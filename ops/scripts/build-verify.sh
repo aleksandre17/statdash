@@ -60,22 +60,22 @@ verify_package() {
 
 case "${MODULE:-all}" in
   geostat)
-    verify_module "geostat" "apps/geostat"
+    verify_module "geostat" "platform/apps/geostat"
     ;;
   panel)
-    verify_module "panel" "apps/panel"
+    verify_module "panel" "platform/apps/panel"
     ;;
   engine)
-    verify_package "engine" "engine/core"
+    verify_package "engine" "platform/engine/core"
     ;;
   react)
-    verify_package "react-pkg" "engine/react"
+    verify_package "react-pkg" "platform/engine/react"
     ;;
   all)
-    verify_package "engine"    "engine/core"
-    verify_package "react-pkg" "engine/react"
-    verify_module  "geostat"   "apps/geostat"
-    verify_module  "panel"     "apps/panel"
+    verify_package "engine"    "platform/engine/core"
+    verify_package "react-pkg" "platform/engine/react"
+    verify_module  "geostat"   "platform/apps/geostat"
+    verify_module  "panel"     "platform/apps/panel"
     ;;
   *)
     echo "Unknown module: $MODULE"

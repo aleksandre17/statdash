@@ -55,9 +55,9 @@ check_ts() {
 }
 
 if [[ -z "$TARGET" ]]; then
-  ENGINE="$ROOT/engine/core"
-  REACT="$ROOT/engine/react"
-  PLUGINS="$ROOT/engine/plugins"
+  ENGINE="$ROOT/platform/engine/core"
+  REACT="$ROOT/platform/engine/react"
+  PLUGINS="$ROOT/platform/engine/plugins"
 
   # Law 1 — No privileged dimension names in engine
   check_ts "Law 1: No ctx.year / ctx.regionId / ctx.region in engine" \

@@ -4,4 +4,4 @@ services:
     container_name: geostat-app
     build:
       context: ../..
-      dockerfile: apps/geostat/src/Dockerfile
+      dockerfile: platform/apps/geostat/src/Dockerfile

@@ -1,12 +1,12 @@
 # ─── Stage 1: Dependencies ───────────────────────────────────────────────────
 FROM node:22-alpine AS deps
 WORKDIR /app
-COPY package*.json ./
+COPY platform/package*.json ./
 RUN npm ci
 
 # ─── Stage 2: Development ────────────────────────────────────────────────────
 FROM deps AS development
-COPY . .
+COPY platform/ .
 EXPOSE 5171
 CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0"]
 
@@ -14,7 +14,7 @@ CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0"]
 FROM deps AS builder
 ARG VITE_API_URL
 ENV VITE_API_URL=$VITE_API_URL
-COPY . .
+COPY platform/ .
 RUN npm run build
 
 # ─── Stage 4: Production ─────────────────────────────────────────────────────

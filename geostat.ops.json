@@ -18,7 +18,7 @@
     "geostat": {
       "role":          "ui",
       "type":          "node-vite",
-      "path":          "apps/geostat",
+      "path":          "platform/apps/geostat",
       "secretsModule": "geostat",
       "target":        "geostat",
       "debug": {
@@ -28,7 +28,7 @@
     "panel": {
       "role":          "ui",
       "type":          "node-vite",
-      "path":          "apps/panel",
+      "path":          "platform/apps/panel",
       "secretsModule": "panel",
       "target":        "panel",
       "debug": {
