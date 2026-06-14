@@ -1,0 +1,129 @@
+{
+  "$schema": "./.claude/kit/project.schema.json",
+  "project": "statdash-platform",
+  "kit_version": "1.4.4",
+  "law_doc": "CLAUDE.md",
+  "lang_codes": [
+    "ka",
+    "en"
+  ],
+  "code_globs": [
+    "*.ts",
+    "*.tsx"
+  ],
+  "modules": [
+    "engine/core",
+    "engine/react",
+    "engine/plugins",
+    "engine/expr",
+    "engine/styles",
+    "apps/geostat",
+    "apps/panel"
+  ],
+  "shared_lib_root": "engine",
+  "law_patterns": [
+    {
+      "id": "Law1-no-privileged-dims",
+      "glob": "*.ts*",
+      "forbid": "\\bctx\\.(year|regionId|quarter|month|periodId)\\b",
+      "msg": "No privileged dimensions: use ctx.dims['time'] / ctx.dims['geo'], never ctx.year/regionId.",
+      "sample_violation": "const y = ctx.year;"
+    },
+    {
+      "id": "Law2-dataspec-declarative",
+      "glob": "*.ts*",
+      "forbid": "getRows\\s*:\\s*\\(",
+      "msg": "DataSpec must be declarative (Constructor-ready): no getRows:(ctx)=>... function in config; use a DataSpec discriminant.",
+      "sample_violation": "const def = { getRows: (ctx) => store.q() };"
+    },
+    {
+      "id": "Arch-engine-no-react",
+      "glob": "engine/core/**",
+      "forbid": "from\\s+['\\\"][^'\\\"]*engine/react",
+      "msg": "Dependency arrow: engine/core must not import engine/react (core ← react, not the reverse).",
+      "sample_violation": "import { X } from '../../react/src/x';"
+    },
+    {
+      "id": "Arch-react-agnostic",
+      "glob": "engine/react/**",
+      "forbid": "from\\s+['\\\"][^'\\\"]*(plugins/|apps/geostat/|apps/panel/)",
+      "msg": "engine/react must stay app-agnostic: no imports from plugins/ or apps/ (app-specifics live downstream).",
+      "sample_violation": "import { GeostatShell } from '../../../engine/plugins/geostat';"
+    }
+  ],
+  "class_m_triggers": [
+    {
+      "match": "engine/core/src/data/.*\\.tsx?$",
+      "label": "engine data-layer change (DataStore / interpretSpec / adapter)",
+      "irreversible": false,
+      "note": "Mandatory-Opus: this is the contract the whole pipeline depends on"
+    },
+    {
+      "match": ".*fromSDMX.*\\.tsx?$|.*/adapters?/.*\\.tsx?$",
+      "label": "adapter boundary (fromSDMX) change",
+      "irreversible": false,
+      "note": "Only place API format → DataRow[]; verify Phase-2 compatibility"
+    },
+    {
+      "match": "engine/(core|react)/.*(index|public|api)\\.tsx?$",
+      "label": "public package API change (cross-layer contract)",
+      "irreversible": true,
+      "note": "Mandatory-Opus + one-body; consumers downstream depend on it"
+    }
+  ],
+  "module_law_docs": {
+    "engine": "engine/CLAUDE.md",
+    "plugins": "engine/plugins/CLAUDE.md"
+  },
+  "paths": {
+    "audit_dir": "docs/audit",
+    "architecture_dir": "docs/architecture",
+    "roadmap_file": "docs/roadmap.md",
+    "layers_dir": "docs/layers",
+    "learning_dir": "docs/learning",
+    "decisions_file": "docs/architecture/decisions.md",
+    "work_dir": "work"
+  },
+  "hygiene": {
+    "bloat_limits": {
+      "md": 300,
+      "ts": 400,
+      "tsx": 400,
+      "js": 400
+    },
+    "hard_factor": 1.5,
+    "claude_sanctioned_dirs": [
+      "kit",
+      "commands",
+      "agents",
+      "skills",
+      "strategy",
+      "context",
+      "session",
+      "feedback",
+      "hooks",
+      "tools",
+      "templates",
+      "agent-memory",
+      "worktrees"
+    ],
+    "repo_sanctioned_top": [
+      "engine",
+      "apps",
+      "kits",
+      "tools",
+      "docs",
+      "ops",
+      "work",
+      "memory",
+      "public",
+      ".claude",
+      ".github",
+      ".vscode",
+      ".idea",
+      "node_modules",
+      "dist",
+      ".git"
+    ]
+  }
+}

@@ -1,0 +1,7 @@
+# Python bytecode from hooks/tools
+__pycache__/
+*.pyc
+# Bootstrap draft (review-then-merge artifact, never committed)
+project.detected.json
+# Per-agent native memory (machine-local)
+agent-memory/

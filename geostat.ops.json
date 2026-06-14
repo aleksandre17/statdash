@@ -1,0 +1,57 @@
+{
+  "version": 2,
+
+  "package": "kits/geostat-kit",
+
+  "secrets": "ops/config",
+
+  "compose": {
+    "catalog": "ops/compose/catalog.json"
+  },
+
+  "stack": {
+    "composeDir":  "ops/compose/stack",
+    "networkName": "statdash-net"
+  },
+
+  "modules": {
+    "geostat": {
+      "role":          "ui",
+      "type":          "node-vite",
+      "path":          "apps/geostat",
+      "secretsModule": "geostat",
+      "target":        "geostat",
+      "debug": {
+        "npmScript": "dev"
+      }
+    },
+    "panel": {
+      "role":          "ui",
+      "type":          "node-vite",
+      "path":          "apps/panel",
+      "secretsModule": "panel",
+      "target":        "panel",
+      "debug": {
+        "npmScript": "dev"
+      }
+    }
+  },
+
+  "cli": {
+    "aliases": {
+      "g": "geostat",
+      "p": "panel"
+    }
+  },
+
+  "vscode": {
+    "folder":        ".vscode",
+    "geostatScript": "tools/statdash.ps1"
+  },
+
+  "scripts": {
+    "checkLaws":   "ops/scripts/check-laws.sh",
+    "layerStatus": "ops/scripts/layer-status.sh",
+    "buildVerify": "ops/scripts/build-verify.sh"
+  }
+}

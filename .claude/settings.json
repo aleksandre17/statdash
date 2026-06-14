@@ -1,0 +1,67 @@
+{
+  "$comment": "geostat-chat-ai — Claude Code project settings. Hooks (Python, cross-platform) turn the most-skipped 'documented disciplines' into real structural barriers (they run outside the model, every time). Default posture WARN; flip WARN_ONLY=False in stop-check.py to hard-enforce. post-edit-laws.py ships enforcing (exit 2) — law violations are unambiguous. Command uses 'python'; on Linux/mac use 'python3' if 'python' is unavailable.",
+  "permissions": {
+    "allow": [
+      "Write(**)",
+      "Edit(**)",
+      "Read(**)",
+      "Bash(./tools/geostat.ps1:*)",
+      "Bash(ops/scripts/*.sh:*)"
+    ]
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python \"$CLAUDE_PROJECT_DIR/.claude/kit/hooks/session-start.py\""
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python \"$CLAUDE_PROJECT_DIR/.claude/kit/hooks/pre-edit-gate.py\""
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python \"$CLAUDE_PROJECT_DIR/.claude/kit/hooks/post-edit-laws.py\""
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python \"$CLAUDE_PROJECT_DIR/.claude/kit/hooks/stop-check.py\""
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python \"$CLAUDE_PROJECT_DIR/.claude/kit/hooks/session-end-tokenlog.py\""
+          }
+        ]
+      }
+    ]
+  },
+  "agent": "orchestrator"
+}

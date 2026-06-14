@@ -1,0 +1,22 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "geostat-kit driver registry",
+  "type": "object",
+  "additionalProperties": {
+    "type": "object",
+    "required": ["label", "runtime", "commands"],
+    "properties": {
+      "label": { "type": "string" },
+      "runtime": { "enum": ["bash", "powershell"] },
+      "roles": {
+        "type": "array",
+        "items": { "enum": ["api", "ui", "worker", "any"] },
+        "description": "Typical module role — not enforced; modules pick type explicitly"
+      },
+      "commands": {
+        "type": "object",
+        "additionalProperties": { "type": "string" }
+      }
+    }
+  }
+}

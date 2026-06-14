@@ -1,0 +1,68 @@
+{
+  "$schema": "./kits/geostat-kit/manifest.schema.json",
+  "version": 2,
+  "package": "kits/geostat-kit",
+  "secrets": "ops/config",
+  "features": {
+    "gcpCredentials": false
+  },
+  "compose": {
+    "catalog": "ops/compose/catalog.json",
+    "syncModules": "apps/backend/ops.modules"
+  },
+  "stack": {
+    "composeDir": "ops/compose/stack",
+    "infraComposeDir": "ops/compose/infra",
+    "networkName": "app-net",
+    "infra": {
+      "services": ["postgres", "redis", "qdrant"]
+    }
+  },
+  "cli": {
+    "aliases": {
+      "fe": "frontend",
+      "be": "backend"
+    }
+  },
+  "modules": {
+    "backend": {
+      "role": "api",
+      "type": "java-boot",
+      "path": "apps/backend",
+      "secretsModule": "backend",
+      "target": "backend"
+    },
+    "frontend": {
+      "role": "ui",
+      "type": "node-vite",
+      "path": "apps/frontend",
+      "secretsModule": "frontend",
+      "target": "frontend"
+    }
+  },
+  "adapters": {
+    "gcp": {
+      "credentialsFile": "google-credentials.json",
+      "containerMount": "/app/google-credentials.json"
+    },
+    "nginx": {
+      "template": "apps/frontend/nginx.conf.template",
+      "output": "apps/frontend/nginx.conf",
+      "envExample": "ops/config/frontend/nginx.env.example",
+      "env": "ops/config/frontend/nginx.env"
+    },
+    "embed": {
+      "envExample": "ops/config/frontend/embed.env.example"
+    }
+  },
+  "ci": {
+    "integration": "ops/ci/integration-stack.sh",
+    "prepareEnv": "kits/geostat-kit/ci/prepare-integration-env.sh",
+    "waitHealth": "kits/geostat-kit/ci/wait-health.sh",
+    "waitStackHealth": "kits/geostat-kit/ci/wait-stack-health.sh"
+  },
+  "vscode": {
+    "folder": ".vscode",
+    "geostatScript": "tools/geostat.ps1"
+  }
+}

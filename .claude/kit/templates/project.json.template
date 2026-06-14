@@ -1,0 +1,16 @@
+{
+  "$schema": "./project.schema.json",
+  "project": "<your-project>",
+  "law_doc": "CLAUDE.md",
+  "module_law_docs": { "<module/path>": "<module/path>/CLAUDE.md" },
+  "lang_codes": [],
+  "class_m_triggers": [
+    { "match": "<regex on file path that forces Mandatory-Opus>", "label": "<what it is>", "irreversible": true, "note": "<what to check first>" }
+  ],
+  "law_patterns": [
+    { "id": "<law-id>", "glob": "*.<ext>", "forbid": "<regex; a match = violation>", "msg": "<fix guidance>" }
+  ],
+  "resume_marker": { "regex": "<extract claimed version from brief, group1=number>", "repo_glob": "<glob for version artifacts>", "repo_regex": "<extract version from path>", "label": "<noun>" },
+  "learning_dir": "docs/learning/",
+  "code_globs": [".java"]
+}

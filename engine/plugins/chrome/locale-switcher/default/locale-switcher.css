@@ -1,0 +1,29 @@
+/* ── LocaleSwitcher — BEM ────────────────────────────────────────── */
+
+.locale-switcher {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.locale-switcher__btn {
+  padding: 0.375rem 0.75rem;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  border: 1px solid #E0EBE8;
+  color: #6B7B8D;
+  background: none;
+  cursor: pointer;
+  line-height: 1;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+}
+.locale-switcher__btn:hover {
+  border-color: #0080BE;
+  color: #0080BE;
+}
+.locale-switcher__btn--active {
+  border-color: #0080BE;
+  color: #0080BE;
+  background: #E6F3FA;
+}

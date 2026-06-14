@@ -1,0 +1,97 @@
+/* ── AppHeader default — structural CSS for all header variants ──────
+   Visual appearance variants live in their own folder CSS.
+   Zero [data-frame] selectors — per-page chrome = registry + config.
+   New visual variant: add app-header/<variant>/ folder. Zero changes here.
+   ─────────────────────────────────────────────────────────────────────── */
+
+.app-header {
+  background: #fff;
+  border-bottom: 1px solid #E0EBE8;
+  transition: background 0.25s, border-color 0.25s, backdrop-filter 0.25s;
+}
+
+.app-header__inner {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 clamp(0.8rem, 2.5vw, 2rem);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: var(--_hdr-h, var(--app-header-h, 5rem));
+}
+
+/* Brand */
+.app-header__brand {
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+  flex-shrink: 0;
+}
+.app-header__logo {
+  height: clamp(2.5rem, 4vw, 3rem);
+  width: auto;
+  transition: transform 0.2s;
+}
+.app-header__brand:hover .app-header__logo { transform: scale(1.05); }
+
+/* Nav */
+.app-header__nav {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+.app-header__nav-link {
+  padding: 0.375rem 0.75rem;
+  font-size: 0.875rem;
+  border-radius: 0.5rem;
+  color: #4A5568;
+  text-decoration: none;
+  transition: background 0.15s, color 0.15s;
+  white-space: nowrap;
+}
+.app-header__nav-link:hover {
+  background: #EFF3F3;
+  color: #1A2332;
+}
+
+/* Actions */
+.app-header__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-shrink: 0;
+}
+
+/* Social */
+.app-header__social {
+  display: flex;
+  align-items: center;
+  gap: 0.125rem;
+}
+.app-header__social-link {
+  width: 2rem;
+  height: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.5rem;
+  color: #6B7B8D;
+  text-decoration: none;
+  transition: color 0.15s, background 0.15s;
+}
+.app-header__social-link:hover {
+  color: #0080BE;
+  background: #E6F3FA;
+}
+.app-header__social-icon {
+  width: 1rem;
+  height: 1rem;
+}
+
+/* ── Responsive ─────────────────────────────────────────────────────── */
+@media (max-width: 960px) {
+  .app-header__nav { display: none; }
+}
+@media (max-width: 640px) {
+  .app-header__social { display: none; }
+}

@@ -1,0 +1,28 @@
+{
+  "description": "Infra module catalog — fragment path + SSH tunnel port env keys. Consumer may add ops/compose/infra/infra-catalog.json to extend.",
+  "modules": {
+    "postgres": {
+      "fragment": "services/postgres.yml",
+      "description": "PostgreSQL (relational)",
+      "tunnel": [{ "env": "POSTGRES_PORT", "default": "5432" }]
+    },
+    "redis": {
+      "fragment": "services/redis.yml",
+      "description": "Redis (cache / streams)",
+      "tunnel": [{ "env": "REDIS_PORT", "default": "6379" }]
+    },
+    "qdrant": {
+      "fragment": "services/qdrant.yml",
+      "description": "Qdrant (vectors)",
+      "tunnel": [
+        { "env": "QDRANT_HTTP_PORT", "default": "6333" },
+        { "env": "QDRANT_GRPC_PORT", "default": "6334" }
+      ]
+    },
+    "rabbitmq": {
+      "fragment": "services/rabbitmq.yml",
+      "description": "RabbitMQ (async events, P5)",
+      "tunnel": [{ "env": "RABBITMQ_PORT", "default": "5672" }]
+    }
+  }
+}

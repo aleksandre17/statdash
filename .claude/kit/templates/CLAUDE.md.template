@@ -1,0 +1,17 @@
+# <Project> — CLAUDE.md (project root; auto-loaded)
+
+## Stack
+<languages · frameworks · datastores>
+
+## Architecture
+<modules · the dependency direction · where contracts/ports live>
+
+## Non-negotiable laws
+1. <law> ...
+(These are the project's canonical laws. The kit's doctrine POINTS here; the kit never restates them.)
+
+## Commands
+<how to build / test / run>
+
+## Where things live
+memory/ = durable WHAT/WHO/directives · .claude/ = HOW/NOW/enforcement (kit) · .claude/project.json = this project's slots.

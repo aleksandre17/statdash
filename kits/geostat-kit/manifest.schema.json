@@ -1,0 +1,433 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "geostat.ops project manifest",
+  "type": "object",
+  "required": ["version", "package", "secrets", "compose", "modules"],
+  "properties": {
+    "version": { "type": "integer", "minimum": 2 },
+    "package": {
+      "type": "string",
+      "description": "Relative path from project root to geostat-kit package"
+    },
+    "secrets": { "type": "string" },
+    "compose": {
+      "type": "object",
+      "description": "Consumer compose catalog and generated artifact paths",
+      "required": ["catalog"],
+      "properties": {
+        "catalog": {
+          "type": "string",
+          "description": "Path to ops/compose/catalog.json (compose-gen templates + targets)"
+        },
+        "syncModules": {
+          "type": "string",
+          "description": "Generated Gradle/docker registry path (e.g. apps/backend/ops.modules)"
+        }
+      }
+    },
+    "stack": {
+      "type": "object",
+      "description": "Full-stack compose, remote deploy module list, and infra wiring",
+      "properties": {
+        "composeDir": {
+          "type": "string",
+          "description": "Generated full-stack compose output dir (default: ops/compose/stack)"
+        },
+        "infraComposeDir": {
+          "type": "string",
+          "description": "Consumer infra compose root (docker-compose.base.yml + services/*.yml)"
+        },
+        "networkName": {
+          "type": "string",
+          "description": "Default Docker network for stack + infra (overridable via DOCKER_NETWORK in deploy.env)"
+        },
+        "composeModules": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Module ids for stack compose-gen and stack-deploy auto-steps (default: all modules)"
+        },
+        "deployBaseSecretsModule": {
+          "type": "string",
+          "description": "Secrets module id for shared DEPLOY_PATH/DEPLOY_LAYOUT (structured java-boot runtime base). Worker modules (retrieval, ingestion) inherit when their .env.deploy omits DEPLOY_PATH."
+        },
+        "modules": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Optional filter for stack endpoint hints only (geostat stack up URLs); default: all catalog roles"
+        },
+        "composeNaming": {
+          "type": "string",
+          "enum": ["manifest"],
+          "description": "Compose service keys from modules.* via compose_identity (deploy.env COMPOSE_* = legacy overrides only)"
+        },
+        "infra": {
+          "type": "object",
+          "description": "Data-store modules for geostat infra (agnostic; consumer owns yaml)",
+          "properties": {
+            "services": {
+              "type": "array",
+              "items": { "type": "string" },
+              "description": "Module ids → services/<id>.yml merged with docker-compose.base.yml"
+            },
+            "composeFiles": {
+              "type": "array",
+              "items": { "type": "string" },
+              "description": "Full override: explicit -f list relative to infraComposeDir"
+            }
+          }
+        }
+      }
+    },
+    "cli": {
+      "type": "object",
+      "properties": {
+        "aliases": {
+          "type": "object",
+          "additionalProperties": { "type": "string" },
+          "description": "Shortcut → modules.<id> (e.g. fe → frontend, be → backend)"
+        }
+      }
+    },
+    "stackDeploy": {
+      "type": "object",
+      "properties": {
+        "modules": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Module ids for remote stack-deploy (default: stack.composeModules, then all modules)"
+        },
+        "steps": {
+          "type": "array",
+          "description": "Explicit deploy steps; omit to auto-generate from stack.composeModules (role order: api, worker, ui)",
+          "items": {
+            "type": "object",
+            "required": ["module", "command"],
+            "properties": {
+              "module": { "type": "string" },
+              "command": { "type": "string" },
+              "args": {
+                "type": "array",
+                "items": { "type": "string" },
+                "description": "Placeholders: {environment} dev|prod, {env} same"
+              }
+            }
+          }
+        }
+      }
+    },
+    "modules": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["type", "path", "secretsModule", "role"],
+        "properties": {
+          "type": {
+            "type": "string",
+            "description": "Driver id from drivers/registry.json (e.g. java-boot, node-vite)"
+          },
+          "role": {
+            "type": "string",
+            "enum": ["ui", "api", "worker", "gateway", "data", "other"],
+            "description": "Logical role for stack order, layout, and default CLI shortcuts"
+          },
+          "path": { "type": "string", "description": "App source dir relative to project root (e.g. apps/backend)" },
+          "secretsModule": {
+            "type": "string",
+            "description": "Folder under secrets root for ops/config (often same as module id)"
+          },
+          "credentials": {
+            "type": "array",
+            "description": "Credential files under secretsModule (overrides global adapters.gcp for this module)",
+            "items": {
+              "type": "object",
+              "required": ["file"],
+              "properties": {
+                "file": { "type": "string" },
+                "mount": { "type": "string" },
+                "envVar": { "type": "string" }
+              },
+              "additionalProperties": false
+            }
+          },
+          "scripts": {
+            "type": "string",
+            "description": "Deprecated — use package drivers; optional wrapper path only"
+          },
+          "target": {
+            "type": "string",
+            "description": "Compose service name slug (e.g. retrieval → geostat-chat-ai-retrieval). NOT a server filesystem path under structured layout — JAR deploy uses stack.deployBaseSecretsModule DEPLOY_PATH + runtime/<container>/."
+          },
+          "compose": {
+            "type": "object",
+            "description": "Compose-gen options (P0-kit-13 embeddedWorker replaces catalog features.worker)",
+            "properties": {
+              "embeddedWorker": {
+                "type": "boolean",
+                "description": "Legacy apps/backend/worker sidecar next to primary api module"
+              }
+            },
+            "additionalProperties": false
+          },
+          "debug": {
+            "type": "object",
+            "description": "VS Code Run and Debug (optional; java-boot auto-detects *Application.java)",
+            "properties": {
+              "label": { "type": "string" },
+              "npmScript": { "type": "string" },
+              "envFile": { "type": "string" },
+              "mainClass": { "type": "string" },
+              "projectName": { "type": "string" },
+              "java": {
+                "type": "object",
+                "properties": {
+                  "mainClass": { "type": "string" },
+                  "projectName": { "type": "string" }
+                }
+              }
+            },
+            "additionalProperties": true
+          },
+          "hybrid": {
+            "type": "object",
+            "description": "Local host run (geostat hybrid boot / module run); springProfiles, gradleWrapper, npmScript",
+            "properties": {
+              "springProfiles": {
+                "type": "string",
+                "description": "SPRING_PROFILES_ACTIVE for java-boot local bootRun"
+              },
+              "gradleWrapper": {
+                "type": "string",
+                "description": "Path to gradlew relative to project root when not in module path"
+              },
+              "gradleProject": {
+                "type": "string",
+                "description": "Gradle subproject for :project:bootRun"
+              },
+              "npmScript": {
+                "type": "string",
+                "description": "npm script for node-vite (default: debug.npmScript or dev)"
+              },
+              "preferJar": {
+                "type": "boolean",
+                "description": "Prefer pre-built JAR over Gradle bootRun for faster startup (requires bootJar)"
+              },
+              "bootJar": {
+                "type": "string",
+                "description": "Path to pre-built Spring Boot JAR for hybrid preferJar mode"
+              }
+            },
+            "additionalProperties": false
+          },
+          "datastores": {
+            "type": "object",
+            "description": "P0-kit-09 config-gen: postgres/rabbitmq/qdrant declarations",
+            "properties": {
+              "postgres": {
+                "type": "object",
+                "properties": {
+                  "schema": { "type": "string" },
+                  "database": { "type": "string" },
+                  "flyway": { "type": "boolean" }
+                },
+                "additionalProperties": false
+              },
+              "rabbitmq": { "type": "object", "additionalProperties": true },
+              "qdrant": { "type": "object", "additionalProperties": true },
+              "events": {
+                "type": "object",
+                "properties": {
+                  "enabledEnv": { "type": "string" }
+                },
+                "additionalProperties": false
+              }
+            },
+            "additionalProperties": false
+          },
+          "spring": {
+            "type": "object",
+            "description": "config-gen Spring profile layout",
+            "properties": {
+              "applicationName": { "type": "string" },
+              "defaultProfile": { "type": "string" },
+              "portEnv": {
+                "type": "string",
+                "description": "Env var for server.port (default: {secretsModule}_PORT)"
+              },
+              "profileGroups": {
+                "type": "object",
+                "additionalProperties": {
+                  "type": "array",
+                  "items": { "type": "string" }
+                }
+              },
+              "envProfiles": {
+                "type": "object",
+                "description": "env-profiles mode: local/dev/prod → secrets env file",
+                "additionalProperties": {
+                  "type": "object",
+                  "properties": {
+                    "envFile": { "type": "string" },
+                    "devtools": { "type": "boolean" },
+                    "prodLogging": { "type": "boolean" }
+                  },
+                  "additionalProperties": false
+                }
+              }
+            },
+            "additionalProperties": false
+          },
+          "configGen": {
+            "type": "object",
+            "description": "P0-kit-09 config-gen mode",
+            "properties": {
+              "mode": {
+                "type": "string",
+                "enum": ["simple", "postgres-profiles", "env-profiles"]
+              }
+            },
+            "additionalProperties": false
+          },
+          "catalog": {
+            "type": "object",
+            "description": "Chat catalog source configuration (yaml vs derived)",
+            "properties": {
+              "sourceEnv": { "type": "string" },
+              "defaultSource": { "type": "string" },
+              "cutoverSource": { "type": "string" },
+              "jdbcUrlEnv": { "type": "string" },
+              "jdbcUserEnv": { "type": "string" },
+              "jdbcPasswordEnv": { "type": "string" },
+              "presentationResources": {
+                "type": "array",
+                "items": { "type": "string" }
+              }
+            },
+            "additionalProperties": false
+          },
+          "derivation": {
+            "type": "object",
+            "description": "Derivation pipeline configuration (Phase 8 P1 enrichment + clustering)",
+            "properties": {
+              "phase": { "type": "string" },
+              "planDoc": { "type": "string" },
+              "defaultCorpus": { "type": "string" },
+              "flywayRange": { "type": "string" },
+              "enrichment": {
+                "type": "object",
+                "properties": {
+                  "enabledEnv": { "type": "string" },
+                  "chatModelEnv": { "type": "string" },
+                  "modelVersionEnv": { "type": "string" },
+                  "defaultChatModel": { "type": "string" }
+                },
+                "additionalProperties": false
+              },
+              "aggregation": {
+                "type": "object",
+                "properties": {
+                  "enabledEnv": { "type": "string" }
+                },
+                "additionalProperties": false
+              },
+              "cutover": {
+                "type": "object",
+                "properties": {
+                  "orchestrator": { "type": "string" },
+                  "prep": { "type": "string" },
+                  "evalGate": { "type": "string" },
+                  "freezeBaseline": { "type": "string" },
+                  "frozenBaselinePath": { "type": "string" },
+                  "derivedSmoke": { "type": "string" }
+                },
+                "additionalProperties": false
+              }
+            },
+            "additionalProperties": false
+          }
+        }
+      }
+    },
+    "vscode": {
+      "type": "object",
+      "properties": {
+        "folder": { "type": "string" },
+        "geostatScript": { "type": "string" },
+        "hybrid": {
+          "type": "object",
+          "description": "P0-infra-07 hybrid compound (tunnel preLaunch + API + UI)",
+          "properties": {
+            "compoundName": { "type": "string" },
+            "apiModule": { "type": "string" },
+            "uiModule": { "type": "string" },
+            "preLaunchTask": { "type": "string" }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "features": {
+      "type": "object",
+      "description": "Optional project capabilities (package reads; defaults off in scaffold)",
+      "additionalProperties": { "type": "boolean" }
+    },
+    "adapters": {
+      "type": "object",
+      "properties": {
+        "gcp": {
+          "type": "object",
+          "properties": {
+            "enabled": { "type": "boolean" },
+            "credentialsFile": { "type": "string" },
+            "containerMount": { "type": "string" },
+            "envVar": { "type": "string" }
+          },
+          "additionalProperties": false
+        },
+        "nginx": {
+          "type": "object",
+          "properties": {
+            "template": { "type": "string" },
+            "output": { "type": "string" },
+            "envExample": { "type": "string" },
+            "env": { "type": "string" }
+          },
+          "additionalProperties": true
+        },
+        "embed": {
+          "type": "object",
+          "additionalProperties": true
+        }
+      },
+      "additionalProperties": true
+    },
+    "ci": {
+      "type": "object",
+      "properties": {
+        "integration": { "type": "string" },
+        "prepareEnv": { "type": "string" },
+        "waitHealth": { "type": "string" },
+        "waitStackHealth": { "type": "string" },
+        "ragSmoke": { "type": "string" },
+        "chatCatalogRagSmoke": { "type": "string" },
+        "chatDerivedCatalogSmoke": { "type": "string", "description": "P1 derived catalog smoke test" },
+        "chatRagE2eSmoke": { "type": "string" },
+        "verifyServicesProd": { "type": "string" },
+        "corpusQualityAudit": { "type": "string" },
+        "ragEvalSmoke": { "type": "string", "description": "RAG eval dry-run / smoke" },
+        "ragEvalHarness": { "type": "string", "description": "RAG eval full harness" },
+        "ragEvalGate": { "type": "string", "description": "RAG eval gate (pass/fail)" },
+        "ragEvalFreezeYamlBaseline": { "type": "string", "description": "Freeze YAML catalog baseline for eval" },
+        "ragDerivationCutoverPrep": { "type": "string", "description": "Phase 8 P1 derivation cutover prep" },
+        "ragP0CorpusQuality": { "type": "string", "description": "P0 Layer 1 corpus quality gate" },
+        "ragP1Cutover": { "type": "string", "description": "Phase 8 P1 full cutover orchestrator" },
+        "ragLocalePipeline": { "type": "string", "description": "Locale pair pipeline orchestrator" },
+        "healthModules": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

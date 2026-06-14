@@ -1,0 +1,28 @@
+# Merge into repo root .gitignore after apply-scaffold
+
+# Secrets (real values)
+secrets/*
+!secrets/.gitignore
+!secrets/README.md
+!secrets/*.example
+!secrets/*/.gitignore
+!secrets/*/*.example
+!secrets/profiles/
+!secrets/profiles/**
+!secrets/ssh/
+!secrets/ssh/README.md
+!secrets/ssh/.gitignore
+!secrets/ssh/*.example
+
+# Deploy runtime
+deploy/.env
+deploy/*.log
+
+# Accidental geostat layout output
+/-OutFile
+
+# Module logs
+frontend/logs/*
+!frontend/logs/.gitignore
+backend/logs/*
+!backend/logs/.gitignore

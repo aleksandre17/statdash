@@ -1,0 +1,133 @@
+# Module driver resolution — manifest type + drivers/registry.json (see lib/driver_api.py)
+
+. (Join-Path $PSScriptRoot "geostat-python.ps1")
+
+function Get-DriverApiScript {
+    Join-Path (Get-OpsPackageRoot) "lib\driver_api.py"
+}
+
+function Invoke-DriverApi {
+    param([string[]]$ApiArgs)
+    $pyArgs = Get-GeostatPythonArgs
+    if (-not $pyArgs) { throw "Python not found (tried py -3, python3, python)" }
+    Invoke-GeostatPythonExe $pyArgs (Get-DriverApiScript) @ApiArgs
+    if ($LASTEXITCODE -ne 0) { throw "driver_api failed" }
+}
+
+function Get-DriverRegistryPath {
+    Join-Path (Get-OpsPackageRoot) "drivers\registry.json"
+}
+
+function Get-ModuleManifestEntry {
+    param([string]$ModuleId)
+    $mf = Get-ProjectManifestPath
+    if (-not $mf -or -not (Test-Path $mf)) { return $null }
+    $data = Get-Content $mf -Raw | ConvertFrom-Json
+    if (-not $data.modules.PSObject.Properties[$ModuleId]) { return $null }
+    return $data.modules.$ModuleId
+}
+
+function Get-ModuleType {
+    param([string]$ModuleId)
+    $m = Get-ModuleManifestEntry $ModuleId
+    if (-not $m) {
+        throw "Unknown module '$ModuleId' - add modules.$ModuleId in geostat.ops.json"
+    }
+    if (-not $m.type) {
+        throw "modules.$ModuleId.type is required (driver id from drivers/registry.json)"
+    }
+    return [string]$m.type
+}
+
+function Get-ModuleProjectPath {
+    param([string]$ModuleId)
+    $root = Get-ProjectRootFromManifest
+    $m = Get-ModuleManifestEntry $ModuleId
+    $rel = if ($m.path) { $m.path } else { $ModuleId }
+    Join-Path $root $rel
+}
+
+function Get-DriverRoot {
+    param([string]$ModuleId)
+    Join-Path (Get-OpsPackageRoot) "drivers\$(Get-ModuleType $ModuleId)"
+}
+
+function Get-DriverRegistryEntry {
+    param([string]$Type)
+    $reg = Get-Content (Get-DriverRegistryPath) -Raw | ConvertFrom-Json
+    if (-not $reg.PSObject.Properties[$Type]) {
+        $known = ($reg.PSObject.Properties.Name) -join ", "
+        throw "Unknown driver type '$Type' - add drivers/$Type/ and registry.json. Known: $known"
+    }
+    return $reg.$Type
+}
+
+function Get-DriverCapabilities {
+    param([string]$ModuleId)
+    $typ = Get-ModuleType $ModuleId
+    $entry = Get-DriverRegistryEntry $typ
+    @($entry.commands.PSObject.Properties.Name)
+}
+
+function Get-DriverCommandPath {
+    param(
+        [string]$ModuleId,
+        [string]$Command
+    )
+    $caps = Get-DriverCapabilities $ModuleId
+    if ($Command -notin $caps) {
+        throw "Driver '$(Get-ModuleType $ModuleId)' has no command '$Command' (available: $($caps -join ', '))"
+    }
+    $entry = Get-DriverRegistryEntry (Get-ModuleType $ModuleId)
+    Join-Path (Get-DriverRoot $ModuleId) $entry.commands.$Command
+}
+
+function Get-CliAliasesFromManifest {
+    $mf = Get-ProjectManifestPath
+    if (-not $mf) { return @{} }
+    $data = Get-Content $mf -Raw | ConvertFrom-Json
+    $aliases = @{}
+    if ($data.cli -and $data.cli.aliases) {
+        $data.cli.aliases.PSObject.Properties | ForEach-Object {
+            $aliases[$_.Name] = [string]$_.Value
+        }
+    }
+    $used = [System.Collections.Generic.HashSet[string]]::new()
+    foreach ($v in $aliases.Values) { [void]$used.Add($v) }
+    foreach ($role in @("ui", "api", "worker", "gateway")) {
+        $ids = @(
+            $data.modules.PSObject.Properties |
+                Where-Object {
+                    $r = $_.Value.role
+                    if (-not $r -and $_.Value.type -eq "node-vite") { $r = "ui" }
+                    if (-not $r -and $_.Value.type -eq "java-boot") { $r = "api" }
+                    $r -eq $role
+                } |
+                ForEach-Object { $_.Name }
+        )
+        if ($ids.Count -eq 1 -and -not $used.Contains($ids[0])) {
+            if (-not $aliases.ContainsKey($role)) { $aliases[$role] = $ids[0] }
+            [void]$used.Add($ids[0])
+        }
+    }
+    return $aliases
+}
+
+function Resolve-CliAlias {
+    param([string]$Alias)
+    $aliases = Get-CliAliasesFromManifest
+    if ($aliases.ContainsKey($Alias)) { return $aliases[$Alias] }
+    $mf = Get-ProjectManifestPath
+    if ($mf) {
+        $data = Get-Content $mf -Raw | ConvertFrom-Json
+        if ($data.modules.PSObject.Properties[$Alias]) { return $Alias }
+    }
+    return $null
+}
+
+function Get-ProjectModules {
+    $mf = Get-ProjectManifestPath
+    if (-not $mf) { return @() }
+    $data = Get-Content $mf -Raw | ConvertFrom-Json
+    @($data.modules.PSObject.Properties.Name)
+}

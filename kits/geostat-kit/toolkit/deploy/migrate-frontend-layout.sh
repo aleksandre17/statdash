@@ -1,0 +1,135 @@
+#!/bin/bash
+# Migrate flat frontend deploy dirs -> structured static/ (server-side via SSH)
+#
+# Usage:
+#   bash kits/geostat-kit/toolkit/deploy/migrate-frontend-layout.sh [--dry-run] [--dev|--prod]
+#
+# Requires: ui module .env.deploy (DEPLOY_LAYOUT=structured), ops/config/deploy.env
+
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PKG_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+export GEOSTAT_KIT_ROOT="$PKG_ROOT"
+
+# shellcheck source=../../lib/project.sh
+source "$PKG_ROOT/lib/project.sh"
+# shellcheck source=../../lib/env.sh
+source "$PKG_ROOT/lib/env.sh"
+# shellcheck source=../../lib/ssh.sh
+source "$PKG_ROOT/lib/ssh.sh"
+geostat_ssh_maybe_alias
+
+GEOSTAT_PROJECT_ROOT="$(geostat_find_project_root "$(pwd)" 2>/dev/null || echo "$(cd "$PKG_ROOT/../../.." && pwd)")"
+export GEOSTAT_PROJECT_ROOT
+
+OPS_MODULE_ID="$(geostat_module_id_for_role ui)"
+[[ -n "$OPS_MODULE_ID" ]] || OPS_MODULE_ID="$(geostat_module_id_for_type node-vite)"
+[[ -n "$OPS_MODULE_ID" ]] || { echo "  ERROR: no ui/node-vite module in geostat.ops.json" >&2; exit 1; }
+OPS_SECRETS_MODULE="$(geostat_secrets_module_name "$OPS_MODULE_ID")"
+SECRETS_DIR="$(geostat_secrets_dir_for_module "$OPS_MODULE_ID")"
+SERVER="$(geostat_env_value "$OPS_SECRETS_MODULE" DEPLOY_SERVER "$(geostat_deploy_env_value DEPLOY_SERVER "")")"
+PROJECT="$(geostat_env_value "$OPS_SECRETS_MODULE" DEPLOY_PROJECT "")"
+[[ -n "$PROJECT" ]] || PROJECT="$(geostat_project_slug)"
+DEPLOY_PATH_BASE="$(geostat_env_value "$OPS_SECRETS_MODULE" DEPLOY_PATH "")"
+[[ -n "$DEPLOY_PATH_BASE" ]] || DEPLOY_PATH_BASE="$(geostat_default_remote_deploy_base "$OPS_SECRETS_MODULE")"
+DEPLOY_PATH_BASE="${DEPLOY_PATH_BASE%/}"
+LAYOUT="$(geostat_env_value "$OPS_SECRETS_MODULE" DEPLOY_LAYOUT "flat")"
+RENAME_PAIRS="$(PYTHONPATH="${PKG_ROOT}" geostat_python "$PKG_ROOT/lib/migrate_layout_names.py" --pairs-ui 2>/dev/null || true)"
+SOURCE_DIRS="$(PYTHONPATH="${PKG_ROOT}" geostat_python "$PKG_ROOT/lib/migrate_layout_names.py" --sources-ui 2>/dev/null || true)"
+
+DRY_RUN=0
+ENVIRONMENT="prod"
+for arg in "$@"; do
+  case "$arg" in
+    --dry-run) DRY_RUN=1 ;;
+    --dev) ENVIRONMENT="dev" ;;
+    --prod) ENVIRONMENT="prod" ;;
+  esac
+done
+
+COMPOSE_FILE="docker-compose.${ENVIRONMENT}.yml"
+
+if [[ "$LAYOUT" != "structured" ]]; then
+  echo "  ERROR: DEPLOY_LAYOUT must be structured in ${SECRETS_DIR}/.env.deploy" >&2
+  exit 1
+fi
+[[ -n "$SERVER" ]] || { echo "  ERROR: DEPLOY_SERVER not set" >&2; exit 1; }
+
+echo ""
+echo "  Frontend layout migration (flat -> static/)"
+echo "  Server: $SERVER"
+echo "  Base:   $DEPLOY_PATH_BASE"
+if [[ -n "$SOURCE_DIRS" ]]; then
+  echo "  Scope:  $SOURCE_DIRS"
+fi
+if [[ -n "$RENAME_PAIRS" ]]; then
+  echo "  Renames: $RENAME_PAIRS"
+fi
+echo "  Mode:   $(if [[ $DRY_RUN -eq 1 ]]; then echo 'dry-run'; else echo 'apply'; fi)"
+echo ""
+
+geostat_ssh "$SERVER" "bash -s" -- "$DEPLOY_PATH_BASE" "$COMPOSE_FILE" "$DRY_RUN" "$RENAME_PAIRS" "$SOURCE_DIRS" <<'REMOTE'
+set -euo pipefail
+BASE="$1"
+COMPOSE_FILE="$2"
+DRY="$3"
+RENAME_PAIRS="${4:-}"
+SOURCE_DIRS="${5:-}"
+
+resolve_dest() {
+  local name="$1"
+  local p old new
+  if [[ -z "$RENAME_PAIRS" ]]; then
+    echo "$name"
+    return
+  fi
+  IFS=',' read -ra _pairs <<< "$RENAME_PAIRS"
+  for p in "${_pairs[@]}"; do
+    [[ -z "$p" ]] && continue
+    old="${p%%:*}"
+    new="${p#*:}"
+    if [[ "$name" == "$old" && -n "$new" ]]; then
+      echo "$new"
+      return
+    fi
+  done
+  echo "$name"
+}
+
+is_scoped() {
+  local name="$1" d
+  [[ -n "$SOURCE_DIRS" ]] || return 1
+  IFS=',' read -ra _dirs <<< "$SOURCE_DIRS"
+  for d in "${_dirs[@]}"; do
+    [[ -z "$d" ]] && continue
+    [[ "$name" == "$d" ]] && return 0
+  done
+  return 1
+}
+
+for old in "$BASE"/*; do
+  [[ -d "$old" ]] || continue
+  name="$(basename "$old")"
+  [[ "$name" == "static" || "$name" == "compose" || "$name" == "workspace" ]] && continue
+  is_scoped "$name" || continue
+  [[ -d "$old/dist" || -f "$old/nginx.conf" || -f "$old/$COMPOSE_FILE" || -f "$old/docker-compose.yml" ]] || continue
+  dest_name="$(resolve_dest "$name")"
+  new="$BASE/static/$dest_name"
+  if [[ -d "$new" ]]; then
+    echo "  [skip] $name - static already exists: $new"
+    continue
+  fi
+  if [[ "$DRY" == "1" ]]; then
+    echo "  [dry-run] mv $old -> $new"
+  else
+    mkdir -p "$BASE/static"
+    mv "$old" "$new"
+    echo "  [OK] mv $old -> $new"
+  fi
+done
+REMOTE
+
+echo ""
+echo "  Done. Verify: geostat fe manage <service> status --$ENVIRONMENT"
+echo ""

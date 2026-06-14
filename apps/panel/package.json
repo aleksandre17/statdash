@@ -1,0 +1,28 @@
+{
+  "name": "@geostat/panel",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev":     "vite",
+    "build":   "tsc -b && vite build",
+    "preview": "vite preview",
+    "test":    "vitest run",
+    "lint":    "eslint ."
+  },
+  "dependencies": {
+    "@geostat/plugins": "workspace:*",
+    "@geostat/react":   "workspace:*",
+    "react":            "catalog:",
+    "react-dom":        "catalog:"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "catalog:",
+    "@types/react":         "catalog:",
+    "@types/react-dom":     "catalog:",
+    "@types/node":          "catalog:",
+    "typescript":           "catalog:",
+    "vite":                 "catalog:",
+    "vitest":               "catalog:"
+  }
+}

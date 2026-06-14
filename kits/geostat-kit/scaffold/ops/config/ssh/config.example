@@ -1,0 +1,6 @@
+Host geostat-deploy
+    HostName YOUR_SERVER_IP
+    User YOUR_USER
+    Port 22
+    IdentityFile ~/.ssh/id_ed25519
+    IdentitiesOnly yes

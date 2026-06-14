@@ -1,0 +1,21 @@
+{
+  "features": {
+    "worker": false
+  },
+  "templates": {
+    "api_dev": "  {api_service}:\n    image: {api_image}\n    container_name: {api_service}\n    build:\n      context: {api_context}\n      dockerfile: {api_dockerfile_dev}\n    ports:\n      - \"${{API_PORT:-8090}}:${{API_PORT:-8090}}\"\n    env_file:\n      - {secrets_backend}/.env.dev\n    networks:\n      - {network_key}\n    restart: unless-stopped\n",
+    "net_bridge": "networks:\n  {network_key}:\n    driver: bridge\n"
+  },
+  "targets": {
+    "apps/backend/docker-compose.dev.yml": {
+      "comment": "# Minimal API dev — extend for your stack\n",
+      "services": ["api_dev"],
+      "fmt": {
+        "api_context": ".",
+        "api_dockerfile_dev": "src/Dockerfile.dev",
+        "secrets_backend": "../../ops/config/backend"
+      },
+      "networks": "net_bridge"
+    }
+  }
+}

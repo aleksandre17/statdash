@@ -1,0 +1,46 @@
+/* ================================================================
+   CHART PLACEHOLDER
+   Shown for unimplemented chart types (map, sankey).
+   ================================================================ */
+
+.chart-ph {
+  min-height: 280px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  background: linear-gradient(160deg, #F8FAFB 0%, #F2F6F8 100%);
+  border-radius: 0 0 12px 12px;
+  padding: 2rem;
+  position: relative;
+  overflow: hidden;
+}
+/* subtle grid lines */
+.chart-ph::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(#E8EEED 1px, transparent 1px),
+    linear-gradient(90deg, #E8EEED 1px, transparent 1px);
+  background-size: 32px 32px;
+  opacity: 0.35;
+}
+.chart-ph-icon {
+  position: relative;
+  color: color-mix(in srgb, var(--sc, #0080BE) 35%, #9AABB8);
+  opacity: 0.7;
+}
+.chart-ph-label {
+  position: relative;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: color-mix(in srgb, var(--sc, #0080BE) 60%, #5A7A8A);
+}
+.chart-ph-text {
+  position: relative;
+  font-size: 0.75rem;
+  color: #B0C4CC;
+  font-style: italic;
+}

@@ -1,0 +1,67 @@
+{
+  "$comment": "claude-kit — Claude Code settings. Hooks (Python, cross-platform) turn the most-skipped disciplines into structural barriers (run outside the model, every time). Default posture WARN; flip WARN_ONLY=False in stop-check.py to hard-enforce. post-edit-laws.py ships enforcing (exit 2). Command uses 'python'; on Linux/mac use 'python3' if needed. PERMISSIONS BELOW ARE A PROJECT SLOT — replace the runner path with your project's.",
+  "permissions": {
+    "allow": [
+      "Write(**)",
+      "Edit(**)",
+      "Read(**)",
+      "Bash(./tools/<your-runner>:*)",
+      "Bash(<your-scripts-dir>/*.sh:*)"
+    ]
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python \"$CLAUDE_PROJECT_DIR/.claude/kit/hooks/session-start.py\""
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python \"$CLAUDE_PROJECT_DIR/.claude/kit/hooks/pre-edit-gate.py\""
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python \"$CLAUDE_PROJECT_DIR/.claude/kit/hooks/post-edit-laws.py\""
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python \"$CLAUDE_PROJECT_DIR/.claude/kit/hooks/stop-check.py\""
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python \"$CLAUDE_PROJECT_DIR/.claude/kit/hooks/session-end-tokenlog.py\""
+          }
+        ]
+      }
+    ]
+  },
+  "agent": "orchestrator"
+}

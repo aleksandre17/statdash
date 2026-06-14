@@ -1,0 +1,22 @@
+# Engineering Laws — <project>
+
+> **Canonical law set: `CLAUDE.md` §Non-negotiable laws.** This file points there and adds only working-session *execution* rules. Do not restate the laws here (one-body).
+
+## Strict Laws
+→ See `CLAUDE.md` §Non-negotiable laws (single source).
+
+## Clean Architecture (fill per project)
+- Application layer: <orchestration + ports only; never imports infra concretes>
+- Infrastructure layer: <adapters + manifest-loaded config>
+- Package structure: <logic-based, no flat piles>
+
+## Approved Stack (fill per project)
+| Concern | Technology | Notes |
+|---------|-----------|-------|
+
+## Execution Rules (generic — keep)
+- Minimize diff — smallest correct change; match existing naming and patterns.
+- No commit unless explicitly asked by the owner.
+- Respond in the owner's language when they write in it.
+- Before implementing: flag law violations; never silently work around them.
+- Verify: run checks after changes; state what passed and what was skipped.

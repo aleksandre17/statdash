@@ -1,0 +1,27 @@
+{
+  "description": "Stack local URL hints — port env keys by module role (manifest modules + ops/config secrets).",
+  "roles": {
+    "ui": {
+      "portEnv": ["DEPLOY_HOST_PORT", "APP_DEV_CONTAINER_PORT"],
+      "defaultPort": "5177",
+      "urlPath": "/",
+      "ciHealth": false,
+      "healthExpect": ""
+    },
+    "api": {
+      "portEnv": ["API_PORT", "RETRIEVAL_PORT", "INGESTION_PORT"],
+      "defaultPort": "8090",
+      "urlPath": "/health",
+      "ciHealth": true,
+      "healthExpect": "UP"
+    },
+    "worker": {
+      "portEnv": ["WORKER_PORT", "INGESTION_PORT"],
+      "defaultPort": "8091",
+      "urlPath": "/actuator/health",
+      "ciHealth": true,
+      "healthExpect": "UP"
+    }
+  },
+  "roleOrder": ["ui", "api", "worker"]
+}

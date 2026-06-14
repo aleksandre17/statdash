@@ -1,0 +1,33 @@
+{
+  "name": "@geostat/react",
+  "version": "0.1.0",
+  "description": "React adapter — headless components consuming @geostat/engine",
+  "type": "module",
+  "private": true,
+  "exports": {
+    ".": {
+      "source":  "./src/index.ts",
+      "types":   "./dist/index.d.ts",
+      "import":  "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsup src/index.ts --format esm --dts --clean"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "peerDependencies": {
+    "react": ">=18",
+    "react-dom": ">=18",
+    "react-router-dom": ">=6"
+  },
+  "dependencies": {
+    "@geostat/engine": "workspace:*",
+    "@geostat/styles": "workspace:*"
+  }
+}

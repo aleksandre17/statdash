@@ -1,0 +1,5 @@
+*
+!.gitignore
+!README.md
+!config.example
+!id_ed25519.example

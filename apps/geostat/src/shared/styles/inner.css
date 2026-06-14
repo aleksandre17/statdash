@@ -1,0 +1,20 @@
+/* ── App shell globals ─────────────────────────────────────────────────
+   Sidebar CSS lives in plugins/chrome/inner-sidebar/default/inner-sidebar.css
+   ─────────────────────────────────────────────────────────────────────── */
+
+/* ── Sticky app header ───────────────────────────────────────── */
+.app-header {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+
+/* ── CSS Variables ───────────────────────────────────────────── */
+:root {
+  --app-header-h:  5rem;
+  --inner-ph-h:    4.25rem;
+  --inner-fb-h:    3rem;
+}
+@media (max-width: 640px) {
+  :root { --app-header-h: 4rem; }
+}

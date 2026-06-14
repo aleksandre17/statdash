@@ -1,0 +1,12 @@
+/* ================================================================
+   @geostat/react — Global Utilities
+   Component CSS is co-located with each component/shell file.
+   Only global cross-cutting utilities live here.
+   ================================================================ */
+
+@import '@geostat/styles/css/index.css';
+
+@import './a11y.css';
+@import './slot.css';
+@import './panel-layout.css';
+@import './chrome-region.css';

@@ -1,0 +1,40 @@
+{
+  "templates": {
+    "app_base": "  {app_service}:\n    image: {app_image}\n    container_name: {app_service}\n    build:\n      context: {app_context}\n      dockerfile: apps/geostat/src/Dockerfile\n    networks:\n      - {network_key}\n    mem_limit: 128m\n    cpus: 0.5\n",
+
+    "app_dev_overlay": "  {app_service}:\n    build:\n      target: development\n    ports:\n      - \"${DEPLOY_HOST_PORT:-5171}:5171\"\n    volumes:\n      - {app_dev_mount}:/app\n      - /app/node_modules\n    environment:\n      VITE_API_URL: ${VITE_API_URL:-}\n    env_file:\n      - {secrets_module}/.env.dev\n    develop:\n      watch:\n        - action: sync\n          path: ./apps/geostat/src\n          target: /app/apps/geostat/src\n        - action: rebuild\n          path: ./apps/geostat/package.json\n",
+
+    "app_prod_overlay": "  {app_service}:\n    build:\n      target: production\n      args:\n        VITE_API_URL: ${VITE_API_URL:-}\n    ports:\n      - \"${DEPLOY_HOST_PORT:-5171}:80\"\n    env_file:\n      - {secrets_module}/.env.prod\n    restart: unless-stopped\n    healthcheck:\n      test: [\"CMD\", \"wget\", \"-qO-\", \"http://localhost/\"]\n      interval: 30s\n      timeout: 5s\n      retries: 3\n      start_period: 10s\n",
+
+    "net_internal": "networks:\n  {network_key}:\n    name: {network_name}\n"
+  },
+
+  "targets": {
+    "ops/compose/docker-compose.yml": {
+      "comment": "# Base — used as foundation for dev (override) and prod (overlay)\n",
+      "services": ["app_base"],
+      "fmt": {
+        "app_context": ".",
+        "secrets_module": "ops/config/geostat"
+      },
+      "networks": "net_internal"
+    },
+
+    "ops/compose/docker-compose.override.yml": {
+      "comment": "# Dev — auto-merged on: docker compose up (run from project root)\n",
+      "services": ["app_dev_overlay"],
+      "fmt": {
+        "app_dev_mount": ".",
+        "secrets_module": "ops/config/geostat"
+      }
+    },
+
+    "ops/compose/docker-compose.prod.yml": {
+      "comment": "# Production — docker compose -f ops/compose/docker-compose.yml -f ops/compose/docker-compose.prod.yml up -d\n",
+      "services": ["app_prod_overlay"],
+      "fmt": {
+        "secrets_module": "ops/config/geostat"
+      }
+    }
+  }
+}

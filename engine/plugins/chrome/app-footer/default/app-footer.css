@@ -1,0 +1,54 @@
+/* ── AppFooter default — structural CSS ──────────────────────────────
+   Visual variants live in their own folder CSS (e.g. app-footer/minimal/).
+   Zero [data-frame] selectors — per-page chrome = registry + config.
+   ─────────────────────────────────────────────────────────────────────── */
+
+.app-footer {
+  background: #fff;
+  border-top: 1px solid #E0EBE8;
+  margin-top: auto;
+  min-height: var(--_ftr-min, auto);
+}
+
+.app-footer__inner {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 1.5rem clamp(0.8rem, 2.5vw, 2rem);
+}
+
+.app-footer__content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  text-align: center;
+}
+
+.app-footer__copyright {
+  font-size: 0.875rem;
+  color: #6B7B8D;
+  margin: 0;
+}
+
+.app-footer__links {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.375rem 0.75rem;
+  font-size: 0.875rem;
+}
+
+.app-footer__link {
+  color: #0080BE;
+  text-decoration: none;
+  transition: color 0.15s;
+}
+.app-footer__link:hover { color: #006A9E; }
+
+.app-footer__links .app-footer__link + .app-footer__link::before {
+  content: '|';
+  margin-right: 0.75rem;
+  color: #E0EBE8;
+  pointer-events: none;
+}

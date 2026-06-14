@@ -1,0 +1,25 @@
+{
+  "$schema": "./project.schema.json",
+  "project": "geostat-chat-ai",
+  "law_doc": "CLAUDE.md",
+  "module_law_docs": { "apps/ingestion-service": "apps/ingestion-service/CLAUDE.md" },
+  "lang_codes": ["ka", "en"],
+
+  "class_m_triggers": [
+    { "match": "(db/migration|resources/db).*V\\d+__.*\\.sql$", "label": "NEW Flyway migration", "irreversible": true, "note": "Mandatory-Opus + DB P1-P7 (apps/ingestion-service/CLAUDE.md) + Decision Inventory" },
+    { "match": "/platform-contracts/.*\\.java$", "label": "platform-contracts change (port/contract crossing modules)", "irreversible": true, "note": "Mandatory-Opus + one-body" },
+    { "match": "(settings|build)\\.gradle\\.kts$", "label": "module/dependency change", "irreversible": false, "note": "New module/lib? -> Mandatory-Opus" }
+  ],
+
+  "law_patterns": [
+    { "id": "Law1-domain-hardcode", "glob": "*.java", "forbid": "\\.contains\\(\\s*\"(ka|en|portal)\"", "msg": "Law 1: domain hardcode -> manifest/corpus, not Java" },
+    { "id": "P1-check-enum", "glob": "*.sql", "forbid": "CHECK\\s*\\(\\s*\\w+\\s+IN\\s*\\(", "msg": "Antipattern 1: CHECK(col IN ...) on domain value -> lookup-table FK (P1)" },
+    { "id": "P2-jsonb-catchall", "glob": "*.sql", "forbid": "\\b(metadata|stats|config_snapshot)\\s+JSONB", "msg": "Antipattern 2/8: JSONB catch-all/stats blob -> typed columns or child table (P2)" },
+    { "id": "vectors-in-pg", "glob": "*.sql", "forbid": "\\b(REAL|FLOAT)\\s*\\[\\]", "msg": "Antipattern 4: REAL[]/FLOAT[] vectors in Postgres -> Qdrant only" }
+  ],
+
+  "resume_marker": { "regex": "Last committed migration:\\*?\\*?\\s*V(\\d+)", "repo_glob": "**/db/migration/V*__*.sql", "repo_regex": "[/\\\\]V(\\d+)__", "label": "migration" },
+
+  "learning_dir": "docs/learning/",
+  "code_globs": [".java", ".jsx", ".tsx", ".ts"]
+}

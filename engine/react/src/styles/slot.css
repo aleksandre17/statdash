@@ -1,0 +1,9 @@
+/* ================================================================
+   SLOT — engine positional wrappers (non-flow children only)
+   flow (default) → Fragment: zero DOM. Wrapper added only when
+   layout.position requires a CSS positioning context.
+   ================================================================ */
+
+.slot--sticky-top    { position: sticky; top: 0; z-index: 100 }
+.slot--sticky-bottom { position: sticky; bottom: 0 }
+.slot--overlay       { position: fixed; inset: 0; z-index: 200 }

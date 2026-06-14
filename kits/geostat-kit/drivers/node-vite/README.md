@@ -1,0 +1,30 @@
+# node-vite driver (SPA)
+
+Stack-agnostic **single-page app** module driver: **Vite (React)**, **Angular CLI**, **Nx** — same commands if the module uses Docker compose with a **development** target and source volume.
+
+## Commands
+
+| Command | Purpose |
+|---------|---------|
+| `deploy local\|dist\|remote\|sync\|watch` | Artifact / compose deploy (`watch` = static dist loop) |
+| `dev bootstrap\|sync\|watch\|restart` | Windows → Linux **source** sync (rsync), no `dist` build |
+| `run` | Local `npm run <script>` + secrets `.env.dev` (manifest `debug.npmScript` / `hybrid`) |
+
+**`deploy watch` vs `dev watch`:** [docs/FE-WATCH.md](../../../docs/FE-WATCH.md)
+
+| `compose`, `manage`, `check` | Module lifecycle |
+
+## Remote dev
+
+```powershell
+geostat fe dev bootstrap -Environment dev
+geostat fe dev watch
+```
+
+See project `docs/DEV-REMOTE.md`.
+
+## Angular / Nx
+
+1. Set `modules.<id>.type` to `node-vite` in `geostat.ops.json`.
+2. Provide `docker-compose.override.yml` with dev target + `.:/app` (or `develop.watch`).
+3. Optional `ops.config.ps1`: `$OpsDevWatchPaths = @("src", "angular.json", "projects")`.

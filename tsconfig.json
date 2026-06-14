@@ -1,0 +1,40 @@
+{
+  "files": [],
+  "references": [
+    { "path": "./apps/geostat" },
+    { "path": "./apps/panel" }
+  ],
+  "compilerOptions": {
+    "target": "ES2020",
+    "useDefineForClassFields": true,
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "skipLibCheck": true,
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "isolatedModules": true,
+    "moduleDetection": "force",
+    "noEmit": true,
+    "jsx": "react-jsx",
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.tsbuildinfo",
+    "paths": {
+      "@plugins":                  ["./engine/plugins"],
+      "@plugins/*":                ["./engine/plugins/*"],
+      "@geostat/plugins":          ["./engine/plugins"],
+      "@geostat/plugins/catalog":  ["./engine/plugins/catalog.ts"],
+      "@geostat/plugins/registry": ["./engine/plugins/registry.ts"],
+      "@geostat/expr":             ["./engine/expr/index.ts"],
+      "@geostat/expr/*":           ["./engine/expr/src/*"],
+      "@geostat/styles":           ["./engine/styles/src/index.ts"],
+      "@geostat/styles/*":         ["./engine/styles/src/*"],
+      "@geostat/engine":           ["./engine/core/src/index.ts"],
+      "@geostat/engine/*":         ["./engine/core/src/*"],
+      "@geostat/react":            ["./engine/react/src/index.ts"],
+      "@geostat/react/*":          ["./engine/react/src/*"]
+    }
+  }
+}

@@ -1,0 +1,28 @@
+/* ================================================================
+   ACCESSIBILITY UTILITIES — WCAG 2.1 AA
+   ================================================================ */
+
+/* Screen-reader-only text — invisible but announced by AT */
+.sr-only {
+  position:   absolute;
+  width:      1px;
+  height:     1px;
+  padding:    0;
+  margin:     -1px;
+  overflow:   hidden;
+  clip:       rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border:     0;
+}
+
+/* Focus-visible: skip mouse clicks, show ring only for keyboard */
+:focus-visible {
+  outline:        2px solid #0080BE;
+  outline-offset: 2px;
+  border-radius:  2px;
+}
+
+/* Suppress the default browser outline only when using mouse */
+:focus:not(:focus-visible) {
+  outline: none;
+}

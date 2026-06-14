@@ -1,0 +1,45 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# ops/config — secrets (never commit real env files)
+ops/config/**/.env.dev
+ops/config/**/.env.prod
+ops/config/**/.env.deploy
+ops/config/deploy.env
+ops/config/**/google-credentials.json
+
+# Build artifacts
+tsconfig.tsbuildinfo
+*.tsbuildinfo
+
+# Runtime logs
+ops/logs/
+
+# Claude conversation dumps
+*.jsonl
+
+# Session / analysis artifacts (user working files — not source)
+user-messages.txt
+pipeline_extracted.txt
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?

@@ -1,0 +1,100 @@
+/* ================================================================
+   TABS WIDGET
+   Filter-param-driven tab strip + content slot.
+   Builder.io / Grafana view-mode tabs pattern.
+   ================================================================ */
+
+.tabs-widget {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+/* ── Tab strip ──────────────────────────────────────────────── */
+.tabs-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  padding: 0.25rem;
+  background: #F5F7F7;
+  border-radius: 10px;
+  width: fit-content;
+}
+
+.tabs-tab {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.375rem 0.875rem;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: #5A7A8A;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  white-space: nowrap;
+}
+
+.tabs-tab:hover {
+  background: #fff;
+  color: #1A2332;
+}
+
+.tabs-tab.is-active {
+  background: #fff;
+  color: var(--tc, #0080BE);
+  font-weight: 600;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+/* ── Tab content ─────────────────────────────────────────────── */
+.tabs-content {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* ── Tab panel — content rendered by TabRenderer ────────────── */
+/*  Lives inside .tabs-content → no extra margins needed.        */
+
+.tab-panel {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Subtitle + view-toggle row — only shown when subtitle or toggle exists */
+.tab-panel-head {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 1.25rem;
+  border-bottom: 1px solid #F0F3F3;
+}
+
+.tab-panel-meta {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Tab content body — chart or table */
+.tab-panel-body {
+  overflow: hidden;
+}
+
+/* ── Flex chain for fixed-height panels ───────────────────────
+ *  When panel-col carries a height token (data-height attr via applyPanelStyles)
+ *  the flex chain must reach the chart-wrap.
+ *  section__body already has flex:1 via panel-layout.css;
+ *  propagate it down through tabs-widget → tabs-content → tab-panel → tab-panel-body.
+ */
+.section__body > .tabs-widget              { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.section__body > .tabs-widget .tabs-content { flex: 1; min-height: 0; }
+.section__body > .tabs-widget .tab-panel    { flex: 1; min-height: 0; }
+.section__body > .tabs-widget .tab-panel-body { flex: 1; }
+
+/* ── Responsive ──────────────────────────────────────────────── */
+@media (max-width: 640px) {
+  .tabs-strip { width: 100%; }
+  .tabs-tab   { flex: 1; justify-content: center; }
+}

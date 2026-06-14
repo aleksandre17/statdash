@@ -1,0 +1,26 @@
+/* ── chrome-region — layout wrapper for chrome slot regions ─────────────
+ *
+ *  display:contents on all regions except overlay: shells are direct
+ *  flex/grid children of .app-shell / .app-shell__body — zero layout
+ *  breaking wrappers. The DOM node exists for event delegation only.
+ *
+ *  overlay region: fixed full-viewport layer, z-indexed above everything.
+ *  pointer-events:none on the region; auto on each shell (focus/click pass
+ *  through the transparent areas — pattern: Grafana context menus).
+ * ────────────────────────────────────────────────────────────────────── */
+
+.chrome-region {
+  display: contents;
+}
+
+.chrome-region--overlay {
+  display:        block;
+  position:       fixed;
+  inset:          0;
+  z-index:        var(--z-chrome-overlay, 200);
+  pointer-events: none;
+}
+
+.chrome-region--overlay > * {
+  pointer-events: auto;
+}

@@ -1,0 +1,17 @@
+/* ── AppHeader transparent variant — frosted glass overlay ──────────────
+   Wrapper has display:contents — invisible to layout, scopes CSS override.
+   Higher specificity (.app-header-transparent-wrap .app-header) wins over
+   the base .app-header rule in default/app-header.css. No !important.
+   Zero coupling to page names, frame names, or other shells.
+   ────────────────────────────────────────────────────────────────────── */
+
+.app-header-transparent-wrap {
+  display: contents;
+}
+
+.app-header-transparent-wrap .app-header {
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-bottom-color: rgba(255, 255, 255, 0.4);
+}

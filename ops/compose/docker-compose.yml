@@ -1,0 +1,7 @@
+services:
+  geostat-app:
+    image: geostat-app
+    container_name: geostat-app
+    build:
+      context: ../..
+      dockerfile: apps/geostat/src/Dockerfile

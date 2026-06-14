@@ -1,0 +1,58 @@
+"""Infra remote path — per-consumer slug under global DEPLOY_PROJECT root."""
+from __future__ import annotations
+
+import pytest
+
+from lib.deploy_paths import (
+    infra_deploy_path_candidates,
+    normalize_infra_slug,
+    resolve_infra_deploy_path,
+)
+
+
+class TestInfraSlug:
+    def test_normalize(self):
+        assert normalize_infra_slug("Geostat-Chat-Bot") == "geostat-chat-bot"
+
+
+class TestResolveInfraDeployPath:
+    def test_explicit(self):
+        assert (
+            resolve_infra_deploy_path(
+                deploy_path="/home/admin/geostat/infra/my-app",
+                server_base=None,
+                global_project=None,
+                consumer_slug="my-app",
+            )
+            == "/home/admin/geostat/infra/my-app"
+        )
+
+    def test_explicit_wrong_slug_raises(self):
+        with pytest.raises(ValueError, match="/infra/my-app"):
+            resolve_infra_deploy_path(
+                deploy_path="/home/admin/geostat/infra/other",
+                server_base="/home/admin",
+                global_project="geostat",
+                consumer_slug="my-app",
+            )
+
+    def test_fallback(self):
+        assert (
+            resolve_infra_deploy_path(
+                deploy_path=None,
+                server_base="/home/administrator",
+                global_project="geostat",
+                consumer_slug="geostat-chat-bot",
+            )
+            == "/home/administrator/geostat/infra/geostat-chat-bot"
+        )
+
+
+class TestCandidates:
+    def test_one_path(self):
+        c = infra_deploy_path_candidates(
+            server_base="/home/administrator",
+            global_project="geostat",
+            consumer_slug="myshop",
+        )
+        assert c == ["/home/administrator/geostat/infra/myshop"]

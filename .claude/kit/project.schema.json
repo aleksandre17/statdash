@@ -1,0 +1,178 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "claude-kit project manifest",
+  "description": "Every project-specific value the generic orchestration kit reads. Fill this; touch no kit file.",
+  "type": "object",
+  "required": [
+    "project",
+    "law_doc"
+  ],
+  "properties": {
+    "project": {
+      "type": "string",
+      "description": "Project name."
+    },
+    "law_doc": {
+      "type": "string",
+      "description": "Path to the root law document (e.g. CLAUDE.md)."
+    },
+    "module_law_docs": {
+      "type": "object",
+      "description": "module path -> its own law doc (e.g. DB rules in the schema-owning module).",
+      "additionalProperties": {
+        "type": "string"
+      }
+    },
+    "lang_codes": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Domain language/locale codes that must NOT be hardcoded in source."
+    },
+    "class_m_triggers": {
+      "type": "array",
+      "description": "File-path patterns that force Mandatory-Opus + risk assessment.",
+      "items": {
+        "type": "object",
+        "required": [
+          "match",
+          "label"
+        ],
+        "properties": {
+          "match": {
+            "type": "string",
+            "description": "Python regex against the file path."
+          },
+          "label": {
+            "type": "string"
+          },
+          "irreversible": {
+            "type": "boolean",
+            "default": false
+          },
+          "note": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "law_patterns": {
+      "type": "array",
+      "description": "Forbidden-pattern checks run by post-edit-laws.py on the changed file.",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "glob",
+          "forbid",
+          "msg"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "glob": {
+            "type": "string",
+            "description": "fnmatch against the file basename, e.g. '*.sql'."
+          },
+          "forbid": {
+            "type": "string",
+            "description": "Python regex; a match is a violation."
+          },
+          "msg": {
+            "type": "string"
+          },
+          "sample_violation": {
+            "type": "string",
+            "description": "Optional: a string that violates `forbid`, used by doctor.py for a live block-test."
+          }
+        }
+      }
+    },
+    "resume_marker": {
+      "type": "object",
+      "description": "How session-start.py detects stale resume state vs the repo.",
+      "properties": {
+        "regex": {
+          "type": "string",
+          "description": "Extracts the brief's claimed version, group(1)=number."
+        },
+        "repo_glob": {
+          "type": "string",
+          "description": "Glob (slash-separated) for the artifacts that advance that version."
+        },
+        "repo_regex": {
+          "type": "string",
+          "description": "Extracts the version number from a matched path."
+        },
+        "label": {
+          "type": "string"
+        }
+      }
+    },
+    "learning_dir": {
+      "type": "string",
+      "default": "docs/learning/"
+    },
+    "code_globs": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Production-code extensions for the learning-note reminder."
+    },
+    "paths": {
+      "type": "object",
+      "description": "Output locations playbooks write to.",
+      "properties": {
+        "audit_dir": {
+          "type": "string"
+        },
+        "architecture_dir": {
+          "type": "string"
+        },
+        "roadmap_file": {
+          "type": "string"
+        },
+        "layers_dir": {
+          "type": "string"
+        },
+        "learning_dir": {
+          "type": "string"
+        },
+        "decisions_file": {
+          "type": "string"
+        },
+        "work_dir": {
+          "type": "string",
+          "description": "Work-board workspace dir (kanban: PROCESS.md, BOARD.md, items/). Default 'work'."
+        }
+      }
+    },
+    "kit_version": {
+      "type": "string",
+      "description": "Kit VERSION this manifest was written against (informational)."
+    },
+    "hygiene": {
+      "type": "object",
+      "description": "Prevention protocol: bloat_limits (lines per extension; warn at limit, BLOCK at limit×hard_factor), hard_factor, claude_sanctioned_dirs (structure guard)."
+    },
+    "modules": {
+      "type": "array",
+      "description": "Project module paths (e.g. 'apps/backend'); bootstrap generates a per-module specialist for each.",
+      "items": {
+        "type": "string"
+      }
+    },
+    "shared_lib_root": {
+      "type": "string",
+      "description": "Root dir of shared, project-agnostic libraries (e.g. 'libs'); arch rules forbid these from importing app packages."
+    },
+    "$schema": {
+      "type": "string",
+      "description": "Optional JSON Schema pointer."
+    }
+  },
+  "version": "1.0"
+}

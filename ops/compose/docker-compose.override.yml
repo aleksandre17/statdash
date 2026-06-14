@@ -1,0 +1,19 @@
+# Dev — auto-loaded with `docker compose up` (run from ops/compose/)
+services:
+  geostat-app:
+    build:
+      target: development
+    ports:
+      - "5171:5171"
+    volumes:
+      - ../..:/app
+      - /app/node_modules
+    environment:
+      - VITE_API_URL=${VITE_API_URL}
+    develop:
+      watch:
+        - action: sync
+          path: ../../apps/geostat/src
+          target: /app/apps/geostat/src
+        - action: rebuild
+          path: ../../apps/geostat/package.json

@@ -1,0 +1,186 @@
+/* ================================================================
+   @geostat/styles — Data-attribute style system
+   Framework-level CSS. Zero BEM class coupling for core rules.
+   Shell-agnostic: any element can carry these attributes.
+
+   DATA-ATTRIBUTE CONTRACT:
+
+   data-height = token string
+     "16:9" | "4:3" | "1:1" | "21:9"  → fixed aspect-ratio
+     "sm"(280px) "md"(380px) "lg"(480px) "xl"(600px) → named height
+     "constrained"                      → px height via inline style
+     Emitted by: applyNodeStyles() / applyPanelStyles()
+
+   data-aspect = "" (presence flag)
+     Responsive aspect-ratio — CSS reads --ar-default/md/sm vars.
+     Emitted by: applyNodeStyles() when aspectRatio is set.
+
+   data-view = "hidden" | "visible"
+     Visibility state — hides/shows the view slot.
+     Emitted by: resolveViewState()
+   ================================================================ */
+
+
+/* ── Height tokens ──────────────────────────────────────────────── */
+
+[data-height="16:9"] { aspect-ratio: 16 / 9; }
+[data-height="4:3"]  { aspect-ratio: 4 / 3;  }
+[data-height="1:1"]  { aspect-ratio: 1 / 1;  }
+[data-height="21:9"] { aspect-ratio: 21 / 9; }
+[data-height="sm"]   { height: 280px; }
+[data-height="md"]   { height: 380px; }
+[data-height="lg"]   { height: 480px; }
+[data-height="xl"]   { height: 600px; }
+[data-height]        { overflow: hidden; }
+
+/* Grid rows: aspect-ratio cells must not stretch (default align-items:stretch
+ * overrides aspect-ratio on block elements in grid context). */
+.panel-row > [data-height="16:9"],
+.panel-row > [data-height="4:3"],
+.panel-row > [data-height="1:1"],
+.panel-row > [data-height="21:9"] { align-self: start; }
+
+/* Content inside a height-constrained ancestor fills the space */
+[data-height] .chart-wrap,
+[data-height] .chart-ph          { height: 100%; }
+[data-height] .data-table__wrap  { overflow-y: auto; }
+[data-height] .data-table        { min-height: 100%; }
+[data-height] .data-table thead th {
+  position: sticky;
+  top:      0;
+  z-index:  1;
+}
+
+
+/* ── Aspect ratio — responsive (data-aspect) ────────────────────── */
+/*
+ * data-aspect="" presence flag + CSS vars --ar-default / --ar-md / --ar-sm.
+ * All responsive logic lives here — shells and component CSS are transparent.
+ *
+ * Cascade:
+ *   Desktop (default): aspect-ratio: var(--ar-default)
+ *   ≤1280px:           aspect-ratio: var(--ar-md, var(--ar-default))
+ *   ≤640px:            aspect-ratio: var(--ar-sm, var(--ar-md, var(--ar-default)))
+ *
+ * When --ar-* var is unset (not in inline style), var() falls through to next
+ * fallback. Completely unset → aspect-ratio is unset (no visual effect).
+ */
+
+[data-aspect] {
+  height:       auto;
+  aspect-ratio: var(--ar-default);
+}
+
+@media (max-width: 1280px) {
+  [data-aspect] {
+    aspect-ratio: var(--ar-md, var(--ar-default));
+  }
+}
+
+@media (max-width: 640px) {
+  [data-aspect] {
+    aspect-ratio: var(--ar-sm, var(--ar-md, var(--ar-default)));
+  }
+}
+
+/* Content inside an aspect-constrained element */
+[data-aspect] .chart-wrap,
+[data-aspect] .chart-ph         { height: 100%; }
+[data-aspect] .data-table__wrap { overflow-y: auto; }
+[data-aspect] .data-table       { min-height: 100%; }
+[data-aspect] .data-table thead th {
+  position: sticky;
+  top:      0;
+  z-index:  1;
+}
+
+/* Active view fills the aspect-constrained space */
+[data-aspect] [data-view="visible"] {
+  display:        flex;
+  flex-direction: column;
+  height:         100%;
+  overflow:       hidden;
+  min-height:     0;
+}
+
+[data-aspect] [data-view="visible"] .chart-wrap,
+[data-aspect] [data-view="visible"] .chart-ph {
+  flex:       1;
+  height:     100%;
+  min-height: 0;
+}
+
+[data-aspect] [data-view="visible"] .data-table__wrap {
+  flex:       1;
+  overflow-y: auto;
+}
+
+[data-aspect] [data-view="visible"] .data-table       { min-height: 100%; }
+[data-aspect] [data-view="visible"] .data-table thead th {
+  position: sticky;
+  top:      0;
+  z-index:  1;
+}
+
+
+/* ── View state ─────────────────────────────────────────────────── */
+
+[data-view="hidden"]  { display: none;  }
+[data-view="visible"] { display: block; }
+
+/* Active view inside a height-constrained element — flex chain fills space */
+[data-height] [data-view="visible"] {
+  display:        flex;
+  flex-direction: column;
+  flex:           1;
+  overflow:       hidden;
+  min-height:     0;
+}
+
+[data-height] [data-view="visible"] .chart-wrap,
+[data-height] [data-view="visible"] .chart-ph {
+  flex:       1;
+  height:     100%;
+  min-height: 0;
+}
+
+[data-height] [data-view="visible"] .data-table__wrap { flex: 1; overflow-y: auto; }
+[data-height] [data-view="visible"] .data-table        { min-height: 100%; }
+[data-height] [data-view="visible"] .data-table thead th {
+  position: sticky;
+  top:      0;
+  z-index:  1;
+}
+
+
+/* ── Responsive resets ──────────────────────────────────────────── */
+
+@media (max-width: 1280px) {
+  /* Height-token elements: collapse aspect-ratio, go to auto */
+  [data-height] {
+    aspect-ratio: unset;
+    height:       auto !important;
+  }
+
+  [data-height] [data-view="visible"] {
+    flex:     1;
+    overflow: visible;
+  }
+
+  [data-height] [data-view="visible"] .chart-wrap {
+    flex:   none;
+    height: var(--chart-h, auto);
+  }
+
+  [data-height] [data-view="visible"] .chart-ph         { flex: none; height: auto; }
+  [data-height] [data-view="visible"] .data-table__wrap { flex: none; overflow-y: visible; }
+  [data-height] [data-view="visible"] .data-table        { min-height: unset; }
+  [data-height] [data-view="visible"] .data-table thead th { position: static; }
+}
+
+
+/* ── Transition tokens ──────────────────────────────────────────── */
+
+[data-transition="fast"]   { transition: var(--transition-fast);   }
+[data-transition="smooth"] { transition: var(--transition-smooth); }
+[data-transition="slow"]   { transition: var(--transition-slow);   }

@@ -1,0 +1,33 @@
+{
+  "name": "national-accounts",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev":        "vite",
+    "dev:api":    "cross-env VITE_STORE_MODE=api vite",
+    "build":      "tsc -b && vite build",
+    "build:mock": "tsc -b && cross-env VITE_STORE_MODE=api vite build",
+    "preview":    "vite preview"
+  },
+  "dependencies": {
+    "@geostat/engine":  "workspace:*",
+    "@geostat/react":   "workspace:*",
+    "@geostat/plugins": "workspace:*",
+    "@geostat/expr":    "workspace:*",
+    "@geostat/styles":  "workspace:*",
+    "@types/leaflet": "^1.9.21",
+    "apexcharts": "^3.45.0",
+    "i18next": "^23.10.0",
+    "leaflet": "^1.9.4",
+    "react":            "catalog:",
+    "react-apexcharts": "^1.4.1",
+    "react-dom":        "catalog:",
+    "react-i18next": "^14.1.0",
+    "react-leaflet": "^5.0.0",
+    "react-router-dom": "catalog:"
+  },
+  "msw": {
+    "workerDirectory": ["public"]
+  }
+}

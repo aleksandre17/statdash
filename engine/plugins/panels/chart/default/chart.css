@@ -1,0 +1,20 @@
+/* ── Chart wrap ──────────────────────────────────────────────────────
+ *  Structural CSS only — no data-* logic, no CSS var reads.
+ *
+ *  Sizing behavior is fully driven by @geostat/styles / node-styles.css:
+ *    [data-height]  → fixed height token on ancestor (section body)
+ *    [data-aspect]  → responsive aspect-ratio on this element
+ *
+ *  Desktop (>1280px):  height:100% fills height-constrained ancestor.
+ *  Mobile  (≤1280px):  height:auto — chart uses intrinsic height.
+ *  With [data-aspect]: height:auto overridden by node-styles.css rule. */
+
+.chart-wrap {
+  height:    100%;
+  min-width: 0;
+  padding:   0.4vw;
+}
+
+@media (max-width: 1280px) {
+  .chart-wrap { height: auto; }
+}
