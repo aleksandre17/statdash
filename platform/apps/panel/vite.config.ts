@@ -12,6 +12,10 @@ import { resolve } from 'path'
 export default defineConfig({
   plugins: [react()],
   resolve: {
+    // 'source' condition lets Vite pick the TypeScript source entry from package.json
+    // exports maps (e.g. "@geostat/expr": { source: "./index.ts", import: "./dist/index.js" })
+    // without needing a build step during development.
+    conditions: ['source', 'browser', 'module', 'import', 'default'],
     alias: [
       // @geostat/plugins must come before @plugins (more specific prefix wins).
       { find: '@geostat/plugins', replacement: resolve(__dirname, '../../engine/plugins')   },
