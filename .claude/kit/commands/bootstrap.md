@@ -15,7 +15,7 @@
    - Fresh project → `project.json` was written from detection.
    - Existing project → the draft is at `.claude/project.detected.json`; Sonnet merges anything new into `project.json` (confirm ambiguous bits with the user), then deletes the draft.
 3. **Clear the judgment TODO** (the report lists it — these can't be inferred):
-   - `law_patterns` — turn the project's `CLAUDE.md` laws into forbidden-pattern regexes (glob + regex + msg). If `CLAUDE.md` is still the template → ask the user for the stack + the non-negotiable laws (a few sharp questions, `01-A` A), write them into `CLAUDE.md`, then derive the patterns.
+   - `law_patterns` — turn the project's `CLAUDE.md` laws into forbidden-pattern regexes (glob + regex + msg). If `CLAUDE.md` is still the template → ask the user for the stack + the non-negotiable laws (a few sharp questions, `01` A), write them into `CLAUDE.md`, then derive the patterns.
    - `module_law_docs`, `lang_codes`, and per-module DB/contract docs.
 4. **Seed the present:** if `opus-brief.md` is the template, either write the first `§Current State` from the user, or run **`/architecture`** to establish current→target→gap, then **`/roadmap`**.
 5. **Confirm ready:** re-validate the manifest + re-run `selftest.py` → expect valid + 8/8. Report READY + the daily rhythm (`resume → /layer|/refactor|/debt → /review → /close`).

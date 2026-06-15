@@ -1,6 +1,6 @@
 # 08 — Enforcement Architecture (which disciplines are structural, which are judgment)
 
-> The system's creed is `04` §C: "Rules cannot override reflex. Structure can." This file makes that literal.
+> The system's creed is `03` §C: "Rules cannot override reflex. Structure can." This file makes that literal.
 > It names, for every discipline, **where** it is enforced — so we stop confusing a documented rule with a guaranteed one.
 > Loaded by Sonnet when wiring/auditing hooks, or when a discipline keeps getting skipped.
 
@@ -34,7 +34,7 @@ The design rule: **every mechanically-checkable discipline belongs in the Struct
 
 ## Stays JUDGMENT (do not automate — these are the real work)
 - Decision Inventory genuineness (`01` Objective Opus-signals) — a hook can force the *prompt*, not the *answer*.
-- Intake Echo faithfulness + faithful amplification (`01-A-mediator.md` §A/B).
+- Intake Echo faithfulness + faithful amplification (`01-team-and-decisions.md` §A/B).
 - Tier 1 vs Tier 2, blocker-vs-proceed (`03`).
 - Discovered-problem dependency ordering (`03` Observation Duty).
 - Brief quality / "Steps-disguised-as-problem" grading (`03`).
@@ -58,7 +58,7 @@ Hooks run on the host shell. The `.py` scripts assume POSIX (Git Bash / WSL / Li
 
 ## These hooks are fitness functions
 
-In architecture-governance terms (Evolutionary Architecture), this enforcement layer *is* a set of **fitness functions** — automated checks that assert architectural characteristics hold over time (dependency direction, layering, forbidden patterns, schema rules). `law_patterns` + the hooks are how a rule holds **by default** instead of by policing. When `/audit` or `/architecture` finds a rule enforced only by prose, the fix is to add a fitness function (a `law_patterns` entry), not another reminder. Architecture-protection vectors → defenses: `10-architecture-protection.md`.
+In architecture-governance terms (Evolutionary Architecture), this enforcement layer *is* a set of **fitness functions** — automated checks that assert architectural characteristics hold over time (dependency direction, layering, forbidden patterns, schema rules). `law_patterns` + the hooks are how a rule holds **by default** instead of by policing. When `/audit` or `/architecture` finds a rule enforced only by prose, the fix is to add a fitness function (a `law_patterns` entry), not another reminder. Architecture-protection vectors → defenses: `09-risk.md`.
 
 ---
 

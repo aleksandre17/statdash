@@ -59,11 +59,10 @@ else:
 
 # --- agent layer ---
 adir = P(".claude/agents")
-for a in ["orchestrator", "architect", "debugger", "migration", "database-architect", "explorer", "chief-engineer", "project-manager", "senior-backend-developer", "senior-frontend-developer", "markup-specialist", "junior-executor"]:
+for a in ["orchestrator", "chief-engineer", "architect", "database-architect", "senior-backend-developer", "senior-frontend-developer", "project-manager", "debugger", "platform-architect", "explorer", "junior-executor"]:
     ck(os.path.exists(os.path.join(adir, f"{a}.md")), f"agent: {a}")
-apps = [d for d in (os.listdir(P("apps")) if os.path.isdir(P("apps")) else []) if os.path.isdir(P("apps", d))]
 specs = [os.path.basename(x).replace(".md", "") for x in glob.glob(os.path.join(adir, "*-specialist.md"))]
-ck(len(specs) >= len(apps) or not apps, "module specialists generated", f"apps={len(apps)} specialists={len(specs)}")
+ck(len(specs) >= 1, "module-specialist present", f"specialists={len(specs)}")
 if os.path.exists(os.path.join(adir, "orchestrator.md")):
     o = open(os.path.join(adir, "orchestrator.md")).read()
     m = re.search(r"Agent\(([^)]*)\)", o); allow = m.group(1) if m else ""
@@ -80,7 +79,7 @@ except Exception as e:
     ck(False, "settings.json", str(e)[:60])
 
 # --- slots present ---
-for slot in [".claude/context/opus-brief.md", ".claude/strategy/04-A-examples.md",
+for slot in [".claude/context/opus-brief.md", ".claude/strategy/03-A-examples.md",
              ".claude/commands/dev.md", ".claude/commands/laws.md", "CLAUDE.md",
              "memory/project_vision.md", "memory/project_roadmap.md", "memory/project_debt.md", "memory/user_profile.md"]:
     ck(os.path.exists(P(slot)), f"slot: {slot}")

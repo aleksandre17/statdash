@@ -1,7 +1,7 @@
 # 06 — Token Economy
 
 > Loaded by Sonnet when a cost / agent-choice decision is unclear. ~40 lines.
-> Sibling files: `01-team-and-decisions.md` (the executor matrix), `04-brief-template.md` (brief efficiency).
+> Sibling files: `01-team-and-decisions.md` (the executor matrix), `03-opus-mandate.md` (brief efficiency).
 
 ---
 

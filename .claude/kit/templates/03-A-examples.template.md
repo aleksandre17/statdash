@@ -1,6 +1,6 @@
-# 04-A — Worked Examples (PROJECT-SPECIFIC slot)
+# 03-A — Worked Examples (PROJECT-SPECIFIC slot)
 
-> The kit's `04-brief-template.md` is generic and points here for concrete examples.
+> The kit's `03-opus-mandate.md` is generic and points here for concrete examples.
 > Fill with YOUR project's real cases: good vs bad Goal lines, a Decision-Inventory "counts vs doesn't" table in your domain, and a binding case study (your own "confidence-laundering" incident).
 
 ## A.3 — Goal line: good vs bad

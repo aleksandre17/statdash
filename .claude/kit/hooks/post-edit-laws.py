@@ -27,7 +27,7 @@ lim = (hy.get("bloat_limits", {}) or {}).get(fp.rsplit(".",1)[-1].lower())
 if lim:
     n = text.count("\n") + 1
     if n > lim * int(hy.get("hard_factor", 2)):
-        sys.stderr.write(f"[post-edit-laws] BLOAT BLOCK: {rel} is {n} lines (hard ceiling {lim*int(hy.get('hard_factor',2))}). Split it — one concern per file (one-body, `05`/`10` hygiene). Do not keep appending.\n")
+        sys.stderr.write(f"[post-edit-laws] BLOAT BLOCK: {rel} is {n} lines (hard ceiling {lim*int(hy.get('hard_factor',2))}). Split it — one concern per file (one-body, `05`/`09` hygiene). Do not keep appending.\n")
         sys.exit(2)
 violations = [p["msg"] for p in load().get("law_patterns", [])
              if _match(p.get("glob", "*")) and re.search(p["forbid"], text, re.I)]

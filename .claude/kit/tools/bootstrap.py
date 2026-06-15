@@ -104,8 +104,8 @@ def place(dst, src, todo=None):
 place([".claude","settings.json"], os.path.join(KIT,"settings.template.json"))
 place([".claude","context","opus-brief.md"], os.path.join(TPL,"opus-brief.template.md"),
       "opus-brief.md: write the first §Current State (or run /architecture then /roadmap)")
-place([".claude","strategy","04-A-examples.md"], os.path.join(TPL,"04-A-examples.template.md"),
-      "04-A-examples.md: add your domain's worked examples")
+place([".claude","strategy","03-A-examples.md"], os.path.join(TPL,"03-A-examples.template.md"),
+      "03-A-examples.md: add your domain's worked examples")
 place([".claude","commands","dev.md"], os.path.join(TPL,"dev.md.template"),
       "commands/dev.md: your build/test/run commands")
 place([".claude","commands","laws.md"], os.path.join(TPL,"laws.md.template"))

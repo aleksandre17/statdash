@@ -14,7 +14,7 @@
 1. **Phases** — group the path into coherent phases (each phase = a milestone that leaves the system shippable/coherent).
 2. **Layers within a phase** — slice each phase into layers small enough to validate independently (Gate 2). Order by dependency.
 3. **Per layer, fill the row** (this is the template):
-   - **Goal** — a *system-state invariant* ("After this layer: …"), never a step list (`04` A.2).
+   - **Goal** — a *system-state invariant* ("After this layer: …"), never a step list (`03` A.2).
    - **Decision-density → who** — judgment-heavy → Opus; crystallized + wiring → Sonnet; templated → Haiku (`01`). Class-M? (`project.json class_m_triggers`) → Mandatory-Opus.
    - **Depends on** — prior layers/ids.
    - **Risk class** — reversibility + blast (`09` §B); irreversible → flag.

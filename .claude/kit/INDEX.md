@@ -5,6 +5,25 @@
 
 ---
 
+---
+
+## Operating model — lean core, on-demand reference, earned growth
+
+**CORE (always active, binding — small by design).** These bind behavior without anyone reading a doc; they are the spine:
+- **Hooks** (`kit/hooks/`) — hard enforcement: they fire, they block (the only layer that truly *forces*).
+- **Manifest** (`project.json` `law_patterns`) — the project's laws, enforced by the hooks.
+- **Agent files** (`.claude/agents/`) — each carries its **Disposition + named canon + model tier**.
+- **`CLAUDE.md`** — project laws (auto-loaded).
+- **SessionStart injection** — the operating contract + Disposition, every session, every agent.
+
+**REFERENCE (on-demand — consult when the core points you here; NOT required to operate):**
+- `kit/strategy/` — deep doctrine (routing, risk, learning, board…).
+- `skills/architecture-standards/` — the named-principle definitions.
+- `kit/feedback/` — validated lessons, loaded per-trigger.
+The agent *operates from the CORE* and *reaches into REFERENCE for depth* — by the rules in the map below.
+
+**Earned growth (governing law).** The CORE stays minimal. New doctrine enters REFERENCE; it graduates to CORE only when real use proves it changes outcomes. **Measure before you add — over-engineering is architectural erosion (YAGNI as a fitness function).** Doctrine grows from field lessons (`feedback/`), not from speculation.
+
 ## Auto-loaded (do not re-read)
 
 | File | Why it's auto-loaded | Touch policy |
@@ -39,7 +58,7 @@ Read: .claude/kit/strategy/06-token-economy.md        (only when cost decision u
 ### D. Sonnet — writing an Opus brief (`--f` or `--b`)
 ```
 Read: .claude/kit/strategy/01-team-and-decisions.md   (Decision-Density model + 5-line Pre-Work Gate + Decision Inventory)
-Read: .claude/kit/strategy/04-brief-template.md       (Section A discipline, then Section B.1 template)
+Read: .claude/kit/strategy/03-opus-mandate.md       (Section A discipline, then Section B.1 template)
 Read: .claude/kit/feedback/feedback_opus_brief_style.md         (failure modes + canonical case study)
 Read: .claude/kit/strategy/05-context-protocol.md     (if brief involves shared writes)
 ```
@@ -48,7 +67,7 @@ Read: .claude/kit/strategy/05-context-protocol.md     (if brief involves shared 
 ```
 Read: .claude/kit/strategy/01-team-and-decisions.md   (Opus-as-Reviewer mode section)
 Read: .claude/kit/strategy/03-opus-mandate.md         (Opus-as-Reviewer discipline)
-Read: .claude/kit/strategy/04-brief-template.md       (Section B.3 — Review Brief)
+Read: .claude/kit/strategy/03-opus-mandate.md       (Section B.3 — Review Brief)
 ```
 
 ### E. Opus / Haiku — receiving a brief
@@ -60,8 +79,8 @@ Brief itself                    — ground truth for the task
 
 Load full strategy files ONLY when brief flags a doctrine question:
   .claude/kit/strategy/03-opus-mandate.md   — doctrine question on Tier/Blocker/Work-protection
-  .claude/kit/strategy/04-brief-template.md — doctrine question on brief format
-  .claude/strategy/04-A-examples.md     — first brief of a sprint only (case studies + canonical reference)
+  .claude/kit/strategy/03-opus-mandate.md — doctrine question on brief format
+  .claude/strategy/03-A-examples.md     — first brief of a sprint only (case studies + canonical reference)
   .claude/kit/strategy/05-context-protocol.md — when writing shared session state
 ```
 Haiku does **not** read mandate or strategy files — templated work, no decisions.
@@ -94,7 +113,7 @@ Rotate: .claude/session/context.md + token-log.md (if stale or layer transition)
 | `memory/project_vision.md` | Owner, quality bar, Phase 1/2 goals | Architectural change only | Sacred |
 | `memory/project_roadmap.md` | 70 layers × 7 phases (structure only) | Roadmap change only | Sacred |
 | `memory/user_profile.md` | owner identity, language, learning goal | Profile change only | Sacred |
-| `.claude/kit/strategy/07-A-learning-format.md` | Writing a learning note (companion to 07) | Sonnet/Opus |
+| `.claude/kit/strategy/07-learning-system.md` | Writing a learning note (companion to 07) | Sonnet/Opus |
 | `.claude/kit/feedback/feedback_powershell_sandbox.md` | Sandbox flag mandate | Never (binding) | Sacred |
 | `.claude/kit/feedback/feedback_opus_work_protection.md` | Never silently remove Opus code | Never (binding) | Sacred |
 | `memory/project_debt.md` | Known gaps backlog | When debt resolved | Slow-changing |
@@ -104,20 +123,20 @@ Rotate: .claude/session/context.md + token-log.md (if stale or layer transition)
 | File | Loads when | Owner |
 |------|-----------|-------|
 | `.claude/kit/strategy/01-team-and-decisions.md` | Sonnet picks executor | Sonnet |
-| `.claude/kit/strategy/01-A-mediator.md` | Intaking a user directive, or relaying an agent's output to the user | Sonnet |
+| `.claude/kit/strategy/01-team-and-decisions.md` | Intaking a user directive, or relaying an agent's output to the user | Sonnet |
 | `.claude/project.json` | Hooks read it; edit when project paths/laws change | Sonnet/config |
 | `.claude/kit/strategy/02-layer-flow.md` | Sonnet runs a layer | Sonnet |
 | `.claude/kit/strategy/03-opus-mandate.md` | Opus brief is written / Opus executes | Opus |
-| `.claude/kit/strategy/04-brief-template.md` | Any brief written or received | Sonnet + Opus + Haiku |
+| `.claude/kit/strategy/03-opus-mandate.md` | Any brief written or received | Sonnet + Opus + Haiku |
 | `.claude/kit/strategy/05-context-protocol.md` | Any shared session write | Every agent |
 | `.claude/kit/strategy/06-token-economy.md` | Sonnet cost decision unclear | Sonnet |
 | `.claude/kit/strategy/07-learning-system.md` | Learning note triggered | Sonnet |
 | `.claude/kit/strategy/08-enforcement.md` | Wiring/auditing hooks; a discipline keeps getting skipped | Sonnet |
 | `.claude/kit/strategy/09-risk.md` | Before parallel spawn, or before an irreversible/high-blast task | Sonnet/Opus |
-| `.claude/kit/strategy/10-architecture-protection.md` | When a change could affect structure, or hardening invariants | Sonnet/Opus |
+| `.claude/kit/strategy/09-risk.md` | When a change could affect structure, or hardening invariants | Sonnet/Opus |
 | `.claude/kit/strategy/11-work-board.md` | Planning, picking, or closing work items (the kanban protocol) | lead/all |
-| `.claude/kit/strategy/12-journeys.md` | Starting any non-trivial effort (the situation→workflow map + folder standard) | lead/all |
-| `.claude/kit/strategy/WORKING-STRATEGY.md` | Back-compat index → points to 8 files above | Sonnet |
+| `.claude/kit/strategy/11-work-board.md` | Starting any non-trivial effort (the situation→workflow map + folder standard) | lead/all |
+| `.claude/kit/`.claude/kit/INDEX.md` | Back-compat index → points to 8 files above | Sonnet |
 
 ### Operational state (changes frequently — read every relevant task)
 
@@ -133,7 +152,7 @@ Rotate: .claude/session/context.md + token-log.md (if stale or layer transition)
 ## One-body guarantees (no duplication)
 
 - **Team roles / decision model** → only `01-team-and-decisions.md`
-- **Brief template** → only `04-brief-template.md`
+- **Brief template** → only `03-opus-mandate.md`
 - **Context protocol** → only `05-context-protocol.md`
 - **Quality bar / vision** → only `memory/project_vision.md` (`.claude/context/vision.md` DELETED — was duplicate)
 - **Token tracking** → only `.claude/session/token-log.md`
@@ -148,9 +167,9 @@ If you find duplication, file a `project_debt.md` entry — every concept lives 
 |----------|---------------------|
 | Sonnet starts a session | `opus-brief.md` + `context.md` |
 | Sonnet decides who runs Layer N | + `01-team-and-decisions.md` |
-| Sonnet writes Opus `--f` brief | + `02-layer-flow.md` + `04-brief-template.md` |
+| Sonnet writes Opus `--f` brief | + `02-layer-flow.md` + `03-opus-mandate.md` |
 | Opus receives a brief | `B.md` + `opus-brief.md` + `context.md` (full 03+04 only on doctrine question) |
-| Opus receives a brief (first of sprint) | + `.claude/strategy/04-A-examples.md` (case studies + canonical reference) |
+| Opus receives a brief (first of sprint) | + `.claude/strategy/03-A-examples.md` (case studies + canonical reference) |
 | Haiku receives a brief | `opus-brief.md` only |
 | Opus appends to shared state | + `05-context-protocol.md` |
 | Sonnet closes session | + `07-learning-system.md` (if note) |
@@ -179,7 +198,7 @@ No agent ever reads all 7 strategy files. The selective map prevents that.
 
 | Forbidden | Why | Instead |
 |-----------|-----|---------|
-| New content added to `WORKING-STRATEGY.md` | It is a back-compat shim — adding content defeats selective loading | Add to the relevant `01–07` file |
+| New content added to `INDEX.md` | It is a back-compat shim — adding content defeats selective loading | Add to the relevant `01–07` file |
 | New `08-…` file without a clear load condition | Every file needs a "loaded when" rule | If it doesn't have a narrow load condition, it doesn't belong as a separate file |
 | Merging two existing files without updating `INDEX.md` | Breaks the selective loading map | Update INDEX.md load conditions + MEMORY.md table simultaneously |
 
@@ -203,11 +222,11 @@ No agent ever reads all 7 strategy files. The selective map prevents that.
 ```
 ## Agent layer (the routing mechanism)
 
-`.claude/agents/*.md` — subagent definitions Claude Code uses to delegate (lead=orchestrator, model-agnostic · oversight=chief-engineer(opus) · senior=architect·database-architect·senior-backend-developer·senior-frontend-developer·project-manager·debugger·migration(opus) · middle=`<module>`-specialists·markup-specialist(sonnet) · junior=explorer·junior-executor(haiku)). Frontmatter `description` drives delegation; `memory: project` persists per-agent. Talk to one directly: `@agent-<name>` (one task) or `claude --agent <name>` (run the session as that agent) — protocol + trade-off in `01-A`. Doctrine: `01` Agent layer. Scaffolded by `/bootstrap`.
+`.claude/agents/*.md` — subagent definitions Claude Code uses to delegate (lead=orchestrator, model-agnostic · oversight=chief-engineer(opus) · senior(opus)=architect·database-architect(+migrations)·senior-backend-developer·senior-frontend-developer(+markup)·project-manager·debugger·platform-architect · middle=module-specialist(sonnet) · junior(haiku)=explorer·junior-executor). Frontmatter `description` drives delegation; `memory: project` persists per-agent. Talk to one directly: `@agent-<name>` (one task) or `claude --agent <name>` (run the session as that agent) — protocol + trade-off in `01`. Doctrine: `01` Agent layer. Scaffolded by `/bootstrap`.
 
 ## Kit meta
 
-`.claude/kit/KIT.md` — what the kit is, the kit/project split, the submodule/upgrade model. `.claude/kit/UPGRADE-NOTES.md` — the kit's changelog (read on `/upgrade`). `.claude/kit/VERSION` — current kit version.
+`.claude/README.md` — what the kit is, the kit/project split, the submodule/upgrade model. `.claude/kit/UPGRADE-NOTES.md` — the kit's changelog (read on `/upgrade`). `.claude/kit/VERSION` — current kit version.
 
 ## Skill (auto-loaded on demand by the architect)
 

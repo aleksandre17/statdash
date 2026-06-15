@@ -1,7 +1,7 @@
 # 02 — Per-Layer Flow & Gates
 
 > Loaded by Sonnet when running a layer. ~50 lines.
-> Sibling files: `01-team-and-decisions.md` (who runs), `04-brief-template.md` (how to brief).
+> Sibling files: `01-team-and-decisions.md` (who runs), `03-opus-mandate.md` (how to brief).
 
 ---
 
@@ -24,7 +24,7 @@ Sonnet: 01-team-and-decisions.md → Sonnet / Opus / Haiku
              decision with only this brief?"      │
             YES → enrich brief first              │
             ↓                                     │
-            Brief (04-brief-template.md)          │
+            Brief (03-opus-mandate.md)          │
                 → Opus executes                   │
             + Continuous audit:                   │
               hardcode · module laws · DRY · one-body   │
@@ -80,4 +80,4 @@ Layer N+1
 
 Layer "complete" means: code works **AND** hardcode? module laws? DRY? one-body? next-phase ready?
 
-A layer never closes with a known quality violation. Handle anything seen on the path by the **discovered-problem protocol** (`03` Observation Duty): blocks/contaminates the current task → fix it FIRST, then resume; connected → fix-on-sight or note; unrelated → log to `memory/project_debt.md`. Never silently drop it. The rationale is economic, not only quality: leaving it = re-walking the same path later = double tokens (`06`), and it is how architecture erodes (`10`).
+A layer never closes with a known quality violation. Handle anything seen on the path by the **discovered-problem protocol** (`03` Observation Duty): blocks/contaminates the current task → fix it FIRST, then resume; connected → fix-on-sight or note; unrelated → log to `memory/project_debt.md`. Never silently drop it. The rationale is economic, not only quality: leaving it = re-walking the same path later = double tokens (`06`), and it is how architecture erodes (`09`).

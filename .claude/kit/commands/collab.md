@@ -1,9 +1,9 @@
 # /collab — task force (multi-senior collaboration on one problem)
 
-> Invoke: "collab" · "war room" · "task force on X" · "let's solve this together". For problems that need **several lenses at once** (e.g. data + code + user judgment). Doctrine: `01-A` (mediation) · `09` (conflict/risk) · `11` (board).
+> Invoke: "collab" · "war room" · "task force on X" · "let's solve this together". For problems that need **several lenses at once** (e.g. data + code + user judgment). Doctrine: `01` (mediation) · `09` (conflict/risk) · `11` (board).
 
 ## Seats at the table
-- **The user** — the decision-maker. Every round ends at you; your words travel verbatim (`01-A` B).
+- **The user** — the decision-maker. Every round ends at you; your words travel verbatim (`01` B).
 - **The lead** — the table itself: assembles, relays, synthesizes, never silently picks.
 - **2–4 agents chosen by lens**, named with the reason (e.g. database-architect = data/consistency lens · senior-backend-developer = code/runtime lens · chief-engineer = system-coherence lens when the blast radius is wide).
 

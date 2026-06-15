@@ -10,9 +10,9 @@
 **Done when:** Gate 2 green · audit clean (no hardcode/DRY/P-law/one-body breach) · brief + layer-doc updated.
 
 ## Procedure
-1. **Intake** — Intake Echo + user's words (`01-A` A). Confirm the layer goal is a *system-state invariant*, not a step list.
+1. **Intake** — Intake Echo + user's words (`01` A). Confirm the layer goal is a *system-state invariant*, not a step list.
 2. **Pre-Work Gate** (`01`) — Class-M? → Mandatory-Opus + `09` §B. Else Decision Inventory → density routing.
-3. **Brief** — compose per `04` (verbatim user-directive block default; Decision Inventory if Opus). Gate 1: "would the agent make a suboptimal call with only this?"
+3. **Brief** — compose per `03` (verbatim user-directive block default; Decision Inventory if Opus). Gate 1: "would the agent make a suboptimal call with only this?"
 4. **Build** — agent works; Opus surfaces discovered problems (`03`: blocker→fix-first, connected→fix-on-sight, unrelated→log).
 5. **Gate 2** — compile + tests. Fail → diagnose → repeat.
 6. **Along-the-way audit** — hardcode? DRY? one-body? P-laws? boundary? (`02`). Quick fixes in-place.

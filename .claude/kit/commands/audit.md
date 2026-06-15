@@ -17,7 +17,7 @@
 3. **Rank** each finding: `severity` (blocker / high / medium / low) + `reversibility` (one-way / two-way).
 4. **Write the audit file** — table: `id | location | finding | law/principle | severity | proposed fix | effort`.
 5. **Disposition:** small + safe → fix now (note it). Large or irreversible → backlog to `project_debt.md` + (if irreversible) `09` §B note. Never silently fix a high-blast item.
-6. **Report** to the user: top findings first, undistorted (`01-A` D), with the file path.
+6. **Report** to the user: top findings first, undistorted (`01` D), with the file path.
 
 ## Quality-attribute lens (ISO/IEC 25010 — audit against these, not only code smells)
 

@@ -1,7 +1,7 @@
 # 04-A — Section A Examples & Case Studies
 
 > Load only on FIRST brief of a sprint, or when Section A discipline needs calibration.
-> On subsequent briefs in the same session: skip this file. The rules live in `04-brief-template.md`.
+> On subsequent briefs in the same session: skip this file. The rules live in `03-opus-mandate.md`.
 
 ---
 
