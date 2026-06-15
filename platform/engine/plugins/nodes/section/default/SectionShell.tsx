@@ -4,6 +4,8 @@ import { useState }                                        from 'react'
 import type { CSSProperties }                               from 'react'
 import { resolveTemplate }                                  from '@geostat/engine'
 import { resolveViewState }                                 from '@geostat/styles'
+import { useT }                                              from '@geostat/react'
+import { InfoIcon, ChevronIcon }                             from '@geostat/react'
 import { defineShell, useGlobalVar }                        from '@geostat/react/engine'
 import type { ShellProps, NodeDef, NodeBase }               from '@geostat/react/engine'
 import type { SectionNode }                                 from './SectionNode'
@@ -22,6 +24,8 @@ function SectionControl({
   placement,
   merged,
 }: ShellProps<SectionNode>) {
+  const t = useT('section')
+
   const view  = def.view ?? {}
   const color = def.color ?? ctx.color
 
@@ -103,7 +107,7 @@ function SectionControl({
           </div>
           <div className="section__actions" onClick={(e) => e.stopPropagation()}>
             {showToggle && (
-              <div className="section__view-toggle" role="group" aria-label="ხედის გადართვა">
+              <div className="section__view-toggle" role="group" aria-label={t('view-toggle')}>
                 {distinctRoles.map(r => (
                   <button
                     key={r}
@@ -117,20 +121,12 @@ function SectionControl({
                 ))}
               </div>
             )}
-            <button className="section__icon-btn" title="ინფორმაცია" type="button" aria-label="ინფორმაცია">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/>
-              </svg>
+            <button className="section__icon-btn" title={t('info')} type="button" aria-label={t('info')}>
+              <InfoIcon />
             </button>
           </div>
           {canCollapse && (
-            <svg
-              className={`section__chevron${open ? ' open' : ''}`}
-              viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
-              aria-hidden="true"
-            >
-              <path d="M6 9l6 6 6-7"/>
-            </svg>
+            <ChevronIcon className={`section__chevron${open ? ' open' : ''}`} />
           )}
         </div>
 

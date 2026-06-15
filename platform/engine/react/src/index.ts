@@ -91,4 +91,4 @@ export type { ChartRendererProps } from './engine/ChartRendererRegistry'
 export { default as CascadeSelect }      from './components/filters/CascadeSelect'
 
 // ── Shared UI primitives ──────────────────────────────────────────────
-export { LINK_ICONS }                    from './components/icons'
+export { LINK_ICONS, InfoIcon, ChevronIcon } from './components/icons'
