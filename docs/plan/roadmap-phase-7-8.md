@@ -63,7 +63,9 @@ The structural moves from `ARCHITECTURE-TARGET.md §Tier 1` that are not gap-fix
 
 ---
 
-### Layer 8.1 — Split `@geostat/charts` out of `@geostat/engine` `[N1]`
+### Layer 8.1 — Split `@geostat/charts` out of `@geostat/engine` `[N1]` ✅
+
+> **✅ DONE (2026-06-15)** — `platform/engine/charts/` (`@geostat/charts`): `ChartDef`/`ChartOutput` types, `interpretChart` dispatch, `ChartRegistry` + `chartRegistry` singleton (13 built-in interpreters), `validateChartDef`. `@geostat/engine` now has zero chart code: `chart/*` deleted, `registry/interpreters.ts` deleted, `EngineRegistry` stripped to spec-only, `setChartRegistry` bootstrap block removed, `ChartInterpreter`/chart exports purged from public API. Registry design: two registries split by package (avoids cycle). `@geostat/react` re-exports `ChartDef`/`ChartOutput`/`interpretChart` from charts. Plugin chart imports updated (17 files). Alias maps updated (tsconfig × 3, vite × 2, vitest × 1). tsc EXIT=0.
 
 **Goal:** Chart interpretation is a separate package; a table-only/headless consumer never bundles chart code.
 
