@@ -18,7 +18,8 @@
     "platform/engine/expr",
     "platform/engine/styles",
     "platform/apps/geostat",
-    "platform/apps/panel"
+    "platform/apps/panel",
+    "platform/apps/api"
   ],
   "shared_lib_root": "platform/engine",
   "law_patterns": [
@@ -49,9 +50,35 @@
       "forbid": "from\\s+['\\\"][^'\\\"]*(platform/engine/plugins/|platform/apps/geostat/|platform/apps/panel/)",
       "msg": "engine/react must stay app-agnostic: no imports from plugins/ or apps/ (app-specifics live downstream).",
       "sample_violation": "import { GeostatShell } from '../../../engine/plugins/geostat';"
+    },
+    {
+      "id": "Arch-engine-core-locale-agnostic",
+      "glob": "platform/engine/core/src/**",
+      "forbid": "[Ⴀ-ჿ]|['\"](ka|ka-GE)['\"]",
+      "msg": "engine/core must be locale-agnostic: no Georgian codepoints and no 'ka'/'ka-GE' locale literals. Move app-locale specifics to apps/ or plugins/.",
+      "sample_violation": "const label = 'ყველა';"
+    },
+    {
+      "id": "Arch-engine-react-locale-agnostic",
+      "glob": "platform/engine/react/src/**",
+      "forbid": "[Ⴀ-ჿ]|['\"](ka|ka-GE)['\"]",
+      "msg": "engine/react must be locale-agnostic: no Georgian codepoints and no 'ka'/'ka-GE' locale literals. Move UI strings and locale constants to plugins/ or the app i18n catalog.",
+      "sample_violation": "const DEFAULT_I18N = { locales: ['ka'] };"
     }
   ],
+  "resume_marker": {
+    "regex": "[Ll]ast\\s+migration:?\\*?\\*?\\s*V?(\\d+)",
+    "repo_glob": "ops/postgres/migrations/V*__*.sql",
+    "repo_regex": "[/\\\\]V(\\d+)__",
+    "label": "Flyway migration"
+  },
   "class_m_triggers": [
+    {
+      "match": "ops/postgres/migrations/V\\d+__.*\\.sql$",
+      "label": "Flyway migration (stats/config schema)",
+      "irreversible": true,
+      "note": "Mandatory-Opus: migration runs once on live volume — review V4 dim_key invariants before write"
+    },
     {
       "match": "platform/engine/core/src/data/.*\\.tsx?$",
       "label": "engine data-layer change (DataStore / interpretSpec / adapter)",
