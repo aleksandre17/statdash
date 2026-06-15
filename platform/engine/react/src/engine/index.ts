@@ -26,7 +26,11 @@ export type {
   ChildrenArg,
   SlotChildren,
   NodeRenderer,
+  // slice taxonomy
+  SliceCategory,
   NodeSliceMeta,
+  PageSliceMeta,
+  PanelSliceMeta,
   ChromeSliceMeta,
   ChromeSlotConfig,
   ChromeEntry,
@@ -67,6 +71,10 @@ export { FilterControlRegistry, filterControlRegistry }   from './filterControlR
 export type { FilterControlSlice, FilterCodec }           from './filterControlRegistry'
 export { SkeletonRegistry, skeletonRegistry }             from './skeletonRegistry'
 export type { SkeletonFn }                                from './skeletonRegistry'
+
+// ── DataSource manifest factory ───────────────────────────────────────
+export { registerStoreBuilder, buildStoreManifest } from './storeManifest'
+export type { StoreBuilderFn }                      from './storeManifest'
 
 // ── Slice registration hub ─────────────────────────────────────────────
 export { registerSlice }               from './registerSlice'

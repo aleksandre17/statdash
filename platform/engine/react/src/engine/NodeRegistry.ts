@@ -26,9 +26,10 @@ import type {
   RenderContext,
   SlotDef,
   ValidationError,
+  ChildrenArg,
 }                                                        from './types'
 
-type AnyRenderer      = (def: any, ctx: RenderContext, children: any) => ReactNode
+type AnyRenderer      = (def: NodeBase, ctx: RenderContext, children: ChildrenArg) => ReactNode
 type ValidateFn       = (def: NodeDef) => ValidationError[] | null
 type MigrateFn        = (old: Record<string, unknown>, from: number) => NodeBase
 type ErrorFallbackFn  = (props: { node: NodeBase; error: Error }) => ReactNode
@@ -59,7 +60,7 @@ export class NodeRegistry {
   register<T extends { type: string }>(
     type:     string,
     variant:  string,
-    renderer: (def: T, ctx: RenderContext, children: any) => ReactNode,
+    renderer: (def: T, ctx: RenderContext, children: ChildrenArg) => ReactNode,
     opts?: {
       label?:           unknown
       icon?:            string
@@ -161,5 +162,26 @@ export class NodeRegistry {
 
   types(): string[] {
     return [...new Set([...this.renderers.keys()].map(k => k.split('::')[0]))]
+  }
+
+  /**
+   * Constructor type-picker source — every registered type+variant with its META.
+   * Open-registry discovery: a newly registered slice appears here with zero
+   * Constructor code change (15-constructor.md §1).  Renderer fn is intentionally
+   * omitted — META is JSON-serializable, the renderer is not.
+   */
+  list(): Array<{ type: string; variant: string } & StoredMeta> {
+    return [...this.metas.entries()].map(([key, meta]) => {
+      const [type, variant] = key.split('::')
+      return { type, variant, ...meta }
+    })
+  }
+
+  /**
+   * JSON Schema for a type's config form (null → Constructor uses raw JSON editor).
+   * Progressive enhancement per 15-constructor.md §3.
+   */
+  getSchema(type: string, variant = 'default'): object | null {
+    return this.getMeta(type, variant)?.schema ?? null
   }
 }

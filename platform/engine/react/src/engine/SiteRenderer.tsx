@@ -25,9 +25,8 @@ import { PageStoreProvider }           from '../context/PageStoreContext'
 import { GlobalStateProvider }         from '../context/GlobalState'
 import { applyEffects, resolveDataLinks } from '@geostat/engine'
 import type { ModeId }                from '@geostat/engine'
-import { evalExpr, isDimVal }         from '@geostat/expr'
-import type { ExprScope, ExprVal, DimVal } from '@geostat/expr'
 import { FiltersProvider }             from '../context/FiltersContext'
+import { evalVarMap }                  from './evalVarMap'
 import { useModeContext, ModeProvider } from '../context/ModeContext'
 import { EventBus }                    from '../events/EventBus'
 import type { GeostatEventMap }        from '../events/events'
@@ -71,12 +70,18 @@ const NodePageRendererInner = memo(function NodePageRendererInner({ page }: { pa
   const locale         = useLocale()
   const { fallbackLocale } = useI18n()
 
+  // Resolved once per page — used for vars, PageStoreContext, and Tier 3 default resolution.
+  const pageStore = useMemo(
+    () => stores[page.storeKey ?? Object.keys(stores)[0]] ?? null,
+    [stores, page.storeKey],
+  )
+
   const {
     ctx: rawSectionCtx,
     raw,
     timeModeKey,
     effects,
-  } = useFilterState(page.filterSchema ?? null)
+  } = useFilterState(page.filterSchema ?? null, pageStore)
 
   const modeList   = useMemo(() => page.modeOrder ?? [], [page.modeOrder])
   const mode       = useModeContext(timeModeKey, modeList)
@@ -109,30 +114,12 @@ const NodePageRendererInner = memo(function NodePageRendererInner({ page }: { pa
     [raw, state],
   )
 
-  // Resolved once per page — used for vars + PageStoreContext (filter control options).
-  const pageStore = useMemo(
-    () => stores[page.storeKey ?? Object.keys(stores)[0]] ?? null,
-    [stores, page.storeKey],
+  const vars = useMemo(
+    () => page.vars
+      ? evalVarMap(page.vars, { filterParams: mergedFilterParams, vars: {}, stores, pageStoreKey: page.storeKey })
+      : {} as Record<string, unknown>,
+    [page.vars, page.storeKey, mergedFilterParams, stores],
   )
-
-  const vars = useMemo(() => {
-    if (!page.vars) return {} as Record<string, unknown>
-    // ExprScope.ctx carries data-aware context for engine-registered ops (find, breadcrumbs, …).
-    // dims = all filter params so { $ctx: 'key' } resolves to any param.
-    // derived accumulates so each entry can reference earlier vars via { $derived: 'key' }.
-    const scope: ExprScope = {
-      dims:    mergedFilterParams as Record<string, DimVal>,
-      derived: {},
-      ctx:     { classifiers: pageStore?.classifiers, display: pageStore?.display, raw },
-    }
-    const result: Record<string, unknown> = {}
-    for (const [k, expr] of Object.entries(page.vars)) {
-      const value = evalExpr(expr as unknown as ExprVal, scope)
-      result[k] = value
-      if (isDimVal(value)) scope.derived[k] = value
-    }
-    return result
-  }, [page.vars, mergedFilterParams, raw, pageStore])
 
   const navSections = useMemo(() => {
     const children = page.type === 'inner-page' ? page.children : []

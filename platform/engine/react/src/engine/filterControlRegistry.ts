@@ -12,7 +12,7 @@ import type { ComponentType }   from 'react'
 import type { FilterControlMeta } from './types'
 
 export interface FilterCodec<T> {
-  toUrl:     (v: T) => string
+  toUrl:     (v: T) => string | null
   fromUrl:   (s: string | null) => T | null
   isEmpty:   (v: T | null) => boolean
   normalize: (raw: unknown) => T

@@ -22,6 +22,13 @@ export interface RenderMiddleware {
   name?:  string
 
   /**
+   * Execution order when multiple middlewares are registered.
+   * Lower number = runs first. Middlewares without priority sort after
+   * those with it (treated as Infinity).
+   */
+  priority?: number
+
+  /**
    * Before hook — called after migration+validation, before shell lookup.
    * Can transform RenderContext (e.g. inject edit-mode flags, override vars).
    * Must return the (possibly modified) context.

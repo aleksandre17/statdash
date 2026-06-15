@@ -9,9 +9,16 @@ class RenderMiddlewareRegistry {
     return this
   }
 
-  /** Retrieve all registered middlewares in registration order. */
-  all(): RenderMiddleware[] {
-    return this.mws
+  /**
+   * Retrieve all registered middlewares as an immutable snapshot, sorted by
+   * priority ascending (lower number = runs first).  Middlewares without a
+   * priority value sort after those that have one (treated as Infinity).
+   */
+  all(): readonly RenderMiddleware[] {
+    const sorted = [...this.mws].sort(
+      (a, b) => (a.priority ?? Infinity) - (b.priority ?? Infinity),
+    )
+    return Object.freeze(sorted)
   }
 
   /** Remove all registered middlewares (useful in tests). */

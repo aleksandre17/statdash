@@ -21,9 +21,14 @@ import type {
   NodeBase,
   NodeDef,
   NodeSliceMeta,
+  PageSliceMeta,
+  PanelSliceMeta,
   ChromeSliceMeta,
   ValidationError,
 }                                                   from './types'
+
+/** Union of all node-tier META shapes — node, page, and panel slices. */
+type AnyNodeSliceMeta = NodeSliceMeta | PageSliceMeta | PanelSliceMeta
 
 export interface NodeSliceExport {
   Shell:          NodeRenderer
@@ -34,7 +39,7 @@ export interface NodeSliceExport {
   validate?:      (def: NodeDef) => ValidationError[] | null
   /** Forward migration — called when stored def._version < META.version. */
   migrate?:       (old: Record<string, unknown>, from: number) => NodeBase
-  META:           NodeSliceMeta
+  META:           AnyNodeSliceMeta
 }
 
 export interface ChromeSliceExport {
@@ -50,7 +55,7 @@ export type RegistrableSlice =
 export function registerSlice(mod: RegistrableSlice): void {
   const { sliceType } = mod.META
   if (sliceType === 'node' || sliceType === 'page' || sliceType === 'panel') {
-    const m = mod.META as NodeSliceMeta
+    const m = mod.META as AnyNodeSliceMeta
     const s = mod as NodeSliceExport
     nodeRegistry.register(m.type, m.variant ?? 'default', s.Shell, {
       label:           m.label,
@@ -58,10 +63,10 @@ export function registerSlice(mod: RegistrableSlice): void {
       category:        m.category,
       schema:          m.schema,
       preview:         m.preview,
-      transparent:     m.transparent,
-      canHaveChildren: m.canHaveChildren,
-      singleton:       m.singleton,
-      rootOnly:        m.rootOnly,
+      transparent:     'transparent'     in m ? m.transparent     : undefined,
+      canHaveChildren: 'canHaveChildren' in m ? m.canHaveChildren : undefined,
+      singleton:       'singleton'       in m ? m.singleton       : undefined,
+      rootOnly:        'rootOnly'        in m ? m.rootOnly        : undefined,
       version:         m.version,
       defaults:        m.defaults,
       slots:           m.slots,

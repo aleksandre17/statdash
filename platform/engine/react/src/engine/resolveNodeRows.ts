@@ -13,7 +13,7 @@
 //
 
 import { interpretSpec, staticStore, applyEncoding, storeVal, applyPipeline } from '@geostat/engine'
-import type { DataRow, DataStore, EncodingSpec, PipelineContext }              from '@geostat/engine'
+import type { DataRow, DataStore, EncodingSpec, PipelineContext, RawRow }       from '@geostat/engine'
 import type { NodeBase, RenderContext }                                        from './types'
 
 // ── resolveStore — CSS cascade: nearest storeKey wins ─────────────────
@@ -47,7 +47,7 @@ export function resolveNodeRows(node: NodeBase, ctx: RenderContext): DataRow[] {
       display:     store.display,
       section:     ctx.sectionCtx,
     }
-    rows = applyPipeline(rows as unknown as import('@geostat/engine').RawRow[], node.transforms, pipeCtx) as unknown as DataRow[]
+    rows = applyPipeline(rows as unknown as RawRow[], node.transforms, pipeCtx) as unknown as DataRow[]
   }
 
   return rows
