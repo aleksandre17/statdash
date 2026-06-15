@@ -1,12 +1,6 @@
-import { codesOf }              from '@geostat/engine'
-import { ASPECT }               from '@geostat/styles'
-import { REGIONAL_CLASSIFIERS } from '@/data/regional/store'
-import type { GeorgraphNode }   from '@plugins/nodes/georgraph/default/GeorgraphNode'
-import type { NodeDef }         from '@geostat/react/engine'
-
-const _years = (codesOf(REGIONAL_CLASSIFIERS.time) as number[]).slice().sort((a, b) => a - b)
-const FIRST  = _years[0]
-const LAST   = _years[_years.length - 1]
+import { ASPECT }             from '@geostat/styles'
+import type { GeorgraphNode } from '@plugins/nodes/georgraph/default/GeorgraphNode'
+import type { NodeDef }       from '@geostat/react/engine'
 
 export const REGIONAL_SECTIONS: NodeDef[] = [
 
@@ -194,7 +188,7 @@ export const REGIONAL_SECTIONS: NodeDef[] = [
         id:    'sectors-range',
         title: 'მთლიანი შიდა პროდუქტის წლიური დინამიკა',
         color: '#0080BE',
-        view:  { subtitle: `${FIRST}–${LAST} · მლნ ₾`, styles: { height: '16:9' } },
+        view:  { subtitle: '{fromYear}–{toYear} · მლნ ₾', styles: { height: '16:9' } },
         data: {
           type:  'query',
           query: { measure: 'GVA', filter: { sector: { $ctx: 'sector' }, geo: { $ctx: 'geo' } } },
@@ -206,7 +200,7 @@ export const REGIONAL_SECTIONS: NodeDef[] = [
           fromDim: 'fromYear', toDim: 'toYear',
         },
         children: [
-          { type: 'chart', chartType: 'bar', label: `მთლიანი შიდა პროდუქტის დინამიკა, ${FIRST}–${LAST}`, fieldConfig: { unit: 'მლნ ₾' }, dataLabels: false, view: { role: 'chart', label: 'დიაგრამა' } },
+          { type: 'chart', chartType: 'bar', label: 'მთლიანი შიდა პროდუქტის დინამიკა, {fromYear}–{toYear}', fieldConfig: { unit: 'მლნ ₾' }, dataLabels: false, view: { role: 'chart', label: 'დიაგრამა' } },
           { type: 'table', colLabel: 'წელი', columns: [{ key: 'value', label: 'მლნ ₾' }], footer: { value: 'avg' }, color: '#0080BE', view: { role: 'table', label: 'ცხრილი' } },
         ],
       },
@@ -220,7 +214,7 @@ export const REGIONAL_SECTIONS: NodeDef[] = [
     id:    'sector-history',
     title: 'სექტორული სტრუქტურა — ისტორიული დინამიკა',
     color: '#7B6CF6',
-    view:  { styles: { height: '16:9' }, subtitle: `${FIRST}–${LAST} · მლნ ₾`, visibleWhen: { op: 'eq', param: 'mode', is: 'range' } },
+    view:  { styles: { height: '16:9' }, subtitle: '{fromYear}–{toYear} · მლნ ₾', visibleWhen: { op: 'eq', param: 'mode', is: 'range' } },
     data: {
       type:  'query',
       query: { measure: 'GVA', filter: { sector: { $ctx: 'sector' }, geo: { $ctx: 'geo' } } },

@@ -11,12 +11,7 @@ import { GDP_FACTS, GDP_CLASSIFIERS, GDP_DISPLAY }  from './raw'
 // display lookup in pipe transforms. Key === code (no surrogate IDs needed).
 export const gdpStore = new ExternalStore(
   fromGDPFacts(GDP_FACTS),
-  {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    classifiers: GDP_CLASSIFIERS as Record<string, any>,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    display:     GDP_DISPLAY     as Record<string, any>,
-  },
+  { classifiers: GDP_CLASSIFIERS, display: GDP_DISPLAY },
 )
 
 // Convenience re-exports for configs that need classifier access at module load.

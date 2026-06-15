@@ -6,15 +6,9 @@
 import { ACCOUNTS_SECTIONS }                    from './accounts.sections'
 import { ACCOUNTS_KPIS }                        from './accounts.kpis'
 import { ACCOUNTS_FILTER_SCHEMA }               from './accounts.filters'
-import { codesOf }                              from '@geostat/engine'
-import { ACCOUNTS_CLASSIFIERS }                 from '@/data/accounts/store'
 import type { InnerPageNode }                   from '@plugins/pages/inner-page/default/InnerPageNode'
 import type { PageConfigBase }                  from '@geostat/react/engine'
 import type { VarMap }                          from '@geostat/engine'
-
-const _years = (codesOf(ACCOUNTS_CLASSIFIERS.time) as number[]).slice().sort((a, b) => a - b)
-const FIRST  = _years[0]
-const LAST   = _years[_years.length - 1]
 
 const ACCOUNTS_VARS: VarMap = {
   selectedSectionId: {
@@ -44,7 +38,7 @@ export const ACCOUNTS_PAGE: InnerPageNode & PageConfigBase = {
     {
       type:   'page-header',
       title:  'ეროვნული ანგარიშების სისტემა',
-      badge:  { year: 'განახლდა: {time}', range: `${FIRST}–${LAST}` },
+      badge:  { year: 'განახლდა: {time}', range: '{fromYear}–{toYear}' },
       crumbs: [{ label: 'ეროვნული ანგარიშები' }],
     },
     { type: 'filter-bar' },

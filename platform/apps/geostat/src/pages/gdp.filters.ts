@@ -1,10 +1,4 @@
-import { codesOf }               from '@geostat/engine'
 import type { FilterSchemaInput } from '@geostat/engine'
-import { GDP_CLASSIFIERS }       from '@/data/gdp/store'
-
-const _years    = (codesOf(GDP_CLASSIFIERS.time) as number[]).slice().sort((a, b) => a - b)
-const GDP_FIRST = String(_years[0])
-const GDP_LAST  = String(_years[_years.length - 1])
 
 export const GDP_FILTER_SCHEMA: FilterSchemaInput = {
   context: {
@@ -24,7 +18,7 @@ export const GDP_FILTER_SCHEMA: FilterSchemaInput = {
         mode: { type: 'hidden', default: 'year' },
         year: {
           type:    'year-select',
-          default: GDP_LAST,
+          default: { from: 'options', pick: 'last' },
           years:   { type: 'inline', items: { $cl: 'time' }, field: 'code' },
         },
       },
@@ -39,7 +33,7 @@ export const GDP_FILTER_SCHEMA: FilterSchemaInput = {
           type:    'select',
           label:   'შუალედი:',
           suffix:  '-დან',
-          default: GDP_FIRST,
+          default: { from: 'options', pick: 'first' },
           options: {
             type:       'inline',
             items:      { $d: 'time' },
@@ -51,7 +45,7 @@ export const GDP_FILTER_SCHEMA: FilterSchemaInput = {
         toYear: {
           type:    'select',
           suffix:  '-მდე',
-          default: GDP_LAST,
+          default: { from: 'options', pick: 'last' },
           options: {
             type:       'inline',
             items:      { $d: 'time' },

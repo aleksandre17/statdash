@@ -1,11 +1,5 @@
-import { codesOf }         from '@geostat/engine'
-import { ASPECT }          from '@geostat/styles'
-import { GDP_CLASSIFIERS } from '@/data/gdp/store'
-import type { NodeDef }    from '@geostat/react/engine'
-
-const _years = (codesOf(GDP_CLASSIFIERS.time) as number[]).slice().sort((a, b) => a - b)
-const FIRST  = _years[0]
-const LAST   = _years[_years.length - 1]
+import { ASPECT }       from '@geostat/styles'
+import type { NodeDef } from '@geostat/react/engine'
 
 export const GDP_SECTIONS: NodeDef[] = [
 
@@ -98,7 +92,7 @@ export const GDP_SECTIONS: NodeDef[] = [
         id:    'production-range',
         title: 'მთლიანი შიდა პროდუქტი წარმოების მეთოდით',
         color: '#0080BE',
-        view:  { styles: { height: '16:9' }, subtitle: `${FIRST}–${LAST} · მლნ ₾` },
+        view:  { styles: { height: '16:9' }, subtitle: '{fromYear}–{toYear} · მლნ ₾' },
         data: {
           type:  'query',
           query: { measure: 'GDP' },
@@ -122,7 +116,7 @@ export const GDP_SECTIONS: NodeDef[] = [
         id:    'income-range',
         title: 'მთლიანი შიდა პროდუქტი ერთ სულ მოსახლეზე',
         color: '#7B6CF6',
-        view:  { styles: { height: '16:9' }, subtitle: `${FIRST}–${LAST} · $` },
+        view:  { styles: { height: '16:9' }, subtitle: '{fromYear}–{toYear} · $' },
         data: {
           type:  'query',
           query: { measure: 'GDP_PER_CAPITA' },
@@ -220,7 +214,7 @@ export const GDP_SECTIONS: NodeDef[] = [
         id:    'growth-dynamics',
         title: 'რეალური მთლიანი შიდა პროდუქტის ზრდა',
         color: '#E76F51',
-        view:  { styles: { height: '16:9' }, subtitle: `${FIRST}–${LAST} · %` },
+        view:  { styles: { height: '16:9' }, subtitle: '{fromYear}–{toYear} · %' },
         data: {
           type:  'query',
           query: { measure: 'GDP_GROWTH' },
@@ -241,7 +235,7 @@ export const GDP_SECTIONS: NodeDef[] = [
         id:    'noe-share',
         title: 'დაუკვირვებადი დამატებული ღირებულების წილი მთლიან დამატებულ ღირებულებაში',
         color: '#6B7B8D',
-        view:  { styles: { height: '16:9' }, subtitle: `${FIRST}–${LAST} · % · მიმდინარე ფასებში` },
+        view:  { styles: { height: '16:9' }, subtitle: '{fromYear}–{toYear} · % · მიმდინარე ფასებში' },
         data: {
           type:  'query',
           query: { measure: 'NOE_SHARE' },

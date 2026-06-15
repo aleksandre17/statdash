@@ -1,10 +1,4 @@
-import { codesOf }              from '@geostat/engine'
 import type { FilterSchemaInput } from '@geostat/engine'
-import { ACCOUNTS_CLASSIFIERS }   from '@/data/accounts/store'
-
-const _years    = (codesOf(ACCOUNTS_CLASSIFIERS.time) as number[]).slice().sort((a, b) => a - b)
-const ACC_FIRST = String(_years[0])
-const ACC_LAST  = String(_years[_years.length - 1])
 
 export const ACCOUNTS_FILTER_SCHEMA: FilterSchemaInput = {
   context: {
@@ -38,7 +32,7 @@ export const ACCOUNTS_FILTER_SCHEMA: FilterSchemaInput = {
         },
         year: {
           type:    'year-select',
-          default: ACC_LAST,
+          default: { from: 'options', pick: 'last' },
           years:   { type: 'inline', items: { $cl: 'time' }, field: 'code' },
         },
       },
@@ -55,7 +49,7 @@ export const ACCOUNTS_FILTER_SCHEMA: FilterSchemaInput = {
           type:    'select',
           label:   'შუალედი:',
           suffix:  '-დან',
-          default: ACC_FIRST,
+          default: { from: 'options', pick: 'first' },
           options: {
             type:       'inline',
             items:      { $d: 'time' },
@@ -67,7 +61,7 @@ export const ACCOUNTS_FILTER_SCHEMA: FilterSchemaInput = {
         toYear: {
           type:    'select',
           suffix:  '-მდე',
-          default: ACC_LAST,
+          default: { from: 'options', pick: 'last' },
           options: {
             type:       'inline',
             items:      { $d: 'time' },

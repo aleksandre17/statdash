@@ -6,8 +6,10 @@
   "scripts": {
     "dev":        "vite",
     "dev:api":    "cross-env VITE_STORE_MODE=api vite",
+    "dev:stats":  "cross-env VITE_STORE_MODE=stats vite",
     "build":      "tsc -b && vite build",
     "build:mock": "tsc -b && cross-env VITE_STORE_MODE=api vite build",
+    "build:stats":"tsc -b && cross-env VITE_STORE_MODE=stats vite build",
     "preview":    "vite preview"
   },
   "dependencies": {

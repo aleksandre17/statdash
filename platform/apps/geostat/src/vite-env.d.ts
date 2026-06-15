@@ -1,8 +1,10 @@
 /// <reference types="vite/client" />
 
 interface ImportMetaEnv {
-  /** 'static' (default) | 'api' — selects the data layer */
-  readonly VITE_STORE_MODE?: 'static' | 'api'
+  /** 'static' (default) | 'api' | 'stats' — selects the data layer */
+  readonly VITE_STORE_MODE?: 'static' | 'api' | 'stats'
+  /** Base URL of the real stats API (stats mode). Default: http://localhost:3001 */
+  readonly VITE_API_STATS_URL?: string
 }
 
 interface ImportMeta {

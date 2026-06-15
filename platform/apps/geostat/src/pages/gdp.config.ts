@@ -6,14 +6,8 @@
 import { GDP_SECTIONS }         from './gdp.sections'
 import { GDP_KPIS }             from './gdp.kpis'
 import { GDP_FILTER_SCHEMA }    from './gdp.filters'
-import { codesOf }              from '@geostat/engine'
-import { GDP_CLASSIFIERS }      from '@/data/gdp/store'
 import type { InnerPageNode }   from '@plugins/pages/inner-page'
 import type { PageConfigBase }  from '@geostat/react/engine'
-
-const _years = (codesOf(GDP_CLASSIFIERS.time) as number[]).slice().sort((a, b) => a - b)
-const FIRST  = _years[0]
-const LAST   = _years[_years.length - 1]
 
 export const GDP_PAGE: InnerPageNode & PageConfigBase = {
   id:           'gdp',
@@ -27,7 +21,7 @@ export const GDP_PAGE: InnerPageNode & PageConfigBase = {
     {
       type:   'page-header',
       title:  'მთლიანი შიდა პროდუქტი',
-      badge:  { year: 'განახლდა: {time}', range: `${FIRST}–${LAST} · მლნ ₾` },
+      badge:  { year: 'განახლდა: {time}', range: '{fromYear}–{toYear} · მლნ ₾' },
       crumbs: [{ label: 'მთლიანი შიდა პროდუქტი' }],
     },
     { type: 'filter-bar' },

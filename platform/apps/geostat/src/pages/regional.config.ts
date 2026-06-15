@@ -6,15 +6,9 @@
 import { REGIONAL_SECTIONS }                from './regional.sections'
 import { REGIONAL_KPIS }                    from './regional.kpis'
 import { REGIONAL_FILTER_SCHEMA }           from './regional.filters'
-import { codesOf }                          from '@geostat/engine'
-import { REGIONAL_CLASSIFIERS }             from '@/data/regional/store'
 import type { InnerPageNode }               from '@plugins/pages/inner-page/default/InnerPageNode'
 import type { PageConfigBase }              from '@geostat/react/engine'
 import type { VarMap }                      from '@geostat/engine'
-
-const _years = (codesOf(REGIONAL_CLASSIFIERS.time) as number[]).slice().sort((a, b) => a - b)
-const FIRST  = _years[0]
-const LAST   = _years[_years.length - 1]
 
 const REGIONAL_VARS: VarMap = {
   regionObj: {
@@ -53,7 +47,7 @@ export const REGIONAL_PAGE: InnerPageNode & PageConfigBase = {
     {
       type:   'page-header',
       title:  'რეგიონული ანგარიშები',
-      badge:  { year: 'განახლდა: {time}', range: `${FIRST}–${LAST} · მლნ ₾` },
+      badge:  { year: 'განახლდა: {time}', range: '{fromYear}–{toYear} · მლნ ₾' },
       crumbs: [{ label: 'რეგიონული ანგარიშები' }],
     },
     { type: 'filter-bar' },
