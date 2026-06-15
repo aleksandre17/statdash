@@ -6,4 +6,5 @@ import { defineWorkspace } from 'vitest/config'
 export default defineWorkspace([
   'engine/core',
   'engine/react',
+  'engine/styles',
 ])

@@ -1,0 +1,2 @@
+# shared/ — cross-feature code, added only when ≥2 features need the same thing.
+# Empty by design. Do not use as a utils dumping ground (root CLAUDE.md, DRY/ISP).

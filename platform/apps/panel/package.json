@@ -13,8 +13,18 @@
   "dependencies": {
     "@geostat/plugins": "workspace:*",
     "@geostat/react":   "workspace:*",
-    "react":            "catalog:",
-    "react-dom":        "catalog:"
+    "react":                "catalog:",
+    "react-dom":            "catalog:",
+    "react-router-dom":     "catalog:",
+    "react-admin":          "catalog:",
+    "@mui/material":        "catalog:",
+    "@mui/icons-material":  "catalog:",
+    "@emotion/react":       "catalog:",
+    "@emotion/styled":      "catalog:",
+    "zustand":              "catalog:",
+    "@dnd-kit/core":        "catalog:",
+    "@dnd-kit/sortable":    "catalog:",
+    "@dnd-kit/utilities":   "catalog:"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "catalog:",
