@@ -17,6 +17,7 @@ import { resolveYears, resolveOptions }          from '@geostat/engine'
 import type { ParamDef, ParamCascadeNode, CascadeNode } from '@geostat/engine'
 import type { ParamYearSelect, ParamSelect, ParamMultiSelect } from '@geostat/engine'
 import type { EngineRow }                        from '@geostat/engine'
+import type { BarNode, ParamNode }               from '@geostat/engine'
 
 // ── FilterState — return type ─────────────────────────────────────────
 
@@ -25,8 +26,29 @@ export interface FilterState {
   raw:         Record<string, string>
   timeModeKey: string
   effects:     Effect[]
+  bars:        BarNode[]
   /** True when one or more Tier 3 (OptionsDefault) defaults are still loading. */
   isLoading:   boolean
+}
+
+// ── schemaToBarNodes — local helper, converts FilterSchemaInput to BarNode[] ──
+
+function schemaToBarNodes(schema: FilterSchemaInput | null | undefined): BarNode[] {
+  if (!schema) return []
+  return Object.entries(schema.bars).map(([barId, barDef]): BarNode => ({
+    type:       'bar',
+    id:         barId,
+    position:   barDef.position,
+    order:      barDef.order,
+    layout:     barDef.layout,
+    timeToggle: barDef.timeToggle,
+    timeModes:  barDef.timeModes,
+    showWhen:   barDef.showWhen,
+    items:      Object.entries(barDef.filters).map(([key, paramDef]) => ({
+      key,
+      ...paramDef,
+    } as ParamNode)),
+  }))
 }
 
 // ── Stable fallbacks ──────────────────────────────────────────────────
@@ -154,8 +176,9 @@ export function useFilterState(
 
   const timeModeKey = context?.timeMode ?? 'mode'
   const effects     = schema?.effects ?? NO_EFFECTS
+  const bars        = useMemo(() => schemaToBarNodes(schema), [schema])
 
-  return { ctx: ctxRef.current, raw, timeModeKey, effects, isLoading }
+  return { ctx: ctxRef.current, raw, timeModeKey, effects, bars, isLoading }
 }
 
 // ── cascadeDeepestCode — traverse cascade path to deepest selected node ──

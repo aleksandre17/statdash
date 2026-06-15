@@ -5,11 +5,10 @@
 //    <NodePageRenderer page={myPageConfig} />
 //
 //  Wiring:
-//    1. useFilterState(page.filterSchema)  → SectionContext + filter state
+//    1. useFilterState(page.filterSchema)  → SectionContext + filter state + BarNode[]
 //    2. evalVarMap(page.vars, ...)         → ctx.vars (page-level derived variables)
-//    3. schemaToBarNodes(page.filterSchema) → BarNode[] for FiltersProvider
-//    4. Build baseCtx from above
-//    5. renderNode(page, ctx)              → ReactNode tree
+//    3. Build baseCtx from above
+//    4. renderNode(page, ctx)              → ReactNode tree
 //
 //  Convention keys consumed from ctx.vars:
 //    _pageColor  → overrides page.color (accent color)
@@ -17,46 +16,24 @@
 //
 
 import { useCallback, useMemo, memo, type ReactNode } from 'react'
-import { useFilter, FilterProvider }   from '@geostat/react'
-import { useStores }                   from '@geostat/react'
-import { useFilterState }              from '@geostat/react'
-import { useLocale, useI18n }          from '../context/SiteContext'
-import { PageStoreProvider }           from '../context/PageStoreContext'
+import {
+  useFilter, FilterProvider,
+  useStores, useFilterState,
+  useLocale, useI18n,
+  PageStoreProvider,
+  useModeContext, ModeProvider,
+} from '@geostat/react'
 import { GlobalStateProvider }         from '../context/GlobalState'
 import { applyEffects, resolveDataLinks } from '@geostat/engine'
 import type { ModeId }                from '@geostat/engine'
 import { FiltersProvider }             from '../context/FiltersContext'
 import { evalVarMap }                  from './evalVarMap'
-import { useModeContext, ModeProvider } from '../context/ModeContext'
 import { EventBus }                    from '../events/EventBus'
 import type { GeostatEventMap }        from '../events/events'
 import { renderNode as renderNodeFn }  from './renderNode'
 import { extractNavSectionsFromChildren } from './navUtils'
-import type { FilterSchemaInput, BarNode, ParamNode, DataLinkDef } from '@geostat/engine'
+import type { DataLinkDef, DimVal }                                from '@geostat/engine'
 import type { NodeBase, RenderContext, NodePageConfig } from './types'
-
-// ── schemaToBarNodes — convert FilterSchemaInput to BarNode[] for FiltersProvider ──
-//
-//  FiltersProvider holds this array. FilterBarShell reads it via useFiltersContext().
-//
-
-function schemaToBarNodes(schema: FilterSchemaInput | null | undefined): BarNode[] {
-  if (!schema) return []
-  return Object.entries(schema.bars).map(([barId, barDef]): BarNode => ({
-    type:       'bar',
-    id:         barId,
-    position:   barDef.position,
-    order:      barDef.order,
-    layout:     barDef.layout,
-    timeToggle: barDef.timeToggle,
-    timeModes:  barDef.timeModes,
-    showWhen:   barDef.showWhen,
-    items:      Object.entries(barDef.filters).map(([key, paramDef]) => ({
-      key,
-      ...paramDef,
-    } as ParamNode)),
-  }))
-}
 
 // ── NodePageRendererInner — component with hook access ─────────────────
 //
@@ -81,16 +58,24 @@ const NodePageRendererInner = memo(function NodePageRendererInner({ page }: { pa
     raw,
     timeModeKey,
     effects,
+    bars,
   } = useFilterState(page.filterSchema ?? null, pageStore)
+
+  const filtersCtx = useMemo(
+    () => ({ bars, timeModeKey, effects }),
+    [bars, timeModeKey, effects],
+  )
 
   const modeList   = useMemo(() => page.modeOrder ?? [], [page.modeOrder])
   const mode       = useModeContext(timeModeKey, modeList)
 
   // Bridge: sectionCtx.timeMode = mode.current (validates against available modes;
   // interpretSpec reads sectionCtx.timeMode for DataSpec.by-mode branch selection).
+  // Destructure current first so the dep is a stable string, not a property access.
+  const { current: currentMode } = mode
   const sectionCtx = useMemo(
-    () => ({ ...rawSectionCtx, timeMode: mode.current }),
-    [rawSectionCtx, mode.current],
+    () => ({ ...rawSectionCtx, timeMode: currentMode }),
+    [rawSectionCtx, currentMode],
   )
 
   const { state, set: filterSet, setMany } = useFilter()
@@ -171,28 +156,22 @@ const NodePageRendererInner = memo(function NodePageRendererInner({ page }: { pa
   const content = renderNodeFn(page, ctx)
 
   return (
-    <GlobalStateProvider>
-      <PageStoreProvider store={pageStore}>
-        <ModeProvider value={modeCtx}>{content}</ModeProvider>
-      </PageStoreProvider>
-    </GlobalStateProvider>
+    <FiltersProvider value={filtersCtx}>
+      <GlobalStateProvider>
+        <PageStoreProvider store={pageStore}>
+          <ModeProvider value={modeCtx}>{content}</ModeProvider>
+        </PageStoreProvider>
+      </GlobalStateProvider>
+    </FiltersProvider>
   )
 })
 
 // ── NodePageRenderer — public API ─────────────────────────────────────
 
 export function NodePageRenderer({ page }: { page: NodePageConfig }): ReactNode {
-  const filtersCtx = useMemo(() => ({
-    bars:        schemaToBarNodes(page.filterSchema),
-    timeModeKey: page.filterSchema?.context?.timeMode ?? 'mode',
-    effects:     page.filterSchema?.effects ?? [],
-  }), [page.filterSchema])
-
   return (
     <FilterProvider>
-      <FiltersProvider value={filtersCtx}>
-        <NodePageRendererInner page={page} />
-      </FiltersProvider>
+      <NodePageRendererInner page={page} />
     </FilterProvider>
   )
 }
