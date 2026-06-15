@@ -1,30 +1,19 @@
-// ── EngineRegistry — Strategy + Plugin Pattern ────────────────────────
+// ── EngineRegistry — Strategy + Plugin Pattern (spec half) ────────────
 //
-//  The registry is what separates a "folder of functions" from a
-//  commercial rendering engine. It enables:
-//
-//    - New DataSpec types without touching interpretSpec switch
-//    - New chart types without touching any chart code
-//    - Override / replace built-in behavior per deployment
-//    - Schema generation (Constructor knows all registered types)
-//    - Runtime capability queries ("can this engine render 'sankey'?")
+//  Phase 8.1: chart interpretation moved to @geostat/charts (ChartRegistry).
+//  EngineRegistry now owns ONLY DataSpec resolution.
 //
 //  Pattern: Grafana panel plugin registry, Vega-Lite mark registry,
 //           Retool component registry, Builder.io plugin system.
 //
 //  Usage:
-//    // Extend with custom type
-//    defaultRegistry.registerSpec(mySpecResolver)
-//    defaultRegistry.registerChart(myChartInterpreter)
-//
-//    // Override a built-in
-//    defaultRegistry.registerSpec(optimizedRowListResolver)  // last wins
+//    import { defaultRegistry } from '@geostat/engine'
+//    defaultRegistry.registerSpec(mySpecResolver)   // extend / override (last wins)
 //
 
-import type { DataRow, EngineRow } from '../data/encoding'
+import type { EngineRow } from '../data/encoding'
 import type { DataSpec }           from '../config/section'
-import type { SectionContext, ChartType } from '../core/context'
-import type { ChartDef, ChartOutput }     from '../chart/types'
+import type { SectionContext } from '../core/context'
 import type { DataStore }          from '../data/store'
 
 // ── SpecResolver — plugin interface for DataSpec → EngineRow[] ────────
@@ -41,26 +30,10 @@ export interface SpecResolver<T extends DataSpec = DataSpec> {
   resolve(spec: T, ctx: SectionContext, store: DataStore): EngineRow[]
 }
 
-// ── ChartInterpreter — plugin interface for ChartDef → ChartOutput ────
-//
-//  The engine produces neutral ChartOutput — no ApexCharts, no Recharts.
-//  The React adapter (apexAdapter.ts) converts ChartOutput → ApexOptions.
-//
-//  Swap rendering library:  change apexAdapter.ts only.
-//  Add server-side PNG:      add canvasAdapter.ts.
-//  Add PDF export:           add pdfAdapter.ts.
-//  Zero engine changes in all cases.
-//
-export interface ChartInterpreter {
-  readonly type: ChartType
-  interpret(def: ChartDef, rows: DataRow[], ctx: SectionContext): ChartOutput
-}
-
 // ── EngineRegistry ────────────────────────────────────────────────────
 
 export class EngineRegistry {
   private readonly _specs  = new Map<string, SpecResolver>()
-  private readonly _charts = new Map<string, ChartInterpreter>()
 
   /** Register a SpecResolver. Last registration wins. Fluent. */
   registerSpec<T extends DataSpec>(resolver: SpecResolver<T>): this {
@@ -68,29 +41,20 @@ export class EngineRegistry {
     return this
   }
 
-  /** Register a ChartInterpreter. Last registration wins. Fluent. */
-  registerChart(interp: ChartInterpreter): this {
-    this._charts.set(interp.type, interp)
-    return this
-  }
-
   spec(type: string): SpecResolver | undefined  { return this._specs.get(type)  }
-  chart(type: string): ChartInterpreter | undefined { return this._charts.get(type) }
 
   /** All registered DataSpec type keys — used by Constructor + validateDataSpec. */
   specTypes(): string[]  { return [...this._specs.keys()]  }
-  /** All registered ChartType keys — used by Constructor + validateChartDef. */
-  chartTypes(): string[] { return [...this._charts.keys()] }
 
   hasSpec(type: string): boolean  { return this._specs.has(type)  }
-  hasChart(type: string): boolean { return this._charts.has(type) }
 }
 
-// ── defaultRegistry — pre-populated with all built-in resolvers ────────
+// ── defaultRegistry — pre-populated with all built-in spec resolvers ──
 //
 //  Extend at application level without touching engine source:
 //    import { defaultRegistry } from '@geostat/engine'
 //    defaultRegistry.registerSpec(myResolver)
-//    defaultRegistry.registerChart(myInterpreter)
+//
+//  For chart interpreter extension, use chartRegistry from @geostat/charts.
 //
 export const defaultRegistry = new EngineRegistry()

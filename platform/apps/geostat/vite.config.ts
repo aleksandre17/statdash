@@ -8,6 +8,7 @@ import { resolve } from 'path'
 //   @geostat/expr    → ../../engine/expr        (zero-dep expression evaluator)
 //   @geostat/styles  → ../../engine/styles/src
 //   @geostat/engine  → ../../engine/core/src    (pure TypeScript, zero React)
+//   @geostat/charts  → ../../engine/charts/src  (renderer-agnostic chart interpretation)
 //   @geostat/react   → ../../engine/react/src   (React adapter, headless UI)
 //   @               → ./src                     (this app's content)
 //
@@ -29,6 +30,7 @@ export default defineConfig({
       { find: '@geostat/expr',    replacement: resolve(__dirname, '../../engine/expr')       },
       { find: '@geostat/styles',  replacement: resolve(__dirname, '../../engine/styles/src') },
       { find: '@geostat/engine',  replacement: resolve(__dirname, '../../engine/core/src')   },
+      { find: '@geostat/charts',  replacement: resolve(__dirname, '../../engine/charts/src') },
       { find: '@geostat/react',   replacement: resolve(__dirname, '../../engine/react/src')  },
       { find: '@',                replacement: resolve(__dirname, 'src')                    },
     ],

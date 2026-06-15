@@ -5,7 +5,7 @@ import { chartRendererRegistry }  from '@geostat/react/engine'
 import type { BodyStyleAttrs }    from '@geostat/react/engine'
 import ChartPlaceholder           from './components/ChartPlaceholder'
 import type { ChartType }         from './components/ChartPlaceholder'
-import type { ChartOutput }       from '@geostat/engine'
+import type { ChartOutput }       from '@geostat/charts'
 
 interface ChartProps {
   output:        ChartOutput

@@ -6,7 +6,7 @@
 //
 
 import type { ApexOptions } from 'apexcharts'
-import type { ChartOutput } from '@geostat/engine'
+import type { ChartOutput } from '@geostat/charts'
 import { BASE, yFormatter, makeDataLabelFormatter, collectFormatted, scaledPx, BP_MD, BP_SM, BP_XS } from './base'
 
 export function buildHBarDiverging(output: ChartOutput): ApexOptions {

@@ -13,7 +13,7 @@
 
 import { Fragment, useState, useCallback, useRef, useEffect } from 'react'
 import { createPortal }                    from 'react-dom'
-import type { ChartOutput }                from '@geostat/engine'
+import type { ChartOutput }                from '@geostat/charts'
 
 // ── Types ──────────────────────────────────────────────────────────────
 

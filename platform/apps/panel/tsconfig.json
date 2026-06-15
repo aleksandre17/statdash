@@ -38,6 +38,8 @@
       "@geostat/styles/*":         ["../../engine/styles/src/*"],
       "@geostat/engine":           ["../../engine/core/src/index.ts"],
       "@geostat/engine/*":         ["../../engine/core/src/*"],
+      "@geostat/charts":           ["../../engine/charts/src/index.ts"],
+      "@geostat/charts/*":         ["../../engine/charts/src/*"],
       "@geostat/react":            ["../../engine/react/src/index.ts"],
       "@geostat/react/*":          ["../../engine/react/src/*"]
     }

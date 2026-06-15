@@ -5,7 +5,7 @@
 //
 
 import type { ApexOptions } from 'apexcharts'
-import type { ChartSeries } from '@geostat/engine'
+import type { ChartSeries } from '@geostat/charts'
 import { fmtNum }           from '@geostat/engine'
 
 // ── Shared base config ─────────────────────────────────────────────────

@@ -1,2 +1,2 @@
-export type { SpecResolver, ChartInterpreter } from './engine'
-export { EngineRegistry, defaultRegistry }     from './engine'
+export type { SpecResolver }               from './engine'
+export { EngineRegistry, defaultRegistry } from './engine'

@@ -1,5 +1,6 @@
 import type { PropertyGroup, DataLinkDef } from '@geostat/react/engine'
-import type { ChartDef, ChartType }        from '@geostat/engine'
+import type { ChartType }        from '@geostat/engine'
+import type { ChartDef }         from '@geostat/charts'
 import type { NodeBase }                   from '@geostat/react/engine'
 
 export type ChartNode =

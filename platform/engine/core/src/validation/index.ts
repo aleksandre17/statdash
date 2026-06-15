@@ -1,2 +1,2 @@
 export type { ValidationSeverity, ValidationCode, ValidationError, ValidationResult } from './types'
-export { validateDataSpec, validateChartDef }                                         from './pipeline'
+export { validateDataSpec }                                                          from './pipeline'

@@ -1,167 +1,10 @@
-// ── Built-in ChartInterpreters ─────────────────────────────────────────
-//
-//  Each ChartType is implemented as a ChartInterpreter class.
-//  Interpreters read DataRow[] + ChartDef and produce ChartOutput —
-//  the neutral, renderer-agnostic format.
-//
-//  Swap rendering library = change only the adapter. Zero engine changes.
-//  Pattern: Grafana panel plugin / Vega-Lite renderer-agnostic spec.
-//
+// ── Specialized Chart Interpreters ─────────────────────────────────────
 
-import type { DataRow }   from '../data/encoding'
-import type { ChartType } from '../core/context'
-import type {
-  ChartDef, ChartOutput, ChartSeries, ChartDataPoint, AxisOutput, LegendOutput, TooltipOutput,
-} from '../chart/types'
-import type { ChartInterpreter } from './engine'
-import { formatFieldValue, resolveThresholdColor, resolveFieldConfig } from '../field/utils'
-import { placeholderOutput }     from '../chart/engine'
-import { defaultRegistry }       from './engine'
-
-// ── Shared helpers ─────────────────────────────────────────────────────
-
-function groupBySeries(rows: DataRow[], defaultName: string): Map<string, DataRow[]> {
-  const map = new Map<string, DataRow[]>()
-  for (const row of rows) {
-    const key = row.series ?? defaultName
-    const bucket = map.get(key)
-    if (bucket) bucket.push(row)
-    else map.set(key, [row])
-  }
-  return map
-}
-
-function buildDataPoint(
-  row:    DataRow,
-  config: ReturnType<typeof resolveFieldConfig>,
-): ChartDataPoint {
-  // Priority: fieldConfig threshold color > DataRow.color > undefined
-  const thresholdColor = (config?.colorMode === 'thresholds' && config.thresholds)
-    ? resolveThresholdColor(row.value, config.thresholds)
-    : row.color || undefined
-  const status = row.status && row.status !== 'A' ? row.status : undefined
-  return { value: row.value, formatted: formatFieldValue(row.value, config), thresholdColor, status }
-}
-
-function buildAxes(def: ChartDef): ChartOutput['axes'] {
-  const fc = def.fieldConfig
-  const x: AxisOutput  = { ...def.axes?.x }
-  const y: AxisOutput  = {
-    unit:     def.axes?.y?.unit,
-    decimals: def.axes?.y?.decimals ?? fc?.decimals,
-    min:      def.axes?.y?.min      ?? fc?.min,
-    max:      def.axes?.y?.max      ?? fc?.max,
-  }
-  const y2 = def.axes?.y2 ? { ...def.axes.y2 } : undefined
-  return { x, y, y2 }
-}
-
-function buildLegend(def: ChartDef, seriesCount: number): LegendOutput {
-  const cfg = def.legend
-  return { show: cfg?.show !== undefined ? cfg.show : seriesCount > 1, position: cfg?.position }
-}
-
-function buildTooltip(def: ChartDef, defaultShared: boolean): TooltipOutput {
-  const mode = def.tooltip?.mode
-  if (mode === 'none') return { show: false }
-  if (mode === 'single') return { show: true, shared: false }
-  if (mode === 'multi')  return { show: true, shared: true  }
-  return { show: true, shared: defaultShared }
-}
-
-function uniqueLabels(rows: DataRow[]): string[] {
-  const seen: string[] = []
-  const set = new Set<string>()
-  for (const r of rows) { if (!set.has(r.label)) { seen.push(r.label); set.add(r.label) } }
-  return seen
-}
-
-// ── BarInterpreter (handles 'bar' and 'hbar') ─────────────────────────
-
-class BarInterpreter implements ChartInterpreter {
-  readonly type: ChartType
-  constructor(type: ChartType = 'bar') { this.type = type }
-
-  interpret(def: ChartDef, rows: DataRow[]): ChartOutput {
-    const chartRows  = rows.filter((r) => !r.isTotal && !r.isSeparator)
-    const grouped    = groupBySeries(chartRows, def.label)
-    const seriesKeys = [...grouped.keys()]
-    const fc         = def.fieldConfig
-    const categories = uniqueLabels(chartRows)
-
-    const series: ChartSeries[] = seriesKeys.map((name) => {
-      const seriesRows  = grouped.get(name)!
-      const resolved    = resolveFieldConfig(fc, name)
-      const rowsByLabel = new Map(seriesRows.map((r) => [r.label, r]))
-      return {
-        name,
-        data:  categories.map((lbl) => {
-          const r = rowsByLabel.get(lbl)
-          return r ? buildDataPoint(r, resolved) : { value: 0, formatted: formatFieldValue(0, resolved) }
-        }),
-        color: seriesRows[0]?.color || '#6B7B8D',
-      }
-    })
-
-    return {
-      type: this.type, height: def.height, categories, series,
-      axes: buildAxes(def), stacked: def.stacked ?? false, horizontal: this.type === 'hbar',
-      legend: buildLegend(def, series.length),
-      tooltip: buildTooltip(def, this.type !== 'hbar'),
-      annotations: [],
-      ...(def.dataLabels !== undefined ? { dataLabels: def.dataLabels } : {}),
-    }
-  }
-}
-
-// ── LineInterpreter ────────────────────────────────────────────────────
-
-class LineInterpreter implements ChartInterpreter {
-  readonly type = 'line' as const
-  interpret(def: ChartDef, rows: DataRow[]): ChartOutput {
-    const out = new BarInterpreter('line' as ChartType).interpret(def, rows)
-    return { ...out, type: 'line', horizontal: false }
-  }
-}
-
-// ── AreaInterpreter ────────────────────────────────────────────────────
-
-class AreaInterpreter implements ChartInterpreter {
-  readonly type = 'area' as const
-  interpret(def: ChartDef, rows: DataRow[]): ChartOutput {
-    const out = new BarInterpreter('area' as ChartType).interpret(def, rows)
-    return { ...out, type: 'area', horizontal: false }
-  }
-}
-
-// ── PieInterpreter (handles 'pie' and 'donut') ────────────────────────
-
-class PieInterpreter implements ChartInterpreter {
-  readonly type: ChartType
-  constructor(type: ChartType = 'pie') { this.type = type }
-
-  interpret(def: ChartDef, rows: DataRow[]): ChartOutput {
-    const fc        = def.fieldConfig
-    const totalRow  = rows.find((r) => r.isTotal)
-    const sliceRows = rows.filter((r) => !r.isTotal && r.value !== 0)
-    if (sliceRows.length === 0) return placeholderOutput(def)
-    const series: ChartSeries[] = [{
-      name:  def.label,
-      data:  sliceRows.map((r) => buildDataPoint(r, resolveFieldConfig(fc, r.label))),
-      color: '#6B7B8D',
-    }]
-    return {
-      type: this.type, height: def.height,
-      categories: sliceRows.map((r) => r.label), series,
-      axes: { x: {}, y: {} }, stacked: false, horizontal: false,
-      legend: buildLegend(def, sliceRows.length),
-      tooltip: buildTooltip(def, false),
-      annotations: [],
-      ...(totalRow !== undefined ? { total: totalRow.value } : {}),
-      ...(def.centerLabel ? { centerLabel: def.centerLabel } : {}),
-    }
-  }
-}
+import type { DataRow, ChartType } from '@geostat/engine'
+import { formatFieldValue, resolveFieldConfig } from '@geostat/engine'
+import type { ChartDef, ChartOutput, ChartSeries, ChartDataPoint } from '../types'
+import type { ChartInterpreter } from '../registry'
+import { buildDataPoint, buildAxes, buildLegend, buildTooltip, groupBySeries, uniqueLabels } from './shared'
 
 // ── WaterfallInterpreter ───────────────────────────────────────────────
 //
@@ -301,10 +144,6 @@ class TreemapInterpreter implements ChartInterpreter {
 //  label appear at multiple positions (e.g. B1G as closing of one account
 //  and opening of the next), enabling the carry-forward chain visual.
 //
-//  Two series expected: 'Resources' (positive → right) and 'Uses'
-//  (negative → left). Returns type 'hbar' so apexAdapter builds a
-//  standard horizontal bar with correct axes.
-//
 
 class HBarDivergingInterpreter implements ChartInterpreter {
   readonly type = 'hbar-diverging' as const
@@ -386,10 +225,6 @@ class HBarDivergingInterpreter implements ChartInterpreter {
 //  All bars start at zero with absolute height (Math.abs(value)).
 //  Negative-valued rows (imports) get a "(-)" prefix on the axis label;
 //  positive rows get "(+)"; the isTotal row gets "(=)".
-//  Per-bar color comes from DataRow.color (thresholdColor slot).
-//
-//  The prefix logic lives here — not in the config pipe — because it is
-//  a pure rendering decision that depends only on sign and isTotal status.
 //
 
 class ContributionInterpreter implements ChartInterpreter {
@@ -437,26 +272,4 @@ class ContributionInterpreter implements ChartInterpreter {
   }
 }
 
-// ── PlaceholderInterpreter ─────────────────────────────────────────────
-
-class PlaceholderInterpreter implements ChartInterpreter {
-  constructor(readonly type: ChartType) {}
-  interpret(def: ChartDef): ChartOutput { return placeholderOutput(def) }
-}
-
-// ── Register all built-in chart interpreters ───────────────────────────
-
-defaultRegistry
-  .registerChart(new BarInterpreter('bar'))
-  .registerChart(new BarInterpreter('hbar'))
-  .registerChart(new HBarDivergingInterpreter())
-  .registerChart(new LineInterpreter())
-  .registerChart(new AreaInterpreter())
-  .registerChart(new PieInterpreter('pie'))
-  .registerChart(new PieInterpreter('donut'))
-  .registerChart(new WaterfallInterpreter())
-  .registerChart(new ContributionInterpreter())
-  .registerChart(new ComboInterpreter())
-  .registerChart(new TreemapInterpreter())
-  .registerChart(new PlaceholderInterpreter('map'))
-  .registerChart(new PlaceholderInterpreter('sankey'))
+export { WaterfallInterpreter, ComboInterpreter, TreemapInterpreter, HBarDivergingInterpreter, ContributionInterpreter }

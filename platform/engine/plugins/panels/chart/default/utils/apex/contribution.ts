@@ -7,7 +7,7 @@
 //
 
 import type { ApexOptions } from 'apexcharts'
-import type { ChartOutput } from '@geostat/engine'
+import type { ChartOutput } from '@geostat/charts'
 import { BASE, yFormatter, collectFormatted, scaledPx, BP_MD, BP_SM, BP_XS } from './base'
 
 // Split a label string into lines so no line exceeds maxChars characters.

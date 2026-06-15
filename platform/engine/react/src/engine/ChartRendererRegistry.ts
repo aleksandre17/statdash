@@ -1,5 +1,5 @@
 import type { ComponentType } from 'react'
-import type { ChartOutput }   from '@geostat/engine'
+import type { ChartOutput }   from '@geostat/charts'
 
 export interface ChartRendererProps {
   output:         ChartOutput

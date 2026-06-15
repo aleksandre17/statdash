@@ -26,7 +26,7 @@ export type {
   ModeId, ModeDef, ModeContext, TimeMode, SectionContext, DimVal,
   // Config vocabulary
   DataSpec, ColumnDef, RowSpec, TableConfig, VisibilityExpr,
-  KpiDef, ChartDef, FieldConfig,
+  KpiDef, FieldConfig,
   // Methodology-link primitives (live: consumed by the `links` panel plugin)
   LinkDef, LinkIconKey,
   // Data types
@@ -86,6 +86,10 @@ export { useModeContext, ModeProvider, useMode } from './context/ModeContext'
 // ── Chart renderer registry — extension point for external chart types ──
 export { chartRendererRegistry }   from './engine/ChartRendererRegistry'
 export type { ChartRendererProps } from './engine/ChartRendererRegistry'
+
+// ── Chart vocabulary — re-exported from @geostat/charts ───────────────
+export type { ChartDef, ChartOutput } from '@geostat/charts'
+export { interpretChart } from '@geostat/charts'
 
 // ── Filter input components ────────────────────────────────────────────
 export { default as CascadeSelect }      from './components/filters/CascadeSelect'

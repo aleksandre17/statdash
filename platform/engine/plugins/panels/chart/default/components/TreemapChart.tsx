@@ -9,7 +9,7 @@
 
 import { useState }         from 'react'
 import { createPortal }     from 'react-dom'
-import type { ChartOutput } from '@geostat/engine'
+import type { ChartOutput } from '@geostat/charts'
 import { fmtNum } from '@geostat/engine'
 
 const GAP = 3

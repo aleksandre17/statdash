@@ -6,9 +6,8 @@ import type { SectionContext }   from '../core/context'
 import type { DataStore, Requirement } from './store'
 import { defaultRegistry }       from '../registry/engine'
 
-// Side-effect import: populate defaultRegistry with all built-in resolvers + interpreters
+// Side-effect import: populate defaultRegistry with all built-in resolvers
 import '../registry/resolvers'
-import '../registry/interpreters'
 
 // ── Observability seam ────────────────────────────────────────────────
 //

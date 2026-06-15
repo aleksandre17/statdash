@@ -1,7 +1,7 @@
 // ── Cartesian builder (bar / hbar / line / waterfall / combo) ──────────
 
 import type { ApexOptions } from 'apexcharts'
-import type { ChartOutput } from '@geostat/engine'
+import type { ChartOutput } from '@geostat/charts'
 import { BASE, yFormatter, collectFormatted, scaledPx, BP_MD, BP_SM, BP_XS } from './base'
 
 export function buildCartesian(output: ChartOutput): ApexOptions {

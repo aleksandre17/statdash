@@ -12,7 +12,6 @@
 //
 
 import type { DataSpec }              from '../config/section'
-import type { ChartDef }              from '../chart/types'
 import { defaultRegistry }            from '../registry/engine'
 import type {
   ValidationSeverity,
@@ -134,29 +133,6 @@ export function validateDataSpec(
   return v.build()
 }
 
-// ── ChartDef validation ────────────────────────────────────────────────
-
-export function validateChartDef(def: ChartDef, path = 'chart'): ValidationResult {
-  const v = validate()
-
-  const knownCharts = defaultRegistry.chartTypes()
-  if (knownCharts.length > 0 && !knownCharts.includes(def.type)) {
-    v.error(path + '.type', 'UNKNOWN_CHART_TYPE',
-      `Unknown chart type: '${def.type}'. Known: ${knownCharts.join(', ')}`)
-  }
-
-  if (!def.label) v.warn(path + '.label', 'MISSING_REQUIRED', 'Chart label is empty')
-
-  if (def.fieldConfig?.thresholds) {
-    const bases = def.fieldConfig.thresholds.filter(t => t.value === null)
-    if (bases.length > 1) {
-      v.warn(path + '.fieldConfig.thresholds', 'THRESHOLD_ORDER',
-        'More than one base threshold (value: null) — only the last one applies')
-    }
-  }
-
-  return v.build()
-}
 
 // NOTE (Layer 0.4): the former `validateSectionDef` validated the dead Track-B
 // `SectionDef` type (no live config uses it) — removed (gap #27). The live-tree

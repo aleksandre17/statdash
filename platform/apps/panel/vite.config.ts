@@ -23,6 +23,7 @@ export default defineConfig({
       { find: '@geostat/expr',    replacement: resolve(__dirname, '../../engine/expr')       },
       { find: '@geostat/styles',  replacement: resolve(__dirname, '../../engine/styles/src') },
       { find: '@geostat/engine',  replacement: resolve(__dirname, '../../engine/core/src')   },
+      { find: '@geostat/charts',  replacement: resolve(__dirname, '../../engine/charts/src') },
       { find: '@geostat/react',   replacement: resolve(__dirname, '../../engine/react/src')  },
       { find: '@',                replacement: resolve(__dirname, 'src')                      },
     ],

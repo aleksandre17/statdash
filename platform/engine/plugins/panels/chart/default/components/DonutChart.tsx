@@ -1,7 +1,7 @@
 // ── DonutChart — clamped leaders, fast greedy, strict bounds ───────────
 
 import { useState, useMemo } from 'react'
-import type { ChartOutput } from '@geostat/engine'
+import type { ChartOutput } from '@geostat/charts'
 import { fmtNum } from '@geostat/engine'
 
 const W = 500, H = 300, CX = 250, CY = 150

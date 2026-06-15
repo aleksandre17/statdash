@@ -1,7 +1,7 @@
 {
-  "name": "@geostat/react",
+  "name": "@geostat/charts",
   "version": "0.1.0",
-  "description": "React adapter — headless components consuming @geostat/engine",
+  "description": "Renderer-agnostic chart interpretation — ChartDef → neutral ChartOutput, zero React, zero rendering lib",
   "type": "module",
   "private": true,
   "exports": {
@@ -15,20 +15,17 @@
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "files": ["dist"],
+  "sideEffects": [
+    "./src/index.ts",
+    "./src/interpreters.ts"
+  ],
   "scripts": {
     "build": "tsup src/index.ts --format esm --dts --clean"
   },
   "publishConfig": {
     "access": "public"
   },
-  "peerDependencies": {
-    "react": ">=18",
-    "react-dom": ">=18",
-    "react-router-dom": ">=6"
-  },
   "dependencies": {
-    "@geostat/engine": "workspace:*",
-    "@geostat/charts": "workspace:*",
-    "@geostat/styles": "workspace:*"
+    "@geostat/engine": "workspace:*"
   }
 }

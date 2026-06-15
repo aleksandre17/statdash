@@ -1,7 +1,7 @@
 // ── Pie / Donut builder ────────────────────────────────────────────────
 
 import type { ApexOptions } from 'apexcharts'
-import type { ChartOutput } from '@geostat/engine'
+import type { ChartOutput } from '@geostat/charts'
 import { fmtNum }           from '@geostat/engine'
 import { BASE, scaledPx, BP_MD, BP_SM, BP_XS } from './base'
 

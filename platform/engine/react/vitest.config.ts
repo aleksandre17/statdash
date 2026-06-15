@@ -16,6 +16,7 @@ export default defineConfig({
   resolve: {
     alias: [
       { find: '@geostat/engine', replacement: resolve(__dirname, '../core/src')   },
+      { find: '@geostat/charts', replacement: resolve(__dirname, '../charts/src')  },
       { find: '@geostat/react',  replacement: resolve(__dirname, 'src')            },
       { find: '@geostat/expr',   replacement: resolve(__dirname, '../expr')        },
       { find: '@geostat/styles', replacement: resolve(__dirname, '../styles/src')  },

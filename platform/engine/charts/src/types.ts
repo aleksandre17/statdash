@@ -16,8 +16,7 @@
 //  Pattern: Grafana PanelData → each panel plugin renders the same neutral data.
 //
 
-import type { ChartType }    from '../core/context'
-import type { FieldConfig }  from '../field/config'
+import type { ChartType, FieldConfig } from '@geostat/engine'
 
 // ── ChartDef — enriched chart specification ───────────────────────────
 //

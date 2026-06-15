@@ -11,10 +11,9 @@
 //    sdmx.ts       — SDMX observation model (ISO 17369, leaf node)
 //    data/         — DataStore, DataRow, interpretSpec, transform pipeline
 //    field/        — FieldConfig display system (Grafana equivalent)
-//    chart/        — ChartDef, ChartOutput neutral format, interpretChart
 //    config/       — DataSpec, TableConfig, VisibilityExpr, KpiDef
 //    validation/   — self-validating configs (Constructor-facing)
-//    registry/     — EngineRegistry, SpecResolver, ChartInterpreter (plugin system)
+//    registry/     — EngineRegistry, SpecResolver (plugin system)
 //
 
 // ── Core ──────────────────────────────────────────────────────────────
@@ -59,23 +58,6 @@ export { applyPipeline, applyStep, getFormatter, FORMATTERS, fmtNum }   from './
 // ── FieldConfig — Grafana-equivalent display configuration ────────────
 export type { Threshold, ColorMode, FieldOverride, FieldConfig }        from './field/config'
 export { formatFieldValue, resolveThresholdColor, resolveFieldConfig }  from './field/utils'
-
-// ── Chart System — neutral rendering format ───────────────────────────
-export type {
-  ChartDef,
-  AxisConfig,
-  LegendConfig,
-  TooltipConfig,
-  ChartOutput,
-  ChartGroup,
-  ChartSeries,
-  ChartDataPoint,
-  AxisOutput,
-  LegendOutput,
-  TooltipOutput,
-  AnnotationOutput,
-}                                                                        from './chart/types'
-export { interpretChart, placeholderOutput, setChartRegistry }          from './chart/engine'
 
 // ── Config Types ──────────────────────────────────────────────────────
 export type { KpiDef }                                                   from './config/kpi'
@@ -136,10 +118,10 @@ export type {
   ValidationError,
   ValidationResult,
 }                                                                        from './validation/types'
-export { validateDataSpec, validateChartDef }                           from './validation/pipeline'
+export { validateDataSpec }                                             from './validation/pipeline'
 
 // ── Registry — Strategy + Plugin Pattern ─────────────────────────────
-export type { SpecResolver, ChartInterpreter }                         from './registry/engine'
+export type { SpecResolver }                                           from './registry/engine'
 export { EngineRegistry, defaultRegistry }                             from './registry/engine'
 export type { DiagnosticObserver }                                     from './registry/diagnostics'
 export { setDiagnosticObserver }                                       from './registry/diagnostics'
@@ -163,15 +145,6 @@ export { formatterRegistry }                                             from '.
 // ── Spec Capability Catalog — Self-Describing Module (Panel / Constructor) ─
 export type { SpecField, SpecDescriptor }  from './spec-catalog'
 export { SPEC_CATALOG }                    from './spec-catalog'
-
-// ── Engine Bootstrap ──────────────────────────────────────────────────
-//
-//  Wires defaultRegistry to interpretChart — must run after all modules load.
-//  The side effect imports in data/spec.ts handle resolver/interpreter registration.
-//
-import { setChartRegistry } from './chart/engine'
-import { defaultRegistry as _reg } from './registry/engine'
-setChartRegistry(_reg)
 
 // ── FilterDerive ops → @geostat/expr plugin registration ─────────────
 //

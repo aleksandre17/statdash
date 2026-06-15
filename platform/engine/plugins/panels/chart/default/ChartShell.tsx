@@ -1,6 +1,6 @@
 import { useCallback, useMemo }                   from 'react'
 import { useNavigate }                             from 'react-router-dom'
-import { interpretChart }                          from '@geostat/engine'
+import { interpretChart }                          from '@geostat/charts'
 import { EmptyState }                              from '@geostat/react/feedback'
 import { defineShell }                             from '@geostat/react/engine'
 import type { BodyStyleAttrs, RenderContext }       from '@geostat/react/engine'
