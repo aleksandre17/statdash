@@ -123,38 +123,6 @@ export interface NodeBase {
 //
 export interface NodeTypeMap {}
 
-// ── SlotDef — typed children contract (Builder.io slots pattern) ──────
-//
-//  Constructor reads: which types can be dragged into this slot?
-//  Engine reads: validation when loading config.
-//
-export interface SlotDef {
-  field:    string             // node field name: 'children' | 'items'
-  label:    LocaleString
-  accepts?: string[]           // allowed node types; empty = any
-  multi:    boolean
-  min?:     number
-  max?:     number
-}
-
-// ── PropertyGroup — Constructor property panel grouping (Retool/Appsmith) ──
-//
-//  Organises schema fields into labelled accordion sections in the
-//  Constructor property panel. `fields` are JSON pointer paths into the node.
-//
-export interface PropertyGroup {
-  label:  LocaleString
-  fields: string[]
-}
-
-// ── ValidationError — per-node validation result ──────────────────────
-
-export interface ValidationError {
-  field:   string
-  message: string
-  level:   'error' | 'warning'
-}
-
 // ── CoreNodeDef — engine-package-owned node types ─────────────────────
 //
 //  These types originate in @geostat/engine, not in plugin shells, so they
@@ -177,13 +145,25 @@ type CoreNodeDef = FilterBarNode | BarNode | ParamNode
 export type NodeDef = CoreNodeDef | NodeTypeMap[keyof NodeTypeMap]
 
 // ── RenderContext — threaded through the render tree ──────────────────
-
+//
+//  Two conceptually distinct halves — kept in one interface for threading
+//  convenience, but the seam is explicit:
+//
+//  A) SERIALIZABLE DATA — safe to JSON.stringify, snapshot, diff, or pass
+//     to the Constructor. These fields carry current filter/locale/mode state
+//     and pre-resolved display values. NO functions.
+//
+//  B) RUNTIME SERVICES — function references created once by SiteRenderer,
+//     closed over React state. NOT serializable. Shells call these but never
+//     store or serialize them. These are the service-locator half of ctx.
+//     (Grafana PanelData vs PanelPlugin services split — same seam.)
+//
 export interface RenderContext {
+  // ── A: Serializable data ──────────────────────────────────────────────
   sectionCtx:    SectionContext
   stores:        Record<string, DataStore>
   pageStoreKey?: string
   filterParams:  Record<string, unknown>
-  set:           (key: string, val: unknown) => void
   vars:          Record<string, unknown>
   color:         string
   crumbs?:       { label: string; href?: string }[]
@@ -195,18 +175,8 @@ export interface RenderContext {
   effects:       Effect[]
   rows?:         DataRow[]
   view?:         ViewParams
-  renderNode:    (node: NodeDef, ctxOverride?: Partial<RenderContext>) => ReactNode
-
-  // ── Rendering platform extensions ─────────────────────────────────────
-  /** Typed pub/sub for cross-node communication (Grafana EventBus pattern). */
-  eventBus:      EventBus<GeostatEventMap>
   /** Cascaded field display config — inherited from nearest ancestor node. */
   fieldConfig?:  FieldConfig
-  /**
-   * Resolve DataLinks for a clicked row → navigate or open context menu.
-   * Created by SiteRenderer, closes over locale + filterParams.
-   */
-  resolveLinks:  (links: DataLinkDef[], row: Record<string, unknown>) => ResolvedLink[]
   /**
    * Bridge for InnerPageShell — populated by SiteRenderer, consumed by the
    * inner-page shell to render InnerLayout (sidebar + section nav).
@@ -216,6 +186,19 @@ export interface RenderContext {
     sections:    NavSection[]
     timeModeKey: string
   }
+
+  // ── B: Runtime services (functions — NOT serializable) ────────────────
+  /** Set a filter param — closes over React state, triggers re-render. */
+  set:           (key: string, val: unknown) => void
+  /** Recursive renderer — creates child ReactNodes on demand. */
+  renderNode:    (node: NodeDef, ctxOverride?: Partial<RenderContext>) => ReactNode
+  /**
+   * Resolve DataLinks for a clicked row → navigate or open context menu.
+   * Created by SiteRenderer, closes over locale + filterParams.
+   */
+  resolveLinks:  (links: DataLinkDef[], row: Record<string, unknown>) => ResolvedLink[]
+  /** Typed pub/sub for cross-node communication (Grafana EventBus pattern). */
+  eventBus:      EventBus<GeostatEventMap>
 }
 
 // ── SlotChildren + ChildrenArg ────────────────────────────────────────
@@ -264,92 +247,28 @@ export type NodeRenderer<T extends { type: string } = { type: string }> = (
   children: ChildrenArg,
 ) => ReactNode
 
-// ── Slice META types — discriminated by sliceType ─────────────────────
-
-/** META for a node type slice (panel plugin equivalent) */
-export interface NodeSliceMeta {
-  sliceType:  'node' | 'page' | 'panel'
-  type:       string
-  variant?:   string
-
-  // ── Palette (Constructor picker)
-  label?:     LocaleString
-  icon?:      string
-  category?:  string
-  preview?:   string
-
-  // ── Schema + defaults (Constructor property panel)
-  schema?:    object
-  defaults?:  Record<string, unknown>
-  groups?:    PropertyGroup[]
-
-  // ── Slot contracts (Constructor child insertion)
-  slots?:     Record<string, SlotDef>
-
-  // ── Capability flags (Constructor behaviour)
-  transparent?:     boolean   // engine expands in-place — no DOM output
-  canHaveChildren?: boolean   // Constructor shows child insertion UI
-  singleton?:       boolean   // only one per page (e.g. page-header)
-  rootOnly?:        boolean   // palette hides unless at root level
-
-  // ── Data migration
-  version?: number
-
-  // ── System UI strings per locale
-  i18n?:    Record<string, Record<string, string>>
-}
-
-// ── ChromeEntry — chrome slot configuration (JSON-serializable) ────────
+// ── Slice META types — re-exported from slice-meta.ts ─────────────────
 //
-//  String shorthand: 'transparent' → { variant: 'transparent' }.
-//  Object form: full control over region · order · per-instance config.
-//  Both forms are JSON-serializable → Constructor Phase 2 ready (JSONB).
+//  All plugin taxonomy types (SliceCategory, NodeSliceMeta, PageSliceMeta,
+//  PanelSliceMeta, ChromeSliceMeta, FilterControlMeta, SliceMeta) and their
+//  Constructor companion types (SlotDef, PropertyGroup, ValidationError) live
+//  in ./slice-meta. Re-exported here so all `from './types'` imports continue
+//  to resolve without change.
 //
-//  Pattern: Grafana variable override chain · Builder.io slot config per page.
-//
-
-/** Per-instance chrome slot configuration — extended form of ChromeEntry. */
-export interface ChromeSlotConfig {
-  /** Which registered variant to render. */
-  variant:  string
-  /** Layout region to place this slot in. Overrides the slot's defaultRegion. */
-  region?:  string
-  /** Sort order within the region. Lower = earlier. Overrides defaultOrder. */
-  order?:   number
-  /** Per-instance config injected via useSlotConfig() — Constructor JSONB. */
-  config?:  Record<string, unknown>
-}
-
-/** Chrome entry in SiteManifest.chrome or PageConfigBase.chrome. */
-export type ChromeEntry = string | ChromeSlotConfig
-
-/** META for a chrome slot slice (header/sidebar/footer variant) */
-export interface ChromeSliceMeta {
-  sliceType:     'chrome'
-  slot:          string
-  key:           string
-  label:         LocaleString   // LocaleString = string | Record<string,string> — plain string still valid
-  preview?:      string
-  // ── Constructor chrome editor
-  icon?:         string
-  schema?:       object
-  version?:      number
-  // ── Layout defaults — where this slot lives when no override is set
-  /** Default layout region: 'top' | 'bottom' | 'left' | 'right' | 'overlay' | 'inline'. */
-  defaultRegion: string
-  /** Default sort order within the region. Lower = earlier. */
-  defaultOrder:  number
-}
-
-/** META for a filter control slice (year-select, cascade, select…) */
-export interface FilterControlMeta {
-  sliceType:   'control'
-  controlType: string
-  label:       string
-  category?:   string
-}
-
-export type SliceMeta = NodeSliceMeta | ChromeSliceMeta | FilterControlMeta
+export type {
+  SliceCategory,
+  SlotDef,
+  PropertyGroup,
+  ValidationError,
+  PageSliceMeta,
+  PanelSliceMeta,
+  NodeSliceMeta,
+  ChromeSlotConfig,
+  ChromeEntry,
+  ChromeSliceMeta,
+  FilterControlMeta,
+  SliceMeta,
+}                                from './slice-meta'
 
 // ── PageConfigBase + NodePageConfig — Track A page composition ────────
 //

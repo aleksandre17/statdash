@@ -24,11 +24,12 @@
 //    }
 //
 
+import type { GeostatEventMap } from './events'
+
 type Handler<T> = (event: T) => void
 type Unsub      = () => void
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export class EventBus<TMap = Record<string, any>> {
+export class EventBus<TMap = GeostatEventMap> {
   private readonly handlers = new Map<string, Set<Handler<unknown>>>()
 
   publish<K extends keyof TMap>(type: K, event: TMap[K]): void {
