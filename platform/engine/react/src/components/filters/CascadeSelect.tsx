@@ -8,11 +8,12 @@ interface Props {
   tree:         CascadeNode[]
   path:         number[]
   onChange:     (path: number[]) => void
+  allLabel:     string
   placeholders?: string[]
   disabled?:    boolean
 }
 
-export default function CascadeSelect({ tree, path, onChange, placeholders = [], disabled }: Props) {
+export default function CascadeSelect({ tree, path, onChange, allLabel, placeholders = [], disabled }: Props) {
   const levels: CascadeNode[][] = [tree]
   for (let i = 0; i < path.length; i++) {
     const node = levels[i]?.find((n) => n.id === path[i])
@@ -37,9 +38,9 @@ export default function CascadeSelect({ tree, path, onChange, placeholders = [],
           value={path[levelIdx] ?? ''}
           onChange={(e) => handleChange(levelIdx, e.target.value)}
           disabled={disabled}
-          aria-label={placeholders[levelIdx] ?? `დონე ${levelIdx + 1}`}
+          aria-label={placeholders?.[levelIdx] ?? String(levelIdx + 1)}
         >
-          <option value="">{placeholders[levelIdx] ?? 'ყველა'}</option>
+          <option value="">{allLabel}</option>
           {nodes.map((n) => (
             <option key={n.id} value={n.id}>
               {n.value}
