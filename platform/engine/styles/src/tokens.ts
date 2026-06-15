@@ -1,61 +1,41 @@
-// ── @geostat/styles — Design token registry ──────────────────────────
+// ── @geostat/styles — Design token registry (barrel) ─────────────────
 //
 //  Single source of truth for all platform design tokens.
-//  CSS side: tokens.css emits :root custom properties.
-//  TS side: these constants reference those custom properties.
+//  CSS side: css/tokens.css emits :root custom properties (the values).
+//  TS side: these constants are typed references to those properties.
 //  Usage in config: { padding: SPACING.md } → 'var(--spacing-md)'
 //
+//  Split by concern (one-body hygiene; the file exceeded the 400-line
+//  ceiling once chart / status / fluid / motion tokens landed):
+//    tokens/spacing    — spacing · radii · border-width · size · blur · opacity · z-index
+//    tokens/effects    — shadow · aspect · breakpoints
+//    tokens/animation  — transition · duration · easing
+//    tokens/typography — font-size · fluid-font-size · weight · line-height · letter-spacing · family
+//    tokens/color      — gray scale · semantic color · status · chart palette
+//
 
-export const SPACING = {
-  xs:    'var(--spacing-xs)',
-  sm:    'var(--spacing-sm)',
-  md:    'var(--spacing-md)',
-  lg:    'var(--spacing-lg)',
-  xl:    'var(--spacing-xl)',
-  '2xl': 'var(--spacing-2xl)',
-} as const satisfies Record<string, string>
+export {
+  SPACING, RADII, BORDER_WIDTH, SIZE, BLUR, OPACITY, Z_INDEX,
+} from './tokens/spacing'
+export type {
+  SpacingToken, RadiiToken, BorderWidthToken, SizeToken, BlurToken, OpacityToken, ZIndexToken,
+} from './tokens/spacing'
 
-export const RADII = {
-  sm:   'var(--radius-sm)',
-  md:   'var(--radius-md)',
-  lg:   'var(--radius-lg)',
-  card: 'var(--radius-card)',
-  pill: 'var(--radius-pill)',
-} as const satisfies Record<string, string>
+export { SHADOW, ASPECT, BREAKPOINTS } from './tokens/effects'
+export type {
+  ShadowToken, AspectToken, BreakpointKey, BreakpointValue,
+} from './tokens/effects'
 
-export const SHADOW = {
-  sm:      'var(--shadow-sm)',
-  md:      'var(--shadow-md)',
-  card:    'var(--shadow-card)',
-  overlay: 'var(--shadow-overlay)',
-} as const satisfies Record<string, string>
+export { TRANSITION, DURATION, EASING } from './tokens/animation'
+export type { TransitionToken, DurationToken, EasingToken } from './tokens/animation'
 
-// Canonical aspect-ratio strings — '16 / 9' format (CSS aspect-ratio value).
-export const ASPECT = {
-  '16:9': '16 / 9',
-  '4:3':  '4 / 3',
-  '1:1':  '1 / 1',
-  '21:9': '21 / 9',
-  '3:2':  '3 / 2',
-} as const satisfies Record<string, string>
+export {
+  FONT_SIZE, FLUID_FONT_SIZE, FONT_WEIGHT, LINE_HEIGHT, LETTER_SPACING, FONT_FAMILY,
+} from './tokens/typography'
+export type {
+  FontSizeToken, FluidFontSizeToken, FontWeightToken,
+  LineHeightToken, LetterSpacingToken, FontFamilyToken,
+} from './tokens/typography'
 
-// Breakpoints in px (media query thresholds, not container queries).
-export const BREAKPOINTS = {
-  sm: 640,
-  md: 960,
-  lg: 1280,
-} as const satisfies Record<string, number>
-
-// Platform transition tokens — reference CSS custom properties.
-export const TRANSITION = {
-  none:   'none',
-  fast:   'var(--transition-fast)',
-  smooth: 'var(--transition-smooth)',
-  slow:   'var(--transition-slow)',
-} as const satisfies Record<string, string>
-
-export type SpacingToken    = typeof SPACING[keyof typeof SPACING]
-export type RadiiToken      = typeof RADII[keyof typeof RADII]
-export type ShadowToken     = typeof SHADOW[keyof typeof SHADOW]
-export type AspectToken     = typeof ASPECT[keyof typeof ASPECT]
-export type TransitionToken = typeof TRANSITION[keyof typeof TRANSITION] | (string & {})
+export { GRAY, COLOR, STATUS, CHART_COLOR } from './tokens/color'
+export type { GrayToken, ColorToken, StatusToken, ChartColorToken } from './tokens/color'

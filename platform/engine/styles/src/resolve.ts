@@ -4,8 +4,13 @@ import type { ResponsiveVal, ResolvedResponsive, StyleValue, FluidValue } from '
 // Flat T    → { default: T }
 // undefined → {}
 // Object    → passthrough
-// Note: FluidValue objects have { fluid, min, max } — NOT { default, md, sm }.
+// Note: FluidValue objects have { fluid, min, max } — NOT breakpoint keys.
 // resolveResponsive correctly identifies them as flat values (not breakpoint objects).
+//
+// Breakpoint key set — SSOT for the object-form detection guard below.
+// Keep in sync with the Breakpoint type and BREAKPOINTS in tokens.ts.
+const BREAKPOINT_KEYS = ['default', 'xs', 'sm', 'md', 'lg', 'xl', '2xl'] as const
+
 export function resolveResponsive<T>(val: ResponsiveVal<T> | undefined): ResolvedResponsive<T> {
   if (val === undefined) return {}
   if (
@@ -13,7 +18,7 @@ export function resolveResponsive<T>(val: ResponsiveVal<T> | undefined): Resolve
     typeof val === 'object' &&
     !Array.isArray(val) &&
     !isFluidValue(val as unknown as StyleValue) &&
-    ('default' in val || 'md' in val || 'sm' in val)
+    BREAKPOINT_KEYS.some(k => k in (val as object))
   ) {
     return val as ResolvedResponsive<T>
   }

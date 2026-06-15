@@ -65,5 +65,18 @@ export function validateNodeStyles(styles: NodeStyles | undefined): StyleIssue[]
     })
   }
 
+  // Pseudo-state opacity must be 0–1 (same constraint as base opacity)
+  for (const state of ['hover', 'focus', 'active'] as const) {
+    const pseudoOp = styles[state]?.opacity
+    if (pseudoOp !== undefined && (pseudoOp < 0 || pseudoOp > 1)) {
+      issues.push({
+        field:    state,
+        code:     'PSEUDO_OPACITY_OUT_OF_RANGE',
+        message:  `${state}.opacity must be 0–1, got ${pseudoOp}`,
+        severity: 'error',
+      })
+    }
+  }
+
   return issues
 }
