@@ -87,7 +87,9 @@ The structural moves from `ARCHITECTURE-TARGET.md §Tier 1` that are not gap-fix
 
 ---
 
-### Layer 8.2 — Unify all chart types through `ChartRendererRegistry` `[N3]`
+### Layer 8.2 — Unify all chart types through `ChartRendererRegistry` `[N3]` ✅
+
+> **✅ DONE (landed with Phase 6.1)** — `chart-renderers.tsx` registers all types into `chartRendererRegistry`: `ApexRenderer` for bar/hbar/line/area/waterfall/combo/contribution/pie, `HBarDivergingChart` for hbar-diverging, `DonutChart` for donut, `TreemapChart` for treemap, `ChartPlaceholder` for map/sankey. `Chart.tsx` routes 100% through `chartRendererRegistry.get(output.type)` — no type branching in shell. `toApexOptions` switch lives inside `ApexRenderer` (Apex adapter internal), not in the shell. Swap rendering library = replace/re-register one renderer, zero shell change.
 
 **Goal:** One swappable render-library seam — every chart type dispatches through the registry, none bespoke in the shell.
 
@@ -107,7 +109,9 @@ The structural moves from `ARCHITECTURE-TARGET.md §Tier 1` that are not gap-fix
 
 ---
 
-### Layer 8.3 — `CachedStore` + batch as the default read path `[N5]`
+### Layer 8.3 — `CachedStore` + batch as the default read path `[N5]` ✅
+
+> **✅ DONE (2026-06-15)** — `resolveStore()` in `resolveNodeRows.ts` now wraps non-static `DataStore` in `CachedStore` on first use. A module-level `WeakMap<DataStore, CachedStore>` ensures the same wrapper is returned across all renders in a session. Cache is dim-encoded (`code:dim1=v1,...`) so different filter states produce different keys — no stale reads, no explicit invalidation needed. StaticStore exempt. tsc EXIT=0.
 
 **Goal:** The caching + batching the platform already built is on by default, not dormant.
 
@@ -127,7 +131,9 @@ The structural moves from `ARCHITECTURE-TARGET.md §Tier 1` that are not gap-fix
 
 ---
 
-### Layer 8.4 — Consolidate the filter-model seam `[N7]`
+### Layer 8.4 — Consolidate the filter-model seam `[N7]` ✅
+
+> **✅ DONE (2026-06-15)** — `useFilterState` now returns `bars: BarNode[]` (via moved `schemaToBarNodes` helper, memoized on schema). `NodePageRendererInner` owns `FiltersProvider` (uses `bars`/`timeModeKey`/`effects` from `useFilterState`). `NodePageRenderer` simplified to just `FilterProvider` → `NodePageRendererInner`. One schema derivation — `bars`/`timeModeKey`/`effects` no longer computed twice. Three-piece seam now coherent: `FilterContext` (URL state) → `useFilterState` (schema eval) → `FiltersContext` (display). Also fixed pre-existing: relative-path imports unified under `@geostat/react` barrel; `mode.current` dep replaced with destructured `currentMode` (eliminates `react-hooks/exhaustive-deps` + preserve-memoization). tsc EXIT=0.
 
 **Goal:** One home for the control plane — `FilterContext` / `FiltersContext` / `useFilterState` form a single coherent filter model, behavior preserved.
 
