@@ -12,18 +12,32 @@
 //  Canonical target lives in migration/03-pipeline.md.
 //
 
-import { interpretSpec, staticStore, applyEncoding, storeVal, applyPipeline } from '@geostat/engine'
-import type { DataRow, DataStore, EncodingSpec, PipelineContext, RawRow }       from '@geostat/engine'
-import type { NodeBase, RenderContext }                                        from './types'
+import { interpretSpec, staticStore, CachedStore, applyEncoding, storeVal, applyPipeline } from '@geostat/engine'
+import type { DataRow, DataStore, EncodingSpec, PipelineContext, RawRow }                    from '@geostat/engine'
+import type { NodeBase, RenderContext }                                                     from './types'
 
 // ── resolveStore — CSS cascade: nearest storeKey wins ─────────────────
 //
 //  ctx.pageStoreKey → stores[key] → first registered store → staticStore.
 //  Renderers that need the active store call this instead of ctx.stores[key].
 //
+//  Phase 8.3 [N5]: non-static stores are wrapped in CachedStore on first
+//  use. The WeakMap keyed on the raw store means the same CachedStore
+//  instance is returned for the same raw store across renders — cache
+//  persists for the session without explicit invalidation (val cache key
+//  already encodes dims, so stale reads across filter changes are impossible).
+//
+const _storeCache = new WeakMap<DataStore, CachedStore>()
+
 export function resolveStore(ctx: Pick<RenderContext, 'stores' | 'pageStoreKey'>): DataStore {
   const key = ctx.pageStoreKey ?? 'default'
-  return ctx.stores[key] ?? ctx.stores[Object.keys(ctx.stores)[0]] ?? staticStore
+  const raw = ctx.stores[key] ?? ctx.stores[Object.keys(ctx.stores)[0]] ?? staticStore
+  if (raw === staticStore) return raw  // static store: nothing to cache
+  const cached = _storeCache.get(raw)
+  if (cached) return cached
+  const wrapper = new CachedStore(raw)
+  _storeCache.set(raw, wrapper)
+  return wrapper
 }
 
 export function resolveNodeRows(node: NodeBase, ctx: RenderContext): DataRow[] {
