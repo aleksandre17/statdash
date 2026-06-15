@@ -1,13 +1,15 @@
-# Production
+# Production app overlay
 # Usage: docker compose -f ops/compose/docker-compose.yml -f ops/compose/docker-compose.prod.yml up -d
 services:
   geostat-app:
     build:
       target: production
       args:
-        VITE_API_URL: ${VITE_API_URL}
+        VITE_API_URL: ${VITE_API_URL:-}
     ports:
-      - "${HOST_PORT:-5171}:80"
+      - "${DEPLOY_HOST_PORT:-5171}:80"
+    env_file:
+      - ../config/geostat/.env.prod
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost/"]

@@ -1,0 +1,11 @@
+# Secrets — never commit the real .env (only .env.example is tracked).
+.env
+
+# Local Postgres data (if ever bind-mounted instead of the named volume).
+postgres/data/
+
+# pgAdmin local state (if ever bind-mounted).
+pgadmin/
+
+# DB env (secrets)
+config/db/.env

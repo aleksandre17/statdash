@@ -1,0 +1,27 @@
+services:
+  postgres:
+    # TimescaleDB-HA on PG16: ships timescaledb, ltree, pg_trgm, btree_gin/gist,
+    # unaccent, pg_stat_statements. Schema is owned by Flyway (services/flyway.yml),
+    # NOT by docker-entrypoint-initdb.d — so the init mount is deliberately absent.
+    image: timescale/timescaledb-ha:pg16
+    container_name: ${INFRA_PREFIX:-statdash}-postgres
+    ports:
+      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
+    env_file:
+      - ../../config/db/.env
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - infra-net
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${POSTGRES_USER:-statdash} -d ${POSTGRES_DB:-statdash}",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    # No mem_limit / cpus: timescaledb-ha tunes its own shared_buffers / workers.
+    restart: unless-stopped

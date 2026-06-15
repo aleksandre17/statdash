@@ -1,0 +1,10 @@
+; userlist.txt.example — pgBouncer auth file (referenced by pgbouncer.ini auth_file).
+; One line per role: "username" "SCRAM-or-md5-secret".
+;
+; Generate the SCRAM secret from Postgres (so it matches the server password):
+;   SELECT rolname, rolpassword FROM pg_authid WHERE rolname = 'statdash';
+; then copy the SCRAM-SHA-256$... value here, replacing the placeholder below.
+;
+;   cp ops/config/db/userlist.txt.example ops/config/db/userlist.txt   (gitignored)
+
+"statdash" "SCRAM-SHA-256$4096:REPLACE_WITH_SALT$REPLACE_WITH_STORED_KEY:REPLACE_WITH_SERVER_KEY"

@@ -1,19 +1,21 @@
-# Dev — auto-loaded with `docker compose up` (run from ops/compose/)
+# Dev — auto-merged on: docker compose -f ops/compose/docker-compose.yml up
 services:
   geostat-app:
     build:
       target: development
     ports:
-      - "5171:5171"
+      - "${DEPLOY_HOST_PORT:-5171}:5171"
     volumes:
       - ../..:/app
       - /app/node_modules
     environment:
-      - VITE_API_URL=${VITE_API_URL}
+      VITE_API_URL: ${VITE_API_URL:-}
+    env_file:
+      - ../config/geostat/.env.dev
     develop:
       watch:
         - action: sync
-          path: ../../apps/geostat/src
+          path: ../../platform/apps/geostat/src
           target: /app/apps/geostat/src
         - action: rebuild
-          path: ../../apps/geostat/package.json
+          path: ../../platform/apps/geostat/package.json

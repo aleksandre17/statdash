@@ -1,0 +1,28 @@
+# Infra base — network + volumes. Include service modules from services/*.yml
+# Usage (dev):
+#   docker compose \
+#     -f ops/compose/infra/docker-compose.base.yml \
+#     -f ops/compose/infra/services/postgres.yml \
+#     -f ops/compose/infra/services/pgadmin.yml \
+#     up -d
+# Usage (prod):
+#   docker compose \
+#     -f ops/compose/infra/docker-compose.base.yml \
+#     -f ops/compose/infra/services/postgres.yml \
+#     -f ops/compose/infra/docker-compose.prod.yml \
+#     up -d
+
+name: ${INFRA_COMPOSE_PROJECT:-statdash-infra}
+
+networks:
+  infra-net:
+    name: ${DOCKER_NETWORK:-statdash-net}
+
+volumes:
+  postgres_data:
+    name: statdash-pgdata
+  pgadmin_data:
+    name: statdash-pgadmin
+  # pgBouncer is effectively stateless; declared for parity / future cert mounts.
+  pgbouncer_data:
+    name: statdash-pgbouncer

@@ -1,0 +1,26 @@
+# Flyway — versioned schema migrations. The canonical schema source.
+# Runs `migrate` once Postgres is healthy, then exits 0 (restart: on-failure
+# retries only on error). Re-running is safe: Flyway skips already-applied
+# versions via its schema_history table.
+#
+# Usage (dev):
+#   docker compose \
+#     -f ops/compose/infra/docker-compose.base.yml \
+#     -f ops/compose/infra/services/postgres.yml \
+#     -f ops/compose/infra/services/flyway.yml \
+#     up -d
+services:
+  flyway:
+    image: flyway/flyway:10-alpine
+    container_name: statdash-flyway
+    command: -url=jdbc:postgresql://postgres:5432/${POSTGRES_DB:-statdash} -user=${POSTGRES_USER:-statdash} -password=${POSTGRES_PASSWORD} -locations=filesystem:/flyway/sql migrate
+    env_file:
+      - ../../config/db/.env
+    volumes:
+      - ../../postgres/migrations:/flyway/sql:ro
+    networks:
+      - infra-net
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: on-failure

@@ -1,0 +1,43 @@
+; ════════════════════════════════════════════════════════════════════════
+; pgbouncer.ini.example — reference config for the statdash pgBouncer pool
+; ════════════════════════════════════════════════════════════════════════
+; The edoburu/pgbouncer image generates this file from the DB_* / POOL_* env
+; vars in services/pgbouncer.yml, so you normally do NOT need to mount this.
+; It is kept as a reference for a hand-rolled / prod pgBouncer deployment and
+; to document the exact pool settings.
+;
+;   cp ops/config/db/pgbouncer.ini.example ops/config/db/pgbouncer.ini   (gitignored)
+;   cp ops/config/db/userlist.txt.example  ops/config/db/userlist.txt    (gitignored)
+
+[databases]
+; client db name = server connection. Points pgBouncer at the statdash Postgres.
+statdash = host=statdash-postgres port=5432 dbname=statdash
+
+[pgbouncer]
+listen_addr = 0.0.0.0
+listen_port = 5432
+
+; SCRAM auth, validated against userlist.txt (see below).
+auth_type = scram-sha-256
+auth_file = /etc/pgbouncer/userlist.txt
+
+; transaction pooling — a server connection is held only for the duration of a
+; transaction, then returned to the pool. Best multiplexing for short web/API
+; queries. NOTE: incompatible with session-level features (SET, advisory locks,
+; LISTEN/NOTIFY, server-side prepared statements without max_prepared_statements).
+pool_mode = transaction
+
+; up to 100 client connections share 20 server connections per (db,user) pair.
+max_client_conn    = 100
+default_pool_size  = 20
+min_pool_size      = 5
+reserve_pool_size  = 5
+reserve_pool_timeout = 3
+
+; admin / stats access (psql -p 6432 pgbouncer).
+admin_users = statdash
+stats_users = statdash
+
+server_idle_timeout = 600
+log_connections     = 1
+log_disconnections  = 1

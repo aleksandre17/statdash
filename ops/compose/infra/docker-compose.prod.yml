@@ -1,0 +1,5 @@
+# Prod infra overrides — no pgAdmin, postgres restart:always, no host port binding
+services:
+  postgres:
+    restart: always
+    ports: []

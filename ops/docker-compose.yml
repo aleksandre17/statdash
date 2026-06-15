@@ -1,0 +1,66 @@
+# ════════════════════════════════════════════════════════════════════════
+# statdash — database infrastructure (PostgreSQL + pgAdmin)
+# ════════════════════════════════════════════════════════════════════════
+# Standalone DB stack for the statdash-platform. Separate from the app
+# compose stack in ./compose/. Run from this directory:
+#   cp .env.example .env   # then edit secrets
+#   docker compose up -d
+#
+# Init scripts in ./postgres/init/ run ONCE on first boot (empty volume),
+# in lexical order (00 → 04). Reset with: docker compose down -v
+
+name: statdash
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: statdash-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB:       ${POSTGRES_DB}
+      POSTGRES_USER:     ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      # Persistent data — survives container recreation; wiped only by `down -v`.
+      - statdash-pgdata:/var/lib/postgresql/data
+      # Init scripts — mounted read-only; postgres runs them on first boot only.
+      - ./postgres/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      # pg_isready against the seeded DB/user — gates dependents until ready.
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - statdash-net
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: statdash-pgadmin
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL:    ${PGADMIN_DEFAULT_EMAIL}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
+      PGADMIN_LISTEN_PORT:      ${PGADMIN_LISTEN_PORT:-5050}
+    ports:
+      - "${PGADMIN_LISTEN_PORT:-5050}:${PGADMIN_LISTEN_PORT:-5050}"
+    volumes:
+      - statdash-pgadmin:/var/lib/pgadmin
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - statdash-net
+
+networks:
+  statdash-net:
+    name: statdash-net
+
+volumes:
+  statdash-pgdata:
+    name: statdash-pgdata
+  statdash-pgadmin:
+    name: statdash-pgadmin
