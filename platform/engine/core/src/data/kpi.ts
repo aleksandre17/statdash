@@ -18,6 +18,7 @@ import { storeVal }            from './store'
 import type { SectionContext }  from '../core/context'
 import type { KpiDef }          from '../config/kpi'
 import { getFormatter }         from './transform'
+import { resolveTemplate }      from '../config/section'
 
 // ── Types ─────────────────────────────────────────────────────────────
 
@@ -175,13 +176,13 @@ export function interpretKpi(
   const formattedValue = resolveValue(spec.value, ctx, store)
   const trend          = spec.trend ? resolveTrend(spec.trend, ctx, store) : null
   return {
-    label:           spec.label,
+    label:           resolveTemplate(spec.label, ctx),
     value:           formattedValue,
     unit:            spec.unit,
     color:           spec.color,
     trend:           trend?.dir ?? 'flat',
     trendValue:      trend?.value ?? '',
-    trendSub:        spec.trendSub ?? '',
+    trendSub:        spec.trendSub ? resolveTemplate(spec.trendSub, ctx) : '',
     preliminary:     spec.preliminary,
     note:            spec.note,
     methodologyUrl:  spec.methodologyUrl,

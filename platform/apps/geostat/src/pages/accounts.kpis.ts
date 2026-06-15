@@ -1,10 +1,4 @@
-import { codesOf }              from '@geostat/engine'
-import { ACCOUNTS_CLASSIFIERS } from '@/data/accounts/store'
-import type { KpiSpec }         from '@geostat/react'
-
-const _years     = (codesOf(ACCOUNTS_CLASSIFIERS.time) as number[]).slice().sort((a, b) => a - b)
-const FIRST_YEAR = _years[0]
-const LAST_YEAR  = _years[_years.length - 1]
+import type { KpiSpec } from '@geostat/react'
 
 export const ACCOUNTS_KPIS: KpiSpec[] = [
 
@@ -38,29 +32,29 @@ export const ACCOUNTS_KPIS: KpiSpec[] = [
   {
     id: 'b1g-cagr', label: 'დამატებული ღირებულება — საშუალო წლიური ზრდა',
     unit: '%', color: '#00A896', mode: 'range',
-    value: { type: 'cagr', measure: 'B1G', from: FIRST_YEAR, to: LAST_YEAR },
-    trend: { type: 'cagr', measure: 'B1G', from: FIRST_YEAR, to: LAST_YEAR },
-    trendSub: `${FIRST_YEAR}–${LAST_YEAR}`,
+    value: { type: 'cagr', measure: 'B1G', from: { $ctx: 'fromYear' }, to: { $ctx: 'toYear' } },
+    trend: { type: 'cagr', measure: 'B1G', from: { $ctx: 'fromYear' }, to: { $ctx: 'toYear' } },
+    trendSub: '{fromYear}–{toYear}',
   },
   {
     id: 'p1-cagr', label: 'გამოშვება — საშუალო წლიური ზრდა',
     unit: '%', color: '#0080BE', mode: 'range',
-    value: { type: 'cagr', measure: 'P1',  from: FIRST_YEAR, to: LAST_YEAR },
-    trend: { type: 'cagr', measure: 'P1',  from: FIRST_YEAR, to: LAST_YEAR },
-    trendSub: `${FIRST_YEAR}–${LAST_YEAR}`,
+    value: { type: 'cagr', measure: 'P1',  from: { $ctx: 'fromYear' }, to: { $ctx: 'toYear' } },
+    trend: { type: 'cagr', measure: 'P1',  from: { $ctx: 'fromYear' }, to: { $ctx: 'toYear' } },
+    trendSub: '{fromYear}–{toYear}',
   },
   {
     id: 'labor-share', label: 'შრომის წილი დამატებულ ღირებულებაში',
     unit: '%', color: '#4ECDC4', mode: 'range',
-    value: { type: 'share', num: { measure: 'D1', time: LAST_YEAR }, denom: { measure: 'B1G', time: LAST_YEAR } },
+    value: { type: 'share', num: { measure: 'D1', time: { $ctx: 'toYear' } }, denom: { measure: 'B1G', time: { $ctx: 'toYear' } } },
     trend: { type: 'static', value: 'სტაბილური', dir: 'flat' },
-    trendSub: String(LAST_YEAR),
+    trendSub: '{toYear}',
   },
   {
     id: 'b9', label: 'წმინდა დაკრედიტება/სესხება  (B9)',
     unit: 'მლნ ₾', color: '#E76F51', mode: 'range',
-    value: { type: 'point', measure: 'B9', format: 'mln_gel', abs: true, time: LAST_YEAR },
+    value: { type: 'point', measure: 'B9', format: 'mln_gel', abs: true, time: { $ctx: 'toYear' } },
     trend: { type: 'static', value: '−', dir: 'down' },
-    trendSub: String(LAST_YEAR),
+    trendSub: '{toYear}',
   },
 ]
