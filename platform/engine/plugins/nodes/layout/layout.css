@@ -7,7 +7,11 @@
    rules respond to the node's own available space — not the global
    viewport. Critical for nested layouts (columns inside card, etc).
 
-   Config  →  data-cols / data-cols-md / data-cols-sm  →  CSS
+   6-point breakpoint scale (matches @geostat/styles tokens):
+     xs≤480  sm≤640  md≤768  lg≤1024  xl≤1280  2xl≤1536
+
+   Config  →  data-cols / data-cols-xl / data-cols-lg /
+              data-cols-md / data-cols-sm / data-cols-xs  →  CSS
    ================================================================ */
 
 /* ── Container contexts (zero-visual, sizing scope only) ─────── */
@@ -29,18 +33,44 @@
 .layout-columns[data-cols="5"] { grid-template-columns: repeat(5, 1fr); }
 .layout-columns[data-cols="6"] { grid-template-columns: repeat(6, 1fr); }
 
-/* md — responds to THIS component's container width, not viewport */
-@container cols (max-width: 960px) {
+/* xl (≤1280px) — responds to THIS component's container width, not viewport */
+@container cols (max-width: 1280px) {
+  .layout-columns[data-cols-xl="1"] { grid-template-columns: 1fr; }
+  .layout-columns[data-cols-xl="2"] { grid-template-columns: repeat(2, 1fr); }
+  .layout-columns[data-cols-xl="3"] { grid-template-columns: repeat(3, 1fr); }
+  .layout-columns[data-cols-xl="4"] { grid-template-columns: repeat(4, 1fr); }
+  .layout-columns[data-cols-xl="5"] { grid-template-columns: repeat(5, 1fr); }
+  .layout-columns[data-cols-xl="6"] { grid-template-columns: repeat(6, 1fr); }
+}
+
+/* lg (≤1024px) */
+@container cols (max-width: 1024px) {
+  .layout-columns[data-cols-lg="1"] { grid-template-columns: 1fr; }
+  .layout-columns[data-cols-lg="2"] { grid-template-columns: repeat(2, 1fr); }
+  .layout-columns[data-cols-lg="3"] { grid-template-columns: repeat(3, 1fr); }
+  .layout-columns[data-cols-lg="4"] { grid-template-columns: repeat(4, 1fr); }
+  .layout-columns[data-cols-lg="5"] { grid-template-columns: repeat(5, 1fr); }
+  .layout-columns[data-cols-lg="6"] { grid-template-columns: repeat(6, 1fr); }
+}
+
+/* md (≤768px) — breakpoint moved from 960px to 768px per @geostat/styles update */
+@container cols (max-width: 768px) {
   .layout-columns[data-cols-md="1"] { grid-template-columns: 1fr; }
   .layout-columns[data-cols-md="2"] { grid-template-columns: repeat(2, 1fr); }
   .layout-columns[data-cols-md="3"] { grid-template-columns: repeat(3, 1fr); }
   .layout-columns[data-cols-md="4"] { grid-template-columns: repeat(4, 1fr); }
 }
 
-/* sm */
+/* sm (≤640px) */
 @container cols (max-width: 640px) {
   .layout-columns[data-cols-sm="1"] { grid-template-columns: 1fr; }
   .layout-columns[data-cols-sm="2"] { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* xs (≤480px) */
+@container cols (max-width: 480px) {
+  .layout-columns[data-cols-xs="1"] { grid-template-columns: 1fr; }
+  .layout-columns[data-cols-xs="2"] { grid-template-columns: repeat(2, 1fr); }
 }
 
 /* Viewport fallback — ultra-narrow or pre-container-query browsers */
@@ -56,15 +86,17 @@
   align-items:           start;
 }
 
-@container grid (max-width: 960px) { .layout-grid { grid-template-columns: repeat(6, 1fr); } }
-@container grid (max-width: 640px) { .layout-grid { grid-template-columns: 1fr; } }
-@media      (max-width: 480px)     { .layout-grid { grid-template-columns: 1fr; } }
+@container grid (max-width: 1024px) { .layout-grid { grid-template-columns: repeat(6, 1fr); } }
+@container grid (max-width: 768px)  { .layout-grid { grid-template-columns: repeat(6, 1fr); } }
+@container grid (max-width: 640px)  { .layout-grid { grid-template-columns: 1fr; } }
+@media      (max-width: 480px)      { .layout-grid { grid-template-columns: 1fr; } }
 
 /* ── Stack (flex: row | column) ──────────────────────────────── */
 .layout-stack {
-  display:   flex;
-  gap:       var(--layout-gap, var(--spacing-md, 1rem));
-  flex-wrap: var(--stack-wrap, nowrap);
+  container-type: inline-size;
+  display:        flex;
+  gap:            var(--layout-gap, var(--spacing-md, 1rem));
+  flex-wrap:      var(--stack-wrap, nowrap);
 }
 
 .layout-stack[data-dir="column"] { flex-direction: column; }

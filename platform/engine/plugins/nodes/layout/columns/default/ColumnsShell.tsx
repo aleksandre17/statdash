@@ -13,8 +13,11 @@ export const ColumnsShell = defineShell<ColumnsNode>({
         <div
           className="layout-columns"
           data-cols={cols.default}
+          data-cols-xl={cols.xl}
+          data-cols-lg={cols.lg}
           data-cols-md={cols.md}
           data-cols-sm={cols.sm}
+          data-cols-xs={cols.xs}
           style={gapVars}
         >
           {children.defs.map((d, i) => (

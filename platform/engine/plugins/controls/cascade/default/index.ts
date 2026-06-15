@@ -12,7 +12,7 @@ export const cascadeSlice: FilterControlSlice<ParamCascadeNode, string> = {
   },
   defaultValue: (config) => config.default ?? '',
   codec: {
-    toUrl:     v => v || (null as unknown as string),
+    toUrl:     v => v || null,
     fromUrl:   s => s ?? null,
     isEmpty:   v => v == null || v === '',
     normalize: raw => String(raw ?? ''),

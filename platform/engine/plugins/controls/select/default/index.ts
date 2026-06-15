@@ -16,7 +16,7 @@ export const selectSlice: FilterControlSlice<ParamSelectNode, string> = {
     return ''
   },
   codec: {
-    toUrl:     v => v || null as unknown as string,
+    toUrl:     v => v || null,
     fromUrl:   s => s,
     isEmpty:   v => v == null || v === '',
     normalize: raw => String(raw ?? ''),

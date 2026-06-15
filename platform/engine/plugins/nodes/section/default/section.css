@@ -5,11 +5,12 @@
    ================================================================ */
 
 .section {
-  background: #fff;
-  border-radius: 14px;
-  border: 1px solid #E8EEED;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
-  overflow: hidden;
+  container-type: inline-size;
+  background:     #fff;
+  border-radius:  14px;
+  border:         1px solid #E8EEED;
+  box-shadow:     0 1px 3px rgba(0,0,0,0.04);
+  overflow:       hidden;
 }
 
 /* Compact variant — reduced header padding and title size */

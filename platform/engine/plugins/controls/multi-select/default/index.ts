@@ -12,7 +12,7 @@ export const multiSelectSlice: FilterControlSlice<ParamMultiSelectNode, string[]
   },
   defaultValue: (config) => config.default ? config.default.split(',').filter(Boolean) : [],
   codec: {
-    toUrl:     v => v.length > 0 ? v.join(',') : null as unknown as string,
+    toUrl:     v => v.length > 0 ? v.join(',') : null,
     fromUrl:   s => s ? s.split(',').filter(Boolean) : null,
     isEmpty:   v => !v || v.length === 0,
     normalize: raw => Array.isArray(raw) ? raw.map(String) : [],
