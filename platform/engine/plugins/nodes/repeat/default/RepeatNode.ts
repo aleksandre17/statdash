@@ -1,4 +1,4 @@
-import type { NodeBase, NodeDef, SlotDef } from '@geostat/react/engine'
+import type { NodeBase, NodeDef, SlotDef, PropSchema } from '@geostat/react/engine'
 
 // ── RepeatNode — Builder.io RepeatData pattern ───────────────────────────
 //
@@ -21,14 +21,10 @@ export interface RepeatNode extends NodeBase {
   children: NodeDef[]
 }
 
-export const RepeatSchema = {
-  type: 'object',
-  required: ['as'],
-  properties: {
-    as:   { type: 'string', title: 'ცვლადის სახელი' },
-    each: { type: 'array',  title: 'სტატიკური სია', items: { type: 'object' } },
-  },
-} as const
+export const RepeatSchema: PropSchema = [
+  { field: 'as',   type: 'string', label: 'ცვლადის სახელი', required: true },
+  { field: 'each', type: 'array',  label: 'სტატიკური სია' },
+]
 
 export const RepeatDefaults: Partial<RepeatNode> = {
   as: 'item',

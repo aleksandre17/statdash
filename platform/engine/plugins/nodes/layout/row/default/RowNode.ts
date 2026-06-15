@@ -1,4 +1,4 @@
-import type { NodeBase, NodeDef, ViewParams, SlotDef } from '@geostat/react/engine'
+import type { NodeBase, NodeDef, ViewParams, SlotDef, PropSchema } from '@geostat/react/engine'
 
 export interface RowNode extends NodeBase {
   type:  'row'
@@ -6,12 +6,9 @@ export interface RowNode extends NodeBase {
   view?: Pick<ViewParams, 'visibleWhen' | 'cols'>
 }
 
-export const RowSchema = {
-  type: 'object',
-  properties: {
-    'view.cols': { type: ['string', 'number'], title: 'სვეტების რაოდენობა' },
-  },
-} as const
+export const RowSchema: PropSchema = [
+  { field: 'view.cols', type: 'string', label: 'სვეტების რაოდენობა' },
+]
 
 export const RowDefaults: Partial<RowNode> = {}
 

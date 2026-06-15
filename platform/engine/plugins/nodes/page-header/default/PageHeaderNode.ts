@@ -1,4 +1,4 @@
-import type { NodeBase, PropertyGroup } from '@geostat/react/engine'
+import type { NodeBase, PropertyGroup, PropSchema } from '@geostat/react/engine'
 
 export interface PageHeaderNode extends NodeBase {
   type:    'page-header'
@@ -7,15 +7,11 @@ export interface PageHeaderNode extends NodeBase {
   crumbs?: { label: string; href?: string }[]
 }
 
-export const PageHeaderSchema = {
-  type: 'object',
-  required: ['title'],
-  properties: {
-    title:  { type: 'string',  title: 'სათაური' },
-    badge:  { type: 'string',  title: 'Badge' },
-    crumbs: { type: 'array',   title: 'Breadcrumbs' },
-  },
-} as const
+export const PageHeaderSchema: PropSchema = [
+  { field: 'title',  type: 'string', label: 'სათაური',    required: true },
+  { field: 'badge',  type: 'string', label: 'Badge' },
+  { field: 'crumbs', type: 'array',  label: 'Breadcrumbs' },
+]
 
 export const PageHeaderGroups: PropertyGroup[] = [
   { label: { ka: 'შიგთავსი', en: 'Content' }, fields: ['title', 'badge', 'crumbs'] },

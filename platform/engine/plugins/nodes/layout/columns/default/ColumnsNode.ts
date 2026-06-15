@@ -1,4 +1,4 @@
-import type { NodeBase, NodeDef, SlotDef, PropertyGroup } from '@geostat/react/engine'
+import type { NodeBase, NodeDef, SlotDef, PropertyGroup, PropSchema } from '@geostat/react/engine'
 import type { ResponsiveVal }                             from '@geostat/styles'
 
 export interface ColumnsNode extends NodeBase {
@@ -8,13 +8,10 @@ export interface ColumnsNode extends NodeBase {
   children: NodeDef[]
 }
 
-export const ColumnsSchema = {
-  type: 'object',
-  properties: {
-    count: { type: 'number', title: 'სვეტები', default: 2 },
-    gap:   { type: 'string', title: 'Gap',     default: 'var(--spacing-md)' },
-  },
-} as const
+export const ColumnsSchema: PropSchema = [
+  { field: 'count', type: 'number', label: 'სვეტები', default: 2 },
+  { field: 'gap',   type: 'string', label: 'Gap',     default: 'var(--spacing-md)' },
+]
 
 export const ColumnsDefaults: Partial<ColumnsNode> = { count: 2 }
 

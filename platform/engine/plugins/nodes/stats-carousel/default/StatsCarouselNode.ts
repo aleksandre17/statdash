@@ -1,4 +1,4 @@
-import type { NodeBase, PropertyGroup, SlotDef, LocaleString } from '@geostat/react/engine'
+import type { NodeBase, PropertyGroup, SlotDef, LocaleString, PropSchema } from '@geostat/react/engine'
 
 export interface StatItem {
   icon?:       string
@@ -22,42 +22,10 @@ export interface StatsCarouselNode extends NodeBase {
   autoplayMs?: number
 }
 
-export const StatsCarouselSchema = {
-  type: 'object',
-  required: ['slides'],
-  properties: {
-    autoplayMs: { type: 'number', title: 'ავტოთამაში (ms)', default: 7000 },
-    slides: {
-      type:  'array',
-      title: 'სლაიდები',
-      items: {
-        type: 'object',
-        required: ['tab', 'title', 'stats'],
-        properties: {
-          tab:   { type: ['string', 'object'], title: 'ჩანართი' },
-          title: { type: ['string', 'object'], title: 'სათაური' },
-          stats: {
-            type:  'array',
-            title: 'ინდიკატორები',
-            items: {
-              type: 'object',
-              required: ['label', 'value', 'unit'],
-              properties: {
-                icon:       { type: 'string',             title: 'ემოჯი / სიმბოლო' },
-                iconBg:     { type: 'string',             title: 'იკონის ფონი'      },
-                label:      { type: ['string', 'object'], title: 'ეტიკეტი'          },
-                value:      { type: 'string',             title: 'მნიშვნელობა'      },
-                unit:       { type: 'string',             title: 'ერთეული'          },
-                change:     { type: 'number',             title: 'ცვლილება (%)'     },
-                changeText: { type: ['string', 'object'], title: 'ცვლილების ტექსტი' },
-              },
-            },
-          },
-        },
-      },
-    },
-  },
-} as const
+export const StatsCarouselSchema: PropSchema = [
+  { field: 'autoplayMs', type: 'number', label: 'ავტოთამაში (ms)', default: 7000 },
+  { field: 'slides',     type: 'array',  label: 'სლაიდები',        required: true },
+]
 
 export const StatsCarouselDefaults: Partial<StatsCarouselNode> = {
   autoplayMs: 7000,

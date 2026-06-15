@@ -1,4 +1,4 @@
-import type { NodeBase, NodeDef, SlotDef, PropertyGroup } from '@geostat/react/engine'
+import type { NodeBase, NodeDef, SlotDef, PropertyGroup, PropSchema } from '@geostat/react/engine'
 import type { ResponsiveVal }                             from '@geostat/styles'
 
 export interface StackNode extends NodeBase {
@@ -9,14 +9,20 @@ export interface StackNode extends NodeBase {
   children:   NodeDef[]
 }
 
-export const StackSchema = {
-  type: 'object',
-  properties: {
-    direction: { type: 'string', enum: ['column', 'row'], title: 'მიმართულება', default: 'column' },
-    gap:       { type: 'string', title: 'Gap', default: 'var(--spacing-md)' },
-    wrap:      { type: 'boolean', title: 'Wrap', default: false },
+export const StackSchema: PropSchema = [
+  {
+    field:   'direction',
+    type:    'string',
+    label:   'მიმართულება',
+    default: 'column',
+    options: [
+      { value: 'column', label: 'Column' },
+      { value: 'row',    label: 'Row' },
+    ],
   },
-} as const
+  { field: 'gap',  type: 'string',  label: 'Gap',  default: 'var(--spacing-md)' },
+  { field: 'wrap', type: 'boolean', label: 'Wrap', default: false },
+]
 
 export const StackDefaults: Partial<StackNode> = { direction: 'column' }
 

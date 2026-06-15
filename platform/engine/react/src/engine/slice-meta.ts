@@ -57,6 +57,68 @@ export interface ValidationError {
   level:   'error' | 'warning'
 }
 
+// ── PropField — typed property descriptor (Constructor property panel) ──
+//
+//  Replaces `schema?: object` with a typed field-descriptor array.
+//  Constructor reads PropSchema → generates property panel UI per slice.
+//  Engine reads PropSchema → validates stored config on load.
+//
+//  Reference: roadmap Layer 9.1 [N10, N11].
+//
+
+/** Primitive and rich value types supported in a PropField. */
+export type PropFieldType =
+  | 'string'        // plain text
+  | 'number'        // numeric
+  | 'boolean'       // toggle / checkbox
+  | 'object'        // generic nested object (Constructor: raw JSON sub-editor)
+  | 'array'         // generic array (Constructor: list editor)
+  | 'LocaleString'  // string | Record<string,string> — bilingual text
+  | 'DataSpec'      // engine DataSpec union
+  | 'ChartDef'      // chart definition (ChartDef from @geostat/charts)
+  | 'color'         // CSS color picker
+  | 'icon'          // icon-picker
+
+/** One option for an enum-like select field. */
+export interface PropFieldOption {
+  value: string
+  label: LocaleString
+}
+
+/** Validation constraints on a PropField value. */
+export interface PropFieldValidation {
+  min?:     number   // number field: minimum value
+  max?:     number   // number field: maximum value
+  pattern?: string   // string field: regex constraint
+}
+
+/**
+ * Typed descriptor for one property field in a slice's config form.
+ *
+ * `field` is a dot-path into the node config ('title', 'view.width').
+ * `group` references a PropertyGroup label — omit if ungrouped.
+ */
+export interface PropField {
+  field:       string
+  type:        PropFieldType
+  label:       LocaleString
+  default?:    unknown
+  required?:   boolean
+  /** Allowed values for string fields; Constructor renders a select. */
+  options?:    PropFieldOption[]
+  validation?: PropFieldValidation
+  /**
+   * Conditional visibility — evaluated against other field values.
+   * e.g. "chartType === 'bar'" — shows this field only when chartType is bar.
+   */
+  showWhen?:   string
+  /** References a PropertyGroup label; field is placed in that accordion section. */
+  group?:      string
+}
+
+/** Ordered list of typed field descriptors for a slice's property panel. */
+export type PropSchema = PropField[]
+
 // ── Slice META — three distinct node contracts per sliceType ──────────
 
 /**
@@ -72,7 +134,7 @@ export interface PageSliceMeta {
   icon?:            string
   category?:        SliceCategory
   preview?:         string
-  schema?:          object
+  schema?:          PropSchema
   defaults?:        Record<string, unknown>
   groups?:          PropertyGroup[]
   slots?:           Record<string, SlotDef>
@@ -101,7 +163,7 @@ export interface PanelSliceMeta {
   icon?:            string
   category:         SliceCategory     // required on panels; expected 'data'
   preview?:         string
-  schema?:          object
+  schema?:          PropSchema
   defaults?:        Record<string, unknown>
   groups?:          PropertyGroup[]
   canHaveChildren?: false             // literal false — panels are always leaves
@@ -122,7 +184,7 @@ export interface NodeSliceMeta {
   icon?:            string
   category?:        SliceCategory
   preview?:         string
-  schema?:          object
+  schema?:          PropSchema
   defaults?:        Record<string, unknown>
   groups?:          PropertyGroup[]
   slots?:           Record<string, SlotDef>
@@ -166,7 +228,7 @@ export interface ChromeSliceMeta {
   preview?:      string
   // ── Constructor chrome editor
   icon?:         string
-  schema?:       object
+  schema?:       PropSchema
   version?:      number
   // ── Layout defaults — where this slot lives when no override is set
   /** Default layout region: 'top' | 'bottom' | 'left' | 'right' | 'overlay' | 'inline'. */

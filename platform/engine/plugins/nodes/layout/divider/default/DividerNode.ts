@@ -1,16 +1,23 @@
-import type { NodeBase, PropertyGroup } from '@geostat/react/engine'
+import type { NodeBase, PropertyGroup, PropSchema } from '@geostat/react/engine'
 
 export interface DividerNode extends NodeBase {
   type:     'divider'
   variant?: 'solid' | 'dashed' | 'invisible'
 }
 
-export const DividerSchema = {
-  type: 'object',
-  properties: {
-    variant: { type: 'string', enum: ['solid', 'dashed', 'invisible'], title: 'სტილი', default: 'solid' },
+export const DividerSchema: PropSchema = [
+  {
+    field:   'variant',
+    type:    'string',
+    label:   'სტილი',
+    default: 'solid',
+    options: [
+      { value: 'solid',     label: 'Solid' },
+      { value: 'dashed',    label: 'Dashed' },
+      { value: 'invisible', label: 'Invisible' },
+    ],
   },
-} as const
+]
 
 export const DividerDefaults: Partial<DividerNode> = { variant: 'solid' }
 

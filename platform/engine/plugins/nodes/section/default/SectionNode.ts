@@ -1,4 +1,4 @@
-import type { NodeBase, NodeDef, ViewParams, PropertyGroup, SlotDef } from '@geostat/react/engine'
+import type { NodeBase, NodeDef, ViewParams, PropertyGroup, SlotDef, PropSchema } from '@geostat/react/engine'
 import type { DataSpec }                                               from '@geostat/engine'
 
 export interface SectionNode extends NodeBase {
@@ -14,17 +14,13 @@ export interface SectionNode extends NodeBase {
   prependLabel?: string
 }
 
-export const SectionSchema = {
-  type: 'object',
-  required: ['title'],
-  properties: {
-    title:        { type: 'string',  title: 'სათაური' },
-    label:        { type: 'string',  title: 'ლეიბლი' },
-    color:        { type: 'string',  title: 'ფერი' },
-    anchor:       { type: 'string',  title: 'Anchor ID' },
-    prependLabel: { type: 'string',  title: 'Drill Label' },
-  },
-} as const
+export const SectionSchema: PropSchema = [
+  { field: 'title',        type: 'string', label: 'სათაური',    required: true },
+  { field: 'label',        type: 'string', label: 'ლეიბლი' },
+  { field: 'color',        type: 'color',  label: 'ფერი' },
+  { field: 'anchor',       type: 'string', label: 'Anchor ID' },
+  { field: 'prependLabel', type: 'string', label: 'Drill Label' },
+]
 
 export const SectionDefaults: Partial<SectionNode> = {
   view: { toggle: true, defaultOpen: true },

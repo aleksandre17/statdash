@@ -27,6 +27,7 @@ import type {
   SlotDef,
   ValidationError,
   ChildrenArg,
+  PropSchema,
 }                                                        from './types'
 
 type AnyRenderer      = (def: NodeBase, ctx: RenderContext, children: ChildrenArg) => ReactNode
@@ -38,7 +39,7 @@ interface StoredMeta extends Record<string, unknown> {
   label?:           unknown
   icon?:            string
   category?:        string
-  schema?:          object
+  schema?:          PropSchema
   preview?:         string
   transparent?:     boolean
   canHaveChildren?: boolean
@@ -65,7 +66,7 @@ export class NodeRegistry {
       label?:           unknown
       icon?:            string
       category?:        string
-      schema?:          object
+      schema?:          PropSchema
       preview?:         string
       transparent?:     boolean
       canHaveChildren?: boolean
@@ -181,7 +182,44 @@ export class NodeRegistry {
    * JSON Schema for a type's config form (null → Constructor uses raw JSON editor).
    * Progressive enhancement per 15-constructor.md §3.
    */
-  getSchema(type: string, variant = 'default'): object | null {
+  getSchema(type: string, variant = 'default'): PropSchema | null {
     return this.getMeta(type, variant)?.schema ?? null
   }
+
+  // ── Registry manifest — Constructor build-time discovery ──────────
+
+  /**
+   * Emits the full builder manifest as JSON-serializable data.
+   * Constructor reads this to build the palette + property panel system.
+   * Called after setupRegistrations() so all slices are registered.
+   *
+   * Reference: roadmap Layer 9.1 [N10, N11], 15-constructor.md §3.
+   */
+  describeRegistry(): RegistryManifest {
+    const entries = this.list()
+    return {
+      palette: entries.map(({ type, variant, label, icon, category }) =>
+        ({ type, variant, label, icon, category }),
+      ),
+      propertySchemas: Object.fromEntries(
+        entries
+          .filter(e => e.schema != null)
+          .map(e => [`${e.type}:${e.variant}`, e.schema as PropSchema]),
+      ),
+    }
+  }
+}
+
+/** JSON-serializable manifest emitted by `nodeRegistry.describeRegistry()`. */
+export interface RegistryManifest {
+  /** All registered node/panel/page entries with display metadata. */
+  palette: Array<{
+    type:      string
+    variant:   string
+    label?:    unknown
+    icon?:     string
+    category?: string
+  }>
+  /** Typed property schemas keyed by `${type}:${variant}`. */
+  propertySchemas: Record<string, PropSchema>
 }

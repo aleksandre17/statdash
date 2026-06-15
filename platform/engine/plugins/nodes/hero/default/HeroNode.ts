@@ -1,4 +1,4 @@
-import type { NodeBase, PropertyGroup, SlotDef, LocaleString } from '@geostat/react/engine'
+import type { NodeBase, PropertyGroup, SlotDef, LocaleString, PropSchema } from '@geostat/react/engine'
 
 export interface HeroCardDef {
   id:     string
@@ -16,30 +16,11 @@ export interface HeroNode extends NodeBase {
   cards:     HeroCardDef[]
 }
 
-export const HeroSchema = {
-  type: 'object',
-  required: ['title', 'cards'],
-  properties: {
-    title:    { type: ['string', 'object'], title: 'სათაური' },
-    subtitle: { type: ['string', 'object'], title: 'ქვესათაური' },
-    cards: {
-      type:  'array',
-      title: 'ბარათები',
-      items: {
-        type: 'object',
-        required: ['id', 'title', 'color', 'img', 'pageBg'],
-        properties: {
-          id:     { type: 'string',              title: 'ID' },
-          title:  { type: ['string', 'object'],  title: 'სათაური' },
-          sub:    { type: ['string', 'object'],  title: 'ქვეტექსტი' },
-          color:  { type: 'string',              title: 'ბეჯის ფერი' },
-          img:    { type: 'string',              title: 'სურათი (URL)' },
-          pageBg: { type: 'string',              title: 'გვერდის ფონი (gradient)' },
-        },
-      },
-    },
-  },
-} as const
+export const HeroSchema: PropSchema = [
+  { field: 'title',    type: 'LocaleString', label: 'სათაური',    required: true },
+  { field: 'subtitle', type: 'LocaleString', label: 'ქვესათაური' },
+  { field: 'cards',    type: 'array',        label: 'ბარათები',   required: true },
+]
 
 export const HeroDefaults: Partial<HeroNode> = {
   title:    { ka: '', en: '' },

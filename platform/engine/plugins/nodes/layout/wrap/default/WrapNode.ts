@@ -1,4 +1,4 @@
-import type { NodeBase, NodeDef, SlotDef } from '@geostat/react/engine'
+import type { NodeBase, NodeDef, SlotDef, PropSchema } from '@geostat/react/engine'
 import type { NodeStyles }                 from '@geostat/styles'
 
 // Transparent layout node — distributes styles to all direct children.
@@ -10,12 +10,9 @@ export interface WrapNode extends NodeBase {
   children: NodeDef[]
 }
 
-export const WrapSchema = {
-  type: 'object',
-  properties: {
-    styles: { type: 'object', title: 'სტილები' },
-  },
-} as const
+export const WrapSchema: PropSchema = [
+  { field: 'styles', type: 'object', label: 'სტილები' },
+]
 
 export const WrapSlots: Record<string, SlotDef> = {
   children: {

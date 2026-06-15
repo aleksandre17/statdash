@@ -1,4 +1,4 @@
-import type { NodeBase } from '@geostat/react/engine'
+import type { NodeBase, PropSchema } from '@geostat/react/engine'
 import type { ModeId }   from '@geostat/engine'
 
 export interface ModeBarNode extends NodeBase {
@@ -7,14 +7,10 @@ export interface ModeBarNode extends NodeBase {
   modes: ModeId[]
 }
 
-export const ModeBarSchema = {
-  type: 'object',
-  required: ['modes'],
-  properties: {
-    modes: { type: 'array',  title: 'Mode IDs' },
-    key:   { type: 'string', title: 'Param Key' },
-  },
-} as const
+export const ModeBarSchema: PropSchema = [
+  { field: 'modes', type: 'array',  label: 'Mode IDs', required: true },
+  { field: 'key',   type: 'string', label: 'Param Key' },
+]
 
 declare module '@geostat/react/engine' {
   interface NodeTypeMap { 'mode-bar': ModeBarNode }

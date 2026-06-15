@@ -1,4 +1,4 @@
-import type { NodeBase, NodeDef, ViewParams, PropertyGroup, SlotDef } from '@geostat/react/engine'
+import type { NodeBase, NodeDef, ViewParams, PropertyGroup, SlotDef, PropSchema } from '@geostat/react/engine'
 import type { DataSpec }                                               from '@geostat/engine'
 
 export interface GeorgraphNode extends NodeBase {
@@ -20,18 +20,15 @@ export interface GeorgraphNode extends NodeBase {
   maxSelect?:       number
 }
 
-export const GeorgraphSchema = {
-  type: 'object',
-  required: ['title', 'geoJsonUrl', 'paramKey', 'isoField', 'geoCodeMap'],
-  properties: {
-    title:      { type: 'string', title: 'სათაური' },
-    geoJsonUrl: { type: 'string', title: 'GeoJSON URL' },
-    paramKey:   { type: 'string', title: 'Param Key' },
-    isoField:   { type: 'string', title: 'ISO Field' },
-    multiSelect:{ type: 'boolean', title: 'Multiple Select' },
-    maxSelect:  { type: 'number',  title: 'Max Select', default: 2 },
-  },
-} as const
+export const GeorgraphSchema: PropSchema = [
+  { field: 'title',       type: 'string',  label: 'სათაური',     required: true },
+  { field: 'geoJsonUrl',  type: 'string',  label: 'GeoJSON URL',  required: true },
+  { field: 'paramKey',    type: 'string',  label: 'Param Key',    required: true },
+  { field: 'isoField',    type: 'string',  label: 'ISO Field',    required: true },
+  { field: 'geoCodeMap',  type: 'object',  label: 'Geo Code Map', required: true },
+  { field: 'multiSelect', type: 'boolean', label: 'Multiple Select' },
+  { field: 'maxSelect',   type: 'number',  label: 'Max Select',   default: 2 },
+]
 
 export const GeorgraphSlots: Record<string, SlotDef> = {
   children: {

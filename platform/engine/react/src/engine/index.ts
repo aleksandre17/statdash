@@ -39,6 +39,11 @@ export type {
   SlotDef,
   PropertyGroup,
   ValidationError,
+  PropFieldType,
+  PropFieldOption,
+  PropFieldValidation,
+  PropField,
+  PropSchema,
   LocaleString,
   PageConfigBase,
   NodePageConfig,
@@ -55,6 +60,7 @@ export { VIEW_DEFAULTS }           from './types'
 
 // ── Core classes ──────────────────────────────────────────────────────
 export { NodeRegistry }            from './NodeRegistry'
+export type { RegistryManifest }   from './NodeRegistry'
 
 // ── Chart renderer registry (Grafana PanelPlugin pattern) ─────────────
 export { ChartRendererRegistry, chartRendererRegistry } from './ChartRendererRegistry'

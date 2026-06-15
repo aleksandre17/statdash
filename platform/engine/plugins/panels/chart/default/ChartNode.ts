@@ -1,4 +1,4 @@
-import type { PropertyGroup, DataLinkDef } from '@geostat/react/engine'
+import type { PropertyGroup, DataLinkDef, PropSchema } from '@geostat/react/engine'
 import type { ChartType }        from '@geostat/engine'
 import type { ChartDef }         from '@geostat/charts'
 import type { NodeBase }                   from '@geostat/react/engine'
@@ -9,17 +9,23 @@ export type ChartNode =
   & Omit<ChartDef, 'type'>
   & { dataLinks?: DataLinkDef[] }
 
-export const ChartSchema = {
-  type: 'object',
-  required: ['chartType'],
-  properties: {
-    chartType: {
-      type: 'string',
-      enum: ['bar', 'line', 'area', 'donut', 'pie', 'scatter', 'heatmap'],
-      title: 'Chart Type',
-    },
+export const ChartSchema: PropSchema = [
+  {
+    field:    'chartType',
+    type:     'string',
+    label:    'Chart Type',
+    required: true,
+    options:  [
+      { value: 'bar',     label: 'Bar' },
+      { value: 'line',    label: 'Line' },
+      { value: 'area',    label: 'Area' },
+      { value: 'donut',   label: 'Donut' },
+      { value: 'pie',     label: 'Pie' },
+      { value: 'scatter', label: 'Scatter' },
+      { value: 'heatmap', label: 'Heatmap' },
+    ],
   },
-} as const
+]
 
 export const ChartGroups: PropertyGroup[] = [
   { label: { ka: 'ვიზუალიზაცია', en: 'Visualisation' }, fields: ['chartType'] },

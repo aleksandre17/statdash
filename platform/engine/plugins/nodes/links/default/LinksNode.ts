@@ -1,4 +1,4 @@
-import type { NodeBase } from '@geostat/react/engine'
+import type { NodeBase, PropSchema } from '@geostat/react/engine'
 import type { LinkDef }  from '@geostat/engine'
 
 export interface LinksNode extends NodeBase {
@@ -6,13 +6,9 @@ export interface LinksNode extends NodeBase {
   items: LinkDef[]
 }
 
-export const LinksSchema = {
-  type: 'object',
-  required: ['items'],
-  properties: {
-    items: { type: 'array', title: 'ბმულები' },
-  },
-} as const
+export const LinksSchema: PropSchema = [
+  { field: 'items', type: 'array', label: 'ბმულები', required: true },
+]
 
 declare module '@geostat/react/engine' {
   interface NodeTypeMap { 'links': LinksNode }

@@ -8,7 +8,6 @@ export const META: NodeSliceMeta = {
   label:           { ka: 'კარტა', en: 'Card' },
   icon:            'layout-card',
   category:        'layout',
-  schema:          { type: 'object', properties: {} } as const,
   slots:           CardSlots,
   canHaveChildren: true,
   version:         1,
