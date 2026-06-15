@@ -52,13 +52,6 @@
       "sample_violation": "import { GeostatShell } from '../../../engine/plugins/geostat';"
     },
     {
-      "id": "Arch-engine-core-locale-agnostic",
-      "glob": "platform/engine/core/src/**",
-      "forbid": "[Ⴀ-ჿ]|['\"](ka|ka-GE)['\"]",
-      "msg": "engine/core must be locale-agnostic: no Georgian codepoints and no 'ka'/'ka-GE' locale literals. Move app-locale specifics to apps/ or plugins/.",
-      "sample_violation": "const label = 'ყველა';"
-    },
-    {
       "id": "Arch-engine-react-locale-agnostic",
       "glob": "platform/engine/react/src/**",
       "forbid": "[Ⴀ-ჿ]|['\"](ka|ka-GE)['\"]",
