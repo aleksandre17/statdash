@@ -19,6 +19,9 @@
 // ── Core ──────────────────────────────────────────────────────────────
 export type { EngineErrorCode }                                          from './core/error'
 export { EngineError }                                                   from './core/error'
+// ── Diagnostic + Result<T> — typed error contract [N17] ───────────────
+export type { DiagnosticLevel, Diagnostic, Result }                      from './core/diagnostic'
+export { diagError, diagWarning, diagInfo, ok, err }                     from './core/diagnostic'
 export type { ModeId, TimeMode, Unit, ChartType, Indicator, SectionContext } from './core/context'
 export { groupBySpan }                                                   from './core/layout'
 export type { DataLookupOp, DeriveEntry, NodeDeriveMap }                from './core/types'

@@ -5,6 +5,8 @@ import type { DataSpec }         from '../config/section'
 import type { SectionContext }   from '../core/context'
 import type { DataStore, Requirement } from './store'
 import { defaultRegistry }       from '../registry/engine'
+import { emitDiagnostic }        from '../registry/diagnostics'
+import { diagWarning }           from '../core/diagnostic'
 
 // Side-effect import: populate defaultRegistry with all built-in resolvers
 import '../registry/resolvers'
@@ -50,7 +52,11 @@ export function interpretSpec(
 ): EngineRow[] {
   const resolver = defaultRegistry.spec(spec.type)
   if (!resolver) {
-    console.warn(`[engine] interpretSpec: no resolver registered for type '${spec.type}'`)
+    emitDiagnostic(diagWarning(
+      'UNKNOWN_SPEC_TYPE',
+      `interpretSpec: no resolver registered for type '${spec.type}'`,
+      { context: { specType: spec.type } },
+    ))
     return []
   }
   const rows = resolver.resolve(spec as DataSpec, ctx, store)

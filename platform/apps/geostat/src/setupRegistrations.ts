@@ -49,7 +49,7 @@ export function setupRegistrations(): void {
           `Use { $cl: 'dimCode' } or { $d: 'dimCode' } instead.`
         )
       })
-      setDiagnosticObserver((code, detail) => console.warn(`[Engine] ${code}: ${detail}`))
+      setDiagnosticObserver((d) => console.warn(`[Engine] ${d.code}: ${d.message}`))
     })()
   }
 }

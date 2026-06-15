@@ -14,6 +14,7 @@ import type { SpecResolver }                 from './engine'
 import { applyPipeline, applyStep }          from '../data/transform'
 import { defaultRegistry }                   from './engine'
 import { emitDiagnostic }                    from './diagnostics'
+import { diagWarning }                        from '../core/diagnostic'
 
 // ── Shared utilities ───────────────────────────────────────────────────
 
@@ -70,10 +71,10 @@ class ByModeResolver implements SpecResolver<Extract<DataSpec, { type: 'by-mode'
     } else {
       // Active mode key absent — emit a diagnostic then fall back to first branch.
       const fallbackKey = modeKeys[0]
-      emitDiagnostic(
+      emitDiagnostic(diagWarning(
         'by-mode:missing-branch',
         `timeMode '${ctx.timeMode}' not found in modes [${modeKeys.join(', ')}]; falling back to '${fallbackKey ?? '(none)'}'`,
-      )
+      ))
       active = fallbackKey ? spec.modes[fallbackKey] : undefined
     }
 
