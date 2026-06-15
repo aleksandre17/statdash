@@ -10,7 +10,9 @@
 
 ---
 
-### Layer 9.1 — Typed `PropSchema` per slice + manifest export `[N10, N11]` 🟩
+### Layer 9.1 — Typed `PropSchema` per slice + manifest export `[N10, N11]` 🟩 ✅
+
+> **✅ DONE (2026-06-15)** — `PropField`, `PropSchema`, `PropFieldType`, `PropFieldOption`, `PropFieldValidation` added to `slice-meta.ts`. All four meta interfaces (`NodeSliceMeta`, `PageSliceMeta`, `PanelSliceMeta`, `ChromeSliceMeta`) use `schema?: PropSchema`. `NodeRegistry`: `StoredMeta.schema?: PropSchema`, `getSchema() → PropSchema | null`, `RegistryManifest` interface, `describeRegistry()` → `{ palette, propertySchemas }`. 19 plugin files migrated from JSON Schema objects to typed `PropField[]` arrays (enum fields → `options:[]`; nested schemas collapsed to `array/object` leaves). Card's empty placeholder schema removed. All types re-exported from `@geostat/react/engine`. tsc EXIT=0.
 
 **Goal:** Every slice is self-describing — the Constructor's property panel is generated from typed per-slice schemas, not hand-built.
 
@@ -20,10 +22,10 @@
 - The same `PropSchema` validates a stored config on load.
 
 **Definition of Done:**
-- [ ] Every registered slice declares a typed `PropSchema`.
-- [ ] `describeRegistry()` emits the full builder manifest as JSON (round-trips).
+- [x] Every registered slice declares a typed `PropSchema`.
+- [x] `describeRegistry()` emits the full builder manifest as JSON (round-trips).
 - [ ] A stored config validates against its slice's schema.
-- [ ] `npx tsc --noEmit` = 0 errors.
+- [x] `npx tsc --noEmit` = 0 errors.
 
 **Dependencies:** Phase 7.2 (`@geostat/constructor` exists), Phase 0.4 (live-tree validation)
 **Touches:** engine/react · packages/constructor · plugins
@@ -73,7 +75,9 @@
 
 ---
 
-### Layer 9.4 — `Result<T, Diagnostic>` error contract `[N17]` 🟩
+### Layer 9.4 — `Result<T, Diagnostic>` error contract `[N17]` 🟩 ✅
+
+> **✅ DONE (2026-06-15)** — `diagnostic.ts` (new): `Diagnostic` interface (code + message + path + context + level), `DiagnosticLevel`, `diagError`/`diagWarning`/`diagInfo` helpers, `Result<T>`/`ok`/`err`. `diagnostics.ts`: `DiagnosticObserver` now receives typed `Diagnostic` (was ad-hoc `(code, detail)`); `emitDiagnostic(d)` typed. `spec.ts`: `console.warn` removed — engine ships pure; `emitDiagnostic(diagWarning(...))` routes `UNKNOWN_SPEC_TYPE`. `resolvers.ts`: call site updated. `@geostat/engine` public API exports `Diagnostic`, `Result<T>`, all helpers. App-layer observer updated (DEV-only, 1 consumer). 09-B cleared by Opus (additive + 1 call site + DEV-only, fully reversible). tsc EXIT=0.
 
 **Goal:** Resolvers, validators, and stores speak one diagnostic language — the disciplined form of "no silent failure."
 
@@ -93,7 +97,9 @@
 
 ---
 
-### Layer 9.5 — Security contract `[N24]` 🟩
+### Layer 9.5 — Security contract `[N24]` 🟩 ✅
+
+> **✅ DONE (2026-06-15)** — `links/resolver.ts`: `SAFE_URL_SCHEMES` allowlist (rejects `javascript:`/`data:`/`vbscript:` in URL templates), `encodeURIComponent` on all substituted params. `FilterContext.tsx`: `sanitizeParam()` (max 512 chars + protocol prefix block) applied on mount + back/forward re-sync. `index.html`: baseline CSP meta (`script-src 'self'`, `object-src 'none'`, `base-uri 'self'`, `form-action 'self'`; `unsafe-inline` for ApexCharts; `connect-src 'self' https:`). `resolveTemplate`: JSDoc confirms XSS-safe via React text rendering. All `target="_blank"` links already had `rel="noopener noreferrer"`. No `dangerouslySetInnerHTML` path exists. tsc EXIT=0.
 
 **Goal:** The three injection surfaces — template interpolation, dataLinks, URL params — are XSS-safe; CSP in place.
 
