@@ -10,6 +10,10 @@ Harden the render/data pipeline against silent failure: complete the lazy proxy,
 
 ---
 
+### Layer 5.1 — Complete the lazy children Proxy (Array-substitutable) ✅
+
+> **✅ DONE (2026-06-15)** — `makeLazyRendered` in `renderNode.ts`: `all()` is now memoised (single allocation on first call). Generic fallback added: `if (prop in Array.prototype) { delegate to all() }`. All missing methods (`slice`, `find`, `flat`, `flatMap`, `concat`, `join`, `at`, `sort`, `reverse`, `keys`, `entries`, `values`, `reduceRight`, `findLast`, `toSorted`, etc.) now work correctly. Explicit lazy paths (`map`, `filter`, `forEach`, `reduce`, `some`, `every`, `includes`, `indexOf`, numeric indices, `Symbol.iterator`, `length`) preserved. tsc clean.
+
 ### Layer 5.1 — Complete the lazy children Proxy (Array-substitutable)
 
 **Goal:** A shell can call any `Array` method on `children.rendered` and get correct results — the proxy is a true `ReactNode[]`, not a 9-method subset.
@@ -32,6 +36,10 @@ Harden the render/data pipeline against silent failure: complete the lazy proxy,
 
 ---
 
+### Layer 5.2 — Middleware registry: immutable retrieval + deterministic ordering ✅
+
+> **✅ DONE (2026-06-15)** — `middleware/registry.ts`: `all()` returns `Object.freeze([...sorted])` — immutable snapshot, not live reference. `middleware/types.ts`: `priority?: number` added to `RenderMiddleware`; `all()` sorts by priority ascending (undefined → Infinity). tsc clean.
+
 ### Layer 5.2 — Middleware registry: immutable retrieval + deterministic ordering
 
 **Goal:** Middleware execution order is explicit and the registry cannot be mutated mid-render.
@@ -53,6 +61,10 @@ Harden the render/data pipeline against silent failure: complete the lazy proxy,
 **Closes:** gap #21
 
 ---
+
+### Layer 5.3 — `by-mode` resolver: warn instead of silent fallback ✅
+
+> **✅ DONE (2026-06-15)** — `registry/diagnostics.ts` (new): `DiagnosticObserver` type + `setDiagnosticObserver` + `emitDiagnostic` — neutral cross-cutting seam (same pattern as `SpecResolveObserver` + `FilterDeriveObserver`). `ByModeResolver.resolve()` calls `emitDiagnostic('by-mode:missing-branch', ...)` on missing active-mode key. `setDiagnosticObserver` exported from `@geostat/engine`. DEV observer wired in `setupRegistrations.ts`. 35/35 tests. tsc clean.
 
 ### Layer 5.3 — `by-mode` resolver: warn instead of silent fallback
 
@@ -80,6 +92,10 @@ Bring the implementation itself to Senior level: split oversized files, extract 
 
 ---
 
+### Layer 6.1 — Split oversized renderers ✅
+
+> **✅ DONE (2026-06-15)** — `toApexOptions.ts` (913 lines) split into 7 files: `utils/apex/` folder with `base.ts` (92), `cartesian.ts` (327), `pie.ts` (143), `contribution.ts` (134), `treemap.ts` (69), `hbar-diverging.ts` (118), and thin `toApexOptions.ts` dispatch (60). `DataTable.tsx` (408 lines) split into `_helpers.ts` (21), `_footer.ts` (53), `SimpleTable.tsx` (131), `PivotTable.tsx` (148), `DataTable.tsx` orchestrator (72). Public surfaces unchanged. tsc clean.
+
 ### Layer 6.1 — Split oversized renderers
 
 **Goal:** No renderer exceeds its size budget (renderer ≤ 80, hook ≤ 100, types ≤ 150). Each file is one readable unit.
@@ -102,6 +118,10 @@ Bring the implementation itself to Senior level: split oversized files, extract 
 **Closes:** gap #31 (size half)
 
 ---
+
+### Layer 6.2 — Extract inline SVG icons and hardcoded aria-labels ✅
+
+> **✅ DONE (2026-06-15)** — `icons.tsx`: `InfoIcon` exported; `ChevronIcon` added (accepts `className?`). `engine/react/src/index.ts`: exports `InfoIcon, ChevronIcon` (additive). `SectionShell.tsx`: `useT('section')` added; `aria-label="ხედის გადართვა"` → `t('view-toggle')`; `aria-label="ინფორმაცია"` → `t('info')`; inline info SVG → `<InfoIcon />`; inline chevron SVG → `<ChevronIcon className={...} />`. tsc clean.
 
 ### Layer 6.2 — Extract inline SVG icons and hardcoded aria-labels
 
@@ -126,6 +146,14 @@ Bring the implementation itself to Senior level: split oversized files, extract 
 
 ---
 
+### Layer 6.3 — Delete the dead Track-B config surface ✅
+
+> **✅ DONE (2026-06-15)** — Pre-flight grep confirmed zero live imports. Deleted: `SectionDef`, `SectionView`, `WidgetDef`, `TabsDef`, `TabEntry`, `TabsMap`, `PageHeaderDef`, `FilterBarDef`, `KpiStripDef`, `LinksDef`, `groupSectionsByWidth`, `groupWidgetsByWidth` from `engine/core/src/config/section.ts`, `config/index.ts`, `core/index.ts`, `engine/react/src/index.ts`. Kept live: `DataSpec`, `ColumnDef`, `RowSpec`, `TableConfig`, `VisibilityExpr`, `KpiDef`, `ChartDef`, `FieldConfig`, `LinkDef`, `LinkIconKey`, `resolveTemplate`, `evalVisibility`. Correction: `LinkDef` is NOT dead — `LinksNode.ts` imports it. tsc EXIT=0.
+
+### Layer 6.3 — Delete the dead Track-B config surface
+
+> **⚠️ BLOCKED (2026-06-15)** — Pre-implementation grep revealed that `SectionDef`, `WidgetDef`, `PageHeaderDef`, `FilterBarDef`, `KpiStripDef`, `LinksDef`, `TabsDef`, `TabEntry`, `groupSectionsByWidth`, `groupWidgetsByWidth` are all re-exported from `engine/react/src/index.ts` (lines 28-32). Removing them from `engine/core/src/config/section.ts` alone is insufficient — they must be removed from the engine/react public index too, then any downstream consumer that imports them from `@geostat/react` must be checked. Pre-flight grep before implementation is required. Resume: grep for imports of these types across `plugins/`, `apps/`, and `engine/react/` before any deletion.
+
 ### Layer 6.3 — Delete the dead Track-B config surface
 
 **Goal:** The engine's public API exposes only what the live platform uses — no dead legacy types confusing the Constructor or new engineers.
@@ -147,6 +175,10 @@ Bring the implementation itself to Senior level: split oversized files, extract 
 **Closes:** gap #12
 
 ---
+
+### Layer 6.4 — App bootstrap skeleton (no blank-screen flash) ✅
+
+> **✅ DONE (2026-06-15)** — `App.tsx`: `return null` → `return <AppSkeleton />`. Co-located `AppSkeleton` component: `app-skeleton` → `__nav` + `__page > __header + __content` placeholder divs, `aria-busy="true"`. Follows `PageSkeleton` pattern from `PageLoader.tsx`. tsc clean.
 
 ### Layer 6.4 — App bootstrap skeleton (no blank-screen flash)
 

@@ -1,7 +1,7 @@
 ---
 id: "0001"
 title: "D-1: Remove Georgian literals from CascadeSelect (engine/react)"
-status: backlog
+status: done
 class: G
 priority: P2
 owner: —

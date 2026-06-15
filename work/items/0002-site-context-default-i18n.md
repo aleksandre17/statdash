@@ -1,7 +1,7 @@
 ---
 id: "0002"
 title: "D-2: Remove ka-hardwired DEFAULT_I18N from SiteContext (engine/react)"
-status: backlog
+status: done
 class: G
 priority: P2
 owner: —
