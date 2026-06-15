@@ -3,7 +3,7 @@
 //  App-level registry: stores · pages · nav · chrome · locale · i18n
 //
 //  Usage:
-//    <SiteProvider stores={{ gdp: gdpStore }} nav={nav} locale="ka" i18n={manifest.i18n}>
+//    <SiteProvider stores={{ gdp: gdpStore }} nav={nav} locale={manifest.i18n.defaultLocale} i18n={manifest.i18n}>
 //      <App />
 //    </SiteProvider>
 //
@@ -37,12 +37,6 @@ export interface I18nConfig {
   locales:        string[]
   defaultLocale:  string
   fallbackLocale: string
-}
-
-const DEFAULT_I18N: I18nConfig = {
-  locales:        ['ka'],
-  defaultLocale:  'ka',
-  fallbackLocale: 'ka',
 }
 
 // ── NavEntry — runtime nav item (config fields + route metadata) ───────
@@ -85,7 +79,7 @@ export interface SiteProviderProps {
   chrome?:       Record<string, ChromeEntry>
   chromeConfig?: ChromeConfig
   locale?:       string
-  i18n?:         I18nConfig
+  i18n:          I18nConfig
   children:      ReactNode
 }
 
@@ -95,7 +89,7 @@ export function SiteProvider({
   pages        = {},
   chrome       = {},
   chromeConfig,
-  i18n         = DEFAULT_I18N,
+  i18n,
   locale,
   children,
 }: SiteProviderProps) {
@@ -192,7 +186,7 @@ export function useFmt(): LocaleFormatter {
 }
 
 // useResolveLocale — content string resolver (memoized on locale + fallback)
-// ❌ resolveLocaleString(def.title, ctx.locale, 'ka') — hardcoded fallback, verbose
+// ❌ resolveLocaleString(def.title, ctx.locale, i18n.fallbackLocale) — verbose, must thread fallback manually
 // ✅ const t = useResolveLocale(); t(def.title) — auto fallback from manifest
 export function useResolveLocale(): (s: LocaleString) => string {
   const locale = useLocale()
@@ -204,7 +198,7 @@ export function useResolveLocale(): (s: LocaleString) => string {
 }
 
 // useT — system UI strings (i18next namespace)
-// Shell: const t = useT('section'); t('export') → 'ექსპორტი' | 'Export'
+// Shell: const t = useT('section'); t('export') → translated string for active locale
 export function useT(ns: string): (key: string, vars?: Record<string, string>) => string {
   const locale = useLocale()
   return useCallback(
