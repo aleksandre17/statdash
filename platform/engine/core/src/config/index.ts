@@ -5,21 +5,32 @@ export type {
   DataSpec,
   TableConfig,
   VisibilityExpr,
-  SectionDef,
-  SectionView,
+  LinkIconKey,
+  LinkDef,
 }                                                                from './section'
-export { resolveTemplate, evalVisibility, groupSectionsByWidth, groupWidgetsByWidth } from './section'
+export { resolveTemplate, evalVisibility } from './section'
 
 export type {
   CascadeNode,
   Condition, WhenMap,
-  Validator, CrossValidator,
+  ValidatorPredicate, Validator, CrossValidator,
   Effect,
   ParamHidden, ParamYearSelect, ParamCascade, ParamSelect,
   ParamRange, ParamMultiSelect, ParamChipSelect, ParamDef,
   BarDef, BarsConfig,
   ContextMapping,
+  FilterSchemaInput,
+  TimeModeItem,
+  BarNode,
+  ParamHiddenNode, ParamYearSelectNode, ParamCascadeNode, ParamSelectNode,
+  ParamRangeNode, ParamMultiSelectNode, ParamChipSelectNode, ParamNode,
+  FilterDerive,
+  VarMap,
+  FilterBarNode,
+  OptionsDefault, DefaultSpec,
 }                                                                from './filter'
-export { evalCondition, evalWhen, validators,
+export { evalCondition, evalWhen, evalValidatorPredicate, validators,
          autoParse, isVisible, isEnabled,
-         validateField, applyCrossValidation, applyEffects }     from './filter'
+         validateField, applyCrossValidation, applyEffects,
+         evalFilterDerive,
+         resolveDefaults, validateCascadeValues }                from './filter'

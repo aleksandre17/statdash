@@ -12,22 +12,6 @@
 //    CSS Grid   — browser packs items by span regardless of content type
 //
 
-// ── TabsMap ────────────────────────────────────────────────────────────
-//
-//  Generic param-driven view selector: Record<string, T>.
-//  Algorithm-agnostic — T can be SectionView, KpiDef, ChartDef, anything.
-//
-//  Commercial platform equivalents:
-//    Grafana   — template variable → panel repeat (any panel shape)
-//    Builder.io — tabs as array of typed content slots (any component)
-//    Retool     — tab container with named slots (any widget tree)
-//
-//  Usage:
-//    tabs: { param: 'mode', views: TabsMap<SectionView> }
-//    active view → views[filterParams[param]]
-//
-export type TabsMap<T> = Record<string, T>
-
 // ── groupBySpan ────────────────────────────────────────────────────────
 //
 //  Packs items into rows where spans (extracted by caller) sum to maxCols.

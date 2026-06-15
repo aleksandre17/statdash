@@ -1,19 +1,17 @@
 // ── Section Config Types ───────────────────────────────────────────────
 //
-//  SectionDef and all related config types.
+//  DataSpec, ColumnDef, RowSpec, TableConfig, VisibilityExpr and the
+//  methodology-link primitives — the live config vocabulary.
 //  100% JSON-serializable — every field is a plain value, no functions.
-//  Constructor (phase 2) generates any SectionDef without writing code.
+//  Constructor (phase 2) generates any of these without writing code.
 //
 
 import type { DimVal, ObsQuery } from '../sdmx'
+import type { LocaleString }     from '../i18n/types'
 import type { ModeId }                   from '../mode/types'
-import type { EncodingSpec, DataRow }     from '../data/encoding'
+import type { EncodingSpec }              from '../data/encoding'
 import type { TransformStep }             from '../data/transform'
 import type { SectionContext }            from '../core/context'
-import type { ChartDef }                  from '../chart/types'
-import type { KpiSpec }                   from '../data/kpi'
-import { groupBySpan }                    from '../core/layout'
-import type { TabsMap }                   from '../core/layout'
 
 // ── ColumnDef — one value column in a DataTable ───────────────────────
 //
@@ -23,7 +21,7 @@ import type { TabsMap }                   from '../core/layout'
 //
 export interface ColumnDef {
   key:     'value' | 'pct' | string
-  label:   string
+  label:   LocaleString
   format?: string
   width?:  string
   align?:  'l' | 'r'
@@ -40,7 +38,7 @@ export interface ColumnDef {
 // ── RowSpec — one entry in a row-list DataSpec ────────────────────────
 export interface RowSpec {
   code:     string
-  label?:   string
+  label?:   LocaleString
   color?:   string
   negate?:  boolean
   isTotal?: boolean
@@ -69,7 +67,9 @@ export type YearsSpec = readonly number[] | 'all'
 //  'by-mode'    — branch on timeMode.
 //  'pivot'      — wide→long shorthand (sugar for transform + melt).
 //  'transform'  — full declarative pipeline (Vega-Lite transform analogue).
-//  'custom'     — escape hatch. fn returns DataRow[] directly.
+//
+//  All branches are 100% JSON-serializable and Constructor-authorable.
+//  To add a custom resolver: `defaultRegistry.registerSpec(myResolver)` in app bootstrap.
 //
 export type DataSpec =
   | { type: 'query'
@@ -106,7 +106,6 @@ export type DataSpec =
       steps:    TransformStep[]
       encoding: EncodingSpec
     }
-  | { type: 'custom'; fn: (ctx: SectionContext) => DataRow[] }
 
 // ── TableConfig ───────────────────────────────────────────────────────
 export interface TableConfig {
@@ -142,139 +141,11 @@ export type VisibilityExpr =
   | { op: 'mode-in';  modes: ModeId[] }
   | { op: 'mode-not'; mode:  ModeId   }
 
-// ── SectionView — one self-contained view slot ────────────────────────
+// ── LinkDef — methodology / reference link primitive ──────────────────
 //
-//  The unit of content inside a section.
-//  Grafana panel query+transform+display as a named slot.
-//  Builder.io content block — fully self-contained, no cross-slot references.
+//  Live: consumed by the `links` panel plugin (LinksNode.items: LinkDef[]).
+//  LinkIconKey is also live — resolved to SVG via LINK_ICONS in @geostat/react.
 //
-//  When used inside SectionDef.tabs.views, each key = a filter param value.
-//  When used as SectionDef.view, it is the sole unconditional view.
-//
-export interface SectionView {
-  /** Subtitle text — may contain {dim} placeholders. resolveTemplate() at render. */
-  subtitle?: string
-  /** Data specification — what to fetch/compute. */
-  data?:     DataSpec
-  /** Chart definition — how to visualise the data. */
-  chart?:    ChartDef
-  /** Table configuration — how to display the data. */
-  table?:    TableConfig
-}
-
-// ── SectionDef ────────────────────────────────────────────────────────
-//
-//  100% JSON-serializable. No year/range parallel universe — use tabs.views.
-//
-//  Visibility:
-//    visibleWhen — explicit VisibilityExpr for complex conditions
-//    tabs.views  — section auto-hides when active param value has no view
-//
-//  View selection (Grafana template variable → panel content pattern):
-//    tabs.views[filterParams[tabs.param]]  → active SectionView
-//    view                                  → unconditional SectionView (no tabs)
-//
-export interface SectionDef {
-  type:          'section'
-  id:            string
-  title:         string
-  color:         string
-  defaultOpen?:  boolean
-  noCollapse?:   boolean
-  hero?:         boolean
-  exportable?:   boolean
-  visibleWhen?:  VisibilityExpr
-  /** Label prepended above the section card. May contain {dim} placeholders. */
-  prependLabel?: string
-  /**
-   * Layout height of the section column.
-   * 'auto'  — content-driven (default)
-   * 'sm' / 'md' / 'lg' / 'xl' — fixed pixel heights (280 / 380 / 480 / 600 px)
-   * '16:9' / '4:3' / '1:1'   — aspect-ratio (responds to column width)
-   */
-  height?: 'auto' | 'sm' | 'md' | 'lg' | 'xl' | '16:9' | '4:3' | '1:1'
-  /**
-   * Layout width within the 12-column page grid.
-   * 'full' (default) / 'half' / 'third'
-   * Renderer places; groupWidgetsByWidth() groups AFTER visibility filtering.
-   */
-  width?:  'full' | 'half' | 'third'
-
-  /**
-   * Param-driven view switch (Grafana template variable / Builder.io tabs pattern).
-   *
-   *   param  — any filter key: 'mode', 'sector', 'region', ...
-   *   views  — TabsMap<SectionView>: key = param value, value = content slot
-   *
-   * Renderer: views[filterParams[param]] → active SectionView.
-   * Section is auto-hidden when the active param value is absent from views.
-   *
-   * Replaces: chart: { year, range }, table: { year, range },
-   *           subtitle: { year, range }, data: { type: 'by-mode' }, visibleIn.
-   */
-  tabs?: {
-    param: string
-    views: TabsMap<SectionView>
-  }
-
-  /**
-   * Unconditional view — used when section has no tabs dependency.
-   * For sections that are always visible with a single data source.
-   */
-  view?: SectionView
-}
-
-// ── TabsDef — widget that renders a tabbed view ───────────────────────
-//
-//  Builder.io / Retool pattern: tabs as an array of content slots.
-//  param references a filter key whose value drives the active tab.
-//  widgets inside each TabEntry are recursive — full WidgetDef[] nesting.
-//
-export interface TabEntry {
-  key:     string
-  label?:  string
-  widgets: WidgetDef[]
-}
-
-export interface TabsDef {
-  type:  'tabs'
-  id:    string
-  /** Filter param key that drives the active tab (must be a string value) */
-  param: string
-  tabs:  TabEntry[]
-}
-
-// ── Page-level widget primitives ─────────────────────────────────────
-//
-//  Pure-data counterparts to the React components that render them.
-//  Each type maps 1:1 to a React component in @geostat/react.
-//  Adding a new widget: define interface here → add renderer in Page.tsx.
-//
-//  Builder.io component registry pattern: type → renderer.
-//  Retool/AppSmith: every canvas element is a typed widget.
-//  Grafana: every panel has a panel type (text, graph, table, …).
-//
-
-/** Page title, breadcrumbs, badge — the top-of-page identity block. */
-export interface PageHeaderDef {
-  type:    'page-header'
-  title:   string
-  /** Badge text — may contain {dim} placeholders. resolveTemplate() at render. */
-  badge?:  string | { year: string; range: string }
-  /** Static breadcrumb trail — overridden by _pageCrumbs derive at runtime. */
-  crumbs?: { label: string; href?: string }[]
-}
-
-/** Filter bar marker — schema lives in PageDef.filterSchema, not here. */
-export interface FilterBarDef {
-  type: 'filter-bar'
-}
-
-/** KPI strip — interpretKpis(kpis, ctx, store) at render time. */
-export interface KpiStripDef {
-  type: 'kpi-strip'
-  kpis: KpiSpec[]
-}
 
 /** Icon token for methodology links — renderer resolves to SVG via LINK_ICONS. */
 export type LinkIconKey = 'doc' | 'info' | 'ext'
@@ -282,64 +153,8 @@ export type LinkIconKey = 'doc' | 'info' | 'ext'
 /** One methodology / reference link. */
 export interface LinkDef {
   href:  string
-  label: string
+  label: LocaleString
   icon:  LinkIconKey
-}
-
-/** Footer methodology links row. */
-export interface LinksDef {
-  type:  'links'
-  links: LinkDef[]
-}
-
-// ── WidgetDef — discriminated union of all widget types ───────────────
-//
-//  PageDef.children: WidgetDef[]  — the full content tree.
-//  Recursive: TabsDef.tabs[].widgets: WidgetDef[] nests any widget type.
-//
-//  Extending the platform:
-//    1. Add interface with a unique `type` literal here
-//    2. Add renderer case in Page.tsx
-//    Zero other changes needed.
-//
-//  Builder.io / Retool / Grafana: type is the dispatch key.
-//
-export type WidgetDef =
-  | PageHeaderDef
-  | FilterBarDef
-  | KpiStripDef
-  | SectionDef
-  | TabsDef
-  | LinksDef
-
-// ── groupSectionsByWidth ───────────────────────────────────────────────
-//
-//  SectionDef-specific application of the generic groupBySpan algorithm.
-//  Thin boundary wrapper: knows only the SectionDef → span mapping.
-//  The packing algorithm itself lives in core/layout.ts — type-agnostic.
-//
-//  "Generic algorithm in core; specific application at the boundary." (DIP)
-//
-const SECTION_COLS: Record<NonNullable<SectionDef['width']>, number> = {
-  full: 12, half: 6, third: 4,
-}
-
-export function groupSectionsByWidth(sections: SectionDef[]): SectionDef[][] {
-  return groupBySpan(sections, (s) => SECTION_COLS[s.width ?? 'full'] ?? 12)
-}
-
-// ── groupWidgetsByWidth ────────────────────────────────────────────────
-//
-//  WidgetDef variant of groupSectionsByWidth.
-//  TabsDef always spans the full 12 columns (never side-by-side).
-//  SectionDef delegates to SECTION_COLS as before.
-//
-export function groupWidgetsByWidth(widgets: WidgetDef[]): WidgetDef[][] {
-  return groupBySpan(widgets, (w) => {
-    if (w.type === 'tabs')    return 12
-    if (w.type === 'section') return SECTION_COLS[w.width ?? 'full'] ?? 12
-    return 12  // non-layout types — full width (renderChildren pre-filters these out)
-  })
 }
 
 // ── evalVisibility ────────────────────────────────────────────────────
@@ -376,7 +191,8 @@ export function evalVisibility(
 //  '{time} · მლნ ₾' + ctx.dims.time=2024 → '2024 · მლნ ₾'
 //
 //  Still accepts { year, range } union for PageDef.badge compatibility.
-//  SectionView.subtitle and SectionDef.prependLabel are plain strings.
+//  Caller should resolve LocaleString via useResolveLocale() before passing
+//  here (string branch passes through unchanged).
 //
 export function resolveTemplate(
   tpl:    string | { year: string; range: string },

@@ -4,7 +4,7 @@
 //  Hexagonal Architecture: this is the "core" hexagon (domain + ports).
 //
 //  Import everything from this single entry point:
-//    import { interpretSpec, type SectionDef } from '@geostat/engine'
+//    import { interpretSpec, type DataSpec } from '@geostat/engine'
 //
 //  Module structure:
 //    core/         — error types + SectionContext + primitive types
@@ -12,7 +12,7 @@
 //    data/         — DataStore, DataRow, interpretSpec, transform pipeline
 //    field/        — FieldConfig display system (Grafana equivalent)
 //    chart/        — ChartDef, ChartOutput neutral format, interpretChart
-//    config/       — SectionDef, DataSpec, TableConfig, VisibilityExpr, KpiDef
+//    config/       — DataSpec, TableConfig, VisibilityExpr, KpiDef
 //    validation/   — self-validating configs (Constructor-facing)
 //    registry/     — EngineRegistry, SpecResolver, ChartInterpreter (plugin system)
 //
@@ -22,7 +22,6 @@ export type { EngineErrorCode }                                          from '.
 export { EngineError }                                                   from './core/error'
 export type { ModeId, TimeMode, Unit, ChartType, Indicator, SectionContext } from './core/context'
 export { groupBySpan }                                                   from './core/layout'
-export type { TabsMap }                                                  from './core/layout'
 export type { DataLookupOp, DeriveEntry, NodeDeriveMap }                from './core/types'
 export { evalNodeDerive }                                                from './core/evalNodeDerive'
 
@@ -86,25 +85,16 @@ export type {
   DataSpec,
   TableConfig,
   VisibilityExpr,
-  SectionView,
-  SectionDef,
-  TabEntry,
-  TabsDef,
-  PageHeaderDef,
-  FilterBarDef,
-  KpiStripDef,
   LinkIconKey,
   LinkDef,
-  LinksDef,
-  WidgetDef,
 }                                                                        from './config/section'
-export { resolveTemplate, evalVisibility, groupSectionsByWidth, groupWidgetsByWidth } from './config/section'
+export { resolveTemplate, evalVisibility } from './config/section'
 
 // ── Filter Schema — declarative filter config types + evaluators ──────
 export type {
   CascadeNode,
   Condition, WhenMap,
-  Validator, CrossValidator,
+  ValidatorPredicate, Validator, CrossValidator,
   Effect,
   ParamHidden, ParamYearSelect, ParamCascade, ParamSelect,
   ParamRange, ParamMultiSelect, ParamChipSelect, ParamDef,
@@ -119,17 +109,23 @@ export type {
   FilterDerive,
   VarMap,
   FilterBarNode,
+  // DefaultSpec — three-tier default value
+  OptionsDefault, DefaultSpec,
+  // Observability seam
+  FilterDeriveObserver,
 }                                                                        from './config/filter'
-export { evalCondition, evalWhen, validators,
+export { evalCondition, evalWhen, evalValidatorPredicate, validators,
          autoParse, isVisible, isEnabled,
          validateField, applyCrossValidation, applyEffects,
-         evalFilterDerive }                                              from './config/filter'
+         evalFilterDerive, setFilterDeriveObserver,
+         resolveDefaults, validateCascadeValues }                        from './config/filter'
 
 // ── Repository Pattern — DataStore ────────────────────────────────────
 export type { DataStore, Requirement, ExternalStoreOptions,
               StoreQuery, StoreCaps }                                    from './data/store'
 export { staticStore, ExternalStore, ApiStore, CachedStore,
          storeVal, storeObs, runBatch }                                 from './data/store'
+export type { DatasourceInstanceConfig }                                from './data/datasource'
 export type { AggOp, AggregationRule }                                  from './data/aggregate'
 export { groupAggregate }                                               from './data/aggregate'
 
@@ -143,8 +139,10 @@ export type {
 export { validateDataSpec, validateChartDef }                           from './validation/pipeline'
 
 // ── Registry — Strategy + Plugin Pattern ─────────────────────────────
-export type { SpecResolver, ChartInterpreter }                          from './registry/engine'
-export { EngineRegistry, defaultRegistry }                              from './registry/engine'
+export type { SpecResolver, ChartInterpreter }                         from './registry/engine'
+export { EngineRegistry, defaultRegistry }                             from './registry/engine'
+export type { DiagnosticObserver }                                     from './registry/diagnostics'
+export { setDiagnosticObserver }                                       from './registry/diagnostics'
 
 // ── Core Resolvers ────────────────────────────────────────────────────
 export type { SpecResolveObserver }                                     from './data/spec'
@@ -161,6 +159,10 @@ export type { LocaleString }                                             from '.
 export { resolveLocaleString, resolveLabel }                             from './i18n/types'
 export type { LocaleFormatter }                                          from './i18n/format'
 export { formatterRegistry }                                             from './i18n/format'
+
+// ── Spec Capability Catalog — Self-Describing Module (Panel / Constructor) ─
+export type { SpecField, SpecDescriptor }  from './spec-catalog'
+export { SPEC_CATALOG }                    from './spec-catalog'
 
 // ── Engine Bootstrap ──────────────────────────────────────────────────
 //

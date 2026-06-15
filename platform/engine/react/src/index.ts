@@ -25,11 +25,10 @@ export type {
   // Core context
   ModeId, ModeDef, ModeContext, TimeMode, SectionContext, DimVal,
   // Config vocabulary
-  SectionDef, SectionView, DataSpec, ColumnDef, RowSpec, TableConfig, VisibilityExpr,
+  DataSpec, ColumnDef, RowSpec, TableConfig, VisibilityExpr,
   KpiDef, ChartDef, FieldConfig,
-  // Widget system — full WidgetDef union
-  WidgetDef, TabsDef, TabEntry, TabsMap,
-  PageHeaderDef, FilterBarDef, KpiStripDef, LinksDef, LinkDef, LinkIconKey,
+  // Methodology-link primitives (live: consumed by the `links` panel plugin)
+  LinkDef, LinkIconKey,
   // Data types
   DataRow, DataStore,
 }                                                                        from '@geostat/engine'
