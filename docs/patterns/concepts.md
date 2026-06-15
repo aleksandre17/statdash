@@ -79,8 +79,8 @@ UN/Eurostat national accounts standard. accounting identities as data constraint
 **ბირთვი:** data / config / rendering — დამოუკიდებელი layers. ცვლილება ერთში = zero effect სხვაში.
 **ჩვენთან (ახალი arch):**
 ```
-engine/core/  ← data logic  (interpretSpec, DataStore, StoreQuery)
-engine/react/   ← render logic (renderNode, NodeRenderer, RenderContext)
+packages/engine/  ← data logic  (interpretSpec, DataStore, StoreQuery)
+packages/react/   ← render logic (renderNode, NodeRenderer, RenderContext)
 plugins/          ← shell impls  (UI per node type)
 src/pages/        ← config layer (NodeDef JSON trees)
 src/data/         ← data boundary (fromSDMX, store instances)

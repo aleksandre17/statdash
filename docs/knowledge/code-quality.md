@@ -77,8 +77,8 @@ declare module '@geostat/react' {
 ❌ SiteRenderer knows about GDP, accounts, regional
 ✅ SiteRenderer depends on SiteManifest — pure config, no data knowledge
 
-engine/core/  → depends on: nothing
-engine/react/   → depends on: @geostat/engine interfaces
+packages/engine/  → depends on: nothing
+packages/react/   → depends on: @geostat/engine interfaces
 plugins/          → depends on: @geostat/react interfaces
 src/              → depends on: everything (outermost)
 
@@ -216,29 +216,29 @@ plugins/nodes/section/
 ```
 src/         (outermost — knows everything)
   plugins/   (app slices — knows react)
-    engine/react/  (adapter)
-      engine/core/  (core — zero external deps)
+    packages/react/  (adapter)
+      packages/engine/  (core — zero external deps)
 
 Arrow direction: inward only.
 ```
 
 **Dependency Rule violations (automatic red flags):**
 ```
-❌ engine/core importing React
-❌ engine/react importing from src/
-❌ engine/react importing from plugins/
+❌ packages/engine importing React
+❌ packages/react importing from src/
+❌ packages/react importing from plugins/
 ❌ plugins/ importing from src/ (except @geostat/* aliases)
 ❌ packages/ containing Geostat-specific anything
 ```
 
 **სად რა კოდი ეკუთვნის (canonical split logic):**
 ```
-engine/core/    Pure TS computation. Zero React. Zero app knowledge.
+packages/engine/    Pure TS computation. Zero React. Zero app knowledge.
                     ← interpretSpec · applyEncoding · applyPipeline · evalExpr
                     ← DataStore interface + implementations
                     ← fromSDMX (format adapter) · groupBySpan · formatValue
 
-engine/react/     React adapter. Registries + RenderContext + hooks. DEFAULTS only.
+packages/react/     React adapter. Registries + RenderContext + hooks. DEFAULTS only.
                     ← NodeRegistry · ChromeRegistry · FilterControlRegistry
                     ← renderNode() pipeline · useFilterState() · SiteContext
                     ← DEFAULT shells (pass-through, zero brand)

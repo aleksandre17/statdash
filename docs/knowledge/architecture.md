@@ -39,7 +39,7 @@
 ### "ნულოვანი friction" ტესტი — ყოველ ახალ ელემენტზე
 
 ```
-❌  ახალი node type → engine/react/ შეიცვალა        = OCP დარღვევა
+❌  ახალი node type → packages/react/ შეიცვალა        = OCP დარღვევა
 ❌  ახალი chrome variant → AppChrome.tsx შეიცვალა     = OCP დარღვევა
 ❌  ახალი filter control → FilterBarShell შეიცვალა   = OCP დარღვევა
 ❌  ახალი DataSpec type → interpretSpec() შეიცვალა   = OCP დარღვევა
@@ -80,8 +80,8 @@ render
 | Node type | `plugins/nodes/{type}/` | `nodeRegistry.register(type, variant, Shell)` |
 | Chrome variant | `plugins/chrome/{Slot}/{variant}/` | `chromeRegistry.register(slot, key, Shell)` |
 | Filter control | `plugins/controls/{type}/` | `filterControlRegistry.register(slice)` |
-| DataSpec type | `engine/core/src/data/` | `defaultRegistry.register(type, resolver)` |
-| Datasource | `engine/core/src/` | `engine.registerDatasource({id, create})` |
+| DataSpec type | `packages/engine/src/data/` | `defaultRegistry.register(type, resolver)` |
+| Datasource | `packages/engine/src/` | `engine.registerDatasource({id, create})` |
 
 **ყოველ შემთხვევაში: core = closed. extension = open.**
 

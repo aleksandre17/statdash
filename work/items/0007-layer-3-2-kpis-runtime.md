@@ -1,7 +1,7 @@
 ---
 id: "0007"
 title: "3.2 deferred: KPI specs — runtime year refs instead of module-load constants"
-status: ready
+status: done
 class: M
 priority: P2
 owner: —

@@ -69,7 +69,9 @@ Eliminate duplicated seams so the same concern has exactly one home. This is the
 
 ---
 
-### Layer 2.1 — Unify `EngineRow` and `RawRow` into one canonical row type
+### Layer 2.1 — Unify `EngineRow` and `RawRow` into one canonical row type ✅
+
+> **✅ DONE (2026-06-14)** — `transform.ts` (822 lines) split into `transform/` sub-module (6 files, all under 400 lines). `RawRow = EngineRow` alias in `transform/types.ts`. `resolveNodeRows.ts` cleaned up (named `RawRow` import, inline import removed). tsc clean.
 
 **Goal:** One name for "untyped data row" across the engine — the `as unknown as` bridges in the render pipeline disappear.
 
@@ -92,7 +94,9 @@ Eliminate duplicated seams so the same concern has exactly one home. This is the
 
 ---
 
-### Layer 2.2 — `SiteRenderer` consumes `evalVarMap` (delete the duplicated loop)
+### Layer 2.2 — `SiteRenderer` consumes `evalVarMap` (delete the duplicated loop) ✅
+
+> **✅ DONE (2026-06-14)** — Replaced inline ExprScope/loop with `evalVarMap()` call. Dead imports (`evalExpr`, `isDimVal`, `ExprScope`, `ExprVal`, `DimVal`) removed. tsc clean.
 
 **Goal:** Page-level and node-level variable evaluation use the same code — they cannot drift.
 
@@ -114,7 +118,9 @@ Eliminate duplicated seams so the same concern has exactly one home. This is the
 
 ---
 
-### Layer 2.3 — Honest `FilterControlSlice` codec contract
+### Layer 2.3 — Honest `FilterControlSlice` codec contract ✅
+
+> **✅ DONE (2026-06-14)** — `FilterCodec.toUrl: (v: T) => string | null`. All 4 `null as unknown as string` casts removed from `hidden`, `cascade`, `select`, `multi-select`. tsc clean.
 
 **Goal:** The codec type tells the truth — a control that clears a URL param returns `null`, and the type says so.
 

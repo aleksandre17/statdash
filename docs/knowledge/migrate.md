@@ -210,7 +210,7 @@ NEVER: step 6 before step 4. NEVER: skip step 7 ("later"). NEVER: step 2 from me
 
 ```
 □ Discriminated union member in engine types (or DataSpec extension)
-□ SpecResolver in engine/core/src/data/spec.ts (or registered resolver)
+□ SpecResolver in packages/engine/src/data/spec.ts (or registered resolver)
 □ Registered in defaultRegistry
 □ Unit test: interpretSpec({ type: '...', ... }, ctx, store) → DataRow[]
 □ tsc --noEmit → 0 errors

@@ -7,7 +7,7 @@ paths:
 # plugins/ — Shell Rules
 
 > **Enforcement layer** (path-scoped · auto-loads on `paths:` match) — ✅/❌ only, not a design home.
-> Design → `docs/architecture/subsystems/02-node-system.md` · `30-plugin-taxonomy.md` · Method → `.claude/generic/engineering/structure.md` · `refactoring.md` · Orientation → `engine/plugins/CLAUDE.md`
+> Design → `docs/architecture/subsystems/02-node-system.md` · `30-plugin-taxonomy.md` · Method → `.claude/generic/engineering/structure.md` · `refactoring.md` · Orientation → `plugins/CLAUDE.md`
 
 ## NodeSlice anatomy
 
@@ -63,7 +63,7 @@ resolveLabel(code, ctx.classifiers[col.key], ctx.locale, ctx.fallbackLocale)
 ## OCP check — new shell must NOT change:
 
 ```
-❌  engine/react/ changed  → OCP violation
+❌  packages/react/ changed  → OCP violation
 ❌  AppChrome.tsx changed     → OCP violation
 ❌  FilterBarShell changed    → OCP violation
 ✅  registerSlice(mySlice)   → done. Zero other changes.

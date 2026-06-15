@@ -10,7 +10,9 @@ Make datasources first-class JSON: a named spec referenced by id, authored and r
 
 ---
 
-### Layer 3.1 — Add `SiteManifest.datasources` as a first-class JSON spec
+### Layer 3.1 — Add `SiteManifest.datasources` as a first-class JSON spec ✅
+
+> **✅ DONE (2026-06-15)** — `DatasourceInstanceConfig` in `engine/core/src/data/datasource.ts`. `SiteManifest.datasources?: DatasourceInstanceConfig[]` added in app layer. `buildStoreManifest(datasources, signal?) → Promise<Record<string, DataStore>>` + `registerStoreBuilder(kind, fn)` + `StoreBuilderFn` in `engine/react/src/engine/storeManifest.ts`, exported from engine/react index. `StoreBuilderFn` takes `signal?: AbortSignal` (Grafana pattern — prevents breaking change in Phase 2). 35/35 tests green + 6 new round-trip fixture tests for `DatasourceInstanceConfig`. tsc clean.
 
 **Goal:** A datasource is describable as plain JSON — a named, addressable spec — before anything consumes it.
 
@@ -34,7 +36,9 @@ Make datasources first-class JSON: a named spec referenced by id, authored and r
 
 ---
 
-### Layer 3.2 — Page configs resolve years at runtime, not module-load
+### Layer 3.2 — Page configs resolve years at runtime, not module-load ✅
+
+> **✅ DONE (2026-06-15)** — `DefaultSpec = DimVal | OptionsDefault | Record<string,unknown>` added to `filter-params.ts`; `resolveDefaults` + `validateCascadeValues` in `filter-eval.ts`; `useFilterState(schema, store?)` calls `resolveDefaults` + gains `isLoading: boolean`. Filter defaults in gdp/accounts/regional `.filters.ts` migrated: `default: LAST` → `{ from:'options', pick:'last' }`. Badge text + section subtitles use `'{fromYear}–{toYear}'` templates. 9 files cleaned of `codesOf` at module-top. tsc clean. **KpiSpec widening (2026-06-15):** `interpretKpi` now calls `resolveTemplate` on `label` and `trendSub`; `gdp/accounts/regional.kpis.ts` remove all `codesOf`/FIRST/LAST constants — `from`/`to`/`time` use `{ $ctx: 'fromYear' }`/`{ $ctx: 'toYear' }` CtxRefs; `trendSub`/`label` use `{fromYear}`/`{toYear}` template syntax. tsc clean. Effects Pass 2 (re-run defaults after effects null keys) noted with comment in `useFilterState`, implement when effects pipeline is revisited.
 
 **Goal:** No page config reaches into imported classifiers at import time — years come from the datasource at render, so Phase-2 API-sourced classifiers work.
 
@@ -67,6 +71,10 @@ Make datasources first-class JSON: a named spec referenced by id, authored and r
 
 ---
 
+### Layer 3.3 — Remove functions from config (DataSpec.custom + filter validators) ✅
+
+> **✅ DONE (2026-06-15)** — `DataSpec.custom { fn }` removed from `section.ts`; `CustomResolver` removed from `resolvers.ts` + `spec-catalog.ts`; `DataSpecEditor.tsx` migrated to `{ type: 'row-list', rows: [] }`. `Validator.test: fn` → `Validator.check: ValidatorPredicate` (declarative discriminated union: `required | min | max | oneOf`); `evalValidatorPredicate(check, value)` evaluator added. `CrossValidator.test: fn` → `CrossValidator.check: WhenMap`; function `message` branch removed → `LocaleString`. `Effect.set` narrowed to `Record<string, string>` (function branch removed). `validateField` signature simplified (no unused `state` param). 35/35 tests. tsc clean.
+
 ### Layer 3.3 — Remove functions from config (DataSpec.custom + filter validators)
 
 **Goal:** No config type can carry a function — every config is pure JSON, Constructor-authorable.
@@ -90,6 +98,10 @@ Make datasources first-class JSON: a named spec referenced by id, authored and r
 **Closes:** gap #3, #4
 
 ---
+
+### Layer 3.4 — `FilterDerive` source: refs only, inline arrays flagged ✅
+
+> **✅ DONE (2026-06-15)** — `FilterDeriveObserver` seam added to `filter-derive.ts` (identical pattern to `SpecResolveObserver`). Observer fires on `find`, `breadcrumbs`, `join-labels` ops when source is an inline array. `setFilterDeriveObserver` exported from `@geostat/engine`. DEV observer wired in `setupRegistrations.ts` with console.warn explaining Phase-2-incompatibility. 35/35 tests. tsc clean.
 
 ### Layer 3.4 — `FilterDerive` source: refs only, inline arrays flagged
 
@@ -118,7 +130,9 @@ Close the remaining type holes and remove unsafe casts. With the architecture JS
 
 ---
 
-### Layer 4.1 — `LocaleString` sweep across user-visible label fields
+### Layer 4.1 — `LocaleString` sweep across user-visible label fields ✅
+
+> **✅ DONE (2026-06-14)** — `ColumnDef.label`, `RowSpec.label`, `SectionView.subtitle`, `PageHeaderDef.title`, `LinkDef.label` widened to `LocaleString` in `config/section.ts`. `ParamMeta.label/suffix/hint` in `filter-params.ts`. `Validator.message` and `CrossValidator.message` (string branch) in `filter-validator.ts`. tsc clean. Render-boundary convention (shells use `useResolveLocale()`) applies on next touch per shell.
 
 **Goal:** Every user-visible label field accepts `LocaleString`, so the Constructor can author bilingual content and multi-site deployments translate cleanly.
 
@@ -140,7 +154,9 @@ Close the remaining type holes and remove unsafe casts. With the architecture JS
 
 ---
 
-### Layer 4.2 — `Unit` open type
+### Layer 4.2 — `Unit` open type ✅
+
+> **✅ DONE (2026-06-14)** — `Unit = string` (was closed union `'MLN_GEL' | 'PCT' | 'USD' | 'GEL'`). tsc clean.
 
 **Goal:** A new unit (EUR, THOU_GEL) needs zero `engine/core` change.
 
@@ -160,7 +176,9 @@ Close the remaining type holes and remove unsafe casts. With the architecture JS
 
 ---
 
-### Layer 4.3 — Remove `as Record<string, any>` classifier casts
+### Layer 4.3 — Remove `as Record<string, any>` classifier casts ✅
+
+> **✅ DONE (2026-06-14)** — Removed all `as Record<string, any>` casts from `gdp/store.ts` and `site-manifest.ts`. Both `eslint-disable` comments removed. tsc clean (ClassifierEntry[] is structurally compatible with Record<string, Classifier>).
 
 **Goal:** Classifier maps flow to `ExternalStore` with their real types — no `any` escape at the adapter boundary.
 
@@ -181,7 +199,9 @@ Close the remaining type holes and remove unsafe casts. With the architecture JS
 
 ---
 
-### Layer 4.4 — Typed `EventBus` default + typed `NodeRegistry` children
+### Layer 4.4 — Typed `EventBus` default + typed `NodeRegistry` children ✅
+
+> **✅ DONE (2026-06-14)** — `EventBus<TMap = GeostatEventMap>` (was `Record<string, any>`). `AnyRenderer` in `NodeRegistry`: `def: NodeBase`, `children: ChildrenArg` (was `any`). `register()` renderer param tightened to `children: ChildrenArg`. tsc clean.
 
 **Goal:** No `any` defaults in core registry/bus generics.
 
@@ -202,7 +222,9 @@ Close the remaining type holes and remove unsafe casts. With the architecture JS
 
 ---
 
-### Layer 4.5 — Clarify the `RenderContext` config-vs-runtime boundary
+### Layer 4.5 — Clarify the `RenderContext` config-vs-runtime boundary ✅
+
+> **✅ DONE (2026-06-14)** — `RenderContext` interface split into A (Serializable data) and B (Runtime services) sections with explicit comment block explaining the seam. tsc clean.
 
 **Goal:** It is explicit which parts of `RenderContext` are runtime services (functions) and which are serializable — so no one mistakes ctx for config.
 

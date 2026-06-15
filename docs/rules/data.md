@@ -2,7 +2,7 @@
 description: Data adapter boundary rules — fromSDMX, DataSpec, DataStore
 paths:
   - "src/data/**"
-  - "engine/core/src/data/**"
+  - "packages/engine/src/data/**"
 ---
 
 # Data Layer Rules

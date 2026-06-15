@@ -10,7 +10,9 @@ With integrity, purity, coupling, JSON-readiness, types, robustness, and readabi
 
 ---
 
-### Layer 7.1 — Datasource plugin API
+### Layer 7.1 — Datasource plugin API ✅
+
+> **✅ DONE (2026-06-15)** — `stats-registrations.ts` (new): `registerStoreBuilders()` registers the `'stats'` kind builder — receives `{ id, kind:'stats', url, params:{ datasetCode, nonTimeDims } }`, fetches obs + classifiers, returns `ExternalStore`. `fetchStats()` slims from 30 → 13 lines: `/datasets` → `DatasourceInstanceConfig[]` → `buildStoreManifest()`. Static/api paths unchanged (Strangler-Fig on the generic path only). `registerStoreBuilders()` called in `setupRegistrations.ts`. DoD: one `registerStoreBuilder()` call per new kind, zero engine change. tsc EXIT=0.
 
 **Goal:** A new agency registers its own `DataStore` implementation as a plugin — zero core change — exactly as Grafana registers a datasource plugin.
 
@@ -32,7 +34,9 @@ With integrity, purity, coupling, JSON-readiness, types, robustness, and readabi
 
 ---
 
-### Layer 7.2 — Constructor palette metadata completeness
+### Layer 7.2 — Constructor palette metadata completeness ✅
+
+> **✅ DONE (2026-06-15)** — `slice-meta.ts` (new): typed taxonomy — `SliceCategory`, `NodeSliceMeta`, `PageSliceMeta`, `PanelSliceMeta`, `ChromeSliceMeta`, `FilterControlMeta`, `SliceMeta` discriminated union. `NodeRegistry.list()` → all registered slices with full META (open discovery); `NodeRegistry.getSchema(type, variant)` → schema or null. `registerSlice` updated to `AnyNodeSliceMeta` union with per-sliceType `'in'` guards. 35 plugin `meta.ts` files across nodes/pages/panels/chrome — every registered slice carries label, icon, category, schema, defaults, slots, groups, version, i18n. `META` exported from every `default/index.ts`. tsc EXIT=0.
 
 **Goal:** Every registered slice carries complete Constructor metadata (label, icon, category, schema, defaults, slots) so the Phase-2 visual builder can present and author it.
 
