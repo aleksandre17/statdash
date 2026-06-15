@@ -5,12 +5,24 @@ import { LocaleGuard }              from './LocaleGuard'
 import { bootstrapSite }            from '@/data/site-manifest'
 import type { SiteBootstrap }       from '@/data/site-manifest'
 
+function AppSkeleton() {
+  return (
+    <div className="app-skeleton" aria-busy="true" aria-label="იტვირთება...">
+      <div className="app-skeleton__nav" />
+      <div className="app-skeleton__page">
+        <div className="app-skeleton__header" />
+        <div className="app-skeleton__content" />
+      </div>
+    </div>
+  )
+}
+
 export default function App() {
   const [bootstrap, setBootstrap] = useState<SiteBootstrap | null>(null)
 
   useEffect(() => { bootstrapSite().then(setBootstrap) }, [])
 
-  if (!bootstrap) return null   // Phase 2: replace with <AppSkeleton />
+  if (!bootstrap) return <AppSkeleton />
 
   const { manifest, stores } = bootstrap
 
