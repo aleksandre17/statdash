@@ -20,9 +20,10 @@
 //  Pattern: Grafana bootData (stores manifest + nav from API on startup),
 //           Retool fetchAppManifest (resources + pages in one bootstrap call).
 //
-import type { DataStore }                                    from '@geostat/engine'
+import type { DataStore, DatasourceInstanceConfig }          from '@geostat/engine'
 import type { NavEntry, I18nConfig, ChromeConfig, ChromeEntry } from '@geostat/react'
 import type { NodePageConfig }                               from '@geostat/react/engine'
+import { buildStoreManifest }     from '@geostat/react/engine'
 import { STORE_MANIFEST }                        from './store-manifest'
 import { listPages }                             from './pages/registry'
 import { NAV }                                   from './nav.config'
@@ -32,6 +33,8 @@ import { GLOBAL_CHROME, I18N_CONFIG }            from './site-config'
 // ── SiteManifest — JSON-serializable ──────────────────────────────────
 
 export interface SiteManifest {
+  /** Named datasource descriptors — JSON-serializable; Phase 2: engine.buildStoreManifest(datasources) builds stores. */
+  datasources?: DatasourceInstanceConfig[]
   /** All page configs — keyed by pageId, drives dynamic routes */
   pages:        Record<string, NodePageConfig>
   /** Sidebar nav entries */
@@ -110,23 +113,50 @@ async function fetchApi(): Promise<SiteBootstrap> {
     stores: {
       gdp: new ExternalStore(
         fromGDPFacts(gdpRaw),
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        { classifiers: GDP_CLASSIFIERS as Record<string, any>, display: GDP_DISPLAY as Record<string, any> },
+        { classifiers: GDP_CLASSIFIERS, display: GDP_DISPLAY },
       ),
       accounts: new ExternalStore(
         fromAccountsFacts(fromSDMX(accountsRaw, { locales: I18N_CONFIG.locales })),
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        { classifiers: ACCOUNTS_CLASSIFIERS as Record<string, any>, display: ACCOUNTS_DISPLAY as Record<string, any> },
+        { classifiers: ACCOUNTS_CLASSIFIERS, display: ACCOUNTS_DISPLAY },
       ),
       regional: new ExternalStore(fromRegionalFacts(regionalRaw.facts), { classifiers: regionalRaw.classifiers }),
     },
   }
 }
 
+// ── Layer 3: real stats API (VITE_STORE_MODE=stats) ──────────────────────
+//
+//  Fetches live observations + classifiers from the stats API and wraps each
+//  dataset in an ExternalStore. Dynamic imports keep the HTTP adapter and
+//  ExternalStore out of the static/api bundles (Hexagonal: adapter at the port).
+//
+//  Graceful degradation: an empty datasets list yields stores = {} — the
+//  renderer falls back to staticStore for any unresolved storeKey, no crash.
+
+async function fetchStats(): Promise<SiteBootstrap> {
+  const base             = import.meta.env.VITE_API_STATS_URL ?? 'http://localhost:3001'
+  const { fetchDatasets } = await import('./stats-api')
+
+  const datasets = await fetchDatasets(base)
+
+  const datasources: DatasourceInstanceConfig[] = datasets.map((ds) => ({
+    id:     ds.code,
+    kind:   'stats',
+    url:    base,
+    params: {
+      datasetCode: ds.code,
+      nonTimeDims: ds.dimensions.filter((d) => !d.is_time_dim).map((d) => d.dim_code),
+    },
+  }))
+
+  const stores = await buildStoreManifest(datasources)
+  return { manifest: buildManifest(), stores }
+}
+
 // ── Public entry point ─────────────────────────────────────────────────
 
 export async function bootstrapSite(): Promise<SiteBootstrap> {
-  return import.meta.env.VITE_STORE_MODE === 'api'
-    ? fetchApi()
-    : fetchStatic()
+  if (import.meta.env.VITE_STORE_MODE === 'stats') return fetchStats()
+  if (import.meta.env.VITE_STORE_MODE === 'api')   return fetchApi()
+  return fetchStatic()
 }
