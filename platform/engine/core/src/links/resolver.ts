@@ -34,16 +34,27 @@ function buildPageHref(
   return query ? `${base}?${query}` : base
 }
 
+/**
+ * Allowlist of URL schemes accepted in external DataLink targets.
+ * `javascript:` / `data:` / `vbscript:` are blocked to prevent protocol injection.
+ */
+const SAFE_URL_SCHEMES = /^(https?|mailto):/i
+
 function buildUrlHref(
   url:          string,
   params:       Record<string, DataLinkParam> | undefined,
   row:          Record<string, DimVal>,
   filterParams: Record<string, unknown>,
 ): string {
+  // Reject unsafe URL schemes in the template itself (config-time XSS guard).
+  if (!SAFE_URL_SCHEMES.test(url.trimStart())) return ''
+
   let result = url
   if (params) {
     for (const [k, v] of Object.entries(params)) {
-      result = result.split(`{${k}}`).join(resolveParam(v, row, filterParams))
+      // encodeURIComponent prevents param values from escaping the URL structure
+      // (e.g. a `$ctx` value containing '?' or '#' stays within its position).
+      result = result.split(`{${k}}`).join(encodeURIComponent(resolveParam(v, row, filterParams)))
     }
   }
   return result

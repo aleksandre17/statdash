@@ -22,6 +22,28 @@ import {
 } from 'react'
 import { useSearchParams, useLocation } from 'react-router-dom'
 
+// ── URL param sanitization ────────────────────────────────────────────
+//
+//  URL params are user-controlled input. While React auto-escapes string
+//  content (no XSS via text rendering), we still sanitize at the read
+//  boundary to:
+//    1. Prevent excessively long values from being stored in React state.
+//    2. Strip protocol prefixes that could propagate to href construction.
+//
+const MAX_PARAM_LEN = 512
+const UNSAFE_PROTOCOL = /^(javascript|data|vbscript):/i
+
+function sanitizeParam(value: string): string {
+  const trimmed = value.slice(0, MAX_PARAM_LEN)
+  return UNSAFE_PROTOCOL.test(trimmed.trimStart()) ? '' : trimmed
+}
+
+function sanitizeParams(raw: Record<string, string>): Record<string, string> {
+  const out: Record<string, string> = {}
+  for (const [k, v] of Object.entries(raw)) out[k] = sanitizeParam(v)
+  return out
+}
+
 interface FilterCtx {
   state:   Record<string, string>
   set:     (key: string, value: string) => void
@@ -38,7 +60,7 @@ export function FilterProvider({ children }: { children: ReactNode }) {
 
   // React owns filter state — not derived from URL on every render.
   const [state, setState] = useState<Record<string, string>>(
-    () => Object.fromEntries(new URLSearchParams(location.search))
+    () => sanitizeParams(Object.fromEntries(new URLSearchParams(location.search)))
   )
 
   // Back/forward within the same page: re-sync from URL when search changes.
@@ -46,7 +68,7 @@ export function FilterProvider({ children }: { children: ReactNode }) {
   // Path guard: navigation = new FilterProvider mount (keyed by page), not this concern.
   useEffect(() => {
     if (location.pathname !== mountPath.current) return
-    const next = Object.fromEntries(new URLSearchParams(location.search))
+    const next = sanitizeParams(Object.fromEntries(new URLSearchParams(location.search)))
     setState(prev => {
       const keys = new Set([...Object.keys(prev), ...Object.keys(next)])
       for (const k of keys) if (prev[k] !== next[k]) return next

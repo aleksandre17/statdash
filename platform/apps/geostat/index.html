@@ -5,6 +5,26 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>ეროვნული ანგარიშები — საქსტატი</title>
+    <!--
+      Content-Security-Policy baseline (Phase 9.5 [N24]).
+      - style-src 'unsafe-inline': required by ApexCharts (SVG inline styles).
+      - connect-src 'self' https:: allows the stats/chat APIs; restrict to
+        specific origins via HTTP header (nginx/server) in production.
+      - frame-ancestors: must be set via HTTP header (meta tag ignored by spec).
+      Production hardening: add `Content-Security-Policy` HTTP header in nginx
+      that overrides this meta, restricting connect-src to the actual API domain.
+    -->
+    <meta http-equiv="Content-Security-Policy" content="
+      default-src 'self';
+      script-src 'self';
+      style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+      font-src 'self' https://fonts.gstatic.com;
+      img-src 'self' data: blob:;
+      connect-src 'self' https:;
+      object-src 'none';
+      base-uri 'self';
+      form-action 'self'
+    " />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Georgian:wght@300;400;500;600;700&family=Noto+Serif+Georgian:wght@600;700&display=swap" rel="stylesheet" />

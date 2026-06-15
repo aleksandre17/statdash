@@ -194,6 +194,11 @@ export function evalVisibility(
 //  Caller should resolve LocaleString via useResolveLocale() before passing
 //  here (string branch passes through unchanged).
 //
+//  XSS safety: returns a plain string — never HTML.  Callers render it as
+//  React text content (JSX auto-escapes) or as a DOM attribute value.
+//  No `dangerouslySetInnerHTML` path exists in the engine.  If a future
+//  caller renders this as HTML it MUST call encodeHTML() first.
+//
 export function resolveTemplate(
   tpl:    string | { year: string; range: string },
   ctx:    SectionContext,
