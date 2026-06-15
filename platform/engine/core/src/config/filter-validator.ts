@@ -7,16 +7,39 @@
 //  Validator message strings are locale-neutral English fallbacks.
 //  The app layer is responsible for localisation (i18n adapter pattern).
 //
+//  All types are 100% JSON-serializable and Constructor-authorable.
+//
 
-import type { WhenMap } from './filter-condition'
+import type { WhenMap }        from './filter-condition'
+import type { LocaleString }   from '../i18n/types'
 import { evalWhen }     from './filter-condition'
+
+// ── ValidatorPredicate — declarative, JSON-serializable predicate ─────────────
+//
+//  Evaluated by evalValidatorPredicate(check, value).
+//  OCP: new ops add a new discriminant; Validator interface unchanged.
+//
+export type ValidatorPredicate =
+  | { op: 'required' }                    // value is non-empty
+  | { op: 'min';   value: number }        // Number(value) >= value, or empty passes
+  | { op: 'max';   value: number }        // Number(value) <= value, or empty passes
+  | { op: 'oneOf'; values: string[] }     // value ∈ values, or empty passes
+
+export function evalValidatorPredicate(check: ValidatorPredicate, value: string): boolean {
+  switch (check.op) {
+    case 'required': return Boolean(value)
+    case 'min':      return !value || Number(value) >= check.value
+    case 'max':      return !value || Number(value) <= check.value
+    case 'oneOf':    return !value || check.values.includes(value)
+  }
+}
 
 // ── Validator — per-field validation ─────────────────────────────────────────
 
 export interface Validator {
-  /** Returns true if the value is valid. */
-  test:    (value: string, state: Record<string, string>) => boolean
-  message: string
+  /** Declarative predicate — JSON-serializable, Constructor-authorable. */
+  check:   ValidatorPredicate
+  message: LocaleString
 }
 
 /**
@@ -26,15 +49,12 @@ export interface Validator {
  * Pass `msg` to supply a localised message from the app layer.
  */
 export const validators = {
-  required:  (msg = 'required'): Validator => ({ test: (v) => Boolean(v),              message: msg }),
-  minYear:   (min: number, msg?: string): Validator => ({ test: (v) => !v || Number(v) >= min,   message: msg ?? `min year: ${min}` }),
-  maxYear:   (max: number, msg?: string): Validator => ({ test: (v) => !v || Number(v) <= max,   message: msg ?? `max year: ${max}` }),
-  oneOf:     (allowed: string[], msg?: string): Validator => ({
-    test: (v) => !v || allowed.includes(v),
-    message: msg ?? `allowed: ${allowed.join(', ')}`,
-  }),
-  minValue:  (min: number, msg?: string): Validator => ({ test: (v) => !v || Number(v) >= min, message: msg ?? `min: ${min}` }),
-  maxValue:  (max: number, msg?: string): Validator => ({ test: (v) => !v || Number(v) <= max, message: msg ?? `max: ${max}` }),
+  required:  (msg = 'required'): Validator => ({ check: { op: 'required' },                    message: msg }),
+  minYear:   (min: number, msg?: string): Validator => ({ check: { op: 'min',   value: min },   message: msg ?? `min year: ${min}` }),
+  maxYear:   (max: number, msg?: string): Validator => ({ check: { op: 'max',   value: max },   message: msg ?? `max year: ${max}` }),
+  oneOf:     (allowed: string[], msg?: string): Validator => ({ check: { op: 'oneOf', values: allowed }, message: msg ?? `allowed: ${allowed.join(', ')}` }),
+  minValue:  (min: number, msg?: string): Validator => ({ check: { op: 'min',   value: min },   message: msg ?? `min: ${min}` }),
+  maxValue:  (max: number, msg?: string): Validator => ({ check: { op: 'max',   value: max },   message: msg ?? `max: ${max}` }),
 } as const
 
 // ── CrossValidator — multi-field validation ───────────────────────────────────
@@ -46,8 +66,9 @@ export const validators = {
 
 export interface CrossValidator {
   fields:    string[]
-  test:      (values: Record<string, string>) => boolean
-  message:   string | ((values: Record<string, string>) => string)
+  /** Declarative WhenMap predicate — JSON-serializable, Constructor-authorable. */
+  check:     WhenMap
+  message:   LocaleString
   attachTo?: string
 }
 
@@ -61,13 +82,12 @@ export interface CrossValidator {
 //    AppSmith  — widget event handlers (onChange → resetWidget)
 //    Retool    — component event handlers (onChange → setValue)
 //
-//  set values may be static strings or (prevValue) => string transforms.
-//  Phase 2: static strings only (full JSON-serialisability).
+//  set values are static strings — 100% JSON-serializable, Constructor-authorable.
 //
 
 export interface Effect {
   when: WhenMap
-  set:  Record<string, string | ((prevValue: string) => string)>
+  set:  Record<string, string>
 }
 
 /** Collect cross-field validation errors, returning a key → message map. */
@@ -79,10 +99,10 @@ export function applyCrossValidation(
   const extra: Record<string, string> = {}
   for (const cv of crossValidate) {
     const vals = Object.fromEntries(cv.fields.map((f) => [f, raw[f] ?? '']))
-    if (!cv.test(vals)) {
+    if (!evalWhen(cv.check, vals)) {
       const target = cv.attachTo ?? cv.fields[0]
       if (!perField[target] && !extra[target])
-        extra[target] = typeof cv.message === 'function' ? cv.message(vals) : cv.message
+        extra[target] = cv.message
     }
   }
   return extra
@@ -105,7 +125,7 @@ export function applyEffects(
   for (const effect of effects) {
     if (evalWhen(effect.when, projected)) {
       for (const [k, v] of Object.entries(effect.set))
-        mutations[k] = typeof v === 'function' ? v(projected[k] ?? '') : v
+        mutations[k] = v
     }
   }
   setMany(mutations)

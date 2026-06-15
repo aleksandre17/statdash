@@ -12,7 +12,7 @@ export default defineConfig({
   resolve: {
     alias: [
       { find: '@geostat/engine', replacement: resolve(__dirname, 'src')      },
-      { find: '@geostat/expr',   replacement: resolve(__dirname, '../expr')   },
+      { find: '@geostat/expr',   replacement: resolve(__dirname, '../expr/index.ts') },
     ],
   },
 })

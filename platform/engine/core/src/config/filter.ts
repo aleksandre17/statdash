@@ -17,9 +17,9 @@
 export type { Condition, WhenMap }                    from './filter-condition'
 export { evalCondition, evalWhen }                    from './filter-condition'
 
-export type { Validator, CrossValidator, Effect }     from './filter-validator'
-export { validators, applyCrossValidation,
-         applyEffects }                               from './filter-validator'
+export type { ValidatorPredicate, Validator, CrossValidator, Effect } from './filter-validator'
+export { evalValidatorPredicate, validators,
+         applyCrossValidation, applyEffects }         from './filter-validator'
 
 export type {
   CascadeNode,
@@ -30,11 +30,15 @@ export type {
   ParamHiddenNode, ParamYearSelectNode, ParamCascadeNode, ParamSelectNode,
   ParamRangeNode, ParamMultiSelectNode, ParamChipSelectNode, ParamNode,
   BarNode,
+  OptionsDefault, DefaultSpec,
 }                                                     from './filter-params'
 
 export type { FilterDerive, DeriveContext,
-              VarMap, FilterBarNode }                 from './filter-derive'
-export { evalFilterDerive }                           from './filter-derive'
+              VarMap, FilterBarNode,
+              FilterDeriveObserver }                  from './filter-derive'
+export { evalFilterDerive,
+         setFilterDeriveObserver }                    from './filter-derive'
 
 export { autoParse, isVisible, isEnabled,
-         validateField }                              from './filter-eval'
+         validateField, resolveDefaults,
+         validateCascadeValues }                      from './filter-eval'

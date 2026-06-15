@@ -14,7 +14,10 @@ export type TimeMode = ModeId
 
 // ── Unit ───────────────────────────────────────────────────────────────
 
-export type Unit = 'MLN_GEL' | 'PCT' | 'USD' | 'GEL'
+// Open string — units are data, not an engine-owned enum.
+// New unit (EUR, THOU_GEL, …) requires zero engine change.
+// Grafana Stat panel.unit: string · SDMX Attribute codelist analogue.
+export type Unit = string
 
 // ── ChartType ──────────────────────────────────────────────────────────
 //

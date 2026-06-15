@@ -19,6 +19,30 @@ import { isDimRef, resolveDimRef }             from '../data/codelist'
 import { evalWhen }                            from './filter-condition'
 import type { ExprVal }                        from '@geostat/expr'
 
+// ── Observability seam ────────────────────────────────────────────────
+//
+//  The engine never imports import.meta or couples to a console.
+//  The app layer registers an optional observer (once, at startup) and
+//  receives a warning when a FilterDerive is evaluated with a Phase-2-
+//  incompatible inline-array source.  Engine ships pure.
+//
+//  Usage (app layer, dev-only):
+//    import { setFilterDeriveObserver } from '@geostat/engine'
+//    if (import.meta.env.DEV) {
+//      setFilterDeriveObserver((key, op) => { … })
+//    }
+//
+
+/** Observer called when a FilterDerive is evaluated with a Phase-2-incompatible inline source. */
+export type FilterDeriveObserver = (key: string, opName: string) => void
+
+let _observer: FilterDeriveObserver | undefined
+
+/** Register a single dev-time observer for inline-array source warnings. Call once at app startup. */
+export function setFilterDeriveObserver(fn: FilterDeriveObserver): void {
+  _observer = fn
+}
+
 export type FilterDerive =
   /** Map a param string value to any via a lookup table. */
   | { op: 'lookup';     key: string; map: Record<string, unknown>; fallback?: unknown }
@@ -83,6 +107,7 @@ export function evalFilterDerive(
       return expr.map[values[expr.key] as string] ?? expr.fallback ?? ''
     }
     case 'find': {
+      if (Array.isArray(expr.source)) _observer?.('source', expr.op)
       const src    = resolveSource(expr.source, ctx?.classifiers, ctx?.display)
       const id     = values[expr.by]
       const idKey  = expr.idField ?? 'id'
@@ -107,6 +132,7 @@ export function evalFilterDerive(
       return result
     }
     case 'breadcrumbs': {
+      if (Array.isArray(expr.source)) _observer?.('source', expr.op)
       const src   = resolveSource(expr.source, ctx?.classifiers, ctx?.display)
       const id    = values[expr.by] as string
       const idKey = expr.idField ?? 'id'
@@ -120,6 +146,7 @@ export function evalFilterDerive(
       return (raw[expr.source] ?? '').includes(expr.sub) ? expr.match : expr.fallback
     }
     case 'join-labels': {
+      if (Array.isArray(expr.source)) _observer?.('source', expr.op)
       const src    = resolveSource(expr.source, ctx?.classifiers, ctx?.display)
       const ids    = (raw[expr.by] ?? '').split(',').filter(Boolean)
       if (!ids.length) return expr.fallback ?? ''

@@ -14,19 +14,53 @@
 //
 
 import type { WhenMap }                                from './filter-condition'
+import type { LocaleString }                            from '../i18n/types'
 import type { Validator }                              from './filter-validator'
 import type { OptionsSource, ChipSource, YearsSource } from '../data/source'
+import type { DimVal }                                 from '../sdmx'
+
+// ── DefaultSpec — three-tier default value ────────────────────────────────────
+
+/**
+ * Tier 3 default: pick a value from this param's own options/years at runtime.
+ * Resolves after options are loaded; `isLoading: true` while pending.
+ */
+export interface OptionsDefault {
+  from:   'options'
+  pick:   'first' | 'last'
+  /** Which row field to use as value. Default: param's valueField ?? 'code'. */
+  field?: string
+}
+
+/**
+ * DefaultSpec — three-tier default value for any ParamDef.
+ *
+ * Runtime discrimination:
+ *   null | string | number | boolean  → Tier 1 DimVal literal (backward-compatible)
+ *   { from: 'options', pick }         → Tier 3 OptionsDefault
+ *   any other object                  → Tier 2 ExprVal (evaluated via evalExpr)
+ *
+ * All three tiers are JSON-serializable. Constructor stores all three in DB.
+ */
+export type DefaultSpec = DimVal | OptionsDefault | Record<string, unknown>
 
 // ── ParamMeta — shared base for every param type ─────────────────────────────
 
 type ParamMeta = {
   /** Label shown before the control. */
-  label?:       string
+  label?:       LocaleString
   /** Short text shown after the control (e.g. suffix annotation). */
-  suffix?:      string
-  /** URL-serialised default value. */
-  default:      string
-  hint?:        string
+  suffix?:      LocaleString
+  /**
+   * URL-serialised default value.
+   *
+   * Tier 1 (DimVal): literal string/number/boolean — backward-compatible.
+   * Tier 2 (ExprVal): { op, left, right, … } — resolved via evalExpr at runtime.
+   * Tier 3 (OptionsDefault): { from: 'options', pick: 'first'|'last' } — resolved
+   *   after the param's options list is loaded.
+   */
+  default:      DefaultSpec
+  hint?:        LocaleString
   description?: string
   /** Hide this control when the condition is false. */
   showWhen?:    WhenMap

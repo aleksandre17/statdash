@@ -13,6 +13,7 @@ import type { CtxRef, DimVal, FilterValue, NeCtxRef }  from '../sdmx'
 import type { SpecResolver }                 from './engine'
 import { applyPipeline, applyStep }          from '../data/transform'
 import { defaultRegistry }                   from './engine'
+import { emitDiagnostic }                    from './diagnostics'
 
 // ── Shared utilities ───────────────────────────────────────────────────
 
@@ -60,7 +61,22 @@ class ByModeResolver implements SpecResolver<Extract<DataSpec, { type: 'by-mode'
     ctx:   SectionContext,
     store: DataStore,
   ): EngineRow[] {
-    const active = spec.modes[ctx.timeMode] ?? spec.modes[Object.keys(spec.modes)[0]!]
+    const modeKeys = Object.keys(spec.modes)
+    const branch   = spec.modes[ctx.timeMode]
+
+    let active: DataSpec | undefined
+    if (branch) {
+      active = branch
+    } else {
+      // Active mode key absent — emit a diagnostic then fall back to first branch.
+      const fallbackKey = modeKeys[0]
+      emitDiagnostic(
+        'by-mode:missing-branch',
+        `timeMode '${ctx.timeMode}' not found in modes [${modeKeys.join(', ')}]; falling back to '${fallbackKey ?? '(none)'}'`,
+      )
+      active = fallbackKey ? spec.modes[fallbackKey] : undefined
+    }
+
     if (!active) return []
     const resolver = defaultRegistry.spec(active.type)
     if (resolver) return resolver.resolve(active as DataSpec, ctx, store)
@@ -277,19 +293,10 @@ class TransformResolver implements SpecResolver<Extract<DataSpec, { type: 'trans
   }
 }
 
-// ── CustomResolver ────────────────────────────────────────────────────
-
-class CustomResolver implements SpecResolver<Extract<DataSpec, { type: 'custom' }>> {
-  readonly type = 'custom' as const
-
-  resolve(spec: Extract<DataSpec, { type: 'custom' }>, ctx: SectionContext): EngineRow[] {
-    // fn returns DataRow[] — cast to EngineRow[] at the engine/renderer boundary.
-    // DataRow is structurally EngineRow-compatible (all fields are unknown-assignable).
-    return spec.fn(ctx) as unknown as EngineRow[]
-  }
-}
-
 // ── Register all built-in spec resolvers ──────────────────────────────
+//
+//  To add a custom resolver: `defaultRegistry.registerSpec(myResolver)` in your app bootstrap.
+//
 
 defaultRegistry
   .registerSpec(new ByModeResolver())
@@ -300,4 +307,3 @@ defaultRegistry
   .registerSpec(new QueryResolver())
   .registerSpec(new PivotResolver())
   .registerSpec(new TransformResolver())
-  .registerSpec(new CustomResolver())
