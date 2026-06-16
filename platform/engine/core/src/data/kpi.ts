@@ -62,6 +62,14 @@ export interface KpiSpec {
 
 // ── Internal helpers ──────────────────────────────────────────────────
 
+/** Extract the primary measure code from a KpiValueSpec for provenance lookup. */
+function primaryMeasure(spec: KpiValueSpec): string | undefined {
+  if ('measure' in spec) return spec.measure          // point | yoy | cagr
+  if ('num'     in spec) return spec.num.measure      // share
+  if ('codes'   in spec) return spec.codes[0]         // expr — first operand
+  return undefined
+}
+
 function resolveTime(ref: TimeRef | undefined, ctx: SectionContext): number {
   if (ref === undefined)                        return ctx.dims['time'] as number
   if (typeof ref === 'object' && '$ctx' in ref) return ctx.dims[ref.$ctx] as number
@@ -175,6 +183,11 @@ export function interpretKpi(
 ): KpiDef {
   const formattedValue = resolveValue(spec.value, ctx, store)
   const trend          = spec.trend ? resolveTrend(spec.trend, ctx, store) : null
+
+  // Provenance: static flag OR dynamic store.metadata port [N14].
+  const code = primaryMeasure(spec.value)
+  const prov = code ? store.metadata?.provenance(code, ctx) : undefined
+
   return {
     label:           resolveTemplate(spec.label, ctx),
     value:           formattedValue,
@@ -183,7 +196,7 @@ export function interpretKpi(
     trend:           trend?.dir ?? 'flat',
     trendValue:      trend?.value ?? '',
     trendSub:        spec.trendSub ? resolveTemplate(spec.trendSub, ctx) : '',
-    preliminary:     spec.preliminary,
+    preliminary:     spec.preliminary || prov?.status === 'p',
     note:            spec.note,
     methodologyUrl:  spec.methodologyUrl,
   }

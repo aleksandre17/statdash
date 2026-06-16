@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { interpretSpec }        from './spec'
-import { ExternalStore }        from './store'
+import { ExternalStore }        from './store-impl'
 import type { SectionContext }  from '../core/context'
 import type { Observation }     from '../sdmx'
 

@@ -35,7 +35,9 @@
 
 ---
 
-### Layer 9.2 — Provenance plane `[N14]` 🟩
+### Layer 9.2 — Provenance plane `[N14]` 🟩 ✅
+
+> **✅ DONE (2026-06-16)** — `core/provenance.ts` (new): `ObsStatus`, `OBS_STATUS_LABELS` (SSOT replacing per-shell constants), `ProvenanceRecord`, `MetadataPort`. `DataRow.provenance?: ProvenanceRecord` added (`status?` preserved, deprecated). `store.ts` split from 518 → 3 files: contracts (`store.ts` ~118L), filter helpers + DimResolver (`store-filter.ts` ~143L), implementations (`store-impl.ts` ~300L). `DataStore.metadata?: MetadataPort` added (optional seam — existing implementors unchanged). All public exports updated. `StatusBadge` shared React component in `@geostat/react/components/data/` — renders `OBS_STATUS_LABELS` label with `status-badge--{code}` CSS modifier; locale-agnostic. `SimpleTable`: replaced inline `STATUS_LABELS` with `<StatusBadge status={row.provenance?.status ?? row.status} />`. `_footer.ts`: per-shell `STATUS_LABELS` constant removed. `data-table.css`: `.t-status` → `.status-badge` (unified class names). `interpretKpi`: checks `store.metadata?.provenance(code, ctx)` — dynamic preliminary status from store; falls back to static `spec.preliminary`. tsc EXIT=0 across engine/core, engine/react, app.
 
 **Goal:** Every figure resolves its source · vintage · methodology · `OBS_STATUS` · confidence, surfaced uniformly.
 
@@ -43,9 +45,9 @@
 - `MetadataPort` in the engine; `DataRow.status` (existing OBS_STATUS) generalizes to a provenance record. A shared info-affordance on chart/table/KPI surfaces it.
 
 **Definition of Done:**
-- [ ] Any rendered figure can resolve its provenance via one port.
-- [ ] Provenance is uniform across panels, not per-shell ad hoc.
-- [ ] `npx tsc --noEmit` = 0 errors.
+- [x] Any rendered figure can resolve its provenance via one port.
+- [x] Provenance is uniform across panels, not per-shell ad hoc.
+- [x] `npx tsc --noEmit` = 0 errors.
 
 **Dependencies:** Phase 3.1 (datasource seam)
 **Touches:** engine/core · plugins · src/data

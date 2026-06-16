@@ -15,7 +15,8 @@
 //  to pivot. DataRow[] is always long format (one row per observation).
 //
 
-import type { DimVal } from '../sdmx'
+import type { DimVal }           from '../sdmx'
+import type { ProvenanceRecord } from '../core/provenance'
 
 // ── EngineRow — neutral output type of interpretSpec ─────────────────
 //
@@ -134,12 +135,24 @@ export interface DataRow {
   /**
    * SDMX OBS_STATUS — data quality / revision flag (IMF / Eurostat standard).
    * A = normal (default, not displayed)
-   * p = preliminary   → badge 'წინ.'
-   * e = estimate       → badge 'შეფ.'
-   * r = revised        → badge 'განახ.'
-   * c = confidential   → badge 'კონფ.'
+   * p = preliminary   → badge 'P'
+   * e = estimate       → badge 'E'
+   * r = revised        → badge 'R'
+   * c = confidential   → badge 'C'
+   *
+   * @deprecated Prefer `provenance.status` for new code.
+   *   Kept for backward compatibility; `applyEncoding` continues to populate it.
    */
   status?:      'A' | 'p' | 'e' | 'r' | 'c'
+  /**
+   * Typed provenance record — superset of the `status` field.
+   * Populated by the store layer (MetadataPort) or by `applyEncoding` when
+   * the encoding includes a status field.  Absent when no provenance data
+   * is available — renderers degrade gracefully.
+   *
+   * Reference: roadmap Layer 9.2 [N14].
+   */
+  provenance?:  ProvenanceRecord
 }
 
 

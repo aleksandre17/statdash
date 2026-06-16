@@ -114,8 +114,9 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* SDMX OBS_STATUS badges — IMF / Eurostat standard */
-.t-status {
+/* SDMX OBS_STATUS badges — IMF / Eurostat standard [N14] */
+/* Class names match StatusBadge component in @geostat/react */
+.status-badge {
   display: inline-block;
   font-size: 0.625rem;
   font-weight: 700;
@@ -127,10 +128,10 @@
   text-transform: uppercase;
   line-height: 1.4;
 }
-.t-status--p { background: #FFF3CD; color: #856404; }   /* preliminary */
-.t-status--e { background: #E8F4F8; color: #1B7A9E; }   /* estimate     */
-.t-status--r { background: #F0F0F0; color: #4A5568; }   /* revised      */
-.t-status--c { background: #FEE2E2; color: #9B1C1C; }   /* confidential */
+.status-badge--p { background: #FFF3CD; color: #856404; }   /* preliminary */
+.status-badge--e { background: #E8F4F8; color: #1B7A9E; }   /* estimate     */
+.status-badge--r { background: #F0F0F0; color: #4A5568; }   /* revised      */
+.status-badge--c { background: #FEE2E2; color: #9B1C1C; }   /* confidential */
 
 /* Table caption — source / provenance note (IMF standard) */
 .data-table__caption {

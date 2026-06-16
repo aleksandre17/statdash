@@ -22,6 +22,9 @@ export { EngineError }                                                   from '.
 // ── Diagnostic + Result<T> — typed error contract [N17] ───────────────
 export type { DiagnosticLevel, Diagnostic, Result }                      from './core/diagnostic'
 export { diagError, diagWarning, diagInfo, ok, err }                     from './core/diagnostic'
+// ── Provenance — data quality + lineage record [N14] ──────────────────
+export type { ObsStatus, ProvenanceRecord, MetadataPort }                from './core/provenance'
+export { OBS_STATUS_LABELS }                                             from './core/provenance'
 export type { ModeId, TimeMode, Unit, ChartType, Indicator, SectionContext } from './core/context'
 export { groupBySpan }                                                   from './core/layout'
 export type { DataLookupOp, DeriveEntry, NodeDeriveMap }                from './core/types'
@@ -106,10 +109,10 @@ export { evalCondition, evalWhen, evalValidatorPredicate, validators,
          resolveDefaults, validateCascadeValues }                        from './config/filter'
 
 // ── Repository Pattern — DataStore ────────────────────────────────────
-export type { DataStore, Requirement, ExternalStoreOptions,
-              StoreQuery, StoreCaps }                                    from './data/store'
-export { staticStore, ExternalStore, ApiStore, CachedStore,
-         storeVal, storeObs, runBatch }                                 from './data/store'
+export type { DataStore, Requirement, StoreQuery, StoreCaps }          from './data/store'
+export { staticStore, storeVal, storeObs, runBatch }                   from './data/store'
+export type { ExternalStoreOptions }                                   from './data/store-impl'
+export { ExternalStore, ApiStore, CachedStore }                        from './data/store-impl'
 export type { DatasourceInstanceConfig }                                from './data/datasource'
 export type { AggOp, AggregationRule }                                  from './data/aggregate'
 export { groupAggregate }                                               from './data/aggregate'

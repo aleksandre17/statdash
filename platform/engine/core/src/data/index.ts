@@ -10,8 +10,9 @@ export type { EncodingSpec, DataRow }                               from './enco
 export type { RawRow, DeriveExpr, TransformStep }                   from './transform'
 export { applyPipeline, applyStep, getFormatter, FORMATTERS }       from './transform'
 export type { DataStore, Requirement, StoreQuery, StoreCaps }       from './store'
-export { staticStore, ExternalStore, ApiStore, CachedStore,
-         storeVal, storeObs, runBatch }                             from './store'
+export { staticStore, storeVal, storeObs, runBatch }               from './store'
+export type { ExternalStoreOptions }                               from './store-impl'
+export { ExternalStore, ApiStore, CachedStore }                    from './store-impl'
 export { interpretSpec, extractRequirements }                       from './spec'
 export { interpretKpis }                                            from './kpi'
 export type { KpiSpec, KpiValueSpec, KpiTrendSpec }                 from './kpi'

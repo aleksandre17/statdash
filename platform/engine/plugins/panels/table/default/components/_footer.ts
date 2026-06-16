@@ -45,9 +45,5 @@ export function defaultFooterLabel(footer: Record<string, AggType>): string {
   return 'სულ / საშუალო'
 }
 
-export const STATUS_LABELS: Record<string, string> = {
-  p: 'წინასწარი',
-  e: 'შეფასებული',
-  r: 'განახლებული',
-  c: 'კონფიდენციალური',
-}
+// OBS_STATUS labels moved to @geostat/engine OBS_STATUS_LABELS [N14].
+// StatusBadge component in @geostat/react is the shared rendering surface.

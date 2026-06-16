@@ -3,7 +3,8 @@
 import type { DataRow, ColumnDef } from '@geostat/engine'
 import type { AggType }            from './_footer'
 import { getCellValue, colFmt }    from './_helpers'
-import { computeAggregate, defaultFooterLabel, STATUS_LABELS } from './_footer'
+import { computeAggregate, defaultFooterLabel } from './_footer'
+import { StatusBadge }             from '@geostat/react'
 
 export interface SimpleTableProps {
   rows:              DataRow[]
@@ -78,10 +79,8 @@ export function SimpleTable({ rows, colLabel, columns, color, indent, statusFlag
                     <span className="t-dot" aria-hidden="true" style={{ background: row.color ?? color }} />
                   )}
                   {row.label}
-                  {statusFlags && row.status && row.status !== 'A' && (
-                    <span className={`t-status t-status--${row.status}`}>
-                      {STATUS_LABELS[row.status] ?? row.status}
-                    </span>
+                  {statusFlags && (
+                    <StatusBadge status={row.provenance?.status ?? row.status} />
                   )}
                 </th>
                 {columns.map((col) => {
