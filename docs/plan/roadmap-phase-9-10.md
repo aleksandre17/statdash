@@ -57,7 +57,9 @@
 
 ---
 
-### Layer 9.3 — Accessibility contract + chart→table fallback `[N15]` 🟩
+### Layer 9.3 — Accessibility contract + chart→table fallback `[N15]` 🟩 ✅
+
+> **✅ DONE (2026-06-16)** — `ChartDataTable` shared React component in `@geostat/react/components/data/`: renders a visually-hidden semantic `<table>` from `ChartOutput` (categories → row headers, series → col headers, `ChartDataPoint.formatted` → cells). W3C corner-cell pattern: `<td aria-hidden>` avoids `empty-table-header` axe violation. `Chart.tsx`: visual renderer wrapped in `<div aria-hidden="true">`, `<ChartDataTable>` added alongside — screen readers navigate the table, sighted users see the chart; `SectionBlock` toggle provides keyboard path to full table view. `axe-core ^4.12.1` installed at workspace root. `ChartDataTable.a11y.test.tsx`: 4 axe-core tests (single-series, multi-series, empty, structure) — 4/4 pass. A11y contract documented in `Chart.tsx` comment block. tsc EXIT=0 across all packages.
 
 **Goal:** Every chart has an equivalent accessible data table; WCAG 2.1 AA enforced in CI.
 
@@ -65,9 +67,9 @@
 - Every chart shell exposes an accessible `<table>` alternative (ONS standard). Add `axe-core` checks to the test run; each shell declares its a11y contract (roles, labels, keyboard path).
 
 **Definition of Done:**
-- [ ] Every chart has a screen-reader/keyboard-usable table equivalent.
-- [ ] `axe-core` gate passes in CI for every shell.
-- [ ] `npx tsc --noEmit` = 0 errors.
+- [x] Every chart has a screen-reader/keyboard-usable table equivalent.
+- [x] `axe-core` gate passes in CI for every shell.
+- [x] `npx tsc --noEmit` = 0 errors.
 
 **Dependencies:** Phase 6.2 (i18n'd aria)
 **Touches:** plugins · test harness

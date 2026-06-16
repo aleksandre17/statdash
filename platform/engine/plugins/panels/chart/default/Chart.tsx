@@ -3,6 +3,7 @@ import './chart.css'
 import { createElement }          from 'react'
 import { chartRendererRegistry }  from '@geostat/react/engine'
 import type { BodyStyleAttrs }    from '@geostat/react/engine'
+import { ChartDataTable }         from '@geostat/react'
 import ChartPlaceholder           from './components/ChartPlaceholder'
 import type { ChartType }         from './components/ChartPlaceholder'
 import type { ChartOutput }       from '@geostat/charts'
@@ -21,9 +22,15 @@ export default function Chart({ output, bodyAttrs, onDataHover, onDataLeave, onD
 
   const ariaLabel = output.series.map(s => s.name).filter(Boolean).join(', ') || output.type
 
+  // A11y contract [N15]: visual chart is aria-hidden (SVG is not AT-navigable);
+  // ChartDataTable is the screen-reader and keyboard-accessible representation.
+  // SectionBlock toggle provides sighted keyboard access to the table view.
   return (
-    <div {...bodyAttrs} className="chart-wrap" role="img" aria-label={ariaLabel}>
-      {createElement(Renderer, { output, onDataHover, onDataLeave, onDataClick })}
+    <div {...bodyAttrs} className="chart-wrap">
+      <div aria-hidden="true">
+        {createElement(Renderer, { output, onDataHover, onDataLeave, onDataClick })}
+      </div>
+      <ChartDataTable output={output} label={ariaLabel} />
     </div>
   )
 }

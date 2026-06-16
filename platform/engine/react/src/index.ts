@@ -98,3 +98,5 @@ export { default as CascadeSelect }      from './components/filters/CascadeSelec
 export { LINK_ICONS, InfoIcon, ChevronIcon } from './components/icons'
 // ── Data integrity components [N14] ───────────────────────────────────
 export { StatusBadge }                       from './components/data/StatusBadge'
+// ── Chart accessibility [N15] ─────────────────────────────────────────
+export { ChartDataTable }                    from './components/data/ChartDataTable'
