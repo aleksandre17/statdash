@@ -197,6 +197,23 @@ export function useResolveLocale(): (s: LocaleString) => string {
   )
 }
 
+// useResolveLocaleSafe — non-throwing LocaleString resolver.
+//  Degrades gracefully outside a <SiteProvider> (Postel's Law): app-agnostic,
+//  context-optional components (e.g. StatusBadge, used in shells AND in isolated
+//  stories/tests) resolve content without hard-requiring the site context. When
+//  a provider IS present, it uses the active locale + manifest fallback.
+const DEFAULT_LOCALE_FALLBACK = 'en'
+export function useResolveLocaleSafe(): (s: LocaleString) => string {
+  const localeOverride = useContext(LocaleContext)
+  const ctx            = useContext(SiteContext)
+  const locale   = localeOverride ?? ctx?.locale ?? DEFAULT_LOCALE_FALLBACK
+  const fallback = ctx?.i18n.fallbackLocale ?? DEFAULT_LOCALE_FALLBACK
+  return useCallback(
+    (s: LocaleString) => resolveLocaleString(s, locale, fallback),
+    [locale, fallback],
+  )
+}
+
 // useT — system UI strings (i18next namespace)
 // Shell: const t = useT('section'); t('export') → translated string for active locale
 export function useT(ns: string): (key: string, vars?: Record<string, string>) => string {

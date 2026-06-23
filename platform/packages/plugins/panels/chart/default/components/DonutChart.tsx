@@ -179,7 +179,7 @@ function tryPos(a: number, r: number, base: number, pct: string, name: string, s
   const right = horiz ? cos >= 0 : false
   const down = !horiz ? sin >= 0 : false
 
-  let avail = horiz
+  const avail = horiz
       ? (right ? X1 - ax - 6 : ax - X0 - 6)
       : Math.min(ax - X0, X1 - ax) * 2 - 6
   if (avail < 30) return null

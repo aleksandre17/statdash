@@ -88,6 +88,27 @@ export default defineConfig([
         allowConstantExport: true,
         extraHOCs: ['defineShell'],
       }],
+
+      // ── Underscore-prefix convention for intentionally-unused bindings ──────
+      //
+      //  The codebase's established convention is a leading `_` to mark a binding
+      //  that is REQUIRED by a signature/interface but deliberately unused — e.g.
+      //  renderer params `(_def, _ctx, _children)` that fulfil the
+      //  `(def, ctx, children) => ReactNode` contract, or a destructure-rest that
+      //  drops a key (`const { type: _, ...rest } = node`).  Encoding the
+      //  convention here (standards-as-code) is the root fix: it lets the linter
+      //  distinguish "intentionally unused, contract-required" from genuine dead
+      //  code, instead of relying on per-line disables.  Genuine dead code (no
+      //  `_` prefix) is still reported and removed.
+      //
+      '@typescript-eslint/no-unused-vars': ['error', {
+        args:                     'all',
+        argsIgnorePattern:        '^_',
+        varsIgnorePattern:        '^_',
+        caughtErrorsIgnorePattern: '^_',
+        destructuredArrayIgnorePattern: '^_',
+        ignoreRestSiblings:       true,
+      }],
     },
   },
 

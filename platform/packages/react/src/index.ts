@@ -65,7 +65,7 @@ export {
   SiteProvider, SiteLocaleProvider,
   usePageStore, useStores, useStoreQuery,
   useSiteNav, useSiteChrome, useSitePages, usePageById,
-  useLocale, useI18n, useFmt, useResolveLocale, useT,
+  useLocale, useI18n, useFmt, useResolveLocale, useResolveLocaleSafe, useT,
   useChromeConfig,
 }                                                                  from './context/SiteContext'
 export type {

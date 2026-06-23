@@ -282,7 +282,6 @@ export function applyViewStyles(view?: {
   styles?: NodeStyles
 }): { panel: StyleAttrs; body: BodyStyleAttrs } {
   const panel                     = applyPanelStyles({ width: view?.width, styles: view?.styles })
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { className: _c, ...body } = applyNodeStyles(view?.styles)
   return { panel, body }
 }

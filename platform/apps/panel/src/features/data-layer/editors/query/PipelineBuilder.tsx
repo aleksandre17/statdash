@@ -1,4 +1,4 @@
-import { useRef } from 'react'
+import { useState } from 'react'
 import {
   Box, Button, Chip, IconButton, MenuItem, Paper, Select, Typography,
 } from '@mui/material'
@@ -51,22 +51,32 @@ export interface PipelineBuilderProps {
 export function PipelineBuilder({ value, onChange }: PipelineBuilderProps) {
   const sensors = useDndSensors()
 
-  // Stable drag ids, length-synced with value (grow/shrink to match).
-  const uidsRef = useRef<string[]>([])
-  while (uidsRef.current.length < value.length) uidsRef.current.push(nextUid())
-  if (uidsRef.current.length > value.length) uidsRef.current = uidsRef.current.slice(0, value.length)
-  const uids = uidsRef.current
+  // Stable drag ids — one per step, kept length-synced with `value`. Held in
+  // state (not a render-mutated ref) so identity survives concurrent renders.
+  // When `value` changes length from OUTSIDE (parent replaces the prop), we
+  // reconcile during render via React's sanctioned "adjust state while
+  // rendering" pattern (https://react.dev/reference/react/useState#storing-
+  // information-from-previous-renders) — a setState on THIS component during
+  // render, which React applies before committing without an extra paint.
+  const [uids, setUids] = useState<string[]>(() => value.map(() => nextUid()))
+  if (uids.length !== value.length) {
+    setUids((prev) =>
+      prev.length < value.length
+        ? [...prev, ...Array.from({ length: value.length - prev.length }, nextUid)]
+        : prev.slice(0, value.length),
+    )
+  }
 
   const updateStep = (index: number, next: TransformStep) =>
     onChange(value.map((s, i) => (i === index ? next : s)))
 
   const removeStep = (index: number) => {
-    uidsRef.current = uids.filter((_u, i) => i !== index)
+    setUids(uids.filter((_u, i) => i !== index))
     onChange(value.filter((_s, i) => i !== index))
   }
 
   const addStep = (op: TransformStep['op']) => {
-    uidsRef.current = [...uids, nextUid()]
+    setUids([...uids, nextUid()])
     onChange([...value, defaultStep(op)])
   }
 
@@ -76,7 +86,7 @@ export function PipelineBuilder({ value, onChange }: PipelineBuilderProps) {
     const oldIndex = uids.indexOf(String(active.id))
     const newIndex = uids.indexOf(String(over.id))
     if (oldIndex < 0 || newIndex < 0) return
-    uidsRef.current = arrayMove(uids, oldIndex, newIndex)
+    setUids(arrayMove(uids, oldIndex, newIndex))
     onChange(arrayMove(value, oldIndex, newIndex))
   }
 

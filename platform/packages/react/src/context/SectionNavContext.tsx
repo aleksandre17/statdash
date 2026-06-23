@@ -26,11 +26,14 @@ export function SectionNavProvider({
 }) {
   const [activeId, setActiveId] = useState<string | null>(null)
 
-  // Always-fresh ref — effect reads this to avoid stale closure without
-  // adding `sections` to the dependency array (which would thrash on every
-  // parent render when navSections is computed inline).
+  // Always-fresh ref — the IO effect reads this to avoid a stale closure without
+  // adding `sections` to its dependency array (which would thrash on every parent
+  // render when navSections is computed inline). The ref is synced in its own
+  // effect (not during render) per react-hooks/refs.
   const sectionsRef = useRef(sections)
-  sectionsRef.current = sections
+  useEffect(() => {
+    sectionsRef.current = sections
+  })
 
   // Re-run the observer only when section IDs actually change.
   // Because navSections is pre-filtered by currentMode upstream (SiteRenderer),
@@ -77,7 +80,6 @@ export function SectionNavProvider({
 
     return () => observer.disconnect()
     // sectionKey encodes section IDs; sectionsRef.current is always up-to-date.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sectionKey])
 
   return (

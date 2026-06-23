@@ -15,7 +15,7 @@ import { isAuthenticated, AuthError } from './lib/auth'
 //  login      — no token / 401 received; show LoginForm
 //  loading    — token present; fetching API data
 //  ready      — constructor ready to use
-type AppState = 'idle' | 'login' | 'loading' | 'ready'
+type AppState = 'login' | 'loading' | 'ready'
 
 // ── AdminContext (not Admin) — RA as a provider layer only ───────────────────
 // AdminContext supplies: dataProvider, i18nProvider, useNotify, useDataProvider,
@@ -28,10 +28,17 @@ type AppState = 'idle' | 'login' | 'loading' | 'ready'
 //   3. 401 from API → LoginForm again (session expired)
 //   4. Network failure → graceful degradation to mock data
 export function App() {
-  const [appState, setAppState] = useState<AppState>('idle')
+  // Auth is a synchronous token check — derive the initial state lazily rather
+  // than transitioning via an effect (avoids set-state-in-effect + the idle frame).
+  const [appState, setAppState] = useState<AppState>(() =>
+    isAuthenticated() ? 'loading' : 'login',
+  )
 
+  // startApp performs the async boot. It does NOT synchronously set 'loading'
+  // itself: on the boot path the initial state is already 'loading', and the
+  // re-login path sets it at the call site (LoginForm onSuccess). Keeping the
+  // first state write off the synchronous effect tick avoids cascading renders.
   const startApp = useCallback(async () => {
-    setAppState('loading')
     const store = useConstructorStore.getState()
     // Guard against HMR / double-mount (StrictMode) re-seeding an already-hydrated store.
     if (store.dataSources.length > 0) {
@@ -65,19 +72,20 @@ export function App() {
     }
   }, [])
 
+  // Mount-time boot: synchronize the app with external systems (auth token +
+  // data store + API) exactly once. This is the sanctioned "subscribe to an
+  // external system" use of an effect. startApp is async; its only synchronous
+  // setState is the already-hydrated early-return (StrictMode double-mount / HMR),
+  // which is terminal and cannot cascade — so the set-state-in-effect heuristic
+  // is a false positive on this boot path.
   useEffect(() => {
-    if (!isAuthenticated()) {
-      setAppState('login')
-    } else {
-      void startApp()
-    }
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time mount boot; see comment
+    if (isAuthenticated()) void startApp()
   }, [startApp])
 
   // ── Login screen ─────────────────────────────────────────────────────────────
-  if (appState === 'idle') return null   // one-frame hold before auth check resolves
-
   if (appState === 'login') {
-    return <LoginForm onSuccess={() => void startApp()} />
+    return <LoginForm onSuccess={() => { setAppState('loading'); void startApp() }} />
   }
 
   // ── Loading ───────────────────────────────────────────────────────────────────

@@ -7,7 +7,7 @@
 //  Retool:  computed state — evaluated once at page level, all components see same values.
 //
 
-import { useRef, useMemo, useCallback } from 'react'
+import { useMemo, useCallback } from 'react'
 import { useFilter }                     from '../context/FilterContext'
 import type { SectionContext, TimeMode, DimVal } from '@statdash/engine'
 import type { Effect, FilterSchemaInput }        from '@statdash/engine'
@@ -124,10 +124,6 @@ export function useFilterState(
   const raw       = resolvedDims
   const isLoading = pendingKeys.length > 0
 
-  // SectionContext — computed-ref pattern (stable identity when unchanged)
-  const ctxKeyRef   = useRef('')
-  const ctxRef      = useRef<SectionContext>({ timeMode: 'year', dims: {} })
-
   const context     = schema?.context
   const ctxTimeMode = context
     ? ((raw[context.timeMode] as TimeMode) || 'year')
@@ -155,8 +151,12 @@ export function useFilterState(
 
   const ctxKey = `${ctxTimeMode}|${dimsKey}|${cascadeEntries.map(([k, v]) => `${k}:${v}`).join(',')}`
 
-  if (ctxKey !== ctxKeyRef.current) {
-    ctxKeyRef.current = ctxKey
+  // SectionContext — stable identity keyed on ctxKey. useMemo returns the same
+  // reference until ctxKey changes, so downstream consumers don't re-render on
+  // unrelated parent renders. (ctxKey is the exhaustive derived dependency; the
+  // values it is built from — ctxTimeMode, dims, cascade codes — all feed into
+  // it, so re-deriving inside the memo is correct and ref-write-free.)
+  const ctx = useMemo<SectionContext>(() => {
     const regularDims = context?.dims
       ? Object.fromEntries(
           Object.entries(context.dims)
@@ -168,17 +168,18 @@ export function useFilterState(
             .filter(([, v]) => v !== ''),
         )
       : {}
-    ctxRef.current = {
+    return {
       timeMode: ctxTimeMode,
       dims:     { ...regularDims, ...Object.fromEntries(cascadeEntries) },
     }
-  }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- ctxKey is the exhaustive derived key (see comment above)
+  }, [ctxKey])
 
   const timeModeKey = context?.timeMode ?? 'mode'
   const effects     = schema?.effects ?? NO_EFFECTS
   const bars        = useMemo(() => schemaToBarNodes(schema), [schema])
 
-  return { ctx: ctxRef.current, raw, timeModeKey, effects, bars, isLoading }
+  return { ctx, raw, timeModeKey, effects, bars, isLoading }
 }
 
 // ── cascadeDeepestCode — traverse cascade path to deepest selected node ──

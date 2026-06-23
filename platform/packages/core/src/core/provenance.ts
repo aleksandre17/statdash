@@ -13,6 +13,7 @@
 //
 
 import type { SectionContext } from './context'
+import type { LocaleString }   from '../i18n/types'
 
 // ── ObsStatus — SDMX OBS_STATUS codes (ISO 17369) ────────────────────
 
@@ -31,15 +32,21 @@ export type ObsStatus = 'A' | 'p' | 'e' | 'r' | 'c'
  * Human-readable labels for non-normal OBS_STATUS codes.
  * Single source of truth — replaces per-shell STATUS_LABELS constants.
  *
+ * Multi-locale per the engine i18n standard (Law 4 — full benefit of the
+ * standard, not partial): each label is a `LocaleString`, resolved by the
+ * consumer against the active locale (useResolveLocale / resolveLocaleString).
+ * The engine ships the canonical bilingual content; renderers stay
+ * locale-agnostic.
+ *
  * Usage:
  *   import { OBS_STATUS_LABELS } from '@statdash/engine'
- *   OBS_STATUS_LABELS['p']  // 'წინასწარი'
+ *   resolveLocaleString(OBS_STATUS_LABELS['p'], locale, fallback)  // 'Preliminary' | 'წინასწარი'
  */
-export const OBS_STATUS_LABELS: Readonly<Record<Exclude<ObsStatus, 'A'>, string>> = {
-  p: 'წინასწარი',
-  e: 'შეფასებული',
-  r: 'განახლებული',
-  c: 'კონფიდენციალური',
+export const OBS_STATUS_LABELS: Readonly<Record<Exclude<ObsStatus, 'A'>, LocaleString>> = {
+  p: { ka: 'წინასწარი',       en: 'Preliminary'  },
+  e: { ka: 'შეფასებული',      en: 'Estimated'    },
+  r: { ka: 'განახლებული',     en: 'Revised'      },
+  c: { ka: 'კონფიდენციალური', en: 'Confidential' },
 }
 
 // ── ProvenanceRecord — typed provenance descriptor ────────────────────

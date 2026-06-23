@@ -124,6 +124,10 @@ export interface NodeBase {
 //  Empty NodeTypeMap → NodeDef = CoreNodeDef. Plugin augments → auto-extends. ✅
 //  Zero packages/ change for new node types.
 //
+//  The empty body is intentional and load-bearing: it is the augmentation seam
+//  plugins extend via `declare module`. `object`/`unknown` would defeat the
+//  per-key merge that gives `NodeDef = CoreNodeDef | <plugin keys>`.
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export interface NodeTypeMap {}
 
 // ── CoreNodeDef — engine-package-owned node types ─────────────────────

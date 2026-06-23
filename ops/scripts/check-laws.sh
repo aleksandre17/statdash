@@ -38,9 +38,20 @@ check_ts() {
 
   # grep -rn output format: "path:line:content"
   # Filter out lines where the *content* (after path:num:) is a comment (// or *)
+  #
+  # Law 4 — "full benefit of the standard, not partial": the rule forbids a
+  # SINGLE-LOCALE hardcode, NOT bilingual content. A line carrying a Georgian
+  # fragment alongside an `en:` sibling is a compliant LocaleString / catalog
+  # entry ({ ka: '…', en: '…' }) — the standard fully applied — so it is exempt.
+  # Self-Describing Module catalogs (*-catalog.ts: spec-catalog, ops-catalog, …)
+  # spread their bilingual entries across multiple lines (ka: on its own line),
+  # so those files are exempt as a whole (like .test. files). A genuine
+  # single-locale Georgian hardcode (no en: pair, not in a catalog) still fails.
   results=$(grep -rn --include="*.ts" --include="*.tsx" "$pattern" "$path" 2>/dev/null \
     | grep -v "^Binary" \
     | grep -v "\.test\." \
+    | grep -v "catalog\.ts:" \
+    | grep -vE "\ben\b[[:space:]]*:" \
     | grep -vE ":[0-9]+:[[:space:]]*//" \
     | grep -vE ":[0-9]+:[[:space:]]*\*" \
     | head -10)

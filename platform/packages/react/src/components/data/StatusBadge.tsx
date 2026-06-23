@@ -17,6 +17,7 @@
 import React                 from 'react'
 import type { ObsStatus }    from '@statdash/engine'
 import { OBS_STATUS_LABELS } from '@statdash/engine'
+import { useResolveLocaleSafe } from '../../context/SiteContext'
 
 interface StatusBadgeProps {
   status?: ObsStatus
@@ -30,9 +31,11 @@ interface StatusBadgeProps {
  * IMF / Eurostat / ONS data integrity convention.
  */
 export function StatusBadge({ status, className }: StatusBadgeProps): React.ReactElement | null {
+  const resolve = useResolveLocaleSafe()
   if (!status || status === 'A') return null
-  const label = OBS_STATUS_LABELS[status]
-  if (!label) return null
+  const localeLabel = OBS_STATUS_LABELS[status]
+  if (!localeLabel) return null
+  const label = resolve(localeLabel)
   const cls = ['status-badge', `status-badge--${status}`, className].filter(Boolean).join(' ')
   return <span className={cls}>{label}</span>
 }

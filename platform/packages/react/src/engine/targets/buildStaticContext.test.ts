@@ -172,7 +172,7 @@ describe('buildStaticContext() — caller overrides', () => {
 
   it('overrides effects', () => {
     const effects = [{ type: 'sync-filters' as const, params: {} }]
-    // @ts-ignore — Effect shape is engine-internal; cast is safe for the override test
+    // @ts-expect-error — Effect shape is engine-internal; cast is safe for the override test
     const ctx = buildStaticContext({ ...MINIMAL_INPUT, effects })
     expect(ctx.effects).toBe(effects)
   })
@@ -183,7 +183,7 @@ describe('buildStaticContext() — caller overrides', () => {
       modes:   [{ id: 'compare', label: 'Compare' }],
       set:     () => {},
     }
-    // @ts-ignore — ModeDef shape; cast safe for override test
+    // @ts-expect-error — ModeDef shape; cast safe for override test
     const ctx = buildStaticContext({ ...MINIMAL_INPUT, mode: customMode })
     expect(ctx.mode).toBe(customMode)
     expect(ctx.mode.current).toBe('compare')
@@ -205,7 +205,7 @@ describe('buildStaticContext() — caller overrides', () => {
       sections:    [{ id: 's1', label: 'Section 1', anchor: '#s1', depth: 0 }],
       timeModeKey: 'mode',
     }
-    // @ts-ignore — NavSection shape; cast safe for override test
+    // @ts-expect-error — NavSection shape; cast safe for override test
     const ctx = buildStaticContext({ ...MINIMAL_INPUT, navContext })
     expect(ctx.navContext).toBe(navContext)
   })

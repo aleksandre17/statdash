@@ -80,7 +80,6 @@ export function useNodeRows(node: NodeBase, ctx: RenderContext): DataRow[] {
   //
   const depKey = useMemo(
     () => (node.data ? specDimKey(node.data as DataSpec, ctx.sectionCtx) : ''),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     [node.data, ctx.sectionCtx],
   )
 

@@ -40,7 +40,6 @@ function ChartControl({
 
   const output = useMemo(() => {
     const rows = ctx.rows ?? []
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { type: _type, chartType, fieldConfig: _fc, ...chartDefFields } = def
     return interpretChart(
       {
@@ -77,6 +76,10 @@ function ChartControl({
         ctx.bus.dispatch({ type: 'nav:drill', href: link.href, target: link.target ?? 'page' })
       }
     }
+    // The granular ctx.* deps below are intentionally precise (ctx.rows changes on
+    // data load; depending on the whole `ctx` object would over-invalidate). The
+    // rule's demand for the parent `ctx` is over-conservative here.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [def.dataLinks, ctx.rows, ctx.resolveLinks, ctx.bus])
 
   if (!ctx.rows?.length) return <EmptyState />
