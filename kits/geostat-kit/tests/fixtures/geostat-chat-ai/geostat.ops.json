@@ -10,6 +10,13 @@
     "syncModules": "apps/backend/ops.modules"
   },
 
+  "migration": {
+    "legacyDirs": {
+      "api": ["geostat-chat-api"],
+      "ui": ["geostat-chat-app", "geostat-chat-ai-fe"]
+    }
+  },
+
   "stack": {
     "composeDir": "ops/compose/stack",
     "networkName": "geostat-chat-ai-net",
