@@ -21,10 +21,30 @@ import {
   setChromeVariantPatch,
   updateChromeConfigPatch,
 } from './constructor.chrome'
+import {
+  type LifecycleSlice,
+  type PageLifecycle,
+  type SaveStatus,
+  type PublishStatus,
+  INITIAL_LIFECYCLE,
+  reflectLifecyclePatch,
+  markDirtyPatch,
+  setSaveStatusPatch,
+  setPublishStatusPatch,
+} from './constructor.lifecycle'
+import {
+  addPagePatch,
+  updatePagePatch,
+  removePagePatch,
+  reorderPageNodesPatch,
+  addNodePatch,
+  updateNodePatch,
+  removeNodePatch,
+} from './constructor.pages'
 
 // ── Full Store ─────────────────────────────────────────────────────────────────
 
-export interface ConstructorStore extends ConstructorSession, WizardSlice, HistorySlice {
+export interface ConstructorStore extends ConstructorSession, WizardSlice, HistorySlice, LifecycleSlice {
   // Wizard actions
   goToStep:       (step: WizardStep) => void
   markStepDone:   (step: WizardStep) => void
@@ -64,6 +84,12 @@ export interface ConstructorStore extends ConstructorSession, WizardSlice, Histo
   // History
   undo: () => void
   redo: () => void
+
+  // Page lifecycle (server FSM mirror + save/publish UI state)
+  reflectLifecycle: (id: string, patch: Partial<PageLifecycle>) => void
+  markPageDirty:    (id: string) => void
+  setSaveStatus:    (id: string, status: SaveStatus) => void
+  setPublishStatus: (id: string, status: PublishStatus) => void
 }
 
 // ── Store factory ─────────────────────────────────────────────────────────────
@@ -73,6 +99,7 @@ export const useConstructorStore = create<ConstructorStore>()(
     subscribeWithSelector((set) => ({
       // ── Initial state ──────────────────────────────────────────────────────
       ...INITIAL_SESSION,
+      ...INITIAL_LIFECYCLE,
       activeStep:      0,
       completedSteps:  new Set<WizardStep>(),
       selectedNodeId:  null,
@@ -235,97 +262,34 @@ export const useConstructorStore = create<ConstructorStore>()(
           'chrome/updateConfig',
         ),
 
-      // ── Page Layer ─────────────────────────────────────────────────────────
+      // ── Page Layer — thin wiring over pure reducers (constructor.pages) ──────
       addPage: (page) =>
-        set(
-          (s) => ({
-            ...pushHistory(s as ConstructorStore, `Add Page: ${page.title.en}`),
-            pages: [...s.pages, page],
-          }),
-          false,
-          'pages/addPage',
-        ),
+        set((s) => ({ ...pushHistory(s as ConstructorStore, `Add Page: ${page.title.en}`), ...addPagePatch(s, page) }), false, 'pages/addPage'),
       updatePage: (id, patch) =>
-        set(
-          (s) => ({
-            ...pushHistory(s as ConstructorStore, `Update Page`),
-            pages: s.pages.map((p) => (p.id === id ? { ...p, ...patch } : p)),
-          }),
-          false,
-          'pages/updatePage',
-        ),
+        set((s) => ({ ...pushHistory(s as ConstructorStore, `Update Page`), ...updatePagePatch(s, id, patch) }), false, 'pages/updatePage'),
       removePage: (id) =>
-        set(
-          (s) => ({
-            ...pushHistory(s as ConstructorStore, `Remove Page`),
-            pages:        s.pages.filter((p) => p.id !== id),
-            activePageId: s.activePageId === id ? null : s.activePageId,
-          }),
-          false,
-          'pages/removePage',
-        ),
+        set((s) => ({ ...pushHistory(s as ConstructorStore, `Remove Page`), ...removePagePatch(s, id) }), false, 'pages/removePage'),
       setActivePage: (id) => set({ activePageId: id }, false, 'pages/setActivePage'),
       reorderPageNodes: (pageId, orderedNodeIds) =>
-        set(
-          (s) => ({
-            ...pushHistory(s as ConstructorStore, `Reorder Sections`),
-            pages: s.pages.map((p) =>
-              p.id === pageId ? { ...p, nodeIds: orderedNodeIds } : p,
-            ),
-          }),
-          false,
-          'canvas/reorderNodes',
-        ),
+        set((s) => ({ ...pushHistory(s as ConstructorStore, `Reorder Sections`), ...reorderPageNodesPatch(s, pageId, orderedNodeIds) }), false, 'canvas/reorderNodes'),
       addNode: (pageId, node, afterId) =>
-        set(
-          (s) => {
-            const page = s.pages.find((p) => p.id === pageId)
-            if (!page) return {}
-            const idx = afterId ? page.nodeIds.indexOf(afterId) + 1 : page.nodeIds.length
-            const nodeIds = [...page.nodeIds.slice(0, idx), node.id, ...page.nodeIds.slice(idx)]
-            return {
-              ...pushHistory(s as ConstructorStore, `Add ${node.type}`),
-              pages: s.pages.map((p) =>
-                p.id === pageId
-                  ? { ...p, nodeIds, nodes: { ...p.nodes, [node.id]: node } }
-                  : p,
-              ),
-            }
-          },
-          false,
-          'canvas/addNode',
-        ),
+        set((s) => ({ ...pushHistory(s as ConstructorStore, `Add ${node.type}`), ...addNodePatch(s, pageId, node, afterId) }), false, 'canvas/addNode'),
       updateNode: (pageId, nodeId, patch) =>
-        set(
-          (s) => ({
-            ...pushHistory(s as ConstructorStore, `Update node`),
-            pages: s.pages.map((p) =>
-              p.id === pageId
-                ? { ...p, nodes: { ...p.nodes, [nodeId]: { ...p.nodes[nodeId], ...patch } } }
-                : p,
-            ),
-          }),
-          false,
-          'canvas/updateNode',
-        ),
+        set((s) => ({ ...pushHistory(s as ConstructorStore, `Update node`), ...updateNodePatch(s, pageId, nodeId, patch) }), false, 'canvas/updateNode'),
       removeNode: (pageId, nodeId) =>
-        set(
-          (s) => {
-            const page = s.pages.find((p) => p.id === pageId)
-            if (!page) return {}
-            const { [nodeId]: _removed, ...restNodes } = page.nodes
-            return {
-              ...pushHistory(s as ConstructorStore, `Remove node`),
-              pages: s.pages.map((p) =>
-                p.id === pageId
-                  ? { ...p, nodeIds: p.nodeIds.filter((id) => id !== nodeId), nodes: restNodes }
-                  : p,
-              ),
-            }
-          },
-          false,
-          'canvas/removeNode',
-        ),
+        set((s) => ({ ...pushHistory(s as ConstructorStore, `Remove node`), ...removeNodePatch(s, pageId, nodeId) }), false, 'canvas/removeNode'),
+
+      // ── Page lifecycle (server FSM mirror) — thin wiring over pure reducers ──
+      // These reflect SERVER truth + authoring UI state; deliberately NOT pushed
+      // to history (lifecycle/save outcomes are not undoable authoring edits).
+      reflectLifecycle: (id, patch) =>
+        set((s) => reflectLifecyclePatch(s, id, patch), false, 'lifecycle/reflect'),
+      markPageDirty: (id) =>
+        set((s) => markDirtyPatch(s, id), false, 'lifecycle/markDirty'),
+      setSaveStatus: (id, status) =>
+        set((s) => setSaveStatusPatch(s, id, status), false, 'lifecycle/setSaveStatus'),
+      setPublishStatus: (id, status) =>
+        set((s) => setPublishStatusPatch(s, id, status), false, 'lifecycle/setPublishStatus'),
 
       // ── History ────────────────────────────────────────────────────────────
       undo: () =>
@@ -376,14 +340,6 @@ export const useConstructorStore = create<ConstructorStore>()(
   ),
 )
 
-// ── Typed selectors (ISP: consumers depend only on what they use) ──────────────
-export const useWizardStep    = () => useConstructorStore((s) => s.activeStep)
-export const useCompletedSteps = () => useConstructorStore((s) => s.completedSteps)
-export const useDataSources   = () => useConstructorStore((s) => s.dataSources)
-export const useDataSpecs     = () => useConstructorStore((s) => s.dataSpecs)
-export const useSite          = () => useConstructorStore((s) => s.site)
-export const usePages         = () => useConstructorStore((s) => s.pages)
-export const useActivePage    = () => useConstructorStore((s) => s.pages.find((p) => p.id === s.activePageId) ?? null)
-export const useSelectedNode  = () => useConstructorStore((s) => s.selectedNodeId)
-export const useChromeSelection = () => useConstructorStore((s) => s.chromeSelection)
-export const useHistory       = () => useConstructorStore((s) => ({ canUndo: s.canUndo, canRedo: s.canRedo, undo: s.undo, redo: s.redo }))
+// Typed read-side selectors live in constructor.selectors (ISP, one concern per
+// file). Re-exported here so existing `from './constructor.store'` imports hold.
+export * from './constructor.selectors'

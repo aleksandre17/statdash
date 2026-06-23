@@ -3,7 +3,6 @@ import { Box, Typography, Paper, Chip, Divider, Button } from '@mui/material'
 import DashboardIcon from '@mui/icons-material/Dashboard'
 import ViewModuleIcon from '@mui/icons-material/ViewModule'
 import DeleteIcon from '@mui/icons-material/Delete'
-import { useNotify } from 'react-admin'
 import { nodeRegistry } from '@statdash/react/engine'
 import { useConstructorStore, useActivePage, useSelectedNode, useChromeSelection } from '../../../store/constructor.store'
 import type { CanvasNode } from '../../../types/constructor'
@@ -11,6 +10,7 @@ import { CanvasView }    from '../../../canvas/CanvasView'
 import { NodePalette }   from '../../../canvas/NodePalette'
 import { toNodePageConfig } from '../../../canvas/canvasPageAdapter'
 import { Inspector, ChromeInspectorPanel, ChromePalette } from '../../../inspector'
+import { PageWorkflowBar } from '../../page-workflow'
 import '../../../canvas/page-step.css'
 
 // Generate a short, collision-resistant node id (matches existing convention).
@@ -24,9 +24,8 @@ export function PageStep() {
   const addNode      = useConstructorStore((s) => s.addNode)
   const updateNode   = useConstructorStore((s) => s.updateNode)
   const removeNode   = useConstructorStore((s) => s.removeNode)
+  const markPageDirty = useConstructorStore((s) => s.markPageDirty)
   const goToStep     = useConstructorStore((s) => s.goToStep)
-  const markStepDone = useConstructorStore((s) => s.markStepDone)
-  const notify       = useNotify()
 
   const [dragging, setDragging] = useState(false)
 
@@ -61,9 +60,10 @@ export function PageStep() {
         addNode(pageId, node)
         updateNode(pageId, parentId, { childIds: [...parent.childIds, id] })
       }
+      markPageDirty(pageId)   // local edit → reflect in the lifecycle badge
       selectNode(id)
     },
-    [pageId, page, addNode, updateNode, selectNode],
+    [pageId, page, addNode, updateNode, markPageDirty, selectNode],
   )
 
   // Write one prop on the selected node (the Inspector's onChange). Supports
@@ -73,8 +73,9 @@ export function PageStep() {
     (field: string, value: unknown) => {
       if (!pageId || !selected) return
       updateNode(pageId, selected.id, { props: { ...selected.props, [field]: value } })
+      markPageDirty(pageId)
     },
-    [pageId, selected, updateNode],
+    [pageId, selected, updateNode, markPageDirty],
   )
 
   return (
@@ -88,6 +89,9 @@ export function PageStep() {
           </Typography>
         </Box>
       </Box>
+
+      {/* ── Draft → publish workflow (list/open/save/publish/history) ──────── */}
+      <PageWorkflowBar />
 
       <Box sx={{ display: 'grid', gridTemplateColumns: '220px 1fr 280px', gap: 2, flex: 1, minHeight: 400 }}>
         {/* ── Palette (engine registry) ─────────────────────────────────── */}
@@ -140,7 +144,7 @@ export function PageStep() {
                 size="small"
                 color="error"
                 startIcon={<DeleteIcon />}
-                onClick={() => { removeNode(pageId, selected.id); selectNode(null) }}
+                onClick={() => { removeNode(pageId, selected.id); markPageDirty(pageId); selectNode(null) }}
               >
                 წაშლა
               </Button>
@@ -149,15 +153,8 @@ export function PageStep() {
         </Paper>
       </Box>
 
-      <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+      <Box sx={{ display: 'flex', justifyContent: 'flex-start' }}>
         <Button variant="outlined" onClick={() => goToStep(1)}>← საიტი</Button>
-        <Button
-          variant="contained"
-          color="success"
-          onClick={() => { markStepDone(2); notify('ექსპორტი — Phase 2.5-ში', { type: 'info' }) }}
-        >
-          შენახვა და გადახედვა
-        </Button>
       </Box>
     </Box>
   )

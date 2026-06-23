@@ -19,14 +19,22 @@ import type {
 import { useConstructorStore } from './constructor.store'
 import {
   configApi,
+  ApiError,
   fromApiDataSource,
   fromApiDataSpec,
   fromApiSite,
   fromApiPage,
   toApiPage,
+  type PageVersionRow,
 } from '../lib/api'
+import type { PageStatus } from './constructor.lifecycle'
 import { validatePageForSave, type SaveIssue } from '../save/saveGuard'
 import { orderLocales } from '../inspector/useActiveLocales'
+
+/** Coerce a server status string into the lifecycle FSM enum (default draft). */
+function toPageStatus(raw: string | undefined): PageStatus {
+  return raw === 'published' || raw === 'archived' ? raw : 'draft'
+}
 
 // ── Save guard error — raised when a page fails the C5 four-check gate ────────
 //
@@ -74,7 +82,17 @@ export async function initFromApi(): Promise<boolean> {
     sources.forEach((r) => store.addDataSource(fromApiDataSource(r)))
     specs.forEach((r) => store.addDataSpec(fromApiDataSpec(r)))
     store.updateSite(fromApiSite(siteMap, navRows))
-    pageDetails.forEach((p) => store.addPage(fromApiPage(p)))
+    pageDetails.forEach((p) => {
+      store.addPage(fromApiPage(p))
+      // Reflect the server FSM for each loaded page (status + published flag).
+      // A freshly-loaded page is clean (no local edits yet) — dirty:false.
+      store.reflectLifecycle(p.id, {
+        status:          toPageStatus(p.status),
+        versionNumber:   p.version_number,
+        latestPublished: p.is_published === true,
+        dirty:           false,
+      })
+    })
     if (pageDetails[0]) store.setActivePage(pageDetails[0].id)
     return true
   } catch (e) {
@@ -196,29 +214,124 @@ export async function createPage(input: Omit<CanvasPage, 'id'>): Promise<CanvasP
   assertSaveable({ ...input, id: '' })
   const { id } = await configApi.pages.create(toApiPage({ ...input, id: '' }))
   const page: CanvasPage = { ...input, id }
-  useConstructorStore.getState().addPage(page)
+  const store = useConstructorStore.getState()
+  store.addPage(page)
+  // A new page starts as a clean draft at version 1 (POST creates the first
+  // version) — reflect the server FSM so the workflow shows the right state.
+  store.reflectLifecycle(id, { status: 'draft', versionNumber: 1, latestPublished: false, dirty: false })
   return page
 }
 
-export async function savePage(id: string, patch: Partial<CanvasPage>): Promise<void> {
+/**
+ * Open a page for authoring: fetch its latest version, hydrate the flat canvas
+ * store from the persisted NodePageConfig tree, reflect the server FSM, and make
+ * it the active page. The single read-path entry the page-list "open" uses.
+ */
+export async function openPage(id: string): Promise<CanvasPage | null> {
+  try {
+    const row = await configApi.pages.get(id)
+    const page = fromApiPage(row)
+    const store = useConstructorStore.getState()
+    // Replace (not duplicate) any already-loaded copy, then reflect + activate.
+    if (store.pages.some((p) => p.id === id)) store.updatePage(id, page)
+    else store.addPage(page)
+    store.reflectLifecycle(id, {
+      status:          toPageStatus(row.status),
+      versionNumber:   row.version_number,
+      latestPublished: row.is_published === true,
+      dirty:           false,
+    })
+    store.setActivePage(id)
+    return page
+  } catch (e) {
+    console.error('[api] openPage failed', e)
+    return null
+  }
+}
+
+/**
+ * Save the active draft. Runs the C5 save-guard BEFORE the API call and records
+ * the outcome on the store (saveStatus[id]) so the workflow renders blocking
+ * issues inline (shift-left) WITHOUT the caller needing a try/catch. Returns the
+ * guard report so callers that DO want the result inline (tests) can read it.
+ */
+export async function savePage(
+  id: string,
+  patch: Partial<Omit<CanvasPage, 'nodes'>> = {},
+): Promise<{ ok: boolean; issues: SaveIssue[] }> {
   const store = useConstructorStore.getState()
-  store.updatePage(id, patch) // optimistic (store rejects `nodes` in patch type)
+  if (Object.keys(patch).length > 0) store.updatePage(id, patch) // optimistic
 
   // Re-read the merged page so the version snapshot is whole (config = the full
   // canvas tree), never a partial that would orphan nodeIds from nodes.
   const merged = useConstructorStore.getState().pages.find((p) => p.id === id)
-  if (!merged) return
+  if (!merged) {
+    const issues: SaveIssue[] = []
+    store.setSaveStatus(id, { issues, error: 'Page not found', saved: false })
+    return { ok: false, issues }
+  }
 
-  // C5 save guard — runs on the WHOLE merged page (the artefact actually
-  // persisted). Throws SaveGuardError on any failed check; the caller surfaces
-  // the issues inline (shift-left). NOT swallowed like the network catch below:
-  // a guard failure is an authoring error to fix, not a transient fault to retry.
-  assertSaveable(merged)
+  // C5 save guard — runs on the WHOLE merged page (the artefact persisted). The
+  // guard is the gate: a failure is an authoring error to fix (recorded as inline
+  // issues), never a config that reaches the server.
+  const report = validatePageForSave(merged, {
+    activeLocales: orderLocales(store.site.defaultLocale),
+  })
+  if (!report.ok) {
+    store.setSaveStatus(id, { issues: report.issues, saved: false })
+    return report
+  }
 
   try {
-    await configApi.pages.update(id, toApiPage(merged))
+    const res = await configApi.pages.update(id, toApiPage(merged))
+    // Saving a new version supersedes any previously-published one — the latest
+    // version is now an unpublished draft until publish promotes it again.
+    store.reflectLifecycle(id, {
+      status:          'draft',
+      versionNumber:   res.version_number,
+      latestPublished: false,
+      dirty:           false,
+    })
+    store.setSaveStatus(id, { issues: [], saved: true })
+    return { ok: true, issues: [] }
   } catch (e) {
-    console.error('[api] savePage failed', e)
+    const message = e instanceof Error ? e.message : 'Save failed'
+    store.setSaveStatus(id, { issues: [], error: message, saved: false })
+    return { ok: false, issues: [] }
+  }
+}
+
+/**
+ * Publish the page's latest version (server FSM draft→published). Admin-gated:
+ * a 403 is surfaced as `forbidden` (needs publisher/admin) — NEVER reimplemented
+ * client-side. On success the server FSM is reflected (status:published, the
+ * latest version is now the published one).
+ */
+export async function publishPage(id: string): Promise<{ ok: boolean; forbidden: boolean }> {
+  const store = useConstructorStore.getState()
+  try {
+    await configApi.pages.publish(id)
+    store.reflectLifecycle(id, { status: 'published', latestPublished: true })
+    store.setPublishStatus(id, { forbidden: false })
+    return { ok: true, forbidden: false }
+  } catch (e) {
+    if (e instanceof ApiError && e.status === 403) {
+      store.setPublishStatus(id, { forbidden: true, error: e.message })
+      return { ok: false, forbidden: true }
+    }
+    const message = e instanceof Error ? e.message : 'Publish failed'
+    store.setPublishStatus(id, { forbidden: false, error: message })
+    return { ok: false, forbidden: false }
+  }
+}
+
+/** Fetch a page's append-only version history (newest first). Read path. */
+export async function fetchVersions(id: string): Promise<PageVersionRow[]> {
+  try {
+    return await configApi.pages.versions(id)
+  } catch (e) {
+    console.error('[api] fetchVersions failed', e)
+    return []
   }
 }
 

@@ -120,8 +120,24 @@ export interface PageDetailRow {
   config: Record<string, unknown>
   data_specs: unknown[]
   version_number: number
+  /** True when the latest version is the published one (GET /:id LATERAL join). */
+  is_published?: boolean
   created_at?: string
   updated_at?: string
+}
+
+/** One row of a page's append-only version history (GET /:id/versions). */
+export interface PageVersionRow {
+  id: string
+  version_number: number
+  is_published: boolean
+  created_at: string
+}
+
+/** Response of POST /:id/publish — which version was promoted. */
+export interface PublishResult {
+  id: string
+  published_version_id: string
 }
 
 export interface NavRow {
@@ -215,6 +231,12 @@ export const configApi = {
       request<{ id: string; version_number?: number }>('PUT', `/pages/${id}`, body),
     delete: (id: string) =>
       request<{ id: string; status: 'archived' }>('DELETE', `/pages/${id}`),
+    // Append-only version history (newest first). Read path — any auth role.
+    versions: (id: string) => request<PageVersionRow[]>('GET', `/pages/${id}/versions`),
+    // Promote the latest version to published. Server FSM (draft→published);
+    // admin-gated — a non-admin token yields ApiError 403 (surfaced as a
+    // "needs publisher" state, never reimplemented client-side).
+    publish: (id: string) => request<PublishResult>('POST', `/pages/${id}/publish`),
   },
   nav: {
     list: () => request<NavRow[]>('GET', '/nav'),
