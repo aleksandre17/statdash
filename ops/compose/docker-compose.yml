@@ -13,8 +13,8 @@ services:
     image: geostat-app
     container_name: geostat-app
     build:
-      context: ../..
-      dockerfile: platform/apps/geostat/src/Dockerfile
+      context: ../../platform
+      dockerfile: apps/geostat/Dockerfile
     networks:
       - statdash-net
     mem_limit: 128m

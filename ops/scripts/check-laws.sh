@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 # Checks statdash-platform architecture laws across the codebase.
 # Usage: ./check-laws.sh [path]
-# Default: scans engine/ and engine/plugins/
+# Default: scans packages/ and packages/plugins/
 #
 # COVERAGE (grep-detectable):
-#   Law 1 — No privileged dimension names in engine/react (ctx.year, ctx.regionId, ctx.region)
+#   Law 1 — No privileged dimension names in packages/react (ctx.year, ctx.regionId, ctx.region)
 #   Law 2 — No functions/callbacks in DataSpec configs (getRows, val(), fetch calls)
-#   Law 3 — No import.meta in engine/core (engine purity, post Layer 1.1)
-#   Law 4 — No hardcoded locale strings in engine/core (Georgian specifics)
-#   Law 5 — No console.log in engine/core (observability seam only)
+#   Law 3 — No import.meta in packages/core (engine purity, post Layer 1.1)
+#   Law 4 — No hardcoded locale strings in packages/core (Georgian specifics)
+#   Law 5 — No console.log in packages/core (observability seam only)
 #
 # NOT COVERED (requires code review):
 #   Law 6 — Dependency arrow correctness (enforced by eslint no-restricted-imports gate)
@@ -23,7 +23,7 @@ VIOLATIONS=0
 echo "═══════════════════════════════════════"
 echo " statdash-platform Law Check"
 if [[ -z "$TARGET" ]]; then
-  echo " Scanning: engine/ + engine/plugins/"
+  echo " Scanning: packages/ + packages/plugins/"
   echo "═══════════════════════════════════════"
 else
   echo " Custom target: $TARGET"
@@ -55,9 +55,9 @@ check_ts() {
 }
 
 if [[ -z "$TARGET" ]]; then
-  ENGINE="$ROOT/platform/engine/core"
-  REACT="$ROOT/platform/engine/react"
-  PLUGINS="$ROOT/platform/engine/plugins"
+  ENGINE="$ROOT/platform/packages/core"
+  REACT="$ROOT/platform/packages/react"
+  PLUGINS="$ROOT/platform/packages/plugins"
 
   # Law 1 — No privileged dimension names in engine
   check_ts "Law 1: No ctx.year / ctx.regionId / ctx.region in engine" \

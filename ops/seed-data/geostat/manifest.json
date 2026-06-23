@@ -1,0 +1,54 @@
+{
+  "counts": {
+    "classifiers": 126,
+    "displays": 67,
+    "facts": {
+      "ACCOUNTS_SEQUENCE": 279,
+      "GDP_ANNUAL": 367,
+      "REGIONAL_GVA": 1485
+    }
+  },
+  "datasets": [
+    "GDP_ANNUAL",
+    "ACCOUNTS_SEQUENCE",
+    "REGIONAL_GVA"
+  ],
+  "files": [
+    {
+      "kind": "codelists",
+      "path": "codelists.bundle.json",
+      "rowCount": 126
+    },
+    {
+      "kind": "displays",
+      "path": "displays.bundle.json",
+      "rowCount": 67
+    },
+    {
+      "datasetCode": "ACCOUNTS_SEQUENCE",
+      "kind": "facts",
+      "path": "facts/ACCOUNTS_SEQUENCE.bundle.json",
+      "rowCount": 279
+    },
+    {
+      "datasetCode": "GDP_ANNUAL",
+      "kind": "facts",
+      "path": "facts/GDP_ANNUAL.bundle.json",
+      "rowCount": 367
+    },
+    {
+      "datasetCode": "REGIONAL_GVA",
+      "kind": "facts",
+      "path": "facts/REGIONAL_GVA.bundle.json",
+      "rowCount": 1485
+    }
+  ],
+  "generatedAt": "2026-06-23T09:05:25.471Z",
+  "publishOrder": [
+    "codelists",
+    "displays",
+    "facts"
+  ],
+  "tenant": "geostat",
+  "version": 1
+}

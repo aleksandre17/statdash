@@ -1,8 +1,8 @@
 {
   "templates": {
-    "app_base": "  {app_service}:\n    image: {app_image}\n    container_name: {app_service}\n    build:\n      context: {app_context}\n      dockerfile: platform/apps/geostat/src/Dockerfile\n    networks:\n      - {network_key}\n    depends_on:\n      postgres:\n        condition: service_healthy\n",
+    "app_base": "  {app_service}:\n    image: {app_image}\n    container_name: {app_service}\n    build:\n      context: {app_context}\n      dockerfile: apps/geostat/Dockerfile\n    networks:\n      - {network_key}\n    depends_on:\n      postgres:\n        condition: service_healthy\n",
 
-    "postgres_base": "  postgres:\n    image: postgres:16-alpine\n    container_name: statdash-postgres\n    restart: unless-stopped\n    env_file:\n      - ../config/db/.env\n    ports:\n      - \"${POSTGRES_PORT:-5432}:5432\"\n    volumes:\n      - statdash-pgdata:/var/lib/postgresql/data\n      - ../postgres/init:/docker-entrypoint-initdb.d:ro\n    healthcheck:\n      test: [\"CMD-SHELL\", \"pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}\"]\n      interval: 10s\n      timeout: 5s\n      retries: 5\n      start_period: 10s\n    networks:\n      - {network_key}\n",
+    "postgres_base": "  postgres:\n    image: timescale/timescaledb-ha:pg16\n    container_name: statdash-postgres\n    restart: unless-stopped\n    env_file:\n      - ../config/db/.env\n    ports:\n      - \"${POSTGRES_PORT:-5432}:5432\"\n    volumes:\n      - statdash-pgdata:/var/lib/postgresql/data\n    healthcheck:\n      test: [\"CMD-SHELL\", \"pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}\"]\n      interval: 10s\n      timeout: 5s\n      retries: 5\n      start_period: 30s\n    networks:\n      - {network_key}\n",
 
     "app_dev_overlay": "  {app_service}:\n    build:\n      target: development\n    ports:\n      - \"${DEPLOY_HOST_PORT:-5171}:5171\"\n    volumes:\n      - {app_dev_mount}:/app\n      - /app/node_modules\n    environment:\n      VITE_API_URL: ${VITE_API_URL:-}\n    env_file:\n      - {secrets_module}/.env.dev\n    develop:\n      watch:\n        - action: sync\n          path: ./platform/apps/geostat/src\n          target: /app/apps/geostat/src\n        - action: rebuild\n          path: ./platform/apps/geostat/package.json\n",
 
@@ -18,7 +18,7 @@
       "comment": "# Base — foundation for dev (override) and prod (overlay)\n",
       "services": ["app_base", "postgres_base"],
       "fmt": {
-        "app_context": ".",
+        "app_context": "../../platform",
         "secrets_module": "ops/config/geostat",
         "network_key": "statdash-net",
         "network_name": "statdash-net"
@@ -30,7 +30,7 @@
       "comment": "# Dev — auto-merged on: docker compose -f ops/compose/docker-compose.yml up\n",
       "services": ["app_dev_overlay", "pgadmin_dev"],
       "fmt": {
-        "app_dev_mount": ".",
+        "app_dev_mount": "../../platform",
         "secrets_module": "ops/config/geostat",
         "network_key": "statdash-net"
       }

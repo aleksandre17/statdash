@@ -1,0 +1,25 @@
+# Ignore all real secrets; keep README and *.example
+*
+!.gitignore
+!README.md
+!**/.gitignore
+!backend/
+!frontend/
+!retrieval/
+!ingestion/
+!infra/
+# Corpus config YAML = the VERSIONED SEED (config-as-code). Track the .yaml; .env/.key stay ignored.
+!corpus/
+!corpus/*.yaml
+!**/.env.example
+!**/.env.deploy.example
+!deploy.env.example
+!profiles/
+!profiles/**
+!frontend/nginx.env.example
+!frontend/embed.env.example
+!ssh/
+!ssh/README.md
+!ssh/.gitignore
+!ssh/*.example
+

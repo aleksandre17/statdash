@@ -1,0 +1,313 @@
+# ════════════════════════════════════════════════════════════════════════════
+# CI — live-DB gate for statdash-platform
+# ════════════════════════════════════════════════════════════════════════════
+#
+# WHAT THIS UNBLOCKS
+#   The DB-gated suites `describe.skip` themselves whenever DATABASE_URL is unset
+#   (no-op locally, real gate in CI). This workflow stands up a real Postgres,
+#   applies V1→V25 with Flyway, and EXPORTS DATABASE_URL so those suites RUN:
+#     • platform/apps/api/src/routes/bootstrap/bootstrap-parity.fitness.test.ts
+#         (ADR-0026 Phase B — DB-served bootstrap === committed geostat manifest)
+#     • platform/apps/api/src/ingest/upsert.scd2.test.ts
+#         (SCD-2 revision invariants against a live partial index + V23 trigger)
+#   …plus the standalone parity gate P1-3 (verify-parity.ts), which needs a
+#   seeded cube + a running API.
+#
+# WHY the timescale/timescaledb-ha:pg16 image (NOT plain postgres:16)
+#   The migrations REQUIRE it: V1 enables timescaledb/ltree/pg_trgm/etc.; V4
+#   creates a hypertable; V13 declares ICU collations (icu_locale). A stock
+#   `postgres` image lacks the TimescaleDB extension and the ICU build the
+#   migrations assume — Flyway would fail on V4/V13. This is the same image the
+#   dev compose stack uses (ops/compose/infra/services/postgres.yml), so CI and
+#   dev migrate against an identical engine (no "works in dev" drift).
+#
+# WHY build:engine BEFORE anything api
+#   apps/api depends on @geostat/engine (workspace:*) and its tsconfig/test
+#   resolution expects the engine dist to exist. `pnpm build:engine` builds
+#   engine/* first; api typecheck/test/seed/start all run after. This ordering
+#   is a known board requirement — skip it and api typecheck + the engine import
+#   in bootstrap-parity (`migratePageConfig`) break.
+#
+# WHY DATABASE_URL is set on the test step
+#   It is THE switch that un-skips the DB-gated suites (`const suite =
+#   DATABASE_URL ? describe : describe.skip`). Set it and they become real
+#   assertions; leave it unset and the whole point of this job is lost.
+#
+# RE-RUNNABILITY
+#   Each run gets a fresh ephemeral Postgres service container, so state never
+#   leaks between runs. Flyway `migrate` is itself idempotent (skips applied
+#   versions via its schema_history table); seed.ts is INSERT … ON CONFLICT
+#   (upsert), never check/delete/insert. Safe to re-run.
+#
+# ⚠ NOT YET EXECUTED — authored from the real project commands but never run in
+#   CI (the authoring environment has no Docker/psql). The first CI run must
+#   confirm the items listed at the bottom of this file.
+# ════════════════════════════════════════════════════════════════════════════
+
+name: CI
+
+on:
+  push:
+  pull_request:
+
+# Single source of truth for the DB identity, shared by the service container,
+# the Flyway step, and DATABASE_URL. Values match the dev stack's POSTGRES_*
+# (ops/config/infra/.env.example) so CI exercises the same names as dev.
+env:
+  POSTGRES_USER: geostat
+  POSTGRES_PASSWORD: geostat
+  POSTGRES_DB: geostat
+  # localhost: the service container's 5432 is published to the runner host, and
+  # all Node steps run on the host (not inside a container), so they reach PG at
+  # localhost. Shape matches apps/api/.env.example (postgres://user:pass@host/db).
+  DATABASE_URL: postgres://geostat:geostat@localhost:5432/geostat
+
+jobs:
+  # ──────────────────────────────────────────────────────────────────────────
+  # build-and-test — typecheck, unit tests, AND the DB-gated suites (un-skipped
+  # via DATABASE_URL). Postgres runs as a service container, health-gated by
+  # GitHub Actions before any step runs; Flyway applies the schema first.
+  # ──────────────────────────────────────────────────────────────────────────
+  build-and-test:
+    name: build + typecheck + tests (live DB)
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        # Same engine as dev (TimescaleDB + ICU) — see header. NOT plain postgres.
+        image: timescale/timescaledb-ha:pg16
+        env:
+          POSTGRES_USER: geostat
+          POSTGRES_PASSWORD: geostat
+          POSTGRES_DB: geostat
+        ports:
+          - 5432:5432
+        # HEALTH-GATE: Actions will not start dependent steps until pg_isready
+        # passes. Nothing migrates or tests before Postgres is actually ready.
+        options: >-
+          --health-cmd "pg_isready -U geostat -d geostat"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+          --health-start-period 30s
+
+    defaults:
+      run:
+        # The pnpm workspace root is platform/ (platform/pnpm-workspace.yaml).
+        # Every pnpm command runs from here.
+        working-directory: platform
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # ── Apply migrations FIRST (Flyway), before Node touches the DB ──────────
+      # Same image + command as ops/compose/infra/services/flyway.yml, pointed at
+      # the CI Postgres (host=localhost via the published service port). Mounts
+      # the canonical migrations dir AND the generated seed lane read-only, then
+      # runs `migrate` (V1→V25 schema, then R__seed_geostat_gold.sql — the ADR-0028
+      # stage-1 preservation net). Idempotent: Flyway skips already-applied Vnn and
+      # re-runs R__ on checksum change. The R__ gold seed is what the DB-gated half
+      # of seed-data.fitness.test.ts compares against.
+      - name: Apply migrations (Flyway)
+        working-directory: ${{ github.workspace }}
+        run: |
+          docker run --rm \
+            --network host \
+            -v "${{ github.workspace }}/ops/postgres/migrations:/flyway/sql:ro" \
+            -v "${{ github.workspace }}/ops/postgres/seed:/flyway/seed:ro" \
+            flyway/flyway:10-alpine \
+            -url="jdbc:postgresql://localhost:5432/${POSTGRES_DB}" \
+            -user="${POSTGRES_USER}" \
+            -password="${POSTGRES_PASSWORD}" \
+            -locations=filesystem:/flyway/sql,filesystem:/flyway/seed \
+            -connectRetries=10 \
+            migrate
+
+      # ── Node + pnpm toolchain ───────────────────────────────────────────────
+      # pnpm@9.15.0 matches platform/package.json packageManager. Node 22 LTS:
+      # the repo pins no .nvmrc / engines, and @types/node is ^24, so a current
+      # LTS is the safe default — see "first CI run must confirm" below.
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: platform/pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # ── Engine dist BEFORE anything api (see header) ────────────────────────
+      - name: Build engine packages
+        run: pnpm build:engine
+
+      # ── Architecture law check (grep-detectable Laws 1–5) ───────────────────
+      - name: Check architecture laws
+        run: pnpm check-laws
+
+      # ── Typecheck: app graph + the api package ──────────────────────────────
+      - name: Typecheck (geostat app)
+        run: pnpm typecheck
+
+      - name: Typecheck (@geostat/api)
+        run: pnpm --filter @geostat/api typecheck
+
+      # ── Unit + DB-gated tests ───────────────────────────────────────────────
+      # DATABASE_URL is exported here (job-level env), so the suites guarded by
+      # `DATABASE_URL ? describe : describe.skip` RUN instead of skip:
+      #   • bootstrap-parity.fitness.test.ts — self-provisions from the committed
+      #     geostat.provisioning.json into the migrated DB (needs migrations +
+      #     V13's seeded config.locale; no separate `seed` step required).
+      #   • upsert.scd2.test.ts — runs inside a rolled-back tx; needs migrations
+      #     only (it upserts the 'account' dimension defensively).
+      # JWT_SECRET/ADMIN_* satisfy env.ts (parsed at import time by api modules).
+      - name: Run tests (unit + live-DB suites)
+        env:
+          JWT_SECRET: ci-jwt-secret-at-least-32-chars-long!!
+          ADMIN_USERNAME: admin
+          ADMIN_PASSWORD: ci-password
+          NODE_ENV: test
+        run: pnpm test
+
+  # ──────────────────────────────────────────────────────────────────────────
+  # verify-parity — P1-3 standalone gate: bundle reference ↔ live API.
+  # ORDER (load-bearing): migrate → seed cube → start API → verify-parity.
+  # Separate job so its API lifecycle (background process) does not entangle the
+  # vitest job, and so a parity failure is attributable on its own.
+  # ──────────────────────────────────────────────────────────────────────────
+  verify-parity:
+    name: verify-parity (P1-3 bundle ↔ live API)
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: timescale/timescaledb-ha:pg16
+        env:
+          POSTGRES_USER: geostat
+          POSTGRES_PASSWORD: geostat
+          POSTGRES_DB: geostat
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U geostat -d geostat"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+          --health-start-period 30s
+
+    defaults:
+      run:
+        working-directory: platform
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # 1. migrate (V1→V25) — see build-and-test for the rationale.
+      - name: Apply migrations (Flyway)
+        working-directory: ${{ github.workspace }}
+        run: |
+          docker run --rm \
+            --network host \
+            -v "${{ github.workspace }}/ops/postgres/migrations:/flyway/sql:ro" \
+            flyway/flyway:10-alpine \
+            -url="jdbc:postgresql://localhost:5432/${POSTGRES_DB}" \
+            -user="${POSTGRES_USER}" \
+            -password="${POSTGRES_PASSWORD}" \
+            -locations=filesystem:/flyway/sql \
+            -connectRetries=10 \
+            migrate
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: platform/pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # 2. engine dist before any api command (seed/start import the engine graph).
+      - name: Build engine packages
+        run: pnpm build:engine
+
+      # 3. seed the cube — populates stats.observation for the three datasets the
+      #    parity gate compares (GDP_ANNUAL, ACCOUNTS_SEQUENCE, REGIONAL_GVA).
+      #    seed.ts uses a pg Pool directly and needs ONLY DATABASE_URL.
+      - name: Seed cube
+        run: pnpm --filter @geostat/api seed
+
+      # 4. start the API in the background, then wait for /health. The API parses
+      #    env.ts at boot (DATABASE_URL + JWT_SECRET + ADMIN_*); on app.ready() it
+      #    runs runProvisioning from ./provisioning (idempotent) before listening.
+      - name: Start API (background)
+        env:
+          JWT_SECRET: ci-jwt-secret-at-least-32-chars-long!!
+          ADMIN_USERNAME: admin
+          ADMIN_PASSWORD: ci-password
+          NODE_ENV: production
+          PORT: 3001
+          HOST: 0.0.0.0
+          CORS_ORIGIN: http://localhost:5175
+        run: |
+          # One-shot (NOT `dev`'s tsx watch): watch mode would hold the step open
+          # and could re-trigger on file events. `tsx src/index.ts` boots once and
+          # backgrounds cleanly. apps/api ships tsx as a devDependency.
+          pnpm --filter @geostat/api exec tsx src/index.ts > "${{ github.workspace }}/api.log" 2>&1 &
+          echo "API_PID=$!" >> "$GITHUB_ENV"
+
+      - name: Wait for API health
+        run: |
+          for i in $(seq 1 60); do
+            if curl -fsS http://localhost:3001/health > /dev/null; then
+              echo "API is healthy"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "API did not become healthy in time — dumping log:"
+          cat "${{ github.workspace }}/api.log" || true
+          exit 1
+
+      # 5. the gate: bundle reference (Phase-1) must equal GET /observations
+      #    (Phase-2) row-for-row. Exits non-zero on any divergence (fail-fast).
+      - name: Run verify-parity
+        env:
+          API_BASE_URL: http://localhost:3001
+        run: pnpm --filter @geostat/api verify-parity
+
+      # Tear down the background API (best-effort; the runner is ephemeral anyway).
+      - name: Stop API
+        if: always()
+        run: kill "${API_PID}" 2>/dev/null || true
+
+# ════════════════════════════════════════════════════════════════════════════
+# WHAT THE FIRST CI RUN MUST CONFIRM (authored, NOT executed here)
+#   1. Node version: repo pins no .nvmrc/engines. Node 22 LTS chosen; if a build
+#      step needs 24 (@types/node is ^24), bump node-version.
+#   2. The API is started one-shot via `tsx src/index.ts` (apps/api's own dev dep),
+#      NOT `pnpm dev` (which is `tsx watch`). Confirm it backgrounds, runs the
+#      boot-time runProvisioning, and /health returns 200. Alternative if the
+#      compiled path is preferred: `pnpm --filter @geostat/api build && start`.
+#   3. Flyway via `docker run` (not a service/action) talks to PG over
+#      `--network host` at localhost:5432. Confirm the runner allows host
+#      networking for the flyway container and reaches the service port.
+#   4. bootstrap-parity self-provisions and needs NO separate seed (V13 seeds
+#      config.locale; the committed geostat.provisioning.json is present). Confirm
+#      the suite RUNS (not skips) and passes — i.e. DATABASE_URL reached the test.
+#   5. `pnpm install --frozen-lockfile` requires platform/pnpm-lock.yaml to be
+#      committed and current. If absent, drop --frozen-lockfile or commit it.
+#   6. check-laws.sh / verify-parity assume a bash shell — fine on ubuntu-latest.
+# ════════════════════════════════════════════════════════════════════════════

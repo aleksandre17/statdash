@@ -6,14 +6,18 @@
 #   cp .env.example .env   # then edit secrets
 #   docker compose up -d
 #
-# Init scripts in ./postgres/init/ run ONCE on first boot (empty volume),
-# in lexical order (00 → 04). Reset with: docker compose down -v
+# Image MUST be timescale/timescaledb-ha:pg16 — Flyway migrations require it
+# (V4 hypertables, V13 ICU). postgres:16-alpine breaks migration.
+#
+# Schema is owned by Flyway (ops/compose/infra/services/flyway.yml), the SSOT —
+# NOT by docker-entrypoint-initdb.d. The legacy ./postgres/init mount is
+# deliberately absent (it duplicated Flyway V1-V5 and drifted).
 
 name: statdash
 
 services:
   postgres:
-    image: postgres:16-alpine
+    image: timescale/timescaledb-ha:pg16
     container_name: statdash-postgres
     restart: unless-stopped
     environment:
@@ -25,8 +29,6 @@ services:
     volumes:
       # Persistent data — survives container recreation; wiped only by `down -v`.
       - statdash-pgdata:/var/lib/postgresql/data
-      # Init scripts — mounted read-only; postgres runs them on first boot only.
-      - ./postgres/init:/docker-entrypoint-initdb.d:ro
     healthcheck:
       # pg_isready against the seeded DB/user — gates dependents until ready.
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]

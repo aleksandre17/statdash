@@ -1,0 +1,722 @@
+{
+  "displays": [
+    {
+      "code": "GDP_AGRI",
+      "dimCode": "measure",
+      "display": {
+        "color": "#3ba272",
+        "fullLabel": "სოფლის, სატყეო და თევზის მეურნეობა",
+        "label": "სოფლის, სატყეო და თევზის მეურნეობა"
+      },
+      "locale": "ka",
+      "rowIndex": 0
+    },
+    {
+      "code": "GDP_IND",
+      "dimCode": "measure",
+      "display": {
+        "color": "#5470c6",
+        "fullLabel": "მრეწველობა",
+        "label": "მრეწველობა"
+      },
+      "locale": "ka",
+      "rowIndex": 1
+    },
+    {
+      "code": "GDP_CON",
+      "dimCode": "measure",
+      "display": {
+        "color": "#fc8452",
+        "fullLabel": "მშენებლობა",
+        "label": "მშენებლობა"
+      },
+      "locale": "ka",
+      "rowIndex": 2
+    },
+    {
+      "code": "GDP_SVC",
+      "dimCode": "measure",
+      "display": {
+        "color": "#73c0de",
+        "fullLabel": "მომსახურება",
+        "label": "მომსახურება"
+      },
+      "locale": "ka",
+      "rowIndex": 3
+    },
+    {
+      "code": "GDP_NET_TAX",
+      "dimCode": "measure",
+      "display": {
+        "color": "#9a60b4",
+        "fullLabel": "წმინდა გადასახადები პროდუქტებზე",
+        "label": "წმინდა გადასახადები პროდუქტებზე"
+      },
+      "locale": "ka",
+      "rowIndex": 4
+    },
+    {
+      "code": "C",
+      "dimCode": "measure",
+      "display": {
+        "color": "#5470c6",
+        "fullLabel": "ხარჯები საბოლოო მოხმარებაზე",
+        "label": "ხარჯები საბოლოო მოხმარებაზე"
+      },
+      "locale": "ka",
+      "rowIndex": 5
+    },
+    {
+      "code": "I_GFCF",
+      "dimCode": "measure",
+      "display": {
+        "color": "#3ba272",
+        "fullLabel": "მთლიანი კაპიტალის ფორმირება",
+        "label": "მთლიანი კაპიტალის ფორმირება"
+      },
+      "locale": "ka",
+      "rowIndex": 6
+    },
+    {
+      "code": "X",
+      "dimCode": "measure",
+      "display": {
+        "color": "#fac858",
+        "fullLabel": "საქონლისა და მომსახურების ექსპორტი",
+        "label": "საქონლისა და მომსახურების ექსპორტი"
+      },
+      "locale": "ka",
+      "rowIndex": 7
+    },
+    {
+      "code": "M",
+      "dimCode": "measure",
+      "display": {
+        "color": "#ee6666",
+        "fullLabel": "საქონლისა და მომსახურების იმპორტი",
+        "label": "საქონლისა და მომსახურების იმპორტი"
+      },
+      "locale": "ka",
+      "rowIndex": 8
+    },
+    {
+      "code": "D1",
+      "dimCode": "measure",
+      "display": {
+        "color": "#73c0de",
+        "fullLabel": "შრომის ანაზღაურება",
+        "label": "შრომის ანაზღაურება"
+      },
+      "locale": "ka",
+      "rowIndex": 9
+    },
+    {
+      "code": "NET_TAX_PROD",
+      "dimCode": "measure",
+      "display": {
+        "color": "#9a60b4",
+        "fullLabel": "წმინდა გადასახადები წარმოებაზე",
+        "label": "წმინდა გადასახადები წარმოებაზე"
+      },
+      "locale": "ka",
+      "rowIndex": 10
+    },
+    {
+      "code": "OS_GROSS",
+      "dimCode": "measure",
+      "display": {
+        "color": "#fc8452",
+        "fullLabel": "მთლიანი საოპერაციო მოგება",
+        "label": "მთლიანი საოპერაციო მოგება"
+      },
+      "locale": "ka",
+      "rowIndex": 11
+    },
+    {
+      "code": "MIXED_INC",
+      "dimCode": "measure",
+      "display": {
+        "color": "#fac858",
+        "fullLabel": "მთლიანი შერეული შემოსავალი",
+        "label": "მთლიანი შერეული შემოსავალი"
+      },
+      "locale": "ka",
+      "rowIndex": 12
+    },
+    {
+      "code": "GDP_GROWTH",
+      "dimCode": "measure",
+      "display": {
+        "color": "#ee6666",
+        "fullLabel": "რეალური მთლიანი შიდა პროდუქტის ზრდა",
+        "label": "რეალური მთლიანი შიდა პროდუქტის ზრდა"
+      },
+      "locale": "ka",
+      "rowIndex": 13
+    },
+    {
+      "code": "GDP_PER_CAPITA",
+      "dimCode": "measure",
+      "display": {
+        "color": "#73c0de",
+        "fullLabel": "მთლიანი შიდა პროდუქტი ერთ სულ მოსახლეზე",
+        "label": "მთლიანი შიდა პროდუქტი ერთ სულ მოსახლეზე"
+      },
+      "locale": "ka",
+      "rowIndex": 14
+    },
+    {
+      "code": "GDP",
+      "dimCode": "measure",
+      "display": {
+        "color": "#5470c6",
+        "fullLabel": "მთლიანი შიდა პროდუქტი საბაზრო ფასებში",
+        "label": "მთლიანი შიდა პროდუქტი საბაზრო ფასებში"
+      },
+      "locale": "ka",
+      "rowIndex": 15
+    },
+    {
+      "code": "NOE_SHARE",
+      "dimCode": "measure",
+      "display": {
+        "color": "#6b7b8d",
+        "fullLabel": "დაუკვირვებადი დამატებული ღირებულების წილი მთლიან დამატებულ ღირებულებაში",
+        "label": "დაუკვირვებადი დამატებული ღირებულების წილი მთლიან დამატებულ ღირებულებაში"
+      },
+      "locale": "ka",
+      "rowIndex": 16
+    },
+    {
+      "code": "GFCF_RES",
+      "dimCode": "measure",
+      "display": {
+        "color": "#5470c6",
+        "fullLabel": "საცხოვრებელი დანიშნულების შენობები",
+        "label": "საცხოვრებელი დანიშნულების შენობები"
+      },
+      "locale": "ka",
+      "rowIndex": 17
+    },
+    {
+      "code": "GFCF_STRUCT",
+      "dimCode": "measure",
+      "display": {
+        "color": "#3ba272",
+        "fullLabel": "არასაცხოვრებელი დანიშნულების და სხვა ნაგებობები",
+        "label": "არასაცხოვრებელი ნაგებობები"
+      },
+      "locale": "ka",
+      "rowIndex": 18
+    },
+    {
+      "code": "GFCF_MACH",
+      "dimCode": "measure",
+      "display": {
+        "color": "#9a60b4",
+        "fullLabel": "მანქანა, მოწყობილობები და სამხედრო აღჭურვილობა",
+        "label": "არასაცხოვრებელი დანიშნულების და სხვა ნაგებობები"
+      },
+      "locale": "ka",
+      "rowIndex": 19
+    },
+    {
+      "code": "GFCF_BIO",
+      "dimCode": "measure",
+      "display": {
+        "color": "#91cc75",
+        "fullLabel": "კულტივირებული ბიოლოგიური აქტივები",
+        "label": "კულტივირებული ბიოლოგიური აქტივები"
+      },
+      "locale": "ka",
+      "rowIndex": 20
+    },
+    {
+      "code": "GFCF_IP",
+      "dimCode": "measure",
+      "display": {
+        "color": "#ea7ccc",
+        "fullLabel": "ინტელექტუალური საკუთრების პროდუქტები და არაწარმოებულ აქტივებზე საკუთრების გადაცემის ხარჯები",
+        "label": "ინტელექტუალური საკუთრების პროდუქტები და არაწარმოებულ აქტივებზე საკუთრების გადაცემის ხარჯები"
+      },
+      "locale": "ka",
+      "rowIndex": 21
+    },
+    {
+      "code": "production",
+      "dimCode": "account",
+      "display": {
+        "color": "#5470c6",
+        "label": "I. წარმოების ანგარიში",
+        "order": 0
+      },
+      "locale": "ka",
+      "rowIndex": 22
+    },
+    {
+      "code": "income_gen",
+      "dimCode": "account",
+      "display": {
+        "color": "#3ba272",
+        "label": "II. შემოსავლების ფორმირების ანგარიში",
+        "order": 1
+      },
+      "locale": "ka",
+      "rowIndex": 23
+    },
+    {
+      "code": "primary_dist",
+      "dimCode": "account",
+      "display": {
+        "color": "#fac858",
+        "label": "III. პირველადი შემოსავლების განაწილება",
+        "order": 2
+      },
+      "locale": "ka",
+      "rowIndex": 24
+    },
+    {
+      "code": "secondary_dist",
+      "dimCode": "account",
+      "display": {
+        "color": "#9a60b4",
+        "label": "IV. შემოსავლების მეორადი განაწილება",
+        "order": 3
+      },
+      "locale": "ka",
+      "rowIndex": 25
+    },
+    {
+      "code": "use_of_income",
+      "dimCode": "account",
+      "display": {
+        "color": "#fc8452",
+        "label": "V. შემოსავლის გამოყენების ანგარიში",
+        "order": 4
+      },
+      "locale": "ka",
+      "rowIndex": 26
+    },
+    {
+      "code": "capital",
+      "dimCode": "account",
+      "display": {
+        "color": "#91cc75",
+        "label": "VI. კაპიტალის ანგარიში",
+        "order": 5
+      },
+      "locale": "ka",
+      "rowIndex": 27
+    },
+    {
+      "code": "P1",
+      "dimCode": "measure",
+      "display": {
+        "color": "#5470c6",
+        "label": "გამოშვება საბაზრო ფასებში"
+      },
+      "locale": "ka",
+      "rowIndex": 28
+    },
+    {
+      "code": "P2",
+      "dimCode": "measure",
+      "display": {
+        "color": "#a0b4e8",
+        "label": "შუალედური მოხმარება"
+      },
+      "locale": "ka",
+      "rowIndex": 29
+    },
+    {
+      "code": "B1G",
+      "dimCode": "measure",
+      "display": {
+        "color": "#5470c6",
+        "label": "მთლიანი შიდა პროდუქტი საბაზრო ფასებში"
+      },
+      "locale": "ka",
+      "rowIndex": 30
+    },
+    {
+      "code": "D1",
+      "dimCode": "measure",
+      "display": {
+        "color": "#3ba272",
+        "label": "შრომის ანაზღაურება"
+      },
+      "locale": "ka",
+      "rowIndex": 31
+    },
+    {
+      "code": "ACC_NET_TAX",
+      "dimCode": "measure",
+      "display": {
+        "color": "#73c0de",
+        "label": "გადასახადები-სუბსიდიები"
+      },
+      "locale": "ka",
+      "rowIndex": 32
+    },
+    {
+      "code": "B2G",
+      "dimCode": "measure",
+      "display": {
+        "color": "#3ba272",
+        "label": "მთლიანი შერეული შემოსავალი + საოპერაციო მოგება"
+      },
+      "locale": "ka",
+      "rowIndex": 33
+    },
+    {
+      "code": "D4_REC",
+      "dimCode": "measure",
+      "display": {
+        "color": "#fac858",
+        "label": "პირველადი შემოსავლების მიღება"
+      },
+      "locale": "ka",
+      "rowIndex": 34
+    },
+    {
+      "code": "D4_PAY",
+      "dimCode": "measure",
+      "display": {
+        "color": "#ee6666",
+        "label": "პირველადი შემოსავლების გადახდა"
+      },
+      "locale": "ka",
+      "rowIndex": 35
+    },
+    {
+      "code": "B5G",
+      "dimCode": "measure",
+      "display": {
+        "color": "#fac858",
+        "label": "მთლიანი ეროვნული შემოსავალი"
+      },
+      "locale": "ka",
+      "rowIndex": 36
+    },
+    {
+      "code": "D5_REC",
+      "dimCode": "measure",
+      "display": {
+        "color": "#9a60b4",
+        "label": "მიმდინარე ტრანსფერების მიღება"
+      },
+      "locale": "ka",
+      "rowIndex": 37
+    },
+    {
+      "code": "D5_PAY",
+      "dimCode": "measure",
+      "display": {
+        "color": "#ee6666",
+        "label": "მიმდინარე ტრანსფერების გადახდა"
+      },
+      "locale": "ka",
+      "rowIndex": 38
+    },
+    {
+      "code": "B6G",
+      "dimCode": "measure",
+      "display": {
+        "color": "#9a60b4",
+        "label": "მთლიანი განკარგვადი შემოსავალი"
+      },
+      "locale": "ka",
+      "rowIndex": 39
+    },
+    {
+      "code": "P3",
+      "dimCode": "measure",
+      "display": {
+        "color": "#fc8452",
+        "label": "საბოლოო მოხმარება"
+      },
+      "locale": "ka",
+      "rowIndex": 40
+    },
+    {
+      "code": "B8G",
+      "dimCode": "measure",
+      "display": {
+        "color": "#fc8452",
+        "label": "მთლიანი დანაზოგი"
+      },
+      "locale": "ka",
+      "rowIndex": 41
+    },
+    {
+      "code": "D9R",
+      "dimCode": "measure",
+      "display": {
+        "color": "#91cc75",
+        "label": "კაპიტალური ტრანსფერების მიღება"
+      },
+      "locale": "ka",
+      "rowIndex": 42
+    },
+    {
+      "code": "P5",
+      "dimCode": "measure",
+      "display": {
+        "color": "#ea7ccc",
+        "label": "მთლიანი კაპიტალის ფორმირება"
+      },
+      "locale": "ka",
+      "rowIndex": 43
+    },
+    {
+      "code": "B9",
+      "dimCode": "measure",
+      "display": {
+        "color": "#ee6666",
+        "label": "წმინდა დაკრედიტება (+), წმინდა სესხება(-)"
+      },
+      "locale": "ka",
+      "rowIndex": 44
+    },
+    {
+      "code": "total",
+      "dimCode": "geo",
+      "display": {
+        "color": "#264653",
+        "label": "საქართველო სულ"
+      },
+      "locale": "ka",
+      "rowIndex": 45
+    },
+    {
+      "code": "tbilisi",
+      "dimCode": "geo",
+      "display": {
+        "color": "#5470c6",
+        "label": "თბილისი"
+      },
+      "locale": "ka",
+      "rowIndex": 46
+    },
+    {
+      "code": "adjara",
+      "dimCode": "geo",
+      "display": {
+        "color": "#3ba272",
+        "label": "აჭარის ავტონომიური რესპუბლიკა"
+      },
+      "locale": "ka",
+      "rowIndex": 47
+    },
+    {
+      "code": "guria",
+      "dimCode": "geo",
+      "display": {
+        "color": "#73c0de",
+        "label": "გურია"
+      },
+      "locale": "ka",
+      "rowIndex": 48
+    },
+    {
+      "code": "imereti",
+      "dimCode": "geo",
+      "display": {
+        "color": "#fac858",
+        "label": "იმერეთი"
+      },
+      "locale": "ka",
+      "rowIndex": 49
+    },
+    {
+      "code": "kakheti",
+      "dimCode": "geo",
+      "display": {
+        "color": "#fc8452",
+        "label": "კახეთი"
+      },
+      "locale": "ka",
+      "rowIndex": 50
+    },
+    {
+      "code": "mtskheta",
+      "dimCode": "geo",
+      "display": {
+        "color": "#9a60b4",
+        "label": "მცხეთა-მთიანეთი"
+      },
+      "locale": "ka",
+      "rowIndex": 51
+    },
+    {
+      "code": "racha",
+      "dimCode": "geo",
+      "display": {
+        "color": "#91cc75",
+        "label": "რაჭა-ლეჩხუმი და ქვემო სვანეთი"
+      },
+      "locale": "ka",
+      "rowIndex": 52
+    },
+    {
+      "code": "samegrelo",
+      "dimCode": "geo",
+      "display": {
+        "color": "#ea7ccc",
+        "label": "სამეგრელო-ზემო სვანეთი"
+      },
+      "locale": "ka",
+      "rowIndex": 53
+    },
+    {
+      "code": "samtskhe",
+      "dimCode": "geo",
+      "display": {
+        "color": "#ee6666",
+        "label": "სამცხე-ჯავახეთი"
+      },
+      "locale": "ka",
+      "rowIndex": 54
+    },
+    {
+      "code": "kvemo_kartli",
+      "dimCode": "geo",
+      "display": {
+        "color": "#48c9b0",
+        "label": "ქვემო ქართლი"
+      },
+      "locale": "ka",
+      "rowIndex": 55
+    },
+    {
+      "code": "shida_kartli",
+      "dimCode": "geo",
+      "display": {
+        "color": "#f49e4c",
+        "label": "შიდა ქართლი"
+      },
+      "locale": "ka",
+      "rowIndex": 56
+    },
+    {
+      "code": "_T",
+      "dimCode": "sector",
+      "display": {
+        "color": "#264653",
+        "fullLabel": "სულ დამატებული ღირებულება",
+        "label": "სულ",
+        "sectorOrder": -1
+      },
+      "locale": "ka",
+      "rowIndex": 57
+    },
+    {
+      "code": "AGRI",
+      "dimCode": "sector",
+      "display": {
+        "color": "#3ba272",
+        "fullLabel": "სოფლის, სატყეო და თევზის მეურნეობა",
+        "label": "სოფლის მეურნეობა",
+        "sectorOrder": 0
+      },
+      "locale": "ka",
+      "rowIndex": 58
+    },
+    {
+      "code": "MANUF",
+      "dimCode": "sector",
+      "display": {
+        "color": "#5470c6",
+        "fullLabel": "დამამუშავებელი მრეწველობა",
+        "label": "მრეწველობა",
+        "sectorOrder": 1
+      },
+      "locale": "ka",
+      "rowIndex": 59
+    },
+    {
+      "code": "CONST",
+      "dimCode": "sector",
+      "display": {
+        "color": "#fc8452",
+        "fullLabel": "მშენებლობა",
+        "label": "მშენებლობა",
+        "sectorOrder": 2
+      },
+      "locale": "ka",
+      "rowIndex": 60
+    },
+    {
+      "code": "TRADE",
+      "dimCode": "sector",
+      "display": {
+        "color": "#73c0de",
+        "fullLabel": "საბითუმო და საცალო ვაჭრობა; ავტომობილებისა და მოტოციკლების რემონტი",
+        "label": "ვაჭრობა",
+        "sectorOrder": 3
+      },
+      "locale": "ka",
+      "rowIndex": 61
+    },
+    {
+      "code": "TRANS",
+      "dimCode": "sector",
+      "display": {
+        "color": "#9a60b4",
+        "fullLabel": "ტრანსპორტი და დასაწყობება",
+        "label": "ტრანსპორტი",
+        "sectorOrder": 4
+      },
+      "locale": "ka",
+      "rowIndex": 62
+    },
+    {
+      "code": "REAL",
+      "dimCode": "sector",
+      "display": {
+        "color": "#fac858",
+        "fullLabel": "უძრავ ქონებასთან დაკავშირებული საქმიანობა",
+        "label": "უძრავი ქონება",
+        "sectorOrder": 5
+      },
+      "locale": "ka",
+      "rowIndex": 63
+    },
+    {
+      "code": "GOV",
+      "dimCode": "sector",
+      "display": {
+        "color": "#ee6666",
+        "fullLabel": "სახელმწიფო მმართველობა და თავდაცვა; სავალდებულო სოციალური უსაფრთხოება",
+        "label": "სახელმწიფო მმართველობა",
+        "sectorOrder": 6
+      },
+      "locale": "ka",
+      "rowIndex": 64
+    },
+    {
+      "code": "EDU",
+      "dimCode": "sector",
+      "display": {
+        "color": "#ea7ccc",
+        "fullLabel": "განათლება",
+        "label": "განათლება",
+        "sectorOrder": 7
+      },
+      "locale": "ka",
+      "rowIndex": 65
+    },
+    {
+      "code": "OTHER",
+      "dimCode": "sector",
+      "display": {
+        "color": "#91cc75",
+        "fullLabel": "სხვა დანარჩენი",
+        "label": "სხვა",
+        "sectorOrder": 8
+      },
+      "locale": "ka",
+      "rowIndex": 66
+    }
+  ]
+}

@@ -1,0 +1,14 @@
+# Copy to ops/config/ssh/config (gitignored) and set in ops/config/deploy.env:
+#   DEPLOY_SERVER=geostat-deploy
+#   DEPLOY_SSH_CONFIG_FILE=ops/config/ssh/config
+#
+# Or merge this block into ~/.ssh/config (then DEPLOY_SERVER=user@host is enough).
+
+Host geostat-deploy
+    HostName YOUR_SERVER_IP_OR_DNS
+    User administrator
+    Port 22
+    # Project-local key, gitignored, kept in-repo. Use an ABSOLUTE path on Windows
+    # that resolves from THIS repo (not a different project's checkout):
+    IdentityFile C:/Users/you/WebstormProjects/national-accounts/ops/config/ssh/id_rsa
+    IdentitiesOnly yes

@@ -13,11 +13,17 @@ services:
   flyway:
     image: flyway/flyway:10-alpine
     container_name: statdash-flyway
-    command: -url=jdbc:postgresql://postgres:5432/${POSTGRES_DB:-statdash} -user=${POSTGRES_USER:-statdash} -password=${POSTGRES_PASSWORD} -locations=filesystem:/flyway/sql migrate
+    # Two locations: the versioned schema (Vnn, ops/postgres/migrations) and the
+    # generated seed lane (R__ repeatable, ops/postgres/seed). Flyway applies all
+    # Vnn first, then the repeatable R__ seeds — and re-applies an R__ whenever its
+    # checksum changes (data evolves → re-converge), never touching the immutable Vnn
+    # contract. R__seed_geostat_gold.sql is the ADR-0028 stage-1 preservation net.
+    command: -url=jdbc:postgresql://postgres:5432/${POSTGRES_DB:-statdash} -user=${POSTGRES_USER:-statdash} -password=${POSTGRES_PASSWORD} -locations=filesystem:/flyway/sql,filesystem:/flyway/seed migrate
     env_file:
       - ../../config/db/.env
     volumes:
       - ../../postgres/migrations:/flyway/sql:ro
+      - ../../postgres/seed:/flyway/seed:ro
     networks:
       - infra-net
     depends_on:

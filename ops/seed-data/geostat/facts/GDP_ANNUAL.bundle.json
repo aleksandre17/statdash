@@ -1,0 +1,3674 @@
+{
+  "obs": [
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GDP_AGRI"
+      },
+      "obsStatus": "A",
+      "obsValue": 1963.7,
+      "rowIndex": 0,
+      "timePeriod": "2010"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GDP_AGRI"
+      },
+      "obsStatus": "A",
+      "obsValue": 2541.7,
+      "rowIndex": 1,
+      "timePeriod": "2011"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GDP_AGRI"
+      },
+      "obsStatus": "A",
+      "obsValue": 2389.6,
+      "rowIndex": 2,
+      "timePeriod": "2012"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GDP_AGRI"
+      },
+      "obsStatus": "A",
+      "obsValue": 2685,
+      "rowIndex": 3,
+      "timePeriod": "2013"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GDP_AGRI"
+      },
+      "obsStatus": "A",
+      "obsValue": 2919.8,
+      "rowIndex": 4,
+      "timePeriod": "2014"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GDP_AGRI"
+      },
+      "obsStatus": "A",
+      "obsValue": 2951.1,
+      "rowIndex": 5,
+      "timePeriod": "2015"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GDP_AGRI"
+      },
+      "obsStatus": "A",
+      "obsValue": 2925.4,
+      "rowIndex": 6,
+      "timePeriod": "2016"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GDP_AGRI"
+      },
+      "obsStatus": "A",
+      "obsValue": 2860.2,
+      "rowIndex": 7,
+      "timePeriod": "2017"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GDP_AGRI"
+      },
+      "obsStatus": "A",
+      "obsValue": 3431,
+      "rowIndex": 8,
+      "timePeriod": "2018"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GDP_AGRI"
+      },
+      "obsStatus": "A",
+      "obsValue": 3647.6,
+      "rowIndex": 9,
+      "timePeriod": "2019"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GDP_AGRI"
+      },
+      "obsStatus": "A",
+      "obsValue": 4140.7,
+      "rowIndex": 10,
+      "timePeriod": "2020"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GDP_AGRI"
+      },
+      "obsStatus": "A",
+      "obsValue": 4388.7,
+      "rowIndex": 11,
+      "timePeriod": "2021"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GDP_AGRI"
+      },
+      "obsStatus": "A",
+      "obsValue": 4832.3,
+      "rowIndex": 12,
+      "timePeriod": "2022"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GDP_AGRI"
+      },
+      "obsStatus": "A",
+      "obsValue": 4865.7,
+      "rowIndex": 13,
+      "timePeriod": "2023"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GDP_AGRI"
+      },
+      "obsStatus": "A",
+      "obsValue": 5102.7,
+      "rowIndex": 14,
+      "timePeriod": "2024"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GDP_AGRI"
+      },
+      "obsStatus": "P",
+      "obsValue": 5420,
+      "rowIndex": 15,
+      "timePeriod": "2025"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GDP_IND"
+      },
+      "obsStatus": "A",
+      "obsValue": 2881.4,
+      "rowIndex": 16,
+      "timePeriod": "2010"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GDP_IND"
+      },
+      "obsStatus": "A",
+      "obsValue": 3355.7,
+      "rowIndex": 17,
+      "timePeriod": "2011"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GDP_IND"
+      },
+      "obsStatus": "A",
+      "obsValue": 3569.7,
+      "rowIndex": 18,
+      "timePeriod": "2012"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GDP_IND"
+      },
+      "obsStatus": "A",
+      "obsValue": 3562.7,
+      "rowIndex": 19,
+      "timePeriod": "2013"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GDP_IND"
+      },
+      "obsStatus": "A",
+      "obsValue": 3837.7,
+      "rowIndex": 20,
+      "timePeriod": "2014"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GDP_IND"
+      },
+      "obsStatus": "A",
+      "obsValue": 4337.9,
+      "rowIndex": 21,
+      "timePeriod": "2015"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GDP_IND"
+      },
+      "obsStatus": "A",
+      "obsValue": 4157.7,
+      "rowIndex": 22,
+      "timePeriod": "2016"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GDP_IND"
+      },
+      "obsStatus": "A",
+      "obsValue": 5135.9,
+      "rowIndex": 23,
+      "timePeriod": "2017"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GDP_IND"
+      },
+      "obsStatus": "A",
+      "obsValue": 5780.2,
+      "rowIndex": 24,
+      "timePeriod": "2018"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GDP_IND"
+      },
+      "obsStatus": "A",
+      "obsValue": 6231.3,
+      "rowIndex": 25,
+      "timePeriod": "2019"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GDP_IND"
+      },
+      "obsStatus": "A",
+      "obsValue": 6710.5,
+      "rowIndex": 26,
+      "timePeriod": "2020"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GDP_IND"
+      },
+      "obsStatus": "A",
+      "obsValue": 8953.8,
+      "rowIndex": 27,
+      "timePeriod": "2021"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GDP_IND"
+      },
+      "obsStatus": "A",
+      "obsValue": 10440.3,
+      "rowIndex": 28,
+      "timePeriod": "2022"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GDP_IND"
+      },
+      "obsStatus": "A",
+      "obsValue": 9907.9,
+      "rowIndex": 29,
+      "timePeriod": "2023"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GDP_IND"
+      },
+      "obsStatus": "A",
+      "obsValue": 11323,
+      "rowIndex": 30,
+      "timePeriod": "2024"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GDP_IND"
+      },
+      "obsStatus": "P",
+      "obsValue": 12135.6,
+      "rowIndex": 31,
+      "timePeriod": "2025"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GDP_CON"
+      },
+      "obsStatus": "A",
+      "obsValue": 856.9,
+      "rowIndex": 32,
+      "timePeriod": "2010"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GDP_CON"
+      },
+      "obsStatus": "A",
+      "obsValue": 1258.6,
+      "rowIndex": 33,
+      "timePeriod": "2011"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GDP_CON"
+      },
+      "obsStatus": "A",
+      "obsValue": 1688,
+      "rowIndex": 34,
+      "timePeriod": "2012"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GDP_CON"
+      },
+      "obsStatus": "A",
+      "obsValue": 1692,
+      "rowIndex": 35,
+      "timePeriod": "2013"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GDP_CON"
+      },
+      "obsStatus": "A",
+      "obsValue": 1926.6,
+      "rowIndex": 36,
+      "timePeriod": "2014"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GDP_CON"
+      },
+      "obsStatus": "A",
+      "obsValue": 2492.2,
+      "rowIndex": 37,
+      "timePeriod": "2015"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GDP_CON"
+      },
+      "obsStatus": "A",
+      "obsValue": 2832,
+      "rowIndex": 38,
+      "timePeriod": "2016"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GDP_CON"
+      },
+      "obsStatus": "A",
+      "obsValue": 3656.1,
+      "rowIndex": 39,
+      "timePeriod": "2017"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GDP_CON"
+      },
+      "obsStatus": "A",
+      "obsValue": 3705,
+      "rowIndex": 40,
+      "timePeriod": "2018"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GDP_CON"
+      },
+      "obsStatus": "A",
+      "obsValue": 3717.6,
+      "rowIndex": 41,
+      "timePeriod": "2019"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GDP_CON"
+      },
+      "obsStatus": "A",
+      "obsValue": 3780.5,
+      "rowIndex": 42,
+      "timePeriod": "2020"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GDP_CON"
+      },
+      "obsStatus": "A",
+      "obsValue": 3839.2,
+      "rowIndex": 43,
+      "timePeriod": "2021"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GDP_CON"
+      },
+      "obsStatus": "A",
+      "obsValue": 5100.6,
+      "rowIndex": 44,
+      "timePeriod": "2022"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GDP_CON"
+      },
+      "obsStatus": "A",
+      "obsValue": 5362.8,
+      "rowIndex": 45,
+      "timePeriod": "2023"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GDP_CON"
+      },
+      "obsStatus": "A",
+      "obsValue": 6894.2,
+      "rowIndex": 46,
+      "timePeriod": "2024"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GDP_CON"
+      },
+      "obsStatus": "P",
+      "obsValue": 7323.7,
+      "rowIndex": 47,
+      "timePeriod": "2025"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GDP_SVC"
+      },
+      "obsStatus": "A",
+      "obsValue": 13830.9,
+      "rowIndex": 48,
+      "timePeriod": "2010"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GDP_SVC"
+      },
+      "obsStatus": "A",
+      "obsValue": 15977.3,
+      "rowIndex": 49,
+      "timePeriod": "2011"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GDP_SVC"
+      },
+      "obsStatus": "A",
+      "obsValue": 17147.7,
+      "rowIndex": 50,
+      "timePeriod": "2012"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GDP_SVC"
+      },
+      "obsStatus": "A",
+      "obsValue": 17995.5,
+      "rowIndex": 51,
+      "timePeriod": "2013"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GDP_SVC"
+      },
+      "obsStatus": "A",
+      "obsValue": 19398,
+      "rowIndex": 52,
+      "timePeriod": "2014"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GDP_SVC"
+      },
+      "obsStatus": "A",
+      "obsValue": 20864.4,
+      "rowIndex": 53,
+      "timePeriod": "2015"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GDP_SVC"
+      },
+      "obsStatus": "A",
+      "obsValue": 22192.6,
+      "rowIndex": 54,
+      "timePeriod": "2016"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GDP_SVC"
+      },
+      "obsStatus": "A",
+      "obsValue": 24111.9,
+      "rowIndex": 55,
+      "timePeriod": "2017"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GDP_SVC"
+      },
+      "obsStatus": "A",
+      "obsValue": 26475.9,
+      "rowIndex": 56,
+      "timePeriod": "2018"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GDP_SVC"
+      },
+      "obsStatus": "A",
+      "obsValue": 29885.5,
+      "rowIndex": 57,
+      "timePeriod": "2019"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GDP_SVC"
+      },
+      "obsStatus": "A",
+      "obsValue": 28821.7,
+      "rowIndex": 58,
+      "timePeriod": "2020"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GDP_SVC"
+      },
+      "obsStatus": "A",
+      "obsValue": 35644.3,
+      "rowIndex": 59,
+      "timePeriod": "2021"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GDP_SVC"
+      },
+      "obsStatus": "A",
+      "obsValue": 43023.3,
+      "rowIndex": 60,
+      "timePeriod": "2022"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GDP_SVC"
+      },
+      "obsStatus": "A",
+      "obsValue": 50192.5,
+      "rowIndex": 61,
+      "timePeriod": "2023"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GDP_SVC"
+      },
+      "obsStatus": "A",
+      "obsValue": 57659.5,
+      "rowIndex": 62,
+      "timePeriod": "2024"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GDP_SVC"
+      },
+      "obsStatus": "P",
+      "obsValue": 66877.3,
+      "rowIndex": 63,
+      "timePeriod": "2025"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GDP_NET_TAX"
+      },
+      "obsStatus": "A",
+      "obsValue": 2615.8,
+      "rowIndex": 64,
+      "timePeriod": "2010"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GDP_NET_TAX"
+      },
+      "obsStatus": "A",
+      "obsValue": 2966,
+      "rowIndex": 65,
+      "timePeriod": "2011"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GDP_NET_TAX"
+      },
+      "obsStatus": "A",
+      "obsValue": 3101.9,
+      "rowIndex": 66,
+      "timePeriod": "2012"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GDP_NET_TAX"
+      },
+      "obsStatus": "A",
+      "obsValue": 3202.5,
+      "rowIndex": 67,
+      "timePeriod": "2013"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GDP_NET_TAX"
+      },
+      "obsStatus": "A",
+      "obsValue": 3640.3,
+      "rowIndex": 68,
+      "timePeriod": "2014"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GDP_NET_TAX"
+      },
+      "obsStatus": "A",
+      "obsValue": 3902.6,
+      "rowIndex": 69,
+      "timePeriod": "2015"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GDP_NET_TAX"
+      },
+      "obsStatus": "A",
+      "obsValue": 4445.5,
+      "rowIndex": 70,
+      "timePeriod": "2016"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GDP_NET_TAX"
+      },
+      "obsStatus": "A",
+      "obsValue": 5575.7,
+      "rowIndex": 71,
+      "timePeriod": "2017"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GDP_NET_TAX"
+      },
+      "obsStatus": "A",
+      "obsValue": 5982.3,
+      "rowIndex": 72,
+      "timePeriod": "2018"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GDP_NET_TAX"
+      },
+      "obsStatus": "A",
+      "obsValue": 6244.3,
+      "rowIndex": 73,
+      "timePeriod": "2019"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GDP_NET_TAX"
+      },
+      "obsStatus": "A",
+      "obsValue": 6335.1,
+      "rowIndex": 74,
+      "timePeriod": "2020"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GDP_NET_TAX"
+      },
+      "obsStatus": "A",
+      "obsValue": 7898.1,
+      "rowIndex": 75,
+      "timePeriod": "2021"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GDP_NET_TAX"
+      },
+      "obsStatus": "A",
+      "obsValue": 9463.5,
+      "rowIndex": 76,
+      "timePeriod": "2022"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GDP_NET_TAX"
+      },
+      "obsStatus": "A",
+      "obsValue": 10553.9,
+      "rowIndex": 77,
+      "timePeriod": "2023"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GDP_NET_TAX"
+      },
+      "obsStatus": "A",
+      "obsValue": 12042.9,
+      "rowIndex": 78,
+      "timePeriod": "2024"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GDP_NET_TAX"
+      },
+      "obsStatus": "P",
+      "obsValue": 12841.6,
+      "rowIndex": 79,
+      "timePeriod": "2025"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "C"
+      },
+      "obsStatus": "A",
+      "obsValue": 21220.5,
+      "rowIndex": 80,
+      "timePeriod": "2010"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "C"
+      },
+      "obsStatus": "A",
+      "obsValue": 24694.8,
+      "rowIndex": 81,
+      "timePeriod": "2011"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "C"
+      },
+      "obsStatus": "A",
+      "obsValue": 25784.5,
+      "rowIndex": 82,
+      "timePeriod": "2012"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "C"
+      },
+      "obsStatus": "A",
+      "obsValue": 26291.2,
+      "rowIndex": 83,
+      "timePeriod": "2013"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "C"
+      },
+      "obsStatus": "A",
+      "obsValue": 28847.3,
+      "rowIndex": 84,
+      "timePeriod": "2014"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "C"
+      },
+      "obsStatus": "A",
+      "obsValue": 31046.6,
+      "rowIndex": 85,
+      "timePeriod": "2015"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "C"
+      },
+      "obsStatus": "A",
+      "obsValue": 31444.9,
+      "rowIndex": 86,
+      "timePeriod": "2016"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "C"
+      },
+      "obsStatus": "A",
+      "obsValue": 35430.8,
+      "rowIndex": 87,
+      "timePeriod": "2017"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "C"
+      },
+      "obsStatus": "A",
+      "obsValue": 37447.7,
+      "rowIndex": 88,
+      "timePeriod": "2018"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "C"
+      },
+      "obsStatus": "A",
+      "obsValue": 40792.1,
+      "rowIndex": 89,
+      "timePeriod": "2019"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "C"
+      },
+      "obsStatus": "A",
+      "obsValue": 47042.6,
+      "rowIndex": 90,
+      "timePeriod": "2020"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "C"
+      },
+      "obsStatus": "A",
+      "obsValue": 58036.1,
+      "rowIndex": 91,
+      "timePeriod": "2021"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "C"
+      },
+      "obsStatus": "A",
+      "obsValue": 62420,
+      "rowIndex": 92,
+      "timePeriod": "2022"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "C"
+      },
+      "obsStatus": "A",
+      "obsValue": 67632.8,
+      "rowIndex": 93,
+      "timePeriod": "2023"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "C"
+      },
+      "obsStatus": "A",
+      "obsValue": 77512.2,
+      "rowIndex": 94,
+      "timePeriod": "2024"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "C"
+      },
+      "obsStatus": "P",
+      "obsValue": 88425.6,
+      "rowIndex": 95,
+      "timePeriod": "2025"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "I_GFCF"
+      },
+      "obsStatus": "A",
+      "obsValue": 4635.6,
+      "rowIndex": 96,
+      "timePeriod": "2010"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "I_GFCF"
+      },
+      "obsStatus": "A",
+      "obsValue": 6034.3,
+      "rowIndex": 97,
+      "timePeriod": "2011"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "I_GFCF"
+      },
+      "obsStatus": "A",
+      "obsValue": 7260.9,
+      "rowIndex": 98,
+      "timePeriod": "2012"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "I_GFCF"
+      },
+      "obsStatus": "A",
+      "obsValue": 6323,
+      "rowIndex": 99,
+      "timePeriod": "2013"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "I_GFCF"
+      },
+      "obsStatus": "A",
+      "obsValue": 8136.8,
+      "rowIndex": 100,
+      "timePeriod": "2014"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "I_GFCF"
+      },
+      "obsStatus": "A",
+      "obsValue": 9285.5,
+      "rowIndex": 101,
+      "timePeriod": "2015"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "I_GFCF"
+      },
+      "obsStatus": "A",
+      "obsValue": 10565,
+      "rowIndex": 102,
+      "timePeriod": "2016"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "I_GFCF"
+      },
+      "obsStatus": "A",
+      "obsValue": 10386.6,
+      "rowIndex": 103,
+      "timePeriod": "2017"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "I_GFCF"
+      },
+      "obsStatus": "A",
+      "obsValue": 12671.3,
+      "rowIndex": 104,
+      "timePeriod": "2018"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "I_GFCF"
+      },
+      "obsStatus": "A",
+      "obsValue": 13509.7,
+      "rowIndex": 105,
+      "timePeriod": "2019"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "I_GFCF"
+      },
+      "obsStatus": "A",
+      "obsValue": 12250.9,
+      "rowIndex": 106,
+      "timePeriod": "2020"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "I_GFCF"
+      },
+      "obsStatus": "A",
+      "obsValue": 12557,
+      "rowIndex": 107,
+      "timePeriod": "2021"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "I_GFCF"
+      },
+      "obsStatus": "A",
+      "obsValue": 17535,
+      "rowIndex": 108,
+      "timePeriod": "2022"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "I_GFCF"
+      },
+      "obsStatus": "A",
+      "obsValue": 20219.7,
+      "rowIndex": 109,
+      "timePeriod": "2023"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "I_GFCF"
+      },
+      "obsStatus": "A",
+      "obsValue": 22790.4,
+      "rowIndex": 110,
+      "timePeriod": "2024"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "I_GFCF"
+      },
+      "obsStatus": "P",
+      "obsValue": 22256.7,
+      "rowIndex": 111,
+      "timePeriod": "2025"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "X"
+      },
+      "obsStatus": "A",
+      "obsValue": 7191.2,
+      "rowIndex": 112,
+      "timePeriod": "2010"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "X"
+      },
+      "obsStatus": "A",
+      "obsValue": 8838,
+      "rowIndex": 113,
+      "timePeriod": "2011"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "X"
+      },
+      "obsStatus": "A",
+      "obsValue": 9942.4,
+      "rowIndex": 114,
+      "timePeriod": "2012"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "X"
+      },
+      "obsStatus": "A",
+      "obsValue": 11929.5,
+      "rowIndex": 115,
+      "timePeriod": "2013"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "X"
+      },
+      "obsStatus": "A",
+      "obsValue": 12429.3,
+      "rowIndex": 116,
+      "timePeriod": "2014"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "X"
+      },
+      "obsStatus": "A",
+      "obsValue": 13866.6,
+      "rowIndex": 117,
+      "timePeriod": "2015"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "X"
+      },
+      "obsStatus": "A",
+      "obsValue": 14620.9,
+      "rowIndex": 118,
+      "timePeriod": "2016"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "X"
+      },
+      "obsStatus": "A",
+      "obsValue": 18965.4,
+      "rowIndex": 119,
+      "timePeriod": "2017"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "X"
+      },
+      "obsStatus": "A",
+      "obsValue": 22548.9,
+      "rowIndex": 120,
+      "timePeriod": "2018"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "X"
+      },
+      "obsStatus": "A",
+      "obsValue": 27003.4,
+      "rowIndex": 121,
+      "timePeriod": "2019"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "X"
+      },
+      "obsStatus": "A",
+      "obsValue": 18372.3,
+      "rowIndex": 122,
+      "timePeriod": "2020"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "X"
+      },
+      "obsStatus": "A",
+      "obsValue": 25913.6,
+      "rowIndex": 123,
+      "timePeriod": "2021"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "X"
+      },
+      "obsStatus": "A",
+      "obsValue": 38236.1,
+      "rowIndex": 124,
+      "timePeriod": "2022"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "X"
+      },
+      "obsStatus": "A",
+      "obsValue": 39848.6,
+      "rowIndex": 125,
+      "timePeriod": "2023"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "X"
+      },
+      "obsStatus": "A",
+      "obsValue": 44478.7,
+      "rowIndex": 126,
+      "timePeriod": "2024"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "X"
+      },
+      "obsStatus": "P",
+      "obsValue": 49585.4,
+      "rowIndex": 127,
+      "timePeriod": "2025"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "M"
+      },
+      "obsStatus": "A",
+      "obsValue": 10898.6,
+      "rowIndex": 128,
+      "timePeriod": "2010"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "M"
+      },
+      "obsStatus": "A",
+      "obsValue": 13467.7,
+      "rowIndex": 129,
+      "timePeriod": "2011"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "M"
+      },
+      "obsStatus": "A",
+      "obsValue": 15091,
+      "rowIndex": 130,
+      "timePeriod": "2012"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "M"
+      },
+      "obsStatus": "A",
+      "obsValue": 15406,
+      "rowIndex": 131,
+      "timePeriod": "2013"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "M"
+      },
+      "obsStatus": "A",
+      "obsValue": 17691,
+      "rowIndex": 132,
+      "timePeriod": "2014"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "M"
+      },
+      "obsStatus": "A",
+      "obsValue": 19650.6,
+      "rowIndex": 133,
+      "timePeriod": "2015"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "M"
+      },
+      "obsStatus": "A",
+      "obsValue": 20077.5,
+      "rowIndex": 134,
+      "timePeriod": "2016"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "M"
+      },
+      "obsStatus": "A",
+      "obsValue": 23443,
+      "rowIndex": 135,
+      "timePeriod": "2017"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "M"
+      },
+      "obsStatus": "A",
+      "obsValue": 27293.5,
+      "rowIndex": 136,
+      "timePeriod": "2018"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "M"
+      },
+      "obsStatus": "A",
+      "obsValue": 31578.9,
+      "rowIndex": 137,
+      "timePeriod": "2019"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "M"
+      },
+      "obsStatus": "A",
+      "obsValue": 27877.2,
+      "rowIndex": 138,
+      "timePeriod": "2020"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "M"
+      },
+      "obsStatus": "A",
+      "obsValue": 35782.6,
+      "rowIndex": 139,
+      "timePeriod": "2021"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "M"
+      },
+      "obsStatus": "A",
+      "obsValue": 45331,
+      "rowIndex": 140,
+      "timePeriod": "2022"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "M"
+      },
+      "obsStatus": "A",
+      "obsValue": 46818.3,
+      "rowIndex": 141,
+      "timePeriod": "2023"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "M"
+      },
+      "obsStatus": "A",
+      "obsValue": 51758.9,
+      "rowIndex": 142,
+      "timePeriod": "2024"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "M"
+      },
+      "obsStatus": "P",
+      "obsValue": 55669.6,
+      "rowIndex": 143,
+      "timePeriod": "2025"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "D1"
+      },
+      "obsStatus": "A",
+      "obsValue": 4999,
+      "rowIndex": 144,
+      "timePeriod": "2010"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "D1"
+      },
+      "obsStatus": "A",
+      "obsValue": 6225,
+      "rowIndex": 145,
+      "timePeriod": "2011"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "D1"
+      },
+      "obsStatus": "A",
+      "obsValue": 7084,
+      "rowIndex": 146,
+      "timePeriod": "2012"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "D1"
+      },
+      "obsStatus": "A",
+      "obsValue": 7800,
+      "rowIndex": 147,
+      "timePeriod": "2013"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "D1"
+      },
+      "obsStatus": "A",
+      "obsValue": 8550,
+      "rowIndex": 148,
+      "timePeriod": "2014"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "D1"
+      },
+      "obsStatus": "A",
+      "obsValue": 9712,
+      "rowIndex": 149,
+      "timePeriod": "2015"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "D1"
+      },
+      "obsStatus": "A",
+      "obsValue": 11062,
+      "rowIndex": 150,
+      "timePeriod": "2016"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "D1"
+      },
+      "obsStatus": "A",
+      "obsValue": 12581,
+      "rowIndex": 151,
+      "timePeriod": "2017"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "D1"
+      },
+      "obsStatus": "A",
+      "obsValue": 14172,
+      "rowIndex": 152,
+      "timePeriod": "2018"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "D1"
+      },
+      "obsStatus": "A",
+      "obsValue": 16242,
+      "rowIndex": 153,
+      "timePeriod": "2019"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "D1"
+      },
+      "obsStatus": "A",
+      "obsValue": 15992,
+      "rowIndex": 154,
+      "timePeriod": "2020"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "D1"
+      },
+      "obsStatus": "A",
+      "obsValue": 18955,
+      "rowIndex": 155,
+      "timePeriod": "2021"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "D1"
+      },
+      "obsStatus": "A",
+      "obsValue": 23019,
+      "rowIndex": 156,
+      "timePeriod": "2022"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "D1"
+      },
+      "obsStatus": "A",
+      "obsValue": 27138,
+      "rowIndex": 157,
+      "timePeriod": "2023"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "D1"
+      },
+      "obsStatus": "A",
+      "obsValue": 31574,
+      "rowIndex": 158,
+      "timePeriod": "2024"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "D1"
+      },
+      "obsStatus": "P",
+      "obsValue": 34816.3,
+      "rowIndex": 159,
+      "timePeriod": "2025"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "NET_TAX_PROD"
+      },
+      "obsStatus": "A",
+      "obsValue": 2823,
+      "rowIndex": 160,
+      "timePeriod": "2010"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "NET_TAX_PROD"
+      },
+      "obsStatus": "A",
+      "obsValue": 3205,
+      "rowIndex": 161,
+      "timePeriod": "2011"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "NET_TAX_PROD"
+      },
+      "obsStatus": "A",
+      "obsValue": 3382,
+      "rowIndex": 162,
+      "timePeriod": "2012"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "NET_TAX_PROD"
+      },
+      "obsStatus": "A",
+      "obsValue": 3513,
+      "rowIndex": 163,
+      "timePeriod": "2013"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "NET_TAX_PROD"
+      },
+      "obsStatus": "A",
+      "obsValue": 3982,
+      "rowIndex": 164,
+      "timePeriod": "2014"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "NET_TAX_PROD"
+      },
+      "obsStatus": "A",
+      "obsValue": 4256,
+      "rowIndex": 165,
+      "timePeriod": "2015"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "NET_TAX_PROD"
+      },
+      "obsStatus": "A",
+      "obsValue": 4841,
+      "rowIndex": 166,
+      "timePeriod": "2016"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "NET_TAX_PROD"
+      },
+      "obsStatus": "A",
+      "obsValue": 6018,
+      "rowIndex": 167,
+      "timePeriod": "2017"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "NET_TAX_PROD"
+      },
+      "obsStatus": "A",
+      "obsValue": 6447,
+      "rowIndex": 168,
+      "timePeriod": "2018"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "NET_TAX_PROD"
+      },
+      "obsStatus": "A",
+      "obsValue": 6705,
+      "rowIndex": 169,
+      "timePeriod": "2019"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "NET_TAX_PROD"
+      },
+      "obsStatus": "A",
+      "obsValue": 6797,
+      "rowIndex": 170,
+      "timePeriod": "2020"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "NET_TAX_PROD"
+      },
+      "obsStatus": "A",
+      "obsValue": 8421,
+      "rowIndex": 171,
+      "timePeriod": "2021"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "NET_TAX_PROD"
+      },
+      "obsStatus": "A",
+      "obsValue": 10081,
+      "rowIndex": 172,
+      "timePeriod": "2022"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "NET_TAX_PROD"
+      },
+      "obsStatus": "A",
+      "obsValue": 11377,
+      "rowIndex": 173,
+      "timePeriod": "2023"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "NET_TAX_PROD"
+      },
+      "obsStatus": "A",
+      "obsValue": 12934,
+      "rowIndex": 174,
+      "timePeriod": "2024"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "NET_TAX_PROD"
+      },
+      "obsStatus": "P",
+      "obsValue": 13830.9,
+      "rowIndex": 175,
+      "timePeriod": "2025"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "OS_GROSS"
+      },
+      "obsStatus": "A",
+      "obsValue": 10363,
+      "rowIndex": 176,
+      "timePeriod": "2010"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "OS_GROSS"
+      },
+      "obsStatus": "A",
+      "obsValue": 11802,
+      "rowIndex": 177,
+      "timePeriod": "2011"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "OS_GROSS"
+      },
+      "obsStatus": "A",
+      "obsValue": 12049,
+      "rowIndex": 178,
+      "timePeriod": "2012"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "OS_GROSS"
+      },
+      "obsStatus": "A",
+      "obsValue": 12115,
+      "rowIndex": 179,
+      "timePeriod": "2013"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "OS_GROSS"
+      },
+      "obsStatus": "A",
+      "obsValue": 13498,
+      "rowIndex": 180,
+      "timePeriod": "2014"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "OS_GROSS"
+      },
+      "obsStatus": "A",
+      "obsValue": 14606,
+      "rowIndex": 181,
+      "timePeriod": "2015"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "OS_GROSS"
+      },
+      "obsStatus": "A",
+      "obsValue": 14699,
+      "rowIndex": 182,
+      "timePeriod": "2016"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "OS_GROSS"
+      },
+      "obsStatus": "A",
+      "obsValue": 16469,
+      "rowIndex": 183,
+      "timePeriod": "2017"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "OS_GROSS"
+      },
+      "obsStatus": "A",
+      "obsValue": 18127,
+      "rowIndex": 184,
+      "timePeriod": "2018"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "OS_GROSS"
+      },
+      "obsStatus": "A",
+      "obsValue": 19489,
+      "rowIndex": 185,
+      "timePeriod": "2019"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "OS_GROSS"
+      },
+      "obsStatus": "A",
+      "obsValue": 19680,
+      "rowIndex": 186,
+      "timePeriod": "2020"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "OS_GROSS"
+      },
+      "obsStatus": "A",
+      "obsValue": 24309,
+      "rowIndex": 187,
+      "timePeriod": "2021"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "OS_GROSS"
+      },
+      "obsStatus": "A",
+      "obsValue": 28965.9,
+      "rowIndex": 188,
+      "timePeriod": "2022"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "OS_GROSS"
+      },
+      "obsStatus": "A",
+      "obsValue": 30876.2,
+      "rowIndex": 189,
+      "timePeriod": "2023"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "OS_GROSS"
+      },
+      "obsStatus": "A",
+      "obsValue": 35356,
+      "rowIndex": 190,
+      "timePeriod": "2024"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "OS_GROSS"
+      },
+      "obsStatus": "P",
+      "obsValue": 40820.7,
+      "rowIndex": 191,
+      "timePeriod": "2025"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "MIXED_INC"
+      },
+      "obsStatus": "A",
+      "obsValue": 3964,
+      "rowIndex": 192,
+      "timePeriod": "2010"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "MIXED_INC"
+      },
+      "obsStatus": "A",
+      "obsValue": 4867,
+      "rowIndex": 193,
+      "timePeriod": "2011"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "MIXED_INC"
+      },
+      "obsStatus": "A",
+      "obsValue": 5381,
+      "rowIndex": 194,
+      "timePeriod": "2012"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "MIXED_INC"
+      },
+      "obsStatus": "A",
+      "obsValue": 5710,
+      "rowIndex": 195,
+      "timePeriod": "2013"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "MIXED_INC"
+      },
+      "obsStatus": "A",
+      "obsValue": 5692,
+      "rowIndex": 196,
+      "timePeriod": "2014"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "MIXED_INC"
+      },
+      "obsStatus": "A",
+      "obsValue": 5974,
+      "rowIndex": 197,
+      "timePeriod": "2015"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "MIXED_INC"
+      },
+      "obsStatus": "A",
+      "obsValue": 5952,
+      "rowIndex": 198,
+      "timePeriod": "2016"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "MIXED_INC"
+      },
+      "obsStatus": "A",
+      "obsValue": 6271,
+      "rowIndex": 199,
+      "timePeriod": "2017"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "MIXED_INC"
+      },
+      "obsStatus": "A",
+      "obsValue": 6629,
+      "rowIndex": 200,
+      "timePeriod": "2018"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "MIXED_INC"
+      },
+      "obsStatus": "A",
+      "obsValue": 7290,
+      "rowIndex": 201,
+      "timePeriod": "2019"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "MIXED_INC"
+      },
+      "obsStatus": "A",
+      "obsValue": 7320,
+      "rowIndex": 202,
+      "timePeriod": "2020"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "MIXED_INC"
+      },
+      "obsStatus": "A",
+      "obsValue": 9039.1,
+      "rowIndex": 203,
+      "timePeriod": "2021"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "MIXED_INC"
+      },
+      "obsStatus": "A",
+      "obsValue": 10794.2,
+      "rowIndex": 204,
+      "timePeriod": "2022"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "MIXED_INC"
+      },
+      "obsStatus": "A",
+      "obsValue": 11491,
+      "rowIndex": 205,
+      "timePeriod": "2023"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "MIXED_INC"
+      },
+      "obsStatus": "A",
+      "obsValue": 13159,
+      "rowIndex": 206,
+      "timePeriod": "2024"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "MIXED_INC"
+      },
+      "obsStatus": "P",
+      "obsValue": 15130.2,
+      "rowIndex": 207,
+      "timePeriod": "2025"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GDP_GROWTH"
+      },
+      "obsStatus": "A",
+      "obsValue": 0,
+      "rowIndex": 208,
+      "timePeriod": "2010"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GDP_GROWTH"
+      },
+      "obsStatus": "A",
+      "obsValue": 7.9,
+      "rowIndex": 209,
+      "timePeriod": "2011"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GDP_GROWTH"
+      },
+      "obsStatus": "A",
+      "obsValue": 6.6,
+      "rowIndex": 210,
+      "timePeriod": "2012"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GDP_GROWTH"
+      },
+      "obsStatus": "A",
+      "obsValue": 5.1,
+      "rowIndex": 211,
+      "timePeriod": "2013"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GDP_GROWTH"
+      },
+      "obsStatus": "A",
+      "obsValue": 4.1,
+      "rowIndex": 212,
+      "timePeriod": "2014"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GDP_GROWTH"
+      },
+      "obsStatus": "A",
+      "obsValue": 3.4,
+      "rowIndex": 213,
+      "timePeriod": "2015"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GDP_GROWTH"
+      },
+      "obsStatus": "A",
+      "obsValue": 3.4,
+      "rowIndex": 214,
+      "timePeriod": "2016"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GDP_GROWTH"
+      },
+      "obsStatus": "A",
+      "obsValue": 5.2,
+      "rowIndex": 215,
+      "timePeriod": "2017"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GDP_GROWTH"
+      },
+      "obsStatus": "A",
+      "obsValue": 6.1,
+      "rowIndex": 216,
+      "timePeriod": "2018"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GDP_GROWTH"
+      },
+      "obsStatus": "A",
+      "obsValue": 5.4,
+      "rowIndex": 217,
+      "timePeriod": "2019"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GDP_GROWTH"
+      },
+      "obsStatus": "A",
+      "obsValue": -6.3,
+      "rowIndex": 218,
+      "timePeriod": "2020"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GDP_GROWTH"
+      },
+      "obsStatus": "A",
+      "obsValue": 10.6,
+      "rowIndex": 219,
+      "timePeriod": "2021"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GDP_GROWTH"
+      },
+      "obsStatus": "A",
+      "obsValue": 11,
+      "rowIndex": 220,
+      "timePeriod": "2022"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GDP_GROWTH"
+      },
+      "obsStatus": "A",
+      "obsValue": 7.8,
+      "rowIndex": 221,
+      "timePeriod": "2023"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GDP_GROWTH"
+      },
+      "obsStatus": "A",
+      "obsValue": 9.7,
+      "rowIndex": 222,
+      "timePeriod": "2024"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GDP_GROWTH"
+      },
+      "obsStatus": "P",
+      "obsValue": 7.5,
+      "rowIndex": 223,
+      "timePeriod": "2025"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GDP_DEFLATOR"
+      },
+      "obsStatus": "A",
+      "obsValue": 9.16,
+      "rowIndex": 224,
+      "timePeriod": "2011"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GDP_DEFLATOR"
+      },
+      "obsStatus": "A",
+      "obsValue": 0.29,
+      "rowIndex": 225,
+      "timePeriod": "2012"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GDP_DEFLATOR"
+      },
+      "obsStatus": "A",
+      "obsValue": -0.65,
+      "rowIndex": 226,
+      "timePeriod": "2013"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GDP_DEFLATOR"
+      },
+      "obsStatus": "A",
+      "obsValue": 4.59,
+      "rowIndex": 227,
+      "timePeriod": "2014"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GDP_DEFLATOR"
+      },
+      "obsStatus": "A",
+      "obsValue": 5.38,
+      "rowIndex": 228,
+      "timePeriod": "2015"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GDP_DEFLATOR"
+      },
+      "obsStatus": "A",
+      "obsValue": 2.28,
+      "rowIndex": 229,
+      "timePeriod": "2016"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GDP_DEFLATOR"
+      },
+      "obsStatus": "A",
+      "obsValue": 7.54,
+      "rowIndex": 230,
+      "timePeriod": "2017"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GDP_DEFLATOR"
+      },
+      "obsStatus": "A",
+      "obsValue": 3.49,
+      "rowIndex": 231,
+      "timePeriod": "2018"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GDP_DEFLATOR"
+      },
+      "obsStatus": "A",
+      "obsValue": 4,
+      "rowIndex": 232,
+      "timePeriod": "2019"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GDP_DEFLATOR"
+      },
+      "obsStatus": "A",
+      "obsValue": 6.85,
+      "rowIndex": 233,
+      "timePeriod": "2020"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GDP_DEFLATOR"
+      },
+      "obsStatus": "A",
+      "obsValue": 10.23,
+      "rowIndex": 234,
+      "timePeriod": "2021"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GDP_DEFLATOR"
+      },
+      "obsStatus": "A",
+      "obsValue": 8.13,
+      "rowIndex": 235,
+      "timePeriod": "2022"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GDP_DEFLATOR"
+      },
+      "obsStatus": "A",
+      "obsValue": 2.95,
+      "rowIndex": 236,
+      "timePeriod": "2023"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GDP_DEFLATOR"
+      },
+      "obsStatus": "A",
+      "obsValue": 4.86,
+      "rowIndex": 237,
+      "timePeriod": "2024"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GDP_DEFLATOR"
+      },
+      "obsStatus": "P",
+      "obsValue": 4.64,
+      "rowIndex": 238,
+      "timePeriod": "2025"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GDP_PER_CAPITA"
+      },
+      "obsStatus": "A",
+      "obsValue": 3281.2,
+      "rowIndex": 239,
+      "timePeriod": "2010"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GDP_PER_CAPITA"
+      },
+      "obsStatus": "A",
+      "obsValue": 4120.8,
+      "rowIndex": 240,
+      "timePeriod": "2011"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GDP_PER_CAPITA"
+      },
+      "obsStatus": "A",
+      "obsValue": 4530.7,
+      "rowIndex": 241,
+      "timePeriod": "2012"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GDP_PER_CAPITA"
+      },
+      "obsStatus": "A",
+      "obsValue": 4711.8,
+      "rowIndex": 242,
+      "timePeriod": "2013"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GDP_PER_CAPITA"
+      },
+      "obsStatus": "A",
+      "obsValue": 4829.9,
+      "rowIndex": 243,
+      "timePeriod": "2014"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GDP_PER_CAPITA"
+      },
+      "obsStatus": "A",
+      "obsValue": 4085.1,
+      "rowIndex": 244,
+      "timePeriod": "2015"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GDP_PER_CAPITA"
+      },
+      "obsStatus": "A",
+      "obsValue": 4143.5,
+      "rowIndex": 245,
+      "timePeriod": "2016"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GDP_PER_CAPITA"
+      },
+      "obsStatus": "A",
+      "obsValue": 4420.3,
+      "rowIndex": 246,
+      "timePeriod": "2017"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GDP_PER_CAPITA"
+      },
+      "obsStatus": "A",
+      "obsValue": 4804,
+      "rowIndex": 247,
+      "timePeriod": "2018"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GDP_PER_CAPITA"
+      },
+      "obsStatus": "A",
+      "obsValue": 4741.4,
+      "rowIndex": 248,
+      "timePeriod": "2019"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GDP_PER_CAPITA"
+      },
+      "obsStatus": "A",
+      "obsValue": 4300.8,
+      "rowIndex": 249,
+      "timePeriod": "2020"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GDP_PER_CAPITA"
+      },
+      "obsStatus": "A",
+      "obsValue": 5083.6,
+      "rowIndex": 250,
+      "timePeriod": "2021"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GDP_PER_CAPITA"
+      },
+      "obsStatus": "A",
+      "obsValue": 6731.2,
+      "rowIndex": 251,
+      "timePeriod": "2022"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GDP_PER_CAPITA"
+      },
+      "obsStatus": "A",
+      "obsValue": 8284,
+      "rowIndex": 252,
+      "timePeriod": "2023"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GDP_PER_CAPITA"
+      },
+      "obsStatus": "A",
+      "obsValue": 9241.5,
+      "rowIndex": 253,
+      "timePeriod": "2024"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GDP_PER_CAPITA"
+      },
+      "obsStatus": "P",
+      "obsValue": 10296.5,
+      "rowIndex": 254,
+      "timePeriod": "2025"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GFCF_RES"
+      },
+      "obsStatus": "A",
+      "obsValue": 315.7,
+      "rowIndex": 255,
+      "timePeriod": "2010"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GFCF_RES"
+      },
+      "obsStatus": "A",
+      "obsValue": 587.8,
+      "rowIndex": 256,
+      "timePeriod": "2011"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GFCF_RES"
+      },
+      "obsStatus": "A",
+      "obsValue": 896.4,
+      "rowIndex": 257,
+      "timePeriod": "2012"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GFCF_RES"
+      },
+      "obsStatus": "A",
+      "obsValue": 850.2,
+      "rowIndex": 258,
+      "timePeriod": "2013"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GFCF_RES"
+      },
+      "obsStatus": "A",
+      "obsValue": 1422.8,
+      "rowIndex": 259,
+      "timePeriod": "2014"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GFCF_RES"
+      },
+      "obsStatus": "A",
+      "obsValue": 1193.6,
+      "rowIndex": 260,
+      "timePeriod": "2015"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GFCF_RES"
+      },
+      "obsStatus": "A",
+      "obsValue": 1917.2,
+      "rowIndex": 261,
+      "timePeriod": "2016"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GFCF_RES"
+      },
+      "obsStatus": "A",
+      "obsValue": 1568.4,
+      "rowIndex": 262,
+      "timePeriod": "2017"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GFCF_RES"
+      },
+      "obsStatus": "A",
+      "obsValue": 2289.5,
+      "rowIndex": 263,
+      "timePeriod": "2018"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GFCF_RES"
+      },
+      "obsStatus": "A",
+      "obsValue": 2495.8,
+      "rowIndex": 264,
+      "timePeriod": "2019"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GFCF_RES"
+      },
+      "obsStatus": "A",
+      "obsValue": 1487.8,
+      "rowIndex": 265,
+      "timePeriod": "2020"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GFCF_RES"
+      },
+      "obsStatus": "A",
+      "obsValue": 1496.8,
+      "rowIndex": 266,
+      "timePeriod": "2021"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GFCF_RES"
+      },
+      "obsStatus": "A",
+      "obsValue": 2655.4,
+      "rowIndex": 267,
+      "timePeriod": "2022"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GFCF_RES"
+      },
+      "obsStatus": "A",
+      "obsValue": 3858.8,
+      "rowIndex": 268,
+      "timePeriod": "2023"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GFCF_RES"
+      },
+      "obsStatus": "A",
+      "obsValue": 4626.8,
+      "rowIndex": 269,
+      "timePeriod": "2024"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GFCF_RES"
+      },
+      "obsStatus": "P",
+      "obsValue": 4297,
+      "rowIndex": 270,
+      "timePeriod": "2025"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GFCF_STRUCT"
+      },
+      "obsStatus": "A",
+      "obsValue": 2234.8,
+      "rowIndex": 271,
+      "timePeriod": "2010"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GFCF_STRUCT"
+      },
+      "obsStatus": "A",
+      "obsValue": 2359,
+      "rowIndex": 272,
+      "timePeriod": "2011"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GFCF_STRUCT"
+      },
+      "obsStatus": "A",
+      "obsValue": 2449.4,
+      "rowIndex": 273,
+      "timePeriod": "2012"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GFCF_STRUCT"
+      },
+      "obsStatus": "A",
+      "obsValue": 1996.7,
+      "rowIndex": 274,
+      "timePeriod": "2013"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GFCF_STRUCT"
+      },
+      "obsStatus": "A",
+      "obsValue": 2299.7,
+      "rowIndex": 275,
+      "timePeriod": "2014"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GFCF_STRUCT"
+      },
+      "obsStatus": "A",
+      "obsValue": 2984.8,
+      "rowIndex": 276,
+      "timePeriod": "2015"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GFCF_STRUCT"
+      },
+      "obsStatus": "A",
+      "obsValue": 2931.4,
+      "rowIndex": 277,
+      "timePeriod": "2016"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GFCF_STRUCT"
+      },
+      "obsStatus": "A",
+      "obsValue": 3181.2,
+      "rowIndex": 278,
+      "timePeriod": "2017"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GFCF_STRUCT"
+      },
+      "obsStatus": "A",
+      "obsValue": 3760,
+      "rowIndex": 279,
+      "timePeriod": "2018"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GFCF_STRUCT"
+      },
+      "obsStatus": "A",
+      "obsValue": 4560.3,
+      "rowIndex": 280,
+      "timePeriod": "2019"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GFCF_STRUCT"
+      },
+      "obsStatus": "A",
+      "obsValue": 4978.2,
+      "rowIndex": 281,
+      "timePeriod": "2020"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GFCF_STRUCT"
+      },
+      "obsStatus": "A",
+      "obsValue": 5081.3,
+      "rowIndex": 282,
+      "timePeriod": "2021"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GFCF_STRUCT"
+      },
+      "obsStatus": "A",
+      "obsValue": 5688.3,
+      "rowIndex": 283,
+      "timePeriod": "2022"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GFCF_STRUCT"
+      },
+      "obsStatus": "A",
+      "obsValue": 6720.1,
+      "rowIndex": 284,
+      "timePeriod": "2023"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GFCF_STRUCT"
+      },
+      "obsStatus": "A",
+      "obsValue": 7966.2,
+      "rowIndex": 285,
+      "timePeriod": "2024"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GFCF_STRUCT"
+      },
+      "obsStatus": "P",
+      "obsValue": 7858.3,
+      "rowIndex": 286,
+      "timePeriod": "2025"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GFCF_MACH"
+      },
+      "obsStatus": "A",
+      "obsValue": 1292.5,
+      "rowIndex": 287,
+      "timePeriod": "2010"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GFCF_MACH"
+      },
+      "obsStatus": "A",
+      "obsValue": 1902.6,
+      "rowIndex": 288,
+      "timePeriod": "2011"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GFCF_MACH"
+      },
+      "obsStatus": "A",
+      "obsValue": 2189.8,
+      "rowIndex": 289,
+      "timePeriod": "2012"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GFCF_MACH"
+      },
+      "obsStatus": "A",
+      "obsValue": 2151.3,
+      "rowIndex": 290,
+      "timePeriod": "2013"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GFCF_MACH"
+      },
+      "obsStatus": "A",
+      "obsValue": 2606.1,
+      "rowIndex": 291,
+      "timePeriod": "2014"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GFCF_MACH"
+      },
+      "obsStatus": "A",
+      "obsValue": 2893.5,
+      "rowIndex": 292,
+      "timePeriod": "2015"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GFCF_MACH"
+      },
+      "obsStatus": "A",
+      "obsValue": 3843.6,
+      "rowIndex": 293,
+      "timePeriod": "2016"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GFCF_MACH"
+      },
+      "obsStatus": "A",
+      "obsValue": 4913.7,
+      "rowIndex": 294,
+      "timePeriod": "2017"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GFCF_MACH"
+      },
+      "obsStatus": "A",
+      "obsValue": 4410.3,
+      "rowIndex": 295,
+      "timePeriod": "2018"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GFCF_MACH"
+      },
+      "obsStatus": "A",
+      "obsValue": 3981.6,
+      "rowIndex": 296,
+      "timePeriod": "2019"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GFCF_MACH"
+      },
+      "obsStatus": "A",
+      "obsValue": 3630.1,
+      "rowIndex": 297,
+      "timePeriod": "2020"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GFCF_MACH"
+      },
+      "obsStatus": "A",
+      "obsValue": 4874.3,
+      "rowIndex": 298,
+      "timePeriod": "2021"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GFCF_MACH"
+      },
+      "obsStatus": "A",
+      "obsValue": 5027.2,
+      "rowIndex": 299,
+      "timePeriod": "2022"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GFCF_MACH"
+      },
+      "obsStatus": "A",
+      "obsValue": 5529.7,
+      "rowIndex": 300,
+      "timePeriod": "2023"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GFCF_MACH"
+      },
+      "obsStatus": "A",
+      "obsValue": 6255.9,
+      "rowIndex": 301,
+      "timePeriod": "2024"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GFCF_MACH"
+      },
+      "obsStatus": "P",
+      "obsValue": 6484.5,
+      "rowIndex": 302,
+      "timePeriod": "2025"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GFCF_BIO"
+      },
+      "obsStatus": "A",
+      "obsValue": 170.4,
+      "rowIndex": 303,
+      "timePeriod": "2010"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GFCF_BIO"
+      },
+      "obsStatus": "A",
+      "obsValue": 226.1,
+      "rowIndex": 304,
+      "timePeriod": "2011"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GFCF_BIO"
+      },
+      "obsStatus": "A",
+      "obsValue": 213,
+      "rowIndex": 305,
+      "timePeriod": "2012"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GFCF_BIO"
+      },
+      "obsStatus": "A",
+      "obsValue": 233.5,
+      "rowIndex": 306,
+      "timePeriod": "2013"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GFCF_BIO"
+      },
+      "obsStatus": "A",
+      "obsValue": 312.5,
+      "rowIndex": 307,
+      "timePeriod": "2014"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GFCF_BIO"
+      },
+      "obsStatus": "A",
+      "obsValue": 386.3,
+      "rowIndex": 308,
+      "timePeriod": "2015"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GFCF_BIO"
+      },
+      "obsStatus": "A",
+      "obsValue": 390.3,
+      "rowIndex": 309,
+      "timePeriod": "2016"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GFCF_BIO"
+      },
+      "obsStatus": "A",
+      "obsValue": 440.9,
+      "rowIndex": 310,
+      "timePeriod": "2017"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GFCF_BIO"
+      },
+      "obsStatus": "A",
+      "obsValue": 435.1,
+      "rowIndex": 311,
+      "timePeriod": "2018"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GFCF_BIO"
+      },
+      "obsStatus": "A",
+      "obsValue": 454.3,
+      "rowIndex": 312,
+      "timePeriod": "2019"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GFCF_BIO"
+      },
+      "obsStatus": "A",
+      "obsValue": 543.9,
+      "rowIndex": 313,
+      "timePeriod": "2020"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GFCF_BIO"
+      },
+      "obsStatus": "A",
+      "obsValue": 511.2,
+      "rowIndex": 314,
+      "timePeriod": "2021"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GFCF_BIO"
+      },
+      "obsStatus": "A",
+      "obsValue": 561.8,
+      "rowIndex": 315,
+      "timePeriod": "2022"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GFCF_BIO"
+      },
+      "obsStatus": "A",
+      "obsValue": 585.1,
+      "rowIndex": 316,
+      "timePeriod": "2023"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GFCF_BIO"
+      },
+      "obsStatus": "A",
+      "obsValue": 625.8,
+      "rowIndex": 317,
+      "timePeriod": "2024"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GFCF_BIO"
+      },
+      "obsStatus": "P",
+      "obsValue": 683.7,
+      "rowIndex": 318,
+      "timePeriod": "2025"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GFCF_IP"
+      },
+      "obsStatus": "A",
+      "obsValue": 115.2,
+      "rowIndex": 319,
+      "timePeriod": "2010"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GFCF_IP"
+      },
+      "obsStatus": "A",
+      "obsValue": 100.2,
+      "rowIndex": 320,
+      "timePeriod": "2011"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GFCF_IP"
+      },
+      "obsStatus": "A",
+      "obsValue": 272.7,
+      "rowIndex": 321,
+      "timePeriod": "2012"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GFCF_IP"
+      },
+      "obsStatus": "A",
+      "obsValue": 140.7,
+      "rowIndex": 322,
+      "timePeriod": "2013"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GFCF_IP"
+      },
+      "obsStatus": "A",
+      "obsValue": 160.8,
+      "rowIndex": 323,
+      "timePeriod": "2014"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GFCF_IP"
+      },
+      "obsStatus": "A",
+      "obsValue": 805.7,
+      "rowIndex": 324,
+      "timePeriod": "2015"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GFCF_IP"
+      },
+      "obsStatus": "A",
+      "obsValue": 422.1,
+      "rowIndex": 325,
+      "timePeriod": "2016"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GFCF_IP"
+      },
+      "obsStatus": "A",
+      "obsValue": 286.8,
+      "rowIndex": 326,
+      "timePeriod": "2017"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GFCF_IP"
+      },
+      "obsStatus": "A",
+      "obsValue": 354.6,
+      "rowIndex": 327,
+      "timePeriod": "2018"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GFCF_IP"
+      },
+      "obsStatus": "A",
+      "obsValue": 423.8,
+      "rowIndex": 328,
+      "timePeriod": "2019"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GFCF_IP"
+      },
+      "obsStatus": "A",
+      "obsValue": 429.5,
+      "rowIndex": 329,
+      "timePeriod": "2020"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GFCF_IP"
+      },
+      "obsStatus": "A",
+      "obsValue": 641.7,
+      "rowIndex": 330,
+      "timePeriod": "2021"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GFCF_IP"
+      },
+      "obsStatus": "A",
+      "obsValue": 457.3,
+      "rowIndex": 331,
+      "timePeriod": "2022"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GFCF_IP"
+      },
+      "obsStatus": "A",
+      "obsValue": 663.8,
+      "rowIndex": 332,
+      "timePeriod": "2023"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GFCF_IP"
+      },
+      "obsStatus": "A",
+      "obsValue": 355.6,
+      "rowIndex": 333,
+      "timePeriod": "2024"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GFCF_IP"
+      },
+      "obsStatus": "P",
+      "obsValue": 569.6,
+      "rowIndex": 334,
+      "timePeriod": "2025"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "NOE_SHARE"
+      },
+      "obsStatus": "A",
+      "obsValue": 23.1,
+      "rowIndex": 335,
+      "timePeriod": "2010"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "NOE_SHARE"
+      },
+      "obsStatus": "A",
+      "obsValue": 20.8,
+      "rowIndex": 336,
+      "timePeriod": "2011"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "NOE_SHARE"
+      },
+      "obsStatus": "A",
+      "obsValue": 17.7,
+      "rowIndex": 337,
+      "timePeriod": "2012"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "NOE_SHARE"
+      },
+      "obsStatus": "A",
+      "obsValue": 14.8,
+      "rowIndex": 338,
+      "timePeriod": "2013"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "NOE_SHARE"
+      },
+      "obsStatus": "A",
+      "obsValue": 15.1,
+      "rowIndex": 339,
+      "timePeriod": "2014"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "NOE_SHARE"
+      },
+      "obsStatus": "A",
+      "obsValue": 13.6,
+      "rowIndex": 340,
+      "timePeriod": "2015"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "NOE_SHARE"
+      },
+      "obsStatus": "A",
+      "obsValue": 12.7,
+      "rowIndex": 341,
+      "timePeriod": "2016"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "NOE_SHARE"
+      },
+      "obsStatus": "A",
+      "obsValue": 13.4,
+      "rowIndex": 342,
+      "timePeriod": "2017"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "NOE_SHARE"
+      },
+      "obsStatus": "A",
+      "obsValue": 13.3,
+      "rowIndex": 343,
+      "timePeriod": "2018"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "NOE_SHARE"
+      },
+      "obsStatus": "A",
+      "obsValue": 14.3,
+      "rowIndex": 344,
+      "timePeriod": "2019"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "NOE_SHARE"
+      },
+      "obsStatus": "A",
+      "obsValue": 12.8,
+      "rowIndex": 345,
+      "timePeriod": "2020"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "NOE_SHARE"
+      },
+      "obsStatus": "A",
+      "obsValue": 14.4,
+      "rowIndex": 346,
+      "timePeriod": "2021"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "NOE_SHARE"
+      },
+      "obsStatus": "A",
+      "obsValue": 13.1,
+      "rowIndex": 347,
+      "timePeriod": "2022"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "NOE_SHARE"
+      },
+      "obsStatus": "A",
+      "obsValue": 12.4,
+      "rowIndex": 348,
+      "timePeriod": "2023"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "NOE_SHARE"
+      },
+      "obsStatus": "A",
+      "obsValue": 12.5,
+      "rowIndex": 349,
+      "timePeriod": "2024"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "NOE_SHARE"
+      },
+      "obsStatus": "P",
+      "obsValue": 12.4,
+      "rowIndex": 350,
+      "timePeriod": "2025"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GDP"
+      },
+      "obsStatus": "A",
+      "obsValue": 22148.7,
+      "rowIndex": 351,
+      "timePeriod": "2010"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GDP"
+      },
+      "obsStatus": "A",
+      "obsValue": 26099.4,
+      "rowIndex": 352,
+      "timePeriod": "2011"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GDP"
+      },
+      "obsStatus": "A",
+      "obsValue": 27896.9,
+      "rowIndex": 353,
+      "timePeriod": "2012"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GDP"
+      },
+      "obsStatus": "A",
+      "obsValue": 29137.7,
+      "rowIndex": 354,
+      "timePeriod": "2013"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GDP"
+      },
+      "obsStatus": "A",
+      "obsValue": 31722.4,
+      "rowIndex": 355,
+      "timePeriod": "2014"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GDP"
+      },
+      "obsStatus": "A",
+      "obsValue": 34548.2,
+      "rowIndex": 356,
+      "timePeriod": "2015"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GDP"
+      },
+      "obsStatus": "A",
+      "obsValue": 36553.3,
+      "rowIndex": 357,
+      "timePeriod": "2016"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GDP"
+      },
+      "obsStatus": "A",
+      "obsValue": 41339.8,
+      "rowIndex": 358,
+      "timePeriod": "2017"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GDP"
+      },
+      "obsStatus": "A",
+      "obsValue": 45374.4,
+      "rowIndex": 359,
+      "timePeriod": "2018"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GDP"
+      },
+      "obsStatus": "A",
+      "obsValue": 49726.3,
+      "rowIndex": 360,
+      "timePeriod": "2019"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GDP"
+      },
+      "obsStatus": "A",
+      "obsValue": 49788.5,
+      "rowIndex": 361,
+      "timePeriod": "2020"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GDP"
+      },
+      "obsStatus": "A",
+      "obsValue": 60724.1,
+      "rowIndex": 362,
+      "timePeriod": "2021"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GDP"
+      },
+      "obsStatus": "A",
+      "obsValue": 72860.1,
+      "rowIndex": 363,
+      "timePeriod": "2022"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GDP"
+      },
+      "obsStatus": "A",
+      "obsValue": 80882.8,
+      "rowIndex": 364,
+      "timePeriod": "2023"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GDP"
+      },
+      "obsStatus": "A",
+      "obsValue": 93022.3,
+      "rowIndex": 365,
+      "timePeriod": "2024"
+    },
+    {
+      "dimKey": {
+        "geo": "GE",
+        "measure": "GDP"
+      },
+      "obsStatus": "P",
+      "obsValue": 104598.1,
+      "rowIndex": 366,
+      "timePeriod": "2025"
+    }
+  ]
+}

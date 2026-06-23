@@ -66,14 +66,14 @@ case "${MODULE:-all}" in
     verify_module "panel" "platform/apps/panel"
     ;;
   engine)
-    verify_package "engine" "platform/engine/core"
+    verify_package "engine" "platform/packages/core"
     ;;
   react)
-    verify_package "react-pkg" "platform/engine/react"
+    verify_package "react-pkg" "platform/packages/react"
     ;;
   all)
-    verify_package "engine"    "platform/engine/core"
-    verify_package "react-pkg" "platform/engine/react"
+    verify_package "engine"    "platform/packages/core"
+    verify_package "react-pkg" "platform/packages/react"
     verify_module  "geostat"   "platform/apps/geostat"
     verify_module  "panel"     "platform/apps/panel"
     ;;

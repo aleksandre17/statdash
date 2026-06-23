@@ -1,0 +1,4189 @@
+{
+  "obs": [
+    {
+      "dimKey": {
+        "account": "production",
+        "measure": "P1",
+        "side": "R"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": 0
+      },
+      "obsStatus": "A",
+      "obsValue": 178837.27566923446,
+      "rowIndex": 0,
+      "timePeriod": "2025"
+    },
+    {
+      "dimKey": {
+        "account": "production",
+        "measure": "P2",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 74239.13578590246,
+      "rowIndex": 1,
+      "timePeriod": "2025"
+    },
+    {
+      "dimKey": {
+        "account": "production",
+        "measure": "B1G",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 104598.139883332,
+      "rowIndex": 2,
+      "timePeriod": "2025"
+    },
+    {
+      "dimKey": {
+        "account": "income_gen",
+        "measure": "B1G",
+        "side": "R"
+      },
+      "obsAttribute": {
+        "isCarryForward": true,
+        "seqPos": 3
+      },
+      "obsStatus": "A",
+      "obsValue": 104598.139883332,
+      "rowIndex": 3,
+      "timePeriod": "2025"
+    },
+    {
+      "dimKey": {
+        "account": "income_gen",
+        "measure": "D1",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 34816.26771433034,
+      "rowIndex": 4,
+      "timePeriod": "2025"
+    },
+    {
+      "dimKey": {
+        "account": "income_gen",
+        "measure": "ACC_NET_TAX",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 13830.947586718112,
+      "rowIndex": 5,
+      "timePeriod": "2025"
+    },
+    {
+      "dimKey": {
+        "account": "income_gen",
+        "measure": "B2G",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 55950.924582283566,
+      "rowIndex": 6,
+      "timePeriod": "2025"
+    },
+    {
+      "dimKey": {
+        "account": "primary_dist",
+        "measure": "B2G",
+        "side": "R"
+      },
+      "obsAttribute": {
+        "isCarryForward": true,
+        "seqPos": 7
+      },
+      "obsStatus": "A",
+      "obsValue": 55950.924582283566,
+      "rowIndex": 7,
+      "timePeriod": "2025"
+    },
+    {
+      "dimKey": {
+        "account": "primary_dist",
+        "measure": "D1",
+        "side": "R"
+      },
+      "obsAttribute": {
+        "isCarryForward": true,
+        "seqPos": 8
+      },
+      "obsStatus": "A",
+      "obsValue": 34816.26771433034,
+      "rowIndex": 8,
+      "timePeriod": "2025"
+    },
+    {
+      "dimKey": {
+        "account": "primary_dist",
+        "measure": "ACC_NET_TAX",
+        "side": "R"
+      },
+      "obsAttribute": {
+        "isCarryForward": true,
+        "seqPos": 9
+      },
+      "obsStatus": "A",
+      "obsValue": 13830.947586718112,
+      "rowIndex": 9,
+      "timePeriod": "2025"
+    },
+    {
+      "dimKey": {
+        "account": "primary_dist",
+        "measure": "D4_REC",
+        "side": "R"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 4934.652980987907,
+      "rowIndex": 10,
+      "timePeriod": "2025"
+    },
+    {
+      "dimKey": {
+        "account": "primary_dist",
+        "measure": "D4_PAY",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 11497.529457157492,
+      "rowIndex": 11,
+      "timePeriod": "2025"
+    },
+    {
+      "dimKey": {
+        "account": "primary_dist",
+        "measure": "B5G",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 98035.26340716243,
+      "rowIndex": 12,
+      "timePeriod": "2025"
+    },
+    {
+      "dimKey": {
+        "account": "secondary_dist",
+        "measure": "B5G",
+        "side": "R"
+      },
+      "obsAttribute": {
+        "isCarryForward": true,
+        "seqPos": 13
+      },
+      "obsStatus": "A",
+      "obsValue": 98035.26340716243,
+      "rowIndex": 13,
+      "timePeriod": "2025"
+    },
+    {
+      "dimKey": {
+        "account": "secondary_dist",
+        "measure": "D5_REC",
+        "side": "R"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 10158.03007440071,
+      "rowIndex": 14,
+      "timePeriod": "2025"
+    },
+    {
+      "dimKey": {
+        "account": "secondary_dist",
+        "measure": "D5_PAY",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 412.4646677096025,
+      "rowIndex": 15,
+      "timePeriod": "2025"
+    },
+    {
+      "dimKey": {
+        "account": "secondary_dist",
+        "measure": "B6G",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 107780.82881385353,
+      "rowIndex": 16,
+      "timePeriod": "2025"
+    },
+    {
+      "dimKey": {
+        "account": "use_of_income",
+        "measure": "B6G",
+        "side": "R"
+      },
+      "obsAttribute": {
+        "isCarryForward": true,
+        "seqPos": 17
+      },
+      "obsStatus": "A",
+      "obsValue": 107780.82881385353,
+      "rowIndex": 17,
+      "timePeriod": "2025"
+    },
+    {
+      "dimKey": {
+        "account": "use_of_income",
+        "measure": "P3",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 88425.60255782693,
+      "rowIndex": 18,
+      "timePeriod": "2025"
+    },
+    {
+      "dimKey": {
+        "account": "use_of_income",
+        "measure": "B8G",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": 20
+      },
+      "obsStatus": "A",
+      "obsValue": 19355.226256026603,
+      "rowIndex": 19,
+      "timePeriod": "2025"
+    },
+    {
+      "dimKey": {
+        "account": "capital",
+        "measure": "B8G",
+        "side": "R"
+      },
+      "obsAttribute": {
+        "isCarryForward": true,
+        "seqPos": 20
+      },
+      "obsStatus": "A",
+      "obsValue": 19355.226256026603,
+      "rowIndex": 20,
+      "timePeriod": "2025"
+    },
+    {
+      "dimKey": {
+        "account": "capital",
+        "measure": "D9R",
+        "side": "R"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 65.60506452301973,
+      "rowIndex": 21,
+      "timePeriod": "2025"
+    },
+    {
+      "dimKey": {
+        "account": "capital",
+        "measure": "P5",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 22256.714798751065,
+      "rowIndex": 22,
+      "timePeriod": "2025"
+    },
+    {
+      "dimKey": {
+        "account": "capital",
+        "measure": "B9",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": -2835.8834782014455,
+      "rowIndex": 23,
+      "timePeriod": "2025"
+    },
+    {
+      "dimKey": {
+        "account": "production",
+        "measure": "P1",
+        "side": "R"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": 0
+      },
+      "obsStatus": "A",
+      "obsValue": 36749.9,
+      "rowIndex": 24,
+      "timePeriod": "2010"
+    },
+    {
+      "dimKey": {
+        "account": "production",
+        "measure": "P1",
+        "side": "R"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": 0
+      },
+      "obsStatus": "A",
+      "obsValue": 45126.8,
+      "rowIndex": 25,
+      "timePeriod": "2011"
+    },
+    {
+      "dimKey": {
+        "account": "production",
+        "measure": "P1",
+        "side": "R"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": 0
+      },
+      "obsStatus": "A",
+      "obsValue": 48735.5,
+      "rowIndex": 26,
+      "timePeriod": "2012"
+    },
+    {
+      "dimKey": {
+        "account": "production",
+        "measure": "P1",
+        "side": "R"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": 0
+      },
+      "obsStatus": "A",
+      "obsValue": 49034.1,
+      "rowIndex": 27,
+      "timePeriod": "2013"
+    },
+    {
+      "dimKey": {
+        "account": "production",
+        "measure": "P1",
+        "side": "R"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": 0
+      },
+      "obsStatus": "A",
+      "obsValue": 53715.7,
+      "rowIndex": 28,
+      "timePeriod": "2014"
+    },
+    {
+      "dimKey": {
+        "account": "production",
+        "measure": "P1",
+        "side": "R"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": 0
+      },
+      "obsStatus": "A",
+      "obsValue": 58319.8,
+      "rowIndex": 29,
+      "timePeriod": "2015"
+    },
+    {
+      "dimKey": {
+        "account": "production",
+        "measure": "P1",
+        "side": "R"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": 0
+      },
+      "obsStatus": "A",
+      "obsValue": 63736.2,
+      "rowIndex": 30,
+      "timePeriod": "2016"
+    },
+    {
+      "dimKey": {
+        "account": "production",
+        "measure": "P1",
+        "side": "R"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": 0
+      },
+      "obsStatus": "A",
+      "obsValue": 70261.8,
+      "rowIndex": 31,
+      "timePeriod": "2017"
+    },
+    {
+      "dimKey": {
+        "account": "production",
+        "measure": "P1",
+        "side": "R"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": 0
+      },
+      "obsStatus": "A",
+      "obsValue": 77139.3,
+      "rowIndex": 32,
+      "timePeriod": "2018"
+    },
+    {
+      "dimKey": {
+        "account": "production",
+        "measure": "P1",
+        "side": "R"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": 0
+      },
+      "obsStatus": "A",
+      "obsValue": 85862.1,
+      "rowIndex": 33,
+      "timePeriod": "2019"
+    },
+    {
+      "dimKey": {
+        "account": "production",
+        "measure": "P1",
+        "side": "R"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": 0
+      },
+      "obsStatus": "A",
+      "obsValue": 84500,
+      "rowIndex": 34,
+      "timePeriod": "2020"
+    },
+    {
+      "dimKey": {
+        "account": "production",
+        "measure": "P1",
+        "side": "R"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": 0
+      },
+      "obsStatus": "A",
+      "obsValue": 103149,
+      "rowIndex": 35,
+      "timePeriod": "2021"
+    },
+    {
+      "dimKey": {
+        "account": "production",
+        "measure": "P1",
+        "side": "R"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": 0
+      },
+      "obsStatus": "A",
+      "obsValue": 123587,
+      "rowIndex": 36,
+      "timePeriod": "2022"
+    },
+    {
+      "dimKey": {
+        "account": "production",
+        "measure": "P1",
+        "side": "R"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": 0
+      },
+      "obsStatus": "A",
+      "obsValue": 137604,
+      "rowIndex": 37,
+      "timePeriod": "2023"
+    },
+    {
+      "dimKey": {
+        "account": "production",
+        "measure": "P1",
+        "side": "R"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": 0
+      },
+      "obsStatus": "A",
+      "obsValue": 160360,
+      "rowIndex": 38,
+      "timePeriod": "2024"
+    },
+    {
+      "dimKey": {
+        "account": "production",
+        "measure": "P2",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 14601.2,
+      "rowIndex": 39,
+      "timePeriod": "2010"
+    },
+    {
+      "dimKey": {
+        "account": "production",
+        "measure": "P2",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 19027.5,
+      "rowIndex": 40,
+      "timePeriod": "2011"
+    },
+    {
+      "dimKey": {
+        "account": "production",
+        "measure": "P2",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 20838.7,
+      "rowIndex": 41,
+      "timePeriod": "2012"
+    },
+    {
+      "dimKey": {
+        "account": "production",
+        "measure": "P2",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 19896.4,
+      "rowIndex": 42,
+      "timePeriod": "2013"
+    },
+    {
+      "dimKey": {
+        "account": "production",
+        "measure": "P2",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 21993.3,
+      "rowIndex": 43,
+      "timePeriod": "2014"
+    },
+    {
+      "dimKey": {
+        "account": "production",
+        "measure": "P2",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 23771.6,
+      "rowIndex": 44,
+      "timePeriod": "2015"
+    },
+    {
+      "dimKey": {
+        "account": "production",
+        "measure": "P2",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 27182.9,
+      "rowIndex": 45,
+      "timePeriod": "2016"
+    },
+    {
+      "dimKey": {
+        "account": "production",
+        "measure": "P2",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 28922.1,
+      "rowIndex": 46,
+      "timePeriod": "2017"
+    },
+    {
+      "dimKey": {
+        "account": "production",
+        "measure": "P2",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 31765,
+      "rowIndex": 47,
+      "timePeriod": "2018"
+    },
+    {
+      "dimKey": {
+        "account": "production",
+        "measure": "P2",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 36135.8,
+      "rowIndex": 48,
+      "timePeriod": "2019"
+    },
+    {
+      "dimKey": {
+        "account": "production",
+        "measure": "P2",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 35093,
+      "rowIndex": 49,
+      "timePeriod": "2020"
+    },
+    {
+      "dimKey": {
+        "account": "production",
+        "measure": "P2",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 42828,
+      "rowIndex": 50,
+      "timePeriod": "2021"
+    },
+    {
+      "dimKey": {
+        "account": "production",
+        "measure": "P2",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 51314,
+      "rowIndex": 51,
+      "timePeriod": "2022"
+    },
+    {
+      "dimKey": {
+        "account": "production",
+        "measure": "P2",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 57134,
+      "rowIndex": 52,
+      "timePeriod": "2023"
+    },
+    {
+      "dimKey": {
+        "account": "production",
+        "measure": "P2",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 66582,
+      "rowIndex": 53,
+      "timePeriod": "2024"
+    },
+    {
+      "dimKey": {
+        "account": "production",
+        "measure": "B1G",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 22148.7,
+      "rowIndex": 54,
+      "timePeriod": "2010"
+    },
+    {
+      "dimKey": {
+        "account": "production",
+        "measure": "B1G",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 26099.4,
+      "rowIndex": 55,
+      "timePeriod": "2011"
+    },
+    {
+      "dimKey": {
+        "account": "production",
+        "measure": "B1G",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 27896.9,
+      "rowIndex": 56,
+      "timePeriod": "2012"
+    },
+    {
+      "dimKey": {
+        "account": "production",
+        "measure": "B1G",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 29137.7,
+      "rowIndex": 57,
+      "timePeriod": "2013"
+    },
+    {
+      "dimKey": {
+        "account": "production",
+        "measure": "B1G",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 31722.4,
+      "rowIndex": 58,
+      "timePeriod": "2014"
+    },
+    {
+      "dimKey": {
+        "account": "production",
+        "measure": "B1G",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 34548.2,
+      "rowIndex": 59,
+      "timePeriod": "2015"
+    },
+    {
+      "dimKey": {
+        "account": "production",
+        "measure": "B1G",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 36553.3,
+      "rowIndex": 60,
+      "timePeriod": "2016"
+    },
+    {
+      "dimKey": {
+        "account": "production",
+        "measure": "B1G",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 41339.8,
+      "rowIndex": 61,
+      "timePeriod": "2017"
+    },
+    {
+      "dimKey": {
+        "account": "production",
+        "measure": "B1G",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 45374.4,
+      "rowIndex": 62,
+      "timePeriod": "2018"
+    },
+    {
+      "dimKey": {
+        "account": "production",
+        "measure": "B1G",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 49726.3,
+      "rowIndex": 63,
+      "timePeriod": "2019"
+    },
+    {
+      "dimKey": {
+        "account": "production",
+        "measure": "B1G",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 49407,
+      "rowIndex": 64,
+      "timePeriod": "2020"
+    },
+    {
+      "dimKey": {
+        "account": "production",
+        "measure": "B1G",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 60321,
+      "rowIndex": 65,
+      "timePeriod": "2021"
+    },
+    {
+      "dimKey": {
+        "account": "production",
+        "measure": "B1G",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 72273,
+      "rowIndex": 66,
+      "timePeriod": "2022"
+    },
+    {
+      "dimKey": {
+        "account": "production",
+        "measure": "B1G",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 80470,
+      "rowIndex": 67,
+      "timePeriod": "2023"
+    },
+    {
+      "dimKey": {
+        "account": "production",
+        "measure": "B1G",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 93778,
+      "rowIndex": 68,
+      "timePeriod": "2024"
+    },
+    {
+      "dimKey": {
+        "account": "income_gen",
+        "measure": "D1",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 4998.7,
+      "rowIndex": 69,
+      "timePeriod": "2010"
+    },
+    {
+      "dimKey": {
+        "account": "income_gen",
+        "measure": "D1",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 6225.1,
+      "rowIndex": 70,
+      "timePeriod": "2011"
+    },
+    {
+      "dimKey": {
+        "account": "income_gen",
+        "measure": "D1",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 7084,
+      "rowIndex": 71,
+      "timePeriod": "2012"
+    },
+    {
+      "dimKey": {
+        "account": "income_gen",
+        "measure": "D1",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 7799.8,
+      "rowIndex": 72,
+      "timePeriod": "2013"
+    },
+    {
+      "dimKey": {
+        "account": "income_gen",
+        "measure": "D1",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 8549.9,
+      "rowIndex": 73,
+      "timePeriod": "2014"
+    },
+    {
+      "dimKey": {
+        "account": "income_gen",
+        "measure": "D1",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 9712,
+      "rowIndex": 74,
+      "timePeriod": "2015"
+    },
+    {
+      "dimKey": {
+        "account": "income_gen",
+        "measure": "D1",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 11061.6,
+      "rowIndex": 75,
+      "timePeriod": "2016"
+    },
+    {
+      "dimKey": {
+        "account": "income_gen",
+        "measure": "D1",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 12580.7,
+      "rowIndex": 76,
+      "timePeriod": "2017"
+    },
+    {
+      "dimKey": {
+        "account": "income_gen",
+        "measure": "D1",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 14171.9,
+      "rowIndex": 77,
+      "timePeriod": "2018"
+    },
+    {
+      "dimKey": {
+        "account": "income_gen",
+        "measure": "D1",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 16241.9,
+      "rowIndex": 78,
+      "timePeriod": "2019"
+    },
+    {
+      "dimKey": {
+        "account": "income_gen",
+        "measure": "D1",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 22000,
+      "rowIndex": 79,
+      "timePeriod": "2020"
+    },
+    {
+      "dimKey": {
+        "account": "income_gen",
+        "measure": "D1",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 26000,
+      "rowIndex": 80,
+      "timePeriod": "2021"
+    },
+    {
+      "dimKey": {
+        "account": "income_gen",
+        "measure": "D1",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 29000,
+      "rowIndex": 81,
+      "timePeriod": "2022"
+    },
+    {
+      "dimKey": {
+        "account": "income_gen",
+        "measure": "D1",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 32000,
+      "rowIndex": 82,
+      "timePeriod": "2023"
+    },
+    {
+      "dimKey": {
+        "account": "income_gen",
+        "measure": "D1",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 31200,
+      "rowIndex": 83,
+      "timePeriod": "2024"
+    },
+    {
+      "dimKey": {
+        "account": "income_gen",
+        "measure": "ACC_NET_TAX",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 2822.9,
+      "rowIndex": 84,
+      "timePeriod": "2010"
+    },
+    {
+      "dimKey": {
+        "account": "income_gen",
+        "measure": "ACC_NET_TAX",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 3205.3,
+      "rowIndex": 85,
+      "timePeriod": "2011"
+    },
+    {
+      "dimKey": {
+        "account": "income_gen",
+        "measure": "ACC_NET_TAX",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 3382.4,
+      "rowIndex": 86,
+      "timePeriod": "2012"
+    },
+    {
+      "dimKey": {
+        "account": "income_gen",
+        "measure": "ACC_NET_TAX",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 3513.4,
+      "rowIndex": 87,
+      "timePeriod": "2013"
+    },
+    {
+      "dimKey": {
+        "account": "income_gen",
+        "measure": "ACC_NET_TAX",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 3982.3,
+      "rowIndex": 88,
+      "timePeriod": "2014"
+    },
+    {
+      "dimKey": {
+        "account": "income_gen",
+        "measure": "ACC_NET_TAX",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 4255.8,
+      "rowIndex": 89,
+      "timePeriod": "2015"
+    },
+    {
+      "dimKey": {
+        "account": "income_gen",
+        "measure": "ACC_NET_TAX",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 4841,
+      "rowIndex": 90,
+      "timePeriod": "2016"
+    },
+    {
+      "dimKey": {
+        "account": "income_gen",
+        "measure": "ACC_NET_TAX",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 6018.4,
+      "rowIndex": 91,
+      "timePeriod": "2017"
+    },
+    {
+      "dimKey": {
+        "account": "income_gen",
+        "measure": "ACC_NET_TAX",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 6446.8,
+      "rowIndex": 92,
+      "timePeriod": "2018"
+    },
+    {
+      "dimKey": {
+        "account": "income_gen",
+        "measure": "ACC_NET_TAX",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 6705.4,
+      "rowIndex": 93,
+      "timePeriod": "2019"
+    },
+    {
+      "dimKey": {
+        "account": "income_gen",
+        "measure": "ACC_NET_TAX",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 5407,
+      "rowIndex": 94,
+      "timePeriod": "2020"
+    },
+    {
+      "dimKey": {
+        "account": "income_gen",
+        "measure": "ACC_NET_TAX",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 6321,
+      "rowIndex": 95,
+      "timePeriod": "2021"
+    },
+    {
+      "dimKey": {
+        "account": "income_gen",
+        "measure": "ACC_NET_TAX",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 9273,
+      "rowIndex": 96,
+      "timePeriod": "2022"
+    },
+    {
+      "dimKey": {
+        "account": "income_gen",
+        "measure": "ACC_NET_TAX",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 10470,
+      "rowIndex": 97,
+      "timePeriod": "2023"
+    },
+    {
+      "dimKey": {
+        "account": "income_gen",
+        "measure": "ACC_NET_TAX",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 11200,
+      "rowIndex": 98,
+      "timePeriod": "2024"
+    },
+    {
+      "dimKey": {
+        "account": "income_gen",
+        "measure": "B2G",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 14327,
+      "rowIndex": 99,
+      "timePeriod": "2010"
+    },
+    {
+      "dimKey": {
+        "account": "income_gen",
+        "measure": "B2G",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 16669,
+      "rowIndex": 100,
+      "timePeriod": "2011"
+    },
+    {
+      "dimKey": {
+        "account": "income_gen",
+        "measure": "B2G",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 17430.5,
+      "rowIndex": 101,
+      "timePeriod": "2012"
+    },
+    {
+      "dimKey": {
+        "account": "income_gen",
+        "measure": "B2G",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 17824.6,
+      "rowIndex": 102,
+      "timePeriod": "2013"
+    },
+    {
+      "dimKey": {
+        "account": "income_gen",
+        "measure": "B2G",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 19190.3,
+      "rowIndex": 103,
+      "timePeriod": "2014"
+    },
+    {
+      "dimKey": {
+        "account": "income_gen",
+        "measure": "B2G",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 20580.3,
+      "rowIndex": 104,
+      "timePeriod": "2015"
+    },
+    {
+      "dimKey": {
+        "account": "income_gen",
+        "measure": "B2G",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 20650.7,
+      "rowIndex": 105,
+      "timePeriod": "2016"
+    },
+    {
+      "dimKey": {
+        "account": "income_gen",
+        "measure": "B2G",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 22740.7,
+      "rowIndex": 106,
+      "timePeriod": "2017"
+    },
+    {
+      "dimKey": {
+        "account": "income_gen",
+        "measure": "B2G",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 24755.6,
+      "rowIndex": 107,
+      "timePeriod": "2018"
+    },
+    {
+      "dimKey": {
+        "account": "income_gen",
+        "measure": "B2G",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 26779,
+      "rowIndex": 108,
+      "timePeriod": "2019"
+    },
+    {
+      "dimKey": {
+        "account": "income_gen",
+        "measure": "B2G",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 22000,
+      "rowIndex": 109,
+      "timePeriod": "2020"
+    },
+    {
+      "dimKey": {
+        "account": "income_gen",
+        "measure": "B2G",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 28000,
+      "rowIndex": 110,
+      "timePeriod": "2021"
+    },
+    {
+      "dimKey": {
+        "account": "income_gen",
+        "measure": "B2G",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 34000,
+      "rowIndex": 111,
+      "timePeriod": "2022"
+    },
+    {
+      "dimKey": {
+        "account": "income_gen",
+        "measure": "B2G",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 38000,
+      "rowIndex": 112,
+      "timePeriod": "2023"
+    },
+    {
+      "dimKey": {
+        "account": "income_gen",
+        "measure": "B2G",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 51378,
+      "rowIndex": 113,
+      "timePeriod": "2024"
+    },
+    {
+      "dimKey": {
+        "account": "primary_dist",
+        "measure": "D4_REC",
+        "side": "R"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 992.6,
+      "rowIndex": 114,
+      "timePeriod": "2010"
+    },
+    {
+      "dimKey": {
+        "account": "primary_dist",
+        "measure": "D4_REC",
+        "side": "R"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 1275.1,
+      "rowIndex": 115,
+      "timePeriod": "2011"
+    },
+    {
+      "dimKey": {
+        "account": "primary_dist",
+        "measure": "D4_REC",
+        "side": "R"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 1778.8,
+      "rowIndex": 116,
+      "timePeriod": "2012"
+    },
+    {
+      "dimKey": {
+        "account": "primary_dist",
+        "measure": "D4_REC",
+        "side": "R"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 1535.4,
+      "rowIndex": 117,
+      "timePeriod": "2013"
+    },
+    {
+      "dimKey": {
+        "account": "primary_dist",
+        "measure": "D4_REC",
+        "side": "R"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 1813.6,
+      "rowIndex": 118,
+      "timePeriod": "2014"
+    },
+    {
+      "dimKey": {
+        "account": "primary_dist",
+        "measure": "D4_REC",
+        "side": "R"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 1912,
+      "rowIndex": 119,
+      "timePeriod": "2015"
+    },
+    {
+      "dimKey": {
+        "account": "primary_dist",
+        "measure": "D4_REC",
+        "side": "R"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 2159.1,
+      "rowIndex": 120,
+      "timePeriod": "2016"
+    },
+    {
+      "dimKey": {
+        "account": "primary_dist",
+        "measure": "D4_REC",
+        "side": "R"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 2832.7,
+      "rowIndex": 121,
+      "timePeriod": "2017"
+    },
+    {
+      "dimKey": {
+        "account": "primary_dist",
+        "measure": "D4_REC",
+        "side": "R"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 3251.9,
+      "rowIndex": 122,
+      "timePeriod": "2018"
+    },
+    {
+      "dimKey": {
+        "account": "primary_dist",
+        "measure": "D4_REC",
+        "side": "R"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 3884.9,
+      "rowIndex": 123,
+      "timePeriod": "2019"
+    },
+    {
+      "dimKey": {
+        "account": "primary_dist",
+        "measure": "D4_REC",
+        "side": "R"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 2322,
+      "rowIndex": 124,
+      "timePeriod": "2020"
+    },
+    {
+      "dimKey": {
+        "account": "primary_dist",
+        "measure": "D4_REC",
+        "side": "R"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 2835,
+      "rowIndex": 125,
+      "timePeriod": "2021"
+    },
+    {
+      "dimKey": {
+        "account": "primary_dist",
+        "measure": "D4_REC",
+        "side": "R"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 3397,
+      "rowIndex": 126,
+      "timePeriod": "2022"
+    },
+    {
+      "dimKey": {
+        "account": "primary_dist",
+        "measure": "D4_REC",
+        "side": "R"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 3782,
+      "rowIndex": 127,
+      "timePeriod": "2023"
+    },
+    {
+      "dimKey": {
+        "account": "primary_dist",
+        "measure": "D4_REC",
+        "side": "R"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 4408,
+      "rowIndex": 128,
+      "timePeriod": "2024"
+    },
+    {
+      "dimKey": {
+        "account": "primary_dist",
+        "measure": "D4_PAY",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 1379.4,
+      "rowIndex": 129,
+      "timePeriod": "2010"
+    },
+    {
+      "dimKey": {
+        "account": "primary_dist",
+        "measure": "D4_PAY",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 1993.5,
+      "rowIndex": 130,
+      "timePeriod": "2011"
+    },
+    {
+      "dimKey": {
+        "account": "primary_dist",
+        "measure": "D4_PAY",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 2063.4,
+      "rowIndex": 131,
+      "timePeriod": "2012"
+    },
+    {
+      "dimKey": {
+        "account": "primary_dist",
+        "measure": "D4_PAY",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 2062.3,
+      "rowIndex": 132,
+      "timePeriod": "2013"
+    },
+    {
+      "dimKey": {
+        "account": "primary_dist",
+        "measure": "D4_PAY",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 2216.6,
+      "rowIndex": 133,
+      "timePeriod": "2014"
+    },
+    {
+      "dimKey": {
+        "account": "primary_dist",
+        "measure": "D4_PAY",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 2691.3,
+      "rowIndex": 134,
+      "timePeriod": "2015"
+    },
+    {
+      "dimKey": {
+        "account": "primary_dist",
+        "measure": "D4_PAY",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 3814.8,
+      "rowIndex": 135,
+      "timePeriod": "2016"
+    },
+    {
+      "dimKey": {
+        "account": "primary_dist",
+        "measure": "D4_PAY",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 4818.2,
+      "rowIndex": 136,
+      "timePeriod": "2017"
+    },
+    {
+      "dimKey": {
+        "account": "primary_dist",
+        "measure": "D4_PAY",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 4960.7,
+      "rowIndex": 137,
+      "timePeriod": "2018"
+    },
+    {
+      "dimKey": {
+        "account": "primary_dist",
+        "measure": "D4_PAY",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 6130,
+      "rowIndex": 138,
+      "timePeriod": "2019"
+    },
+    {
+      "dimKey": {
+        "account": "primary_dist",
+        "measure": "D4_PAY",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 5435,
+      "rowIndex": 139,
+      "timePeriod": "2020"
+    },
+    {
+      "dimKey": {
+        "account": "primary_dist",
+        "measure": "D4_PAY",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 6635,
+      "rowIndex": 140,
+      "timePeriod": "2021"
+    },
+    {
+      "dimKey": {
+        "account": "primary_dist",
+        "measure": "D4_PAY",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 7950,
+      "rowIndex": 141,
+      "timePeriod": "2022"
+    },
+    {
+      "dimKey": {
+        "account": "primary_dist",
+        "measure": "D4_PAY",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 8852,
+      "rowIndex": 142,
+      "timePeriod": "2023"
+    },
+    {
+      "dimKey": {
+        "account": "primary_dist",
+        "measure": "D4_PAY",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 10316,
+      "rowIndex": 143,
+      "timePeriod": "2024"
+    },
+    {
+      "dimKey": {
+        "account": "primary_dist",
+        "measure": "B5G",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 21761.8,
+      "rowIndex": 144,
+      "timePeriod": "2010"
+    },
+    {
+      "dimKey": {
+        "account": "primary_dist",
+        "measure": "B5G",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 25381,
+      "rowIndex": 145,
+      "timePeriod": "2011"
+    },
+    {
+      "dimKey": {
+        "account": "primary_dist",
+        "measure": "B5G",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 27612.3,
+      "rowIndex": 146,
+      "timePeriod": "2012"
+    },
+    {
+      "dimKey": {
+        "account": "primary_dist",
+        "measure": "B5G",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 28610.8,
+      "rowIndex": 147,
+      "timePeriod": "2013"
+    },
+    {
+      "dimKey": {
+        "account": "primary_dist",
+        "measure": "B5G",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 31319.4,
+      "rowIndex": 148,
+      "timePeriod": "2014"
+    },
+    {
+      "dimKey": {
+        "account": "primary_dist",
+        "measure": "B5G",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 33768.8,
+      "rowIndex": 149,
+      "timePeriod": "2015"
+    },
+    {
+      "dimKey": {
+        "account": "primary_dist",
+        "measure": "B5G",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 34897.7,
+      "rowIndex": 150,
+      "timePeriod": "2016"
+    },
+    {
+      "dimKey": {
+        "account": "primary_dist",
+        "measure": "B5G",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 39354.3,
+      "rowIndex": 151,
+      "timePeriod": "2017"
+    },
+    {
+      "dimKey": {
+        "account": "primary_dist",
+        "measure": "B5G",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 43665.5,
+      "rowIndex": 152,
+      "timePeriod": "2018"
+    },
+    {
+      "dimKey": {
+        "account": "primary_dist",
+        "measure": "B5G",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 47481.1,
+      "rowIndex": 153,
+      "timePeriod": "2019"
+    },
+    {
+      "dimKey": {
+        "account": "primary_dist",
+        "measure": "B5G",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 46294,
+      "rowIndex": 154,
+      "timePeriod": "2020"
+    },
+    {
+      "dimKey": {
+        "account": "primary_dist",
+        "measure": "B5G",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 56521,
+      "rowIndex": 155,
+      "timePeriod": "2021"
+    },
+    {
+      "dimKey": {
+        "account": "primary_dist",
+        "measure": "B5G",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 67720,
+      "rowIndex": 156,
+      "timePeriod": "2022"
+    },
+    {
+      "dimKey": {
+        "account": "primary_dist",
+        "measure": "B5G",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 75400,
+      "rowIndex": 157,
+      "timePeriod": "2023"
+    },
+    {
+      "dimKey": {
+        "account": "primary_dist",
+        "measure": "B5G",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 87870,
+      "rowIndex": 158,
+      "timePeriod": "2024"
+    },
+    {
+      "dimKey": {
+        "account": "secondary_dist",
+        "measure": "D5_REC",
+        "side": "R"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 2108.3,
+      "rowIndex": 159,
+      "timePeriod": "2010"
+    },
+    {
+      "dimKey": {
+        "account": "secondary_dist",
+        "measure": "D5_REC",
+        "side": "R"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 2454.5,
+      "rowIndex": 160,
+      "timePeriod": "2011"
+    },
+    {
+      "dimKey": {
+        "account": "secondary_dist",
+        "measure": "D5_REC",
+        "side": "R"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 2504.7,
+      "rowIndex": 161,
+      "timePeriod": "2012"
+    },
+    {
+      "dimKey": {
+        "account": "secondary_dist",
+        "measure": "D5_REC",
+        "side": "R"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 2612.7,
+      "rowIndex": 162,
+      "timePeriod": "2013"
+    },
+    {
+      "dimKey": {
+        "account": "secondary_dist",
+        "measure": "D5_REC",
+        "side": "R"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 2755.1,
+      "rowIndex": 163,
+      "timePeriod": "2014"
+    },
+    {
+      "dimKey": {
+        "account": "secondary_dist",
+        "measure": "D5_REC",
+        "side": "R"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 2763.8,
+      "rowIndex": 164,
+      "timePeriod": "2015"
+    },
+    {
+      "dimKey": {
+        "account": "secondary_dist",
+        "measure": "D5_REC",
+        "side": "R"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 2916.1,
+      "rowIndex": 165,
+      "timePeriod": "2016"
+    },
+    {
+      "dimKey": {
+        "account": "secondary_dist",
+        "measure": "D5_REC",
+        "side": "R"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 3511.9,
+      "rowIndex": 166,
+      "timePeriod": "2017"
+    },
+    {
+      "dimKey": {
+        "account": "secondary_dist",
+        "measure": "D5_REC",
+        "side": "R"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 3810.9,
+      "rowIndex": 167,
+      "timePeriod": "2018"
+    },
+    {
+      "dimKey": {
+        "account": "secondary_dist",
+        "measure": "D5_REC",
+        "side": "R"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 4344.4,
+      "rowIndex": 168,
+      "timePeriod": "2019"
+    },
+    {
+      "dimKey": {
+        "account": "secondary_dist",
+        "measure": "D5_REC",
+        "side": "R"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 4815,
+      "rowIndex": 169,
+      "timePeriod": "2020"
+    },
+    {
+      "dimKey": {
+        "account": "secondary_dist",
+        "measure": "D5_REC",
+        "side": "R"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 5878,
+      "rowIndex": 170,
+      "timePeriod": "2021"
+    },
+    {
+      "dimKey": {
+        "account": "secondary_dist",
+        "measure": "D5_REC",
+        "side": "R"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 7043,
+      "rowIndex": 171,
+      "timePeriod": "2022"
+    },
+    {
+      "dimKey": {
+        "account": "secondary_dist",
+        "measure": "D5_REC",
+        "side": "R"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 7842,
+      "rowIndex": 172,
+      "timePeriod": "2023"
+    },
+    {
+      "dimKey": {
+        "account": "secondary_dist",
+        "measure": "D5_REC",
+        "side": "R"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 9138,
+      "rowIndex": 173,
+      "timePeriod": "2024"
+    },
+    {
+      "dimKey": {
+        "account": "secondary_dist",
+        "measure": "D5_PAY",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 151.7,
+      "rowIndex": 174,
+      "timePeriod": "2010"
+    },
+    {
+      "dimKey": {
+        "account": "secondary_dist",
+        "measure": "D5_PAY",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 217.9,
+      "rowIndex": 175,
+      "timePeriod": "2011"
+    },
+    {
+      "dimKey": {
+        "account": "secondary_dist",
+        "measure": "D5_PAY",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 178.9,
+      "rowIndex": 176,
+      "timePeriod": "2012"
+    },
+    {
+      "dimKey": {
+        "account": "secondary_dist",
+        "measure": "D5_PAY",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 198.1,
+      "rowIndex": 177,
+      "timePeriod": "2013"
+    },
+    {
+      "dimKey": {
+        "account": "secondary_dist",
+        "measure": "D5_PAY",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 239.4,
+      "rowIndex": 178,
+      "timePeriod": "2014"
+    },
+    {
+      "dimKey": {
+        "account": "secondary_dist",
+        "measure": "D5_PAY",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 230.8,
+      "rowIndex": 179,
+      "timePeriod": "2015"
+    },
+    {
+      "dimKey": {
+        "account": "secondary_dist",
+        "measure": "D5_PAY",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 264,
+      "rowIndex": 180,
+      "timePeriod": "2016"
+    },
+    {
+      "dimKey": {
+        "account": "secondary_dist",
+        "measure": "D5_PAY",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 311.3,
+      "rowIndex": 181,
+      "timePeriod": "2017"
+    },
+    {
+      "dimKey": {
+        "account": "secondary_dist",
+        "measure": "D5_PAY",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 353.3,
+      "rowIndex": 182,
+      "timePeriod": "2018"
+    },
+    {
+      "dimKey": {
+        "account": "secondary_dist",
+        "measure": "D5_PAY",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 463.7,
+      "rowIndex": 183,
+      "timePeriod": "2019"
+    },
+    {
+      "dimKey": {
+        "account": "secondary_dist",
+        "measure": "D5_PAY",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 185,
+      "rowIndex": 184,
+      "timePeriod": "2020"
+    },
+    {
+      "dimKey": {
+        "account": "secondary_dist",
+        "measure": "D5_PAY",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 226,
+      "rowIndex": 185,
+      "timePeriod": "2021"
+    },
+    {
+      "dimKey": {
+        "account": "secondary_dist",
+        "measure": "D5_PAY",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 271,
+      "rowIndex": 186,
+      "timePeriod": "2022"
+    },
+    {
+      "dimKey": {
+        "account": "secondary_dist",
+        "measure": "D5_PAY",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 302,
+      "rowIndex": 187,
+      "timePeriod": "2023"
+    },
+    {
+      "dimKey": {
+        "account": "secondary_dist",
+        "measure": "D5_PAY",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 351,
+      "rowIndex": 188,
+      "timePeriod": "2024"
+    },
+    {
+      "dimKey": {
+        "account": "secondary_dist",
+        "measure": "B6G",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 23718.4,
+      "rowIndex": 189,
+      "timePeriod": "2010"
+    },
+    {
+      "dimKey": {
+        "account": "secondary_dist",
+        "measure": "B6G",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 27617.6,
+      "rowIndex": 190,
+      "timePeriod": "2011"
+    },
+    {
+      "dimKey": {
+        "account": "secondary_dist",
+        "measure": "B6G",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 29938.1,
+      "rowIndex": 191,
+      "timePeriod": "2012"
+    },
+    {
+      "dimKey": {
+        "account": "secondary_dist",
+        "measure": "B6G",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 31025.5,
+      "rowIndex": 192,
+      "timePeriod": "2013"
+    },
+    {
+      "dimKey": {
+        "account": "secondary_dist",
+        "measure": "B6G",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 33835.1,
+      "rowIndex": 193,
+      "timePeriod": "2014"
+    },
+    {
+      "dimKey": {
+        "account": "secondary_dist",
+        "measure": "B6G",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 36301.7,
+      "rowIndex": 194,
+      "timePeriod": "2015"
+    },
+    {
+      "dimKey": {
+        "account": "secondary_dist",
+        "measure": "B6G",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 37549.8,
+      "rowIndex": 195,
+      "timePeriod": "2016"
+    },
+    {
+      "dimKey": {
+        "account": "secondary_dist",
+        "measure": "B6G",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 42554.9,
+      "rowIndex": 196,
+      "timePeriod": "2017"
+    },
+    {
+      "dimKey": {
+        "account": "secondary_dist",
+        "measure": "B6G",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 47123.1,
+      "rowIndex": 197,
+      "timePeriod": "2018"
+    },
+    {
+      "dimKey": {
+        "account": "secondary_dist",
+        "measure": "B6G",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 51361.8,
+      "rowIndex": 198,
+      "timePeriod": "2019"
+    },
+    {
+      "dimKey": {
+        "account": "secondary_dist",
+        "measure": "B6G",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 50924,
+      "rowIndex": 199,
+      "timePeriod": "2020"
+    },
+    {
+      "dimKey": {
+        "account": "secondary_dist",
+        "measure": "B6G",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 62173,
+      "rowIndex": 200,
+      "timePeriod": "2021"
+    },
+    {
+      "dimKey": {
+        "account": "secondary_dist",
+        "measure": "B6G",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 74492,
+      "rowIndex": 201,
+      "timePeriod": "2022"
+    },
+    {
+      "dimKey": {
+        "account": "secondary_dist",
+        "measure": "B6G",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 82940,
+      "rowIndex": 202,
+      "timePeriod": "2023"
+    },
+    {
+      "dimKey": {
+        "account": "secondary_dist",
+        "measure": "B6G",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 96657,
+      "rowIndex": 203,
+      "timePeriod": "2024"
+    },
+    {
+      "dimKey": {
+        "account": "use_of_income",
+        "measure": "P3",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 21220.5,
+      "rowIndex": 204,
+      "timePeriod": "2010"
+    },
+    {
+      "dimKey": {
+        "account": "use_of_income",
+        "measure": "P3",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 24694.8,
+      "rowIndex": 205,
+      "timePeriod": "2011"
+    },
+    {
+      "dimKey": {
+        "account": "use_of_income",
+        "measure": "P3",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 25784.5,
+      "rowIndex": 206,
+      "timePeriod": "2012"
+    },
+    {
+      "dimKey": {
+        "account": "use_of_income",
+        "measure": "P3",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 26291.2,
+      "rowIndex": 207,
+      "timePeriod": "2013"
+    },
+    {
+      "dimKey": {
+        "account": "use_of_income",
+        "measure": "P3",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 28847.3,
+      "rowIndex": 208,
+      "timePeriod": "2014"
+    },
+    {
+      "dimKey": {
+        "account": "use_of_income",
+        "measure": "P3",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 31046.6,
+      "rowIndex": 209,
+      "timePeriod": "2015"
+    },
+    {
+      "dimKey": {
+        "account": "use_of_income",
+        "measure": "P3",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 31444.9,
+      "rowIndex": 210,
+      "timePeriod": "2016"
+    },
+    {
+      "dimKey": {
+        "account": "use_of_income",
+        "measure": "P3",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 35430.8,
+      "rowIndex": 211,
+      "timePeriod": "2017"
+    },
+    {
+      "dimKey": {
+        "account": "use_of_income",
+        "measure": "P3",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 37447.7,
+      "rowIndex": 212,
+      "timePeriod": "2018"
+    },
+    {
+      "dimKey": {
+        "account": "use_of_income",
+        "measure": "P3",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 40792.1,
+      "rowIndex": 213,
+      "timePeriod": "2019"
+    },
+    {
+      "dimKey": {
+        "account": "use_of_income",
+        "measure": "P3",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 41758,
+      "rowIndex": 214,
+      "timePeriod": "2020"
+    },
+    {
+      "dimKey": {
+        "account": "use_of_income",
+        "measure": "P3",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 50982,
+      "rowIndex": 215,
+      "timePeriod": "2021"
+    },
+    {
+      "dimKey": {
+        "account": "use_of_income",
+        "measure": "P3",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 61083,
+      "rowIndex": 216,
+      "timePeriod": "2022"
+    },
+    {
+      "dimKey": {
+        "account": "use_of_income",
+        "measure": "P3",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 68011,
+      "rowIndex": 217,
+      "timePeriod": "2023"
+    },
+    {
+      "dimKey": {
+        "account": "use_of_income",
+        "measure": "P3",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 79259,
+      "rowIndex": 218,
+      "timePeriod": "2024"
+    },
+    {
+      "dimKey": {
+        "account": "use_of_income",
+        "measure": "B8G",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": 20
+      },
+      "obsStatus": "A",
+      "obsValue": 2498,
+      "rowIndex": 219,
+      "timePeriod": "2010"
+    },
+    {
+      "dimKey": {
+        "account": "use_of_income",
+        "measure": "B8G",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": 20
+      },
+      "obsStatus": "A",
+      "obsValue": 2922.8,
+      "rowIndex": 220,
+      "timePeriod": "2011"
+    },
+    {
+      "dimKey": {
+        "account": "use_of_income",
+        "measure": "B8G",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": 20
+      },
+      "obsStatus": "A",
+      "obsValue": 4153.6,
+      "rowIndex": 221,
+      "timePeriod": "2012"
+    },
+    {
+      "dimKey": {
+        "account": "use_of_income",
+        "measure": "B8G",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": 20
+      },
+      "obsStatus": "A",
+      "obsValue": 4734.3,
+      "rowIndex": 222,
+      "timePeriod": "2013"
+    },
+    {
+      "dimKey": {
+        "account": "use_of_income",
+        "measure": "B8G",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": 20
+      },
+      "obsStatus": "A",
+      "obsValue": 4987.8,
+      "rowIndex": 223,
+      "timePeriod": "2014"
+    },
+    {
+      "dimKey": {
+        "account": "use_of_income",
+        "measure": "B8G",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": 20
+      },
+      "obsStatus": "A",
+      "obsValue": 5255.1,
+      "rowIndex": 224,
+      "timePeriod": "2015"
+    },
+    {
+      "dimKey": {
+        "account": "use_of_income",
+        "measure": "B8G",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": 20
+      },
+      "obsStatus": "A",
+      "obsValue": 6104.9,
+      "rowIndex": 225,
+      "timePeriod": "2016"
+    },
+    {
+      "dimKey": {
+        "account": "use_of_income",
+        "measure": "B8G",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": 20
+      },
+      "obsStatus": "A",
+      "obsValue": 7124.1,
+      "rowIndex": 226,
+      "timePeriod": "2017"
+    },
+    {
+      "dimKey": {
+        "account": "use_of_income",
+        "measure": "B8G",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": 20
+      },
+      "obsStatus": "A",
+      "obsValue": 9675.5,
+      "rowIndex": 227,
+      "timePeriod": "2018"
+    },
+    {
+      "dimKey": {
+        "account": "use_of_income",
+        "measure": "B8G",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": 20
+      },
+      "obsStatus": "A",
+      "obsValue": 10569.7,
+      "rowIndex": 228,
+      "timePeriod": "2019"
+    },
+    {
+      "dimKey": {
+        "account": "use_of_income",
+        "measure": "B8G",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": 20
+      },
+      "obsStatus": "A",
+      "obsValue": 9166,
+      "rowIndex": 229,
+      "timePeriod": "2020"
+    },
+    {
+      "dimKey": {
+        "account": "use_of_income",
+        "measure": "B8G",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": 20
+      },
+      "obsStatus": "A",
+      "obsValue": 11191,
+      "rowIndex": 230,
+      "timePeriod": "2021"
+    },
+    {
+      "dimKey": {
+        "account": "use_of_income",
+        "measure": "B8G",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": 20
+      },
+      "obsStatus": "A",
+      "obsValue": 13409,
+      "rowIndex": 231,
+      "timePeriod": "2022"
+    },
+    {
+      "dimKey": {
+        "account": "use_of_income",
+        "measure": "B8G",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": 20
+      },
+      "obsStatus": "A",
+      "obsValue": 14929,
+      "rowIndex": 232,
+      "timePeriod": "2023"
+    },
+    {
+      "dimKey": {
+        "account": "use_of_income",
+        "measure": "B8G",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": 20
+      },
+      "obsStatus": "A",
+      "obsValue": 17398,
+      "rowIndex": 233,
+      "timePeriod": "2024"
+    },
+    {
+      "dimKey": {
+        "account": "capital",
+        "measure": "D9R",
+        "side": "R"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 354.5,
+      "rowIndex": 234,
+      "timePeriod": "2010"
+    },
+    {
+      "dimKey": {
+        "account": "capital",
+        "measure": "D9R",
+        "side": "R"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 247.7,
+      "rowIndex": 235,
+      "timePeriod": "2011"
+    },
+    {
+      "dimKey": {
+        "account": "capital",
+        "measure": "D9R",
+        "side": "R"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 217.4,
+      "rowIndex": 236,
+      "timePeriod": "2012"
+    },
+    {
+      "dimKey": {
+        "account": "capital",
+        "measure": "D9R",
+        "side": "R"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 220.5,
+      "rowIndex": 237,
+      "timePeriod": "2013"
+    },
+    {
+      "dimKey": {
+        "account": "capital",
+        "measure": "D9R",
+        "side": "R"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 188.4,
+      "rowIndex": 238,
+      "timePeriod": "2014"
+    },
+    {
+      "dimKey": {
+        "account": "capital",
+        "measure": "D9R",
+        "side": "R"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 132,
+      "rowIndex": 239,
+      "timePeriod": "2015"
+    },
+    {
+      "dimKey": {
+        "account": "capital",
+        "measure": "D9R",
+        "side": "R"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 133.3,
+      "rowIndex": 240,
+      "timePeriod": "2016"
+    },
+    {
+      "dimKey": {
+        "account": "capital",
+        "measure": "D9R",
+        "side": "R"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 208.4,
+      "rowIndex": 241,
+      "timePeriod": "2017"
+    },
+    {
+      "dimKey": {
+        "account": "capital",
+        "measure": "D9R",
+        "side": "R"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 194.4,
+      "rowIndex": 242,
+      "timePeriod": "2018"
+    },
+    {
+      "dimKey": {
+        "account": "capital",
+        "measure": "D9R",
+        "side": "R"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 131.2,
+      "rowIndex": 243,
+      "timePeriod": "2019"
+    },
+    {
+      "dimKey": {
+        "account": "capital",
+        "measure": "D9R",
+        "side": "R"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 60,
+      "rowIndex": 244,
+      "timePeriod": "2020"
+    },
+    {
+      "dimKey": {
+        "account": "capital",
+        "measure": "D9R",
+        "side": "R"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 60,
+      "rowIndex": 245,
+      "timePeriod": "2021"
+    },
+    {
+      "dimKey": {
+        "account": "capital",
+        "measure": "D9R",
+        "side": "R"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 60,
+      "rowIndex": 246,
+      "timePeriod": "2022"
+    },
+    {
+      "dimKey": {
+        "account": "capital",
+        "measure": "D9R",
+        "side": "R"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 60,
+      "rowIndex": 247,
+      "timePeriod": "2023"
+    },
+    {
+      "dimKey": {
+        "account": "capital",
+        "measure": "D9R",
+        "side": "R"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 60,
+      "rowIndex": 248,
+      "timePeriod": "2024"
+    },
+    {
+      "dimKey": {
+        "account": "capital",
+        "measure": "P5",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 4635.6,
+      "rowIndex": 249,
+      "timePeriod": "2010"
+    },
+    {
+      "dimKey": {
+        "account": "capital",
+        "measure": "P5",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 6034.3,
+      "rowIndex": 250,
+      "timePeriod": "2011"
+    },
+    {
+      "dimKey": {
+        "account": "capital",
+        "measure": "P5",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 7260.9,
+      "rowIndex": 251,
+      "timePeriod": "2012"
+    },
+    {
+      "dimKey": {
+        "account": "capital",
+        "measure": "P5",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 6323,
+      "rowIndex": 252,
+      "timePeriod": "2013"
+    },
+    {
+      "dimKey": {
+        "account": "capital",
+        "measure": "P5",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 8136.8,
+      "rowIndex": 253,
+      "timePeriod": "2014"
+    },
+    {
+      "dimKey": {
+        "account": "capital",
+        "measure": "P5",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 9285.5,
+      "rowIndex": 254,
+      "timePeriod": "2015"
+    },
+    {
+      "dimKey": {
+        "account": "capital",
+        "measure": "P5",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 10565,
+      "rowIndex": 255,
+      "timePeriod": "2016"
+    },
+    {
+      "dimKey": {
+        "account": "capital",
+        "measure": "P5",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 10386.6,
+      "rowIndex": 256,
+      "timePeriod": "2017"
+    },
+    {
+      "dimKey": {
+        "account": "capital",
+        "measure": "P5",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 12671.3,
+      "rowIndex": 257,
+      "timePeriod": "2018"
+    },
+    {
+      "dimKey": {
+        "account": "capital",
+        "measure": "P5",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 13509.7,
+      "rowIndex": 258,
+      "timePeriod": "2019"
+    },
+    {
+      "dimKey": {
+        "account": "capital",
+        "measure": "P5",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 10847,
+      "rowIndex": 259,
+      "timePeriod": "2020"
+    },
+    {
+      "dimKey": {
+        "account": "capital",
+        "measure": "P5",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 13193,
+      "rowIndex": 260,
+      "timePeriod": "2021"
+    },
+    {
+      "dimKey": {
+        "account": "capital",
+        "measure": "P5",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 15729,
+      "rowIndex": 261,
+      "timePeriod": "2022"
+    },
+    {
+      "dimKey": {
+        "account": "capital",
+        "measure": "P5",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 17644,
+      "rowIndex": 262,
+      "timePeriod": "2023"
+    },
+    {
+      "dimKey": {
+        "account": "capital",
+        "measure": "P5",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": 20593,
+      "rowIndex": 263,
+      "timePeriod": "2024"
+    },
+    {
+      "dimKey": {
+        "account": "capital",
+        "measure": "B9",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": -1783.1,
+      "rowIndex": 264,
+      "timePeriod": "2010"
+    },
+    {
+      "dimKey": {
+        "account": "capital",
+        "measure": "B9",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": -2863.8,
+      "rowIndex": 265,
+      "timePeriod": "2011"
+    },
+    {
+      "dimKey": {
+        "account": "capital",
+        "measure": "B9",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": -2889.9,
+      "rowIndex": 266,
+      "timePeriod": "2012"
+    },
+    {
+      "dimKey": {
+        "account": "capital",
+        "measure": "B9",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": -1368.2,
+      "rowIndex": 267,
+      "timePeriod": "2013"
+    },
+    {
+      "dimKey": {
+        "account": "capital",
+        "measure": "B9",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": -2960.6,
+      "rowIndex": 268,
+      "timePeriod": "2014"
+    },
+    {
+      "dimKey": {
+        "account": "capital",
+        "measure": "B9",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": -3898.4,
+      "rowIndex": 269,
+      "timePeriod": "2015"
+    },
+    {
+      "dimKey": {
+        "account": "capital",
+        "measure": "B9",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": -4326.8,
+      "rowIndex": 270,
+      "timePeriod": "2016"
+    },
+    {
+      "dimKey": {
+        "account": "capital",
+        "measure": "B9",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": -3054.1,
+      "rowIndex": 271,
+      "timePeriod": "2017"
+    },
+    {
+      "dimKey": {
+        "account": "capital",
+        "measure": "B9",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": -2801.5,
+      "rowIndex": 272,
+      "timePeriod": "2018"
+    },
+    {
+      "dimKey": {
+        "account": "capital",
+        "measure": "B9",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": -2808.8,
+      "rowIndex": 273,
+      "timePeriod": "2019"
+    },
+    {
+      "dimKey": {
+        "account": "capital",
+        "measure": "B9",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": -1621,
+      "rowIndex": 274,
+      "timePeriod": "2020"
+    },
+    {
+      "dimKey": {
+        "account": "capital",
+        "measure": "B9",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": -1942,
+      "rowIndex": 275,
+      "timePeriod": "2021"
+    },
+    {
+      "dimKey": {
+        "account": "capital",
+        "measure": "B9",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": -2260,
+      "rowIndex": 276,
+      "timePeriod": "2022"
+    },
+    {
+      "dimKey": {
+        "account": "capital",
+        "measure": "B9",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": -2655,
+      "rowIndex": 277,
+      "timePeriod": "2023"
+    },
+    {
+      "dimKey": {
+        "account": "capital",
+        "measure": "B9",
+        "side": "U"
+      },
+      "obsAttribute": {
+        "isCarryForward": false,
+        "seqPos": -1
+      },
+      "obsStatus": "A",
+      "obsValue": -3135,
+      "rowIndex": 278,
+      "timePeriod": "2024"
+    }
+  ]
+}

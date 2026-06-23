@@ -1,0 +1,9410 @@
+-- ════════════════════════════════════════════════════════════════════════
+-- R__seed_geostat_gold.sql — STAGE-1 PRESERVATION NET (ADR-0028 D2)
+-- ════════════════════════════════════════════════════════════════════════
+--
+-- GENERATED — do not edit by hand. Source of truth: the geostat dataset
+-- bundles (apps/geostat/src/data/{gdp,accounts,regional}) projected through
+-- apps/api/scripts/seed-pipeline-payloads.ts. Regenerate with:
+--   pnpm --filter @statdash/api export:seed-data
+--
+-- ROLE: the restore-from-nothing safety net for ADR-0028 (geostat de-tenanting).
+-- A Flyway REPEATABLE migration (R__) — runs after the versioned Vnn schema,
+-- re-runs whenever its checksum changes, and is fully idempotent (every write
+-- is INSERT…ON CONFLICT DO UPDATE). It lands the GOLD cube DIRECTLY (bypassing
+-- bronze→silver) so `flyway migrate` reconstructs the exact stats.* cube with
+-- no API, no engine, no TS. This is STAGE 1 of the two-stage preservation;
+-- STAGE 2 is the same data loaded through the ingest pipeline from the
+-- ops/seed-data/geostat/*.bundle.json files (the production-grade path).
+--
+-- WHY R__ (repeatable), not Vnn (versioned): seed DATA is not schema and must
+-- re-converge when the data changes; a Vnn is immutable-once-applied (never edit
+-- an applied migration). Repeatable + idempotent INSERT = re-runnable preservation
+-- without violating the Flyway append-only versioned contract. Schema stays in Vnn;
+-- this is a clearly-namespaced, generated, reviewable seed lane.
+--
+-- The upserts mirror apps/api/scripts/seed-helpers.ts byte-for-byte, so they
+-- drive the V4/V8/V23 gold triggers identically (code_path materialization,
+-- dim_key validation, revision capture). A parity test asserts this SQL gold
+-- == the bundle files == the pipeline gold (seed-data.fitness.test.ts).
+-- ════════════════════════════════════════════════════════════════════════
+
+SET LOCAL app.revised_by = 'seed:R__seed_geostat_gold';
+
+-- ── 1. dimensions (cube axes) ─────────────────────────────────────────
+INSERT INTO stats.dimension (code, label, ord)
+  VALUES ('measure', '{"ka":"მაჩვენებელი","en":"Measure"}'::jsonb, 1)
+  ON CONFLICT (code) DO NOTHING;
+INSERT INTO stats.dimension (code, label, ord)
+  VALUES ('time', '{"ka":"პერიოდი","en":"Time Period"}'::jsonb, 2)
+  ON CONFLICT (code) DO NOTHING;
+INSERT INTO stats.dimension (code, label, ord)
+  VALUES ('geo', '{"ka":"ტერიტორია","en":"Geography"}'::jsonb, 3)
+  ON CONFLICT (code) DO NOTHING;
+INSERT INTO stats.dimension (code, label, ord)
+  VALUES ('approach', '{"ka":"მიდგომა","en":"Approach"}'::jsonb, 4)
+  ON CONFLICT (code) DO NOTHING;
+INSERT INTO stats.dimension (code, label, ord)
+  VALUES ('account', '{"ka":"ანგარიში","en":"Account"}'::jsonb, 5)
+  ON CONFLICT (code) DO NOTHING;
+INSERT INTO stats.dimension (code, label, ord)
+  VALUES ('side', '{"ka":"მხარე","en":"Side"}'::jsonb, 6)
+  ON CONFLICT (code) DO NOTHING;
+INSERT INTO stats.dimension (code, label, ord)
+  VALUES ('sector', '{"ka":"სექტორი","en":"Sector"}'::jsonb, 7)
+  ON CONFLICT (code) DO NOTHING;
+
+-- ── 2. datasets + DSD (key structure) ─────────────────────────────────
+INSERT INTO stats.dataset (code, label, frequency)
+  VALUES ('GDP_ANNUAL', '{"ka":"მშპ (წლიური)","en":"GDP (annual)"}'::jsonb, 'A')
+  ON CONFLICT (code) DO UPDATE SET label = EXCLUDED.label;
+INSERT INTO stats.dataset_dimension (dataset_code, dim_code, is_time_dim, ord)
+  VALUES ('GDP_ANNUAL', 'measure', false, 0)
+  ON CONFLICT (dataset_code, dim_code) DO UPDATE SET is_time_dim = EXCLUDED.is_time_dim, ord = EXCLUDED.ord;
+INSERT INTO stats.dataset_dimension (dataset_code, dim_code, is_time_dim, ord)
+  VALUES ('GDP_ANNUAL', 'geo', false, 1)
+  ON CONFLICT (dataset_code, dim_code) DO UPDATE SET is_time_dim = EXCLUDED.is_time_dim, ord = EXCLUDED.ord;
+INSERT INTO stats.dataset_dimension (dataset_code, dim_code, is_time_dim, ord)
+  VALUES ('GDP_ANNUAL', 'time', true, 2)
+  ON CONFLICT (dataset_code, dim_code) DO UPDATE SET is_time_dim = EXCLUDED.is_time_dim, ord = EXCLUDED.ord;
+INSERT INTO stats.dataset (code, label, frequency)
+  VALUES ('ACCOUNTS_SEQUENCE', '{"ka":"ანგარიშების მიმდევრობა","en":"Accounts sequence"}'::jsonb, 'A')
+  ON CONFLICT (code) DO UPDATE SET label = EXCLUDED.label;
+INSERT INTO stats.dataset_dimension (dataset_code, dim_code, is_time_dim, ord)
+  VALUES ('ACCOUNTS_SEQUENCE', 'measure', false, 0)
+  ON CONFLICT (dataset_code, dim_code) DO UPDATE SET is_time_dim = EXCLUDED.is_time_dim, ord = EXCLUDED.ord;
+INSERT INTO stats.dataset_dimension (dataset_code, dim_code, is_time_dim, ord)
+  VALUES ('ACCOUNTS_SEQUENCE', 'account', false, 1)
+  ON CONFLICT (dataset_code, dim_code) DO UPDATE SET is_time_dim = EXCLUDED.is_time_dim, ord = EXCLUDED.ord;
+INSERT INTO stats.dataset_dimension (dataset_code, dim_code, is_time_dim, ord)
+  VALUES ('ACCOUNTS_SEQUENCE', 'side', false, 2)
+  ON CONFLICT (dataset_code, dim_code) DO UPDATE SET is_time_dim = EXCLUDED.is_time_dim, ord = EXCLUDED.ord;
+INSERT INTO stats.dataset_dimension (dataset_code, dim_code, is_time_dim, ord)
+  VALUES ('ACCOUNTS_SEQUENCE', 'time', true, 3)
+  ON CONFLICT (dataset_code, dim_code) DO UPDATE SET is_time_dim = EXCLUDED.is_time_dim, ord = EXCLUDED.ord;
+INSERT INTO stats.dataset (code, label, frequency)
+  VALUES ('REGIONAL_GVA', '{"ka":"რეგიონული მშპ","en":"Regional GVA"}'::jsonb, 'A')
+  ON CONFLICT (code) DO UPDATE SET label = EXCLUDED.label;
+INSERT INTO stats.dataset_dimension (dataset_code, dim_code, is_time_dim, ord)
+  VALUES ('REGIONAL_GVA', 'measure', false, 0)
+  ON CONFLICT (dataset_code, dim_code) DO UPDATE SET is_time_dim = EXCLUDED.is_time_dim, ord = EXCLUDED.ord;
+INSERT INTO stats.dataset_dimension (dataset_code, dim_code, is_time_dim, ord)
+  VALUES ('REGIONAL_GVA', 'geo', false, 1)
+  ON CONFLICT (dataset_code, dim_code) DO UPDATE SET is_time_dim = EXCLUDED.is_time_dim, ord = EXCLUDED.ord;
+INSERT INTO stats.dataset_dimension (dataset_code, dim_code, is_time_dim, ord)
+  VALUES ('REGIONAL_GVA', 'sector', false, 2)
+  ON CONFLICT (dataset_code, dim_code) DO UPDATE SET is_time_dim = EXCLUDED.is_time_dim, ord = EXCLUDED.ord;
+INSERT INTO stats.dataset_dimension (dataset_code, dim_code, is_time_dim, ord)
+  VALUES ('REGIONAL_GVA', 'time', true, 3)
+  ON CONFLICT (dataset_code, dim_code) DO UPDATE SET is_time_dim = EXCLUDED.is_time_dim, ord = EXCLUDED.ord;
+
+-- ── 3. classifier members ─────────────────────────────────────────────
+-- INSERT…ON CONFLICT (dim_code, code) WHERE is_current — in-place convergence
+-- (seed/provisioning do not write SCD-2 history; the runtime ingest path does).
+INSERT INTO stats.classifier (dim_code, code, label, color, parent_code, ord, metadata)
+  VALUES ('approach', 'production', '{"ka":"production","en":"production"}'::jsonb, NULL, NULL, 0, '{}'::jsonb)
+  ON CONFLICT (dim_code, code) WHERE is_current DO UPDATE
+    SET label = EXCLUDED.label, parent_code = EXCLUDED.parent_code, ord = EXCLUDED.ord, metadata = EXCLUDED.metadata;
+INSERT INTO stats.classifier (dim_code, code, label, color, parent_code, ord, metadata)
+  VALUES ('approach', 'expenditure', '{"ka":"expenditure","en":"expenditure"}'::jsonb, NULL, NULL, 1, '{}'::jsonb)
+  ON CONFLICT (dim_code, code) WHERE is_current DO UPDATE
+    SET label = EXCLUDED.label, parent_code = EXCLUDED.parent_code, ord = EXCLUDED.ord, metadata = EXCLUDED.metadata;
+INSERT INTO stats.classifier (dim_code, code, label, color, parent_code, ord, metadata)
+  VALUES ('approach', 'income', '{"ka":"income","en":"income"}'::jsonb, NULL, NULL, 2, '{}'::jsonb)
+  ON CONFLICT (dim_code, code) WHERE is_current DO UPDATE
+    SET label = EXCLUDED.label, parent_code = EXCLUDED.parent_code, ord = EXCLUDED.ord, metadata = EXCLUDED.metadata;
+INSERT INTO stats.classifier (dim_code, code, label, color, parent_code, ord, metadata)
+  VALUES ('approach', 'investment', '{"ka":"investment","en":"investment"}'::jsonb, NULL, NULL, 3, '{}'::jsonb)
+  ON CONFLICT (dim_code, code) WHERE is_current DO UPDATE
+    SET label = EXCLUDED.label, parent_code = EXCLUDED.parent_code, ord = EXCLUDED.ord, metadata = EXCLUDED.metadata;
+INSERT INTO stats.classifier (dim_code, code, label, color, parent_code, ord, metadata)
+  VALUES ('approach', 'growth', '{"ka":"growth","en":"growth"}'::jsonb, NULL, NULL, 4, '{}'::jsonb)
+  ON CONFLICT (dim_code, code) WHERE is_current DO UPDATE
+    SET label = EXCLUDED.label, parent_code = EXCLUDED.parent_code, ord = EXCLUDED.ord, metadata = EXCLUDED.metadata;
+INSERT INTO stats.classifier (dim_code, code, label, color, parent_code, ord, metadata)
+  VALUES ('approach', 'per_capita', '{"ka":"per_capita","en":"per_capita"}'::jsonb, NULL, NULL, 5, '{}'::jsonb)
+  ON CONFLICT (dim_code, code) WHERE is_current DO UPDATE
+    SET label = EXCLUDED.label, parent_code = EXCLUDED.parent_code, ord = EXCLUDED.ord, metadata = EXCLUDED.metadata;
+INSERT INTO stats.classifier (dim_code, code, label, color, parent_code, ord, metadata)
+  VALUES ('approach', 'total', '{"ka":"total","en":"total"}'::jsonb, NULL, NULL, 6, '{}'::jsonb)
+  ON CONFLICT (dim_code, code) WHERE is_current DO UPDATE
+    SET label = EXCLUDED.label, parent_code = EXCLUDED.parent_code, ord = EXCLUDED.ord, metadata = EXCLUDED.metadata;
+INSERT INTO stats.classifier (dim_code, code, label, color, parent_code, ord, metadata)
+  VALUES ('approach', 'noe', '{"ka":"noe","en":"noe"}'::jsonb, NULL, NULL, 7, '{}'::jsonb)
+  ON CONFLICT (dim_code, code) WHERE is_current DO UPDATE
+    SET label = EXCLUDED.label, parent_code = EXCLUDED.parent_code, ord = EXCLUDED.ord, metadata = EXCLUDED.metadata;
+INSERT INTO stats.classifier (dim_code, code, label, color, parent_code, ord, metadata)
+  VALUES ('measure', 'GDP_AGRI', '{"ka":"სოფლის, სატყეო და თევზის მეურნეობა","en":"სოფლის, სატყეო და თევზის მეურნეობა"}'::jsonb, NULL, 'production', 0, '{"approach":"production","unit_measure":"GEL_MN","decimals":1}'::jsonb)
+  ON CONFLICT (dim_code, code) WHERE is_current DO UPDATE
+    SET label = EXCLUDED.label, parent_code = EXCLUDED.parent_code, ord = EXCLUDED.ord, metadata = EXCLUDED.metadata;
+INSERT INTO stats.classifier (dim_code, code, label, color, parent_code, ord, metadata)
+  VALUES ('measure', 'GDP_IND', '{"ka":"მრეწველობა","en":"მრეწველობა"}'::jsonb, NULL, 'production', 1, '{"approach":"production","unit_measure":"GEL_MN","decimals":1}'::jsonb)
+  ON CONFLICT (dim_code, code) WHERE is_current DO UPDATE
+    SET label = EXCLUDED.label, parent_code = EXCLUDED.parent_code, ord = EXCLUDED.ord, metadata = EXCLUDED.metadata;
+INSERT INTO stats.classifier (dim_code, code, label, color, parent_code, ord, metadata)
+  VALUES ('measure', 'GDP_CON', '{"ka":"მშენებლობა","en":"მშენებლობა"}'::jsonb, NULL, 'production', 2, '{"approach":"production","unit_measure":"GEL_MN","decimals":1}'::jsonb)
+  ON CONFLICT (dim_code, code) WHERE is_current DO UPDATE
+    SET label = EXCLUDED.label, parent_code = EXCLUDED.parent_code, ord = EXCLUDED.ord, metadata = EXCLUDED.metadata;
+INSERT INTO stats.classifier (dim_code, code, label, color, parent_code, ord, metadata)
+  VALUES ('measure', 'GDP_SVC', '{"ka":"მომსახურება","en":"მომსახურება"}'::jsonb, NULL, 'production', 3, '{"approach":"production","unit_measure":"GEL_MN","decimals":1}'::jsonb)
+  ON CONFLICT (dim_code, code) WHERE is_current DO UPDATE
+    SET label = EXCLUDED.label, parent_code = EXCLUDED.parent_code, ord = EXCLUDED.ord, metadata = EXCLUDED.metadata;
+INSERT INTO stats.classifier (dim_code, code, label, color, parent_code, ord, metadata)
+  VALUES ('measure', 'GDP_NET_TAX', '{"ka":"წმინდა გადასახადები პროდუქტებზე","en":"წმინდა გადასახადები პროდუქტებზე"}'::jsonb, NULL, 'production', 4, '{"approach":"production","unit_measure":"GEL_MN","decimals":1}'::jsonb)
+  ON CONFLICT (dim_code, code) WHERE is_current DO UPDATE
+    SET label = EXCLUDED.label, parent_code = EXCLUDED.parent_code, ord = EXCLUDED.ord, metadata = EXCLUDED.metadata;
+INSERT INTO stats.classifier (dim_code, code, label, color, parent_code, ord, metadata)
+  VALUES ('measure', 'C', '{"ka":"ხარჯები საბოლოო მოხმარებაზე","en":"ხარჯები საბოლოო მოხმარებაზე"}'::jsonb, NULL, 'expenditure', 5, '{"approach":"expenditure","unit_measure":"GEL_MN","decimals":1}'::jsonb)
+  ON CONFLICT (dim_code, code) WHERE is_current DO UPDATE
+    SET label = EXCLUDED.label, parent_code = EXCLUDED.parent_code, ord = EXCLUDED.ord, metadata = EXCLUDED.metadata;
+INSERT INTO stats.classifier (dim_code, code, label, color, parent_code, ord, metadata)
+  VALUES ('measure', 'I_GFCF', '{"ka":"მთლიანი კაპიტალის ფორმირება","en":"მთლიანი კაპიტალის ფორმირება"}'::jsonb, NULL, 'expenditure', 6, '{"approach":"expenditure","unit_measure":"GEL_MN","decimals":1}'::jsonb)
+  ON CONFLICT (dim_code, code) WHERE is_current DO UPDATE
+    SET label = EXCLUDED.label, parent_code = EXCLUDED.parent_code, ord = EXCLUDED.ord, metadata = EXCLUDED.metadata;
+INSERT INTO stats.classifier (dim_code, code, label, color, parent_code, ord, metadata)
+  VALUES ('measure', 'X', '{"ka":"საქონლისა და მომსახურების ექსპორტი","en":"საქონლისა და მომსახურების ექსპორტი"}'::jsonb, NULL, 'expenditure', 7, '{"approach":"expenditure","unit_measure":"GEL_MN","decimals":1}'::jsonb)
+  ON CONFLICT (dim_code, code) WHERE is_current DO UPDATE
+    SET label = EXCLUDED.label, parent_code = EXCLUDED.parent_code, ord = EXCLUDED.ord, metadata = EXCLUDED.metadata;
+INSERT INTO stats.classifier (dim_code, code, label, color, parent_code, ord, metadata)
+  VALUES ('measure', 'M', '{"ka":"საქონლისა და მომსახურების იმპორტი","en":"საქონლისა და მომსახურების იმპორტი"}'::jsonb, NULL, 'expenditure', 8, '{"approach":"expenditure","unit_measure":"GEL_MN","decimals":1}'::jsonb)
+  ON CONFLICT (dim_code, code) WHERE is_current DO UPDATE
+    SET label = EXCLUDED.label, parent_code = EXCLUDED.parent_code, ord = EXCLUDED.ord, metadata = EXCLUDED.metadata;
+INSERT INTO stats.classifier (dim_code, code, label, color, parent_code, ord, metadata)
+  VALUES ('measure', 'D1', '{"ka":"შრომის ანაზღაურება","en":"შრომის ანაზღაურება"}'::jsonb, NULL, 'income', 9, '{"approach":"income","unit_measure":"GEL_MN","decimals":1}'::jsonb)
+  ON CONFLICT (dim_code, code) WHERE is_current DO UPDATE
+    SET label = EXCLUDED.label, parent_code = EXCLUDED.parent_code, ord = EXCLUDED.ord, metadata = EXCLUDED.metadata;
+INSERT INTO stats.classifier (dim_code, code, label, color, parent_code, ord, metadata)
+  VALUES ('measure', 'NET_TAX_PROD', '{"ka":"წმინდა გადასახადები წარმოებაზე","en":"წმინდა გადასახადები წარმოებაზე"}'::jsonb, NULL, 'income', 10, '{"approach":"income","unit_measure":"GEL_MN","decimals":1}'::jsonb)
+  ON CONFLICT (dim_code, code) WHERE is_current DO UPDATE
+    SET label = EXCLUDED.label, parent_code = EXCLUDED.parent_code, ord = EXCLUDED.ord, metadata = EXCLUDED.metadata;
+INSERT INTO stats.classifier (dim_code, code, label, color, parent_code, ord, metadata)
+  VALUES ('measure', 'OS_GROSS', '{"ka":"მთლიანი საოპერაციო მოგება","en":"მთლიანი საოპერაციო მოგება"}'::jsonb, NULL, 'income', 11, '{"approach":"income","unit_measure":"GEL_MN","decimals":1}'::jsonb)
+  ON CONFLICT (dim_code, code) WHERE is_current DO UPDATE
+    SET label = EXCLUDED.label, parent_code = EXCLUDED.parent_code, ord = EXCLUDED.ord, metadata = EXCLUDED.metadata;
+INSERT INTO stats.classifier (dim_code, code, label, color, parent_code, ord, metadata)
+  VALUES ('measure', 'MIXED_INC', '{"ka":"მთლიანი შერეული შემოსავალი","en":"მთლიანი შერეული შემოსავალი"}'::jsonb, NULL, 'income', 12, '{"approach":"income","unit_measure":"GEL_MN","decimals":1}'::jsonb)
+  ON CONFLICT (dim_code, code) WHERE is_current DO UPDATE
+    SET label = EXCLUDED.label, parent_code = EXCLUDED.parent_code, ord = EXCLUDED.ord, metadata = EXCLUDED.metadata;
+INSERT INTO stats.classifier (dim_code, code, label, color, parent_code, ord, metadata)
+  VALUES ('measure', 'GDP_GROWTH', '{"ka":"რეალური მთლიანი შიდა პროდუქტის ზრდა","en":"რეალური მთლიანი შიდა პროდუქტის ზრდა"}'::jsonb, NULL, 'growth', 13, '{"approach":"growth","unit_measure":"PERCENT","decimals":1}'::jsonb)
+  ON CONFLICT (dim_code, code) WHERE is_current DO UPDATE
+    SET label = EXCLUDED.label, parent_code = EXCLUDED.parent_code, ord = EXCLUDED.ord, metadata = EXCLUDED.metadata;
+INSERT INTO stats.classifier (dim_code, code, label, color, parent_code, ord, metadata)
+  VALUES ('measure', 'GDP_PER_CAPITA', '{"ka":"მთლიანი შიდა პროდუქტი ერთ სულ მოსახლეზე","en":"მთლიანი შიდა პროდუქტი ერთ სულ მოსახლეზე"}'::jsonb, NULL, 'per_capita', 14, '{"approach":"per_capita","unit_measure":"USD","decimals":1}'::jsonb)
+  ON CONFLICT (dim_code, code) WHERE is_current DO UPDATE
+    SET label = EXCLUDED.label, parent_code = EXCLUDED.parent_code, ord = EXCLUDED.ord, metadata = EXCLUDED.metadata;
+INSERT INTO stats.classifier (dim_code, code, label, color, parent_code, ord, metadata)
+  VALUES ('measure', 'GDP', '{"ka":"მთლიანი შიდა პროდუქტი საბაზრო ფასებში","en":"მთლიანი შიდა პროდუქტი საბაზრო ფასებში"}'::jsonb, NULL, 'total', 15, '{"approach":"total","unit_measure":"GEL_MN","decimals":1}'::jsonb)
+  ON CONFLICT (dim_code, code) WHERE is_current DO UPDATE
+    SET label = EXCLUDED.label, parent_code = EXCLUDED.parent_code, ord = EXCLUDED.ord, metadata = EXCLUDED.metadata;
+INSERT INTO stats.classifier (dim_code, code, label, color, parent_code, ord, metadata)
+  VALUES ('measure', 'NOE_SHARE', '{"ka":"დაუკვირვებადი დამატებული ღირებულების წილი მთლიან დამატებულ ღირებულებაში","en":"დაუკვირვებადი დამატებული ღირებულების წილი მთლიან დამატებულ ღირებულებაში"}'::jsonb, NULL, 'noe', 16, '{"approach":"noe","unit_measure":"PERCENT","decimals":1}'::jsonb)
+  ON CONFLICT (dim_code, code) WHERE is_current DO UPDATE
+    SET label = EXCLUDED.label, parent_code = EXCLUDED.parent_code, ord = EXCLUDED.ord, metadata = EXCLUDED.metadata;
+INSERT INTO stats.classifier (dim_code, code, label, color, parent_code, ord, metadata)
+  VALUES ('measure', 'GFCF_RES', '{"ka":"საცხოვრებელი დანიშნულების შენობები","en":"საცხოვრებელი დანიშნულების შენობები"}'::jsonb, NULL, 'investment', 17, '{"approach":"investment","unit_measure":"GEL_MN","decimals":1}'::jsonb)
+  ON CONFLICT (dim_code, code) WHERE is_current DO UPDATE
+    SET label = EXCLUDED.label, parent_code = EXCLUDED.parent_code, ord = EXCLUDED.ord, metadata = EXCLUDED.metadata;
+INSERT INTO stats.classifier (dim_code, code, label, color, parent_code, ord, metadata)
+  VALUES ('measure', 'GFCF_STRUCT', '{"ka":"არასაცხოვრებელი ნაგებობები","en":"არასაცხოვრებელი ნაგებობები"}'::jsonb, NULL, 'investment', 18, '{"approach":"investment","unit_measure":"GEL_MN","decimals":1}'::jsonb)
+  ON CONFLICT (dim_code, code) WHERE is_current DO UPDATE
+    SET label = EXCLUDED.label, parent_code = EXCLUDED.parent_code, ord = EXCLUDED.ord, metadata = EXCLUDED.metadata;
+INSERT INTO stats.classifier (dim_code, code, label, color, parent_code, ord, metadata)
+  VALUES ('measure', 'GFCF_MACH', '{"ka":"არასაცხოვრებელი დანიშნულების და სხვა ნაგებობები","en":"არასაცხოვრებელი დანიშნულების და სხვა ნაგებობები"}'::jsonb, NULL, 'investment', 19, '{"approach":"investment","unit_measure":"GEL_MN","decimals":1}'::jsonb)
+  ON CONFLICT (dim_code, code) WHERE is_current DO UPDATE
+    SET label = EXCLUDED.label, parent_code = EXCLUDED.parent_code, ord = EXCLUDED.ord, metadata = EXCLUDED.metadata;
+INSERT INTO stats.classifier (dim_code, code, label, color, parent_code, ord, metadata)
+  VALUES ('measure', 'GFCF_BIO', '{"ka":"კულტივირებული ბიოლოგიური აქტივები","en":"კულტივირებული ბიოლოგიური აქტივები"}'::jsonb, NULL, 'investment', 20, '{"approach":"investment","unit_measure":"GEL_MN","decimals":1}'::jsonb)
+  ON CONFLICT (dim_code, code) WHERE is_current DO UPDATE
+    SET label = EXCLUDED.label, parent_code = EXCLUDED.parent_code, ord = EXCLUDED.ord, metadata = EXCLUDED.metadata;
+INSERT INTO stats.classifier (dim_code, code, label, color, parent_code, ord, metadata)
+  VALUES ('measure', 'GFCF_IP', '{"ka":"ინტელექტუალური საკუთრების პროდუქტები და არაწარმოებულ აქტივებზე საკუთრების გადაცემის ხარჯები","en":"ინტელექტუალური საკუთრების პროდუქტები და არაწარმოებულ აქტივებზე საკუთრების გადაცემის ხარჯები"}'::jsonb, NULL, 'investment', 21, '{"approach":"investment","unit_measure":"GEL_MN","decimals":1}'::jsonb)
+  ON CONFLICT (dim_code, code) WHERE is_current DO UPDATE
+    SET label = EXCLUDED.label, parent_code = EXCLUDED.parent_code, ord = EXCLUDED.ord, metadata = EXCLUDED.metadata;
+INSERT INTO stats.classifier (dim_code, code, label, color, parent_code, ord, metadata)
+  VALUES ('geo', 'GE', '{"ka":"საქართველო","en":"საქართველო"}'::jsonb, NULL, NULL, 1, '{}'::jsonb)
+  ON CONFLICT (dim_code, code) WHERE is_current DO UPDATE
+    SET label = EXCLUDED.label, parent_code = EXCLUDED.parent_code, ord = EXCLUDED.ord, metadata = EXCLUDED.metadata;
+INSERT INTO stats.classifier (dim_code, code, label, color, parent_code, ord, metadata)
+  VALUES ('time', '2010', '{"ka":"2010","en":"2010"}'::jsonb, NULL, NULL, 2010, '{}'::jsonb)
+  ON CONFLICT (dim_code, code) WHERE is_current DO UPDATE
+    SET label = EXCLUDED.label, parent_code = EXCLUDED.parent_code, ord = EXCLUDED.ord, metadata = EXCLUDED.metadata;
+INSERT INTO stats.classifier (dim_code, code, label, color, parent_code, ord, metadata)
+  VALUES ('time', '2011', '{"ka":"2011","en":"2011"}'::jsonb, NULL, NULL, 2011, '{}'::jsonb)
+  ON CONFLICT (dim_code, code) WHERE is_current DO UPDATE
+    SET label = EXCLUDED.label, parent_code = EXCLUDED.parent_code, ord = EXCLUDED.ord, metadata = EXCLUDED.metadata;
+INSERT INTO stats.classifier (dim_code, code, label, color, parent_code, ord, metadata)
+  VALUES ('time', '2012', '{"ka":"2012","en":"2012"}'::jsonb, NULL, NULL, 2012, '{}'::jsonb)
+  ON CONFLICT (dim_code, code) WHERE is_current DO UPDATE
+    SET label = EXCLUDED.label, parent_code = EXCLUDED.parent_code, ord = EXCLUDED.ord, metadata = EXCLUDED.metadata;
+INSERT INTO stats.classifier (dim_code, code, label, color, parent_code, ord, metadata)
+  VALUES ('time', '2013', '{"ka":"2013","en":"2013"}'::jsonb, NULL, NULL, 2013, '{}'::jsonb)
+  ON CONFLICT (dim_code, code) WHERE is_current DO UPDATE
+    SET label = EXCLUDED.label, parent_code = EXCLUDED.parent_code, ord = EXCLUDED.ord, metadata = EXCLUDED.metadata;
+INSERT INTO stats.classifier (dim_code, code, label, color, parent_code, ord, metadata)
+  VALUES ('time', '2014', '{"ka":"2014","en":"2014"}'::jsonb, NULL, NULL, 2014, '{}'::jsonb)
+  ON CONFLICT (dim_code, code) WHERE is_current DO UPDATE
+    SET label = EXCLUDED.label, parent_code = EXCLUDED.parent_code, ord = EXCLUDED.ord, metadata = EXCLUDED.metadata;
+INSERT INTO stats.classifier (dim_code, code, label, color, parent_code, ord, metadata)
+  VALUES ('time', '2015', '{"ka":"2015","en":"2015"}'::jsonb, NULL, NULL, 2015, '{}'::jsonb)
+  ON CONFLICT (dim_code, code) WHERE is_current DO UPDATE
+    SET label = EXCLUDED.label, parent_code = EXCLUDED.parent_code, ord = EXCLUDED.ord, metadata = EXCLUDED.metadata;
+INSERT INTO stats.classifier (dim_code, code, label, color, parent_code, ord, metadata)
+  VALUES ('time', '2016', '{"ka":"2016","en":"2016"}'::jsonb, NULL, NULL, 2016, '{}'::jsonb)
+  ON CONFLICT (dim_code, code) WHERE is_current DO UPDATE
+    SET label = EXCLUDED.label, parent_code = EXCLUDED.parent_code, ord = EXCLUDED.ord, metadata = EXCLUDED.metadata;
+INSERT INTO stats.classifier (dim_code, code, label, color, parent_code, ord, metadata)
+  VALUES ('time', '2017', '{"ka":"2017","en":"2017"}'::jsonb, NULL, NULL, 2017, '{}'::jsonb)
+  ON CONFLICT (dim_code, code) WHERE is_current DO UPDATE
+    SET label = EXCLUDED.label, parent_code = EXCLUDED.parent_code, ord = EXCLUDED.ord, metadata = EXCLUDED.metadata;
+INSERT INTO stats.classifier (dim_code, code, label, color, parent_code, ord, metadata)
+  VALUES ('time', '2018', '{"ka":"2018","en":"2018"}'::jsonb, NULL, NULL, 2018, '{}'::jsonb)
+  ON CONFLICT (dim_code, code) WHERE is_current DO UPDATE
+    SET label = EXCLUDED.label, parent_code = EXCLUDED.parent_code, ord = EXCLUDED.ord, metadata = EXCLUDED.metadata;
+INSERT INTO stats.classifier (dim_code, code, label, color, parent_code, ord, metadata)
+  VALUES ('time', '2019', '{"ka":"2019","en":"2019"}'::jsonb, NULL, NULL, 2019, '{}'::jsonb)
+  ON CONFLICT (dim_code, code) WHERE is_current DO UPDATE
+    SET label = EXCLUDED.label, parent_code = EXCLUDED.parent_code, ord = EXCLUDED.ord, metadata = EXCLUDED.metadata;
+INSERT INTO stats.classifier (dim_code, code, label, color, parent_code, ord, metadata)
+  VALUES ('time', '2020', '{"ka":"2020","en":"2020"}'::jsonb, NULL, NULL, 2020, '{}'::jsonb)
+  ON CONFLICT (dim_code, code) WHERE is_current DO UPDATE
+    SET label = EXCLUDED.label, parent_code = EXCLUDED.parent_code, ord = EXCLUDED.ord, metadata = EXCLUDED.metadata;
+INSERT INTO stats.classifier (dim_code, code, label, color, parent_code, ord, metadata)
+  VALUES ('time', '2021', '{"ka":"2021","en":"2021"}'::jsonb, NULL, NULL, 2021, '{}'::jsonb)
+  ON CONFLICT (dim_code, code) WHERE is_current DO UPDATE
+    SET label = EXCLUDED.label, parent_code = EXCLUDED.parent_code, ord = EXCLUDED.ord, metadata = EXCLUDED.metadata;
+INSERT INTO stats.classifier (dim_code, code, label, color, parent_code, ord, metadata)
+  VALUES ('time', '2022', '{"ka":"2022","en":"2022"}'::jsonb, NULL, NULL, 2022, '{}'::jsonb)
+  ON CONFLICT (dim_code, code) WHERE is_current DO UPDATE
+    SET label = EXCLUDED.label, parent_code = EXCLUDED.parent_code, ord = EXCLUDED.ord, metadata = EXCLUDED.metadata;
+INSERT INTO stats.classifier (dim_code, code, label, color, parent_code, ord, metadata)
+  VALUES ('time', '2023', '{"ka":"2023","en":"2023"}'::jsonb, NULL, NULL, 2023, '{}'::jsonb)
+  ON CONFLICT (dim_code, code) WHERE is_current DO UPDATE
+    SET label = EXCLUDED.label, parent_code = EXCLUDED.parent_code, ord = EXCLUDED.ord, metadata = EXCLUDED.metadata;
+INSERT INTO stats.classifier (dim_code, code, label, color, parent_code, ord, metadata)
+  VALUES ('time', '2024', '{"ka":"2024","en":"2024"}'::jsonb, NULL, NULL, 2024, '{}'::jsonb)
+  ON CONFLICT (dim_code, code) WHERE is_current DO UPDATE
+    SET label = EXCLUDED.label, parent_code = EXCLUDED.parent_code, ord = EXCLUDED.ord, metadata = EXCLUDED.metadata;
+INSERT INTO stats.classifier (dim_code, code, label, color, parent_code, ord, metadata)
+  VALUES ('time', '2025', '{"ka":"2025","en":"2025"}'::jsonb, NULL, NULL, 2025, '{}'::jsonb)
+  ON CONFLICT (dim_code, code) WHERE is_current DO UPDATE
+    SET label = EXCLUDED.label, parent_code = EXCLUDED.parent_code, ord = EXCLUDED.ord, metadata = EXCLUDED.metadata;
+INSERT INTO stats.classifier (dim_code, code, label, color, parent_code, ord, metadata)
+  VALUES ('account', 'production', '{"ka":"I. წარმოების ანგარიში","en":"I. წარმოების ანგარიში"}'::jsonb, NULL, NULL, 0, '{"sectionId":"production-account"}'::jsonb)
+  ON CONFLICT (dim_code, code) WHERE is_current DO UPDATE
+    SET label = EXCLUDED.label, parent_code = EXCLUDED.parent_code, ord = EXCLUDED.ord, metadata = EXCLUDED.metadata;
+INSERT INTO stats.classifier (dim_code, code, label, color, parent_code, ord, metadata)
+  VALUES ('account', 'income_gen', '{"ka":"II. შემოსავლების ფორმირების ანგარიში","en":"II. შემოსავლების ფორმირების ანგარიში"}'::jsonb, NULL, NULL, 1, '{"sectionId":"income-formation"}'::jsonb)
+  ON CONFLICT (dim_code, code) WHERE is_current DO UPDATE
+    SET label = EXCLUDED.label, parent_code = EXCLUDED.parent_code, ord = EXCLUDED.ord, metadata = EXCLUDED.metadata;
+INSERT INTO stats.classifier (dim_code, code, label, color, parent_code, ord, metadata)
+  VALUES ('account', 'primary_dist', '{"ka":"III. პირველადი შემოსავლების განაწილება","en":"III. პირველადი შემოსავლების განაწილება"}'::jsonb, NULL, NULL, 2, '{"sectionId":"primary-distribution"}'::jsonb)
+  ON CONFLICT (dim_code, code) WHERE is_current DO UPDATE
+    SET label = EXCLUDED.label, parent_code = EXCLUDED.parent_code, ord = EXCLUDED.ord, metadata = EXCLUDED.metadata;
+INSERT INTO stats.classifier (dim_code, code, label, color, parent_code, ord, metadata)
+  VALUES ('account', 'secondary_dist', '{"ka":"IV. შემოსავლების მეორადი განაწილება","en":"IV. შემოსავლების მეორადი განაწილება"}'::jsonb, NULL, NULL, 3, '{"sectionId":"secondary-distribution"}'::jsonb)
+  ON CONFLICT (dim_code, code) WHERE is_current DO UPDATE
+    SET label = EXCLUDED.label, parent_code = EXCLUDED.parent_code, ord = EXCLUDED.ord, metadata = EXCLUDED.metadata;
+INSERT INTO stats.classifier (dim_code, code, label, color, parent_code, ord, metadata)
+  VALUES ('account', 'use_of_income', '{"ka":"V. შემოსავლის გამოყენების ანგარიში","en":"V. შემოსავლის გამოყენების ანგარიში"}'::jsonb, NULL, NULL, 4, '{"sectionId":null}'::jsonb)
+  ON CONFLICT (dim_code, code) WHERE is_current DO UPDATE
+    SET label = EXCLUDED.label, parent_code = EXCLUDED.parent_code, ord = EXCLUDED.ord, metadata = EXCLUDED.metadata;
+INSERT INTO stats.classifier (dim_code, code, label, color, parent_code, ord, metadata)
+  VALUES ('account', 'capital', '{"ka":"VI. კაპიტალის ანგარიში","en":"VI. კაპიტალის ანგარიში"}'::jsonb, NULL, NULL, 5, '{"sectionId":"capital-account"}'::jsonb)
+  ON CONFLICT (dim_code, code) WHERE is_current DO UPDATE
+    SET label = EXCLUDED.label, parent_code = EXCLUDED.parent_code, ord = EXCLUDED.ord, metadata = EXCLUDED.metadata;
+INSERT INTO stats.classifier (dim_code, code, label, color, parent_code, ord, metadata)
+  VALUES ('measure', 'P1', '{"ka":"გამოშვება საბაზრო ფასებში","en":"გამოშვება საბაზრო ფასებში"}'::jsonb, NULL, NULL, 0, '{"account":"production","isClosing":0,"unit_measure":"GEL_MN","decimals":1}'::jsonb)
+  ON CONFLICT (dim_code, code) WHERE is_current DO UPDATE
+    SET label = EXCLUDED.label, parent_code = EXCLUDED.parent_code, ord = EXCLUDED.ord, metadata = EXCLUDED.metadata;
+INSERT INTO stats.classifier (dim_code, code, label, color, parent_code, ord, metadata)
+  VALUES ('measure', 'P2', '{"ka":"შუალედური მოხმარება","en":"შუალედური მოხმარება"}'::jsonb, NULL, NULL, 1, '{"account":"production","isClosing":0,"unit_measure":"GEL_MN","decimals":1}'::jsonb)
+  ON CONFLICT (dim_code, code) WHERE is_current DO UPDATE
+    SET label = EXCLUDED.label, parent_code = EXCLUDED.parent_code, ord = EXCLUDED.ord, metadata = EXCLUDED.metadata;
+INSERT INTO stats.classifier (dim_code, code, label, color, parent_code, ord, metadata)
+  VALUES ('measure', 'B1G', '{"ka":"მთლიანი შიდა პროდუქტი საბაზრო ფასებში","en":"მთლიანი შიდა პროდუქტი საბაზრო ფასებში"}'::jsonb, NULL, NULL, 2, '{"account":"production","isClosing":1,"unit_measure":"GEL_MN","decimals":1}'::jsonb)
+  ON CONFLICT (dim_code, code) WHERE is_current DO UPDATE
+    SET label = EXCLUDED.label, parent_code = EXCLUDED.parent_code, ord = EXCLUDED.ord, metadata = EXCLUDED.metadata;
+INSERT INTO stats.classifier (dim_code, code, label, color, parent_code, ord, metadata)
+  VALUES ('measure', 'D1', '{"ka":"შრომის ანაზღაურება","en":"შრომის ანაზღაურება"}'::jsonb, NULL, NULL, 3, '{"account":"income_gen","isClosing":0,"unit_measure":"GEL_MN","decimals":1}'::jsonb)
+  ON CONFLICT (dim_code, code) WHERE is_current DO UPDATE
+    SET label = EXCLUDED.label, parent_code = EXCLUDED.parent_code, ord = EXCLUDED.ord, metadata = EXCLUDED.metadata;
+INSERT INTO stats.classifier (dim_code, code, label, color, parent_code, ord, metadata)
+  VALUES ('measure', 'ACC_NET_TAX', '{"ka":"გადასახადები-სუბსიდიები","en":"გადასახადები-სუბსიდიები"}'::jsonb, NULL, NULL, 4, '{"account":"income_gen","isClosing":0,"unit_measure":"GEL_MN","decimals":1}'::jsonb)
+  ON CONFLICT (dim_code, code) WHERE is_current DO UPDATE
+    SET label = EXCLUDED.label, parent_code = EXCLUDED.parent_code, ord = EXCLUDED.ord, metadata = EXCLUDED.metadata;
+INSERT INTO stats.classifier (dim_code, code, label, color, parent_code, ord, metadata)
+  VALUES ('measure', 'B2G', '{"ka":"მთლიანი შერეული შემოსავალი + საოპერაციო მოგება","en":"მთლიანი შერეული შემოსავალი + საოპერაციო მოგება"}'::jsonb, NULL, NULL, 5, '{"account":"income_gen","isClosing":1,"unit_measure":"GEL_MN","decimals":1}'::jsonb)
+  ON CONFLICT (dim_code, code) WHERE is_current DO UPDATE
+    SET label = EXCLUDED.label, parent_code = EXCLUDED.parent_code, ord = EXCLUDED.ord, metadata = EXCLUDED.metadata;
+INSERT INTO stats.classifier (dim_code, code, label, color, parent_code, ord, metadata)
+  VALUES ('measure', 'D4_REC', '{"ka":"პირველადი შემოსავლების მიღება","en":"პირველადი შემოსავლების მიღება"}'::jsonb, NULL, NULL, 6, '{"account":"primary_dist","isClosing":0,"unit_measure":"GEL_MN","decimals":1}'::jsonb)
+  ON CONFLICT (dim_code, code) WHERE is_current DO UPDATE
+    SET label = EXCLUDED.label, parent_code = EXCLUDED.parent_code, ord = EXCLUDED.ord, metadata = EXCLUDED.metadata;
+INSERT INTO stats.classifier (dim_code, code, label, color, parent_code, ord, metadata)
+  VALUES ('measure', 'D4_PAY', '{"ka":"პირველადი შემოსავლების გადახდა","en":"პირველადი შემოსავლების გადახდა"}'::jsonb, NULL, NULL, 7, '{"account":"primary_dist","isClosing":0,"unit_measure":"GEL_MN","decimals":1}'::jsonb)
+  ON CONFLICT (dim_code, code) WHERE is_current DO UPDATE
+    SET label = EXCLUDED.label, parent_code = EXCLUDED.parent_code, ord = EXCLUDED.ord, metadata = EXCLUDED.metadata;
+INSERT INTO stats.classifier (dim_code, code, label, color, parent_code, ord, metadata)
+  VALUES ('measure', 'B5G', '{"ka":"მთლიანი ეროვნული შემოსავალი","en":"მთლიანი ეროვნული შემოსავალი"}'::jsonb, NULL, NULL, 8, '{"account":"primary_dist","isClosing":1,"unit_measure":"GEL_MN","decimals":1}'::jsonb)
+  ON CONFLICT (dim_code, code) WHERE is_current DO UPDATE
+    SET label = EXCLUDED.label, parent_code = EXCLUDED.parent_code, ord = EXCLUDED.ord, metadata = EXCLUDED.metadata;
+INSERT INTO stats.classifier (dim_code, code, label, color, parent_code, ord, metadata)
+  VALUES ('measure', 'D5_REC', '{"ka":"მიმდინარე ტრანსფერების მიღება","en":"მიმდინარე ტრანსფერების მიღება"}'::jsonb, NULL, NULL, 9, '{"account":"secondary_dist","isClosing":0,"unit_measure":"GEL_MN","decimals":1}'::jsonb)
+  ON CONFLICT (dim_code, code) WHERE is_current DO UPDATE
+    SET label = EXCLUDED.label, parent_code = EXCLUDED.parent_code, ord = EXCLUDED.ord, metadata = EXCLUDED.metadata;
+INSERT INTO stats.classifier (dim_code, code, label, color, parent_code, ord, metadata)
+  VALUES ('measure', 'D5_PAY', '{"ka":"მიმდინარე ტრანსფერების გადახდა","en":"მიმდინარე ტრანსფერების გადახდა"}'::jsonb, NULL, NULL, 10, '{"account":"secondary_dist","isClosing":0,"unit_measure":"GEL_MN","decimals":1}'::jsonb)
+  ON CONFLICT (dim_code, code) WHERE is_current DO UPDATE
+    SET label = EXCLUDED.label, parent_code = EXCLUDED.parent_code, ord = EXCLUDED.ord, metadata = EXCLUDED.metadata;
+INSERT INTO stats.classifier (dim_code, code, label, color, parent_code, ord, metadata)
+  VALUES ('measure', 'B6G', '{"ka":"მთლიანი განკარგვადი შემოსავალი","en":"მთლიანი განკარგვადი შემოსავალი"}'::jsonb, NULL, NULL, 11, '{"account":"secondary_dist","isClosing":1,"unit_measure":"GEL_MN","decimals":1}'::jsonb)
+  ON CONFLICT (dim_code, code) WHERE is_current DO UPDATE
+    SET label = EXCLUDED.label, parent_code = EXCLUDED.parent_code, ord = EXCLUDED.ord, metadata = EXCLUDED.metadata;
+INSERT INTO stats.classifier (dim_code, code, label, color, parent_code, ord, metadata)
+  VALUES ('measure', 'P3', '{"ka":"საბოლოო მოხმარება","en":"საბოლოო მოხმარება"}'::jsonb, NULL, NULL, 12, '{"account":"use_of_income","isClosing":0,"unit_measure":"GEL_MN","decimals":1}'::jsonb)
+  ON CONFLICT (dim_code, code) WHERE is_current DO UPDATE
+    SET label = EXCLUDED.label, parent_code = EXCLUDED.parent_code, ord = EXCLUDED.ord, metadata = EXCLUDED.metadata;
+INSERT INTO stats.classifier (dim_code, code, label, color, parent_code, ord, metadata)
+  VALUES ('measure', 'B8G', '{"ka":"მთლიანი დანაზოგი","en":"მთლიანი დანაზოგი"}'::jsonb, NULL, NULL, 13, '{"account":"use_of_income","isClosing":1,"unit_measure":"GEL_MN","decimals":1}'::jsonb)
+  ON CONFLICT (dim_code, code) WHERE is_current DO UPDATE
+    SET label = EXCLUDED.label, parent_code = EXCLUDED.parent_code, ord = EXCLUDED.ord, metadata = EXCLUDED.metadata;
+INSERT INTO stats.classifier (dim_code, code, label, color, parent_code, ord, metadata)
+  VALUES ('measure', 'D9R', '{"ka":"კაპიტალური ტრანსფერების მიღება","en":"კაპიტალური ტრანსფერების მიღება"}'::jsonb, NULL, NULL, 14, '{"account":"capital","isClosing":0,"unit_measure":"GEL_MN","decimals":1}'::jsonb)
+  ON CONFLICT (dim_code, code) WHERE is_current DO UPDATE
+    SET label = EXCLUDED.label, parent_code = EXCLUDED.parent_code, ord = EXCLUDED.ord, metadata = EXCLUDED.metadata;
+INSERT INTO stats.classifier (dim_code, code, label, color, parent_code, ord, metadata)
+  VALUES ('measure', 'P5', '{"ka":"მთლიანი კაპიტალის ფორმირება","en":"მთლიანი კაპიტალის ფორმირება"}'::jsonb, NULL, NULL, 15, '{"account":"capital","isClosing":0,"unit_measure":"GEL_MN","decimals":1}'::jsonb)
+  ON CONFLICT (dim_code, code) WHERE is_current DO UPDATE
+    SET label = EXCLUDED.label, parent_code = EXCLUDED.parent_code, ord = EXCLUDED.ord, metadata = EXCLUDED.metadata;
+INSERT INTO stats.classifier (dim_code, code, label, color, parent_code, ord, metadata)
+  VALUES ('measure', 'B9', '{"ka":"წმინდა დაკრედიტება (+), წმინდა სესხება(-)","en":"წმინდა დაკრედიტება (+), წმინდა სესხება(-)"}'::jsonb, NULL, NULL, 16, '{"account":"capital","isClosing":1,"unit_measure":"GEL_MN","decimals":1}'::jsonb)
+  ON CONFLICT (dim_code, code) WHERE is_current DO UPDATE
+    SET label = EXCLUDED.label, parent_code = EXCLUDED.parent_code, ord = EXCLUDED.ord, metadata = EXCLUDED.metadata;
+INSERT INTO stats.classifier (dim_code, code, label, color, parent_code, ord, metadata)
+  VALUES ('side', 'R', '{"ka":"რესურსები","en":"რესურსები"}'::jsonb, NULL, NULL, 0, '{}'::jsonb)
+  ON CONFLICT (dim_code, code) WHERE is_current DO UPDATE
+    SET label = EXCLUDED.label, parent_code = EXCLUDED.parent_code, ord = EXCLUDED.ord, metadata = EXCLUDED.metadata;
+INSERT INTO stats.classifier (dim_code, code, label, color, parent_code, ord, metadata)
+  VALUES ('side', 'U', '{"ka":"გამოყენება","en":"გამოყენება"}'::jsonb, NULL, NULL, 1, '{}'::jsonb)
+  ON CONFLICT (dim_code, code) WHERE is_current DO UPDATE
+    SET label = EXCLUDED.label, parent_code = EXCLUDED.parent_code, ord = EXCLUDED.ord, metadata = EXCLUDED.metadata;
+INSERT INTO stats.classifier (dim_code, code, label, color, parent_code, ord, metadata)
+  VALUES ('time', '2010', '{"ka":"2010","en":"2010"}'::jsonb, NULL, NULL, 2010, '{}'::jsonb)
+  ON CONFLICT (dim_code, code) WHERE is_current DO UPDATE
+    SET label = EXCLUDED.label, parent_code = EXCLUDED.parent_code, ord = EXCLUDED.ord, metadata = EXCLUDED.metadata;
+INSERT INTO stats.classifier (dim_code, code, label, color, parent_code, ord, metadata)
+  VALUES ('time', '2011', '{"ka":"2011","en":"2011"}'::jsonb, NULL, NULL, 2011, '{}'::jsonb)
+  ON CONFLICT (dim_code, code) WHERE is_current DO UPDATE
+    SET label = EXCLUDED.label, parent_code = EXCLUDED.parent_code, ord = EXCLUDED.ord, metadata = EXCLUDED.metadata;
+INSERT INTO stats.classifier (dim_code, code, label, color, parent_code, ord, metadata)
+  VALUES ('time', '2012', '{"ka":"2012","en":"2012"}'::jsonb, NULL, NULL, 2012, '{}'::jsonb)
+  ON CONFLICT (dim_code, code) WHERE is_current DO UPDATE
+    SET label = EXCLUDED.label, parent_code = EXCLUDED.parent_code, ord = EXCLUDED.ord, metadata = EXCLUDED.metadata;
+INSERT INTO stats.classifier (dim_code, code, label, color, parent_code, ord, metadata)
+  VALUES ('time', '2013', '{"ka":"2013","en":"2013"}'::jsonb, NULL, NULL, 2013, '{}'::jsonb)
+  ON CONFLICT (dim_code, code) WHERE is_current DO UPDATE
+    SET label = EXCLUDED.label, parent_code = EXCLUDED.parent_code, ord = EXCLUDED.ord, metadata = EXCLUDED.metadata;
+INSERT INTO stats.classifier (dim_code, code, label, color, parent_code, ord, metadata)
+  VALUES ('time', '2014', '{"ka":"2014","en":"2014"}'::jsonb, NULL, NULL, 2014, '{}'::jsonb)
+  ON CONFLICT (dim_code, code) WHERE is_current DO UPDATE
+    SET label = EXCLUDED.label, parent_code = EXCLUDED.parent_code, ord = EXCLUDED.ord, metadata = EXCLUDED.metadata;
+INSERT INTO stats.classifier (dim_code, code, label, color, parent_code, ord, metadata)
+  VALUES ('time', '2015', '{"ka":"2015","en":"2015"}'::jsonb, NULL, NULL, 2015, '{}'::jsonb)
+  ON CONFLICT (dim_code, code) WHERE is_current DO UPDATE
+    SET label = EXCLUDED.label, parent_code = EXCLUDED.parent_code, ord = EXCLUDED.ord, metadata = EXCLUDED.metadata;
+INSERT INTO stats.classifier (dim_code, code, label, color, parent_code, ord, metadata)
+  VALUES ('time', '2016', '{"ka":"2016","en":"2016"}'::jsonb, NULL, NULL, 2016, '{}'::jsonb)
+  ON CONFLICT (dim_code, code) WHERE is_current DO UPDATE
+    SET label = EXCLUDED.label, parent_code = EXCLUDED.parent_code, ord = EXCLUDED.ord, metadata = EXCLUDED.metadata;
+INSERT INTO stats.classifier (dim_code, code, label, color, parent_code, ord, metadata)
+  VALUES ('time', '2017', '{"ka":"2017","en":"2017"}'::jsonb, NULL, NULL, 2017, '{}'::jsonb)
+  ON CONFLICT (dim_code, code) WHERE is_current DO UPDATE
+    SET label = EXCLUDED.label, parent_code = EXCLUDED.parent_code, ord = EXCLUDED.ord, metadata = EXCLUDED.metadata;
+INSERT INTO stats.classifier (dim_code, code, label, color, parent_code, ord, metadata)
+  VALUES ('time', '2018', '{"ka":"2018","en":"2018"}'::jsonb, NULL, NULL, 2018, '{}'::jsonb)
+  ON CONFLICT (dim_code, code) WHERE is_current DO UPDATE
+    SET label = EXCLUDED.label, parent_code = EXCLUDED.parent_code, ord = EXCLUDED.ord, metadata = EXCLUDED.metadata;
+INSERT INTO stats.classifier (dim_code, code, label, color, parent_code, ord, metadata)
+  VALUES ('time', '2019', '{"ka":"2019","en":"2019"}'::jsonb, NULL, NULL, 2019, '{}'::jsonb)
+  ON CONFLICT (dim_code, code) WHERE is_current DO UPDATE
+    SET label = EXCLUDED.label, parent_code = EXCLUDED.parent_code, ord = EXCLUDED.ord, metadata = EXCLUDED.metadata;
+INSERT INTO stats.classifier (dim_code, code, label, color, parent_code, ord, metadata)
+  VALUES ('time', '2020', '{"ka":"2020","en":"2020"}'::jsonb, NULL, NULL, 2020, '{}'::jsonb)
+  ON CONFLICT (dim_code, code) WHERE is_current DO UPDATE
+    SET label = EXCLUDED.label, parent_code = EXCLUDED.parent_code, ord = EXCLUDED.ord, metadata = EXCLUDED.metadata;
+INSERT INTO stats.classifier (dim_code, code, label, color, parent_code, ord, metadata)
+  VALUES ('time', '2021', '{"ka":"2021","en":"2021"}'::jsonb, NULL, NULL, 2021, '{}'::jsonb)
+  ON CONFLICT (dim_code, code) WHERE is_current DO UPDATE
+    SET label = EXCLUDED.label, parent_code = EXCLUDED.parent_code, ord = EXCLUDED.ord, metadata = EXCLUDED.metadata;
+INSERT INTO stats.classifier (dim_code, code, label, color, parent_code, ord, metadata)
+  VALUES ('time', '2022', '{"ka":"2022","en":"2022"}'::jsonb, NULL, NULL, 2022, '{}'::jsonb)
+  ON CONFLICT (dim_code, code) WHERE is_current DO UPDATE
+    SET label = EXCLUDED.label, parent_code = EXCLUDED.parent_code, ord = EXCLUDED.ord, metadata = EXCLUDED.metadata;
+INSERT INTO stats.classifier (dim_code, code, label, color, parent_code, ord, metadata)
+  VALUES ('time', '2023', '{"ka":"2023","en":"2023"}'::jsonb, NULL, NULL, 2023, '{}'::jsonb)
+  ON CONFLICT (dim_code, code) WHERE is_current DO UPDATE
+    SET label = EXCLUDED.label, parent_code = EXCLUDED.parent_code, ord = EXCLUDED.ord, metadata = EXCLUDED.metadata;
+INSERT INTO stats.classifier (dim_code, code, label, color, parent_code, ord, metadata)
+  VALUES ('time', '2024', '{"ka":"2024","en":"2024"}'::jsonb, NULL, NULL, 2024, '{}'::jsonb)
+  ON CONFLICT (dim_code, code) WHERE is_current DO UPDATE
+    SET label = EXCLUDED.label, parent_code = EXCLUDED.parent_code, ord = EXCLUDED.ord, metadata = EXCLUDED.metadata;
+INSERT INTO stats.classifier (dim_code, code, label, color, parent_code, ord, metadata)
+  VALUES ('time', '2025', '{"ka":"2025","en":"2025"}'::jsonb, NULL, NULL, 2025, '{}'::jsonb)
+  ON CONFLICT (dim_code, code) WHERE is_current DO UPDATE
+    SET label = EXCLUDED.label, parent_code = EXCLUDED.parent_code, ord = EXCLUDED.ord, metadata = EXCLUDED.metadata;
+INSERT INTO stats.classifier (dim_code, code, label, color, parent_code, ord, metadata)
+  VALUES ('geo', 'total', '{"ka":"საქართველო სულ","en":"საქართველო სულ"}'::jsonb, NULL, NULL, 0, '{}'::jsonb)
+  ON CONFLICT (dim_code, code) WHERE is_current DO UPDATE
+    SET label = EXCLUDED.label, parent_code = EXCLUDED.parent_code, ord = EXCLUDED.ord, metadata = EXCLUDED.metadata;
+INSERT INTO stats.classifier (dim_code, code, label, color, parent_code, ord, metadata)
+  VALUES ('geo', 'tbilisi', '{"ka":"თბილისი","en":"თბილისი"}'::jsonb, NULL, 'total', 1, '{}'::jsonb)
+  ON CONFLICT (dim_code, code) WHERE is_current DO UPDATE
+    SET label = EXCLUDED.label, parent_code = EXCLUDED.parent_code, ord = EXCLUDED.ord, metadata = EXCLUDED.metadata;
+INSERT INTO stats.classifier (dim_code, code, label, color, parent_code, ord, metadata)
+  VALUES ('geo', 'adjara', '{"ka":"აჭარის ავტონომიური რესპუბლიკა","en":"აჭარის ავტონომიური რესპუბლიკა"}'::jsonb, NULL, 'total', 2, '{}'::jsonb)
+  ON CONFLICT (dim_code, code) WHERE is_current DO UPDATE
+    SET label = EXCLUDED.label, parent_code = EXCLUDED.parent_code, ord = EXCLUDED.ord, metadata = EXCLUDED.metadata;
+INSERT INTO stats.classifier (dim_code, code, label, color, parent_code, ord, metadata)
+  VALUES ('geo', 'guria', '{"ka":"გურია","en":"გურია"}'::jsonb, NULL, 'total', 3, '{}'::jsonb)
+  ON CONFLICT (dim_code, code) WHERE is_current DO UPDATE
+    SET label = EXCLUDED.label, parent_code = EXCLUDED.parent_code, ord = EXCLUDED.ord, metadata = EXCLUDED.metadata;
+INSERT INTO stats.classifier (dim_code, code, label, color, parent_code, ord, metadata)
+  VALUES ('geo', 'imereti', '{"ka":"იმერეთი","en":"იმერეთი"}'::jsonb, NULL, 'total', 4, '{}'::jsonb)
+  ON CONFLICT (dim_code, code) WHERE is_current DO UPDATE
+    SET label = EXCLUDED.label, parent_code = EXCLUDED.parent_code, ord = EXCLUDED.ord, metadata = EXCLUDED.metadata;
+INSERT INTO stats.classifier (dim_code, code, label, color, parent_code, ord, metadata)
+  VALUES ('geo', 'kakheti', '{"ka":"კახეთი","en":"კახეთი"}'::jsonb, NULL, 'total', 5, '{}'::jsonb)
+  ON CONFLICT (dim_code, code) WHERE is_current DO UPDATE
+    SET label = EXCLUDED.label, parent_code = EXCLUDED.parent_code, ord = EXCLUDED.ord, metadata = EXCLUDED.metadata;
+INSERT INTO stats.classifier (dim_code, code, label, color, parent_code, ord, metadata)
+  VALUES ('geo', 'mtskheta', '{"ka":"მცხეთა-მთიანეთი","en":"მცხეთა-მთიანეთი"}'::jsonb, NULL, 'total', 6, '{}'::jsonb)
+  ON CONFLICT (dim_code, code) WHERE is_current DO UPDATE
+    SET label = EXCLUDED.label, parent_code = EXCLUDED.parent_code, ord = EXCLUDED.ord, metadata = EXCLUDED.metadata;
+INSERT INTO stats.classifier (dim_code, code, label, color, parent_code, ord, metadata)
+  VALUES ('geo', 'racha', '{"ka":"რაჭა-ლეჩხუმი და ქვემო სვანეთი","en":"რაჭა-ლეჩხუმი და ქვემო სვანეთი"}'::jsonb, NULL, 'total', 7, '{}'::jsonb)
+  ON CONFLICT (dim_code, code) WHERE is_current DO UPDATE
+    SET label = EXCLUDED.label, parent_code = EXCLUDED.parent_code, ord = EXCLUDED.ord, metadata = EXCLUDED.metadata;
+INSERT INTO stats.classifier (dim_code, code, label, color, parent_code, ord, metadata)
+  VALUES ('geo', 'samegrelo', '{"ka":"სამეგრელო-ზემო სვანეთი","en":"სამეგრელო-ზემო სვანეთი"}'::jsonb, NULL, 'total', 8, '{}'::jsonb)
+  ON CONFLICT (dim_code, code) WHERE is_current DO UPDATE
+    SET label = EXCLUDED.label, parent_code = EXCLUDED.parent_code, ord = EXCLUDED.ord, metadata = EXCLUDED.metadata;
+INSERT INTO stats.classifier (dim_code, code, label, color, parent_code, ord, metadata)
+  VALUES ('geo', 'samtskhe', '{"ka":"სამცხე-ჯავახეთი","en":"სამცხე-ჯავახეთი"}'::jsonb, NULL, 'total', 9, '{}'::jsonb)
+  ON CONFLICT (dim_code, code) WHERE is_current DO UPDATE
+    SET label = EXCLUDED.label, parent_code = EXCLUDED.parent_code, ord = EXCLUDED.ord, metadata = EXCLUDED.metadata;
+INSERT INTO stats.classifier (dim_code, code, label, color, parent_code, ord, metadata)
+  VALUES ('geo', 'kvemo_kartli', '{"ka":"ქვემო ქართლი","en":"ქვემო ქართლი"}'::jsonb, NULL, 'total', 10, '{}'::jsonb)
+  ON CONFLICT (dim_code, code) WHERE is_current DO UPDATE
+    SET label = EXCLUDED.label, parent_code = EXCLUDED.parent_code, ord = EXCLUDED.ord, metadata = EXCLUDED.metadata;
+INSERT INTO stats.classifier (dim_code, code, label, color, parent_code, ord, metadata)
+  VALUES ('geo', 'shida_kartli', '{"ka":"შიდა ქართლი","en":"შიდა ქართლი"}'::jsonb, NULL, 'total', 11, '{}'::jsonb)
+  ON CONFLICT (dim_code, code) WHERE is_current DO UPDATE
+    SET label = EXCLUDED.label, parent_code = EXCLUDED.parent_code, ord = EXCLUDED.ord, metadata = EXCLUDED.metadata;
+INSERT INTO stats.classifier (dim_code, code, label, color, parent_code, ord, metadata)
+  VALUES ('sector', '_T', '{"ka":"სულ","en":"სულ"}'::jsonb, NULL, NULL, 0, '{}'::jsonb)
+  ON CONFLICT (dim_code, code) WHERE is_current DO UPDATE
+    SET label = EXCLUDED.label, parent_code = EXCLUDED.parent_code, ord = EXCLUDED.ord, metadata = EXCLUDED.metadata;
+INSERT INTO stats.classifier (dim_code, code, label, color, parent_code, ord, metadata)
+  VALUES ('sector', 'AGRI', '{"ka":"სოფლის მეურნეობა","en":"სოფლის მეურნეობა"}'::jsonb, NULL, '_T', 1, '{}'::jsonb)
+  ON CONFLICT (dim_code, code) WHERE is_current DO UPDATE
+    SET label = EXCLUDED.label, parent_code = EXCLUDED.parent_code, ord = EXCLUDED.ord, metadata = EXCLUDED.metadata;
+INSERT INTO stats.classifier (dim_code, code, label, color, parent_code, ord, metadata)
+  VALUES ('sector', 'MANUF', '{"ka":"მრეწველობა","en":"მრეწველობა"}'::jsonb, NULL, '_T', 2, '{}'::jsonb)
+  ON CONFLICT (dim_code, code) WHERE is_current DO UPDATE
+    SET label = EXCLUDED.label, parent_code = EXCLUDED.parent_code, ord = EXCLUDED.ord, metadata = EXCLUDED.metadata;
+INSERT INTO stats.classifier (dim_code, code, label, color, parent_code, ord, metadata)
+  VALUES ('sector', 'CONST', '{"ka":"მშენებლობა","en":"მშენებლობა"}'::jsonb, NULL, '_T', 3, '{}'::jsonb)
+  ON CONFLICT (dim_code, code) WHERE is_current DO UPDATE
+    SET label = EXCLUDED.label, parent_code = EXCLUDED.parent_code, ord = EXCLUDED.ord, metadata = EXCLUDED.metadata;
+INSERT INTO stats.classifier (dim_code, code, label, color, parent_code, ord, metadata)
+  VALUES ('sector', 'TRADE', '{"ka":"ვაჭრობა","en":"ვაჭრობა"}'::jsonb, NULL, '_T', 4, '{}'::jsonb)
+  ON CONFLICT (dim_code, code) WHERE is_current DO UPDATE
+    SET label = EXCLUDED.label, parent_code = EXCLUDED.parent_code, ord = EXCLUDED.ord, metadata = EXCLUDED.metadata;
+INSERT INTO stats.classifier (dim_code, code, label, color, parent_code, ord, metadata)
+  VALUES ('sector', 'TRANS', '{"ka":"ტრანსპორტი","en":"ტრანსპორტი"}'::jsonb, NULL, '_T', 5, '{}'::jsonb)
+  ON CONFLICT (dim_code, code) WHERE is_current DO UPDATE
+    SET label = EXCLUDED.label, parent_code = EXCLUDED.parent_code, ord = EXCLUDED.ord, metadata = EXCLUDED.metadata;
+INSERT INTO stats.classifier (dim_code, code, label, color, parent_code, ord, metadata)
+  VALUES ('sector', 'REAL', '{"ka":"უძრავი ქონება","en":"უძრავი ქონება"}'::jsonb, NULL, '_T', 6, '{}'::jsonb)
+  ON CONFLICT (dim_code, code) WHERE is_current DO UPDATE
+    SET label = EXCLUDED.label, parent_code = EXCLUDED.parent_code, ord = EXCLUDED.ord, metadata = EXCLUDED.metadata;
+INSERT INTO stats.classifier (dim_code, code, label, color, parent_code, ord, metadata)
+  VALUES ('sector', 'GOV', '{"ka":"სახელმწიფო მმართველობა","en":"სახელმწიფო მმართველობა"}'::jsonb, NULL, '_T', 7, '{}'::jsonb)
+  ON CONFLICT (dim_code, code) WHERE is_current DO UPDATE
+    SET label = EXCLUDED.label, parent_code = EXCLUDED.parent_code, ord = EXCLUDED.ord, metadata = EXCLUDED.metadata;
+INSERT INTO stats.classifier (dim_code, code, label, color, parent_code, ord, metadata)
+  VALUES ('sector', 'EDU', '{"ka":"განათლება","en":"განათლება"}'::jsonb, NULL, '_T', 8, '{}'::jsonb)
+  ON CONFLICT (dim_code, code) WHERE is_current DO UPDATE
+    SET label = EXCLUDED.label, parent_code = EXCLUDED.parent_code, ord = EXCLUDED.ord, metadata = EXCLUDED.metadata;
+INSERT INTO stats.classifier (dim_code, code, label, color, parent_code, ord, metadata)
+  VALUES ('sector', 'OTHER', '{"ka":"სხვა","en":"სხვა"}'::jsonb, NULL, '_T', 9, '{}'::jsonb)
+  ON CONFLICT (dim_code, code) WHERE is_current DO UPDATE
+    SET label = EXCLUDED.label, parent_code = EXCLUDED.parent_code, ord = EXCLUDED.ord, metadata = EXCLUDED.metadata;
+INSERT INTO stats.classifier (dim_code, code, label, color, parent_code, ord, metadata)
+  VALUES ('measure', 'GVA', '{"ka":"დამატებული ღირებულება","en":"დამატებული ღირებულება"}'::jsonb, NULL, NULL, 0, '{"unit_measure":"GEL_MN","decimals":1}'::jsonb)
+  ON CONFLICT (dim_code, code) WHERE is_current DO UPDATE
+    SET label = EXCLUDED.label, parent_code = EXCLUDED.parent_code, ord = EXCLUDED.ord, metadata = EXCLUDED.metadata;
+INSERT INTO stats.classifier (dim_code, code, label, color, parent_code, ord, metadata)
+  VALUES ('time', '2010', '{"ka":"2010","en":"2010"}'::jsonb, NULL, NULL, 2010, '{}'::jsonb)
+  ON CONFLICT (dim_code, code) WHERE is_current DO UPDATE
+    SET label = EXCLUDED.label, parent_code = EXCLUDED.parent_code, ord = EXCLUDED.ord, metadata = EXCLUDED.metadata;
+INSERT INTO stats.classifier (dim_code, code, label, color, parent_code, ord, metadata)
+  VALUES ('time', '2011', '{"ka":"2011","en":"2011"}'::jsonb, NULL, NULL, 2011, '{}'::jsonb)
+  ON CONFLICT (dim_code, code) WHERE is_current DO UPDATE
+    SET label = EXCLUDED.label, parent_code = EXCLUDED.parent_code, ord = EXCLUDED.ord, metadata = EXCLUDED.metadata;
+INSERT INTO stats.classifier (dim_code, code, label, color, parent_code, ord, metadata)
+  VALUES ('time', '2012', '{"ka":"2012","en":"2012"}'::jsonb, NULL, NULL, 2012, '{}'::jsonb)
+  ON CONFLICT (dim_code, code) WHERE is_current DO UPDATE
+    SET label = EXCLUDED.label, parent_code = EXCLUDED.parent_code, ord = EXCLUDED.ord, metadata = EXCLUDED.metadata;
+INSERT INTO stats.classifier (dim_code, code, label, color, parent_code, ord, metadata)
+  VALUES ('time', '2013', '{"ka":"2013","en":"2013"}'::jsonb, NULL, NULL, 2013, '{}'::jsonb)
+  ON CONFLICT (dim_code, code) WHERE is_current DO UPDATE
+    SET label = EXCLUDED.label, parent_code = EXCLUDED.parent_code, ord = EXCLUDED.ord, metadata = EXCLUDED.metadata;
+INSERT INTO stats.classifier (dim_code, code, label, color, parent_code, ord, metadata)
+  VALUES ('time', '2014', '{"ka":"2014","en":"2014"}'::jsonb, NULL, NULL, 2014, '{}'::jsonb)
+  ON CONFLICT (dim_code, code) WHERE is_current DO UPDATE
+    SET label = EXCLUDED.label, parent_code = EXCLUDED.parent_code, ord = EXCLUDED.ord, metadata = EXCLUDED.metadata;
+INSERT INTO stats.classifier (dim_code, code, label, color, parent_code, ord, metadata)
+  VALUES ('time', '2015', '{"ka":"2015","en":"2015"}'::jsonb, NULL, NULL, 2015, '{}'::jsonb)
+  ON CONFLICT (dim_code, code) WHERE is_current DO UPDATE
+    SET label = EXCLUDED.label, parent_code = EXCLUDED.parent_code, ord = EXCLUDED.ord, metadata = EXCLUDED.metadata;
+INSERT INTO stats.classifier (dim_code, code, label, color, parent_code, ord, metadata)
+  VALUES ('time', '2016', '{"ka":"2016","en":"2016"}'::jsonb, NULL, NULL, 2016, '{}'::jsonb)
+  ON CONFLICT (dim_code, code) WHERE is_current DO UPDATE
+    SET label = EXCLUDED.label, parent_code = EXCLUDED.parent_code, ord = EXCLUDED.ord, metadata = EXCLUDED.metadata;
+INSERT INTO stats.classifier (dim_code, code, label, color, parent_code, ord, metadata)
+  VALUES ('time', '2017', '{"ka":"2017","en":"2017"}'::jsonb, NULL, NULL, 2017, '{}'::jsonb)
+  ON CONFLICT (dim_code, code) WHERE is_current DO UPDATE
+    SET label = EXCLUDED.label, parent_code = EXCLUDED.parent_code, ord = EXCLUDED.ord, metadata = EXCLUDED.metadata;
+INSERT INTO stats.classifier (dim_code, code, label, color, parent_code, ord, metadata)
+  VALUES ('time', '2018', '{"ka":"2018","en":"2018"}'::jsonb, NULL, NULL, 2018, '{}'::jsonb)
+  ON CONFLICT (dim_code, code) WHERE is_current DO UPDATE
+    SET label = EXCLUDED.label, parent_code = EXCLUDED.parent_code, ord = EXCLUDED.ord, metadata = EXCLUDED.metadata;
+INSERT INTO stats.classifier (dim_code, code, label, color, parent_code, ord, metadata)
+  VALUES ('time', '2019', '{"ka":"2019","en":"2019"}'::jsonb, NULL, NULL, 2019, '{}'::jsonb)
+  ON CONFLICT (dim_code, code) WHERE is_current DO UPDATE
+    SET label = EXCLUDED.label, parent_code = EXCLUDED.parent_code, ord = EXCLUDED.ord, metadata = EXCLUDED.metadata;
+INSERT INTO stats.classifier (dim_code, code, label, color, parent_code, ord, metadata)
+  VALUES ('time', '2020', '{"ka":"2020","en":"2020"}'::jsonb, NULL, NULL, 2020, '{}'::jsonb)
+  ON CONFLICT (dim_code, code) WHERE is_current DO UPDATE
+    SET label = EXCLUDED.label, parent_code = EXCLUDED.parent_code, ord = EXCLUDED.ord, metadata = EXCLUDED.metadata;
+INSERT INTO stats.classifier (dim_code, code, label, color, parent_code, ord, metadata)
+  VALUES ('time', '2021', '{"ka":"2021","en":"2021"}'::jsonb, NULL, NULL, 2021, '{}'::jsonb)
+  ON CONFLICT (dim_code, code) WHERE is_current DO UPDATE
+    SET label = EXCLUDED.label, parent_code = EXCLUDED.parent_code, ord = EXCLUDED.ord, metadata = EXCLUDED.metadata;
+INSERT INTO stats.classifier (dim_code, code, label, color, parent_code, ord, metadata)
+  VALUES ('time', '2022', '{"ka":"2022","en":"2022"}'::jsonb, NULL, NULL, 2022, '{}'::jsonb)
+  ON CONFLICT (dim_code, code) WHERE is_current DO UPDATE
+    SET label = EXCLUDED.label, parent_code = EXCLUDED.parent_code, ord = EXCLUDED.ord, metadata = EXCLUDED.metadata;
+INSERT INTO stats.classifier (dim_code, code, label, color, parent_code, ord, metadata)
+  VALUES ('time', '2023', '{"ka":"2023","en":"2023"}'::jsonb, NULL, NULL, 2023, '{}'::jsonb)
+  ON CONFLICT (dim_code, code) WHERE is_current DO UPDATE
+    SET label = EXCLUDED.label, parent_code = EXCLUDED.parent_code, ord = EXCLUDED.ord, metadata = EXCLUDED.metadata;
+INSERT INTO stats.classifier (dim_code, code, label, color, parent_code, ord, metadata)
+  VALUES ('time', '2024', '{"ka":"2024","en":"2024"}'::jsonb, NULL, NULL, 2024, '{}'::jsonb)
+  ON CONFLICT (dim_code, code) WHERE is_current DO UPDATE
+    SET label = EXCLUDED.label, parent_code = EXCLUDED.parent_code, ord = EXCLUDED.ord, metadata = EXCLUDED.metadata;
+
+-- ── 4. classifier_display (per-member, per-locale overlay) ─────────────
+INSERT INTO stats.classifier_display (member_id, locale, display)
+  SELECT id, 'ka', '{"label":"სოფლის, სატყეო და თევზის მეურნეობა","color":"#3ba272","fullLabel":"სოფლის, სატყეო და თევზის მეურნეობა"}'::jsonb
+    FROM stats.classifier WHERE dim_code = 'measure' AND code = 'GDP_AGRI' AND is_current
+  ON CONFLICT (member_id, locale) DO UPDATE SET display = EXCLUDED.display;
+INSERT INTO stats.classifier_display (member_id, locale, display)
+  SELECT id, 'ka', '{"label":"მრეწველობა","color":"#5470c6","fullLabel":"მრეწველობა"}'::jsonb
+    FROM stats.classifier WHERE dim_code = 'measure' AND code = 'GDP_IND' AND is_current
+  ON CONFLICT (member_id, locale) DO UPDATE SET display = EXCLUDED.display;
+INSERT INTO stats.classifier_display (member_id, locale, display)
+  SELECT id, 'ka', '{"label":"მშენებლობა","color":"#fc8452","fullLabel":"მშენებლობა"}'::jsonb
+    FROM stats.classifier WHERE dim_code = 'measure' AND code = 'GDP_CON' AND is_current
+  ON CONFLICT (member_id, locale) DO UPDATE SET display = EXCLUDED.display;
+INSERT INTO stats.classifier_display (member_id, locale, display)
+  SELECT id, 'ka', '{"label":"მომსახურება","color":"#73c0de","fullLabel":"მომსახურება"}'::jsonb
+    FROM stats.classifier WHERE dim_code = 'measure' AND code = 'GDP_SVC' AND is_current
+  ON CONFLICT (member_id, locale) DO UPDATE SET display = EXCLUDED.display;
+INSERT INTO stats.classifier_display (member_id, locale, display)
+  SELECT id, 'ka', '{"label":"წმინდა გადასახადები პროდუქტებზე","color":"#9a60b4","fullLabel":"წმინდა გადასახადები პროდუქტებზე"}'::jsonb
+    FROM stats.classifier WHERE dim_code = 'measure' AND code = 'GDP_NET_TAX' AND is_current
+  ON CONFLICT (member_id, locale) DO UPDATE SET display = EXCLUDED.display;
+INSERT INTO stats.classifier_display (member_id, locale, display)
+  SELECT id, 'ka', '{"label":"ხარჯები საბოლოო მოხმარებაზე","color":"#5470c6","fullLabel":"ხარჯები საბოლოო მოხმარებაზე"}'::jsonb
+    FROM stats.classifier WHERE dim_code = 'measure' AND code = 'C' AND is_current
+  ON CONFLICT (member_id, locale) DO UPDATE SET display = EXCLUDED.display;
+INSERT INTO stats.classifier_display (member_id, locale, display)
+  SELECT id, 'ka', '{"label":"მთლიანი კაპიტალის ფორმირება","color":"#3ba272","fullLabel":"მთლიანი კაპიტალის ფორმირება"}'::jsonb
+    FROM stats.classifier WHERE dim_code = 'measure' AND code = 'I_GFCF' AND is_current
+  ON CONFLICT (member_id, locale) DO UPDATE SET display = EXCLUDED.display;
+INSERT INTO stats.classifier_display (member_id, locale, display)
+  SELECT id, 'ka', '{"label":"საქონლისა და მომსახურების ექსპორტი","color":"#fac858","fullLabel":"საქონლისა და მომსახურების ექსპორტი"}'::jsonb
+    FROM stats.classifier WHERE dim_code = 'measure' AND code = 'X' AND is_current
+  ON CONFLICT (member_id, locale) DO UPDATE SET display = EXCLUDED.display;
+INSERT INTO stats.classifier_display (member_id, locale, display)
+  SELECT id, 'ka', '{"label":"საქონლისა და მომსახურების იმპორტი","color":"#ee6666","fullLabel":"საქონლისა და მომსახურების იმპორტი"}'::jsonb
+    FROM stats.classifier WHERE dim_code = 'measure' AND code = 'M' AND is_current
+  ON CONFLICT (member_id, locale) DO UPDATE SET display = EXCLUDED.display;
+INSERT INTO stats.classifier_display (member_id, locale, display)
+  SELECT id, 'ka', '{"label":"შრომის ანაზღაურება","color":"#73c0de","fullLabel":"შრომის ანაზღაურება"}'::jsonb
+    FROM stats.classifier WHERE dim_code = 'measure' AND code = 'D1' AND is_current
+  ON CONFLICT (member_id, locale) DO UPDATE SET display = EXCLUDED.display;
+INSERT INTO stats.classifier_display (member_id, locale, display)
+  SELECT id, 'ka', '{"label":"წმინდა გადასახადები წარმოებაზე","color":"#9a60b4","fullLabel":"წმინდა გადასახადები წარმოებაზე"}'::jsonb
+    FROM stats.classifier WHERE dim_code = 'measure' AND code = 'NET_TAX_PROD' AND is_current
+  ON CONFLICT (member_id, locale) DO UPDATE SET display = EXCLUDED.display;
+INSERT INTO stats.classifier_display (member_id, locale, display)
+  SELECT id, 'ka', '{"label":"მთლიანი საოპერაციო მოგება","color":"#fc8452","fullLabel":"მთლიანი საოპერაციო მოგება"}'::jsonb
+    FROM stats.classifier WHERE dim_code = 'measure' AND code = 'OS_GROSS' AND is_current
+  ON CONFLICT (member_id, locale) DO UPDATE SET display = EXCLUDED.display;
+INSERT INTO stats.classifier_display (member_id, locale, display)
+  SELECT id, 'ka', '{"label":"მთლიანი შერეული შემოსავალი","color":"#fac858","fullLabel":"მთლიანი შერეული შემოსავალი"}'::jsonb
+    FROM stats.classifier WHERE dim_code = 'measure' AND code = 'MIXED_INC' AND is_current
+  ON CONFLICT (member_id, locale) DO UPDATE SET display = EXCLUDED.display;
+INSERT INTO stats.classifier_display (member_id, locale, display)
+  SELECT id, 'ka', '{"label":"რეალური მთლიანი შიდა პროდუქტის ზრდა","color":"#ee6666","fullLabel":"რეალური მთლიანი შიდა პროდუქტის ზრდა"}'::jsonb
+    FROM stats.classifier WHERE dim_code = 'measure' AND code = 'GDP_GROWTH' AND is_current
+  ON CONFLICT (member_id, locale) DO UPDATE SET display = EXCLUDED.display;
+INSERT INTO stats.classifier_display (member_id, locale, display)
+  SELECT id, 'ka', '{"label":"მთლიანი შიდა პროდუქტი ერთ სულ მოსახლეზე","color":"#73c0de","fullLabel":"მთლიანი შიდა პროდუქტი ერთ სულ მოსახლეზე"}'::jsonb
+    FROM stats.classifier WHERE dim_code = 'measure' AND code = 'GDP_PER_CAPITA' AND is_current
+  ON CONFLICT (member_id, locale) DO UPDATE SET display = EXCLUDED.display;
+INSERT INTO stats.classifier_display (member_id, locale, display)
+  SELECT id, 'ka', '{"label":"მთლიანი შიდა პროდუქტი საბაზრო ფასებში","color":"#5470c6","fullLabel":"მთლიანი შიდა პროდუქტი საბაზრო ფასებში"}'::jsonb
+    FROM stats.classifier WHERE dim_code = 'measure' AND code = 'GDP' AND is_current
+  ON CONFLICT (member_id, locale) DO UPDATE SET display = EXCLUDED.display;
+INSERT INTO stats.classifier_display (member_id, locale, display)
+  SELECT id, 'ka', '{"label":"დაუკვირვებადი დამატებული ღირებულების წილი მთლიან დამატებულ ღირებულებაში","color":"#6b7b8d","fullLabel":"დაუკვირვებადი დამატებული ღირებულების წილი მთლიან დამატებულ ღირებულებაში"}'::jsonb
+    FROM stats.classifier WHERE dim_code = 'measure' AND code = 'NOE_SHARE' AND is_current
+  ON CONFLICT (member_id, locale) DO UPDATE SET display = EXCLUDED.display;
+INSERT INTO stats.classifier_display (member_id, locale, display)
+  SELECT id, 'ka', '{"label":"საცხოვრებელი დანიშნულების შენობები","color":"#5470c6","fullLabel":"საცხოვრებელი დანიშნულების შენობები"}'::jsonb
+    FROM stats.classifier WHERE dim_code = 'measure' AND code = 'GFCF_RES' AND is_current
+  ON CONFLICT (member_id, locale) DO UPDATE SET display = EXCLUDED.display;
+INSERT INTO stats.classifier_display (member_id, locale, display)
+  SELECT id, 'ka', '{"label":"არასაცხოვრებელი ნაგებობები","color":"#3ba272","fullLabel":"არასაცხოვრებელი დანიშნულების და სხვა ნაგებობები"}'::jsonb
+    FROM stats.classifier WHERE dim_code = 'measure' AND code = 'GFCF_STRUCT' AND is_current
+  ON CONFLICT (member_id, locale) DO UPDATE SET display = EXCLUDED.display;
+INSERT INTO stats.classifier_display (member_id, locale, display)
+  SELECT id, 'ka', '{"label":"არასაცხოვრებელი დანიშნულების და სხვა ნაგებობები","color":"#9a60b4","fullLabel":"მანქანა, მოწყობილობები და სამხედრო აღჭურვილობა"}'::jsonb
+    FROM stats.classifier WHERE dim_code = 'measure' AND code = 'GFCF_MACH' AND is_current
+  ON CONFLICT (member_id, locale) DO UPDATE SET display = EXCLUDED.display;
+INSERT INTO stats.classifier_display (member_id, locale, display)
+  SELECT id, 'ka', '{"label":"კულტივირებული ბიოლოგიური აქტივები","color":"#91cc75","fullLabel":"კულტივირებული ბიოლოგიური აქტივები"}'::jsonb
+    FROM stats.classifier WHERE dim_code = 'measure' AND code = 'GFCF_BIO' AND is_current
+  ON CONFLICT (member_id, locale) DO UPDATE SET display = EXCLUDED.display;
+INSERT INTO stats.classifier_display (member_id, locale, display)
+  SELECT id, 'ka', '{"label":"ინტელექტუალური საკუთრების პროდუქტები და არაწარმოებულ აქტივებზე საკუთრების გადაცემის ხარჯები","color":"#ea7ccc","fullLabel":"ინტელექტუალური საკუთრების პროდუქტები და არაწარმოებულ აქტივებზე საკუთრების გადაცემის ხარჯები"}'::jsonb
+    FROM stats.classifier WHERE dim_code = 'measure' AND code = 'GFCF_IP' AND is_current
+  ON CONFLICT (member_id, locale) DO UPDATE SET display = EXCLUDED.display;
+INSERT INTO stats.classifier_display (member_id, locale, display)
+  SELECT id, 'ka', '{"label":"I. წარმოების ანგარიში","color":"#5470c6","order":0}'::jsonb
+    FROM stats.classifier WHERE dim_code = 'account' AND code = 'production' AND is_current
+  ON CONFLICT (member_id, locale) DO UPDATE SET display = EXCLUDED.display;
+INSERT INTO stats.classifier_display (member_id, locale, display)
+  SELECT id, 'ka', '{"label":"II. შემოსავლების ფორმირების ანგარიში","color":"#3ba272","order":1}'::jsonb
+    FROM stats.classifier WHERE dim_code = 'account' AND code = 'income_gen' AND is_current
+  ON CONFLICT (member_id, locale) DO UPDATE SET display = EXCLUDED.display;
+INSERT INTO stats.classifier_display (member_id, locale, display)
+  SELECT id, 'ka', '{"label":"III. პირველადი შემოსავლების განაწილება","color":"#fac858","order":2}'::jsonb
+    FROM stats.classifier WHERE dim_code = 'account' AND code = 'primary_dist' AND is_current
+  ON CONFLICT (member_id, locale) DO UPDATE SET display = EXCLUDED.display;
+INSERT INTO stats.classifier_display (member_id, locale, display)
+  SELECT id, 'ka', '{"label":"IV. შემოსავლების მეორადი განაწილება","color":"#9a60b4","order":3}'::jsonb
+    FROM stats.classifier WHERE dim_code = 'account' AND code = 'secondary_dist' AND is_current
+  ON CONFLICT (member_id, locale) DO UPDATE SET display = EXCLUDED.display;
+INSERT INTO stats.classifier_display (member_id, locale, display)
+  SELECT id, 'ka', '{"label":"V. შემოსავლის გამოყენების ანგარიში","color":"#fc8452","order":4}'::jsonb
+    FROM stats.classifier WHERE dim_code = 'account' AND code = 'use_of_income' AND is_current
+  ON CONFLICT (member_id, locale) DO UPDATE SET display = EXCLUDED.display;
+INSERT INTO stats.classifier_display (member_id, locale, display)
+  SELECT id, 'ka', '{"label":"VI. კაპიტალის ანგარიში","color":"#91cc75","order":5}'::jsonb
+    FROM stats.classifier WHERE dim_code = 'account' AND code = 'capital' AND is_current
+  ON CONFLICT (member_id, locale) DO UPDATE SET display = EXCLUDED.display;
+INSERT INTO stats.classifier_display (member_id, locale, display)
+  SELECT id, 'ka', '{"label":"გამოშვება საბაზრო ფასებში","color":"#5470c6"}'::jsonb
+    FROM stats.classifier WHERE dim_code = 'measure' AND code = 'P1' AND is_current
+  ON CONFLICT (member_id, locale) DO UPDATE SET display = EXCLUDED.display;
+INSERT INTO stats.classifier_display (member_id, locale, display)
+  SELECT id, 'ka', '{"label":"შუალედური მოხმარება","color":"#a0b4e8"}'::jsonb
+    FROM stats.classifier WHERE dim_code = 'measure' AND code = 'P2' AND is_current
+  ON CONFLICT (member_id, locale) DO UPDATE SET display = EXCLUDED.display;
+INSERT INTO stats.classifier_display (member_id, locale, display)
+  SELECT id, 'ka', '{"label":"მთლიანი შიდა პროდუქტი საბაზრო ფასებში","color":"#5470c6"}'::jsonb
+    FROM stats.classifier WHERE dim_code = 'measure' AND code = 'B1G' AND is_current
+  ON CONFLICT (member_id, locale) DO UPDATE SET display = EXCLUDED.display;
+INSERT INTO stats.classifier_display (member_id, locale, display)
+  SELECT id, 'ka', '{"label":"შრომის ანაზღაურება","color":"#3ba272"}'::jsonb
+    FROM stats.classifier WHERE dim_code = 'measure' AND code = 'D1' AND is_current
+  ON CONFLICT (member_id, locale) DO UPDATE SET display = EXCLUDED.display;
+INSERT INTO stats.classifier_display (member_id, locale, display)
+  SELECT id, 'ka', '{"label":"გადასახადები-სუბსიდიები","color":"#73c0de"}'::jsonb
+    FROM stats.classifier WHERE dim_code = 'measure' AND code = 'ACC_NET_TAX' AND is_current
+  ON CONFLICT (member_id, locale) DO UPDATE SET display = EXCLUDED.display;
+INSERT INTO stats.classifier_display (member_id, locale, display)
+  SELECT id, 'ka', '{"label":"მთლიანი შერეული შემოსავალი + საოპერაციო მოგება","color":"#3ba272"}'::jsonb
+    FROM stats.classifier WHERE dim_code = 'measure' AND code = 'B2G' AND is_current
+  ON CONFLICT (member_id, locale) DO UPDATE SET display = EXCLUDED.display;
+INSERT INTO stats.classifier_display (member_id, locale, display)
+  SELECT id, 'ka', '{"label":"პირველადი შემოსავლების მიღება","color":"#fac858"}'::jsonb
+    FROM stats.classifier WHERE dim_code = 'measure' AND code = 'D4_REC' AND is_current
+  ON CONFLICT (member_id, locale) DO UPDATE SET display = EXCLUDED.display;
+INSERT INTO stats.classifier_display (member_id, locale, display)
+  SELECT id, 'ka', '{"label":"პირველადი შემოსავლების გადახდა","color":"#ee6666"}'::jsonb
+    FROM stats.classifier WHERE dim_code = 'measure' AND code = 'D4_PAY' AND is_current
+  ON CONFLICT (member_id, locale) DO UPDATE SET display = EXCLUDED.display;
+INSERT INTO stats.classifier_display (member_id, locale, display)
+  SELECT id, 'ka', '{"label":"მთლიანი ეროვნული შემოსავალი","color":"#fac858"}'::jsonb
+    FROM stats.classifier WHERE dim_code = 'measure' AND code = 'B5G' AND is_current
+  ON CONFLICT (member_id, locale) DO UPDATE SET display = EXCLUDED.display;
+INSERT INTO stats.classifier_display (member_id, locale, display)
+  SELECT id, 'ka', '{"label":"მიმდინარე ტრანსფერების მიღება","color":"#9a60b4"}'::jsonb
+    FROM stats.classifier WHERE dim_code = 'measure' AND code = 'D5_REC' AND is_current
+  ON CONFLICT (member_id, locale) DO UPDATE SET display = EXCLUDED.display;
+INSERT INTO stats.classifier_display (member_id, locale, display)
+  SELECT id, 'ka', '{"label":"მიმდინარე ტრანსფერების გადახდა","color":"#ee6666"}'::jsonb
+    FROM stats.classifier WHERE dim_code = 'measure' AND code = 'D5_PAY' AND is_current
+  ON CONFLICT (member_id, locale) DO UPDATE SET display = EXCLUDED.display;
+INSERT INTO stats.classifier_display (member_id, locale, display)
+  SELECT id, 'ka', '{"label":"მთლიანი განკარგვადი შემოსავალი","color":"#9a60b4"}'::jsonb
+    FROM stats.classifier WHERE dim_code = 'measure' AND code = 'B6G' AND is_current
+  ON CONFLICT (member_id, locale) DO UPDATE SET display = EXCLUDED.display;
+INSERT INTO stats.classifier_display (member_id, locale, display)
+  SELECT id, 'ka', '{"label":"საბოლოო მოხმარება","color":"#fc8452"}'::jsonb
+    FROM stats.classifier WHERE dim_code = 'measure' AND code = 'P3' AND is_current
+  ON CONFLICT (member_id, locale) DO UPDATE SET display = EXCLUDED.display;
+INSERT INTO stats.classifier_display (member_id, locale, display)
+  SELECT id, 'ka', '{"label":"მთლიანი დანაზოგი","color":"#fc8452"}'::jsonb
+    FROM stats.classifier WHERE dim_code = 'measure' AND code = 'B8G' AND is_current
+  ON CONFLICT (member_id, locale) DO UPDATE SET display = EXCLUDED.display;
+INSERT INTO stats.classifier_display (member_id, locale, display)
+  SELECT id, 'ka', '{"label":"კაპიტალური ტრანსფერების მიღება","color":"#91cc75"}'::jsonb
+    FROM stats.classifier WHERE dim_code = 'measure' AND code = 'D9R' AND is_current
+  ON CONFLICT (member_id, locale) DO UPDATE SET display = EXCLUDED.display;
+INSERT INTO stats.classifier_display (member_id, locale, display)
+  SELECT id, 'ka', '{"label":"მთლიანი კაპიტალის ფორმირება","color":"#ea7ccc"}'::jsonb
+    FROM stats.classifier WHERE dim_code = 'measure' AND code = 'P5' AND is_current
+  ON CONFLICT (member_id, locale) DO UPDATE SET display = EXCLUDED.display;
+INSERT INTO stats.classifier_display (member_id, locale, display)
+  SELECT id, 'ka', '{"label":"წმინდა დაკრედიტება (+), წმინდა სესხება(-)","color":"#ee6666"}'::jsonb
+    FROM stats.classifier WHERE dim_code = 'measure' AND code = 'B9' AND is_current
+  ON CONFLICT (member_id, locale) DO UPDATE SET display = EXCLUDED.display;
+INSERT INTO stats.classifier_display (member_id, locale, display)
+  SELECT id, 'ka', '{"label":"საქართველო სულ","color":"#264653"}'::jsonb
+    FROM stats.classifier WHERE dim_code = 'geo' AND code = 'total' AND is_current
+  ON CONFLICT (member_id, locale) DO UPDATE SET display = EXCLUDED.display;
+INSERT INTO stats.classifier_display (member_id, locale, display)
+  SELECT id, 'ka', '{"label":"თბილისი","color":"#5470c6"}'::jsonb
+    FROM stats.classifier WHERE dim_code = 'geo' AND code = 'tbilisi' AND is_current
+  ON CONFLICT (member_id, locale) DO UPDATE SET display = EXCLUDED.display;
+INSERT INTO stats.classifier_display (member_id, locale, display)
+  SELECT id, 'ka', '{"label":"აჭარის ავტონომიური რესპუბლიკა","color":"#3ba272"}'::jsonb
+    FROM stats.classifier WHERE dim_code = 'geo' AND code = 'adjara' AND is_current
+  ON CONFLICT (member_id, locale) DO UPDATE SET display = EXCLUDED.display;
+INSERT INTO stats.classifier_display (member_id, locale, display)
+  SELECT id, 'ka', '{"label":"გურია","color":"#73c0de"}'::jsonb
+    FROM stats.classifier WHERE dim_code = 'geo' AND code = 'guria' AND is_current
+  ON CONFLICT (member_id, locale) DO UPDATE SET display = EXCLUDED.display;
+INSERT INTO stats.classifier_display (member_id, locale, display)
+  SELECT id, 'ka', '{"label":"იმერეთი","color":"#fac858"}'::jsonb
+    FROM stats.classifier WHERE dim_code = 'geo' AND code = 'imereti' AND is_current
+  ON CONFLICT (member_id, locale) DO UPDATE SET display = EXCLUDED.display;
+INSERT INTO stats.classifier_display (member_id, locale, display)
+  SELECT id, 'ka', '{"label":"კახეთი","color":"#fc8452"}'::jsonb
+    FROM stats.classifier WHERE dim_code = 'geo' AND code = 'kakheti' AND is_current
+  ON CONFLICT (member_id, locale) DO UPDATE SET display = EXCLUDED.display;
+INSERT INTO stats.classifier_display (member_id, locale, display)
+  SELECT id, 'ka', '{"label":"მცხეთა-მთიანეთი","color":"#9a60b4"}'::jsonb
+    FROM stats.classifier WHERE dim_code = 'geo' AND code = 'mtskheta' AND is_current
+  ON CONFLICT (member_id, locale) DO UPDATE SET display = EXCLUDED.display;
+INSERT INTO stats.classifier_display (member_id, locale, display)
+  SELECT id, 'ka', '{"label":"რაჭა-ლეჩხუმი და ქვემო სვანეთი","color":"#91cc75"}'::jsonb
+    FROM stats.classifier WHERE dim_code = 'geo' AND code = 'racha' AND is_current
+  ON CONFLICT (member_id, locale) DO UPDATE SET display = EXCLUDED.display;
+INSERT INTO stats.classifier_display (member_id, locale, display)
+  SELECT id, 'ka', '{"label":"სამეგრელო-ზემო სვანეთი","color":"#ea7ccc"}'::jsonb
+    FROM stats.classifier WHERE dim_code = 'geo' AND code = 'samegrelo' AND is_current
+  ON CONFLICT (member_id, locale) DO UPDATE SET display = EXCLUDED.display;
+INSERT INTO stats.classifier_display (member_id, locale, display)
+  SELECT id, 'ka', '{"label":"სამცხე-ჯავახეთი","color":"#ee6666"}'::jsonb
+    FROM stats.classifier WHERE dim_code = 'geo' AND code = 'samtskhe' AND is_current
+  ON CONFLICT (member_id, locale) DO UPDATE SET display = EXCLUDED.display;
+INSERT INTO stats.classifier_display (member_id, locale, display)
+  SELECT id, 'ka', '{"label":"ქვემო ქართლი","color":"#48c9b0"}'::jsonb
+    FROM stats.classifier WHERE dim_code = 'geo' AND code = 'kvemo_kartli' AND is_current
+  ON CONFLICT (member_id, locale) DO UPDATE SET display = EXCLUDED.display;
+INSERT INTO stats.classifier_display (member_id, locale, display)
+  SELECT id, 'ka', '{"label":"შიდა ქართლი","color":"#f49e4c"}'::jsonb
+    FROM stats.classifier WHERE dim_code = 'geo' AND code = 'shida_kartli' AND is_current
+  ON CONFLICT (member_id, locale) DO UPDATE SET display = EXCLUDED.display;
+INSERT INTO stats.classifier_display (member_id, locale, display)
+  SELECT id, 'ka', '{"label":"სულ","fullLabel":"სულ დამატებული ღირებულება","color":"#264653","sectorOrder":-1}'::jsonb
+    FROM stats.classifier WHERE dim_code = 'sector' AND code = '_T' AND is_current
+  ON CONFLICT (member_id, locale) DO UPDATE SET display = EXCLUDED.display;
+INSERT INTO stats.classifier_display (member_id, locale, display)
+  SELECT id, 'ka', '{"label":"სოფლის მეურნეობა","fullLabel":"სოფლის, სატყეო და თევზის მეურნეობა","color":"#3ba272","sectorOrder":0}'::jsonb
+    FROM stats.classifier WHERE dim_code = 'sector' AND code = 'AGRI' AND is_current
+  ON CONFLICT (member_id, locale) DO UPDATE SET display = EXCLUDED.display;
+INSERT INTO stats.classifier_display (member_id, locale, display)
+  SELECT id, 'ka', '{"label":"მრეწველობა","fullLabel":"დამამუშავებელი მრეწველობა","color":"#5470c6","sectorOrder":1}'::jsonb
+    FROM stats.classifier WHERE dim_code = 'sector' AND code = 'MANUF' AND is_current
+  ON CONFLICT (member_id, locale) DO UPDATE SET display = EXCLUDED.display;
+INSERT INTO stats.classifier_display (member_id, locale, display)
+  SELECT id, 'ka', '{"label":"მშენებლობა","fullLabel":"მშენებლობა","color":"#fc8452","sectorOrder":2}'::jsonb
+    FROM stats.classifier WHERE dim_code = 'sector' AND code = 'CONST' AND is_current
+  ON CONFLICT (member_id, locale) DO UPDATE SET display = EXCLUDED.display;
+INSERT INTO stats.classifier_display (member_id, locale, display)
+  SELECT id, 'ka', '{"label":"ვაჭრობა","fullLabel":"საბითუმო და საცალო ვაჭრობა; ავტომობილებისა და მოტოციკლების რემონტი","color":"#73c0de","sectorOrder":3}'::jsonb
+    FROM stats.classifier WHERE dim_code = 'sector' AND code = 'TRADE' AND is_current
+  ON CONFLICT (member_id, locale) DO UPDATE SET display = EXCLUDED.display;
+INSERT INTO stats.classifier_display (member_id, locale, display)
+  SELECT id, 'ka', '{"label":"ტრანსპორტი","fullLabel":"ტრანსპორტი და დასაწყობება","color":"#9a60b4","sectorOrder":4}'::jsonb
+    FROM stats.classifier WHERE dim_code = 'sector' AND code = 'TRANS' AND is_current
+  ON CONFLICT (member_id, locale) DO UPDATE SET display = EXCLUDED.display;
+INSERT INTO stats.classifier_display (member_id, locale, display)
+  SELECT id, 'ka', '{"label":"უძრავი ქონება","fullLabel":"უძრავ ქონებასთან დაკავშირებული საქმიანობა","color":"#fac858","sectorOrder":5}'::jsonb
+    FROM stats.classifier WHERE dim_code = 'sector' AND code = 'REAL' AND is_current
+  ON CONFLICT (member_id, locale) DO UPDATE SET display = EXCLUDED.display;
+INSERT INTO stats.classifier_display (member_id, locale, display)
+  SELECT id, 'ka', '{"label":"სახელმწიფო მმართველობა","fullLabel":"სახელმწიფო მმართველობა და თავდაცვა; სავალდებულო სოციალური უსაფრთხოება","color":"#ee6666","sectorOrder":6}'::jsonb
+    FROM stats.classifier WHERE dim_code = 'sector' AND code = 'GOV' AND is_current
+  ON CONFLICT (member_id, locale) DO UPDATE SET display = EXCLUDED.display;
+INSERT INTO stats.classifier_display (member_id, locale, display)
+  SELECT id, 'ka', '{"label":"განათლება","fullLabel":"განათლება","color":"#ea7ccc","sectorOrder":7}'::jsonb
+    FROM stats.classifier WHERE dim_code = 'sector' AND code = 'EDU' AND is_current
+  ON CONFLICT (member_id, locale) DO UPDATE SET display = EXCLUDED.display;
+INSERT INTO stats.classifier_display (member_id, locale, display)
+  SELECT id, 'ka', '{"label":"სხვა","fullLabel":"სხვა დანარჩენი","color":"#91cc75","sectorOrder":8}'::jsonb
+    FROM stats.classifier WHERE dim_code = 'sector' AND code = 'OTHER' AND is_current
+  ON CONFLICT (member_id, locale) DO UPDATE SET display = EXCLUDED.display;
+
+-- ── 5. observations (the GOLD facts) ──────────────────────────────────
+-- GDP_ANNUAL: 367 observations
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2010', '{"measure":"GDP_AGRI","geo":"GE"}'::jsonb, 1963.7, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2011', '{"measure":"GDP_AGRI","geo":"GE"}'::jsonb, 2541.7, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2012', '{"measure":"GDP_AGRI","geo":"GE"}'::jsonb, 2389.6, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2013', '{"measure":"GDP_AGRI","geo":"GE"}'::jsonb, 2685, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2014', '{"measure":"GDP_AGRI","geo":"GE"}'::jsonb, 2919.8, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2015', '{"measure":"GDP_AGRI","geo":"GE"}'::jsonb, 2951.1, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2016', '{"measure":"GDP_AGRI","geo":"GE"}'::jsonb, 2925.4, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2017', '{"measure":"GDP_AGRI","geo":"GE"}'::jsonb, 2860.2, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2018', '{"measure":"GDP_AGRI","geo":"GE"}'::jsonb, 3431, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2019', '{"measure":"GDP_AGRI","geo":"GE"}'::jsonb, 3647.6, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2020', '{"measure":"GDP_AGRI","geo":"GE"}'::jsonb, 4140.7, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2021', '{"measure":"GDP_AGRI","geo":"GE"}'::jsonb, 4388.7, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2022', '{"measure":"GDP_AGRI","geo":"GE"}'::jsonb, 4832.3, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2023', '{"measure":"GDP_AGRI","geo":"GE"}'::jsonb, 4865.7, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2024', '{"measure":"GDP_AGRI","geo":"GE"}'::jsonb, 5102.7, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2025', '{"measure":"GDP_AGRI","geo":"GE"}'::jsonb, 5420, 'P', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2010', '{"measure":"GDP_IND","geo":"GE"}'::jsonb, 2881.4, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2011', '{"measure":"GDP_IND","geo":"GE"}'::jsonb, 3355.7, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2012', '{"measure":"GDP_IND","geo":"GE"}'::jsonb, 3569.7, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2013', '{"measure":"GDP_IND","geo":"GE"}'::jsonb, 3562.7, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2014', '{"measure":"GDP_IND","geo":"GE"}'::jsonb, 3837.7, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2015', '{"measure":"GDP_IND","geo":"GE"}'::jsonb, 4337.9, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2016', '{"measure":"GDP_IND","geo":"GE"}'::jsonb, 4157.7, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2017', '{"measure":"GDP_IND","geo":"GE"}'::jsonb, 5135.9, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2018', '{"measure":"GDP_IND","geo":"GE"}'::jsonb, 5780.2, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2019', '{"measure":"GDP_IND","geo":"GE"}'::jsonb, 6231.3, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2020', '{"measure":"GDP_IND","geo":"GE"}'::jsonb, 6710.5, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2021', '{"measure":"GDP_IND","geo":"GE"}'::jsonb, 8953.8, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2022', '{"measure":"GDP_IND","geo":"GE"}'::jsonb, 10440.3, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2023', '{"measure":"GDP_IND","geo":"GE"}'::jsonb, 9907.9, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2024', '{"measure":"GDP_IND","geo":"GE"}'::jsonb, 11323, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2025', '{"measure":"GDP_IND","geo":"GE"}'::jsonb, 12135.6, 'P', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2010', '{"measure":"GDP_CON","geo":"GE"}'::jsonb, 856.9, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2011', '{"measure":"GDP_CON","geo":"GE"}'::jsonb, 1258.6, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2012', '{"measure":"GDP_CON","geo":"GE"}'::jsonb, 1688, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2013', '{"measure":"GDP_CON","geo":"GE"}'::jsonb, 1692, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2014', '{"measure":"GDP_CON","geo":"GE"}'::jsonb, 1926.6, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2015', '{"measure":"GDP_CON","geo":"GE"}'::jsonb, 2492.2, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2016', '{"measure":"GDP_CON","geo":"GE"}'::jsonb, 2832, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2017', '{"measure":"GDP_CON","geo":"GE"}'::jsonb, 3656.1, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2018', '{"measure":"GDP_CON","geo":"GE"}'::jsonb, 3705, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2019', '{"measure":"GDP_CON","geo":"GE"}'::jsonb, 3717.6, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2020', '{"measure":"GDP_CON","geo":"GE"}'::jsonb, 3780.5, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2021', '{"measure":"GDP_CON","geo":"GE"}'::jsonb, 3839.2, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2022', '{"measure":"GDP_CON","geo":"GE"}'::jsonb, 5100.6, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2023', '{"measure":"GDP_CON","geo":"GE"}'::jsonb, 5362.8, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2024', '{"measure":"GDP_CON","geo":"GE"}'::jsonb, 6894.2, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2025', '{"measure":"GDP_CON","geo":"GE"}'::jsonb, 7323.7, 'P', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2010', '{"measure":"GDP_SVC","geo":"GE"}'::jsonb, 13830.9, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2011', '{"measure":"GDP_SVC","geo":"GE"}'::jsonb, 15977.3, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2012', '{"measure":"GDP_SVC","geo":"GE"}'::jsonb, 17147.7, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2013', '{"measure":"GDP_SVC","geo":"GE"}'::jsonb, 17995.5, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2014', '{"measure":"GDP_SVC","geo":"GE"}'::jsonb, 19398, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2015', '{"measure":"GDP_SVC","geo":"GE"}'::jsonb, 20864.4, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2016', '{"measure":"GDP_SVC","geo":"GE"}'::jsonb, 22192.6, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2017', '{"measure":"GDP_SVC","geo":"GE"}'::jsonb, 24111.9, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2018', '{"measure":"GDP_SVC","geo":"GE"}'::jsonb, 26475.9, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2019', '{"measure":"GDP_SVC","geo":"GE"}'::jsonb, 29885.5, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2020', '{"measure":"GDP_SVC","geo":"GE"}'::jsonb, 28821.7, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2021', '{"measure":"GDP_SVC","geo":"GE"}'::jsonb, 35644.3, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2022', '{"measure":"GDP_SVC","geo":"GE"}'::jsonb, 43023.3, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2023', '{"measure":"GDP_SVC","geo":"GE"}'::jsonb, 50192.5, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2024', '{"measure":"GDP_SVC","geo":"GE"}'::jsonb, 57659.5, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2025', '{"measure":"GDP_SVC","geo":"GE"}'::jsonb, 66877.3, 'P', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2010', '{"measure":"GDP_NET_TAX","geo":"GE"}'::jsonb, 2615.8, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2011', '{"measure":"GDP_NET_TAX","geo":"GE"}'::jsonb, 2966, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2012', '{"measure":"GDP_NET_TAX","geo":"GE"}'::jsonb, 3101.9, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2013', '{"measure":"GDP_NET_TAX","geo":"GE"}'::jsonb, 3202.5, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2014', '{"measure":"GDP_NET_TAX","geo":"GE"}'::jsonb, 3640.3, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2015', '{"measure":"GDP_NET_TAX","geo":"GE"}'::jsonb, 3902.6, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2016', '{"measure":"GDP_NET_TAX","geo":"GE"}'::jsonb, 4445.5, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2017', '{"measure":"GDP_NET_TAX","geo":"GE"}'::jsonb, 5575.7, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2018', '{"measure":"GDP_NET_TAX","geo":"GE"}'::jsonb, 5982.3, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2019', '{"measure":"GDP_NET_TAX","geo":"GE"}'::jsonb, 6244.3, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2020', '{"measure":"GDP_NET_TAX","geo":"GE"}'::jsonb, 6335.1, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2021', '{"measure":"GDP_NET_TAX","geo":"GE"}'::jsonb, 7898.1, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2022', '{"measure":"GDP_NET_TAX","geo":"GE"}'::jsonb, 9463.5, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2023', '{"measure":"GDP_NET_TAX","geo":"GE"}'::jsonb, 10553.9, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2024', '{"measure":"GDP_NET_TAX","geo":"GE"}'::jsonb, 12042.9, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2025', '{"measure":"GDP_NET_TAX","geo":"GE"}'::jsonb, 12841.6, 'P', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2010', '{"measure":"C","geo":"GE"}'::jsonb, 21220.5, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2011', '{"measure":"C","geo":"GE"}'::jsonb, 24694.8, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2012', '{"measure":"C","geo":"GE"}'::jsonb, 25784.5, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2013', '{"measure":"C","geo":"GE"}'::jsonb, 26291.2, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2014', '{"measure":"C","geo":"GE"}'::jsonb, 28847.3, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2015', '{"measure":"C","geo":"GE"}'::jsonb, 31046.6, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2016', '{"measure":"C","geo":"GE"}'::jsonb, 31444.9, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2017', '{"measure":"C","geo":"GE"}'::jsonb, 35430.8, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2018', '{"measure":"C","geo":"GE"}'::jsonb, 37447.7, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2019', '{"measure":"C","geo":"GE"}'::jsonb, 40792.1, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2020', '{"measure":"C","geo":"GE"}'::jsonb, 47042.6, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2021', '{"measure":"C","geo":"GE"}'::jsonb, 58036.1, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2022', '{"measure":"C","geo":"GE"}'::jsonb, 62420, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2023', '{"measure":"C","geo":"GE"}'::jsonb, 67632.8, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2024', '{"measure":"C","geo":"GE"}'::jsonb, 77512.2, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2025', '{"measure":"C","geo":"GE"}'::jsonb, 88425.6, 'P', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2010', '{"measure":"I_GFCF","geo":"GE"}'::jsonb, 4635.6, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2011', '{"measure":"I_GFCF","geo":"GE"}'::jsonb, 6034.3, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2012', '{"measure":"I_GFCF","geo":"GE"}'::jsonb, 7260.9, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2013', '{"measure":"I_GFCF","geo":"GE"}'::jsonb, 6323, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2014', '{"measure":"I_GFCF","geo":"GE"}'::jsonb, 8136.8, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2015', '{"measure":"I_GFCF","geo":"GE"}'::jsonb, 9285.5, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2016', '{"measure":"I_GFCF","geo":"GE"}'::jsonb, 10565, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2017', '{"measure":"I_GFCF","geo":"GE"}'::jsonb, 10386.6, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2018', '{"measure":"I_GFCF","geo":"GE"}'::jsonb, 12671.3, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2019', '{"measure":"I_GFCF","geo":"GE"}'::jsonb, 13509.7, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2020', '{"measure":"I_GFCF","geo":"GE"}'::jsonb, 12250.9, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2021', '{"measure":"I_GFCF","geo":"GE"}'::jsonb, 12557, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2022', '{"measure":"I_GFCF","geo":"GE"}'::jsonb, 17535, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2023', '{"measure":"I_GFCF","geo":"GE"}'::jsonb, 20219.7, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2024', '{"measure":"I_GFCF","geo":"GE"}'::jsonb, 22790.4, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2025', '{"measure":"I_GFCF","geo":"GE"}'::jsonb, 22256.7, 'P', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2010', '{"measure":"X","geo":"GE"}'::jsonb, 7191.2, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2011', '{"measure":"X","geo":"GE"}'::jsonb, 8838, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2012', '{"measure":"X","geo":"GE"}'::jsonb, 9942.4, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2013', '{"measure":"X","geo":"GE"}'::jsonb, 11929.5, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2014', '{"measure":"X","geo":"GE"}'::jsonb, 12429.3, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2015', '{"measure":"X","geo":"GE"}'::jsonb, 13866.6, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2016', '{"measure":"X","geo":"GE"}'::jsonb, 14620.9, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2017', '{"measure":"X","geo":"GE"}'::jsonb, 18965.4, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2018', '{"measure":"X","geo":"GE"}'::jsonb, 22548.9, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2019', '{"measure":"X","geo":"GE"}'::jsonb, 27003.4, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2020', '{"measure":"X","geo":"GE"}'::jsonb, 18372.3, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2021', '{"measure":"X","geo":"GE"}'::jsonb, 25913.6, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2022', '{"measure":"X","geo":"GE"}'::jsonb, 38236.1, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2023', '{"measure":"X","geo":"GE"}'::jsonb, 39848.6, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2024', '{"measure":"X","geo":"GE"}'::jsonb, 44478.7, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2025', '{"measure":"X","geo":"GE"}'::jsonb, 49585.4, 'P', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2010', '{"measure":"M","geo":"GE"}'::jsonb, 10898.6, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2011', '{"measure":"M","geo":"GE"}'::jsonb, 13467.7, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2012', '{"measure":"M","geo":"GE"}'::jsonb, 15091, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2013', '{"measure":"M","geo":"GE"}'::jsonb, 15406, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2014', '{"measure":"M","geo":"GE"}'::jsonb, 17691, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2015', '{"measure":"M","geo":"GE"}'::jsonb, 19650.6, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2016', '{"measure":"M","geo":"GE"}'::jsonb, 20077.5, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2017', '{"measure":"M","geo":"GE"}'::jsonb, 23443, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2018', '{"measure":"M","geo":"GE"}'::jsonb, 27293.5, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2019', '{"measure":"M","geo":"GE"}'::jsonb, 31578.9, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2020', '{"measure":"M","geo":"GE"}'::jsonb, 27877.2, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2021', '{"measure":"M","geo":"GE"}'::jsonb, 35782.6, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2022', '{"measure":"M","geo":"GE"}'::jsonb, 45331, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2023', '{"measure":"M","geo":"GE"}'::jsonb, 46818.3, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2024', '{"measure":"M","geo":"GE"}'::jsonb, 51758.9, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2025', '{"measure":"M","geo":"GE"}'::jsonb, 55669.6, 'P', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2010', '{"measure":"D1","geo":"GE"}'::jsonb, 4999, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2011', '{"measure":"D1","geo":"GE"}'::jsonb, 6225, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2012', '{"measure":"D1","geo":"GE"}'::jsonb, 7084, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2013', '{"measure":"D1","geo":"GE"}'::jsonb, 7800, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2014', '{"measure":"D1","geo":"GE"}'::jsonb, 8550, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2015', '{"measure":"D1","geo":"GE"}'::jsonb, 9712, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2016', '{"measure":"D1","geo":"GE"}'::jsonb, 11062, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2017', '{"measure":"D1","geo":"GE"}'::jsonb, 12581, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2018', '{"measure":"D1","geo":"GE"}'::jsonb, 14172, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2019', '{"measure":"D1","geo":"GE"}'::jsonb, 16242, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2020', '{"measure":"D1","geo":"GE"}'::jsonb, 15992, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2021', '{"measure":"D1","geo":"GE"}'::jsonb, 18955, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2022', '{"measure":"D1","geo":"GE"}'::jsonb, 23019, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2023', '{"measure":"D1","geo":"GE"}'::jsonb, 27138, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2024', '{"measure":"D1","geo":"GE"}'::jsonb, 31574, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2025', '{"measure":"D1","geo":"GE"}'::jsonb, 34816.3, 'P', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2010', '{"measure":"NET_TAX_PROD","geo":"GE"}'::jsonb, 2823, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2011', '{"measure":"NET_TAX_PROD","geo":"GE"}'::jsonb, 3205, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2012', '{"measure":"NET_TAX_PROD","geo":"GE"}'::jsonb, 3382, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2013', '{"measure":"NET_TAX_PROD","geo":"GE"}'::jsonb, 3513, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2014', '{"measure":"NET_TAX_PROD","geo":"GE"}'::jsonb, 3982, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2015', '{"measure":"NET_TAX_PROD","geo":"GE"}'::jsonb, 4256, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2016', '{"measure":"NET_TAX_PROD","geo":"GE"}'::jsonb, 4841, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2017', '{"measure":"NET_TAX_PROD","geo":"GE"}'::jsonb, 6018, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2018', '{"measure":"NET_TAX_PROD","geo":"GE"}'::jsonb, 6447, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2019', '{"measure":"NET_TAX_PROD","geo":"GE"}'::jsonb, 6705, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2020', '{"measure":"NET_TAX_PROD","geo":"GE"}'::jsonb, 6797, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2021', '{"measure":"NET_TAX_PROD","geo":"GE"}'::jsonb, 8421, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2022', '{"measure":"NET_TAX_PROD","geo":"GE"}'::jsonb, 10081, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2023', '{"measure":"NET_TAX_PROD","geo":"GE"}'::jsonb, 11377, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2024', '{"measure":"NET_TAX_PROD","geo":"GE"}'::jsonb, 12934, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2025', '{"measure":"NET_TAX_PROD","geo":"GE"}'::jsonb, 13830.9, 'P', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2010', '{"measure":"OS_GROSS","geo":"GE"}'::jsonb, 10363, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2011', '{"measure":"OS_GROSS","geo":"GE"}'::jsonb, 11802, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2012', '{"measure":"OS_GROSS","geo":"GE"}'::jsonb, 12049, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2013', '{"measure":"OS_GROSS","geo":"GE"}'::jsonb, 12115, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2014', '{"measure":"OS_GROSS","geo":"GE"}'::jsonb, 13498, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2015', '{"measure":"OS_GROSS","geo":"GE"}'::jsonb, 14606, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2016', '{"measure":"OS_GROSS","geo":"GE"}'::jsonb, 14699, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2017', '{"measure":"OS_GROSS","geo":"GE"}'::jsonb, 16469, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2018', '{"measure":"OS_GROSS","geo":"GE"}'::jsonb, 18127, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2019', '{"measure":"OS_GROSS","geo":"GE"}'::jsonb, 19489, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2020', '{"measure":"OS_GROSS","geo":"GE"}'::jsonb, 19680, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2021', '{"measure":"OS_GROSS","geo":"GE"}'::jsonb, 24309, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2022', '{"measure":"OS_GROSS","geo":"GE"}'::jsonb, 28965.9, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2023', '{"measure":"OS_GROSS","geo":"GE"}'::jsonb, 30876.2, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2024', '{"measure":"OS_GROSS","geo":"GE"}'::jsonb, 35356, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2025', '{"measure":"OS_GROSS","geo":"GE"}'::jsonb, 40820.7, 'P', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2010', '{"measure":"MIXED_INC","geo":"GE"}'::jsonb, 3964, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2011', '{"measure":"MIXED_INC","geo":"GE"}'::jsonb, 4867, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2012', '{"measure":"MIXED_INC","geo":"GE"}'::jsonb, 5381, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2013', '{"measure":"MIXED_INC","geo":"GE"}'::jsonb, 5710, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2014', '{"measure":"MIXED_INC","geo":"GE"}'::jsonb, 5692, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2015', '{"measure":"MIXED_INC","geo":"GE"}'::jsonb, 5974, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2016', '{"measure":"MIXED_INC","geo":"GE"}'::jsonb, 5952, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2017', '{"measure":"MIXED_INC","geo":"GE"}'::jsonb, 6271, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2018', '{"measure":"MIXED_INC","geo":"GE"}'::jsonb, 6629, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2019', '{"measure":"MIXED_INC","geo":"GE"}'::jsonb, 7290, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2020', '{"measure":"MIXED_INC","geo":"GE"}'::jsonb, 7320, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2021', '{"measure":"MIXED_INC","geo":"GE"}'::jsonb, 9039.1, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2022', '{"measure":"MIXED_INC","geo":"GE"}'::jsonb, 10794.2, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2023', '{"measure":"MIXED_INC","geo":"GE"}'::jsonb, 11491, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2024', '{"measure":"MIXED_INC","geo":"GE"}'::jsonb, 13159, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2025', '{"measure":"MIXED_INC","geo":"GE"}'::jsonb, 15130.2, 'P', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2010', '{"measure":"GDP_GROWTH","geo":"GE"}'::jsonb, 0, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2011', '{"measure":"GDP_GROWTH","geo":"GE"}'::jsonb, 7.9, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2012', '{"measure":"GDP_GROWTH","geo":"GE"}'::jsonb, 6.6, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2013', '{"measure":"GDP_GROWTH","geo":"GE"}'::jsonb, 5.1, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2014', '{"measure":"GDP_GROWTH","geo":"GE"}'::jsonb, 4.1, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2015', '{"measure":"GDP_GROWTH","geo":"GE"}'::jsonb, 3.4, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2016', '{"measure":"GDP_GROWTH","geo":"GE"}'::jsonb, 3.4, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2017', '{"measure":"GDP_GROWTH","geo":"GE"}'::jsonb, 5.2, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2018', '{"measure":"GDP_GROWTH","geo":"GE"}'::jsonb, 6.1, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2019', '{"measure":"GDP_GROWTH","geo":"GE"}'::jsonb, 5.4, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2020', '{"measure":"GDP_GROWTH","geo":"GE"}'::jsonb, -6.3, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2021', '{"measure":"GDP_GROWTH","geo":"GE"}'::jsonb, 10.6, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2022', '{"measure":"GDP_GROWTH","geo":"GE"}'::jsonb, 11, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2023', '{"measure":"GDP_GROWTH","geo":"GE"}'::jsonb, 7.8, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2024', '{"measure":"GDP_GROWTH","geo":"GE"}'::jsonb, 9.7, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2025', '{"measure":"GDP_GROWTH","geo":"GE"}'::jsonb, 7.5, 'P', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2011', '{"measure":"GDP_DEFLATOR","geo":"GE"}'::jsonb, 9.16, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2012', '{"measure":"GDP_DEFLATOR","geo":"GE"}'::jsonb, 0.29, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2013', '{"measure":"GDP_DEFLATOR","geo":"GE"}'::jsonb, -0.65, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2014', '{"measure":"GDP_DEFLATOR","geo":"GE"}'::jsonb, 4.59, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2015', '{"measure":"GDP_DEFLATOR","geo":"GE"}'::jsonb, 5.38, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2016', '{"measure":"GDP_DEFLATOR","geo":"GE"}'::jsonb, 2.28, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2017', '{"measure":"GDP_DEFLATOR","geo":"GE"}'::jsonb, 7.54, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2018', '{"measure":"GDP_DEFLATOR","geo":"GE"}'::jsonb, 3.49, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2019', '{"measure":"GDP_DEFLATOR","geo":"GE"}'::jsonb, 4, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2020', '{"measure":"GDP_DEFLATOR","geo":"GE"}'::jsonb, 6.85, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2021', '{"measure":"GDP_DEFLATOR","geo":"GE"}'::jsonb, 10.23, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2022', '{"measure":"GDP_DEFLATOR","geo":"GE"}'::jsonb, 8.13, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2023', '{"measure":"GDP_DEFLATOR","geo":"GE"}'::jsonb, 2.95, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2024', '{"measure":"GDP_DEFLATOR","geo":"GE"}'::jsonb, 4.86, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2025', '{"measure":"GDP_DEFLATOR","geo":"GE"}'::jsonb, 4.64, 'P', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2010', '{"measure":"GDP_PER_CAPITA","geo":"GE"}'::jsonb, 3281.2, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2011', '{"measure":"GDP_PER_CAPITA","geo":"GE"}'::jsonb, 4120.8, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2012', '{"measure":"GDP_PER_CAPITA","geo":"GE"}'::jsonb, 4530.7, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2013', '{"measure":"GDP_PER_CAPITA","geo":"GE"}'::jsonb, 4711.8, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2014', '{"measure":"GDP_PER_CAPITA","geo":"GE"}'::jsonb, 4829.9, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2015', '{"measure":"GDP_PER_CAPITA","geo":"GE"}'::jsonb, 4085.1, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2016', '{"measure":"GDP_PER_CAPITA","geo":"GE"}'::jsonb, 4143.5, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2017', '{"measure":"GDP_PER_CAPITA","geo":"GE"}'::jsonb, 4420.3, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2018', '{"measure":"GDP_PER_CAPITA","geo":"GE"}'::jsonb, 4804, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2019', '{"measure":"GDP_PER_CAPITA","geo":"GE"}'::jsonb, 4741.4, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2020', '{"measure":"GDP_PER_CAPITA","geo":"GE"}'::jsonb, 4300.8, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2021', '{"measure":"GDP_PER_CAPITA","geo":"GE"}'::jsonb, 5083.6, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2022', '{"measure":"GDP_PER_CAPITA","geo":"GE"}'::jsonb, 6731.2, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2023', '{"measure":"GDP_PER_CAPITA","geo":"GE"}'::jsonb, 8284, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2024', '{"measure":"GDP_PER_CAPITA","geo":"GE"}'::jsonb, 9241.5, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2025', '{"measure":"GDP_PER_CAPITA","geo":"GE"}'::jsonb, 10296.5, 'P', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2010', '{"measure":"GFCF_RES","geo":"GE"}'::jsonb, 315.7, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2011', '{"measure":"GFCF_RES","geo":"GE"}'::jsonb, 587.8, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2012', '{"measure":"GFCF_RES","geo":"GE"}'::jsonb, 896.4, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2013', '{"measure":"GFCF_RES","geo":"GE"}'::jsonb, 850.2, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2014', '{"measure":"GFCF_RES","geo":"GE"}'::jsonb, 1422.8, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2015', '{"measure":"GFCF_RES","geo":"GE"}'::jsonb, 1193.6, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2016', '{"measure":"GFCF_RES","geo":"GE"}'::jsonb, 1917.2, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2017', '{"measure":"GFCF_RES","geo":"GE"}'::jsonb, 1568.4, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2018', '{"measure":"GFCF_RES","geo":"GE"}'::jsonb, 2289.5, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2019', '{"measure":"GFCF_RES","geo":"GE"}'::jsonb, 2495.8, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2020', '{"measure":"GFCF_RES","geo":"GE"}'::jsonb, 1487.8, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2021', '{"measure":"GFCF_RES","geo":"GE"}'::jsonb, 1496.8, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2022', '{"measure":"GFCF_RES","geo":"GE"}'::jsonb, 2655.4, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2023', '{"measure":"GFCF_RES","geo":"GE"}'::jsonb, 3858.8, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2024', '{"measure":"GFCF_RES","geo":"GE"}'::jsonb, 4626.8, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2025', '{"measure":"GFCF_RES","geo":"GE"}'::jsonb, 4297, 'P', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2010', '{"measure":"GFCF_STRUCT","geo":"GE"}'::jsonb, 2234.8, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2011', '{"measure":"GFCF_STRUCT","geo":"GE"}'::jsonb, 2359, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2012', '{"measure":"GFCF_STRUCT","geo":"GE"}'::jsonb, 2449.4, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2013', '{"measure":"GFCF_STRUCT","geo":"GE"}'::jsonb, 1996.7, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2014', '{"measure":"GFCF_STRUCT","geo":"GE"}'::jsonb, 2299.7, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2015', '{"measure":"GFCF_STRUCT","geo":"GE"}'::jsonb, 2984.8, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2016', '{"measure":"GFCF_STRUCT","geo":"GE"}'::jsonb, 2931.4, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2017', '{"measure":"GFCF_STRUCT","geo":"GE"}'::jsonb, 3181.2, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2018', '{"measure":"GFCF_STRUCT","geo":"GE"}'::jsonb, 3760, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2019', '{"measure":"GFCF_STRUCT","geo":"GE"}'::jsonb, 4560.3, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2020', '{"measure":"GFCF_STRUCT","geo":"GE"}'::jsonb, 4978.2, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2021', '{"measure":"GFCF_STRUCT","geo":"GE"}'::jsonb, 5081.3, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2022', '{"measure":"GFCF_STRUCT","geo":"GE"}'::jsonb, 5688.3, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2023', '{"measure":"GFCF_STRUCT","geo":"GE"}'::jsonb, 6720.1, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2024', '{"measure":"GFCF_STRUCT","geo":"GE"}'::jsonb, 7966.2, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2025', '{"measure":"GFCF_STRUCT","geo":"GE"}'::jsonb, 7858.3, 'P', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2010', '{"measure":"GFCF_MACH","geo":"GE"}'::jsonb, 1292.5, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2011', '{"measure":"GFCF_MACH","geo":"GE"}'::jsonb, 1902.6, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2012', '{"measure":"GFCF_MACH","geo":"GE"}'::jsonb, 2189.8, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2013', '{"measure":"GFCF_MACH","geo":"GE"}'::jsonb, 2151.3, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2014', '{"measure":"GFCF_MACH","geo":"GE"}'::jsonb, 2606.1, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2015', '{"measure":"GFCF_MACH","geo":"GE"}'::jsonb, 2893.5, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2016', '{"measure":"GFCF_MACH","geo":"GE"}'::jsonb, 3843.6, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2017', '{"measure":"GFCF_MACH","geo":"GE"}'::jsonb, 4913.7, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2018', '{"measure":"GFCF_MACH","geo":"GE"}'::jsonb, 4410.3, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2019', '{"measure":"GFCF_MACH","geo":"GE"}'::jsonb, 3981.6, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2020', '{"measure":"GFCF_MACH","geo":"GE"}'::jsonb, 3630.1, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2021', '{"measure":"GFCF_MACH","geo":"GE"}'::jsonb, 4874.3, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2022', '{"measure":"GFCF_MACH","geo":"GE"}'::jsonb, 5027.2, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2023', '{"measure":"GFCF_MACH","geo":"GE"}'::jsonb, 5529.7, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2024', '{"measure":"GFCF_MACH","geo":"GE"}'::jsonb, 6255.9, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2025', '{"measure":"GFCF_MACH","geo":"GE"}'::jsonb, 6484.5, 'P', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2010', '{"measure":"GFCF_BIO","geo":"GE"}'::jsonb, 170.4, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2011', '{"measure":"GFCF_BIO","geo":"GE"}'::jsonb, 226.1, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2012', '{"measure":"GFCF_BIO","geo":"GE"}'::jsonb, 213, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2013', '{"measure":"GFCF_BIO","geo":"GE"}'::jsonb, 233.5, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2014', '{"measure":"GFCF_BIO","geo":"GE"}'::jsonb, 312.5, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2015', '{"measure":"GFCF_BIO","geo":"GE"}'::jsonb, 386.3, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2016', '{"measure":"GFCF_BIO","geo":"GE"}'::jsonb, 390.3, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2017', '{"measure":"GFCF_BIO","geo":"GE"}'::jsonb, 440.9, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2018', '{"measure":"GFCF_BIO","geo":"GE"}'::jsonb, 435.1, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2019', '{"measure":"GFCF_BIO","geo":"GE"}'::jsonb, 454.3, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2020', '{"measure":"GFCF_BIO","geo":"GE"}'::jsonb, 543.9, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2021', '{"measure":"GFCF_BIO","geo":"GE"}'::jsonb, 511.2, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2022', '{"measure":"GFCF_BIO","geo":"GE"}'::jsonb, 561.8, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2023', '{"measure":"GFCF_BIO","geo":"GE"}'::jsonb, 585.1, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2024', '{"measure":"GFCF_BIO","geo":"GE"}'::jsonb, 625.8, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2025', '{"measure":"GFCF_BIO","geo":"GE"}'::jsonb, 683.7, 'P', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2010', '{"measure":"GFCF_IP","geo":"GE"}'::jsonb, 115.2, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2011', '{"measure":"GFCF_IP","geo":"GE"}'::jsonb, 100.2, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2012', '{"measure":"GFCF_IP","geo":"GE"}'::jsonb, 272.7, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2013', '{"measure":"GFCF_IP","geo":"GE"}'::jsonb, 140.7, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2014', '{"measure":"GFCF_IP","geo":"GE"}'::jsonb, 160.8, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2015', '{"measure":"GFCF_IP","geo":"GE"}'::jsonb, 805.7, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2016', '{"measure":"GFCF_IP","geo":"GE"}'::jsonb, 422.1, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2017', '{"measure":"GFCF_IP","geo":"GE"}'::jsonb, 286.8, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2018', '{"measure":"GFCF_IP","geo":"GE"}'::jsonb, 354.6, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2019', '{"measure":"GFCF_IP","geo":"GE"}'::jsonb, 423.8, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2020', '{"measure":"GFCF_IP","geo":"GE"}'::jsonb, 429.5, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2021', '{"measure":"GFCF_IP","geo":"GE"}'::jsonb, 641.7, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2022', '{"measure":"GFCF_IP","geo":"GE"}'::jsonb, 457.3, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2023', '{"measure":"GFCF_IP","geo":"GE"}'::jsonb, 663.8, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2024', '{"measure":"GFCF_IP","geo":"GE"}'::jsonb, 355.6, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2025', '{"measure":"GFCF_IP","geo":"GE"}'::jsonb, 569.6, 'P', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2010', '{"measure":"NOE_SHARE","geo":"GE"}'::jsonb, 23.1, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2011', '{"measure":"NOE_SHARE","geo":"GE"}'::jsonb, 20.8, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2012', '{"measure":"NOE_SHARE","geo":"GE"}'::jsonb, 17.7, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2013', '{"measure":"NOE_SHARE","geo":"GE"}'::jsonb, 14.8, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2014', '{"measure":"NOE_SHARE","geo":"GE"}'::jsonb, 15.1, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2015', '{"measure":"NOE_SHARE","geo":"GE"}'::jsonb, 13.6, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2016', '{"measure":"NOE_SHARE","geo":"GE"}'::jsonb, 12.7, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2017', '{"measure":"NOE_SHARE","geo":"GE"}'::jsonb, 13.4, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2018', '{"measure":"NOE_SHARE","geo":"GE"}'::jsonb, 13.3, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2019', '{"measure":"NOE_SHARE","geo":"GE"}'::jsonb, 14.3, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2020', '{"measure":"NOE_SHARE","geo":"GE"}'::jsonb, 12.8, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2021', '{"measure":"NOE_SHARE","geo":"GE"}'::jsonb, 14.4, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2022', '{"measure":"NOE_SHARE","geo":"GE"}'::jsonb, 13.1, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2023', '{"measure":"NOE_SHARE","geo":"GE"}'::jsonb, 12.4, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2024', '{"measure":"NOE_SHARE","geo":"GE"}'::jsonb, 12.5, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2025', '{"measure":"NOE_SHARE","geo":"GE"}'::jsonb, 12.4, 'P', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2010', '{"measure":"GDP","geo":"GE"}'::jsonb, 22148.7, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2011', '{"measure":"GDP","geo":"GE"}'::jsonb, 26099.4, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2012', '{"measure":"GDP","geo":"GE"}'::jsonb, 27896.9, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2013', '{"measure":"GDP","geo":"GE"}'::jsonb, 29137.7, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2014', '{"measure":"GDP","geo":"GE"}'::jsonb, 31722.4, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2015', '{"measure":"GDP","geo":"GE"}'::jsonb, 34548.2, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2016', '{"measure":"GDP","geo":"GE"}'::jsonb, 36553.3, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2017', '{"measure":"GDP","geo":"GE"}'::jsonb, 41339.8, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2018', '{"measure":"GDP","geo":"GE"}'::jsonb, 45374.4, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2019', '{"measure":"GDP","geo":"GE"}'::jsonb, 49726.3, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2020', '{"measure":"GDP","geo":"GE"}'::jsonb, 49788.5, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2021', '{"measure":"GDP","geo":"GE"}'::jsonb, 60724.1, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2022', '{"measure":"GDP","geo":"GE"}'::jsonb, 72860.1, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2023', '{"measure":"GDP","geo":"GE"}'::jsonb, 80882.8, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2024', '{"measure":"GDP","geo":"GE"}'::jsonb, 93022.3, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('GDP_ANNUAL', '2025', '{"measure":"GDP","geo":"GE"}'::jsonb, 104598.1, 'P', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+-- ACCOUNTS_SEQUENCE: 279 observations
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2025', '{"measure":"P1","account":"production","side":"R"}'::jsonb, 178837.27566923446, 'A', '{"seqPos":0,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2025', '{"measure":"P2","account":"production","side":"U"}'::jsonb, 74239.13578590246, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2025', '{"measure":"B1G","account":"production","side":"U"}'::jsonb, 104598.139883332, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2025', '{"measure":"B1G","account":"income_gen","side":"R"}'::jsonb, 104598.139883332, 'A', '{"seqPos":3,"isCarryForward":true}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2025', '{"measure":"D1","account":"income_gen","side":"U"}'::jsonb, 34816.26771433034, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2025', '{"measure":"ACC_NET_TAX","account":"income_gen","side":"U"}'::jsonb, 13830.947586718112, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2025', '{"measure":"B2G","account":"income_gen","side":"U"}'::jsonb, 55950.924582283566, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2025', '{"measure":"B2G","account":"primary_dist","side":"R"}'::jsonb, 55950.924582283566, 'A', '{"seqPos":7,"isCarryForward":true}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2025', '{"measure":"D1","account":"primary_dist","side":"R"}'::jsonb, 34816.26771433034, 'A', '{"seqPos":8,"isCarryForward":true}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2025', '{"measure":"ACC_NET_TAX","account":"primary_dist","side":"R"}'::jsonb, 13830.947586718112, 'A', '{"seqPos":9,"isCarryForward":true}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2025', '{"measure":"D4_REC","account":"primary_dist","side":"R"}'::jsonb, 4934.652980987907, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2025', '{"measure":"D4_PAY","account":"primary_dist","side":"U"}'::jsonb, 11497.529457157492, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2025', '{"measure":"B5G","account":"primary_dist","side":"U"}'::jsonb, 98035.26340716243, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2025', '{"measure":"B5G","account":"secondary_dist","side":"R"}'::jsonb, 98035.26340716243, 'A', '{"seqPos":13,"isCarryForward":true}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2025', '{"measure":"D5_REC","account":"secondary_dist","side":"R"}'::jsonb, 10158.03007440071, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2025', '{"measure":"D5_PAY","account":"secondary_dist","side":"U"}'::jsonb, 412.4646677096025, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2025', '{"measure":"B6G","account":"secondary_dist","side":"U"}'::jsonb, 107780.82881385353, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2025', '{"measure":"B6G","account":"use_of_income","side":"R"}'::jsonb, 107780.82881385353, 'A', '{"seqPos":17,"isCarryForward":true}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2025', '{"measure":"P3","account":"use_of_income","side":"U"}'::jsonb, 88425.60255782693, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2025', '{"measure":"B8G","account":"use_of_income","side":"U"}'::jsonb, 19355.226256026603, 'A', '{"seqPos":20,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2025', '{"measure":"B8G","account":"capital","side":"R"}'::jsonb, 19355.226256026603, 'A', '{"seqPos":20,"isCarryForward":true}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2025', '{"measure":"D9R","account":"capital","side":"R"}'::jsonb, 65.60506452301973, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2025', '{"measure":"P5","account":"capital","side":"U"}'::jsonb, 22256.714798751065, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2025', '{"measure":"B9","account":"capital","side":"U"}'::jsonb, -2835.8834782014455, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2010', '{"measure":"P1","account":"production","side":"R"}'::jsonb, 36749.9, 'A', '{"seqPos":0,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2011', '{"measure":"P1","account":"production","side":"R"}'::jsonb, 45126.8, 'A', '{"seqPos":0,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2012', '{"measure":"P1","account":"production","side":"R"}'::jsonb, 48735.5, 'A', '{"seqPos":0,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2013', '{"measure":"P1","account":"production","side":"R"}'::jsonb, 49034.1, 'A', '{"seqPos":0,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2014', '{"measure":"P1","account":"production","side":"R"}'::jsonb, 53715.7, 'A', '{"seqPos":0,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2015', '{"measure":"P1","account":"production","side":"R"}'::jsonb, 58319.8, 'A', '{"seqPos":0,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2016', '{"measure":"P1","account":"production","side":"R"}'::jsonb, 63736.2, 'A', '{"seqPos":0,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2017', '{"measure":"P1","account":"production","side":"R"}'::jsonb, 70261.8, 'A', '{"seqPos":0,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2018', '{"measure":"P1","account":"production","side":"R"}'::jsonb, 77139.3, 'A', '{"seqPos":0,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2019', '{"measure":"P1","account":"production","side":"R"}'::jsonb, 85862.1, 'A', '{"seqPos":0,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2020', '{"measure":"P1","account":"production","side":"R"}'::jsonb, 84500, 'A', '{"seqPos":0,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2021', '{"measure":"P1","account":"production","side":"R"}'::jsonb, 103149, 'A', '{"seqPos":0,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2022', '{"measure":"P1","account":"production","side":"R"}'::jsonb, 123587, 'A', '{"seqPos":0,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2023', '{"measure":"P1","account":"production","side":"R"}'::jsonb, 137604, 'A', '{"seqPos":0,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2024', '{"measure":"P1","account":"production","side":"R"}'::jsonb, 160360, 'A', '{"seqPos":0,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2010', '{"measure":"P2","account":"production","side":"U"}'::jsonb, 14601.2, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2011', '{"measure":"P2","account":"production","side":"U"}'::jsonb, 19027.5, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2012', '{"measure":"P2","account":"production","side":"U"}'::jsonb, 20838.7, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2013', '{"measure":"P2","account":"production","side":"U"}'::jsonb, 19896.4, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2014', '{"measure":"P2","account":"production","side":"U"}'::jsonb, 21993.3, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2015', '{"measure":"P2","account":"production","side":"U"}'::jsonb, 23771.6, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2016', '{"measure":"P2","account":"production","side":"U"}'::jsonb, 27182.9, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2017', '{"measure":"P2","account":"production","side":"U"}'::jsonb, 28922.1, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2018', '{"measure":"P2","account":"production","side":"U"}'::jsonb, 31765, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2019', '{"measure":"P2","account":"production","side":"U"}'::jsonb, 36135.8, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2020', '{"measure":"P2","account":"production","side":"U"}'::jsonb, 35093, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2021', '{"measure":"P2","account":"production","side":"U"}'::jsonb, 42828, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2022', '{"measure":"P2","account":"production","side":"U"}'::jsonb, 51314, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2023', '{"measure":"P2","account":"production","side":"U"}'::jsonb, 57134, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2024', '{"measure":"P2","account":"production","side":"U"}'::jsonb, 66582, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2010', '{"measure":"B1G","account":"production","side":"U"}'::jsonb, 22148.7, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2011', '{"measure":"B1G","account":"production","side":"U"}'::jsonb, 26099.4, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2012', '{"measure":"B1G","account":"production","side":"U"}'::jsonb, 27896.9, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2013', '{"measure":"B1G","account":"production","side":"U"}'::jsonb, 29137.7, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2014', '{"measure":"B1G","account":"production","side":"U"}'::jsonb, 31722.4, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2015', '{"measure":"B1G","account":"production","side":"U"}'::jsonb, 34548.2, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2016', '{"measure":"B1G","account":"production","side":"U"}'::jsonb, 36553.3, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2017', '{"measure":"B1G","account":"production","side":"U"}'::jsonb, 41339.8, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2018', '{"measure":"B1G","account":"production","side":"U"}'::jsonb, 45374.4, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2019', '{"measure":"B1G","account":"production","side":"U"}'::jsonb, 49726.3, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2020', '{"measure":"B1G","account":"production","side":"U"}'::jsonb, 49407, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2021', '{"measure":"B1G","account":"production","side":"U"}'::jsonb, 60321, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2022', '{"measure":"B1G","account":"production","side":"U"}'::jsonb, 72273, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2023', '{"measure":"B1G","account":"production","side":"U"}'::jsonb, 80470, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2024', '{"measure":"B1G","account":"production","side":"U"}'::jsonb, 93778, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2010', '{"measure":"D1","account":"income_gen","side":"U"}'::jsonb, 4998.7, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2011', '{"measure":"D1","account":"income_gen","side":"U"}'::jsonb, 6225.1, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2012', '{"measure":"D1","account":"income_gen","side":"U"}'::jsonb, 7084, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2013', '{"measure":"D1","account":"income_gen","side":"U"}'::jsonb, 7799.8, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2014', '{"measure":"D1","account":"income_gen","side":"U"}'::jsonb, 8549.9, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2015', '{"measure":"D1","account":"income_gen","side":"U"}'::jsonb, 9712, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2016', '{"measure":"D1","account":"income_gen","side":"U"}'::jsonb, 11061.6, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2017', '{"measure":"D1","account":"income_gen","side":"U"}'::jsonb, 12580.7, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2018', '{"measure":"D1","account":"income_gen","side":"U"}'::jsonb, 14171.9, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2019', '{"measure":"D1","account":"income_gen","side":"U"}'::jsonb, 16241.9, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2020', '{"measure":"D1","account":"income_gen","side":"U"}'::jsonb, 22000, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2021', '{"measure":"D1","account":"income_gen","side":"U"}'::jsonb, 26000, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2022', '{"measure":"D1","account":"income_gen","side":"U"}'::jsonb, 29000, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2023', '{"measure":"D1","account":"income_gen","side":"U"}'::jsonb, 32000, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2024', '{"measure":"D1","account":"income_gen","side":"U"}'::jsonb, 31200, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2010', '{"measure":"ACC_NET_TAX","account":"income_gen","side":"U"}'::jsonb, 2822.9, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2011', '{"measure":"ACC_NET_TAX","account":"income_gen","side":"U"}'::jsonb, 3205.3, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2012', '{"measure":"ACC_NET_TAX","account":"income_gen","side":"U"}'::jsonb, 3382.4, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2013', '{"measure":"ACC_NET_TAX","account":"income_gen","side":"U"}'::jsonb, 3513.4, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2014', '{"measure":"ACC_NET_TAX","account":"income_gen","side":"U"}'::jsonb, 3982.3, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2015', '{"measure":"ACC_NET_TAX","account":"income_gen","side":"U"}'::jsonb, 4255.8, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2016', '{"measure":"ACC_NET_TAX","account":"income_gen","side":"U"}'::jsonb, 4841, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2017', '{"measure":"ACC_NET_TAX","account":"income_gen","side":"U"}'::jsonb, 6018.4, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2018', '{"measure":"ACC_NET_TAX","account":"income_gen","side":"U"}'::jsonb, 6446.8, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2019', '{"measure":"ACC_NET_TAX","account":"income_gen","side":"U"}'::jsonb, 6705.4, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2020', '{"measure":"ACC_NET_TAX","account":"income_gen","side":"U"}'::jsonb, 5407, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2021', '{"measure":"ACC_NET_TAX","account":"income_gen","side":"U"}'::jsonb, 6321, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2022', '{"measure":"ACC_NET_TAX","account":"income_gen","side":"U"}'::jsonb, 9273, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2023', '{"measure":"ACC_NET_TAX","account":"income_gen","side":"U"}'::jsonb, 10470, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2024', '{"measure":"ACC_NET_TAX","account":"income_gen","side":"U"}'::jsonb, 11200, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2010', '{"measure":"B2G","account":"income_gen","side":"U"}'::jsonb, 14327, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2011', '{"measure":"B2G","account":"income_gen","side":"U"}'::jsonb, 16669, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2012', '{"measure":"B2G","account":"income_gen","side":"U"}'::jsonb, 17430.5, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2013', '{"measure":"B2G","account":"income_gen","side":"U"}'::jsonb, 17824.6, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2014', '{"measure":"B2G","account":"income_gen","side":"U"}'::jsonb, 19190.3, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2015', '{"measure":"B2G","account":"income_gen","side":"U"}'::jsonb, 20580.3, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2016', '{"measure":"B2G","account":"income_gen","side":"U"}'::jsonb, 20650.7, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2017', '{"measure":"B2G","account":"income_gen","side":"U"}'::jsonb, 22740.7, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2018', '{"measure":"B2G","account":"income_gen","side":"U"}'::jsonb, 24755.6, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2019', '{"measure":"B2G","account":"income_gen","side":"U"}'::jsonb, 26779, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2020', '{"measure":"B2G","account":"income_gen","side":"U"}'::jsonb, 22000, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2021', '{"measure":"B2G","account":"income_gen","side":"U"}'::jsonb, 28000, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2022', '{"measure":"B2G","account":"income_gen","side":"U"}'::jsonb, 34000, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2023', '{"measure":"B2G","account":"income_gen","side":"U"}'::jsonb, 38000, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2024', '{"measure":"B2G","account":"income_gen","side":"U"}'::jsonb, 51378, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2010', '{"measure":"D4_REC","account":"primary_dist","side":"R"}'::jsonb, 992.6, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2011', '{"measure":"D4_REC","account":"primary_dist","side":"R"}'::jsonb, 1275.1, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2012', '{"measure":"D4_REC","account":"primary_dist","side":"R"}'::jsonb, 1778.8, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2013', '{"measure":"D4_REC","account":"primary_dist","side":"R"}'::jsonb, 1535.4, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2014', '{"measure":"D4_REC","account":"primary_dist","side":"R"}'::jsonb, 1813.6, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2015', '{"measure":"D4_REC","account":"primary_dist","side":"R"}'::jsonb, 1912, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2016', '{"measure":"D4_REC","account":"primary_dist","side":"R"}'::jsonb, 2159.1, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2017', '{"measure":"D4_REC","account":"primary_dist","side":"R"}'::jsonb, 2832.7, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2018', '{"measure":"D4_REC","account":"primary_dist","side":"R"}'::jsonb, 3251.9, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2019', '{"measure":"D4_REC","account":"primary_dist","side":"R"}'::jsonb, 3884.9, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2020', '{"measure":"D4_REC","account":"primary_dist","side":"R"}'::jsonb, 2322, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2021', '{"measure":"D4_REC","account":"primary_dist","side":"R"}'::jsonb, 2835, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2022', '{"measure":"D4_REC","account":"primary_dist","side":"R"}'::jsonb, 3397, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2023', '{"measure":"D4_REC","account":"primary_dist","side":"R"}'::jsonb, 3782, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2024', '{"measure":"D4_REC","account":"primary_dist","side":"R"}'::jsonb, 4408, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2010', '{"measure":"D4_PAY","account":"primary_dist","side":"U"}'::jsonb, 1379.4, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2011', '{"measure":"D4_PAY","account":"primary_dist","side":"U"}'::jsonb, 1993.5, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2012', '{"measure":"D4_PAY","account":"primary_dist","side":"U"}'::jsonb, 2063.4, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2013', '{"measure":"D4_PAY","account":"primary_dist","side":"U"}'::jsonb, 2062.3, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2014', '{"measure":"D4_PAY","account":"primary_dist","side":"U"}'::jsonb, 2216.6, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2015', '{"measure":"D4_PAY","account":"primary_dist","side":"U"}'::jsonb, 2691.3, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2016', '{"measure":"D4_PAY","account":"primary_dist","side":"U"}'::jsonb, 3814.8, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2017', '{"measure":"D4_PAY","account":"primary_dist","side":"U"}'::jsonb, 4818.2, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2018', '{"measure":"D4_PAY","account":"primary_dist","side":"U"}'::jsonb, 4960.7, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2019', '{"measure":"D4_PAY","account":"primary_dist","side":"U"}'::jsonb, 6130, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2020', '{"measure":"D4_PAY","account":"primary_dist","side":"U"}'::jsonb, 5435, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2021', '{"measure":"D4_PAY","account":"primary_dist","side":"U"}'::jsonb, 6635, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2022', '{"measure":"D4_PAY","account":"primary_dist","side":"U"}'::jsonb, 7950, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2023', '{"measure":"D4_PAY","account":"primary_dist","side":"U"}'::jsonb, 8852, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2024', '{"measure":"D4_PAY","account":"primary_dist","side":"U"}'::jsonb, 10316, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2010', '{"measure":"B5G","account":"primary_dist","side":"U"}'::jsonb, 21761.8, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2011', '{"measure":"B5G","account":"primary_dist","side":"U"}'::jsonb, 25381, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2012', '{"measure":"B5G","account":"primary_dist","side":"U"}'::jsonb, 27612.3, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2013', '{"measure":"B5G","account":"primary_dist","side":"U"}'::jsonb, 28610.8, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2014', '{"measure":"B5G","account":"primary_dist","side":"U"}'::jsonb, 31319.4, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2015', '{"measure":"B5G","account":"primary_dist","side":"U"}'::jsonb, 33768.8, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2016', '{"measure":"B5G","account":"primary_dist","side":"U"}'::jsonb, 34897.7, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2017', '{"measure":"B5G","account":"primary_dist","side":"U"}'::jsonb, 39354.3, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2018', '{"measure":"B5G","account":"primary_dist","side":"U"}'::jsonb, 43665.5, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2019', '{"measure":"B5G","account":"primary_dist","side":"U"}'::jsonb, 47481.1, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2020', '{"measure":"B5G","account":"primary_dist","side":"U"}'::jsonb, 46294, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2021', '{"measure":"B5G","account":"primary_dist","side":"U"}'::jsonb, 56521, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2022', '{"measure":"B5G","account":"primary_dist","side":"U"}'::jsonb, 67720, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2023', '{"measure":"B5G","account":"primary_dist","side":"U"}'::jsonb, 75400, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2024', '{"measure":"B5G","account":"primary_dist","side":"U"}'::jsonb, 87870, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2010', '{"measure":"D5_REC","account":"secondary_dist","side":"R"}'::jsonb, 2108.3, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2011', '{"measure":"D5_REC","account":"secondary_dist","side":"R"}'::jsonb, 2454.5, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2012', '{"measure":"D5_REC","account":"secondary_dist","side":"R"}'::jsonb, 2504.7, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2013', '{"measure":"D5_REC","account":"secondary_dist","side":"R"}'::jsonb, 2612.7, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2014', '{"measure":"D5_REC","account":"secondary_dist","side":"R"}'::jsonb, 2755.1, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2015', '{"measure":"D5_REC","account":"secondary_dist","side":"R"}'::jsonb, 2763.8, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2016', '{"measure":"D5_REC","account":"secondary_dist","side":"R"}'::jsonb, 2916.1, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2017', '{"measure":"D5_REC","account":"secondary_dist","side":"R"}'::jsonb, 3511.9, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2018', '{"measure":"D5_REC","account":"secondary_dist","side":"R"}'::jsonb, 3810.9, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2019', '{"measure":"D5_REC","account":"secondary_dist","side":"R"}'::jsonb, 4344.4, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2020', '{"measure":"D5_REC","account":"secondary_dist","side":"R"}'::jsonb, 4815, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2021', '{"measure":"D5_REC","account":"secondary_dist","side":"R"}'::jsonb, 5878, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2022', '{"measure":"D5_REC","account":"secondary_dist","side":"R"}'::jsonb, 7043, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2023', '{"measure":"D5_REC","account":"secondary_dist","side":"R"}'::jsonb, 7842, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2024', '{"measure":"D5_REC","account":"secondary_dist","side":"R"}'::jsonb, 9138, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2010', '{"measure":"D5_PAY","account":"secondary_dist","side":"U"}'::jsonb, 151.7, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2011', '{"measure":"D5_PAY","account":"secondary_dist","side":"U"}'::jsonb, 217.9, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2012', '{"measure":"D5_PAY","account":"secondary_dist","side":"U"}'::jsonb, 178.9, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2013', '{"measure":"D5_PAY","account":"secondary_dist","side":"U"}'::jsonb, 198.1, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2014', '{"measure":"D5_PAY","account":"secondary_dist","side":"U"}'::jsonb, 239.4, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2015', '{"measure":"D5_PAY","account":"secondary_dist","side":"U"}'::jsonb, 230.8, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2016', '{"measure":"D5_PAY","account":"secondary_dist","side":"U"}'::jsonb, 264, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2017', '{"measure":"D5_PAY","account":"secondary_dist","side":"U"}'::jsonb, 311.3, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2018', '{"measure":"D5_PAY","account":"secondary_dist","side":"U"}'::jsonb, 353.3, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2019', '{"measure":"D5_PAY","account":"secondary_dist","side":"U"}'::jsonb, 463.7, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2020', '{"measure":"D5_PAY","account":"secondary_dist","side":"U"}'::jsonb, 185, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2021', '{"measure":"D5_PAY","account":"secondary_dist","side":"U"}'::jsonb, 226, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2022', '{"measure":"D5_PAY","account":"secondary_dist","side":"U"}'::jsonb, 271, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2023', '{"measure":"D5_PAY","account":"secondary_dist","side":"U"}'::jsonb, 302, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2024', '{"measure":"D5_PAY","account":"secondary_dist","side":"U"}'::jsonb, 351, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2010', '{"measure":"B6G","account":"secondary_dist","side":"U"}'::jsonb, 23718.4, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2011', '{"measure":"B6G","account":"secondary_dist","side":"U"}'::jsonb, 27617.6, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2012', '{"measure":"B6G","account":"secondary_dist","side":"U"}'::jsonb, 29938.1, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2013', '{"measure":"B6G","account":"secondary_dist","side":"U"}'::jsonb, 31025.5, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2014', '{"measure":"B6G","account":"secondary_dist","side":"U"}'::jsonb, 33835.1, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2015', '{"measure":"B6G","account":"secondary_dist","side":"U"}'::jsonb, 36301.7, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2016', '{"measure":"B6G","account":"secondary_dist","side":"U"}'::jsonb, 37549.8, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2017', '{"measure":"B6G","account":"secondary_dist","side":"U"}'::jsonb, 42554.9, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2018', '{"measure":"B6G","account":"secondary_dist","side":"U"}'::jsonb, 47123.1, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2019', '{"measure":"B6G","account":"secondary_dist","side":"U"}'::jsonb, 51361.8, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2020', '{"measure":"B6G","account":"secondary_dist","side":"U"}'::jsonb, 50924, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2021', '{"measure":"B6G","account":"secondary_dist","side":"U"}'::jsonb, 62173, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2022', '{"measure":"B6G","account":"secondary_dist","side":"U"}'::jsonb, 74492, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2023', '{"measure":"B6G","account":"secondary_dist","side":"U"}'::jsonb, 82940, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2024', '{"measure":"B6G","account":"secondary_dist","side":"U"}'::jsonb, 96657, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2010', '{"measure":"P3","account":"use_of_income","side":"U"}'::jsonb, 21220.5, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2011', '{"measure":"P3","account":"use_of_income","side":"U"}'::jsonb, 24694.8, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2012', '{"measure":"P3","account":"use_of_income","side":"U"}'::jsonb, 25784.5, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2013', '{"measure":"P3","account":"use_of_income","side":"U"}'::jsonb, 26291.2, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2014', '{"measure":"P3","account":"use_of_income","side":"U"}'::jsonb, 28847.3, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2015', '{"measure":"P3","account":"use_of_income","side":"U"}'::jsonb, 31046.6, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2016', '{"measure":"P3","account":"use_of_income","side":"U"}'::jsonb, 31444.9, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2017', '{"measure":"P3","account":"use_of_income","side":"U"}'::jsonb, 35430.8, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2018', '{"measure":"P3","account":"use_of_income","side":"U"}'::jsonb, 37447.7, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2019', '{"measure":"P3","account":"use_of_income","side":"U"}'::jsonb, 40792.1, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2020', '{"measure":"P3","account":"use_of_income","side":"U"}'::jsonb, 41758, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2021', '{"measure":"P3","account":"use_of_income","side":"U"}'::jsonb, 50982, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2022', '{"measure":"P3","account":"use_of_income","side":"U"}'::jsonb, 61083, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2023', '{"measure":"P3","account":"use_of_income","side":"U"}'::jsonb, 68011, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2024', '{"measure":"P3","account":"use_of_income","side":"U"}'::jsonb, 79259, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2010', '{"measure":"B8G","account":"use_of_income","side":"U"}'::jsonb, 2498, 'A', '{"seqPos":20,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2011', '{"measure":"B8G","account":"use_of_income","side":"U"}'::jsonb, 2922.8, 'A', '{"seqPos":20,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2012', '{"measure":"B8G","account":"use_of_income","side":"U"}'::jsonb, 4153.6, 'A', '{"seqPos":20,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2013', '{"measure":"B8G","account":"use_of_income","side":"U"}'::jsonb, 4734.3, 'A', '{"seqPos":20,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2014', '{"measure":"B8G","account":"use_of_income","side":"U"}'::jsonb, 4987.8, 'A', '{"seqPos":20,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2015', '{"measure":"B8G","account":"use_of_income","side":"U"}'::jsonb, 5255.1, 'A', '{"seqPos":20,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2016', '{"measure":"B8G","account":"use_of_income","side":"U"}'::jsonb, 6104.9, 'A', '{"seqPos":20,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2017', '{"measure":"B8G","account":"use_of_income","side":"U"}'::jsonb, 7124.1, 'A', '{"seqPos":20,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2018', '{"measure":"B8G","account":"use_of_income","side":"U"}'::jsonb, 9675.5, 'A', '{"seqPos":20,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2019', '{"measure":"B8G","account":"use_of_income","side":"U"}'::jsonb, 10569.7, 'A', '{"seqPos":20,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2020', '{"measure":"B8G","account":"use_of_income","side":"U"}'::jsonb, 9166, 'A', '{"seqPos":20,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2021', '{"measure":"B8G","account":"use_of_income","side":"U"}'::jsonb, 11191, 'A', '{"seqPos":20,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2022', '{"measure":"B8G","account":"use_of_income","side":"U"}'::jsonb, 13409, 'A', '{"seqPos":20,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2023', '{"measure":"B8G","account":"use_of_income","side":"U"}'::jsonb, 14929, 'A', '{"seqPos":20,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2024', '{"measure":"B8G","account":"use_of_income","side":"U"}'::jsonb, 17398, 'A', '{"seqPos":20,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2010', '{"measure":"D9R","account":"capital","side":"R"}'::jsonb, 354.5, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2011', '{"measure":"D9R","account":"capital","side":"R"}'::jsonb, 247.7, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2012', '{"measure":"D9R","account":"capital","side":"R"}'::jsonb, 217.4, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2013', '{"measure":"D9R","account":"capital","side":"R"}'::jsonb, 220.5, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2014', '{"measure":"D9R","account":"capital","side":"R"}'::jsonb, 188.4, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2015', '{"measure":"D9R","account":"capital","side":"R"}'::jsonb, 132, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2016', '{"measure":"D9R","account":"capital","side":"R"}'::jsonb, 133.3, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2017', '{"measure":"D9R","account":"capital","side":"R"}'::jsonb, 208.4, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2018', '{"measure":"D9R","account":"capital","side":"R"}'::jsonb, 194.4, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2019', '{"measure":"D9R","account":"capital","side":"R"}'::jsonb, 131.2, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2020', '{"measure":"D9R","account":"capital","side":"R"}'::jsonb, 60, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2021', '{"measure":"D9R","account":"capital","side":"R"}'::jsonb, 60, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2022', '{"measure":"D9R","account":"capital","side":"R"}'::jsonb, 60, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2023', '{"measure":"D9R","account":"capital","side":"R"}'::jsonb, 60, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2024', '{"measure":"D9R","account":"capital","side":"R"}'::jsonb, 60, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2010', '{"measure":"P5","account":"capital","side":"U"}'::jsonb, 4635.6, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2011', '{"measure":"P5","account":"capital","side":"U"}'::jsonb, 6034.3, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2012', '{"measure":"P5","account":"capital","side":"U"}'::jsonb, 7260.9, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2013', '{"measure":"P5","account":"capital","side":"U"}'::jsonb, 6323, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2014', '{"measure":"P5","account":"capital","side":"U"}'::jsonb, 8136.8, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2015', '{"measure":"P5","account":"capital","side":"U"}'::jsonb, 9285.5, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2016', '{"measure":"P5","account":"capital","side":"U"}'::jsonb, 10565, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2017', '{"measure":"P5","account":"capital","side":"U"}'::jsonb, 10386.6, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2018', '{"measure":"P5","account":"capital","side":"U"}'::jsonb, 12671.3, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2019', '{"measure":"P5","account":"capital","side":"U"}'::jsonb, 13509.7, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2020', '{"measure":"P5","account":"capital","side":"U"}'::jsonb, 10847, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2021', '{"measure":"P5","account":"capital","side":"U"}'::jsonb, 13193, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2022', '{"measure":"P5","account":"capital","side":"U"}'::jsonb, 15729, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2023', '{"measure":"P5","account":"capital","side":"U"}'::jsonb, 17644, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2024', '{"measure":"P5","account":"capital","side":"U"}'::jsonb, 20593, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2010', '{"measure":"B9","account":"capital","side":"U"}'::jsonb, -1783.1, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2011', '{"measure":"B9","account":"capital","side":"U"}'::jsonb, -2863.8, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2012', '{"measure":"B9","account":"capital","side":"U"}'::jsonb, -2889.9, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2013', '{"measure":"B9","account":"capital","side":"U"}'::jsonb, -1368.2, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2014', '{"measure":"B9","account":"capital","side":"U"}'::jsonb, -2960.6, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2015', '{"measure":"B9","account":"capital","side":"U"}'::jsonb, -3898.4, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2016', '{"measure":"B9","account":"capital","side":"U"}'::jsonb, -4326.8, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2017', '{"measure":"B9","account":"capital","side":"U"}'::jsonb, -3054.1, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2018', '{"measure":"B9","account":"capital","side":"U"}'::jsonb, -2801.5, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2019', '{"measure":"B9","account":"capital","side":"U"}'::jsonb, -2808.8, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2020', '{"measure":"B9","account":"capital","side":"U"}'::jsonb, -1621, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2021', '{"measure":"B9","account":"capital","side":"U"}'::jsonb, -1942, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2022', '{"measure":"B9","account":"capital","side":"U"}'::jsonb, -2260, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2023', '{"measure":"B9","account":"capital","side":"U"}'::jsonb, -2655, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('ACCOUNTS_SEQUENCE', '2024', '{"measure":"B9","account":"capital","side":"U"}'::jsonb, -3135, 'A', '{"seqPos":-1,"isCarryForward":false}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+-- REGIONAL_GVA: 1485 observations
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2010', '{"measure":"GVA","geo":"tbilisi","sector":"AGRI"}'::jsonb, 33.31, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2011', '{"measure":"GVA","geo":"tbilisi","sector":"AGRI"}'::jsonb, 42.18, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2012', '{"measure":"GVA","geo":"tbilisi","sector":"AGRI"}'::jsonb, 37.03, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2013', '{"measure":"GVA","geo":"tbilisi","sector":"AGRI"}'::jsonb, 39.01, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2014', '{"measure":"GVA","geo":"tbilisi","sector":"AGRI"}'::jsonb, 49.56, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2015', '{"measure":"GVA","geo":"tbilisi","sector":"AGRI"}'::jsonb, 50.75, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2016', '{"measure":"GVA","geo":"tbilisi","sector":"AGRI"}'::jsonb, 47.97, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2017', '{"measure":"GVA","geo":"tbilisi","sector":"AGRI"}'::jsonb, 43.81, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2018', '{"measure":"GVA","geo":"tbilisi","sector":"AGRI"}'::jsonb, 49.81, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2019', '{"measure":"GVA","geo":"tbilisi","sector":"AGRI"}'::jsonb, 56.25, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2020', '{"measure":"GVA","geo":"tbilisi","sector":"AGRI"}'::jsonb, 55.09, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2021', '{"measure":"GVA","geo":"tbilisi","sector":"AGRI"}'::jsonb, 50.31, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2022', '{"measure":"GVA","geo":"tbilisi","sector":"AGRI"}'::jsonb, 66.49, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2023', '{"measure":"GVA","geo":"tbilisi","sector":"AGRI"}'::jsonb, 58.82, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2024', '{"measure":"GVA","geo":"tbilisi","sector":"AGRI"}'::jsonb, 62.04, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2010', '{"measure":"GVA","geo":"tbilisi","sector":"MANUF"}'::jsonb, 1251.18, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2011', '{"measure":"GVA","geo":"tbilisi","sector":"MANUF"}'::jsonb, 1474.98, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2012', '{"measure":"GVA","geo":"tbilisi","sector":"MANUF"}'::jsonb, 1462.83, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2013', '{"measure":"GVA","geo":"tbilisi","sector":"MANUF"}'::jsonb, 1605.2, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2014', '{"measure":"GVA","geo":"tbilisi","sector":"MANUF"}'::jsonb, 1622.6, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2015', '{"measure":"GVA","geo":"tbilisi","sector":"MANUF"}'::jsonb, 1719.03, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2016', '{"measure":"GVA","geo":"tbilisi","sector":"MANUF"}'::jsonb, 1889.8, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2017', '{"measure":"GVA","geo":"tbilisi","sector":"MANUF"}'::jsonb, 2047.34, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2018', '{"measure":"GVA","geo":"tbilisi","sector":"MANUF"}'::jsonb, 2344.21, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2019', '{"measure":"GVA","geo":"tbilisi","sector":"MANUF"}'::jsonb, 2426.52, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2020', '{"measure":"GVA","geo":"tbilisi","sector":"MANUF"}'::jsonb, 2409.16, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2021', '{"measure":"GVA","geo":"tbilisi","sector":"MANUF"}'::jsonb, 3524.91, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2022', '{"measure":"GVA","geo":"tbilisi","sector":"MANUF"}'::jsonb, 3842.79, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2023', '{"measure":"GVA","geo":"tbilisi","sector":"MANUF"}'::jsonb, 2331.31, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2024', '{"measure":"GVA","geo":"tbilisi","sector":"MANUF"}'::jsonb, 2789.18, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2010', '{"measure":"GVA","geo":"tbilisi","sector":"CONST"}'::jsonb, 564.72, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2011', '{"measure":"GVA","geo":"tbilisi","sector":"CONST"}'::jsonb, 912.43, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2012', '{"measure":"GVA","geo":"tbilisi","sector":"CONST"}'::jsonb, 1239.96, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2013', '{"measure":"GVA","geo":"tbilisi","sector":"CONST"}'::jsonb, 1067.11, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2014', '{"measure":"GVA","geo":"tbilisi","sector":"CONST"}'::jsonb, 1201.03, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2015', '{"measure":"GVA","geo":"tbilisi","sector":"CONST"}'::jsonb, 1726.07, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2016', '{"measure":"GVA","geo":"tbilisi","sector":"CONST"}'::jsonb, 2040.79, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2017', '{"measure":"GVA","geo":"tbilisi","sector":"CONST"}'::jsonb, 2619.81, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2018', '{"measure":"GVA","geo":"tbilisi","sector":"CONST"}'::jsonb, 2519.78, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2019', '{"measure":"GVA","geo":"tbilisi","sector":"CONST"}'::jsonb, 2245.63, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2020', '{"measure":"GVA","geo":"tbilisi","sector":"CONST"}'::jsonb, 2541.19, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2021', '{"measure":"GVA","geo":"tbilisi","sector":"CONST"}'::jsonb, 2408.14, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2022', '{"measure":"GVA","geo":"tbilisi","sector":"CONST"}'::jsonb, 3157.54, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2023', '{"measure":"GVA","geo":"tbilisi","sector":"CONST"}'::jsonb, 3381.49, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2024', '{"measure":"GVA","geo":"tbilisi","sector":"CONST"}'::jsonb, 4455.11, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2010', '{"measure":"GVA","geo":"tbilisi","sector":"TRADE"}'::jsonb, 2892.41, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2011', '{"measure":"GVA","geo":"tbilisi","sector":"TRADE"}'::jsonb, 3417.62, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2012', '{"measure":"GVA","geo":"tbilisi","sector":"TRADE"}'::jsonb, 3224.89, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2013', '{"measure":"GVA","geo":"tbilisi","sector":"TRADE"}'::jsonb, 3222.33, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2014', '{"measure":"GVA","geo":"tbilisi","sector":"TRADE"}'::jsonb, 3258.13, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2015', '{"measure":"GVA","geo":"tbilisi","sector":"TRADE"}'::jsonb, 3302.9, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2016', '{"measure":"GVA","geo":"tbilisi","sector":"TRADE"}'::jsonb, 3380.79, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2017', '{"measure":"GVA","geo":"tbilisi","sector":"TRADE"}'::jsonb, 3770.07, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2018', '{"measure":"GVA","geo":"tbilisi","sector":"TRADE"}'::jsonb, 4166.54, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2019', '{"measure":"GVA","geo":"tbilisi","sector":"TRADE"}'::jsonb, 4680.19, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2020', '{"measure":"GVA","geo":"tbilisi","sector":"TRADE"}'::jsonb, 4977.39, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2021', '{"measure":"GVA","geo":"tbilisi","sector":"TRADE"}'::jsonb, 6336.72, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2022', '{"measure":"GVA","geo":"tbilisi","sector":"TRADE"}'::jsonb, 7606.82, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2023', '{"measure":"GVA","geo":"tbilisi","sector":"TRADE"}'::jsonb, 9131.99, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2024', '{"measure":"GVA","geo":"tbilisi","sector":"TRADE"}'::jsonb, 10207.17, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2010', '{"measure":"GVA","geo":"tbilisi","sector":"TRANS"}'::jsonb, 995.01, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2011', '{"measure":"GVA","geo":"tbilisi","sector":"TRANS"}'::jsonb, 1220.5, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2012', '{"measure":"GVA","geo":"tbilisi","sector":"TRANS"}'::jsonb, 1303.11, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2013', '{"measure":"GVA","geo":"tbilisi","sector":"TRANS"}'::jsonb, 1206.88, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2014', '{"measure":"GVA","geo":"tbilisi","sector":"TRANS"}'::jsonb, 1255.63, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2015', '{"measure":"GVA","geo":"tbilisi","sector":"TRANS"}'::jsonb, 1284.02, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2016', '{"measure":"GVA","geo":"tbilisi","sector":"TRANS"}'::jsonb, 1252.1, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2017', '{"measure":"GVA","geo":"tbilisi","sector":"TRANS"}'::jsonb, 1169.61, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2018', '{"measure":"GVA","geo":"tbilisi","sector":"TRANS"}'::jsonb, 1524.99, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2019', '{"measure":"GVA","geo":"tbilisi","sector":"TRANS"}'::jsonb, 1865.55, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2020', '{"measure":"GVA","geo":"tbilisi","sector":"TRANS"}'::jsonb, 1548.48, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2021', '{"measure":"GVA","geo":"tbilisi","sector":"TRANS"}'::jsonb, 1918.06, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2022', '{"measure":"GVA","geo":"tbilisi","sector":"TRANS"}'::jsonb, 2571.75, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2023', '{"measure":"GVA","geo":"tbilisi","sector":"TRANS"}'::jsonb, 2587.5, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2024', '{"measure":"GVA","geo":"tbilisi","sector":"TRANS"}'::jsonb, 3110.16, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2010', '{"measure":"GVA","geo":"tbilisi","sector":"REAL"}'::jsonb, 1308.25, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2011', '{"measure":"GVA","geo":"tbilisi","sector":"REAL"}'::jsonb, 1368.21, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2012', '{"measure":"GVA","geo":"tbilisi","sector":"REAL"}'::jsonb, 1422.47, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2013', '{"measure":"GVA","geo":"tbilisi","sector":"REAL"}'::jsonb, 1561.76, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2014', '{"measure":"GVA","geo":"tbilisi","sector":"REAL"}'::jsonb, 1747.69, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2015', '{"measure":"GVA","geo":"tbilisi","sector":"REAL"}'::jsonb, 1923.63, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2016', '{"measure":"GVA","geo":"tbilisi","sector":"REAL"}'::jsonb, 2081.86, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2017', '{"measure":"GVA","geo":"tbilisi","sector":"REAL"}'::jsonb, 2265.88, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2018', '{"measure":"GVA","geo":"tbilisi","sector":"REAL"}'::jsonb, 2386, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2019', '{"measure":"GVA","geo":"tbilisi","sector":"REAL"}'::jsonb, 2678.28, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2020', '{"measure":"GVA","geo":"tbilisi","sector":"REAL"}'::jsonb, 2735.92, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2021', '{"measure":"GVA","geo":"tbilisi","sector":"REAL"}'::jsonb, 2910.29, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2022', '{"measure":"GVA","geo":"tbilisi","sector":"REAL"}'::jsonb, 3510.59, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2023', '{"measure":"GVA","geo":"tbilisi","sector":"REAL"}'::jsonb, 4314.76, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2024', '{"measure":"GVA","geo":"tbilisi","sector":"REAL"}'::jsonb, 4700.29, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2010', '{"measure":"GVA","geo":"tbilisi","sector":"GOV"}'::jsonb, 736.71, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2011', '{"measure":"GVA","geo":"tbilisi","sector":"GOV"}'::jsonb, 804.08, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2012', '{"measure":"GVA","geo":"tbilisi","sector":"GOV"}'::jsonb, 868.55, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2013', '{"measure":"GVA","geo":"tbilisi","sector":"GOV"}'::jsonb, 968.23, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2014', '{"measure":"GVA","geo":"tbilisi","sector":"GOV"}'::jsonb, 1065.66, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2015', '{"measure":"GVA","geo":"tbilisi","sector":"GOV"}'::jsonb, 1189.57, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2016', '{"measure":"GVA","geo":"tbilisi","sector":"GOV"}'::jsonb, 1199.35, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2017', '{"measure":"GVA","geo":"tbilisi","sector":"GOV"}'::jsonb, 1038.23, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2018', '{"measure":"GVA","geo":"tbilisi","sector":"GOV"}'::jsonb, 1033.36, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2019', '{"measure":"GVA","geo":"tbilisi","sector":"GOV"}'::jsonb, 1195.6, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2020', '{"measure":"GVA","geo":"tbilisi","sector":"GOV"}'::jsonb, 1297.21, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2021', '{"measure":"GVA","geo":"tbilisi","sector":"GOV"}'::jsonb, 1311, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2022', '{"measure":"GVA","geo":"tbilisi","sector":"GOV"}'::jsonb, 1403.28, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2023', '{"measure":"GVA","geo":"tbilisi","sector":"GOV"}'::jsonb, 1729.81, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2024', '{"measure":"GVA","geo":"tbilisi","sector":"GOV"}'::jsonb, 1934.12, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2010', '{"measure":"GVA","geo":"tbilisi","sector":"EDU"}'::jsonb, 271.49, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2011', '{"measure":"GVA","geo":"tbilisi","sector":"EDU"}'::jsonb, 308.31, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2012', '{"measure":"GVA","geo":"tbilisi","sector":"EDU"}'::jsonb, 338.04, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2013', '{"measure":"GVA","geo":"tbilisi","sector":"EDU"}'::jsonb, 411.26, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2014', '{"measure":"GVA","geo":"tbilisi","sector":"EDU"}'::jsonb, 441.15, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2015', '{"measure":"GVA","geo":"tbilisi","sector":"EDU"}'::jsonb, 404.6, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2016', '{"measure":"GVA","geo":"tbilisi","sector":"EDU"}'::jsonb, 582.4, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2017', '{"measure":"GVA","geo":"tbilisi","sector":"EDU"}'::jsonb, 554.87, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2018', '{"measure":"GVA","geo":"tbilisi","sector":"EDU"}'::jsonb, 610.76, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2019', '{"measure":"GVA","geo":"tbilisi","sector":"EDU"}'::jsonb, 622.33, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2020', '{"measure":"GVA","geo":"tbilisi","sector":"EDU"}'::jsonb, 687, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2021', '{"measure":"GVA","geo":"tbilisi","sector":"EDU"}'::jsonb, 749.98, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2022', '{"measure":"GVA","geo":"tbilisi","sector":"EDU"}'::jsonb, 846.31, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2023', '{"measure":"GVA","geo":"tbilisi","sector":"EDU"}'::jsonb, 1117.63, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2024', '{"measure":"GVA","geo":"tbilisi","sector":"EDU"}'::jsonb, 1561.51, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2010', '{"measure":"GVA","geo":"tbilisi","sector":"OTHER"}'::jsonb, 2271.17, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2011', '{"measure":"GVA","geo":"tbilisi","sector":"OTHER"}'::jsonb, 2773.57, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2012', '{"measure":"GVA","geo":"tbilisi","sector":"OTHER"}'::jsonb, 2975.37, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2013', '{"measure":"GVA","geo":"tbilisi","sector":"OTHER"}'::jsonb, 3047.8, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2014', '{"measure":"GVA","geo":"tbilisi","sector":"OTHER"}'::jsonb, 3513.95, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2015', '{"measure":"GVA","geo":"tbilisi","sector":"OTHER"}'::jsonb, 3856.42, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2016', '{"measure":"GVA","geo":"tbilisi","sector":"OTHER"}'::jsonb, 4160.95, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2017', '{"measure":"GVA","geo":"tbilisi","sector":"OTHER"}'::jsonb, 4721.32, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2018', '{"measure":"GVA","geo":"tbilisi","sector":"OTHER"}'::jsonb, 5525.04, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2019', '{"measure":"GVA","geo":"tbilisi","sector":"OTHER"}'::jsonb, 6240.37, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2020', '{"measure":"GVA","geo":"tbilisi","sector":"OTHER"}'::jsonb, 5503.78, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2021', '{"measure":"GVA","geo":"tbilisi","sector":"OTHER"}'::jsonb, 7099.74, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2022', '{"measure":"GVA","geo":"tbilisi","sector":"OTHER"}'::jsonb, 9165.55, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2023', '{"measure":"GVA","geo":"tbilisi","sector":"OTHER"}'::jsonb, 12406.23, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2024', '{"measure":"GVA","geo":"tbilisi","sector":"OTHER"}'::jsonb, 14162.99, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2010', '{"measure":"GVA","geo":"adjara","sector":"AGRI"}'::jsonb, 95.47, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2011', '{"measure":"GVA","geo":"adjara","sector":"AGRI"}'::jsonb, 126.67, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2012', '{"measure":"GVA","geo":"adjara","sector":"AGRI"}'::jsonb, 145.54, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2013', '{"measure":"GVA","geo":"adjara","sector":"AGRI"}'::jsonb, 162.97, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2014', '{"measure":"GVA","geo":"adjara","sector":"AGRI"}'::jsonb, 147.99, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2015', '{"measure":"GVA","geo":"adjara","sector":"AGRI"}'::jsonb, 158.64, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2016', '{"measure":"GVA","geo":"adjara","sector":"AGRI"}'::jsonb, 144.46, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2017', '{"measure":"GVA","geo":"adjara","sector":"AGRI"}'::jsonb, 152.41, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2018', '{"measure":"GVA","geo":"adjara","sector":"AGRI"}'::jsonb, 165.21, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2019', '{"measure":"GVA","geo":"adjara","sector":"AGRI"}'::jsonb, 193.73, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2020', '{"measure":"GVA","geo":"adjara","sector":"AGRI"}'::jsonb, 194.43, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2021', '{"measure":"GVA","geo":"adjara","sector":"AGRI"}'::jsonb, 234.66, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2022', '{"measure":"GVA","geo":"adjara","sector":"AGRI"}'::jsonb, 224.25, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2023', '{"measure":"GVA","geo":"adjara","sector":"AGRI"}'::jsonb, 244.04, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2024', '{"measure":"GVA","geo":"adjara","sector":"AGRI"}'::jsonb, 190, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2010', '{"measure":"GVA","geo":"adjara","sector":"MANUF"}'::jsonb, 98.8, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2011', '{"measure":"GVA","geo":"adjara","sector":"MANUF"}'::jsonb, 109.73, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2012', '{"measure":"GVA","geo":"adjara","sector":"MANUF"}'::jsonb, 143.04, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2013', '{"measure":"GVA","geo":"adjara","sector":"MANUF"}'::jsonb, 147.42, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2014', '{"measure":"GVA","geo":"adjara","sector":"MANUF"}'::jsonb, 156.61, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2015', '{"measure":"GVA","geo":"adjara","sector":"MANUF"}'::jsonb, 202.6, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2016', '{"measure":"GVA","geo":"adjara","sector":"MANUF"}'::jsonb, 193.27, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2017', '{"measure":"GVA","geo":"adjara","sector":"MANUF"}'::jsonb, 225.44, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2018', '{"measure":"GVA","geo":"adjara","sector":"MANUF"}'::jsonb, 256.68, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2019', '{"measure":"GVA","geo":"adjara","sector":"MANUF"}'::jsonb, 337.49, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2020', '{"measure":"GVA","geo":"adjara","sector":"MANUF"}'::jsonb, 382.15, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2021', '{"measure":"GVA","geo":"adjara","sector":"MANUF"}'::jsonb, 395.59, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2022', '{"measure":"GVA","geo":"adjara","sector":"MANUF"}'::jsonb, 612.63, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2023', '{"measure":"GVA","geo":"adjara","sector":"MANUF"}'::jsonb, 380.97, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2024', '{"measure":"GVA","geo":"adjara","sector":"MANUF"}'::jsonb, 431.89, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2010', '{"measure":"GVA","geo":"adjara","sector":"CONST"}'::jsonb, 115.67, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2011', '{"measure":"GVA","geo":"adjara","sector":"CONST"}'::jsonb, 124.36, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2012', '{"measure":"GVA","geo":"adjara","sector":"CONST"}'::jsonb, 220.52, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2013', '{"measure":"GVA","geo":"adjara","sector":"CONST"}'::jsonb, 265.23, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2014', '{"measure":"GVA","geo":"adjara","sector":"CONST"}'::jsonb, 346.26, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2015', '{"measure":"GVA","geo":"adjara","sector":"CONST"}'::jsonb, 384.11, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2016', '{"measure":"GVA","geo":"adjara","sector":"CONST"}'::jsonb, 405.55, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2017', '{"measure":"GVA","geo":"adjara","sector":"CONST"}'::jsonb, 465.26, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2018', '{"measure":"GVA","geo":"adjara","sector":"CONST"}'::jsonb, 670.06, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2019', '{"measure":"GVA","geo":"adjara","sector":"CONST"}'::jsonb, 879.54, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2020', '{"measure":"GVA","geo":"adjara","sector":"CONST"}'::jsonb, 544.87, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2021', '{"measure":"GVA","geo":"adjara","sector":"CONST"}'::jsonb, 762.53, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2022', '{"measure":"GVA","geo":"adjara","sector":"CONST"}'::jsonb, 975.27, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2023', '{"measure":"GVA","geo":"adjara","sector":"CONST"}'::jsonb, 937.06, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2024', '{"measure":"GVA","geo":"adjara","sector":"CONST"}'::jsonb, 1107.62, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2010', '{"measure":"GVA","geo":"adjara","sector":"TRADE"}'::jsonb, 117.34, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2011', '{"measure":"GVA","geo":"adjara","sector":"TRADE"}'::jsonb, 206.15, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2012', '{"measure":"GVA","geo":"adjara","sector":"TRADE"}'::jsonb, 208.45, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2013', '{"measure":"GVA","geo":"adjara","sector":"TRADE"}'::jsonb, 215.55, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2014', '{"measure":"GVA","geo":"adjara","sector":"TRADE"}'::jsonb, 236.57, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2015', '{"measure":"GVA","geo":"adjara","sector":"TRADE"}'::jsonb, 253.81, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2016', '{"measure":"GVA","geo":"adjara","sector":"TRADE"}'::jsonb, 287.96, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2017', '{"measure":"GVA","geo":"adjara","sector":"TRADE"}'::jsonb, 331.39, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2018', '{"measure":"GVA","geo":"adjara","sector":"TRADE"}'::jsonb, 372.1, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2019', '{"measure":"GVA","geo":"adjara","sector":"TRADE"}'::jsonb, 447.6, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2020', '{"measure":"GVA","geo":"adjara","sector":"TRADE"}'::jsonb, 388.59, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2021', '{"measure":"GVA","geo":"adjara","sector":"TRADE"}'::jsonb, 442.58, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2022', '{"measure":"GVA","geo":"adjara","sector":"TRADE"}'::jsonb, 594.33, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2023', '{"measure":"GVA","geo":"adjara","sector":"TRADE"}'::jsonb, 699.54, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2024', '{"measure":"GVA","geo":"adjara","sector":"TRADE"}'::jsonb, 714.68, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2010', '{"measure":"GVA","geo":"adjara","sector":"TRANS"}'::jsonb, 126.93, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2011', '{"measure":"GVA","geo":"adjara","sector":"TRANS"}'::jsonb, 142.57, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2012', '{"measure":"GVA","geo":"adjara","sector":"TRANS"}'::jsonb, 183.12, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2013', '{"measure":"GVA","geo":"adjara","sector":"TRANS"}'::jsonb, 143.22, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2014', '{"measure":"GVA","geo":"adjara","sector":"TRANS"}'::jsonb, 147.49, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2015', '{"measure":"GVA","geo":"adjara","sector":"TRANS"}'::jsonb, 213.22, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2016', '{"measure":"GVA","geo":"adjara","sector":"TRANS"}'::jsonb, 194.91, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2017', '{"measure":"GVA","geo":"adjara","sector":"TRANS"}'::jsonb, 175.23, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2018', '{"measure":"GVA","geo":"adjara","sector":"TRANS"}'::jsonb, 231.58, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2019', '{"measure":"GVA","geo":"adjara","sector":"TRANS"}'::jsonb, 301.86, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2020', '{"measure":"GVA","geo":"adjara","sector":"TRANS"}'::jsonb, 325.36, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2021', '{"measure":"GVA","geo":"adjara","sector":"TRANS"}'::jsonb, 431.44, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2022', '{"measure":"GVA","geo":"adjara","sector":"TRANS"}'::jsonb, 504.2, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2023', '{"measure":"GVA","geo":"adjara","sector":"TRANS"}'::jsonb, 541.19, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2024', '{"measure":"GVA","geo":"adjara","sector":"TRANS"}'::jsonb, 609.6, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2010', '{"measure":"GVA","geo":"adjara","sector":"REAL"}'::jsonb, 336.75, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2011', '{"measure":"GVA","geo":"adjara","sector":"REAL"}'::jsonb, 349.73, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2012', '{"measure":"GVA","geo":"adjara","sector":"REAL"}'::jsonb, 360.72, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2013', '{"measure":"GVA","geo":"adjara","sector":"REAL"}'::jsonb, 385.29, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2014', '{"measure":"GVA","geo":"adjara","sector":"REAL"}'::jsonb, 419.55, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2015', '{"measure":"GVA","geo":"adjara","sector":"REAL"}'::jsonb, 455.59, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2016', '{"measure":"GVA","geo":"adjara","sector":"REAL"}'::jsonb, 479.1, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2017', '{"measure":"GVA","geo":"adjara","sector":"REAL"}'::jsonb, 511.5, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2018', '{"measure":"GVA","geo":"adjara","sector":"REAL"}'::jsonb, 534.83, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2019', '{"measure":"GVA","geo":"adjara","sector":"REAL"}'::jsonb, 599.88, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2020', '{"measure":"GVA","geo":"adjara","sector":"REAL"}'::jsonb, 609.03, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2021', '{"measure":"GVA","geo":"adjara","sector":"REAL"}'::jsonb, 663.42, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2022', '{"measure":"GVA","geo":"adjara","sector":"REAL"}'::jsonb, 778.78, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2023', '{"measure":"GVA","geo":"adjara","sector":"REAL"}'::jsonb, 919.25, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2024', '{"measure":"GVA","geo":"adjara","sector":"REAL"}'::jsonb, 944.61, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2010', '{"measure":"GVA","geo":"adjara","sector":"GOV"}'::jsonb, 163.6, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2011', '{"measure":"GVA","geo":"adjara","sector":"GOV"}'::jsonb, 214.97, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2012', '{"measure":"GVA","geo":"adjara","sector":"GOV"}'::jsonb, 145.66, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2013', '{"measure":"GVA","geo":"adjara","sector":"GOV"}'::jsonb, 215.26, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2014', '{"measure":"GVA","geo":"adjara","sector":"GOV"}'::jsonb, 168.93, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2015', '{"measure":"GVA","geo":"adjara","sector":"GOV"}'::jsonb, 221.41, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2016', '{"measure":"GVA","geo":"adjara","sector":"GOV"}'::jsonb, 170.64, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2017', '{"measure":"GVA","geo":"adjara","sector":"GOV"}'::jsonb, 218.66, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2018', '{"measure":"GVA","geo":"adjara","sector":"GOV"}'::jsonb, 225.2, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2019', '{"measure":"GVA","geo":"adjara","sector":"GOV"}'::jsonb, 271.07, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2020', '{"measure":"GVA","geo":"adjara","sector":"GOV"}'::jsonb, 242.89, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2021', '{"measure":"GVA","geo":"adjara","sector":"GOV"}'::jsonb, 298.57, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2022', '{"measure":"GVA","geo":"adjara","sector":"GOV"}'::jsonb, 348.27, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2023', '{"measure":"GVA","geo":"adjara","sector":"GOV"}'::jsonb, 377.35, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2024', '{"measure":"GVA","geo":"adjara","sector":"GOV"}'::jsonb, 460.37, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2010', '{"measure":"GVA","geo":"adjara","sector":"EDU"}'::jsonb, 79.19, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2011', '{"measure":"GVA","geo":"adjara","sector":"EDU"}'::jsonb, 102.54, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2012', '{"measure":"GVA","geo":"adjara","sector":"EDU"}'::jsonb, 150.76, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2013', '{"measure":"GVA","geo":"adjara","sector":"EDU"}'::jsonb, 121.36, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2014', '{"measure":"GVA","geo":"adjara","sector":"EDU"}'::jsonb, 159.89, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2015', '{"measure":"GVA","geo":"adjara","sector":"EDU"}'::jsonb, 193.47, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2016', '{"measure":"GVA","geo":"adjara","sector":"EDU"}'::jsonb, 185.61, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2017', '{"measure":"GVA","geo":"adjara","sector":"EDU"}'::jsonb, 168.26, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2018', '{"measure":"GVA","geo":"adjara","sector":"EDU"}'::jsonb, 175.88, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2019', '{"measure":"GVA","geo":"adjara","sector":"EDU"}'::jsonb, 188.98, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2020', '{"measure":"GVA","geo":"adjara","sector":"EDU"}'::jsonb, 219.2, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2021', '{"measure":"GVA","geo":"adjara","sector":"EDU"}'::jsonb, 243.45, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2022', '{"measure":"GVA","geo":"adjara","sector":"EDU"}'::jsonb, 247.28, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2023', '{"measure":"GVA","geo":"adjara","sector":"EDU"}'::jsonb, 357.91, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2024', '{"measure":"GVA","geo":"adjara","sector":"EDU"}'::jsonb, 441.13, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2010', '{"measure":"GVA","geo":"adjara","sector":"OTHER"}'::jsonb, 271, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2011', '{"measure":"GVA","geo":"adjara","sector":"OTHER"}'::jsonb, 333.87, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2012', '{"measure":"GVA","geo":"adjara","sector":"OTHER"}'::jsonb, 665.58, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2013', '{"measure":"GVA","geo":"adjara","sector":"OTHER"}'::jsonb, 575.96, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2014', '{"measure":"GVA","geo":"adjara","sector":"OTHER"}'::jsonb, 541.84, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2015', '{"measure":"GVA","geo":"adjara","sector":"OTHER"}'::jsonb, 733.08, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2016', '{"measure":"GVA","geo":"adjara","sector":"OTHER"}'::jsonb, 1016.94, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2017', '{"measure":"GVA","geo":"adjara","sector":"OTHER"}'::jsonb, 872.81, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2018', '{"measure":"GVA","geo":"adjara","sector":"OTHER"}'::jsonb, 948.1, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2019', '{"measure":"GVA","geo":"adjara","sector":"OTHER"}'::jsonb, 1185.8, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2020', '{"measure":"GVA","geo":"adjara","sector":"OTHER"}'::jsonb, 915.98, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2021', '{"measure":"GVA","geo":"adjara","sector":"OTHER"}'::jsonb, 1392.74, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2022', '{"measure":"GVA","geo":"adjara","sector":"OTHER"}'::jsonb, 1705.61, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2023', '{"measure":"GVA","geo":"adjara","sector":"OTHER"}'::jsonb, 2226.04, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2024', '{"measure":"GVA","geo":"adjara","sector":"OTHER"}'::jsonb, 2616.35, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2010', '{"measure":"GVA","geo":"guria","sector":"AGRI"}'::jsonb, 98.44, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2011', '{"measure":"GVA","geo":"guria","sector":"AGRI"}'::jsonb, 157.11, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2012', '{"measure":"GVA","geo":"guria","sector":"AGRI"}'::jsonb, 150.92, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2013', '{"measure":"GVA","geo":"guria","sector":"AGRI"}'::jsonb, 169.54, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2014', '{"measure":"GVA","geo":"guria","sector":"AGRI"}'::jsonb, 136.19, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2015', '{"measure":"GVA","geo":"guria","sector":"AGRI"}'::jsonb, 118.68, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2016', '{"measure":"GVA","geo":"guria","sector":"AGRI"}'::jsonb, 135.62, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2017', '{"measure":"GVA","geo":"guria","sector":"AGRI"}'::jsonb, 129.6, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2018', '{"measure":"GVA","geo":"guria","sector":"AGRI"}'::jsonb, 94.31, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2019', '{"measure":"GVA","geo":"guria","sector":"AGRI"}'::jsonb, 104.29, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2020', '{"measure":"GVA","geo":"guria","sector":"AGRI"}'::jsonb, 128.38, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2021', '{"measure":"GVA","geo":"guria","sector":"AGRI"}'::jsonb, 158.29, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2022', '{"measure":"GVA","geo":"guria","sector":"AGRI"}'::jsonb, 184.44, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2023', '{"measure":"GVA","geo":"guria","sector":"AGRI"}'::jsonb, 178.63, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2024', '{"measure":"GVA","geo":"guria","sector":"AGRI"}'::jsonb, 207.66, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2010', '{"measure":"GVA","geo":"guria","sector":"MANUF"}'::jsonb, 37.37, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2011', '{"measure":"GVA","geo":"guria","sector":"MANUF"}'::jsonb, 40.1, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2012', '{"measure":"GVA","geo":"guria","sector":"MANUF"}'::jsonb, 35.58, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2013', '{"measure":"GVA","geo":"guria","sector":"MANUF"}'::jsonb, 51.87, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2014', '{"measure":"GVA","geo":"guria","sector":"MANUF"}'::jsonb, 59.15, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2015', '{"measure":"GVA","geo":"guria","sector":"MANUF"}'::jsonb, 88.6, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2016', '{"measure":"GVA","geo":"guria","sector":"MANUF"}'::jsonb, 71.57, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2017', '{"measure":"GVA","geo":"guria","sector":"MANUF"}'::jsonb, 83.08, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2018', '{"measure":"GVA","geo":"guria","sector":"MANUF"}'::jsonb, 76.19, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2019', '{"measure":"GVA","geo":"guria","sector":"MANUF"}'::jsonb, 75.63, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2020', '{"measure":"GVA","geo":"guria","sector":"MANUF"}'::jsonb, 79.29, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2021', '{"measure":"GVA","geo":"guria","sector":"MANUF"}'::jsonb, 117.43, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2022', '{"measure":"GVA","geo":"guria","sector":"MANUF"}'::jsonb, 111.02, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2023', '{"measure":"GVA","geo":"guria","sector":"MANUF"}'::jsonb, 139.25, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2024', '{"measure":"GVA","geo":"guria","sector":"MANUF"}'::jsonb, 133.94, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2010', '{"measure":"GVA","geo":"guria","sector":"CONST"}'::jsonb, 2.04, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2011', '{"measure":"GVA","geo":"guria","sector":"CONST"}'::jsonb, 3.82, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2012', '{"measure":"GVA","geo":"guria","sector":"CONST"}'::jsonb, 5.76, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2013', '{"measure":"GVA","geo":"guria","sector":"CONST"}'::jsonb, 6.64, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2014', '{"measure":"GVA","geo":"guria","sector":"CONST"}'::jsonb, 9.95, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2015', '{"measure":"GVA","geo":"guria","sector":"CONST"}'::jsonb, 22.9, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2016', '{"measure":"GVA","geo":"guria","sector":"CONST"}'::jsonb, 14.36, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2017', '{"measure":"GVA","geo":"guria","sector":"CONST"}'::jsonb, 38.74, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2018', '{"measure":"GVA","geo":"guria","sector":"CONST"}'::jsonb, 28.07, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2019', '{"measure":"GVA","geo":"guria","sector":"CONST"}'::jsonb, 15.14, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2020', '{"measure":"GVA","geo":"guria","sector":"CONST"}'::jsonb, 17.09, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2021', '{"measure":"GVA","geo":"guria","sector":"CONST"}'::jsonb, 28.21, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2022', '{"measure":"GVA","geo":"guria","sector":"CONST"}'::jsonb, 49.64, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2023', '{"measure":"GVA","geo":"guria","sector":"CONST"}'::jsonb, 35.96, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2024', '{"measure":"GVA","geo":"guria","sector":"CONST"}'::jsonb, 31.94, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2010', '{"measure":"GVA","geo":"guria","sector":"TRADE"}'::jsonb, 6.05, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2011', '{"measure":"GVA","geo":"guria","sector":"TRADE"}'::jsonb, 10.62, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2012', '{"measure":"GVA","geo":"guria","sector":"TRADE"}'::jsonb, 10.81, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2013', '{"measure":"GVA","geo":"guria","sector":"TRADE"}'::jsonb, 9.46, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2014', '{"measure":"GVA","geo":"guria","sector":"TRADE"}'::jsonb, 16.44, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2015', '{"measure":"GVA","geo":"guria","sector":"TRADE"}'::jsonb, 22.6, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2016', '{"measure":"GVA","geo":"guria","sector":"TRADE"}'::jsonb, 23.08, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2017', '{"measure":"GVA","geo":"guria","sector":"TRADE"}'::jsonb, 28.95, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2018', '{"measure":"GVA","geo":"guria","sector":"TRADE"}'::jsonb, 35.51, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2019', '{"measure":"GVA","geo":"guria","sector":"TRADE"}'::jsonb, 42.85, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2020', '{"measure":"GVA","geo":"guria","sector":"TRADE"}'::jsonb, 30.66, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2021', '{"measure":"GVA","geo":"guria","sector":"TRADE"}'::jsonb, 38.47, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2022', '{"measure":"GVA","geo":"guria","sector":"TRADE"}'::jsonb, 33.11, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2023', '{"measure":"GVA","geo":"guria","sector":"TRADE"}'::jsonb, 42.46, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2024', '{"measure":"GVA","geo":"guria","sector":"TRADE"}'::jsonb, 51.5, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2010', '{"measure":"GVA","geo":"guria","sector":"TRANS"}'::jsonb, 0.43, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2011', '{"measure":"GVA","geo":"guria","sector":"TRANS"}'::jsonb, 0.47, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2012', '{"measure":"GVA","geo":"guria","sector":"TRANS"}'::jsonb, 0.7, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2013', '{"measure":"GVA","geo":"guria","sector":"TRANS"}'::jsonb, 2.78, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2014', '{"measure":"GVA","geo":"guria","sector":"TRANS"}'::jsonb, 2.22, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2015', '{"measure":"GVA","geo":"guria","sector":"TRANS"}'::jsonb, 2.4, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2016', '{"measure":"GVA","geo":"guria","sector":"TRANS"}'::jsonb, 6.74, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2017', '{"measure":"GVA","geo":"guria","sector":"TRANS"}'::jsonb, 9.48, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2018', '{"measure":"GVA","geo":"guria","sector":"TRANS"}'::jsonb, 8.09, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2019', '{"measure":"GVA","geo":"guria","sector":"TRANS"}'::jsonb, 15.14, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2020', '{"measure":"GVA","geo":"guria","sector":"TRANS"}'::jsonb, 17.94, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2021', '{"measure":"GVA","geo":"guria","sector":"TRANS"}'::jsonb, 17.66, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2022', '{"measure":"GVA","geo":"guria","sector":"TRANS"}'::jsonb, 22.1, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2023', '{"measure":"GVA","geo":"guria","sector":"TRANS"}'::jsonb, 24.63, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2024', '{"measure":"GVA","geo":"guria","sector":"TRANS"}'::jsonb, 30.82, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2010', '{"measure":"GVA","geo":"guria","sector":"REAL"}'::jsonb, 92.36, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2011', '{"measure":"GVA","geo":"guria","sector":"REAL"}'::jsonb, 95.41, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2012', '{"measure":"GVA","geo":"guria","sector":"REAL"}'::jsonb, 96.57, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2013', '{"measure":"GVA","geo":"guria","sector":"REAL"}'::jsonb, 100.6, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2014', '{"measure":"GVA","geo":"guria","sector":"REAL"}'::jsonb, 108.04, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2015', '{"measure":"GVA","geo":"guria","sector":"REAL"}'::jsonb, 115.59, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2016', '{"measure":"GVA","geo":"guria","sector":"REAL"}'::jsonb, 118.5, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2017', '{"measure":"GVA","geo":"guria","sector":"REAL"}'::jsonb, 123.92, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2018', '{"measure":"GVA","geo":"guria","sector":"REAL"}'::jsonb, 125.64, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2019', '{"measure":"GVA","geo":"guria","sector":"REAL"}'::jsonb, 137.11, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2020', '{"measure":"GVA","geo":"guria","sector":"REAL"}'::jsonb, 136.44, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2021', '{"measure":"GVA","geo":"guria","sector":"REAL"}'::jsonb, 137.93, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2022', '{"measure":"GVA","geo":"guria","sector":"REAL"}'::jsonb, 158.94, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2023', '{"measure":"GVA","geo":"guria","sector":"REAL"}'::jsonb, 186.01, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2024', '{"measure":"GVA","geo":"guria","sector":"REAL"}'::jsonb, 189.59, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2010', '{"measure":"GVA","geo":"guria","sector":"GOV"}'::jsonb, 42.73, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2011', '{"measure":"GVA","geo":"guria","sector":"GOV"}'::jsonb, 18.74, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2012', '{"measure":"GVA","geo":"guria","sector":"GOV"}'::jsonb, 32.01, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2013', '{"measure":"GVA","geo":"guria","sector":"GOV"}'::jsonb, 44.47, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2014', '{"measure":"GVA","geo":"guria","sector":"GOV"}'::jsonb, 67.64, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2015', '{"measure":"GVA","geo":"guria","sector":"GOV"}'::jsonb, 28.97, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2016', '{"measure":"GVA","geo":"guria","sector":"GOV"}'::jsonb, 59.19, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2017', '{"measure":"GVA","geo":"guria","sector":"GOV"}'::jsonb, 50.23, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2018', '{"measure":"GVA","geo":"guria","sector":"GOV"}'::jsonb, 60.08, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2019', '{"measure":"GVA","geo":"guria","sector":"GOV"}'::jsonb, 65.95, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2020', '{"measure":"GVA","geo":"guria","sector":"GOV"}'::jsonb, 70.5, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2021', '{"measure":"GVA","geo":"guria","sector":"GOV"}'::jsonb, 96.81, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2022', '{"measure":"GVA","geo":"guria","sector":"GOV"}'::jsonb, 112.52, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2023', '{"measure":"GVA","geo":"guria","sector":"GOV"}'::jsonb, 116.23, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2024', '{"measure":"GVA","geo":"guria","sector":"GOV"}'::jsonb, 145.37, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2010', '{"measure":"GVA","geo":"guria","sector":"EDU"}'::jsonb, 28.74, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2011', '{"measure":"GVA","geo":"guria","sector":"EDU"}'::jsonb, 33.97, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2012', '{"measure":"GVA","geo":"guria","sector":"EDU"}'::jsonb, 38.67, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2013', '{"measure":"GVA","geo":"guria","sector":"EDU"}'::jsonb, 37.55, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2014', '{"measure":"GVA","geo":"guria","sector":"EDU"}'::jsonb, 38.34, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2015', '{"measure":"GVA","geo":"guria","sector":"EDU"}'::jsonb, 54.2, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2016', '{"measure":"GVA","geo":"guria","sector":"EDU"}'::jsonb, 53.26, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2017', '{"measure":"GVA","geo":"guria","sector":"EDU"}'::jsonb, 51.44, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2018', '{"measure":"GVA","geo":"guria","sector":"EDU"}'::jsonb, 56.21, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2019', '{"measure":"GVA","geo":"guria","sector":"EDU"}'::jsonb, 65.32, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2020', '{"measure":"GVA","geo":"guria","sector":"EDU"}'::jsonb, 74.85, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2021', '{"measure":"GVA","geo":"guria","sector":"EDU"}'::jsonb, 79.02, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2022', '{"measure":"GVA","geo":"guria","sector":"EDU"}'::jsonb, 90.05, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2023', '{"measure":"GVA","geo":"guria","sector":"EDU"}'::jsonb, 123.64, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2024', '{"measure":"GVA","geo":"guria","sector":"EDU"}'::jsonb, 166.77, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2010', '{"measure":"GVA","geo":"guria","sector":"OTHER"}'::jsonb, 51.33, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2011', '{"measure":"GVA","geo":"guria","sector":"OTHER"}'::jsonb, 57.65, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2012', '{"measure":"GVA","geo":"guria","sector":"OTHER"}'::jsonb, 106.42, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2013', '{"measure":"GVA","geo":"guria","sector":"OTHER"}'::jsonb, 123.59, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2014', '{"measure":"GVA","geo":"guria","sector":"OTHER"}'::jsonb, 106.17, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2015', '{"measure":"GVA","geo":"guria","sector":"OTHER"}'::jsonb, 130.93, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2016', '{"measure":"GVA","geo":"guria","sector":"OTHER"}'::jsonb, 138.15, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2017', '{"measure":"GVA","geo":"guria","sector":"OTHER"}'::jsonb, 141.35, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2018', '{"measure":"GVA","geo":"guria","sector":"OTHER"}'::jsonb, 182.99, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2019', '{"measure":"GVA","geo":"guria","sector":"OTHER"}'::jsonb, 213.17, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2020', '{"measure":"GVA","geo":"guria","sector":"OTHER"}'::jsonb, 142.04, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2021', '{"measure":"GVA","geo":"guria","sector":"OTHER"}'::jsonb, 253.26, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2022', '{"measure":"GVA","geo":"guria","sector":"OTHER"}'::jsonb, 310.14, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2023', '{"measure":"GVA","geo":"guria","sector":"OTHER"}'::jsonb, 365.98, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2024', '{"measure":"GVA","geo":"guria","sector":"OTHER"}'::jsonb, 399.8, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2010', '{"measure":"GVA","geo":"imereti","sector":"AGRI"}'::jsonb, 313.38, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2011', '{"measure":"GVA","geo":"imereti","sector":"AGRI"}'::jsonb, 380.66, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2012', '{"measure":"GVA","geo":"imereti","sector":"AGRI"}'::jsonb, 377.58, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2013', '{"measure":"GVA","geo":"imereti","sector":"AGRI"}'::jsonb, 406.73, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2014', '{"measure":"GVA","geo":"imereti","sector":"AGRI"}'::jsonb, 390.73, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2015', '{"measure":"GVA","geo":"imereti","sector":"AGRI"}'::jsonb, 421.07, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2016', '{"measure":"GVA","geo":"imereti","sector":"AGRI"}'::jsonb, 384.71, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2017', '{"measure":"GVA","geo":"imereti","sector":"AGRI"}'::jsonb, 410.14, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2018', '{"measure":"GVA","geo":"imereti","sector":"AGRI"}'::jsonb, 470.96, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2019', '{"measure":"GVA","geo":"imereti","sector":"AGRI"}'::jsonb, 517.12, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2020', '{"measure":"GVA","geo":"imereti","sector":"AGRI"}'::jsonb, 587.34, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2021', '{"measure":"GVA","geo":"imereti","sector":"AGRI"}'::jsonb, 624.12, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2022', '{"measure":"GVA","geo":"imereti","sector":"AGRI"}'::jsonb, 638.52, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2023', '{"measure":"GVA","geo":"imereti","sector":"AGRI"}'::jsonb, 657.31, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2024', '{"measure":"GVA","geo":"imereti","sector":"AGRI"}'::jsonb, 715.68, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2010', '{"measure":"GVA","geo":"imereti","sector":"MANUF"}'::jsonb, 344.01, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2011', '{"measure":"GVA","geo":"imereti","sector":"MANUF"}'::jsonb, 372.74, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2012', '{"measure":"GVA","geo":"imereti","sector":"MANUF"}'::jsonb, 416.62, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2013', '{"measure":"GVA","geo":"imereti","sector":"MANUF"}'::jsonb, 286.46, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2014', '{"measure":"GVA","geo":"imereti","sector":"MANUF"}'::jsonb, 244.81, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2015', '{"measure":"GVA","geo":"imereti","sector":"MANUF"}'::jsonb, 618.07, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2016', '{"measure":"GVA","geo":"imereti","sector":"MANUF"}'::jsonb, 357.55, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2017', '{"measure":"GVA","geo":"imereti","sector":"MANUF"}'::jsonb, 607.6, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2018', '{"measure":"GVA","geo":"imereti","sector":"MANUF"}'::jsonb, 755.65, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2019', '{"measure":"GVA","geo":"imereti","sector":"MANUF"}'::jsonb, 734.89, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2020', '{"measure":"GVA","geo":"imereti","sector":"MANUF"}'::jsonb, 721.88, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2021', '{"measure":"GVA","geo":"imereti","sector":"MANUF"}'::jsonb, 985.05, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2022', '{"measure":"GVA","geo":"imereti","sector":"MANUF"}'::jsonb, 1445.2, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2023', '{"measure":"GVA","geo":"imereti","sector":"MANUF"}'::jsonb, 618.55, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2024', '{"measure":"GVA","geo":"imereti","sector":"MANUF"}'::jsonb, 633.03, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2010', '{"measure":"GVA","geo":"imereti","sector":"CONST"}'::jsonb, 23.27, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2011', '{"measure":"GVA","geo":"imereti","sector":"CONST"}'::jsonb, 84.92, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2012', '{"measure":"GVA","geo":"imereti","sector":"CONST"}'::jsonb, 43.13, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2013', '{"measure":"GVA","geo":"imereti","sector":"CONST"}'::jsonb, 46.13, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2014', '{"measure":"GVA","geo":"imereti","sector":"CONST"}'::jsonb, 80.99, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2015', '{"measure":"GVA","geo":"imereti","sector":"CONST"}'::jsonb, 114.94, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2016', '{"measure":"GVA","geo":"imereti","sector":"CONST"}'::jsonb, 80.25, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2017', '{"measure":"GVA","geo":"imereti","sector":"CONST"}'::jsonb, 159.41, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2018', '{"measure":"GVA","geo":"imereti","sector":"CONST"}'::jsonb, 104.56, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2019', '{"measure":"GVA","geo":"imereti","sector":"CONST"}'::jsonb, 144.19, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2020', '{"measure":"GVA","geo":"imereti","sector":"CONST"}'::jsonb, 213.88, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2021', '{"measure":"GVA","geo":"imereti","sector":"CONST"}'::jsonb, 260.24, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2022', '{"measure":"GVA","geo":"imereti","sector":"CONST"}'::jsonb, 387.59, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2023', '{"measure":"GVA","geo":"imereti","sector":"CONST"}'::jsonb, 361.92, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2024', '{"measure":"GVA","geo":"imereti","sector":"CONST"}'::jsonb, 439.49, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2010', '{"measure":"GVA","geo":"imereti","sector":"TRADE"}'::jsonb, 72.17, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2011', '{"measure":"GVA","geo":"imereti","sector":"TRADE"}'::jsonb, 98.05, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2012', '{"measure":"GVA","geo":"imereti","sector":"TRADE"}'::jsonb, 113.63, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2013', '{"measure":"GVA","geo":"imereti","sector":"TRADE"}'::jsonb, 110.88, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2014', '{"measure":"GVA","geo":"imereti","sector":"TRADE"}'::jsonb, 150.08, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2015', '{"measure":"GVA","geo":"imereti","sector":"TRADE"}'::jsonb, 153.97, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2016', '{"measure":"GVA","geo":"imereti","sector":"TRADE"}'::jsonb, 169.79, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2017', '{"measure":"GVA","geo":"imereti","sector":"TRADE"}'::jsonb, 209.75, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2018', '{"measure":"GVA","geo":"imereti","sector":"TRADE"}'::jsonb, 246.52, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2019', '{"measure":"GVA","geo":"imereti","sector":"TRADE"}'::jsonb, 340.99, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2020', '{"measure":"GVA","geo":"imereti","sector":"TRADE"}'::jsonb, 285.2, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2021', '{"measure":"GVA","geo":"imereti","sector":"TRADE"}'::jsonb, 374.56, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2022', '{"measure":"GVA","geo":"imereti","sector":"TRADE"}'::jsonb, 389.67, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2023', '{"measure":"GVA","geo":"imereti","sector":"TRADE"}'::jsonb, 399.07, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2024', '{"measure":"GVA","geo":"imereti","sector":"TRADE"}'::jsonb, 426.91, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2010', '{"measure":"GVA","geo":"imereti","sector":"TRANS"}'::jsonb, 17.54, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2011', '{"measure":"GVA","geo":"imereti","sector":"TRANS"}'::jsonb, 10.23, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2012', '{"measure":"GVA","geo":"imereti","sector":"TRANS"}'::jsonb, 9.57, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2013', '{"measure":"GVA","geo":"imereti","sector":"TRANS"}'::jsonb, 7.38, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2014', '{"measure":"GVA","geo":"imereti","sector":"TRANS"}'::jsonb, 11.79, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2015', '{"measure":"GVA","geo":"imereti","sector":"TRANS"}'::jsonb, 20.91, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2016', '{"measure":"GVA","geo":"imereti","sector":"TRANS"}'::jsonb, 22.04, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2017', '{"measure":"GVA","geo":"imereti","sector":"TRANS"}'::jsonb, 25.72, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2018', '{"measure":"GVA","geo":"imereti","sector":"TRANS"}'::jsonb, 68.72, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2019', '{"measure":"GVA","geo":"imereti","sector":"TRANS"}'::jsonb, 35.41, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2020', '{"measure":"GVA","geo":"imereti","sector":"TRANS"}'::jsonb, 44.08, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2021', '{"measure":"GVA","geo":"imereti","sector":"TRANS"}'::jsonb, 81.89, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2022', '{"measure":"GVA","geo":"imereti","sector":"TRANS"}'::jsonb, 100.06, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2023', '{"measure":"GVA","geo":"imereti","sector":"TRANS"}'::jsonb, 118.68, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2024', '{"measure":"GVA","geo":"imereti","sector":"TRANS"}'::jsonb, 157.41, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2010', '{"measure":"GVA","geo":"imereti","sector":"REAL"}'::jsonb, 290.61, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2011', '{"measure":"GVA","geo":"imereti","sector":"REAL"}'::jsonb, 300.04, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2012', '{"measure":"GVA","geo":"imereti","sector":"REAL"}'::jsonb, 304.57, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2013', '{"measure":"GVA","geo":"imereti","sector":"REAL"}'::jsonb, 317.61, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2014', '{"measure":"GVA","geo":"imereti","sector":"REAL"}'::jsonb, 341.42, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2015', '{"measure":"GVA","geo":"imereti","sector":"REAL"}'::jsonb, 365.4, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2016', '{"measure":"GVA","geo":"imereti","sector":"REAL"}'::jsonb, 374.31, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2017', '{"measure":"GVA","geo":"imereti","sector":"REAL"}'::jsonb, 392.28, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2018', '{"measure":"GVA","geo":"imereti","sector":"REAL"}'::jsonb, 397.87, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2019', '{"measure":"GVA","geo":"imereti","sector":"REAL"}'::jsonb, 433.94, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2020', '{"measure":"GVA","geo":"imereti","sector":"REAL"}'::jsonb, 433.34, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2021', '{"measure":"GVA","geo":"imereti","sector":"REAL"}'::jsonb, 439.2, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2022', '{"measure":"GVA","geo":"imereti","sector":"REAL"}'::jsonb, 506.25, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2023', '{"measure":"GVA","geo":"imereti","sector":"REAL"}'::jsonb, 593.55, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2024', '{"measure":"GVA","geo":"imereti","sector":"REAL"}'::jsonb, 606.73, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2010', '{"measure":"GVA","geo":"imereti","sector":"GOV"}'::jsonb, 205.26, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2011', '{"measure":"GVA","geo":"imereti","sector":"GOV"}'::jsonb, 225.76, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2012', '{"measure":"GVA","geo":"imereti","sector":"GOV"}'::jsonb, 229.65, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2013', '{"measure":"GVA","geo":"imereti","sector":"GOV"}'::jsonb, 281.62, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2014', '{"measure":"GVA","geo":"imereti","sector":"GOV"}'::jsonb, 274.27, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2015', '{"measure":"GVA","geo":"imereti","sector":"GOV"}'::jsonb, 280.99, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2016', '{"measure":"GVA","geo":"imereti","sector":"GOV"}'::jsonb, 291.05, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2017', '{"measure":"GVA","geo":"imereti","sector":"GOV"}'::jsonb, 330.78, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2018', '{"measure":"GVA","geo":"imereti","sector":"GOV"}'::jsonb, 366.85, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2019', '{"measure":"GVA","geo":"imereti","sector":"GOV"}'::jsonb, 286.16, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2020', '{"measure":"GVA","geo":"imereti","sector":"GOV"}'::jsonb, 297.82, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2021', '{"measure":"GVA","geo":"imereti","sector":"GOV"}'::jsonb, 336.43, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2022', '{"measure":"GVA","geo":"imereti","sector":"GOV"}'::jsonb, 444.48, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2023', '{"measure":"GVA","geo":"imereti","sector":"GOV"}'::jsonb, 466.36, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2024', '{"measure":"GVA","geo":"imereti","sector":"GOV"}'::jsonb, 578.98, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2010', '{"measure":"GVA","geo":"imereti","sector":"EDU"}'::jsonb, 126.42, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2011', '{"measure":"GVA","geo":"imereti","sector":"EDU"}'::jsonb, 173.39, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2012', '{"measure":"GVA","geo":"imereti","sector":"EDU"}'::jsonb, 183.86, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2013', '{"measure":"GVA","geo":"imereti","sector":"EDU"}'::jsonb, 198.83, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2014', '{"measure":"GVA","geo":"imereti","sector":"EDU"}'::jsonb, 250.85, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2015', '{"measure":"GVA","geo":"imereti","sector":"EDU"}'::jsonb, 222.08, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2016', '{"measure":"GVA","geo":"imereti","sector":"EDU"}'::jsonb, 278.66, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2017', '{"measure":"GVA","geo":"imereti","sector":"EDU"}'::jsonb, 268.1, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2018', '{"measure":"GVA","geo":"imereti","sector":"EDU"}'::jsonb, 286.93, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2019', '{"measure":"GVA","geo":"imereti","sector":"EDU"}'::jsonb, 305.74, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2020', '{"measure":"GVA","geo":"imereti","sector":"EDU"}'::jsonb, 313.06, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2021', '{"measure":"GVA","geo":"imereti","sector":"EDU"}'::jsonb, 352.94, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2022', '{"measure":"GVA","geo":"imereti","sector":"EDU"}'::jsonb, 442.97, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2023', '{"measure":"GVA","geo":"imereti","sector":"EDU"}'::jsonb, 521.11, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2024', '{"measure":"GVA","geo":"imereti","sector":"EDU"}'::jsonb, 613.95, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2010', '{"measure":"GVA","geo":"imereti","sector":"OTHER"}'::jsonb, 336, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2011', '{"measure":"GVA","geo":"imereti","sector":"OTHER"}'::jsonb, 341.74, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2012', '{"measure":"GVA","geo":"imereti","sector":"OTHER"}'::jsonb, 521.41, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2013', '{"measure":"GVA","geo":"imereti","sector":"OTHER"}'::jsonb, 481.25, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2014', '{"measure":"GVA","geo":"imereti","sector":"OTHER"}'::jsonb, 520.13, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2015', '{"measure":"GVA","geo":"imereti","sector":"OTHER"}'::jsonb, 718.57, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2016', '{"measure":"GVA","geo":"imereti","sector":"OTHER"}'::jsonb, 694.6, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2017', '{"measure":"GVA","geo":"imereti","sector":"OTHER"}'::jsonb, 904.01, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2018', '{"measure":"GVA","geo":"imereti","sector":"OTHER"}'::jsonb, 1000.05, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2019', '{"measure":"GVA","geo":"imereti","sector":"OTHER"}'::jsonb, 948.84, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2020', '{"measure":"GVA","geo":"imereti","sector":"OTHER"}'::jsonb, 834.63, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2021', '{"measure":"GVA","geo":"imereti","sector":"OTHER"}'::jsonb, 1287.32, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2022', '{"measure":"GVA","geo":"imereti","sector":"OTHER"}'::jsonb, 1349.75, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2023', '{"measure":"GVA","geo":"imereti","sector":"OTHER"}'::jsonb, 1782.34, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2024', '{"measure":"GVA","geo":"imereti","sector":"OTHER"}'::jsonb, 2098.43, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2010', '{"measure":"GVA","geo":"kakheti","sector":"AGRI"}'::jsonb, 233.23, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2011', '{"measure":"GVA","geo":"kakheti","sector":"AGRI"}'::jsonb, 362.56, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2012', '{"measure":"GVA","geo":"kakheti","sector":"AGRI"}'::jsonb, 349.57, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2013', '{"measure":"GVA","geo":"kakheti","sector":"AGRI"}'::jsonb, 475.05, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2014', '{"measure":"GVA","geo":"kakheti","sector":"AGRI"}'::jsonb, 564.97, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2015', '{"measure":"GVA","geo":"kakheti","sector":"AGRI"}'::jsonb, 631.53, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2016', '{"measure":"GVA","geo":"kakheti","sector":"AGRI"}'::jsonb, 611.11, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2017', '{"measure":"GVA","geo":"kakheti","sector":"AGRI"}'::jsonb, 680.36, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2018', '{"measure":"GVA","geo":"kakheti","sector":"AGRI"}'::jsonb, 843.37, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2019', '{"measure":"GVA","geo":"kakheti","sector":"AGRI"}'::jsonb, 919.98, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2020', '{"measure":"GVA","geo":"kakheti","sector":"AGRI"}'::jsonb, 924.84, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2021', '{"measure":"GVA","geo":"kakheti","sector":"AGRI"}'::jsonb, 1001.36, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2022', '{"measure":"GVA","geo":"kakheti","sector":"AGRI"}'::jsonb, 1274.22, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2023', '{"measure":"GVA","geo":"kakheti","sector":"AGRI"}'::jsonb, 1221.79, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2024', '{"measure":"GVA","geo":"kakheti","sector":"AGRI"}'::jsonb, 1336.59, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2010', '{"measure":"GVA","geo":"kakheti","sector":"MANUF"}'::jsonb, 85.35, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2011', '{"measure":"GVA","geo":"kakheti","sector":"MANUF"}'::jsonb, 107.73, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2012', '{"measure":"GVA","geo":"kakheti","sector":"MANUF"}'::jsonb, 150.03, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2013', '{"measure":"GVA","geo":"kakheti","sector":"MANUF"}'::jsonb, 205.94, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2014', '{"measure":"GVA","geo":"kakheti","sector":"MANUF"}'::jsonb, 283.71, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2015', '{"measure":"GVA","geo":"kakheti","sector":"MANUF"}'::jsonb, 212.28, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2016', '{"measure":"GVA","geo":"kakheti","sector":"MANUF"}'::jsonb, 265.62, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2017', '{"measure":"GVA","geo":"kakheti","sector":"MANUF"}'::jsonb, 336.08, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2018', '{"measure":"GVA","geo":"kakheti","sector":"MANUF"}'::jsonb, 322.3, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2019', '{"measure":"GVA","geo":"kakheti","sector":"MANUF"}'::jsonb, 324.19, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2020', '{"measure":"GVA","geo":"kakheti","sector":"MANUF"}'::jsonb, 258.96, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2021', '{"measure":"GVA","geo":"kakheti","sector":"MANUF"}'::jsonb, 574.12, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2022', '{"measure":"GVA","geo":"kakheti","sector":"MANUF"}'::jsonb, 406.88, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2023', '{"measure":"GVA","geo":"kakheti","sector":"MANUF"}'::jsonb, 433.62, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2024', '{"measure":"GVA","geo":"kakheti","sector":"MANUF"}'::jsonb, 477.84, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2010', '{"measure":"GVA","geo":"kakheti","sector":"CONST"}'::jsonb, 13.74, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2011', '{"measure":"GVA","geo":"kakheti","sector":"CONST"}'::jsonb, 13.04, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2012', '{"measure":"GVA","geo":"kakheti","sector":"CONST"}'::jsonb, 29.56, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2013', '{"measure":"GVA","geo":"kakheti","sector":"CONST"}'::jsonb, 60.53, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2014', '{"measure":"GVA","geo":"kakheti","sector":"CONST"}'::jsonb, 43.96, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2015', '{"measure":"GVA","geo":"kakheti","sector":"CONST"}'::jsonb, 23.66, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2016', '{"measure":"GVA","geo":"kakheti","sector":"CONST"}'::jsonb, 36.36, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2017', '{"measure":"GVA","geo":"kakheti","sector":"CONST"}'::jsonb, 71.18, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2018', '{"measure":"GVA","geo":"kakheti","sector":"CONST"}'::jsonb, 45.32, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2019', '{"measure":"GVA","geo":"kakheti","sector":"CONST"}'::jsonb, 50.85, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2020', '{"measure":"GVA","geo":"kakheti","sector":"CONST"}'::jsonb, 39.4, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2021', '{"measure":"GVA","geo":"kakheti","sector":"CONST"}'::jsonb, 44.97, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2022', '{"measure":"GVA","geo":"kakheti","sector":"CONST"}'::jsonb, 67.4, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2023', '{"measure":"GVA","geo":"kakheti","sector":"CONST"}'::jsonb, 110.89, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2024', '{"measure":"GVA","geo":"kakheti","sector":"CONST"}'::jsonb, 129.47, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2010', '{"measure":"GVA","geo":"kakheti","sector":"TRADE"}'::jsonb, 34.92, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2011', '{"measure":"GVA","geo":"kakheti","sector":"TRADE"}'::jsonb, 48.55, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2012', '{"measure":"GVA","geo":"kakheti","sector":"TRADE"}'::jsonb, 43.41, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2013', '{"measure":"GVA","geo":"kakheti","sector":"TRADE"}'::jsonb, 57.77, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2014', '{"measure":"GVA","geo":"kakheti","sector":"TRADE"}'::jsonb, 53.48, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2015', '{"measure":"GVA","geo":"kakheti","sector":"TRADE"}'::jsonb, 60.58, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2016', '{"measure":"GVA","geo":"kakheti","sector":"TRADE"}'::jsonb, 55.75, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2017', '{"measure":"GVA","geo":"kakheti","sector":"TRADE"}'::jsonb, 85.67, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2018', '{"measure":"GVA","geo":"kakheti","sector":"TRADE"}'::jsonb, 81.03, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2019', '{"measure":"GVA","geo":"kakheti","sector":"TRADE"}'::jsonb, 123.6, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2020', '{"measure":"GVA","geo":"kakheti","sector":"TRADE"}'::jsonb, 152.58, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2021', '{"measure":"GVA","geo":"kakheti","sector":"TRADE"}'::jsonb, 147.8, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2022', '{"measure":"GVA","geo":"kakheti","sector":"TRADE"}'::jsonb, 129.5, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2023', '{"measure":"GVA","geo":"kakheti","sector":"TRADE"}'::jsonb, 147.94, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2024', '{"measure":"GVA","geo":"kakheti","sector":"TRADE"}'::jsonb, 150.02, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2010', '{"measure":"GVA","geo":"kakheti","sector":"TRANS"}'::jsonb, 3.87, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2011', '{"measure":"GVA","geo":"kakheti","sector":"TRANS"}'::jsonb, 0.59, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2012', '{"measure":"GVA","geo":"kakheti","sector":"TRANS"}'::jsonb, 1.41, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2013', '{"measure":"GVA","geo":"kakheti","sector":"TRANS"}'::jsonb, 1.09, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2014', '{"measure":"GVA","geo":"kakheti","sector":"TRANS"}'::jsonb, 1.95, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2015', '{"measure":"GVA","geo":"kakheti","sector":"TRANS"}'::jsonb, 2.89, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2016', '{"measure":"GVA","geo":"kakheti","sector":"TRANS"}'::jsonb, 4.57, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2017', '{"measure":"GVA","geo":"kakheti","sector":"TRANS"}'::jsonb, 18.44, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2018', '{"measure":"GVA","geo":"kakheti","sector":"TRANS"}'::jsonb, 7.09, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2019', '{"measure":"GVA","geo":"kakheti","sector":"TRANS"}'::jsonb, 9.77, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2020', '{"measure":"GVA","geo":"kakheti","sector":"TRANS"}'::jsonb, 6.19, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2021', '{"measure":"GVA","geo":"kakheti","sector":"TRANS"}'::jsonb, 18.45, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2022', '{"measure":"GVA","geo":"kakheti","sector":"TRANS"}'::jsonb, 32.59, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2023', '{"measure":"GVA","geo":"kakheti","sector":"TRANS"}'::jsonb, 29.84, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2024', '{"measure":"GVA","geo":"kakheti","sector":"TRANS"}'::jsonb, 38.79, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2010', '{"measure":"GVA","geo":"kakheti","sector":"REAL"}'::jsonb, 117.53, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2011', '{"measure":"GVA","geo":"kakheti","sector":"REAL"}'::jsonb, 121.11, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2012', '{"measure":"GVA","geo":"kakheti","sector":"REAL"}'::jsonb, 122.95, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2013', '{"measure":"GVA","geo":"kakheti","sector":"REAL"}'::jsonb, 128.48, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2014', '{"measure":"GVA","geo":"kakheti","sector":"REAL"}'::jsonb, 138.1, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2015', '{"measure":"GVA","geo":"kakheti","sector":"REAL"}'::jsonb, 147.59, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2016', '{"measure":"GVA","geo":"kakheti","sector":"REAL"}'::jsonb, 151.33, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2017', '{"measure":"GVA","geo":"kakheti","sector":"REAL"}'::jsonb, 158.5, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2018', '{"measure":"GVA","geo":"kakheti","sector":"REAL"}'::jsonb, 161.12, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2019', '{"measure":"GVA","geo":"kakheti","sector":"REAL"}'::jsonb, 175.85, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2020', '{"measure":"GVA","geo":"kakheti","sector":"REAL"}'::jsonb, 175.03, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2021', '{"measure":"GVA","geo":"kakheti","sector":"REAL"}'::jsonb, 177.69, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2022', '{"measure":"GVA","geo":"kakheti","sector":"REAL"}'::jsonb, 204.91, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2023', '{"measure":"GVA","geo":"kakheti","sector":"REAL"}'::jsonb, 240.4, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2024', '{"measure":"GVA","geo":"kakheti","sector":"REAL"}'::jsonb, 246.49, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2010', '{"measure":"GVA","geo":"kakheti","sector":"GOV"}'::jsonb, 114.39, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2011', '{"measure":"GVA","geo":"kakheti","sector":"GOV"}'::jsonb, 81.75, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2012', '{"measure":"GVA","geo":"kakheti","sector":"GOV"}'::jsonb, 74.03, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2013', '{"measure":"GVA","geo":"kakheti","sector":"GOV"}'::jsonb, 88.85, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2014', '{"measure":"GVA","geo":"kakheti","sector":"GOV"}'::jsonb, 154.97, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2015', '{"measure":"GVA","geo":"kakheti","sector":"GOV"}'::jsonb, 91.8, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2016', '{"measure":"GVA","geo":"kakheti","sector":"GOV"}'::jsonb, 129.72, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2017', '{"measure":"GVA","geo":"kakheti","sector":"GOV"}'::jsonb, 157.81, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2018', '{"measure":"GVA","geo":"kakheti","sector":"GOV"}'::jsonb, 122.8, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2019', '{"measure":"GVA","geo":"kakheti","sector":"GOV"}'::jsonb, 148.54, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2020', '{"measure":"GVA","geo":"kakheti","sector":"GOV"}'::jsonb, 177.81, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2021', '{"measure":"GVA","geo":"kakheti","sector":"GOV"}'::jsonb, 162.88, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2022', '{"measure":"GVA","geo":"kakheti","sector":"GOV"}'::jsonb, 229.4, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2023', '{"measure":"GVA","geo":"kakheti","sector":"GOV"}'::jsonb, 260.16, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2024', '{"measure":"GVA","geo":"kakheti","sector":"GOV"}'::jsonb, 339.87, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2010', '{"measure":"GVA","geo":"kakheti","sector":"EDU"}'::jsonb, 74.2, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2011', '{"measure":"GVA","geo":"kakheti","sector":"EDU"}'::jsonb, 70.02, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2012', '{"measure":"GVA","geo":"kakheti","sector":"EDU"}'::jsonb, 85.22, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2013', '{"measure":"GVA","geo":"kakheti","sector":"EDU"}'::jsonb, 100.23, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2014', '{"measure":"GVA","geo":"kakheti","sector":"EDU"}'::jsonb, 72.54, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2015', '{"measure":"GVA","geo":"kakheti","sector":"EDU"}'::jsonb, 115.68, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2016', '{"measure":"GVA","geo":"kakheti","sector":"EDU"}'::jsonb, 105.38, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2017', '{"measure":"GVA","geo":"kakheti","sector":"EDU"}'::jsonb, 122.84, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2018', '{"measure":"GVA","geo":"kakheti","sector":"EDU"}'::jsonb, 145.96, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2019', '{"measure":"GVA","geo":"kakheti","sector":"EDU"}'::jsonb, 153.35, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2020', '{"measure":"GVA","geo":"kakheti","sector":"EDU"}'::jsonb, 148.96, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2021', '{"measure":"GVA","geo":"kakheti","sector":"EDU"}'::jsonb, 200.72, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2022', '{"measure":"GVA","geo":"kakheti","sector":"EDU"}'::jsonb, 230.26, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2023', '{"measure":"GVA","geo":"kakheti","sector":"EDU"}'::jsonb, 235.27, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2024', '{"measure":"GVA","geo":"kakheti","sector":"EDU"}'::jsonb, 342.44, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2010', '{"measure":"GVA","geo":"kakheti","sector":"OTHER"}'::jsonb, 153.21, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2011', '{"measure":"GVA","geo":"kakheti","sector":"OTHER"}'::jsonb, 197.71, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2012', '{"measure":"GVA","geo":"kakheti","sector":"OTHER"}'::jsonb, 215.15, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2013', '{"measure":"GVA","geo":"kakheti","sector":"OTHER"}'::jsonb, 251.45, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2014', '{"measure":"GVA","geo":"kakheti","sector":"OTHER"}'::jsonb, 232.41, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2015', '{"measure":"GVA","geo":"kakheti","sector":"OTHER"}'::jsonb, 249.86, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2016', '{"measure":"GVA","geo":"kakheti","sector":"OTHER"}'::jsonb, 301.73, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2017', '{"measure":"GVA","geo":"kakheti","sector":"OTHER"}'::jsonb, 370.75, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2018', '{"measure":"GVA","geo":"kakheti","sector":"OTHER"}'::jsonb, 415.67, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2019', '{"measure":"GVA","geo":"kakheti","sector":"OTHER"}'::jsonb, 405.42, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2020', '{"measure":"GVA","geo":"kakheti","sector":"OTHER"}'::jsonb, 345.38, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2021', '{"measure":"GVA","geo":"kakheti","sector":"OTHER"}'::jsonb, 562.66, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2022', '{"measure":"GVA","geo":"kakheti","sector":"OTHER"}'::jsonb, 655.19, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2023', '{"measure":"GVA","geo":"kakheti","sector":"OTHER"}'::jsonb, 858.08, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2024', '{"measure":"GVA","geo":"kakheti","sector":"OTHER"}'::jsonb, 976.94, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2010', '{"measure":"GVA","geo":"mtskheta","sector":"AGRI"}'::jsonb, 49.16, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2011', '{"measure":"GVA","geo":"mtskheta","sector":"AGRI"}'::jsonb, 55.81, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2012', '{"measure":"GVA","geo":"mtskheta","sector":"AGRI"}'::jsonb, 61.5, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2013', '{"measure":"GVA","geo":"mtskheta","sector":"AGRI"}'::jsonb, 67.33, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2014', '{"measure":"GVA","geo":"mtskheta","sector":"AGRI"}'::jsonb, 87.55, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2015', '{"measure":"GVA","geo":"mtskheta","sector":"AGRI"}'::jsonb, 72.39, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2016', '{"measure":"GVA","geo":"mtskheta","sector":"AGRI"}'::jsonb, 80.5, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2017', '{"measure":"GVA","geo":"mtskheta","sector":"AGRI"}'::jsonb, 80.26, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2018', '{"measure":"GVA","geo":"mtskheta","sector":"AGRI"}'::jsonb, 90.86, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2019', '{"measure":"GVA","geo":"mtskheta","sector":"AGRI"}'::jsonb, 84.47, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2020', '{"measure":"GVA","geo":"mtskheta","sector":"AGRI"}'::jsonb, 91.94, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2021', '{"measure":"GVA","geo":"mtskheta","sector":"AGRI"}'::jsonb, 113.48, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2022', '{"measure":"GVA","geo":"mtskheta","sector":"AGRI"}'::jsonb, 120.32, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2023', '{"measure":"GVA","geo":"mtskheta","sector":"AGRI"}'::jsonb, 131.93, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2024', '{"measure":"GVA","geo":"mtskheta","sector":"AGRI"}'::jsonb, 119.46, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2010', '{"measure":"GVA","geo":"mtskheta","sector":"MANUF"}'::jsonb, 42.27, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2011', '{"measure":"GVA","geo":"mtskheta","sector":"MANUF"}'::jsonb, 60.51, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2012', '{"measure":"GVA","geo":"mtskheta","sector":"MANUF"}'::jsonb, 153.26, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2013', '{"measure":"GVA","geo":"mtskheta","sector":"MANUF"}'::jsonb, 130.99, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2014', '{"measure":"GVA","geo":"mtskheta","sector":"MANUF"}'::jsonb, 185.88, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2015', '{"measure":"GVA","geo":"mtskheta","sector":"MANUF"}'::jsonb, 174.73, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2016', '{"measure":"GVA","geo":"mtskheta","sector":"MANUF"}'::jsonb, 162.82, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2017', '{"measure":"GVA","geo":"mtskheta","sector":"MANUF"}'::jsonb, 172.59, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2018', '{"measure":"GVA","geo":"mtskheta","sector":"MANUF"}'::jsonb, 272.78, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2019', '{"measure":"GVA","geo":"mtskheta","sector":"MANUF"}'::jsonb, 306.78, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2020', '{"measure":"GVA","geo":"mtskheta","sector":"MANUF"}'::jsonb, 415.98, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2021', '{"measure":"GVA","geo":"mtskheta","sector":"MANUF"}'::jsonb, 478.05, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2022', '{"measure":"GVA","geo":"mtskheta","sector":"MANUF"}'::jsonb, 600.54, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2023', '{"measure":"GVA","geo":"mtskheta","sector":"MANUF"}'::jsonb, 644.06, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2024', '{"measure":"GVA","geo":"mtskheta","sector":"MANUF"}'::jsonb, 805.83, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2010', '{"measure":"GVA","geo":"mtskheta","sector":"CONST"}'::jsonb, 9.66, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2011', '{"measure":"GVA","geo":"mtskheta","sector":"CONST"}'::jsonb, 4.98, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2012', '{"measure":"GVA","geo":"mtskheta","sector":"CONST"}'::jsonb, 6.93, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2013', '{"measure":"GVA","geo":"mtskheta","sector":"CONST"}'::jsonb, 53.31, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2014', '{"measure":"GVA","geo":"mtskheta","sector":"CONST"}'::jsonb, 57.94, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2015', '{"measure":"GVA","geo":"mtskheta","sector":"CONST"}'::jsonb, 58.28, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2016', '{"measure":"GVA","geo":"mtskheta","sector":"CONST"}'::jsonb, 52.63, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2017', '{"measure":"GVA","geo":"mtskheta","sector":"CONST"}'::jsonb, 71.42, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2018', '{"measure":"GVA","geo":"mtskheta","sector":"CONST"}'::jsonb, 17.6, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2019', '{"measure":"GVA","geo":"mtskheta","sector":"CONST"}'::jsonb, 25.89, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2020', '{"measure":"GVA","geo":"mtskheta","sector":"CONST"}'::jsonb, 28.19, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2021', '{"measure":"GVA","geo":"mtskheta","sector":"CONST"}'::jsonb, 36.35, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2022', '{"measure":"GVA","geo":"mtskheta","sector":"CONST"}'::jsonb, 27.06, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2023', '{"measure":"GVA","geo":"mtskheta","sector":"CONST"}'::jsonb, 58.42, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2024', '{"measure":"GVA","geo":"mtskheta","sector":"CONST"}'::jsonb, 60.26, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2010', '{"measure":"GVA","geo":"mtskheta","sector":"TRADE"}'::jsonb, 3.26, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2011', '{"measure":"GVA","geo":"mtskheta","sector":"TRADE"}'::jsonb, 7.59, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2012', '{"measure":"GVA","geo":"mtskheta","sector":"TRADE"}'::jsonb, 9.56, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2013', '{"measure":"GVA","geo":"mtskheta","sector":"TRADE"}'::jsonb, 13.42, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2014', '{"measure":"GVA","geo":"mtskheta","sector":"TRADE"}'::jsonb, 17.78, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2015', '{"measure":"GVA","geo":"mtskheta","sector":"TRADE"}'::jsonb, 38.88, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2016', '{"measure":"GVA","geo":"mtskheta","sector":"TRADE"}'::jsonb, 20.89, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2017', '{"measure":"GVA","geo":"mtskheta","sector":"TRADE"}'::jsonb, 23.99, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2018', '{"measure":"GVA","geo":"mtskheta","sector":"TRADE"}'::jsonb, 28.56, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2019', '{"measure":"GVA","geo":"mtskheta","sector":"TRADE"}'::jsonb, 47.02, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2020', '{"measure":"GVA","geo":"mtskheta","sector":"TRADE"}'::jsonb, 44.92, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2021', '{"measure":"GVA","geo":"mtskheta","sector":"TRADE"}'::jsonb, 59.08, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2022', '{"measure":"GVA","geo":"mtskheta","sector":"TRADE"}'::jsonb, 83.08, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2023', '{"measure":"GVA","geo":"mtskheta","sector":"TRADE"}'::jsonb, 101.7, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2024', '{"measure":"GVA","geo":"mtskheta","sector":"TRADE"}'::jsonb, 106.59, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2010', '{"measure":"GVA","geo":"mtskheta","sector":"TRANS"}'::jsonb, 2.73, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2011', '{"measure":"GVA","geo":"mtskheta","sector":"TRANS"}'::jsonb, 1.81, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2012', '{"measure":"GVA","geo":"mtskheta","sector":"TRANS"}'::jsonb, 1.13, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2013', '{"measure":"GVA","geo":"mtskheta","sector":"TRANS"}'::jsonb, 1.82, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2014', '{"measure":"GVA","geo":"mtskheta","sector":"TRANS"}'::jsonb, 3.57, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2015', '{"measure":"GVA","geo":"mtskheta","sector":"TRANS"}'::jsonb, 11.79, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2016', '{"measure":"GVA","geo":"mtskheta","sector":"TRANS"}'::jsonb, 9.36, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2017', '{"measure":"GVA","geo":"mtskheta","sector":"TRANS"}'::jsonb, 8.37, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2018', '{"measure":"GVA","geo":"mtskheta","sector":"TRANS"}'::jsonb, 14.08, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2019', '{"measure":"GVA","geo":"mtskheta","sector":"TRANS"}'::jsonb, 19.94, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2020', '{"measure":"GVA","geo":"mtskheta","sector":"TRANS"}'::jsonb, 19.2, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2021', '{"measure":"GVA","geo":"mtskheta","sector":"TRANS"}'::jsonb, 27.6, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2022', '{"measure":"GVA","geo":"mtskheta","sector":"TRANS"}'::jsonb, 34.5, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2023', '{"measure":"GVA","geo":"mtskheta","sector":"TRANS"}'::jsonb, 40.2, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2024', '{"measure":"GVA","geo":"mtskheta","sector":"TRANS"}'::jsonb, 45.32, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2010', '{"measure":"GVA","geo":"mtskheta","sector":"REAL"}'::jsonb, 93.37, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2011', '{"measure":"GVA","geo":"mtskheta","sector":"REAL"}'::jsonb, 97.61, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2012', '{"measure":"GVA","geo":"mtskheta","sector":"REAL"}'::jsonb, 99.68, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2013', '{"measure":"GVA","geo":"mtskheta","sector":"REAL"}'::jsonb, 106, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2014', '{"measure":"GVA","geo":"mtskheta","sector":"REAL"}'::jsonb, 115.63, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2015', '{"measure":"GVA","geo":"mtskheta","sector":"REAL"}'::jsonb, 125.74, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2016', '{"measure":"GVA","geo":"mtskheta","sector":"REAL"}'::jsonb, 131.83, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2017', '{"measure":"GVA","geo":"mtskheta","sector":"REAL"}'::jsonb, 140.33, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2018', '{"measure":"GVA","geo":"mtskheta","sector":"REAL"}'::jsonb, 145.84, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2019', '{"measure":"GVA","geo":"mtskheta","sector":"REAL"}'::jsonb, 160.71, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2020', '{"measure":"GVA","geo":"mtskheta","sector":"REAL"}'::jsonb, 164.04, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2021', '{"measure":"GVA","geo":"mtskheta","sector":"REAL"}'::jsonb, 161.78, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2022', '{"measure":"GVA","geo":"mtskheta","sector":"REAL"}'::jsonb, 193.53, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2023', '{"measure":"GVA","geo":"mtskheta","sector":"REAL"}'::jsonb, 236.73, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2024', '{"measure":"GVA","geo":"mtskheta","sector":"REAL"}'::jsonb, 253.47, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2010', '{"measure":"GVA","geo":"mtskheta","sector":"GOV"}'::jsonb, 67.1, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2011', '{"measure":"GVA","geo":"mtskheta","sector":"GOV"}'::jsonb, 84.71, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2012', '{"measure":"GVA","geo":"mtskheta","sector":"GOV"}'::jsonb, 69.56, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2013', '{"measure":"GVA","geo":"mtskheta","sector":"GOV"}'::jsonb, 56.7, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2014', '{"measure":"GVA","geo":"mtskheta","sector":"GOV"}'::jsonb, 77.99, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2015', '{"measure":"GVA","geo":"mtskheta","sector":"GOV"}'::jsonb, 74.54, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2016', '{"measure":"GVA","geo":"mtskheta","sector":"GOV"}'::jsonb, 61.44, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2017', '{"measure":"GVA","geo":"mtskheta","sector":"GOV"}'::jsonb, 96.22, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2018', '{"measure":"GVA","geo":"mtskheta","sector":"GOV"}'::jsonb, 90.12, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2019', '{"measure":"GVA","geo":"mtskheta","sector":"GOV"}'::jsonb, 106.61, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2020', '{"measure":"GVA","geo":"mtskheta","sector":"GOV"}'::jsonb, 125.85, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2021', '{"measure":"GVA","geo":"mtskheta","sector":"GOV"}'::jsonb, 130.78, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2022', '{"measure":"GVA","geo":"mtskheta","sector":"GOV"}'::jsonb, 146.8, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2023', '{"measure":"GVA","geo":"mtskheta","sector":"GOV"}'::jsonb, 149.49, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2024', '{"measure":"GVA","geo":"mtskheta","sector":"GOV"}'::jsonb, 161.96, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2010', '{"measure":"GVA","geo":"mtskheta","sector":"EDU"}'::jsonb, 19.14, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2011', '{"measure":"GVA","geo":"mtskheta","sector":"EDU"}'::jsonb, 25.51, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2012', '{"measure":"GVA","geo":"mtskheta","sector":"EDU"}'::jsonb, 32.56, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2013', '{"measure":"GVA","geo":"mtskheta","sector":"EDU"}'::jsonb, 27.48, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2014', '{"measure":"GVA","geo":"mtskheta","sector":"EDU"}'::jsonb, 50.02, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2015', '{"measure":"GVA","geo":"mtskheta","sector":"EDU"}'::jsonb, 41.83, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2016', '{"measure":"GVA","geo":"mtskheta","sector":"EDU"}'::jsonb, 44.11, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2017', '{"measure":"GVA","geo":"mtskheta","sector":"EDU"}'::jsonb, 44.59, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2018', '{"measure":"GVA","geo":"mtskheta","sector":"EDU"}'::jsonb, 44.21, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2019', '{"measure":"GVA","geo":"mtskheta","sector":"EDU"}'::jsonb, 50.49, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2020', '{"measure":"GVA","geo":"mtskheta","sector":"EDU"}'::jsonb, 56.47, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2021', '{"measure":"GVA","geo":"mtskheta","sector":"EDU"}'::jsonb, 57.95, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2022', '{"measure":"GVA","geo":"mtskheta","sector":"EDU"}'::jsonb, 69.07, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2023', '{"measure":"GVA","geo":"mtskheta","sector":"EDU"}'::jsonb, 95.89, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2024', '{"measure":"GVA","geo":"mtskheta","sector":"EDU"}'::jsonb, 123.54, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2010', '{"measure":"GVA","geo":"mtskheta","sector":"OTHER"}'::jsonb, 53.37, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2011', '{"measure":"GVA","geo":"mtskheta","sector":"OTHER"}'::jsonb, 71.32, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2012', '{"measure":"GVA","geo":"mtskheta","sector":"OTHER"}'::jsonb, 97.19, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2013', '{"measure":"GVA","geo":"mtskheta","sector":"OTHER"}'::jsonb, 78.65, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2014', '{"measure":"GVA","geo":"mtskheta","sector":"OTHER"}'::jsonb, 81.46, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2015', '{"measure":"GVA","geo":"mtskheta","sector":"OTHER"}'::jsonb, 167.26, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2016', '{"measure":"GVA","geo":"mtskheta","sector":"OTHER"}'::jsonb, 130.09, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2017', '{"measure":"GVA","geo":"mtskheta","sector":"OTHER"}'::jsonb, 180.61, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2018', '{"measure":"GVA","geo":"mtskheta","sector":"OTHER"}'::jsonb, 242.34, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2019', '{"measure":"GVA","geo":"mtskheta","sector":"OTHER"}'::jsonb, 240.14, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2020', '{"measure":"GVA","geo":"mtskheta","sector":"OTHER"}'::jsonb, 176.34, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2021', '{"measure":"GVA","geo":"mtskheta","sector":"OTHER"}'::jsonb, 214.04, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2022', '{"measure":"GVA","geo":"mtskheta","sector":"OTHER"}'::jsonb, 307.9, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2023', '{"measure":"GVA","geo":"mtskheta","sector":"OTHER"}'::jsonb, 451.16, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2024', '{"measure":"GVA","geo":"mtskheta","sector":"OTHER"}'::jsonb, 539.75, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2010', '{"measure":"GVA","geo":"racha","sector":"AGRI"}'::jsonb, 30.7, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2011', '{"measure":"GVA","geo":"racha","sector":"AGRI"}'::jsonb, 37.29, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2012', '{"measure":"GVA","geo":"racha","sector":"AGRI"}'::jsonb, 36.99, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2013', '{"measure":"GVA","geo":"racha","sector":"AGRI"}'::jsonb, 39.85, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2014', '{"measure":"GVA","geo":"racha","sector":"AGRI"}'::jsonb, 40.69, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2015', '{"measure":"GVA","geo":"racha","sector":"AGRI"}'::jsonb, 41.77, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2016', '{"measure":"GVA","geo":"racha","sector":"AGRI"}'::jsonb, 38.21, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2017', '{"measure":"GVA","geo":"racha","sector":"AGRI"}'::jsonb, 37.57, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2018', '{"measure":"GVA","geo":"racha","sector":"AGRI"}'::jsonb, 45.06, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2019', '{"measure":"GVA","geo":"racha","sector":"AGRI"}'::jsonb, 48.3, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2020', '{"measure":"GVA","geo":"racha","sector":"AGRI"}'::jsonb, 51.58, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2021', '{"measure":"GVA","geo":"racha","sector":"AGRI"}'::jsonb, 44.04, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2022', '{"measure":"GVA","geo":"racha","sector":"AGRI"}'::jsonb, 64.66, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2023', '{"measure":"GVA","geo":"racha","sector":"AGRI"}'::jsonb, 60.02, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2024', '{"measure":"GVA","geo":"racha","sector":"AGRI"}'::jsonb, 57.7, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2010', '{"measure":"GVA","geo":"racha","sector":"MANUF"}'::jsonb, 2.46, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2011', '{"measure":"GVA","geo":"racha","sector":"MANUF"}'::jsonb, 5.66, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2012', '{"measure":"GVA","geo":"racha","sector":"MANUF"}'::jsonb, 7.85, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2013', '{"measure":"GVA","geo":"racha","sector":"MANUF"}'::jsonb, 3.99, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2014', '{"measure":"GVA","geo":"racha","sector":"MANUF"}'::jsonb, 6.93, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2015', '{"measure":"GVA","geo":"racha","sector":"MANUF"}'::jsonb, 13.25, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2016', '{"measure":"GVA","geo":"racha","sector":"MANUF"}'::jsonb, 10.5, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2017', '{"measure":"GVA","geo":"racha","sector":"MANUF"}'::jsonb, 15.43, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2018', '{"measure":"GVA","geo":"racha","sector":"MANUF"}'::jsonb, 29.41, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2019', '{"measure":"GVA","geo":"racha","sector":"MANUF"}'::jsonb, 16.86, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2020', '{"measure":"GVA","geo":"racha","sector":"MANUF"}'::jsonb, 30.29, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2021', '{"measure":"GVA","geo":"racha","sector":"MANUF"}'::jsonb, 30.11, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2022', '{"measure":"GVA","geo":"racha","sector":"MANUF"}'::jsonb, 30.65, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2023', '{"measure":"GVA","geo":"racha","sector":"MANUF"}'::jsonb, 29.95, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2024', '{"measure":"GVA","geo":"racha","sector":"MANUF"}'::jsonb, 33.97, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2010', '{"measure":"GVA","geo":"racha","sector":"CONST"}'::jsonb, 8.57, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2011', '{"measure":"GVA","geo":"racha","sector":"CONST"}'::jsonb, 2.12, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2012', '{"measure":"GVA","geo":"racha","sector":"CONST"}'::jsonb, 6.34, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2013', '{"measure":"GVA","geo":"racha","sector":"CONST"}'::jsonb, 8.78, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2014', '{"measure":"GVA","geo":"racha","sector":"CONST"}'::jsonb, 6.17, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2015', '{"measure":"GVA","geo":"racha","sector":"CONST"}'::jsonb, 8.79, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2016', '{"measure":"GVA","geo":"racha","sector":"CONST"}'::jsonb, 9.74, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2017', '{"measure":"GVA","geo":"racha","sector":"CONST"}'::jsonb, 9.69, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2018', '{"measure":"GVA","geo":"racha","sector":"CONST"}'::jsonb, 9.89, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2019', '{"measure":"GVA","geo":"racha","sector":"CONST"}'::jsonb, 14.83, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2020', '{"measure":"GVA","geo":"racha","sector":"CONST"}'::jsonb, 17.52, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2021', '{"measure":"GVA","geo":"racha","sector":"CONST"}'::jsonb, 7.32, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2022', '{"measure":"GVA","geo":"racha","sector":"CONST"}'::jsonb, 16.67, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2023', '{"measure":"GVA","geo":"racha","sector":"CONST"}'::jsonb, 27.5, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2024', '{"measure":"GVA","geo":"racha","sector":"CONST"}'::jsonb, 30.82, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2010', '{"measure":"GVA","geo":"racha","sector":"TRADE"}'::jsonb, 0.7, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2011', '{"measure":"GVA","geo":"racha","sector":"TRADE"}'::jsonb, 1.33, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2012', '{"measure":"GVA","geo":"racha","sector":"TRADE"}'::jsonb, 0.94, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2013', '{"measure":"GVA","geo":"racha","sector":"TRADE"}'::jsonb, 0.99, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2014', '{"measure":"GVA","geo":"racha","sector":"TRADE"}'::jsonb, 1.89, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2015', '{"measure":"GVA","geo":"racha","sector":"TRADE"}'::jsonb, 2.45, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2016', '{"measure":"GVA","geo":"racha","sector":"TRADE"}'::jsonb, 2.79, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2017', '{"measure":"GVA","geo":"racha","sector":"TRADE"}'::jsonb, 4.25, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2018', '{"measure":"GVA","geo":"racha","sector":"TRADE"}'::jsonb, 3.54, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2019', '{"measure":"GVA","geo":"racha","sector":"TRADE"}'::jsonb, 4.35, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2020', '{"measure":"GVA","geo":"racha","sector":"TRADE"}'::jsonb, 10.22, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2021', '{"measure":"GVA","geo":"racha","sector":"TRADE"}'::jsonb, 13.59, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2022', '{"measure":"GVA","geo":"racha","sector":"TRADE"}'::jsonb, 4.87, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2023', '{"measure":"GVA","geo":"racha","sector":"TRADE"}'::jsonb, 5.8, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2024', '{"measure":"GVA","geo":"racha","sector":"TRADE"}'::jsonb, 6.51, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2010', '{"measure":"GVA","geo":"racha","sector":"TRANS"}'::jsonb, 0.04, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2011', '{"measure":"GVA","geo":"racha","sector":"TRANS"}'::jsonb, 0, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2012', '{"measure":"GVA","geo":"racha","sector":"TRANS"}'::jsonb, 0.14, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2013', '{"measure":"GVA","geo":"racha","sector":"TRANS"}'::jsonb, 0, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2014', '{"measure":"GVA","geo":"racha","sector":"TRANS"}'::jsonb, 0.11, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2015', '{"measure":"GVA","geo":"racha","sector":"TRANS"}'::jsonb, 0.1, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2016', '{"measure":"GVA","geo":"racha","sector":"TRANS"}'::jsonb, 0.8, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2017', '{"measure":"GVA","geo":"racha","sector":"TRANS"}'::jsonb, 0.24, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2018', '{"measure":"GVA","geo":"racha","sector":"TRANS"}'::jsonb, 0.86, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2019', '{"measure":"GVA","geo":"racha","sector":"TRANS"}'::jsonb, 0.51, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2020', '{"measure":"GVA","geo":"racha","sector":"TRANS"}'::jsonb, 0.63, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2021', '{"measure":"GVA","geo":"racha","sector":"TRANS"}'::jsonb, 0.78, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2022', '{"measure":"GVA","geo":"racha","sector":"TRANS"}'::jsonb, 3.89, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2023', '{"measure":"GVA","geo":"racha","sector":"TRANS"}'::jsonb, 4.14, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2024', '{"measure":"GVA","geo":"racha","sector":"TRANS"}'::jsonb, 2.76, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2010', '{"measure":"GVA","geo":"racha","sector":"REAL"}'::jsonb, 16.61, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2011', '{"measure":"GVA","geo":"racha","sector":"REAL"}'::jsonb, 17.12, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2012', '{"measure":"GVA","geo":"racha","sector":"REAL"}'::jsonb, 17.36, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2013', '{"measure":"GVA","geo":"racha","sector":"REAL"}'::jsonb, 18.13, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2014', '{"measure":"GVA","geo":"racha","sector":"REAL"}'::jsonb, 19.47, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2015', '{"measure":"GVA","geo":"racha","sector":"REAL"}'::jsonb, 20.78, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2016', '{"measure":"GVA","geo":"racha","sector":"REAL"}'::jsonb, 21.26, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2017', '{"measure":"GVA","geo":"racha","sector":"REAL"}'::jsonb, 22.22, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2018', '{"measure":"GVA","geo":"racha","sector":"REAL"}'::jsonb, 22.53, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2019', '{"measure":"GVA","geo":"racha","sector":"REAL"}'::jsonb, 24.56, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2020', '{"measure":"GVA","geo":"racha","sector":"REAL"}'::jsonb, 24.43, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2021', '{"measure":"GVA","geo":"racha","sector":"REAL"}'::jsonb, 24.8, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2022', '{"measure":"GVA","geo":"racha","sector":"REAL"}'::jsonb, 28.61, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2023', '{"measure":"GVA","geo":"racha","sector":"REAL"}'::jsonb, 33.54, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2024', '{"measure":"GVA","geo":"racha","sector":"REAL"}'::jsonb, 34.38, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2010', '{"measure":"GVA","geo":"racha","sector":"GOV"}'::jsonb, 13.06, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2011', '{"measure":"GVA","geo":"racha","sector":"GOV"}'::jsonb, 14.21, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2012', '{"measure":"GVA","geo":"racha","sector":"GOV"}'::jsonb, 14.27, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2013', '{"measure":"GVA","geo":"racha","sector":"GOV"}'::jsonb, 17.26, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2014', '{"measure":"GVA","geo":"racha","sector":"GOV"}'::jsonb, 16.65, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2015', '{"measure":"GVA","geo":"racha","sector":"GOV"}'::jsonb, 16.96, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2016', '{"measure":"GVA","geo":"racha","sector":"GOV"}'::jsonb, 17.47, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2017', '{"measure":"GVA","geo":"racha","sector":"GOV"}'::jsonb, 19.77, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2018', '{"measure":"GVA","geo":"racha","sector":"GOV"}'::jsonb, 21.89, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2019', '{"measure":"GVA","geo":"racha","sector":"GOV"}'::jsonb, 44.67, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2020', '{"measure":"GVA","geo":"racha","sector":"GOV"}'::jsonb, 38.69, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2021', '{"measure":"GVA","geo":"racha","sector":"GOV"}'::jsonb, 48.62, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2022', '{"measure":"GVA","geo":"racha","sector":"GOV"}'::jsonb, 59.12, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2023', '{"measure":"GVA","geo":"racha","sector":"GOV"}'::jsonb, 65.7, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2024', '{"measure":"GVA","geo":"racha","sector":"GOV"}'::jsonb, 83.04, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2010', '{"measure":"GVA","geo":"racha","sector":"EDU"}'::jsonb, 8.04, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2011', '{"measure":"GVA","geo":"racha","sector":"EDU"}'::jsonb, 10.92, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2012', '{"measure":"GVA","geo":"racha","sector":"EDU"}'::jsonb, 11.42, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2013', '{"measure":"GVA","geo":"racha","sector":"EDU"}'::jsonb, 12.18, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2014', '{"measure":"GVA","geo":"racha","sector":"EDU"}'::jsonb, 15.23, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2015', '{"measure":"GVA","geo":"racha","sector":"EDU"}'::jsonb, 13.41, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2016', '{"measure":"GVA","geo":"racha","sector":"EDU"}'::jsonb, 16.73, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2017', '{"measure":"GVA","geo":"racha","sector":"EDU"}'::jsonb, 16.02, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2018', '{"measure":"GVA","geo":"racha","sector":"EDU"}'::jsonb, 17.12, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2019', '{"measure":"GVA","geo":"racha","sector":"EDU"}'::jsonb, 28.05, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2020', '{"measure":"GVA","geo":"racha","sector":"EDU"}'::jsonb, 30.18, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2021', '{"measure":"GVA","geo":"racha","sector":"EDU"}'::jsonb, 36.84, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2022', '{"measure":"GVA","geo":"racha","sector":"EDU"}'::jsonb, 44.08, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2023', '{"measure":"GVA","geo":"racha","sector":"EDU"}'::jsonb, 49.61, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2024', '{"measure":"GVA","geo":"racha","sector":"EDU"}'::jsonb, 72.21, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2010', '{"measure":"GVA","geo":"racha","sector":"OTHER"}'::jsonb, 21.17, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2011', '{"measure":"GVA","geo":"racha","sector":"OTHER"}'::jsonb, 20.92, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2012', '{"measure":"GVA","geo":"racha","sector":"OTHER"}'::jsonb, 31.7, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2013', '{"measure":"GVA","geo":"racha","sector":"OTHER"}'::jsonb, 29.28, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2014', '{"measure":"GVA","geo":"racha","sector":"OTHER"}'::jsonb, 31.45, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2015', '{"measure":"GVA","geo":"racha","sector":"OTHER"}'::jsonb, 41.63, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2016', '{"measure":"GVA","geo":"racha","sector":"OTHER"}'::jsonb, 42.47, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2017', '{"measure":"GVA","geo":"racha","sector":"OTHER"}'::jsonb, 56.28, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2018', '{"measure":"GVA","geo":"racha","sector":"OTHER"}'::jsonb, 65.89, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2019', '{"measure":"GVA","geo":"racha","sector":"OTHER"}'::jsonb, 84.53, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2020', '{"measure":"GVA","geo":"racha","sector":"OTHER"}'::jsonb, 54.71, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2021', '{"measure":"GVA","geo":"racha","sector":"OTHER"}'::jsonb, 106.58, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2022', '{"measure":"GVA","geo":"racha","sector":"OTHER"}'::jsonb, 129.49, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2023', '{"measure":"GVA","geo":"racha","sector":"OTHER"}'::jsonb, 140.06, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2024', '{"measure":"GVA","geo":"racha","sector":"OTHER"}'::jsonb, 155.36, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2010', '{"measure":"GVA","geo":"samegrelo","sector":"AGRI"}'::jsonb, 316.92, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2011', '{"measure":"GVA","geo":"samegrelo","sector":"AGRI"}'::jsonb, 404.63, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2012', '{"measure":"GVA","geo":"samegrelo","sector":"AGRI"}'::jsonb, 352.38, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2013', '{"measure":"GVA","geo":"samegrelo","sector":"AGRI"}'::jsonb, 384.75, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2014', '{"measure":"GVA","geo":"samegrelo","sector":"AGRI"}'::jsonb, 415.45, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2015', '{"measure":"GVA","geo":"samegrelo","sector":"AGRI"}'::jsonb, 403.31, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2016', '{"measure":"GVA","geo":"samegrelo","sector":"AGRI"}'::jsonb, 327.68, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2017', '{"measure":"GVA","geo":"samegrelo","sector":"AGRI"}'::jsonb, 280.57, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2018', '{"measure":"GVA","geo":"samegrelo","sector":"AGRI"}'::jsonb, 340.24, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2019', '{"measure":"GVA","geo":"samegrelo","sector":"AGRI"}'::jsonb, 417.27, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2020', '{"measure":"GVA","geo":"samegrelo","sector":"AGRI"}'::jsonb, 509.95, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2021', '{"measure":"GVA","geo":"samegrelo","sector":"AGRI"}'::jsonb, 530.1, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2022', '{"measure":"GVA","geo":"samegrelo","sector":"AGRI"}'::jsonb, 487.59, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2023', '{"measure":"GVA","geo":"samegrelo","sector":"AGRI"}'::jsonb, 507.6, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2024', '{"measure":"GVA","geo":"samegrelo","sector":"AGRI"}'::jsonb, 582.38, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2010', '{"measure":"GVA","geo":"samegrelo","sector":"MANUF"}'::jsonb, 91.74, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2011', '{"measure":"GVA","geo":"samegrelo","sector":"MANUF"}'::jsonb, 103.54, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2012', '{"measure":"GVA","geo":"samegrelo","sector":"MANUF"}'::jsonb, 95.05, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2013', '{"measure":"GVA","geo":"samegrelo","sector":"MANUF"}'::jsonb, 148.57, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2014', '{"measure":"GVA","geo":"samegrelo","sector":"MANUF"}'::jsonb, 184.53, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2015', '{"measure":"GVA","geo":"samegrelo","sector":"MANUF"}'::jsonb, 180.34, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2016', '{"measure":"GVA","geo":"samegrelo","sector":"MANUF"}'::jsonb, 212.3, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2017', '{"measure":"GVA","geo":"samegrelo","sector":"MANUF"}'::jsonb, 228.91, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2018', '{"measure":"GVA","geo":"samegrelo","sector":"MANUF"}'::jsonb, 229.04, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2019', '{"measure":"GVA","geo":"samegrelo","sector":"MANUF"}'::jsonb, 271.22, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2020', '{"measure":"GVA","geo":"samegrelo","sector":"MANUF"}'::jsonb, 332.74, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2021', '{"measure":"GVA","geo":"samegrelo","sector":"MANUF"}'::jsonb, 341.36, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2022', '{"measure":"GVA","geo":"samegrelo","sector":"MANUF"}'::jsonb, 403.79, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2023', '{"measure":"GVA","geo":"samegrelo","sector":"MANUF"}'::jsonb, 411.79, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2024', '{"measure":"GVA","geo":"samegrelo","sector":"MANUF"}'::jsonb, 512.46, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2010', '{"measure":"GVA","geo":"samegrelo","sector":"CONST"}'::jsonb, 34.43, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2011', '{"measure":"GVA","geo":"samegrelo","sector":"CONST"}'::jsonb, 34.25, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2012', '{"measure":"GVA","geo":"samegrelo","sector":"CONST"}'::jsonb, 35.22, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2013', '{"measure":"GVA","geo":"samegrelo","sector":"CONST"}'::jsonb, 57.86, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2014', '{"measure":"GVA","geo":"samegrelo","sector":"CONST"}'::jsonb, 45.6, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2015', '{"measure":"GVA","geo":"samegrelo","sector":"CONST"}'::jsonb, 41.35, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2016', '{"measure":"GVA","geo":"samegrelo","sector":"CONST"}'::jsonb, 35.65, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2017', '{"measure":"GVA","geo":"samegrelo","sector":"CONST"}'::jsonb, 53.45, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2018', '{"measure":"GVA","geo":"samegrelo","sector":"CONST"}'::jsonb, 85.12, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2019', '{"measure":"GVA","geo":"samegrelo","sector":"CONST"}'::jsonb, 109.11, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2020', '{"measure":"GVA","geo":"samegrelo","sector":"CONST"}'::jsonb, 142.48, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2021', '{"measure":"GVA","geo":"samegrelo","sector":"CONST"}'::jsonb, 107.99, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2022', '{"measure":"GVA","geo":"samegrelo","sector":"CONST"}'::jsonb, 99.86, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2023', '{"measure":"GVA","geo":"samegrelo","sector":"CONST"}'::jsonb, 104.52, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2024', '{"measure":"GVA","geo":"samegrelo","sector":"CONST"}'::jsonb, 158.48, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2010', '{"measure":"GVA","geo":"samegrelo","sector":"TRADE"}'::jsonb, 81.02, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2011', '{"measure":"GVA","geo":"samegrelo","sector":"TRADE"}'::jsonb, 109.81, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2012', '{"measure":"GVA","geo":"samegrelo","sector":"TRADE"}'::jsonb, 67.86, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2013', '{"measure":"GVA","geo":"samegrelo","sector":"TRADE"}'::jsonb, 63, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2014', '{"measure":"GVA","geo":"samegrelo","sector":"TRADE"}'::jsonb, 81.24, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2015', '{"measure":"GVA","geo":"samegrelo","sector":"TRADE"}'::jsonb, 113.02, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2016', '{"measure":"GVA","geo":"samegrelo","sector":"TRADE"}'::jsonb, 174.52, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2017', '{"measure":"GVA","geo":"samegrelo","sector":"TRADE"}'::jsonb, 132.18, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2018', '{"measure":"GVA","geo":"samegrelo","sector":"TRADE"}'::jsonb, 136.56, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2019', '{"measure":"GVA","geo":"samegrelo","sector":"TRADE"}'::jsonb, 117.97, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2020', '{"measure":"GVA","geo":"samegrelo","sector":"TRADE"}'::jsonb, 137.37, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2021', '{"measure":"GVA","geo":"samegrelo","sector":"TRADE"}'::jsonb, 150.08, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2022', '{"measure":"GVA","geo":"samegrelo","sector":"TRADE"}'::jsonb, 185.53, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2023', '{"measure":"GVA","geo":"samegrelo","sector":"TRADE"}'::jsonb, 160.21, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2024', '{"measure":"GVA","geo":"samegrelo","sector":"TRADE"}'::jsonb, 166.39, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2010', '{"measure":"GVA","geo":"samegrelo","sector":"TRANS"}'::jsonb, 256.36, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2011', '{"measure":"GVA","geo":"samegrelo","sector":"TRANS"}'::jsonb, 299.38, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2012', '{"measure":"GVA","geo":"samegrelo","sector":"TRANS"}'::jsonb, 242.94, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2013', '{"measure":"GVA","geo":"samegrelo","sector":"TRANS"}'::jsonb, 250.12, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2014', '{"measure":"GVA","geo":"samegrelo","sector":"TRANS"}'::jsonb, 284.25, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2015', '{"measure":"GVA","geo":"samegrelo","sector":"TRANS"}'::jsonb, 321.8, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2016', '{"measure":"GVA","geo":"samegrelo","sector":"TRANS"}'::jsonb, 264.1, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2017', '{"measure":"GVA","geo":"samegrelo","sector":"TRANS"}'::jsonb, 497.35, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2018', '{"measure":"GVA","geo":"samegrelo","sector":"TRANS"}'::jsonb, 321.3, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2019', '{"measure":"GVA","geo":"samegrelo","sector":"TRANS"}'::jsonb, 556.67, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2020', '{"measure":"GVA","geo":"samegrelo","sector":"TRANS"}'::jsonb, 543.49, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2021', '{"measure":"GVA","geo":"samegrelo","sector":"TRANS"}'::jsonb, 584.76, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2022', '{"measure":"GVA","geo":"samegrelo","sector":"TRANS"}'::jsonb, 661.55, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2023', '{"measure":"GVA","geo":"samegrelo","sector":"TRANS"}'::jsonb, 696.38, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2024', '{"measure":"GVA","geo":"samegrelo","sector":"TRANS"}'::jsonb, 791, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2010', '{"measure":"GVA","geo":"samegrelo","sector":"REAL"}'::jsonb, 130.7, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2011', '{"measure":"GVA","geo":"samegrelo","sector":"REAL"}'::jsonb, 134.95, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2012', '{"measure":"GVA","geo":"samegrelo","sector":"REAL"}'::jsonb, 136.88, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2013', '{"measure":"GVA","geo":"samegrelo","sector":"REAL"}'::jsonb, 142.82, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2014', '{"measure":"GVA","geo":"samegrelo","sector":"REAL"}'::jsonb, 153.72, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2015', '{"measure":"GVA","geo":"samegrelo","sector":"REAL"}'::jsonb, 164.21, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2016', '{"measure":"GVA","geo":"samegrelo","sector":"REAL"}'::jsonb, 168.06, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2017', '{"measure":"GVA","geo":"samegrelo","sector":"REAL"}'::jsonb, 175.7, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2018', '{"measure":"GVA","geo":"samegrelo","sector":"REAL"}'::jsonb, 178.12, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2019', '{"measure":"GVA","geo":"samegrelo","sector":"REAL"}'::jsonb, 194.06, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2020', '{"measure":"GVA","geo":"samegrelo","sector":"REAL"}'::jsonb, 192.78, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2021', '{"measure":"GVA","geo":"samegrelo","sector":"REAL"}'::jsonb, 194.93, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2022', '{"measure":"GVA","geo":"samegrelo","sector":"REAL"}'::jsonb, 224.49, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2023', '{"measure":"GVA","geo":"samegrelo","sector":"REAL"}'::jsonb, 262.97, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2024', '{"measure":"GVA","geo":"samegrelo","sector":"REAL"}'::jsonb, 268.57, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2010', '{"measure":"GVA","geo":"samegrelo","sector":"GOV"}'::jsonb, 126.22, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2011', '{"measure":"GVA","geo":"samegrelo","sector":"GOV"}'::jsonb, 101.27, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2012', '{"measure":"GVA","geo":"samegrelo","sector":"GOV"}'::jsonb, 141.81, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2013', '{"measure":"GVA","geo":"samegrelo","sector":"GOV"}'::jsonb, 216.38, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2014', '{"measure":"GVA","geo":"samegrelo","sector":"GOV"}'::jsonb, 193.03, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2015', '{"measure":"GVA","geo":"samegrelo","sector":"GOV"}'::jsonb, 177.75, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2016', '{"measure":"GVA","geo":"samegrelo","sector":"GOV"}'::jsonb, 197.3, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2017', '{"measure":"GVA","geo":"samegrelo","sector":"GOV"}'::jsonb, 184.48, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2018', '{"measure":"GVA","geo":"samegrelo","sector":"GOV"}'::jsonb, 230.49, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2019', '{"measure":"GVA","geo":"samegrelo","sector":"GOV"}'::jsonb, 242.83, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2020', '{"measure":"GVA","geo":"samegrelo","sector":"GOV"}'::jsonb, 261.49, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2021', '{"measure":"GVA","geo":"samegrelo","sector":"GOV"}'::jsonb, 342.8, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2022', '{"measure":"GVA","geo":"samegrelo","sector":"GOV"}'::jsonb, 427.06, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2023', '{"measure":"GVA","geo":"samegrelo","sector":"GOV"}'::jsonb, 433.19, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2024', '{"measure":"GVA","geo":"samegrelo","sector":"GOV"}'::jsonb, 490.37, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2010', '{"measure":"GVA","geo":"samegrelo","sector":"EDU"}'::jsonb, 79.84, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2011', '{"measure":"GVA","geo":"samegrelo","sector":"EDU"}'::jsonb, 70.74, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2012', '{"measure":"GVA","geo":"samegrelo","sector":"EDU"}'::jsonb, 72.02, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2013', '{"measure":"GVA","geo":"samegrelo","sector":"EDU"}'::jsonb, 107.91, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2014', '{"measure":"GVA","geo":"samegrelo","sector":"EDU"}'::jsonb, 85.52, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2015', '{"measure":"GVA","geo":"samegrelo","sector":"EDU"}'::jsonb, 117.51, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2016', '{"measure":"GVA","geo":"samegrelo","sector":"EDU"}'::jsonb, 146.38, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2017', '{"measure":"GVA","geo":"samegrelo","sector":"EDU"}'::jsonb, 155.15, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2018', '{"measure":"GVA","geo":"samegrelo","sector":"EDU"}'::jsonb, 143.98, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2019', '{"measure":"GVA","geo":"samegrelo","sector":"EDU"}'::jsonb, 149.57, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2020', '{"measure":"GVA","geo":"samegrelo","sector":"EDU"}'::jsonb, 191.27, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2021', '{"measure":"GVA","geo":"samegrelo","sector":"EDU"}'::jsonb, 230.25, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2022', '{"measure":"GVA","geo":"samegrelo","sector":"EDU"}'::jsonb, 280.46, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2023', '{"measure":"GVA","geo":"samegrelo","sector":"EDU"}'::jsonb, 301.81, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2024', '{"measure":"GVA","geo":"samegrelo","sector":"EDU"}'::jsonb, 384.6, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2010', '{"measure":"GVA","geo":"samegrelo","sector":"OTHER"}'::jsonb, 173.35, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2011', '{"measure":"GVA","geo":"samegrelo","sector":"OTHER"}'::jsonb, 202.22, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2012', '{"measure":"GVA","geo":"samegrelo","sector":"OTHER"}'::jsonb, 279.6, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2013', '{"measure":"GVA","geo":"samegrelo","sector":"OTHER"}'::jsonb, 336.85, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2014', '{"measure":"GVA","geo":"samegrelo","sector":"OTHER"}'::jsonb, 293.88, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2015', '{"measure":"GVA","geo":"samegrelo","sector":"OTHER"}'::jsonb, 373.78, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2016', '{"measure":"GVA","geo":"samegrelo","sector":"OTHER"}'::jsonb, 354.03, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2017', '{"measure":"GVA","geo":"samegrelo","sector":"OTHER"}'::jsonb, 347.49, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2018', '{"measure":"GVA","geo":"samegrelo","sector":"OTHER"}'::jsonb, 396.53, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2019', '{"measure":"GVA","geo":"samegrelo","sector":"OTHER"}'::jsonb, 435.71, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2020', '{"measure":"GVA","geo":"samegrelo","sector":"OTHER"}'::jsonb, 469.19, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2021', '{"measure":"GVA","geo":"samegrelo","sector":"OTHER"}'::jsonb, 528.49, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2022', '{"measure":"GVA","geo":"samegrelo","sector":"OTHER"}'::jsonb, 561, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2023', '{"measure":"GVA","geo":"samegrelo","sector":"OTHER"}'::jsonb, 950.23, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2024', '{"measure":"GVA","geo":"samegrelo","sector":"OTHER"}'::jsonb, 1087.58, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2010', '{"measure":"GVA","geo":"samtskhe","sector":"AGRI"}'::jsonb, 241.64, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2011', '{"measure":"GVA","geo":"samtskhe","sector":"AGRI"}'::jsonb, 300.93, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2012', '{"measure":"GVA","geo":"samtskhe","sector":"AGRI"}'::jsonb, 239.08, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2013', '{"measure":"GVA","geo":"samtskhe","sector":"AGRI"}'::jsonb, 257.02, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2014', '{"measure":"GVA","geo":"samtskhe","sector":"AGRI"}'::jsonb, 306.24, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2015', '{"measure":"GVA","geo":"samtskhe","sector":"AGRI"}'::jsonb, 251.84, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2016', '{"measure":"GVA","geo":"samtskhe","sector":"AGRI"}'::jsonb, 283.76, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2017', '{"measure":"GVA","geo":"samtskhe","sector":"AGRI"}'::jsonb, 244.97, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2018', '{"measure":"GVA","geo":"samtskhe","sector":"AGRI"}'::jsonb, 306.04, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2019', '{"measure":"GVA","geo":"samtskhe","sector":"AGRI"}'::jsonb, 291.48, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2020', '{"measure":"GVA","geo":"samtskhe","sector":"AGRI"}'::jsonb, 345.06, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2021', '{"measure":"GVA","geo":"samtskhe","sector":"AGRI"}'::jsonb, 385.09, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2022', '{"measure":"GVA","geo":"samtskhe","sector":"AGRI"}'::jsonb, 456.08, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2023', '{"measure":"GVA","geo":"samtskhe","sector":"AGRI"}'::jsonb, 458.32, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2024', '{"measure":"GVA","geo":"samtskhe","sector":"AGRI"}'::jsonb, 439.92, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2010', '{"measure":"GVA","geo":"samtskhe","sector":"MANUF"}'::jsonb, 88.1, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2011', '{"measure":"GVA","geo":"samtskhe","sector":"MANUF"}'::jsonb, 89.73, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2012', '{"measure":"GVA","geo":"samtskhe","sector":"MANUF"}'::jsonb, 144.63, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2013', '{"measure":"GVA","geo":"samtskhe","sector":"MANUF"}'::jsonb, 202.49, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2014', '{"measure":"GVA","geo":"samtskhe","sector":"MANUF"}'::jsonb, 266.65, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2015', '{"measure":"GVA","geo":"samtskhe","sector":"MANUF"}'::jsonb, 230.57, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2016', '{"measure":"GVA","geo":"samtskhe","sector":"MANUF"}'::jsonb, 220.66, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2017', '{"measure":"GVA","geo":"samtskhe","sector":"MANUF"}'::jsonb, 293.04, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2018', '{"measure":"GVA","geo":"samtskhe","sector":"MANUF"}'::jsonb, 315.77, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2019', '{"measure":"GVA","geo":"samtskhe","sector":"MANUF"}'::jsonb, 407.23, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2020', '{"measure":"GVA","geo":"samtskhe","sector":"MANUF"}'::jsonb, 407.05, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2021', '{"measure":"GVA","geo":"samtskhe","sector":"MANUF"}'::jsonb, 464.69, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2022', '{"measure":"GVA","geo":"samtskhe","sector":"MANUF"}'::jsonb, 378.8, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2023', '{"measure":"GVA","geo":"samtskhe","sector":"MANUF"}'::jsonb, 343.13, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2024', '{"measure":"GVA","geo":"samtskhe","sector":"MANUF"}'::jsonb, 555.31, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2010', '{"measure":"GVA","geo":"samtskhe","sector":"CONST"}'::jsonb, 21.36, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2011', '{"measure":"GVA","geo":"samtskhe","sector":"CONST"}'::jsonb, 14, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2012', '{"measure":"GVA","geo":"samtskhe","sector":"CONST"}'::jsonb, 20, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2013', '{"measure":"GVA","geo":"samtskhe","sector":"CONST"}'::jsonb, 58.91, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2014', '{"measure":"GVA","geo":"samtskhe","sector":"CONST"}'::jsonb, 25.7, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2015', '{"measure":"GVA","geo":"samtskhe","sector":"CONST"}'::jsonb, 17.04, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2016', '{"measure":"GVA","geo":"samtskhe","sector":"CONST"}'::jsonb, 37.46, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2017', '{"measure":"GVA","geo":"samtskhe","sector":"CONST"}'::jsonb, 52.16, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2018', '{"measure":"GVA","geo":"samtskhe","sector":"CONST"}'::jsonb, 82.02, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2019', '{"measure":"GVA","geo":"samtskhe","sector":"CONST"}'::jsonb, 88.12, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2020', '{"measure":"GVA","geo":"samtskhe","sector":"CONST"}'::jsonb, 84.46, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2021', '{"measure":"GVA","geo":"samtskhe","sector":"CONST"}'::jsonb, 90.76, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2022', '{"measure":"GVA","geo":"samtskhe","sector":"CONST"}'::jsonb, 91.08, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2023', '{"measure":"GVA","geo":"samtskhe","sector":"CONST"}'::jsonb, 93.05, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2024', '{"measure":"GVA","geo":"samtskhe","sector":"CONST"}'::jsonb, 133.3, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2010', '{"measure":"GVA","geo":"samtskhe","sector":"TRADE"}'::jsonb, 31.89, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2011', '{"measure":"GVA","geo":"samtskhe","sector":"TRADE"}'::jsonb, 28.45, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2012', '{"measure":"GVA","geo":"samtskhe","sector":"TRADE"}'::jsonb, 30.25, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2013', '{"measure":"GVA","geo":"samtskhe","sector":"TRADE"}'::jsonb, 27.83, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2014', '{"measure":"GVA","geo":"samtskhe","sector":"TRADE"}'::jsonb, 31.26, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2015', '{"measure":"GVA","geo":"samtskhe","sector":"TRADE"}'::jsonb, 28.42, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2016', '{"measure":"GVA","geo":"samtskhe","sector":"TRADE"}'::jsonb, 36.43, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2017', '{"measure":"GVA","geo":"samtskhe","sector":"TRADE"}'::jsonb, 51.38, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2018', '{"measure":"GVA","geo":"samtskhe","sector":"TRADE"}'::jsonb, 49.79, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2019', '{"measure":"GVA","geo":"samtskhe","sector":"TRADE"}'::jsonb, 59.83, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2020', '{"measure":"GVA","geo":"samtskhe","sector":"TRADE"}'::jsonb, 44.74, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2021', '{"measure":"GVA","geo":"samtskhe","sector":"TRADE"}'::jsonb, 47.45, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2022', '{"measure":"GVA","geo":"samtskhe","sector":"TRADE"}'::jsonb, 54.05, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2023', '{"measure":"GVA","geo":"samtskhe","sector":"TRADE"}'::jsonb, 57.43, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2024', '{"measure":"GVA","geo":"samtskhe","sector":"TRADE"}'::jsonb, 74.06, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2010', '{"measure":"GVA","geo":"samtskhe","sector":"TRANS"}'::jsonb, 1, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2011', '{"measure":"GVA","geo":"samtskhe","sector":"TRANS"}'::jsonb, 1.84, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2012', '{"measure":"GVA","geo":"samtskhe","sector":"TRANS"}'::jsonb, 3.66, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2013', '{"measure":"GVA","geo":"samtskhe","sector":"TRANS"}'::jsonb, 4.48, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2014', '{"measure":"GVA","geo":"samtskhe","sector":"TRANS"}'::jsonb, 4.4, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2015', '{"measure":"GVA","geo":"samtskhe","sector":"TRANS"}'::jsonb, 5.71, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2016', '{"measure":"GVA","geo":"samtskhe","sector":"TRANS"}'::jsonb, 10.16, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2017', '{"measure":"GVA","geo":"samtskhe","sector":"TRANS"}'::jsonb, 11.1, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2018', '{"measure":"GVA","geo":"samtskhe","sector":"TRANS"}'::jsonb, 6.1, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2019', '{"measure":"GVA","geo":"samtskhe","sector":"TRANS"}'::jsonb, 10.01, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2020', '{"measure":"GVA","geo":"samtskhe","sector":"TRANS"}'::jsonb, 8.59, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2021', '{"measure":"GVA","geo":"samtskhe","sector":"TRANS"}'::jsonb, 12.56, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2022', '{"measure":"GVA","geo":"samtskhe","sector":"TRANS"}'::jsonb, 21.82, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2023', '{"measure":"GVA","geo":"samtskhe","sector":"TRANS"}'::jsonb, 42.22, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2024', '{"measure":"GVA","geo":"samtskhe","sector":"TRANS"}'::jsonb, 48, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2010', '{"measure":"GVA","geo":"samtskhe","sector":"REAL"}'::jsonb, 100.23, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2011', '{"measure":"GVA","geo":"samtskhe","sector":"REAL"}'::jsonb, 103.57, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2012', '{"measure":"GVA","geo":"samtskhe","sector":"REAL"}'::jsonb, 104.82, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2013', '{"measure":"GVA","geo":"samtskhe","sector":"REAL"}'::jsonb, 109.2, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2014', '{"measure":"GVA","geo":"samtskhe","sector":"REAL"}'::jsonb, 117.36, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2015', '{"measure":"GVA","geo":"samtskhe","sector":"REAL"}'::jsonb, 125.62, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2016', '{"measure":"GVA","geo":"samtskhe","sector":"REAL"}'::jsonb, 128.63, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2017', '{"measure":"GVA","geo":"samtskhe","sector":"REAL"}'::jsonb, 134.73, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2018', '{"measure":"GVA","geo":"samtskhe","sector":"REAL"}'::jsonb, 136.94, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2019', '{"measure":"GVA","geo":"samtskhe","sector":"REAL"}'::jsonb, 149.5, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2020', '{"measure":"GVA","geo":"samtskhe","sector":"REAL"}'::jsonb, 149.08, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2021', '{"measure":"GVA","geo":"samtskhe","sector":"REAL"}'::jsonb, 151.05, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2022', '{"measure":"GVA","geo":"samtskhe","sector":"REAL"}'::jsonb, 174.34, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2023', '{"measure":"GVA","geo":"samtskhe","sector":"REAL"}'::jsonb, 204.19, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2024', '{"measure":"GVA","geo":"samtskhe","sector":"REAL"}'::jsonb, 210.14, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2010', '{"measure":"GVA","geo":"samtskhe","sector":"GOV"}'::jsonb, 73.46, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2011', '{"measure":"GVA","geo":"samtskhe","sector":"GOV"}'::jsonb, 36.25, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2012', '{"measure":"GVA","geo":"samtskhe","sector":"GOV"}'::jsonb, 72.91, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2013', '{"measure":"GVA","geo":"samtskhe","sector":"GOV"}'::jsonb, 68.8, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2014', '{"measure":"GVA","geo":"samtskhe","sector":"GOV"}'::jsonb, 100.66, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2015', '{"measure":"GVA","geo":"samtskhe","sector":"GOV"}'::jsonb, 46.61, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2016', '{"measure":"GVA","geo":"samtskhe","sector":"GOV"}'::jsonb, 85.77, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2017', '{"measure":"GVA","geo":"samtskhe","sector":"GOV"}'::jsonb, 95.24, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2018', '{"measure":"GVA","geo":"samtskhe","sector":"GOV"}'::jsonb, 89.25, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2019', '{"measure":"GVA","geo":"samtskhe","sector":"GOV"}'::jsonb, 119.42, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2020', '{"measure":"GVA","geo":"samtskhe","sector":"GOV"}'::jsonb, 139.61, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2021', '{"measure":"GVA","geo":"samtskhe","sector":"GOV"}'::jsonb, 180.78, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2022', '{"measure":"GVA","geo":"samtskhe","sector":"GOV"}'::jsonb, 181.14, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2023', '{"measure":"GVA","geo":"samtskhe","sector":"GOV"}'::jsonb, 184.51, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2024', '{"measure":"GVA","geo":"samtskhe","sector":"GOV"}'::jsonb, 253.25, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2010', '{"measure":"GVA","geo":"samtskhe","sector":"EDU"}'::jsonb, 44.11, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2011', '{"measure":"GVA","geo":"samtskhe","sector":"EDU"}'::jsonb, 60.42, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2012', '{"measure":"GVA","geo":"samtskhe","sector":"EDU"}'::jsonb, 56.68, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2013', '{"measure":"GVA","geo":"samtskhe","sector":"EDU"}'::jsonb, 50.37, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2014', '{"measure":"GVA","geo":"samtskhe","sector":"EDU"}'::jsonb, 72.44, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2015', '{"measure":"GVA","geo":"samtskhe","sector":"EDU"}'::jsonb, 84.72, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2016', '{"measure":"GVA","geo":"samtskhe","sector":"EDU"}'::jsonb, 78.23, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2017', '{"measure":"GVA","geo":"samtskhe","sector":"EDU"}'::jsonb, 78.75, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2018', '{"measure":"GVA","geo":"samtskhe","sector":"EDU"}'::jsonb, 80.03, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2019', '{"measure":"GVA","geo":"samtskhe","sector":"EDU"}'::jsonb, 100.76, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2020', '{"measure":"GVA","geo":"samtskhe","sector":"EDU"}'::jsonb, 114.87, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2021', '{"measure":"GVA","geo":"samtskhe","sector":"EDU"}'::jsonb, 138.72, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2022', '{"measure":"GVA","geo":"samtskhe","sector":"EDU"}'::jsonb, 150.67, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2023', '{"measure":"GVA","geo":"samtskhe","sector":"EDU"}'::jsonb, 171.7, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2024', '{"measure":"GVA","geo":"samtskhe","sector":"EDU"}'::jsonb, 233.11, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2010', '{"measure":"GVA","geo":"samtskhe","sector":"OTHER"}'::jsonb, 94.26, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2011', '{"measure":"GVA","geo":"samtskhe","sector":"OTHER"}'::jsonb, 128.99, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2012', '{"measure":"GVA","geo":"samtskhe","sector":"OTHER"}'::jsonb, 100.42, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2013', '{"measure":"GVA","geo":"samtskhe","sector":"OTHER"}'::jsonb, 174.51, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2014', '{"measure":"GVA","geo":"samtskhe","sector":"OTHER"}'::jsonb, 193.4, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2015', '{"measure":"GVA","geo":"samtskhe","sector":"OTHER"}'::jsonb, 133.81, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2016', '{"measure":"GVA","geo":"samtskhe","sector":"OTHER"}'::jsonb, 176.78, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2017', '{"measure":"GVA","geo":"samtskhe","sector":"OTHER"}'::jsonb, 197.44, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2018', '{"measure":"GVA","geo":"samtskhe","sector":"OTHER"}'::jsonb, 196.11, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2019', '{"measure":"GVA","geo":"samtskhe","sector":"OTHER"}'::jsonb, 238.45, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2020', '{"measure":"GVA","geo":"samtskhe","sector":"OTHER"}'::jsonb, 243.37, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2021', '{"measure":"GVA","geo":"samtskhe","sector":"OTHER"}'::jsonb, 369.05, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2022', '{"measure":"GVA","geo":"samtskhe","sector":"OTHER"}'::jsonb, 390.58, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2023', '{"measure":"GVA","geo":"samtskhe","sector":"OTHER"}'::jsonb, 476.43, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2024', '{"measure":"GVA","geo":"samtskhe","sector":"OTHER"}'::jsonb, 538.67, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2010', '{"measure":"GVA","geo":"kvemo_kartli","sector":"AGRI"}'::jsonb, 365.05, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2011', '{"measure":"GVA","geo":"kvemo_kartli","sector":"AGRI"}'::jsonb, 462.25, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2012', '{"measure":"GVA","geo":"kvemo_kartli","sector":"AGRI"}'::jsonb, 405.75, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2013', '{"measure":"GVA","geo":"kvemo_kartli","sector":"AGRI"}'::jsonb, 427.44, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2014', '{"measure":"GVA","geo":"kvemo_kartli","sector":"AGRI"}'::jsonb, 451.53, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2015', '{"measure":"GVA","geo":"kvemo_kartli","sector":"AGRI"}'::jsonb, 519.37, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2016', '{"measure":"GVA","geo":"kvemo_kartli","sector":"AGRI"}'::jsonb, 540.15, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2017', '{"measure":"GVA","geo":"kvemo_kartli","sector":"AGRI"}'::jsonb, 571.07, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2018', '{"measure":"GVA","geo":"kvemo_kartli","sector":"AGRI"}'::jsonb, 593.8, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2019', '{"measure":"GVA","geo":"kvemo_kartli","sector":"AGRI"}'::jsonb, 646.78, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2020', '{"measure":"GVA","geo":"kvemo_kartli","sector":"AGRI"}'::jsonb, 689.39, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2021', '{"measure":"GVA","geo":"kvemo_kartli","sector":"AGRI"}'::jsonb, 735.89, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2022', '{"measure":"GVA","geo":"kvemo_kartli","sector":"AGRI"}'::jsonb, 791.16, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2023', '{"measure":"GVA","geo":"kvemo_kartli","sector":"AGRI"}'::jsonb, 818.12, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2024', '{"measure":"GVA","geo":"kvemo_kartli","sector":"AGRI"}'::jsonb, 815.44, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2010', '{"measure":"GVA","geo":"kvemo_kartli","sector":"MANUF"}'::jsonb, 737.68, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2011', '{"measure":"GVA","geo":"kvemo_kartli","sector":"MANUF"}'::jsonb, 770.59, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2012', '{"measure":"GVA","geo":"kvemo_kartli","sector":"MANUF"}'::jsonb, 801.37, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2013', '{"measure":"GVA","geo":"kvemo_kartli","sector":"MANUF"}'::jsonb, 654.68, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2014', '{"measure":"GVA","geo":"kvemo_kartli","sector":"MANUF"}'::jsonb, 656.85, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2015', '{"measure":"GVA","geo":"kvemo_kartli","sector":"MANUF"}'::jsonb, 699.79, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2016', '{"measure":"GVA","geo":"kvemo_kartli","sector":"MANUF"}'::jsonb, 663.55, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2017', '{"measure":"GVA","geo":"kvemo_kartli","sector":"MANUF"}'::jsonb, 1012.82, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2018', '{"measure":"GVA","geo":"kvemo_kartli","sector":"MANUF"}'::jsonb, 985.88, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2019', '{"measure":"GVA","geo":"kvemo_kartli","sector":"MANUF"}'::jsonb, 1013.39, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2020', '{"measure":"GVA","geo":"kvemo_kartli","sector":"MANUF"}'::jsonb, 1270.41, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2021', '{"measure":"GVA","geo":"kvemo_kartli","sector":"MANUF"}'::jsonb, 1639.57, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2022', '{"measure":"GVA","geo":"kvemo_kartli","sector":"MANUF"}'::jsonb, 2167.6, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2023', '{"measure":"GVA","geo":"kvemo_kartli","sector":"MANUF"}'::jsonb, 997.17, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2024', '{"measure":"GVA","geo":"kvemo_kartli","sector":"MANUF"}'::jsonb, 928.87, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2010', '{"measure":"GVA","geo":"kvemo_kartli","sector":"CONST"}'::jsonb, 28.85, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2011', '{"measure":"GVA","geo":"kvemo_kartli","sector":"CONST"}'::jsonb, 37.21, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2012', '{"measure":"GVA","geo":"kvemo_kartli","sector":"CONST"}'::jsonb, 49.96, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2013', '{"measure":"GVA","geo":"kvemo_kartli","sector":"CONST"}'::jsonb, 45.94, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2014', '{"measure":"GVA","geo":"kvemo_kartli","sector":"CONST"}'::jsonb, 78.6, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2015', '{"measure":"GVA","geo":"kvemo_kartli","sector":"CONST"}'::jsonb, 69.03, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2016', '{"measure":"GVA","geo":"kvemo_kartli","sector":"CONST"}'::jsonb, 65.28, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2017', '{"measure":"GVA","geo":"kvemo_kartli","sector":"CONST"}'::jsonb, 75.74, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2018', '{"measure":"GVA","geo":"kvemo_kartli","sector":"CONST"}'::jsonb, 97.43, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2019', '{"measure":"GVA","geo":"kvemo_kartli","sector":"CONST"}'::jsonb, 104.1, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2020', '{"measure":"GVA","geo":"kvemo_kartli","sector":"CONST"}'::jsonb, 105.91, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2021', '{"measure":"GVA","geo":"kvemo_kartli","sector":"CONST"}'::jsonb, 101.38, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2022', '{"measure":"GVA","geo":"kvemo_kartli","sector":"CONST"}'::jsonb, 145.63, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2023', '{"measure":"GVA","geo":"kvemo_kartli","sector":"CONST"}'::jsonb, 139.82, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2024', '{"measure":"GVA","geo":"kvemo_kartli","sector":"CONST"}'::jsonb, 201.16, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2010', '{"measure":"GVA","geo":"kvemo_kartli","sector":"TRADE"}'::jsonb, 45.16, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2011', '{"measure":"GVA","geo":"kvemo_kartli","sector":"TRADE"}'::jsonb, 61.64, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2012', '{"measure":"GVA","geo":"kvemo_kartli","sector":"TRADE"}'::jsonb, 90.75, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2013', '{"measure":"GVA","geo":"kvemo_kartli","sector":"TRADE"}'::jsonb, 76.13, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2014', '{"measure":"GVA","geo":"kvemo_kartli","sector":"TRADE"}'::jsonb, 111.42, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2015', '{"measure":"GVA","geo":"kvemo_kartli","sector":"TRADE"}'::jsonb, 118.57, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2016', '{"measure":"GVA","geo":"kvemo_kartli","sector":"TRADE"}'::jsonb, 133.47, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2017', '{"measure":"GVA","geo":"kvemo_kartli","sector":"TRADE"}'::jsonb, 151.53, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2018', '{"measure":"GVA","geo":"kvemo_kartli","sector":"TRADE"}'::jsonb, 195.02, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2019', '{"measure":"GVA","geo":"kvemo_kartli","sector":"TRADE"}'::jsonb, 225.19, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2020', '{"measure":"GVA","geo":"kvemo_kartli","sector":"TRADE"}'::jsonb, 221.57, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2021', '{"measure":"GVA","geo":"kvemo_kartli","sector":"TRADE"}'::jsonb, 381.89, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2022', '{"measure":"GVA","geo":"kvemo_kartli","sector":"TRADE"}'::jsonb, 340.95, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2023', '{"measure":"GVA","geo":"kvemo_kartli","sector":"TRADE"}'::jsonb, 309.9, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2024', '{"measure":"GVA","geo":"kvemo_kartli","sector":"TRADE"}'::jsonb, 335.42, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2010', '{"measure":"GVA","geo":"kvemo_kartli","sector":"TRANS"}'::jsonb, 9.6, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2011', '{"measure":"GVA","geo":"kvemo_kartli","sector":"TRANS"}'::jsonb, 6.14, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2012', '{"measure":"GVA","geo":"kvemo_kartli","sector":"TRANS"}'::jsonb, 15.91, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2013', '{"measure":"GVA","geo":"kvemo_kartli","sector":"TRANS"}'::jsonb, 9.44, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2014', '{"measure":"GVA","geo":"kvemo_kartli","sector":"TRANS"}'::jsonb, 8.55, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2015', '{"measure":"GVA","geo":"kvemo_kartli","sector":"TRANS"}'::jsonb, 14.44, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2016', '{"measure":"GVA","geo":"kvemo_kartli","sector":"TRANS"}'::jsonb, 24.89, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2017', '{"measure":"GVA","geo":"kvemo_kartli","sector":"TRANS"}'::jsonb, 25.14, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2018', '{"measure":"GVA","geo":"kvemo_kartli","sector":"TRANS"}'::jsonb, 46.84, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2019', '{"measure":"GVA","geo":"kvemo_kartli","sector":"TRANS"}'::jsonb, 56.92, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2020', '{"measure":"GVA","geo":"kvemo_kartli","sector":"TRANS"}'::jsonb, 65.43, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2021', '{"measure":"GVA","geo":"kvemo_kartli","sector":"TRANS"}'::jsonb, 88.04, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2022', '{"measure":"GVA","geo":"kvemo_kartli","sector":"TRANS"}'::jsonb, 105.72, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2023', '{"measure":"GVA","geo":"kvemo_kartli","sector":"TRANS"}'::jsonb, 143.9, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2024', '{"measure":"GVA","geo":"kvemo_kartli","sector":"TRANS"}'::jsonb, 121.4, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2010', '{"measure":"GVA","geo":"kvemo_kartli","sector":"REAL"}'::jsonb, 134.64, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2011', '{"measure":"GVA","geo":"kvemo_kartli","sector":"REAL"}'::jsonb, 139.07, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2012', '{"measure":"GVA","geo":"kvemo_kartli","sector":"REAL"}'::jsonb, 141.34, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2013', '{"measure":"GVA","geo":"kvemo_kartli","sector":"REAL"}'::jsonb, 147.74, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2014', '{"measure":"GVA","geo":"kvemo_kartli","sector":"REAL"}'::jsonb, 158.7, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2015', '{"measure":"GVA","geo":"kvemo_kartli","sector":"REAL"}'::jsonb, 169.96, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2016', '{"measure":"GVA","geo":"kvemo_kartli","sector":"REAL"}'::jsonb, 174.35, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2017', '{"measure":"GVA","geo":"kvemo_kartli","sector":"REAL"}'::jsonb, 182.36, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2018', '{"measure":"GVA","geo":"kvemo_kartli","sector":"REAL"}'::jsonb, 185.48, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2019', '{"measure":"GVA","geo":"kvemo_kartli","sector":"REAL"}'::jsonb, 202.54, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2020', '{"measure":"GVA","geo":"kvemo_kartli","sector":"REAL"}'::jsonb, 202.22, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2021', '{"measure":"GVA","geo":"kvemo_kartli","sector":"REAL"}'::jsonb, 204.96, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2022', '{"measure":"GVA","geo":"kvemo_kartli","sector":"REAL"}'::jsonb, 237.02, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2023', '{"measure":"GVA","geo":"kvemo_kartli","sector":"REAL"}'::jsonb, 279.13, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2024', '{"measure":"GVA","geo":"kvemo_kartli","sector":"REAL"}'::jsonb, 286.74, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2010', '{"measure":"GVA","geo":"kvemo_kartli","sector":"GOV"}'::jsonb, 183.81, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2011', '{"measure":"GVA","geo":"kvemo_kartli","sector":"GOV"}'::jsonb, 156.98, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2012', '{"measure":"GVA","geo":"kvemo_kartli","sector":"GOV"}'::jsonb, 159.37, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2013', '{"measure":"GVA","geo":"kvemo_kartli","sector":"GOV"}'::jsonb, 249.92, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2014', '{"measure":"GVA","geo":"kvemo_kartli","sector":"GOV"}'::jsonb, 238.03, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2015', '{"measure":"GVA","geo":"kvemo_kartli","sector":"GOV"}'::jsonb, 219.07, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2016', '{"measure":"GVA","geo":"kvemo_kartli","sector":"GOV"}'::jsonb, 234.93, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2017', '{"measure":"GVA","geo":"kvemo_kartli","sector":"GOV"}'::jsonb, 251.95, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2018', '{"measure":"GVA","geo":"kvemo_kartli","sector":"GOV"}'::jsonb, 308.79, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2019', '{"measure":"GVA","geo":"kvemo_kartli","sector":"GOV"}'::jsonb, 228.24, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2020', '{"measure":"GVA","geo":"kvemo_kartli","sector":"GOV"}'::jsonb, 274.85, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2021', '{"measure":"GVA","geo":"kvemo_kartli","sector":"GOV"}'::jsonb, 324.3, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2022', '{"measure":"GVA","geo":"kvemo_kartli","sector":"GOV"}'::jsonb, 315.69, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2023', '{"measure":"GVA","geo":"kvemo_kartli","sector":"GOV"}'::jsonb, 469.81, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2024', '{"measure":"GVA","geo":"kvemo_kartli","sector":"GOV"}'::jsonb, 552.85, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2010', '{"measure":"GVA","geo":"kvemo_kartli","sector":"EDU"}'::jsonb, 39.31, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2011', '{"measure":"GVA","geo":"kvemo_kartli","sector":"EDU"}'::jsonb, 43.84, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2012', '{"measure":"GVA","geo":"kvemo_kartli","sector":"EDU"}'::jsonb, 37.07, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2013', '{"measure":"GVA","geo":"kvemo_kartli","sector":"EDU"}'::jsonb, 55.55, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2014', '{"measure":"GVA","geo":"kvemo_kartli","sector":"EDU"}'::jsonb, 59.13, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2015', '{"measure":"GVA","geo":"kvemo_kartli","sector":"EDU"}'::jsonb, 71.33, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2016', '{"measure":"GVA","geo":"kvemo_kartli","sector":"EDU"}'::jsonb, 59.33, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2017', '{"measure":"GVA","geo":"kvemo_kartli","sector":"EDU"}'::jsonb, 179.94, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2018', '{"measure":"GVA","geo":"kvemo_kartli","sector":"EDU"}'::jsonb, 153.16, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2019', '{"measure":"GVA","geo":"kvemo_kartli","sector":"EDU"}'::jsonb, 151.22, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2020', '{"measure":"GVA","geo":"kvemo_kartli","sector":"EDU"}'::jsonb, 173.45, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2021', '{"measure":"GVA","geo":"kvemo_kartli","sector":"EDU"}'::jsonb, 233.24, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2022', '{"measure":"GVA","geo":"kvemo_kartli","sector":"EDU"}'::jsonb, 257.64, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2023', '{"measure":"GVA","geo":"kvemo_kartli","sector":"EDU"}'::jsonb, 286.08, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2024', '{"measure":"GVA","geo":"kvemo_kartli","sector":"EDU"}'::jsonb, 330.67, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2010', '{"measure":"GVA","geo":"kvemo_kartli","sector":"OTHER"}'::jsonb, 110.96, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2011', '{"measure":"GVA","geo":"kvemo_kartli","sector":"OTHER"}'::jsonb, 230.36, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2012', '{"measure":"GVA","geo":"kvemo_kartli","sector":"OTHER"}'::jsonb, 169.37, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2013', '{"measure":"GVA","geo":"kvemo_kartli","sector":"OTHER"}'::jsonb, 179.7, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2014', '{"measure":"GVA","geo":"kvemo_kartli","sector":"OTHER"}'::jsonb, 298.07, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2015', '{"measure":"GVA","geo":"kvemo_kartli","sector":"OTHER"}'::jsonb, 261.88, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2016', '{"measure":"GVA","geo":"kvemo_kartli","sector":"OTHER"}'::jsonb, 349.26, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2017', '{"measure":"GVA","geo":"kvemo_kartli","sector":"OTHER"}'::jsonb, 580.34, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2018', '{"measure":"GVA","geo":"kvemo_kartli","sector":"OTHER"}'::jsonb, 510.2, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2019', '{"measure":"GVA","geo":"kvemo_kartli","sector":"OTHER"}'::jsonb, 621.82, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2020', '{"measure":"GVA","geo":"kvemo_kartli","sector":"OTHER"}'::jsonb, 525.62, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2021', '{"measure":"GVA","geo":"kvemo_kartli","sector":"OTHER"}'::jsonb, 787.15, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2022', '{"measure":"GVA","geo":"kvemo_kartli","sector":"OTHER"}'::jsonb, 1125.07, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2023', '{"measure":"GVA","geo":"kvemo_kartli","sector":"OTHER"}'::jsonb, 1836.17, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2024', '{"measure":"GVA","geo":"kvemo_kartli","sector":"OTHER"}'::jsonb, 2206.12, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2010', '{"measure":"GVA","geo":"shida_kartli","sector":"AGRI"}'::jsonb, 186.42, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2011', '{"measure":"GVA","geo":"shida_kartli","sector":"AGRI"}'::jsonb, 211.65, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2012', '{"measure":"GVA","geo":"shida_kartli","sector":"AGRI"}'::jsonb, 233.21, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2013', '{"measure":"GVA","geo":"shida_kartli","sector":"AGRI"}'::jsonb, 255.31, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2014', '{"measure":"GVA","geo":"shida_kartli","sector":"AGRI"}'::jsonb, 328.87, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2015', '{"measure":"GVA","geo":"shida_kartli","sector":"AGRI"}'::jsonb, 281.75, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2016', '{"measure":"GVA","geo":"shida_kartli","sector":"AGRI"}'::jsonb, 331.26, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2017', '{"measure":"GVA","geo":"shida_kartli","sector":"AGRI"}'::jsonb, 229.39, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2018', '{"measure":"GVA","geo":"shida_kartli","sector":"AGRI"}'::jsonb, 431.32, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2019', '{"measure":"GVA","geo":"shida_kartli","sector":"AGRI"}'::jsonb, 367.96, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2020', '{"measure":"GVA","geo":"shida_kartli","sector":"AGRI"}'::jsonb, 517.74, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2021', '{"measure":"GVA","geo":"shida_kartli","sector":"AGRI"}'::jsonb, 511.37, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2022', '{"measure":"GVA","geo":"shida_kartli","sector":"AGRI"}'::jsonb, 524.62, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2023', '{"measure":"GVA","geo":"shida_kartli","sector":"AGRI"}'::jsonb, 529.18, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2024', '{"measure":"GVA","geo":"shida_kartli","sector":"AGRI"}'::jsonb, 575.81, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2010', '{"measure":"GVA","geo":"shida_kartli","sector":"MANUF"}'::jsonb, 102.45, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2011', '{"measure":"GVA","geo":"shida_kartli","sector":"MANUF"}'::jsonb, 220.4, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2012', '{"measure":"GVA","geo":"shida_kartli","sector":"MANUF"}'::jsonb, 159.4, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2013', '{"measure":"GVA","geo":"shida_kartli","sector":"MANUF"}'::jsonb, 125.06, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2014', '{"measure":"GVA","geo":"shida_kartli","sector":"MANUF"}'::jsonb, 170.02, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2015', '{"measure":"GVA","geo":"shida_kartli","sector":"MANUF"}'::jsonb, 198.62, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2016', '{"measure":"GVA","geo":"shida_kartli","sector":"MANUF"}'::jsonb, 110.08, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2017', '{"measure":"GVA","geo":"shida_kartli","sector":"MANUF"}'::jsonb, 113.59, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2018', '{"measure":"GVA","geo":"shida_kartli","sector":"MANUF"}'::jsonb, 192.25, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2019', '{"measure":"GVA","geo":"shida_kartli","sector":"MANUF"}'::jsonb, 317.07, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2020', '{"measure":"GVA","geo":"shida_kartli","sector":"MANUF"}'::jsonb, 367.61, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2021', '{"measure":"GVA","geo":"shida_kartli","sector":"MANUF"}'::jsonb, 342.97, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2022', '{"measure":"GVA","geo":"shida_kartli","sector":"MANUF"}'::jsonb, 440.41, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2023', '{"measure":"GVA","geo":"shida_kartli","sector":"MANUF"}'::jsonb, 428.25, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2024', '{"measure":"GVA","geo":"shida_kartli","sector":"MANUF"}'::jsonb, 545.67, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2010', '{"measure":"GVA","geo":"shida_kartli","sector":"CONST"}'::jsonb, 34.56, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2011', '{"measure":"GVA","geo":"shida_kartli","sector":"CONST"}'::jsonb, 27.46, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2012', '{"measure":"GVA","geo":"shida_kartli","sector":"CONST"}'::jsonb, 30.64, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2013', '{"measure":"GVA","geo":"shida_kartli","sector":"CONST"}'::jsonb, 21.54, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2014', '{"measure":"GVA","geo":"shida_kartli","sector":"CONST"}'::jsonb, 30.36, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2015', '{"measure":"GVA","geo":"shida_kartli","sector":"CONST"}'::jsonb, 26.05, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2016', '{"measure":"GVA","geo":"shida_kartli","sector":"CONST"}'::jsonb, 53.93, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2017', '{"measure":"GVA","geo":"shida_kartli","sector":"CONST"}'::jsonb, 39.21, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2018', '{"measure":"GVA","geo":"shida_kartli","sector":"CONST"}'::jsonb, 45.09, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2019', '{"measure":"GVA","geo":"shida_kartli","sector":"CONST"}'::jsonb, 40.2, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2020', '{"measure":"GVA","geo":"shida_kartli","sector":"CONST"}'::jsonb, 45.5, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2021', '{"measure":"GVA","geo":"shida_kartli","sector":"CONST"}'::jsonb, 51.34, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2022', '{"measure":"GVA","geo":"shida_kartli","sector":"CONST"}'::jsonb, 82.84, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2023', '{"measure":"GVA","geo":"shida_kartli","sector":"CONST"}'::jsonb, 112.16, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2024', '{"measure":"GVA","geo":"shida_kartli","sector":"CONST"}'::jsonb, 146.6, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2010', '{"measure":"GVA","geo":"shida_kartli","sector":"TRADE"}'::jsonb, 18.39, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2011', '{"measure":"GVA","geo":"shida_kartli","sector":"TRADE"}'::jsonb, 36.03, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2012', '{"measure":"GVA","geo":"shida_kartli","sector":"TRADE"}'::jsonb, 52.03, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2013', '{"measure":"GVA","geo":"shida_kartli","sector":"TRADE"}'::jsonb, 42.52, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2014', '{"measure":"GVA","geo":"shida_kartli","sector":"TRADE"}'::jsonb, 50.79, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2015', '{"measure":"GVA","geo":"shida_kartli","sector":"TRADE"}'::jsonb, 54.64, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2016', '{"measure":"GVA","geo":"shida_kartli","sector":"TRADE"}'::jsonb, 61.57, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2017', '{"measure":"GVA","geo":"shida_kartli","sector":"TRADE"}'::jsonb, 67.63, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2018', '{"measure":"GVA","geo":"shida_kartli","sector":"TRADE"}'::jsonb, 98.97, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2019', '{"measure":"GVA","geo":"shida_kartli","sector":"TRADE"}'::jsonb, 96.7, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2020', '{"measure":"GVA","geo":"shida_kartli","sector":"TRADE"}'::jsonb, 106.59, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2021', '{"measure":"GVA","geo":"shida_kartli","sector":"TRADE"}'::jsonb, 123.92, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2022', '{"measure":"GVA","geo":"shida_kartli","sector":"TRADE"}'::jsonb, 173.61, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2023', '{"measure":"GVA","geo":"shida_kartli","sector":"TRADE"}'::jsonb, 187.74, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2024', '{"measure":"GVA","geo":"shida_kartli","sector":"TRADE"}'::jsonb, 194.51, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2010', '{"measure":"GVA","geo":"shida_kartli","sector":"TRANS"}'::jsonb, 2.34, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2011', '{"measure":"GVA","geo":"shida_kartli","sector":"TRANS"}'::jsonb, 8.4, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2012', '{"measure":"GVA","geo":"shida_kartli","sector":"TRANS"}'::jsonb, 3.94, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2013', '{"measure":"GVA","geo":"shida_kartli","sector":"TRANS"}'::jsonb, 5.69, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2014', '{"measure":"GVA","geo":"shida_kartli","sector":"TRANS"}'::jsonb, 7.32, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2015', '{"measure":"GVA","geo":"shida_kartli","sector":"TRANS"}'::jsonb, 4.58, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2016', '{"measure":"GVA","geo":"shida_kartli","sector":"TRANS"}'::jsonb, 7.54, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2017', '{"measure":"GVA","geo":"shida_kartli","sector":"TRANS"}'::jsonb, 9, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2018', '{"measure":"GVA","geo":"shida_kartli","sector":"TRANS"}'::jsonb, 10.36, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2019', '{"measure":"GVA","geo":"shida_kartli","sector":"TRANS"}'::jsonb, 18.26, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2020', '{"measure":"GVA","geo":"shida_kartli","sector":"TRANS"}'::jsonb, 29.81, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2021', '{"measure":"GVA","geo":"shida_kartli","sector":"TRANS"}'::jsonb, 24.86, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2022', '{"measure":"GVA","geo":"shida_kartli","sector":"TRANS"}'::jsonb, 50.85, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2023', '{"measure":"GVA","geo":"shida_kartli","sector":"TRANS"}'::jsonb, 79.14, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2024', '{"measure":"GVA","geo":"shida_kartli","sector":"TRANS"}'::jsonb, 116.45, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2010', '{"measure":"GVA","geo":"shida_kartli","sector":"REAL"}'::jsonb, 81.27, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2011', '{"measure":"GVA","geo":"shida_kartli","sector":"REAL"}'::jsonb, 83.77, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2012', '{"measure":"GVA","geo":"shida_kartli","sector":"REAL"}'::jsonb, 85.03, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2013', '{"measure":"GVA","geo":"shida_kartli","sector":"REAL"}'::jsonb, 88.79, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2014', '{"measure":"GVA","geo":"shida_kartli","sector":"REAL"}'::jsonb, 95.36, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2015', '{"measure":"GVA","geo":"shida_kartli","sector":"REAL"}'::jsonb, 101.86, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2016', '{"measure":"GVA","geo":"shida_kartli","sector":"REAL"}'::jsonb, 104.35, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2017', '{"measure":"GVA","geo":"shida_kartli","sector":"REAL"}'::jsonb, 109.4, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2018', '{"measure":"GVA","geo":"shida_kartli","sector":"REAL"}'::jsonb, 111.05, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2019', '{"measure":"GVA","geo":"shida_kartli","sector":"REAL"}'::jsonb, 121.3, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2020', '{"measure":"GVA","geo":"shida_kartli","sector":"REAL"}'::jsonb, 120.75, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2021', '{"measure":"GVA","geo":"shida_kartli","sector":"REAL"}'::jsonb, 122.66, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2022', '{"measure":"GVA","geo":"shida_kartli","sector":"REAL"}'::jsonb, 141.5, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2023', '{"measure":"GVA","geo":"shida_kartli","sector":"REAL"}'::jsonb, 166.01, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2024', '{"measure":"GVA","geo":"shida_kartli","sector":"REAL"}'::jsonb, 170.34, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2010', '{"measure":"GVA","geo":"shida_kartli","sector":"GOV"}'::jsonb, 140.76, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2011', '{"measure":"GVA","geo":"shida_kartli","sector":"GOV"}'::jsonb, 208.12, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2012', '{"measure":"GVA","geo":"shida_kartli","sector":"GOV"}'::jsonb, 227.15, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2013', '{"measure":"GVA","geo":"shida_kartli","sector":"GOV"}'::jsonb, 224.17, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2014', '{"measure":"GVA","geo":"shida_kartli","sector":"GOV"}'::jsonb, 279.78, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2015', '{"measure":"GVA","geo":"shida_kartli","sector":"GOV"}'::jsonb, 214.38, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2016', '{"measure":"GVA","geo":"shida_kartli","sector":"GOV"}'::jsonb, 251, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2017', '{"measure":"GVA","geo":"shida_kartli","sector":"GOV"}'::jsonb, 194.75, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2018', '{"measure":"GVA","geo":"shida_kartli","sector":"GOV"}'::jsonb, 221.59, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2019', '{"measure":"GVA","geo":"shida_kartli","sector":"GOV"}'::jsonb, 283.1, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2020', '{"measure":"GVA","geo":"shida_kartli","sector":"GOV"}'::jsonb, 297.69, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2021', '{"measure":"GVA","geo":"shida_kartli","sector":"GOV"}'::jsonb, 315.17, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2022', '{"measure":"GVA","geo":"shida_kartli","sector":"GOV"}'::jsonb, 369.14, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2023', '{"measure":"GVA","geo":"shida_kartli","sector":"GOV"}'::jsonb, 424.51, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2024', '{"measure":"GVA","geo":"shida_kartli","sector":"GOV"}'::jsonb, 546.7, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2010', '{"measure":"GVA","geo":"shida_kartli","sector":"EDU"}'::jsonb, 87.95, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2011', '{"measure":"GVA","geo":"shida_kartli","sector":"EDU"}'::jsonb, 84.36, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2012', '{"measure":"GVA","geo":"shida_kartli","sector":"EDU"}'::jsonb, 132.34, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2013', '{"measure":"GVA","geo":"shida_kartli","sector":"EDU"}'::jsonb, 127.68, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2014', '{"measure":"GVA","geo":"shida_kartli","sector":"EDU"}'::jsonb, 122.54, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2015', '{"measure":"GVA","geo":"shida_kartli","sector":"EDU"}'::jsonb, 151.52, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2016', '{"measure":"GVA","geo":"shida_kartli","sector":"EDU"}'::jsonb, 140.22, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2017', '{"measure":"GVA","geo":"shida_kartli","sector":"EDU"}'::jsonb, 103.65, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2018', '{"measure":"GVA","geo":"shida_kartli","sector":"EDU"}'::jsonb, 109.43, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2019', '{"measure":"GVA","geo":"shida_kartli","sector":"EDU"}'::jsonb, 135.49, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2020', '{"measure":"GVA","geo":"shida_kartli","sector":"EDU"}'::jsonb, 139.86, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2021', '{"measure":"GVA","geo":"shida_kartli","sector":"EDU"}'::jsonb, 167.41, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2022', '{"measure":"GVA","geo":"shida_kartli","sector":"EDU"}'::jsonb, 175.78, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2023', '{"measure":"GVA","geo":"shida_kartli","sector":"EDU"}'::jsonb, 204.5, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2024', '{"measure":"GVA","geo":"shida_kartli","sector":"EDU"}'::jsonb, 281.22, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2010', '{"measure":"GVA","geo":"shida_kartli","sector":"OTHER"}'::jsonb, 148.02, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2011', '{"measure":"GVA","geo":"shida_kartli","sector":"OTHER"}'::jsonb, 159.73, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2012', '{"measure":"GVA","geo":"shida_kartli","sector":"OTHER"}'::jsonb, 301.25, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2013', '{"measure":"GVA","geo":"shida_kartli","sector":"OTHER"}'::jsonb, 455.25, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2014', '{"measure":"GVA","geo":"shida_kartli","sector":"OTHER"}'::jsonb, 428.63, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2015', '{"measure":"GVA","geo":"shida_kartli","sector":"OTHER"}'::jsonb, 417.09, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2016', '{"measure":"GVA","geo":"shida_kartli","sector":"OTHER"}'::jsonb, 361.61, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2017', '{"measure":"GVA","geo":"shida_kartli","sector":"OTHER"}'::jsonb, 334.54, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2018', '{"measure":"GVA","geo":"shida_kartli","sector":"OTHER"}'::jsonb, 359.3, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2019', '{"measure":"GVA","geo":"shida_kartli","sector":"OTHER"}'::jsonb, 373.64, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2020', '{"measure":"GVA","geo":"shida_kartli","sector":"OTHER"}'::jsonb, 365.01, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2021', '{"measure":"GVA","geo":"shida_kartli","sector":"OTHER"}'::jsonb, 493.63, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2022', '{"measure":"GVA","geo":"shida_kartli","sector":"OTHER"}'::jsonb, 588.05, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2023', '{"measure":"GVA","geo":"shida_kartli","sector":"OTHER"}'::jsonb, 719.22, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
+  VALUES ('REGIONAL_GVA', '2024', '{"measure":"GVA","geo":"shida_kartli","sector":"OTHER"}'::jsonb, 837.61, 'A', '{}'::jsonb)
+  ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
+    SET obs_value = EXCLUDED.obs_value, obs_status = EXCLUDED.obs_status, obs_attribute = EXCLUDED.obs_attribute;
+
+-- ── 6. dataset version bump (mirrors seed.ts) ─────────────────────────
+SELECT stats.bump_dataset_version('GDP_ANNUAL');
+SELECT stats.bump_dataset_version('ACCOUNTS_SEQUENCE');
+SELECT stats.bump_dataset_version('REGIONAL_GVA');

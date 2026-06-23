@@ -6,7 +6,7 @@ services:
     ports:
       - "${DEPLOY_HOST_PORT:-5171}:5171"
     volumes:
-      - ../..:/app
+      - ../../platform:/app
       - /app/node_modules
     environment:
       VITE_API_URL: ${VITE_API_URL:-}
