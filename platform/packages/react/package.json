@@ -22,7 +22,7 @@
   "types": "./dist/index.d.ts",
   "files": ["dist"],
   "scripts": {
-    "build": "tsup src/index.ts --format esm --dts --clean"
+    "build": "tsup"
   },
   "publishConfig": {
     "access": "public"
@@ -40,6 +40,7 @@
     "@statdash/contracts": "workspace:*",
     "@statdash/engine": "workspace:*",
     "@statdash/charts": "workspace:*",
-    "@statdash/styles": "workspace:*"
+    "@statdash/styles": "workspace:*",
+    "@statdash/expr": "workspace:*"
   }
 }

@@ -2,11 +2,12 @@ import './inner-sidebar.css'
 import { useRef, useEffect, useState } from 'react'
 import { Link, useLocation }           from 'react-router-dom'
 import { useSearchParams }             from 'react-router-dom'
-import { useSiteNav, useLocale }       from '@statdash/react'
+import { useSiteNav, useLocale, useChromeConfig, useResolveLocale, useSlotConfig } from '@statdash/react'
 import { useSectionNav }               from '@statdash/react/context/SectionNavContext'
 import { stickyOffset }                from '@statdash/react/engine'
 import type { NavIconKey }             from '@statdash/react'
 import type { ReactNode }              from 'react'
+import type { InnerSidebarConfig }     from './meta'
 
 // ── Nav icon registry — token → SVG ───────────────────────────────────
 
@@ -60,6 +61,9 @@ export function InnerSidebarShell(): ReactNode {
   const location                            = useLocation()
   const locale                              = useLocale()
   const nav                                 = useSiteNav()
+  const config                              = useChromeConfig()
+  const slot                                = useSlotConfig<InnerSidebarConfig>()
+  const t                                   = useResolveLocale()
   const { sections, activeId, timeModeKey } = useSectionNav()
   const [searchParams, setSearchParams]     = useSearchParams()
 
@@ -86,10 +90,14 @@ export function InnerSidebarShell(): ReactNode {
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#9AABB8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>
         </svg>
-        <span className="sidebar-brand-text">ეროვნული<br/>ანგარიშები</span>
+        {slot.brandTitle && (
+          <span className="sidebar-brand-text">{t(slot.brandTitle)}</span>
+        )}
       </div>
 
-      <div className="sidebar-section-label">სექციები</div>
+      {slot.sectionsLabel && (
+        <div className="sidebar-section-label">{t(slot.sectionsLabel)}</div>
+      )}
 
       {nav.map((entry) => {
         const localePath   = `/${locale}${entry.path}`
@@ -153,9 +161,11 @@ export function InnerSidebarShell(): ReactNode {
         )
       })}
 
-      <div className="sidebar-footer">
-        © {new Date().getFullYear()} საქსტატი
-      </div>
+      {config.copyright && (
+        <div className="sidebar-footer">
+          © {new Date().getFullYear()} {t(config.copyright)}
+        </div>
+      )}
     </aside>
   )
 }

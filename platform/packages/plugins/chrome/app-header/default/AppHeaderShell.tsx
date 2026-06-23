@@ -1,12 +1,14 @@
 import { Link }                                              from 'react-router-dom'
-import { useSiteNav, useLocale, useChromeConfig, useResolveLocale } from '@statdash/react'
+import { useSiteNav, useLocale, useChromeConfig, useResolveLocale, useSlotConfig } from '@statdash/react'
 import { ChromeSlot }                                        from '@statdash/react/engine'
+import type { AppHeaderConfig }                              from './meta'
 import './app-header.css'
 
 export function AppHeaderShell() {
   const nav    = useSiteNav()
   const locale = useLocale()
   const config = useChromeConfig()
+  const slot   = useSlotConfig<AppHeaderConfig>()
   const t      = useResolveLocale()
 
   return (
@@ -29,9 +31,9 @@ export function AppHeaderShell() {
         </nav>
 
         <div className="app-header__actions">
-          {config.socialLinks && config.socialLinks.length > 0 && (
+          {slot.socialLinks && slot.socialLinks.length > 0 && (
             <div className="app-header__social">
-              {config.socialLinks.map((social, i) => (
+              {slot.socialLinks.map((social, i) => (
                 <a
                   key={i}
                   href={social.href}

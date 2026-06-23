@@ -1,13 +1,3 @@
-import type { ChromeSliceMeta } from '@statdash/react/engine'
-export { AppHeaderShell as Shell } from './AppHeaderShell'
-
-export const META: ChromeSliceMeta = {
-  sliceType:     'chrome',
-  slot:          'AppHeader',
-  key:           'default',
-  label:         { ka: 'სრული სათაური', en: 'Full Header' },
-  icon:          'layout-template',
-  version:       1,
-  defaultRegion: 'top',
-  defaultOrder:  10,
-}
+export { AppHeaderShell as Shell }  from './AppHeaderShell'
+export { META, AppHeaderSchema }    from './meta'
+export type { AppHeaderConfig, SocialLinkDef } from './meta'

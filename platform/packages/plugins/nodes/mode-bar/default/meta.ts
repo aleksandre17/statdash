@@ -13,4 +13,8 @@ export const META: NodeSliceMeta = {
   singleton:       true,
   caps:            [],
   version:         1,
+  i18n: {
+    ka: { 'aria-label': 'ნახვის რეჟიმი' },
+    en: { 'aria-label': 'View mode' },
+  },
 }

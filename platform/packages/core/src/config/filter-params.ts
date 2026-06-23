@@ -114,6 +114,8 @@ export type ParamCascade = ParamMeta & {
   tree:          CascadeNode[]
   /** Placeholder labels for [level1, level2] dropdowns. */
   placeholders?: [string, string]
+  /** Label for the "no selection / all" option. Tenant content — config-supplied. */
+  allLabel?:     string
   /** If set, deepest selected node's code field → ctx.dims[dim]. Empty selection → '' (wildcard). */
   dim?:          string
   /** Field to read from node as the dim value. Defaults to 'code'. */
@@ -150,6 +152,9 @@ export type ParamRange = ParamMeta & {
   step?: number
   /** Unit suffix rendered after the inputs. */
   unit?: string
+  /** Accessible labels for the from/to inputs. Tenant content — config-supplied. */
+  fromLabel?: string
+  toLabel?:   string
 }
 
 /**

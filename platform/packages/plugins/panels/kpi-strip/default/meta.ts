@@ -13,4 +13,8 @@ export const META: PanelSliceMeta = {
   canHaveChildren: false,
   caps:            ['filterable'],
   version:         1,
+  i18n: {
+    ka: { 'trend-up': 'მზარდი:', 'trend-down': 'კლებადი:', 'trend-flat': 'სტაბილური:' },
+    en: { 'trend-up': 'Up:',     'trend-down': 'Down:',    'trend-flat': 'Flat:' },
+  },
 }

@@ -18,7 +18,7 @@ export function RangeShell({ filterKey, config }: { filterKey: string; config: P
         max={to}
         step={config.step}
         onChange={e => set(filterKey, `${e.target.value},${to}`)}
-        aria-label={`${config.label} — დან`}
+        aria-label={config.fromLabel ?? config.label}
       />
       <span className="filter-control__range-sep" aria-hidden="true">–</span>
       <input
@@ -29,7 +29,7 @@ export function RangeShell({ filterKey, config }: { filterKey: string; config: P
         max={config.max}
         step={config.step}
         onChange={e => set(filterKey, `${from},${e.target.value}`)}
-        aria-label={`${config.label} — მდე`}
+        aria-label={config.toLabel ?? config.label}
       />
       {config.unit && <span className="filter-range-unit">{config.unit}</span>}
     </div>

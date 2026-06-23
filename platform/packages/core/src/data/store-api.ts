@@ -58,15 +58,26 @@ export class ApiStore implements DataStore {
    */
   readonly metadata?: MetadataPort
 
+  private readonly baseUrl:     string
+  private readonly datasetCode: string
+  private readonly nonTimeDims: string[]
+  readonly classifiers:         Record<string, Classifier>
+  private readonly mapRow:      (raw: RawObsRow) => EngineRow
+
   constructor(
-    private readonly baseUrl:     string,
-    private readonly datasetCode: string,
-    private readonly nonTimeDims: string[],
-    readonly classifiers:         Record<string, Classifier> = {},
-    private readonly mapRow:      (raw: RawObsRow) => EngineRow,
-    metadata?:                    MetadataPort,
+    baseUrl:      string,
+    datasetCode:  string,
+    nonTimeDims:  string[],
+    classifiers:  Record<string, Classifier> = {},
+    mapRow:       (raw: RawObsRow) => EngineRow,
+    metadata?:    MetadataPort,
   ) {
-    this.metadata = metadata
+    this.baseUrl     = baseUrl
+    this.datasetCode = datasetCode
+    this.nonTimeDims = nonTimeDims
+    this.classifiers = classifiers
+    this.mapRow      = mapRow
+    this.metadata    = metadata
   }
 
   // ── queryAsync — primary async path ──────────────────────────────

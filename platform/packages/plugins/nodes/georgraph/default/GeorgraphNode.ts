@@ -16,6 +16,11 @@ export interface GeorgraphNode extends NodeBase {
   isoField:         string
   geoCodeMap:       Record<string, string>
   labelOverrides?:  Record<string, string>
+  /** Unit suffix for region tooltips — tenant content (the measure's unit). */
+  unit?:            string
+  /** Initial map viewport before FitBounds reframes to the data extent. */
+  initialCenter?:   [number, number]
+  initialZoom?:     number
   multiSelect?:     boolean
   maxSelect?:       number
 }
@@ -26,6 +31,7 @@ export const GeorgraphSchema: PropSchema = [
   { field: 'paramKey',    type: 'string',  label: 'Param Key',    required: true },
   { field: 'isoField',    type: 'string',  label: 'ISO Field',    required: true },
   { field: 'geoCodeMap',  type: 'object',  label: 'Geo Code Map', required: true },
+  { field: 'unit',        type: 'string',  label: { ka: 'ერთეული', en: 'Unit' } },
   { field: 'multiSelect', type: 'boolean', label: 'Multiple Select' },
   { field: 'maxSelect',   type: 'number',  label: 'Max Select',   default: 2 },
 ]
@@ -42,7 +48,7 @@ export const GeorgraphSlots: Record<string, SlotDef> = {
 
 export const GeorgraphGroups: PropertyGroup[] = [
   { label: { ka: 'შიგთავსი',   en: 'Content'  }, fields: ['title', 'label', 'color'] },
-  { label: { ka: 'კარტოგრაფია', en: 'Map'      }, fields: ['geoJsonUrl', 'paramKey', 'isoField', 'multiSelect', 'maxSelect'] },
+  { label: { ka: 'კარტოგრაფია', en: 'Map'      }, fields: ['geoJsonUrl', 'paramKey', 'isoField', 'unit', 'multiSelect', 'maxSelect'] },
 ]
 
 declare module '@statdash/react/engine' {

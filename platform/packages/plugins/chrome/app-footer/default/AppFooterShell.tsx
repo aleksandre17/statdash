@@ -1,8 +1,10 @@
-import { useChromeConfig, useResolveLocale } from '@statdash/react'
+import { useChromeConfig, useResolveLocale, useSlotConfig } from '@statdash/react'
+import type { AppFooterConfig }              from './meta'
 import './app-footer.css'
 
 export function AppFooterShell() {
   const config = useChromeConfig()
+  const slot   = useSlotConfig<AppFooterConfig>()
   const t      = useResolveLocale()
 
   return (
@@ -14,9 +16,9 @@ export function AppFooterShell() {
               © {new Date().getFullYear()} {t(config.copyright)}
             </p>
           )}
-          {config.footerLinks && config.footerLinks.length > 0 && (
+          {slot.footerLinks && slot.footerLinks.length > 0 && (
             <div className="app-footer__links">
-              {config.footerLinks.map((link, i) => (
+              {slot.footerLinks.map((link, i) => (
                 <a
                   key={i}
                   href={link.href}

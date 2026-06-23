@@ -7,7 +7,8 @@
  */
 export class ExtensionPoint<T> {
   declare readonly __type: T
-  constructor(readonly id: string) {}
+  readonly id: string
+  constructor(id: string) { this.id = id }
 }
 
 export function createExtensionPoint<T>(id: string): ExtensionPoint<T> {

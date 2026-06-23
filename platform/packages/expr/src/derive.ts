@@ -1,6 +1,21 @@
 import type { DeriveMap, DimVal, ExprScope, ExprVal } from './types.ts'
 import { evalExpr } from './eval.ts'
 
+// ── isDevMode ────────────────────────────────────────────────────────────────
+//
+//  @statdash/expr is a zero-dep, bundler-agnostic package, so it must not
+//  reference Vite's ambient `import.meta.env` types (that would couple it to one
+//  bundler and break its own standalone `tsup --dts` build) nor Node's `process`
+//  (a Node-ism, undefined in the browser). This self-contained accessor reads the
+//  standard ESM `import.meta.env.DEV` flag through a local cast — no global
+//  `ImportMeta` augmentation, so it can never weaken `import.meta` for consumers.
+//  In a Vite build `DEV` is statically replaced; elsewhere it reads as falsy and
+//  the dev-only branch is dead-stripped.
+function isDevMode(): boolean {
+  const env = (import.meta as { env?: { DEV?: boolean } }).env
+  return env?.DEV === true
+}
+
 // ── evalDerived ────────────────────────────────────────────────────────────
 
 // Evaluates each entry in declaration order, accumulating results.
@@ -13,8 +28,8 @@ export function evalDerived(
   const accumulated: Record<string, DimVal> = { ...baseScope.derived }
 
   for (const entry of derive) {
-    // Dev-mode: warn on $derived refs that haven't been evaluated yet
-    if (typeof process !== 'undefined' && process.env['NODE_ENV'] !== 'production') {
+    // Dev-mode: warn on $derived refs that haven't been evaluated yet.
+    if (isDevMode()) {
       const refs = collectDerivedRefs(entry.expr)
       for (const ref of refs) {
         if (!(ref in accumulated)) {

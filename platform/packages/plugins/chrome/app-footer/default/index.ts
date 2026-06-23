@@ -1,13 +1,3 @@
-import type { ChromeSliceMeta } from '@statdash/react/engine'
-export { AppFooterShell as Shell } from './AppFooterShell'
-
-export const META: ChromeSliceMeta = {
-  sliceType:     'chrome',
-  slot:          'AppFooter',
-  key:           'default',
-  label:         { ka: 'სტანდარტული ქვედა ზოლი', en: 'Standard Footer' },
-  icon:          'layout-bottom',
-  version:       1,
-  defaultRegion: 'bottom',
-  defaultOrder:  0,
-}
+export { AppFooterShell as Shell }  from './AppFooterShell'
+export { META, AppFooterSchema }    from './meta'
+export type { AppFooterConfig, FooterLinkDef } from './meta'

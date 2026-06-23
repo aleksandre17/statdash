@@ -1,38 +1,40 @@
 import type { LocaleString } from '@statdash/engine'
 
-export interface SocialLinkDef {
-  href:   string
-  label:  string       // aria-label for accessibility
-  icon:   string       // SVG path d attribute
-  fill?:  boolean      // true = filled, false = stroked
-}
-
-export interface FooterLinkDef {
-  href:   string
-  label:  LocaleString
-}
-
-// ── ChromeConfig — brand content channel ──────────────────────────────
+// ── ChromeConfig — THIN cross-cutting brand base ──────────────────────
 //
-//  Separates brand identity data from slot→variant routing
-//  (which lives in SiteManifest.chrome: Record<string,string>).
+//  STRICT SOLID — the shared chrome base carries ONLY genuinely cross-cutting
+//  brand identity: fields read by ≥2 chrome shells, OR true site singletons
+//  (one logo / one locale-label set per site). Element-specific config — a
+//  field read by exactly ONE shell that is NOT a site singleton — does NOT
+//  belong here; it lives on that element's meta.ts PropSchema and is injected
+//  as the slot's per-instance config (useSlotConfig). This is the ISP/OCP
+//  boundary: a new chrome element is a new schema, this base untouched.
 //
-//  Chrome shells read brand from useChromeConfig() — no hardcoded strings.
-//  Constructor Phase 2: chromeConfig comes from the API alongside pages.
+//  KEEP list (the SSOT, enforced by chrome-config.fitness.test.ts F1):
+//    logoUrl, logoAlt   — site singleton: the one brand logo (app-header today;
+//                         any future shell rendering the logo reads the same one).
+//    copyright          — ≥2 consumers: app-footer + inner-sidebar.
+//    localeLabels       — site singleton: the one locale-display-label map,
+//                         read by the locale-switcher (and any future shell).
+//
+//  Migrated OUT (now per-element, see each element's meta.ts):
+//    brandTitle, sectionsLabel → inner-sidebar/default/meta.ts (InnerSidebarConfig)
+//    socialLinks               → app-header/default/meta.ts  (AppHeaderConfig)
+//    footerLinks               → app-footer/default/meta.ts  (AppFooterConfig)
+//
+//  Chrome shells read the base from useChromeConfig(); element config from
+//  useSlotConfig<T>(). Constructor Phase 2: chromeConfig + per-slot config both
+//  come from the API alongside pages.
 //
 export interface ChromeConfig {
-  // ── Brand identity
+  // ── Brand identity — site singleton (the one logo).
   logoUrl:       string
   logoAlt:       LocaleString
 
-  // ── Locale display labels — replaces hardcoded 'ქარ', 'ENG'
-  // Falls back to locale.toUpperCase() if key not present.
+  // ── Locale display labels — site singleton; replaces hardcoded locale codes.
+  //  Falls back to locale.toUpperCase() if a key is absent.
   localeLabels?: Record<string, string>
 
-  // ── Header
-  socialLinks?:  SocialLinkDef[]
-
-  // ── Footer
+  // ── Copyright — cross-cutting: read by ≥2 shells (footer + sidebar).
   copyright?:    LocaleString
-  footerLinks?:  FooterLinkDef[]
 }

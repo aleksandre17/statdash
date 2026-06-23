@@ -69,8 +69,7 @@ export {
   useChromeConfig,
 }                                                                  from './context/SiteContext'
 export type {
-  SiteProviderProps, NavEntry, I18nConfig,
-  ChromeConfig, SocialLinkDef, FooterLinkDef,
+  SiteProviderProps, NavEntry, I18nConfig, ChromeConfig,
 }                                                                  from './context/SiteContext'
 export type { ChromeEntry, ChromeSlotConfig }                      from './engine/types'
 

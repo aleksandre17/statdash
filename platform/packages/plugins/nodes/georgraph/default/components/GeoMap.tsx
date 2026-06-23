@@ -27,7 +27,23 @@ export interface GeoMapProps {
   isoField:        string
   geoCodeMap:      Record<string, string>
   labelOverrides?: Record<string, string>
+  /**
+   * Unit suffix appended to the value in the region tooltip (e.g. the measure's
+   * resolved unit). Tenant content — supplied by config/data, never hardcoded.
+   * Absent → the value renders bare. The pct suffix '%' is a generic format token.
+   */
+  unit?:           string
+  /**
+   * Initial map viewport before FitBounds adjusts to the geoJson extent.
+   * Optional — defaults to a neutral world view; FitBounds immediately
+   * reframes to the actual data, so this only affects the first paint frame.
+   */
+  initialCenter?:  [number, number]
+  initialZoom?:    number
 }
+
+const WORLD_CENTER: [number, number] = [0, 0]
+const WORLD_ZOOM = 1
 
 interface GeoFeatureProps {
   [key: string]: string | number | boolean | null
@@ -72,6 +88,9 @@ export function GeoMap({
   isoField,
   geoCodeMap,
   labelOverrides,
+  unit,
+  initialCenter = WORLD_CENTER,
+  initialZoom = WORLD_ZOOM,
 }: GeoMapProps) {
   const [geoJson, setGeoJson] = useState<GeoJSON.FeatureCollection | null>(null)
 
@@ -112,8 +131,9 @@ export function GeoMap({
     const row   = rows.find(r => r.id === geoId)
 
     if (row) {
+      const unitSuffix = unit ? ` ${unit}` : ''
       layer.bindTooltip(
-        `<strong>${row.label}</strong><br/>${fmtNum(row.value, 0)} მლნ ₾ · ${fmtNum(row.pct ?? 0, 1)}%`,
+        `<strong>${row.label}</strong><br/>${fmtNum(row.value, 0)}${unitSuffix} · ${fmtNum(row.pct ?? 0, 1)}%`,
         { sticky: true },
       )
     } else {
@@ -142,8 +162,8 @@ export function GeoMap({
   return (
     <div className="chart-wrap" style={{ position: 'relative' }}>
       <MapContainer
-        center={[42.3, 43.5]}
-        zoom={7}
+        center={initialCenter}
+        zoom={initialZoom}
         zoomSnap={0}
         zoomDelta={0.25}
         style={{ height: '100%', width: '100%', background: 'transparent' }}

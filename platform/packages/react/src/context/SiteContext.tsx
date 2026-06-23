@@ -29,7 +29,7 @@ import type { NodePageConfig }                                    from '../engin
 import type { ChromeConfig }                                      from './ChromeConfig'
 import type { ChromeEntry }                                        from '../engine/types'
 
-export type { ChromeConfig, SocialLinkDef, FooterLinkDef } from './ChromeConfig'
+export type { ChromeConfig } from './ChromeConfig'
 
 // ── I18nConfig — locale configuration from SiteManifest ───────────────
 

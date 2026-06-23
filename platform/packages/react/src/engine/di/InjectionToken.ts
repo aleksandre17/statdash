@@ -15,7 +15,8 @@ export class InjectionToken<T> {
   /** Phantom — never assigned; forces T to participate in assignability. */
   declare readonly __type: T
 
-  constructor(readonly description: string) {}
+  readonly description: string
+  constructor(description: string) { this.description = description }
 
   toString(): string { return `InjectionToken(${this.description})` }
 }

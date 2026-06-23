@@ -6,7 +6,8 @@ import type { ChartInterpreter } from '../registry'
 import { placeholderOutput } from '../interpret'
 
 class PlaceholderInterpreter implements ChartInterpreter {
-  constructor(readonly type: ChartType) {}
+  readonly type: ChartType
+  constructor(type: ChartType) { this.type = type }
   interpret(def: ChartDef): ChartOutput { return placeholderOutput(def) }
 }
 

@@ -58,10 +58,15 @@ export class CachedStore implements DataStore {
   private valCache = new Map<string, number>()
   private readonly _obsCache = new Map<string, { rows: EngineRow[]; expiresAt: number }>()
 
+  private readonly source: DataStore
+  private readonly ttlMs: number
+
   constructor(
-    private readonly source: DataStore,
-    private readonly ttlMs: number = 5 * 60 * 1000,
+    source: DataStore,
+    ttlMs: number = 5 * 60 * 1000,
   ) {
+    this.source = source
+    this.ttlMs  = ttlMs
     this.caps        = {
       queryTypes: source.caps?.queryTypes ?? ['val', 'obs'],
       batching:   false,

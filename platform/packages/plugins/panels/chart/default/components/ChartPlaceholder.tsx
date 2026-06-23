@@ -71,24 +71,14 @@ const ICONS: Record<ChartType, React.ReactNode> = {
   ),
 }
 
-const LABELS: Record<ChartType, string> = {
-  bar:       'სვეტოვანი დიაგრამა',
-  hbar:      'ჰორიზონტალური ბარ დიაგრამა',
-  line:      'ხაზოვანი დიაგრამა',
-  pie:       'წრიული დიაგრამა',
-  donut:     'დონატის დიაგრამა',
-  waterfall: 'Waterfall დიაგრამა',
-  map:       'ქორეპლეთ რუკა',
-  sankey:    'Sankey დიაგრამა',
-  combo:     'კომბინირებული დიაგრამა',
-}
-
+// Neutral fallback label = the chart-type token itself (data, not tenant text).
+// Localized names arrive via the `label` prop, supplied by the shell's i18n.
 export default function ChartPlaceholder({ type = 'bar', label, text, height = 280 }: ChartPlaceholderProps) {
   return (
     <div className="chart-ph" style={{ minHeight: height }}>
       <div className="chart-ph-icon">{ICONS[type]}</div>
-      <div className="chart-ph-label">{label ?? LABELS[type]}</div>
-      <div className="chart-ph-text">{text ?? 'ვიზუალიზაცია მალე დაემატება'}</div>
+      <div className="chart-ph-label">{label ?? type}</div>
+      {text != null && <div className="chart-ph-text">{text}</div>}
     </div>
   )
 }

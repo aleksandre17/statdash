@@ -27,9 +27,14 @@ function pickVariant(e: ChromeEntry | undefined): string | undefined {
   return e?.variant
 }
 
-function pickConfig(e: ChromeEntry | undefined): Record<string, unknown> {
-  if (typeof e === 'string' || e == null) return {}
-  return e.config ?? {}
+// Returns the entry's config ONLY when it actually carries one. A string
+// shorthand ('default') or an object without `config` yields undefined — NOT an
+// empty object — so each facet resolves independently down the priority chain
+// (page ?? site ?? {}). Mirrors resolveChrome's pickConfig: a page override that
+// only changes the VARIANT must not erase the site-level slot config.
+function pickConfig(e: ChromeEntry | undefined): Record<string, unknown> | undefined {
+  if (typeof e === 'string' || e == null) return undefined
+  return e.config
 }
 
 export function ChromeSlot({ slot }: { slot: string }): ReactNode {
@@ -38,7 +43,11 @@ export function ChromeSlot({ slot }: { slot: string }): ReactNode {
   const pageEntry    = pageChrome[slot]
   const siteEntry    = globalChrome[slot]
   const key          = pickVariant(pageEntry) ?? pickVariant(siteEntry) ?? 'default'
-  const config       = pageEntry != null ? pickConfig(pageEntry) : pickConfig(siteEntry)
+  // Resolve config per-facet down the same priority chain as the variant:
+  // page override → site default → empty. A variant-only page override (the
+  // inner-page META default `{ InnerSidebar: 'default' }`) leaves config to fall
+  // through to the site-level slot config (Grafana override-chain semantics).
+  const config       = pickConfig(pageEntry) ?? pickConfig(siteEntry) ?? {}
   const Shell        = chromeRegistry.get(slot, key) ?? NullChromeSlot
   return (
     <ChromeSlotConfigProvider config={config}>

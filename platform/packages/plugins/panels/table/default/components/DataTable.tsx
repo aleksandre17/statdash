@@ -30,9 +30,12 @@ import { PivotTable }                          from './PivotTable'
 
 export default function DataTable({
   rows,
-  colLabel    = 'კომპონენტი',
+  // Header labels are tenant CONTENT — supplied by TableConfig (and ultimately
+  // the section/measure metadata). Defaults are empty so no tenant locale or
+  // currency is baked into this agnostic component (was 'კომპონენტი' / 'მლნ ₾').
+  colLabel    = '',
   columns,
-  valueLabel  = 'მლნ ₾',
+  valueLabel  = '',
   // color omitted — CSS var(--sc) cascades from page/section wrapper
   indent      = false,
   statusFlags = false,
@@ -49,7 +52,7 @@ export default function DataTable({
   return isMultiSeries
     ? <PivotTable
         rows={rows}
-        colLabel={colLabel ?? 'კომპონენტი'}
+        colLabel={colLabel ?? ''}
         columns={effectiveCols}
         footer={footer}
         caption={caption}
@@ -59,7 +62,7 @@ export default function DataTable({
       />
     : <SimpleTable
         rows={rows}
-        colLabel={colLabel ?? 'კომპონენტი'}
+        colLabel={colLabel ?? ''}
         columns={effectiveCols}
         indent={indent ?? false}
         statusFlags={statusFlags ?? false}

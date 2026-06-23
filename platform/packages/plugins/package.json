@@ -20,14 +20,19 @@
   },
   "files": ["dist"],
   "scripts": {
-    "build": "tsup catalog.ts registry.ts --format esm --dts --clean"
+    "build": "tsup"
   },
   "publishConfig": {
     "access": "public"
   },
   "dependencies": {
     "@statdash/engine": "workspace:*",
-    "@statdash/react":  "workspace:*"
+    "@statdash/react":  "workspace:*",
+    "@statdash/charts": "workspace:*",
+    "@statdash/styles": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/leaflet": "^1.9.12"
   },
   "peerDependencies": {
     "react": ">=18",

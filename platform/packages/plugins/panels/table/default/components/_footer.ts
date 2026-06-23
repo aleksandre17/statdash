@@ -34,15 +34,16 @@ export function computeAggregate(col: ColumnDef, dataRows: DataRow[], aggType: A
   }
 }
 
-// Default footer row label derived from table footer config
+// Default footer row label derived from table footer config.
+//
+// Returns the language-neutral aggregate TOKEN(s) ('sum' / 'avg' / 'cagr') —
+// data, not tenant content. The renderer (shell) is responsible for resolving
+// these to localized text via its i18n layer; when config supplies an explicit
+// `footerLabel` that always wins. This keeps the agnostic table component free
+// of any tenant locale (was previously hardcoded Georgian 'სულ' / 'საშუალო').
 export function defaultFooterLabel(footer: Record<string, AggType>): string {
   const types = [...new Set(Object.values(footer))]
-  if (types.length === 1) {
-    if (types[0] === 'sum')  return 'სულ'
-    if (types[0] === 'avg')  return 'საშუალო'
-    if (types[0] === 'cagr') return 'CAGR'
-  }
-  return 'სულ / საშუალო'
+  return types.join(' / ')
 }
 
 // OBS_STATUS labels moved to @statdash/engine OBS_STATUS_LABELS [N14].

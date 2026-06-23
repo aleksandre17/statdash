@@ -16,7 +16,7 @@ export function CascadeShell({ filterKey, config }: { filterKey: string; config:
         tree={config.tree}
         path={path}
         onChange={p => set(filterKey, p.join(','))}
-        allLabel="ყველა"
+        allLabel={config.allLabel ?? ''}
         placeholders={config.placeholders}
       />
     </div>

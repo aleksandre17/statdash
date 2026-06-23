@@ -89,6 +89,9 @@ function GeorgraphControl({ def, ctx, vs, table }: Pick<ShellProps<GeorgraphNode
           isoField={def.isoField}
           geoCodeMap={def.geoCodeMap}
           labelOverrides={def.labelOverrides}
+          unit={def.unit}
+          initialCenter={def.initialCenter}
+          initialZoom={def.initialZoom}
         />
         {table}
       </PanelLayout>

@@ -26,13 +26,20 @@ export type EngineErrorCode =
 export class EngineError extends Error {
   override readonly name = 'EngineError'
 
+  readonly code:     EngineErrorCode
+  readonly path?:    string
+  readonly context?: Record<string, unknown>
+
   constructor(
-    message:               string,
-    readonly code:         EngineErrorCode,
-    readonly path?:        string,
-    readonly context?:     Record<string, unknown>,
+    message:  string,
+    code:     EngineErrorCode,
+    path?:    string,
+    context?: Record<string, unknown>,
   ) {
     super(message)
+    this.code    = code
+    this.path    = path
+    this.context = context
     // Restore prototype chain (required when extending built-in Error)
     Object.setPrototypeOf(this, new.target.prototype)
   }

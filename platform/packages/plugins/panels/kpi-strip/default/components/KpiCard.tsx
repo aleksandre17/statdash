@@ -12,14 +12,21 @@ interface KpiCardProps {
   preliminary?:    boolean
   note?:           string
   methodologyUrl?: string
+  /**
+   * Localized screen-reader trend direction labels, supplied by the shell via
+   * useT('kpi-strip'). Tenant/i18n content — never hardcoded here. Falls back to
+   * neutral English tokens so the sr-only text is never empty (WCAG).
+   */
+  trendLabels?:    { up: string; down: string; flat: string }
 }
 
 const ARROWS        = { up: '↗', down: '↘', flat: '→' }
-const TREND_LABELS  = { up: 'მზარდი:', down: 'კლებადი:', flat: 'სტაბილური:' }
+const TREND_FALLBACK = { up: 'Up:', down: 'Down:', flat: 'Flat:' }
 
 export default function KpiCard({
   label, value, unit, trend, trendValue, trendSub,
   color = '#0080BE', preliminary, note, methodologyUrl,
+  trendLabels = TREND_FALLBACK,
 }: KpiCardProps) {
   const hasMeta = preliminary || methodologyUrl
 
@@ -52,7 +59,7 @@ export default function KpiCard({
         <div>
           <span className={`kpi-trend kpi-trend-${trend}`}>
             <span aria-hidden="true">{ARROWS[trend]}</span>
-            <span className="sr-only">{TREND_LABELS[trend]}</span>
+            <span className="sr-only">{trendLabels[trend]}</span>
             &nbsp;{trendValue}
           </span>
           {trendSub && <div className="kpi-trend-sub">{trendSub}</div>}

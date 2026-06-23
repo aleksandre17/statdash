@@ -380,12 +380,18 @@ importers:
 
   packages/plugins:
     dependencies:
+      '@statdash/charts':
+        specifier: workspace:*
+        version: link:../charts
       '@statdash/engine':
         specifier: workspace:*
         version: link:../core
       '@statdash/react':
         specifier: workspace:*
         version: link:../react
+      '@statdash/styles':
+        specifier: workspace:*
+        version: link:../styles
       leaflet:
         specifier: '>=1.9.0'
         version: 1.9.4
@@ -404,6 +410,10 @@ importers:
       react-router-dom:
         specifier: '>=6'
         version: 7.17.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+    devDependencies:
+      '@types/leaflet':
+        specifier: ^1.9.12
+        version: 1.9.21
 
   packages/react:
     dependencies:
@@ -416,6 +426,9 @@ importers:
       '@statdash/engine':
         specifier: workspace:*
         version: link:../core
+      '@statdash/expr':
+        specifier: workspace:*
+        version: link:../expr
       '@statdash/styles':
         specifier: workspace:*
         version: link:../styles
@@ -6637,7 +6650,7 @@ snapshots:
       - react-router
       - react-router-dom
 
-  ra-ui-materialui@5.14.7(35sjdtmxct5n4eyzv6cokqkb7e):
+  ra-ui-materialui@5.14.7(oe3kdomw4iqatuelp4bqc7qdoq):
     dependencies:
       '@mui/icons-material': 6.5.0(@mui/material@6.5.0(@emotion/react@11.14.0(@types/react@19.2.17)(react@19.2.7))(@emotion/styled@11.14.1(@emotion/react@11.14.0(@types/react@19.2.17)(react@19.2.7))(@types/react@19.2.17)(react@19.2.7))(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(@types/react@19.2.17)(react@19.2.7)
       '@mui/material': 6.5.0(@emotion/react@11.14.0(@types/react@19.2.17)(react@19.2.7))(@emotion/styled@11.14.1(@emotion/react@11.14.0(@types/react@19.2.17)(react@19.2.7))(@types/react@19.2.17)(react@19.2.7))(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
@@ -6676,7 +6689,7 @@ snapshots:
       ra-core: 5.14.7(@tanstack/react-query@5.101.0(react@19.2.7))(react-dom@19.2.7(react@19.2.7))(react-hook-form@7.79.0(react@19.2.7))(react-router-dom@7.17.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(react-router@7.17.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(react@19.2.7)
       ra-i18n-polyglot: 5.14.7(@tanstack/react-query@5.101.0(react@19.2.7))(react-dom@19.2.7(react@19.2.7))(react-hook-form@7.79.0(react@19.2.7))(react-router-dom@7.17.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(react-router@7.17.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(react@19.2.7)
       ra-language-english: 5.14.7(@tanstack/react-query@5.101.0(react@19.2.7))(react-dom@19.2.7(react@19.2.7))(react-hook-form@7.79.0(react@19.2.7))(react-router-dom@7.17.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(react-router@7.17.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(react@19.2.7)
-      ra-ui-materialui: 5.14.7(35sjdtmxct5n4eyzv6cokqkb7e)
+      ra-ui-materialui: 5.14.7(oe3kdomw4iqatuelp4bqc7qdoq)
       react: 19.2.7
       react-dom: 19.2.7(react@19.2.7)
       react-hook-form: 7.79.0(react@19.2.7)

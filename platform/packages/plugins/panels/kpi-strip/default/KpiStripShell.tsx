@@ -2,7 +2,7 @@ import { Fragment, useMemo }                    from 'react'
 import { interpretKpis }                        from '@statdash/engine'
 import { defineShell, resolveStore, resolvePreliminary } from '@statdash/react/engine'
 import type { RenderContext }                  from '@statdash/react/engine'
-import { useInject, EMPTY_STATE, useExtensions, PANEL_TITLE_BADGE } from '@statdash/react'
+import { useInject, EMPTY_STATE, useExtensions, PANEL_TITLE_BADGE, useT } from '@statdash/react'
 import type { KpiStripNode }                   from './KpiStripNode'
 import KpiCard                                  from './components/KpiCard'
 
@@ -14,6 +14,8 @@ export const KpiStripShell = defineShell<KpiStripNode>({
 
 function KpiStripControl({ def, ctx }: { def: KpiStripNode; ctx: RenderContext }) {
   const EmptyState = useInject(ctx.ui, EMPTY_STATE)
+  const t          = useT('kpi-strip')
+  const trendLabels = { up: t('trend-up'), down: t('trend-down'), flat: t('trend-flat') }
   const { stores, pageStoreKey, sectionCtx } = ctx
 
   const store = useMemo(
@@ -45,7 +47,7 @@ function KpiStripControl({ def, ctx }: { def: KpiStripNode; ctx: RenderContext }
         </div>
       )}
       <div className="kpi-strip">
-        {kpis.map((kpi) => <KpiCard key={kpi.label} {...kpi} />)}
+        {kpis.map((kpi) => <KpiCard key={kpi.label} {...kpi} trendLabels={trendLabels} />)}
       </div>
     </>
   )
