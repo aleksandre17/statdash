@@ -66,8 +66,8 @@ suite('Dataset lifecycle FSM (V28) — fitness', () => {
       `INSERT INTO stats.classifier (dim_code, code, label)
        VALUES ('time', '2020', '{"en":"2020"}') ON CONFLICT DO NOTHING`)
     await client.query(
-      `INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value)
-       VALUES ($1, '2020', '{"time":"2020"}'::jsonb, 1.0)`, [ds])
+      `INSERT INTO stats.observation (dataset_code, time_period, time_period_date, dim_key, obs_value)
+       VALUES ($1, '2020', stats.parse_time_period('2020'), '{"time":"2020"}'::jsonb, 1.0)`, [ds])
 
     const countObs = async (): Promise<number> => {
       const { rows } = await client.query<{ n: string }>(

@@ -109,8 +109,9 @@ export async function upsertDisplay(
  * Upsert one observation. dim_key MUST contain exactly the dataset's non-time
  * DSD dims (set equality, enforced by the V4 trigger). Conflict target = the V4
  * unique index (dataset_code, time_period, dim_key_hash, time_period_date);
- * dim_key_hash + time_period_date are GENERATED, so Postgres infers them from
- * the inserted dim_key / time_period.
+ * dim_key_hash is GENERATED (Postgres infers it), but time_period_date is
+ * WRITER-PROVIDED — supplied inline as stats.parse_time_period(time_period),
+ * because TimescaleDB cannot derive the partition column via a trigger on INSERT.
  *
  * GAP 1: obsAttribute → stats.observation.obs_attribute (V8 jsonb bag). Non-key
  * SDMX attributes live here — e.g. seqPos (ACCOUNTS carry-forward position),
@@ -128,8 +129,8 @@ export async function upsertObservation(
   obsAttribute: Record<string, unknown> = {},
 ): Promise<void> {
   await c.query(
-    `INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
-     VALUES ($1, $2, $3::jsonb, $4, $5, $6::jsonb)
+    `INSERT INTO stats.observation (dataset_code, time_period, time_period_date, dim_key, obs_value, obs_status, obs_attribute)
+     VALUES ($1, $2, stats.parse_time_period($2), $3::jsonb, $4, $5, $6::jsonb)
      ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE
        SET obs_value     = EXCLUDED.obs_value,
            obs_status    = EXCLUDED.obs_status,

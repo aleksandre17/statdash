@@ -239,9 +239,9 @@ dbSuite('GET /api/cube/:datasetCode/profile — bundle shape (live DB)', () => {
     // DSD non-time dims are {measure, geo} (time is is_time_dim), so the dim_key the
     // validate_observation_dim_key trigger requires is exactly those two keys.
     await client.query(
-      `INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value) VALUES
-         ($1, '2020', $2::jsonb, 100),
-         ($1, '2021', $2::jsonb, 110)
+      `INSERT INTO stats.observation (dataset_code, time_period, time_period_date, dim_key, obs_value) VALUES
+         ($1, '2020', stats.parse_time_period('2020'), $2::jsonb, 100),
+         ($1, '2021', stats.parse_time_period('2021'), $2::jsonb, 110)
        ON CONFLICT DO NOTHING`,
       [DS, JSON.stringify({ measure: M_CODE, geo: G_CODE })],
     )
@@ -268,8 +268,8 @@ dbSuite('GET /api/cube/:datasetCode/profile — bundle shape (live DB)', () => {
   it('classify route returns the three-way has-data / empty-by-design / missing (V26 SSOT)', async () => {
     // Realised: one observation for {measure:CPGDP, geo:CPGE}.
     await client.query(
-      `INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value)
-         VALUES ($1, '2020', $2::jsonb, 100)
+      `INSERT INTO stats.observation (dataset_code, time_period, time_period_date, dim_key, obs_value)
+         VALUES ($1, '2020', stats.parse_time_period('2020'), $2::jsonb, 100)
        ON CONFLICT DO NOTHING`,
       [DS, JSON.stringify({ measure: M_CODE, geo: G_CODE })],
     )

@@ -226,11 +226,13 @@ async function publishFacts(client: QueryableClient, submissionId: string): Prom
   // promotion stays semantically identical to the old per-row upsertObservation
   // loop — only the network chatter is gone. COALESCE(obs_status,'A') mirrors the
   // gold default for silver rows that staged a NULL status (Postel at the boundary).
-  // The conflict target is the V4 unique index; dim_key_hash + time_period_date
-  // are GENERATED, so Postgres infers them from the inserted values.
+  // The conflict target is the V4 unique index. dim_key_hash is GENERATED (Postgres
+  // infers it), but time_period_date is WRITER-PROVIDED — TimescaleDB cannot derive
+  // the partition column via a trigger on INSERT — so we compute it inline from the
+  // SAME stats.parse_time_period(time_period) SSOT rule.
   const { rows: written } = await client.query<{ dataset_code: string }>(
-    `INSERT INTO stats.observation (dataset_code, time_period, dim_key, obs_value, obs_status, obs_attribute)
-     SELECT dataset_code, time_period, dim_key, obs_value, COALESCE(obs_status, 'A'), obs_attribute
+    `INSERT INTO stats.observation (dataset_code, time_period, time_period_date, dim_key, obs_value, obs_status, obs_attribute)
+     SELECT dataset_code, time_period, stats.parse_time_period(time_period), dim_key, obs_value, COALESCE(obs_status, 'A'), obs_attribute
        FROM stats_stage.obs_staging
       WHERE submission_id = $1
      ON CONFLICT (dataset_code, time_period, dim_key_hash, time_period_date) DO UPDATE

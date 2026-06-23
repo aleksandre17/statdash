@@ -47,25 +47,47 @@ COPY apps/api           ./apps/api
 RUN pnpm --filter "@statdash/api^..." run build \
  && pnpm --filter @statdash/api run build
 
+# ─── Stage 2b: pnpm deploy → flattened, self-contained runtime dir ────────────
+# WHY NOT just COPY node_modules into the runtime stage:
+#   This workspace uses pnpm's default ISOLATED node-linker (.npmrc:
+#   shamefully-hoist=false, no node-linker override → the .pnpm virtual store).
+#   Under that linker, node_modules/@statdash/* and every external dep are
+#   SYMLINKS into .pnpm/<pkg>@<ver>/node_modules/<pkg>. A hand-picked COPY of a
+#   few package dirs + node_modules cannot reliably reproduce that symlink web in
+#   the runtime image: copying a symlink without its .pnpm target (or copying
+#   .pnpm partially) yields dangling links → MODULE_NOT_FOUND at boot. That is
+#   the flagged runtime-resolution fragility.
+#
+# THE ROBUST FIX — `pnpm deploy`:
+#   `pnpm deploy --filter @statdash/api --prod /deploy` resolves the api's
+#   FULL production dependency closure and writes a STANDALONE directory with
+#   every dependency INLINED under deploy/node_modules — workspace packages
+#   (@statdash/contracts|expr|engine, copied per their `files:['dist']`) and
+#   external prod deps alike, as real directories, NO symlinks into a virtual
+#   store. The result is a self-contained app that `node dist/index.js` runs
+#   from any base image with zero pnpm/.pnpm runtime assumptions.
+#   Prereq satisfied above: the engine + api dist already exist (deploy copies
+#   the built `dist`, never source).
+#
+#   --legacy is passed because pnpm@9 gates `deploy` outside a workspace behind
+#   it unless inject-workspace-packages is enabled; --legacy keeps it working
+#   for the standard workspace:* deps here. --prod drops devDependencies (tsx,
+#   typescript, @types/*) so the runtime image carries only what boot needs.
+#   Target /deploy is OUTSIDE the workspace tree (/app): pnpm 9 refuses a deploy
+#   target nested inside the project, so it lives at the image root.
+RUN pnpm --filter @statdash/api --prod --legacy deploy /deploy
+
 # ─── Stage 3: production runtime ──────────────────────────────────────────────
-# Ship the api dist + the node_modules graph (which symlinks the @statdash/*
-# packages → their dist, copied via the package dirs below).
+# Ship ONLY the flattened deploy dir produced above. No pnpm, no .pnpm store, no
+# workspace symlinks — a single self-contained tree. `dist/index.js` + an inlined
+# node_modules is everything `node` needs.
 FROM node:22-alpine AS production
 WORKDIR /app
 ENV NODE_ENV=production
-COPY --from=build /app/apps/api/dist ./apps/api/dist
-COPY --from=build /app/apps/api/package.json ./apps/api/
-# Built dist of the workspace deps the runtime import graph reaches.
-COPY --from=build /app/packages/contracts/dist ./packages/contracts/dist
-COPY --from=build /app/packages/contracts/package.json ./packages/contracts/
-COPY --from=build /app/packages/expr/dist ./packages/expr/dist
-COPY --from=build /app/packages/expr/package.json ./packages/expr/
-COPY --from=build /app/packages/core/dist ./packages/core/dist
-COPY --from=build /app/packages/core/package.json ./packages/core/
-# node_modules (incl. the workspace symlinks under node_modules/@statdash/*).
-COPY --from=build /app/node_modules ./node_modules
-COPY --from=build /app/apps/api/node_modules ./apps/api/node_modules
-COPY --from=build /app/packages/core/node_modules ./packages/core/node_modules
-WORKDIR /app/apps/api
+# The deploy dir is the api package root: package.json + dist + node_modules
+# (all deps inlined). Copy it verbatim as the app root.
+COPY --from=build /deploy ./
 EXPOSE 3001
+# Run as the unprivileged node user baked into node:22-alpine (least privilege).
+USER node
 CMD ["node", "dist/index.js"]

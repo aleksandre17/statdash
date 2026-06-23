@@ -67,6 +67,11 @@ interface ClassifierRow {
   code: string
   dimCode: string
   label?: unknown
+  // ADR-0023 hierarchy edge: parent member's business code within the SAME
+  // dimCode (or absent/null for a root). A cross-dim parentCode is invalid (the
+  // V23 trg_classifier_code_path trigger + ingest publishClassifiers both RAISE).
+  parentCode?: string | null
+  metadata?: Record<string, unknown>
 }
 interface DisplayRow {
   code: string
@@ -221,6 +226,94 @@ describe('ADR-0028 SSOT — seed-data bundle files are well-formed + self-consis
     const knownDims = new Set(codelists.map((c) => c.dimCode))
     const unknown = [...new Set(displays.map((d) => d.dimCode))].filter((d) => !knownDims.has(d))
     expect(unknown).toEqual([])
+  })
+
+  // ── DSD-COMPLETENESS: every obs dim_key VALUE is a declared classifier member ──
+  // ROOT CAUSE this guards (live-seed regression): an observation referenced
+  // measure=GDP_DEFLATOR, a code absent from the classifier codelist, so the V4
+  // validate_observation_dim_key trigger rejected it at load (the DSD contract the
+  // cube enforces — each dim_key value must resolve to a CURRENT classifier member).
+  // The dimension-level check above proves the KEY SET is grounded; this proves the
+  // VALUE SET is too. The set of (dim_code, code) used across ALL observation
+  // dim_keys must be a SUBSET of the classifier set. A future obs that introduces an
+  // unknown code fails HERE, offline, before the cube ever rejects it.
+  it('every (dim_code, code) used in any observation dim_key is a declared classifier member (DSD-completeness)', () => {
+    const known = new Set(codelists.map((c) => `${c.dimCode} ${c.code}`))
+    const missing = new Set<string>()
+    for (const code of FACT_DATASETS) {
+      for (const o of factObs.get(code)!) {
+        for (const [dim, value] of Object.entries(o.dimKey)) {
+          if (!known.has(`${dim} ${value}`)) missing.add(`${dim}=${value}`)
+        }
+      }
+    }
+    expect([...missing].sort()).toEqual([])
+  })
+
+  // ── Unit metadata references a real unit code (SDMX UNIT_MEASURE / V16 codelist) ──
+  // A classifier may carry metadata.unit_measure (the measure-level unit attribute,
+  // [[project-decision-c-unit-measure]]). If present it MUST be a code that exists in
+  // the V16 stats.unit_measure seed — otherwise the unit is meaningless / would dangle.
+  // Mirrors the V16 INSERT set; a typo'd or invented unit fails offline.
+  it('every classifier metadata.unit_measure is a valid V16 unit_measure code', () => {
+    const V16_UNITS = new Set([
+      'GEL', 'USD', 'EUR', 'GEL_MN', 'USD_MN',
+      'PERCENT', 'RATIO', 'RATIO_PCT', 'PURE_NUMBER', 'INDEX', 'PERSON',
+    ])
+    const bad = codelists
+      .map((c) => (c.metadata as Record<string, unknown> | undefined)?.unit_measure)
+      .filter((u): u is string => typeof u === 'string')
+      .filter((u) => !V16_UNITS.has(u))
+    expect([...new Set(bad)]).toEqual([])
+  })
+
+  // ── ADR-0023 parentCode integrity: the edge is SAME-dim, never cross-dim ──
+  // ROOT CAUSE this guards (live-run regression): measure classifiers carried a
+  // parentCode pointing at an `approach` value (production/expenditure/...), which
+  // is not a `measure` member. parent_code is a SAME dim_code business-key edge;
+  // the V23 trg_classifier_code_path trigger RAISES on a non-current same-dim
+  // parent, and ingest publishClassifiers' topological resolve fails identically.
+  // The fix flattened measures (approach is metadata.approach, an attribute) and
+  // kept the genuine geo→total / sector→_T same-dim hierarchies. This invariant
+  // makes the cross-dim mis-mapping unrepresentable in the committed SSOT — a
+  // re-introduced cross-dim parent fails here, with no DB, before the seed runs.
+  it('every classifier parentCode resolves to a same-dim member (no cross-dim edge)', () => {
+    const codesByDim = new Map<string, Set<string>>()
+    for (const c of codelists) {
+      if (!codesByDim.has(c.dimCode)) codesByDim.set(c.dimCode, new Set())
+      codesByDim.get(c.dimCode)!.add(c.code)
+    }
+    const crossDim = codelists
+      .filter((c) => c.parentCode != null)
+      .filter((c) => !(codesByDim.get(c.dimCode)?.has(c.parentCode!) ?? false))
+      .map((c) => `${c.dimCode}/${c.code}→${c.parentCode}`)
+    expect(crossDim).toEqual([])
+  })
+
+  // No classifier may be its own parent (a trivial 1-cycle the trigger would also
+  // reject). Cheap structural guard alongside the same-dim invariant above.
+  it('no classifier parentCode points at itself', () => {
+    const selfParents = codelists
+      .filter((c) => c.parentCode != null && c.parentCode === c.code)
+      .map((c) => `${c.dimCode}/${c.code}`)
+    expect(selfParents).toEqual([])
+  })
+
+  // ── Approach grouping is preserved as the metadata attribute (not lost) ──
+  // The flatten removed the cross-dim parentCode but the SDMX approach grouping
+  // MUST survive as metadata.approach. Assert measures are flat (no same-dim
+  // parent) and the approach attribute is still present on the grouped measures.
+  it('measures are flat and carry approach as metadata.approach, not as a parent edge', () => {
+    const measures = codelists.filter((c) => c.dimCode === 'measure')
+    expect(measures.length).toBeGreaterThan(0)
+    for (const m of measures) {
+      // a measure must never carry a same-dim parent edge (measures are flat)
+      expect(m.parentCode == null).toBe(true)
+    }
+    // the approach attribute is present on the grouped measures (the 22 that
+    // previously encoded it as a cross-dim parent now encode it here).
+    const withApproach = measures.filter((m) => m.metadata?.approach != null)
+    expect(withApproach.length).toBeGreaterThan(0)
   })
 })
 
