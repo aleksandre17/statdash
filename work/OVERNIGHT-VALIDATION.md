@@ -11,6 +11,7 @@ You pushed for the first real run. It happened — on your Linux server (192.168
 | **Seed (R__ gold)** | ✅ loads clean — cube populated: **2131 obs** (367+279+1485), 99 current classifiers, 3 datasets, 11 units, **7 concepts** |
 | **136 DB-gated tests** | ✅ **136/136 pass** vs the live cube (bootstrap-parity, SCD-2 vintage/as-of, ContentConstraint, concept-scheme, dataset-lifecycle FSM, category-scheme, cube-profile+classify, seed-parity) |
 | **verify-parity** | ✅ bundle ↔ live API row-for-row (GDP 367, ACCOUNTS 279, REGIONAL 1485) — the api booted, provisioned, served the cube correctly |
+| **api Docker image — FULL STACK IN ONE NETWORK** | ✅ `statdash-api:validate` (407MB) builds + runs on the server, container `statdash-validate-api` on `statdash-net` talking to the cube in `statdash-validate-pg`. `/health` ok, `/api/bootstrap` serves the SDUI config, all 3 datasets serve exact counts, **verify-parity GREEN against the containerized api** (row-for-row value parity). Your recurring question — "does everything start in one network?" — is now answered: **YES.** |
 
 ### Real bugs the live run caught + fixed (every one invisible to mocks/unit tests)
 1. **V4 hypertable** — `time_period_date` GENERATED → can't be a TimescaleDB partition dim; then trigger-populate also fails (partition NOT-NULL checked before BEFORE-triggers) → **writers provide it** via `parse_time_period`.
@@ -30,10 +31,15 @@ Each is committed + pushed to `aleksandre17/statdash` main (54 commits). Fitness
 - Local (needs Docker): `pnpm validate:local` (one shot: migrate→seed→DB-gated tests→verify-parity).
 - On the server: the isolated `statdash-validate-pg` is still up; `ops/RUNBOOK.md` has the flow.
 
+### See it live in the morning
+Both validation containers are LEFT RUNNING on the server so you can see the stack live:
+- On the server: `curl http://localhost:3010/health` → `{"status":"ok",…}`; `curl http://localhost:3010/api/bootstrap` → the SDUI config.
+- Containers: `statdash-validate-api` (port 3010→3001) + `statdash-validate-pg` (cube) on `statdash-net`, isolated from the reference-project containers.
+
 ### In progress / next
-- **api Docker image build on the server** (proving the full stack — api container + cube on one network, your recurring question). Status at handoff: see below / the board.
+- **api Docker image — DONE** ✅ (see the table above). The Dockerfile now ships the built workspace (api dist + engine packages' dist + resolved node_modules) rather than `pnpm deploy`, which was version-fragile (pinned pnpm@9.15 rejects `--legacy`; new-deploy needs `inject-workspace-packages`). FOLLOW-UP (not blocking): slim the 407MB image via a pinned `pnpm deploy` once the deploy version story is settled — correctness shipped first.
 - Deferred per your call: CI (the `.github/workflows/ci.yml` is stale `@geostat`→`@statdash` — refresh when you want CI).
-- Cleanup: the throwaway `statdash-validate-pg` + `/tmp/statdash-*` on the server can be removed anytime (`docker rm -f statdash-validate-pg`).
+- Cleanup (when you're done inspecting): `docker rm -f statdash-validate-api statdash-validate-pg` and `rm -rf /tmp/statdash-*` on the server.
 
 ### The takeaway
-The platform was beautifully tested but had never *run*. It has now run, end-to-end, against a real database — and was hardened by 10 real fixes in the process. Your instinct to demand the real run was exactly right.
+The platform was beautifully tested but had never *run*. It has now run, end-to-end: migrations + seed on a real TimescaleDB, 136/136 DB-gated tests, and — the last piece — the **api Docker image built and running on the server, in one isolated network, serving the cube with row-for-row parity**. Hardened by 11 real fixes in the process (10 data-layer + the version-fragile Dockerfile). Your instinct to demand the real run, and your push-back that "we HAVE a Linux server with Docker — what's the problem?", were both exactly right.
