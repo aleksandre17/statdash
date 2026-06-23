@@ -63,7 +63,7 @@ dbSuite('ConceptScheme (V27) — fitness', () => {
     const dim = `__fit_dim_${Date.now()}`
 
     await client.query(
-      `INSERT INTO stats.concept_scheme (code, label) VALUES ($1, '{"en":"fixture"}')`, [scheme])
+      `INSERT INTO stats.concept_scheme (code, label) VALUES ($1, '{"ka":"ფიქსტ","en":"fixture"}')`, [scheme])
     // Concept role = 'geo'; the dimension's stale alias deliberately set to 'measure'
     // would be a DRIFT — but the resolution COALESCE(concept, dim) must pick the
     // concept ('geo'), proving the SSOT wins. (We set the dim alias to NULL here so
@@ -71,10 +71,10 @@ dbSuite('ConceptScheme (V27) — fitness', () => {
     // resolution test only needs the concept to carry the role.)
     await client.query(
       `INSERT INTO stats.concept (scheme_code, code, label, concept_role)
-       VALUES ($1, 'REF_AREA_FIT', '{"en":"area"}', 'geo')`, [scheme])
+       VALUES ($1, 'REF_AREA_FIT', '{"ka":"არეალი","en":"area"}', 'geo')`, [scheme])
     await client.query(
       `INSERT INTO stats.dimension (code, label, concept_scheme_code, concept_code)
-       VALUES ($1, '{"en":"d"}', $2, 'REF_AREA_FIT')`, [dim, scheme])
+       VALUES ($1, '{"ka":"დ","en":"d"}', $2, 'REF_AREA_FIT')`, [dim, scheme])
 
     const { rows } = await client.query<{ resolved: string | null }>(
       `SELECT COALESCE(c.concept_role, d.concept_role) AS resolved
@@ -89,11 +89,11 @@ dbSuite('ConceptScheme (V27) — fitness', () => {
   it('rejects a dimension binding to a non-existent concept (FK holds)', async () => {
     const scheme = `__FIT_CS2_${Date.now()}`
     await client.query(
-      `INSERT INTO stats.concept_scheme (code, label) VALUES ($1, '{"en":"fixture"}')`, [scheme])
+      `INSERT INTO stats.concept_scheme (code, label) VALUES ($1, '{"ka":"ფიქსტ","en":"fixture"}')`, [scheme])
     await expect(
       client.query(
         `INSERT INTO stats.dimension (code, label, concept_scheme_code, concept_code)
-         VALUES ($1, '{"en":"d"}', $2, 'NO_SUCH_CONCEPT')`, [`__fit_d2_${Date.now()}`, scheme]),
+         VALUES ($1, '{"ka":"დ","en":"d"}', $2, 'NO_SUCH_CONCEPT')`, [`__fit_d2_${Date.now()}`, scheme]),
     ).rejects.toThrow()
   })
 })

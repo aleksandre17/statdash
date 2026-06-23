@@ -55,10 +55,10 @@ suite('ContentConstraint cube region (ADR-0027) — fitness', () => {
     const ds = `__FITNESS_CC_${Date.now()}`
     // Minimal dataset + dimensions so FKs resolve (rolled back after the test).
     await client.query(
-      `INSERT INTO stats.dataset (code, label) VALUES ($1, '{"en":"fixture"}')`, [ds])
+      `INSERT INTO stats.dataset (code, label) VALUES ($1, '{"ka":"ფიქსტ","en":"fixture"}')`, [ds])
     await client.query(
       `INSERT INTO stats.dimension (code, label) VALUES
-         ('account', '{"en":"a"}'), ('side', '{"en":"s"}')
+         ('account', '{"ka":"ანგარიში","en":"a"}'), ('side', '{"ka":"მხარე","en":"s"}')
        ON CONFLICT (code) DO NOTHING`)
 
     // No constraint yet → unconstrained (TRUE for any key).

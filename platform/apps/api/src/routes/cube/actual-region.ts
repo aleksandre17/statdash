@@ -155,8 +155,14 @@ export async function classifyCombos(
   // the SSOT predicate for allowed-membership. Classification is a pure CASE over
   // those two booleans, computed in TS so the wire vocabulary stays here.
   const { rows } = await app.pg.query<{ idx: number; realised: boolean; allowed: boolean }>(
+    // (ordinality - 1)::int — ordinality is bigint (int8), which node-postgres
+    // surfaces as a STRING. Without the ::int cast, idx comes back as "0"/"1"/…,
+    // the Map below is keyed by those strings, and byIdx.get(<number>) misses every
+    // entry → every combo silently classifies as 'missing' (a realised has-data combo
+    // would wrongly report missing). Casting to int4 makes pg return a real JS number
+    // so the request-order join is sound.
     `WITH input(idx, dim_key) AS (
-       SELECT ordinality - 1, value
+       SELECT (ordinality - 1)::int, value
          FROM jsonb_array_elements($2::jsonb) WITH ORDINALITY AS t(value, ordinality)
      )
      SELECT i.idx,

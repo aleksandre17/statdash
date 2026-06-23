@@ -51,23 +51,32 @@ suite('Dataset lifecycle FSM (V28) — fitness', () => {
     const ds = `__FIT_LC_${Date.now()}`
     const successor = `__FIT_LC_NEXT_${Date.now()}`
 
-    // Minimal datasets + a single observation. The observation needs a dim_key the
-    // V4 trigger accepts; use a minimal time-only DSD so the fixture is self-contained.
+    // Minimal datasets + a single observation. The V4/V22 validate_observation_dim_key
+    // trigger requires a DSD with at least one NON-time dimension: expected_dims is
+    // built from dataset_dimension WHERE is_time_dim = false, and a time-ONLY DSD makes
+    // expected_dims NULL → "has no DSD declared". The dim_key must then equal exactly
+    // those non-time dims (set equality) and each value must be a CURRENT classifier
+    // member. So declare a 2-axis DSD {geo (non-time), time (is_time)}, seed one geo
+    // member, and key the obs on the non-time dim only ({"geo":"GE"}). Mirrors the
+    // cube-profile fixture's DSD+obs shape.
     await client.query(
-      `INSERT INTO stats.dataset (code, label) VALUES ($1, '{"en":"fixture"}'), ($2, '{"en":"next"}')`,
+      `INSERT INTO stats.dataset (code, label) VALUES ($1, '{"ka":"ფიქსტ","en":"fixture"}'), ($2, '{"ka":"შემდეგი","en":"next"}')`,
       [ds, successor])
     await client.query(
-      `INSERT INTO stats.dimension (code, label) VALUES ('time', '{"en":"t"}')
+      `INSERT INTO stats.dimension (code, label) VALUES
+         ('geo',  '{"ka":"გეო","en":"geo"}'),
+         ('time', '{"ka":"პერიოდი","en":"t"}')
        ON CONFLICT (code) DO NOTHING`)
     await client.query(
-      `INSERT INTO stats.dataset_dimension (dataset_code, dim_code, is_time_dim)
-       VALUES ($1, 'time', true)`, [ds])
+      `INSERT INTO stats.dataset_dimension (dataset_code, dim_code, is_time_dim, ord) VALUES
+         ($1, 'geo',  false, 0),
+         ($1, 'time', true,  1)`, [ds])
     await client.query(
       `INSERT INTO stats.classifier (dim_code, code, label)
-       VALUES ('time', '2020', '{"en":"2020"}') ON CONFLICT DO NOTHING`)
+       VALUES ('geo', 'GE', '{"ka":"საქართველო","en":"Georgia"}') ON CONFLICT DO NOTHING`)
     await client.query(
       `INSERT INTO stats.observation (dataset_code, time_period, time_period_date, dim_key, obs_value)
-       VALUES ($1, '2020', stats.parse_time_period('2020'), '{"time":"2020"}'::jsonb, 1.0)`, [ds])
+       VALUES ($1, '2020', stats.parse_time_period('2020'), '{"geo":"GE"}'::jsonb, 1.0)`, [ds])
 
     const countObs = async (): Promise<number> => {
       const { rows } = await client.query<{ n: string }>(
@@ -78,9 +87,13 @@ suite('Dataset lifecycle FSM (V28) — fitness', () => {
     expect(before, 'fixture seeded one observation').toBe(1)
 
     // draft → published → superseded(replaced_by=successor), via the FSM function.
-    await client.query(`SELECT stats.set_dataset_status($1, 'published')`, [ds])
-    await client.query(`SELECT stats.set_dataset_status($2, 'published')`, [ds, successor])
-    await client.query(`SELECT stats.set_dataset_status($1, 'superseded', $2)`, [ds, successor])
+    // Explicit ::text casts: stats.set_dataset_status(TEXT, TEXT, TEXT DEFAULT NULL)
+    // — a bare $1 alongside an unknown-typed 'published' literal gives Postgres no
+    // column context to infer the parameter type during function overload resolution
+    // ("could not determine data type of parameter $1"). Casting pins the type.
+    await client.query(`SELECT stats.set_dataset_status($1::text, 'published')`, [ds])
+    await client.query(`SELECT stats.set_dataset_status($1::text, 'published')`, [successor])
+    await client.query(`SELECT stats.set_dataset_status($1::text, 'superseded', $2::text)`, [ds, successor])
 
     // 2. Zero observations deleted.
     const after = await countObs()
@@ -101,26 +114,30 @@ suite('Dataset lifecycle FSM (V28) — fitness', () => {
   it('superseded requires replaced_by (constraint) and FSM rejects illegal transitions', async () => {
     const ds = `__FIT_LC_CHK_${Date.now()}`
     await client.query(
-      `INSERT INTO stats.dataset (code, label) VALUES ($1, '{"en":"fixture"}')`, [ds])
+      `INSERT INTO stats.dataset (code, label) VALUES ($1, '{"ka":"ფიქსტ","en":"fixture"}')`, [ds])
 
     // The CHECK: status='superseded' with NULL replaced_by is unrepresentable.
+    // Savepoint-wrap: a CHECK violation aborts the txn, which would poison the
+    // savepoints below — contain the expected failure.
+    await client.query('SAVEPOINT s0')
     await expect(
       client.query(`UPDATE stats.dataset SET status = 'superseded' WHERE code = $1`, [ds]),
     ).rejects.toThrow(/dataset_superseded_chk|superseded/i)
+    await client.query('ROLLBACK TO SAVEPOINT s0')
 
     // The FSM: draft → deprecated is illegal (must publish first). Use a savepoint so
     // the rejected statement does not poison the surrounding txn.
     await client.query('SAVEPOINT s1')
     await expect(
-      client.query(`SELECT stats.set_dataset_status($1, 'deprecated')`, [ds]),
+      client.query(`SELECT stats.set_dataset_status($1::text, 'deprecated')`, [ds]),
     ).rejects.toThrow(/illegal transition/i)
     await client.query('ROLLBACK TO SAVEPOINT s1')
 
     // The FSM: supersede without replaced_by is rejected with a clear message.
-    await client.query(`SELECT stats.set_dataset_status($1, 'published')`, [ds])
+    await client.query(`SELECT stats.set_dataset_status($1::text, 'published')`, [ds])
     await client.query('SAVEPOINT s2')
     await expect(
-      client.query(`SELECT stats.set_dataset_status($1, 'superseded')`, [ds]),
+      client.query(`SELECT stats.set_dataset_status($1::text, 'superseded')`, [ds]),
     ).rejects.toThrow(/requires p_replaced_by/i)
     await client.query('ROLLBACK TO SAVEPOINT s2')
   })

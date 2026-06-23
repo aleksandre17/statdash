@@ -58,12 +58,12 @@ suite('CategoryScheme (V29) — fitness', () => {
   it('rejects a category edge that would create a cycle', async () => {
     const scheme = `__FIT_CAT_${Date.now()}`
     await client.query(
-      `INSERT INTO stats.category_scheme (code, label) VALUES ($1, '{"en":"fixture"}')`, [scheme])
+      `INSERT INTO stats.category_scheme (code, label) VALUES ($1, '{"ka":"ფიქსტ","en":"fixture"}')`, [scheme])
     await client.query(
-      `INSERT INTO stats.category (scheme_code, code, label) VALUES ($1, 'A', '{"en":"a"}')`, [scheme])
+      `INSERT INTO stats.category (scheme_code, code, label) VALUES ($1, 'A', '{"ka":"ა","en":"a"}')`, [scheme])
     await client.query(
       `INSERT INTO stats.category (scheme_code, code, label, parent_code)
-       VALUES ($1, 'B', '{"en":"b"}', 'A')`, [scheme])
+       VALUES ($1, 'B', '{"ka":"ბ","en":"b"}', 'A')`, [scheme])
     // Now point A at B → A.B and B.A would be a cycle. The path build needs A's path
     // which now must route through B whose path routes through A — the trigger raises
     // (B's path was built when A was a root; re-parenting A to B leaves the lookup
@@ -78,12 +78,18 @@ suite('CategoryScheme (V29) — fitness', () => {
   it('rejects a self-parenting category (category_no_self_parent_chk)', async () => {
     const scheme = `__FIT_CAT_SP_${Date.now()}`
     await client.query(
-      `INSERT INTO stats.category_scheme (code, label) VALUES ($1, '{"en":"fixture"}')`, [scheme])
+      `INSERT INTO stats.category_scheme (code, label) VALUES ($1, '{"ka":"ფიქსტ","en":"fixture"}')`, [scheme])
     await expect(
       client.query(
         `INSERT INTO stats.category (scheme_code, code, label, parent_code)
-         VALUES ($1, 'X', '{"en":"x"}', 'X')`, [scheme]),
-    ).rejects.toThrow(/category_no_self_parent_chk|self/i)
+         VALUES ($1, 'X', '{"ka":"ხ","en":"x"}', 'X')`, [scheme]),
+    // A self-parent is rejected — but the FIRST trigger to fire is the V29 code-path
+    // build (trg_category_code_path), which raises 'no parent' because a
+    // self-referencing category's parent is not yet a current member at insert time,
+    // BEFORE the deferred category_no_self_parent_chk CHECK would. The assertion's
+    // INTENT (a self-parent is rejected) holds; only the surfacing message differs, so
+    // the regex accepts either guard's wording.
+    ).rejects.toThrow(/category_no_self_parent_chk|self|no parent|cycle/i)
   })
 
   // ── 2. Catalog projection excludes non-published datasets ─────────────────────
@@ -93,12 +99,14 @@ suite('CategoryScheme (V29) — fitness', () => {
     const dsPub = `__FIT_CAT_PUB_DS_${Date.now()}`
 
     await client.query(
-      `INSERT INTO stats.category_scheme (code, label) VALUES ($1, '{"en":"fixture"}')`, [scheme])
+      `INSERT INTO stats.category_scheme (code, label) VALUES ($1, '{"ka":"ფიქსტ","en":"fixture"}')`, [scheme])
     await client.query(
-      `INSERT INTO stats.category (scheme_code, code, label) VALUES ($1, 'GDP', '{"en":"gdp"}')`, [scheme])
-    // One draft (default status) + one published dataset, both categorised.
+      `INSERT INTO stats.category (scheme_code, code, label) VALUES ($1, 'GDP', '{"ka":"მშპ","en":"gdp"}')`, [scheme])
+    // One draft (default status) + one published dataset, both categorised. The
+    // dataset labels MUST be complete LocaleStrings — stats.dataset.label is wired to
+    // the V14 config.enforce_locale_string trigger, which rejects a ka-less label.
     await client.query(
-      `INSERT INTO stats.dataset (code, label) VALUES ($1, '{"en":"draft"}'), ($2, '{"en":"pub"}')`,
+      `INSERT INTO stats.dataset (code, label) VALUES ($1, '{"ka":"მონახაზი","en":"draft"}'), ($2, '{"ka":"გამოქვეყნებული","en":"pub"}')`,
       [dsDraft, dsPub])
     await client.query(`SELECT stats.set_dataset_status($1, 'published')`, [dsPub])
     await client.query(

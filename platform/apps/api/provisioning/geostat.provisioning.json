@@ -1200,7 +1200,8 @@
       "slug": "accounts",
       "status": "published",
       "title": {
-        "ka": "accounts"
+        "ka": "accounts",
+        "en": "accounts"
       }
     },
     {
@@ -2357,7 +2358,8 @@
       "slug": "gdp",
       "status": "published",
       "title": {
-        "ka": "gdp"
+        "ka": "gdp",
+        "en": "gdp"
       }
     },
     {
@@ -2600,7 +2602,8 @@
       "slug": "landing",
       "status": "published",
       "title": {
-        "ka": "landing"
+        "ka": "landing",
+        "en": "landing"
       }
     },
     {
@@ -3882,7 +3885,8 @@
       "slug": "regional",
       "status": "published",
       "title": {
-        "ka": "regional"
+        "ka": "regional",
+        "en": "regional"
       }
     }
   ],

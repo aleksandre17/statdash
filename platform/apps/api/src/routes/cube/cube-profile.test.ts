@@ -135,10 +135,15 @@ dbSuite('GET /api/cube/:datasetCode/profile — bundle shape (live DB)', () => {
     )
 
     // Dataset with NO dataset-level unit_code — so resolution is purely per-measure.
+    // status='published' so the V28 published-only discovery projection
+    // (stats.dataset_published, the cube-profile/classify surface) exposes it — the
+    // default 'draft' would 404 from discovery. Insert published directly (the FSM
+    // function is exercised by the dataset-lifecycle suite; here we only need the
+    // dataset to be discoverable).
     await client.query(
-      `INSERT INTO stats.dataset (code, label, frequency)
-         VALUES ($1, '{"ka":"ტესტი","en":"Test"}'::jsonb, 'A')
-       ON CONFLICT (code) DO NOTHING`,
+      `INSERT INTO stats.dataset (code, label, frequency, status, valid_from)
+         VALUES ($1, '{"ka":"ტესტი","en":"Test"}'::jsonb, 'A', 'published', now())
+       ON CONFLICT (code) DO UPDATE SET status = 'published'`,
       [DS],
     )
 

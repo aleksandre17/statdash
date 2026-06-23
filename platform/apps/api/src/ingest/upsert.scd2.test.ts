@@ -204,12 +204,56 @@ suite('upsertClassifier — SCD-2 revision invariants', () => {
     await upsertClassifier(qc, DIM, 'B', { ka: 'წარმოება', en: 'Production' }, null, null, 0)
     await upsertClassifier(qc, DIM, 'B1', { ka: 'მშპ', en: 'GVA' }, null, 'B', 1)
 
-    const { rows: t0rows } = await client.query<{ now: string }>(`SELECT now() AS now`)
-    const asOf = t0rows[0].now
+    // CRITICAL (real-DB semantics): the SCD-2 writer stamps valid_from/valid_to with
+    // now() = transaction_timestamp(), which is CONSTANT for the WHOLE txn. Every
+    // value derived from now() in this single-txn test — the seed's valid_from, the
+    // revision's valid_from, the closed original's valid_to, AND a now()-derived asOf —
+    // collapses onto ONE instant T. The original's window then becomes [T, T) (closed
+    // at the same instant it would be read), and with boundary comparisons the as-of
+    // read cannot reliably sit strictly inside it → it surfaces the revised row.
+    //
+    // Make the temporal math EXPLICIT and independent of now(): pin the seed rows to a
+    // fixed past instant, capture asOf at a later fixed instant, and stamp the revision
+    // at a still-later fixed instant. The windows now have real, unambiguous width:
+    //   seed/original:  valid_from = SEED_T   (= '2020-01-01')
+    //   asOf:                       AS_OF_T   (= '2021-01-01', strictly inside)
+    //   revision:       valid_from = REV_T    (= '2022-01-01', strictly after asOf)
+    // so original B is live as of AS_OF_T (valid_from ≤ asOf < valid_to=REV_T) and the
+    // revision is in asOf's future and excluded — the temporal contract, no now()
+    // collapse possible.
+    const SEED_T = '2020-01-01T00:00:00Z'
+    const AS_OF_T = '2021-01-01T00:00:00Z'
+    const REV_T = '2022-01-01T00:00:00Z'
 
-    // Revise B's label AFTER the captured instant.
+    await client.query(
+      `UPDATE stats.classifier
+          SET valid_from = $2::timestamptz
+        WHERE dim_code = $1 AND code IN ('B','B1') AND is_current = true`,
+      [DIM, SEED_T],
+    )
+    const asOf = AS_OF_T
+
+    // Revise B's label. The writer closes the original (valid_to = now()) and inserts
+    // the revision (valid_from = now()); both land on the txn instant T. Re-stamp them
+    // to the EXPLICIT REV_T so the as-of window math is independent of now(): the
+    // original's window becomes [SEED_T, REV_T) (asOf strictly inside) and the
+    // revision's [REV_T, ∞) (strictly after asOf, excluded).
     await upsertClassifier(
       qc, DIM, 'B', { ka: 'წარმოება (გადახედილი)', en: 'Production (revised)' }, null, null, 0,
+    )
+    // Original B (now closed, is_current=false): pin its valid_to to REV_T.
+    await client.query(
+      `UPDATE stats.classifier
+          SET valid_to = $2::timestamptz
+        WHERE dim_code = $1 AND code = 'B' AND is_current = false`,
+      [DIM, REV_T],
+    )
+    // Revision B (the new current row): pin its valid_from to REV_T.
+    await client.query(
+      `UPDATE stats.classifier
+          SET valid_from = $2::timestamptz
+        WHERE dim_code = $1 AND code = 'B' AND is_current = true`,
+      [DIM, REV_T],
     )
 
     // As-of the captured instant: the validity-window picks the ORIGINAL B row.
@@ -218,8 +262,8 @@ suite('upsertClassifier — SCD-2 revision invariants', () => {
          FROM stats.classifier
         WHERE dim_code = $1
           AND code IN ('B','B1')
-          AND valid_from <= $2
-          AND (valid_to IS NULL OR valid_to > $2)
+          AND valid_from <= $2::timestamptz
+          AND (valid_to IS NULL OR valid_to > $2::timestamptz)
         ORDER BY code_path`,
       [DIM, asOf],
     )
