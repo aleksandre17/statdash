@@ -34,6 +34,17 @@ import pytest
 PKG = Path(__file__).resolve().parents[1]
 FIXTURE_ROOT = Path(__file__).resolve().parent / "fixtures" / "geostat-chat-ai"
 
+# Make the kit root importable for *in-process* tests regardless of the cwd
+# pytest was launched from. `lib` is a namespace package (no __init__.py); it is
+# only importable while the kit root is on sys.path. Running `python -m pytest`
+# from the kit dir put cwd (== kit root) on sys.path implicitly, so imports
+# resolved; running from the repo root did not, producing 22 collection errors
+# (`ModuleNotFoundError: No module named 'lib'`). Anchoring sys.path here — to a
+# path derived from this file, never from cwd — makes collection deterministic
+# for either invocation. SSOT: the same PKG that the subprocess helper exports.
+if str(PKG) not in sys.path:
+    sys.path.insert(0, str(PKG))
+
 # Never collect inside the synthetic consumer fixture. It contains a junction
 # (kits/geostat-kit -> the real kit) that would otherwise make pytest recurse
 # infinitely back into this tree. The fixture holds data, not tests.
@@ -105,6 +116,66 @@ def _fixture_project(request: pytest.FixtureRequest) -> None:
         _write_volatile_secrets(FIXTURE_ROOT)
     os.environ.setdefault("GEOSTAT_PROJECT_ROOT", str(REPO))
     os.environ["GEOSTAT_KIT_ROOT"] = str(PKG)
+
+
+def kit_cli_env(extra: dict[str, str] | None = None) -> dict[str, str]:
+    """The environment a kit child process needs to behave like the in-process tests.
+
+    Single source of truth for the three things a subprocess invocation of a kit
+    CLI (``lib/driver_api.py``, ``lib/validate_manifest.py``, …) depends on:
+
+    * ``PYTHONPATH`` -> the kit root, so the child resolves ``from lib.x import``
+      (the scripts import the kit's namespace package; without this the child
+      dies with ``ModuleNotFoundError: No module named 'lib'``).
+    * ``GEOSTAT_PROJECT_ROOT`` -> the synthetic fixture, so manifest resolution
+      hits the kit-owned fixture and not whatever ``geostat.ops.json`` happens
+      to sit at the real repo root.
+    * ``GEOSTAT_KIT_ROOT`` -> the kit, so registry/driver-path resolution works.
+
+    Derived entirely from ``PKG``/``REPO`` (file-anchored), never from cwd, so it
+    is identical whether pytest is launched from the kit dir or the repo root.
+    """
+    env = dict(os.environ)
+    existing = env.get("PYTHONPATH", "")
+    env["PYTHONPATH"] = os.pathsep.join([str(PKG), existing]) if existing else str(PKG)
+    env["GEOSTAT_PROJECT_ROOT"] = str(REPO)
+    env["GEOSTAT_KIT_ROOT"] = str(PKG)
+    if extra:
+        env.update(extra)
+    return env
+
+
+def run_kit_cli(
+    *args: str,
+    script: str = "driver_api.py",
+    check: bool = True,
+    env_extra: dict[str, str] | None = None,
+) -> subprocess.CompletedProcess[str]:
+    """Invoke a kit CLI as a child process, deterministically.
+
+    Centralises cwd + env for *every* subprocess test so the child resolves
+    ``lib`` and the fixture manifest exactly like the in-process tests do —
+    independent of the cwd pytest was launched from (DRY; the harness, not each
+    test, owns the invocation contract).
+
+    cwd is pinned to the synthetic fixture (the project root the kit is being
+    exercised against); env carries PYTHONPATH/GEOSTAT_* via :func:`kit_cli_env`.
+    """
+    cmd = [sys.executable, str(PKG / "lib" / script), *args]
+    return subprocess.run(
+        cmd,
+        cwd=str(REPO),
+        env=kit_cli_env(env_extra),
+        capture_output=True,
+        text=True,
+        check=check,
+    )
+
+
+@pytest.fixture
+def kit_cli():
+    """Fixture wrapper around :func:`run_kit_cli` for tests that prefer injection."""
+    return run_kit_cli
 
 
 def repo_module(repo_root: Path, manifest: dict, module_id: str) -> Path:

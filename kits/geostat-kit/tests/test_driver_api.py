@@ -1,21 +1,17 @@
 """Driver registry, CLI aliases, stack-deploy plan."""
 from __future__ import annotations
 
-import json
-import subprocess
-import sys
 from pathlib import Path
+
+from conftest import run_kit_cli
 
 
 def _run_api(repo: Path, pkg: Path, *args: str) -> str:
-    env = {
-        **dict(__import__("os").environ),
-        "GEOSTAT_PROJECT_ROOT": str(repo),
-        "GEOSTAT_KIT_ROOT": str(pkg),
-    }
-    cmd = [sys.executable, str(pkg / "lib" / "driver_api.py"), *args]
-    r = subprocess.run(cmd, capture_output=True, text=True, env=env, check=True)
-    return r.stdout.strip()
+    # repo/pkg are accepted for call-site compatibility; the cwd + env (PYTHONPATH,
+    # GEOSTAT_PROJECT_ROOT -> synthetic fixture, GEOSTAT_KIT_ROOT) are owned by the
+    # centralized run_kit_cli harness so the child resolves `lib` and the fixture
+    # manifest deterministically regardless of the cwd pytest was launched from.
+    return run_kit_cli(*args).stdout.strip()
 
 
 class TestJavaBootDriver:
