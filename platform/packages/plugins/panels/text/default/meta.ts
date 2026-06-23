@@ -1,5 +1,5 @@
 import type { PanelSliceMeta } from '@statdash/react/engine'
-import { TextSchema, TextGroups } from './TextNode'
+import { TextSchema, TextDefaults, TextGroups } from './TextNode'
 
 export const META: PanelSliceMeta = {
   sliceType:       'panel',
@@ -9,6 +9,7 @@ export const META: PanelSliceMeta = {
   icon:            'text',
   category:        'content',
   schema:          TextSchema,
+  defaults:        TextDefaults,
   groups:          TextGroups,
   canHaveChildren: false,
   caps:            [] as const,

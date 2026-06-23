@@ -22,10 +22,24 @@ export const HeroSchema: PropSchema = [
   { field: 'cards',    type: 'array',        label: 'ბარათები',   required: true },
 ]
 
+// ── HeroDefaults — must be SAVE-GUARD-valid the instant the node is dropped ──
+//
+//  Defaults-vs-guard contract (Constructor saveGuard check 4, locale-complete):
+//    • A REQUIRED localized field (`title`) must seed a COMPLETE LocaleString —
+//      a non-empty value for every active locale. An empty-but-present record
+//      `{ka:'',en:''}` is "set but blank" and the guard correctly rejects it,
+//      so we seed real placeholder content the author then edits in place.
+//    • An OPTIONAL localized field (`subtitle`) must be ABSENT, not an empty
+//      record: absent = "not set" (guard skips it); a present LocaleString =
+//      "set" (guard requires per-locale completeness). Seeding `{ka:'',en:''}`
+//      would force the author to fill OR clear it before the first save.
+//
+//  `cards` is a required array; an empty array is structurally valid JSON and
+//  is owned by the per-node validity check (check 3 / required), not the
+//  locale-completeness contract this file is reconciling.
 export const HeroDefaults: Partial<HeroNode> = {
-  title:    { ka: '', en: '' },
-  subtitle: { ka: '', en: '' },
-  cards:    [],
+  title: { ka: 'სათაური', en: 'Title' },
+  cards: [],
 }
 
 export const HeroSlots: Record<string, SlotDef> = {}
