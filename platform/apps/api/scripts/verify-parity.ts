@@ -38,7 +38,7 @@
 // shape seed.ts/the pipeline write to gold — so each parity builder is now a thin
 // read of facts/<DATASET>.bundle.json, no id→code/geo-inject remapping needed.
 import { readFileSync } from 'node:fs'
-import { fileURLToPath } from 'node:url'
+import { fileURLToPath, pathToFileURL } from 'node:url'
 import { dirname, resolve } from 'node:path'
 
 // apps/api/scripts → repo-root ops/seed-data/geostat/facts (ops/ is a sibling of
@@ -241,7 +241,7 @@ async function main() {
 }
 
 // Only run when invoked directly; importing the comparators (tests) is fine.
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (import.meta.url === pathToFileURL(process.argv[1]).href) {
   main().catch((e) => {
     console.error('[verify-parity] fatal:', e)
     process.exit(1)
