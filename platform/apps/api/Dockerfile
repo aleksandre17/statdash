@@ -48,32 +48,27 @@ COPY apps/api           ./apps/api
 RUN pnpm --filter "@statdash/api^..." run build \
  && pnpm --filter @statdash/api run build
 
-# ─── Stage 2: deploy → flattened, self-contained runtime dir ──────────────────
-# `pnpm deploy` resolves the api's FULL production dependency closure and writes a
-# STANDALONE directory with every dependency INLINED under /deploy/node_modules —
-# workspace packages (@statdash/{contracts,expr,engine}, copied per their
-# `files:['dist']`) and external prod deps alike, as real directories, NO symlinks
-# into a virtual store. The result runs from any base image with zero pnpm/.pnpm
-# runtime assumptions. Prereq satisfied above: engine + api dist already exist
-# (deploy copies the built `dist`, never source).
-#
-#   --legacy   pnpm@9 gates `deploy` outside an injected workspace behind it;
-#              keeps `workspace:*` deps resolving here.
-#   --prod     drops devDependencies (tsx, typescript, @types/*) → runtime carries
-#              only what boot needs.
-#   /deploy    target is OUTSIDE the workspace tree (/app): pnpm 9 refuses a
-#              target nested inside the project, so it lives at the image root.
-RUN pnpm --filter @statdash/api --prod --legacy deploy /deploy
-
-# ─── Stage 3: production runtime ──────────────────────────────────────────────
-# Ship ONLY the flattened deploy dir. No pnpm, no .pnpm store, no workspace
-# symlinks — a single self-contained tree: package.json + dist + an inlined
-# node_modules is everything `node` needs.
+# ─── Stage 2: production runtime — ship the built workspace ───────────────────
+# `pnpm deploy` is version-fragile (the pinned pnpm@9.15 rejects --legacy, and the
+# new-deploy path needs inject-workspace-packages) so we ship the built workspace
+# directly: the api's dist + the engine packages' dist + the resolved node_modules
+# (the .pnpm store and the workspace symlinks). The @statdash/* symlinks in
+# node_modules are RELATIVE (node_modules/@statdash/engine -> ../../packages/core),
+# so they resolve within the copied tree; node finds every dep with no pnpm at
+# runtime. Larger than a `pnpm deploy` slim dir — a future optimization once the
+# pnpm-deploy version story is pinned; correctness first.
 FROM node:22-alpine AS production
 WORKDIR /app
 ENV NODE_ENV=production
-# The deploy dir IS the api package root. Copy it verbatim as the app root.
-COPY --from=build /deploy ./
+# The whole resolved dependency graph (incl. .pnpm store + workspace symlinks).
+COPY --from=build /app/node_modules ./node_modules
+# Symlink targets: the engine packages (their built dist) + their package.json.
+COPY --from=build /app/packages ./packages
+# The api itself (its built dist + package.json + node_modules symlinks).
+COPY --from=build /app/apps/api ./apps/api
+# Workspace root manifests so pnpm-workspace symlink resolution stays valid.
+COPY --from=build /app/package.json /app/pnpm-workspace.yaml ./
+WORKDIR /app/apps/api
 EXPOSE 3001
 # Run as the unprivileged node user baked into node:22-alpine (least privilege).
 USER node
