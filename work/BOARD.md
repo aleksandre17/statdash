@@ -182,7 +182,7 @@ Last blemish fixed: V24 cycle trigger renamed `trg_classifier_no_cycle`→`trg_c
 | SDMX-P0-2 | **Vintage-as-release** — queryable publication vintages | Can't reconstruct "GDP as published on date D"; revision triangles need release grouping | V25: `stats.release` + release_id stamping (GUC trigger) + open/publish helpers + genesis backfill; publish.ts integration; `?asOf=D` + `/releases` endpoints | ✅ DONE (ADR-0025) |
 | SDMX-P0-1 | **ContentConstraint** — valid dimension *combinations* | Cube accepts impossible tuples; renderer can't distinguish "no data" from "impossible by construction" | ✅ V26: predicate-row model (B9-only-side-U = 1 row, generic); `dim_key_in_allowed_region()` SSOT + `cube_actual_region` view; batch `ILLEGAL_COMBINATION` (silver, region.ts twin); provisioning + fitness; hot path untouched | ✅ DONE |
 | Constructor | `GET /api/cube/:code/profile` cube-profile endpoint | Constructor power ∝ what it can auto-discover | ✅ `GET /api/cube/:dataset/profile`: dims+conceptRole+isTime+members, measures+V21 units (fitness-locked), actualRegion auto-detects V26 view | ✅ DONE |
-| SDMX-P1 | ConceptScheme · CategoryScheme · ref-metadata · quality indicators · dataset lifecycle · SDMX REST API | Expected at agency level | Deferred; documented future doors | 📋 NOTED |
+| SDMX-P1 | ConceptScheme · CategoryScheme · ref-metadata · quality indicators · dataset lifecycle · SDMX REST API | Expected at agency level | **Mostly BUILT** (board was stale): V27 ConceptScheme (+concept_role), V28 dataset-lifecycle FSM, V29 CategoryScheme — each with a live-DB fitness test (all green in the 2026-06-23 validation). **Still open:** ref-metadata, quality indicators, the SDMX REST API surface. | 🟡 PARTIAL |
 
 ---
 
