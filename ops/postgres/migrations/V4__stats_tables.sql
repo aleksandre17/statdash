@@ -14,6 +14,32 @@
 -- Idempotent: CREATE ... IF NOT EXISTS; CREATE OR REPLACE for functions;
 -- hypertable / compression / policy calls guarded by if_not_exists. No DROP
 -- of any table. Reuses config.set_updated_at() (defined in V3) for audit.
+--
+-- ── 2026-06-23 IN-PLACE FIX (never-applied migration; no checksum to break) ──
+--   EVOLUTION of stats.observation.time_period_date (the hypertable partition
+--   column), in two steps both forced by TimescaleDB:
+--
+--   (a) GENERATED ALWAYS AS (stats.parse_time_period(time_period)) STORED was
+--       rejected: TimescaleDB forbids a GENERATED column as the partitioning
+--       dimension (SQLSTATE 0A000 "Generated columns cannot be used as
+--       partitioning dimensions"); create_hypertable aborted on first real run.
+--
+--   (b) The follow-up — a PLAIN DATE column filled by a BEFORE INSERT OR UPDATE
+--       trigger — was also rejected, PROVEN on live TimescaleDB: the engine
+--       enforces the partition-column NOT-NULL check BEFORE user BEFORE-row
+--       triggers run, so on INSERT the trigger never gets to populate the value
+--       and every observation INSERT failed with
+--         NULL value in column "time_period_date" violates not-null constraint.
+--
+--   RESOLUTION (current): time_period_date is WRITER-PROVIDED. Every observation
+--   writer supplies it inline as stats.parse_time_period(time_period). The
+--   derivation logic stays centralized in stats.parse_time_period (SSOT) — writers
+--   invoke it, they do not reimplement the date rule — and V9's CREATE OR REPLACE
+--   of the parser (new frequencies) still flows to every writer automatically,
+--   because they call it BY NAME. The INSERT trigger + its function are DROPPED
+--   (they cannot work; keeping them would be misleading). A fitness function
+--   asserts no INSERT INTO stats.observation omits time_period_date, so the
+--   NULL-partition bug cannot be reintroduced by a future writer.
 -- ════════════════════════════════════════════════════════════════════════
 
 
@@ -122,7 +148,10 @@ CREATE INDEX IF NOT EXISTS idx_dataset_dim_dim_code ON stats.dataset_dimension (
 
 -- ── time_period normalization helper ────────────────────────────────────
 -- SDMX TIME_PERIOD text → a DATE anchor for hypertable partitioning + range
--- queries. IMMUTABLE + STRICT so it can back a GENERATED STORED column.
+-- queries. IMMUTABLE + STRICT (deterministic; the planner folds it). This is the
+-- SSOT for the time_period → date rule: every observation writer calls it inline
+-- to supply time_period_date (the writer-provided partition value), so the rule
+-- is defined once here and never reimplemented at a call site.
 --   '2023'       → 2023-01-01
 --   '2023-Q1..4' → 01-01 / 04-01 / 07-01 / 10-01
 --   '2023-01'    → 2023-01-01
@@ -143,7 +172,7 @@ CREATE OR REPLACE FUNCTION stats.parse_time_period(p TEXT) RETURNS DATE AS $$
 $$ LANGUAGE SQL IMMUTABLE STRICT;
 
 COMMENT ON FUNCTION stats.parse_time_period(TEXT) IS
-  'SDMX TIME_PERIOD text → DATE anchor (year/quarter/month/day). IMMUTABLE STRICT — backs observation.time_period_date GENERATED STORED.';
+  'SDMX TIME_PERIOD text → DATE anchor (year/quarter/month/day). IMMUTABLE STRICT. SSOT for the time_period → date rule: every observation writer supplies time_period_date inline as stats.parse_time_period(time_period). It is NOT a GENERATED column (TimescaleDB forbids a generated column as the partition dimension) and NOT trigger-derived (TimescaleDB enforces the partition-column NOT-NULL check before BEFORE-row triggers fire, so a trigger never populates it on INSERT) — hence writer-provided.';
 
 
 -- ── stats.observation — one data point (SDMX Observation), as a hypertable ──
@@ -155,8 +184,15 @@ CREATE TABLE IF NOT EXISTS stats.observation (
   id              BIGINT      GENERATED ALWAYS AS IDENTITY,
   dataset_code    TEXT        NOT NULL REFERENCES stats.dataset(code) ON DELETE CASCADE,
   time_period     TEXT        NOT NULL,
-  -- Parsed date for TimescaleDB hypertable + range queries (GENERATED STORED).
-  time_period_date DATE       GENERATED ALWAYS AS (stats.parse_time_period(time_period)) STORED,
+  -- Parsed date = the hypertable partition column. PLAIN DATE, WRITER-PROVIDED.
+  -- NOT GENERATED (TimescaleDB forbids a generated column as the partitioning
+  -- dimension) and NOT trigger-derived (TimescaleDB enforces this column's
+  -- NOT-NULL partition check BEFORE user BEFORE-row triggers run, so a trigger
+  -- never populates it on INSERT — PROVEN on live TimescaleDB). Every writer MUST
+  -- supply it inline as stats.parse_time_period(time_period); the derivation rule
+  -- stays centralized in that function (SSOT). A fitness function forbids any
+  -- INSERT INTO stats.observation that omits this column.
+  time_period_date DATE,
   -- dim_key: series key (all non-time dimensions). JSONB, canonical sorted keys.
   dim_key         JSONB       NOT NULL,
   dim_key_hash    TEXT        GENERATED ALWAYS AS (md5(dim_key::text)) STORED,
@@ -175,8 +211,23 @@ CREATE TABLE IF NOT EXISTS stats.observation (
 COMMENT ON TABLE  stats.observation                  IS 'SDMX Observation, TimescaleDB hypertable partitioned on time_period_date. Series = (dataset_code, time_period, dim_key). Generic dim_key keeps the cube dimension-agnostic (Law 1).';
 COMMENT ON COLUMN stats.observation.dim_key          IS 'Series key WITHOUT time_period, e.g. {"measure":"GDP","geo":"GE"}. jsonb = canonical sorted keys.';
 COMMENT ON COLUMN stats.observation.dim_key_hash     IS 'md5(dim_key::text), deterministic because jsonb sorts keys. Uniqueness + ON CONFLICT target.';
-COMMENT ON COLUMN stats.observation.time_period_date IS 'GENERATED from time_period via stats.parse_time_period — the hypertable partition column.';
+COMMENT ON COLUMN stats.observation.time_period_date IS 'The hypertable partition column. WRITER-PROVIDED as stats.parse_time_period(time_period) (the SSOT date rule). NOT a GENERATED column (TimescaleDB forbids generated columns as the partition dimension) and NOT trigger-derived (TimescaleDB enforces the partition NOT-NULL check before BEFORE-row triggers, so a trigger never fills it on INSERT — proven). Every observation writer must supply it; a fitness function enforces this.';
 COMMENT ON COLUMN stats.observation.obs_status       IS 'SDMX OBS_STATUS: A=normal P=preliminary E=estimate R=revised M=missing.';
+
+-- ── time_period_date is WRITER-PROVIDED (no derivation trigger) ─────────────
+-- There is deliberately NO trigger here. Two mechanisms were tried and both fail
+-- on a TimescaleDB hypertable:
+--   • GENERATED STORED — rejected: a generated column cannot be the partition
+--     dimension (SQLSTATE 0A000).
+--   • BEFORE INSERT trigger — rejected (PROVEN live): TimescaleDB enforces the
+--     partition-column NOT-NULL check BEFORE user BEFORE-row triggers fire, so the
+--     trigger never runs in time to populate it; every INSERT failed with
+--     NULL value in column "time_period_date" violates not-null constraint.
+-- Therefore every writer supplies time_period_date inline as
+-- stats.parse_time_period(time_period). The rule lives once in that function
+-- (SSOT); writers call it by name (so V9 frequency widening flows in for free).
+-- A fitness function forbids any INSERT INTO stats.observation that omits the
+-- column, so the NULL-partition bug cannot return.
 
 -- TimescaleDB hypertable — partition by time_period_date, 3-month chunks.
 -- if_not_exists => already-a-hypertable is a no-op (idempotent re-run).
@@ -200,8 +251,10 @@ SELECT add_compression_policy('stats.observation', INTERVAL '6 months', if_not_e
 -- ── Indexes on observation ──────────────────────────────────────────────
 -- Uniqueness / upsert target. NOTE: a UNIQUE index on a TimescaleDB hypertable
 -- MUST include the partition column (time_period_date). It is a deterministic
--- GENERATED function of time_period, so adding it does not change the logical
--- key — (dataset_code, time_period, dim_key_hash) still identifies the series.
+-- function of time_period (stats.parse_time_period), writer-provided at insert
+-- time, so adding it does not change the logical key — (dataset_code,
+-- time_period, dim_key_hash) still identifies the series (one date per
+-- time_period). The writer supplies it, so it is non-NULL by the unique check.
 CREATE UNIQUE INDEX IF NOT EXISTS uq_observation_series
   ON stats.observation (dataset_code, time_period, dim_key_hash, time_period_date);
 

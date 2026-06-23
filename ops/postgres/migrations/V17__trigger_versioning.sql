@@ -99,8 +99,11 @@
 --                   keep the bump purely in the application path (pre-V17 state).
 --                   Either fallback is a function-body / trigger-shape swap, not
 --                   a schema reshape.
---   Rollback plan : DROP TRIGGER IF EXISTS trg_obs_auto_version ON stats.observation;
+--   Rollback plan : DROP TRIGGER IF EXISTS trg_obs_auto_version_ins ON stats.observation;
+--                   DROP TRIGGER IF EXISTS trg_obs_auto_version_upd ON stats.observation;
 --                   DROP FUNCTION IF EXISTS stats.auto_bump_dataset_version();
+--                   (2026-06-23: split into _ins/_upd — transition table is illegal
+--                   on a multi-event trigger; see §2 fix note.)
 --
 -- Idempotent: CREATE OR REPLACE FUNCTION · DROP TRIGGER IF EXISTS + CREATE.
 -- Re-run = converge, never error. Additive only; never edits a V1-V16 object.
@@ -144,17 +147,44 @@ COMMENT ON FUNCTION stats.auto_bump_dataset_version() IS
 
 
 -- ════════════════════════════════════════════════════════════════════════
--- 2. trg_obs_auto_version — wire it to stats.observation
+-- 2. trg_obs_auto_version_{ins,upd} — wire it to stats.observation
 -- ════════════════════════════════════════════════════════════════════════
--- DROP IF EXISTS + CREATE = idempotent (re)installation. REFERENCING NEW TABLE
--- gives the function the set of rows written by the statement; FOR EACH STATEMENT
--- fires it once regardless of row/chunk count.
-DROP TRIGGER IF EXISTS trg_obs_auto_version ON stats.observation;
-CREATE TRIGGER trg_obs_auto_version
-  AFTER INSERT OR UPDATE ON stats.observation
+-- 2026-06-23 LIVE-RUN FIX (SQLSTATE 0A000): Postgres forbids a transition table
+-- (REFERENCING NEW/OLD TABLE) on a trigger declared for MORE THAN ONE event.
+-- The original single "AFTER INSERT OR UPDATE … REFERENCING NEW TABLE AS new_obs"
+-- is illegal — a transition-table trigger MUST be a single-event trigger. Split
+-- into TWO single-event triggers (INSERT and UPDATE) that EXECUTE the SAME
+-- event-agnostic function (it reads only new_obs = the NEW transition table, never
+-- OLD — see §1, line "SELECT DISTINCT dataset_code FROM new_obs"). Both declare
+-- REFERENCING NEW TABLE AS new_obs FOR EACH STATEMENT. Semantics are identical to
+-- the intended single trigger: any INSERT and any UPDATE each bump once per
+-- distinct dataset per statement. A DELETE is still not watched (deletes do not
+-- change a surviving figure's identity in a way the ETag must invalidate beyond
+-- what a re-publish already covers — same scope as before the split).
+--
+-- DROP IF EXISTS + CREATE = idempotent (re)installation. The pre-fix trigger name
+-- trg_obs_auto_version is also dropped (defensive: a partial earlier run could
+-- have created it before the failing CREATE on a different DB; harmless if absent).
+-- REFERENCING NEW TABLE gives the function the set of rows written by the
+-- statement; FOR EACH STATEMENT fires it once regardless of row/chunk count.
+DROP TRIGGER IF EXISTS trg_obs_auto_version     ON stats.observation;
+DROP TRIGGER IF EXISTS trg_obs_auto_version_ins ON stats.observation;
+DROP TRIGGER IF EXISTS trg_obs_auto_version_upd ON stats.observation;
+
+CREATE TRIGGER trg_obs_auto_version_ins
+  AFTER INSERT ON stats.observation
   REFERENCING NEW TABLE AS new_obs
   FOR EACH STATEMENT
   EXECUTE FUNCTION stats.auto_bump_dataset_version();
 
-COMMENT ON TRIGGER trg_obs_auto_version ON stats.observation IS
-  'Auto-bumps stats.dataset_version (the ETag SSOT) for every dataset touched by any INSERT/UPDATE on stats.observation — closing the gap where a write that bypassed the app publish path left the version (and thus the HTTP ETag) stale. Statement-level + transition table = bump once per dataset per statement, TimescaleDB-safe. Coexists with the app''s explicit bump (double-bump is harmless — the counter is a monotonic validator). Skipped under app.dry_run.';
+CREATE TRIGGER trg_obs_auto_version_upd
+  AFTER UPDATE ON stats.observation
+  REFERENCING NEW TABLE AS new_obs
+  FOR EACH STATEMENT
+  EXECUTE FUNCTION stats.auto_bump_dataset_version();
+
+COMMENT ON TRIGGER trg_obs_auto_version_ins ON stats.observation IS
+  'Auto-bumps stats.dataset_version (the ETag SSOT) for every dataset touched by an INSERT on stats.observation — closing the gap where a write that bypassed the app publish path left the version (and thus the HTTP ETag) stale. Statement-level + transition table = bump once per dataset per statement, TimescaleDB-safe. Split from the former single AFTER INSERT OR UPDATE trigger (illegal: transition tables forbidden on multi-event triggers, SQLSTATE 0A000) — pairs with trg_obs_auto_version_upd, same function. Coexists with the app''s explicit bump (double-bump is harmless — the counter is a monotonic validator). Skipped under app.dry_run.';
+
+COMMENT ON TRIGGER trg_obs_auto_version_upd ON stats.observation IS
+  'Auto-bumps stats.dataset_version (the ETag SSOT) for every dataset touched by an UPDATE on stats.observation — closing the gap where a write that bypassed the app publish path left the version (and thus the HTTP ETag) stale. Statement-level + transition table = bump once per dataset per statement, TimescaleDB-safe. Split from the former single AFTER INSERT OR UPDATE trigger (illegal: transition tables forbidden on multi-event triggers, SQLSTATE 0A000) — pairs with trg_obs_auto_version_ins, same function. Coexists with the app''s explicit bump (double-bump is harmless — the counter is a monotonic validator). Skipped under app.dry_run.';

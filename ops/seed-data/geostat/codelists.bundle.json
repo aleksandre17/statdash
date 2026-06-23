@@ -101,7 +101,6 @@
         "unit_measure": "GEL_MN"
       },
       "ord": 0,
-      "parentCode": "production",
       "rowIndex": 8
     },
     {
@@ -117,7 +116,6 @@
         "unit_measure": "GEL_MN"
       },
       "ord": 1,
-      "parentCode": "production",
       "rowIndex": 9
     },
     {
@@ -133,7 +131,6 @@
         "unit_measure": "GEL_MN"
       },
       "ord": 2,
-      "parentCode": "production",
       "rowIndex": 10
     },
     {
@@ -149,7 +146,6 @@
         "unit_measure": "GEL_MN"
       },
       "ord": 3,
-      "parentCode": "production",
       "rowIndex": 11
     },
     {
@@ -165,7 +161,6 @@
         "unit_measure": "GEL_MN"
       },
       "ord": 4,
-      "parentCode": "production",
       "rowIndex": 12
     },
     {
@@ -181,7 +176,6 @@
         "unit_measure": "GEL_MN"
       },
       "ord": 5,
-      "parentCode": "expenditure",
       "rowIndex": 13
     },
     {
@@ -197,7 +191,6 @@
         "unit_measure": "GEL_MN"
       },
       "ord": 6,
-      "parentCode": "expenditure",
       "rowIndex": 14
     },
     {
@@ -213,7 +206,6 @@
         "unit_measure": "GEL_MN"
       },
       "ord": 7,
-      "parentCode": "expenditure",
       "rowIndex": 15
     },
     {
@@ -229,7 +221,6 @@
         "unit_measure": "GEL_MN"
       },
       "ord": 8,
-      "parentCode": "expenditure",
       "rowIndex": 16
     },
     {
@@ -245,7 +236,6 @@
         "unit_measure": "GEL_MN"
       },
       "ord": 9,
-      "parentCode": "income",
       "rowIndex": 17
     },
     {
@@ -261,7 +251,6 @@
         "unit_measure": "GEL_MN"
       },
       "ord": 10,
-      "parentCode": "income",
       "rowIndex": 18
     },
     {
@@ -277,7 +266,6 @@
         "unit_measure": "GEL_MN"
       },
       "ord": 11,
-      "parentCode": "income",
       "rowIndex": 19
     },
     {
@@ -293,7 +281,6 @@
         "unit_measure": "GEL_MN"
       },
       "ord": 12,
-      "parentCode": "income",
       "rowIndex": 20
     },
     {
@@ -309,7 +296,6 @@
         "unit_measure": "PERCENT"
       },
       "ord": 13,
-      "parentCode": "growth",
       "rowIndex": 21
     },
     {
@@ -325,7 +311,6 @@
         "unit_measure": "USD"
       },
       "ord": 14,
-      "parentCode": "per_capita",
       "rowIndex": 22
     },
     {
@@ -341,7 +326,6 @@
         "unit_measure": "GEL_MN"
       },
       "ord": 15,
-      "parentCode": "total",
       "rowIndex": 23
     },
     {
@@ -357,7 +341,6 @@
         "unit_measure": "PERCENT"
       },
       "ord": 16,
-      "parentCode": "noe",
       "rowIndex": 24
     },
     {
@@ -373,7 +356,6 @@
         "unit_measure": "GEL_MN"
       },
       "ord": 17,
-      "parentCode": "investment",
       "rowIndex": 25
     },
     {
@@ -389,7 +371,6 @@
         "unit_measure": "GEL_MN"
       },
       "ord": 18,
-      "parentCode": "investment",
       "rowIndex": 26
     },
     {
@@ -405,7 +386,6 @@
         "unit_measure": "GEL_MN"
       },
       "ord": 19,
-      "parentCode": "investment",
       "rowIndex": 27
     },
     {
@@ -421,7 +401,6 @@
         "unit_measure": "GEL_MN"
       },
       "ord": 20,
-      "parentCode": "investment",
       "rowIndex": 28
     },
     {
@@ -437,7 +416,6 @@
         "unit_measure": "GEL_MN"
       },
       "ord": 21,
-      "parentCode": "investment",
       "rowIndex": 29
     },
     {
@@ -1450,6 +1428,21 @@
       },
       "ord": 0,
       "rowIndex": 110
+    },
+    {
+      "code": "GDP_DEFLATOR",
+      "dimCode": "measure",
+      "label": {
+        "en": "GDP Deflator",
+        "ka": "მშპ-ის დეფლატორი"
+      },
+      "metadata": {
+        "approach": "growth",
+        "decimals": 2,
+        "unit_measure": "PERCENT"
+      },
+      "ord": 22,
+      "rowIndex": 126
     },
     {
       "code": "2010",
