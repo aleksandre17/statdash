@@ -47,6 +47,9 @@ export default defineConfig({
     globals: true,
     environment: 'jsdom',
     include: ['src/**/*.test.{ts,tsx}'],
+    // jest-dom matchers (toBeInTheDocument, toHaveAttribute …) for component
+    // render-path tests (second-tenant fitness function).
+    setupFiles: ['./vitest.setup.ts'],
   },
   resolve: {
     conditions: ['source', 'browser', 'module', 'import', 'default'],
@@ -61,7 +64,7 @@ export default defineConfig({
       { find: '@statdash/charts', replacement: resolve(dir, '../../packages/charts/src') },
       { find: '@statdash/react/engine', replacement: resolve(dir, '../../packages/react/src/engine') },
       { find: '@statdash/react', replacement: resolve(dir, '../../packages/react/src') },
-      { find: '@/', replacement: resolve(dir, 'src') },
+      { find: '@', replacement: resolve(dir, 'src') },
       ...hostExternals,
     ],
   },
