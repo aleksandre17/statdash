@@ -1,1 +1,0 @@
-- [SCD-2 classifier writers](project_scd2_classifier_writers.md) — which files are SCD-2 writers vs in-place upserters, and the is_current invariants across ingest/seed
