@@ -22,12 +22,12 @@
 //
 import { useCallback, useMemo } from 'react'
 import type { PropField, PropSchema, PropertyGroup, LocaleString } from '@statdash/react/engine'
-import { nodeRegistry } from '@statdash/react/engine'
 import { fieldControlRegistry } from './FieldControlRegistry'
 import { isVisible, getAtPath } from './showWhen'
 import { validateField } from './validateField'
 import { useActiveLocales } from './useActiveLocales'
 import { useSite } from '../store/constructor.store'
+import { nodeSchemaSource, type SchemaSource } from './schemaSource'
 import type { CanvasNode, Locale } from '../types/constructor'
 import './Inspector.css'
 
@@ -75,24 +75,31 @@ function groupFields(
 // ── Inspector ───────────────────────────────────────────────────────────────
 
 export interface InspectorProps {
-  /** The selected node from the unified store (C2). */
+  /** The selected element, modeled as a CanvasNode (node/panel/chrome/control). */
   node: CanvasNode
   /** Write a single prop value (dot-path field) on the node. Inspector owns no store. */
   onChange: (field: string, next: unknown) => void
+  /**
+   * Where this element's schema comes from (Dependency Inversion). Defaults to
+   * the node registry so node/panel selection is unchanged; chrome selection
+   * passes `chromeSchemaSource` — the SAME Inspector renders both. A new slice
+   * kind = a new source, this component unchanged (OCP).
+   */
+  schemaSource?: SchemaSource
 }
 
-export function Inspector({ node, onChange }: InspectorProps) {
+export function Inspector({ node, onChange, schemaSource = nodeSchemaSource }: InspectorProps) {
   const site    = useSite()
   const locales = useActiveLocales()
   const locale  = site.defaultLocale
 
   const schema = useMemo(
-    () => nodeRegistry.getSchema(node.type, node.variant) ?? [],
-    [node.type, node.variant],
+    () => schemaSource.getSchema(node),
+    [schemaSource, node],
   )
   const groups = useMemo(
-    () => (nodeRegistry.getMeta(node.type, node.variant)?.groups as PropertyGroup[] | undefined) ?? [],
-    [node.type, node.variant],
+    () => schemaSource.getGroups(node),
+    [schemaSource, node],
   )
 
   const fieldGroups = useMemo(

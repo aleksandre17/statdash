@@ -12,6 +12,22 @@ if (!('ResizeObserver' in globalThis)) {
   } as unknown as typeof ResizeObserver
 }
 
+// jsdom lacks IntersectionObserver — SectionNavContext observes section anchors
+// to drive scroll-spy. The Constructor canvas (and the author→render e2e proof)
+// mount the REAL engine renderer, which mounts sections, so a no-op stub is
+// needed for any test that renders a full page through NodePageRenderer.
+if (!('IntersectionObserver' in globalThis)) {
+  globalThis.IntersectionObserver = class {
+    readonly root = null
+    readonly rootMargin = ''
+    readonly thresholds: ReadonlyArray<number> = []
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+    takeRecords(): IntersectionObserverEntry[] { return [] }
+  } as unknown as typeof IntersectionObserver
+}
+
 // registerSlice() calls i18next.addResources for slices that ship i18n. Those
 // methods only exist after init() (geostat does this in main.tsx before
 // setupRegistrations). Initialise the singleton once here so the canvas

@@ -41,6 +41,7 @@ import {
   viewExists,
   type ActualRegion,
 } from './actual-region.js'
+import { isDatasetDiscoverable } from '../stats/lifecycle.js'
 
 const ProfileParams = z.object({ datasetCode: z.string().min(1) })
 
@@ -64,10 +65,25 @@ interface ProfileMember {
   parentCode: string | null
 }
 
-/** One cube axis: its DSD placement (isTime), its SDMX concept role, its members. */
+/**
+ * The Concept a dimension binds to (V27 ConceptScheme). Null when the dimension is
+ * unbound (legacy/unclassified). Lets the Constructor group/suggest by concept —
+ * two REF_AREA axes (partner/reporter) declare the SAME concept, so the palette can
+ * offer a "these are both geographies / swap axis" affordance.
+ */
+interface ProfileConcept {
+  scheme: string
+  code:   string
+}
+
+/** One cube axis: its DSD placement (isTime), its SDMX concept role, its concept binding, its members. */
 interface ProfileDimension {
   code:        string
   conceptRole: string | null
+  // V27 — the concept binding (null = unbound). The conceptRole now resolves THROUGH
+  // the concept where bound (dimension → concept → role), with the V18
+  // dimension.concept_role kept as the read alias during the expand window.
+  concept:     ProfileConcept | null
   isTime:      boolean
   members:     ProfileMember[]
 }
@@ -108,12 +124,13 @@ interface CubeProfile {
 }
 
 // ── Server-internal row shapes (never leaked verbatim) ────────────────────────
-interface DatasetRow { code: string }
 interface DimensionRow {
-  dim_code:     string
-  concept_role: string | null
-  is_time_dim:  boolean
-  ord:          number
+  dim_code:            string
+  concept_role:        string | null
+  concept_scheme_code: string | null
+  concept_code:        string | null
+  is_time_dim:         boolean
+  ord:                 number
 }
 interface MemberRow {
   dim_code:    string
@@ -149,15 +166,25 @@ export const cubeRoutes: FastifyPluginAsync = async (app) => {
     //    data dependency on each other → run concurrently (one round-trip latency,
     //    not three).
     const [dimsRes, membersRes, measuresRes] = await Promise.all([
-      // DSD axes for this dataset, each carrying its concept role (V18) and the
-      // per-dataset time flag (the DSD truth for isTime). Ordered by the DSD ord.
+      // DSD axes for this dataset, each carrying its concept role + concept binding
+      // (V27) and the per-dataset time flag (the DSD truth for isTime). Ordered by
+      // the DSD ord. The role is resolved THROUGH the bound concept (V27 SSOT) where
+      // a binding exists, else through the V18 dimension.concept_role read alias
+      // (COALESCE = the expand-window resolution: concept wins, alias backs it). The
+      // binding (concept_scheme_code, concept_code) is exposed so the Constructor can
+      // group/suggest by concept (two REF_AREA axes → "both geographies").
       app.pg.query<DimensionRow>(
         `SELECT dd.dim_code,
-                d.concept_role,
+                COALESCE(c.concept_role, d.concept_role) AS concept_role,
+                d.concept_scheme_code,
+                d.concept_code,
                 dd.is_time_dim,
                 dd.ord
            FROM stats.dataset_dimension dd
            JOIN stats.dimension d ON d.code = dd.dim_code
+           LEFT JOIN stats.concept c
+             ON c.scheme_code = d.concept_scheme_code
+            AND c.code        = d.concept_code
           WHERE dd.dataset_code = $1
           ORDER BY dd.ord, dd.dim_code`,
         [datasetCode],
@@ -218,6 +245,11 @@ export const cubeRoutes: FastifyPluginAsync = async (app) => {
     const dimensions: ProfileDimension[] = dimsRes.rows.map((d) => ({
       code:        d.dim_code,
       conceptRole: d.concept_role,
+      // V27 — the concept binding, present only when the dimension declares one.
+      concept:
+        d.concept_scheme_code !== null && d.concept_code !== null
+          ? { scheme: d.concept_scheme_code, code: d.concept_code }
+          : null,
       isTime:      d.is_time_dim,
       members:     membersByDim.get(d.dim_code) ?? [],
     }))
@@ -274,14 +306,17 @@ export const cubeRoutes: FastifyPluginAsync = async (app) => {
   })
 }
 
-// 404 fail-fast shared by both routes — one definition of "this dataset exists".
+// 404 fail-fast shared by both routes — one definition of "this dataset is
+// DISCOVERABLE". The cube-profile / classify routes are the Constructor's DISCOVERY
+// surface, so they go through the V28 published-only projection (isDatasetDiscoverable):
+// a draft/superseded dataset is absent from discovery and 404s here exactly as a
+// non-existent one does (Principle of Least Astonishment — the Constructor only sees
+// what is published). A superseded dataset's DATA stays readable via the observations
+// permalink/asOf path (auditability), which is a different surface. Pre-V28 (view
+// absent) this degrades to plain existence — nothing is hidden during a rollout.
 async function assertDatasetExists(
   app: Parameters<FastifyPluginAsync>[0],
   datasetCode: string,
 ): Promise<void> {
-  const { rows } = await app.pg.query<DatasetRow>(
-    `SELECT code FROM stats.dataset WHERE code = $1`,
-    [datasetCode],
-  )
-  if (!rows[0]) throw notFound('Dataset')
+  if (!(await isDatasetDiscoverable(app, datasetCode))) throw notFound('Dataset')
 }

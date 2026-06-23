@@ -4,6 +4,7 @@ import type {
   DataSourceDef, NamedDataSpec,
   SiteDef, NavItem,
   CanvasPage, CanvasNode,
+  ChromeSelection,
   WizardStep,
 } from '../types/constructor'
 import {
@@ -15,6 +16,11 @@ import {
   snapshot,
   pushHistory,
 } from './constructor.history'
+import {
+  selectChromePatch,
+  setChromeVariantPatch,
+  updateChromeConfigPatch,
+} from './constructor.chrome'
 
 // ── Full Store ─────────────────────────────────────────────────────────────────
 
@@ -40,6 +46,11 @@ export interface ConstructorStore extends ConstructorSession, WizardSlice, Histo
   addNavItem:       (item: NavItem) => void
   removeNavItem:    (id: string) => void
 
+  // Chrome authoring (Phase C) — per-slot chrome config + selection
+  selectChrome:        (sel: ChromeSelection | null) => void
+  setChromeVariant:    (slot: string, key: string) => void
+  updateChromeConfig:  (slot: string, field: string, value: unknown) => void
+
   // Page Layer actions
   addPage:          (page: CanvasPage) => void
   updatePage:       (id: string, patch: Partial<Omit<CanvasPage, 'nodes'>>) => void
@@ -62,9 +73,10 @@ export const useConstructorStore = create<ConstructorStore>()(
     subscribeWithSelector((set) => ({
       // ── Initial state ──────────────────────────────────────────────────────
       ...INITIAL_SESSION,
-      activeStep:     0,
-      completedSteps: new Set<WizardStep>(),
-      selectedNodeId: null,
+      activeStep:      0,
+      completedSteps:  new Set<WizardStep>(),
+      selectedNodeId:  null,
+      chromeSelection: null,
       undoStack:      [],
       redoStack:      [],
       canUndo:        false,
@@ -78,7 +90,10 @@ export const useConstructorStore = create<ConstructorStore>()(
           false,
           'wizard/markStepDone',
         ),
-      selectNode: (id) => set({ selectedNodeId: id }, false, 'canvas/selectNode'),
+      // Selecting a node clears any chrome selection (mutual exclusivity — one
+      // Inspector shows one element; least astonishment).
+      selectNode: (id) =>
+        set({ selectedNodeId: id, chromeSelection: null }, false, 'canvas/selectNode'),
 
       // ── Data Layer ─────────────────────────────────────────────────────────
       addDataSource: (ds) =>
@@ -204,6 +219,22 @@ export const useConstructorStore = create<ConstructorStore>()(
           'site/removeNavItem',
         ),
 
+      // ── Chrome authoring (Phase C) — thin wiring over pure reducers ──────────
+      selectChrome: (sel) =>
+        set((s) => selectChromePatch(s, sel), false, 'chrome/selectChrome'),
+      setChromeVariant: (slot, key) =>
+        set(
+          (s) => ({ ...pushHistory(s as ConstructorStore, `Set chrome variant: ${slot}`), ...setChromeVariantPatch(s, slot, key) }),
+          false,
+          'chrome/setVariant',
+        ),
+      updateChromeConfig: (slot, field, value) =>
+        set(
+          (s) => ({ ...pushHistory(s as ConstructorStore, `Edit chrome: ${slot}`), ...updateChromeConfigPatch(s, slot, field, value) }),
+          false,
+          'chrome/updateConfig',
+        ),
+
       // ── Page Layer ─────────────────────────────────────────────────────────
       addPage: (page) =>
         set(
@@ -310,9 +341,10 @@ export const useConstructorStore = create<ConstructorStore>()(
               canUndo:   s.undoStack.length > 1,
               canRedo:   true,
               // Preserve UI state
-              activeStep:     s.activeStep,
-              completedSteps: s.completedSteps,
-              selectedNodeId: s.selectedNodeId,
+              activeStep:      s.activeStep,
+              completedSteps:  s.completedSteps,
+              selectedNodeId:  s.selectedNodeId,
+              chromeSelection: s.chromeSelection,
             }
           },
           false,
@@ -330,9 +362,10 @@ export const useConstructorStore = create<ConstructorStore>()(
               redoStack: s.redoStack.slice(0, -1),
               canUndo:   true,
               canRedo:   s.redoStack.length > 1,
-              activeStep:     s.activeStep,
-              completedSteps: s.completedSteps,
-              selectedNodeId: s.selectedNodeId,
+              activeStep:      s.activeStep,
+              completedSteps:  s.completedSteps,
+              selectedNodeId:  s.selectedNodeId,
+              chromeSelection: s.chromeSelection,
             }
           },
           false,
@@ -352,4 +385,5 @@ export const useSite          = () => useConstructorStore((s) => s.site)
 export const usePages         = () => useConstructorStore((s) => s.pages)
 export const useActivePage    = () => useConstructorStore((s) => s.pages.find((p) => p.id === s.activePageId) ?? null)
 export const useSelectedNode  = () => useConstructorStore((s) => s.selectedNodeId)
+export const useChromeSelection = () => useConstructorStore((s) => s.chromeSelection)
 export const useHistory       = () => useConstructorStore((s) => ({ canUndo: s.canUndo, canRedo: s.canRedo, undo: s.undo, redo: s.redo }))

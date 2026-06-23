@@ -9,6 +9,7 @@ import { configRoutes } from './routes/config/index.js'
 import { publicDataSourcesRoutes } from './routes/data-sources/index.js'
 import { bootstrapRoutes } from './routes/bootstrap/index.js'
 import { cubeRoutes } from './routes/cube/index.js'
+import { catalogRoutes } from './routes/catalog/index.js'
 import { statsRoutes } from './routes/stats/index.js'
 import { authRoutes } from './routes/auth/index.js'
 import { snapshotsRoutes, embedRoutes, createSnapshotStore } from './routes/embed/index.js'
@@ -56,6 +57,13 @@ await app.register(bootstrapRoutes, { prefix: '/api/bootstrap' })
 // (V21 SSOT); actualRegion is a guarded SEAM for V26's stats.cube_actual_region —
 // null today, populated the instant that view lands, no contract change.
 await app.register(cubeRoutes, { prefix: '/api/cube' })
+
+// ADR SDMX-P1-C — public catalog (CategoryScheme V29). UNGUARDED sibling to
+// configRoutes: the Constructor dataset palette + public theme nav browse the
+// subject taxonomy WITHOUT a token, so it gets its own scope (the config JWT guard
+// never cascades). Published-only projection (joins V28 stats.dataset_published);
+// degrades to available:false when V29 is not yet applied here (rolling migration).
+await app.register(catalogRoutes, { prefix: '/api/catalog' })
 
 // N38 — snapshot persistence + signed embed (delivery boundary). One in-memory
 // store, injected into the guarded write route and the public read route. The

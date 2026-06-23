@@ -7,6 +7,10 @@
 //
 export { Inspector } from './Inspector'
 export type { InspectorProps } from './Inspector'
+export { nodeSchemaSource, chromeSchemaSource } from './schemaSource'
+export type { SchemaSource } from './schemaSource'
+export { ChromeInspectorPanel } from './ChromeInspectorPanel'
+export { ChromePalette } from './ChromePalette'
 export { fieldControlRegistry } from './FieldControlRegistry'
 export type { FieldControlRegistry } from './FieldControlRegistry'
 export type { FieldControl, FieldControlProps, FieldControlKey } from './fieldControl.types'

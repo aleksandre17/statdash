@@ -281,6 +281,12 @@ export function fromApiSite(map: SiteConfigMap, navRows: NavRow[]): SiteDef {
     nav,
     themeOverrides: isStringRecord(map.themeOverrides) ? map.themeOverrides : {},
     dataSourceBindings: isStringRecord(map.dataSourceBindings) ? map.dataSourceBindings : {},
+    // Chrome is opaque JSON (Record<slot, ChromeSlotConfig>) — engine-compatible
+    // by contract (it serializes straight to SiteManifest.chrome), never inspected
+    // here. Default to {} when absent so older site configs keep loading.
+    chrome: (map.chrome && typeof map.chrome === 'object' && !Array.isArray(map.chrome))
+      ? (map.chrome as SiteDef['chrome'])
+      : {},
   }
 }
 

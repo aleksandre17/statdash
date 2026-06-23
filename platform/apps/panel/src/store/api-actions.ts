@@ -181,6 +181,8 @@ export async function saveSite(patch: Partial<SiteDef>): Promise<void> {
     if (patch.themeOverrides !== undefined) map.themeOverrides = patch.themeOverrides
     if (patch.dataSourceBindings !== undefined)
       map.dataSourceBindings = patch.dataSourceBindings
+    // Chrome per-element config (Phase C) — persisted as SiteManifest.chrome.
+    if (patch.chrome !== undefined) map.chrome = patch.chrome
     if (Object.keys(map).length > 0) await configApi.site.update(map)
   } catch (e) {
     console.error('[api] saveSite failed', e)

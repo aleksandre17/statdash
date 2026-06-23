@@ -9,6 +9,7 @@
 //
 
 import type { DataSpec } from '@statdash/engine'
+import type { ChromeSlotConfig } from '@statdash/react/engine'
 
 // ── Layer 1: Data ─────────────────────────────────────────────────────────────
 
@@ -54,6 +55,29 @@ export interface SiteDef {
   themeOverrides:     Record<string, string>
   /** Context key → DataSource id — e.g. { geo: 'ds-geo-2024' } */
   dataSourceBindings: Record<string, string>
+  /**
+   * App-shell chrome configuration, keyed by slot (AppHeader / InnerSidebar /
+   * AppFooter …). Each entry picks a variant + carries that chrome element's
+   * OWN per-element `config` (the per-slot config the shell reads via
+   * useSlotConfig). Mirrors the engine `SiteManifest.chrome` shape exactly so it
+   * serializes straight to the config API. Authored through the generic
+   * Inspector via `chromeSchemaSource` (Phase C).
+   */
+  chrome:             Record<string, ChromeSlotConfig>
+}
+
+// ── Chrome selection (Phase C) ──────────────────────────────────────────────
+//
+//  A chrome element is addressed by slot+key (the chromeRegistry composite key).
+//  The Constructor selects it the same way it selects a page node, then the
+//  Inspector renders its schema via chromeSchemaSource. Selection state is a
+//  discriminated union so the panel knows which schema source + write path to
+//  use without overloading the node-id string.
+//
+export interface ChromeSelection {
+  kind: 'chrome'
+  slot: string
+  key:  string
 }
 
 // ── Layer 3: Pages ────────────────────────────────────────────────────────────

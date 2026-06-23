@@ -1,6 +1,7 @@
 import type { FastifyPluginAsync } from 'fastify'
 import { z } from 'zod'
-import { ok, parseQuery } from '../../lib/http.js'
+import { ok, parseQuery, notFound } from '../../lib/http.js'
+import { isDatasetDiscoverable } from './lifecycle.js'
 
 // filter arrives as a JSON string in the query string; refine it to a plain
 // object so it can feed dim_key @> $::jsonb (GIN containment), never raw text.
@@ -178,6 +179,21 @@ export const observationsRoutes: FastifyPluginAsync = async (app) => {
   app.get('/', async (req, reply) => {
     const q = parseQuery(ObsQuery, req.query)
     const filterJson = q.filter ? JSON.stringify(q.filter) : null
+
+    // ADR SDMX-P1-B — published-only projection (lifecycle filter) for the CURRENT
+    // cube read. A draft/superseded dataset is absent from the public delivery
+    // surface, so a current-cube read of one 404s (it is not discoverable) —
+    // through the V28 stats.dataset_published SSOT (isDatasetDiscoverable), pre-V28
+    // degrades to plain existence so a rollout hides nothing.
+    //
+    // THE AUDITABILITY EXCEPTION (non-negotiable): an explicit ?asOf= read is a
+    // VINTAGE PERMALINK. A permalink to an old dashboard built on a now-superseded
+    // dataset MUST NOT 404 (data outlives code; lifecycle deletes no facts). So the
+    // lifecycle gate applies ONLY to the live-cube discovery read; the asOf path
+    // skips it and resolves the historical vintage regardless of current status.
+    if (!q.asOf && !(await isDatasetDiscoverable(app, q.dataset))) {
+      throw notFound('Dataset')
+    }
 
     // GAP 5a — resolve the dataset version FIRST, set the ETag, and short-circuit
     // a matching If-None-Match with 304 (no body, no obs scan). This makes the

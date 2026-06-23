@@ -2,6 +2,7 @@ import type {
   DataSourceDef, NamedDataSpec,
   SiteDef,
   CanvasPage,
+  ChromeSelection,
   WizardStep,
 } from '../types/constructor'
 
@@ -41,9 +42,11 @@ export interface ConstructorSession {
 // ── Wizard UI ─────────────────────────────────────────────────────────────────
 
 export interface WizardSlice {
-  activeStep:     WizardStep
-  completedSteps: Set<WizardStep>
-  selectedNodeId: string | null
+  activeStep:      WizardStep
+  completedSteps:  Set<WizardStep>
+  selectedNodeId:  string | null
+  /** The selected chrome element (Phase C). Mutually exclusive with a node. */
+  chromeSelection: ChromeSelection | null
 }
 
 // ── Initial state ─────────────────────────────────────────────────────────────
@@ -54,6 +57,7 @@ const INITIAL_SITE: SiteDef = {
   nav:                [],
   themeOverrides:     {},
   dataSourceBindings: {},
+  chrome:             {},
 }
 
 export const INITIAL_SESSION: ConstructorSession = {

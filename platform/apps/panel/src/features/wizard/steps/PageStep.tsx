@@ -5,21 +5,22 @@ import ViewModuleIcon from '@mui/icons-material/ViewModule'
 import DeleteIcon from '@mui/icons-material/Delete'
 import { useNotify } from 'react-admin'
 import { nodeRegistry } from '@statdash/react/engine'
-import { useConstructorStore, useActivePage, useSelectedNode } from '../../../store/constructor.store'
+import { useConstructorStore, useActivePage, useSelectedNode, useChromeSelection } from '../../../store/constructor.store'
 import type { CanvasNode } from '../../../types/constructor'
 import { CanvasView }    from '../../../canvas/CanvasView'
 import { NodePalette }   from '../../../canvas/NodePalette'
 import { toNodePageConfig } from '../../../canvas/canvasPageAdapter'
-import { Inspector }     from '../../../inspector'
+import { Inspector, ChromeInspectorPanel, ChromePalette } from '../../../inspector'
 import '../../../canvas/page-step.css'
 
 // Generate a short, collision-resistant node id (matches existing convention).
 const newNodeId = () => `node-${Math.random().toString(36).slice(2, 9)}`
 
 export function PageStep() {
-  const page         = useActivePage()
-  const selectedId   = useSelectedNode()
-  const selectNode   = useConstructorStore((s) => s.selectNode)
+  const page          = useActivePage()
+  const selectedId    = useSelectedNode()
+  const chromeSel     = useChromeSelection()
+  const selectNode    = useConstructorStore((s) => s.selectNode)
   const addNode      = useConstructorStore((s) => s.addNode)
   const updateNode   = useConstructorStore((s) => s.updateNode)
   const removeNode   = useConstructorStore((s) => s.removeNode)
@@ -93,6 +94,9 @@ export function PageStep() {
         <Paper variant="outlined" sx={{ p: 1.5, overflow: 'auto' }}>
           <Typography variant="overline" color="text.secondary">პალიტრა</Typography>
           <NodePalette onDragStateChange={setDragging} />
+          <Divider sx={{ my: 1.5 }} />
+          <Typography variant="overline" color="text.secondary">გარსი</Typography>
+          <ChromePalette />
         </Paper>
 
         {/* ── Live WYSIWYG canvas ───────────────────────────────────────── */}
@@ -117,14 +121,16 @@ export function PageStep() {
         {/* ── Inspector ─────────────────────────────────────────────────── */}
         <Paper variant="outlined" sx={{ p: 2, overflow: 'auto' }}>
           <Typography variant="overline" color="text.secondary">ინსპექტორი</Typography>
-          {!selected && (
+          {/* Chrome element selected → the SAME generic Inspector, chrome source. */}
+          {chromeSel && <ChromeInspectorPanel />}
+          {!chromeSel && !selected && (
             <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center',
                        justifyContent: 'center', height: 200, color: 'text.disabled', gap: 1 }}>
               <ViewModuleIcon sx={{ fontSize: 40 }} />
               <Typography variant="body2">აირჩიეთ ელემენტი</Typography>
             </Box>
           )}
-          {selected && pageId && (
+          {!chromeSel && selected && pageId && (
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
               <Chip size="small" label={selected.type} color="primary" variant="outlined" sx={{ alignSelf: 'flex-start' }} />
               {/* Schema-driven property panel (C1) — generic, no per-type UI. */}

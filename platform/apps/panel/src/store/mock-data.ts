@@ -39,6 +39,7 @@ export const MOCK_SITE: SiteDef = {
   ],
   themeOverrides: {},
   dataSourceBindings: { geo: 'ds-1' },
+  chrome: {},
 }
 
 export const MOCK_PAGE: CanvasPage = {

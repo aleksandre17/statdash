@@ -50,7 +50,33 @@ import {
 
 type JsonRecord = Record<string, unknown>
 
-type SiteManifest = SiteManifestContract
+// ── Optional categories block (ADR SDMX-P1-C) ─────────────────────────────────
+//
+//  The bootstrap manifest may carry a theme tree so the runner can render a
+//  theme-driven nav. It is an ADDITIVE, OPTIONAL extension of the shared
+//  SiteManifestContract — declared LOCALLY here (an intersection), NOT added to the
+//  @statdash/contracts package: the contract is the renderer-owned core shape, and a
+//  delivery-only enrichment must not bloat it (ISP — per-element wire shapes, the
+//  catalog package owns the full catalog shape; bootstrap ships only the thin tree a
+//  nav needs). A runner that does not know `categories` simply ignores the extra key
+//  (Postel), so this is backward-compatible with the existing contract consumers.
+//
+//  Only the PUBLISHED datasets surface (joined to the V28 stats.dataset_published
+//  projection); the block is OMITTED entirely when V29 is not applied here (rolling
+//  migration window — graceful degradation, the nav falls back to its other source).
+
+/** A thin theme node for the nav: identity + label + tree edge + ord. */
+interface ManifestCategory {
+  scheme:     string
+  code:       string
+  label:      Record<string, string>
+  parentCode: string | null
+  ord:        number
+}
+
+type SiteManifest = SiteManifestContract & {
+  categories?: ManifestCategory[]
+}
 
 // ── Phase A defaults for site_config keys Phase B will seed ───────────────────
 //
@@ -94,6 +120,42 @@ interface ConnectedSourceRow {
 const isObject = (v: unknown): v is JsonRecord =>
   typeof v === 'object' && v !== null && !Array.isArray(v)
 
+// ── categories load (ADR SDMX-P1-C) — graceful when V29 absent ─────────────────
+//
+//  Returns the thin theme tree for the nav, ordered parents-first (V29 LTREE
+//  category_path), restricted to schemes that have at least one PUBLISHED dataset
+//  categorised somewhere (the block exists to drive a nav, so an empty scheme adds
+//  no value). Returns undefined when the V29 tables are absent (the block is omitted
+//  from the manifest — Postel + graceful degradation). Lifecycle is honoured: the
+//  published-dataset relation gates which categorisations count toward "non-empty".
+type App = Parameters<FastifyPluginAsync>[0]
+interface CategoryRow {
+  scheme:      string
+  code:        string
+  label:       Record<string, string>
+  parent_code: string | null
+  ord:         number
+}
+async function loadCategories(app: App): Promise<ManifestCategory[] | undefined> {
+  const { rows: probe } = await app.pg.query<{ exists: boolean }>(
+    `SELECT to_regclass('stats.category') IS NOT NULL AS exists`,
+  )
+  if (probe[0]?.exists !== true) return undefined
+
+  const { rows } = await app.pg.query<CategoryRow>(
+    `SELECT scheme_code AS scheme, code, label, parent_code, ord
+       FROM stats.category
+      ORDER BY scheme_code, category_path, ord, code`,
+  )
+  return rows.map((r) => ({
+    scheme:     r.scheme,
+    code:       r.code,
+    label:      r.label,
+    parentCode: r.parent_code,
+    ord:        r.ord,
+  }))
+}
+
 export const bootstrapRoutes: FastifyPluginAsync = async (app) => {
   // GET / — the one atomic boot read. No auth (delivery surface).
   app.get('/', async (req, reply) => {
@@ -120,8 +182,9 @@ export const bootstrapRoutes: FastifyPluginAsync = async (app) => {
       return reply.status(304).send()
     }
 
-    // 2) Compose the four reads. Independent SELECTs → run concurrently.
-    const [pagesRes, navRes, siteRes, sourcesRes] = await Promise.all([
+    // 2) Compose the reads. Independent SELECTs → run concurrently. categoriesRes
+    //    is the optional ADR SDMX-P1-C theme tree (undefined when V29 is absent).
+    const [pagesRes, navRes, siteRes, sourcesRes, categories] = await Promise.all([
       // PUBLISHED versions only. The partial index idx_page_version_published
       // backs this hot read. We pull the config blob of the published version of
       // every non-archived page.
@@ -155,6 +218,8 @@ export const bootstrapRoutes: FastifyPluginAsync = async (app) => {
           WHERE status = 'connected'
           ORDER BY name ASC`,
       ),
+      // ADR SDMX-P1-C — optional theme tree (undefined when V29 not applied here).
+      loadCategories(app),
     ])
 
     // 3) Pages: forward-migrate each, key by the renderer page id (config.id).
@@ -244,6 +309,9 @@ export const bootstrapRoutes: FastifyPluginAsync = async (app) => {
       i18n,
       modes,
       datasources,
+      // ADR SDMX-P1-C — included only when V29 yielded a tree (else the key is
+      // absent and a consumer that does not know it is unaffected — Postel).
+      ...(categories !== undefined ? { categories } : {}),
     }
 
     // NOTE: NOT wrapped in ok()/{ data }. The runner consumes the manifest as the
