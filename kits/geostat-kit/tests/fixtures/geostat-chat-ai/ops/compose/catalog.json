@@ -1,0 +1,21 @@
+{
+  "features": {
+    "worker": false
+  },
+  "fmt": {},
+  "targets": {
+    "apps/backend/docker-compose.yml": {
+      "fmt": {}
+    },
+    "apps/frontend/docker-compose.yml": {
+      "fmt": {}
+    }
+  },
+  "overlays": {
+    "app_prod_overlay": {
+      "ports": [
+        "${DEPLOY_HOST_PORT}:80"
+      ]
+    }
+  }
+}

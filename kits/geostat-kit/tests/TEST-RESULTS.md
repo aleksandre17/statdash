@@ -1,37 +1,49 @@
-﻿# geostat-kit package tests — last run
+# geostat-kit package tests — last run
 
 | Field | Value |
 |-------|--------|
-| Date | 2026-05-21 |
+| Date | 2026-06-23 |
 | Host | Windows (`win32`) |
 | Python | 3.13.x |
-| **Result** | **148 passed, 17 skipped** |
-| Project root | `GEOSTAT_PROJECT_ROOT` → consumer repo with `geostat.ops.json` |
+| **Result** | **250 passed, 23 skipped** (0 failed, 0 errors) |
+| Project root | **synthetic fixture** `tests/fixtures/geostat-chat-ai` (self-contained) |
 
 ## Command
 
 ```powershell
 cd kits\geostat-kit
 $env:PYTHONPATH = (Get-Location).Path
-$env:GEOSTAT_PROJECT_ROOT = "C:\path\to\your-project"
 py -3 -m pytest tests -q
 ```
 
-## Golden-path scenarios verified (path logic)
+No `GEOSTAT_PROJECT_ROOT` is required: the suite runs against a synthetic,
+self-contained reference consumer that the kit owns. `conftest.py` materialises
+the two volatile bits at session start (a `kits/geostat-kit` junction back to the
+real kit, and `ops/config/deploy.env` from `deploy.env.fixture`). Set
+`GEOSTAT_PROJECT_ROOT` only to smoke-test the kit against a *real* consumer repo.
 
-| ID | Kind on server |
-|----|----------------|
-| B1 / B2 / B3 | `.../static/{COMPOSE_APP_SERVICE}/` |
-| C1 / C2 | `.../compose/dev|prod/{service}/` |
-| D1 / D2 / D3 | `.../compose/dev/{service}/` |
+## Why a synthetic fixture (the fix for the long-standing red baseline)
 
-Tests use abstract bases (`/home/example/my-app/...`) and `COMPOSE_*` from `deploy.env` — no consumer brand names.
+The suite used to point `repo_root` at whatever `geostat.ops.json` sat at the
+real project root, asserting a *stale reference project* (modules `frontend` /
+`chat-api` / `retrieval` / `ingestion`). When the live consumer migrated to
+`api` / `geostat` / `panel`, ~44 tests + 11 errors appeared — the suite was
+testing the consumer, not the kit. The kit is a reusable package, so its tests
+now run against a fixture it controls: deterministic, and immune to consumer
+manifest churn (standard golden-fixture pattern).
 
-## Package boundary
+The fixture (`geostat-chat-ai`) models a representative multi-module consumer —
+`chat-api` (java-boot api, env-profiles), `retrieval` (java-boot api, simple +
+qdrant + credentials), `ingestion` (java-boot worker, postgres), `frontend`
+(node-vite ui) — so every machinery path stays covered.
 
-- `test_layout_v2.py` — bans legacy `secrets/`, `packages/geostat`, `deploy/compose` in toolkit sources
-- `test_scaffold_abstract_names.py` — scaffold has no branded service names
-- `test_project_context.py` — manifest resolution API
+## What the suite still meaningfully verifies
+
+- Manifest validation + schema + package boundary (`test_validate_manifest`, `test_layout_v2`)
+- Driver registry integrity + driver_api resolution incl. node-api & node-vite (`test_driver_api`, `test_registry_integrity`)
+- Compose service naming + config-gen golden output (`test_compose_identity`, `test_config_gen`)
+- Deploy-path logic, stack-deploy ordering, migrate-layout (`test_deploy_paths`, `test_migrate_layout`)
+- Credentials (explicit list + global GCP fallback), vscode-gen, scaffold abstractness
 
 ## Not run in this suite
 

@@ -56,6 +56,33 @@ class TestNodeViteDriver:
         assert (pkg_root / "drivers" / "node-vite" / "ps1" / "run.ps1").is_file()
 
 
+class TestNodeApiDriver:
+    def test_registered_with_api_role(self, registry: dict):
+        assert "node-api" in registry
+        assert "api" in registry["node-api"]["roles"]
+        assert registry["node-api"]["runtime"] == "bash"
+
+    def test_commands_match_java_boot_service_shape(self, registry: dict):
+        cmds = set(registry["node-api"]["commands"].keys())
+        # Service lifecycle parity with java-boot (deploy/dev/run/manage/compose/check/modules)
+        assert {"deploy", "dev", "run", "manage", "compose", "check", "modules"} <= cmds
+        assert "watch" not in cmds  # watch is a dev subcommand, never a top-level command
+
+    def test_deploy_and_dev_are_bash(self, pkg_root: Path):
+        assert (pkg_root / "drivers" / "node-api" / "sh" / "deploy.sh").is_file()
+        assert (pkg_root / "drivers" / "node-api" / "sh" / "dev.sh").is_file()
+
+    def test_run_is_powershell_like_java_boot(self, pkg_root: Path):
+        # local host run delegates to the shared hybrid runner (ps1), as java-boot does
+        assert (pkg_root / "drivers" / "node-api" / "ps1" / "run.ps1").is_file()
+
+    def test_node_step_helpers_exist(self, pkg_root: Path):
+        deploy = pkg_root / "toolkit" / "deploy"
+        assert (deploy / "pnpm-build.sh").is_file()
+        assert (deploy / "node-upload.sh").is_file()
+        assert (deploy / "node-docker-up.sh").is_file()
+
+
 class TestManifest:
     def test_frontend_type(self, manifest: dict):
         assert manifest["modules"]["frontend"]["type"] == "node-vite"

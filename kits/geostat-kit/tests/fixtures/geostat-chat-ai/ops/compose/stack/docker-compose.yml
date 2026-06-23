@@ -1,0 +1,13 @@
+services:
+  geostat-chat-ai-api:
+    build:
+      context: ../../../apps/backend
+  retrieval-service:
+    build:
+      context: ../../../apps/retrieval-service
+  ingestion-service:
+    build:
+      context: ../../../apps/ingestion-service
+  geostat-chat-ai-app:
+    build:
+      context: ../../../apps/frontend

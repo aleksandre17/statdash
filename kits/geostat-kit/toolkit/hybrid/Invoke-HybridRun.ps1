@@ -88,6 +88,22 @@ switch ($driverType) {
         npm run $npmScript
         exit $LASTEXITCODE
     }
+    "node-api" {
+        # pnpm-workspace Node service: run the module's dev/start script via pnpm so
+        # workspace deps (e.g. @geostat/engine) resolve. Same npm-script contract as
+        # node-vite, pnpm instead of npm (the api lives in a pnpm workspace).
+        $npmScript = Get-ModuleNpmScript $ModuleId
+        if (-not $npmScript) { $npmScript = "dev" }
+
+        Set-Location $modPath
+        if (Get-Command pnpm -ErrorAction SilentlyContinue) {
+            pnpm run $npmScript
+        } else {
+            Write-Host "[hybrid] pnpm not on PATH - falling back to npm run $npmScript" -ForegroundColor Yellow
+            npm run $npmScript
+        }
+        exit $LASTEXITCODE
+    }
     default {
         throw ('Hybrid run not supported for driver type ''{0}'' (module {1})' -f $driverType, $ModuleId)
     }

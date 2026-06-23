@@ -36,6 +36,16 @@ bash kits/geostat-kit/tests/run-kit-tests.sh
 
 CI job: `ops-package-tests` in `.github/workflows/ci.yml`.
 
+## Reference consumer fixture
+
+The suite runs against a **synthetic, self-contained reference consumer** under
+`tests/fixtures/geostat-chat-ai/` — not the live project manifest. This keeps the
+kit's tests validating the kit's *machinery* independent of any consumer's module
+set. `conftest.py` self-provisions the two gitignored/volatile bits at session
+start (the `kits/geostat-kit` junction and `ops/config/deploy.env`), so a fresh
+checkout runs green with no setup. Point `GEOSTAT_PROJECT_ROOT` at a real repo
+only to smoke-test an adoption.
+
 ## Last results
 
-**[TEST-RESULTS.md](./TEST-RESULTS.md)** — summary (41/41 passed). Raw log: [LAST-RUN.txt](./LAST-RUN.txt).
+**[TEST-RESULTS.md](./TEST-RESULTS.md)** — summary (250 passed, 23 skipped).

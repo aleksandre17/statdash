@@ -1,0 +1,7 @@
+services:
+  chat-api:
+    build:
+      context: .
+      dockerfile: src/Dockerfile
+    env_file:
+      - ../../ops/config/backend/.env.dev

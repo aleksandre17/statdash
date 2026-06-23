@@ -1,0 +1,4 @@
+services:
+  geostat-chat-ai-app:
+    ports:
+      - "${DEPLOY_HOST_PORT}:80"
