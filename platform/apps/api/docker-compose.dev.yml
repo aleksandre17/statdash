@@ -1,0 +1,46 @@
+# Per-module deploy compose (node-api driver) — DEV.
+#
+# Read by the node-api driver at $PROJECT_DIR (platform/apps/api) for:
+#   - `geostat api compose ...`        (compose.sh, no --prod, run from this dir)
+#   - `geostat api manage <svc> --dev` (manage.sh service discovery)
+#   - `geostat api check`              (service discovery; also gates on .prod file)
+#
+# NOTE: `geostat api dev bootstrap` does NOT use this file — that subcommand runs
+# `pnpm dev` (tsx watch) on the server from a synced workspace via the toolkit's
+# dev_write_workspace_compose path. This file is the plain `docker compose` dev shape
+# (build the production image, run it locally), kept in parity with docker-compose.prod.yml.
+#
+# Build context = pnpm workspace root (platform/), i.e. `../../` from this module dir.
+# Postgres / pgBouncer live in the separate `statdash-infra` project and are reached over
+# the external `statdash-net` network by DNS (statdash-pgbouncer:5432) via DATABASE_URL in
+# .env.dev — hence no depends_on (they are not services here). Bring infra up first.
+#
+# Usage (local):
+#   docker compose -f docker-compose.dev.yml up -d --build
+services:
+  statdash-api:
+    image: statdash-api:dev
+    container_name: statdash-api
+    build:
+      context: ../../
+      dockerfile: apps/api/Dockerfile
+      target: production
+    ports:
+      - "${PORT:-3001}:3001"
+    env_file:
+      - ../../../ops/config/api/.env.dev
+    networks:
+      - statdash-net
+    mem_limit: 256m
+    cpus: 0.5
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3001/health | grep -q ok || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+networks:
+  statdash-net:
+    name: statdash-net
+    external: true

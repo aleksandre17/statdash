@@ -1,5 +1,5 @@
 import { Box, ToggleButton, ToggleButtonGroup, TextField, Typography } from '@mui/material'
-import type { DataSpec } from '@geostat/engine'
+import type { DataSpec } from '@statdash/engine'
 import { YearsField } from './YearsField'
 import { ChipInput } from './query/ChipInput'
 

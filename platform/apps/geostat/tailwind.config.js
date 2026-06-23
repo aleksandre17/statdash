@@ -3,8 +3,8 @@ export default {
   content: [
     "./index.html",
     "./src/**/*.{js,ts,jsx,tsx}",
-    "../../engine/plugins/**/*.{js,ts,jsx,tsx}",
-    "../../engine/**/*.{js,ts,jsx,tsx}",
+    "../../packages/plugins/**/*.{js,ts,jsx,tsx}",
+    "../../packages/**/*.{js,ts,jsx,tsx}",
   ],
   theme: {
     extend: {

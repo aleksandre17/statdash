@@ -1,5 +1,5 @@
 import { Box, TextField } from '@mui/material'
-import type { TransformStep } from '@geostat/engine'
+import type { TransformStep } from '@statdash/engine'
 import { ChipInput } from '../ChipInput'
 
 // ── LookupStepForm — op=lookup: key + from($d ref) + fields ────────────────────

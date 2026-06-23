@@ -1,6 +1,6 @@
 // ── Config API client ─────────────────────────────────────────────────────────
 //
-//  Native-fetch boundary to @geostat/api (Fastify, /api/config/*).
+//  Native-fetch boundary to @statdash/api (Fastify, /api/config/*).
 //  Law 5 (API-readiness): this is the only HTTP adapter for the Constructor —
 //  swap BASE or the transport here, nothing else changes.
 //  Law 1 (no privileged dims) + Law 2 (declarative config): `spec` and `config`
@@ -17,8 +17,10 @@ import type {
   NavItem,
   CanvasPage,
 } from '../types/constructor'
-import type { DataSpec } from '@geostat/engine'
+import type { DataSpec } from '@statdash/engine'
+import type { NodePageConfig } from '@statdash/react/engine'
 import { getToken, clearToken, AuthError } from './auth'
+import { toNodePageConfig, fromNodePageConfig } from '../canvas/canvasPageAdapter'
 
 // ── Transport ───────────────────────────────────────────────────────────────
 
@@ -41,12 +43,24 @@ interface Envelope<T> {
 }
 
 async function request<T>(method: string, path: string, body?: unknown): Promise<T> {
+  return requestAt<T>(PREFIX, method, path, body)
+}
+
+/**
+ * Transport core, parameterised by API scope prefix. The config surface
+ * (`/api/config`) and the cube discovery surface (`/api/cube`) are distinct
+ * server scopes (the cube routes are deliberately OFF the JWT-guarded config
+ * scope — least-privilege at the boundary). One transport, two prefixes —
+ * Law 5: this stays the only HTTP adapter for the Constructor. Exported so the
+ * sibling cubeApi (lib/cubeApi.ts) reuses the exact same fetch/401/envelope path.
+ */
+export async function requestAt<T>(prefix: string, method: string, path: string, body?: unknown): Promise<T> {
   const token = getToken()
   const headers: Record<string, string> = {}
   if (body !== undefined)  headers['Content-Type'] = 'application/json'
   if (token !== null)      headers['Authorization'] = `Bearer ${token}`
 
-  const res = await fetch(`${BASE}${PREFIX}${path}`, {
+  const res = await fetch(`${BASE}${prefix}${path}`, {
     method,
     headers,
     body: body !== undefined ? JSON.stringify(body) : undefined,
@@ -271,28 +285,23 @@ export function fromApiSite(map: SiteConfigMap, navRows: NavRow[]): SiteDef {
 }
 
 export function fromApiPage(row: PageDetailRow): CanvasPage {
-  const config = row.config ?? {}
-  const nodeIds = Array.isArray(config.nodeIds) ? (config.nodeIds as string[]) : []
-  const nodes =
-    config.nodes && typeof config.nodes === 'object'
-      ? (config.nodes as CanvasPage['nodes'])
-      : {}
-
-  return {
-    id: row.id,
-    title: { ka: row.title.ka, en: row.title.en ?? row.title.ka },
-    slug: row.slug,
-    nodeIds,
-    nodes,
-  }
+  // The persisted config IS a NodePageConfig (engine NodeDef tree) — the same
+  // shape the renderer consumes. Hydrate the flat editor store from it via the
+  // tree→flat adapter (C2 load side), so the API boundary and the canvas share
+  // one serialization contract. Title lives on the page row, not the tree.
+  const title = { ka: row.title.ka, en: row.title.en ?? row.title.ka }
+  const config = (row.config ?? {}) as unknown as NodePageConfig
+  return fromNodePageConfig(config, title)
 }
 
 export function toApiPage(page: CanvasPage): PageWriteBody {
   return {
     slug: page.slug,
     title: page.title,
-    // nodeIds + nodes are the canvas tree — they live inside the version config.
-    config: { nodeIds: page.nodeIds, nodes: page.nodes },
+    // The canvas tree is persisted as a real NodePageConfig (NodeDef tree) —
+    // the flat→tree adapter (C2 save side). Round-trips losslessly with
+    // fromApiPage → fromNodePageConfig.
+    config: toNodePageConfig(page) as unknown as Record<string, unknown>,
     data_specs: [],
   }
 }

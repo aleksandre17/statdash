@@ -1,10 +1,10 @@
 # Project Laws — statdash-platform (root, binding)
 
-> JSON/config-driven statistical dashboard platform. Phase 1: dashboard (JSON config → renderer). Phase 2: Constructor (generates JSON, no code). Per-module laws: `packages/CLAUDE.md`, `plugins/CLAUDE.md`. Enforcement rules: `.claude/rules/`.
+> JSON/config-driven statistical dashboard platform. Phase 1: dashboard (JSON config → renderer). Phase 2: Constructor (generates JSON, no code). Per-module laws: `platform/packages/CLAUDE.md`, `platform/packages/plugins/CLAUDE.md`. Enforcement rules: `.claude/rules/`.
 
 1. **No privileged dimensions.** All dimensions are equal: `ctx.dims['time']`, never `ctx.year` / `ctx.regionId`. Generic `Record<K,V>`, never hardcoded dimension names.
 2. **Config is declarative, logic lives in the renderer.** `DataSpec` carries data (indicator codes, ObsQuery, `$ctx` refs) — never `getRows:(ctx)=>…`, `val()`, `fetch`, or `if/switch`. A function in config is not Constructor-ready.
-3. **Dependency arrow (Clean Architecture):** `packages/engine ← packages/react ← plugins ← src`. Never import against the arrow. `packages/react` stays app-agnostic (Geostat specifics → `plugins/`).
+3. **Dependency arrow (Clean Architecture):** `packages/contracts ← packages/expr ← packages/core ← packages/charts ← packages/react ← packages/plugins ← apps/*` (and `packages/contracts ← apps/api`). Never import against the arrow — enforced as a build gate by `eslint no-restricted-imports` (`platform/eslint.config.js`). `packages/contracts` is the innermost zero-dep shared-types layer (importable by all, incl. `apps/api`, which the arrow forbids from importing `packages/react`). `packages/core` is the pure engine; `packages/react` stays app-agnostic (Geostat specifics → `packages/plugins/`).
 4. **The full benefit of standards, not partial.** Grammar of Graphics, SDMX, OLAP, Vega-Lite, Tidy Data — adopted whole, in their best form.
 5. **API-readiness.** `src/data/` is pure data, separated from UI; swapping `DataStore` is one parameter. `fromSDMX` is the only adapter boundary.
 6. **Best solution only.** works + agnostic + ISP-clean + extensible + tested. Every fix is root-cause (root cause → standard → fix), never a symptom patch.

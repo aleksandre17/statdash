@@ -8,7 +8,7 @@
 //  Serializable to JSON → saved to config API / exported as PageDef JSON.
 //
 
-import type { DataSpec } from '@geostat/engine'
+import type { DataSpec } from '@statdash/engine'
 
 // ── Layer 1: Data ─────────────────────────────────────────────────────────────
 
@@ -58,24 +58,32 @@ export interface SiteDef {
 
 // ── Layer 3: Pages ────────────────────────────────────────────────────────────
 
-/** Unique discriminated type for a node on the canvas. */
-export type CanvasNodeKind =
-  | 'section'
-  | 'kpi-strip'
-  | 'filter-bar'
-  | 'page-header'
-  | 'links'
-  | 'hero'
-  | 'stats-carousel'
-  | 'repeat'
-
+/**
+ * One node on the canvas — unified on the engine NodeDef model (C2).
+ *
+ *  Why no closed `kind` enum any more?
+ *    The palette is an OPEN registry (`nodeRegistry.list()`): any registered
+ *    slice is draggable. A hardcoded 8-member union meant a newly-registered
+ *    type was palette-visible but UNSTORABLE — a Law-1 / OCP violation (the
+ *    interpreter widens, the store doesn't). `type: string` keeps the store as
+ *    open as the registry: a new type = a new capability, store unchanged.
+ *
+ *  Shape mirrors the engine node (`{ type, variant?, props, children }`):
+ *    - `type`     dispatch discriminant — `nodeRegistry.get(type, variant)`.
+ *    - `variant`  registry variant selector (default 'default' when omitted).
+ *    - `props`    the node config body — keyed by the slice's PropSchema fields,
+ *                 seeded from `getDefaults(type)` on add. (Was `config`.)
+ *    - `childIds` child node IDs — id references into the page's flat node map
+ *                 (Identity Map; the tree is projected by canvasPageAdapter).
+ */
 export interface CanvasNode {
-  id:       string
-  kind:     CanvasNodeKind
-  /** Config values — keyed by META.schema field names. */
-  config:   Record<string, unknown>
+  id:        string
+  type:      string
+  variant?:  string
+  /** Config values — keyed by the slice's PropSchema field names. */
+  props:     Record<string, unknown>
   /** Child node IDs for container nodes (e.g. section → panels). */
-  children: string[]
+  childIds:  string[]
 }
 
 export interface CanvasPage {

@@ -1,0 +1,51 @@
+# Per-app image (node-vite driver) — panel (Constructor) SPA → static dist served by nginx.
+#
+# Build context = the pnpm workspace root (platform/). The per-module compose passes
+#   build:
+#     context: ../../
+#     dockerfile: apps/panel/Dockerfile
+# so every COPY below resolves against the workspace root. The Vite build resolves
+# @statdash/* via aliases to ../../packages/* SOURCE (no per-package build step), hence the
+# whole packages/ tree must be in the build context — copied in the build stage.
+#
+# pnpm (not npm): the workspace uses the catalog: + workspace:* protocols, which only the
+# pnpm resolver understands. corepack pins the version from package.json packageManager.
+ARG NGINX_VERSION=1.27-alpine
+ARG APP_DEV_PORT=5171
+
+# ─── Stage 1: base ────────────────────────────────────────────────────────────
+FROM node:22-alpine AS base
+WORKDIR /app
+RUN corepack enable pnpm
+
+# ─── Stage 2: deps (install the @statdash/panel closure) ───────────────────────
+FROM base AS deps
+COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
+# Workspace package manifests must exist before a --frozen-lockfile filtered install.
+COPY packages/ ./packages/
+COPY apps/panel/package.json ./apps/panel/
+RUN pnpm install --frozen-lockfile --filter ./apps/panel...
+
+# ─── Stage 3: development (vite dev server, source-mounted by compose override) ─
+FROM deps AS development
+ARG APP_DEV_PORT
+ENV APP_DEV_PORT=${APP_DEV_PORT}
+COPY . .
+EXPOSE ${APP_DEV_PORT}
+CMD ["sh", "-c", "pnpm --filter ./apps/panel dev -- --host 0.0.0.0 --port ${APP_DEV_PORT}"]
+
+# ─── Stage 4: builder (tsc -b && vite build → apps/panel/dist) ────────────────
+FROM deps AS builder
+ARG VITE_API_URL
+ENV VITE_API_URL=$VITE_API_URL
+COPY . .
+RUN pnpm --filter ./apps/panel build
+
+# ─── Stage 5: production (nginx serving the static dist) ──────────────────────
+FROM nginx:${NGINX_VERSION} AS production
+COPY --from=builder /app/apps/panel/dist /usr/share/nginx/html
+COPY apps/panel/nginx.conf /etc/nginx/conf.d/default.conf
+EXPOSE 80
+HEALTHCHECK --interval=30s --timeout=5s --retries=3 --start-period=10s \
+  CMD wget -qO- http://localhost/ >/dev/null 2>&1 || exit 1
+CMD ["nginx", "-g", "daemon off;"]

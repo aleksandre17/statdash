@@ -1,40 +1,43 @@
-// ── Site Manifest + Bootstrap ──────────────────────────────────────────
+// ── Site Manifest + Bootstrap (PURE GENERIC RUNNER — ADR-0028) ────────────
 //
-//  SiteManifest  — JSON-serializable site config.
-//                  Phase 2: exact shape of GET /api/site response.
+//  SiteManifest  — JSON-serializable site config; the exact shape of the
+//                  GET /api/bootstrap response (the api ↔ runner wire contract).
 //
 //  SiteBootstrap — runtime shell data (manifest + DataStore instances).
-//                  Phase 2 — two lines change in main.tsx:
-//                    const manifest = await fetch('/api/site').then(r => r.json())
-//                    const stores   = await engine.buildStoreManifest(manifest.datasources)
-//                  Everything else stays.
 //
-//  ── Layer 1: static (VITE_STORE_MODE=static, default) ─────────────────
-//  In-memory ExternalStore. No network. Instant. Dev default.
-//
-//  ── Layer 2: mock API (VITE_STORE_MODE=api) ───────────────────────────
-//  MSW intercepts fetch('/api/datasets/*'), returns raw dataset JSON.
-//  Simulates real network: latency, loading states, error scenarios.
-//  Switch: `npm run dev:api`
+//  ── The runner carries NO tenant content ─────────────────────────────────
+//  ADR-0028 (de-tenanting): all Geostat pages/nav/chrome/data were extracted to
+//  provisioning + seed-data and DELETED from here. The PRIMARY path is the live
+//  API: GET /api/bootstrap for the manifest, config.data_source rows for stores.
+//  When the API is down or unconfigured, the runner FAILS SOFT to emptyManifest()
+//  (a brand-free "site unavailable" page) — it always boots to something sane,
+//  never crashes (graceful degradation / Principle of Least Astonishment).
 //
 //  Pattern: Grafana bootData (stores manifest + nav from API on startup),
 //           Retool fetchAppManifest (resources + pages in one bootstrap call).
 //
-import type { DataStore, DatasourceInstanceConfig }          from '@geostat/engine'
-import type { NavEntry, I18nConfig, ChromeConfig, ChromeEntry } from '@geostat/react'
-import type { NodePageConfig }                               from '@geostat/react/engine'
-import { buildStoreManifest }     from '@geostat/react/engine'
-import { STORE_MANIFEST }                        from './store-manifest'
-import { listPages }                             from './pages/registry'
-import { NAV }                                   from './nav.config'
-import { CHROME_CONFIG }                         from './chrome-config'
-import { GLOBAL_CHROME, I18N_CONFIG }            from './site-config'
+import type { SiteManifestContract }                          from '@statdash/contracts'
+import type { DataStore, DatasourceInstanceConfig, ModeDef }  from '@statdash/engine'
+import type { NavEntry, I18nConfig, ChromeConfig, ChromeEntry } from '@statdash/react'
+import type { NodePageConfig }                                 from '@statdash/react/engine'
 
 // ── SiteManifest — JSON-serializable ──────────────────────────────────
+//
+//  The runner's PRECISE view of the @statdash/contracts SiteManifestContract (the
+//  shared api ↔ runner wire shape). The contract types the renderer-owned blobs
+//  (pages/nav/chrome/chromeConfig/i18n) as opaque JSON because the backend must not
+//  own the config schema; HERE — the consumer that DOES own the renderer types — we
+//  REFINE those fields to NodePageConfig / NavEntry / ChromeEntry / ChromeConfig /
+//  I18nConfig. `modes`/`datasources` are likewise narrowed to their engine types
+//  (structurally identical to the contract's ManifestMode / ManifestDatasource).
+//  Refine, never re-declare: the envelope is single-sourced; only the blob fields
+//  are tightened. Every field stays plain JSON — the same shape serializes from the
+//  DB and renders here.
 
-export interface SiteManifest {
-  /** Named datasource descriptors — JSON-serializable; Phase 2: engine.buildStoreManifest(datasources) builds stores. */
-  datasources?: DatasourceInstanceConfig[]
+export interface SiteManifest extends Omit<
+  SiteManifestContract,
+  'pages' | 'nav' | 'chrome' | 'chromeConfig' | 'i18n' | 'modes' | 'datasources'
+> {
   /** All page configs — keyed by pageId, drives dynamic routes */
   pages:        Record<string, NodePageConfig>
   /** Sidebar nav entries */
@@ -45,11 +48,15 @@ export interface SiteManifest {
   chromeConfig: ChromeConfig
   /** Locale configuration */
   i18n:         I18nConfig
+  /** Rendering modes (year/range/compare …) — moved out of setupRegistrations; registered at boot. */
+  modes:        ModeDef[]
+  /** Named datasource descriptors — JSON-serializable; engine.buildStoreManifest(datasources) builds stores. */
+  datasources?: DatasourceInstanceConfig[]
 }
 
 // ── SiteBootstrap — runtime shell data ────────────────────────────────
-// Phase 1: both fields built locally (TypeScript imports).
-// Phase 2: manifest = JSON from API; stores = engine.buildStoreManifest(manifest.datasources).
+//   manifest = JSON from API (or emptyManifest fallback);
+//   stores   = engine.buildStoreManifest(config.data_source) (or {} fallback).
 
 export interface SiteBootstrap {
   manifest: SiteManifest
@@ -57,106 +64,125 @@ export interface SiteBootstrap {
   stores:   Record<string, DataStore>
 }
 
-// ── helpers ────────────────────────────────────────────────────────────
+// ── emptyManifest — GENERIC FAIL-SOFT FALLBACK (ADR-0028 D4) ──────────────
+//
+//  The runner carries no tenant content; but it MUST still boot to something
+//  sane when /api/bootstrap is unreachable or the platform is unconfigured
+//  (resilience / graceful degradation). This is a tiny, brand-free SiteManifest:
+//  a single en-only "site not configured" page, empty nav, neutral chrome, one
+//  active locale. It is tenant-AGNOSTIC (Law 1) and astonishment-free — an
+//  unconfigured runner SAYS SO, it does not crash. resolveManifest() falls back
+//  to this on any API failure.
+//
+//  The copy is locale-agnostic ('en' only): the fallback must render before any
+//  tenant i18n catalog exists, so it cannot depend on a {ka,en} bag.
 
-function pagesRecord(pages: NodePageConfig[]): Record<string, NodePageConfig> {
-  return Object.fromEntries(pages.map(p => [p.id, p]))
+const OFFLINE_PAGE_ID = '__offline'
+
+/**
+ * A minimal NodePageConfig that renders the generic empty state: an inner-page
+ * holding a single registered `text` node. Locale-agnostic plain copy ('en'
+ * only) — the fallback renders before any tenant i18n catalog exists, so it
+ * carries a bare string, never a {ka,en} bag.
+ */
+function offlinePage(): NodePageConfig {
+  return {
+    id:       OFFLINE_PAGE_ID,
+    type:     'inner-page',
+    children: [
+      {
+        type:    'text',
+        format:  'plain',
+        content:
+          'This dashboard is not configured, or the data service is currently ' +
+          'unavailable. Please try again later.',
+      },
+    ],
+  } as NodePageConfig
 }
 
-function buildManifest(): SiteManifest {
+export function emptyManifest(): SiteManifest {
   return {
-    pages:        pagesRecord(listPages()),
-    nav:          NAV,
-    chrome:       GLOBAL_CHROME,
-    chromeConfig: CHROME_CONFIG,
-    i18n:         I18N_CONFIG,
+    pages:        { [OFFLINE_PAGE_ID]: offlinePage() },
+    indexPageId:  OFFLINE_PAGE_ID,
+    nav:          [],
+    chrome:       {},
+    chromeConfig: {} as ChromeConfig,
+    i18n:         { locales: ['en'], defaultLocale: 'en', fallbackLocale: 'en' },
+    modes:        [],
+    datasources:  [],
   }
 }
 
-// ── Layer 1: static ────────────────────────────────────────────────────
+// ── Manifest source: API with fail-soft fallback ──────────────────────────
+//
+//  fetchBootstrap mirrors fetch-store-manifest.ts: one fetch over the HTTP
+//  boundary, fail-fast (throws) so the caller owns the fallback. GET
+//  /api/bootstrap returns the SiteManifest superset verbatim (ADR-0026); the
+//  app owns its own wire contract — the API never imports app types (Law 3).
+//
+//  The { data } envelope matches the rest of the API (stats-api.ts getAt);
+//  liberal-in-what-we-accept (Postel): a bare manifest (no envelope) is also
+//  honored so a future endpoint shape change doesn't hard-break the client.
 
-async function fetchStatic(): Promise<SiteBootstrap> {
-  await Promise.resolve()   // yield — matches async API contract
-  return { manifest: buildManifest(), stores: STORE_MANIFEST }
+export async function fetchBootstrap(baseUrl: string): Promise<SiteManifest> {
+  const res = await fetch(`${baseUrl}/api/bootstrap`)
+  if (!res.ok) throw new Error(`GET /api/bootstrap: ${res.status}`)
+  const json = (await res.json()) as { data?: SiteManifest } & Partial<SiteManifest>
+  return (json.data ?? (json as SiteManifest))
 }
 
-// ── Layer 2: mock API (MSW) ────────────────────────────────────────────
+// ── resolveManifest — API with empty-state fallback ───────────────────────
+//
+//  Fetch the manifest from /api/bootstrap; on ANY failure fall back to the
+//  generic emptyManifest() (graceful degradation). The runner is API-first; the
+//  empty state is the offline/unconfigured net, NOT tenant content.
 
-async function fetchApi(): Promise<SiteBootstrap> {
-  // Dynamic imports — adapters and ExternalStore load only at the HTTP boundary.
-  // In static mode this function never runs, so these chunks are never fetched.
-  // Pattern: Hexagonal Architecture — adapter code lives at the port, not in the core.
-  const [
-    [gdpRaw, accountsRaw, regionalRaw],
-    { fromGDPFacts },
-    { GDP_CLASSIFIERS, GDP_DISPLAY },
-    { fromAccountsFacts, fromSDMX },
-    { ACCOUNTS_CLASSIFIERS, ACCOUNTS_DISPLAY },
-    { fromRegionalFacts },
-    { ExternalStore },
-  ] = await Promise.all([
-    Promise.all([
-      fetch('/api/datasets/gdp').then((r) => r.json()),
-      fetch('/api/datasets/accounts').then((r) => r.json()),
-      fetch('/api/datasets/regional').then((r) => r.json()),
-    ]),
-    import('./gdp/adapter'),
-    import('./gdp/raw'),
-    import('./accounts/adapter'),
-    import('./accounts/raw'),
-    import('./regional/adapter'),
-    import('@geostat/engine'),
-  ])
-
-  return {
-    manifest: buildManifest(),
-    stores: {
-      gdp: new ExternalStore(
-        fromGDPFacts(gdpRaw),
-        { classifiers: GDP_CLASSIFIERS, display: GDP_DISPLAY },
-      ),
-      accounts: new ExternalStore(
-        fromAccountsFacts(fromSDMX(accountsRaw, { locales: I18N_CONFIG.locales })),
-        { classifiers: ACCOUNTS_CLASSIFIERS, display: ACCOUNTS_DISPLAY },
-      ),
-      regional: new ExternalStore(fromRegionalFacts(regionalRaw.facts), { classifiers: regionalRaw.classifiers }),
-    },
+async function resolveManifest(): Promise<SiteManifest> {
+  const base = import.meta.env.VITE_API_STATS_URL ?? 'http://localhost:3001'
+  try {
+    return await fetchBootstrap(base)
+  } catch (err) {
+    console.warn(
+      '[bootstrap] fetchBootstrap failed — falling back to generic empty manifest (offline/unconfigured).',
+      err,
+    )
+    return emptyManifest()
   }
 }
 
-// ── Layer 3: real stats API (VITE_STORE_MODE=stats) ──────────────────────
+// ── Store manifest: live config.data_source rows, empty fallback ──────────
 //
-//  Fetches live observations + classifiers from the stats API and wraps each
-//  dataset in an ExternalStore. Dynamic imports keep the HTTP adapter and
-//  ExternalStore out of the static/api bundles (Hexagonal: adapter at the port).
+//  The store manifest is built from config.data_source rows (the Constructor's
+//  persisted datasources) via fetchStoreManifest. config.data_source is the SSOT
+//  for "which stores exist" — the Constructor writes it; the dashboard reads it.
+//  Dynamic import keeps the HTTP adapter + engine factory out of the entry bundle
+//  (Hexagonal: adapter at the port).
 //
-//  Graceful degradation: an empty datasets list yields stores = {} — the
-//  renderer falls back to staticStore for any unresolved storeKey, no crash.
+//  RESILIENCE (graceful degradation): if the data-sources read fails (API down
+//  at boot), fall back to NO stores ({}) and log a warning, rather than crash.
+//  Paired with emptyManifest, the runner boots its generic empty state.
 
-async function fetchStats(): Promise<SiteBootstrap> {
-  const base             = import.meta.env.VITE_API_STATS_URL ?? 'http://localhost:3001'
-  const { fetchDatasets } = await import('./stats-api')
-
-  const datasets = await fetchDatasets(base)
-
-  const datasources: DatasourceInstanceConfig[] = datasets.map((ds) => ({
-    id:     ds.code,
-    kind:   'stats',
-    url:    base,
-    params: {
-      datasetCode: ds.code,
-      nonTimeDims: ds.dimensions.filter((d) => !d.is_time_dim).map((d) => d.dim_code),
-    },
-  }))
-
-  const stores = await buildStoreManifest(datasources)
-  return { manifest: buildManifest(), stores }
+async function fetchStores(base: string): Promise<Record<string, DataStore>> {
+  const { fetchStoreManifest } = await import('./fetch-store-manifest')
+  try {
+    return await fetchStoreManifest(base)
+  } catch (err) {
+    console.warn(
+      '[bootstrap] fetchStoreManifest failed — no stores (offline/unconfigured).',
+      err,
+    )
+    return {}
+  }
 }
 
 // ── Public entry point ─────────────────────────────────────────────────
+//
+//  Manifest + stores resolve independently (each owns its own fail-soft
+//  fallback), then compose into the SiteBootstrap App.tsx renders from.
 
 export async function bootstrapSite(): Promise<SiteBootstrap> {
-  if (import.meta.env.VITE_STORE_MODE === 'stats') return fetchStats()
-  if (import.meta.env.VITE_STORE_MODE === 'api')   return fetchApi()
-  return fetchStatic()
+  const base = import.meta.env.VITE_API_STATS_URL ?? 'http://localhost:3001'
+  const [manifest, stores] = await Promise.all([resolveManifest(), fetchStores(base)])
+  return { manifest, stores }
 }

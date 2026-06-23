@@ -47,8 +47,8 @@ export const MOCK_PAGE: CanvasPage = {
   slug: 'gdp',
   nodeIds: ['node-1', 'node-2', 'node-3'],
   nodes: {
-    'node-1': { id: 'node-1', kind: 'filter-bar', config: { position: 'sticky' },     children: [] },
-    'node-2': { id: 'node-2', kind: 'kpi-strip',  config: { title: 'Key Indicators' }, children: [] },
-    'node-3': { id: 'node-3', kind: 'section',    config: { title: 'GDP Dynamics' },   children: ['panel-1'] },
+    'node-1': { id: 'node-1', type: 'filter-bar', props: { position: 'sticky' },      childIds: [] },
+    'node-2': { id: 'node-2', type: 'kpi-strip',  props: { title: 'Key Indicators' }, childIds: [] },
+    'node-3': { id: 'node-3', type: 'section',    props: { title: 'GDP Dynamics' },   childIds: [] },
   },
 }

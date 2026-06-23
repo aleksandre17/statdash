@@ -1,0 +1,15 @@
+{
+  "id": "example",
+  "type": "inner-page",
+  "path": "/example",
+  "storeKey": "gdp",
+  "title": { "ka": "მაგალითი", "en": "Example" },
+  "children": [
+    {
+      "type": "page-header",
+      "title": "Example page",
+      "crumbs": [{ "label": "Example" }]
+    },
+    { "type": "filter-bar" }
+  ]
+}

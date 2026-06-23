@@ -1,0 +1,39 @@
+/* ── page-step.css — palette list chrome for the Constructor page step ──── */
+
+.node-palette {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.node-palette__item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 8px 10px;
+  font: inherit;
+  color: var(--color-text-primary, #1a1a2e);
+  background: var(--color-surface, #fff);
+  border: 1px solid var(--color-border, #dee2e6);
+  border-radius: var(--radius-sm, 4px);
+  cursor: grab;
+  touch-action: none;
+  transition: border-color 120ms ease, background-color 120ms ease;
+}
+
+.node-palette__item:hover {
+  border-color: var(--color-accent, #005a9c);
+  background: var(--color-accent-muted, #e8f0f8);
+}
+
+.node-palette__item:focus-visible {
+  outline: 2px solid var(--color-accent, #005a9c);
+  outline-offset: 2px;
+}
+
+.node-palette__item:active {
+  cursor: grabbing;
+}

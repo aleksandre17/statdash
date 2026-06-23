@@ -1,5 +1,5 @@
 import { Box, MenuItem, Select, TextField, Typography } from '@mui/material'
-import type { EncodingSpec } from '@geostat/engine'
+import type { EncodingSpec } from '@statdash/engine'
 
 // ── EncodingEditor — channel → field-name mapper ──────────────────────────────
 //

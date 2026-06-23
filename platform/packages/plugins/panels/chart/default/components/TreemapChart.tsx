@@ -1,0 +1,241 @@
+// ── TreemapChart ────────────────────────────────────────────────────────
+//
+//  Left  column (35 %) : total block, full height
+//  Right column (65 %) : 2×2 flex grid
+//    top    row : 2 largest components side-by-side (flex-grow by value)
+//    bottom row : 2 smallest components side-by-side (flex-grow by value)
+//    row heights : proportional to row-sum (flex on the row itself)
+//
+
+import { useState }         from 'react'
+import { createPortal }     from 'react-dom'
+import type { ChartOutput } from '@statdash/charts'
+import { fmtNum } from '@statdash/engine'
+
+const GAP = 3
+
+function isLight(hex: string): boolean {
+  const h = hex.replace('#', '')
+  const r = parseInt(h.slice(0, 2), 16)
+  const g = parseInt(h.slice(2, 4), 16)
+  const b = parseInt(h.slice(4, 6), 16)
+  return (r * 299 + g * 587 + b * 114) / 1000 > 160
+}
+
+interface Item {
+  label: string; clean: string; op: string
+  value: number; formatted: string
+  color: string; isTotal: boolean
+}
+interface Cursor { x: number; y: number }
+
+// ── Tooltip ────────────────────────────────────────────────────────────
+
+function Tooltip({ item, pct, cursor }: { item: Item; pct: string; cursor: Cursor }) {
+  return (
+    <div style={{
+      position: 'fixed', left: cursor.x + 16, top: cursor.y - 10,
+      width: 210, background: '#fff', border: `1px solid ${item.color}`,
+      borderRadius: 7, padding: '9px 11px', pointerEvents: 'none',
+      boxShadow: '0 2px 10px rgba(0,0,0,0.12)', zIndex: 99999,
+      fontFamily: 'BPG Arial, Roboto, sans-serif',
+    }}>
+      <div style={{ fontSize: 10, color: '#5A7A8A', lineHeight: 1.45, marginBottom: 5 }}>
+        {item.clean}
+      </div>
+      <div style={{ fontSize: 12, fontWeight: 700, color: '#1A2332' }}>
+        {item.formatted}
+        {pct && <span style={{ fontWeight: 500, fontSize: 10, color: item.color, marginLeft: 7 }}>· {pct}</span>}
+      </div>
+    </div>
+  )
+}
+
+// ── Block ──────────────────────────────────────────────────────────────
+
+function Block({
+  item, flexGrow, hovered, onEnter, onMove, onLeave,
+}: {
+  item: Item; flexGrow: number; pct: string
+  hovered: Item | null
+  onEnter: (e: React.MouseEvent) => void
+  onMove:  (e: React.MouseEvent) => void
+  onLeave: () => void
+}) {
+  const light = isLight(item.color)
+  const dim   = hovered && hovered.label !== item.label
+  return (
+    <div
+      style={{
+        flex: flexGrow, position: 'relative', minWidth: 0, minHeight: 0,
+        background: item.color, borderRadius: 4, overflow: 'hidden',
+        cursor: 'default', opacity: dim ? 0.7 : 1, transition: 'opacity 0.15s',
+      }}
+      onMouseEnter={onEnter}
+      onMouseMove={onMove}
+      onMouseLeave={onLeave}
+    >
+      {item.op && (
+        <div style={{
+          position: 'absolute', top: 5, left: 7, pointerEvents: 'none',
+          fontSize: 10, fontWeight: 700, fontFamily: 'monospace',
+          color: light ? '#1A2332' : '#fff', opacity: 0.55,
+        }}>
+          {item.op}
+        </div>
+      )}
+      <div style={{
+        position: 'absolute', inset: 0,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        padding: '4px 10px', pointerEvents: 'none',
+        color: light ? '#1A2332' : '#fff', overflow: 'hidden',
+      }}>
+        <span style={{
+          fontSize: 12, fontFamily: 'BPG Arial, Roboto, sans-serif',
+          textAlign: 'center', lineHeight: 1.35,
+          overflow: 'hidden', display: '-webkit-box',
+          WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
+        }}>
+          {item.clean}
+        </span>
+      </div>
+    </div>
+  )
+}
+
+// ── Component ──────────────────────────────────────────────────────────
+
+export default function TreemapChart({ output }: { output: ChartOutput }) {
+  const [hovered, setHovered] = useState<Item | null>(null)
+  const [cursor,  setCursor]  = useState<Cursor | null>(null)
+
+  const pts  = output.series[0]?.data ?? []
+  const cats = output.categories
+  if (!pts.length) return null
+
+  const base = output.series[0]?.color ?? '#0080BE'
+
+  const items: Item[] = cats
+    .map((rawLabel, i) => {
+      const label = rawLabel ?? ''
+      const pt    = pts[i]
+      if (!pt) return null
+      return {
+        label,
+        clean:     label.replace(/^\(.\) /, ''),
+        op:        label.match(/^\((.)\) /)?.[1] ?? '',
+        value:     pt.value,
+        formatted: pt.formatted,
+        color:     pt.thresholdColor ?? base,
+        isTotal:   label.startsWith('(=) '),
+      }
+    })
+    .filter((it): it is Item => it !== null)
+
+  const totalItem  = items.find(it => it.isTotal)
+  const components = items.filter(it => !it.isTotal).sort((a, b) => b.value - a.value)
+  const totalValue = totalItem?.value ?? components.reduce((s, it) => s + it.value, 0)
+  const pctOf      = (it: Item) => totalValue > 0
+    ? fmtNum((it.value / totalValue) * 100, 1) + '%' : ''
+
+  // Split into two rows: 2 largest on top, rest on bottom
+  const topRow = components.slice(0, 2)
+  const botRow = components.slice(2)
+  const topSum = topRow.reduce((s, it) => s + it.value, 0)
+  const botSum = botRow.reduce((s, it) => s + it.value, 0)
+
+  function handlers(it: Item) {
+    return {
+      onEnter: (e: React.MouseEvent) => { setHovered(it); setCursor({ x: e.clientX, y: e.clientY }) },
+      onMove:  (e: React.MouseEvent) => setCursor({ x: e.clientX, y: e.clientY }),
+      onLeave: () => { setHovered(null); setCursor(null) },
+    }
+  }
+
+  return (
+    <div style={{ display: 'flex', height: '100%', gap: GAP }}>
+
+      {/* ── Left: total (35%) ── */}
+      {totalItem && (() => {
+        const light = isLight(totalItem.color)
+        const h     = handlers(totalItem)
+        const dim   = hovered && hovered.label !== totalItem.label
+        return (
+          <div
+            style={{
+              width: '30%', flexShrink: 0, position: 'relative',
+              background: totalItem.color, borderRadius: 4, overflow: 'hidden',
+              cursor: 'default', opacity: dim ? 0.7 : 1, transition: 'opacity 0.15s',
+            }}
+            onMouseEnter={h.onEnter}
+            onMouseMove={h.onMove}
+            onMouseLeave={h.onLeave}
+          >
+            {totalItem.op && (
+              <div style={{
+                position: 'absolute', top: 5, left: 7, pointerEvents: 'none',
+                fontSize: 10, fontWeight: 700, fontFamily: 'monospace',
+                color: light ? '#1A2332' : '#fff', opacity: 0.55,
+              }}>
+                {totalItem.op}
+              </div>
+            )}
+            <div style={{
+              position: 'absolute', inset: 0,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              padding: 12, textAlign: 'center', pointerEvents: 'none',
+              color: light ? '#1A2332' : '#fff',
+            }}>
+              <span style={{ fontSize: 12, fontFamily: 'BPG Arial, Roboto, sans-serif', lineHeight: 1.35 }}>
+                {totalItem.clean}
+              </span>
+            </div>
+          </div>
+        )
+      })()}
+
+      {/* ── Right: 2×2 grid ── */}
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: GAP, minWidth: 0 }}>
+
+        {/* Top row */}
+        {topRow.length > 0 && (
+          <div style={{ flex: topSum, display: 'flex', gap: GAP, minHeight: 0 }}>
+            {topRow.map((it, i) => {
+              const h = handlers(it)
+              return (
+                <Block
+                  key={it.label || i}
+                  item={it} flexGrow={it.value} pct={pctOf(it)}
+                  hovered={hovered}
+                  onEnter={h.onEnter} onMove={h.onMove} onLeave={h.onLeave}
+                />
+              )
+            })}
+          </div>
+        )}
+
+        {/* Bottom row */}
+        {botRow.length > 0 && (
+          <div style={{ flex: botSum, display: 'flex', gap: GAP, minHeight: 0 }}>
+            {botRow.map((it, i) => {
+              const h = handlers(it)
+              return (
+                <Block
+                  key={it.label || i}
+                  item={it} flexGrow={it.value} pct={pctOf(it)}
+                  hovered={hovered}
+                  onEnter={h.onEnter} onMove={h.onMove} onLeave={h.onLeave}
+                />
+              )
+            })}
+          </div>
+        )}
+      </div>
+
+      {hovered && cursor && createPortal(
+        <Tooltip item={hovered} pct={hovered.isTotal ? '' : pctOf(hovered)} cursor={cursor} />,
+        document.body,
+      )}
+    </div>
+  )
+}

@@ -2,7 +2,7 @@ import {
   Accordion, AccordionDetails, AccordionSummary, Box, Typography,
 } from '@mui/material'
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
-import type { DataSpec, EncodingSpec, ObsQuery, TransformStep } from '@geostat/engine'
+import type { DataSpec, EncodingSpec, ObsQuery, TransformStep } from '@statdash/engine'
 import { MeasureSelector } from './query/MeasureSelector'
 import { FilterBuilder } from './query/FilterBuilder'
 import { PipelineBuilder } from './query/PipelineBuilder'

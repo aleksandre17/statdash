@@ -2,14 +2,21 @@
 //
 //  Registry + Strategy pattern (Grafana LocaleContext):
 //    formatterRegistry.register(locale, formatter)
-//  OCP: new locale = one register() call. Zero engine/react/plugins change.
+//  OCP: new locale = one more entry in manifest.i18n.locales. Zero code change.
 //
-//  Imported once at app startup (main.tsx / setupRegistrations).
-//  Side-effect: populates formatterRegistry for 'ka' and 'en'.
+//  ADR-0026: the locale LIST is manifest data, no longer hardcoded here.
+//  registerFormatters(locales) is called at boot from manifest.i18n.locales
+//  (App.tsx, post-bootstrap) so the same code serves any site's locale set —
+//  local fallback or /api/bootstrap. The formatter STRATEGY (how a number /
+//  date is built) stays here: that is implementation, not manifest data.
 //
+//  The locale code is used directly as the Intl tag (e.g. 'ka', 'en'); the
+//  runtime applies sensible region defaults, so no app-specific 'ka-GE'/'en-US'
+//  mapping is hardcoded. A site needing an explicit region tag would carry it
+//  in its locale code (Phase B, when site_config defines the locale catalog).
 
-import { formatterRegistry } from '@geostat/engine'
-import type { LocaleFormatter } from '@geostat/engine'
+import { formatterRegistry } from '@statdash/engine'
+import type { LocaleFormatter } from '@statdash/engine'
 
 function makeFormatter(tag: string): LocaleFormatter {
   return {
@@ -38,6 +45,12 @@ function makeFormatter(tag: string): LocaleFormatter {
   }
 }
 
-formatterRegistry
-  .register('ka', makeFormatter('ka-GE'))
-  .register('en', makeFormatter('en-US'))
+/**
+ * Register an Intl formatter for each locale the active manifest declares.
+ * Idempotent: re-registering a locale overwrites with the same strategy.
+ */
+export function registerFormatters(locales: string[]): void {
+  for (const locale of locales) {
+    formatterRegistry.register(locale, makeFormatter(locale))
+  }
+}

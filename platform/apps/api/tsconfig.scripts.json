@@ -1,0 +1,25 @@
+{
+  // ── Typecheck config for build-time ETL scripts (scripts/*.ts) ──────────
+  // The scripts are NOT part of the API build (tsconfig.build.json includes
+  // "src" only). They run under tsx. This config typechecks the ETL scripts.
+  // The seed/parity scripts read the committed ops/seed-data/geostat/ bundle
+  // files (ADR-0028 SSOT) and own their own input contract (ACL in seed.ts),
+  // so they do NOT import the engine's type graph (Law 3). The TS dataset
+  // bundles + their @statdash/engine ambient shim were removed in ADR-0028
+  // Phase C once the bundles were deleted and the files became the SSOT.
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "target": "ES2022",
+    "lib": ["ES2022"],
+    "noEmit": true,
+    "composite": false,
+    "skipLibCheck": true,
+    "allowImportingTsExtensions": false,
+    "types": ["node"],
+    "baseUrl": ".",
+    "paths": {}
+  },
+  "include": ["scripts"]
+}

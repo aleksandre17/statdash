@@ -3,17 +3,27 @@ import * as Pages     from '@plugins/pages'
 import * as Panels    from '@plugins/panels'
 import * as Nodes     from '@plugins/nodes'
 import * as Controls  from '@plugins/controls'
-import { registerSlice, middlewareRegistry } from '@geostat/react/engine'
-import { modeRegistry }                      from '@geostat/engine'
+import { registerSlice, middlewareRegistry } from '@statdash/react/engine'
 import { createElement }                     from 'react'
 import { registerStoreBuilders } from './data/stats-registrations'
+import { registerFeedbackI18n }  from './i18n/feedback'
+import { setupExtensions }       from './extensions/setupExtensions'
+// Locale formatters are registered at boot from manifest.i18n.locales
+// (App.tsx, post-bootstrap) — see i18n/formatters.ts registerFormatters().
 
 export function setupRegistrations(): void {
   registerStoreBuilders()
 
-  modeRegistry.register({ id: 'year',    label: 'წლიური',    icon: 'calendar',       dataKey: 'year'    })
-  modeRegistry.register({ id: 'range',   label: 'დინამიკა',  icon: 'calendar-range', dataKey: 'range'   })
-  modeRegistry.register({ id: 'compare', label: 'შედარება',  icon: 'git-compare',    dataKey: 'compare' })
+  // Core (non-slice) i18n: 'feedback' namespace for engine/react shared
+  // feedback components (EmptyState). Runs after i18next.init() in main.tsx.
+  registerFeedbackI18n()
+
+  // Extension point contributions — plugin-style registration for app-tier slots.
+  setupExtensions()
+
+  // Modes are app DATA, not a compiled capability — they now live in the
+  // SiteManifest (manifest.modes) and are registered at boot from whichever
+  // manifest is active (App.tsx). See data/modes.config.ts (offline fallback).
 
   ;[
     ...Object.values(Chrome),
@@ -38,7 +48,7 @@ export function setupRegistrations(): void {
   // ── DEV observability seam (app layer only) ──────────────────────────────
   if (import.meta.env.DEV) {
     ;(async () => {
-      const { setSpecResolveObserver, setFilterDeriveObserver, setDiagnosticObserver } = await import('@geostat/engine')
+      const { setSpecResolveObserver, setFilterDeriveObserver, setDiagnosticObserver } = await import('@statdash/engine')
       setSpecResolveObserver((tag, _ctx, rows) => {
         console.debug(`[engine] ${tag} → ${rows.length} rows`)
       })

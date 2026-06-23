@@ -2,6 +2,9 @@
 
 ## Project
 - [Panel DataSpec editor contract](project_panel_dataspec_editor.md) — engine types are the contract the Constructor UI must produce; spec-text mismatches resolved toward engine
+- [Bootstrap runner Phase A (ADR-0026)](project_bootstrap_runner_phasea.md) — manifest is runtime SSOT; PageLoader resolves via usePageById; modes+formatters register post-bootstrap from manifest
+- [Constructor C3 + C5](project_panel_c3_c5.md) — cube capability-discovery (discovery/), active-dataset via DataSource.config.datasetCode, save guard (4 checks) wired into api-actions
+- [De-tenant Phase 2 STRIP (ADR-0028)](project_detenant_phase_strip.md) — geostat → pure runner; emptyManifest fallback; seed.ts/verify-parity/seed-pipeline read ops/seed-data files
 
 ## Feedback — corrections & validated approaches
 - [Conform to engine types over spec text](feedback_conform_engine_types.md) — when a task spec contradicts a published @geostat/engine type, the type wins

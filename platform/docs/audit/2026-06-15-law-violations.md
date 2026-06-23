@@ -66,9 +66,9 @@ must contain zero `[Ⴀ-ჿ]` codepoints and no literal `'ka'`/`'ka-GE'`.
 ## Categories that are clean (and *why* — so the floor isn't mistaken for absence of review)
 
 - **A — Dependency arrow (clean).** No `engine/core/src/**` import of `engine/react`
-  or `@geostat/react`; no `engine/react/src/**` import of `plugins/` or `apps/`.
-  package.json confirms it: `engine/react` depends only on `@geostat/engine` +
-  `@geostat/styles`. `@geostat/expr` is imported by both core and react — this is
+  or `@statdash/react`; no `engine/react/src/**` import of `plugins/` or `apps/`.
+  package.json confirms it: `engine/react` depends only on `@statdash/engine` +
+  `@statdash/styles`. `@statdash/expr` is imported by both core and react — this is
   **correct**: `expr` is the bottom expression leaf (no upstream deps), so depending
   on it does not violate the arrow.
 
@@ -94,7 +94,7 @@ None — read-only run.
 - Pre-known blocker reconfirmed (NOT re-found, already in `project_debt.md`):
   `engine/react/src/index.ts:24-35` re-exports dead Track-B types
   (`SectionDef`, `WidgetDef`, `TabsDef`, `TabEntry`, `PageHeaderDef`, `FilterBarDef`,
-  `KpiStripDef`, `LinksDef`, …) from `@geostat/engine`. Layer 6.3 BLOCKED on TS
+  `KpiStripDef`, `LinksDef`, …) from `@statdash/engine`. Layer 6.3 BLOCKED on TS
   upgrade per `docs/plan/roadmap-phase-5-6.md`. No action this pass.
 
 ## Cross-cutting / systemic

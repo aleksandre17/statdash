@@ -1,0 +1,24 @@
+{
+  "name": "@statdash/expr",
+  "version": "0.1.0",
+  "description": "Pure TypeScript expression evaluator — zero deps, JSON-serializable logic",
+  "type": "module",
+  "private": true,
+  "exports": {
+    ".": {
+      "source":  "./index.ts",
+      "types":   "./dist/index.d.ts",
+      "import":  "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsup index.ts --format esm --dts --clean"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

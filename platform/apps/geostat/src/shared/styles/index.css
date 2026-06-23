@@ -29,12 +29,12 @@
   }
 
   body {
-    font-family: 'Noto Sans Georgian', system-ui, sans-serif;
+    font-family: system-ui, sans-serif;
     line-height: 1.6;
   }
 
   h1, h2, h3, h4, h5, h6 {
-    font-family: 'Noto Serif Georgian', 'Noto Sans Georgian', sans-serif;
+    font-family: system-ui, sans-serif;
     color: #1A2332;
     line-height: 1.3;
   }

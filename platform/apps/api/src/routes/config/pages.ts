@@ -1,6 +1,41 @@
 import type { FastifyPluginAsync } from 'fastify'
 import { z } from 'zod'
-import { ok, notFound, parseBody, parseParams } from '../../lib/http.js'
+import { migratePageConfig } from '@statdash/engine'
+import { ok, notFound, parseBody, parseParams, HttpError } from '../../lib/http.js'
+import type { AuditLogger } from '../../lib/audit-log.js'
+
+// ── Publish-role gate (C4 RBAC — Constructor publish governance) ───────────────
+//
+//  AUTHORING vs PUBLISHING are distinct privileges (C4 / P3-5). configRoutes'
+//  authPlugin already gates EVERY config route with a valid Bearer JWT, so save
+//  (POST /, PUT /:id) is open to any authenticated user with a write role. PUBLISH
+//  is the governance act that makes a draft the live, public site — it must be
+//  gated MORE STRICTLY than save: an editor curates drafts, an admin publishes.
+//
+//  ROLE VOCABULARY: the platform RBAC set is admin/editor/viewer (V10 comment,
+//  admin/users.ts KNOWN_ROLES, V10 default 'viewer'). There is NO dedicated
+//  `publisher` role. Rather than INVENT a 4th role here (a one-way-door change
+//  spanning the DB CHECK, KNOWN_ROLES, and token issuance across apps/api — an
+//  architect-level cross-module contract decision), publish is gated to the
+//  existing privileged role: admin. This realises the editor-saves / admin-
+//  publishes separation C4 needs using the vocabulary that already exists.
+//
+//  ESCALATION (flagged for the architect): if the product needs a publisher role
+//  distinct FROM admin (a user who may publish but not manage users/system), the
+//  expand step is additive — add 'publisher' to KNOWN_ROLES + the V10 role
+//  comment, then widen PUBLISH_ROLES to ['admin', 'publisher']. The gate below is
+//  the single seam that absorbs that change (Protected Variations).
+//
+//  401 (no/invalid token, from authPlugin) vs 403 (valid token, wrong role, here)
+//  are kept distinct per RFC 7235 — same contract as ingestRoutes / releases.ts.
+const PUBLISH_ROLES = ['admin'] as const
+
+function requirePublish(roles: string[] | undefined): void {
+  const r = roles ?? []
+  if (!PUBLISH_ROLES.some((role) => r.includes(role))) {
+    throw new HttpError(403, 'admin role required to publish')
+  }
+}
 
 // ── Schemas ───────────────────────────────────────────────────────────────────
 const CreatePageBody = z.object({
@@ -20,7 +55,11 @@ const UpdatePageBody = z.object({
 
 const PageParams = z.object({ id: z.string().uuid() })
 
-export const pagesRoutes: FastifyPluginAsync = async (app) => {
+// Factory: the AuditLogger is injected (port) so config writes are recorded
+// against the JWT subject — a governance trail of who saved/published which
+// page [N41]. Optional so callers/tests without an audit logger still compile;
+// logging is then a no-op.
+export const pagesRoutes = (audit?: AuditLogger): FastifyPluginAsync => async (app) => {
   // GET / — list non-archived pages (Constructor dashboard).
   app.get('/', async () => {
     const { rows } = await app.pg.query(
@@ -33,7 +72,7 @@ export const pagesRoutes: FastifyPluginAsync = async (app) => {
   })
 
   // GET /:id — page identity + its latest version config + data_specs.
-  app.get('/:id', async (req) => {
+  app.get('/:id', async (req, reply) => {
     const { id } = parseParams(PageParams, req.params)
     const { rows } = await app.pg.query(
       `SELECT p.id, p.slug, p.title, p.status, p.metadata,
@@ -52,7 +91,28 @@ export const pagesRoutes: FastifyPluginAsync = async (app) => {
     )
     const page = rows[0]
     if (!page) throw notFound('Page')
-    return ok(page)
+
+    // Forward-migrate the config blob to the current schema version (lazy
+    // migration on read). The migration is pure + idempotent: a current-schema
+    // config is returned unchanged. The forward-compat guard throws if the
+    // stored blob has a HIGHER schemaVersion than CURRENT_SCHEMA_VERSION
+    // (a future config, not safe to serve to current clients).
+    let config = page.config
+    if (config && typeof config === 'object' && !Array.isArray(config)) {
+      try {
+        config = migratePageConfig(config as Record<string, unknown>)
+      } catch {
+        // schemaVersion > CURRENT: config was saved by a newer platform build.
+        // Return 409 Conflict (RFC 9457-style: the resource state conflicts
+        // with the request because serving it would violate the forward-compat
+        // contract — the current server cannot understand a future config).
+        return reply.status(409).send({
+          error: 'Config schema version is newer than this server supports',
+          code:  'CONFIG_SCHEMA_AHEAD',
+        })
+      }
+    }
+    return ok({ ...page, config })
   })
 
   // POST / — create page + its first immutable version (atomic).
@@ -71,6 +131,12 @@ export const pagesRoutes: FastifyPluginAsync = async (app) => {
         [page.id, JSON.stringify(body.config), JSON.stringify(body.data_specs)],
       )
       await client.query('COMMIT')
+      audit?.log({
+        userId:   req.jwtPayload?.sub,
+        action:   'config.save',
+        resource: page.id,
+        payload:  { slug: body.slug, created: true },
+      })
       return reply.status(201).send(ok({ id: page.id }))
     } catch (e) {
       await client.query('ROLLBACK')
@@ -135,6 +201,12 @@ export const pagesRoutes: FastifyPluginAsync = async (app) => {
       }
 
       await client.query('COMMIT')
+      audit?.log({
+        userId:   req.jwtPayload?.sub,
+        action:   'config.save',
+        resource: id,
+        payload:  versionNumber !== undefined ? { version_number: versionNumber } : undefined,
+      })
       return ok({ id, version_number: versionNumber })
     } catch (e) {
       await client.query('ROLLBACK').catch(() => {})
@@ -170,8 +242,11 @@ export const pagesRoutes: FastifyPluginAsync = async (app) => {
   })
 
   // POST /:id/publish — promote the latest version; demote all others. Atomic so
-  // there is never zero or two published versions for a page.
-  app.post('/:id/publish', async (req) => {
+  // there is never zero or two published versions for a page. PUBLISH-role gated
+  // (admin) on top of authPlugin's JWT — save is open to any write role, publish
+  // is the stricter governance act (C4 / P3-5). The onRequest gate runs BEFORE the
+  // handler/transaction, so an unauthorised caller never opens a DB connection.
+  app.post('/:id/publish', { onRequest: async (req) => requirePublish(req.jwtPayload?.roles) }, async (req) => {
     const { id } = parseParams(PageParams, req.params)
     const client = await app.pg.connect()
     try {
@@ -198,6 +273,12 @@ export const pagesRoutes: FastifyPluginAsync = async (app) => {
       )
 
       await client.query('COMMIT')
+      audit?.log({
+        userId:   req.jwtPayload?.sub,
+        action:   'config.publish',
+        resource: id,
+        payload:  { published_version_id: latest.id },
+      })
       return ok({ id, published_version_id: latest.id })
     } catch (e) {
       await client.query('ROLLBACK').catch(() => {})

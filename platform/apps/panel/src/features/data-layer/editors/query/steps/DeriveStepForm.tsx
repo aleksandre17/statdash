@@ -1,5 +1,5 @@
 import { Box, TextField } from '@mui/material'
-import type { TransformStep } from '@geostat/engine'
+import type { TransformStep } from '@statdash/engine'
 
 // ── DeriveStepForm — op=derive: as + expr ─────────────────────────────────────
 //

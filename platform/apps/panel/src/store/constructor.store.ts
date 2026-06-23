@@ -253,7 +253,7 @@ export const useConstructorStore = create<ConstructorStore>()(
             const idx = afterId ? page.nodeIds.indexOf(afterId) + 1 : page.nodeIds.length
             const nodeIds = [...page.nodeIds.slice(0, idx), node.id, ...page.nodeIds.slice(idx)]
             return {
-              ...pushHistory(s as ConstructorStore, `Add ${node.kind}`),
+              ...pushHistory(s as ConstructorStore, `Add ${node.type}`),
               pages: s.pages.map((p) =>
                 p.id === pageId
                   ? { ...p, nodeIds, nodes: { ...p.nodes, [node.id]: node } }

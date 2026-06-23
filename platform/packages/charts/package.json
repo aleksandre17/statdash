@@ -1,0 +1,31 @@
+{
+  "name": "@statdash/charts",
+  "version": "0.1.0",
+  "description": "Renderer-agnostic chart interpretation — ChartDef → neutral ChartOutput, zero React, zero rendering lib",
+  "type": "module",
+  "private": true,
+  "exports": {
+    ".": {
+      "source":  "./src/index.ts",
+      "types":   "./dist/index.d.ts",
+      "import":  "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": ["dist"],
+  "sideEffects": [
+    "./src/index.ts",
+    "./src/interpreters.ts"
+  ],
+  "scripts": {
+    "build": "tsup src/index.ts --format esm --dts --clean"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "dependencies": {
+    "@statdash/engine": "workspace:*"
+  }
+}

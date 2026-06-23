@@ -1,0 +1,45 @@
+{
+  "name": "@statdash/react",
+  "version": "0.1.0",
+  "description": "React adapter — headless components consuming @statdash/engine",
+  "type": "module",
+  "private": true,
+  "exports": {
+    ".": {
+      "source":  "./src/index.ts",
+      "types":   "./dist/index.d.ts",
+      "import":  "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./engine": {
+      "source":  "./src/engine/index.ts",
+      "types":   "./dist/engine/index.d.ts",
+      "import":  "./dist/engine/index.js",
+      "default": "./dist/engine/index.js"
+    }
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsup src/index.ts --format esm --dts --clean"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "peerDependencies": {
+    "react": ">=18",
+    "react-dom": ">=18",
+    "react-router-dom": ">=6",
+    "i18next": ">=23.0.0"
+  },
+  "peerDependenciesMeta": {
+    "i18next": { "optional": true }
+  },
+  "dependencies": {
+    "@statdash/contracts": "workspace:*",
+    "@statdash/engine": "workspace:*",
+    "@statdash/charts": "workspace:*",
+    "@statdash/styles": "workspace:*"
+  }
+}

@@ -25,6 +25,31 @@ import {
   fromApiPage,
   toApiPage,
 } from '../lib/api'
+import { validatePageForSave, type SaveIssue } from '../save/saveGuard'
+import { orderLocales } from '../inspector/useActiveLocales'
+
+// ── Save guard error — raised when a page fails the C5 four-check gate ────────
+//
+//  The Constructor must ONLY emit configs that pass migrate-identity +
+//  round-trip + per-node-valid + locale-complete. createPage/savePage run the
+//  guard BEFORE the API write and throw this on failure — shifting the failure
+//  LEFT to authoring time (the caller renders `issues` inline) instead of
+//  letting an invalid config reach the server / gold gate.
+export class SaveGuardError extends Error {
+  readonly issues: SaveIssue[]
+  constructor(issues: SaveIssue[]) {
+    super(`Page failed ${issues.length} save check${issues.length === 1 ? '' : 's'}`)
+    this.name = 'SaveGuardError'
+    this.issues = issues
+  }
+}
+
+/** Run the C5 save guard for a page against the session's active locales. */
+function assertSaveable(page: CanvasPage): void {
+  const { defaultLocale } = useConstructorStore.getState().site
+  const report = validatePageForSave(page, { activeLocales: orderLocales(defaultLocale) })
+  if (!report.ok) throw new SaveGuardError(report.issues)
+}
 
 // ── Init ──────────────────────────────────────────────────────────────────────
 // Load every layer in parallel on app start. Returns true on success, false if
@@ -165,6 +190,8 @@ export async function saveSite(patch: Partial<SiteDef>): Promise<void> {
 // ── Pages ──────────────────────────────────────────────────────────────────────
 
 export async function createPage(input: Omit<CanvasPage, 'id'>): Promise<CanvasPage> {
+  // C5 save guard — block an invalid config before it ever reaches the server.
+  assertSaveable({ ...input, id: '' })
   const { id } = await configApi.pages.create(toApiPage({ ...input, id: '' }))
   const page: CanvasPage = { ...input, id }
   useConstructorStore.getState().addPage(page)
@@ -175,11 +202,18 @@ export async function savePage(id: string, patch: Partial<CanvasPage>): Promise<
   const store = useConstructorStore.getState()
   store.updatePage(id, patch) // optimistic (store rejects `nodes` in patch type)
 
+  // Re-read the merged page so the version snapshot is whole (config = the full
+  // canvas tree), never a partial that would orphan nodeIds from nodes.
+  const merged = useConstructorStore.getState().pages.find((p) => p.id === id)
+  if (!merged) return
+
+  // C5 save guard — runs on the WHOLE merged page (the artefact actually
+  // persisted). Throws SaveGuardError on any failed check; the caller surfaces
+  // the issues inline (shift-left). NOT swallowed like the network catch below:
+  // a guard failure is an authoring error to fix, not a transient fault to retry.
+  assertSaveable(merged)
+
   try {
-    // Re-read the merged page so the version snapshot is whole (config = the full
-    // canvas tree), never a partial that would orphan nodeIds from nodes.
-    const merged = useConstructorStore.getState().pages.find((p) => p.id === id)
-    if (!merged) return
     await configApi.pages.update(id, toApiPage(merged))
   } catch (e) {
     console.error('[api] savePage failed', e)

@@ -1,0 +1,24 @@
+{
+  "name": "@statdash/contracts",
+  "version": "0.1.0",
+  "description": "Zero-dependency shared boundary contracts — the single source of truth for DTOs that cross the api ↔ engine ↔ app boundary (no React, no engine internals).",
+  "type": "module",
+  "private": true,
+  "exports": {
+    ".": {
+      "source":  "./src/index.ts",
+      "types":   "./dist/index.d.ts",
+      "import":  "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsup src/index.ts --format esm --dts --clean"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

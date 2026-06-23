@@ -1,0 +1,30 @@
+# Per-module deploy compose (node-vite driver) — DEV overlay.
+# Auto-merged on: docker compose -f docker-compose.yml -f docker-compose.override.yml up
+#   (node-vite `deploy.ps1 remote -Environment dev` passes both explicitly).
+#
+# Runs the development target (vite dev server). The workspace root is bind-mounted so
+# edits hot-reload; node_modules is kept inside the container. APP_DEV_CONTAINER_PORT is
+# the in-container vite port, published on DEPLOY_HOST_PORT.
+services:
+  statdash-geostat:
+    build:
+      target: development
+      args:
+        APP_DEV_PORT: ${APP_DEV_CONTAINER_PORT:-5171}
+    image: statdash-geostat:dev
+    ports:
+      - "${DEPLOY_HOST_PORT:-5171}:${APP_DEV_CONTAINER_PORT:-5171}"
+    environment:
+      VITE_API_URL: ${VITE_API_URL:-}
+    env_file:
+      - ../../../ops/config/geostat/.env.dev
+    volumes:
+      - ../../:/app
+      - /app/node_modules
+    develop:
+      watch:
+        - action: sync
+          path: ./src
+          target: /app/apps/geostat/src
+        - action: rebuild
+          path: ./package.json

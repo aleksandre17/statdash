@@ -1,4 +1,10 @@
-# Explorer Memory Index — Capability Descriptors
+# Explorer Memory Index — Data Inventory + Capability Descriptors
+
+## Data Inventory (Codebase Exploration)
+
+- [data_static_facts.md](data_static_facts.md) — Regional/Accounts/GDP raw datasets, DataBundle pattern
+- [page_render_configs.md](page_render_configs.md) — Page configs, DataSpec shapes, filter schema, KPIs
+- [datastore_architecture.md](datastore_architecture.md) — ExternalStore, Phase 1↔2 bootstrap, migration
 
 ## @geostat/expr — Expression Engine
 

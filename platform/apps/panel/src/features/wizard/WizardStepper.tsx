@@ -13,6 +13,7 @@ export function WizardStepper() {
   const activeStep     = useWizardStep()
   const completedSteps = useCompletedSteps()
   const goToStep       = useConstructorStore((s) => s.goToStep)
+  const locale         = useConstructorStore((s) => s.site.defaultLocale)
 
   const handleLogout = () => {
     logout()
@@ -26,9 +27,9 @@ export function WizardStepper() {
           <Step key={step.id} completed={completedSteps.has(step.index)}>
             <StepButton onClick={() => goToStep(step.index)}>
               <StepLabel>
-                <Typography variant="subtitle2">{step.label.ka}</Typography>
+                <Typography variant="subtitle2">{step.label[locale]}</Typography>
                 <Typography variant="caption" color="text.secondary">
-                  {step.description.ka}
+                  {step.description[locale]}
                 </Typography>
               </StepLabel>
             </StepButton>
@@ -36,11 +37,11 @@ export function WizardStepper() {
         ))}
       </Stepper>
 
-      <Tooltip title="გასვლა (Logout)">
+      <Tooltip title={locale === 'en' ? 'Logout' : 'გასვლა'}>
         <IconButton
           onClick={handleLogout}
           size="small"
-          aria-label="Logout"
+          aria-label={locale === 'en' ? 'Logout' : 'გასვლა'}
           sx={{ ml: 2, color: 'text.secondary' }}
         >
           <LogoutIcon fontSize="small" />

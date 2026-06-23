@@ -4,8 +4,8 @@ import {
   FormControl, InputLabel, MenuItem, Select, TextField, Typography,
 } from '@mui/material'
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
-import type { DataSpec } from '@geostat/engine'
-import { SPEC_CATALOG } from '@geostat/engine'
+import type { DataSpec } from '@statdash/engine'
+import { SPEC_CATALOG } from '@statdash/engine'
 import { QuerySpecEditor } from './editors/QuerySpecEditor'
 import { TimeseriesEditor } from './editors/TimeseriesEditor'
 import { GrowthEditor } from './editors/GrowthEditor'

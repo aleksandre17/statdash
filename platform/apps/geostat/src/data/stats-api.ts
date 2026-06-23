@@ -10,7 +10,7 @@
 //  Record<string, DimVal>. We never name 'measure' / 'geo' / 'time' here —
 //  the adapter spreads the key as-is and lets the engine resolve dimensions.
 //
-import type { Observation, Classifier, ClassifierEntry, DimVal } from '@geostat/engine'
+import type { Observation, Classifier, ClassifierEntry, DimVal } from '@statdash/engine'
 
 // ── Wire shapes — exact contract of GET /api/stats/* responses ────────────
 
@@ -21,12 +21,58 @@ export interface StatsDatasetRow {
   dimensions: { dim_code: string; is_time_dim: boolean; ord: number }[]
 }
 
-/** Row of GET /observations — one fact. dim_key holds all non-time dims. */
-export interface StatsObsRow {
-  time_period: string
-  dim_key:     Record<string, unknown>
-  obs_value:   number
-  obs_status:  string
+/**
+ * Row of GET /observations — one raw fact, exact wire shape of the route's
+ * SELECT (time_period, dim_key, obs_value, obs_status, obs_attribute).
+ *
+ * This is the SSOT raw shape the engine's ApiStore hands to its DI `mapRow`
+ * (engine `RawObsRow`). It is structurally identical to engine `RawObsRow`,
+ * declared here so the app owns its own wire contract (the engine never
+ * imports app types — Law 3 / dependency arrow).
+ *
+ * `obs_value` is `number | null`: the route returns it verbatim from pg and a
+ * missing/suppressed cell is null, not 0 — the mapper preserves that.
+ * `dim_key` is opaque generic (Law 1): never named dims here.
+ */
+export interface RawStatsObsRow {
+  time_period:   string
+  dim_key:       Record<string, string>
+  obs_value:     number | null
+  obs_status:    string
+  obs_attribute: Record<string, unknown>
+}
+
+/**
+ * @deprecated kept as a backward-compatible alias for existing callers.
+ * New code uses {@link RawStatsObsRow} — the exact route shape.
+ */
+export type StatsObsRow = RawStatsObsRow
+
+/**
+ * Row of GET /datasets/:code — dataset descriptor + DSD + provenance flags.
+ * P2-3: `preliminary` (any obs_status='P') and `version` feed the engine's
+ * MetadataPort so dataset-wide provenance badges can render.
+ */
+export interface StatsDatasetMetaRow {
+  code:        string
+  label:       string
+  version:     string | null
+  preliminary: boolean
+  dimensions:  { dim_code: string; is_time_dim: boolean; ord: number }[]
+}
+
+/**
+ * Row of GET /api/data-sources — one connected data source (P3-4). The public,
+ * minimal projection the dashboard reads at boot to build its store manifest;
+ * mirrors the API's PublicDataSourceRow exactly (the app owns its own wire
+ * contract — the API never imports app types, Law 3). `config` carries the
+ * store-builder params (datasetCode, nonTimeDims) as opaque JSON.
+ */
+export interface PublicDataSourceRow {
+  name:   string
+  type:   string
+  url:    string | null
+  config: Record<string, unknown>
 }
 
 /** Row of GET /classifiers/:dim_code — one codelist member. */
@@ -43,10 +89,21 @@ export interface StatsClassifierRow {
 // ── HTTP boundary — the ONLY fetch in stats mode (Law 5) ──────────────────
 
 const STATS_PREFIX = '/api/stats'
+const API_PREFIX   = '/api'
 
 async function get<T>(base: string, path: string): Promise<T> {
-  const res = await fetch(`${base}${STATS_PREFIX}${path}`)
-  if (!res.ok) throw new Error(`Stats API ${path}: ${res.status}`)
+  return getAt<T>(base, STATS_PREFIX, path)
+}
+
+/**
+ * Same { data: T } unwrap as get(), but parameterized on the route prefix so the
+ * public /api/data-sources read (P3-4) — which is NOT under /api/stats — can
+ * share this single fetch boundary instead of opening a second one (Law 5: one
+ * adapter seam).
+ */
+async function getAt<T>(base: string, prefix: string, path: string): Promise<T> {
+  const res = await fetch(`${base}${prefix}${path}`)
+  if (!res.ok) throw new Error(`API ${prefix}${path}: ${res.status}`)
   const json = (await res.json()) as { data: T }
   return json.data
 }
@@ -74,16 +131,36 @@ function parseTimePeriod(tp: string): number | null {
 /**
  * StatsObsRow → Observation. dim_key is spread generically (Law 1); time_period
  * is parsed to a numeric `time` dim, omitted when the format is unrecognized.
- * obs_status is surfaced as camelCase `obsStatus` (engine convention).
+ * obs_status is surfaced as camelCase `obsStatus` (engine convention) and
+ * normalized to the engine's canonical SDMX OBS_STATUS casing.
+ *
+ * Postel's Law (robustness at the boundary): the DB persists SDMX codes in
+ * upper case ('P', 'E', 'R', 'C') while the engine's `ObsStatus` union and
+ * OBS_STATUS_LABELS use the IMF/Eurostat lower-case convention ('p', 'e', 'r',
+ * 'c'); only 'A' (normal) stays upper. Normalize here — the single adapter seam
+ * — so every downstream consumer (provenance badge, StatusBadge) sees one
+ * canonical casing and never has to case-fold the status itself.
  */
-export function fromStatsObsRow(row: StatsObsRow): Observation {
+export function fromStatsObsRow(row: RawStatsObsRow): Observation {
   const time = parseTimePeriod(row.time_period)
   return {
     ...(row.dim_key as Record<string, DimVal>), // measure, geo, sector, …
     value: row.obs_value,
-    obsStatus: row.obs_status,
+    obsStatus: normalizeObsStatus(row.obs_status),
     ...(time !== null ? { time } : {}),
   }
+}
+
+/**
+ * Canonicalize a raw SDMX OBS_STATUS to the engine's convention: 'A' (normal)
+ * stays upper-case, every other recognized code is lower-cased ('P'→'p', …).
+ * Unrecognized values pass through untouched (forward-compatible — a new SDMX
+ * code still reaches the renderer rather than being silently dropped).
+ */
+function normalizeObsStatus(raw: string): string {
+  if (raw === '' || raw === 'A') return raw
+  const lower = raw.toLowerCase()
+  return (lower === 'p' || lower === 'e' || lower === 'r' || lower === 'c') ? lower : raw
 }
 
 /**
@@ -118,7 +195,72 @@ export async function fetchDatasetObs(
   return rows.map(fromStatsObsRow)
 }
 
+/**
+ * GET /api/data-sources → connected data sources (P3-4). The Phase-2 boot read:
+ * fetchStoreManifest maps these rows to 'stats' datasource descriptors. Lives
+ * here so every server read crosses the one HTTP adapter (Law 5). Note the
+ * /api prefix (not /api/stats) — this is a sibling public route.
+ */
+export async function fetchDataSources(base: string): Promise<PublicDataSourceRow[]> {
+  return getAt<PublicDataSourceRow[]>(base, API_PREFIX, '/data-sources')
+}
+
 export async function fetchDimClassifiers(base: string, dimCode: string): Promise<Classifier> {
   const rows = await get<StatsClassifierRow[]>(base, `/classifiers/${encodeURIComponent(dimCode)}`)
   return fromStatsClassifiers(rows)
+}
+
+/**
+ * GET /datasets/:code → dataset-level provenance (P2-3). Read once at store-build
+ * time and folded into a MetadataPort so the engine can surface a dataset-wide
+ * "preliminary" badge without re-fetching per render.
+ */
+export async function fetchDatasetMeta(base: string, datasetCode: string): Promise<StatsDatasetMetaRow> {
+  return get<StatsDatasetMetaRow>(base, `/datasets/${encodeURIComponent(datasetCode)}`)
+}
+
+// ── Per-query observation fetcher — the on-demand read (ADR-STORE-001) ─────
+//
+//  Where fetchDatasetObs pulls the WHOLE cube, fetchObservations pulls exactly
+//  one slice — the Cache-Aside read the engine ApiStore issues per ObsQuery.
+//  Returns RAW rows (RawStatsObsRow): the engine ApiStore owns the raw→engine
+//  mapping via its injected `mapRow` (fromStatsObsRow), so the boundary stays a
+//  pure HTTP adapter (Hexagonal) and the engine stays app-agnostic (Law 3).
+//
+//  ETag/304 aware: the route emits a weak ETag (GAP 5a). We forward the caller's
+//  If-None-Match and surface `notModified` so the store can keep its cached slice
+//  on a 304 (conditional-GET cache validation, RFC 9110).
+
+/** Query params for GET /api/stats/observations — mirrors the route's ObsQuery. */
+export interface ObsFetchParams {
+  dataset: string
+  from?:   string                 // time_period start (e.g. '2015')
+  to?:     string                 // time_period end   (e.g. '2024')
+  filter?: Record<string, string> // non-time dim filters → JSON.stringify-ed
+  limit?:  number
+}
+
+export async function fetchObservations(
+  base: string,
+  params: ObsFetchParams,
+  ifNoneMatch?: string,
+): Promise<{ data: RawStatsObsRow[]; etag?: string; notModified: boolean }> {
+  const qp = new URLSearchParams({ dataset: params.dataset })
+  if (params.from) qp.set('from', params.from)
+  if (params.to)   qp.set('to', params.to)
+  if (params.filter && Object.keys(params.filter).length > 0)
+    qp.set('filter', JSON.stringify(params.filter))
+  if (params.limit) qp.set('limit', String(params.limit))
+
+  const headers: Record<string, string> = {}
+  if (ifNoneMatch) headers['If-None-Match'] = ifNoneMatch
+
+  const res = await fetch(`${base}${STATS_PREFIX}/observations?${qp.toString()}`, { headers })
+
+  // 304 — cached slice is still fresh; keep the caller's ETag, signal no body.
+  if (res.status === 304) return { data: [], etag: ifNoneMatch, notModified: true }
+  if (!res.ok) throw new Error(`fetchObservations HTTP ${res.status}`)
+
+  const body = (await res.json()) as { data: RawStatsObsRow[] }
+  return { data: body.data, etag: res.headers.get('ETag') ?? undefined, notModified: false }
 }

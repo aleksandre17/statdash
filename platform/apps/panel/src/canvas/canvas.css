@@ -1,0 +1,139 @@
+/* ── canvas.css — WYSIWYG canvas overlay (N35) ─────────────────────────────
+ *
+ *  BEM blocks:
+ *    .canvas-root      — positioning context for the two stacked layers
+ *    .canvas-layer     — full-bleed layer (renderer | overlay)
+ *    .canvas-overlay   — interaction layer (selection + drop zones)
+ *    .canvas-node      — per-node hit/selection frame
+ *    .canvas-dropzone  — per-slot drop target
+ *
+ *  Tokens: canvas-scoped custom properties fall back to engine design tokens
+ *  (--color-accent, --radius-*) so the editor chrome stays on the platform
+ *  palette and never hardcodes a raw color/size at the point of use.
+ */
+
+.canvas-root {
+  --canvas-accent:        var(--color-accent, #005a9c);
+  --canvas-accent-soft:   color-mix(in srgb, var(--canvas-accent) 12%, transparent);
+  --canvas-dropzone-idle: color-mix(in srgb, var(--canvas-accent) 30%, transparent);
+  --canvas-radius:        var(--radius-sm, 4px);
+  --canvas-outline:       2px;
+
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+}
+
+.canvas-layer {
+  position: absolute;
+  inset: 0;
+}
+
+/* Layer 1 — the real renderer. Non-interactive so all pointer events fall
+ * through to the overlay (selection + drop zones own interaction). */
+.canvas-layer--renderer {
+  position: relative; /* establishes flow height for the scroll container */
+  pointer-events: none;
+}
+
+/* Layer 2 — overlay. The layer itself is transparent to pointer events; only
+ * its interactive children (.canvas-node, .canvas-dropzone) opt back in. */
+.canvas-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+/* ── Per-node selection frame ──────────────────────────────────────────── */
+
+.canvas-node {
+  position: absolute;
+  pointer-events: auto;
+  cursor: pointer;
+  border: var(--canvas-outline) solid transparent;
+  border-radius: var(--canvas-radius);
+  background: transparent;
+  padding: 0;
+  margin: 0;
+  box-sizing: border-box;
+  transition: border-color 120ms ease, background-color 120ms ease;
+}
+
+.canvas-node:hover {
+  border-color: var(--canvas-accent-soft);
+  background-color: var(--canvas-accent-soft);
+}
+
+.canvas-node:focus-visible {
+  outline: var(--canvas-outline) solid var(--canvas-accent);
+  outline-offset: 2px;
+}
+
+.canvas-node--selected,
+.canvas-node--selected:hover {
+  border-color: var(--canvas-accent);
+  background-color: transparent;
+}
+
+/* Resize handle — CSS-only affordance on the selected node. */
+.canvas-node--selected::after {
+  content: '';
+  position: absolute;
+  right: calc(var(--canvas-outline) * -1);
+  bottom: calc(var(--canvas-outline) * -1);
+  width: 10px;
+  height: 10px;
+  background: var(--canvas-accent);
+  border-radius: var(--canvas-radius);
+}
+
+/* Type label badge on the selected node (no color-only signal — WCAG). */
+.canvas-node__tag {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform: translateY(-100%);
+  padding: 0 var(--radius-sm, 4px);
+  font-size: 11px;
+  line-height: 1.6;
+  color: var(--color-text-inverse, #fff);
+  background: var(--canvas-accent);
+  border-radius: var(--canvas-radius) var(--canvas-radius) 0 0;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+/* ── Drop zones ────────────────────────────────────────────────────────── */
+
+/* Drop zones are invisible until a drag is in progress on the root. */
+.canvas-dropzone {
+  position: absolute;
+  pointer-events: none;
+  opacity: 0;
+  border: var(--canvas-outline) dashed var(--canvas-dropzone-idle);
+  border-radius: var(--canvas-radius);
+  background: var(--canvas-accent-soft);
+  box-sizing: border-box;
+  transition: opacity 120ms ease, border-color 120ms ease, background-color 120ms ease;
+}
+
+.canvas-root--dragging .canvas-dropzone {
+  pointer-events: auto;
+  opacity: 1;
+}
+
+.canvas-dropzone--over {
+  border-color: var(--canvas-accent);
+  border-style: solid;
+}
+
+.canvas-dropzone__label {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 12px;
+  color: var(--canvas-accent);
+  pointer-events: none;
+}

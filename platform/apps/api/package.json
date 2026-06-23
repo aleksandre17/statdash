@@ -1,5 +1,5 @@
 {
-  "name": "@geostat/api",
+  "name": "@statdash/api",
   "version": "0.0.1",
   "private": true,
   "type": "module",
@@ -7,19 +7,27 @@
     "dev":   "tsx watch src/index.ts",
     "build": "tsc -p tsconfig.build.json",
     "start": "node dist/index.js",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit && tsc -p tsconfig.scripts.json",
+    "seed":  "tsx scripts/seed.ts",
+    "verify-parity": "tsx scripts/verify-parity.ts"
   },
   "dependencies": {
+    "@statdash/contracts":   "workspace:*",
+    "@statdash/engine":      "workspace:*",
     "fastify":              "catalog:",
     "@fastify/cors":        "catalog:",
     "@fastify/postgres":    "catalog:",
     "fastify-plugin":       "catalog:",
     "zod":                  "catalog:",
-    "dotenv":               "catalog:"
+    "dotenv":               "catalog:",
+    "js-yaml":              "catalog:"
   },
   "devDependencies": {
     "tsx":                  "catalog:",
     "typescript":           "catalog:",
-    "@types/node":          "catalog:"
+    "@types/node":          "catalog:",
+    "@types/js-yaml":       "catalog:",
+    "pg":                   "8.21.0",
+    "@types/pg":            "8.11.10"
   }
 }

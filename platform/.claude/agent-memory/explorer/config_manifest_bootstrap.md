@@ -49,15 +49,24 @@ Phase 2: manifest fetched from API; stores built via `engine.buildStoreManifest(
 
 ## bootstrapSite()
 
-Entry point called in main.tsx:
+Lives in `apps/geostat/src/data/site-manifest.ts` (NOT a separate manifest.ts).
+Called from `App.tsx` (in useEffect), not directly in main.tsx.
 
 ```ts
 export async function bootstrapSite(): Promise<SiteBootstrap> {
-  return import.meta.env.VITE_STORE_MODE === 'api'
-    ? fetchApi()
-    : fetchStatic()
+  if (import.meta.env.VITE_STORE_MODE === 'stats') return fetchStats()  // Phase 2 LIVE
+  if (import.meta.env.VITE_STORE_MODE === 'api')   return fetchApi()    // MSW mock
+  return fetchStatic()                                                   // default
 }
 ```
+
+**Three modes:** static (default, STORE_MANIFEST), api (MSW mock), stats (LIVE Phase 2,
+fetches stores from config.data_source rows via fetch-store-manifest.ts + 'stats' builder).
+
+**IMPORTANT — Phase 2 is only HALF done at the manifest level:** `fetchStats()` still calls
+the LOCAL `buildManifest()` for pages/nav/chrome/chromeConfig/i18n — ONLY `stores` are
+fetched from the API. The pages/nav/chrome are still compiled TypeScript imports. The
+"single switch" for manifest (pages/nav from API) is NOT yet flipped; only datasources are.
 
 ### Layer 1: static (VITE_STORE_MODE=static, default)
 - In-memory ExternalStore

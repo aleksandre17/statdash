@@ -1,8 +1,0 @@
-/* ================================================================
-   @geostat/styles — CSS bundle entry point
-   Import order matters: tokens first (vars defined before use).
-   ================================================================ */
-
-@import './tokens.css';
-@import './node-styles.css';
-@import './animations.css';

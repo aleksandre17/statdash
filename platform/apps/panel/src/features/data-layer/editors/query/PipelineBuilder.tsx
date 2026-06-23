@@ -10,7 +10,7 @@ import {
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { DndContext, type DragEndEvent, closestCenter } from '@dnd-kit/core'
-import type { TransformStep } from '@geostat/engine'
+import type { TransformStep } from '@statdash/engine'
 import { useDndSensors } from '../../../../shared/dnd/useDndSensors'
 import { StepForm } from './steps/StepForm'
 

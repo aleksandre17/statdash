@@ -7,8 +7,11 @@ import { defineConfig, globalIgnores } from 'eslint/config'
 
 // ── Dependency arrow (Clean Architecture) — enforced as a BUILD GATE ─────────
 //
-//   engine/expr ← engine/core ← engine/react ← engine/plugins ← apps/geostat
-//   (engine/ at repo root — full platform library; apps/ = pure deployable units)
+//   packages/contracts ← packages/expr ← packages/core ← packages/react ← packages/plugins ← apps/geostat
+//   packages/contracts ← apps/api
+//   (packages/ at repo root — full platform library; apps/ = pure deployable units)
+//   contracts is the innermost layer: it imports NOTHING and is importable by ALL
+//   (incl. apps/api, which the arrow forbids from importing @statdash/react).
 //
 // Implemented via per-layer no-restricted-imports rules.  Each inner layer
 // explicitly bans imports from every outer layer, whether by alias or relative
@@ -18,37 +21,51 @@ import { defineConfig, globalIgnores } from 'eslint/config'
 //
 // Layer    may import
 // ───────  ──────────────────────────────────────────────────────────────────
-// expr     nothing (innermost)
+// contracts nothing (innermost — zero-dep, importable by ALL incl. apps/api)
+// expr     nothing
 // styles   nothing
-// engine   expr
-// react    engine · expr · styles · @geostat/react (self)
-// plugins  react · engine · expr · styles · @geostat/plugins (self)
+// core     expr
+// react    core · expr · styles · @statdash/react (self)
+// plugins  react · core · expr · styles · @statdash/plugins (self)
 // apps     everything (outermost, no restrictions)
 //
-// apps/panel EXTRA: no src-relative reach-ins to engine/ (use @geostat/* only).
+// apps/panel EXTRA: no src-relative reach-ins to packages/ (use @statdash/* only).
 // This fitness function keeps the future panel→external-repo split a no-op.
 
 const APPS_GEOSTAT = ['apps/geostat/**', '**/apps/geostat/**', '@/*']
 const APPS_PANEL   = ['apps/panel/**',   '**/apps/panel/**']
 const ALL_APPS     = [...APPS_GEOSTAT, ...APPS_PANEL]
 
-// PLUGINS_ALL: all import paths that resolve to engine/plugins or apps.
+// PLUGINS_ALL: all import paths that resolve to packages/plugins or apps.
 // Used to restrict inner layers from importing anything outer than react.
 const PLUGINS_ALL  = [
   ...ALL_APPS,
-  'engine/plugins/**', '**/engine/plugins/**',
+  'packages/plugins/**', '**/packages/plugins/**',
   '@plugins', '@plugins/**',
-  '@geostat/plugins', '@geostat/plugins/**',
+  '@statdash/plugins', '@statdash/plugins/**',
 ]
 
-// engine/core restriction: no plugins, apps, @geostat/react, or react layer
-const RESTRICT_ENGINE = [...PLUGINS_ALL, '@geostat/react', '@geostat/react/**', '**/engine/react/**']
+// packages/core restriction: no plugins, apps, @statdash/react, or react layer
+const RESTRICT_ENGINE = [...PLUGINS_ALL, '@statdash/react', '@statdash/react/**', '**/packages/react/**']
 
-// engine/react restriction: no plugins, apps (CAN use @geostat/react self-ref)
+// packages/react restriction: no plugins, apps (CAN use @statdash/react self-ref)
 const RESTRICT_REACT  = PLUGINS_ALL
 
 // expr/styles restriction: same as engine (innermost — nothing outer)
 const RESTRICT_EXPR   = RESTRICT_ENGINE
+
+// contracts restriction: imports NOTHING from any workspace package — it is the
+// zero-dep shared root. Ban every @statdash/* sibling and every relative reach into
+// another package; the purity fitness test (contracts.fitness.test.ts)
+// double-locks this at the compiler/runtime level.
+const RESTRICT_CONTRACTS = [
+  ...RESTRICT_ENGINE,
+  '@statdash/expr', '@statdash/expr/**',
+  '@statdash/engine', '@statdash/engine/**',
+  '@statdash/charts', '@statdash/charts/**',
+  '@statdash/styles', '@statdash/styles/**',
+  '../**', // no relative reach into sibling packages
+]
 
 export default defineConfig([
   globalIgnores(['**/dist/**', '**/node_modules/**']),
@@ -74,38 +91,65 @@ export default defineConfig([
     },
   },
 
-  // ── engine/expr — zero dependencies (innermost) ──────────────────────
+  // ── packages/contracts — zero dependencies (innermost, importable by all) ──
   {
-    files: ['engine/expr/**/*.{ts,tsx}'],
+    files: ['packages/contracts/**/*.{ts,tsx}'],
+    rules: { 'no-restricted-imports': ['error', { patterns: RESTRICT_CONTRACTS }] },
+  },
+
+  // ── packages/expr — zero dependencies (innermost) ──────────────────────
+  {
+    files: ['packages/expr/**/*.{ts,tsx}'],
     rules: { 'no-restricted-imports': ['error', { patterns: RESTRICT_EXPR }] },
   },
 
-  // ── engine/styles — no app-specific dependencies ─────────────────────
+  // ── packages/styles — no app-specific dependencies ─────────────────────
   {
-    files: ['engine/styles/**/*.{ts,tsx}'],
+    files: ['packages/styles/**/*.{ts,tsx}'],
     rules: { 'no-restricted-imports': ['error', { patterns: RESTRICT_EXPR }] },
   },
 
-  // ── engine/core — may only import expr (+ external npm) ──────────────
+  // ── packages/core — may only import expr (+ external npm) ──────────────
   {
-    files: ['engine/core/**/*.{ts,tsx}'],
+    files: ['packages/core/**/*.{ts,tsx}'],
     rules: { 'no-restricted-imports': ['error', { patterns: RESTRICT_ENGINE }] },
   },
 
-  // ── engine/react — may import engine/core · expr · styles · self ──────
+  // ── packages/react — may import packages/core · expr · styles · self ──────
   {
-    files: ['engine/react/**/*.{ts,tsx}'],
+    files: ['packages/react/**/*.{ts,tsx}'],
     rules: { 'no-restricted-imports': ['error', { patterns: RESTRICT_REACT }] },
   },
 
-  // ── engine/plugins — may import react · engine/core · expr · styles · self ──
+  // ── packages/plugins — may import react · packages/core · expr · styles · self ──
   {
-    files: ['engine/plugins/**/*.{ts,tsx}'],
-    rules: { 'no-restricted-imports': ['error', { patterns: ALL_APPS }] },
+    files: ['packages/plugins/**/*.{ts,tsx}'],
+    rules: {
+      'no-restricted-imports': ['error', { patterns: ALL_APPS }],
+
+      // ── DI consumption exception ────────────────────────────────────────────
+      //
+      //  Shells use useInject(ctx.ui, TOKEN) to obtain UI components from the
+      //  MapContainer DI container. The reference IS stable: useInject wraps
+      //  container.inject(token) in useMemo([container, token]); both deps are
+      //  stable per page lifecycle (ctx.ui = same MapContainer instance created
+      //  once in SiteRenderer; TOKEN = module-level singleton InjectionToken).
+      //
+      //  react-hooks/static-components is over-conservative for this pattern —
+      //  it cannot statically prove the returned ComponentType is stable, even
+      //  when useMemo guarantees it.  The exception is scoped to plugins/ only
+      //  (the shell layer that consumes UIRegistry via useInject).
+      //
+      //  If this rule's API gains an `allowedHooks` option (as react-hooks
+      //  exhaustive-deps has `additionalHooks`), replace this off-override with
+      //  a targeted configuration.
+      //
+      'react-hooks/static-components': 'off',
+    },
   },
 
-  // ── apps/panel — no src-relative reach-ins to engine source ───────────
-  // Panel must declare @geostat/* or @plugins as its public import surface.
+  // ── apps/panel — no src-relative reach-ins to packages source ───────────
+  // Panel must declare @statdash/* or @plugins as its public import surface.
   // This rule keeps the future filter-repo panel split a no-op:
   // panel has zero hidden knowledge of the monorepo's internal paths.
   {
@@ -114,8 +158,8 @@ export default defineConfig([
       'no-restricted-imports': ['error', {
         patterns: [
           {
-            group: ['../../engine/**', '../../../engine/**', '**/engine/**'],
-            message: 'Panel must not reach into engine source by relative path. Use @geostat/* or @plugins aliases.',
+            group: ['../../packages/**', '../../../packages/**', '**/packages/**'],
+            message: 'Panel must not reach into platform package source by relative path. Use @statdash/* or @plugins aliases.',
           },
         ],
       }],

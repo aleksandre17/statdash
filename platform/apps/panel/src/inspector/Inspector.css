@@ -1,0 +1,106 @@
+/* ── Inspector — schema-driven property panel (BEM, token-driven) ──────── */
+
+.insp {
+  display: flex;
+  flex-direction: column;
+  gap: var(--insp-gap-md, 12px);
+}
+
+.insp__empty {
+  color: var(--insp-muted, #94a3b8);
+  font-size: var(--insp-font-sm, 0.8125rem);
+}
+
+.insp__empty code {
+  padding: 1px 4px;
+  border-radius: var(--insp-radius-sm, 4px);
+  background: var(--insp-badge-bg, #eef2f7);
+}
+
+.insp__group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--insp-gap-sm, 8px);
+  margin: 0;
+  padding: var(--insp-gap-sm, 8px) 0 0;
+  border: 0;
+  border-top: 1px solid var(--insp-divider, #e2e8f0);
+}
+
+.insp__group--plain {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.insp__legend {
+  padding: 0;
+  color: var(--insp-muted, #64748b);
+  font-size: var(--insp-font-xs, 0.6875rem);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.insp-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--insp-gap-xs, 4px);
+}
+
+.insp-field__label {
+  font-size: var(--insp-font-sm, 0.8125rem);
+  font-weight: 500;
+  color: var(--insp-fg, #1e293b);
+}
+
+.insp-field__required {
+  color: var(--insp-danger, #dc2626);
+}
+
+/* Screen-reader-only text (no colour-only signalling for required). */
+.insp-field__sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.insp-field__error {
+  margin: 0;
+  color: var(--insp-danger, #dc2626);
+  font-size: var(--insp-font-xs, 0.6875rem);
+}
+
+/* Native control baseline — apps may theme via tokens. */
+.insp-field__input,
+.insp-field__select,
+.insp-field__json,
+.insp-locale__input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: var(--insp-control-pad, 6px 8px);
+  border: 1px solid var(--insp-border, #cbd5e1);
+  border-radius: var(--insp-radius-sm, 4px);
+  font: inherit;
+  font-size: var(--insp-font-sm, 0.8125rem);
+  background: var(--insp-control-bg, #fff);
+  color: var(--insp-fg, #1e293b);
+}
+
+.insp-field__input:focus-visible,
+.insp-field__select:focus-visible,
+.insp-field__json:focus-visible,
+.insp-locale__input:focus-visible {
+  outline: 2px solid var(--insp-focus, #2563eb);
+  outline-offset: 1px;
+}
+
+.insp-field__json {
+  resize: vertical;
+  font-family: var(--insp-mono, ui-monospace, monospace);
+}

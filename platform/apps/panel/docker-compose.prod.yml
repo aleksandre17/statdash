@@ -1,0 +1,24 @@
+# Per-module deploy compose (node-vite driver) — PRODUCTION overlay.
+# Usage: docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+#
+# Builds the production target (nginx serving the static Vite dist) and publishes it on
+# DEPLOY_HOST_PORT → container :80. VITE_API_URL is baked at build time.
+services:
+  statdash-panel:
+    build:
+      target: production
+      args:
+        VITE_API_URL: ${VITE_API_URL:-}
+        NGINX_VERSION: ${NGINX_VERSION:-1.27-alpine}
+    image: statdash-panel
+    ports:
+      - "${DEPLOY_HOST_PORT:-5172}:80"
+    env_file:
+      - ../../../ops/config/panel/.env.prod
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s

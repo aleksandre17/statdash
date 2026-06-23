@@ -1,0 +1,37 @@
+.text-panel {
+  padding:     var(--space-3);
+  line-height: 1.6;
+}
+
+.text-panel--plain {
+  white-space: pre-wrap;
+}
+
+.text-panel--rich h1,
+.text-panel--rich h2,
+.text-panel--rich h3 {
+  margin-top: var(--space-4);
+}
+
+.text-panel--rich a {
+  color: var(--color-primary);
+}
+
+.text-panel--rich code {
+  background:    var(--color-surface-2);
+  border-radius: 3px;
+  padding:       0.1em 0.3em;
+}
+
+.text-panel--rich ul,
+.text-panel--rich ol {
+  padding-left: var(--space-4);
+}
+
+.text-panel--rich strong {
+  font-weight: 700;
+}
+
+.text-panel--rich em {
+  font-style: italic;
+}

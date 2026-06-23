@@ -1,0 +1,359 @@
+/* ================================================================
+   @statdash/styles — Design Tokens
+   Single source of truth for all platform CSS custom properties.
+   TypeScript side: tokens.ts references these as 'var(--*)'.
+   ================================================================ */
+
+:root {
+  /* ── Spacing scale (4px base grid) ─────────────────────────── */
+  --spacing-0:    0;
+  --spacing-xs:   0.25rem;   /*  4px */
+  --spacing-sm:   0.5rem;    /*  8px */
+  --spacing-md:   1rem;      /* 16px */
+  --spacing-lg:   1.5rem;    /* 24px */
+  --spacing-xl:   2rem;      /* 32px */
+  --spacing-2xl:  3rem;      /* 48px */
+  --spacing-3xl:  4rem;      /* 64px */
+  --spacing-4xl:  6rem;      /* 96px */
+
+  /* ── Border radius ──────────────────────────────────────────── */
+  --radius-none:  0;
+  --radius-xs:    2px;
+  --radius-sm:    4px;
+  --radius-md:    8px;
+  --radius-lg:    12px;
+  --radius-xl:    16px;
+  --radius-2xl:   24px;
+  --radius-card:  14px;
+  --radius-pill:  9999px;
+
+  /* ── Border widths ──────────────────────────────────────────── */
+  --border-width-thin:  1px;
+  --border-width-base:  2px;
+  --border-width-thick: 4px;
+
+  /* ── Semantic sizes (icons + container max-widths) ──────────── */
+  --size-icon-sm:          16px;
+  --size-icon-md:          20px;
+  --size-icon-lg:          24px;
+  --size-container-narrow: 640px;
+  --size-container-mid:    960px;
+  --size-container-wide:   1280px;
+
+  /* ── Backdrop blur ──────────────────────────────────────────── */
+  --blur-sm: blur(4px);
+  --blur-md: blur(8px);
+  --blur-lg: blur(16px);
+
+  /* ── Opacity (unitless) ─────────────────────────────────────── */
+  --opacity-disabled: 0.38;
+  --opacity-muted:    0.6;
+  --opacity-ghost:    0.08;
+
+  /* ── Shadows ────────────────────────────────────────────────── */
+  --shadow-sm:      0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-md:      0 1px 3px rgba(0, 0, 0, 0.10), 0 1px 2px rgba(0, 0, 0, 0.06);
+  --shadow-card:    0 1px 3px rgba(0, 0, 0, 0.04);
+  --shadow-overlay: 0 4px 24px rgba(0, 0, 0, 0.12);
+  --shadow-xl:      0 12px 40px rgba(0, 0, 0, 0.18);
+  --shadow-inset:   inset 0 1px 2px rgba(0, 0, 0, 0.08);
+  --shadow-focus:   0 0 0 3px rgba(0, 90, 156, 0.40);   /* accessible focus ring */
+
+  /* ── Transitions (shorthand — kept for back-compat) ─────────── */
+  --transition-fast:   all 0.1s ease;
+  --transition-smooth: all 0.2s ease;
+  --transition-slow:   all 0.35s ease;
+
+  /* ── Durations (composable with easing) ─────────────────────── */
+  --duration-instant: 0ms;
+  --duration-fast:    100ms;
+  --duration-normal:  200ms;
+  --duration-slow:    400ms;
+  --duration-slower:  700ms;
+
+  /* ── Easing curves ──────────────────────────────────────────── */
+  --easing-linear:      linear;
+  --easing-ease-in:     cubic-bezier(0.4, 0, 1, 1);
+  --easing-ease-out:    cubic-bezier(0, 0, 0.2, 1);
+  --easing-ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  --easing-spring:      cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  --easing-bounce:      cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* ── Typography: font sizes (rem, agnostic scale) ───────────── */
+  --font-size-xs:   0.75rem;   /* 12px */
+  --font-size-sm:   0.8125rem; /* 13px */
+  --font-size-md:   0.9375rem; /* 15px */
+  --font-size-lg:   1.125rem;  /* 18px */
+  --font-size-xl:   1.5rem;    /* 24px */
+  --font-size-2xl:  2rem;      /* 32px */
+
+  /* ── Typography: fluid font sizes (clamp(min, fluid, max)) ───── */
+  --font-size-fluid-sm:      clamp(0.8125rem, 0.20vw + 0.78rem, 0.9375rem);
+  --font-size-fluid-md:      clamp(0.9375rem, 0.30vw + 0.88rem, 1.125rem);
+  --font-size-fluid-lg:      clamp(1.125rem,  0.60vw + 1.00rem, 1.5rem);
+  --font-size-fluid-xl:      clamp(1.5rem,    1.20vw + 1.20rem, 2.25rem);
+  --font-size-fluid-2xl:     clamp(2rem,      2.00vw + 1.50rem, 3rem);
+  --font-size-fluid-display: clamp(2.5rem,    3.50vw + 1.75rem, 4.5rem);
+
+  /* ── Typography: font weights ───────────────────────────────── */
+  --font-weight-regular:  400;
+  --font-weight-medium:   500;
+  --font-weight-semibold: 600;
+  --font-weight-bold:     700;
+
+  /* ── Typography: line heights ───────────────────────────────── */
+  --line-height-tight:   1.2;
+  --line-height-normal:  1.5;
+  --line-height-relaxed: 1.75;
+
+  /* ── Typography: letter spacing ─────────────────────────────── */
+  --letter-spacing-tight:  -0.01em;
+  --letter-spacing-normal: 0;
+  --letter-spacing-wide:   0.04em;
+
+  /* ── Typography: font families (generic; app maps brand) ────── */
+  --font-family-base: system-ui, -apple-system, sans-serif;
+  --font-family-mono: ui-monospace, 'Courier New', monospace;
+
+  /* ── Neutral gray scale (raw primitives; dark mode inverts) ─── */
+  --gray-50:  #f8f9fa;
+  --gray-100: #f1f3f5;
+  --gray-200: #e9ecef;
+  --gray-300: #dee2e6;
+  --gray-400: #ced4da;
+  --gray-500: #adb5bd;
+  --gray-600: #868e96;
+  --gray-700: #495057;
+  --gray-800: #343a40;
+  --gray-900: #212529;
+
+  /* ── Semantic colors (agnostic defaults; app overrides via cascade) ─
+     packages/ is brand-agnostic: these are neutral functional values.
+     src/styles/tokens.css maps --geostat-* brand onto these names. */
+  --color-text-primary:   #1a1a2e;
+  --color-text-secondary: #4a4a5e;
+  --color-text-muted:     #6c757d;
+  --color-text-inverse:   #ffffff;
+
+  --color-surface:        #ffffff;
+  --color-surface-raised: #f8f9fa;
+  --color-surface-sunken: #f1f3f5;
+
+  --color-border:         #dee2e6;
+  --color-border-strong:  #adb5bd;
+
+  --color-accent:         #005a9c;
+  --color-accent-muted:   #e8f0f8;
+
+  /* ── Status / feedback colors (bg / border / fg per status) ─── */
+  --status-positive-bg:     #e6f4ea;
+  --status-positive-border: #a3d9b5;
+  --status-positive-fg:     #1b7a43;
+
+  --status-negative-bg:     #fdecea;
+  --status-negative-border: #f3b6af;
+  --status-negative-fg:     #b3261e;
+
+  --status-warning-bg:      #fff6e5;
+  --status-warning-border:  #f5d28a;
+  --status-warning-fg:      #8a5a00;
+
+  --status-info-bg:         #e8f0f8;
+  --status-info-border:     #a8c8e8;
+  --status-info-fg:         #0b4a82;
+
+  /* preliminary — stat-platform-specific (data not yet final) */
+  --status-preliminary-bg:     #f3eefb;
+  --status-preliminary-border: #c9b8e8;
+  --status-preliminary-fg:     #5b3a9b;
+
+  /* ── Chart palette (categorical, deuteranopia-distinguishable) ─
+     GeoStat blue leads; ordered for maximum pairwise separation.
+     Okabe-Ito / Tableau-10 blend. Dark variants below. */
+  --chart-color-1:  #005a9c;  /* GeoStat blue */
+  --chart-color-2:  #e8710a;  /* orange */
+  --chart-color-3:  #1b9e77;  /* teal-green */
+  --chart-color-4:  #d81b60;  /* magenta */
+  --chart-color-5:  #7b3294;  /* purple */
+  --chart-color-6:  #c79a00;  /* mustard */
+  --chart-color-7:  #4eb3d3;  /* sky */
+  --chart-color-8:  #984ea3;  /* violet */
+  --chart-color-9:  #66a61e;  /* olive */
+  --chart-color-10: #8c564b;  /* brown */
+
+  /* ── Z-index scale ──────────────────────────────────────────── */
+  --z-base:         0;
+  --z-raised:       10;
+  --z-dropdown:     50;
+  --z-sticky:       100;
+  --z-overlay:      200;
+  --z-modal:        300;
+  --z-tooltip:      400;
+  --z-notification: 500;
+  --z-max:          2147483647;
+}
+
+/* ================================================================
+   Dark mode (D4 — Option C: system default + explicit override)
+
+   Dark mode is a controlled override layer — semantic color, the raw
+   gray scale (inverted), status, chart, and shadows change; spacing,
+   radii, type, motion, blur, opacity, z-index stay theme-neutral.
+   SSOT: the dark palette is defined ONCE via the shared declaration
+   list below, applied through both selectors (no value duplication of
+   intent — only the selector differs).
+
+   Precedence (lowest → highest):
+     1. :root light defaults (above)
+     2. @media (prefers-color-scheme: dark)   — system preference
+     3. [data-theme="dark"]                    — explicit (tenant / Constructor)
+     4. [data-theme="light"]                   — explicit opt-out of dark
+
+   The Constructor / tenant manifest sets data-theme on <html>; with no
+   attribute set, the system preference wins. data-theme="light" lets a
+   tenant force light even on a dark-preference OS.
+   ================================================================ */
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    /* gray scale inverted — 50 is now darkest, 900 lightest */
+    --gray-50:  #15151f;
+    --gray-100: #1c1c28;
+    --gray-200: #25252f;
+    --gray-300: #2c2c3a;
+    --gray-400: #3a3a47;
+    --gray-500: #55555f;
+    --gray-600: #7a7a85;
+    --gray-700: #a0a0ab;
+    --gray-800: #c8c8d0;
+    --gray-900: #e8eaf0;
+
+    --color-text-primary:   #e8eaf0;
+    --color-text-secondary: #b4b8c4;
+    --color-text-muted:     #8a8f9c;
+    --color-text-inverse:   #1a1a2e;
+
+    --color-surface:        #15151f;
+    --color-surface-raised: #1e1e2a;
+    --color-surface-sunken: #0e0e16;
+
+    --color-border:         #2c2c3a;
+    --color-border-strong:  #44444f;
+
+    --color-accent:         #4aa3e0;
+    --color-accent-muted:   #1c2f42;
+
+    /* Status — deeper bg, lighter fg for contrast on dark surfaces */
+    --status-positive-bg:     #15281d;
+    --status-positive-border: #2f6b45;
+    --status-positive-fg:     #6fd99b;
+
+    --status-negative-bg:     #2a1715;
+    --status-negative-border: #7a342d;
+    --status-negative-fg:     #f3938b;
+
+    --status-warning-bg:      #2a2310;
+    --status-warning-border:  #7a6320;
+    --status-warning-fg:      #f0c969;
+
+    --status-info-bg:         #122334;
+    --status-info-border:     #2f5a82;
+    --status-info-fg:         #79b8ec;
+
+    --status-preliminary-bg:     #211a30;
+    --status-preliminary-border: #4f3a7a;
+    --status-preliminary-fg:     #b89ce8;
+
+    /* Chart — lighter / more vivid for readability on dark backgrounds */
+    --chart-color-1:  #4aa3e0;
+    --chart-color-2:  #ff9e4a;
+    --chart-color-3:  #4fd0a3;
+    --chart-color-4:  #f06595;
+    --chart-color-5:  #b07cd6;
+    --chart-color-6:  #e6c34a;
+    --chart-color-7:  #7fd1ec;
+    --chart-color-8:  #c78fd0;
+    --chart-color-9:  #9bd64a;
+    --chart-color-10: #c39288;
+
+    /* Focus ring tuned to the dark accent */
+    --shadow-focus:   0 0 0 3px rgba(74, 163, 224, 0.50);
+
+    /* Shadows read darker on dark surfaces */
+    --shadow-sm:      0 1px 2px rgba(0, 0, 0, 0.40);
+    --shadow-md:      0 1px 3px rgba(0, 0, 0, 0.55), 0 1px 2px rgba(0, 0, 0, 0.40);
+    --shadow-card:    0 1px 3px rgba(0, 0, 0, 0.45);
+    --shadow-overlay: 0 4px 24px rgba(0, 0, 0, 0.65);
+    --shadow-xl:      0 12px 40px rgba(0, 0, 0, 0.70);
+    --shadow-inset:   inset 0 1px 2px rgba(0, 0, 0, 0.50);
+  }
+}
+
+/* Explicit dark — highest precedence, beats system preference either way. */
+[data-theme="dark"] {
+  --gray-50:  #15151f;
+  --gray-100: #1c1c28;
+  --gray-200: #25252f;
+  --gray-300: #2c2c3a;
+  --gray-400: #3a3a47;
+  --gray-500: #55555f;
+  --gray-600: #7a7a85;
+  --gray-700: #a0a0ab;
+  --gray-800: #c8c8d0;
+  --gray-900: #e8eaf0;
+
+  --color-text-primary:   #e8eaf0;
+  --color-text-secondary: #b4b8c4;
+  --color-text-muted:     #8a8f9c;
+  --color-text-inverse:   #1a1a2e;
+
+  --color-surface:        #15151f;
+  --color-surface-raised: #1e1e2a;
+  --color-surface-sunken: #0e0e16;
+
+  --color-border:         #2c2c3a;
+  --color-border-strong:  #44444f;
+
+  --color-accent:         #4aa3e0;
+  --color-accent-muted:   #1c2f42;
+
+  --status-positive-bg:     #15281d;
+  --status-positive-border: #2f6b45;
+  --status-positive-fg:     #6fd99b;
+
+  --status-negative-bg:     #2a1715;
+  --status-negative-border: #7a342d;
+  --status-negative-fg:     #f3938b;
+
+  --status-warning-bg:      #2a2310;
+  --status-warning-border:  #7a6320;
+  --status-warning-fg:      #f0c969;
+
+  --status-info-bg:         #122334;
+  --status-info-border:     #2f5a82;
+  --status-info-fg:         #79b8ec;
+
+  --status-preliminary-bg:     #211a30;
+  --status-preliminary-border: #4f3a7a;
+  --status-preliminary-fg:     #b89ce8;
+
+  --chart-color-1:  #4aa3e0;
+  --chart-color-2:  #ff9e4a;
+  --chart-color-3:  #4fd0a3;
+  --chart-color-4:  #f06595;
+  --chart-color-5:  #b07cd6;
+  --chart-color-6:  #e6c34a;
+  --chart-color-7:  #7fd1ec;
+  --chart-color-8:  #c78fd0;
+  --chart-color-9:  #9bd64a;
+  --chart-color-10: #c39288;
+
+  --shadow-focus:   0 0 0 3px rgba(74, 163, 224, 0.50);
+
+  --shadow-sm:      0 1px 2px rgba(0, 0, 0, 0.40);
+  --shadow-md:      0 1px 3px rgba(0, 0, 0, 0.55), 0 1px 2px rgba(0, 0, 0, 0.40);
+  --shadow-card:    0 1px 3px rgba(0, 0, 0, 0.45);
+  --shadow-overlay: 0 4px 24px rgba(0, 0, 0, 0.65);
+  --shadow-xl:      0 12px 40px rgba(0, 0, 0, 0.70);
+  --shadow-inset:   inset 0 1px 2px rgba(0, 0, 0, 0.50);
+}

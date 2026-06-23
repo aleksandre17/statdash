@@ -1,10 +1,12 @@
 import { Autocomplete, Chip, TextField } from '@mui/material'
 
-// ── ChipInput — free-solo multi-value text entry ──────────────────────────────
+// ── ChipInput — multi-value entry, suggestion-aware + free-solo ───────────────
 //
 //  Shared primitive: type a token, press Enter to add it as a deletable chip.
-//  No autocomplete suggestions — the DataSource catalogue (real codes) is not
-//  available in the prototype, so this is pure free text.
+//  `options` supplies suggestions (C3: the active dataset's REAL measure codes
+//  from the cube profile, so the author PICKS rather than types a raw code —
+//  Law 2). freeSolo is KEPT so it degrades to pure free text when no profile is
+//  available (graceful degradation) — the field never becomes unusable.
 //
 //  Reused by MeasureSelector (measure codes) and LookupStepForm (lookup fields).
 //
@@ -14,14 +16,16 @@ export interface ChipInputProps {
   onChange:    (next: string[]) => void
   label:       string
   placeholder?: string
+  /** Suggested values (codes). Empty ⇒ pure free-text entry (current behaviour). */
+  options?:    string[]
 }
 
-export function ChipInput({ value, onChange, label, placeholder }: ChipInputProps) {
+export function ChipInput({ value, onChange, label, placeholder, options = [] }: ChipInputProps) {
   return (
     <Autocomplete
       multiple
       freeSolo
-      options={[]}
+      options={options}
       value={value}
       onChange={(_e, next) => onChange((next as string[]).map((s) => s.trim()).filter(Boolean))}
       renderTags={(tags, getTagProps) =>

@@ -1,0 +1,27 @@
+{
+  "name": "@statdash/styles",
+  "version": "0.2.0",
+  "description": "Platform style system — tokens, resolvers, validators, CSS codegen",
+  "type": "module",
+  "private": true,
+  "exports": {
+    ".": {
+      "source":  "./src/index.ts",
+      "types":   "./dist/index.d.ts",
+      "import":  "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./css/index.css":   "./src/css/index.css",
+    "./node-styles.css": "./src/css/node-styles.css"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": ["dist", "src/css"],
+  "scripts": {
+    "build": "tsup src/index.ts --format esm --dts --clean",
+    "test":  "vitest run"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

@@ -20,30 +20,44 @@
     "strict": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
-    "erasableSyntaxOnly": true,
     "noFallthroughCasesInSwitch": true,
     "noUncheckedSideEffectImports": true,
 
-    /* Path aliases — engine/ at repo root contains all platform layers */
+    /* Path aliases — packages/ at repo root contains all platform layers */
     "baseUrl": ".",
     "paths": {
       "@/*":                       ["./src/*"],
-      "@plugins":                  ["../../engine/plugins"],
-      "@plugins/*":                ["../../engine/plugins/*"],
-      "@geostat/plugins":          ["../../engine/plugins"],
-      "@geostat/plugins/catalog":  ["../../engine/plugins/catalog.ts"],
-      "@geostat/plugins/registry": ["../../engine/plugins/registry.ts"],
-      "@geostat/expr":             ["../../engine/expr/index.ts"],
-      "@geostat/expr/*":           ["../../engine/expr/src/*"],
-      "@geostat/styles":           ["../../engine/styles/src/index.ts"],
-      "@geostat/styles/*":         ["../../engine/styles/src/*"],
-      "@geostat/engine":           ["../../engine/core/src/index.ts"],
-      "@geostat/engine/*":         ["../../engine/core/src/*"],
-      "@geostat/charts":           ["../../engine/charts/src/index.ts"],
-      "@geostat/charts/*":         ["../../engine/charts/src/*"],
-      "@geostat/react":            ["../../engine/react/src/index.ts"],
-      "@geostat/react/*":          ["../../engine/react/src/*"]
+      "@statdash/contracts":        ["../../packages/contracts/src/index.ts"],
+      "@statdash/contracts/*":      ["../../packages/contracts/src/*"],
+      "@plugins":                  ["../../packages/plugins"],
+      "@plugins/*":                ["../../packages/plugins/*"],
+      "@statdash/plugins":          ["../../packages/plugins"],
+      "@statdash/plugins/catalog":  ["../../packages/plugins/catalog.ts"],
+      "@statdash/plugins/registry": ["../../packages/plugins/registry.ts"],
+      "@statdash/expr":             ["../../packages/expr/index.ts"],
+      "@statdash/expr/*":           ["../../packages/expr/src/*"],
+      "@statdash/styles":           ["../../packages/styles/src/index.ts"],
+      "@statdash/styles/*":         ["../../packages/styles/src/*"],
+      "@statdash/engine":           ["../../packages/core/src/index.ts"],
+      "@statdash/engine/*":         ["../../packages/core/src/*"],
+      "@statdash/charts":           ["../../packages/charts/src/index.ts"],
+      "@statdash/charts/*":         ["../../packages/charts/src/*"],
+      "@statdash/react":            ["../../packages/react/src/index.ts"],
+      "@statdash/react/*":          ["../../packages/react/src/*"],
+
+      /* Third-party deps live in this app's node_modules (declared as peers
+         by the packages/* libraries). Package source is compiled in-graph here,
+         so bare specifiers imported from packages/** must resolve to the app's
+         node_modules — `moduleResolution: bundler` resolves relative to the
+         importing file and cannot otherwise reach them. */
+      "react-router-dom":          ["./node_modules/react-router-dom"],
+      "apexcharts":                ["./node_modules/apexcharts"],
+      "react-apexcharts":          ["./node_modules/react-apexcharts"],
+      "leaflet":                   ["./node_modules/@types/leaflet"],
+      "react-leaflet":             ["./node_modules/react-leaflet"],
+      "i18next":                   ["./node_modules/i18next"]
     }
   },
-  "include": ["src", "../../engine"]
+  "include": ["src", "../../packages"],
+  "exclude": ["../../packages/**/*.stories.tsx", "../../packages/**/*.stories.ts"]
 }

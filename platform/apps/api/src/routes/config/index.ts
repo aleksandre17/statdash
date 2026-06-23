@@ -5,14 +5,17 @@ import { dataSourcesRoutes } from './data-sources.js'
 import { dataSpecsRoutes } from './data-specs.js'
 import { siteRoutes } from './site.js'
 import { navRoutes } from './nav.js'
+import type { AuditLogger } from '../../lib/audit-log.js'
 
 // config.* schema — the Constructor's persistence surface (Layers 1/2/3).
-export const configRoutes: FastifyPluginAsync = async (app) => {
+// Factory: the AuditLogger is threaded to pagesRoutes so config saves/publishes
+// are recorded in the governance trail [N41]. Optional ⇒ logging is a no-op.
+export const configRoutes = (audit?: AuditLogger): FastifyPluginAsync => async (app) => {
   // Guard every config sub-route with Bearer-JWT. authPlugin is fp-wrapped, so
   // its onRequest hook attaches to this scope and cascades to all routes
   // registered after it. Must be first — registration order is hook order.
   await app.register(authPlugin)
-  await app.register(pagesRoutes, { prefix: '/pages' })
+  await app.register(pagesRoutes(audit), { prefix: '/pages' })
   await app.register(dataSourcesRoutes, { prefix: '/data-sources' })
   await app.register(dataSpecsRoutes, { prefix: '/data-specs' })
   await app.register(siteRoutes, { prefix: '/site' })

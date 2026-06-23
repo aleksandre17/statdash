@@ -3,13 +3,15 @@ import { createHmac, timingSafeEqual } from 'node:crypto'
 // Minimal JWT (HS256) on node:crypto — no 3rd-party lib, zero supply-chain risk.
 // Single-issuer, symmetric-key scenario: HMAC-SHA256 over base64url(header).base64url(payload).
 //
-// Token shape: { sub, iat, exp }. Header + payload are base64url-encoded JSON,
-// signature is HMAC-SHA256 of `${header}.${payload}`.
+// Token shape: { sub, iat, exp, roles? }. Header + payload are base64url-encoded
+// JSON, signature is HMAC-SHA256 of `${header}.${payload}`.
 
 export interface JwtPayload {
-  sub: string // subject (username)
-  iat: number // issued-at (epoch seconds)
-  exp: number // expires (epoch seconds)
+  sub:    string   // subject (username) — kept as the human identity
+  uid?:   string   // user id (config.user.id) [P2-2]; absent ⇒ env-bootstrap or pre-P2-2 token
+  iat:    number   // issued-at (epoch seconds)
+  exp:    number   // expires (epoch seconds)
+  roles?: string[] // RBAC roles [N41]; absent ⇒ no roles (back-compat with pre-N41 tokens)
 }
 
 const now = (): number => Math.floor(Date.now() / 1000)
@@ -22,10 +24,22 @@ function sign(header: string, payload: string, secret: string): string {
   return createHmac('sha256', secret).update(`${header}.${payload}`).digest('base64url')
 }
 
-export function issueToken(sub: string, secret: string, ttlSeconds = 86_400): string {
+export function issueToken(
+  sub: string,
+  secret: string,
+  ttlSeconds = 86_400,
+  roles: string[] = [],
+  uid?: string,
+): string {
   const iat = now()
   const header = b64urlJson({ alg: 'HS256', typ: 'JWT' })
-  const payload = b64urlJson({ sub, iat, exp: iat + ttlSeconds })
+  // Build the payload additively so every claim that carries no information is
+  // omitted: the pre-N41 / pre-P2-2 token shape is preserved for the no-role,
+  // no-uid case (smaller token, no spurious claim, byte-identical to old tokens).
+  const claims: JwtPayload = { sub, iat, exp: iat + ttlSeconds }
+  if (uid !== undefined) claims.uid = uid
+  if (roles.length > 0) claims.roles = roles
+  const payload = b64urlJson(claims)
   const sig = sign(header, payload, secret)
   return `${header}.${payload}.${sig}`
 }
@@ -69,6 +83,16 @@ function parseClaims(payload: string): JwtPayload {
     typeof (raw as JwtPayload).exp !== 'number'
   ) {
     throw new Error('Malformed token claims')
+  }
+  // roles is optional (back-compat) but, when present, must be a string[].
+  const roles = (raw as JwtPayload).roles
+  if (roles !== undefined && (!Array.isArray(roles) || !roles.every(r => typeof r === 'string'))) {
+    throw new Error('Malformed token roles')
+  }
+  // uid is optional (env-bootstrap + pre-P2-2 tokens omit it); when present, a string.
+  const uid = (raw as JwtPayload).uid
+  if (uid !== undefined && typeof uid !== 'string') {
+    throw new Error('Malformed token uid')
   }
   return raw as JwtPayload
 }

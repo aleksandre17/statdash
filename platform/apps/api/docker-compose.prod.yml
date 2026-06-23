@@ -1,0 +1,52 @@
+# Per-module deploy compose (node-api driver) — PRODUCTION.
+#
+# This is the SOURCE compose the node-api driver reads at $PROJECT_DIR
+# (platform/apps/api) for:
+#   - local:  `geostat api compose --prod ...`  (compose.sh, run from this dir)
+#   - remote: `geostat api deploy --prod`       (server-compose.sh scp's this file and
+#             feeds it to gen_server_compose.py, which extracts the `statdash-api`
+#             service, strips build/ports rewrites, and emits a per-service
+#             docker-compose.prod.yml on the server)
+#
+# Build context is the pnpm workspace root (platform/). From this module dir that is
+# `../../`; the 3-stage Dockerfile at apps/api/Dockerfile resolves its COPY paths
+# (pnpm-lock.yaml, apps/api/...) against that root.
+#
+# Postgres / pgBouncer run in the SEPARATE `statdash-infra` compose project and are
+# reached over the shared external `statdash-net` network by container DNS
+# (statdash-pgbouncer:5432) via DATABASE_URL in .env.prod. They are intentionally NOT
+# listed under depends_on: they are not services of THIS compose project, so a
+# depends_on reference would be an "undefined service" error (and would survive
+# gen_server_compose.py's deep-copy into the per-service file). Bring infra up first.
+#
+# Usage (local):
+#   docker compose -f docker-compose.prod.yml up -d
+# Network must exist first (infra base creates it, or: docker network create statdash-net).
+services:
+  statdash-api:
+    image: statdash-api
+    container_name: statdash-api
+    build:
+      context: ../../
+      dockerfile: apps/api/Dockerfile
+      target: production
+    ports:
+      - "${PORT:-3001}:3001"
+    env_file:
+      - ../../../ops/config/api/.env.prod
+    networks:
+      - statdash-net
+    restart: unless-stopped
+    mem_limit: 256m
+    cpus: 0.5
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3001/health | grep -q ok || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+networks:
+  statdash-net:
+    name: statdash-net
+    external: true

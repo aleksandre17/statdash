@@ -1,0 +1,39 @@
+# Per-module deploy compose (node-vite driver) — BASE.
+#
+# This is the SOURCE compose the node-vite driver reads at $ROOT (platform/apps/geostat)
+# via Get-ComposeServicesFromFile (service discovery) and `deploy.ps1`:
+#   - local:  build the production image here, run the container locally
+#   - remote: ship source → `docker compose -f docker-compose.yml -f docker-compose.prod.yml
+#             up -d --build` on the server
+# It is merged with docker-compose.override.yml (dev) or docker-compose.prod.yml (prod).
+#
+# Build context = the pnpm workspace root (platform/), i.e. `../../` from this module dir.
+# The 5-stage Dockerfile at apps/geostat/Dockerfile resolves its COPY paths
+# (pnpm-lock.yaml, packages/, apps/geostat/...) against that root. This mirrors the node-api
+# api compose model (context ../../, dockerfile apps/<app>/...).
+#
+# NOTE (node-vite remote tar scope): `deploy.ps1 remote` currently tars only $ROOT (this
+# module dir), which does NOT include ../../ (the workspace + packages/). Remote container
+# build therefore needs the driver to archive the workspace root, not the module dir — see
+# the deploy report. `deploy dist`/`sync`/`watch` (local vite build → nginx static) are
+# unaffected and work today.
+#
+# Network statdash-net is external (created by the infra stack, or:
+#   docker network create statdash-net). Postgres / API live in their own compose projects
+# and are reached over that network by DNS.
+services:
+  statdash-geostat:
+    image: statdash-geostat
+    container_name: statdash-geostat
+    build:
+      context: ../../
+      dockerfile: apps/geostat/Dockerfile
+    networks:
+      - statdash-net
+    mem_limit: 128m
+    cpus: 0.5
+
+networks:
+  statdash-net:
+    name: statdash-net
+    external: true

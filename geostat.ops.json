@@ -15,6 +15,15 @@
   },
 
   "modules": {
+    "api": {
+      "role":          "api",
+      "type":          "node-api",
+      "path":          "platform/apps/api",
+      "secretsModule": "api",
+      "debug": {
+        "npmScript": "dev"
+      }
+    },
     "geostat": {
       "role":          "ui",
       "type":          "node-vite",
@@ -39,6 +48,7 @@
 
   "cli": {
     "aliases": {
+      "a": "api",
       "g": "geostat",
       "p": "panel"
     }

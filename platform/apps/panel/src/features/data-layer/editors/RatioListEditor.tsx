@@ -1,7 +1,7 @@
 import { Box, Button, IconButton, TextField, Typography } from '@mui/material'
 import AddIcon from '@mui/icons-material/Add'
 import CloseIcon from '@mui/icons-material/Close'
-import type { DataSpec } from '@geostat/engine'
+import type { DataSpec } from '@statdash/engine'
 
 // ── RatioListEditor — type=ratio-list: pairs[] ────────────────────────────────
 //

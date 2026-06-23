@@ -1,8 +1,8 @@
 # pnpm workspace — replaces npm "workspaces" field in package.json.
-# engine/* = published platform library packages (source-resolved in-repo, publishable).
-# apps/*   = application deployables (private: true, never published).
+# packages/* = published platform library packages (source-resolved in-repo, publishable).
+# apps/*     = application deployables (private: true, never published).
 packages:
-  - 'engine/*'
+  - 'packages/*'
   - 'apps/*'
 
 # Catalog: single-source version pins shared across all workspace packages.
@@ -42,6 +42,8 @@ catalog:
   fastify-plugin: '^5.0.0'
   zod: '^3.23.0'
   dotenv: '^16.0.0'
+  js-yaml: '^4.1.0'
+  '@types/js-yaml': '^4.0.9'
   tsx: '^4.0.0'
   react-admin: '^5.0.0'
   '@mui/material': '^6.0.0'

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Box, TextField, Typography } from '@mui/material'
-import type { TransformStep } from '@geostat/engine'
+import type { TransformStep } from '@statdash/engine'
 import { DeriveStepForm } from './DeriveStepForm'
 import { LookupStepForm } from './LookupStepForm'
 import { SortStepForm } from './SortStepForm'

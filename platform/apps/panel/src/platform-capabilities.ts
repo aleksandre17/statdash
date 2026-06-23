@@ -8,22 +8,22 @@
 //  Panel aggregates without owning the definitions.
 //
 //  Dependency direction is preserved:
-//    @geostat/expr    ← ops + refs catalogs   (expression builder)
-//    @geostat/engine  ← spec catalog          (DataSpec type picker)
-//    @geostat/styles  ← tokens catalog        (style token picker)
-//    @geostat/plugins ← META catalog          (Constructor palette + slots)
+//    @statdash/expr    ← ops + refs catalogs   (expression builder)
+//    @statdash/engine  ← spec catalog          (DataSpec type picker)
+//    @statdash/styles  ← tokens catalog        (style token picker)
+//    @statdash/plugins ← META catalog          (Constructor palette + slots)
 //
 
-import { OPS_CATALOG, REFS_CATALOG }    from '@geostat/expr'
-import { SPEC_CATALOG }                  from '@geostat/engine'
-import { TOKENS_CATALOG }               from '@geostat/styles'
-import { PLUGIN_CATALOG }               from '@geostat/plugins/catalog'
+import { OPS_CATALOG, REFS_CATALOG }    from '@statdash/expr'
+import { SPEC_CATALOG }                  from '@statdash/engine'
+import { TOKENS_CATALOG }               from '@statdash/styles'
+import { PLUGIN_CATALOG }               from '@statdash/plugins/catalog'
 
-export type { OpCategory, OpArgType, OpDescriptor } from '@geostat/expr'
-export type { RefKind, RefDescriptor }              from '@geostat/expr'
-export type { SpecField, SpecDescriptor }           from '@geostat/engine'
-export type { TokenGroup, TokenDescriptor }         from '@geostat/styles'
-export type { PaletteEntry, PluginCatalog }         from '@geostat/plugins/catalog'
+export type { OpCategory, OpArgType, OpDescriptor } from '@statdash/expr'
+export type { RefKind, RefDescriptor }              from '@statdash/expr'
+export type { SpecField, SpecDescriptor }           from '@statdash/engine'
+export type { TokenGroup, TokenDescriptor }         from '@statdash/styles'
+export type { PaletteEntry, PluginCatalog }         from '@statdash/plugins/catalog'
 
 // ── Aggregated capabilities object ────────────────────────────────────────────
 //

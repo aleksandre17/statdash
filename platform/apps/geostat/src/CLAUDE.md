@@ -1,19 +1,26 @@
-# src/ — Application Layer Orientation
+# src/ — Application Layer Orientation (PURE GENERIC RUNNER)
 
-> ავტოლოადი src/-ის ნებისმიერ ფაილზე მუშაობისას.
-> **Layer orientation only** — fromSDMX / DataSpec / Phase 1 constants → `.claude/rules/data.md` (when in `src/data/**`);
-> page config JSON shape → `.claude/rules/pages.md` (when in `src/pages/**`).
+> **Layer orientation only.** This app is a de-tenanted SDUI runner (ADR-0028):
+> it carries NO tenant content (no pages, no datasets, no brand). All content
+> comes from the API at boot.
 >
-> src/ = outermost layer — knows everything. Only here can app-specific code live.
+> src/ = outermost layer — knows everything. Only here can app-tier (non-content)
+> wiring live: registrations, extension contributions, i18n machinery, the
+> bootstrap client.
 
 ---
 
-## manifest.ts — Phase 1 / 2 Seam
+## site-manifest.ts — the boot seam
 
 ```ts
-// Phase 1 (now):   return { datasources: DATASOURCE_CONFIGS, pages: pagesRecord(), ... }
-// Phase 2 (later): return fetch('/api/site').then(r => r.json())
-// ONE line change. Everything else stays.
+// Primary:  manifest = GET /api/bootstrap;  stores = config.data_source rows.
+// Fallback: emptyManifest() (brand-free "site unavailable" page) when the API
+//           is unreachable/unconfigured — the runner always boots fail-soft.
 ```
 
-Full Phase contract → `.claude/individual/context/identity.md` §"Phase 1 → Phase 2: The Single Switch"
+- No compiled-in pages/nav/chrome/datasets — those were extracted to
+  `apps/api/provisioning/geostat.provisioning.json` (config) and
+  `ops/seed-data/geostat/` (data), then deleted.
+- `emptyManifest()` MUST stay tenant-agnostic (Law 1) + en-only.
+- `feedback.ts` ships only the en UI-chrome baseline; tenant locales arrive via
+  the manifest i18n catalog at boot.

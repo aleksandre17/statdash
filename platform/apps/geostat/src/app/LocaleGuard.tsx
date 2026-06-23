@@ -11,12 +11,11 @@
 //  /  → redirect to /${defaultLocale} (handled by parent Route path="*").
 //
 import { useParams, Navigate, Routes, Route, useLocation } from 'react-router-dom'
-import { SiteLocaleProvider, FrameProvider, ChromeOverrideProvider } from '@geostat/react'
-import type { ChromeEntry }                                          from '@geostat/react'
-import { NodePageRenderer, nodeRegistry }                            from '@geostat/react/engine'
+import { SiteLocaleProvider, FrameProvider, ChromeOverrideProvider } from '@statdash/react'
+import type { ChromeEntry }                                          from '@statdash/react'
+import { NodePageRenderer, nodeRegistry }                            from '@statdash/react/engine'
 import AppChrome                                                     from '@plugins/chrome/AppChrome'
 import PageLoader                                                    from './PageLoader'
-import { LANDING_CONFIG }                                            from '../pages/landing.config'
 import type { SiteManifest }                                         from '@/data/site-manifest'
 
 export function LocaleGuard({ manifest }: { manifest: SiteManifest }) {
@@ -27,8 +26,9 @@ export function LocaleGuard({ manifest }: { manifest: SiteManifest }) {
     return <Navigate to={`/${manifest.i18n.defaultLocale}`} replace />
 
   const pathParts    = location.pathname.split('/').filter(Boolean)
-  const pageId       = pathParts[1] ?? 'landing'
+  const pageId       = pathParts[1] ?? manifest.indexPageId
   const pageEntry    = manifest.pages[pageId]
+  const indexPage    = manifest.pages[manifest.indexPageId]
   const metaDefs     = pageEntry
     ? (nodeRegistry.getDefaults(pageEntry.type, pageEntry.variant ?? 'default') ?? {})
     : {}
@@ -44,7 +44,10 @@ export function LocaleGuard({ manifest }: { manifest: SiteManifest }) {
         <ChromeOverrideProvider overrides={pageChrome}>
           <AppChrome>
             <Routes>
-              <Route index          element={<NodePageRenderer page={LANDING_CONFIG} />} />
+              <Route
+                index
+                element={indexPage ? <NodePageRenderer page={indexPage} /> : <PageLoader />}
+              />
               <Route path=":pageId" element={<PageLoader />} />
             </Routes>
           </AppChrome>
