@@ -25,8 +25,10 @@
 //  are typed PropField descriptors (the engine names the ref; the panel binds it).
 //
 import { useMemo } from 'react'
+import { modeRegistry } from '@statdash/engine'
+import type { FilterSchemaInput } from '@statdash/engine'
 import type { FieldControlProps } from '../fieldControl.types'
-import { readLocale } from '../localeString'
+import { readLocale, type LocaleStringValue } from '../localeString'
 import { useConstructorStore } from '../../store/constructor.store'
 import type { ConstructorStore } from '../../store/constructor.store'
 import type { Locale } from '../../types/constructor'
@@ -52,6 +54,57 @@ const STORE_SOURCES: Record<
   dataSources: (s) => s.dataSources.map((d) => ({ value: d.id, label: d.name })),
   pages:       (s, locale) =>
     s.pages.map((p) => ({ value: p.id, label: readLocale(p.title, locale) || p.slug })),
+  // V4 — the active page's authored ParamDef keys: the `param` a VisibilityExpr
+  // leaf binds to. The author PICKS an authored filter control, never types a raw
+  // param name (Law 2). Flat-mapped across the page's bars; deduped, order-stable.
+  filterParams: (s, locale) => activeFilterParamOptions(s, locale),
+  // V4 — the registered ModeId set: the `mode` a mode-* leaf binds to. Picked from
+  // the live modeRegistry (icon/label registered at boot), never a raw id string.
+  modes:        (_s, locale) =>
+    modeRegistry.list().map((m) => ({ value: m.id, label: readLocale(m.label, locale) || m.id })),
+}
+
+/**
+ * The authored ParamDef keys of the active page, as pickable options. Reads the
+ * page's engine-canonical filterSchema (page.meta.filterSchema) and flat-maps the
+ * control keys across all bars (deduped, first-seen order). Empty when the page
+ * has no filters — fail-soft (the leaf's `param` is then simply un-resolvable yet,
+ * exactly like a cube field with no dataset bound).
+ */
+function activeFilterParamOptions(s: ConstructorStore, _locale: Locale): ResolvedOption[] {
+  const page   = s.pages.find((p) => p.id === s.activePageId)
+  const schema = page?.meta?.filterSchema as FilterSchemaInput | undefined
+  if (!schema?.bars) return []
+  const seen = new Set<string>()
+  const out: ResolvedOption[] = []
+  for (const bar of Object.values(schema.bars)) {
+    for (const key of Object.keys(bar.filters ?? {})) {
+      if (seen.has(key)) continue
+      seen.add(key)
+      const def = bar.filters[key] as { label?: LocaleStringValue }
+      const label = readLocale(def.label, _locale)
+      out.push({ value: key, label: label ? `${key} · ${label}` : key })
+    }
+  }
+  return out
+}
+
+/**
+ * The underlying cube dimension of an authored ParamDef, by its filter key. Most
+ * ParamDef types carry a `key` field naming the dimension they write into; this
+ * returns it so a VisibilityExpr leaf's `is`/`values` can scope to the param's
+ * members. undefined when the key is unknown or the param has no dimension (e.g.
+ * a `hidden` URL-state param) — caller falls back gracefully.
+ */
+function paramDimension(s: ConstructorStore, paramKey: string): string | undefined {
+  const page   = s.pages.find((p) => p.id === s.activePageId)
+  const schema = page?.meta?.filterSchema as FilterSchemaInput | undefined
+  if (!schema?.bars) return undefined
+  for (const bar of Object.values(schema.bars)) {
+    const def = bar.filters?.[paramKey] as { key?: unknown } | undefined
+    if (def && typeof def.key === 'string') return def.key
+  }
+  return undefined
 }
 
 export function EnumRefField({ field, id, value, locale, siblingValues, onChange }: FieldControlProps) {
@@ -68,13 +121,23 @@ export function EnumRefField({ field, id, value, locale, siblingValues, onChange
   // The dimension a 'cube.members' field is scoped to: the value at the sibling
   // prop named by `sourceDim`, when present. Falls back to the profile's first
   // dimension so members still resolve to something usable.
+  //
+  // V4 special case: when `sourceDim` is 'param' (a VisibilityExpr leaf's `is`
+  // scoped to a sibling-picked filter param), the sibling value is a ParamDef KEY,
+  // not a dimension code — so we resolve it through the active page's filterSchema
+  // to the param's underlying dimension (its `key`). Postel's Law: if the value is
+  // not an authored param key, we treat it as a dimension code directly.
   const memberDim = useMemo<string | undefined>(() => {
     if (sourceKey !== 'cube.members') return undefined
     const fromSibling = sourceDim && siblingValues ? siblingValues[sourceDim] : undefined
-    if (typeof fromSibling === 'string' && fromSibling) return fromSibling
+    if (typeof fromSibling === 'string' && fromSibling) {
+      return sourceDim === 'param'
+        ? (paramDimension(store, fromSibling) ?? fromSibling)
+        : fromSibling
+    }
     const profile = profileOrNull(active)
     return profile?.dimensions[0]?.code
-  }, [sourceKey, sourceDim, siblingValues, active])
+  }, [sourceKey, sourceDim, siblingValues, active, store])
 
   const { options, hint } = useMemo<{ options: ResolvedOption[]; hint: string }>(() => {
     if (!sourceKey) return { options: [], hint: 'no source declared' }

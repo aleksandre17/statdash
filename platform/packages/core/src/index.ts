@@ -97,6 +97,19 @@ export { DATASPEC_DISCRIMINANTS, PARAMDEF_TYPES, VISIBILITY_OPS } from './config
 //  per-control form (mirrors getTransformStepSchema for transform steps).
 export { registerParamSchema, getParamSchema, listParamSchemas } from './config/param-schema-registry'
 import './config/param-schemas' // side-effect: register built-in ParamDef authoring schemas
+// ── VisibilityExpr authoring-surface registry — node-level "show when" [V4] ────
+//  Each VisibilityExpr op CARRIES its authoring surface (a leaf PropSchema or a
+//  composite marker), registered via the visibility-schemas side-effect. The
+//  panel's visibilityLeafSchemaSource resolves a leaf op through getVisibilityLeaf
+//  Schema into the generic Inspector; the recursive VisibilityBuilder renders
+//  composites (and/or/not). Mirrors getParamSchema / getTransformStepSchema.
+export type { VisibilityOpKind, VisibilityOpSurface } from './config/visibility-schema-registry'
+export {
+  registerVisibilityLeafSchema, registerVisibilityComposite,
+  getVisibilitySurface, getVisibilityLeafSchema,
+  isVisibilityOpAuthorable, listVisibilitySurfaces,
+} from './config/visibility-schema-registry'
+import './config/visibility-schemas' // side-effect: register built-in VisibilityExpr authoring surfaces
 // ── PropSchema — typed authoring-form vocabulary (Constructor) ─────────
 //  Lives in core (not react) because a TransformStep op now CARRIES its own
 //  authoring PropSchema (OCP) and core may not import react (the arrow).

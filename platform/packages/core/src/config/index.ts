@@ -44,3 +44,17 @@ export { evalCondition, evalWhen, evalValidatorPredicate, validators,
 //  './param-schemas') is owned by the package index (src/index.ts), mirroring how
 //  the transform-step registry's built-ins are registered from data/transform.
 export { registerParamSchema, getParamSchema, listParamSchemas } from './param-schema-registry'
+
+// ── VisibilityExpr authoring-surface registry [V4] ────────────────────────────
+//  The Constructor's node-level "show when" condition vocabulary: each
+//  VisibilityExpr op CARRIES its authoring surface (a leaf PropSchema or a
+//  composite marker), registered via the visibility-schemas module-init side-
+//  effect below. The panel's visibilityLeafSchemaSource resolves a leaf op through
+//  getVisibilityLeafSchema into the generic Inspector; the recursive
+//  VisibilityBuilder renders composites. Mirrors the param-schema registry.
+export type { VisibilityOpKind, VisibilityOpSurface } from './visibility-schema-registry'
+export {
+  registerVisibilityLeafSchema, registerVisibilityComposite,
+  getVisibilitySurface, getVisibilityLeafSchema,
+  isVisibilityOpAuthorable, listVisibilitySurfaces,
+} from './visibility-schema-registry'

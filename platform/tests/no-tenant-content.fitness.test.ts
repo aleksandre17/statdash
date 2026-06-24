@@ -117,6 +117,11 @@ const ALLOW = new Set(
     // author page-level filter controls. Not rendering/logic code; an i18n catalog
     // (V0 page-level FilterSchema authoring).
     'packages/core/src/config/param-schemas.ts',
+    // VisibilityExpr authoring catalog — the SAME class as param-schemas.ts: a
+    // Constructor descriptor carrying bilingual PropField labels the Inspector
+    // renders to author node-level "show when" leaf conditions (eq/neq/in/isset/
+    // mode-*). Not rendering/logic code; an i18n catalog (V4 visibility builder).
+    'packages/core/src/config/visibility-schemas.ts',
     'packages/core/src/core/provenance.ts',
     'packages/styles/src/catalog/typography.ts',
     'packages/styles/src/catalog/primitives.ts',

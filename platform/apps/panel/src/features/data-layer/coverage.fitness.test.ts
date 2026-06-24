@@ -31,6 +31,7 @@
 import { describe, it, expect } from 'vitest'
 import {
   listTransformOps, getTransformStepSchema, getParamSchema,
+  isVisibilityOpAuthorable,
   DATASPEC_DISCRIMINANTS, PARAMDEF_TYPES, VISIBILITY_OPS,
 } from '@statdash/engine'
 
@@ -59,8 +60,19 @@ function paramDefAuthorable(type: string): boolean {
   return getParamSchema(type) != null
 }
 
-/** VisibilityExpr ops with a Constructor condition-builder today. (V4 — not built.) */
-const VISIBILITY_EDITORS = new Set<string>()
+/**
+ * VisibilityExpr ops are surfaced exactly like transform ops / ParamDefs [V4]: an
+ * op is authorable iff it CARRIES an authoring surface in the engine visibility
+ * registry (isVisibilityOpAuthorable) — a leaf PropSchema (eq/neq/in/isset/mode-*)
+ * rendered through the generic Inspector via the panel's visibilityLeafSchemaSource
+ * (VisibilityLeafEditor), or a composite marker (and/or/not) handled by the
+ * recursive VisibilityBuilder. There is no hand-list of "editors": the registry IS
+ * the surface set (a new op with a surface is surfaced; one that loses it FAILS
+ * this gate). Mirrors paramDefAuthorable — schema-driven, no bespoke per-op form.
+ */
+function visibilityOpAuthorable(op: string): boolean {
+  return isVisibilityOpAuthorable(op)
+}
 
 // ── COVERAGE_TODO — the explicit, roadmap-keyed gap allowlist ───────────────────
 //
@@ -93,17 +105,13 @@ const COVERAGE_TODO = {
     // The allowlist is empty: a type without a schema now FAILS the gate.
   },
   visibilityOps: {
-    // V4 — node-level VisibilityExpr ("show when") condition builder. None yet.
-    'eq':       'V4 — VisibilityExpr builder',
-    'neq':      'V4 — VisibilityExpr builder',
-    'in':       'V4 — VisibilityExpr builder',
-    'isset':    'V4 — VisibilityExpr builder',
-    'and':      'V4 — VisibilityExpr builder',
-    'or':       'V4 — VisibilityExpr builder',
-    'not':      'V4 — VisibilityExpr builder',
-    'mode-is':  'V4 — VisibilityExpr builder',
-    'mode-in':  'V4 — VisibilityExpr builder',
-    'mode-not': 'V4 — VisibilityExpr builder',
+    // V4 — node-level VisibilityExpr ("show when") condition builder is DONE. Every
+    // op now carries an authoring surface in the engine visibility registry (leaf
+    // PropSchema or composite marker, OCP) rendered through the generic Inspector
+    // (visibilityLeafSchemaSource + VisibilityLeafEditor) and the recursive
+    // VisibilityBuilder (VisibilitySection in the node Inspector), bound to the
+    // cube-profile / authored ParamDefs / registered modes. The allowlist is empty:
+    // an op without a surface now FAILS the gate.
   },
 } as const
 
@@ -155,7 +163,7 @@ describe('Coverage Fitness #1 — every renderer capability is authorable (or an
   it('VisibilityExpr ops: each is surfaced OR allowlisted', () => {
     const gaps: string[] = []
     for (const op of VISIBILITY_OPS) {
-      const authorable  = VISIBILITY_EDITORS.has(op)
+      const authorable  = visibilityOpAuthorable(op)
       const allowlisted = op in COVERAGE_TODO.visibilityOps
       if (!authorable && !allowlisted) gaps.push(op)
       if (authorable && allowlisted) gaps.push(`${op} (surfaced but still in COVERAGE_TODO — remove it)`)

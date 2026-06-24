@@ -13,6 +13,8 @@ import { Inspector, ChromeInspectorPanel, ChromePalette } from '../../../inspect
 import { setAtPath } from '../../../inspector/showWhen'
 import { PageWorkflowBar } from '../../page-workflow'
 import { FiltersDrawer } from '../../filters'
+import { VisibilitySection } from '../../visibility'
+import type { VisibilityExpr } from '@statdash/engine'
 import '../../../canvas/page-step.css'
 
 // Generate a short, collision-resistant node id (matches existing convention).
@@ -84,6 +86,30 @@ export function PageStep() {
     [pageId, selected, updateNode, markPageDirty],
   )
 
+  // ── view.visibleWhen — the node-level "show when" gate (V4) ──────────────
+  //  A null `next` CLEARS the gate (always visible): we rebuild `view` WITHOUT
+  //  the key so an un-edited / cleared node never carries a `visibleWhen: undefined`
+  //  (additive + byte-clean — the round-trip stays lossless). A non-null `next`
+  //  writes through the SAME setAtPath path as every other node prop, so the edit
+  //  composes with undo/redo and the WYSIWYG re-render.
+  const setVisibleWhen = useCallback(
+    (next: VisibilityExpr | undefined) => {
+      if (!pageId || !selected) return
+      if (next == null) {
+        const view = { ...(selected.props.view as Record<string, unknown> | undefined) }
+        delete view.visibleWhen
+        const nextProps = { ...selected.props, view }
+        // Drop an emptied `view` entirely so a node that never had one stays clean.
+        if (Object.keys(view).length === 0) delete (nextProps as Record<string, unknown>).view
+        updateNode(pageId, selected.id, { props: nextProps })
+      } else {
+        updateNode(pageId, selected.id, { props: setAtPath(selected.props, 'view.visibleWhen', next) })
+      }
+      markPageDirty(pageId)
+    },
+    [pageId, selected, updateNode, markPageDirty],
+  )
+
   return (
     <Box sx={{ p: 3, display: 'flex', flexDirection: 'column', gap: 2, height: '100%' }}>
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
@@ -145,6 +171,12 @@ export function PageStep() {
               <Chip size="small" label={selected.type} color="primary" variant="outlined" sx={{ alignSelf: 'flex-start' }} />
               {/* Schema-driven property panel (C1) — generic, no per-type UI. */}
               <Inspector node={selected} onChange={patchProp} />
+              <Divider />
+              {/* ── Node-level "show when" gate (V4) — any node can carry one ──── */}
+              <VisibilitySection
+                value={(selected.props.view as { visibleWhen?: VisibilityExpr } | undefined)?.visibleWhen}
+                onChange={setVisibleWhen}
+              />
               <Divider />
               <Button
                 size="small"

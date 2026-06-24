@@ -51,6 +51,11 @@ export type PropFieldType =
 //    'dataSpecs'        — ids from the NamedDataSpec library (Layer-1)
 //    'tokens'           — design-token keys (theme)
 //    'pages'            — page ids in the current site (for nav / links)
+//    'filterParams'     — keys of the active page's authored ParamDefs (V4 — the
+//                         `param` a VisibilityExpr leaf binds to: pick an authored
+//                         filter control, never type a raw param name — Law 2)
+//    'modes'            — registered ModeId set (V4 — the `mode(s)` a mode-* leaf
+//                         binds to: pick a registered mode, never type a raw id)
 //
 export type PropFieldSource =
   | 'cube.measures'
@@ -59,6 +64,8 @@ export type PropFieldSource =
   | 'dataSpecs'
   | 'tokens'
   | 'pages'
+  | 'filterParams'
+  | 'modes'
   | (string & {})
 
 /** One option for an enum-like select field. */
