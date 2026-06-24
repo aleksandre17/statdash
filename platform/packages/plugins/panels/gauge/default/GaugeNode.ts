@@ -1,8 +1,11 @@
 import type { NodeBase, PropertyGroup, PropSchema } from '@statdash/react/engine'
 import type { FieldConfig }                         from '@statdash/engine'
+import { DATA_INTEGRITY_SCHEMA, DATA_INTEGRITY_FIELDS } from '../../dataIntegritySchema'
 
 export interface GaugeNode extends NodeBase {
   type: 'gauge'
+  /** Explicit "preliminary data" override (Law 9) — signal #1 of resolvePreliminary. */
+  preliminary?: boolean
   /** Field from rows to display as the gauge value. Default: 'value' */
   valueField?:  string
   /** Minimum gauge value. Default: 0 */
@@ -49,6 +52,7 @@ export const GaugeSchema: PropSchema = [
     type:  'object',
     label: { ka: 'ზღვრები', en: 'Thresholds' },
   },
+  ...DATA_INTEGRITY_SCHEMA,
 ]
 
 export const GaugeGroups: PropertyGroup[] = [
@@ -59,6 +63,10 @@ export const GaugeGroups: PropertyGroup[] = [
   {
     label:  { ka: 'ვიზუალიზაცია', en: 'Display' },
     fields: ['showValue', 'thresholds'],
+  },
+  {
+    label:  { ka: 'მონაცემთა მთლიანობა', en: 'Data integrity' },
+    fields: [...DATA_INTEGRITY_FIELDS],
   },
 ]
 

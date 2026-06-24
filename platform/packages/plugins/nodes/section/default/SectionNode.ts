@@ -31,6 +31,14 @@ export const SectionSchema: PropSchema = [
   { field: 'color',        type: 'color',  label: 'ფერი' },
   { field: 'anchor',       type: 'string', label: 'Anchor ID' },
   { field: 'prependLabel', type: 'string', label: 'Drill Label' },
+  // ── Methodology disclosure (Law 9 — IMF/Eurostat/ONS data integrity) ──────
+  //  Authors the `methodology` panel SectionShell already renders (note +
+  //  source + last-updated). Plain strings (NOT LocaleString) — matching the
+  //  current SectionMethodology data model, so existing configs stay
+  //  byte-identical. `note` supports template vars (resolved at render).
+  { field: 'methodology.note',        type: 'string', label: { ka: 'მეთოდოლოგიის შენიშვნა', en: 'Methodology note' } },
+  { field: 'methodology.source',      type: 'string', label: { ka: 'მონაცემთა წყარო',       en: 'Data source' } },
+  { field: 'methodology.lastUpdated', type: 'string', label: { ka: 'ბოლო განახლება',          en: 'Last updated' } },
 ]
 
 export const SectionDefaults: Partial<SectionNode> = {
@@ -52,6 +60,9 @@ export const SectionGroups: PropertyGroup[] = [
   // hero + compact retired into the declared `emphasis` enum variant (variants.emphasis):
   // the Inspector renders one select instead of two mutually-exclusive booleans.
   { label: { ka: 'განლაგება',  en: 'Layout'    }, fields: ['view.width', 'variants.emphasis', 'anchor'] },
+  // Methodology disclosure — the data-integrity fieldset (Law 9). Renders the
+  // SectionMethodology panel only when authored (the shell gates on def.methodology).
+  { label: { ka: 'მეთოდოლოგია', en: 'Methodology' }, fields: ['methodology.note', 'methodology.source', 'methodology.lastUpdated'] },
 ]
 
 declare module '@statdash/react/engine' {

@@ -13,6 +13,7 @@ import { Inspector, ChromeInspectorPanel, ChromePalette } from '../../../inspect
 import { setAtPath } from '../../../inspector/showWhen'
 import { PageWorkflowBar } from '../../page-workflow'
 import { FiltersDrawer } from '../../filters'
+import { PageInspectorPanel } from '../../page-config'
 import { VisibilitySection } from '../../visibility'
 import type { VisibilityExpr } from '@statdash/engine'
 import '../../../canvas/page-step.css'
@@ -188,6 +189,14 @@ export function PageStep() {
               </Button>
             </Box>
           )}
+
+          {/* ── Page Inspector (PageConfigBase authoring, V3) ────────────── */}
+          {/*  Page-scoped, not element-scoped: authors the page ROOT's         */}
+          {/*  presentation / frame / modeOrder / vars through the SAME generic */}
+          {/*  Inspector (pageSchemaSource — presentation via presentationProp-  */}
+          {/*  Schema). Round-trips losslessly through page.meta.               */}
+          <Divider sx={{ my: 2 }} />
+          <PageInspectorPanel />
 
           {/* ── Page-level filters (FilterSchema authoring, V0) ──────────── */}
           {/*  Page-scoped, not element-scoped: shown regardless of node       */}

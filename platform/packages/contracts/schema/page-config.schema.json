@@ -378,6 +378,21 @@
           "description": "string field",
           "type": "string"
         },
+        "methodology.note": {
+          "title": "Methodology note",
+          "description": "string field",
+          "type": "string"
+        },
+        "methodology.source": {
+          "title": "Data source",
+          "description": "string field",
+          "type": "string"
+        },
+        "methodology.lastUpdated": {
+          "title": "Last updated",
+          "description": "string field",
+          "type": "string"
+        },
         "variants.emphasis": {
           "title": "Emphasis",
           "description": "hero: Hero, compact: Compact",
@@ -1182,6 +1197,11 @@
             "heatmap"
           ]
         },
+        "preliminary": {
+          "title": "Preliminary data",
+          "description": "boolean field",
+          "type": "boolean"
+        },
         "type": {
           "const": "chart"
         },
@@ -1259,6 +1279,11 @@
           "title": "სვეტის სათაური",
           "description": "string field",
           "type": "string"
+        },
+        "preliminary": {
+          "title": "Preliminary data",
+          "description": "boolean field",
+          "type": "boolean"
         },
         "type": {
           "const": "table"
@@ -1445,6 +1470,11 @@
           "title": "Thresholds",
           "description": "object field",
           "type": "object"
+        },
+        "preliminary": {
+          "title": "Preliminary data",
+          "description": "boolean field",
+          "type": "boolean"
         },
         "type": {
           "const": "gauge"
