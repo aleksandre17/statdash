@@ -1,43 +1,26 @@
-// ── pageVars — breadcrumb types (engine-owned) ───────────────────────
+// ── pageVars — breadcrumb structural type (engine-owned) ─────────────────────
 //
-//  Crumb type and isCrumbs boundary guard.
+//  Crumb is the structural shape of one breadcrumb item. It is part of the
+//  GENERIC RenderContext contract: ctx.navContext.crumbs?: Crumb[] is what page
+//  shells (PageHeaderShell) consume, regardless of WHO produced the trail. So
+//  the structural type lives here, in the app-agnostic engine layer.
 //
-//  Color is set as a CSS custom property (--sc) on wrapper elements via the
-//  DOM cascade — no var slot, no constant needed.
-//
-//  Breadcrumbs flow: page.vars['_pageCrumbs'] → SiteRenderer reads with
-//  isCrumbs() → populates navContext.crumbs → consumed by PageHeaderShell.
-//  The string key '_pageCrumbs' is used directly in page configs as a plain
-//  string literal; no exported constant needed.
+//  The runtime GUARD (isCrumbs) and the PROJECTION of a page's presentation
+//  into navContext.crumbs are a per-concern concern — they live WITH the
+//  crumbs projector (@statdash/plugins .../presentation/crumbsProjector.ts),
+//  behind the presentation registry [N-ADR-0029 v2]. The engine never reads
+//  a `crumbs` key by name; presentation flows only through projectPresentation.
 //
 //  Law 3 (engine/react is app-agnostic): no brand defaults here.
 //
 
 // ── Crumb — breadcrumb trail item ─────────────────────────────────────
 //
-//  Shared shape for the `_pageCrumbs` var slot and navContext.crumbs.
+//  Shared shape for the evaluated crumbs value and ctx.navContext.crumbs.
 //  Owned here so plugin authors who build dynamic breadcrumbs can import
-//  Crumb + isCrumbs from @statdash/react/engine without touching internals.
+//  Crumb from @statdash/react/engine without touching internals.
 //
 export interface Crumb {
   label: string
   href?: string
-}
-
-/**
- * Runtime guard for the `_pageCrumbs` var slot.
- *
- * A boundary type-guard, NOT a schema validator: `ctx.vars` is
- * `Record<string, unknown>` produced by evalVarMap, so the value at the
- * crumbs key is untrusted. We narrow it to `Crumb[]` by checking it is an
- * array of `{ label: string }` objects (href is optional, unchecked). Keep it
- * cheap — this runs every render.
- */
-export function isCrumbs(v: unknown): v is Crumb[] {
-  return (
-    Array.isArray(v) &&
-    v.every(
-      c => c !== null && typeof c === 'object' && typeof (c as Crumb).label === 'string',
-    )
-  )
 }

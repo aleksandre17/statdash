@@ -47,6 +47,8 @@ export type {
   PropSchema,
   LocaleString,
   PageConfigBase,
+  PagePresentation,
+  VarExpr,
   NodePageConfig,
   // N41: app-tier auth context for RBAC visibility
   AuthContext,
@@ -161,17 +163,36 @@ export { GlobalStateProvider, useGlobalStore, useGlobalVar } from '../context/Gl
 // ── Var evaluation — shared util for page-level and node-level vars ────
 export { evalVarMap }                 from './evalVarMap'
 
-// ── Page var types — Crumb shape + runtime guard ──────────────────────
+// ── Page var types — Crumb structural shape ───────────────────────────
 //
-//  isCrumbs validates the `_pageCrumbs` slot value at the SiteRenderer
-//  boundary. Plugin authors building dynamic breadcrumbs import Crumb +
-//  isCrumbs here.
+//  Crumb is the structural shape of ctx.navContext.crumbs — part of the GENERIC
+//  RenderContext contract consumed by page shells (PageHeaderShell), so it lives
+//  in the app-agnostic engine. The runtime guard + the projection of a page's
+//  crumbs live WITH the crumbs projector (@statdash/plugins), behind the
+//  presentation registry [N-ADR-0029 v2].
 //
-//  Color is a CSS custom property (--sc) on wrapper elements — no constant.
-//  Breadcrumb key '_pageCrumbs' is a plain string literal in page configs.
-//
-export { isCrumbs }        from './pageVars'
 export type { Crumb }      from './pageVars'
+
+// ── Presentation-Projection Registry [N-ADR-0029 v2] ──────────────────
+//
+//  The open registry the renderer iterates generically. Concrete projectors
+//  (color → --sc, crumbs → navContext.crumbs) live in @statdash/plugins and
+//  register at app boot. The engine knows the protocol (evaluate → project),
+//  never a concern. A new concern = a new registration, ZERO renderer edits.
+//
+export type {
+  PresentationProjector,
+  PresentationSink,
+  ProjectorEvalCtx,
+  ProjectedValue,
+  EvalExpr,
+}                                       from './presentation'
+export {
+  registerPresentationProjector,
+  listPresentationProjectors,
+  presentationPropSchema,
+  projectPresentation,
+}                                       from './presentation'
 
 // ── Nav utils — section nav extraction + scroll offset ────────────────
 export { stickyOffset, extractNavSectionsFromChildren, extractNavSections } from './navUtils'

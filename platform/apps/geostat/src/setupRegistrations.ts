@@ -6,6 +6,7 @@ import * as Controls  from '@plugins/controls'
 import { registerSlice, middlewareRegistry } from '@statdash/react/engine'
 import { createElement }                     from 'react'
 import { registerStoreBuilders } from '@statdash/plugins/datasources'
+import { registerPresentationProjectors } from '@statdash/plugins/presentation'
 import { registerFeedbackI18n }  from './i18n/feedback'
 import { setupExtensions }       from './extensions/setupExtensions'
 // Locale formatters are registered at boot from manifest.i18n.locales
@@ -13,6 +14,11 @@ import { setupExtensions }       from './extensions/setupExtensions'
 
 export function setupRegistrations(): void {
   registerStoreBuilders()
+
+  // Presentation projectors [N-ADR-0029 v2] — color → CSS var, crumbs →
+  // navContext.crumbs. The renderer iterates these generically; a new concern
+  // is a new registration here, with ZERO renderer edits.
+  registerPresentationProjectors()
 
   // Core (non-slice) i18n: 'feedback' namespace for engine/react shared
   // feedback components (EmptyState). Runs after i18next.init() in main.tsx.

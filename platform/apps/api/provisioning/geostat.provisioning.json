@@ -3822,6 +3822,32 @@
           "range"
         ],
         "path": "/regional",
+        "presentation": {
+          "color": {
+            "by": "region",
+            "fallback": "#0080BE",
+            "field": "color",
+            "idField": "code",
+            "op": "find",
+            "source": {
+              "$d": "geo"
+            }
+          },
+          "crumbs": {
+            "by": "region",
+            "idField": "code",
+            "labelField": "label",
+            "op": "breadcrumbs",
+            "prefix": [
+              {
+                "label": "რეგიონული ანგარიშები"
+              }
+            ],
+            "source": {
+              "$cl": "geo"
+            }
+          }
+        },
         "storeKey": "regional",
         "type": "inner-page",
         "vars": {
@@ -3836,30 +3862,6 @@
             "else": "single",
             "op": "if",
             "then": "multi"
-          },
-          "_pageColor": {
-            "by": "region",
-            "fallback": "#0080BE",
-            "field": "color",
-            "idField": "code",
-            "op": "find",
-            "source": {
-              "$d": "geo"
-            }
-          },
-          "_pageCrumbs": {
-            "by": "region",
-            "idField": "code",
-            "labelField": "label",
-            "op": "breadcrumbs",
-            "prefix": [
-              {
-                "label": "რეგიონული ანგარიშები"
-              }
-            ],
-            "source": {
-              "$cl": "geo"
-            }
           },
           "_regionTitle": {
             "by": "region",

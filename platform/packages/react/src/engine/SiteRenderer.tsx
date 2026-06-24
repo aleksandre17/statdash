@@ -10,9 +10,11 @@
 //    3. Build baseCtx from above
 //    4. renderNode(page, ctx)              → ReactNode tree
 //
-//  Page color is set as CSS custom property --sc on a wrapper div so it
-//  cascades to all shells without a special ctx field. Crumbs flow via
-//  navContext.crumbs (navContext is the correct home for navigation state).
+//  Page presentation (color, breadcrumbs, …) is applied generically through the
+//  presentation-projector registry [N-ADR-0029 v2]: each registered projector
+//  evaluates its contribution and projects it into a sink (CSS custom properties
+//  on a wrapper div; a nav patch merged into navContext). The renderer names no
+//  concern — a new presentation capability is a registration, not a renderer edit.
 //
 
 import React, { useCallback, useMemo, memo, type ReactNode } from 'react'
@@ -32,8 +34,9 @@ import { EventBus }                    from '../events/EventBus'
 import type { GeostatEventMap }        from '../events/events'
 import { renderNode as renderNodeFn }  from './renderNode'
 import { extractNavSectionsFromChildren } from './navUtils'
-import { isCrumbs }                   from './pageVars'
-import type { Crumb }                 from './pageVars'
+import { projectPresentation }         from './presentation'
+import type { PresentationSink, ProjectorEvalCtx } from './presentation'
+import type { VarExpr }                from './types/node'
 import type { DataLinkDef, DimVal }   from '@statdash/engine'
 import type { NodeBase, RenderContext, NodePageConfig } from './types'
 import { createDefaultUI }            from './createDefaultUI'
@@ -197,11 +200,32 @@ const NodePageRendererInner = memo(function NodePageRendererInner({
     return c
   }, [uiSetup])
 
-  // Derive page-scoped color and crumbs from vars using string literal keys.
-  // Color cascades via CSS --sc on a wrapper div; crumbs flow via navContext.
-  const rawPageColor   = vars['_pageColor']
-  const pageColor      = (typeof rawPageColor === 'string' ? rawPageColor : undefined) ?? page.color
-  const derivedCrumbs = isCrumbs(vars['_pageCrumbs']) ? vars['_pageCrumbs'] as Crumb[] : undefined
+  // ── Presentation projection [N-ADR-0029 v2] ─────────────────────────────
+  //
+  //  The renderer is a GENERIC visitor over the presentation-projector registry.
+  //  It names NO presentation concern: it runs every registered projector over
+  //  `page.presentation` and folds each into a generic sink (cssVars → wrapper
+  //  div; nav → navContext). A new concern is a new registration in
+  //  @statdash/plugins, with ZERO edits to this file.
+  //
+  //  Projectors reuse the SAME evalVarMap / VarExpr machinery via `evalOne`, so
+  //  data-driven contributions keep working.
+  //
+  const evalOne = useCallback(
+    (e: VarExpr): unknown =>
+      evalVarMap({ v: e }, { filterParams: mergedFilterParams, vars: {}, stores, pageStoreKey: page.storeKey }).v,
+    [mergedFilterParams, stores, page.storeKey],
+  )
+
+  const sink = useMemo<PresentationSink>(() => {
+    const evalCtx: ProjectorEvalCtx = {
+      filterParams: mergedFilterParams,
+      stores,
+      pageStoreKey: page.storeKey,
+      pageColorFallback: page.color,
+    }
+    return projectPresentation(page.presentation, evalOne, evalCtx)
+  }, [page.presentation, page.color, page.storeKey, mergedFilterParams, stores, evalOne])
 
   const baseCtx: Omit<RenderContext, 'renderNode'> = {
     sectionCtx,
@@ -219,7 +243,9 @@ const NodePageRendererInner = memo(function NodePageRendererInner({
     eventBus,
     bus,
     resolveLinks,
-    navContext:   { sections: navSections, timeModeKey, crumbs: derivedCrumbs },
+    // Merge the generic nav patch — the renderer does NOT know which nav fields
+    // (e.g. crumbs) a projector contributed; it spreads the sink's nav bag.
+    navContext:   { sections: navSections, timeModeKey, ...sink.nav },
     ui:           uiContainer,
   }
 
@@ -235,10 +261,12 @@ const NodePageRendererInner = memo(function NodePageRendererInner({
 
   const content = renderNodeFn(page, ctx)
 
-  // Scope the CSS custom property --sc to this page when a page color is defined.
-  // All shells read var(--sc) via CSS cascade — no JS prop needed.
-  const pageContent = pageColor
-    ? <div style={{ '--sc': pageColor } as React.CSSProperties}>{content}</div>
+  // Apply the generic CSS-var bag on a wrapper div. The renderer does NOT know
+  // which custom properties a projector set (e.g. the page-color var) — it
+  // spreads sink.cssVars. Shells read the resulting custom properties via the
+  // CSS cascade. No wrapper when no projector contributed a CSS var.
+  const pageContent = Object.keys(sink.cssVars).length
+    ? <div style={sink.cssVars as React.CSSProperties}>{content}</div>
     : content
 
   return (

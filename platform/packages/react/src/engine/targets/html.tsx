@@ -24,7 +24,10 @@ import { PageStoreProvider }             from '../../context/PageStoreContext'
 import { ModeProvider }                  from '../../context/ModeContext'
 import { FiltersProvider }               from '../../context/FiltersContext'
 import { renderNode as renderNodeFn }    from '../renderNode'
-import { isCrumbs }                     from '../pageVars'
+import { projectPresentation }           from '../presentation'
+import type { ProjectorEvalCtx, EvalExpr } from '../presentation'
+import { evalVarMap }                    from '../evalVarMap'
+import type { PagePresentation, VarExpr } from '../types/node'
 import type { RenderContext, NodeBase, NodeDef, NodePageConfig, AuthContext } from '../types'
 import { createDefaultUI }              from '../createDefaultUI'
 import { ExtensionRegistry }            from '../extensions/ExtensionRegistry'
@@ -69,8 +72,10 @@ export interface StaticRenderContext {
    */
   auth?:          AuthContext
   /**
-   * Breadcrumb trail — forwarded to `ctx.navContext.crumbs` so
-   * PageHeaderShell renders the correct breadcrumb path in static snapshots.
+   * Breadcrumb trail — a pre-resolved convenience input. `buildStaticContext`
+   * folds this into the generic `presentation` bag (under the crumbs projector's
+   * key) so it is projected to `ctx.navContext.crumbs` through the SAME
+   * presentation-projector registry the dynamic renderer uses [N-ADR-0029 v2].
    */
   crumbs?:        { label: string; href?: string }[]
   /**
@@ -78,6 +83,14 @@ export interface StaticRenderContext {
    * renders the sidebar nav correctly in static snapshots.
    */
   navContext?:    { sections: NavSection[]; timeModeKey: string }
+  /**
+   * Presentation-projection contributions [N-ADR-0029 v2] — the generic bag the
+   * registry projects (CSS vars on the wrapper, nav patch into navContext). When
+   * absent, `renderPageToHTML` projects from `page.presentation`. The legacy
+   * `color`/`crumbs` convenience inputs above are folded into this by
+   * `buildStaticContext`; the renderer itself names no presentation concern.
+   */
+  presentation?:  PagePresentation
 }
 
 // ── buildStaticContext — factory for StaticRenderContext ─────────────────
@@ -104,6 +117,17 @@ export interface StaticRenderContext {
 export function buildStaticContext(
   input: Pick<StaticRenderContext, 'sectionCtx' | 'stores'> & Partial<Omit<StaticRenderContext, 'sectionCtx' | 'stores'>>,
 ): StaticRenderContext {
+  // Fold the legacy pre-resolved convenience inputs into the generic
+  // presentation bag [N-ADR-0029 v2]. These input field names ARE the matching
+  // projector keys, so the fold is a plain spread of the defined ones — the
+  // render loop never reads a concern key by name; only this input adapter does.
+  const legacyPresentation: PagePresentation = {
+    ...(input.color  !== undefined ? { color:  input.color  } : {}),
+    ...(input.crumbs !== undefined ? { crumbs: input.crumbs } : {}),
+  }
+  const presentation: PagePresentation | undefined =
+    input.presentation ?? (Object.keys(legacyPresentation).length ? legacyPresentation : undefined)
+
   return {
     // ── required ───────────────────────────────────────────────────────
     sectionCtx:     input.sectionCtx,
@@ -126,6 +150,7 @@ export function buildStaticContext(
     },
     effects:    input.effects    ?? [],
     crumbs:     input.crumbs,
+    presentation,
     navContext: input.navContext,
     theme:      input.theme,
     auth:       input.auth,
@@ -166,17 +191,44 @@ export function renderPageToHTML(
   // Self-referential ctx holder — mirrors SiteRenderer to handle renderNode circularity.
   const ctxHolder = { ctx: null as unknown as RenderContext }
 
-  // Merge static crumbs into navContext.crumbs (validated via isCrumbs) so
-  // PageHeaderShell gets the correct breadcrumb path in static snapshots.
+  // ── Presentation projection [N-ADR-0029 v2] ─────────────────────────────
+  //
+  //  IDENTICAL generic pass to SiteRenderer: iterate the presentation-projector
+  //  registry over the page's presentation bag, fold each into a sink (cssVars →
+  //  wrapper div; nav → navContext). The snapshot path names no concern.
+  //
+  //  evalOne mirrors evalVarMap but passes PRE-RESOLVED values (already-evaluated
+  //  literals/arrays supplied by the caller, e.g. a Crumb[]) through unchanged —
+  //  only true VarExpr op/ref objects are evaluated against the static context.
+  //
+  const evalOne: EvalExpr = (e: VarExpr): unknown => {
+    const isExpression = e !== null && typeof e === 'object' && !Array.isArray(e)
+    return isExpression
+      ? evalVarMap({ v: e }, {
+          filterParams: staticCtx.filterParams,
+          vars:         {},
+          stores:       staticCtx.stores,
+          pageStoreKey: staticCtx.pageStoreKey,
+        }).v
+      : e
+  }
+  const projEvalCtx: ProjectorEvalCtx = {
+    filterParams:      staticCtx.filterParams,
+    stores:            staticCtx.stores,
+    pageStoreKey:      staticCtx.pageStoreKey,
+    pageColorFallback: staticCtx.color,
+  }
+  const sink = projectPresentation(staticCtx.presentation ?? page.presentation, evalOne, projEvalCtx)
+
+  // Merge the generic nav patch into navContext — the renderer does NOT know
+  // which nav fields (e.g. crumbs) a projector contributed. When there is a
+  // base navContext, patch it; otherwise build a minimal one only if a projector
+  // contributed nav, preserving the previous "no navContext unless needed" shape.
+  const navPatchKeys  = Object.keys(sink.nav)
   const staticNavContext = staticCtx.navContext
-    ? {
-        ...staticCtx.navContext,
-        ...(staticCtx.crumbs !== undefined && isCrumbs(staticCtx.crumbs)
-          ? { crumbs: staticCtx.crumbs }
-          : {}),
-      }
-    : staticCtx.crumbs !== undefined && isCrumbs(staticCtx.crumbs)
-      ? { sections: [], timeModeKey: staticCtx.timeModeKey, crumbs: staticCtx.crumbs }
+    ? { ...staticCtx.navContext, ...sink.nav }
+    : navPatchKeys.length
+      ? { sections: [], timeModeKey: staticCtx.timeModeKey, ...sink.nav }
       : staticCtx.navContext
 
   ctxHolder.ctx = {
@@ -208,9 +260,11 @@ export function renderPageToHTML(
 
   const content = renderNodeFn(page as NodeBase, ctxHolder.ctx)
 
-  // Scope --sc to this snapshot when a page color is present (CSS cascade).
-  const innerContent = staticCtx.color
-    ? createElement('div', { style: { '--sc': staticCtx.color } as React.CSSProperties }, content)
+  // Apply the generic CSS-var bag on a wrapper div — the renderer does NOT know
+  // which custom properties a projector set; it spreads sink.cssVars. Shells read
+  // them via the CSS cascade. No wrapper when no projector contributed a CSS var.
+  const innerContent = Object.keys(sink.cssVars).length
+    ? createElement('div', { style: sink.cssVars as React.CSSProperties }, content)
     : content
 
   // Wrap with the minimum providers shells may read via context hooks.

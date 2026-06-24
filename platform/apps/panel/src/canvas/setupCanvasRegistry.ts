@@ -27,6 +27,7 @@ import { createElement }              from 'react'
 import { registerSlice, middlewareRegistry } from '@statdash/react/engine'
 import { modeRegistry }   from '@statdash/engine'
 import { registerStoreBuilders } from '@statdash/plugins/datasources'
+import { registerPresentationProjectors } from '@statdash/plugins/presentation'
 
 let done = false
 
@@ -62,6 +63,14 @@ export function setupCanvasRegistry(): void {
   //  SiteProvider stores= seam the runner uses. No network happens here; the
   //  structural (empty-store) preview keeps working byte-identically until then.
   registerStoreBuilders()
+
+  // ── Presentation projectors [N-ADR-0029 v2] ──────────────────────────────
+  //
+  //  Same SSOT the geostat runner boots: color → CSS var, crumbs →
+  //  navContext.crumbs. The canvas mounts the REAL NodePageRenderer, which
+  //  iterates these generically — so the live preview projects page presentation
+  //  byte-identically to the runner.
+  registerPresentationProjectors()
 
   // ── Canvas anchor middleware (AOP — engine-supported, no engine change) ──
   //

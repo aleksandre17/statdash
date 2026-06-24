@@ -146,6 +146,35 @@ type CoreNodeDef = FilterBarNode | BarNode | ParamNode
 //
 export type NodeDef = CoreNodeDef | NodeTypeMap[keyof NodeTypeMap]
 
+// ── VarExpr — single-expression element of a VarMap ───────────────────
+//
+//  REUSE of the existing VarMap value type (FilterDerive | ExprVal) — NOT a
+//  new expression grammar. The data-driven page-presentation seam below must
+//  evaluate the very same `op:'find'` / `op:'breadcrumbs'` expressions the
+//  generic `vars` map evaluates, through the same evalVarMap machinery.
+//
+export type VarExpr = VarMap[string]
+
+// ── PagePresentation — generic presentation-contributions bag (N-ADR-0029 v2) ──
+//
+//  A page's presentation is a list of declarative contributions, KEYED BY
+//  registered projector key. The engine NEVER reads a specific key (`color`,
+//  `crumbs`, …) — it iterates the presentation-projector registry and asks each
+//  projector for `presentation[projector.key]`, then evaluate()s + project()s it
+//  (see packages/react/src/engine/presentation/). Concrete keys are owned by the
+//  concrete projectors in @statdash/plugins, NOT named here.
+//
+//  This is the v2 reshape: v1 declared two flat fields (`color`/`crumbs`) the
+//  renderer special-cased; that merely relocated the smell. Now the slot is a
+//  generic typed bag the registry projects, the Constructor authors it via
+//  presentationPropSchema() (the union of registered projectors' schema()), and a
+//  NEW concern = a new registration with ZERO renderer/type edits (OCP / Law 1).
+//
+//  `vars` stays purely generic with ZERO reserved keys; presentation has zero
+//  privileged dimensions — every key is a registered, schema'd capability.
+//
+export type PagePresentation = Record<string, VarExpr | string | unknown>
+
 // ── PageConfigBase + NodePageConfig — Track A page composition ────────
 //
 //  Intersection pattern: NodePageConfig = (InnerPageNode | …) & PageConfigBase
@@ -178,6 +207,15 @@ export interface PageConfigBase {
   chrome?:       Record<string, ChromeEntry>
   path?:         string
   color?:        string
+  /**
+   * Presentation-projection contributions [N-ADR-0029 v2] — a generic bag keyed
+   * by registered projector key. The renderer iterates the presentation-projector
+   * registry and projects each contribution generically (evaluate → project); it
+   * names no concern. Concrete capabilities (color → CSS var, crumbs →
+   * navContext.crumbs) are registered projectors in @statdash/plugins. Keeps
+   * `vars` purely generic (zero reserved keys); a new concern needs ZERO edits here.
+   */
+  presentation?: PagePresentation
   filterSchema?: FilterSchemaInput
   vars?:         VarMap
   modeOrder?:    string[]

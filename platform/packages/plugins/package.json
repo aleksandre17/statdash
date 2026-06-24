@@ -22,6 +22,12 @@
       "types":   "./dist/datasources/index.d.ts",
       "import":  "./dist/datasources/index.js",
       "default": "./dist/datasources/index.js"
+    },
+    "./presentation": {
+      "source":  "./presentation/index.ts",
+      "types":   "./dist/presentation/index.d.ts",
+      "import":  "./dist/presentation/index.js",
+      "default": "./dist/presentation/index.js"
     }
   },
   "files": ["dist"],

@@ -19,6 +19,8 @@ export type {
   NodeTypeMap,
   NodeDef,
   PageConfigBase,
+  PagePresentation,
+  VarExpr,
   NodePageConfig,
 }                                from './node'
 export { VIEW_DEFAULTS }         from './node'
