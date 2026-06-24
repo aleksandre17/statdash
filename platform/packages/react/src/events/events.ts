@@ -1,16 +1,17 @@
-// ── GeostatEventMap — typed event catalogue ───────────────────────────────
+// ── PlatformEventMap — typed event catalogue (module augmentation pattern) ──
 //
-//  Augment this interface to add custom events (module augmentation, OCP):
-//    declare module '@statdash/react/events' {
-//      interface GeostatEventMap {
-//        'my:event': { data: string }
-//      }
-//    }
+//  Apps/plugins extend via:
+//    declare module '@statdash/react' { interface PlatformEventMap { 'my:event': {...} } }
+//
+//  Same pattern as PlatformCommandMap and NodeTypeMap — open interface, no
+//  central registry change required for extension (OCP). The base map declared
+//  here carries only platform-generic events; tenant/app-specific events are
+//  contributed app-side via augmentation.
 //
 
 import type { DimVal } from '@statdash/engine'
 
-export interface GeostatEventMap {
+export interface PlatformEventMap {
   /** Row hover — synchronises highlight across charts on the same page. */
   'row:hover':     { rowKey: string; nodeType: string }
   /** Row hover end — clear highlight. */
@@ -38,3 +39,6 @@ export interface GeostatEventMap {
    */
   'node:status':   { nodeId?: string; nodeType: string; status: 'ok' | 'empty' | 'error' }
 }
+
+export type EventType = keyof PlatformEventMap
+

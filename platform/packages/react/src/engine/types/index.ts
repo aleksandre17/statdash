@@ -68,7 +68,7 @@ export type { LocaleString, TransformStep, FieldConfig, DataLinkDef, DataLinkPar
 
 // ── Events — re-exported for shell use ─────────────────────────────────
 export type { EventBus }        from '../../events/EventBus'
-export type { GeostatEventMap } from '../../events/events'
+export type { PlatformEventMap, EventType } from '../../events/events'
 
 // ── Declarative node-event handlers [N36 cross-filter] ─────────────────
 export type {

@@ -1,6 +1,6 @@
 // @vitest-environment node
 //
-// i18next is an optional peer installed only in apps/geostat — not in the
+// i18next is an optional peer installed only at the app tier — not in the
 // platform root or engine/react. EmptyState + ExportBar import useT from
 // SiteContext which imports i18next; we mock the module here to avoid the
 // "Could not resolve i18next" error that hits any test importing those files.

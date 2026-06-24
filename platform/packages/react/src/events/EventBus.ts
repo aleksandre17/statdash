@@ -17,19 +17,19 @@
 //    }), [ctx.eventBus])
 //
 //  Module augmentation — open for extension:
-//    declare module '@statdash/react/events' {
-//      interface GeostatEventMap {
+//    declare module '@statdash/react' {
+//      interface PlatformEventMap {
 //        'custom:event': { payload: string }
 //      }
 //    }
 //
 
-import type { GeostatEventMap } from './events'
+import type { PlatformEventMap } from './events'
 
 type Handler<T> = (event: T) => void
 type Unsub      = () => void
 
-export class EventBus<TMap = GeostatEventMap> {
+export class EventBus<TMap = PlatformEventMap> {
   private readonly handlers = new Map<string, Set<Handler<unknown>>>()
 
   publish<K extends keyof TMap>(type: K, event: TMap[K]): void {

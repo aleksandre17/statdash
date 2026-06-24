@@ -6,7 +6,7 @@
 //  view.visibleToRoles gates a node against ctx.auth.roles. The gate runs at
 //  the TOP of renderNode (before migrate/validate/resolveRows) and returns
 //  null when the caller lacks every listed role. Auth is an app-tier concern
-//  (Law 3): engine/react reads ctx.auth — injected by apps/geostat — while
+//  (Law 3): engine/react reads ctx.auth — injected by the app tier — while
 //  engine/core stays free of any user/role model.
 //
 //  We register a trivial shell for a private node type so a PERMITTED node

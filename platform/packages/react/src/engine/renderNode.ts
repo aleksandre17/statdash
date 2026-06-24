@@ -211,7 +211,7 @@ export function renderNode(node: NodeBase, ctx: RenderContext): ReactNode {
   //  Runs FIRST (before migrate/validate/resolveRows) so an unauthorized node
   //  costs nothing to skip and never triggers data resolution it can't reveal.
   //  Auth is an app-tier concern (Law 3): engine/react reads ctx.auth, which
-  //  apps/geostat injects; engine/core stays free of any user/role model.
+  //  the app tier injects; engine/core stays free of any user/role model.
   //  Absent/empty visibleToRoles ⇒ visible to all (anonymous included).
   const visibleToRoles = node.visibleToRoles
   if (visibleToRoles && visibleToRoles.length > 0) {

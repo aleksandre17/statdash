@@ -2,8 +2,8 @@
 //
 //  AuthContext lives in engine/react, NOT engine/core. Auth is an app-tier
 //  concern (Law 3): engine/core knows nothing about users or roles. The
-//  app (apps/geostat) injects the resolved identity into RenderContext at
-//  the app tier; engine/react's render pipeline (renderNode) reads it to
+//  app tier injects the resolved identity into RenderContext at the app
+//  tier; engine/react's render pipeline (renderNode) reads it to
 //  enforce view.visibleToRoles. engine/core stays free of any user model.
 //
 //  Absent auth ⇒ anonymous (roles: []). This is the safe default: an

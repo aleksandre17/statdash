@@ -129,7 +129,7 @@
 
   /* ── Semantic colors (agnostic defaults; app overrides via cascade) ─
      packages/ is brand-agnostic: these are neutral functional values.
-     src/styles/tokens.css maps --geostat-* brand onto these names. */
+     the app's tokens.css maps its brand vars onto these names. */
   --color-text-primary:   #1a1a2e;
   --color-text-secondary: #4a4a5e;
   --color-text-muted:     #6c757d;
@@ -168,9 +168,9 @@
   --status-preliminary-fg:     #5b3a9b;
 
   /* ── Chart palette (categorical, deuteranopia-distinguishable) ─
-     GeoStat blue leads; ordered for maximum pairwise separation.
+     Blue leads; ordered for maximum pairwise separation.
      Okabe-Ito / Tableau-10 blend. Dark variants below. */
-  --chart-color-1:  #005a9c;  /* GeoStat blue */
+  --chart-color-1:  #005a9c;  /* blue */
   --chart-color-2:  #e8710a;  /* orange */
   --chart-color-3:  #1b9e77;  /* teal-green */
   --chart-color-4:  #d81b60;  /* magenta */

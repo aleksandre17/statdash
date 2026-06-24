@@ -34,8 +34,8 @@
 //    composition primitive at each altitude (Law 8: open for extension).
 //
 //  Law 3 (Clean Architecture): this lives in engine/react and is fully
-//  app-agnostic — it knows only NodeTypeMap + the registry, never any Geostat
-//  concrete node. New node types compose through it with zero change here.
+//  app-agnostic — it knows only NodeTypeMap + the registry, never any concrete
+//  app-specific node. New node types compose through it with zero change here.
 //
 
 import { type ReactNode }      from 'react'

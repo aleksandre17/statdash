@@ -13,12 +13,12 @@ import { describe, it, expect, vi } from 'vitest'
 import { render, cleanup }          from '@testing-library/react'
 import { createElement }            from 'react'
 import { EventBus }                 from '../events/EventBus'
-import type { GeostatEventMap }     from '../events/events'
+import type { PlatformEventMap }    from '../events/events'
 import { useNodeStatus, deriveNodeStatus } from './useNodeStatus'
 import type { RenderContext }       from './types'
 import type { DataRow }             from '@statdash/engine'
 
-function ctxWithBus(bus: EventBus<GeostatEventMap>): RenderContext {
+function ctxWithBus(bus: EventBus<PlatformEventMap>): RenderContext {
   return { eventBus: bus } as unknown as RenderContext
 }
 
@@ -38,7 +38,7 @@ describe('deriveNodeStatus', () => {
 
 describe('useNodeStatus — publish seam', () => {
   it('publishes node:status on mount with attribution', () => {
-    const bus = new EventBus<GeostatEventMap>()
+    const bus = new EventBus<PlatformEventMap>()
     const seen = vi.fn()
     bus.subscribe('node:status', seen)
 
@@ -48,7 +48,7 @@ describe('useNodeStatus — publish seam', () => {
   })
 
   it('dedupes — no re-publish when status is unchanged on re-render', () => {
-    const bus = new EventBus<GeostatEventMap>()
+    const bus = new EventBus<PlatformEventMap>()
     const seen = vi.fn()
     bus.subscribe('node:status', seen)
 
@@ -60,7 +60,7 @@ describe('useNodeStatus — publish seam', () => {
   })
 
   it('re-publishes on a status transition (empty → ok)', () => {
-    const bus = new EventBus<GeostatEventMap>()
+    const bus = new EventBus<PlatformEventMap>()
     const seen = vi.fn()
     bus.subscribe('node:status', seen)
 

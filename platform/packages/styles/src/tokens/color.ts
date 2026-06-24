@@ -31,7 +31,7 @@ export const GRAY = {
 
 // ── Semantic colors ─────────────────────────────────────────────────────
 //  Names are semantic + agnostic (text/surface/border/accent), values are
-//  neutral defaults. The app maps brand --geostat-* onto these via cascade.
+//  neutral defaults. The app maps its own brand vars onto these via cascade.
 export const COLOR = {
   textPrimary:   'var(--color-text-primary)',
   textSecondary: 'var(--color-text-secondary)',
@@ -69,7 +69,7 @@ export const STATUS = {
 } as const satisfies Record<string, string>
 
 // ── Chart / data-visualization palette ──────────────────────────────────
-//  10 categorical colors. GeoStat blue leads; ordered for maximum pairwise
+//  10 categorical colors. Blue leads; ordered for maximum pairwise
 //  separation under deuteranopia. Dark-mode variants (lighter / more vivid)
 //  are remapped in tokens.css. Use series1…series10 for multi-series charts.
 export const CHART_COLOR = {

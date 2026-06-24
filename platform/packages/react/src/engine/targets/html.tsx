@@ -19,7 +19,7 @@ import { renderToStaticMarkup }          from 'react-dom/server'
 import type { ModeContext, DataStore, SectionContext, Effect } from '@statdash/engine'
 import type { NavSection }                                     from '../navUtils'
 import { EventBus }                      from '../../events/EventBus'
-import type { GeostatEventMap }          from '../../events/events'
+import type { PlatformEventMap }         from '../../events/events'
 import { PageStoreProvider }             from '../../context/PageStoreContext'
 import { ModeProvider }                  from '../../context/ModeContext'
 import { FiltersProvider }               from '../../context/FiltersContext'
@@ -41,6 +41,14 @@ import { DefaultCommandBus }            from '../commands/CommandBus'
 //  'api'  — data JSON via extractRequirements + store resolution (Phase 10.2c)
 //
 export type RenderTarget = 'dom' | 'html' | 'pdf' | 'api'
+
+// ── Snapshot wrapper class ────────────────────────────────────────────────
+//
+//  Generic, brand-neutral class on the outermost element of a static HTML
+//  snapshot. Apps that want to scope snapshot CSS may override this per render
+//  via `StaticRenderContext.snapshotClassName` (Law 3: no tenant literal here).
+//
+export const SNAPSHOT_WRAPPER_CLASS = 'statdash-snapshot'
 
 // ── StaticRenderContext ───────────────────────────────────────────────────
 //
@@ -65,6 +73,10 @@ export interface StaticRenderContext {
   /** Visual theme for the snapshot — forwarded to `ctx.theme` and the
    *  `data-theme` attribute on the outermost element. Optional ⇒ 'default'. */
   theme?:         'default' | 'high-contrast'
+  /** CSS class on the outermost snapshot element. Optional ⇒
+   *  `SNAPSHOT_WRAPPER_CLASS` (brand-neutral default). Apps override to scope
+   *  their own snapshot styles — no tenant literal lives in this layer (Law 3). */
+  snapshotClassName?: string
   /**
    * Resolved identity for the snapshot [N41] — forwarded to `ctx.auth` so
    * `view.visibleToRoles` is enforced in static renders too. Optional ⇒
@@ -154,6 +166,7 @@ export function buildStaticContext(
     navContext: input.navContext,
     theme:      input.theme,
     auth:       input.auth,
+    snapshotClassName: input.snapshotClassName,
   }
 }
 
@@ -186,7 +199,7 @@ export function renderPageToHTML(
   ] ?? null
 
   // EventBus: functional instance — no subscribers in SSR, publish is a no-op.
-  const bus = new EventBus<GeostatEventMap>()
+  const bus = new EventBus<PlatformEventMap>()
 
   // Self-referential ctx holder — mirrors SiteRenderer to handle renderNode circularity.
   const ctxHolder = { ctx: null as unknown as RenderContext }
@@ -282,7 +295,7 @@ export function renderPageToHTML(
         createElement(
           'div',
           {
-            className: 'geostat-snapshot',
+            className: staticCtx.snapshotClassName ?? SNAPSHOT_WRAPPER_CLASS,
             'data-render-target': 'html',
             'data-theme': staticCtx.theme ?? 'default',
           },

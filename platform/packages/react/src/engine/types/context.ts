@@ -29,7 +29,7 @@ import type {
   ResolvedLink,
 }                                from '@statdash/engine'
 import type { EventBus }         from '../../events/EventBus'
-import type { GeostatEventMap }  from '../../events/events'
+import type { PlatformEventMap } from '../../events/events'
 import type { CommandBus }       from '../commands/CommandBus'
 import type { NavSection }       from '../navUtils'
 import type { ViewParams, NodeDef } from './node'
@@ -64,8 +64,8 @@ export interface RenderContext {
   timeModeKey:   string
   mode:          ModeContext
   /**
-   * Resolved identity for RBAC visibility [N41]. Injected by apps/geostat at
-   * the app tier; absent ⇒ anonymous (no roles). Read by renderNode to enforce
+   * Resolved identity for RBAC visibility [N41]. Injected by the app tier;
+   * absent ⇒ anonymous (no roles). Read by renderNode to enforce
    * node.visibleToRoles. Serializable (no functions) — part of the "A" half.
    */
   auth?:         AuthContext
@@ -117,7 +117,7 @@ export interface RenderContext {
    */
   resolveLinks:  (links: DataLinkDef[], row: Record<string, unknown>) => ResolvedLink[]
   /** Typed pub/sub for cross-node communication (Grafana EventBus pattern). */
-  eventBus:      EventBus<GeostatEventMap>
+  eventBus:      EventBus<PlatformEventMap>
   /**
    * Typed command bus — all platform state mutations flow through here (CQS).
    * Replaces direct calls to ctx.set / ctx.mode.set in shells.

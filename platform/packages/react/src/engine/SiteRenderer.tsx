@@ -31,7 +31,7 @@ import type { ModeId }                from '@statdash/engine'
 import { FiltersProvider }             from '../context/FiltersContext'
 import { evalVarMap }                  from './evalVarMap'
 import { EventBus }                    from '../events/EventBus'
-import type { GeostatEventMap }        from '../events/events'
+import type { PlatformEventMap }       from '../events/events'
 import { renderNode as renderNodeFn }  from './renderNode'
 import { extractNavSectionsFromChildren } from './navUtils'
 import { projectPresentation }         from './presentation'
@@ -147,7 +147,7 @@ const NodePageRendererInner = memo(function NodePageRendererInner({
   }, [page, timeModeKey, modeCtx])
 
   // One EventBus per page — created once, survives filter changes (same ref).
-  const eventBus = useMemo(() => new EventBus<GeostatEventMap>(), [])
+  const eventBus = useMemo(() => new EventBus<PlatformEventMap>(), [])
 
   // Extensions registry — caller-supplied or a fresh empty registry per page.
   // An empty registry is a safe default: useExtensions always returns [].

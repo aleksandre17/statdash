@@ -3,7 +3,7 @@
 //  Plugins extend via:
 //    declare module '@statdash/react' { interface PlatformCommandMap { 'my:cmd': {...} } }
 //
-//  Same pattern as GeostatEventMap and NodeTypeMap — open discriminated union,
+//  Same pattern as PlatformEventMap and NodeTypeMap — open discriminated union,
 //  no central registry change required for extension.
 //
 

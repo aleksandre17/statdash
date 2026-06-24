@@ -1,6 +1,6 @@
 // ── @statdash/react/engine — Public API ────────────────────────────────
 //
-//  JSON-driven rendering engine for Geostat National Accounts Dashboard.
+//  JSON-driven rendering engine — app-agnostic statistical dashboard renderer.
 //
 //  Architecture (Grafana/Builder.io/Retool/AppSmith patterns):
 //    nodeRegistry    — type+variant → shell dispatch
@@ -149,7 +149,7 @@ export type { RenderMiddleware }      from './middleware/types'
 
 // ── Events — typed pub/sub cross-node communication (Gap 6) ───────────
 export { EventBus }                   from '../events/EventBus'
-export type { GeostatEventMap }       from '../events/events'
+export type { PlatformEventMap, EventType } from '../events/events'
 
 // ── Node status — publish 'node:status' on the bus (Pattern E seam) ───
 //  Foundation for the deferred NodeStatusContext (SectionShell ADR): panels

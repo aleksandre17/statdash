@@ -66,7 +66,7 @@ export const DATA_COLOR_TOKENS: Record<string, TokenDescriptor> = {
 
   // ── Chart palette (categorical, deuteranopia-distinguishable) ───────────────
   'chart-color.series1':  { group: 'chart-color', cssVar: 'var(--chart-color-1)',  value: '#005a9c',
-    label: { ka: 'სერია 1',  en: 'Series 1'  }, description: { ka: 'მე-1 სერია — GeoStat ლურჯი.', en: 'Series 1 — GeoStat blue.' } },
+    label: { ka: 'სერია 1',  en: 'Series 1'  }, description: { ka: 'მე-1 სერია — ლურჯი.', en: 'Series 1 — blue.' } },
   'chart-color.series2':  { group: 'chart-color', cssVar: 'var(--chart-color-2)',  value: '#e8710a',
     label: { ka: 'სერია 2',  en: 'Series 2'  }, description: { ka: 'მე-2 სერია — ნარინჯისფერი.', en: 'Series 2 — orange.' } },
   'chart-color.series3':  { group: 'chart-color', cssVar: 'var(--chart-color-3)',  value: '#1b9e77',
