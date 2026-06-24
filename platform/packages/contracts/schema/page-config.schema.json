@@ -1,0 +1,1576 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://statdash.dev/schema/page-config.schema.json",
+  "title": "StatDash Page Config",
+  "description": "The whole-config wire contract for a StatDash page (NodePageConfig). Generated from describeApp() — the registry manifest is the SSOT.",
+  "$defs": {
+    "DataSpec": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "const": "query"
+            }
+          },
+          "required": [
+            "type"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "const": "row-list"
+            }
+          },
+          "required": [
+            "type"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "const": "timeseries"
+            }
+          },
+          "required": [
+            "type"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "const": "growth"
+            }
+          },
+          "required": [
+            "type"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "const": "ratio-list"
+            }
+          },
+          "required": [
+            "type"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "const": "by-mode"
+            }
+          },
+          "required": [
+            "type"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "const": "pivot"
+            }
+          },
+          "required": [
+            "type"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "const": "transform"
+            }
+          },
+          "required": [
+            "type"
+          ]
+        }
+      ]
+    },
+    "node_inner-page__default": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "inner-page"
+        },
+        "id": {
+          "type": "string",
+          "description": "Page id (required)"
+        },
+        "variant": {
+          "type": "string",
+          "description": "Registry variant"
+        },
+        "data": {
+          "$ref": "#/$defs/DataSpec"
+        },
+        "view": {
+          "type": "object",
+          "description": "ViewParams"
+        },
+        "children": {
+          "type": "array",
+          "description": "Child nodes",
+          "items": {
+            "$ref": "#/$defs/AnyNode"
+          }
+        },
+        "schemaVersion": {
+          "type": "integer",
+          "description": "Page schema version"
+        },
+        "frame": {
+          "type": "string",
+          "description": "Layout geometry frame"
+        },
+        "chrome": {
+          "type": "object",
+          "description": "Per-page chrome slot overrides"
+        },
+        "path": {
+          "type": "string",
+          "description": "Page path / permalink segment"
+        },
+        "color": {
+          "type": "string",
+          "description": "Deprecated — use presentation.color"
+        },
+        "presentation": {
+          "type": "object",
+          "properties": {
+            "color": {
+              "title": "Page color",
+              "description": "color field",
+              "type": "string",
+              "$comment": "color"
+            },
+            "crumbs": {
+              "title": "Breadcrumbs",
+              "description": "array field",
+              "type": "array"
+            }
+          },
+          "additionalProperties": true
+        },
+        "filterSchema": {
+          "type": "object",
+          "description": "Declarative filter schema"
+        },
+        "vars": {
+          "type": "object",
+          "description": "Node-scoped derived vars"
+        },
+        "modeOrder": {
+          "type": "array",
+          "description": "View-mode ordering",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "type",
+        "id",
+        "children"
+      ],
+      "additionalProperties": true
+    },
+    "node_container-page__default": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "container-page"
+        },
+        "id": {
+          "type": "string",
+          "description": "Page id (required)"
+        },
+        "variant": {
+          "type": "string",
+          "description": "Registry variant"
+        },
+        "data": {
+          "$ref": "#/$defs/DataSpec"
+        },
+        "view": {
+          "type": "object",
+          "description": "ViewParams"
+        },
+        "children": {
+          "type": "array",
+          "description": "Child nodes",
+          "items": {
+            "$ref": "#/$defs/AnyNode"
+          }
+        },
+        "schemaVersion": {
+          "type": "integer",
+          "description": "Page schema version"
+        },
+        "frame": {
+          "type": "string",
+          "description": "Layout geometry frame"
+        },
+        "chrome": {
+          "type": "object",
+          "description": "Per-page chrome slot overrides"
+        },
+        "path": {
+          "type": "string",
+          "description": "Page path / permalink segment"
+        },
+        "color": {
+          "type": "string",
+          "description": "Deprecated — use presentation.color"
+        },
+        "presentation": {
+          "type": "object",
+          "properties": {
+            "color": {
+              "title": "Page color",
+              "description": "color field",
+              "type": "string",
+              "$comment": "color"
+            },
+            "crumbs": {
+              "title": "Breadcrumbs",
+              "description": "array field",
+              "type": "array"
+            }
+          },
+          "additionalProperties": true
+        },
+        "filterSchema": {
+          "type": "object",
+          "description": "Declarative filter schema"
+        },
+        "vars": {
+          "type": "object",
+          "description": "Node-scoped derived vars"
+        },
+        "modeOrder": {
+          "type": "array",
+          "description": "View-mode ordering",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "type",
+        "id",
+        "children"
+      ],
+      "additionalProperties": true
+    },
+    "node_tab-page__default": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "tab-page"
+        },
+        "id": {
+          "type": "string",
+          "description": "Page id (required)"
+        },
+        "variant": {
+          "type": "string",
+          "description": "Registry variant"
+        },
+        "data": {
+          "$ref": "#/$defs/DataSpec"
+        },
+        "view": {
+          "type": "object",
+          "description": "ViewParams"
+        },
+        "children": {
+          "type": "array",
+          "description": "Child nodes",
+          "items": {
+            "$ref": "#/$defs/AnyNode"
+          }
+        },
+        "schemaVersion": {
+          "type": "integer",
+          "description": "Page schema version"
+        },
+        "frame": {
+          "type": "string",
+          "description": "Layout geometry frame"
+        },
+        "chrome": {
+          "type": "object",
+          "description": "Per-page chrome slot overrides"
+        },
+        "path": {
+          "type": "string",
+          "description": "Page path / permalink segment"
+        },
+        "color": {
+          "type": "string",
+          "description": "Deprecated — use presentation.color"
+        },
+        "presentation": {
+          "type": "object",
+          "properties": {
+            "color": {
+              "title": "Page color",
+              "description": "color field",
+              "type": "string",
+              "$comment": "color"
+            },
+            "crumbs": {
+              "title": "Breadcrumbs",
+              "description": "array field",
+              "type": "array"
+            }
+          },
+          "additionalProperties": true
+        },
+        "filterSchema": {
+          "type": "object",
+          "description": "Declarative filter schema"
+        },
+        "vars": {
+          "type": "object",
+          "description": "Node-scoped derived vars"
+        },
+        "modeOrder": {
+          "type": "array",
+          "description": "View-mode ordering",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "type",
+        "id",
+        "children"
+      ],
+      "additionalProperties": true
+    },
+    "node_section__default": {
+      "type": "object",
+      "properties": {
+        "title": {
+          "title": "სათაური",
+          "description": "string field",
+          "type": "string"
+        },
+        "label": {
+          "title": "ლეიბლი",
+          "description": "string field",
+          "type": "string"
+        },
+        "color": {
+          "title": "ფერი",
+          "description": "color field",
+          "type": "string",
+          "$comment": "color"
+        },
+        "anchor": {
+          "title": "Anchor ID",
+          "description": "string field",
+          "type": "string"
+        },
+        "prependLabel": {
+          "title": "Drill Label",
+          "description": "string field",
+          "type": "string"
+        },
+        "type": {
+          "const": "section"
+        },
+        "id": {
+          "type": "string",
+          "description": "Node id"
+        },
+        "variant": {
+          "type": "string",
+          "description": "Registry variant"
+        },
+        "data": {
+          "$ref": "#/$defs/DataSpec"
+        },
+        "view": {
+          "type": "object",
+          "description": "ViewParams"
+        },
+        "children": {
+          "type": "array",
+          "description": "Child nodes",
+          "items": {
+            "$ref": "#/$defs/AnyNode"
+          }
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "additionalProperties": true
+    },
+    "node_mode-bar__default": {
+      "type": "object",
+      "properties": {
+        "modes": {
+          "title": "Mode IDs",
+          "description": "array field",
+          "type": "array"
+        },
+        "key": {
+          "title": "Param Key",
+          "description": "string field",
+          "type": "string"
+        },
+        "type": {
+          "const": "mode-bar"
+        },
+        "id": {
+          "type": "string",
+          "description": "Node id"
+        },
+        "variant": {
+          "type": "string",
+          "description": "Registry variant"
+        },
+        "data": {
+          "$ref": "#/$defs/DataSpec"
+        },
+        "view": {
+          "type": "object",
+          "description": "ViewParams"
+        },
+        "children": {
+          "type": "array",
+          "description": "Child nodes",
+          "items": {
+            "$ref": "#/$defs/AnyNode"
+          }
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "additionalProperties": true
+    },
+    "node_filter-bar__default": {
+      "type": "object",
+      "properties": {
+        "barIds": {
+          "title": "Bars to show",
+          "description": "array field",
+          "type": "array"
+        },
+        "type": {
+          "const": "filter-bar"
+        },
+        "id": {
+          "type": "string",
+          "description": "Node id"
+        },
+        "variant": {
+          "type": "string",
+          "description": "Registry variant"
+        },
+        "data": {
+          "$ref": "#/$defs/DataSpec"
+        },
+        "view": {
+          "type": "object",
+          "description": "ViewParams"
+        },
+        "children": {
+          "type": "array",
+          "description": "Child nodes",
+          "items": {
+            "$ref": "#/$defs/AnyNode"
+          }
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "additionalProperties": true
+    },
+    "node_page-header__default": {
+      "type": "object",
+      "properties": {
+        "title": {
+          "title": "სათაური",
+          "description": "string field",
+          "type": "string"
+        },
+        "badge": {
+          "title": "Badge",
+          "description": "string field",
+          "type": "string"
+        },
+        "crumbs": {
+          "title": "Breadcrumbs",
+          "description": "array field",
+          "type": "array"
+        },
+        "type": {
+          "const": "page-header"
+        },
+        "id": {
+          "type": "string",
+          "description": "Node id"
+        },
+        "variant": {
+          "type": "string",
+          "description": "Registry variant"
+        },
+        "data": {
+          "$ref": "#/$defs/DataSpec"
+        },
+        "view": {
+          "type": "object",
+          "description": "ViewParams"
+        },
+        "children": {
+          "type": "array",
+          "description": "Child nodes",
+          "items": {
+            "$ref": "#/$defs/AnyNode"
+          }
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "additionalProperties": true
+    },
+    "node_georgraph__default": {
+      "type": "object",
+      "properties": {
+        "title": {
+          "title": "სათაური",
+          "description": "string field",
+          "type": "string"
+        },
+        "geoJsonUrl": {
+          "title": "GeoJSON URL",
+          "description": "string field",
+          "type": "string"
+        },
+        "paramKey": {
+          "title": "Param Key",
+          "description": "string field",
+          "type": "string"
+        },
+        "isoField": {
+          "title": "ISO Field",
+          "description": "string field",
+          "type": "string"
+        },
+        "geoCodeMap": {
+          "title": "Geo Code Map",
+          "description": "object field",
+          "type": "object"
+        },
+        "unit": {
+          "title": "Unit",
+          "description": "string field",
+          "type": "string"
+        },
+        "multiSelect": {
+          "title": "Multiple Select",
+          "description": "boolean field",
+          "type": "boolean"
+        },
+        "maxSelect": {
+          "title": "Max Select",
+          "description": "number field",
+          "default": 2,
+          "type": "number"
+        },
+        "type": {
+          "const": "georgraph"
+        },
+        "id": {
+          "type": "string",
+          "description": "Node id"
+        },
+        "variant": {
+          "type": "string",
+          "description": "Registry variant"
+        },
+        "data": {
+          "$ref": "#/$defs/DataSpec"
+        },
+        "view": {
+          "type": "object",
+          "description": "ViewParams"
+        },
+        "children": {
+          "type": "array",
+          "description": "Child nodes",
+          "items": {
+            "$ref": "#/$defs/AnyNode"
+          }
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "additionalProperties": true
+    },
+    "node_links__default": {
+      "type": "object",
+      "properties": {
+        "items": {
+          "title": "ბმულები",
+          "description": "array field",
+          "type": "array"
+        },
+        "type": {
+          "const": "links"
+        },
+        "id": {
+          "type": "string",
+          "description": "Node id"
+        },
+        "variant": {
+          "type": "string",
+          "description": "Registry variant"
+        },
+        "data": {
+          "$ref": "#/$defs/DataSpec"
+        },
+        "view": {
+          "type": "object",
+          "description": "ViewParams"
+        },
+        "children": {
+          "type": "array",
+          "description": "Child nodes",
+          "items": {
+            "$ref": "#/$defs/AnyNode"
+          }
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "additionalProperties": true
+    },
+    "node_repeat__default": {
+      "type": "object",
+      "properties": {
+        "as": {
+          "title": "ცვლადის სახელი",
+          "description": "string field",
+          "type": "string"
+        },
+        "each": {
+          "title": "სტატიკური სია",
+          "description": "array field",
+          "type": "array"
+        },
+        "type": {
+          "const": "repeat"
+        },
+        "id": {
+          "type": "string",
+          "description": "Node id"
+        },
+        "variant": {
+          "type": "string",
+          "description": "Registry variant"
+        },
+        "data": {
+          "$ref": "#/$defs/DataSpec"
+        },
+        "view": {
+          "type": "object",
+          "description": "ViewParams"
+        },
+        "children": {
+          "type": "array",
+          "description": "Child nodes",
+          "items": {
+            "$ref": "#/$defs/AnyNode"
+          }
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "additionalProperties": true
+    },
+    "node_hero__default": {
+      "type": "object",
+      "properties": {
+        "title": {
+          "title": "სათაური",
+          "description": "LocaleString field",
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "object"
+            }
+          ],
+          "$comment": "LocaleString"
+        },
+        "subtitle": {
+          "title": "ქვესათაური",
+          "description": "LocaleString field",
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "object"
+            }
+          ],
+          "$comment": "LocaleString"
+        },
+        "cards": {
+          "title": "ბარათები",
+          "description": "array field",
+          "type": "array"
+        },
+        "type": {
+          "const": "hero"
+        },
+        "id": {
+          "type": "string",
+          "description": "Node id"
+        },
+        "variant": {
+          "type": "string",
+          "description": "Registry variant"
+        },
+        "data": {
+          "$ref": "#/$defs/DataSpec"
+        },
+        "view": {
+          "type": "object",
+          "description": "ViewParams"
+        },
+        "children": {
+          "type": "array",
+          "description": "Child nodes",
+          "items": {
+            "$ref": "#/$defs/AnyNode"
+          }
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "additionalProperties": true
+    },
+    "node_stats-carousel__default": {
+      "type": "object",
+      "properties": {
+        "autoplayMs": {
+          "title": "ავტოთამაში (ms)",
+          "description": "number field",
+          "default": 7000,
+          "type": "number"
+        },
+        "slides": {
+          "title": "სლაიდები",
+          "description": "array field",
+          "type": "array"
+        },
+        "type": {
+          "const": "stats-carousel"
+        },
+        "id": {
+          "type": "string",
+          "description": "Node id"
+        },
+        "variant": {
+          "type": "string",
+          "description": "Registry variant"
+        },
+        "data": {
+          "$ref": "#/$defs/DataSpec"
+        },
+        "view": {
+          "type": "object",
+          "description": "ViewParams"
+        },
+        "children": {
+          "type": "array",
+          "description": "Child nodes",
+          "items": {
+            "$ref": "#/$defs/AnyNode"
+          }
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "additionalProperties": true
+    },
+    "node_row__default": {
+      "type": "object",
+      "properties": {
+        "view.cols": {
+          "title": "სვეტების რაოდენობა",
+          "description": "string field",
+          "type": "string"
+        },
+        "type": {
+          "const": "row"
+        },
+        "id": {
+          "type": "string",
+          "description": "Node id"
+        },
+        "variant": {
+          "type": "string",
+          "description": "Registry variant"
+        },
+        "data": {
+          "$ref": "#/$defs/DataSpec"
+        },
+        "view": {
+          "type": "object",
+          "description": "ViewParams"
+        },
+        "children": {
+          "type": "array",
+          "description": "Child nodes",
+          "items": {
+            "$ref": "#/$defs/AnyNode"
+          }
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "additionalProperties": true
+    },
+    "node_grid__default": {
+      "type": "object",
+      "properties": {
+        "columns": {
+          "title": "სვეტები",
+          "description": "number field",
+          "default": 12,
+          "type": "number"
+        },
+        "gap": {
+          "title": "Gap",
+          "description": "string field",
+          "default": "var(--spacing-md)",
+          "type": "string"
+        },
+        "type": {
+          "const": "grid"
+        },
+        "id": {
+          "type": "string",
+          "description": "Node id"
+        },
+        "variant": {
+          "type": "string",
+          "description": "Registry variant"
+        },
+        "data": {
+          "$ref": "#/$defs/DataSpec"
+        },
+        "view": {
+          "type": "object",
+          "description": "ViewParams"
+        },
+        "children": {
+          "type": "array",
+          "description": "Child nodes",
+          "items": {
+            "$ref": "#/$defs/AnyNode"
+          }
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "additionalProperties": true
+    },
+    "node_columns__default": {
+      "type": "object",
+      "properties": {
+        "count": {
+          "title": "სვეტები",
+          "description": "number field",
+          "default": 2,
+          "type": "number"
+        },
+        "gap": {
+          "title": "Gap",
+          "description": "string field",
+          "default": "var(--spacing-md)",
+          "type": "string"
+        },
+        "type": {
+          "const": "columns"
+        },
+        "id": {
+          "type": "string",
+          "description": "Node id"
+        },
+        "variant": {
+          "type": "string",
+          "description": "Registry variant"
+        },
+        "data": {
+          "$ref": "#/$defs/DataSpec"
+        },
+        "view": {
+          "type": "object",
+          "description": "ViewParams"
+        },
+        "children": {
+          "type": "array",
+          "description": "Child nodes",
+          "items": {
+            "$ref": "#/$defs/AnyNode"
+          }
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "additionalProperties": true
+    },
+    "node_stack__default": {
+      "type": "object",
+      "properties": {
+        "direction": {
+          "title": "მიმართულება",
+          "description": "column: Column, row: Row",
+          "default": "column",
+          "type": "string",
+          "enum": [
+            "column",
+            "row"
+          ]
+        },
+        "gap": {
+          "title": "Gap",
+          "description": "string field",
+          "default": "var(--spacing-md)",
+          "type": "string"
+        },
+        "wrap": {
+          "title": "Wrap",
+          "description": "boolean field",
+          "default": false,
+          "type": "boolean"
+        },
+        "type": {
+          "const": "stack"
+        },
+        "id": {
+          "type": "string",
+          "description": "Node id"
+        },
+        "variant": {
+          "type": "string",
+          "description": "Registry variant"
+        },
+        "data": {
+          "$ref": "#/$defs/DataSpec"
+        },
+        "view": {
+          "type": "object",
+          "description": "ViewParams"
+        },
+        "children": {
+          "type": "array",
+          "description": "Child nodes",
+          "items": {
+            "$ref": "#/$defs/AnyNode"
+          }
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "additionalProperties": true
+    },
+    "node_card__default": {
+      "type": "object",
+      "properties": {
+        "title": {
+          "title": "Title",
+          "description": "LocaleString field",
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "object"
+            }
+          ],
+          "$comment": "LocaleString"
+        },
+        "type": {
+          "const": "card"
+        },
+        "id": {
+          "type": "string",
+          "description": "Node id"
+        },
+        "variant": {
+          "type": "string",
+          "description": "Registry variant"
+        },
+        "data": {
+          "$ref": "#/$defs/DataSpec"
+        },
+        "view": {
+          "type": "object",
+          "description": "ViewParams"
+        },
+        "children": {
+          "type": "array",
+          "description": "Child nodes",
+          "items": {
+            "$ref": "#/$defs/AnyNode"
+          }
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "additionalProperties": true
+    },
+    "node_divider__default": {
+      "type": "object",
+      "properties": {
+        "variant": {
+          "type": "string",
+          "description": "Registry variant"
+        },
+        "type": {
+          "const": "divider"
+        },
+        "id": {
+          "type": "string",
+          "description": "Node id"
+        },
+        "data": {
+          "$ref": "#/$defs/DataSpec"
+        },
+        "view": {
+          "type": "object",
+          "description": "ViewParams"
+        },
+        "children": {
+          "type": "array",
+          "description": "Child nodes",
+          "items": {
+            "$ref": "#/$defs/AnyNode"
+          }
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "additionalProperties": true
+    },
+    "node_spacer__default": {
+      "type": "object",
+      "properties": {
+        "size": {
+          "title": "ზომა",
+          "description": "string field",
+          "default": "var(--spacing-xl)",
+          "type": "string"
+        },
+        "type": {
+          "const": "spacer"
+        },
+        "id": {
+          "type": "string",
+          "description": "Node id"
+        },
+        "variant": {
+          "type": "string",
+          "description": "Registry variant"
+        },
+        "data": {
+          "$ref": "#/$defs/DataSpec"
+        },
+        "view": {
+          "type": "object",
+          "description": "ViewParams"
+        },
+        "children": {
+          "type": "array",
+          "description": "Child nodes",
+          "items": {
+            "$ref": "#/$defs/AnyNode"
+          }
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "additionalProperties": true
+    },
+    "node_wrap__default": {
+      "type": "object",
+      "properties": {
+        "styles": {
+          "title": "სტილები",
+          "description": "object field",
+          "type": "object"
+        },
+        "type": {
+          "const": "wrap"
+        },
+        "id": {
+          "type": "string",
+          "description": "Node id"
+        },
+        "variant": {
+          "type": "string",
+          "description": "Registry variant"
+        },
+        "data": {
+          "$ref": "#/$defs/DataSpec"
+        },
+        "view": {
+          "type": "object",
+          "description": "ViewParams"
+        },
+        "children": {
+          "type": "array",
+          "description": "Child nodes",
+          "items": {
+            "$ref": "#/$defs/AnyNode"
+          }
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "additionalProperties": true
+    },
+    "node_chart__default": {
+      "type": "object",
+      "properties": {
+        "chartType": {
+          "title": "Chart Type",
+          "description": "bar: Bar, line: Line, area: Area, donut: Donut, pie: Pie, scatter: Scatter, heatmap: Heatmap",
+          "type": "string",
+          "enum": [
+            "bar",
+            "line",
+            "area",
+            "donut",
+            "pie",
+            "scatter",
+            "heatmap"
+          ]
+        },
+        "type": {
+          "const": "chart"
+        },
+        "id": {
+          "type": "string",
+          "description": "Node id"
+        },
+        "variant": {
+          "type": "string",
+          "description": "Registry variant"
+        },
+        "data": {
+          "$ref": "#/$defs/DataSpec"
+        },
+        "view": {
+          "type": "object",
+          "description": "ViewParams"
+        },
+        "children": {
+          "type": "array",
+          "description": "Child nodes",
+          "items": {
+            "$ref": "#/$defs/AnyNode"
+          }
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "additionalProperties": true
+    },
+    "node_kpi-strip__default": {
+      "type": "object",
+      "properties": {
+        "items": {
+          "title": "KPI მეტრიკები",
+          "description": "array field",
+          "type": "array"
+        },
+        "type": {
+          "const": "kpi-strip"
+        },
+        "id": {
+          "type": "string",
+          "description": "Node id"
+        },
+        "variant": {
+          "type": "string",
+          "description": "Registry variant"
+        },
+        "data": {
+          "$ref": "#/$defs/DataSpec"
+        },
+        "view": {
+          "type": "object",
+          "description": "ViewParams"
+        },
+        "children": {
+          "type": "array",
+          "description": "Child nodes",
+          "items": {
+            "$ref": "#/$defs/AnyNode"
+          }
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "additionalProperties": true
+    },
+    "node_table__default": {
+      "type": "object",
+      "properties": {
+        "colLabel": {
+          "title": "სვეტის სათაური",
+          "description": "string field",
+          "type": "string"
+        },
+        "type": {
+          "const": "table"
+        },
+        "id": {
+          "type": "string",
+          "description": "Node id"
+        },
+        "variant": {
+          "type": "string",
+          "description": "Registry variant"
+        },
+        "data": {
+          "$ref": "#/$defs/DataSpec"
+        },
+        "view": {
+          "type": "object",
+          "description": "ViewParams"
+        },
+        "children": {
+          "type": "array",
+          "description": "Child nodes",
+          "items": {
+            "$ref": "#/$defs/AnyNode"
+          }
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "additionalProperties": true
+    },
+    "node_map__default": {
+      "type": "object",
+      "properties": {
+        "view.geoDim": {
+          "title": "Geo dimension field",
+          "description": "string field",
+          "type": "string"
+        },
+        "view.valueField": {
+          "title": "Value field",
+          "description": "string field",
+          "type": "string"
+        },
+        "view.scale": {
+          "title": "Color scale",
+          "description": "quantile: Quantile, linear: Linear, threshold: Threshold",
+          "default": "quantile",
+          "type": "string",
+          "enum": [
+            "quantile",
+            "linear",
+            "threshold"
+          ]
+        },
+        "view.topology": {
+          "title": "Topology ID",
+          "description": "string field",
+          "type": "string"
+        },
+        "view.palette": {
+          "title": "Color palette",
+          "description": "array field",
+          "type": "array"
+        },
+        "type": {
+          "const": "map"
+        },
+        "id": {
+          "type": "string",
+          "description": "Node id"
+        },
+        "variant": {
+          "type": "string",
+          "description": "Registry variant"
+        },
+        "data": {
+          "$ref": "#/$defs/DataSpec"
+        },
+        "view": {
+          "type": "object",
+          "description": "ViewParams"
+        },
+        "children": {
+          "type": "array",
+          "description": "Child nodes",
+          "items": {
+            "$ref": "#/$defs/AnyNode"
+          }
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "additionalProperties": true
+    },
+    "node_text__default": {
+      "type": "object",
+      "properties": {
+        "content": {
+          "title": "Content",
+          "description": "LocaleString field",
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "object"
+            }
+          ],
+          "$comment": "LocaleString"
+        },
+        "format": {
+          "title": "Format",
+          "description": "markdown: Markdown, plain: Plain text, html: HTML",
+          "default": "markdown",
+          "type": "string",
+          "enum": [
+            "markdown",
+            "plain",
+            "html"
+          ]
+        },
+        "type": {
+          "const": "text"
+        },
+        "id": {
+          "type": "string",
+          "description": "Node id"
+        },
+        "variant": {
+          "type": "string",
+          "description": "Registry variant"
+        },
+        "data": {
+          "$ref": "#/$defs/DataSpec"
+        },
+        "view": {
+          "type": "object",
+          "description": "ViewParams"
+        },
+        "children": {
+          "type": "array",
+          "description": "Child nodes",
+          "items": {
+            "$ref": "#/$defs/AnyNode"
+          }
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "additionalProperties": true
+    },
+    "node_gauge__default": {
+      "type": "object",
+      "properties": {
+        "valueField": {
+          "title": "Value field",
+          "description": "string field",
+          "default": "value",
+          "type": "string"
+        },
+        "min": {
+          "title": "Minimum",
+          "description": "number field",
+          "default": 0,
+          "type": "number"
+        },
+        "max": {
+          "title": "Maximum",
+          "description": "number field",
+          "default": 100,
+          "type": "number"
+        },
+        "showValue": {
+          "title": "Show value",
+          "description": "boolean field",
+          "default": true,
+          "type": "boolean"
+        },
+        "thresholds": {
+          "title": "Thresholds",
+          "description": "object field",
+          "type": "object"
+        },
+        "type": {
+          "const": "gauge"
+        },
+        "id": {
+          "type": "string",
+          "description": "Node id"
+        },
+        "variant": {
+          "type": "string",
+          "description": "Registry variant"
+        },
+        "data": {
+          "$ref": "#/$defs/DataSpec"
+        },
+        "view": {
+          "type": "object",
+          "description": "ViewParams"
+        },
+        "children": {
+          "type": "array",
+          "description": "Child nodes",
+          "items": {
+            "$ref": "#/$defs/AnyNode"
+          }
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "additionalProperties": true
+    },
+    "AnyNode": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/node_inner-page__default"
+        },
+        {
+          "$ref": "#/$defs/node_container-page__default"
+        },
+        {
+          "$ref": "#/$defs/node_tab-page__default"
+        },
+        {
+          "$ref": "#/$defs/node_section__default"
+        },
+        {
+          "$ref": "#/$defs/node_mode-bar__default"
+        },
+        {
+          "$ref": "#/$defs/node_filter-bar__default"
+        },
+        {
+          "$ref": "#/$defs/node_page-header__default"
+        },
+        {
+          "$ref": "#/$defs/node_georgraph__default"
+        },
+        {
+          "$ref": "#/$defs/node_links__default"
+        },
+        {
+          "$ref": "#/$defs/node_repeat__default"
+        },
+        {
+          "$ref": "#/$defs/node_hero__default"
+        },
+        {
+          "$ref": "#/$defs/node_stats-carousel__default"
+        },
+        {
+          "$ref": "#/$defs/node_row__default"
+        },
+        {
+          "$ref": "#/$defs/node_grid__default"
+        },
+        {
+          "$ref": "#/$defs/node_columns__default"
+        },
+        {
+          "$ref": "#/$defs/node_stack__default"
+        },
+        {
+          "$ref": "#/$defs/node_card__default"
+        },
+        {
+          "$ref": "#/$defs/node_divider__default"
+        },
+        {
+          "$ref": "#/$defs/node_spacer__default"
+        },
+        {
+          "$ref": "#/$defs/node_wrap__default"
+        },
+        {
+          "$ref": "#/$defs/node_chart__default"
+        },
+        {
+          "$ref": "#/$defs/node_kpi-strip__default"
+        },
+        {
+          "$ref": "#/$defs/node_table__default"
+        },
+        {
+          "$ref": "#/$defs/node_map__default"
+        },
+        {
+          "$ref": "#/$defs/node_text__default"
+        },
+        {
+          "$ref": "#/$defs/node_gauge__default"
+        }
+      ]
+    }
+  },
+  "oneOf": [
+    {
+      "$ref": "#/$defs/node_inner-page__default"
+    },
+    {
+      "$ref": "#/$defs/node_container-page__default"
+    },
+    {
+      "$ref": "#/$defs/node_tab-page__default"
+    }
+  ]
+}

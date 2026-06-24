@@ -142,6 +142,18 @@ export default defineConfig([
     rules: { 'no-restricted-imports': ['error', { patterns: RESTRICT_REACT }] },
   },
 
+  // ── packages/react/scripts — BUILD TOOLING, not shipped library code ──────
+  //  emit-page-config-schema.ts must populate the FULL plugin registry to emit
+  //  the whole-config JSON Schema (ADR §7.7). It runs at build time only and is
+  //  NEVER in the published surface (react package `files: ["dist"]`; scripts/
+  //  is excluded). The shipped library (src/**) keeps the strict arrow — this
+  //  override is scoped to scripts/ exactly as apps/api/scripts import seed data.
+  //  It permits importing the node-safe plugin META catalog to drive describeApp().
+  {
+    files: ['packages/react/scripts/**/*.{ts,tsx}'],
+    rules: { 'no-restricted-imports': 'off' },
+  },
+
   // ── packages/plugins — may import react · packages/core · expr · styles · self ──
   {
     files: ['packages/plugins/**/*.{ts,tsx}'],

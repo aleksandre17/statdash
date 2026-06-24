@@ -22,7 +22,8 @@
   "types": "./dist/index.d.ts",
   "files": ["dist"],
   "scripts": {
-    "build": "tsup"
+    "build": "tsup",
+    "gen:schema": "tsx scripts/emit-page-config-schema.ts"
   },
   "publishConfig": {
     "access": "public"
@@ -42,5 +43,8 @@
     "@statdash/charts": "workspace:*",
     "@statdash/styles": "workspace:*",
     "@statdash/expr": "workspace:*"
+  },
+  "devDependencies": {
+    "tsx": "catalog:"
   }
 }

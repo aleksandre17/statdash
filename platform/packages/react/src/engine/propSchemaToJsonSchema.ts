@@ -34,16 +34,43 @@ export interface JsonSchemaProperty {
   description?: string
   default?:     unknown
   enum?:        unknown[]
+  const?:       unknown
   minimum?:     number
   maximum?:     number
   pattern?:     string
   oneOf?:       JsonSchemaProperty[]
+  /** $ref pointer — used by the document-level generator ($defs composition). */
+  $ref?:        string
+  /** Array item schema — used for `children`/array properties. */
+  items?:       JsonSchemaProperty
+  /** Nested object properties — used for the `presentation` bag at the page root. */
+  properties?:  Record<string, JsonSchemaProperty>
+  /** Whether extra keys are permitted on a nested object property. */
+  additionalProperties?: boolean
   $comment?:    string
 }
 
-/** Top-level JSON Schema Draft-7 object schema. */
+/** The Draft-2020-12 dialect URI — the document-root dialect (ADR §7.7). */
+export const DRAFT_2020_12 = 'https://json-schema.org/draft/2020-12/schema' as const
+/** The Draft-07 dialect URI — retained for node-level authoring subschemas. */
+export const DRAFT_07 = 'http://json-schema.org/draft-07/schema#' as const
+
+/** Top-level JSON Schema object schema (dialect carried in `$schema`). */
 export interface JsonSchemaObject {
-  $schema:              'http://json-schema.org/draft-07/schema#'
+  $schema:              typeof DRAFT_07 | typeof DRAFT_2020_12
+  type:                 'object'
+  properties:           Record<string, JsonSchemaProperty>
+  required:             string[]
+  additionalProperties: boolean
+}
+
+/**
+ * A node-level subschema — the same object body as JsonSchemaObject but with
+ * NO `$schema` dialect declaration. Used as a `$defs` member inside a
+ * Draft-2020-12 document, where only the document ROOT declares the dialect
+ * (embedding a `$schema` on every subschema is non-idiomatic 2020-12).
+ */
+export interface JsonSubSchema {
   type:                 'object'
   properties:           Record<string, JsonSchemaProperty>
   required:             string[]
@@ -67,8 +94,21 @@ export interface JsonSchemaObject {
 export function propSchemaToJsonSchema(
   schema: PropSchema | null | undefined,
 ): JsonSchemaObject {
-  const base: JsonSchemaObject = {
-    $schema:              'http://json-schema.org/draft-07/schema#',
+  return { $schema: DRAFT_07, ...propSchemaToSubSchema(schema) }
+}
+
+/**
+ * Convert a PropSchema to a JSON Schema object BODY without a `$schema`
+ * dialect declaration — for embedding as a `$defs` member of a Draft-2020-12
+ * document (`generatePageConfigSchema`). Shares the exact per-field conversion
+ * (`buildProperty`) with `propSchemaToJsonSchema` — no forked truth.
+ *
+ * @param schema - PropField[] or null/empty (empty ⇒ open object).
+ */
+export function propSchemaToSubSchema(
+  schema: PropSchema | null | undefined,
+): JsonSubSchema {
+  const base: JsonSubSchema = {
     type:                 'object',
     properties:           {},
     required:             [],

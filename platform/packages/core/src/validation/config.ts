@@ -48,7 +48,13 @@ export interface StructuralNode {
   id?:        string
   children?:  StructuralNode[]
   data?:      unknown
-  [k: string]: unknown
+  // NO `[k: string]: unknown` index signature. The mirror must remain a strict
+  // WIDENING of react's NodePageConfig (F4, structuralMirror.fitness.test.ts):
+  // a string index signature would BREAK that assignability, because plain
+  // interfaces (BarNode, FilterBarNode, …) without their own index signature
+  // are not assignable to a type that declares one. Extra/rich fields on a real
+  // node are simply not constrained here — that is the intended floor (the
+  // validator reads only the structural keys above, via explicit casts).
 }
 
 export type StructuralPageConfig = StructuralNode & { schemaVersion?: number }
@@ -121,7 +127,9 @@ export function validateConfig(config: unknown): ValidationError[] {
   }
 
   // ── Walk the tree (cycle-safe) ────────────────────────────────────────
-  walk(config as StructuralNode, '', errors, known, failOpen, new Set())
+  //  walk() takes `unknown` and re-narrows internally; pass the object directly
+  //  (no StructuralNode cast — the mirror no longer has an index signature).
+  walk(config, '', errors, known, failOpen, new Set())
 
   return errors
 }

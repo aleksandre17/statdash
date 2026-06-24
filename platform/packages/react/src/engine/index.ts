@@ -87,8 +87,13 @@ export type { NodeViewProps }      from './NodeView'
 //  A new node type gets its Constructor form for free — schema is the SSOT.
 export { describeApp }                       from './constructor'
 export type { AppManifest }                  from './constructor'
-export { propSchemaToJsonSchema }            from './propSchemaToJsonSchema'
-export type { JsonSchemaObject, JsonSchemaProperty } from './propSchemaToJsonSchema'
+export { propSchemaToJsonSchema, propSchemaToSubSchema, DRAFT_07, DRAFT_2020_12 } from './propSchemaToJsonSchema'
+export type { JsonSchemaObject, JsonSubSchema, JsonSchemaProperty } from './propSchemaToJsonSchema'
+// ── Whole-config JSON Schema generator (ADR §7.7) — the wire contract ──────
+//  Composes describeApp() into a Draft-2020-12 document; emitted as a build
+//  artifact at packages/contracts/schema/page-config.schema.json.
+export { generatePageConfigSchema, PAGE_ROOT_TYPES } from './generatePageConfigSchema'
+export type { PageConfigSchema }                     from './generatePageConfigSchema'
 export { PropSchemaForm }                    from '../components/PropSchemaForm'
 export type { PropSchemaFormProps, FieldRenderProps } from '../components/PropSchemaForm'
 export { resolveNodeRows, resolveStore, resolveCompareRows } from './resolveNodeRows'

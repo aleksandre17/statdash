@@ -14,6 +14,7 @@
     "build:panel": "pnpm --filter ./apps/panel   run build",
     "build:mock": "pnpm --filter ./apps/geostat run build:mock",
     "build:engine": "pnpm -r --filter \"./packages/*...\" run build",
+    "gen:schema": "pnpm --filter @statdash/react run gen:schema",
     "release": "pnpm changeset publish",
     "lint": "eslint .",
     "typecheck": "tsc -b apps/geostat/tsconfig.app.json --noEmit",

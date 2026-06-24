@@ -10,6 +10,7 @@
 //
 import i18next, { type i18n as I18nInstance }       from 'i18next'
 import type { ReactNode }                           from 'react'
+import { registerNodeType }                         from '@statdash/engine'
 import { nodeRegistry }                              from './register-all'
 import { chromeRegistry }                           from './chromeRegistry'
 import { filterControlRegistry }                    from './filterControlRegistry'
@@ -76,6 +77,10 @@ export function registerSlice(mod: RegistrableSlice): void {
       migrate:         s.migrate,
       errorFallback:   s.ErrorFallback,
     })
+    // Inject the placeable type into the engine's derived node-type set (ADR §7.3):
+    // the react nodeRegistry stays authoritative; the engine learns the SET so
+    // validateConfig's `type ∈ known set` check (fail-open until populated) activates.
+    registerNodeType(m.type)
     if (s.Skeleton) {
       skeletonRegistry.register(m.type, m.variant ?? 'default', s.Skeleton)
     }
