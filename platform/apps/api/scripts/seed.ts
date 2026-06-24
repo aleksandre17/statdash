@@ -87,6 +87,7 @@ import {
   upsertDimension,
   upsertClassifier,
   upsertObservation,
+  upsertReferenceMetadata,
 } from './seed-helpers.js'
 
 // config.data_source rows (P3-4) — its own concern, separate from the cube ETL.
@@ -229,6 +230,59 @@ async function main() {
       } catch (e) {
         await c.query('ROLLBACK')
         console.error(`[seed] ${datasetCode} FAILED (rolled back):`, e)
+        throw e
+      } finally {
+        c.release()
+      }
+    }
+
+    // Reference metadata (V31, SDMX ESMS-lite) — a representative dataset report so
+    // the Law-9 methodology/source/last-updated/quality badges have STRUCTURED data
+    // to render (the api serve endpoint reads this; the runner folds it into the
+    // MetadataPort). Own transaction; guarded on V31 being applied so a seed run
+    // against a pre-V31 database (rolling order) skips gracefully instead of crashing.
+    {
+      const c = await pool.connect()
+      try {
+        await c.query('BEGIN')
+        const { rows: probe } = await c.query<{ exists: boolean }>(
+          `SELECT to_regclass('stats.reference_metadata') IS NOT NULL AS exists`,
+        )
+        if (probe[0]?.exists === true) {
+          // GDP_ANNUAL — the flagship national-accounts dataset. Content is i18n
+          // COMPLETE (every active locale ka+en) so the V31 optional-locale trigger
+          // accepts it; an incomplete field would be rejected, which is the contract.
+          await upsertReferenceMetadata(c, 'GDP_ANNUAL', {
+            methodology: {
+              ka: 'მშპ გამოითვლება წარმოების, ხარჯვისა და შემოსავლის მიდგომებით (SNA 2008).',
+              en: 'GDP is compiled via the production, expenditure and income approaches (SNA 2008).',
+            },
+            source: {
+              ka: 'საქართველოს სტატისტიკის ეროვნული სამსახური (საქსტატი)',
+              en: 'National Statistics Office of Georgia (Geostat)',
+            },
+            coverage: {
+              ka: 'მთლიანი ეროვნული ეკონომიკა, წლიური, 2010 წლიდან.',
+              en: 'Total national economy, annual, from 2010 onward.',
+            },
+            quality: {
+              ka: 'წინასწარი მონაცემები გადასინჯვას ექვემდებარება მომდევნო გამოშვებებში.',
+              en: 'Preliminary figures are subject to revision in subsequent releases.',
+            },
+            lastUpdated:    '2024-09-15',
+            contactName:    'Geostat National Accounts Division',
+            contactEmail:   'info@geostat.ge',
+            methodologyUrl: 'https://www.geostat.ge/en/modules/categories/23/gross-domestic-product-gdp',
+          })
+          await c.query('COMMIT')
+          console.log('[seed] REFERENCE_METADATA committed (GDP_ANNUAL).')
+        } else {
+          await c.query('ROLLBACK')
+          console.log('[seed] REFERENCE_METADATA skipped — V31 not applied on this database.')
+        }
+      } catch (e) {
+        await c.query('ROLLBACK')
+        console.error('[seed] REFERENCE_METADATA FAILED (rolled back):', e)
         throw e
       } finally {
         c.release()

@@ -138,3 +138,70 @@ export async function upsertObservation(
     [datasetCode, timePeriod(year), JSON.stringify(dimKey), value, normalizeStatus(obsStatus), JSON.stringify(obsAttribute)],
   )
 }
+
+// ── Reference metadata (V31, SDMX ESMS-lite) ──────────────────────────────────
+//
+//  The STRUCTURED reference-metadata report for a dataset that backs the Law-9
+//  methodology/source/last-updated/quality badges (the SSOT the api serve endpoint
+//  reads, the runner folds into the MetadataPort). Optional content fields are i18n
+//  LocaleStrings (guarded by the V31 config.enforce_locale_string_optional trigger —
+//  a PROVIDED field must be locale-complete; an OMITTED one is allowed).
+
+/** The structured ESMS-lite fields for one dataset report (all optional except the flow). */
+export interface ReferenceMetadataSeed {
+  metadataflowCode?: string                              // defaults 'ESMS_LITE'
+  methodology?:      Record<string, string>              // LocaleString
+  source?:           Record<string, string>
+  coverage?:         Record<string, string>
+  quality?:          Record<string, string>
+  note?:             Record<string, string>
+  lastUpdated?:      string                              // ISO date 'YYYY-MM-DD'
+  contactName?:      string
+  contactEmail?:     string
+  methodologyUrl?:   string
+}
+
+/**
+ * Upsert the CURRENT dataset-grained reference-metadata report (V31). INTENTIONAL:
+ * like upsertClassifier, this converges the CURRENT row IN PLACE — seed/provisioning
+ * do NOT write SCD-2 history (a real metadata revision is a curator action that
+ * close-old/inserts-new; a re-seed overwrites the authored current report). The
+ * partial unique index uq_reference_metadata_current_dataset (is_current AND
+ * target_type='dataset') is the conflict target. The migration must be applied first
+ * (the ESMS_LITE metadataflow + the table exist); the helper assumes V31.
+ *
+ * '{}'::jsonb for an OMITTED LocaleString field — the optional-locale trigger passes
+ * it (field absent); a PROVIDED field must be locale-complete or the trigger rejects.
+ */
+export async function upsertReferenceMetadata(
+  c: PoolClient,
+  datasetCode: string,
+  rm: ReferenceMetadataSeed,
+): Promise<void> {
+  const loc = (v?: Record<string, string>): string => JSON.stringify(v ?? {})
+  await c.query(
+    `INSERT INTO stats.reference_metadata
+       (metadataflow_code, target_type, dataset_code,
+        methodology, source, coverage, quality, note,
+        last_updated, contact_name, contact_email, methodology_url)
+     VALUES ($1, 'dataset', $2,
+        $3::jsonb, $4::jsonb, $5::jsonb, $6::jsonb, $7::jsonb,
+        $8, $9, $10, $11)
+     ON CONFLICT (dataset_code) WHERE is_current AND target_type = 'dataset' DO UPDATE
+       SET metadataflow_code = EXCLUDED.metadataflow_code,
+           methodology       = EXCLUDED.methodology,
+           source            = EXCLUDED.source,
+           coverage          = EXCLUDED.coverage,
+           quality           = EXCLUDED.quality,
+           note              = EXCLUDED.note,
+           last_updated      = EXCLUDED.last_updated,
+           contact_name      = EXCLUDED.contact_name,
+           contact_email     = EXCLUDED.contact_email,
+           methodology_url   = EXCLUDED.methodology_url`,
+    [
+      rm.metadataflowCode ?? 'ESMS_LITE', datasetCode,
+      loc(rm.methodology), loc(rm.source), loc(rm.coverage), loc(rm.quality), loc(rm.note),
+      rm.lastUpdated ?? null, rm.contactName ?? null, rm.contactEmail ?? null, rm.methodologyUrl ?? null,
+    ],
+  )
+}
