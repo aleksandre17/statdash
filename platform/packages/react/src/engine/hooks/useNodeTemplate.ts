@@ -37,6 +37,22 @@ import type { RenderContext } from '../types/context'
 //  engine primitive. `{ year, range }` union templates always resolve (the
 //  primitive selects by ctx.timeMode) — they have no string form to guard on.
 //
+// A definite template (string or {year,range}) ALWAYS resolves to a string;
+// only an `undefined` input yields `undefined`. The overloads make that precise
+// so callers resolving a REQUIRED field (e.g. section title: string) get a
+// `string` back with no non-null assertion. resolveTemplate returns `string`,
+// and the no-`{` short-circuit returns the input string — both string for a
+// string input — so the narrowed signature is sound.
+export function resolveNodeTemplate(
+  tpl:    string | { year: string; range: string },
+  sectionCtx: SectionContext,
+  params: Record<string, unknown>,
+): string
+export function resolveNodeTemplate(
+  tpl:    string | { year: string; range: string } | undefined,
+  sectionCtx: SectionContext,
+  params: Record<string, unknown>,
+): string | undefined
 export function resolveNodeTemplate(
   tpl:    string | { year: string; range: string } | undefined,
   sectionCtx: SectionContext,
@@ -45,6 +61,13 @@ export function resolveNodeTemplate(
   if (tpl === undefined) return undefined
   if (typeof tpl === 'string' && !tpl.includes('{')) return tpl
   return resolveTemplate(tpl, sectionCtx, params)
+}
+
+// The bound resolver mirrors resolveNodeTemplate's overloads: a definite
+// template → string, an optional/absent one → string | undefined.
+export interface NodeTemplateResolver {
+  (tpl:  string | { year: string; range: string }): string
+  (tpl?: string | { year: string; range: string }): string | undefined
 }
 
 // ── useNodeTemplate — bind resolveNodeTemplate to a RenderContext ──────
@@ -56,7 +79,8 @@ export function resolveNodeTemplate(
 //
 export function useNodeTemplate(
   ctx: RenderContext,
-): (tpl?: string | { year: string; range: string }) => string | undefined {
+): NodeTemplateResolver {
   const params = { ...ctx.filterParams, ...ctx.vars }
-  return (tpl) => resolveNodeTemplate(tpl, ctx.sectionCtx, params)
+  return ((tpl?: string | { year: string; range: string }) =>
+    resolveNodeTemplate(tpl, ctx.sectionCtx, params)) as NodeTemplateResolver
 }

@@ -114,6 +114,8 @@ export { useNodeStream }           from './useNodeStream'
 //    accentStyle — per-node `color → { '--sc' }` override of the page cascade.
 export { useCollapsible }          from './hooks/useCollapsible'
 export type { Collapsible, CollapsibleHeadProps } from './hooks/useCollapsible'
+export { useDisclosure }           from './hooks/useDisclosure'
+export type { Disclosure }         from './hooks/useDisclosure'
 export { useViewToggle }           from './hooks/useViewToggle'
 export type { ViewToggle }         from './hooks/useViewToggle'
 export { viewStateKey }            from './hooks/viewStateKey'
@@ -162,7 +164,7 @@ export { useFiltersContext, FiltersProvider } from '../context/FiltersContext'
 export type { FiltersCtx }                   from '../context/FiltersContext'
 
 // ── Layout item context — zero-DOM grid/flex placement for child shells ──
-export { LayoutItemProvider, useLayoutItem } from './layoutItemContext'
+export { LayoutItemProvider, useLayoutItem, mergePlacement } from './layoutItemContext'
 
 // ── Wrap style context — distribute NodeStyles from WrapNode to children ──
 export { WrapStyleContext, useWrapStyle } from './wrapStyleContext'

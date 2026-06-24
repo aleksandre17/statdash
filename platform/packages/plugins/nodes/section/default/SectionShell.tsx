@@ -1,10 +1,8 @@
 import './section.css'
 
-import { useState }                                          from 'react'
-import type { CSSProperties }                                from 'react'
 import { resolveViewState }                                  from '@statdash/styles'
 import { useT, useExtensions, SECTION_HEADER_ACTIONS }       from '@statdash/react'
-import { defineShell, useViewToggle, useCollapsible, accentStyle, useNodeTemplate } from '@statdash/react/engine'
+import { defineShell, useViewToggle, useCollapsible, useDisclosure, accentStyle, useNodeTemplate, mergePlacement } from '@statdash/react/engine'
 import type { ShellProps, NodeDef }                          from '@statdash/react/engine'
 import type { SectionNode }                                  from './SectionNode'
 import { META }                                              from './meta'
@@ -62,8 +60,6 @@ function SectionControl({
 }: ShellProps<SectionNode>) {
   const t = useT('section')
 
-  const view = def.view ?? {}
-
   // Canonical template resolver — binds resolveTemplate to this ctx with the
   // standard { ...filterParams, ...vars } merge so node.vars-derived variables
   // and RepeatShell flat vars (e.g. account_label, account_code) resolve.
@@ -79,18 +75,16 @@ function SectionControl({
   const subtitle   = resolve(merged.subtitle)
 
   const viewToggle  = useViewToggle(children.defs, 'section', resolvedId, merged.toggle)
-  const collapsible = useCollapsible(view.defaultOpen, view.noCollapse)
+  const collapsible = useCollapsible(merged.defaultOpen, merged.noCollapse)
 
-  const [infoOpen, setInfoOpen] = useState(false)
+  const info = useDisclosure()
 
   const sectionActions = useExtensions(ctx.extensions, SECTION_HEADER_ACTIONS, {
     sectionId:      resolvedId,
     hasMethodology: !!def.methodology,
   })
 
-  const outerStyle = (vs.panel.style || placement)
-    ? { ...vs.panel.style, ...(placement as Record<string, string>) } as CSSProperties
-    : undefined
+  const outerStyle = mergePlacement(vs.panel.style, placement)
 
   return (
     <div {...vs.panel} style={outerStyle}>
@@ -109,22 +103,22 @@ function SectionControl({
           headProps={collapsible.headProps}
           open={collapsible.open}
           canCollapse={collapsible.canCollapse}
-          title={title!}
+          title={title}
           label={label}
           subtitle={subtitle}
           viewToggle={viewToggle}
           actions={sectionActions}
           hasMethodology={!!def.methodology}
-          infoOpen={infoOpen}
-          onToggleInfo={() => setInfoOpen(o => !o)}
+          infoOpen={info.open}
+          onToggleInfo={info.toggle}
           t={t}
         />
 
-        {def.methodology && infoOpen && (
+        {def.methodology && info.open && (
           <SectionMethodology
             methodology={def.methodology}
             resolve={resolve}
-            onClose={() => setInfoOpen(false)}
+            onClose={info.close}
             t={t}
           />
         )}
@@ -135,8 +129,8 @@ function SectionControl({
             (TableShell / ChartShell). Aggregating child rows requires a NodeStatusContext
             publish/subscribe seam that has zero second consumers today (YAGNI). */}
 
-        {(view.noCollapse || collapsible.open) && (
-          <div className={SECTION.body} {...vs.body} style={vs.body.style as CSSProperties | undefined}>
+        {(merged.noCollapse || collapsible.open) && (
+          <div className={SECTION.body} {...vs.body}>
             {children.defs.map((d: NodeDef, i: number) => (
               <div key={i} className={SECTION.view} {...resolveViewState(viewToggle.isHidden(d))}>
                 {children.rendered[i]}

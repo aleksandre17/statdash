@@ -18,6 +18,7 @@ import { GlobalStateProvider }      from '../../context/GlobalState'
 import type { NodeDef }             from '../types'
 import { useViewToggle }            from './useViewToggle'
 import { useCollapsible }           from './useCollapsible'
+import { useDisclosure }            from './useDisclosure'
 import { viewStateKey }             from './viewStateKey'
 import { accentStyle }              from './accentStyle'
 
@@ -148,5 +149,31 @@ describe('useCollapsible', () => {
     expect(result.current.headProps.style).toEqual({ cursor: 'default' })
     act(() => result.current.headProps.onClick())
     expect(result.current.open).toBe(true) // unchanged
+  })
+})
+
+// ── useDisclosure — minimal open/close/toggle primitive ──────────────────────
+
+describe('useDisclosure', () => {
+  it('defaults closed', () => {
+    const { result } = renderHook(() => useDisclosure())
+    expect(result.current.open).toBe(false)
+  })
+
+  it('honors an explicit initial open state', () => {
+    const { result } = renderHook(() => useDisclosure(true))
+    expect(result.current.open).toBe(true)
+  })
+
+  it('toggles, closes, and shows', () => {
+    const { result } = renderHook(() => useDisclosure())
+    act(() => result.current.toggle())
+    expect(result.current.open).toBe(true)
+    act(() => result.current.toggle())
+    expect(result.current.open).toBe(false)
+    act(() => result.current.show())
+    expect(result.current.open).toBe(true)
+    act(() => result.current.close())
+    expect(result.current.open).toBe(false)
   })
 })

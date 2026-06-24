@@ -131,10 +131,12 @@ export type { PanelTitleHost, SectionActionHost }    from './engine/extensions/p
 // ── Panel title-badge seam — folds the PANEL_TITLE_BADGE ritual (M-5) ──────
 export { usePanelTitleBadge }                        from './engine/usePanelTitleBadge'
 // ── Shell UI hooks — app-agnostic, reusable by ANY shell ──────────────────
-//  Disclosure (useCollapsible), role-tagged view toggle (useViewToggle +
-//  viewStateKey), and the per-node `--sc` accent override (accentStyle).
+//  Disclosure (useCollapsible / useDisclosure), role-tagged view toggle
+//  (useViewToggle + viewStateKey), per-node `--sc` accent (accentStyle).
 export { useCollapsible }                            from './engine/hooks/useCollapsible'
 export type { Collapsible, CollapsibleHeadProps }    from './engine/hooks/useCollapsible'
+export { useDisclosure }                             from './engine/hooks/useDisclosure'
+export type { Disclosure }                           from './engine/hooks/useDisclosure'
 export { useViewToggle }                             from './engine/hooks/useViewToggle'
 export type { ViewToggle }                           from './engine/hooks/useViewToggle'
 export { viewStateKey }                              from './engine/hooks/viewStateKey'
