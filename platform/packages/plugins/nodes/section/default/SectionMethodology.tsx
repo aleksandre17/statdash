@@ -6,8 +6,6 @@
 //  literal display strings.
 //
 
-import { resolveTemplate }       from '@statdash/engine'
-import type { SectionContext }   from '@statdash/engine'
 import type { SectionMethodology as SectionMethodologyDef } from './SectionNode'
 
 type T = (key: string) => string
@@ -24,8 +22,8 @@ function MetaRow({ label, value }: { label: string; value: string }) {
 
 export interface SectionMethodologyProps {
   methodology:    SectionMethodologyDef
-  sectionCtx:     SectionContext
-  templateParams: Record<string, unknown>
+  /** Canonical template resolver bound to the section's RenderContext. */
+  resolve:        (tpl?: string) => string | undefined
   /** Close the panel (parent owns the open state). */
   onClose:        () => void
   t:              T
@@ -33,8 +31,7 @@ export interface SectionMethodologyProps {
 
 export function SectionMethodology({
   methodology,
-  sectionCtx,
-  templateParams,
+  resolve,
   onClose,
   t,
 }: SectionMethodologyProps) {
@@ -42,9 +39,7 @@ export function SectionMethodology({
     <div className="section__methodology" role="region" aria-label={t('methodology')}>
       {methodology.note && (
         <p className="section__methodology-note">
-          {methodology.note.includes('{')
-            ? resolveTemplate(methodology.note, sectionCtx, templateParams)
-            : methodology.note}
+          {resolve(methodology.note)}
         </p>
       )}
       {methodology.source      && <MetaRow label={t('source')}       value={methodology.source} />}

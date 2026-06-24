@@ -1,6 +1,5 @@
 import { Fragment, type ReactNode }            from 'react'
-import { resolveTemplate }                     from '@statdash/engine'
-import { defineShell, resolvePreliminary }     from '@statdash/react/engine'
+import { defineShell, resolvePreliminary, useNodeTemplate } from '@statdash/react/engine'
 import type { ShellProps }                     from '@statdash/react/engine'
 import { useT, useInject, PANEL_LAYOUT, useExtensions, PANEL_TITLE_BADGE } from '@statdash/react'
 import type { GeographNode }                   from './GeographNode'
@@ -59,7 +58,7 @@ function GeographControl({ def, ctx, vs, table }: Pick<ShellProps<GeographNode>,
   }
 
   const rows  = ctx.rows ?? []
-  const label = def.label ? resolveTemplate(def.label, ctx.sectionCtx, ctx.filterParams) : undefined
+  const label = useNodeTemplate(ctx)(def.label)
 
   const views = table != null
     ? [

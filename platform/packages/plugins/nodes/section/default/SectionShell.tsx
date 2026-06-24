@@ -2,10 +2,9 @@ import './section.css'
 
 import { useState }                                          from 'react'
 import type { CSSProperties }                                from 'react'
-import { resolveTemplate }                                   from '@statdash/engine'
 import { resolveViewState }                                  from '@statdash/styles'
 import { useT, useExtensions, SECTION_HEADER_ACTIONS }       from '@statdash/react'
-import { defineShell, useViewToggle, useCollapsible, accentStyle } from '@statdash/react/engine'
+import { defineShell, useViewToggle, useCollapsible, accentStyle, useNodeTemplate } from '@statdash/react/engine'
 import type { ShellProps, NodeDef }                          from '@statdash/react/engine'
 import type { SectionNode }                                  from './SectionNode'
 import { META }                                              from './meta'
@@ -65,13 +64,10 @@ function SectionControl({
 
   const view = def.view ?? {}
 
-  // Merge ctx.vars into template params so node.vars-derived variables and
-  // RepeatShell flat vars (e.g. account_label, account_code) are available to
-  // template resolution below.
-  const templateParams = { ...ctx.filterParams, ...ctx.vars }
-
-  const resolve = (tpl?: string) =>
-    tpl?.includes('{') ? resolveTemplate(tpl, ctx.sectionCtx, templateParams) : tpl
+  // Canonical template resolver — binds resolveTemplate to this ctx with the
+  // standard { ...filterParams, ...vars } merge so node.vars-derived variables
+  // and RepeatShell flat vars (e.g. account_label, account_code) resolve.
+  const resolve = useNodeTemplate(ctx)
 
   // Resolve id/title through the template engine so Repeat-injected vars work
   // (e.g. id: 'account-{account_code}', title: '{account_label}').
@@ -80,7 +76,7 @@ function SectionControl({
   const resolvedId = resolve(def.id)
   const title      = resolve(def.title)
   const label      = resolve(def.label)
-  const subtitle   = merged.subtitle ? resolveTemplate(merged.subtitle, ctx.sectionCtx, templateParams) : undefined
+  const subtitle   = resolve(merged.subtitle)
 
   const viewToggle  = useViewToggle(children.defs, 'section', resolvedId, merged.toggle)
   const collapsible = useCollapsible(view.defaultOpen, view.noCollapse)
@@ -100,7 +96,7 @@ function SectionControl({
     <div {...vs.panel} style={outerStyle}>
       {def.prependLabel && (
         <div className={SECTION.drillLabel}>
-          {resolveTemplate(def.prependLabel, ctx.sectionCtx)}
+          {resolve(def.prependLabel)}
         </div>
       )}
       <section
@@ -127,8 +123,7 @@ function SectionControl({
         {def.methodology && infoOpen && (
           <SectionMethodology
             methodology={def.methodology}
-            sectionCtx={ctx.sectionCtx}
-            templateParams={templateParams}
+            resolve={resolve}
             onClose={() => setInfoOpen(false)}
             t={t}
           />

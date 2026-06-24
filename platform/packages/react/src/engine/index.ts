@@ -118,6 +118,11 @@ export { useViewToggle }           from './hooks/useViewToggle'
 export type { ViewToggle }         from './hooks/useViewToggle'
 export { viewStateKey }            from './hooks/viewStateKey'
 export { accentStyle }             from './hooks/accentStyle'
+// ── Node template resolution — the ONE canonical shell seam ───────────────
+//  resolveNodeTemplate(tpl, sectionCtx, params) — pure, reusable in non-hook spots.
+//  useNodeTemplate(ctx) → resolve(tpl?) binds the canonical { ...filterParams, ...vars }
+//  param merge so NO shell hand-rolls the merge or the `{`-guard.
+export { resolveNodeTemplate, useNodeTemplate } from './hooks/useNodeTemplate'
 
 // ── Registries ────────────────────────────────────────────────────────
 export { ChromeRegistry, chromeRegistry, NullChromeSlot } from './chromeRegistry'
