@@ -127,8 +127,9 @@ export interface CanvasNode {
  *   - `path` ⇒ CanvasPage.slug
  * (`type`/`children` are NODE-structural, owned by the inner-page root + nodeIds.)
  *
- * So `meta` holds frame · chrome · color · presentation · filterSchema · vars ·
- * modeOrder · schemaVersion — and AUTOMATICALLY any field a future PageConfigBase
+ * So `meta` holds frame · chrome · presentation · filterSchema · vars ·
+ * modeOrder · schemaVersion (page color lives under presentation.color) — and
+ * AUTOMATICALLY any field a future PageConfigBase
  * grows, because canvasPageAdapter carries it by structural pass-through, not by
  * a hand-maintained key list (mirrors how CanvasNode.props carries node body fields).
  */
@@ -143,7 +144,7 @@ export interface CanvasPage {
   /** All nodes keyed by id (flat map for O(1) lookup). */
   nodes:    Record<string, CanvasNode>
   /**
-   * Page-level engine config (frame/chrome/color/presentation/filterSchema/vars/
+   * Page-level engine config (frame/chrome/presentation/filterSchema/vars/
    * modeOrder/…) preserved verbatim across edit→save. Absent when the page carries
    * none. See {@link PageMeta}. Carried generically by canvasPageAdapter so a new
    * PageConfigBase field survives the round-trip with zero adapter change.

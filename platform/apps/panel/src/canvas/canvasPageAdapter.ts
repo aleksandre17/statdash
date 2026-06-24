@@ -40,7 +40,7 @@ const STRUCTURAL_KEYS = new Set(['type', 'variant', 'id', 'children'])
 //    type/children → owned by the inner-page root + nodeIds (node-structural)
 //    id            → CanvasPage.id
 //    path          → CanvasPage.slug
-//  EVERY OTHER page-root key (a PageConfigBase field: frame, chrome, color,
+//  EVERY OTHER page-root key (a PageConfigBase field: frame, chrome,
 //  presentation, filterSchema, vars, modeOrder, schemaVersion, …) is carried
 //  GENERICALLY into / out of `meta`. This is structural pass-through, the page-
 //  level mirror of `propsOf` — a NEW PageConfigBase field round-trips with zero
@@ -80,7 +80,7 @@ function toEngineNode(node: CanvasNode, page: CanvasPage): EngineNode {
  * the ordered top-level nodes in an `inner-page` root so NodePageRenderer's
  * navigation/filter wiring resolves. Identity PageConfigBase fields (id←id,
  * path←slug) come from the CanvasPage columns; every OTHER page-level field
- * (frame, chrome, color, presentation, filterSchema, vars, modeOrder, …) is
+ * (frame, chrome, presentation, filterSchema, vars, modeOrder, …) is
  * spread back from `page.meta` so the round-trip is page-level lossless.
  */
 export function toNodePageConfig(page: CanvasPage): NodePageConfig {
@@ -90,7 +90,7 @@ export function toNodePageConfig(page: CanvasPage): NodePageConfig {
     .map((node) => toEngineNode(node, page))
 
   return {
-    ...(page.meta ?? {}),               // frame/chrome/color/presentation/filterSchema/vars/modeOrder/…
+    ...(page.meta ?? {}),               // frame/chrome/presentation/filterSchema/vars/modeOrder/…
     type:     'inner-page',
     id:       page.id,
     path:     page.slug,
@@ -150,7 +150,7 @@ function flattenNode(
  *
  * Lossless against toNodePageConfig: every node's type/variant/props/childIds
  * and document order survive the round-trip — AND every page-level field
- * (frame/chrome/color/presentation/filterSchema/vars/modeOrder/…) is collected
+ * (frame/chrome/presentation/filterSchema/vars/modeOrder/…) is collected
  * into `meta` by structural pass-through (PAGE_STRUCTURAL_KEYS is the only set
  * peeled off), so a page authored with chrome/frame/vars hydrates without loss.
  */

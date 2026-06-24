@@ -222,10 +222,9 @@ const NodePageRendererInner = memo(function NodePageRendererInner({
       filterParams: mergedFilterParams,
       stores,
       pageStoreKey: page.storeKey,
-      pageColorFallback: page.color,
     }
     return projectPresentation(page.presentation, evalOne, evalCtx)
-  }, [page.presentation, page.color, page.storeKey, mergedFilterParams, stores, evalOne])
+  }, [page.presentation, page.storeKey, mergedFilterParams, stores, evalOne])
 
   const baseCtx: Omit<RenderContext, 'renderNode'> = {
     sectionCtx,

@@ -3,8 +3,13 @@
 //  The FIRST registered presentation projector. Page color is a literal string
 //  OR a data-driven VarExpr (op:'find', …) evaluated per render. It projects to
 //  the CSS custom property `--sc` on the page wrapper div — every concern detail
-//  (the `--sc` var name, the literal-vs-expr narrow, the page-color fallback)
-//  lives HERE, with the concern, NOT in the generic renderer.
+//  (the `--sc` var name, the literal-vs-expr narrow) lives HERE, with the concern,
+//  NOT in the generic renderer.
+//
+//  Single home (schemaVersion ≥ 2): page color is authored ONLY at
+//  `presentation.color`. The legacy flat `PageConfigBase.color` field was retired
+//  and its values migrated into `presentation.color` by the v1→v2 migrator
+//  (packages/core/src/config/migration.ts). There is no flat fallback to fold.
 //
 //  Registered at app boot via registerPresentationProjector (setupRegistrations /
 //  setupCanvasRegistry), beside registerStoreBuilders / registerSlice.
@@ -28,12 +33,12 @@ export const colorProjector: PresentationProjector<VarExpr | string, string> = {
     { field: 'color', type: 'color', label: { en: 'Page color' } },
   ],
 
-  evaluate(raw, evalExpr, ctx) {
-    // No authored color ⇒ fall back to the static literal page color (if any).
-    if (raw === undefined) return ctx.pageColorFallback
+  evaluate(raw, evalExpr) {
+    // No authored presentation.color ⇒ contribute nothing.
+    if (raw === undefined) return undefined
     // Literal string ⇒ use as-is; otherwise evaluate the VarExpr (op:'find', …).
     const v = typeof raw === 'string' ? raw : evalExpr(raw)
-    return (typeof v === 'string' ? v : undefined) ?? ctx.pageColorFallback
+    return typeof v === 'string' ? v : undefined
   },
 
   project(color, sink) {

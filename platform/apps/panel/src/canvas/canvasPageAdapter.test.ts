@@ -126,7 +126,6 @@ const META_FIELD_COVERAGE: Record<keyof PageMeta, true> = {
   schemaVersion: true,
   frame:         true,
   chrome:        true,
-  color:         true,
   presentation:  true,
   filterSchema:  true,
   vars:          true,
@@ -138,7 +137,9 @@ const fullMeta: PageMeta = {
   schemaVersion: 2,
   frame:         'landing',
   chrome:        { header: 'minimal', sidebar: { variant: 'compact', config: { collapsed: true } } },
-  color:         '#1f77b4',
+  // schemaVersion ≥ 2: page color lives ONLY under presentation.color (the flat
+  // PageConfigBase.color field was retired). PageMeta = Omit<PageConfigBase,'id'|'path'>
+  // therefore no longer carries a flat `color`.
   presentation:  { color: '#1f77b4', label: 'overview' },
   filterSchema: {
     bars: {
@@ -182,7 +183,6 @@ describe('page-level round-trip fitness (P-3): every PageConfigBase field surviv
     const cfg = toNodePageConfig(fullPage) as unknown as Record<string, unknown>
     expect(cfg.frame).toBe('landing')
     expect(cfg.chrome).toEqual(fullMeta.chrome)
-    expect(cfg.color).toBe('#1f77b4')
     expect(cfg.presentation).toEqual(fullMeta.presentation)
     expect(cfg.filterSchema).toEqual(fullMeta.filterSchema)
     expect(cfg.vars).toEqual(fullMeta.vars)

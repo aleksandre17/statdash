@@ -1015,7 +1015,6 @@
             "type": "links"
           }
         ],
-        "color": "#0080BE",
         "filterSchema": {
           "bars": {
             "range-bar": {
@@ -1180,6 +1179,10 @@
           "range"
         ],
         "path": "/accounts",
+        "presentation": {
+          "color": "#0080BE"
+        },
+        "schemaVersion": 2,
         "storeKey": "accounts",
         "type": "inner-page",
         "vars": {
@@ -2223,7 +2226,6 @@
             "type": "links"
           }
         ],
-        "color": "#0080BE",
         "filterSchema": {
           "bars": {
             "range-bar": {
@@ -2352,6 +2354,10 @@
           "range"
         ],
         "path": "/gdp",
+        "presentation": {
+          "color": "#0080BE"
+        },
+        "schemaVersion": 2,
         "storeKey": "gdp",
         "type": "inner-page"
       },
@@ -2596,6 +2602,7 @@
           }
         ],
         "id": "landing",
+        "schemaVersion": 2,
         "type": "container-page",
         "variant": "landing"
       },
@@ -3648,7 +3655,6 @@
             "type": "links"
           }
         ],
-        "color": "#0080BE",
         "filterSchema": {
           "bars": {
             "range-bar": {
@@ -3848,6 +3854,7 @@
             }
           }
         },
+        "schemaVersion": 2,
         "storeKey": "regional",
         "type": "inner-page",
         "vars": {

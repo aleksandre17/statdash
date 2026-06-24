@@ -14,11 +14,14 @@
 //    2. Register a migration: registerMigration(newVersion, fn).
 //    3. fn receives the previous-version config and returns the next-version config.
 //
-//  Current version: 1 (initial — no migrations registered yet).
+//  Current version: 2.
+//    v1 → v2: page-level `color` moved from a flat PageConfigBase field into
+//    `presentation.color` (the presentation-projection registry's single home).
+//    See the registered migrator at the foot of this module.
 //
 
 /** Current schema version for page configs. Bump when introducing breaking config changes. */
-export const CURRENT_SCHEMA_VERSION = 1
+export const CURRENT_SCHEMA_VERSION = 2
 
 /**
  * A migration function.
@@ -110,3 +113,58 @@ export function highestMigrationVersion(): number {
   if (_migrations.size === 0) return 0
   return Math.max(..._migrations.keys())
 }
+
+// ── Registered migrators (immutable platform history) ───────────────────
+//
+//  Migrations are pure, forward-only, fixed platform history — not a per-tenant
+//  extension seam — so they register at module load, baked into the chain wherever
+//  @statdash/engine is imported (the api read/save paths, the panel save-gate).
+//
+
+// ── v0 → v1: identity (contiguity) ──────────────────────────────────────
+//
+//  v1 was the initial format — there is no structural change FROM v0 (the
+//  unversioned legacy shape) TO v1. But the runner stops at the FIRST missing
+//  step (a deliberate forward-compat break), so a contiguous chain is required
+//  for a v0 stored config to REACH the v2 color migrator. This identity step
+//  keeps v0 → v1 → v2 reachable without altering any field. (A v0 stored config
+//  IS structurally a v1 config; this only stamps the version progression.)
+//
+registerMigration(1, (config) => config)
+
+// ── v1 → v2: page color → presentation.color (single home) ──────────────
+//
+//  Page color had TWO homes — a flat `color` field AND `presentation.color`
+//  (the presentation-projection registry key). This migrator collapses them to
+//  ONE: it moves a flat `color` into `presentation.color` and drops the flat key.
+//
+//  Edge cases (all proven in migration.test.ts):
+//    • no flat `color`          → no spurious `presentation` is created.
+//    • `presentation.color` set → the authored presentation value WINS; the flat
+//      `color` is still dropped (the flat field is being retired, not merged over).
+//    • other `presentation` keys (e.g. crumbs) are preserved.
+//
+//  The migration is the canonical mechanism — color is not special-cased outside
+//  this chain (the renderer reads `presentation.color` only).
+//
+registerMigration(2, (config) => {
+  // No flat color authored ⇒ nothing to move; leave presentation untouched.
+  if (config.color === undefined) return config
+
+  // Drop the flat `color` regardless (it is the field being retired).
+  const { color, presentation, ...rest } = config
+
+  const existingPresentation =
+    presentation && typeof presentation === 'object' && !Array.isArray(presentation)
+      ? (presentation as Record<string, unknown>)
+      : {}
+
+  // Existing presentation.color WINS (the authored projector value is canonical);
+  // otherwise the flat color becomes presentation.color.
+  const nextPresentation: Record<string, unknown> =
+    'color' in existingPresentation
+      ? existingPresentation
+      : { ...existingPresentation, color }
+
+  return { ...rest, presentation: nextPresentation }
+})

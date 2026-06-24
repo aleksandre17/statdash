@@ -104,8 +104,8 @@ describe('POST /api/config/pages — config validation WARN mode (ADR §6)', () 
     // Still persisted (WARN, not REJECT) — 201 + the version row was written.
     expect(res.statusCode).toBe(201)
     expect(stored).toHaveLength(1)
-    // And the STORED config is the MIGRATED one (schemaVersion stamped).
-    expect((stored[0].config as { schemaVersion?: number }).schemaVersion).toBe(1)
+    // And the STORED config is the MIGRATED one (schemaVersion stamped to current).
+    expect((stored[0].config as { schemaVersion?: number }).schemaVersion).toBe(2)
 
     // A structured warn was emitted carrying the page ref + failing paths.
     const warn = warns.find((w) => /structural validation/i.test(w.msg))

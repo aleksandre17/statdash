@@ -140,10 +140,6 @@
           "type": "string",
           "description": "Page path / permalink segment"
         },
-        "color": {
-          "type": "string",
-          "description": "Deprecated — use presentation.color"
-        },
         "presentation": {
           "type": "object",
           "properties": {
@@ -228,10 +224,6 @@
           "type": "string",
           "description": "Page path / permalink segment"
         },
-        "color": {
-          "type": "string",
-          "description": "Deprecated — use presentation.color"
-        },
         "presentation": {
           "type": "object",
           "properties": {
@@ -315,10 +307,6 @@
         "path": {
           "type": "string",
           "description": "Page path / permalink segment"
-        },
-        "color": {
-          "type": "string",
-          "description": "Deprecated — use presentation.color"
         },
         "presentation": {
           "type": "object",

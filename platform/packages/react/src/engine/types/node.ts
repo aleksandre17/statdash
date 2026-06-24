@@ -206,7 +206,6 @@ export interface PageConfigBase {
    *  JSON-serializable. Constructor Phase 2: DB column pages.chrome JSONB. */
   chrome?:       Record<string, ChromeEntry>
   path?:         string
-  color?:        string
   /**
    * Presentation-projection contributions [N-ADR-0029 v2] — a generic bag keyed
    * by registered projector key. The renderer iterates the presentation-projector

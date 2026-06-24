@@ -38,14 +38,10 @@ describe('colorProjector projects page color to the --sc CSS var (byte-identical
     expect(sink.cssVars).toEqual({ '--sc': '#0080BE' })
   })
 
-  it('falls back to the static page color when no presentation.color is authored', () => {
-    const sink = projectPresentation({}, passthrough, {
-      filterParams: {}, stores: {}, pageColorFallback: '#123456',
-    })
-    expect(sink.cssVars).toEqual({ '--sc': '#123456' })
-  })
-
-  it('contributes no CSS var when neither authored nor fallback color exists', () => {
+  it('contributes no CSS var when presentation.color is not authored (single home, no flat fallback)', () => {
+    // schemaVersion ≥ 2: page color is authored ONLY at presentation.color. There
+    // is no flat PageConfigBase.color / pageColorFallback channel any more — its
+    // values were migrated into presentation.color by the v1→v2 migrator.
     const sink = projectPresentation({}, passthrough, { filterParams: {}, stores: {} })
     expect(sink.cssVars).toEqual({})
   })

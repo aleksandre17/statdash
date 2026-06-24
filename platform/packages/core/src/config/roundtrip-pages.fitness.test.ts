@@ -30,10 +30,12 @@ describe('Page round-trip — inner-page + kpi-strip', () => {
   it('full page survives with visibleToRoles, preliminary, methodologyUrl', () => {
     const page = {
       id:            'gdp-overview',
-      schemaVersion: 1,
+      schemaVersion: 2,
       type:          'inner-page',
       path:          '/gdp',
-      color:         '#1f77b4',
+      // schemaVersion ≥ 2: page color lives ONLY under presentation.color (the
+      // flat PageConfigBase.color field was retired by the v1→v2 migrator).
+      presentation:  { color: '#1f77b4' },
       modeOrder:     ['year', 'range'],
       filterSchema: {
         bars: {
@@ -86,7 +88,7 @@ describe('Page round-trip — inner-page + kpi-strip', () => {
 
     const r = roundTrip(page)
     expect(r.id).toBe('gdp-overview')
-    expect(r.schemaVersion).toBe(1)
+    expect(r.schemaVersion).toBe(2)
     expect(r.type).toBe('inner-page')
 
     const strip = r.children[0]

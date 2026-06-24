@@ -65,17 +65,17 @@ describe('GET /api/config/pages/:id — lazy schema migration [N19 / P3-3]', () 
     const res = await app.inject({ method: 'GET', url: `/api/config/pages/${PAGE_ID}` })
     expect(res.statusCode).toBe(200)
     const { data } = res.json()
-    // CURRENT_SCHEMA_VERSION is 1; a v0 blob is forward-migrated and stamped.
-    expect(data.config.schemaVersion).toBe(1)
+    // CURRENT_SCHEMA_VERSION is 2; a v0 blob is forward-migrated and stamped.
+    expect(data.config.schemaVersion).toBe(2)
     // Original fields are preserved (migration is non-destructive).
     expect(data.config.title).toBe('A v0 config')
   })
 
   it('returns a current-schema config unchanged (idempotent)', async () => {
-    const app = await buildApp({ schemaVersion: 1, title: 'Current' })
+    const app = await buildApp({ schemaVersion: 2, title: 'Current' })
     const res = await app.inject({ method: 'GET', url: `/api/config/pages/${PAGE_ID}` })
     expect(res.statusCode).toBe(200)
-    expect(res.json().data.config.schemaVersion).toBe(1)
+    expect(res.json().data.config.schemaVersion).toBe(2)
   })
 
   it('returns a 409 problem+json for a future config, with structured version extensions', async () => {
@@ -91,7 +91,7 @@ describe('GET /api/config/pages/:id — lazy schema migration [N19 / P3-3]', () 
     // Forward-compat context is STRUCTURED extension members, not a stringified blob.
     expect(body.code).toBe('CONFIG_SCHEMA_AHEAD')
     expect(body.configSchemaVersion).toBe(999)
-    expect(body.currentSchemaVersion).toBe(1)
+    expect(body.currentSchemaVersion).toBe(2)
   })
 
   it('leaves a null config untouched (no migration attempted)', async () => {

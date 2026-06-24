@@ -229,9 +229,18 @@ export function renderPageToHTML(
     filterParams:      staticCtx.filterParams,
     stores:            staticCtx.stores,
     pageStoreKey:      staticCtx.pageStoreKey,
-    pageColorFallback: staticCtx.color,
   }
-  const sink = projectPresentation(staticCtx.presentation ?? page.presentation, evalOne, projEvalCtx)
+  // Resolve the page's presentation bag. The snapshot `color` convenience input is
+  // a render-context affordance (not a page-authored field): fold it under the
+  // color projector's key when neither an explicit presentation bag nor the page's
+  // own presentation.color supplies one — keeping the single-home contract (the
+  // renderer names no concern; this input adapter folds by the projector key).
+  const basePresentation = staticCtx.presentation ?? page.presentation
+  const presentation: PagePresentation | undefined =
+    staticCtx.color !== undefined && (basePresentation?.color === undefined)
+      ? { ...(basePresentation ?? {}), color: staticCtx.color }
+      : basePresentation
+  const sink = projectPresentation(presentation, evalOne, projEvalCtx)
 
   // Merge the generic nav patch into navContext — the renderer does NOT know
   // which nav fields (e.g. crumbs) a projector contributed. When there is a

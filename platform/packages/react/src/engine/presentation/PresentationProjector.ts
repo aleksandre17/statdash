@@ -46,14 +46,12 @@ export interface PresentationSink {
 
 /**
  * The slice of render state a projector may read while evaluating (read-only).
- * Carries the same fields evalVarMap consumes, plus an optional literal
- * page-color fallback for the static (non-data-driven) path.
+ * Carries the same fields evalVarMap consumes — nothing more. A projector's raw
+ * value comes from `page.presentation[key]` (its single authored home); there is
+ * no privileged flat-field fallback channel (the legacy `PageConfigBase.color`
+ * was retired into `presentation.color` by the v1→v2 migration).
  */
-export type ProjectorEvalCtx = Pick<RenderContext, 'filterParams' | 'stores' | 'pageStoreKey'> & {
-  /** Fallback literal page value (e.g. PageConfigBase.color) for a projector
-   *  that supports a static literal alongside its data-driven expression. */
-  pageColorFallback?: string
-}
+export type ProjectorEvalCtx = Pick<RenderContext, 'filterParams' | 'stores' | 'pageStoreKey'>
 
 /** Evaluator injected into a projector — the SiteRenderer-bound evalVarMap
  *  closure. A projector reuses the SAME VarExpr machinery (find/breadcrumbs)

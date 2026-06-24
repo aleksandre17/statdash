@@ -30,6 +30,7 @@ import {
   describeApp,
   generatePageConfigSchema,
   registerPresentationProjector,
+  listPresentationProjectors,
   type NodeSliceMeta, type PanelSliceMeta, type PageSliceMeta,
 } from '@statdash/react/engine'
 import { knownNodeTypes, registerNodeType } from '@statdash/engine'
@@ -164,6 +165,50 @@ describe('F3 — every placeable type is reachable by all three contract faces',
     // validator set → the F3 "∈ knownNodeTypes" assertion would fail for it.
     expect(refTypes.has('ghost-node')).toBe(true)
     expect(known.has('ghost-node')).toBe(false)
+  })
+})
+
+// ── F5 — no presentation concern is ALSO a flat PageConfigBase field ─────────
+//
+//  ADR adr-config-and-render-vision finish-line #4 (P-5 single-home). Page color
+//  once had TWO homes — a flat PageConfigBase.color field AND presentation.color.
+//  The v1→v2 migrator collapsed them to ONE: presentation.color. F5 makes that
+//  un-regressable: a registered presentation projector key MUST NOT also appear
+//  as a flat page-base document field. The page-base document fields are the
+//  runtime SSOT enumeration in the generator (buildPageBaseProperties → the
+//  page-root $def properties), so a future flat-vs-projector duplication — or a
+//  re-added flat `color` — fails this build.
+//
+describe('F5 — a presentation projector key is never also a flat PageConfigBase field', () => {
+
+  /** The flat page-base document fields = a page-root $def's own properties minus
+   *  the structural NodeBase keys and `presentation` itself (the projector bag). */
+  function flatPageBaseFields(): Set<string> {
+    const schema = generatePageConfigSchema()
+    const pageRoot = schema.$defs['node_inner-page__default'] as { properties: Record<string, unknown> }
+    const keys = Object.keys(pageRoot.properties)
+    // Exclude the structural NodeBase fields buildNodeDef adds to every node and
+    // the `presentation` bag — what remains is the PageConfigBase flat surface.
+    const NON_PAGE_BASE = new Set([
+      'type', 'id', 'variant', 'data', 'view', 'children', 'presentation',
+    ])
+    return new Set(keys.filter(k => !NON_PAGE_BASE.has(k)))
+  }
+
+  it('no registered projector key collides with a flat page-base field', () => {
+    const flat = flatPageBaseFields()
+    const collisions = listPresentationProjectors()
+      .map(p => p.key)
+      .filter(key => flat.has(key))
+    expect(collisions, `projector keys also present as flat page fields: ${collisions.join(', ')}`)
+      .toEqual([])
+  })
+
+  it('`color` is gone from the flat page-base surface and lives ONLY as a projector', () => {
+    const flat = flatPageBaseFields()
+    expect(flat.has('color'), 'flat PageConfigBase.color was re-introduced — color is projector-only').toBe(false)
+    const projectorKeys = listPresentationProjectors().map(p => p.key)
+    expect(projectorKeys, 'color projector missing from the registry').toContain('color')
   })
 })
 

@@ -20,14 +20,14 @@ describe('migratePageConfig — version stamping', () => {
     const v0 = { id: 'gdp', type: 'inner-page', children: [] }
     const out = migratePageConfig(v0)
     expect(out.schemaVersion).toBe(CURRENT_SCHEMA_VERSION)
-    expect(out.schemaVersion).toBe(1)
+    expect(out.schemaVersion).toBe(2)
   })
 
   it('returns a config already at the current version unchanged in content', () => {
-    const v1 = { id: 'gdp', type: 'inner-page', schemaVersion: 1, children: [] }
-    const out = migratePageConfig(v1)
-    expect(out.schemaVersion).toBe(1)
-    expect(out).toEqual(v1)
+    const v2 = { id: 'gdp', type: 'inner-page', schemaVersion: 2, children: [] }
+    const out = migratePageConfig(v2)
+    expect(out.schemaVersion).toBe(2)
+    expect(out).toEqual(v2)
   })
 
   it('is idempotent — migrating twice equals migrating once', () => {
@@ -108,6 +108,89 @@ describe('migratePageConfig — forward-compat guard', () => {
   })
 })
 
+// ── v1 → v2: page color → presentation.color (the FIRST real migrator) ──────
+//
+//  Proves the migration chain runs end-to-end through a REAL registered migrator
+//  (P-4: the chain previously had ZERO migrators — dead code). The v1→v2 migrator
+//  collapses the page-color SSOT wobble (P-5): a flat `color` moves into
+//  `presentation.color`, and the flat field is dropped — its single home.
+//
+describe('v1 → v2 — page color migrates into presentation.color (single home)', () => {
+  it('a v1 page with a flat color → v2 with presentation.color and no flat color', () => {
+    const v1 = { id: 'gdp', type: 'inner-page', schemaVersion: 1, color: '#0080BE', children: [] }
+    const out = migratePageConfig(v1)
+    expect(out.schemaVersion).toBe(2)
+    expect(out.color).toBeUndefined()
+    expect(out.presentation).toEqual({ color: '#0080BE' })
+    // Other fields are preserved.
+    expect(out.id).toBe('gdp')
+    expect(out.children).toEqual([])
+  })
+
+  it('a v0 page (no schemaVersion) with a flat color migrates through v1→v2', () => {
+    // v0 → v1 has no registered migrator (identity step), v1 → v2 moves the color.
+    const v0 = { id: 'gdp', type: 'inner-page', color: '#123456', children: [] }
+    const out = migratePageConfig(v0)
+    expect(out.schemaVersion).toBe(2)
+    expect(out.color).toBeUndefined()
+    expect(out.presentation).toEqual({ color: '#123456' })
+  })
+
+  it('a page with NO color migrates cleanly — no spurious presentation bag', () => {
+    const v1 = { id: 'landing', type: 'container-page', schemaVersion: 1, children: [] }
+    const out = migratePageConfig(v1)
+    expect(out.schemaVersion).toBe(2)
+    expect(out.presentation).toBeUndefined()
+    expect(out).not.toHaveProperty('color')
+  })
+
+  it('an existing presentation.color WINS; the flat color is still dropped', () => {
+    const v1 = {
+      id: 'regional', type: 'inner-page', schemaVersion: 1,
+      color: '#0080BE',
+      presentation: { color: { op: 'find', by: 'region' }, crumbs: [{ label: 'X' }] },
+      children: [],
+    }
+    const out = migratePageConfig(v1) as { presentation: Record<string, unknown>; color?: unknown }
+    expect(out.color).toBeUndefined()
+    // The authored presentation.color (an expression) is canonical — NOT overwritten.
+    expect(out.presentation.color).toEqual({ op: 'find', by: 'region' })
+    // Sibling presentation keys are preserved.
+    expect(out.presentation.crumbs).toEqual([{ label: 'X' }])
+  })
+
+  it('merges flat color into an existing presentation that has NO color', () => {
+    const v1 = {
+      id: 'p', type: 'inner-page', schemaVersion: 1,
+      color: '#abcdef',
+      presentation: { crumbs: [{ label: 'Home' }] },
+      children: [],
+    }
+    const out = migratePageConfig(v1) as { presentation: Record<string, unknown> }
+    expect(out.presentation).toEqual({ crumbs: [{ label: 'Home' }], color: '#abcdef' })
+  })
+
+  it('is idempotent on a v2 input — re-migration is a no-op', () => {
+    const v2 = {
+      id: 'gdp', type: 'inner-page', schemaVersion: 2,
+      presentation: { color: '#0080BE' }, children: [],
+    }
+    const out = migratePageConfig(v2)
+    expect(out).toEqual(v2)
+    // And migrating the output of a v1 migration again is stable.
+    const fromV1 = migratePageConfig({ id: 'gdp', type: 'inner-page', schemaVersion: 1, color: '#0080BE', children: [] })
+    expect(migratePageConfig(fromV1)).toEqual(fromV1)
+  })
+
+  it('does not mutate the v1 input', () => {
+    const v1 = { id: 'gdp', type: 'inner-page', schemaVersion: 1, color: '#0080BE', children: [] }
+    const snapshot = JSON.parse(JSON.stringify(v1))
+    migratePageConfig(v1)
+    expect(v1).toEqual(snapshot)
+    expect(v1).toHaveProperty('color', '#0080BE')
+  })
+})
+
 // ── Migration chain mechanics — exercises the registry seam ─────────────
 //
 //  These tests register a migration to a HIGHER target than the live
@@ -122,8 +205,11 @@ describe('migration registry — registerMigration / highestMigrationVersion', (
   })
 
   it('records the highest registered target version', () => {
-    registerMigration(2, (c) => ({ ...c, addedInV2: true }))
-    registerMigration(3, (c) => ({ ...c, addedInV3: true }))
-    expect(highestMigrationVersion()).toBeGreaterThanOrEqual(3)
+    // Register to HIGH throwaway targets (well above CURRENT_SCHEMA_VERSION) so we
+    // exercise the registry seam WITHOUT clobbering the real v1/v2 migrators
+    // (registerMigration is last-write-wins on the module-global Map).
+    registerMigration(90, (c) => ({ ...c, addedInV90: true }))
+    registerMigration(91, (c) => ({ ...c, addedInV91: true }))
+    expect(highestMigrationVersion()).toBeGreaterThanOrEqual(91)
   })
 })

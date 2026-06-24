@@ -199,7 +199,6 @@ function buildPageBaseProperties(): Record<string, JsonSchemaProperty> {
     frame:         { type: 'string', description: 'Layout geometry frame' },
     chrome:        { type: 'object', description: 'Per-page chrome slot overrides' },
     path:          { type: 'string', description: 'Page path / permalink segment' },
-    color:         { type: 'string', description: 'Deprecated — use presentation.color' },
     presentation:  { type: 'object', properties: presentationSub.properties, additionalProperties: true },
     filterSchema:  { type: 'object', description: 'Declarative filter schema' },
     vars:          { type: 'object', description: 'Node-scoped derived vars' },
