@@ -14,13 +14,13 @@
   border-radius: var(--radius-sm, 4px);
   cursor: pointer;
   font-size: 0.85rem;
-  color: var(--color-text-secondary, #6b7280);
+  color: var(--color-text-secondary);
   transition: background 120ms, color 120ms;
 }
 
 .mode-tab-btn--active {
-  background: var(--color-surface, white);
-  color: var(--color-primary, #0080be);
+  background: var(--color-surface);
+  color: var(--color-accent);
   font-weight: 600;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }

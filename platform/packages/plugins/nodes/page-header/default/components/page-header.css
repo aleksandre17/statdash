@@ -5,8 +5,8 @@
    ================================================================ */
 
 .page-header {
-  background: #fff;
-  border-bottom: 1px solid #E8EEED;
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
   padding: 0 1.5rem;
   height: var(--inner-ph-h);
   display: flex;
@@ -38,14 +38,14 @@
   text-decoration: none;
   transition: color 0.15s;
 }
-.page-header__breadcrumb a:hover { color: #0080BE; }
+.page-header__breadcrumb a:hover { color: var(--color-accent); }
 .page-header__bc-sep { color: #D8E4E8; font-size: 0.625rem; }
 
 .page-header__title {
   font-family: 'Noto Serif Georgian', 'Noto Sans Georgian', sans-serif;
   font-size: 1.0625rem;
   font-weight: 700;
-  color: #1A2332;
+  color: var(--color-text-primary);
   line-height: 1.2;
   white-space: nowrap;
   overflow: hidden;
@@ -67,15 +67,15 @@
   border-radius: 999px;
   font-size: 0.6875rem;
   font-weight: 500;
-  background: #E6F3FA;
-  color: #0080BE;
+  background: var(--color-accent-muted);
+  color: var(--color-accent);
   white-space: nowrap;
 }
 .freshness-dot {
   width: 5px;
   height: 5px;
   border-radius: 50%;
-  background: #0080BE;
+  background: var(--color-accent);
   animation: blink 2.5s ease-in-out infinite;
 }
 @keyframes blink {
@@ -92,16 +92,16 @@
   font-size: 0.8rem;
   font-weight: 500;
   cursor: pointer;
-  border: 1px solid #E8EEED;
-  background: #fff;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
   color: #5A7A8A;
   transition: all 0.15s;
   font-family: 'Noto Sans Georgian', system-ui, sans-serif;
 }
 .page-header__btn:hover {
-  background: #F5F7F7;
-  border-color: #C8D5D9;
-  color: #1A2332;
+  background: var(--color-surface-sunken);
+  border-color: var(--color-border-strong);
+  color: var(--color-text-primary);
 }
 .page-header__btn svg { flex-shrink: 0; }
 

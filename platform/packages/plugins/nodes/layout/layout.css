@@ -104,16 +104,16 @@
 
 /* ── Card ────────────────────────────────────────────────────── */
 .layout-card {
-  background:    var(--color-surface,  #fff);
-  border:        1px solid var(--color-border, #e5e7eb);
+  background:    var(--color-surface);
+  border:        1px solid var(--color-border);
   border-radius: var(--radius-md, 8px);
   padding:       var(--spacing-md, 1rem);
 }
 
 /* ── Divider ─────────────────────────────────────────────────── */
 .layout-divider            { border: none; margin: 0; display: block; }
-.layout-divider--solid     { border-top: 1px solid var(--color-border, #e5e7eb); }
-.layout-divider--dashed    { border-top: 1px dashed var(--color-border, #e5e7eb); }
+.layout-divider--solid     { border-top: 1px solid var(--color-border); }
+.layout-divider--dashed    { border-top: 1px dashed var(--color-border); }
 .layout-divider--invisible { border: none; }
 
 /* ── Spacer ──────────────────────────────────────────────────── */

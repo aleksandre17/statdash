@@ -5,8 +5,8 @@
    ─────────────────────────────────────────────────────────────────────── */
 
 .app-header {
-  background: #fff;
-  border-bottom: 1px solid #E0EBE8;
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border-frame);
   transition: background 0.25s, border-color 0.25s, backdrop-filter 0.25s;
 }
 
@@ -44,14 +44,14 @@
   padding: 0.375rem 0.75rem;
   font-size: 0.875rem;
   border-radius: 0.5rem;
-  color: #4A5568;
+  color: var(--color-text-secondary);
   text-decoration: none;
   transition: background 0.15s, color 0.15s;
   white-space: nowrap;
 }
 .app-header__nav-link:hover {
   background: #EFF3F3;
-  color: #1A2332;
+  color: var(--color-text-primary);
 }
 
 /* Actions */
@@ -75,13 +75,13 @@
   align-items: center;
   justify-content: center;
   border-radius: 0.5rem;
-  color: #6B7B8D;
+  color: var(--color-text-muted);
   text-decoration: none;
   transition: color 0.15s, background 0.15s;
 }
 .app-header__social-link:hover {
-  color: #0080BE;
-  background: #E6F3FA;
+  color: var(--color-accent);
+  background: var(--color-accent-muted);
 }
 .app-header__social-icon {
   width: 1rem;

@@ -4,8 +4,8 @@
    ─────────────────────────────────────────────────────────────────────── */
 
 .app-footer {
-  background: #fff;
-  border-top: 1px solid #E0EBE8;
+  background: var(--color-surface);
+  border-top: 1px solid var(--color-border-frame);
   margin-top: auto;
   min-height: var(--_ftr-min, auto);
 }
@@ -26,7 +26,7 @@
 
 .app-footer__copyright {
   font-size: 0.875rem;
-  color: #6B7B8D;
+  color: var(--color-text-muted);
   margin: 0;
 }
 
@@ -40,15 +40,15 @@
 }
 
 .app-footer__link {
-  color: #0080BE;
+  color: var(--color-accent);
   text-decoration: none;
   transition: color 0.15s;
 }
-.app-footer__link:hover { color: #006A9E; }
+.app-footer__link:hover { color: var(--color-accent-hover); }
 
 .app-footer__links .app-footer__link + .app-footer__link::before {
   content: '|';
   margin-right: 0.75rem;
-  color: #E0EBE8;
+  color: var(--color-border-frame);
   pointer-events: none;
 }

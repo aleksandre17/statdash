@@ -10,16 +10,16 @@
 }
 
 .skeleton-block {
-  background: #E8EEED;
+  background: var(--color-border);
   border-radius: 6px;
   animation: skeleton-pulse 1.6s ease-in-out infinite;
 }
 
 /* ── Section skeleton — matches .section shape ───────────────────── */
 .section-skeleton {
-  background: #fff;
+  background: var(--color-surface);
   border-radius: 14px;
-  border: 1px solid #E8EEED;
+  border: 1px solid var(--color-border);
   overflow: hidden;
 }
 .section-skeleton__head {
@@ -27,7 +27,7 @@
   align-items: center;
   gap: 0.75rem;
   padding: 0.9375rem 1.25rem;
-  border-bottom: 1px solid #F0F3F3;
+  border-bottom: 1px solid var(--color-border-subtle);
 }
 .section-skeleton__title {
   height: 1rem;
@@ -51,9 +51,9 @@
 }
 .kpi-skeleton__card {
   flex: 1;
-  background: #fff;
+  background: var(--color-surface);
   border-radius: 12px;
-  border: 1px solid #E8EEED;
+  border: 1px solid var(--color-border);
   padding: 1.25rem;
   display: flex;
   flex-direction: column;
@@ -96,7 +96,7 @@
   font-weight: 500;
   border: 1px solid #F5D0C8;
   border-radius: 6px;
-  background: #fff;
+  background: var(--color-surface);
   color: #7A3D30;
   cursor: pointer;
 }
@@ -111,7 +111,7 @@
   gap: 0.625rem;
   padding: 3rem 1.5rem;
   text-align: center;
-  color: #9AABB8;
+  color: var(--color-text-faint);
 }
 .empty-state__icon { font-size: 2rem; line-height: 1; }
 .empty-state__title {
@@ -122,7 +122,7 @@
 }
 .empty-state__desc {
   font-size: 0.8125rem;
-  color: #9AABB8;
+  color: var(--color-text-faint);
   margin: 0;
   max-width: 280px;
 }

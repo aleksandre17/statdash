@@ -22,14 +22,14 @@
   position: absolute;
   inset: 0;
   background-image:
-    linear-gradient(#E8EEED 1px, transparent 1px),
-    linear-gradient(90deg, #E8EEED 1px, transparent 1px);
+    linear-gradient(var(--color-border) 1px, transparent 1px),
+    linear-gradient(90deg, var(--color-border) 1px, transparent 1px);
   background-size: 32px 32px;
   opacity: 0.35;
 }
 .chart-ph-icon {
   position: relative;
-  color: color-mix(in srgb, var(--sc, var(--color-accent)) 35%, #9AABB8);
+  color: color-mix(in srgb, var(--sc, var(--color-accent)) 35%, var(--color-text-faint));
   opacity: 0.7;
 }
 .chart-ph-label {
@@ -41,6 +41,6 @@
 .chart-ph-text {
   position: relative;
   font-size: 0.75rem;
-  color: #B0C4CC;
+  color: var(--color-text-faint);
   font-style: italic;
 }

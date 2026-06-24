@@ -33,14 +33,14 @@
   padding:       0.375rem 0.5rem;
   border:        1px solid var(--psf-border, #cbd5e1);
   border-radius: 6px;
-  background:    var(--psf-field-bg, #fff);
+  background:    var(--psf-field-bg, var(--color-surface));
   color:         inherit;
 }
 
 .psf__input:focus,
 .psf__select:focus,
 .psf__json:focus {
-  outline:      2px solid var(--psf-focus, #0080be);
+  outline:      2px solid var(--psf-focus, var(--color-accent));
   outline-offset: 1px;
   border-color: transparent;
 }
@@ -48,7 +48,7 @@
 .psf__checkbox {
   width:        1rem;
   height:       1rem;
-  accent-color: var(--psf-focus, #0080be);
+  accent-color: var(--psf-focus, var(--color-accent));
 }
 
 .psf__color {

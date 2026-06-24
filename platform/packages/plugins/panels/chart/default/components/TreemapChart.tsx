@@ -43,7 +43,7 @@ function Tooltip({ item, pct, cursor }: { item: Item; pct: string; cursor: Curso
       <div style={{ fontSize: 10, color: '#5A7A8A', lineHeight: 1.45, marginBottom: 5 }}>
         {item.clean}
       </div>
-      <div style={{ fontSize: 12, fontWeight: 700, color: '#1A2332' }}>
+      <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--color-text-primary)' }}>
         {item.formatted}
         {pct && <span style={{ fontWeight: 500, fontSize: 10, color: item.color, marginLeft: 7 }}>· {pct}</span>}
       </div>

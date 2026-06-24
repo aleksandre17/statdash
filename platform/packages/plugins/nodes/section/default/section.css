@@ -6,9 +6,9 @@
 
 .section {
   container-type: inline-size;
-  background:     #fff;
+  background:     var(--color-surface);
   border-radius:  14px;
-  border:         1px solid #E8EEED;
+  border:         1px solid var(--color-border);
   box-shadow:     0 1px 3px rgba(0,0,0,0.04);
   overflow:       hidden;
 }
@@ -19,7 +19,7 @@
 
 /* Hero variant — larger accent, no collapse */
 .section--hero {
-  border: 1.5px solid color-mix(in srgb, var(--sc, var(--color-accent)) 25%, #E8EEED);
+  border: 1.5px solid color-mix(in srgb, var(--sc, var(--color-accent)) 25%, var(--color-border));
   box-shadow: 0 2px 12px rgba(0,0,0,0.06), 0 0 0 1px color-mix(in srgb, var(--sc, var(--color-accent)) 8%, transparent);
 }
 .section--hero .section__accent {
@@ -43,9 +43,9 @@
   user-select: none;
   transition: background 0.15s;
 }
-.section__head:hover { background: #FAFBFB; }
+.section__head:hover { background: var(--color-surface-raised); }
 .section__head.open {
-  border-bottom: 1px solid #F0F3F3;
+  border-bottom: 1px solid var(--color-border-subtle);
 }
 
 .section__accent {
@@ -61,7 +61,7 @@
   font-family: 'Noto Serif Georgian', 'Noto Sans Georgian', sans-serif;
   font-size: 0.9375rem;
   font-weight: 700;
-  color: #1A2332;
+  color: var(--color-text-primary);
 }
 .section__label {
   font-size: 0.8125rem;
@@ -72,7 +72,7 @@
 
 .section__subtitle {
   font-size: 0.75rem;
-  color: #9AABB8;
+  color: var(--color-text-faint);
   margin-top: 0.0625rem;
 }
 
@@ -86,25 +86,25 @@
   width: 1.75rem;
   height: 1.75rem;
   border-radius: 6px;
-  border: 1px solid #E8EEED;
-  background: #fff;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  color: #9AABB8;
+  color: var(--color-text-faint);
   transition: all 0.15s;
 }
 .section__icon-btn:hover {
-  background: #F5F7F7;
+  background: var(--color-surface-sunken);
   color: #5A7A8A;
-  border-color: #C8D5D9;
+  border-color: var(--color-border-strong);
 }
 
 .section__chevron {
   width: 1.125rem;
   height: 1.125rem;
-  color: #C8D5D9;
+  color: var(--color-border-strong);
   transition: transform 0.25s ease;
   flex-shrink: 0;
 }
@@ -135,17 +135,17 @@
   content: '';
   flex: 1;
   height: 1px;
-  background: #E8EEED;
+  background: var(--color-border);
 }
 
 /* ── View toggle (Chart | Table) ──────────────────────────────── */
 
 .section__view-toggle {
   display: flex;
-  border: 1px solid #E8EEED;
+  border: 1px solid var(--color-border);
   border-radius: 8px;
   overflow: hidden;
-  background: #F5F7F7;
+  background: var(--color-surface-sunken);
   margin-right: 0.25rem;
 }
 
@@ -156,7 +156,7 @@
   padding: 0.3rem 0.625rem;
   font-size: 0.72rem;
   font-weight: 500;
-  color: #9AABB8;
+  color: var(--color-text-faint);
   background: transparent;
   border: none;
   cursor: pointer;
@@ -165,7 +165,7 @@
 }
 .section__view-btn:hover { color: #5A7A8A; }
 .section__view-btn.active {
-  background: #fff;
+  background: var(--color-surface);
   color: var(--sc, var(--color-accent));
   box-shadow: 0 1px 3px rgba(0,0,0,0.08);
   font-weight: 600;
@@ -174,7 +174,7 @@
 
 /* ── Methodology disclosure panel ─────────────────────────────── */
 .section__methodology {
-  border-top:   1px solid #F0F3F3;
+  border-top:   1px solid var(--color-surface-frame);
   background:   #F7FAFA;
   padding:      0.875rem 1.25rem;
   display:      flex;
@@ -206,18 +206,18 @@
   padding:      0.25rem 0.75rem;
   font-size:    0.75rem;
   font-weight:  500;
-  border:       1px solid #C8D5D9;
+  border:       1px solid var(--color-border-strong);
   border-radius: 5px;
-  background:   #fff;
+  background:   var(--color-surface);
   color:        #445A66;
   cursor:       pointer;
   transition:   background 0.15s;
 }
-.section__methodology-close:hover { background: #EEF3F4; }
+.section__methodology-close:hover { background: var(--color-accent-bg); }
 
 /* Active state for info icon-btn when methodology panel is open */
 .section__icon-btn.active {
-  background:   #EEF3F4;
+  background:   var(--color-accent-bg);
   color:        var(--sc, var(--color-accent));
-  border-color: #B0C8D4;
+  border-color: var(--color-border-interactive);
 }

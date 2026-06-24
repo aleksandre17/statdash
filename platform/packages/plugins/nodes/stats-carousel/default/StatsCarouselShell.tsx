@@ -109,7 +109,7 @@ function StatsCarouselControl({ def }: { def: StatsCarouselNode }) {
                   >
                     <span aria-hidden="true">{stat.change > 0 ? '↗' : '↘'}</span>
                     <span style={{ fontWeight: 600 }}>{Math.abs(stat.change)}%</span>
-                    <span style={{ color: '#6B7B8D' }}>{resolve(stat.changeText)}</span>
+                    <span style={{ color: 'var(--color-text-muted)' }}>{resolve(stat.changeText)}</span>
                   </div>
                 )}
               </div>

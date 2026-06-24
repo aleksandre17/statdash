@@ -17,7 +17,7 @@
 
 /* Focus-visible: skip mouse clicks, show ring only for keyboard */
 :focus-visible {
-  outline:        2px solid #0080BE;
+  outline:        2px solid var(--color-accent);
   outline-offset: 2px;
   border-radius:  2px;
 }

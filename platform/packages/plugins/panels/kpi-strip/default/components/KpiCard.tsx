@@ -25,7 +25,7 @@ const TREND_FALLBACK = { up: 'Up:', down: 'Down:', flat: 'Flat:' }
 
 export default function KpiCard({
   label, value, unit, trend, trendValue, trendSub,
-  color = '#0080BE', preliminary, note, methodologyUrl,
+  color = 'var(--color-accent)', preliminary, note, methodologyUrl,
   trendLabels = TREND_FALLBACK,
 }: KpiCardProps) {
   const hasMeta = preliminary || methodologyUrl

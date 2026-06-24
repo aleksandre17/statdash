@@ -199,7 +199,7 @@ export default function HBarDivergingChart({ output }: { output: ChartOutput }) 
       {tip && createPortal(
         <div style={{
           position: 'fixed', left: tip.x + 14, top: tip.y - 52,
-          background: '#fff', border: '1px solid #E0EBE8', borderRadius: 5,
+          background: 'var(--color-surface)', border: '1px solid var(--color-border-frame)', borderRadius: 5,
           padding: '6px 10px', boxShadow: '0 4px 16px rgba(0,0,0,.10)',
           zIndex: 99999, pointerEvents: 'none', minWidth: 130,
         }}>
@@ -263,7 +263,7 @@ export default function HBarDivergingChart({ output }: { output: ChartOutput }) 
                   borderRight: '1px solid #E2E8F0',
                 }}>
                   <span style={{
-                    fontSize: lFs, color: '#4A5568', textAlign: 'right',
+                    fontSize: lFs, color: 'var(--color-text-secondary)', textAlign: 'right',
                     lineHeight: 1.4, wordBreak: 'break-word' as const,
                   }}>
                     {item.cat}
@@ -362,7 +362,7 @@ export default function HBarDivergingChart({ output }: { output: ChartOutput }) 
           {series.map(s => (
             <div key={s.name} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
               <div style={{ width: 14, height: 14, background: s.color, borderRadius: 2, flexShrink: 0 }} />
-              <span style={{ fontSize: 12, color: '#4A5568' }}>{s.name}</span>
+              <span style={{ fontSize: 12, color: 'var(--color-text-secondary)' }}>{s.name}</span>
             </div>
           ))}
         </div>

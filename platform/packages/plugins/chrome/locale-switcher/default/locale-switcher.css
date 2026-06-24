@@ -11,19 +11,19 @@
   border-radius: 0.5rem;
   font-size: 0.875rem;
   font-weight: 500;
-  border: 1px solid #E0EBE8;
-  color: #6B7B8D;
+  border: 1px solid var(--color-border-frame);
+  color: var(--color-text-muted);
   background: none;
   cursor: pointer;
   line-height: 1;
   transition: border-color 0.15s, color 0.15s, background 0.15s;
 }
 .locale-switcher__btn:hover {
-  border-color: #0080BE;
-  color: #0080BE;
+  border-color: var(--color-accent);
+  color: var(--color-accent);
 }
 .locale-switcher__btn--active {
-  border-color: #0080BE;
-  color: #0080BE;
-  background: #E6F3FA;
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+  background: var(--color-accent-muted);
 }

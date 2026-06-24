@@ -96,7 +96,7 @@ export function SimpleTable({ rows, colLabel, columns, indent, statusFlags, capt
                   return (
                     <td key={col.key}>
                       {row.isTotal ? (
-                        <span className="bar-pct" style={{ color: '#1A2332' }}>{colFmt(col)(val)}</span>
+                        <span className="bar-pct" style={{ color: 'var(--color-text-primary)' }}>{colFmt(col)(val)}</span>
                       ) : (
                         <div className="bar-cell" style={row.color ? { '--sc': row.color } as React.CSSProperties : undefined}>
                           <div className="bar-track">

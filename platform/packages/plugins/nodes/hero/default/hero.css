@@ -35,6 +35,7 @@
   font-size: clamp(2rem, 4vw, 3.125rem);
   color: #0d3b66;
   line-height: 1.15;
+  /* off-table heading color — left literal pending an ADR role */
   margin-bottom: 12px;
   max-width: 700px;
 }
@@ -55,8 +56,9 @@
 }
 
 .hero-card {
-  --card-accent: #0080BE;
-  background-color: #fff;
+  /* Tier-3 per-card accent projector; defaults to the semantic accent role */
+  --card-accent: var(--color-accent);
+  background-color: var(--color-surface);
   border-radius: 18px;
   overflow: hidden;
   border: 2.5px solid transparent;
@@ -70,13 +72,13 @@
 
 .hero-card:hover {
   transform: translateY(-6px);
-  box-shadow: 0 12px 36px rgba(0,128,190,0.15);
+  box-shadow: 0 12px 36px color-mix(in srgb, var(--color-accent) 15%, transparent);
 }
 
 .hero-card.is-active {
   transform: translateY(-4px);
-  box-shadow: 0 12px 36px rgba(0,128,190,0.18);
-  border-color: var(--card-accent, #0080BE);
+  box-shadow: 0 12px 36px color-mix(in srgb, var(--color-accent) 18%, transparent);
+  border-color: var(--card-accent, var(--color-accent));
 }
 
 .hero-card__media {
@@ -84,7 +86,7 @@
   height: var(--landing-card-height);
   object-fit: cover;
   display: block;
-  background: #fff;
+  background: var(--color-surface);
 }
 
 .hero-card__body {
@@ -95,27 +97,27 @@
   padding: clamp(0.6rem, 1.2vh, 0.9rem) clamp(0.9rem, 1.8vw, 1.75rem)
     clamp(0.65rem, 1.4vh, 1rem);
   text-align: center;
-  background: #fff;
+  background: var(--color-surface);
 }
 
 .hero-card__title {
   font-size: 0.9375rem;
   font-weight: 600;
-  color: #1A2332;
+  color: var(--color-text-primary);
   margin-bottom: 4px;
 }
 
 .hero-card__sub {
   font-size: 0.875rem;
-  color: #6B7B8D;
+  color: var(--color-text-muted);
 }
 
 .hero-card__button {
   margin-top: 0.75rem;
   padding: 7px 32px;
   border-radius: 10px;
-  background: var(--card-accent, #0080BE);
-  color: #fff;
+  background: var(--card-accent, var(--color-accent));
+  color: var(--color-text-inverse);
   border: none;
   font-size: 0.8125rem;
   font-weight: 600;

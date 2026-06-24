@@ -392,7 +392,7 @@ export default function DonutChart({ output }: { output: ChartOutput }) {
         {slices.map((s, i) => (
           <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 5, opacity: hov !== null && hov !== i ? 0.4 : 1, transition: 'opacity .15s' }}>
             <div style={{ width: 8, height: 8, borderRadius: '50%', background: s.color, flexShrink: 0 }} />
-            <span style={{ fontSize: 10, color: '#4A5568', lineHeight: 1.3 }}>
+            <span style={{ fontSize: 10, color: 'var(--color-text-secondary)', lineHeight: 1.3 }}>
               {s.name}
             </span>
           </div>

@@ -51,7 +51,7 @@ function GaugeControl({ def, ctx }: { def: GaugeNode; ctx: RenderContext }) {
         startAngle: -135,
         endAngle:    135,
         hollow:     { size: '65%' },
-        track:      { background: 'var(--color-border, #e2e8f0)' },
+        track:      { background: 'var(--color-border)' },
         dataLabels: {
           name:  { show: false },
           value: {
@@ -63,7 +63,7 @@ function GaugeControl({ def, ctx }: { def: GaugeNode; ctx: RenderContext }) {
         },
       },
     },
-    fill:   { colors: [color ?? 'var(--color-primary, #0080BE)'] },
+    fill:   { colors: [color ?? 'var(--color-accent)'] },
     stroke: { lineCap: 'round' },
   }
 

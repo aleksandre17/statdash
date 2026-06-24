@@ -11,9 +11,9 @@
 }
 
 .kpi-card {
-  background: #fff;
+  background: var(--color-surface);
   border-radius: 14px;
-  border: 1px solid #E8EEED;
+  border: 1px solid var(--color-border);
   padding: 1rem 1.125rem;
   display: flex;
   flex-direction: column;
@@ -28,7 +28,7 @@
   position: absolute;
   top: 0; left: 0; right: 0;
   height: 2.5px;
-  background: var(--kc, #0080BE);
+  background: var(--kc, var(--color-accent));
   opacity: 0.65;
 }
 .kpi-card:hover {
@@ -52,7 +52,7 @@
 
 .kpi-label {
   font-size: 0.6875rem;
-  color: #9AABB8;
+  color: var(--color-text-faint);
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.04em;
@@ -75,12 +75,12 @@
 /* "ℹ" — methodology / metadata link */
 .kpi-info-link {
   font-size: 0.75rem;
-  color: #9AABB8;
+  color: var(--color-text-faint);
   text-decoration: none;
   line-height: 1;
   transition: color 0.15s ease;
 }
-.kpi-info-link:hover { color: #0080BE; }
+.kpi-info-link:hover { color: var(--color-accent); }
 
 /* Explanatory note below trend */
 .kpi-note {
@@ -101,13 +101,13 @@
   font-family: 'Noto Serif Georgian', 'Noto Sans Georgian', sans-serif;
   font-size: 1.625rem;
   font-weight: 700;
-  color: #1A2332;
+  color: var(--color-text-primary);
   line-height: 1;
   letter-spacing: -0.025em;
 }
 .kpi-unit {
   font-size: 0.8125rem;
-  color: #9AABB8;
+  color: var(--color-text-faint);
   font-weight: 500;
 }
 
@@ -120,7 +120,7 @@
 }
 .kpi-trend-up   { color: #2A9D8F; }
 .kpi-trend-down { color: #E76F51; }
-.kpi-trend-flat { color: #9AABB8; }
+.kpi-trend-flat { color: var(--color-text-faint); }
 
 .kpi-trend-sub {
   font-size: 0.6875rem;

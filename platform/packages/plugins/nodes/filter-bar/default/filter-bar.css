@@ -4,8 +4,8 @@
    ================================================================ */
 
 .filter-bar {
-  background: #fff;
-  border-bottom: 1px solid #E8EEED;
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
   padding: 0 1.5rem;
   height: var(--inner-fb-h);
   display: flex;
@@ -49,7 +49,7 @@
 
 .filter-label {
   font-size: 0.75rem;
-  color: #9AABB8;
+  color: var(--color-text-faint);
   font-weight: 500;
   white-space: nowrap;
 }
@@ -58,18 +58,18 @@
   height: 1.875rem;
   padding: 0 0.5rem;
   border-radius: 7px;
-  border: 1px solid #E8EEED;
+  border: 1px solid var(--color-border);
   font-size: 0.8125rem;
   color: #2D3748;
-  background: #fff;
+  background: var(--color-surface);
   cursor: pointer;
   outline: none;
   font-family: 'Noto Sans Georgian', system-ui, sans-serif;
   transition: border-color 0.15s, box-shadow 0.15s;
 }
 .filter-select:focus {
-  border-color: #0080BE;
-  box-shadow: 0 0 0 2px rgba(0,128,190,0.12);
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-accent) 12%, transparent);
 }
 
 .filter-chip {
@@ -81,7 +81,7 @@
   font-size: 0.75rem;
   font-weight: 500;
   background: #EAF4FB;
-  color: #0080BE;
+  color: var(--color-accent);
   border: 1px solid #CCE8F5;
   white-space: nowrap;
 }
@@ -89,7 +89,7 @@
 .filter-divider {
   width: 1px;
   height: 1.125rem;
-  background: #E8EEED;
+  background: var(--color-border);
   flex-shrink: 0;
 }
 
@@ -109,7 +109,7 @@
 /* Range chip (dynamics mode) */
 .filter-chip-range {
   background: color-mix(in srgb, var(--sc, var(--color-accent)) 8%, white);
-  border-color: color-mix(in srgb, var(--sc, var(--color-accent)) 20%, #E8EEED);
+  border-color: color-mix(in srgb, var(--sc, var(--color-accent)) 20%, var(--color-border));
   color: color-mix(in srgb, var(--sc, var(--color-accent)) 80%, #2D3748);
   font-weight: 600;
 }
