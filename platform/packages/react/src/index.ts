@@ -130,6 +130,15 @@ export { PANEL_TITLE_BADGE, SECTION_HEADER_ACTIONS } from './engine/extensions/p
 export type { PanelTitleHost, SectionActionHost }    from './engine/extensions/points'
 // ── Panel title-badge seam — folds the PANEL_TITLE_BADGE ritual (M-5) ──────
 export { usePanelTitleBadge }                        from './engine/usePanelTitleBadge'
+// ── Shell UI hooks — app-agnostic, reusable by ANY shell ──────────────────
+//  Disclosure (useCollapsible), role-tagged view toggle (useViewToggle +
+//  viewStateKey), and the per-node `--sc` accent override (accentStyle).
+export { useCollapsible }                            from './engine/hooks/useCollapsible'
+export type { Collapsible, CollapsibleHeadProps }    from './engine/hooks/useCollapsible'
+export { useViewToggle }                             from './engine/hooks/useViewToggle'
+export type { ViewToggle }                           from './engine/hooks/useViewToggle'
+export { viewStateKey }                              from './engine/hooks/viewStateKey'
+export { accentStyle }                               from './engine/hooks/accentStyle'
 // CommandBus — typed platform command dispatch
 export type { PlatformCommandMap, CommandType, Command } from './engine/commands/commands'
 export type { CommandBus, CommandHandler, CommandMiddleware } from './engine/commands/CommandBus'

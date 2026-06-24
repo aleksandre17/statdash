@@ -5,14 +5,11 @@ import type { CSSProperties }                                from 'react'
 import { resolveTemplate }                                   from '@statdash/engine'
 import { resolveViewState }                                  from '@statdash/styles'
 import { useT, useExtensions, SECTION_HEADER_ACTIONS }       from '@statdash/react'
-import { defineShell }                                       from '@statdash/react/engine'
+import { defineShell, useViewToggle, useCollapsible, accentStyle } from '@statdash/react/engine'
 import type { ShellProps, NodeDef }                          from '@statdash/react/engine'
 import type { SectionNode }                                  from './SectionNode'
 import { META }                                              from './meta'
 import { SECTION }                                           from './styleKeys'
-import { sectionAccentStyle }                                from './sectionKeys'
-import { useViewToggle }                                     from './useViewToggle'
-import { useCollapsible }                                    from './useCollapsible'
 import { SectionHeader }                                     from './SectionHeader'
 import { SectionMethodology }                                from './SectionMethodology'
 
@@ -85,7 +82,7 @@ function SectionControl({
   const label      = resolve(def.label)
   const subtitle   = merged.subtitle ? resolveTemplate(merged.subtitle, ctx.sectionCtx, templateParams) : undefined
 
-  const viewToggle  = useViewToggle(children.defs, resolvedId, merged.toggle)
+  const viewToggle  = useViewToggle(children.defs, 'section', resolvedId, merged.toggle)
   const collapsible = useCollapsible(view.defaultOpen, view.noCollapse)
 
   const [infoOpen, setInfoOpen] = useState(false)
@@ -110,7 +107,7 @@ function SectionControl({
         className={SECTION.block}
         {...variantAttrs}
         id={def.anchor ?? resolvedId}
-        style={sectionAccentStyle(def.color)}
+        style={accentStyle(def.color)}
       >
         <SectionHeader
           headProps={collapsible.headProps}

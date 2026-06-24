@@ -10,8 +10,7 @@
 import { Fragment }       from 'react'
 import type { ReactNode } from 'react'
 import { InfoIcon, ChevronIcon } from '@statdash/react'
-import type { CollapsibleHeadProps } from './useCollapsible'
-import type { ViewToggle }           from './useViewToggle'
+import type { CollapsibleHeadProps, ViewToggle } from '@statdash/react/engine'
 
 type T = (key: string) => string
 

@@ -1,11 +1,12 @@
 // @vitest-environment jsdom
 //
-// ── SectionShell + extracted units — readability-refactor guard ───────────────
+// ── SectionShell — composed DOM + ARIA guard ──────────────────────────────────
 //
-//  This suite pins the behavior the SectionShell readability refactor must keep
-//  byte-identical: the role-based view toggle (useViewToggle), the collapse
-//  a11y/keyboard contract (useCollapsible), the key/style helpers (sectionKeys),
-//  and the composed header/methodology/body DOM + ARIA of the shell itself.
+//  This suite pins the section shell's own composed header/methodology/body DOM
+//  + ARIA. The generic units it consumes (useViewToggle, useCollapsible, the
+//  key/accent helpers) are now shared @statdash/react hooks and are unit-tested
+//  there (engine/hooks/shellHooks.test.tsx); this suite asserts the section's
+//  composition of them.
 //
 //  @statdash/react (useT/useExtensions/icons) is mocked — those are the SUT's
 //  collaborators, not the unit under test; mocking them lets us assert the
@@ -24,23 +25,15 @@ vi.mock('@statdash/react', () => ({
   ChevronIcon: ({ className }: { className?: string }) => <svg data-icon="chevron" className={className} />,
 }))
 
-import { render, fireEvent, renderHook, act, cleanup } from '@testing-library/react'
-import type { ReactNode }                          from 'react'
+import { render, fireEvent, cleanup }             from '@testing-library/react'
 import { GlobalStateProvider }                     from '@statdash/react/engine'
 import type { ShellProps, NodeDef }                from '@statdash/react/engine'
 import { SectionShell }                            from './SectionShell'
 import type { SectionNode }                        from './SectionNode'
-import { useViewToggle }                           from './useViewToggle'
-import { useCollapsible }                          from './useCollapsible'
-import { sectionViewStateKey, sectionAccentStyle } from './sectionKeys'
 
 afterEach(cleanup)
 
 // ── Fixtures ─────────────────────────────────────────────────────────────────
-
-const wrapper = ({ children }: { children: ReactNode }) => (
-  <GlobalStateProvider>{children}</GlobalStateProvider>
-)
 
 /** Minimal RenderContext touching only what SectionControl reads. */
 function makeCtx(): ShellProps<SectionNode>['ctx'] {
@@ -69,121 +62,6 @@ function renderShell(def: Partial<SectionNode>, children = chartTableChildren())
   const node = SectionShell(fullDef, makeCtx() as never, children as never)
   return render(<GlobalStateProvider>{node}</GlobalStateProvider>)
 }
-
-// ── sectionKeys helpers ──────────────────────────────────────────────────────
-
-describe('sectionKeys', () => {
-  it('sectionViewStateKey namespaces by resolved id', () => {
-    expect(sectionViewStateKey('account-A')).toBe('section:view:account-A')
-  })
-
-  it('sectionViewStateKey falls back to anon when id is undefined', () => {
-    expect(sectionViewStateKey(undefined)).toBe('section:view:anon')
-  })
-
-  it('sectionAccentStyle sets --sc only when a color is authored', () => {
-    expect(sectionAccentStyle('#0080BE')).toEqual({ '--sc': '#0080BE' })
-    expect(sectionAccentStyle(undefined)).toBeUndefined()
-  })
-})
-
-// ── useViewToggle — role derivation + hidden predicate ───────────────────────
-
-describe('useViewToggle', () => {
-  it('derives distinct, declaration-ordered roles and labels', () => {
-    const { result } = renderHook(
-      () => useViewToggle(chartTableChildren().defs, 's1', true),
-      { wrapper },
-    )
-    expect(result.current.roles).toEqual(['chart', 'table'])
-    expect(result.current.roleLabels).toEqual({ chart: 'Chart', table: 'Table' })
-    expect(result.current.showToggle).toBe(true)
-    expect(result.current.activeRole).toBe('chart')
-  })
-
-  it('hides children whose role is not the active role', () => {
-    const children = chartTableChildren()
-    const { result } = renderHook(
-      () => useViewToggle(children.defs, 's1', true),
-      { wrapper },
-    )
-    // active = chart → chart visible, table hidden
-    expect(result.current.isHidden(children.defs[0])).toBe(false)
-    expect(result.current.isHidden(children.defs[1])).toBe(true)
-
-    act(() => result.current.setActiveRole('table'))
-    expect(result.current.isHidden(children.defs[0])).toBe(true)
-    expect(result.current.isHidden(children.defs[1])).toBe(false)
-  })
-
-  it('does not show the toggle for a single role (nothing hidden)', () => {
-    const single = {
-      defs: [{ type: 'chart', view: { role: 'chart' } } as unknown as NodeDef],
-      rendered: [<div key="0" />],
-    } as unknown as ShellProps<SectionNode>['children']
-    const { result } = renderHook(
-      () => useViewToggle(single.defs, 's1', true),
-      { wrapper },
-    )
-    expect(result.current.showToggle).toBe(false)
-    expect(result.current.isHidden(single.defs[0])).toBe(false)
-  })
-
-  it('does not show the toggle when the section opts out (toggle=false)', () => {
-    const { result } = renderHook(
-      () => useViewToggle(chartTableChildren().defs, 's1', false),
-      { wrapper },
-    )
-    expect(result.current.showToggle).toBe(false)
-  })
-})
-
-// ── useCollapsible — open state + keyboard/ARIA contract ─────────────────────
-
-describe('useCollapsible', () => {
-  it('defaults open and exposes a button-role head with aria-expanded', () => {
-    const { result } = renderHook(() => useCollapsible(undefined, undefined))
-    expect(result.current.open).toBe(true)
-    expect(result.current.canCollapse).toBe(true)
-    expect(result.current.headProps.role).toBe('button')
-    expect(result.current.headProps.tabIndex).toBe(0)
-    expect(result.current.headProps['aria-expanded']).toBe(true)
-    expect(result.current.headProps.style).toEqual({ cursor: 'pointer' })
-  })
-
-  it('respects defaultOpen=false', () => {
-    const { result } = renderHook(() => useCollapsible(false, undefined))
-    expect(result.current.open).toBe(false)
-    expect(result.current.headProps['aria-expanded']).toBe(false)
-  })
-
-  it('toggles on click', () => {
-    const { result } = renderHook(() => useCollapsible(true, undefined))
-    act(() => result.current.headProps.onClick())
-    expect(result.current.open).toBe(false)
-  })
-
-  it('toggles on Enter and Space, ignores other keys', () => {
-    const { result } = renderHook(() => useCollapsible(true, undefined))
-    const press = (key: string) =>
-      act(() => result.current.headProps.onKeyDown({ key, preventDefault: () => {} }))
-
-    press('Enter'); expect(result.current.open).toBe(false)
-    press(' ');     expect(result.current.open).toBe(true)
-    press('a');     expect(result.current.open).toBe(true)
-  })
-
-  it('is inert when collapse is disabled (noCollapse)', () => {
-    const { result } = renderHook(() => useCollapsible(true, true))
-    expect(result.current.canCollapse).toBe(false)
-    expect(result.current.headProps.role).toBeUndefined()
-    expect(result.current.headProps.tabIndex).toBeUndefined()
-    expect(result.current.headProps['aria-expanded']).toBeUndefined()
-    expect(result.current.headProps.style).toEqual({ cursor: 'default' })
-    act(() => result.current.headProps.onClick())
-    expect(result.current.open).toBe(true) // unchanged
-  })
-})
 
 // ── SectionShell — composed DOM + ARIA ───────────────────────────────────────
 

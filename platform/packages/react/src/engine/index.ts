@@ -107,6 +107,18 @@ export { resolvePreliminary }      from './resolvePreliminary'
 export { usePanelTitleBadge }      from './usePanelTitleBadge'
 export { useNodeStream }           from './useNodeStream'
 
+// ── Shell UI hooks — app-agnostic, reusable by ANY shell ──────────────────
+//  useCollapsible — disclosure state + header a11y/keyboard contract (accordion,
+//    panel, drawer, section). useViewToggle — role-tagged sibling-children view
+//    switch (chart/table), persisted in GlobalState under viewStateKey(ns, id).
+//    accentStyle — per-node `color → { '--sc' }` override of the page cascade.
+export { useCollapsible }          from './hooks/useCollapsible'
+export type { Collapsible, CollapsibleHeadProps } from './hooks/useCollapsible'
+export { useViewToggle }           from './hooks/useViewToggle'
+export type { ViewToggle }         from './hooks/useViewToggle'
+export { viewStateKey }            from './hooks/viewStateKey'
+export { accentStyle }             from './hooks/accentStyle'
+
 // ── Registries ────────────────────────────────────────────────────────
 export { ChromeRegistry, chromeRegistry, NullChromeSlot } from './chromeRegistry'
 export { ChromeSlot }                                      from './ChromeSlot'
