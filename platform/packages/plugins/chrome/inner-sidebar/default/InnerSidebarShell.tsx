@@ -3,7 +3,7 @@ import { useRef, useEffect, useState } from 'react'
 import { Link, useLocation }           from 'react-router-dom'
 import { useSearchParams }             from 'react-router-dom'
 import { useSiteNav, useLocale, useChromeConfig, useResolveLocale, useSlotConfig } from '@statdash/react'
-import { useSectionNav }               from '@statdash/react/context/SectionNavContext'
+import { useAnchorNav }                from '@statdash/react/context/AnchorNavContext'
 import { stickyOffset }                from '@statdash/react/engine'
 import type { NavIconKey }             from '@statdash/react'
 import type { ReactNode }              from 'react'
@@ -54,8 +54,8 @@ function scrollTo(anchor: string) {
 
 // ── InnerSidebarShell — zero-prop chrome shell ────────────────────────
 //
-//  Reads nav data from context (useSiteNav, useSectionNav) — no props needed.
-//  SectionNavProvider is mounted by InnerPageShell before rendering this slot.
+//  Reads nav data from context (useSiteNav, useAnchorNav) — no props needed.
+//  AnchorNavProvider is mounted by InnerPageShell before rendering this slot.
 
 export function InnerSidebarShell(): ReactNode {
   const location                            = useLocation()
@@ -64,7 +64,7 @@ export function InnerSidebarShell(): ReactNode {
   const config                              = useChromeConfig()
   const slot                                = useSlotConfig<InnerSidebarConfig>()
   const t                                   = useResolveLocale()
-  const { sections, activeId, timeModeKey } = useSectionNav()
+  const { sections, activeId, timeModeKey } = useAnchorNav()
   const [searchParams, setSearchParams]     = useSearchParams()
 
   const pathParts     = location.pathname.split('/').filter(Boolean)

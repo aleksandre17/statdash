@@ -3,19 +3,27 @@ import { createContext, useContext, useEffect, useRef, useState } from 'react'
 import { stickyOffset }                                            from '../engine/navUtils'
 import type { NavSection }                                         from '../engine/navUtils'
 
-interface SectionNavCtxValue {
+// ── AnchorNavContext — generic active-anchor scroll-spy ───────────────
+//
+//  Tracks which of a list of anchor targets (NavSection[]) is currently active
+//  via IntersectionObserver. App-agnostic: it knows nothing about sections —
+//  any node that contributes a NavSection (id/title/navMode) participates.
+//  (No-Privileged-Node ADR: de-privileged from the section-named original.)
+//
+
+interface AnchorNavCtxValue {
   sections:    NavSection[]
   activeId:    string | null
   timeModeKey: string
 }
 
-const SectionNavCtx = createContext<SectionNavCtxValue>({
+const AnchorNavCtx = createContext<AnchorNavCtxValue>({
   sections:    [],
   activeId:    null,
   timeModeKey: 'mode',
 })
 
-export function SectionNavProvider({
+export function AnchorNavProvider({
   sections,
   timeModeKey,
   children,
@@ -35,7 +43,7 @@ export function SectionNavProvider({
     sectionsRef.current = sections
   })
 
-  // Re-run the observer only when section IDs actually change.
+  // Re-run the observer only when anchor IDs actually change.
   // Because navSections is pre-filtered by currentMode upstream (SiteRenderer),
   // a mode switch produces a different ID set → sectionKey changes → IO rebuilds.
   const sectionKey = sections.map(s => s.id).join('|')
@@ -51,7 +59,7 @@ export function SectionNavProvider({
       for (const { id } of sects) {
         if (state.get(id)) { setActiveId(id); return }
       }
-      // Scrolled past all sections — keep the last one above the offset line active.
+      // Scrolled past all anchors — keep the last one above the offset line active.
       let last: string | null = null
       for (const { id } of sects) {
         const el = document.getElementById(id)
@@ -79,14 +87,14 @@ export function SectionNavProvider({
     })
 
     return () => observer.disconnect()
-    // sectionKey encodes section IDs; sectionsRef.current is always up-to-date.
+    // sectionKey encodes anchor IDs; sectionsRef.current is always up-to-date.
   }, [sectionKey])
 
   return (
-    <SectionNavCtx.Provider value={{ sections, activeId, timeModeKey }}>
+    <AnchorNavCtx.Provider value={{ sections, activeId, timeModeKey }}>
       {children}
-    </SectionNavCtx.Provider>
+    </AnchorNavCtx.Provider>
   )
 }
 
-export const useSectionNav = () => useContext(SectionNavCtx)
+export const useAnchorNav = () => useContext(AnchorNavCtx)

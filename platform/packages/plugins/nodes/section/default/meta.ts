@@ -13,7 +13,7 @@ export const META: NodeSliceMeta = {
   slots:           SectionSlots,
   groups:          SectionGroups,
   canHaveChildren: true,
-  caps:            ['collapsible', 'methodology'],
+  caps:            ['collapsible', 'methodology', 'nav-contributor'],
   version:         1,
   i18n: {
     ka: {

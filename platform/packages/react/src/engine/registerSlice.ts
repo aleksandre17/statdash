@@ -72,6 +72,7 @@ export function registerSlice(mod: RegistrableSlice): void {
       defaults:        m.defaults,
       slots:           'slots' in m ? m.slots : undefined,
       caps:            'caps'  in m ? m.caps  : undefined,
+      navContribution: 'navContribution' in m ? m.navContribution : undefined,
       groups:          m.groups,
       validate:        s.validate,
       migrate:         s.migrate,

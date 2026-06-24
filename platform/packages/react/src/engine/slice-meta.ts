@@ -44,6 +44,8 @@ export type SliceCategory = 'page' | 'data' | 'layout' | 'content' | 'filter'
 //    'children'    — node holds child nodes (structural container)
 //    'chart'       — node renders a chart visualisation
 //    'kpi'         — node renders KPI metrics
+//    'nav-contributor'  — node contributes a section to the page nav (id/title/navMode)
+//    'nav-transparent'  — real-DOM container the nav extractor descends through
 //
 export type NodeCap =
   | 'export'
@@ -57,6 +59,8 @@ export type NodeCap =
   | 'children'
   | 'chart'
   | 'kpi'
+  | 'nav-contributor'
+  | 'nav-transparent'
   | (string & {})
 
 /**
@@ -89,10 +93,21 @@ export const CAPS = {
   CHART:       'chart',
   /** Node renders KPI metrics. */
   KPI:         'kpi',
+  /** Node contributes a section to the page nav (read via its NavContribution descriptor). */
+  NAV_CONTRIBUTOR: 'nav-contributor',
+  /** Real-DOM container the nav extractor descends through (distinct from render `transparent`). */
+  NAV_TRANSPARENT: 'nav-transparent',
 } as const satisfies Record<string, NodeCap>
 
 /** Narrow type: one of the standard capability token strings. */
 export type Cap = typeof CAPS[keyof typeof CAPS]
+
+// NavContribution descriptor (how a `nav-contributor` node is read) is its own
+// concern — see ./nav-contribution.ts. Re-exported here so it travels with the
+// slice-taxonomy public surface (NodeSliceMeta carries a `navContribution`).
+export type { NavContribution } from './nav-contribution'
+export { DEFAULT_NAV_CONTRIBUTION } from './nav-contribution'
+import type { NavContribution } from './nav-contribution'
 
 // ── SlotDef — typed children contract (Builder.io slots pattern) ──────
 //
@@ -310,6 +325,12 @@ export interface NodeSliceMeta {
   singleton?:       boolean
   /** Declared capability tokens [N29] — Constructor palette filtering. */
   caps?:            NodeCap[]
+  /**
+   * How this node's nav section is read when it declares the `nav-contributor`
+   * cap. Optional — absent ⇒ DEFAULT_NAV_CONTRIBUTION (anchor??id, title,
+   * view.visibleWhen). Ignored when `nav-contributor` is not in `caps`.
+   */
+  navContribution?: NavContribution
   version?:         number
   i18n?:            Record<string, Record<string, string>>
 }

@@ -39,7 +39,8 @@ type ErrorFallbackFn  = (props: { node: NodeBase; error: Error }) => ReactNode
 // Re-exported here so existing `import { NodeCap } from './NodeRegistry'` keeps working.
 export type { NodeCap, Cap } from './slice-meta'
 export { CAPS }              from './slice-meta'
-import type { NodeCap }      from './slice-meta'
+import type { NodeCap, NavContribution } from './slice-meta'
+import { DEFAULT_NAV_CONTRIBUTION }      from './slice-meta'
 
 interface StoredMeta extends Record<string, unknown> {
   label?:           unknown
@@ -57,6 +58,8 @@ interface StoredMeta extends Record<string, unknown> {
   groups?:          unknown[]
   /** Declared capability tokens for Constructor discovery and cross-node querying [N29]. */
   caps?:            NodeCap[]
+  /** Descriptor for reading this node's nav section (when caps includes 'nav-contributor'). */
+  navContribution?: NavContribution
 }
 
 export class NodeRegistry {
@@ -86,6 +89,8 @@ export class NodeRegistry {
       groups?:          unknown[]
       /** Declared capability tokens — used by Constructor palette and getByCapability [N29]. */
       caps?:            NodeCap[]
+      /** Descriptor for reading this node's nav section (when caps includes 'nav-contributor'). */
+      navContribution?: NavContribution
       validate?:        ValidateFn
       migrate?:         MigrateFn
       errorFallback?:   ErrorFallbackFn
@@ -209,6 +214,22 @@ export class NodeRegistry {
       this.metas.get(`${type}::${variant}`) ??
       this.metas.get(`${type}::default`)
     return meta?.caps ? [...meta.caps] : []
+  }
+
+  /**
+   * Resolved NavContribution reader for a `nav-contributor` node [No-Privileged-Node ADR].
+   * Returns the node's declared `navContribution` descriptor merged over
+   * DEFAULT_NAV_CONTRIBUTION when the type declares the `nav-contributor` cap;
+   * returns `undefined` when the type is not a nav contributor (so the nav
+   * extractor skips it). The merge means a node can override one field (e.g.
+   * `titleField`) and inherit the rest — the engine never special-cases a type.
+   */
+  getNavContribution(type: string, variant = 'default'): Required<NavContribution> | undefined {
+    if (!this.getCaps(type, variant).includes('nav-contributor')) return undefined
+    const meta =
+      this.metas.get(`${type}::${variant}`) ??
+      this.metas.get(`${type}::default`)
+    return { ...DEFAULT_NAV_CONTRIBUTION, ...(meta?.navContribution ?? {}) }
   }
 
   /**

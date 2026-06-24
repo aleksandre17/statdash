@@ -12,7 +12,7 @@ if (!('ResizeObserver' in globalThis)) {
   } as unknown as typeof ResizeObserver
 }
 
-// jsdom lacks IntersectionObserver — SectionNavContext observes section anchors
+// jsdom lacks IntersectionObserver — AnchorNavContext observes section anchors
 // to drive scroll-spy. The Constructor canvas (and the author→render e2e proof)
 // mount the REAL engine renderer, which mounts sections, so a no-op stub is
 // needed for any test that renders a full page through NodePageRenderer.

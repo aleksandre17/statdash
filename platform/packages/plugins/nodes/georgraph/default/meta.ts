@@ -11,7 +11,7 @@ export const META: NodeSliceMeta = {
   slots:           GeorgraphSlots,
   groups:          GeorgraphGroups,
   canHaveChildren: true,
-  caps:            ['collapsible', 'filterable', 'view-toggle'],
+  caps:            ['collapsible', 'filterable', 'view-toggle', 'nav-contributor'],
   version:         1,
   i18n: {
     ka: {

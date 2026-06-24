@@ -1,12 +1,24 @@
 // ── navUtils — extract nav section list from page config ──────────────
 //
-//  Agnostic: reads id/title/visibleWhen from NodeDef tree.
-//  Handles RowNode by inheriting the row's visibleWhen as navMode for its children.
-//  Uses structural types — engine must not import from plugins/.
+//  GENERIC registry-driven visitor (No-Privileged-Node ADR). Reads nothing by
+//  hardcoded node type: it consults the nodeRegistry capabilities for each child.
+//    - `nav-contributor` → emit a NavSection via the node's NavContribution
+//      reader (default: id `anchor ?? id`, title `title`, navMode from
+//      `view.visibleWhen`). section + georgraph declare this in their META.
+//    - `nav-transparent`  → a REAL-DOM container (row) the extractor descends
+//      through: its `view.visibleWhen` nav-mode is inherited by the contributor
+//      children it wraps (reuses the generic `collectChildNodes` walker).
+//
+//  ZERO plugin node-type literals. New nav node = declare a cap in its META;
+//  this file is never edited (OCP / Law 1 / Law 8). The engine reads the
+//  registry, never imports plugins — the arrow is respected.
 //
 
-import type { VisibilityExpr } from '@statdash/engine'
-import type { NodeBase, NodeDef } from './types'
+import type { VisibilityExpr }      from '@statdash/engine'
+import type { NodeBase, NodeDef }   from './types'
+import type { NavContribution }     from './nav-contribution'
+import { nodeRegistry }             from './register-all'
+import { collectChildNodes }        from './targets/nodeWalk'
 
 export interface NavSection {
   id:       string
@@ -23,28 +35,47 @@ export function stickyOffset(): number {
   return offset
 }
 
+type Raw = Record<string, unknown>
+
+function asRaw(node: NodeBase): Raw { return node as unknown as Raw }
+
+/** Read a dot-path value off a raw node (e.g. 'view.visibleWhen'). */
+function readPath(raw: Raw, path: string): unknown {
+  return path.split('.').reduce<unknown>(
+    (acc, key) => (acc != null && typeof acc === 'object'
+      ? (acc as Record<string, unknown>)[key]
+      : undefined),
+    raw,
+  )
+}
+
 function getNavMode(vw: VisibilityExpr | undefined, timeModeKey: string): string | undefined {
   if (!vw) return undefined
   if (vw.op === 'eq' && vw.param === timeModeKey) return String(vw.is)
   return undefined
 }
 
-type Raw = Record<string, unknown>
-
-function asRaw(node: NodeBase): Raw { return node as unknown as Raw }
-
-function fromSectionLike(raw: Raw, timeModeKey: string, inherited?: string): NavSection {
-  const view = raw['view'] as { visibleWhen?: VisibilityExpr } | undefined
-  return {
-    id:      (raw['anchor'] as string | undefined) ?? (raw['id'] as string),
-    title:   raw['title'] as string,
-    navMode: getNavMode(view?.visibleWhen, timeModeKey) ?? inherited,
+/**
+ * Apply a NavContribution reader to a raw contributor node. Returns a NavSection
+ * only when both id and title resolve to strings (preserves the legacy
+ * isSectionLike guard); otherwise undefined so the node is skipped.
+ */
+function readContribution(
+  raw:         Raw,
+  reader:      Required<NavContribution>,
+  timeModeKey: string,
+  inherited?:  string,
+): NavSection | undefined {
+  let id: string | undefined
+  for (const field of reader.idFields) {
+    const v = readPath(raw, field)
+    if (typeof v === 'string') { id = v; break }
   }
-}
+  const title = readPath(raw, reader.titleField)
+  if (id === undefined || typeof title !== 'string') return undefined
 
-function isSectionLike(raw: Raw): boolean {
-  return (raw['type'] === 'section' || raw['type'] === 'georgraph') &&
-    typeof raw['id'] === 'string' && typeof raw['title'] === 'string'
+  const vw = readPath(raw, reader.modeField) as VisibilityExpr | undefined
+  return { id, title, navMode: getNavMode(vw, timeModeKey) ?? inherited }
 }
 
 export function extractNavSectionsFromChildren(
@@ -52,10 +83,7 @@ export function extractNavSectionsFromChildren(
   timeModeKey: string,
   modeOrder?:  string[],
 ): NavSection[] {
-  const sections = children
-    .map(asRaw)
-    .filter(r => r['type'] === 'section' || r['type'] === 'georgraph' || r['type'] === 'row')
-  return _extract(sections, timeModeKey, modeOrder)
+  return _extract(children.map(asRaw), timeModeKey, modeOrder)
 }
 
 export function extractNavSections(
@@ -70,15 +98,26 @@ function _extract(nodes: Raw[], timeModeKey: string, modeOrder?: string[]): NavS
   const out: NavSection[] = []
 
   for (const node of nodes) {
-    if (node['type'] === 'row') {
-      const rowView = node['view'] as { visibleWhen?: VisibilityExpr } | undefined
-      const rowMode = getNavMode(rowView?.visibleWhen, timeModeKey)
-      const items   = (node['items'] as Raw[] | undefined) ?? []
-      for (const item of items) {
-        if (isSectionLike(item)) out.push(fromSectionLike(item, timeModeKey, rowMode))
+    const type = node['type']
+    if (typeof type !== 'string') continue
+    const caps = nodeRegistry.getCaps(type)
+
+    if (caps.includes('nav-transparent')) {
+      // Real-DOM container: inherit its own nav-mode, descend into its child
+      // nodes generically, and emit the contributor children it wraps.
+      const containerVw = readPath(node, 'view.visibleWhen') as VisibilityExpr | undefined
+      const inherited   = getNavMode(containerVw, timeModeKey)
+      for (const child of collectChildNodes(node)) {
+        const reader = nodeRegistry.getNavContribution(child.type)
+        if (!reader) continue
+        const sec = readContribution(child, reader, timeModeKey, inherited)
+        if (sec) out.push(sec)
       }
-    } else if (isSectionLike(node)) {
-      out.push(fromSectionLike(node, timeModeKey))
+    } else {
+      const reader = nodeRegistry.getNavContribution(type)
+      if (!reader) continue
+      const sec = readContribution(node, reader, timeModeKey)
+      if (sec) out.push(sec)
     }
   }
 

@@ -11,6 +11,9 @@ export const META: NodeSliceMeta = {
   defaults:        RowDefaults,
   slots:           RowSlots,
   canHaveChildren: true,
-  caps:            [],
+  // `nav-transparent` (descend-for-nav) is DISTINCT from render `transparent`:
+  // a row is a REAL DOM container, but the nav extractor traverses its children
+  // so sections nested in a row still appear in the page nav.
+  caps:            ['nav-transparent'],
   version:         1,
 }

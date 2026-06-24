@@ -1,8 +1,13 @@
 /* ================================================================
-   SECTION CARD  (.sc)  +  PANEL LAYOUT  (.panel)
+   CARD  (.sc)  +  PANEL LAYOUT  (.panel)
    Collapsible card with header, body, and index-based view toggle.
    Framework primitive — no app-specific colours or strings.
    Grafana PanelChrome equivalent.
+
+   Relocated from packages/react/src/styles/section-card.css
+   (No-Privileged-Node ADR P4): this is a GENERIC card primitive consumed
+   by react's own PanelLayout component, not section-node visuals. Its home
+   is the token layer it depends on (--color-surface / --color-accent / …).
 
    .sc    — legacy prefix (SectionCard, kept for SectionShell compat)
    .panel — canonical prefix used by PanelLayout component

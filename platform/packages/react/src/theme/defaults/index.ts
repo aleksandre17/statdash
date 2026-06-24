@@ -8,7 +8,7 @@
 //  after renderNode() fully replaces the old RenderEngine.renderSlots() pipeline.
 //
 
-export { DefaultSectionShell    } from './DefaultSectionShell'
+export { DefaultPassthroughShell } from './DefaultPassthroughShell'
 export { DefaultChartShell      } from './DefaultChartShell'
 export { DefaultTableShell      } from './DefaultTableShell'
 export { DefaultFilterBarShell  } from './DefaultFilterBarShell'

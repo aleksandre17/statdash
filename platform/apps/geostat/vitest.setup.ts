@@ -3,7 +3,7 @@
 //  1. @testing-library/jest-dom matchers (toBeInTheDocument, toHaveAttribute …)
 //     for the component render-path tests (second-tenant fitness function).
 //  2. jsdom shims for browser observers the renderer's layout shells use
-//     (IntersectionObserver via SectionNavContext, ResizeObserver via charts).
+//     (IntersectionObserver via AnchorNavContext, ResizeObserver via charts).
 //     jsdom ships neither; these no-op stubs let full pages mount in tests.
 //     This is a standard test-environment shim, NOT product code.
 //

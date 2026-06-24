@@ -210,11 +210,20 @@ describe('Structural nodes declare empty caps', () => {
     expect(reg.getCaps('filter-bar')).toEqual([])
   })
 
-  it('row has no caps', () => {
-    expect(reg.getCaps('row')).toEqual([])
-  })
-
   it('wrap has no caps', () => {
     expect(reg.getCaps('wrap')).toEqual([])
+  })
+})
+
+// ── nav capabilities — No-Privileged-Node ADR ─────────────────────────────────
+
+describe('nav capabilities are declared in META, not hardcoded in navUtils', () => {
+  it('row is a nav-transparent container (descend-for-nav, distinct from render transparent)', () => {
+    expect(reg.getCaps('row')).toEqual(['nav-transparent'])
+  })
+
+  it('section + georgraph are nav contributors', () => {
+    expect(reg.getCaps('section')).toContain('nav-contributor')
+    expect(reg.getCaps('georgraph')).toContain('nav-contributor')
   })
 })

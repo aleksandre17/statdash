@@ -5,7 +5,7 @@ import { defineConfig } from 'tsup'
 // Why a dedicated config (the inner packages build via the inline CLI):
 // plugins' source imports several DEEP subpaths of its workspace deps that
 // are not enumerated in those deps' `exports` maps, e.g.
-//   @statdash/react/context/SectionNavContext
+//   @statdash/react/context/AnchorNavContext
 //   @statdash/react/engine/{NodeRegistry,registerSlice,slice-meta,types}
 //   @statdash/plugins/panels/map/default            (self deep-import)
 // rollup-plugin-dts (tsup's dts pass) resolves an externalized workspace
