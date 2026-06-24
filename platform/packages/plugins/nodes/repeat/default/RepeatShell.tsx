@@ -1,5 +1,5 @@
-import React, { Fragment, createElement } from 'react'
-import { NodeView }                       from '@statdash/react/engine'
+import { Fragment, createElement } from 'react'
+import { NodeView, accentStyle }   from '@statdash/react/engine'
 import type { NodeRenderer, RenderContext } from '@statdash/react/engine'
 import type { RepeatNode }               from './RepeatNode'
 
@@ -74,10 +74,13 @@ export const RepeatShell: NodeRenderer<RepeatNode> = (def, ctx, children) => {
         ),
       )
 
-      return typeof item['color'] === 'string'
+      // Emit the --sc wrapper (via accentStyle, the canonical color→--sc
+      // projection) only when the item carries a color; otherwise a bare Fragment.
+      const color = item['color']
+      return typeof color === 'string'
         ? createElement(
             'div',
-            { key: itemKey, style: { '--sc': item['color'] as string } as React.CSSProperties },
+            { key: itemKey, style: accentStyle(color) },
             iterContent,
           )
         : createElement(Fragment, { key: itemKey }, iterContent)

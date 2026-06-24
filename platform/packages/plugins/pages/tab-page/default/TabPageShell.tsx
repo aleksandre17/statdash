@@ -3,7 +3,6 @@ import { useState }                              from 'react'
 import { useResolveLocale }                      from '@statdash/react'
 import type { ChildrenArg, NodeRenderer, NodeDef, NodeBase } from '@statdash/react/engine'
 import type { TabPageNode }                                  from './TabPageNode'
-import type { LocaleString }                    from '@statdash/engine'
 
 export const TabPageShell: NodeRenderer<TabPageNode> = (def, _ctx, children) =>
   <TabControl def={def} children={children} />
@@ -26,7 +25,7 @@ function TabControl({ def, children }: { def: TabPageNode; children: ChildrenArg
               onClick={() => setActiveTab(i)}
               type="button"
             >
-              {viewLabel ? t(viewLabel as LocaleString) : String(i + 1)}
+              {viewLabel ? t(viewLabel) : String(i + 1)}
             </button>
           )
         })}

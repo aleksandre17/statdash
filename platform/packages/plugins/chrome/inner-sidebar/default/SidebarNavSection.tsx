@@ -8,7 +8,8 @@
 //
 
 import { Link }              from 'react-router-dom'
-import type { ReactNode, CSSProperties } from 'react'
+import type { ReactNode }    from 'react'
+import { accentStyle }       from '@statdash/react/engine'
 import type { NavSection }   from '@statdash/react/engine'
 import type { NavIconKey }   from '@statdash/react'
 import { SIDEBAR, subNavOpenHeightRem } from './styleKeys'
@@ -54,7 +55,7 @@ export function SidebarNavSection({
   const chevronClass = isOpen ? `${SIDEBAR.chevron} ${SIDEBAR.isOpen}` : SIDEBAR.chevron
 
   return (
-    <div className={SIDEBAR.navSection} style={{ '--sc': color } as CSSProperties} data-nav-entry={id}>
+    <div className={SIDEBAR.navSection} style={accentStyle(color)} data-nav-entry={id}>
       <button className={itemClass} onClick={onToggle}>
         <span className={SIDEBAR.icon}><Icon /></span>
         <Link

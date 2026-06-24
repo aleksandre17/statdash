@@ -48,14 +48,14 @@ export function useSidebarNav({
 
   return useCallback(
     (sec: NavSection) => {
-      const needsModeSwitch = sec.navMode && sec.navMode !== currentMode
+      const targetMode = sec.navMode
 
-      if (needsModeSwitch) {
+      if (targetMode && targetMode !== currentMode) {
         // The target anchor only mounts after the mode's sections render — queue
         // the scroll, then flip the mode param in place (no navigation).
         scroll.queueScroll(sec.id)
         setSearchParams(prev => {
-          prev.set(timeModeKey, sec.navMode!)
+          prev.set(timeModeKey, targetMode)
           return prev
         }, { replace: true })
         return

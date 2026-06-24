@@ -4,19 +4,19 @@ import ReactApexChart              from 'react-apexcharts'
 import { defineShell }             from '@statdash/react/engine'
 import { usePanelTitleBadge }      from '@statdash/react/engine'
 import { resolveThresholdColor }   from '@statdash/engine'
-import type { RenderContext }      from '@statdash/react/engine'
+import type { RenderContext, ViewParams } from '@statdash/react/engine'
 import { useInject, EMPTY_STATE, PanelExportBar } from '@statdash/react'
 import type { ExportMeta }         from '@statdash/engine'
 import type { GaugeNode }          from './GaugeNode'
 import { toGaugePct, gaugeApexOptions, GAUGE_HEIGHT } from './gaugeUtils'
 
 export const GaugeShell = defineShell<GaugeNode>({
-  render({ def, ctx }) {
-    return <GaugeControl def={def} ctx={ctx} />
+  render({ def, ctx, merged }) {
+    return <GaugeControl def={def} ctx={ctx} merged={merged} />
   },
 })
 
-function GaugeControl({ def, ctx }: { def: GaugeNode; ctx: RenderContext }) {
+function GaugeControl({ def, ctx, merged }: { def: GaugeNode; ctx: RenderContext; merged: ViewParams }) {
   const EmptyState = useInject(ctx.ui, EMPTY_STATE)
   const titleBadge = usePanelTitleBadge(ctx, def, 'gauge')
   const rows       = ctx.rows ?? []
@@ -34,7 +34,7 @@ function GaugeControl({ def, ctx }: { def: GaugeNode; ctx: RenderContext }) {
   const color      = resolveThresholdColor(raw, def.thresholds ?? [])
   const options    = gaugeApexOptions(raw, color, def.showValue !== false)
 
-  const title = def.view?.label
+  const title = merged.label
   const exportMeta: ExportMeta = {
     title,
     filename: def.id ?? title,

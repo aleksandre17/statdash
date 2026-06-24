@@ -2,21 +2,21 @@ import { useState, useEffect }          from 'react'
 import { defineShell }                    from '@statdash/react/engine'
 import { usePanelTitleBadge }             from '@statdash/react/engine'
 import type { RenderContext }             from '@statdash/react/engine'
-import type { BodyStyleAttrs }            from '@statdash/react/engine'
+import type { BodyStyleAttrs, ViewParams } from '@statdash/react/engine'
 import { useInject, EMPTY_STATE, PanelExportBar } from '@statdash/react'
 import type { ExportMeta }                from '@statdash/engine'
 import type { TableNode }                 from './TableNode'
 import DataTable                          from './components/DataTable'
 
 export const TableShell = defineShell<TableNode>({
-  render({ def, ctx, vs }) {
-    return <TableControl def={def} ctx={ctx} bodyAttrs={vs.body} />
+  render({ def, ctx, vs, merged }) {
+    return <TableControl def={def} ctx={ctx} bodyAttrs={vs.body} merged={merged} />
   },
 })
 
 function TableControl({
-  def, ctx, bodyAttrs,
-}: { def: TableNode; ctx: RenderContext; bodyAttrs: BodyStyleAttrs }) {
+  def, ctx, bodyAttrs, merged,
+}: { def: TableNode; ctx: RenderContext; bodyAttrs: BodyStyleAttrs; merged: ViewParams }) {
   const EmptyState = useInject(ctx.ui, EMPTY_STATE)
   const rows = ctx.rows ?? []
   const { type: _, ...tableConfig } = def
@@ -40,7 +40,7 @@ function TableControl({
     }
   }, [ctx.eventBus])
 
-  const title = def.view?.label
+  const title = merged.label
   const exportMeta: ExportMeta = {
     title,
     filename: def.id ?? title,

@@ -5,7 +5,7 @@ import { resolveLocaleString }     from '@statdash/engine'
 import type { AggType }            from './_footer'
 import { getCellValue, colFmt }    from './_helpers'
 import { computeAggregate, defaultFooterLabel } from './_footer'
-import { StatusBadge }             from '@statdash/react'
+import { StatusBadge, accentStyle } from '@statdash/react'
 
 export interface SimpleTableProps {
   rows:              DataRow[]
@@ -98,7 +98,7 @@ export function SimpleTable({ rows, colLabel, columns, indent, statusFlags, capt
                       {row.isTotal ? (
                         <span className="bar-pct" style={{ color: 'var(--color-text-primary)' }}>{colFmt(col)(val)}</span>
                       ) : (
-                        <div className="bar-cell" style={row.color ? { '--sc': row.color } as React.CSSProperties : undefined}>
+                        <div className="bar-cell" style={accentStyle(row.color)}>
                           <div className="bar-track">
                             <div className="bar-fill" style={{ width: `${Math.max(0, (val - min) / (max - min)) * 100}%` }} />
                           </div>
