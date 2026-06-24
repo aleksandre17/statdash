@@ -146,10 +146,19 @@ export type {
   ValidationResult,
 }                                                                        from './validation/types'
 export { validateDataSpec }                                             from './validation/pipeline'
+// ── Structural config validator — wire-contract floor (P-1, ADR §7) ───
+//  The SAME structural validator apps/api (save) + packages/react (render)
+//  share. Returns ValidationError[] ([] === valid); never throws.
+export type { StructuralNode, StructuralPageConfig }                    from './validation/config'
+export { validateConfig }                                              from './validation/config'
 
 // ── Registry — Strategy + Plugin Pattern ─────────────────────────────
 export type { SpecResolver }                                           from './registry/engine'
 export { EngineRegistry, defaultRegistry }                             from './registry/engine'
+// ── Node-type registry — derived placeable-type SET (ADR §7.3) ────────
+//  Fail-open when empty; populated at startup by react's register-all so
+//  validateConfig can enforce `type ∈ known set`. Core holds NO hardcoded list.
+export { registerNodeType, knownNodeTypes, hasNodeType }               from './registry/nodeTypes'
 export type { DiagnosticObserver }                                     from './registry/diagnostics'
 export { setDiagnosticObserver, emitDiagnostic }                       from './registry/diagnostics'
 

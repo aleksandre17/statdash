@@ -16,6 +16,16 @@ export type ValidationCode =
   | 'DEPRECATED_CUSTOM_FN'
   | 'THRESHOLD_ORDER'
   | 'UNREACHABLE_SPEC'
+  // ── Structural-floor codes (validateConfig — ADR §7.2) ──────────────
+  | 'NOT_AN_OBJECT'
+  | 'MISSING_TYPE'
+  | 'INVALID_TYPE_FIELD'
+  | 'UNKNOWN_NODE_TYPE'
+  | 'INVALID_CHILDREN'
+  | 'CYCLIC_CHILDREN'
+  | 'INVALID_ID'
+  | 'INVALID_SCHEMA_VERSION'
+  | 'INVALID_PAGE_ROOT_TYPE'
 
 export interface ValidationError {
   /** JSONPath to the offending field: 'data.rows[0].code', 'chart.year.type'. */

@@ -135,11 +135,18 @@ export function validateDataSpec(
 
 
 // NOTE (Layer 0.4): the former `validateSectionDef` validated the dead Track-B
-// `SectionDef` type (no live config uses it) — removed (gap #27). The live-tree
-// validator `validatePageTree(NodeDef)` belongs in @statdash/react (it must call
-// nodeRegistry slice-validate hooks; engine cannot import react) and lands with
-// the Constructor work (ROADMAP N10/N18) — it also reconciles the two
-// ValidationError shapes (engine {path,code,severity} vs react {field,level}).
+// `SectionDef` type (no live config uses it) — removed (gap #27).
+//
+// RESOLVED (ADR adr-config-and-render-vision §7.2): the engine-tier STRUCTURAL
+// FLOOR for the whole page tree now legitimately lives in core as
+// `validateConfig` (./config.ts). The earlier note conflated two concerns: the
+// known-TYPE-SET (the engine CAN hold this — a derived projection injected via
+// registry/nodeTypes.ts, fail-open when empty, exactly like the spec-type set
+// above) versus the per-node slice-`validate()` hooks (those genuinely stay in
+// @statdash/react — they need the renderer registry). Only the latter is up-tier;
+// `validateConfig` reuses this same {path,code,severity} ValidationError model
+// (it calls validateDataSpec for each node's `data`), so there is no shape
+// reconciliation to do here.
 
 // ── Helpers ────────────────────────────────────────────────────────────
 
