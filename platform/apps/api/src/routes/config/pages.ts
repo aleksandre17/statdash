@@ -3,6 +3,7 @@ import { z } from 'zod'
 import { migratePageConfig, validateConfig, CURRENT_SCHEMA_VERSION } from '@statdash/engine'
 import { ok, notFound, parseBody, parseParams, HttpError } from '../../lib/http.js'
 import { Problem, configValidationProblem } from '../../lib/problem.js'
+import { buildSetClause } from '../../lib/sql-update.js'
 import type { AuditLogger } from '../../lib/audit-log.js'
 
 // ── Config-validation enforcement seam (WARN → REJECT, the ONE-LINE flip) ─────
@@ -227,17 +228,17 @@ export const pagesRoutes = (audit?: AuditLogger): FastifyPluginAsync => async (a
         throw notFound('Page')
       }
 
-      // Build a dynamic-but-parameterized identity UPDATE (only provided fields).
-      const sets: string[] = []
-      const vals: unknown[] = []
-      if (body.slug !== undefined)   { sets.push(`slug = $${sets.length + 1}`);   vals.push(body.slug) }
-      if (body.title !== undefined)  { sets.push(`title = $${sets.length + 1}`);  vals.push(JSON.stringify(body.title)) }
-      if (body.status !== undefined) { sets.push(`status = $${sets.length + 1}`); vals.push(body.status) }
-      if (sets.length > 0) {
-        vals.push(id)
+      // Dynamic-but-parameterized identity UPDATE — only the provided fields
+      // (buildSetClause omits undefined; title is a JSONB column passed as text).
+      const { clause, values, count } = buildSetClause({
+        slug:   body.slug,
+        title:  body.title !== undefined ? JSON.stringify(body.title) : undefined,
+        status: body.status,
+      })
+      if (count > 0) {
         await client.query(
-          `UPDATE config.page SET ${sets.join(', ')} WHERE id = $${vals.length}`,
-          vals,
+          `UPDATE config.page SET ${clause} WHERE id = $${count + 1}`,
+          [...values, id],
         )
       }
 

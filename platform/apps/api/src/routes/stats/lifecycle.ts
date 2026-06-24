@@ -20,17 +20,15 @@
 //  call sites are untouched (OCP).
 
 import type { FastifyPluginAsync } from 'fastify'
+import { relationExists } from '../../lib/relation-exists.js'
 
 type App = Parameters<FastifyPluginAsync>[0]
 
-// to_regclass returns NULL for an absent relation WITHOUT raising — the same clean
-// precondition probe actual-region.ts uses for the V26 view. One definition of "is
-// V28 applied here".
+// One definition of "is V28 applied here" — delegates to the shared relationExists
+// precondition mechanism (lib/relation-exists.ts), the same probe every rolling-
+// migration feature gates on.
 export async function datasetPublishedViewExists(app: App): Promise<boolean> {
-  const { rows } = await app.pg.query<{ exists: boolean }>(
-    `SELECT to_regclass('stats.dataset_published') IS NOT NULL AS exists`,
-  )
-  return rows[0]?.exists === true
+  return relationExists(app.pg, 'stats.dataset_published')
 }
 
 /**

@@ -11,7 +11,8 @@
 //    Retool   — component.datasource.queryOverrides
 //
 
-import type { DimVal } from '../sdmx'
+import type { DimVal }    from '../sdmx'
+import type { TimeMode }  from '../core/context'
 
 export interface ScopeOverride {
   /**
@@ -23,8 +24,11 @@ export interface ScopeOverride {
   /**
    * Override timeMode for this panel only.
    * Useful when a panel always shows a range while siblings show a single year.
+   * Open ModeId (TimeMode) — any registered mode, not just year/range, so a
+   * panel can pin a custom mode (compare, …). Matches SectionContext.timeMode,
+   * the field mergeScope writes this into. No privileged closed union.
    */
-  timeMode?:    'year' | 'range'
+  timeMode?:    TimeMode
   /**
    * Compare mode — render a second dataset alongside the base data.
    * Shells read ctx.compareRows + ctx.compareLabel to render the second series.

@@ -19,6 +19,7 @@
 
 import type { Classifier }                                             from '../sdmx'
 import type { SectionContext }                                         from '../core/context'
+import { TIME_DIM }                                                    from '../core/context'
 import type { EngineRow }                                              from './encoding'
 import type { DataStore, QueryResult, ResultMeta, StoreCaps, StoreQuery } from './store'
 import type { MetadataPort }                                           from '../core/provenance'
@@ -200,7 +201,7 @@ export class ApiStore implements DataStore {
     const params: Record<string, string> = { dataset: this.datasetCode }
 
     // Time bounds
-    const timeDim = ctx.dims['time']
+    const timeDim = ctx.dims[TIME_DIM]
     if (timeDim !== undefined && timeDim !== '') {
       const timeStr = String(timeDim)
       if (timeStr.includes(',')) {
@@ -225,7 +226,7 @@ export class ApiStore implements DataStore {
 
     if (q.type === 'obs' && q.filter) {
       for (const [dim, fv] of Object.entries(q.filter)) {
-        if (dim === 'time' || fv === undefined || fv === null) continue
+        if (dim === TIME_DIM || fv === undefined || fv === null) continue
         if (typeof fv === 'object' && !Array.isArray(fv) && '$ctx' in (fv as object)) {
           const ref = (fv as { $ctx: string }).$ctx
           const val = ctx.dims[ref]

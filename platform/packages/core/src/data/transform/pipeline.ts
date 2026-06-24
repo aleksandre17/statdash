@@ -1,28 +1,17 @@
-﻿import type { RawRow, TransformStep, PipelineContext } from './types'
-import { applyMelt, applyRename, applyCast, applyFilter, applySort,
-         applyConcat, applyTemplate, applyAddField, applySelect, applyDerive,
-         applyAggregate, applyRollup, applyLookup, applyJoin, applyGroup } from './steps'
+import type { RawRow, TransformStep, PipelineContext } from './types'
+import { getTransformStep } from './step-registry'
 
-/** applyStep — Execute one TransformStep against a row array. */
+/**
+ * applyStep — Execute one TransformStep against a row array.
+ *
+ * Dispatches through the open step-registry (OCP): every built-in registers in
+ * transform/index.ts, plugins register via registerTransformStep(). A single
+ * dispatch path means a custom op and a built-in op are reached identically —
+ * no closed switch to keep in sync. Unknown op → rows unchanged (no throw).
+ */
 export function applyStep(rows: RawRow[], step: TransformStep, ctx?: PipelineContext): RawRow[] {
-  switch (step.op) {
-    case 'melt':      return applyMelt(rows, step)
-    case 'rename':    return applyRename(rows, step)
-    case 'cast':      return applyCast(rows, step)
-    case 'filter':    return applyFilter(rows, step, ctx)
-    case 'sort':      return applySort(rows, step)
-    case 'addField':  return applyAddField(rows, step)
-    case 'select':    return applySelect(rows, step)
-    case 'derive':    return applyDerive(rows, step)
-    case 'aggregate': return applyAggregate(rows, step)
-    case 'rollup':    return applyRollup(rows, step)
-    case 'lookup':    return applyLookup(rows, step, ctx)
-    case 'join':      return applyJoin(rows, step, ctx)
-    case 'group':     return applyGroup(rows, step)
-    case 'concat':    return applyConcat(rows, step)
-    case 'template':  return applyTemplate(rows, step)
-    default:          return rows  // unknown op → return rows unchanged
-  }
+  const fn = getTransformStep(step.op)
+  return fn ? fn(rows, step, ctx) : rows
 }
 
 /** applyPipeline — Execute an ordered list of TransformSteps in sequence. */

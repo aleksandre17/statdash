@@ -16,6 +16,7 @@ import type { CtxRef, DimVal }  from '../sdmx'
 import type { DataStore }       from './store'
 import { storeVal }            from './store'
 import type { SectionContext }  from '../core/context'
+import { atTime, TIME_DIM }      from '../core/context'
 import type { KpiDef }          from '../config/kpi'
 import type { LocaleString }    from '../i18n/types'
 import { resolveLocaleString }  from '../i18n/types'
@@ -80,14 +81,9 @@ function primaryMeasure(spec: KpiValueSpec): string | undefined {
 }
 
 function resolveTime(ref: TimeRef | undefined, ctx: SectionContext): number {
-  if (ref === undefined)                        return ctx.dims['time'] as number
+  if (ref === undefined)                        return ctx.dims[TIME_DIM] as number
   if (typeof ref === 'object' && '$ctx' in ref) return ctx.dims[ref.$ctx] as number
   return ref as number
-}
-
-function atTime(t: number, ctx: SectionContext): SectionContext {
-  if ((ctx.dims['time'] as number) === t) return ctx
-  return { ...ctx, dims: { ...ctx.dims, time: t } }
 }
 
 function withFilter(ctx: SectionContext, filter?: DimFilter): SectionContext {

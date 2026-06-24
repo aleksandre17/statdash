@@ -14,6 +14,7 @@
 //  silver gate + the fitness test + here — one definition, never three).
 
 import type { FastifyPluginAsync } from 'fastify'
+import { relationExists } from '../../lib/relation-exists.js'
 
 type App = Parameters<FastifyPluginAsync>[0]
 
@@ -189,14 +190,11 @@ export async function classifyCombos(
   })
 }
 
-// ── viewExists — shared V26 precondition probe ────────────────────────────────
+// ── viewExists — the V26 precondition probe (named wrapper over relationExists) ─
 //
-//  to_regclass returns NULL for an absent relation without raising. Both the loader
-//  (degrade to null) and the classify route (404 the capability) read this — one
-//  definition of "is V26 applied here", not two.
+//  Both the loader (degrade to null) and the classify route (404 the capability)
+//  read this — one definition of "is V26 applied here". Delegates to the shared
+//  relationExists mechanism (lib/relation-exists.ts) so the probe SQL has one home.
 export async function viewExists(app: App): Promise<boolean> {
-  const { rows } = await app.pg.query<{ exists: boolean }>(
-    `SELECT to_regclass('stats.cube_actual_region') IS NOT NULL AS exists`,
-  )
-  return rows[0]?.exists === true
+  return relationExists(app.pg, 'stats.cube_actual_region')
 }

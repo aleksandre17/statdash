@@ -1,6 +1,7 @@
 import type { FastifyPluginAsync } from 'fastify'
 import { z } from 'zod'
 import { ok, notFound, parseBody, parseParams } from '../../lib/http.js'
+import { buildSetClause } from '../../lib/sql-update.js'
 
 // A nav item targets EITHER an internal page OR an external href, never both —
 // mirrors the nav_item_target_chk CHECK so we fail fast with a 400 instead of a
@@ -70,15 +71,16 @@ export const navRoutes: FastifyPluginAsync = async (app) => {
     const { id } = parseParams(IdParams, req.params)
     const body = parseBody(UpdateNavBody, req.body)
 
-    const sets: string[] = []
-    const vals: unknown[] = []
-    if (body.label !== undefined)     { sets.push(`label = $${sets.length + 1}`);     vals.push(JSON.stringify(body.label)) }
-    if (body.href !== undefined)      { sets.push(`href = $${sets.length + 1}`);      vals.push(body.href) }
-    if (body.page_id !== undefined)   { sets.push(`page_id = $${sets.length + 1}`);   vals.push(body.page_id) }
-    if (body.parent_id !== undefined) { sets.push(`parent_id = $${sets.length + 1}`); vals.push(body.parent_id) }
-    if (body.ord !== undefined)       { sets.push(`ord = $${sets.length + 1}`);       vals.push(body.ord) }
+    // Partial update — only the supplied fields (buildSetClause omits undefined).
+    const { clause, values, count } = buildSetClause({
+      label:     body.label !== undefined ? JSON.stringify(body.label) : undefined,
+      href:      body.href,
+      page_id:   body.page_id,
+      parent_id: body.parent_id,
+      ord:       body.ord,
+    })
 
-    if (sets.length === 0) {
+    if (count === 0) {
       const { rows } = await app.pg.query(
         `SELECT id, parent_id, page_id, label, href, ord, created_at, updated_at
            FROM config.nav_item WHERE id = $1`,
@@ -88,12 +90,11 @@ export const navRoutes: FastifyPluginAsync = async (app) => {
       return ok(rows[0])
     }
 
-    vals.push(id)
     const { rows } = await app.pg.query(
-      `UPDATE config.nav_item SET ${sets.join(', ')}
-        WHERE id = $${vals.length}
+      `UPDATE config.nav_item SET ${clause}
+        WHERE id = $${count + 1}
         RETURNING id, parent_id, page_id, label, href, ord, created_at, updated_at`,
-      vals,
+      [...values, id],
     )
     if (!rows[0]) throw notFound('Nav item')
     return ok(rows[0])

@@ -15,6 +15,7 @@ import { storeVal }                                                    from './s
 import type { DataStore, Requirement, ResultMeta, StoreCaps, StoreQuery } from './store'
 import { dimKey, matchesFilter, matchesLeaves, DimResolver }           from './store-filter'
 import type { LeafFn }                                                 from './store-filter'
+import { roundAgg }                                                    from './round'
 import type { MetadataPort }                                           from '../core/provenance'
 
 
@@ -117,6 +118,8 @@ export class CachedStore implements DataStore {
 
   warm(reqs: Requirement[]): void {
     for (const { code, dims } of reqs) {
+      // timeMode is a required SectionContext field but is never read by _val
+      // (cache key is dims-only via dimKey) — any registered mode id is inert here.
       this._val(code, { timeMode: 'year', dims })
     }
   }
@@ -207,7 +210,7 @@ export class ExternalStore implements DataStore {
       }
       if (ok) sum += Number(o['value'] ?? 0)
     }
-    return Math.round(sum * 100) / 100
+    return roundAgg(sum)
   }
 
   private _observe(query: ObsQuery, ctx: SectionContext): Observation[] {

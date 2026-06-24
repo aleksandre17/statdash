@@ -1,6 +1,7 @@
 import type { FastifyPluginAsync } from 'fastify'
 import { z } from 'zod'
 import { ok, notFound, parseBody, parseParams } from '../../lib/http.js'
+import { buildSetClause } from '../../lib/sql-update.js'
 
 // type values mirror the data_source_type_chk CHECK constraint (V3).
 const DataSourceBody = z.object({
@@ -56,15 +57,17 @@ export const dataSourcesRoutes: FastifyPluginAsync = async (app) => {
     const { id } = parseParams(IdParams, req.params)
     const body = parseBody(UpdateDataSourceBody, req.body)
 
-    const sets: string[] = []
-    const vals: unknown[] = []
-    if (body.name !== undefined)   { sets.push(`name = $${sets.length + 1}`);   vals.push(body.name) }
-    if (body.type !== undefined)   { sets.push(`type = $${sets.length + 1}`);   vals.push(body.type) }
-    if (body.url !== undefined)    { sets.push(`url = $${sets.length + 1}`);    vals.push(body.url) }
-    if (body.config !== undefined) { sets.push(`config = $${sets.length + 1}`); vals.push(JSON.stringify(body.config)) }
-    if (body.status !== undefined) { sets.push(`status = $${sets.length + 1}`); vals.push(body.status) }
+    // Partial update — only the supplied fields (buildSetClause omits undefined).
+    // JSONB columns are passed as stringified text; the column type coerces text→jsonb.
+    const { clause, values, count } = buildSetClause({
+      name:   body.name,
+      type:   body.type,
+      url:    body.url,
+      config: body.config !== undefined ? JSON.stringify(body.config) : undefined,
+      status: body.status,
+    })
 
-    if (sets.length === 0) {
+    if (count === 0) {
       const { rows } = await app.pg.query(
         `SELECT id, name, type, url, config, status, created_at, updated_at
            FROM config.data_source WHERE id = $1`,
@@ -74,12 +77,11 @@ export const dataSourcesRoutes: FastifyPluginAsync = async (app) => {
       return ok(rows[0])
     }
 
-    vals.push(id)
     const { rows } = await app.pg.query(
-      `UPDATE config.data_source SET ${sets.join(', ')}
-        WHERE id = $${vals.length}
+      `UPDATE config.data_source SET ${clause}
+        WHERE id = $${count + 1}
         RETURNING id, name, type, url, config, status, created_at, updated_at`,
-      vals,
+      [...values, id],
     )
     if (!rows[0]) throw notFound('Data source')
     return ok(rows[0])

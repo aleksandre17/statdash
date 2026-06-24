@@ -13,6 +13,7 @@ import type { OptionsSource, ChipSource, YearsSource }       from './source'
 import type { DimRef, DimVal }                               from '../sdmx'
 import { isDimRef, resolveDimRef }                            from './codelist'
 import { applyPipeline }                                     from './transform'
+import type { TransformStep }                                from './transform/types'
 
 // Resolves the pre-pipeline row array for a non-static source.
 function resolveRaw(
@@ -34,6 +35,19 @@ function resolveRaw(
   return storeObs(store, src.query, ctx)
 }
 
+// Resolve raw rows then apply the source's optional pipe (shared by all three
+// resolvers — identical pipe-application step, single PipelineContext shape).
+function resolvePiped(
+  src:   { pipe?: TransformStep[] },
+  raw:   readonly Record<string, DimVal>[],
+  store: DataStore,
+  ctx:   SectionContext,
+): readonly Record<string, DimVal>[] {
+  return src.pipe && src.pipe.length > 0
+    ? applyPipeline(raw as Record<string, DimVal>[], src.pipe, { classifiers: store.classifiers, display: store.display, section: ctx })
+    : raw
+}
+
 // ── resolveYears ─────────────────────────────────────────────────────────────
 
 export function resolveYears(
@@ -45,9 +59,7 @@ export function resolveYears(
   if (years.type === 'static')  return years.items
   const raw = resolveRaw(years, store, ctx)
   if (!raw) return []
-  const rows = years.pipe && years.pipe.length > 0
-    ? applyPipeline(raw as Record<string, DimVal>[], years.pipe, { classifiers: store.classifiers, display: store.display, section: ctx })
-    : raw
+  const rows = resolvePiped(years, raw, store, ctx)
   const seen = new Set<number>()
   return rows
     .map((o) => Number(o[years.field]))
@@ -65,9 +77,7 @@ export function resolveOptions(
   if (src.type === 'static') return src.items
   const raw = resolveRaw(src, store, ctx)
   if (!raw) return []
-  const rows = src.pipe && src.pipe.length > 0
-    ? applyPipeline(raw as Record<string, DimVal>[], src.pipe, { classifiers: store.classifiers, display: store.display, section: ctx })
-    : raw
+  const rows = resolvePiped(src, raw, store, ctx)
   const seen = new Set<string>()
   return rows
     .map((o) => ({
@@ -87,9 +97,7 @@ export function resolveChips(
   if (src.type === 'static') return src.items
   const raw = resolveRaw(src, store, ctx)
   if (!raw) return []
-  const rows = src.pipe && src.pipe.length > 0
-    ? applyPipeline(raw as Record<string, DimVal>[], src.pipe, { classifiers: store.classifiers, display: store.display, section: ctx })
-    : raw
+  const rows = resolvePiped(src, raw, store, ctx)
   const seen = new Set<string>()
   return rows
     .map((o) => ({

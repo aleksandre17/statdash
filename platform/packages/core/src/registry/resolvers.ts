@@ -7,6 +7,7 @@
 import type { EngineRow }                   from '../data/encoding'
 import type { DataSpec, RowSpec, YearsSpec } from '../config/data-spec'
 import type { SectionContext }               from '../core/context'
+import { atTime, TIME_DIM }                  from '../core/context'
 import type { DataStore }                    from '../data/store'
 import { storeVal, storeObs }               from '../data/store'
 import type { CtxRef, DimVal, FilterValue, NeCtxRef }  from '../sdmx'
@@ -18,11 +19,9 @@ import { emitDiagnostic }                    from './diagnostics'
 import { diagWarning }                        from '../core/diagnostic'
 
 // ── Shared utilities ───────────────────────────────────────────────────
-
-function atTime(t: number, ctx: SectionContext): SectionContext {
-  if ((ctx.dims['time'] as number) === t) return ctx
-  return { ...ctx, dims: { ...ctx.dims, time: t } }
-}
+//
+//  atTime / TIME_DIM are imported from core/context — the single SSOT for
+//  the conventional time-axis key. No local 'time' literal lives here.
 
 /**
  * Resolves YearsSpec → number[].
@@ -36,7 +35,7 @@ function atTime(t: number, ctx: SectionContext): SectionContext {
 function resolveYears(years: YearsSpec, measure: string, store: DataStore, ctx: SectionContext): number[] {
   if (years !== 'all') return [...years]
   const obs = storeObs(store, { measure }, ctx)
-  return [...new Set(obs.map((o) => Number(o['time'])))].sort((a, b) => a - b)
+  return [...new Set(obs.map((o) => Number(o[TIME_DIM])))].sort((a, b) => a - b)
 }
 
 /** Resolve a FilterValue to a flat list of DimVals (used by extractRequirements). */
@@ -248,7 +247,7 @@ class QueryResolver implements SpecResolver<Extract<DataSpec, { type: 'query' }>
     const raw     = storeObs(store, spec.query, ctx)
     const clamped = (spec.fromDim || spec.toDim)
       ? raw.filter((o) => {
-          const t    = Number(o['time'])
+          const t    = Number(o[TIME_DIM])
           const from = spec.fromDim ? Number(ctx.dims[spec.fromDim] ?? 0)        : 0
           const to   = spec.toDim   ? Number(ctx.dims[spec.toDim]   ?? Infinity) : Infinity
           return (!from || t >= from) && (!to || t <= to)

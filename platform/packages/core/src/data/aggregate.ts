@@ -9,6 +9,7 @@
 //
 
 import type { DimVal } from '../sdmx'
+import { roundAgg }    from './round'
 
 export type AggOp = 'sum' | 'avg' | 'min' | 'max'
 
@@ -50,7 +51,7 @@ export function groupAggregate(
       const row: Record<string, DimVal> = {
         ...key,
         ...rule.emit,
-        [rule.field]: Math.round(agg * 100) / 100,
+        [rule.field]: roundAgg(agg),
       }
       if (rule.metaFrom) {
         const { dim, cl, pick, rename } = rule.metaFrom

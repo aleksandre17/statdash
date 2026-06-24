@@ -141,6 +141,22 @@ export const forbidden = (detail: string): Problem =>
 export const conflict = (detail: string): Problem =>
   new Problem('conflict', detail)
 
+/**
+ * 409 — an identical payload was already published (Idempotent Receiver, EIP).
+ *
+ * The structured re-submission signal the ingest + curator-import surfaces both
+ * raise. `code` + `existingJobId` are RFC 9457 EXTENSION MEMBERS (§3.2) — top-level
+ * fields of the problem body — NOT a JSON blob stuffed into `detail`. That is the
+ * whole point of the Problem seam: a machine-readable conflict the client reads as
+ * `body.existingJobId`, never `JSON.parse(body.detail)`. One factory so the two
+ * call sites cannot drift on the contract (SSOT).
+ */
+export const alreadyPublished = (existingJobId: string): Problem =>
+  new Problem('conflict', 'An identical payload was already published', {
+    code: 'ALREADY_PUBLISHED',
+    existingJobId,
+  })
+
 /** 410 — permanently gone. */
 export const gone = (detail: string): Problem =>
   new Problem('gone', detail)

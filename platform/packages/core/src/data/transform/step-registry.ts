@@ -25,7 +25,7 @@ export function registerTransformStep(op: string, fn: StepFn): void {
   _registry.set(op, fn)
 }
 
-/** @internal — used by applyStep only */
+/** Lookup a handler by op — the single dispatch source for applyStep(). */
 export function getTransformStep(op: string): StepFn | undefined {
   return _registry.get(op)
 }

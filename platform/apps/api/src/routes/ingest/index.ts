@@ -27,6 +27,7 @@
 
 import type { FastifyPluginAsync } from 'fastify'
 import { ok, parseBody, parseParams, parseQuery, HttpError, notFound } from '../../lib/http.js'
+import { alreadyPublished } from '../../lib/problem.js'
 import { authPlugin } from '../../auth.js'
 import type { AuditLogger } from '../../lib/audit-log.js'
 import { publishSubmission, createSubmission, AlreadyPublishedError } from '../../ingest/index.js'
@@ -60,17 +61,16 @@ export const ingestRoutes = (audit?: AuditLogger): FastifyPluginAsync => async (
   // ── Submission creation (shared by the three submit routes — Strategy by kind) ─
   // Delegates to the one authoritative createSubmission service (SSOT for the bronze
   // write + idempotency guard, shared with the curator CSV import route). The HTTP
-  // boundary's only added job is mapping AlreadyPublishedError → the 409 contract
-  // clients already depend on ({ code: 'ALREADY_PUBLISHED', existingJobId }).
+  // boundary's only added job is mapping AlreadyPublishedError → the RFC 9457 409
+  // conflict carrying { code: 'ALREADY_PUBLISHED', existingJobId } as structured
+  // EXTENSION MEMBERS of the problem body (read as body.existingJobId), via the one
+  // alreadyPublished() factory shared with the curator import route (SSOT).
   async function submit(args: Parameters<typeof createSubmission>[2]): Promise<string> {
     try {
       return await createSubmission(app.pg, app.log, args)
     } catch (err) {
       if (err instanceof AlreadyPublishedError) {
-        throw new HttpError(
-          409,
-          JSON.stringify({ code: 'ALREADY_PUBLISHED', existingJobId: err.existingJobId }),
-        )
+        throw alreadyPublished(err.existingJobId)
       }
       throw err
     }

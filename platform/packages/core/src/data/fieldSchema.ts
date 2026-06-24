@@ -7,6 +7,7 @@
 
 import type { DataSpec }  from '../config/data-spec'
 import type { EngineRow } from './encoding'
+import { TIME_DIM }       from '../core/context'
 
 export type FieldType = 'number' | 'string' | 'time' | 'boolean' | 'unknown'
 export type FieldRole = 'dimension' | 'measure' | 'meta'
@@ -143,14 +144,14 @@ export function deriveFieldSchema(spec: DataSpec, rows: EngineRow[]): FieldSchem
     }
     case 'timeseries': {
       return ([
-        { name: 'time',   type: 'time'   as FieldType, role: 'dimension' as FieldRole },
+        { name: TIME_DIM, type: 'time'   as FieldType, role: 'dimension' as FieldRole },
         { name: 'value',  type: 'number' as FieldType, role: 'measure'   as FieldRole },
         { name: 'series', type: 'string' as FieldType, role: 'dimension' as FieldRole },
       ] satisfies FieldSchema[]).filter(f => f.name in rows[0])
     }
     case 'growth': {
       return ([
-        { name: 'time',   type: 'time'   as FieldType, role: 'dimension' as FieldRole },
+        { name: TIME_DIM, type: 'time'   as FieldType, role: 'dimension' as FieldRole },
         { name: 'value',  type: 'number' as FieldType, role: 'measure'   as FieldRole },
         { name: 'growth', type: 'number' as FieldType, role: 'measure'   as FieldRole },
       ] satisfies FieldSchema[]).filter(f => f.name in rows[0])

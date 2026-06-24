@@ -1,5 +1,6 @@
 ﻿import type { CtxRef, DimVal, FilterValue }  from '../../sdmx'
 import { isDimRef, resolveDimRef }            from '../codelist'
+import { roundAgg }                           from '../round'
 import type { RawRow, TransformStep, PipelineContext } from './types'
 
 // ── Individual step implementations ───────────────────────────────────
@@ -176,7 +177,7 @@ export function applyAggregate(rows: RawRow[], step: Extract<TransformStep, { op
     const out: RawRow = { ...key }
     for (const a of aggregations) {
       const field = a.as ?? a.field
-      out[field]  = Math.round(aggFn(a.op, buckets[field]) * 100) / 100
+      out[field]  = roundAgg(aggFn(a.op, buckets[field]))
     }
     return out
   })
@@ -297,7 +298,7 @@ export function applyRollup(rows: RawRow[], step: Extract<TransformStep, { op: '
   const out: RawRow[] = [...rows]
   for (const { key, values } of groups.values()) {
     const rollupRow: RawRow = { ...key, [step.dim]: step.as }
-    rollupRow[field] = Math.round(aggFn(step.agg, values) * 100) / 100
+    rollupRow[field] = roundAgg(aggFn(step.agg, values))
     out.push(rollupRow)
   }
   return out

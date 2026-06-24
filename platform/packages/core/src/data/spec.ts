@@ -3,6 +3,7 @@ import { resolveFilterForReqs }  from '../registry/resolvers'
 import type { EngineRow }        from './encoding'
 import type { DataSpec }         from '../config/data-spec'
 import type { SectionContext }   from '../core/context'
+import { TIME_DIM }              from '../core/context'
 import type { DataStore, Requirement } from './store'
 import { defaultRegistry }       from '../registry/engine'
 import { emitDiagnostic }        from '../registry/diagnostics'
@@ -100,7 +101,7 @@ export function extractRequirements(
   spec: DataSpec,
   ctx:  SectionContext,
 ): Requirement[] {
-  const time = ctx.dims['time'] as number
+  const time = ctx.dims[TIME_DIM] as number
 
   switch (spec.type) {
 
@@ -120,14 +121,14 @@ export function extractRequirements(
     case 'timeseries':
       // 'all' — years resolved at runtime from store; no static requirements extractable
       if (spec.years === 'all') return []
-      return spec.years.map((year) => ({ code: spec.code, dims: { ...ctx.dims, time: year } }))
+      return spec.years.map((year) => ({ code: spec.code, dims: { ...ctx.dims, [TIME_DIM]: year } }))
 
     case 'growth': {
       // 'all' — years resolved at runtime from store; no static requirements extractable
       if (spec.years === 'all') return []
       const codes = Array.isArray(spec.code) ? spec.code : [spec.code]
       return codes.flatMap((code) =>
-        (spec.years as readonly number[]).map((year) => ({ code, dims: { ...ctx.dims, time: year } })),
+        (spec.years as readonly number[]).map((year) => ({ code, dims: { ...ctx.dims, [TIME_DIM]: year } })),
       )
     }
 
@@ -142,7 +143,7 @@ export function extractRequirements(
         ? spec.query.measure
         : [spec.query.measure]
 
-      const timeFilter = spec.query.filter?.['time']
+      const timeFilter = spec.query.filter?.[TIME_DIM]
       let years: number[]
 
       if (timeFilter !== undefined) {
@@ -154,7 +155,7 @@ export function extractRequirements(
       }
 
       return measures.flatMap((code) =>
-        years.map((year) => ({ code, dims: { ...ctx.dims, time: year } })),
+        years.map((year) => ({ code, dims: { ...ctx.dims, [TIME_DIM]: year } })),
       )
     }
 

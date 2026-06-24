@@ -2,6 +2,7 @@ import type { FastifyPluginAsync } from 'fastify'
 import type { ReferenceMetadataContract } from '@statdash/contracts'
 import { z } from 'zod'
 import { ok, notFound, parseParams } from '../../lib/http.js'
+import { relationExists } from '../../lib/relation-exists.js'
 import { isDatasetDiscoverable } from './lifecycle.js'
 
 const CodeParams = z.object({ code: z.string().min(1) })
@@ -33,16 +34,13 @@ interface ReferenceMetadataRow {
 const hasLocale = (v: LocaleString | null | undefined): v is LocaleString =>
   v != null && Object.keys(v).length > 0
 
-// to_regclass returns NULL (without raising) for an absent relation — the same clean
-// precondition probe lifecycle.ts / actual-region.ts use. One definition of "is V31
-// applied here", so a rolling-migration deploy degrades gracefully (404, not 500).
+// "Is V31 applied here?" — delegates to the shared relationExists precondition
+// mechanism (lib/relation-exists.ts) so a rolling-migration deploy degrades
+// gracefully (404, not 500), the same posture lifecycle.ts / actual-region.ts use.
 async function referenceMetadataTableExists(
   app: Parameters<FastifyPluginAsync>[0],
 ): Promise<boolean> {
-  const { rows } = await app.pg.query<{ exists: boolean }>(
-    `SELECT to_regclass('stats.reference_metadata') IS NOT NULL AS exists`,
-  )
-  return rows[0]?.exists === true
+  return relationExists(app.pg, 'stats.reference_metadata')
 }
 
 export const datasetsRoutes: FastifyPluginAsync = async (app) => {

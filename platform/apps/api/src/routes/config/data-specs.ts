@@ -1,6 +1,7 @@
 import type { FastifyPluginAsync } from 'fastify'
 import { z } from 'zod'
 import { ok, notFound, parseBody, parseParams, parseQuery } from '../../lib/http.js'
+import { buildSetClause } from '../../lib/sql-update.js'
 
 // spec is the engine DataSpec JSON — validated by the engine at query time, so
 // here it is an opaque object (z.record), never narrowed to a code shape.
@@ -60,14 +61,15 @@ export const dataSpecsRoutes: FastifyPluginAsync = async (app) => {
     const { id } = parseParams(IdParams, req.params)
     const body = parseBody(UpdateDataSpecBody, req.body)
 
-    const sets: string[] = []
-    const vals: unknown[] = []
-    if (body.name !== undefined)        { sets.push(`name = $${sets.length + 1}`);        vals.push(body.name) }
-    if (body.description !== undefined) { sets.push(`description = $${sets.length + 1}`); vals.push(body.description) }
-    if (body.spec !== undefined)        { sets.push(`spec = $${sets.length + 1}`);        vals.push(JSON.stringify(body.spec)) }
-    if (body.source_id !== undefined)   { sets.push(`source_id = $${sets.length + 1}`);   vals.push(body.source_id) }
+    // Partial update — only the supplied fields (buildSetClause omits undefined).
+    const { clause, values, count } = buildSetClause({
+      name:        body.name,
+      description: body.description,
+      spec:        body.spec !== undefined ? JSON.stringify(body.spec) : undefined,
+      source_id:   body.source_id,
+    })
 
-    if (sets.length === 0) {
+    if (count === 0) {
       const { rows } = await app.pg.query(
         `SELECT id, name, description, spec, source_id, created_at, updated_at
            FROM config.data_spec WHERE id = $1`,
@@ -77,12 +79,11 @@ export const dataSpecsRoutes: FastifyPluginAsync = async (app) => {
       return ok(rows[0])
     }
 
-    vals.push(id)
     const { rows } = await app.pg.query(
-      `UPDATE config.data_spec SET ${sets.join(', ')}
-        WHERE id = $${vals.length}
+      `UPDATE config.data_spec SET ${clause}
+        WHERE id = $${count + 1}
         RETURNING id, name, description, spec, source_id, created_at, updated_at`,
-      vals,
+      [...values, id],
     )
     if (!rows[0]) throw notFound('Data spec')
     return ok(rows[0])

@@ -38,6 +38,7 @@ import {
   type ModeDef,
   type DatasourceInstanceConfig,
 } from '@statdash/engine'
+import { relationExists } from '../../lib/relation-exists.js'
 
 // ── Manifest envelope ─────────────────────────────────────────────────────────
 //
@@ -137,10 +138,9 @@ interface CategoryRow {
   ord:         number
 }
 async function loadCategories(app: App): Promise<ManifestCategory[] | undefined> {
-  const { rows: probe } = await app.pg.query<{ exists: boolean }>(
-    `SELECT to_regclass('stats.category') IS NOT NULL AS exists`,
-  )
-  if (probe[0]?.exists !== true) return undefined
+  // V29 precondition (shared relationExists mechanism, lib/relation-exists.ts):
+  // absent category table ⇒ omit the block (Postel + graceful degradation).
+  if (!(await relationExists(app.pg, 'stats.category'))) return undefined
 
   const { rows } = await app.pg.query<CategoryRow>(
     `SELECT scheme_code AS scheme, code, label, parent_code, ord

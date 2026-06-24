@@ -31,6 +31,7 @@
 import type { FastifyPluginAsync } from 'fastify'
 import { z } from 'zod'
 import { ok, HttpError, parseQuery, parseBody } from '../../lib/http.js'
+import { alreadyPublished } from '../../lib/problem.js'
 import { authPlugin } from '../../auth.js'
 import { toCsv, parseCsv } from '../../lib/csv.js'
 import { createSubmission, AlreadyPublishedError } from '../../ingest/index.js'
@@ -291,10 +292,10 @@ export const displaysRoutes: FastifyPluginAsync = async (app) => {
       return reply.status(202).send(ok({ jobId }))
     } catch (err) {
       if (err instanceof AlreadyPublishedError) {
-        throw new HttpError(
-          409,
-          JSON.stringify({ code: 'ALREADY_PUBLISHED', existingJobId: err.existingJobId }),
-        )
+        // RFC 9457 409: { code, existingJobId } as structured extension members of
+        // the problem body (one factory shared with the JSON ingest route — SSOT),
+        // not a JSON blob stuffed into detail.
+        throw alreadyPublished(err.existingJobId)
       }
       throw err
     }

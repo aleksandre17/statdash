@@ -60,3 +60,27 @@ export interface SectionContext {
   /** Active UI locale — ExternalStore passes as ?lang= query param (Phase 2). Engine never reads. */
   locale?:  string
 }
+
+// ── TIME_DIM — canonical time-axis dimension key ──────────────────────
+//
+//  The SDMX TIME_PERIOD convention key (see header above + sdmx.ts).
+//  Time-axis resolvers (timeseries / growth / kpi yoy·cagr) pin a year by
+//  writing ctx.dims[TIME_DIM]; the API store reads it for from/to bounds.
+//
+//  This is NOT a privileged dimension — it is the single named SSOT for the
+//  one conventional key those resolvers operate on, replacing a magic 'time'
+//  literal scattered across modules. No dimension is special-cased elsewhere.
+//
+export const TIME_DIM = 'time'
+
+// ── atTime — pin the time-axis dim to a specific value ────────────────
+//
+//  Returns ctx unchanged when already at t (referential-equality fast path
+//  preserved); otherwise a shallow clone with dims[TIME_DIM] overwritten.
+//  Shared by registry resolvers and the KPI engine — both pin a year before
+//  a store read.
+//
+export function atTime(t: number, ctx: SectionContext): SectionContext {
+  if ((ctx.dims[TIME_DIM] as number) === t) return ctx
+  return { ...ctx, dims: { ...ctx.dims, [TIME_DIM]: t } }
+}
