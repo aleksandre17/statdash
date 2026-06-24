@@ -5,7 +5,7 @@ import * as Nodes     from '@plugins/nodes'
 import * as Controls  from '@plugins/controls'
 import { registerSlice, middlewareRegistry } from '@statdash/react/engine'
 import { createElement }                     from 'react'
-import { registerStoreBuilders } from './data/stats-registrations'
+import { registerStoreBuilders } from '@statdash/plugins/datasources'
 import { registerFeedbackI18n }  from './i18n/feedback'
 import { setupExtensions }       from './extensions/setupExtensions'
 // Locale formatters are registered at boot from manifest.i18n.locales

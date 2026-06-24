@@ -16,6 +16,12 @@
       "types":   "./dist/registry.d.ts",
       "import":  "./dist/registry.js",
       "default": "./dist/registry.js"
+    },
+    "./datasources": {
+      "source":  "./datasources/index.ts",
+      "types":   "./dist/datasources/index.d.ts",
+      "import":  "./dist/datasources/index.js",
+      "default": "./dist/datasources/index.js"
     }
   },
   "files": ["dist"],

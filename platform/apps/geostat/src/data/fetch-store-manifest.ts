@@ -26,8 +26,8 @@
 
 import type { DataStore, DatasourceInstanceConfig } from '@statdash/engine'
 import { buildStoreManifest } from '@statdash/react/engine'
-import type { PublicDataSourceRow } from './stats-api'
-import { fetchDataSources } from './stats-api'
+import type { PublicDataSourceRow } from '@statdash/plugins/datasources'
+import { fetchDataSources } from '@statdash/plugins/datasources'
 
 /**
  * Map one DB data-source row to a JSON datasource descriptor the registered

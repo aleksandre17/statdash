@@ -102,7 +102,7 @@ export { SkeletonRegistry, skeletonRegistry }             from './skeletonRegist
 export type { SkeletonFn }                                from './skeletonRegistry'
 
 // ── DataSource manifest factory ───────────────────────────────────────
-export { registerStoreBuilder, buildStoreManifest } from './storeManifest'
+export { registerStoreBuilder, buildStoreManifest, registeredKinds } from './storeManifest'
 export type { StoreBuilderFn }                      from './storeManifest'
 
 // ── Slice registration hub ─────────────────────────────────────────────

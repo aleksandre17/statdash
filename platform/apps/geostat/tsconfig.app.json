@@ -34,6 +34,7 @@
       "@statdash/plugins":          ["../../packages/plugins"],
       "@statdash/plugins/catalog":  ["../../packages/plugins/catalog.ts"],
       "@statdash/plugins/registry": ["../../packages/plugins/registry.ts"],
+      "@statdash/plugins/datasources": ["../../packages/plugins/datasources/index.ts"],
       "@statdash/expr":             ["../../packages/expr/index.ts"],
       "@statdash/expr/*":           ["../../packages/expr/src/*"],
       "@statdash/styles":           ["../../packages/styles/src/index.ts"],

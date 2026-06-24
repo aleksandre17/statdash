@@ -10,6 +10,12 @@
 //  Record<string, DimVal>. We never name 'measure' / 'geo' / 'time' here —
 //  the adapter spreads the key as-is and lets the engine resolve dimensions.
 //
+//  SSOT NOTE (G3.0): this is tenant-agnostic stats plumbing — the SDMX obs→row
+//  mapping + the /api/stats HTTP boundary. It carries NO tenant content (no
+//  pages, datasets, brand), so it lives in @statdash/plugins/datasources where
+//  BOTH the geostat runner and the panel Constructor share ONE store-builder
+//  (Law 3: plugins is below apps; it imports only @statdash/engine types here).
+//
 import type { Observation, Classifier, ClassifierEntry, DimVal } from '@statdash/engine'
 
 // ── Wire shapes — exact contract of GET /api/stats/* responses ────────────

@@ -26,6 +26,7 @@ import * as Controls  from '@plugins/controls'
 import { createElement }              from 'react'
 import { registerSlice, middlewareRegistry } from '@statdash/react/engine'
 import { modeRegistry }   from '@statdash/engine'
+import { registerStoreBuilders } from '@statdash/plugins/datasources'
 
 let done = false
 
@@ -51,6 +52,16 @@ export function setupCanvasRegistry(): void {
     ...Object.values(Nodes),
     ...Object.values(Controls),
   ].forEach((s) => registerSlice(s as Parameters<typeof registerSlice>[0]))
+
+  // ── G3.0 — register the SHARED 'stats' store-builder (SSOT) ──────────────
+  //
+  //  The same builder the geostat runner boots (@statdash/plugins/datasources).
+  //  Registration is INERT until G3.1 calls buildStoreManifest(descriptors) with
+  //  live stats datasources — it adds the 'stats' kind to the store-builder
+  //  registry so the panel can later inject a LIVE store map through the same
+  //  SiteProvider stores= seam the runner uses. No network happens here; the
+  //  structural (empty-store) preview keeps working byte-identically until then.
+  registerStoreBuilders()
 
   // ── Canvas anchor middleware (AOP — engine-supported, no engine change) ──
   //

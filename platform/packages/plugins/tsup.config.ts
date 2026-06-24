@@ -22,7 +22,7 @@ import { defineConfig } from 'tsup'
 const workspaceRoot = '../..'
 
 export default defineConfig({
-  entry: ['catalog.ts', 'registry.ts'],
+  entry: ['catalog.ts', 'registry.ts', 'datasources/index.ts'],
   format: ['esm'],
   clean: true,
   dts: {
@@ -48,6 +48,7 @@ export default defineConfig({
         '@statdash/react/*': ['./packages/react/src/*'],
         '@statdash/plugins/catalog': ['./packages/plugins/catalog.ts'],
         '@statdash/plugins/registry': ['./packages/plugins/registry.ts'],
+        '@statdash/plugins/datasources': ['./packages/plugins/datasources/index.ts'],
         '@statdash/plugins/*': ['./packages/plugins/*'],
       },
     },

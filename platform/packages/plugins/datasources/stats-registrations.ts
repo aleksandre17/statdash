@@ -1,7 +1,18 @@
-// ── Stats datasource plugin builder ──────────────────────────────────────────
+// ── Stats datasource plugin builder (SHARED — G3.0 SSOT) ─────────────────────
 //
 //  Registers the 'stats' kind with the engine's store-builder registry.
-//  Call registerStoreBuilders() once at app boot (setupRegistrations.ts).
+//  Call registerStoreBuilders() once at app boot.
+//
+//  SSOT (G3.0): this builder is shared by BOTH the geostat runner
+//  (apps/geostat setupRegistrations) AND the panel Constructor (G3 live-data
+//  preview). It lives in @statdash/plugins/datasources — below apps in the
+//  dependency arrow — so neither app imports the other (Law 3). The arrow holds
+//  for every symbol it pulls in:
+//    • registerStoreBuilder  ← @statdash/react/engine   (react, below plugins)
+//    • ApiStore / CachedStore ← @statdash/engine          (core,  below plugins)
+//    • fetchDimClassifiers / fromStatsObsRow / fetchDatasetMeta ← ./stats-api
+//      (co-located tenant-agnostic stats plumbing — the SDMX obs→row mapper +
+//       /api/stats HTTP boundary; carries NO tenant content).
 //
 //  Descriptor shape expected by the builder:
 //    { id: 'gdp', kind: 'stats', url: string, params: { datasetCode: string, nonTimeDims: string[] } }

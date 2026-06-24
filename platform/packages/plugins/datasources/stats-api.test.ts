@@ -8,6 +8,9 @@
 //  upper. The single adapter seam must canonicalize so downstream provenance
 //  never has to case-fold (Postel's Law).
 //
+//  Moved here in G3.0 with the adapter it pins — the SSOT stats wire seam now
+//  lives in @statdash/plugins/datasources (shared by runner + Constructor).
+//
 
 import { describe, it, expect } from 'vitest'
 import { fromStatsObsRow }       from './stats-api'
