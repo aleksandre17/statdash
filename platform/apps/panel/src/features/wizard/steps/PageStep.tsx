@@ -12,6 +12,7 @@ import { toNodePageConfig } from '../../../canvas/canvasPageAdapter'
 import { Inspector, ChromeInspectorPanel, ChromePalette } from '../../../inspector'
 import { setAtPath } from '../../../inspector/showWhen'
 import { PageWorkflowBar } from '../../page-workflow'
+import { FiltersDrawer } from '../../filters'
 import '../../../canvas/page-step.css'
 
 // Generate a short, collision-resistant node id (matches existing convention).
@@ -127,7 +128,7 @@ export function PageStep() {
             )}
         </Paper>
 
-        {/* ── Inspector ─────────────────────────────────────────────────── */}
+        {/* ── Inspector + page-level Filters (FilterSchema authoring, V0) ─── */}
         <Paper variant="outlined" sx={{ p: 2, overflow: 'auto' }}>
           <Typography variant="overline" color="text.secondary">ინსპექტორი</Typography>
           {/* Chrome element selected → the SAME generic Inspector, chrome source. */}
@@ -155,6 +156,13 @@ export function PageStep() {
               </Button>
             </Box>
           )}
+
+          {/* ── Page-level filters (FilterSchema authoring, V0) ──────────── */}
+          {/*  Page-scoped, not element-scoped: shown regardless of node       */}
+          {/*  selection. Authors the page's filter bars + ParamDefs through    */}
+          {/*  the SAME generic Inspector (ParamDefEditor + cube-profile bind). */}
+          <Divider sx={{ my: 2 }} />
+          <FiltersDrawer />
         </Paper>
       </Box>
 

@@ -96,6 +96,14 @@ export interface PropField {
    * The engine only declares the kind of ref; the panel binds it (Law 3).
    */
   source?:     PropFieldSource
+  /**
+   * For a `'cube.members'` enum-ref ONLY: the sibling field whose value names the
+   * dimension whose members this field draws from (the member list is scoped to a
+   * chosen dimension — e.g. a `default` member is scoped to the param's `key`).
+   * The panel reads the dimension code from `siblingValues[sourceDim]`, falling
+   * back to the profile's first dimension. Ignored for any other source.
+   */
+  sourceDim?:  string
   validation?: PropFieldValidation
   /**
    * Conditional visibility — evaluated against other field values.

@@ -112,6 +112,11 @@ const ALLOW = new Set(
     // Constructor descriptor carrying bilingual PropField labels the Inspector
     // renders. Not rendering/logic code; an i18n catalog (V1 transform StepForms).
     'packages/core/src/data/transform/op-schemas.ts',
+    // ParamDef authoring catalog — the SAME class as op-schemas.ts: a Constructor
+    // descriptor carrying bilingual PropField labels the Inspector renders to
+    // author page-level filter controls. Not rendering/logic code; an i18n catalog
+    // (V0 page-level FilterSchema authoring).
+    'packages/core/src/config/param-schemas.ts',
     'packages/core/src/core/provenance.ts',
     'packages/styles/src/catalog/typography.ts',
     'packages/styles/src/catalog/primitives.ts',

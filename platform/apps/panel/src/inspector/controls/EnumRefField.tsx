@@ -21,9 +21,8 @@
 //
 //  'cube.members' is dimension-scoped: it reads which dimension via the field's
 //  `sourceDim` descriptor (a sibling prop path naming the chosen dimension),
-//  falling back to the profile's first dimension. Defensive reads — `source` /
-//  `sourceDim` are engine descriptor keys the panel's PropField type may not yet
-//  expose on the narrow union.
+//  falling back to the profile's first dimension. Both `source` and `sourceDim`
+//  are typed PropField descriptors (the engine names the ref; the panel binds it).
 //
 import { useMemo } from 'react'
 import type { FieldControlProps } from '../fieldControl.types'
@@ -61,9 +60,10 @@ export function EnumRefField({ field, id, value, locale, siblingValues, onChange
   // The active dataset's profile — drives the cube.* sources (C3).
   const active = useActiveProfile()
 
-  // Defensive reads of the engine descriptor keys (see header).
-  const sourceKey = (field as { source?: string }).source
-  const sourceDim = (field as { sourceDim?: string }).sourceDim
+  // `source` selects the catalog; `sourceDim` scopes a 'cube.members' field to a
+  // sibling-chosen dimension (both are typed PropField descriptors).
+  const sourceKey = field.source
+  const sourceDim = field.sourceDim
 
   // The dimension a 'cube.members' field is scoped to: the value at the sibling
   // prop named by `sourceDim`, when present. Falls back to the profile's first

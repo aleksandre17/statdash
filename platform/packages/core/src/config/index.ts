@@ -34,3 +34,13 @@ export { evalCondition, evalWhen, evalValidatorPredicate, validators,
          validateField, applyCrossValidation, applyEffects,
          evalFilterDerive,
          resolveDefaults, validateCascadeValues }                from './filter'
+
+// ── ParamDef authoring-schema registry [V0] ───────────────────────────────────
+//  The Constructor's page-level FilterSchema control vocabulary: each ParamDef
+//  type CARRIES its authoring PropSchema (registered via the param-schemas
+//  module-init side-effect below), resolved through the generic Inspector. The
+//  registry mirrors the transform-step schema registry, one rung down (a ParamDef
+//  instead of a TransformStep). The registration side-effect (import of
+//  './param-schemas') is owned by the package index (src/index.ts), mirroring how
+//  the transform-step registry's built-ins are registered from data/transform.
+export { registerParamSchema, getParamSchema, listParamSchemas } from './param-schema-registry'

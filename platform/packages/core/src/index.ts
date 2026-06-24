@@ -90,6 +90,13 @@ export type { VisibilityExpr }              from './config/visibility'
 //  enumerates these (TransformStep ops use listTransformOps()).
 export type { DataSpecDiscriminant, ParamDefType, VisibilityOp } from './config/discriminant-manifest'
 export { DATASPEC_DISCRIMINANTS, PARAMDEF_TYPES, VISIBILITY_OPS } from './config/discriminant-manifest'
+// ── ParamDef authoring-schema registry — the page-level FilterSchema catalog [V0] ──
+//  Each ParamDef type CARRIES its authoring PropSchema (OCP), registered via the
+//  config/index side-effect. The panel's filterParamSchemaSource resolves a
+//  ParamDef through getParamSchema into the SAME generic Inspector — no bespoke
+//  per-control form (mirrors getTransformStepSchema for transform steps).
+export { registerParamSchema, getParamSchema, listParamSchemas } from './config/param-schema-registry'
+import './config/param-schemas' // side-effect: register built-in ParamDef authoring schemas
 // ── PropSchema — typed authoring-form vocabulary (Constructor) ─────────
 //  Lives in core (not react) because a TransformStep op now CARRIES its own
 //  authoring PropSchema (OCP) and core may not import react (the arrow).

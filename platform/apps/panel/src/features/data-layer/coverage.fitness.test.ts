@@ -30,7 +30,7 @@
 //
 import { describe, it, expect } from 'vitest'
 import {
-  listTransformOps, getTransformStepSchema,
+  listTransformOps, getTransformStepSchema, getParamSchema,
   DATASPEC_DISCRIMINANTS, PARAMDEF_TYPES, VISIBILITY_OPS,
 } from '@statdash/engine'
 
@@ -46,8 +46,18 @@ const BESPOKE_STEP_FORMS = new Set(['derive', 'lookup', 'sort', 'filter'])
 /** DataSpec discriminants with a dedicated (non-JSON-fallback) editor today. */
 const DATASPEC_EDITORS = new Set(['query', 'timeseries', 'growth', 'ratio-list'])
 
-/** ParamDef types with a Constructor control editor today. (V0 — not built yet.) */
-const PARAMDEF_EDITORS = new Set<string>()
+/**
+ * ParamDef types are surfaced exactly like transform ops [V0]: a type is
+ * authorable iff it CARRIES an authoring PropSchema in the engine param-schema
+ * registry (getParamSchema), which the generic Inspector renders via the panel's
+ * filterParamSchemaSource (ParamDefEditor) — no bespoke per-control form. There is
+ * no hand-list of "editors": the schema registry IS the surface set (a new type
+ * with a schema is surfaced; one that loses its schema FAILS this gate). Mirrors
+ * BESPOKE_STEP_FORMS being unnecessary for params (every type is schema-driven).
+ */
+function paramDefAuthorable(type: string): boolean {
+  return getParamSchema(type) != null
+}
 
 /** VisibilityExpr ops with a Constructor condition-builder today. (V4 — not built.) */
 const VISIBILITY_EDITORS = new Set<string>()
@@ -76,15 +86,11 @@ const COVERAGE_TODO = {
     'custom':    'PERMANENT — resolver-name reference only, never authorable code',
   },
   paramDefs: {
-    // V0 — page-level FilterSchema/ParamDef authoring (the single biggest gap:
-    // a statistical dashboard IS its filters). None authorable yet.
-    'hidden':       'V0 — FilterSchema editor (hidden URL-state param)',
-    'year-select':  'V0 — FilterSchema editor (year ↔ range control)',
-    'cascade':      'V0 — FilterSchema editor (2-level hierarchical select)',
-    'select':       'V0 — FilterSchema editor (single dropdown, cube.members)',
-    'range':        'V0 — FilterSchema editor (numeric range)',
-    'multi-select': 'V0 — FilterSchema editor (multi checkbox group)',
-    'chip-select':  'V0 — FilterSchema editor (colored chip strip)',
+    // V0 — page-level FilterSchema/ParamDef authoring is DONE. Every ParamDef
+    // type now carries an authoring PropSchema (engine param-schema registry,
+    // OCP) rendered through the generic Inspector (filterParamSchemaSource +
+    // ParamDefEditor + the FiltersDrawer surface), bound to the cube-profile.
+    // The allowlist is empty: a type without a schema now FAILS the gate.
   },
   visibilityOps: {
     // V4 — node-level VisibilityExpr ("show when") condition builder. None yet.
@@ -138,7 +144,7 @@ describe('Coverage Fitness #1 — every renderer capability is authorable (or an
   it('ParamDef types: each is surfaced OR allowlisted', () => {
     const gaps: string[] = []
     for (const p of PARAMDEF_TYPES) {
-      const authorable  = PARAMDEF_EDITORS.has(p)
+      const authorable  = paramDefAuthorable(p)
       const allowlisted = p in COVERAGE_TODO.paramDefs
       if (!authorable && !allowlisted) gaps.push(p)
       if (authorable && allowlisted) gaps.push(`${p} (surfaced but still in COVERAGE_TODO — remove it)`)
