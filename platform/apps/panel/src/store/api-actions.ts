@@ -29,7 +29,7 @@ import {
 } from '../lib/api'
 import type { PageStatus } from './constructor.lifecycle'
 import { validatePageForSave, type SaveIssue } from '../save/saveGuard'
-import { orderLocales } from '../inspector/useActiveLocales'
+import { resolveActiveLocales } from '../inspector/useActiveLocales'
 
 /** Coerce a server status string into the lifecycle FSM enum (default draft). */
 function toPageStatus(raw: string | undefined): PageStatus {
@@ -54,8 +54,10 @@ export class SaveGuardError extends Error {
 
 /** Run the C5 save guard for a page against the session's active locales. */
 function assertSaveable(page: CanvasPage): void {
-  const { defaultLocale } = useConstructorStore.getState().site
-  const report = validatePageForSave(page, { activeLocales: orderLocales(defaultLocale) })
+  const { activeLocales, defaultLocale } = useConstructorStore.getState().site
+  const report = validatePageForSave(page, {
+    activeLocales: resolveActiveLocales(activeLocales, defaultLocale),
+  })
   if (!report.ok) throw new SaveGuardError(report.issues)
 }
 
@@ -275,7 +277,7 @@ export async function savePage(
   // guard is the gate: a failure is an authoring error to fix (recorded as inline
   // issues), never a config that reaches the server.
   const report = validatePageForSave(merged, {
-    activeLocales: orderLocales(store.site.defaultLocale),
+    activeLocales: resolveActiveLocales(store.site.activeLocales, store.site.defaultLocale),
   })
   if (!report.ok) {
     store.setSaveStatus(id, { issues: report.issues, saved: false })

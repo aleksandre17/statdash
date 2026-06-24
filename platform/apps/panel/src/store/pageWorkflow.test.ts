@@ -43,7 +43,7 @@ function mockFetch() {
   })
 }
 
-function resetStore(page: CanvasPage) {
+function resetStore(page: CanvasPage, activeLocales: string[] = []) {
   useConstructorStore.setState({
     pages: [page],
     activePageId: page.id,
@@ -51,7 +51,7 @@ function resetStore(page: CanvasPage) {
     chromeSelection: null,
     lifecycle: {}, saveStatus: {}, publishStatus: {},
     undoStack: [], redoStack: [], canUndo: false, canRedo: false,
-    site: { ...useConstructorStore.getState().site, defaultLocale: 'ka' },
+    site: { ...useConstructorStore.getState().site, defaultLocale: 'ka', activeLocales },
   })
 }
 
@@ -107,6 +107,60 @@ describe('savePage — the save→guard gate', () => {
     // Saving a new version reflects status:draft, the new version, not-yet-published.
     expect(store().lifecycle['p1']).toMatchObject({ status: 'draft', versionNumber: 4, latestPublished: false, dirty: false })
     expect(store().saveStatus['p1']?.saved).toBe(true)
+  })
+})
+
+describe('savePage — locale-completeness honors the site ACTIVE set (Q-5 SSOT)', () => {
+  // The save-guard's locale set is derived from the SAME SSOT the Inspector uses
+  // (resolveActiveLocales(site.activeLocales, defaultLocale)) — NOT defaultLocale
+  // alone. So a config missing a NON-default active locale must be rejected, the
+  // case that silently passed when the guard saw only the default locale.
+
+  /** A hero whose title is complete in the DEFAULT locale (ka) but missing en. */
+  function defaultOnlyHeroPage(): CanvasPage {
+    const hero: CanvasNode = {
+      id: 'hero-1', type: 'hero',
+      props: { ...(nodeRegistry.getDefaults('hero') ?? {}),
+               title: { ka: 'მთავარი' }, subtitle: { ka: 'ა', en: 'b' },
+               cards: [{ id: 'c', title: { ka: 'ბ', en: 'b' }, color: '#000', img: '', pageBg: '' }] },
+      childIds: [],
+    }
+    return { id: 'p1', title: { ka: 'მთ', en: 'H' }, slug: 'home', nodeIds: ['hero-1'], nodes: { 'hero-1': hero } }
+  }
+
+  it('REJECTS a config missing a NON-default active locale (en) when site.activeLocales = [ka,en]', async () => {
+    resetStore(defaultOnlyHeroPage(), ['ka', 'en'])
+
+    const report = await savePage('p1')
+
+    expect(report.ok).toBe(false)
+    const issue = report.issues.find((i) => i.check === 'locale-complete' && i.nodeId === 'hero-1')
+    expect(issue?.field).toBe('title')
+    expect(issue?.message).toContain('en')        // the non-default active locale
+    expect(calls.some((c) => c.method === 'PUT')).toBe(false)  // no write reached the server
+  })
+
+  it('PASSES the same page when the only active locale is the default (single-locale site)', async () => {
+    // With activeLocales = [ka], the default-only title is complete → no locale issue.
+    resetStore(defaultOnlyHeroPage(), ['ka'])
+    responder = (c) => c.method === 'PUT'
+      ? { status: 200, data: { id: 'p1', version_number: 2 } }
+      : { status: 200, data: {} }
+
+    const report = await savePage('p1')
+
+    expect(report.issues.some((i) => i.check === 'locale-complete')).toBe(false)
+  })
+
+  it('falls back gracefully to the platform set [ka,en] when activeLocales is empty', async () => {
+    // Empty activeLocales (mock-data / legacy payload) → resolveActiveLocales
+    // degrades to default-first [ka,en], so en is still required.
+    resetStore(defaultOnlyHeroPage(), [])
+
+    const report = await savePage('p1')
+
+    expect(report.ok).toBe(false)
+    expect(report.issues.some((i) => i.check === 'locale-complete' && i.field === 'title')).toBe(true)
   })
 })
 
