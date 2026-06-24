@@ -151,6 +151,14 @@ export { validateDataSpec }                                             from './
 //  share. Returns ValidationError[] ([] === valid); never throws.
 export type { StructuralNode, StructuralPageConfig }                    from './validation/config'
 export { validateConfig }                                              from './validation/config'
+// ── Shared accept/reject corpus (fitness F1 SSOT, ADR §7.8) ────────────
+//  The labelled VALID/INVALID config corpus. Exported from the engine so the
+//  apps/api save-guard contract test and the react pre-render gate reuse the
+//  SAME samples that pin validateConfig here — one corpus, three faces, no
+//  copy-drift (they all run one validator).
+export type { ValidCase, InvalidCase }                                 from './validation/config-corpus'
+export { VALID_CONFIGS, INVALID_CONFIGS, CORPUS_KNOWN_TYPES,
+         corpusAllTypes }                                              from './validation/config-corpus'
 
 // ── Registry — Strategy + Plugin Pattern ─────────────────────────────
 export type { SpecResolver }                                           from './registry/engine'
@@ -158,7 +166,8 @@ export { EngineRegistry, defaultRegistry }                             from './r
 // ── Node-type registry — derived placeable-type SET (ADR §7.3) ────────
 //  Fail-open when empty; populated at startup by react's register-all so
 //  validateConfig can enforce `type ∈ known set`. Core holds NO hardcoded list.
-export { registerNodeType, knownNodeTypes, hasNodeType }               from './registry/nodeTypes'
+export { registerNodeType, knownNodeTypes, hasNodeType,
+         _resetNodeTypes }                                             from './registry/nodeTypes'
 export type { DiagnosticObserver }                                     from './registry/diagnostics'
 export { setDiagnosticObserver, emitDiagnostic }                       from './registry/diagnostics'
 

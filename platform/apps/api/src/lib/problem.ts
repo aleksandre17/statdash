@@ -21,6 +21,7 @@ import {
   PROBLEM_URN_PREFIX,
   type ProblemDetails,
 } from '@statdash/contracts'
+import type { ValidationError } from '@statdash/engine'
 import type { ZodError } from 'zod'
 
 // ── The problem catalogue ─────────────────────────────────────────────────────
@@ -153,6 +154,24 @@ export const badRequest = (detail: string): Problem =>
 /** 400 — schema validation failure. Surfaces the Zod issues as a typed extension. */
 export const validationProblem = (err: ZodError): Problem =>
   new Problem('validation', 'Request validation failed', { issues: err.issues })
+
+/**
+ * 400 — page-config STRUCTURAL validation failure (engine `validateConfig`).
+ *
+ * The sibling to {@link validationProblem}: a request can fail validation two
+ * ways — Zod (the request envelope) or the engine's structural floor (the
+ * config tree). Both surface through the SAME `'validation'` problem kind and
+ * the SAME `issues` extension member, so a client parses ONE wire contract for
+ * every validation failure regardless of which validator produced it (Postel /
+ * least astonishment). The engine `ValidationError[]` is the `issues` payload —
+ * each carries `{ path, code, message, severity }` (machine-readable, §3.2),
+ * mirroring how the Zod variant carries `ZodError.issues`.
+ *
+ * This is the throw the save-path WARN→REJECT flip uses once the backfill audit
+ * is green (see routes/config/pages.ts ENFORCE_CONFIG_VALIDATION).
+ */
+export const configValidationProblem = (errors: ValidationError[]): Problem =>
+  new Problem('validation', 'Request validation failed', { issues: errors })
 
 /**
  * Map any thrown value to a Problem. A `Problem` passes through. A Fastify/HTTP

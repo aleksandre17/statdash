@@ -10,11 +10,12 @@
       "types":   "./dist/index.d.ts",
       "import":  "./dist/index.js",
       "default": "./dist/index.js"
-    }
+    },
+    "./schema/page-config.schema.json": "./schema/page-config.schema.json"
   },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
-  "files": ["dist"],
+  "files": ["dist", "schema"],
   "scripts": {
     "build": "tsup src/index.ts --format esm --dts --clean"
   },

@@ -1,9 +1,54 @@
-import type { FastifyPluginAsync } from 'fastify'
+import type { FastifyBaseLogger, FastifyPluginAsync } from 'fastify'
 import { z } from 'zod'
-import { migratePageConfig, CURRENT_SCHEMA_VERSION } from '@statdash/engine'
+import { migratePageConfig, validateConfig, CURRENT_SCHEMA_VERSION } from '@statdash/engine'
 import { ok, notFound, parseBody, parseParams, HttpError } from '../../lib/http.js'
-import { Problem } from '../../lib/problem.js'
+import { Problem, configValidationProblem } from '../../lib/problem.js'
 import type { AuditLogger } from '../../lib/audit-log.js'
+
+// ── Config-validation enforcement seam (WARN → REJECT, the ONE-LINE flip) ─────
+//
+//  PRODUCT DECISION (lead): validate every saved config against the engine's
+//  structural floor (validateConfig — the SAME function the renderer runs), but
+//  in WARN/OBSERVE mode first: on a failing config we LOG a structured warning
+//  and STILL PERSIST. We do NOT hard-reject yet. The reject flip is deliberately
+//  deferred until the backfill audit (scripts/audit-config-validity.ts) shows the
+//  STORED corpus is already clean — flipping before then would start rejecting
+//  saves of configs no worse than what is already in the DB.
+//
+//  THE FLIP IS ONE BOOLEAN. Set this to `true` and the gated throw in
+//  guardConfig() below activates — POST / + PUT /:id then reject an invalid
+//  config with the `validation` problem (configValidationProblem), identical wire
+//  contract to a Zod failure. No other line changes (Protected Variations: this
+//  flag is the single seam the WARN↔REJECT decision lives behind).
+const ENFORCE_CONFIG_VALIDATION = false // flip to true after the backfill audit is green
+
+/**
+ * Structural-floor guard for a config about to be saved. Validates the (already
+ * migrated) config via the engine's validateConfig — the SAME validator the
+ * renderer uses, so server and client cannot diverge. In WARN mode (default) a
+ * failing config is LOGGED and allowed through; in REJECT mode (the one-boolean
+ * flip above) it throws the `validation` Problem instead. A clean config is a
+ * no-op (no log) either way.
+ *
+ * @param config  the MIGRATED config (validate what we store, not the raw blob).
+ * @param pageRef the page id / slug for the audit line (who/what failed).
+ * @param log     the Fastify structured logger (logs · the observability pillar).
+ */
+function guardConfig(config: Record<string, unknown>, pageRef: string, log: FastifyBaseLogger): void {
+  const problems = validateConfig(config)
+  if (problems.length === 0) return
+
+  // WARN/observe: a structured warn carrying the page ref, the problem count, and
+  // the failing JSON-pointer paths — enough for the backfill audit to triage the
+  // corpus without dumping whole configs into the log.
+  log.warn(
+    { pageRef, problemCount: problems.length, paths: problems.map((p) => p.path) },
+    'config save: structural validation found problems (WARN mode — persisting anyway)',
+  )
+
+  // REJECT flip — present but gated so the WARN→REJECT switch is one boolean.
+  if (ENFORCE_CONFIG_VALIDATION) throw configValidationProblem(problems)
+}
 
 // ── Publish-role gate (C4 RBAC — Constructor publish governance) ───────────────
 //
@@ -127,6 +172,12 @@ export const pagesRoutes = (audit?: AuditLogger): FastifyPluginAsync => async (a
   // POST / — create page + its first immutable version (atomic).
   app.post('/', async (req, reply) => {
     const body = parseBody(CreatePageBody, req.body)
+    // Forward-migrate to CURRENT_SCHEMA_VERSION BEFORE storing (the stored blob is
+    // current-schema, matching the read path which migrates lazily — idempotent, so
+    // the GET /:id re-migrate is a no-op). Then guard it (WARN mode) against the
+    // structural floor. body.config defaults to {} ⇒ migrate stamps schemaVersion.
+    const migrated = migratePageConfig(body.config)
+    guardConfig(migrated, body.slug, app.log)
     const client = await app.pg.connect()
     try {
       await client.query('BEGIN')
@@ -137,7 +188,7 @@ export const pagesRoutes = (audit?: AuditLogger): FastifyPluginAsync => async (a
       await client.query(
         `INSERT INTO config.page_version (page_id, config, data_specs)
          VALUES ($1, $2, $3)`,
-        [page.id, JSON.stringify(body.config), JSON.stringify(body.data_specs)],
+        [page.id, JSON.stringify(migrated), JSON.stringify(body.data_specs)],
       )
       await client.query('COMMIT')
       audit?.log({
@@ -201,10 +252,16 @@ export const pagesRoutes = (audit?: AuditLogger): FastifyPluginAsync => async (a
         )
         const nextConfig    = body.config    ?? prev?.config    ?? {}
         const nextDataSpecs = body.data_specs ?? prev?.data_specs ?? []
+        // Migrate to current schema before storing (idempotent: a carried-over
+        // prev.config is already current, a fresh body.config is stamped) so the
+        // stored blob matches the read path. Then guard (WARN mode) the migrated
+        // tree against the structural floor.
+        const migrated = migratePageConfig(nextConfig as Record<string, unknown>)
+        guardConfig(migrated, id, app.log)
         const { rows: [ver] } = await client.query(
           `INSERT INTO config.page_version (page_id, config, data_specs)
            VALUES ($1, $2, $3) RETURNING version_number`,
-          [id, JSON.stringify(nextConfig), JSON.stringify(nextDataSpecs)],
+          [id, JSON.stringify(migrated), JSON.stringify(nextDataSpecs)],
         )
         versionNumber = ver.version_number
       }

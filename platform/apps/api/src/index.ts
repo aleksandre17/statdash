@@ -9,6 +9,7 @@ import { publicDataSourcesRoutes } from './routes/data-sources/index.js'
 import { bootstrapRoutes } from './routes/bootstrap/index.js'
 import { cubeRoutes } from './routes/cube/index.js'
 import { catalogRoutes } from './routes/catalog/index.js'
+import { schemaRoutes } from './routes/schema/index.js'
 import { statsRoutes } from './routes/stats/index.js'
 import { authRoutes } from './routes/auth/index.js'
 import { snapshotsRoutes, embedRoutes, createSnapshotStore } from './routes/embed/index.js'
@@ -74,6 +75,13 @@ await app.register(cubeRoutes, { prefix: '/api/cube' })
 // never cascades). Published-only projection (joins V28 stats.dataset_published);
 // degrades to available:false when V29 is not yet applied here (rolling migration).
 await app.register(catalogRoutes, { prefix: '/api/catalog' })
+
+// ADR adr-config-and-render-vision §7 — public page-config JSON Schema. UNGUARDED
+// sibling to configRoutes: the Constructor reads the config CONTRACT before it has
+// any token, so it gets its own scope (the config JWT guard never cascades). A
+// static, generated artifact (packages/contracts/schema) served verbatim — the
+// machine-readable form of the SAME structural floor validateConfig enforces.
+await app.register(schemaRoutes, { prefix: '/api/schema' })
 
 // N38 — snapshot persistence + signed embed (delivery boundary). One in-memory
 // store, injected into the guarded write route and the public read route. The
