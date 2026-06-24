@@ -5,14 +5,24 @@ import { registerExport, getExportFormat, listExportFormats } from './registry'
 import './index'
 
 describe('export registry — contract', () => {
-  it('built-in formats csv and sdmx-json are registered', () => {
+  it('built-in formats csv, xlsx and sdmx-json are registered', () => {
     const formats = listExportFormats()
     expect(formats).toContain('csv')
+    expect(formats).toContain('xlsx')
     expect(formats).toContain('sdmx-json')
   })
 
+  it('xlsx is registered with the OOXML spreadsheet mime + ext', () => {
+    const fmt = getExportFormat('xlsx')
+    expect(fmt).toBeDefined()
+    expect(fmt!.mime).toBe('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    expect(fmt!.ext).toBe('xlsx')
+    // xlsx serializer emits binary bytes, not a string
+    expect(fmt!.serialize([{ a: 1 }], {})).toBeInstanceOf(Uint8Array)
+  })
+
   it('each built-in format has required fields', () => {
-    for (const id of ['csv', 'sdmx-json']) {
+    for (const id of ['csv', 'xlsx', 'sdmx-json']) {
       const fmt = getExportFormat(id)
       expect(fmt, `format '${id}' should be registered`).toBeDefined()
       expect(typeof fmt!.mime,      `'${id}'.mime`     ).toBe('string')

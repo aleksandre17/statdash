@@ -7,9 +7,10 @@
 //  no central registry change required for extension.
 //
 
-import type { ModeId }    from '@statdash/engine'
-import type { DataRow }   from '@statdash/engine'
-import type { ExportMeta } from '@statdash/engine'
+import type { ModeId }          from '@statdash/engine'
+import type { DataRow }         from '@statdash/engine'
+import type { ExportMeta }      from '@statdash/engine'
+import type { ExportFormatId }  from '@statdash/engine'
 
 export interface PlatformCommandMap {
   /** Set one filter param. Replaces ctx.set(key, val). */
@@ -25,8 +26,12 @@ export interface PlatformCommandMap {
    * Migrated from the 'drill:down' EventBus event — one consumer = command, not event.
    */
   'nav:drill':      { href: string; target: 'page' | 'url' | 'external'; params?: Record<string, string> }
-  /** Export rows programmatically. ExportBar's own handlers are unaffected. */
-  'data:export':    { format: 'csv' | 'xlsx'; rows: DataRow[]; meta?: ExportMeta }
+  /**
+   * Export rows programmatically. ExportBar's own handlers are unaffected.
+   * `format` is a registry id (ExportFormatId) — the export registry is the
+   * SSOT for available formats, not a hand-maintained literal union.
+   */
+  'data:export':    { format: ExportFormatId; rows: DataRow[]; meta?: ExportMeta }
 }
 
 export type CommandType = keyof PlatformCommandMap

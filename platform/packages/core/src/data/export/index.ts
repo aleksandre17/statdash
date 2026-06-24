@@ -11,12 +11,20 @@
 import { registerExport }    from './registry'
 import { serializeCsv }      from './formats/csv'
 import { serializeSdmxJson } from './formats/sdmx-json'
+import { serializeXlsx }     from './formats/xlsx'
 
 registerExport('csv', {
   mime:      'text/csv',
   ext:       'csv',
   label:     'CSV',
   serialize: serializeCsv,
+})
+
+registerExport('xlsx', {
+  mime:      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  ext:       'xlsx',
+  label:     'Excel',
+  serialize: serializeXlsx,
 })
 
 registerExport('sdmx-json', {
@@ -27,5 +35,5 @@ registerExport('sdmx-json', {
 })
 
 // ── Public exports ─────────────────────────────────────────────────────
-export type { ExportMeta, SerializeFn, ExportFormat } from './types'
+export type { ExportMeta, SerializeFn, ExportFormat, ExportFormatId } from './types'
 export { registerExport, getExportFormat, listExportFormats } from './registry'

@@ -189,7 +189,7 @@ export { registerMetric, getMetric, listMetrics, listMetricDefs,
 // ── Export formats [N16] — registry + built-ins (csv, sdmx-json) ──────
 //  Re-exporting the barrel also runs its side-effect: the csv / sdmx-json
 //  formats register themselves on import, so listExportFormats() is non-empty.
-export type { ExportMeta, SerializeFn, ExportFormat }                   from './data/export'
+export type { ExportMeta, SerializeFn, ExportFormat, ExportFormatId }   from './data/export'
 export { registerExport, getExportFormat, listExportFormats }          from './data/export'
 
 // ── DataLinks — declarative drill-down / navigation ───────────────────

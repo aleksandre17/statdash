@@ -33,8 +33,14 @@ export function useExport(rows: DataRow[], meta: ExportMeta): UseExportResult {
     const fmt = getExportFormat(format)
     if (!fmt || rows.length === 0) return
 
+    // SerializeFn returns string (csv/sdmx-json) OR Uint8Array (xlsx/binary).
+    // A Uint8Array is wrapped as a raw BlobPart so its bytes are not UTF-8
+    // re-encoded (which would corrupt the OOXML zip container).
     const content = fmt.serialize(rows as unknown as EngineRow[], meta)
-    const blob    = new Blob([content], { type: fmt.mime })
+    const part: BlobPart = typeof content === 'string'
+      ? content
+      : new Uint8Array(content)
+    const blob    = new Blob([part], { type: fmt.mime })
     const url     = URL.createObjectURL(blob)
     const a       = document.createElement('a')
     a.href        = url

@@ -8,7 +8,7 @@ import './feedback.css'
 import type { ComponentType } from 'react'
 import { useExport }                  from '../../engine/hooks/useExport'
 import { useT }                       from '../../context/SiteContext'
-import type { DataRow, ExportMeta }   from '@statdash/engine'
+import type { DataRow, ExportMeta, ExportFormatId } from '@statdash/engine'
 import { InjectionToken } from '../../engine/di/InjectionToken'
 
 export const EXPORT_BAR = new InjectionToken<ComponentType<ExportBarProps>>('export-bar')
@@ -23,8 +23,9 @@ export interface ExportBarProps {
    * When provided, called on button click instead of (or in addition to) the
    * internal download logic, so shells can dispatch `data:export` commands.
    * When absent, the internal `useExport` download runs as before (backward compat).
+   * `format` is a registry id (ExportFormatId) — the registry is the SSOT.
    */
-  onExport?: (format: 'csv' | 'xlsx') => void
+  onExport?: (format: ExportFormatId) => void
 }
 
 export function ExportBar({ rows, meta, className, onExport }: ExportBarProps) {
@@ -32,7 +33,7 @@ export function ExportBar({ rows, meta, className, onExport }: ExportBarProps) {
   const { formats, exportAs } = useExport(rows, meta)
   if (formats.length === 0 || rows.length === 0) return null
 
-  const handleClick = (fmt: 'csv' | 'xlsx') => {
+  const handleClick = (fmt: ExportFormatId) => {
     if (onExport) {
       onExport(fmt)
     } else {
@@ -52,7 +53,7 @@ export function ExportBar({ rows, meta, className, onExport }: ExportBarProps) {
           type="button"
           className="export-bar__btn"
           aria-label={t('export.download', { fmt: fmt.toUpperCase() })}
-          onClick={() => handleClick(fmt as 'csv' | 'xlsx')}
+          onClick={() => handleClick(fmt)}
         >
           {'↓'} {fmt.toUpperCase()}
         </button>

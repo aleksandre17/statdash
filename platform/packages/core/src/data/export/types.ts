@@ -22,10 +22,24 @@ export interface ExportMeta {
 }
 
 /**
- * Pure serializer — takes rows + meta, returns a string.
+ * Pure serializer — takes rows + meta, returns the serialized payload.
+ * Text formats (csv, sdmx-json) return a `string`; binary container formats
+ * (xlsx and other OOXML/zip payloads) return raw bytes as a `Uint8Array`.
+ * The download layer wraps either in a Blob with the format's `mime`.
  * Must be synchronous and free of side-effects.
  */
-export type SerializeFn = (rows: EngineRow[], meta: ExportMeta) => string
+export type SerializeFn = (rows: EngineRow[], meta: ExportMeta) => string | Uint8Array
+
+/**
+ * Identifier of a registered export format (e.g. 'csv', 'xlsx', 'sdmx-json').
+ *
+ * The registry is the single source of truth for available formats — ids are
+ * an open set (plugins/app layer register new ones), so this is `string`, not
+ * a hand-maintained literal union. Consumers derive the live list from
+ * `listExportFormats()`; this alias names the value type for that SSOT so
+ * callers stop duplicating a `'csv' | 'xlsx'` union that can drift.
+ */
+export type ExportFormatId = string
 
 /** A registered export format descriptor. */
 export interface ExportFormat {
