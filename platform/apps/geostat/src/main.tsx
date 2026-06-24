@@ -13,6 +13,14 @@ import './shared/styles/inner.css'
 // i18n catalog supplies tenant locales at boot.
 i18next.init({ lng: 'en', fallbackLng: 'en', resources: {}, interpolation: { escapeValue: false } })
 
+// Theming spine (ADR semantic-token spine §2): scope the geostat tenant theme.
+// The default theme in @statdash/styles is brand-NEUTRAL; this attribute
+// rebinds the Tier-2 accent roles to geostat's #0080BE family (see
+// shared/styles/index.css [data-tenant="geostat"]). Composes with data-theme
+// (tenant × mode are orthogonal root axes). The multi-tenant target injects
+// this from manifest.theme at boot — same one-line seam, no shell change.
+document.documentElement.dataset.tenant = 'geostat'
+
 setupRegistrations()
 
 ReactDOM.createRoot(document.getElementById('root')!).render(

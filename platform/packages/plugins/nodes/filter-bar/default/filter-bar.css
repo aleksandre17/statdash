@@ -108,9 +108,9 @@
 
 /* Range chip (dynamics mode) */
 .filter-chip-range {
-  background: color-mix(in srgb, var(--sc, #0080BE) 8%, white);
-  border-color: color-mix(in srgb, var(--sc, #0080BE) 20%, #E8EEED);
-  color: color-mix(in srgb, var(--sc, #0080BE) 80%, #2D3748);
+  background: color-mix(in srgb, var(--sc, var(--color-accent)) 8%, white);
+  border-color: color-mix(in srgb, var(--sc, var(--color-accent)) 20%, #E8EEED);
+  color: color-mix(in srgb, var(--sc, var(--color-accent)) 80%, #2D3748);
   font-weight: 600;
 }
 

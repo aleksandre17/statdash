@@ -3,22 +3,31 @@
 @tailwind utilities;
 
 /* ========================================
-   CSS Custom Properties
-   ======================================== */
-:root {
-  --color-primary: #0080BE;
-  --color-primary-dark: #006A9E;
-  --color-primary-light: #E6F3FA;
-  --color-teal: #00A896;
-  --color-teal-light: #E8F5F2;
+   Geostat tenant theme (semantic-token spine, ADR §2)
 
-  --chart-primary: #0080BE;
-  --chart-secondary: #00A896;
-  --chart-tertiary: #4ECDC4;
-  --chart-accent: #E76F51;
-  --chart-warning: #F4A261;
-  --chart-positive: #2A9D8F;
- }
+   A theme is a set of Tier-2 semantic VALUES. The geostat BRAND lives here
+   — outside the engine contract (packages/styles ships brand-NEUTRAL roles).
+   This block rebinds ONLY the accent family to geostat's teal-blue; the
+   neutrals (surface/border/text) come from the brand-neutral default theme,
+   which already equals the geostat render. Set via data-tenant="geostat" on
+   <html> (main.tsx). Door left open for runtime injection from manifest.theme:
+   the same flat token-value map can be supplied by /api/bootstrap with no
+   shell change (ADR §2 "runtime-injected").
+
+   The former dead :root { --color-primary … / --chart-* } set was consumed by
+   NOBODY (the @apply directives + utility classes resolve through the Tailwind
+   theme in tailwind.config.js, not these vars) — removed per ADR Pfinal-prep.
+   ======================================== */
+[data-tenant="geostat"] {
+  --color-accent:           #0080BE;
+  --color-accent-hover:     #006A9E;
+  --color-accent-muted:     #E6F3FA;
+  --color-accent-bg:        #EEF3F4;
+  --color-accent-secondary: #00A896;
+  /* --color-accent-ring derives from --color-accent via color-mix in the
+     default theme — no per-tenant override needed (resolves to a #0080BE
+     ring under geostat automatically). */
+}
 
 /* ========================================
    Base Styles

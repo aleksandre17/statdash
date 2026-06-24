@@ -24,6 +24,12 @@ export const COLOR_TOKENS: Record<string, TokenDescriptor> = {
     label:       { ka: 'მკრთალი ტექსტი', en: 'Text Muted' },
     description: { ka: 'მკრთალი / დამხმარე ტექსტის ფერი.', en: 'Muted / helper text color.' },
   },
+  'color.text-faint': {
+    group:   'color',
+    cssVar:  'var(--color-text-faint)',
+    label:       { ka: 'ფერმკრთალი ტექსტი', en: 'Text Faint' },
+    description: { ka: 'ფერმკრთალი ტექსტი (placeholder / subtitle).', en: 'Faint text (placeholder / subtitle).' },
+  },
   'color.text-inverse': {
     group:   'color',
     cssVar:  'var(--color-text-inverse)',
@@ -48,11 +54,29 @@ export const COLOR_TOKENS: Record<string, TokenDescriptor> = {
     label:       { ka: 'ჩაღრმავებული ზედაპირი', en: 'Surface Sunken' },
     description: { ka: 'ჩაღრმავებული არის ფონი.',         en: 'Sunken / inset surface color.' },
   },
+  'color.surface-frame': {
+    group:   'color',
+    cssVar:  'var(--color-surface-frame)',
+    label:       { ka: 'ჩარჩოს ზედაპირი', en: 'Surface Frame' },
+    description: { ka: 'ჩარჩოს / გამყოფის ფონი.',         en: 'Frame / divider surface color.' },
+  },
   'color.border': {
     group:   'color',
     cssVar:  'var(--color-border)',
     label:       { ka: 'საზღვარი', en: 'Border' },
     description: { ka: 'ნაგულისხმევი საზღვრის ფერი.',     en: 'Default border color.' },
+  },
+  'color.border-subtle': {
+    group:   'color',
+    cssVar:  'var(--color-border-subtle)',
+    label:       { ka: 'რბილი საზღვარი', en: 'Border Subtle' },
+    description: { ka: 'რბილი hairline გამყოფი.',          en: 'Subtle hairline divider color.' },
+  },
+  'color.border-frame': {
+    group:   'color',
+    cssVar:  'var(--color-border-frame)',
+    label:       { ka: 'ჩარჩოს საზღვარი', en: 'Border Frame' },
+    description: { ka: 'სქემის / tooltip ჩარჩოს საზღვარი.', en: 'Chart / tooltip frame border color.' },
   },
   'color.border-strong': {
     group:   'color',
@@ -60,17 +84,53 @@ export const COLOR_TOKENS: Record<string, TokenDescriptor> = {
     label:       { ka: 'მკვეთრი საზღვარი', en: 'Border Strong' },
     description: { ka: 'მკვეთრი / აქცენტური საზღვარი.',   en: 'Strong / emphasized border color.' },
   },
+  'color.border-interactive': {
+    group:   'color',
+    cssVar:  'var(--color-border-interactive)',
+    label:       { ka: 'ინტერაქციული საზღვარი', en: 'Border Interactive' },
+    description: { ka: 'hover / active მდგომარეობის საზღვარი.', en: 'Hover / active state border color.' },
+  },
   'color.accent': {
     group:   'color',
     cssVar:  'var(--color-accent)',
     label:       { ka: 'აქცენტი', en: 'Accent' },
     description: { ka: 'ინტერაქციული აქცენტის ფერი.',     en: 'Interactive accent color.' },
   },
+  'color.accent-hover': {
+    group:   'color',
+    cssVar:  'var(--color-accent-hover)',
+    label:       { ka: 'აქცენტი (hover)', en: 'Accent Hover' },
+    description: { ka: 'აქცენტის hover მდგომარეობა.',     en: 'Accent hover state color.' },
+  },
   'color.accent-muted': {
     group:   'color',
     cssVar:  'var(--color-accent-muted)',
     label:       { ka: 'მკრთალი აქცენტი', en: 'Accent Muted' },
     description: { ka: 'აქცენტის მკრთალი ფონი (hover / selected).', en: 'Muted accent background (hover / selected).' },
+  },
+  'color.accent-bg': {
+    group:   'color',
+    cssVar:  'var(--color-accent-bg)',
+    label:       { ka: 'აქცენტის ფონი', en: 'Accent Background' },
+    description: { ka: 'აქცენტის რბილი ფონი (active icon-btn).', en: 'Soft accent background (active icon-btn).' },
+  },
+  'color.accent-secondary': {
+    group:   'color',
+    cssVar:  'var(--color-accent-secondary)',
+    label:       { ka: 'მეორეული აქცენტი', en: 'Accent Secondary' },
+    description: { ka: 'მეორეული აქცენტის ფერი (teal).',  en: 'Secondary accent color (teal).' },
+  },
+  'color.accent-ring': {
+    group:   'color',
+    cssVar:  'var(--color-accent-ring)',
+    label:       { ka: 'აქცენტის რგოლი', en: 'Accent Ring' },
+    description: { ka: 'ფოკუსის / არჩევის რგოლი აქცენტიდან.', en: 'Focus / selection ring derived from accent.' },
+  },
+  'color.chart-frame': {
+    group:   'color',
+    cssVar:  'var(--color-chart-frame)',
+    label:       { ka: 'სქემის ჩარჩო', en: 'Chart Frame' },
+    description: { ka: 'მონაცემთა ვიზუალიზაციის ჩარჩოს ფერი.', en: 'Data-viz frame color (chrome around charts).' },
   },
 
   // ── Z-index ───────────────────────────────────────────────────────────────

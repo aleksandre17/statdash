@@ -115,7 +115,7 @@
   --font-family-base: system-ui, -apple-system, sans-serif;
   --font-family-mono: ui-monospace, 'Courier New', monospace;
 
-  /* ── Neutral gray scale (raw primitives; dark mode inverts) ─── */
+  /* ── TIER 1 · PRIMITIVE — Neutral gray scale (dark mode inverts) ─── */
   --gray-50:  #f8f9fa;
   --gray-100: #f1f3f5;
   --gray-200: #e9ecef;
@@ -127,23 +127,77 @@
   --gray-800: #343a40;
   --gray-900: #212529;
 
-  /* ── Semantic colors (agnostic defaults; app overrides via cascade) ─
-     packages/ is brand-agnostic: these are neutral functional values.
-     the app's tokens.css maps its brand vars onto these names. */
-  --color-text-primary:   #1a1a2e;
-  --color-text-secondary: #4a4a5e;
-  --color-text-muted:     #6c757d;
-  --color-text-inverse:   #ffffff;
+  /* ── TIER 1 · PRIMITIVE — Accent ramp (brand-NEUTRAL slate-blue) ───
+     A desaturated slate-blue ramp. This is NOT a tenant brand: it is the
+     neutral accent family the default theme derives its --color-accent
+     roles from. A tenant theme ([data-tenant]) rebinds the Tier-2 accent
+     roles to its OWN ramp — packages/ ships only this neutral default.
+     Primitives are referenced ONLY by the Tier-2 semantic roles below,
+     never by shells. */
+  --blue-50:  #f1f4f7;
+  --blue-100: #e2e9f0;
+  --blue-200: #c3d0dd;
+  --blue-300: #9aaec0;
+  --blue-400: #6f86a0;
+  --blue-500: #4f6886;
+  --blue-600: #3d5470;   /* default --color-accent */
+  --blue-700: #324559;
+  --blue-800: #283545;
+  --blue-900: #1c2532;
 
-  --color-surface:        #ffffff;
-  --color-surface-raised: #f8f9fa;
-  --color-surface-sunken: #f1f3f5;
+  /* ── TIER 1 · PRIMITIVE — Secondary ramp (brand-NEUTRAL teal) ──────
+     Neutral teal family for the secondary accent role. Same rule: a
+     tenant theme rebinds --color-accent-secondary; packages/ ships
+     this neutral default only. */
+  --teal-50:  #eef4f3;
+  --teal-100: #dde9e7;
+  --teal-200: #bcd3cf;
+  --teal-300: #91b6b0;
+  --teal-400: #6a9892;
+  --teal-500: #4f7d77;
+  --teal-600: #3f6661;
+  --teal-700: #34524e;
+  --teal-800: #2a413e;
+  --teal-900: #1e2f2c;
 
-  --color-border:         #dee2e6;
-  --color-border-strong:  #adb5bd;
+  /* ── TIER 2 · SEMANTIC — colors (the role layer shells consume) ────
+     packages/ is brand-agnostic: NEUTRALS (surface/border/text) are the
+     platform's tasteful default light theme; the ACCENT family defaults
+     to the neutral slate ramp above. A tenant theme ([data-tenant])
+     rebinds these role VALUES — it never edits packages/. Dark mode (the
+     orthogonal MODE layer below) also rebinds only this Tier-2 layer.
+     Values reconciled to the live render per ADR §3 (semantic-token spine). */
 
-  --color-accent:         #005a9c;
-  --color-accent-muted:   #e8f0f8;
+  /* Text */
+  --color-text-primary:   #1A2332;
+  --color-text-secondary: #4A5568;
+  --color-text-muted:     #6B7B8D;
+  --color-text-faint:     #9AABB8;
+  --color-text-inverse:   #FFFFFF;
+
+  /* Surface */
+  --color-surface:        #FFFFFF;
+  --color-surface-raised: #FAFBFB;
+  --color-surface-sunken: #F5F7F7;
+  --color-surface-frame:  #F0F3F3;
+
+  /* Border */
+  --color-border:             #E8EEED;
+  --color-border-subtle:      #F0F3F3;
+  --color-border-frame:       #E0EBE8;
+  --color-border-strong:      #C8D5D9;
+  --color-border-interactive: #B0C8D4;
+
+  /* Accent (brand-NEUTRAL default; a tenant theme rebinds this family) */
+  --color-accent:           var(--blue-600);
+  --color-accent-hover:     var(--blue-700);
+  --color-accent-muted:     var(--blue-50);
+  --color-accent-bg:        var(--blue-50);
+  --color-accent-secondary: var(--teal-600);
+  --color-accent-ring:      color-mix(in srgb, var(--color-accent) 15%, transparent);
+
+  /* Chart frame (chrome around data-viz; the categorical palette is --chart-color-*) */
+  --color-chart-frame:    #E0EBE8;
 
   /* ── Status / feedback colors (bg / border / fg per status) ─── */
   --status-positive-bg:     #e6f4ea;

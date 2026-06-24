@@ -33,17 +33,32 @@ export const GRAY = {
 //  Names are semantic + agnostic (text/surface/border/accent), values are
 //  neutral defaults. The app maps its own brand vars onto these via cascade.
 export const COLOR = {
+  // Text
   textPrimary:   'var(--color-text-primary)',
   textSecondary: 'var(--color-text-secondary)',
   textMuted:     'var(--color-text-muted)',
+  textFaint:     'var(--color-text-faint)',
   textInverse:   'var(--color-text-inverse)',
+  // Surface
   surface:       'var(--color-surface)',
   surfaceRaised: 'var(--color-surface-raised)',
   surfaceSunken: 'var(--color-surface-sunken)',
-  border:        'var(--color-border)',
-  borderStrong:  'var(--color-border-strong)',
-  accent:        'var(--color-accent)',
-  accentMuted:   'var(--color-accent-muted)',
+  surfaceFrame:  'var(--color-surface-frame)',
+  // Border
+  border:            'var(--color-border)',
+  borderSubtle:      'var(--color-border-subtle)',
+  borderFrame:       'var(--color-border-frame)',
+  borderStrong:      'var(--color-border-strong)',
+  borderInteractive: 'var(--color-border-interactive)',
+  // Accent
+  accent:          'var(--color-accent)',
+  accentHover:     'var(--color-accent-hover)',
+  accentMuted:     'var(--color-accent-muted)',
+  accentBg:        'var(--color-accent-bg)',
+  accentSecondary: 'var(--color-accent-secondary)',
+  accentRing:      'var(--color-accent-ring)',
+  // Chart chrome
+  chartFrame:    'var(--color-chart-frame)',
 } as const satisfies Record<string, string>
 
 // ── Status / feedback colors ────────────────────────────────────────────
