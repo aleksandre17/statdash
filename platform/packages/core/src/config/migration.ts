@@ -14,16 +14,19 @@
 //    2. Register a migration: registerMigration(newVersion, fn).
 //    3. fn receives the previous-version config and returns the next-version config.
 //
-//  Current version: 3.
+//  Current version: 4.
 //    v1 → v2: page-level `color` moved from a flat PageConfigBase field into
 //    `presentation.color` (the presentation-projection registry's single home).
 //    v2 → v3: node `type: 'georgraph'` renamed to `'geograph'` (misspelling fix),
 //    applied recursively across the whole node tree.
+//    v3 → v4: a section's two mutually-exclusive `view.hero` / `view.compact`
+//    booleans collapse into ONE declared `variants.emphasis` enum
+//    ('hero' | 'compact') — the variant-style spine. Applied recursively.
 //    See the registered migrators at the foot of this module.
 //
 
 /** Current schema version for page configs. Bump when introducing breaking config changes. */
-export const CURRENT_SCHEMA_VERSION = 3
+export const CURRENT_SCHEMA_VERSION = 4
 
 /**
  * A migration function.
@@ -205,3 +208,60 @@ function renameGeoType(value: unknown): unknown {
 }
 
 registerMigration(3, (config) => renameGeoType(config) as Record<string, unknown>)
+
+// ── v3 → v4: section view.hero / view.compact → variants.emphasis enum ────
+//
+//  The shell-variant-style spine collapses a section's two mutually-exclusive
+//  emphasis booleans (`view.hero`, `view.compact`) into ONE declared enum
+//  `variants.emphasis` ('hero' | 'compact'). The booleans were a SERIALIZED
+//  config shape (stored configs + provisioning), so retiring them is a real
+//  migration, applied recursively across the whole node tree.
+//
+//  Per-node rewrite (pure, idempotent, structure-preserving):
+//    • `view.hero === true`    → set `variants.emphasis = 'hero'`; drop view.hero.
+//    • `view.compact === true` → set `variants.emphasis = 'compact'`; drop view.compact.
+//    • hero WINS when both are set (they were mutually exclusive; this makes the
+//      collapse deterministic). An already-authored `variants.emphasis` is left
+//      untouched (authored value is canonical), but the legacy booleans are still
+//      dropped (they are the fields being retired).
+//    • a `view` left empty after dropping its only keys is preserved as `{}` —
+//      structure-preserving; the renderer treats `{}` and absent identically.
+//    • nodes without these booleans pass through structurally unchanged.
+//
+const EMPHASIS_FIELD = 'emphasis'
+
+function migrateEmphasis(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(migrateEmphasis)
+  if (!value || typeof value !== 'object') return value
+
+  const node = value as Record<string, unknown>
+  // Recurse first so nested children/slots are migrated regardless of this node.
+  const out: Record<string, unknown> = {}
+  for (const [k, v] of Object.entries(node)) out[k] = migrateEmphasis(v)
+
+  const view = out.view
+  if (!view || typeof view !== 'object' || Array.isArray(view)) return out
+
+  const v = view as Record<string, unknown>
+  const hasHero    = v.hero === true
+  const hasCompact = v.compact === true
+  if (!hasHero && !hasCompact) return out
+
+  // Strip the retiring booleans from a fresh view object.
+  const { hero: _h, compact: _c, ...restView } = v
+  out.view = restView
+
+  // hero wins over compact (mutually exclusive); an authored emphasis is canonical.
+  const existing = out.variants && typeof out.variants === 'object' && !Array.isArray(out.variants)
+    ? (out.variants as Record<string, unknown>)
+    : {}
+  if (EMPHASIS_FIELD in existing) {
+    out.variants = existing
+  } else {
+    const emphasis = hasHero ? 'hero' : 'compact'
+    out.variants = { ...existing, [EMPHASIS_FIELD]: emphasis }
+  }
+  return out
+}
+
+registerMigration(4, (config) => migrateEmphasis(config) as Record<string, unknown>)

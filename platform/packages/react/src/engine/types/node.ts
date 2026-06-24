@@ -42,10 +42,10 @@ export interface ViewParams {
   toggle?:      boolean
   legend?:      'bottom' | 'right' | 'none'
   tooltip?:     'multi' | 'single' | 'none'
-  compact?:     boolean
+  // `compact` and `hero` retired (schema v4) into the section's declared
+  // `variants.emphasis` enum — see migration.ts v3→v4 + section/default/meta.ts.
   defaultOpen?: boolean
   noCollapse?:  boolean
-  hero?:        boolean
   exportable?:  boolean
   cols?:        string | number
   styles?:      NodeStyles
@@ -66,14 +66,13 @@ export interface ViewParams {
 
 export const VIEW_DEFAULTS: Required<Omit<ViewParams,
   'width' | 'subtitle' | 'visibleWhen' | 'defaultOpen' | 'noCollapse' |
-  'hero' | 'exportable' | 'cols' | 'styles' | 'role' | 'label' | 'position' |
+  'exportable' | 'cols' | 'styles' | 'role' | 'label' | 'position' |
   'scope' | 'polling'
 >> = {
   default: 'chart',
   toggle:  true,
   legend:  'bottom',
   tooltip: 'multi',
-  compact: false,
 }
 
 // ── NodeBase — shared base for all NodeDef members ───────────────────
@@ -88,6 +87,16 @@ export interface NodeBase {
   data?:       import('@statdash/engine').DataSpec
   view?:       ViewParams
   storeKey?:   string
+
+  /**
+   * Authored visual-variant values — a generic bag keyed by variant NAME
+   * (e.g. `{ emphasis: 'hero' }`), declared per-slice in META (NodeSliceMeta.
+   * variants). defineShell resolves these against the slice's VariantSchema to
+   * `data-*` attrs the shell spreads (resolveVariants). The engine names no
+   * specific variant — zero privileged keys, mirroring `presentation`/`vars`.
+   * Constructor-authored via variantPropSchema(); JSON-Schema-validated.
+   */
+  variants?:   Record<string, string | boolean>
 
   /**
    * RBAC visibility gate [N41]. If set and non-empty, the node is hidden

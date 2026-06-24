@@ -45,6 +45,8 @@ export type {
   PropFieldValidation,
   PropField,
   PropSchema,
+  VariantDef,
+  VariantSchema,
   LocaleString,
   PageConfigBase,
   PagePresentation,
@@ -146,6 +148,14 @@ export { WrapStyleContext, useWrapStyle } from './wrapStyleContext'
 // ── Shell factory — abstract base for all NodeRenderer implementations ──
 export { defineShell }        from './defineShell'
 export type { ShellProps }    from './defineShell'
+
+// ── Variant seam — declared variants → data-attrs / Constructor PropFields ──
+//  variantPropSchema(meta.variants) → PropField[] (mirrors presentationPropSchema):
+//  variants are Constructor-authorable + flow into generatePageConfigSchema.
+//  The resolveVariants resolver itself lives in @statdash/styles (beside resolveViewState).
+//  nodeSchemaWithVariants is the ONE schema-folding SSOT every registration path
+//  (registerSlice, the emit-schema tool, schema fitness) routes through.
+export { variantPropSchema, nodeSchemaWithVariants } from './variant-meta'
 
 // ── Middleware — AOP interceptors for render pipeline (Gap 10) ─────────
 export { middlewareRegistry }         from './middleware/registry'

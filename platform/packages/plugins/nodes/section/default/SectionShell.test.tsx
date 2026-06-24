@@ -253,10 +253,18 @@ describe('SectionShell render', () => {
   })
 
   it('renders a hero section as non-collapsible (no chevron / no button role)', () => {
-    const { container } = renderShell({ view: { hero: true, noCollapse: true } })
+    // Emphasis is now a DECLARED variant (variants.emphasis) projected to the
+    // `data-emphasis` attribute — NOT a `section--hero` modifier class (the
+    // variant-style spine reconception). noCollapse still drives collapse state.
+    const { container } = renderShell({ variants: { emphasis: 'hero' }, view: { noCollapse: true } })
     const head = container.querySelector('.section__head')!
     expect(head.getAttribute('role')).toBeNull()
     expect(container.querySelector('.section__chevron')).toBeNull()
-    expect(container.querySelector('section.section--hero')).toBeTruthy()
+    // The visual/behavioral contract holds: the section carries data-emphasis="hero"
+    // (the byte-identical move from class modifier → data attribute).
+    const section = container.querySelector('section.section')!
+    expect(section.getAttribute('data-emphasis')).toBe('hero')
+    // And the legacy modifier class is gone (no dual-class regression).
+    expect(container.querySelector('.section--hero')).toBeNull()
   })
 })

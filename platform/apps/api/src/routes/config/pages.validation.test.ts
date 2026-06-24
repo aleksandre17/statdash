@@ -13,7 +13,7 @@
 
 import { describe, it, expect } from 'vitest'
 import type { FastifyInstance, FastifyBaseLogger } from 'fastify'
-import { migratePageConfig, validateConfig } from '@statdash/engine'
+import { migratePageConfig, validateConfig, CURRENT_SCHEMA_VERSION } from '@statdash/engine'
 
 process.env.DATABASE_URL   ??= 'postgres://test'
 process.env.JWT_SECRET     ??= 'test-jwt-secret-at-least-32-chars-long!!'
@@ -105,7 +105,7 @@ describe('POST /api/config/pages — config validation WARN mode (ADR §6)', () 
     expect(res.statusCode).toBe(201)
     expect(stored).toHaveLength(1)
     // And the STORED config is the MIGRATED one (schemaVersion stamped to current).
-    expect((stored[0].config as { schemaVersion?: number }).schemaVersion).toBe(3)
+    expect((stored[0].config as { schemaVersion?: number }).schemaVersion).toBe(CURRENT_SCHEMA_VERSION)
 
     // A structured warn was emitted carrying the page ref + failing paths.
     const warn = warns.find((w) => /structural validation/i.test(w.msg))

@@ -20,14 +20,14 @@ describe('migratePageConfig — version stamping', () => {
     const v0 = { id: 'gdp', type: 'inner-page', children: [] }
     const out = migratePageConfig(v0)
     expect(out.schemaVersion).toBe(CURRENT_SCHEMA_VERSION)
-    expect(out.schemaVersion).toBe(3)
+    expect(out.schemaVersion).toBe(4)
   })
 
   it('returns a config already at the current version unchanged in content', () => {
-    const v3 = { id: 'gdp', type: 'inner-page', schemaVersion: 3, children: [] }
-    const out = migratePageConfig(v3)
-    expect(out.schemaVersion).toBe(3)
-    expect(out).toEqual(v3)
+    const vCur = { id: 'gdp', type: 'inner-page', schemaVersion: CURRENT_SCHEMA_VERSION, children: [] }
+    const out = migratePageConfig(vCur)
+    expect(out.schemaVersion).toBe(CURRENT_SCHEMA_VERSION)
+    expect(out).toEqual(vCur)
   })
 
   it('is idempotent — migrating twice equals migrating once', () => {
@@ -119,7 +119,7 @@ describe('v1 → v2 — page color migrates into presentation.color (single home
   it('a v1 page with a flat color → v2 with presentation.color and no flat color', () => {
     const v1 = { id: 'gdp', type: 'inner-page', schemaVersion: 1, color: '#0080BE', children: [] }
     const out = migratePageConfig(v1)
-    expect(out.schemaVersion).toBe(3)
+    expect(out.schemaVersion).toBe(CURRENT_SCHEMA_VERSION)
     expect(out.color).toBeUndefined()
     expect(out.presentation).toEqual({ color: '#0080BE' })
     // Other fields are preserved.
@@ -131,7 +131,7 @@ describe('v1 → v2 — page color migrates into presentation.color (single home
     // v0 → v1 has no registered migrator (identity step), v1 → v2 moves the color.
     const v0 = { id: 'gdp', type: 'inner-page', color: '#123456', children: [] }
     const out = migratePageConfig(v0)
-    expect(out.schemaVersion).toBe(3)
+    expect(out.schemaVersion).toBe(CURRENT_SCHEMA_VERSION)
     expect(out.color).toBeUndefined()
     expect(out.presentation).toEqual({ color: '#123456' })
   })
@@ -139,7 +139,7 @@ describe('v1 → v2 — page color migrates into presentation.color (single home
   it('a page with NO color migrates cleanly — no spurious presentation bag', () => {
     const v1 = { id: 'landing', type: 'container-page', schemaVersion: 1, children: [] }
     const out = migratePageConfig(v1)
-    expect(out.schemaVersion).toBe(3)
+    expect(out.schemaVersion).toBe(CURRENT_SCHEMA_VERSION)
     expect(out.presentation).toBeUndefined()
     expect(out).not.toHaveProperty('color')
   })
@@ -170,13 +170,13 @@ describe('v1 → v2 — page color migrates into presentation.color (single home
     expect(out.presentation).toEqual({ crumbs: [{ label: 'Home' }], color: '#abcdef' })
   })
 
-  it('is idempotent on a v3 input — re-migration is a no-op', () => {
-    const v3 = {
-      id: 'gdp', type: 'inner-page', schemaVersion: 3,
+  it('is idempotent on a current-version input — re-migration is a no-op', () => {
+    const vCur = {
+      id: 'gdp', type: 'inner-page', schemaVersion: CURRENT_SCHEMA_VERSION,
       presentation: { color: '#0080BE' }, children: [],
     }
-    const out = migratePageConfig(v3)
-    expect(out).toEqual(v3)
+    const out = migratePageConfig(vCur)
+    expect(out).toEqual(vCur)
     // And migrating the output of a v1 migration again is stable.
     const fromV1 = migratePageConfig({ id: 'gdp', type: 'inner-page', schemaVersion: 1, color: '#0080BE', children: [] })
     expect(migratePageConfig(fromV1)).toEqual(fromV1)
@@ -211,7 +211,7 @@ describe('v2 → v3 — node type georgraph renamed to geograph', () => {
       ],
     }
     const out = migratePageConfig(v2) as Record<string, unknown>
-    expect(out.schemaVersion).toBe(3)
+    expect(out.schemaVersion).toBe(CURRENT_SCHEMA_VERSION)
     const section = (out.children as Array<Record<string, unknown>>)[0]
     const geoNode = (section.children as Array<Record<string, unknown>>)[0]
     expect(geoNode.type).toBe('geograph')
@@ -241,7 +241,7 @@ describe('v2 → v3 — node type georgraph renamed to geograph', () => {
       children: [{ type: 'section', id: 's1', children: [{ type: 'chart', id: 'c1' }] }],
     }
     const out = migratePageConfig(v2)
-    expect(out).toEqual({ ...v2, schemaVersion: 3 })
+    expect(out).toEqual({ ...v2, schemaVersion: CURRENT_SCHEMA_VERSION })
   })
 
   it('does NOT rewrite a non-type field whose value happens to be "georgraph"', () => {
@@ -256,12 +256,12 @@ describe('v2 → v3 — node type georgraph renamed to geograph', () => {
   })
 
   it('is idempotent — already-migrated geograph survives re-migration', () => {
-    const v3 = {
-      id: 'p', type: 'inner-page', schemaVersion: 3,
+    const vCur = {
+      id: 'p', type: 'inner-page', schemaVersion: CURRENT_SCHEMA_VERSION,
       children: [{ type: 'geograph', id: 'm' }],
     }
-    const out = migratePageConfig(v3)
-    expect(out).toEqual(v3)
+    const out = migratePageConfig(vCur)
+    expect(out).toEqual(vCur)
   })
 
   it('does not mutate the v2 input tree', () => {

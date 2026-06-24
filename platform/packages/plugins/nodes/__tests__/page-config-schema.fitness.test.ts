@@ -31,6 +31,7 @@ import {
   generatePageConfigSchema,
   registerPresentationProjector,
   listPresentationProjectors,
+  nodeSchemaWithVariants,
   type NodeSliceMeta, type PanelSliceMeta, type PageSliceMeta,
 } from '@statdash/react/engine'
 import { knownNodeTypes, registerNodeType } from '@statdash/engine'
@@ -82,7 +83,8 @@ function setupRegistry(): void {
       label:    m.label,
       icon:     m.icon,
       category: m.category,
-      schema:   m.schema,
+      // Same variant-folding SSOT as registerSlice + the emit-schema tool.
+      schema:   nodeSchemaWithVariants(m.schema, 'variants' in m ? m.variants : undefined),
       defaults: m.defaults,
       slots:    'slots' in m ? m.slots : undefined,
       version:  m.version,

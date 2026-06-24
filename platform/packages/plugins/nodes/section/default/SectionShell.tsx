@@ -8,6 +8,8 @@ import { useT, useExtensions, SECTION_HEADER_ACTIONS }       from '@statdash/rea
 import { defineShell }                                       from '@statdash/react/engine'
 import type { ShellProps, NodeDef }                          from '@statdash/react/engine'
 import type { SectionNode }                                  from './SectionNode'
+import { META }                                              from './meta'
+import { SECTION }                                           from './styleKeys'
 import { sectionAccentStyle }                                from './sectionKeys'
 import { useViewToggle }                                     from './useViewToggle'
 import { useCollapsible }                                    from './useCollapsible'
@@ -44,8 +46,12 @@ import { SectionMethodology }                                from './SectionMeth
 //  real, this stays Option D.
 //
 export const SectionShell = defineShell<SectionNode>({
-  render({ def, ctx, children, vs, placement, merged }) {
-    return <SectionControl def={def} ctx={ctx} children={children} vs={vs} placement={placement} merged={merged} />
+  // The slice's DECLARED variants (meta.ts). defineShell resolves them against
+  // def.variants into `variantAttrs` (data-* attrs); the shell only chooses WHICH
+  // element carries them — it writes ZERO variant→class logic.
+  variants: META.variants,
+  render({ def, ctx, children, vs, placement, merged, variantAttrs }) {
+    return <SectionControl def={def} ctx={ctx} children={children} vs={vs} placement={placement} merged={merged} variantAttrs={variantAttrs} />
   },
 })
 
@@ -56,6 +62,7 @@ function SectionControl({
   vs,
   placement,
   merged,
+  variantAttrs,
 }: ShellProps<SectionNode>) {
   const t = useT('section')
 
@@ -92,21 +99,16 @@ function SectionControl({
     ? { ...vs.panel.style, ...(placement as Record<string, string>) } as CSSProperties
     : undefined
 
-  const sectionClass = [
-    'section',
-    view.hero      && 'section--hero',
-    merged.compact && 'section--compact',
-  ].filter(Boolean).join(' ')
-
   return (
     <div {...vs.panel} style={outerStyle}>
       {def.prependLabel && (
-        <div className="section__drill-label">
+        <div className={SECTION.drillLabel}>
           {resolveTemplate(def.prependLabel, ctx.sectionCtx)}
         </div>
       )}
       <section
-        className={sectionClass}
+        className={SECTION.block}
+        {...variantAttrs}
         id={def.anchor ?? resolvedId}
         style={sectionAccentStyle(def.color)}
       >
@@ -142,9 +144,9 @@ function SectionControl({
             publish/subscribe seam that has zero second consumers today (YAGNI). */}
 
         {(view.noCollapse || collapsible.open) && (
-          <div className="section__body" {...vs.body} style={vs.body.style as CSSProperties | undefined}>
+          <div className={SECTION.body} {...vs.body} style={vs.body.style as CSSProperties | undefined}>
             {children.defs.map((d: NodeDef, i: number) => (
-              <div key={i} className="section__view" {...resolveViewState(viewToggle.isHidden(d))}>
+              <div key={i} className={SECTION.view} {...resolveViewState(viewToggle.isHidden(d))}>
                 {children.rendered[i]}
               </div>
             ))}

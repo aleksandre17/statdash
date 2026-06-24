@@ -56,6 +56,8 @@ export type {
   ChromeSliceMeta,
   FilterControlMeta,
   SliceMeta,
+  VariantDef,
+  VariantSchema,
 }                                from './slice'
 
 // ── CoreNodeDef source types + pipeline/display types (from @statdash/engine) ──

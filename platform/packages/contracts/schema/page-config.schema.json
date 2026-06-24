@@ -378,6 +378,15 @@
           "description": "string field",
           "type": "string"
         },
+        "variants.emphasis": {
+          "title": "Emphasis",
+          "description": "hero: Hero, compact: Compact",
+          "type": "string",
+          "enum": [
+            "hero",
+            "compact"
+          ]
+        },
         "type": {
           "const": "section"
         },

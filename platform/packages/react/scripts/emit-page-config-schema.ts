@@ -27,6 +27,7 @@ import { dirname, join } from 'node:path'
 import { nodeRegistry } from '../src/engine/register-all'
 import { generatePageConfigSchema } from '../src/engine/generatePageConfigSchema'
 import { registerPresentationProjector } from '../src/engine/presentation/presentationRegistry'
+import { nodeSchemaWithVariants } from '../src/engine/variant-meta'
 import { registerNodeType } from '@statdash/engine'
 import type { NodeSliceMeta, PanelSliceMeta, PageSliceMeta } from '../src/engine/slice-meta'
 
@@ -86,7 +87,9 @@ function setupRegistrations(): void {
       label:    m.label,
       icon:     m.icon,
       category: m.category,
-      schema:   m.schema,
+      // Route through the SAME variant-folding SSOT registerSlice uses, so the
+      // declared variants reach the wire schema on this build path too.
+      schema:   nodeSchemaWithVariants(m.schema, 'variants' in m ? m.variants : undefined),
       defaults: m.defaults,
       slots:    'slots' in m ? m.slots : undefined,
       version:  m.version,

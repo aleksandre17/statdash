@@ -7,5 +7,8 @@
 ## Project (continued)
 - [CommandBus migration](project_commandbus_migration.md) — GeorgraphShell + ExportBar panel shells migrated; controls use useFilter() not ctx — see file for why
 
+## Project (continued)
+- [Shell render testing](project_shell_render_testing.md) — jsdom-render a plugin shell in plugins vitest (mock @statdash/react, real GlobalStateProvider)
+
 ## Feedback
 - [Node env test imports](feedback_node_env_test_imports.md) — @geostat/react sub-path + @geostat/engine fail in @vitest-environment node; test pure utils only

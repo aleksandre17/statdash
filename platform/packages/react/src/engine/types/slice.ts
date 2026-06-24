@@ -26,4 +26,6 @@ export type {
   ChromeSliceMeta,
   FilterControlMeta,
   SliceMeta,
+  VariantDef,
+  VariantSchema,
 }                                from '../slice-meta'

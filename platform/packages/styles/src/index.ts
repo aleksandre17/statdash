@@ -46,6 +46,13 @@ export {
 export { resolveViewState }      from './resolvers/view'
 export type { ViewStateAttrs }   from './resolvers/view'
 
+export { resolveVariants }       from './resolvers/variant'
+export type {
+  VariantDefShape,
+  VariantSchemaShape,
+  AuthoredVariants,
+} from './resolvers/variant'
+
 export { resolveConditionStyles } from './resolvers/condition'
 
 // ── Composition utilities ─────────────────────────────────────────────

@@ -48,8 +48,10 @@ export const SectionSlots: Record<string, SlotDef> = {
 
 export const SectionGroups: PropertyGroup[] = [
   { label: { ka: 'შიგთავსი',   en: 'Content'  }, fields: ['title', 'label', 'color', 'prependLabel'] },
-  { label: { ka: 'ქცევა',      en: 'Behaviour' }, fields: ['view.toggle', 'view.defaultOpen', 'view.noCollapse', 'view.hero'] },
-  { label: { ka: 'განლაგება',  en: 'Layout'    }, fields: ['view.width', 'view.compact', 'anchor'] },
+  { label: { ka: 'ქცევა',      en: 'Behaviour' }, fields: ['view.toggle', 'view.defaultOpen', 'view.noCollapse'] },
+  // hero + compact retired into the declared `emphasis` enum variant (variants.emphasis):
+  // the Inspector renders one select instead of two mutually-exclusive booleans.
+  { label: { ka: 'განლაგება',  en: 'Layout'    }, fields: ['view.width', 'variants.emphasis', 'anchor'] },
 ]
 
 declare module '@statdash/react/engine' {

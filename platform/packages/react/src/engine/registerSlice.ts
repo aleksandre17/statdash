@@ -17,6 +17,7 @@ import { filterControlRegistry }                    from './filterControlRegistr
 import type { FilterControlSlice }                  from './filterControlRegistry'
 import { skeletonRegistry }                         from './skeletonRegistry'
 import type { SkeletonFn }                          from './skeletonRegistry'
+import { nodeSchemaWithVariants }                   from './variant-meta'
 import type {
   NodeRenderer,
   NodeBase,
@@ -62,7 +63,14 @@ export function registerSlice(mod: RegistrableSlice): void {
       label:           m.label,
       icon:            m.icon,
       category:        m.category,
-      schema:          m.schema,
+      // A slice's DECLARED variants (NodeSliceMeta.variants) join its authored
+      // PropSchema as `variants.<name>` PropFields, so they reach the Constructor
+      // Inspector + generatePageConfigSchema with ZERO generator edits (the same
+      // way presentationPropSchema folds into the page-base fields). Mirrors how
+      // resolveVariants projects them to data-attrs at render — declare → author →
+      // validate → render, one declaration in META driving the whole chain. The
+      // emit-schema build tool routes through the SAME nodeSchemaWithVariants SSOT.
+      schema:          nodeSchemaWithVariants(m.schema, 'variants' in m ? m.variants : undefined),
       preview:         m.preview,
       transparent:     'transparent'     in m ? m.transparent     : undefined,
       canHaveChildren: 'canHaveChildren' in m ? m.canHaveChildren : undefined,

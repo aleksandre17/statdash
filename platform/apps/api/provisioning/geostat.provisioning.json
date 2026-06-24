@@ -557,8 +557,10 @@
             "id": "sna-hero",
             "title": "ეროვნული ანგარიშები",
             "type": "section",
+            "variants": {
+              "emphasis": "hero"
+            },
             "view": {
-              "hero": true,
               "noCollapse": true,
               "styles": {
                 "height": "16:9"
@@ -980,8 +982,10 @@
             "id": "sna-hero-range",
             "title": "ეროვნული ანგარიშები",
             "type": "section",
+            "variants": {
+              "emphasis": "hero"
+            },
             "view": {
-              "hero": true,
               "noCollapse": true,
               "styles": {
                 "height": "16:9"
@@ -1182,7 +1186,7 @@
         "presentation": {
           "color": "#0080BE"
         },
-        "schemaVersion": 2,
+        "schemaVersion": 4,
         "storeKey": "accounts",
         "type": "inner-page",
         "vars": {

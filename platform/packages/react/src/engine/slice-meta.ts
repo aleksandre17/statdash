@@ -247,6 +247,12 @@ export interface PropField {
 /** Ordered list of typed field descriptors for a slice's property panel. */
 export type PropSchema = PropField[]
 
+// VariantDef / VariantSchema (declarative shell variants) are their own concern
+// — see ./variant-meta.ts. Re-exported here so they travel with the public
+// slice-taxonomy surface (NodeSliceMeta carries a `variants: VariantSchema`).
+export type { VariantDef, VariantSchema } from './variant-meta'
+import type { VariantSchema } from './variant-meta'
+
 // ── Slice META — three distinct node contracts per sliceType ──────────
 
 /**
@@ -323,6 +329,8 @@ export interface NodeSliceMeta {
   transparent?:     boolean
   canHaveChildren?: boolean
   singleton?:       boolean
+  /** Declared visual variants → `data-*` attrs (see variant-meta.ts); shells spread, never hand-code a `--modifier` class. */
+  variants?:        VariantSchema
   /** Declared capability tokens [N29] — Constructor palette filtering. */
   caps?:            NodeCap[]
   /**
