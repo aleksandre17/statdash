@@ -1,10 +1,9 @@
 import 'dotenv/config'
 import Fastify from 'fastify'
-import type { FastifyError, FastifyReply, FastifyRequest } from 'fastify'
 import cors from '@fastify/cors'
 import { env } from './env.js'
 import { dbPlugin } from './db.js'
-import { ValidationError } from './lib/http.js'
+import { registerProblemErrorHandler } from './lib/error-handler.js'
 import { configRoutes } from './routes/config/index.js'
 import { publicDataSourcesRoutes } from './routes/data-sources/index.js'
 import { bootstrapRoutes } from './routes/bootstrap/index.js'
@@ -24,6 +23,17 @@ import { runIngestionWorker } from './ingest/index.js'
 const app = Fastify({
   logger: { level: env.NODE_ENV === 'development' ? 'info' : 'warn' },
 })
+
+// ── Global error boundary — RFC 9457 Problem Details ──────────────────────────
+// MUST be registered BEFORE any route plugin: a Fastify error handler is
+// inherited by child encapsulated contexts at THEIR registration time, so a
+// handler set after a route plugin would not cascade into it (the route would
+// fall back to Fastify's default error shape). Installing it first makes every
+// route — current and future — inherit the one canonical serializer. The
+// serializer lives in lib/error-handler.ts so tests register the EXACT
+// production handler (no drift); validation failures carry their Zod issues and
+// the schema-ahead conflict carries its versions as structured extension members.
+registerProblemErrorHandler(app, { includeStack: env.NODE_ENV === 'development' })
 
 // N41 — one audit logger, created at the app layer and injected (port) into
 // every producer (config writes, snapshot mints) and the admin read route. A
@@ -94,29 +104,6 @@ await app.register(displaysRoutes, { prefix: '/api/admin/displays' })
 await app.register(ingestRoutes(audit), { prefix: '/api/ingest' })
 
 app.get('/health', async () => ({ status: 'ok', ts: new Date().toISOString() }))
-
-// ── Global error boundary ─────────────────────────────────────────────────────
-// One place maps thrown errors → the { error, message } envelope. Zod failures
-// surface as 400 with their issues; everything else keeps its statusCode or 500.
-app.setErrorHandler((error: FastifyError, _req: FastifyRequest, reply: FastifyReply) => {
-  if (error instanceof ValidationError) {
-    return reply.status(400).send({
-      error:   error.name,
-      message: error.message,
-      issues:  error.issues,
-    })
-  }
-
-  const statusCode = error.statusCode ?? 500
-  if (statusCode >= 500) app.log.error(error)
-  else app.log.warn(error)
-
-  return reply.status(statusCode).send({
-    error:   error.name,
-    message: error.message,
-    ...(env.NODE_ENV === 'development' && { stack: error.stack }),
-  })
-})
 
 // P2-5 — file-based provisioning (GitOps). Run after the app (and so app.pg) is
 // fully booted, before we accept traffic, so the config in PROVISIONING_DIR is

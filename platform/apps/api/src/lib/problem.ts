@@ -1,0 +1,190 @@
+// ── Problem registry + Problem error — the api's ONE RFC 9457 mechanism ───────
+//
+//  Every error the api surfaces is a `Problem`: a thrown domain error the central
+//  error handler (index.ts) serializes into the RFC 9457 `application/problem+json`
+//  envelope (the ProblemDetails shape from @statdash/contracts).
+//
+//  OPEN/EXTENSIBLE SEAM (Law 8 / OCP, mirrors the platform's open-registry
+//  discipline): a new error kind = ONE entry in PROBLEM_REGISTRY below, NOT an
+//  edit to a central switch. Each kind declares its stable `type` URI suffix,
+//  type-stable `title`, and default `status`. Routes throw `problem(kind, …)` (or
+//  a thin helper) carrying an occurrence `detail` + typed extension members; they
+//  never hand-assemble error JSON and never repeat a status/title literal (no
+//  magic strings — the registry is the single source of truth).
+//
+//  Why api-local (not in @statdash/contracts): the ProblemDetails *shape* is the
+//  client contract and lives in contracts (zero-dep, pure types). This registry +
+//  the Problem class are RUNTIME values the api throws; contracts holds no logic
+//  or classes. Clients consume the shape, the server owns the catalogue.
+
+import {
+  PROBLEM_URN_PREFIX,
+  type ProblemDetails,
+} from '@statdash/contracts'
+import type { ZodError } from 'zod'
+
+// ── The problem catalogue ─────────────────────────────────────────────────────
+//
+//  Keyed by a stable kind slug. `urn` is the slug appended to the URN prefix to
+//  form the RFC 9457 `type`. `title` is the type-stable human summary. `status`
+//  is the default HTTP status (an occurrence may override only its `detail` /
+//  extensions, never the title — title is type-stable by RFC 9457 §3.1).
+//
+//  The slugs mirror the existing semantic error vocabulary 1:1 so every current
+//  HTTP status is preserved exactly (see the conversion map in the route files).
+
+interface ProblemDef {
+  /** Slug appended to PROBLEM_URN_PREFIX → the RFC 9457 `type` URI. */
+  readonly urn: string
+  /** Type-stable, human-readable summary (RFC 9457 title). */
+  readonly title: string
+  /** Default HTTP status for this kind. */
+  readonly status: number
+}
+
+export const PROBLEM_REGISTRY = {
+  /** 400 — request failed schema validation (Zod). Carries `issues` extension. */
+  validation: { urn: 'validation', title: 'Request validation failed', status: 400 },
+  /** 400 — request was well-formed but semantically invalid (e.g. malformed CSV cell). */
+  'bad-request': { urn: 'bad-request', title: 'Bad request', status: 400 },
+  /** 401 — missing or invalid authentication credentials. */
+  unauthorized: { urn: 'unauthorized', title: 'Authentication required', status: 401 },
+  /** 403 — authenticated but not permitted (role / signature / disabled account). */
+  forbidden: { urn: 'forbidden', title: 'Forbidden', status: 403 },
+  /** 404 — the requested resource does not exist. */
+  'not-found': { urn: 'not-found', title: 'Resource not found', status: 404 },
+  /** 409 — the resource state conflicts with the request (FSM guard, duplicate). */
+  conflict: { urn: 'conflict', title: 'Conflict', status: 409 },
+  /**
+   * 409 — stored config schemaVersion is HIGHER than this server supports
+   * (forward-compat guard). Carries `configSchemaVersion` / `currentSchemaVersion`
+   * extension members so the client can act, instead of a stringified blob.
+   */
+  'config-schema-ahead': {
+    urn: 'config-schema-ahead',
+    title: 'Config schema version is newer than this server supports',
+    status: 409,
+  },
+  /** 410 — the resource existed but is permanently gone (expired embed token). */
+  gone: { urn: 'gone', title: 'Gone', status: 410 },
+  /** 500 — an unexpected server fault. The fallback for any non-Problem throw. */
+  internal: { urn: 'internal', title: 'Internal server error', status: 500 },
+} as const satisfies Record<string, ProblemDef>
+
+/** The set of registered problem kinds. New kind = a new entry above. */
+export type ProblemKind = keyof typeof PROBLEM_REGISTRY
+
+// ── Problem — the thrown domain error ─────────────────────────────────────────
+//
+//  Carries a registry kind + an occurrence detail + typed extension members. The
+//  central error handler reads `.toProblemDetails(instance)` to build the body
+//  and `.status` for the response line. Extends Error so existing throw/catch and
+//  Fastify's error path work unchanged; `statusCode` is mirrored so any code that
+//  still reads Fastify's `error.statusCode` keeps seeing the right number.
+
+export class Problem extends Error {
+  readonly kind: ProblemKind
+  readonly status: number
+  /** Mirror of `status` — Fastify and legacy callers read `error.statusCode`. */
+  readonly statusCode: number
+  readonly extensions: Readonly<Record<string, unknown>>
+
+  constructor(kind: ProblemKind, detail?: string, extensions: Record<string, unknown> = {}) {
+    const def = PROBLEM_REGISTRY[kind]
+    super(detail ?? def.title)
+    this.name = 'Problem'
+    this.kind = kind
+    this.status = def.status
+    this.statusCode = def.status
+    this.extensions = extensions
+  }
+
+  /** Serialize to the RFC 9457 body. `instance` is the request path (occurrence URI). */
+  toProblemDetails(instance?: string): ProblemDetails {
+    const def = PROBLEM_REGISTRY[this.kind]
+    return {
+      type: PROBLEM_URN_PREFIX + def.urn,
+      title: def.title,
+      status: this.status,
+      ...(this.message && this.message !== def.title ? { detail: this.message } : {}),
+      ...(instance ? { instance } : {}),
+      ...this.extensions,
+    }
+  }
+}
+
+// ── Factory + thin semantic helpers ───────────────────────────────────────────
+//
+//  `problem(kind, detail, ext)` is the general factory. The helpers below name the
+//  common kinds so call sites read as intent and never repeat a status literal.
+
+export const problem = (
+  kind: ProblemKind,
+  detail?: string,
+  extensions?: Record<string, unknown>,
+): Problem => new Problem(kind, detail, extensions)
+
+/** 404 — `${what} not found`. Preserves the prior `notFound('Page')` ergonomics. */
+export const notFound = (what: string): Problem =>
+  new Problem('not-found', `${what} not found`)
+
+/** 401 — authentication required / invalid. */
+export const unauthorized = (detail: string): Problem =>
+  new Problem('unauthorized', detail)
+
+/** 403 — authenticated but not permitted. */
+export const forbidden = (detail: string): Problem =>
+  new Problem('forbidden', detail)
+
+/** 409 — resource-state / uniqueness conflict. */
+export const conflict = (detail: string): Problem =>
+  new Problem('conflict', detail)
+
+/** 410 — permanently gone. */
+export const gone = (detail: string): Problem =>
+  new Problem('gone', detail)
+
+/** 400 — well-formed but semantically invalid. */
+export const badRequest = (detail: string): Problem =>
+  new Problem('bad-request', detail)
+
+// ── Validation problem — wraps a ZodError as a 400 with `issues` extension ─────
+
+/** 400 — schema validation failure. Surfaces the Zod issues as a typed extension. */
+export const validationProblem = (err: ZodError): Problem =>
+  new Problem('validation', 'Request validation failed', { issues: err.issues })
+
+/**
+ * Map any thrown value to a Problem. A `Problem` passes through. A Fastify/HTTP
+ * error carrying a numeric `statusCode` is mapped to the matching registry kind
+ * so framework-originated errors (e.g. body-parse 400) still emit a conformant
+ * envelope. Everything else becomes a 500 `internal`. Single fail-fast seam the
+ * central handler delegates to.
+ */
+export function toProblem(err: unknown): Problem {
+  if (err instanceof Problem) return err
+  const status = statusOf(err)
+  const detail = err instanceof Error ? err.message : undefined
+  return new Problem(kindForStatus(status), detail)
+}
+
+function statusOf(err: unknown): number {
+  if (err && typeof err === 'object' && 'statusCode' in err) {
+    const sc = (err as { statusCode?: unknown }).statusCode
+    if (typeof sc === 'number') return sc
+  }
+  return 500
+}
+
+/** Map a bare HTTP status to the closest registry kind (default: by class of code). */
+function kindForStatus(status: number): ProblemKind {
+  switch (status) {
+    case 400: return 'bad-request'
+    case 401: return 'unauthorized'
+    case 403: return 'forbidden'
+    case 404: return 'not-found'
+    case 409: return 'conflict'
+    case 410: return 'gone'
+    default:  return status >= 500 ? 'internal' : 'bad-request'
+  }
+}

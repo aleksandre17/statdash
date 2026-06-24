@@ -22,5 +22,6 @@
 
 export * from './json'
 export * from './manifest'
+export * from './problem'
 export * from './site'
 export * from './snapshot'

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import type { FastifyInstance, FastifyError, FastifyReply, FastifyRequest } from 'fastify'
+import type { FastifyInstance } from 'fastify'
 
 // Env contract is parsed at import time (env.ts), so set required vars BEFORE
 // importing any module that reads it. JWT_SECRET is fixed so the test can decode
@@ -56,7 +56,7 @@ function fakePg(opts: { hasAdmin: boolean; users?: DbRow[] }): Queryable {
 async function buildApp(pg: Queryable): Promise<FastifyInstance> {
   const Fastify = (await import('fastify')).default
   const { authRoutes } = await import('./index.js')
-  const { ValidationError } = await import('../../lib/http.js')
+  const { registerProblemErrorHandler } = await import('../../lib/error-handler.js')
 
   const app = Fastify()
   // The routes consume app.pg only through the Queryable port (findUserByUsername,
@@ -64,15 +64,9 @@ async function buildApp(pg: Queryable): Promise<FastifyInstance> {
   // @fastify/postgres PostgresDb decoration type, of which Queryable is the only
   // surface the login path touches.
   app.decorate('pg', pg as unknown as FastifyInstance['pg'])
+  // Error handler FIRST so the route plugin inherits it (mirrors index.ts).
+  registerProblemErrorHandler(app)
   await app.register(authRoutes, { prefix: '/api/auth' })
-
-  app.setErrorHandler((error: FastifyError, _req: FastifyRequest, reply: FastifyReply) => {
-    if (error instanceof ValidationError) {
-      return reply.status(400).send({ error: error.name, message: error.message, issues: error.issues })
-    }
-    const statusCode = error.statusCode ?? 500
-    return reply.status(statusCode).send({ error: error.name, message: error.message })
-  })
 
   await app.ready()
   return app
@@ -90,7 +84,9 @@ async function login(
 ): Promise<{ status: number; token?: string; message?: string }> {
   const res = await app.inject({ method: 'POST', url: '/api/auth', payload: body })
   const json = res.json()
-  return { status: res.statusCode, token: json.data?.token, message: json.message }
+  // On success the token is in the { data } envelope; on failure the human message
+  // is the RFC 9457 `detail` member (problem+json), not a bare `message`.
+  return { status: res.statusCode, token: json.data?.token, message: json.detail }
 }
 
 describe('POST /api/auth — bootstrap path (no enabled admin in DB)', () => {

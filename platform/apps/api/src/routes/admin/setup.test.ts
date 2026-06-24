@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import type { FastifyInstance, FastifyError, FastifyReply, FastifyRequest } from 'fastify'
+import type { FastifyInstance } from 'fastify'
 
 // Env contract is parsed at import time (env.ts), so set required vars BEFORE
 // importing any module that reads it.
@@ -52,23 +52,17 @@ function fakePg(opts: { hasAdmin: boolean; onInsert?: (values: unknown[]) => voi
 async function buildApp(pg: Queryable): Promise<FastifyInstance> {
   const Fastify = (await import('fastify')).default
   const { setupRoutes } = await import('./setup.js')
-  const { ValidationError } = await import('../../lib/http.js')
+  const { registerProblemErrorHandler } = await import('../../lib/error-handler.js')
 
   const app = Fastify()
   // The route consumes app.pg only through the Queryable port (hasAdminUser,
   // createUser take Queryable). The cast bridges the @fastify/postgres PostgresDb
   // decoration type, of which Queryable is the only surface setup touches.
   app.decorate('pg', pg as unknown as FastifyInstance['pg'])
+  // Error handler FIRST so the route plugin inherits it (mirrors index.ts).
+  registerProblemErrorHandler(app)
   // Mounted at the same prefix index.ts uses (sibling to the guarded adminRoutes).
   await app.register(setupRoutes, { prefix: '/api/admin/setup' })
-
-  app.setErrorHandler((error: FastifyError, _req: FastifyRequest, reply: FastifyReply) => {
-    if (error instanceof ValidationError) {
-      return reply.status(400).send({ error: error.name, message: error.message, issues: error.issues })
-    }
-    const statusCode = error.statusCode ?? 500
-    return reply.status(statusCode).send({ error: error.name, message: error.message })
-  })
 
   await app.ready()
   return app

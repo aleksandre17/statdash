@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import type { FastifyInstance, FastifyError, FastifyReply, FastifyRequest } from 'fastify'
+import type { FastifyInstance } from 'fastify'
 
 // Env contract is parsed at import time (env.ts), so set required vars BEFORE
 // importing any module that reads it.
@@ -46,19 +46,14 @@ function fakePg(config: unknown): FastifyInstance['pg'] {
 async function buildApp(config: unknown): Promise<FastifyInstance> {
   const Fastify = (await import('fastify')).default
   const { pagesRoutes } = await import('./pages.js')
-  const { ValidationError } = await import('../../lib/http.js')
+  const { registerProblemErrorHandler } = await import('../../lib/error-handler.js')
 
   const app = Fastify()
   app.decorate('pg', fakePg(config))
+  // Error handler FIRST so the route plugin inherits it (Fastify cascades the
+  // handler into child contexts at their registration time) — same order as index.ts.
+  registerProblemErrorHandler(app)
   await app.register(pagesRoutes(), { prefix: '/api/config/pages' })
-
-  app.setErrorHandler((error: FastifyError, _req: FastifyRequest, reply: FastifyReply) => {
-    if (error instanceof ValidationError) {
-      return reply.status(400).send({ error: error.name, message: error.message, issues: error.issues })
-    }
-    const statusCode = error.statusCode ?? 500
-    return reply.status(statusCode).send({ error: error.name, message: error.message })
-  })
 
   await app.ready()
   return app
@@ -83,11 +78,20 @@ describe('GET /api/config/pages/:id — lazy schema migration [N19 / P3-3]', () 
     expect(res.json().data.config.schemaVersion).toBe(1)
   })
 
-  it('returns 409 CONFIG_SCHEMA_AHEAD for a future config (schemaVersion > CURRENT)', async () => {
+  it('returns a 409 problem+json for a future config, with structured version extensions', async () => {
     const app = await buildApp({ schemaVersion: 999, title: 'From the future' })
     const res = await app.inject({ method: 'GET', url: `/api/config/pages/${PAGE_ID}` })
     expect(res.statusCode).toBe(409)
-    expect(res.json().code).toBe('CONFIG_SCHEMA_AHEAD')
+    expect(res.headers['content-type']).toContain('application/problem+json')
+    const body = res.json()
+    // RFC 9457 required members.
+    expect(body.type).toBe('urn:statdash:problem:config-schema-ahead')
+    expect(body.status).toBe(409)
+    expect(typeof body.title).toBe('string')
+    // Forward-compat context is STRUCTURED extension members, not a stringified blob.
+    expect(body.code).toBe('CONFIG_SCHEMA_AHEAD')
+    expect(body.configSchemaVersion).toBe(999)
+    expect(body.currentSchemaVersion).toBe(1)
   })
 
   it('leaves a null config untouched (no migration attempted)', async () => {
@@ -138,14 +142,11 @@ describe('POST /api/config/pages/:id/publish — publish-role gate (C4)', () => 
   async function buildPublishApp(): Promise<FastifyInstance> {
     const Fastify = (await import('fastify')).default
     const { configRoutes } = await import('./index.js')
-    const { HttpError } = await import('../../lib/http.js')
+    const { registerProblemErrorHandler } = await import('../../lib/error-handler.js')
     const app = Fastify()
     app.decorate('pg', publishFakePg())
+    registerProblemErrorHandler(app)
     await app.register(configRoutes(), { prefix: '/api/config' })
-    app.setErrorHandler((error: FastifyError, _req: FastifyRequest, reply: FastifyReply) => {
-      const statusCode = error instanceof HttpError ? error.statusCode : (error.statusCode ?? 500)
-      return reply.status(statusCode).send({ error: error.name, message: error.message })
-    })
     await app.ready()
     return app
   }

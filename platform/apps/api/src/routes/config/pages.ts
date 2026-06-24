@@ -1,7 +1,8 @@
 import type { FastifyPluginAsync } from 'fastify'
 import { z } from 'zod'
-import { migratePageConfig } from '@statdash/engine'
+import { migratePageConfig, CURRENT_SCHEMA_VERSION } from '@statdash/engine'
 import { ok, notFound, parseBody, parseParams, HttpError } from '../../lib/http.js'
+import { Problem } from '../../lib/problem.js'
 import type { AuditLogger } from '../../lib/audit-log.js'
 
 // ── Publish-role gate (C4 RBAC — Constructor publish governance) ───────────────
@@ -72,7 +73,7 @@ export const pagesRoutes = (audit?: AuditLogger): FastifyPluginAsync => async (a
   })
 
   // GET /:id — page identity + its latest version config + data_specs.
-  app.get('/:id', async (req, reply) => {
+  app.get('/:id', async (req) => {
     const { id } = parseParams(PageParams, req.params)
     const { rows } = await app.pg.query(
       `SELECT p.id, p.slug, p.title, p.status, p.metadata,
@@ -103,13 +104,21 @@ export const pagesRoutes = (audit?: AuditLogger): FastifyPluginAsync => async (a
         config = migratePageConfig(config as Record<string, unknown>)
       } catch {
         // schemaVersion > CURRENT: config was saved by a newer platform build.
-        // Return 409 Conflict (RFC 9457-style: the resource state conflicts
-        // with the request because serving it would violate the forward-compat
-        // contract — the current server cannot understand a future config).
-        return reply.status(409).send({
-          error: 'Config schema version is newer than this server supports',
-          code:  'CONFIG_SCHEMA_AHEAD',
-        })
+        // 409 Conflict (RFC 9457): the resource state conflicts with the request
+        // because serving it would violate the forward-compat contract — the
+        // current server cannot understand a future config. The forward-compat
+        // context (the stored version + what this server supports) is carried as
+        // STRUCTURED extension members, not a stringified blob, so the client can
+        // act on it programmatically (e.g. prompt for a server upgrade).
+        const configSchemaVersion =
+          typeof (config as Record<string, unknown>).schemaVersion === 'number'
+            ? (config as { schemaVersion: number }).schemaVersion
+            : undefined
+        throw new Problem(
+          'config-schema-ahead',
+          'The stored page config was written by a newer platform build than this server supports.',
+          { code: 'CONFIG_SCHEMA_AHEAD', configSchemaVersion, currentSchemaVersion: CURRENT_SCHEMA_VERSION },
+        )
       }
     }
     return ok({ ...page, config })

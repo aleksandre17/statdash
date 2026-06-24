@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll } from 'vitest'
-import type { FastifyInstance, FastifyError, FastifyReply, FastifyRequest } from 'fastify'
+import type { FastifyInstance } from 'fastify'
 
 // Env contract is parsed at import time (env.ts), so set the required vars BEFORE
 // importing any module that reads it. EMBED_SECRET is fixed so the test can sign
@@ -22,22 +22,16 @@ const snapshot = { generatedAt: '2026-06-17T00:00:00.000Z', nodes: [], status: '
 async function buildApp(): Promise<{ app: FastifyInstance; jwt: string }> {
   const Fastify = (await import('fastify')).default
   const { snapshotsRoutes, embedRoutes, createSnapshotStore } = await import('./index.js')
-  const { ValidationError } = await import('../../lib/http.js')
+  const { registerProblemErrorHandler } = await import('../../lib/error-handler.js')
   const { issueToken } = await import('../../lib/auth.js')
   const { env } = await import('../../env.js')
 
   const app = Fastify()
   const store = createSnapshotStore(100)
+  // Error handler FIRST so the route plugins inherit it (mirrors index.ts).
+  registerProblemErrorHandler(app)
   await app.register(snapshotsRoutes(store), { prefix: '/api/snapshots' })
   await app.register(embedRoutes(store), { prefix: '/api/embed' })
-
-  app.setErrorHandler((error: FastifyError, _req: FastifyRequest, reply: FastifyReply) => {
-    if (error instanceof ValidationError) {
-      return reply.status(400).send({ error: error.name, message: error.message, issues: error.issues })
-    }
-    const statusCode = error.statusCode ?? 500
-    return reply.status(statusCode).send({ error: error.name, message: error.message })
-  })
 
   await app.ready()
   return { app, jwt: issueToken('admin', env.JWT_SECRET) }
