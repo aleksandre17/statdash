@@ -10,7 +10,8 @@ import type { SectionContext }               from '../core/context'
 import { atTime, TIME_DIM }                  from '../core/context'
 import type { DataStore }                    from '../data/store'
 import { storeVal, storeObs }               from '../data/store'
-import type { CtxRef, DimVal, FilterValue, NeCtxRef }  from '../sdmx'
+import type { CtxRef, DimVal, FilterValue, NeCtxRef, ObsQuery }  from '../sdmx'
+import { resolveMeasureRef }                  from '../data/metric'
 import { resolveLocaleString }                from '../i18n/types'
 import type { SpecResolver }                 from './engine'
 import { applyPipeline, applyStep }          from '../data/transform'
@@ -36,6 +37,56 @@ function resolveYears(years: YearsSpec, measure: string, store: DataStore, ctx: 
   if (years !== 'all') return [...years]
   const obs = storeObs(store, { measure }, ctx)
   return [...new Set(obs.map((o) => Number(o[TIME_DIM])))].sort((a, b) => a - b)
+}
+
+// ── Measure-ref resolution at the query boundary [N26 / R1] ───────────
+//
+//  The SINGLE wire point where a config measure reference becomes a store
+//  query. resolveMeasureRef (metric.ts) is the SSOT seam; this helper applies
+//  its result to an ObsQuery:
+//    - measure: raw code(s) substituted for any metric-id(s).
+//    - filter:  MetricDef default dims merged in as DEFAULTS. Precedence is
+//               explicit config > metric default (the query's own filter keys
+//               win on collision). A raw-code query (no metric) gets NO dims
+//               merged and the SAME measure back ⇒ a byte-identical ObsQuery
+//               (Postel / FF-RAW-CODE-IDENTICAL).
+//
+//  Cube-default precedence (the third tier) lives below this: the store applies
+//  its own defaults to whatever measure+filter it receives, so the full chain
+//  is explicit config > metric default > cube default.
+//
+export function resolveQueryMeasures(query: ObsQuery): ObsQuery {
+  const resolved = resolveMeasureRef(query.measure)
+
+  // No metric expansion AND no metric dims ⇒ return the original object
+  // untouched (identity) so raw-code queries are provably byte-identical.
+  const sameMeasure =
+    resolved.codes.length === (Array.isArray(query.measure) ? query.measure.length : 1) &&
+    resolved.codes.every((c, i) => c === (Array.isArray(query.measure) ? query.measure[i] : query.measure))
+  if (sameMeasure && !resolved.dims) return query
+
+  const measure: string | string[] =
+    resolved.codes.length === 1 ? resolved.codes[0]! : resolved.codes
+
+  // Metric dims are DEFAULTS — the query's explicit filter overrides them.
+  const filter = resolved.dims
+    ? { ...resolved.dims, ...query.filter }
+    : query.filter
+
+  return filter !== undefined
+    ? { ...query, measure, filter }
+    : { ...query, measure }
+}
+
+/**
+ * Resolve a single measure reference used by the convenience specs
+ * (timeseries/growth/ratio-list `code`). A registered metric-id expands to its
+ * underlying code; a raw code passes through UNCHANGED (byte-identical).
+ * Multi-code metrics resolve to their FIRST code here (the convenience specs
+ * are single-measure-per-code by shape); author a `query` spec for multi-measure.
+ */
+function resolveCode(code: string): string {
+  return resolveMeasureRef(code).codes[0] ?? code
 }
 
 /** Resolve a FilterValue to a flat list of DimVals (used by extractRequirements). */
@@ -96,26 +147,27 @@ class RowListResolver implements SpecResolver<Extract<DataSpec, { type: 'row-lis
     store: DataStore,
   ): EngineRow[] {
     return spec.rows.map((r: RowSpec) => {
-      const raw = storeVal(store, r.code, ctx)
+      const code = resolveCode(r.code)
+      const raw = storeVal(store, code, ctx)
 
       let label = r.label
       let color = r.color
       if (!label || !color) {
-        const obs = storeObs(store, { measure: r.code }, ctx)[0]
+        const obs = storeObs(store, { measure: code }, ctx)[0]
         if (obs) {
-          if (!label) label = String(obs['label'] ?? r.code)
+          if (!label) label = String(obs['label'] ?? code)
           if (!color) color = String(obs['color'] ?? '') || undefined
         }
       }
 
       const row: EngineRow = {
-        id:    r.code,
+        id:    code,
         // Flatten LocaleString → string at the data boundary; the React/i18n
         // layer performs locale-aware classifier resolution downstream.
-        label: label !== undefined ? resolveLocaleString(label, 'en', 'en') : r.code,
+        label: label !== undefined ? resolveLocaleString(label, 'en', 'en') : code,
         value: r.negate ? -raw : raw,
       }
-      if (r.pctOf !== undefined) row['pct'] = (Math.abs(raw) / storeVal(store, r.pctOf, ctx)) * 100
+      if (r.pctOf !== undefined) row['pct'] = (Math.abs(raw) / storeVal(store, resolveCode(r.pctOf), ctx)) * 100
       if (color)    row['color']   = color
       if (r.isTotal) row['isTotal'] = true
       return row
@@ -152,8 +204,9 @@ class TimeseriesResolver implements SpecResolver<Extract<DataSpec, { type: 'time
     ctx:   SectionContext,
     store: DataStore,
   ): EngineRow[] {
-    const years = clampYears(resolveYears(spec.years, spec.code, store, ctx), spec, ctx)
-    const vals  = years.map((y) => storeVal(store, spec.code, atTime(y, ctx)))
+    const code  = resolveCode(spec.code)
+    const years = clampYears(resolveYears(spec.years, code, store, ctx), spec, ctx)
+    const vals  = years.map((y) => storeVal(store, code, atTime(y, ctx)))
     const max   = Math.max(...vals.map(Math.abs), 1)
     return years.map((y, i) => ({
       id:    String(y),
@@ -174,7 +227,7 @@ class GrowthResolver implements SpecResolver<Extract<DataSpec, { type: 'growth' 
     ctx:   SectionContext,
     store: DataStore,
   ): EngineRow[] {
-    const codes = Array.isArray(spec.code) ? spec.code : [spec.code]
+    const codes = (Array.isArray(spec.code) ? spec.code : [spec.code]).map(resolveCode)
     const years = clampYears(resolveYears(spec.years, codes[0], store, ctx), spec, ctx)
 
     if (codes.length === 1) {
@@ -214,9 +267,11 @@ class RatioListResolver implements SpecResolver<Extract<DataSpec, { type: 'ratio
     store: DataStore,
   ): EngineRow[] {
     const rows = spec.pairs.map(({ code, denom, label }) => {
-      const num = storeVal(store, code,  ctx)
-      const den = storeVal(store, denom, ctx)
-      return { id: code, measure: code, label: label ?? code, value: den ? (num / den) * 100 : 0 }
+      const numCode = resolveCode(code)
+      const denCode = resolveCode(denom)
+      const num = storeVal(store, numCode, ctx)
+      const den = storeVal(store, denCode, ctx)
+      return { id: numCode, measure: numCode, label: label ?? numCode, value: den ? (num / den) * 100 : 0 }
     })
     if (!spec.pipe?.length) return rows
     return applyPipeline(
@@ -244,7 +299,7 @@ class QueryResolver implements SpecResolver<Extract<DataSpec, { type: 'query' }>
     ctx:   SectionContext,
     store: DataStore,
   ): EngineRow[] {
-    const raw     = storeObs(store, spec.query, ctx)
+    const raw     = storeObs(store, resolveQueryMeasures(spec.query), ctx)
     const clamped = (spec.fromDim || spec.toDim)
       ? raw.filter((o) => {
           const t    = Number(o[TIME_DIM])

@@ -51,6 +51,94 @@ export function listMetrics(): string[] {
   return [..._registry.keys()].sort()
 }
 
+// ── resolveMeasureRef — the SSOT measure-resolution seam [N26 / R1] ────
+//
+//  A "measure reference" in config is EITHER a raw SDMX code (today's
+//  behaviour — passes through UNCHANGED) OR a metric-id registered in the
+//  MetricRegistry. This seam is the SINGLE place that distinguishes the two:
+//  every binding-path consumer (QueryResolver, the convenience resolvers,
+//  extractRequirements) resolves measure references THROUGH here, so there is
+//  one resolution path (FF-ONE-RESOLUTION-PATH), not a parallel re-impl.
+//
+//  Postel / expand-contract: a raw code that is NOT a registered metric-id
+//  resolves to itself with NO governance and NO default dims, so every
+//  existing (raw-code) config produces a byte-identical resolved query.
+//  Wiring the semantic layer in is purely additive (FF-RAW-CODE-IDENTICAL).
+//
+//  When the ref IS a metric-id, it resolves to the MetricDef's underlying
+//  code(s) PLUS the governance declared once on the metric: unit, methodology,
+//  default dims, and default aggregation. Those flow to the query (dims) and
+//  to the panel (unit/methodology via the provenance seam, see
+//  withMetricProvenance).
+//
+//  This file stays a pure vocabulary leaf — resolveMeasureRef reads only the
+//  local _registry via getMetric; it imports nothing from registry/. The
+//  binding wiring lives in registry/resolvers.ts (applyMeasureRef), which the
+//  metric.fitness purity test guards.
+
+/**
+ * The result of resolving a measure reference. `codes` is always present
+ * (the underlying SDMX code(s) the store will be queried with). The governance
+ * fields are present ONLY when the ref resolved to a registered metric-id;
+ * for raw codes they are all absent, so consumers can merge defaults with
+ * "explicit wins" precedence and a raw-code path stays byte-identical.
+ */
+export interface ResolvedMeasure {
+  /** Underlying SDMX measure code(s) — what the store is actually queried with. */
+  codes:        string[]
+  /** Metric-default unit, if the ref was a metric-id with a unit. */
+  unit?:        LocaleString
+  /** Metric-default methodology URL, if declared on the metric. */
+  methodology?: string
+  /** Metric-default cross-time aggregation, if declared. */
+  agg?:         'sum' | 'avg' | 'last'
+  /** Metric-default dimension filters — merged into the query as DEFAULTS (explicit query-time filters win). */
+  dims?:        Partial<Record<string, FilterValue>>
+}
+
+/**
+ * Resolve a measure reference (raw code, metric-id, or an array mixing both)
+ * to its underlying code(s) plus any governance carried by a registered metric.
+ *
+ * - A registered metric-id expands to its `code`(s) and contributes its
+ *   `unit`/`methodology`/`agg`/`dims`.
+ * - An unregistered string passes through as a raw code (Postel: liberal accept).
+ * - For arrays, each element is resolved independently and the underlying codes
+ *   are concatenated in order (duplicates preserved — the store de-dupes).
+ *
+ * Governance precedence when an array mixes metrics: first metric with a given
+ * governance field wins (deterministic, order-stable). Callers layer the
+ * explicit-config > metric-default > cube-default precedence on top: anything
+ * the config sets explicitly is applied AFTER these defaults and overrides them.
+ */
+export function resolveMeasureRef(ref: string | string[]): ResolvedMeasure {
+  const refs = Array.isArray(ref) ? ref : [ref]
+  const out: ResolvedMeasure = { codes: [] }
+  let dims: Partial<Record<string, FilterValue>> | undefined
+
+  for (const r of refs) {
+    const metric = _registry.get(r)
+    if (!metric) {
+      // Raw code — pass through unchanged (byte-identical path).
+      out.codes.push(r)
+      continue
+    }
+    const codes = Array.isArray(metric.code) ? metric.code : [metric.code]
+    out.codes.push(...codes)
+    // First-metric-wins for scalar governance (order-stable, deterministic).
+    if (out.unit        === undefined && metric.unit        !== undefined) out.unit        = metric.unit
+    if (out.methodology === undefined && metric.methodology !== undefined) out.methodology = metric.methodology
+    if (out.agg         === undefined && metric.agg         !== undefined) out.agg         = metric.agg
+    if (metric.dims) {
+      // Earlier metric's dims win on key collision (first-wins, mirrors scalars).
+      dims = { ...metric.dims, ...dims }
+    }
+  }
+
+  if (dims && Object.keys(dims).length > 0) out.dims = dims
+  return out
+}
+
 /**
  * Return all registered metrics as a JSON-serializable Record keyed by id.
  * Used by describeApp() to populate the Constructor's data-catalog picker.
@@ -72,9 +160,12 @@ export function withMetricProvenance(base: MetadataPort): MetadataPort {
         const codes = Array.isArray(def.code) ? def.code : [def.code]
         return codes.includes(code)
       })
-      const metricFill: Partial<ProvenanceRecord> = metric?.methodology
-        ? { methodology: metric.methodology }
-        : {}
+      // Metric-level governance (methodology + unit) fills provenance as a
+      // DEFAULT; runtime/cube provenance wins via the spread order below
+      // (explicit cube > metric default — the R1 precedence, provenance half).
+      const metricFill: Partial<ProvenanceRecord> = {}
+      if (metric?.methodology) metricFill.methodology = metric.methodology
+      if (metric?.unit)        metricFill.unit        = metric.unit
       const runtime = base.provenance(code, ctx)
       if (!metric && !runtime) return undefined
       return { ...metricFill, ...runtime }

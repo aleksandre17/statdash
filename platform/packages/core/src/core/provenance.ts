@@ -73,6 +73,15 @@ export interface ProvenanceRecord {
   note?:         string
   /** URL to the methodology page (drives the ℹ link). */
   methodology?:  string
+  /**
+   * Unit of measurement, e.g. 'million GEL' / '% change' [N26 / R1].
+   * Flows from a registered MetricDef.unit via withMetricProvenance so a panel
+   * bound to `metric:X` can surface X's unit without per-panel authoring.
+   * A LocaleString (full benefit of the i18n standard, Law 4); the renderer
+   * resolves it against the active locale. Always optional — absent for
+   * raw-code bindings and for stores with no metric-level unit.
+   */
+  unit?:         LocaleString
 }
 
 // ── MetadataPort — engine seam for per-indicator provenance ──────────

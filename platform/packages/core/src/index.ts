@@ -197,9 +197,9 @@ export { interpretKpis }                                                from './
 export type { KpiSpec, KpiValueSpec, KpiTrendSpec }                     from './data/kpi'
 
 // ── Metric registry [N26] — Constructor metric vocabulary + extension seam ──
-export type { MetricDef }                                               from './data/metric'
+export type { MetricDef, ResolvedMeasure }                             from './data/metric'
 export { registerMetric, getMetric, listMetrics, listMetricDefs,
-         withMetricProvenance }                                         from './data/metric'
+         resolveMeasureRef, withMetricProvenance }                     from './data/metric'
 
 // ── Export formats [N16] — registry + built-ins (csv, sdmx-json) ──────
 //  Re-exporting the barrel also runs its side-effect: the csv / sdmx-json

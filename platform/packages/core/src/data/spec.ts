@@ -1,5 +1,6 @@
 import { staticStore }           from './store'
 import { resolveFilterForReqs }  from '../registry/resolvers'
+import { resolveMeasureRef }     from './metric'
 import type { EngineRow }        from './encoding'
 import type { DataSpec }         from '../config/data-spec'
 import type { SectionContext }   from '../core/context'
@@ -112,21 +113,25 @@ export function extractRequirements(
     }
 
     case 'row-list':
+      // Resolve each ref through the SSOT seam so prefetch warms the underlying
+      // codes (raw codes pass through unchanged ⇒ byte-identical requirements).
       return spec.rows.flatMap(({ code, pctOf }) => {
-        const reqs: Requirement[] = [{ code, dims: ctx.dims }]
-        if (pctOf) reqs.push({ code: pctOf, dims: ctx.dims })
+        const reqs: Requirement[] = resolveMeasureRef(code).codes.map((c) => ({ code: c, dims: ctx.dims }))
+        if (pctOf) for (const c of resolveMeasureRef(pctOf).codes) reqs.push({ code: c, dims: ctx.dims })
         return reqs
       })
 
     case 'timeseries':
       // 'all' — years resolved at runtime from store; no static requirements extractable
       if (spec.years === 'all') return []
-      return spec.years.map((year) => ({ code: spec.code, dims: { ...ctx.dims, [TIME_DIM]: year } }))
+      return resolveMeasureRef(spec.code).codes.flatMap((code) =>
+        (spec.years as readonly number[]).map((year) => ({ code, dims: { ...ctx.dims, [TIME_DIM]: year } })),
+      )
 
     case 'growth': {
       // 'all' — years resolved at runtime from store; no static requirements extractable
       if (spec.years === 'all') return []
-      const codes = Array.isArray(spec.code) ? spec.code : [spec.code]
+      const codes = resolveMeasureRef(spec.code).codes
       return codes.flatMap((code) =>
         (spec.years as readonly number[]).map((year) => ({ code, dims: { ...ctx.dims, [TIME_DIM]: year } })),
       )
@@ -134,14 +139,12 @@ export function extractRequirements(
 
     case 'ratio-list':
       return spec.pairs.flatMap(({ code, denom }) => [
-        { code,       dims: ctx.dims },
-        { code: denom, dims: ctx.dims },
+        ...resolveMeasureRef(code).codes.map((c)  => ({ code: c, dims: ctx.dims })),
+        ...resolveMeasureRef(denom).codes.map((c) => ({ code: c, dims: ctx.dims })),
       ])
 
     case 'query': {
-      const measures = Array.isArray(spec.query.measure)
-        ? spec.query.measure
-        : [spec.query.measure]
+      const measures = resolveMeasureRef(spec.query.measure).codes
 
       const timeFilter = spec.query.filter?.[TIME_DIM]
       let years: number[]
