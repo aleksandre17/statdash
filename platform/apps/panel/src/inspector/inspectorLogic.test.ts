@@ -3,7 +3,7 @@ import type { PropField } from '@statdash/react/engine'
 import { isVisible, getAtPath, setAtPath } from './showWhen'
 import { validateField } from './validateField'
 import { readLocale, writeLocale } from './localeString'
-import { orderLocales } from './useActiveLocales'
+import { orderLocales, resolveActiveLocales } from './useActiveLocales'
 
 describe('showWhen — safe conditional visibility (no eval)', () => {
   it('shows when no condition is set', () => {
@@ -118,5 +118,28 @@ describe('orderLocales — default-first ordering', () => {
   it('puts the site default first', () => {
     expect(orderLocales('en')).toEqual(['en', 'ka'])
     expect(orderLocales('ka')).toEqual(['ka', 'en'])
+  })
+})
+
+describe('resolveActiveLocales — site SSOT with graceful fallback', () => {
+  it('uses the site active set when present, PRESERVING its order', () => {
+    // The site projection is authoritative + ordered — even when its order
+    // differs from default-first, we honour it (config.locale ORDER BY ord).
+    expect(resolveActiveLocales(['en', 'ka'], 'ka')).toEqual(['en', 'ka'])
+    expect(resolveActiveLocales(['ka', 'en'], 'en')).toEqual(['ka', 'en'])
+  })
+
+  it('narrows away unknown registry codes, keeping known locales', () => {
+    expect(resolveActiveLocales(['ka', 'fr', 'en', 'de'], 'ka')).toEqual(['ka', 'en'])
+  })
+
+  it('falls back to [defaultLocale]+platform when the site set is empty', () => {
+    // Mock-data / older-payload path — never author against an empty set.
+    expect(resolveActiveLocales([], 'en')).toEqual(['en', 'ka'])
+    expect(resolveActiveLocales([], 'ka')).toEqual(['ka', 'en'])
+  })
+
+  it('falls back when the site set has only unknown codes', () => {
+    expect(resolveActiveLocales(['fr', 'de'], 'ka')).toEqual(['ka', 'en'])
   })
 })

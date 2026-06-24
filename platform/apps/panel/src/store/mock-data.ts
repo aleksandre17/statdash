@@ -31,6 +31,8 @@ export const MOCK_SPECS: NamedDataSpec[] = [
 export const MOCK_SITE: SiteDef = {
   name: 'GeoStat Dashboard',
   defaultLocale: 'ka',
+  // Bilingual mock site (the API-unreachable fallback) — the known platform set.
+  activeLocales: ['ka', 'en'],
   nav: [
     { id: 'nav-1', label: { ka: 'მთავარი',              en: 'Home'           }, pageId: 'page-1', order: 0 },
     { id: 'nav-2', label: { ka: 'მშპ',                  en: 'GDP'            }, pageId: 'page-2', order: 1 },

@@ -54,6 +54,9 @@ export interface WizardSlice {
 const INITIAL_SITE: SiteDef = {
   name:               '',
   defaultLocale:      'ka',
+  // Empty until the site read projects config.locale — useActiveLocales falls
+  // back to [defaultLocale]/['ka','en'] so LocaleField never authors empty.
+  activeLocales:      [],
   nav:                [],
   themeOverrides:     {},
   dataSourceBindings: {},

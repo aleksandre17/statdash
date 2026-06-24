@@ -19,6 +19,7 @@ import type {
 } from '../types/constructor'
 import type { DataSpec } from '@statdash/engine'
 import type { NodePageConfig } from '@statdash/react/engine'
+import type { SiteConfigResponse } from '@statdash/contracts'
 import { getToken, clearToken, AuthError } from './auth'
 import { toNodePageConfig, fromNodePageConfig } from '../canvas/canvasPageAdapter'
 
@@ -102,6 +103,7 @@ export interface DataSpecRow {
   updated_at: string
 }
 
+/** Write body for PUT /site — the open settings map the panel upserts. */
 export type SiteConfigMap = Record<string, unknown>
 
 export interface PageListRow {
@@ -220,7 +222,10 @@ export const configApi = {
     delete: (id: string) => request<{ id: string }>('DELETE', `/data-specs/${id}`),
   },
   site: {
-    get: () => request<SiteConfigMap>('GET', '/site'),
+    // Read projects activeLocales/defaultLocale from the config.locale registry
+    // on top of the open settings map (SiteConfigResponse); the write is just the
+    // settings map (the projection is server-derived, never sent back).
+    get: () => request<SiteConfigResponse>('GET', '/site'),
     update: (body: SiteConfigMap) => request<SiteConfigMap>('PUT', '/site', body),
   },
   pages: {
@@ -283,7 +288,7 @@ export function fromApiDataSpec(row: DataSpecRow): NamedDataSpec {
   }
 }
 
-export function fromApiSite(map: SiteConfigMap, navRows: NavRow[]): SiteDef {
+export function fromApiSite(map: SiteConfigResponse, navRows: NavRow[]): SiteDef {
   // Nav is sourced from the nav tree, not from the site map. Constructor nav is
   // a flat ordered list of page-targeting items, so we keep page-backed rows in
   // wire (depth, ord) order and assign a contiguous local order.
@@ -299,6 +304,11 @@ export function fromApiSite(map: SiteConfigMap, navRows: NavRow[]): SiteDef {
   return {
     name: typeof map.name === 'string' ? map.name : '',
     defaultLocale: map.defaultLocale === 'en' ? 'en' : 'ka',
+    // Active-locale set — the SSOT projection from config.locale (ordered).
+    // Carried as opaque string codes; useActiveLocales narrows + falls back.
+    activeLocales: Array.isArray(map.activeLocales)
+      ? map.activeLocales.filter((l): l is string => typeof l === 'string')
+      : [],
     logo: typeof map.logo === 'string' ? map.logo : undefined,
     nav,
     themeOverrides: isStringRecord(map.themeOverrides) ? map.themeOverrides : {},

@@ -48,6 +48,14 @@ export interface NavItem {
 export interface SiteDef {
   name:               string
   defaultLocale:      Locale
+  /**
+   * Active-locale codes the author must fill for every LocaleString, ORDERED —
+   * the SSOT projection of `config.locale` (V13), mapped through the site read
+   * (`fromApiSite`). Opaque string codes (the registry owns the universe); the
+   * panel narrows them to known `Locale`s in `useActiveLocales`. May be empty on
+   * the mock-data / older-payload fallback path — consumers degrade gracefully.
+   */
+  activeLocales:      string[]
   logo?:              string
   /** Ordered navigation items — D&D reorder updates this array. */
   nav:                NavItem[]

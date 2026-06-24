@@ -5,30 +5,50 @@
 //  carry every active locale, not just the default. The Inspector's LocaleField
 //  renders one input per active locale, so it needs this list.
 //
-//  Source of truth (in priority order, Postel's Law — derive, never hardcode):
-//    1. The Constructor session's site.defaultLocale is always included first
-//       (it is the guaranteed-present locale).
-//    2. The platform's known locale set (PLATFORM_LOCALES) supplies the rest.
+//  Source of truth (SSOT, Law 1): the site's `activeLocales` — the ORDERED
+//  projection of `config.locale` (the bootstrap locale registry), surfaced to
+//  the panel through the site read (`fromApiSite`). The panel narrows those
+//  opaque registry codes to its known `Locale` universe (PLATFORM_LOCALES).
 //
-//  SEAM (flagged): the authoritative active-locale list is `config.locale`
-//  (the bootstrap locale registry), not a hardcoded union. That registry is
-//  not yet surfaced to apps/panel. PLATFORM_LOCALES is the interim default;
-//  when the bootstrap exposes the locale list to the panel, replace the
-//  constant with that read — this hook is the one place to change.
+//  Graceful degradation (Postel's Law) — `activeLocales` can be empty on the
+//  mock-data fallback path (API unreachable) or an older payload. The fallback
+//  chain, in order: site activeLocales → [defaultLocale] → PLATFORM_LOCALES, so
+//  LocaleField NEVER authors against an empty set.
 //
 import type { Locale } from '../types/constructor'
 import { useSite } from '../store/constructor.store'
 
-/** Interim platform locale set — see SEAM note above (config.locale registry). */
+/** The panel's known locale universe — used to narrow registry codes. */
 export const PLATFORM_LOCALES: readonly Locale[] = ['ka', 'en'] as const
 
+/** Type guard: is a raw registry code one of the panel's known locales? */
+function isKnownLocale(code: string): code is Locale {
+  return (PLATFORM_LOCALES as readonly string[]).includes(code)
+}
+
 /**
- * Returns the ordered active-locale list for the current session:
- * the site default first, then every other platform locale.
+ * Resolve the ordered active-locale list (pure). Narrows the site's registry
+ * codes to known `Locale`s, preserving their order; degrades to default-first
+ * ordering when the site set is absent/empty/unknown.
+ */
+export function resolveActiveLocales(
+  activeLocales: readonly string[],
+  defaultLocale: Locale,
+): Locale[] {
+  const known = activeLocales.filter(isKnownLocale)
+  if (known.length > 0) return known
+  // No usable site set — fall back to the default locale, then the platform set.
+  return orderLocales(defaultLocale)
+}
+
+/**
+ * Returns the ordered active-locale list for the current session: the site's
+ * projected `activeLocales`, narrowed to known locales, with a graceful fallback
+ * to default-first platform ordering.
  */
 export function useActiveLocales(): Locale[] {
   const site = useSite()
-  return orderLocales(site.defaultLocale)
+  return resolveActiveLocales(site.activeLocales, site.defaultLocale)
 }
 
 /** Pure ordering helper — default first, remaining platform locales after. */
