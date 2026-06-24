@@ -100,6 +100,11 @@ export { PropSchemaForm }                    from '../components/PropSchemaForm'
 export type { PropSchemaFormProps, FieldRenderProps } from '../components/PropSchemaForm'
 export { resolveNodeRows, resolveStore, resolveCompareRows } from './resolveNodeRows'
 export { resolvePreliminary }      from './resolvePreliminary'
+// ── Panel title-badge seam — the reusable PANEL_TITLE_BADGE ritual ────────
+//  usePanelTitleBadge(ctx, def, nodeType) → memoized badge node | undefined.
+//  Folds resolvePreliminary + useExtensions(PANEL_TITLE_BADGE) so every panel
+//  shell consumes ONE capability instead of re-deriving the badge inline.
+export { usePanelTitleBadge }      from './usePanelTitleBadge'
 export { useNodeStream }           from './useNodeStream'
 
 // ── Registries ────────────────────────────────────────────────────────

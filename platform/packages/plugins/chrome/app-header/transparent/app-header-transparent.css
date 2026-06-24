@@ -1,15 +1,14 @@
 /* ── AppHeader transparent variant — frosted glass overlay ──────────────
-   Wrapper has display:contents — invisible to layout, scopes CSS override.
-   Higher specificity (.app-header-transparent-wrap .app-header) wins over
-   the base .app-header rule in default/app-header.css. No !important.
-   Zero coupling to page names, frame names, or other shells.
+   The transparent appearance is a DECLARED variant: the header element carries
+   `data-surface="transparent"` (resolved in AppHeaderShell from its `surface`
+   prop). This attribute selector — `.app-header[data-surface="transparent"]`
+   (specificity 0,2,0) — wins over the base `.app-header` rule (0,1,0) exactly as
+   the former `.app-header-transparent-wrap .app-header` descendant selector did,
+   without a wrapper div or a modifier class. No !important. Zero coupling to page
+   names, frame names, or other shells.
    ────────────────────────────────────────────────────────────────────── */
 
-.app-header-transparent-wrap {
-  display: contents;
-}
-
-.app-header-transparent-wrap .app-header {
+.app-header[data-surface="transparent"] {
   background: var(--color-surface-translucent);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);

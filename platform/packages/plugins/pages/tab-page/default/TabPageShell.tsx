@@ -22,7 +22,7 @@ function TabControl({ def, children }: { def: TabPageNode; children: ChildrenArg
               key={i}
               role="tab"
               aria-selected={i === activeTab}
-              className={`tab-btn${i === activeTab ? ' is-active' : ''}`}
+              className="tab-btn"
               onClick={() => setActiveTab(i)}
               type="button"
             >

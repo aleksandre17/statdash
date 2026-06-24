@@ -1,11 +1,12 @@
-import { Fragment, useState, useEffect } from 'react'
-import { defineShell, resolvePreliminary } from '@statdash/react/engine'
-import type { RenderContext }           from '@statdash/react/engine'
-import type { BodyStyleAttrs }          from '@statdash/react/engine'
-import { useInject, EMPTY_STATE, EXPORT_BAR, useExtensions, PANEL_TITLE_BADGE } from '@statdash/react'
-import type { ExportMeta }             from '@statdash/engine'
-import type { TableNode }              from './TableNode'
-import DataTable                       from './components/DataTable'
+import { useState, useEffect }          from 'react'
+import { defineShell }                    from '@statdash/react/engine'
+import { usePanelTitleBadge }             from '@statdash/react/engine'
+import type { RenderContext }             from '@statdash/react/engine'
+import type { BodyStyleAttrs }            from '@statdash/react/engine'
+import { useInject, EMPTY_STATE, PanelExportBar } from '@statdash/react'
+import type { ExportMeta }                from '@statdash/engine'
+import type { TableNode }                 from './TableNode'
+import DataTable                          from './components/DataTable'
 
 export const TableShell = defineShell<TableNode>({
   render({ def, ctx, vs }) {
@@ -17,20 +18,13 @@ function TableControl({
   def, ctx, bodyAttrs,
 }: { def: TableNode; ctx: RenderContext; bodyAttrs: BodyStyleAttrs }) {
   const EmptyState = useInject(ctx.ui, EMPTY_STATE)
-  const ExportBar  = useInject(ctx.ui, EXPORT_BAR)
   const rows = ctx.rows ?? []
   const { type: _, ...tableConfig } = def
 
-  const titleBadges = useExtensions(ctx.extensions, PANEL_TITLE_BADGE, {
-    nodeType:    'table',
-    nodeId:      def.id,
-    preliminary: resolvePreliminary(def, ctx),
-  })
-  const titleBadge = titleBadges.length > 0
-    ? <>{titleBadges.map((b, i) => <Fragment key={i}>{b}</Fragment>)}</>
-    : undefined
+  const titleBadge = usePanelTitleBadge(ctx, def, 'table')
 
-  // Gap 6: EventBus — subscribe to row:hover / row:leave to highlight matching rows
+  // EventBus — subscribe to row:hover / row:leave so this table highlights the
+  // row a sibling panel (e.g. a chart) is currently pointing at.
   const [highlightedLabel, setHighlightedLabel] = useState<string | undefined>(undefined)
 
   useEffect(() => {
@@ -63,11 +57,7 @@ function TableControl({
         ? <EmptyState />
         : <>
             <DataTable rows={rows} highlightedLabel={highlightedLabel} {...tableConfig} />
-            <ExportBar
-              rows={rows}
-              meta={exportMeta}
-              onExport={fmt => ctx.bus.dispatch({ type: 'data:export', format: fmt, rows, meta: exportMeta })}
-            />
+            <PanelExportBar ctx={ctx} rows={rows} meta={exportMeta} />
           </>
       }
     </div>

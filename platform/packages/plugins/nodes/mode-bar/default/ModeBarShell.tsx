@@ -17,7 +17,7 @@ function ModeBarControl({ ctx }: { ctx: RenderContext }): ReactNode {
           key={def.id}
           role="tab"
           aria-selected={current === def.id}
-          className={`mode-tab-btn${current === def.id ? ' mode-tab-btn--active' : ''}`}
+          className="mode-tab-btn"
           onClick={() => set(def.id)}
         >
           {def.icon && <span className="mode-tab-icon" data-icon={def.icon} aria-hidden />}

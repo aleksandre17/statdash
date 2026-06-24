@@ -25,7 +25,8 @@ function FilterBarControl({ def, ctx }: { def: FilterBarNode; ctx: RenderContext
         return (
           <div
             key={bar.id ?? i}
-            className={`filter-bar filter-bar--${bar.position ?? 'sticky'}`}
+            className="filter-bar"
+            data-position={bar.position ?? 'sticky'}
             style={{ order: bar.order }}
           >
             {bar.items.map(item => {

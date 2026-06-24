@@ -181,6 +181,20 @@ export default defineConfig([
     },
   },
 
+  // ── PanelExportBar — the react-layer twin of the plugins DI exception ─────
+  //
+  //  PanelExportBar is the promoted panel-export seam (the wrapper every panel
+  //  shell consumes instead of re-wiring useInject(EXPORT_BAR) + the bus). It
+  //  uses the SAME useInject(ctx.ui, EXPORT_BAR) DI pattern as the shells, with
+  //  the SAME stability guarantee (useMemo([container, token]); both deps stable
+  //  per page lifecycle). The rule cannot statically prove that, exactly as in
+  //  the plugins block above. The override is scoped to this single file so the
+  //  gate stays fully active across the rest of packages/react.
+  {
+    files: ['packages/react/src/components/feedback/PanelExportBar.tsx'],
+    rules: { 'react-hooks/static-components': 'off' },
+  },
+
   // ── apps/panel — no src-relative reach-ins to packages source ───────────
   // Panel must declare @statdash/* or @plugins as its public import surface.
   // This rule keeps the future filter-repo panel split a no-op:

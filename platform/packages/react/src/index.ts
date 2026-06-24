@@ -103,6 +103,9 @@ export { EMPTY_STATE }                       from './components/feedback/EmptySt
 export type { EmptyStateProps }              from './components/feedback/EmptyState'
 export { EXPORT_BAR }                        from './components/feedback/ExportBar'
 export type { ExportBarProps }               from './components/feedback/ExportBar'
+// ── Panel export seam — DI ExportBar + data:export bus dispatch, wrapped ──
+export { PanelExportBar }                    from './components/feedback/PanelExportBar'
+export type { PanelExportBarProps }          from './components/feedback/PanelExportBar'
 // ── UI component DI container (InjectionToken<T> pattern) ────────────
 //  InjectionToken: typed DI key — token IS the type, no correlated-union cast.
 //  Container: runtime DI container interface. MapContainer: concrete impl.
@@ -125,6 +128,8 @@ export { ExtensionRegistry }                    from './engine/extensions/Extens
 export { useExtensions }                        from './engine/extensions/useExtensions'
 export { PANEL_TITLE_BADGE, SECTION_HEADER_ACTIONS } from './engine/extensions/points'
 export type { PanelTitleHost, SectionActionHost }    from './engine/extensions/points'
+// ── Panel title-badge seam — folds the PANEL_TITLE_BADGE ritual (M-5) ──────
+export { usePanelTitleBadge }                        from './engine/usePanelTitleBadge'
 // CommandBus — typed platform command dispatch
 export type { PlatformCommandMap, CommandType, Command } from './engine/commands/commands'
 export type { CommandBus, CommandHandler, CommandMiddleware } from './engine/commands/CommandBus'

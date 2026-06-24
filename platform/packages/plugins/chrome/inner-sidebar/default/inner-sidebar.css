@@ -115,6 +115,16 @@
   color: var(--sc, var(--color-accent));
   font-weight: 600;
 }
+/* The label is a router <Link> (an <a>): strip the anchor underline and let it
+   inherit the row's text colour. Replaces the former inline
+   `style={{ textDecoration:'none', color:'inherit' }}`; the `.is-active` color
+   above is intentionally NOT applied to the link text (matching prior behaviour
+   where the inline `color:inherit` won) — the active accent shows via the row
+   bar + icon. Tie with the is-active rule on specificity → later source wins. */
+.sidebar-nav-section a.sidebar-nav-label {
+  text-decoration: none;
+  color: inherit;
+}
 
 .sidebar-chevron {
   flex-shrink: 0;

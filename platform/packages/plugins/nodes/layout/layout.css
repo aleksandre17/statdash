@@ -111,10 +111,10 @@
 }
 
 /* ── Divider ─────────────────────────────────────────────────── */
-.layout-divider            { border: none; margin: 0; display: block; }
-.layout-divider--solid     { border-top: 1px solid var(--color-border); }
-.layout-divider--dashed    { border-top: 1px dashed var(--color-border); }
-.layout-divider--invisible { border: none; }
+.layout-divider                            { border: none; margin: 0; display: block; }
+.layout-divider[data-divider-style="solid"]     { border-top: 1px solid var(--color-border); }
+.layout-divider[data-divider-style="dashed"]    { border-top: 1px dashed var(--color-border); }
+.layout-divider[data-divider-style="invisible"] { border: none; }
 
 /* ── Spacer ──────────────────────────────────────────────────── */
 .layout-spacer { display: block; }

@@ -4,6 +4,16 @@ import { useT, useResolveLocale }                   from '@statdash/react'
 import type { NodeRenderer }                         from '@statdash/react/engine'
 import type { StatsCarouselNode }                    from './StatsCarouselNode'
 
+// ── Carousel timing (named; the only two magic numbers the shell carried) ──
+//
+//  DEFAULT_AUTOPLAY_MS — slide dwell time before auto-advancing to the next
+//  slide, used when the node omits `autoplayMs`.
+//  FADE_OUT_MS — the cross-fade hold: how long the current slide stays faded
+//  out (`is-visible` off) before the new slide's content swaps in. Must match
+//  the `.stats-grid` opacity/transform transition duration in stats-carousel.css.
+const DEFAULT_AUTOPLAY_MS = 7000
+const FADE_OUT_MS         = 200
+
 export const StatsCarouselShell: NodeRenderer<StatsCarouselNode> = (def, _ctx, _children) =>
   <StatsCarouselControl def={def} />
 
@@ -14,7 +24,7 @@ function StatsCarouselControl({ def }: { def: StatsCarouselNode }) {
   const resolve = useResolveLocale()
 
   const count    = def.slides.length
-  const autoplay = def.autoplayMs ?? 7000
+  const autoplay = def.autoplayMs ?? DEFAULT_AUTOPLAY_MS
 
   const activeSlideRef = useRef(activeSlide)
   const fadeTimerRef   = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -24,7 +34,7 @@ function StatsCarouselControl({ def }: { def: StatsCarouselNode }) {
   const goTo = useCallback((i: number) => {
     if (fadeTimerRef.current) clearTimeout(fadeTimerRef.current)
     setFade(false)
-    fadeTimerRef.current = setTimeout(() => { setActiveSlide(i); setFade(true) }, 200)
+    fadeTimerRef.current = setTimeout(() => { setActiveSlide(i); setFade(true) }, FADE_OUT_MS)
   }, [])
 
   useEffect(() => {
@@ -47,7 +57,8 @@ function StatsCarouselControl({ def }: { def: StatsCarouselNode }) {
               key={index}
               type="button"
               onClick={() => goTo(index)}
-              className={`stats-tab${index === activeSlide ? ' is-active' : ''}`}
+              className="stats-tab"
+              data-current={index === activeSlide ? '' : undefined}
             >
               {resolve(s.tab)}
             </button>
@@ -59,7 +70,8 @@ function StatsCarouselControl({ def }: { def: StatsCarouselNode }) {
             {def.slides.map((_, index) => (
               <div
                 key={index}
-                className={`stats-indicator${index === activeSlide ? ' is-active' : ''}`}
+                className="stats-indicator"
+                data-current={index === activeSlide ? '' : undefined}
               />
             ))}
           </div>
@@ -84,7 +96,7 @@ function StatsCarouselControl({ def }: { def: StatsCarouselNode }) {
           </div>
         </div>
 
-        <div className={`stats-grid${fade ? ' is-visible' : ''}`}>
+        <div className="stats-grid" data-visible={fade ? '' : undefined}>
           {slide.stats.map((stat, index) => (
             <div key={`${activeSlide}-${index}`} className="stats-item">
               {stat.icon && (
@@ -105,11 +117,11 @@ function StatsCarouselControl({ def }: { def: StatsCarouselNode }) {
                 {stat.change != null && stat.change !== 0 && stat.changeText && (
                   <div
                     className="stats-change"
-                    style={{ color: stat.change > 0 ? 'var(--color-trend-positive)' : 'var(--color-trend-negative)' }}
+                    data-trend={stat.change > 0 ? 'up' : 'down'}
                   >
                     <span aria-hidden="true">{stat.change > 0 ? '↗' : '↘'}</span>
-                    <span style={{ fontWeight: 600 }}>{Math.abs(stat.change)}%</span>
-                    <span style={{ color: 'var(--color-text-muted)' }}>{resolve(stat.changeText)}</span>
+                    <span className="stats-change__pct">{Math.abs(stat.change)}%</span>
+                    <span className="stats-change__text">{resolve(stat.changeText)}</span>
                   </div>
                 )}
               </div>

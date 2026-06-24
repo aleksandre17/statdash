@@ -74,7 +74,7 @@
   box-shadow: 0 12px 36px color-mix(in srgb, var(--color-accent) 15%, transparent);
 }
 
-.hero-card.is-active {
+.hero-card[data-current] {
   transform: translateY(-4px);
   box-shadow: 0 12px 36px color-mix(in srgb, var(--color-accent) 18%, transparent);
   border-color: var(--card-accent, var(--color-accent));

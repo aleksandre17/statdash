@@ -38,7 +38,8 @@ function HeroControl({ def }: { def: HeroNode }) {
             <div
               key={card.id}
               onClick={() => setActiveCard(index)}
-              className={`hero-card${activeCard === index ? ' is-active' : ''}`}
+              className="hero-card"
+              data-current={activeCard === index ? '' : undefined}
               style={{ '--card-accent': card.color } as React.CSSProperties}
             >
               <img

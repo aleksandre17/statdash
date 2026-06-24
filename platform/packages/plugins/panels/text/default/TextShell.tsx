@@ -3,6 +3,7 @@ import './text.css'
 import { defineShell }               from '@statdash/react/engine'
 import type { TextNode }              from './TextNode'
 import { renderMarkdown, sanitise }   from './textUtils'
+import { TEXT, resolveTextRender }    from './textKeys'
 
 export const TextShell = defineShell<TextNode>({
   render({ def, ctx }) {
@@ -18,8 +19,11 @@ export const TextShell = defineShell<TextNode>({
 
     const format = def.format ?? 'markdown'
 
+    // Render mode arrives as a data-render attribute (resolveTextRender), never
+    // an inline modifier class — the same channel the style spine uses for view
+    // state. The shell writes zero variant→class logic.
     if (format === 'plain') {
-      return <p className="text-panel text-panel--plain">{raw}</p>
+      return <p className={TEXT.block} {...resolveTextRender('plain')}>{raw}</p>
     }
 
     const html = format === 'markdown'
@@ -28,7 +32,8 @@ export const TextShell = defineShell<TextNode>({
 
     return (
       <div
-        className="text-panel text-panel--rich"
+        className={TEXT.block}
+        {...resolveTextRender(format)}
         // biome-ignore lint/security/noDangerouslySetInnerHtml: content is sanitised by `sanitise()`
         dangerouslySetInnerHTML={{ __html: html }}
       />
