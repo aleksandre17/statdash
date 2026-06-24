@@ -28,7 +28,7 @@
 //  application/problem+json later. Never throws — errors are collected.
 //
 
-import type { DataSpec }        from '../config/section'
+import type { DataSpec }        from '../config/data-spec'
 import { knownNodeTypes }       from '../registry/nodeTypes'
 import { validateDataSpec }     from './pipeline'
 import type { ValidationError } from './types'

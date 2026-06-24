@@ -9,7 +9,7 @@
 // @vitest-environment node
 
 import { describe, it, expect } from 'vitest'
-import type { DataSpec }        from './section'
+import type { DataSpec }        from './data-spec'
 
 function roundTrip<T>(v: T): T { return JSON.parse(JSON.stringify(v)) as T }
 

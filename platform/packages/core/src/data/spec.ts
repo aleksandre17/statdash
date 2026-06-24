@@ -1,7 +1,7 @@
 import { staticStore }           from './store'
 import { resolveFilterForReqs }  from '../registry/resolvers'
 import type { EngineRow }        from './encoding'
-import type { DataSpec }         from '../config/section'
+import type { DataSpec }         from '../config/data-spec'
 import type { SectionContext }   from '../core/context'
 import type { DataStore, Requirement } from './store'
 import { defaultRegistry }       from '../registry/engine'

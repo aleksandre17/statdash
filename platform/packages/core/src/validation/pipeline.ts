@@ -11,7 +11,7 @@
 //  ValidationError uses JSONPath in .path for precise error location.
 //
 
-import type { DataSpec }              from '../config/section'
+import type { DataSpec }              from '../config/data-spec'
 import { defaultRegistry }            from '../registry/engine'
 import type {
   ValidationSeverity,

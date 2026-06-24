@@ -20,7 +20,7 @@ import type { KpiDef }          from '../config/kpi'
 import type { LocaleString }    from '../i18n/types'
 import { resolveLocaleString }  from '../i18n/types'
 import { getFormatter }         from './transform'
-import { resolveTemplate }      from '../config/section'
+import { resolveTemplate }      from '../config/template'
 
 // ── Types ─────────────────────────────────────────────────────────────
 

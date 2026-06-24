@@ -5,7 +5,7 @@
 // Used by engine/react targets (api.ts, html.tsx) to produce self-describing
 // snapshots. Placed in engine/core so all targets share one derivation.
 
-import type { DataSpec }  from '../config/section'
+import type { DataSpec }  from '../config/data-spec'
 import type { EngineRow } from './encoding'
 
 export type FieldType = 'number' | 'string' | 'time' | 'boolean' | 'unknown'

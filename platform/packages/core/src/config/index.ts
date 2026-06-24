@@ -4,11 +4,11 @@ export type {
   RowSpec,
   DataSpec,
   TableConfig,
-  VisibilityExpr,
-  LinkIconKey,
-  LinkDef,
-}                                                                from './section'
-export { resolveTemplate, evalVisibility } from './section'
+}                                                                from './data-spec'
+export type { VisibilityExpr }              from './visibility'
+export type { LinkIconKey, LinkDef }        from './links'
+export { evalVisibility }                   from './visibility'
+export { resolveTemplate }                  from './template'
 
 export type {
   CascadeNode,

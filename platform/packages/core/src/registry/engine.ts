@@ -12,7 +12,7 @@
 //
 
 import type { EngineRow } from '../data/encoding'
-import type { DataSpec }           from '../config/section'
+import type { DataSpec }           from '../config/data-spec'
 import type { SectionContext } from '../core/context'
 import type { DataStore }          from '../data/store'
 

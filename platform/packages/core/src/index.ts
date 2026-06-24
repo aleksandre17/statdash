@@ -81,11 +81,11 @@ export type {
   RowSpec,
   DataSpec,
   TableConfig,
-  VisibilityExpr,
-  LinkIconKey,
-  LinkDef,
-}                                                                        from './config/section'
-export { resolveTemplate, evalVisibility } from './config/section'
+}                                                                        from './config/data-spec'
+export type { VisibilityExpr }              from './config/visibility'
+export type { LinkIconKey, LinkDef }        from './config/links'
+export { evalVisibility }                   from './config/visibility'
+export { resolveTemplate }                  from './config/template'
 
 // ── Config Schema Versioning [N19 / P3-3] ────────────────────────────
 //  Stored page configs carry a `schemaVersion`. migratePageConfig() forward-

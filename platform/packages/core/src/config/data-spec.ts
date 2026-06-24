@@ -1,7 +1,8 @@
-// ── Section Config Types ───────────────────────────────────────────────
+// ── DataSpec — the platform-wide data-query vocabulary ────────────────
 //
-//  DataSpec, ColumnDef, RowSpec, TableConfig, VisibilityExpr and the
-//  methodology-link primitives — the live config vocabulary.
+//  The central data-query discriminated union + the table/column/row/years
+//  primitives it composes with. Used by EVERY data element (chart, table,
+//  kpi, panel) — this is generic platform vocabulary, not section-specific.
 //  100% JSON-serializable — every field is a plain value, no functions.
 //  Constructor (phase 2) generates any of these without writing code.
 //
@@ -11,7 +12,6 @@ import type { LocaleString }     from '../i18n/types'
 import type { ModeId }                   from '../mode/types'
 import type { EncodingSpec }              from '../data/encoding'
 import type { TransformStep }             from '../data/transform'
-import type { SectionContext }            from '../core/context'
 
 // ── ColumnDef — one value column in a DataTable ───────────────────────
 //
@@ -130,92 +130,4 @@ export interface TableConfig {
   footerLabel?: string
   seriesFormat?: Record<string, string>
   seriesOrder?:  string[]
-}
-
-// ── VisibilityExpr — boolean expression tree ──────────────────────────
-//
-//  Evaluated by evalVisibility(expr, filterParams) in Page.tsx.
-//  100% JSON-serializable → Constructor (phase 2) generates any combination.
-//
-export type VisibilityExpr =
-  | { op: 'eq';       param: string; is: DimVal | null }
-  | { op: 'neq';      param: string; is: DimVal | null }
-  | { op: 'in';       param: string; values: DimVal[]  }
-  | { op: 'isset';    param: string }
-  | { op: 'and';      exprs: VisibilityExpr[] }
-  | { op: 'or';       exprs: VisibilityExpr[] }
-  | { op: 'not';      expr:  VisibilityExpr  }
-  // Mode-aware ops — use ModeContext.current, not filterParams. Old { op:'eq', param:'mode' } still works.
-  | { op: 'mode-is';  mode:  ModeId   }
-  | { op: 'mode-in';  modes: ModeId[] }
-  | { op: 'mode-not'; mode:  ModeId   }
-
-// ── LinkDef — methodology / reference link primitive ──────────────────
-//
-//  Live: consumed by the `links` panel plugin (LinksNode.items: LinkDef[]).
-//  LinkIconKey is also live — resolved to SVG via LINK_ICONS in @statdash/react.
-//
-
-/** Icon token for methodology links — renderer resolves to SVG via LINK_ICONS. */
-export type LinkIconKey = 'doc' | 'info' | 'ext'
-
-/** One methodology / reference link. */
-export interface LinkDef {
-  href:  string
-  label: LocaleString
-  icon:  LinkIconKey
-}
-
-// ── evalVisibility ────────────────────────────────────────────────────
-//
-//  Pure evaluator for VisibilityExpr boolean trees.
-//  Called by Page.tsx to decide which sections to render.
-//  Lives in engine — pure logic, zero React.
-//
-//  fr = PageFiltersResult cast to Record<string, unknown>.
-//  undefined values normalised to null (no-selection state).
-//
-export function evalVisibility(
-  expr: VisibilityExpr,
-  fr:   Record<string, unknown>,
-  mode?: ModeId,
-): boolean {
-  switch (expr.op) {
-    case 'eq':       return (fr[expr.param] ?? null) === expr.is
-    case 'neq':      return (fr[expr.param] ?? null) !== expr.is
-    case 'in':       return expr.values.includes(fr[expr.param] as (typeof expr.values)[0])
-    case 'isset':    { const v = fr[expr.param]; return v !== undefined && v !== null && v !== '' }
-    case 'and':      return expr.exprs.every((e) => evalVisibility(e, fr, mode))
-    case 'or':       return expr.exprs.some((e)  => evalVisibility(e, fr, mode))
-    case 'not':      return !evalVisibility(expr.expr, fr, mode)
-    case 'mode-is':  return mode != null && mode === expr.mode
-    case 'mode-in':  return mode != null && expr.modes.includes(mode)
-    case 'mode-not': return mode != null && mode !== expr.mode
-  }
-}
-
-// ── resolveTemplate ───────────────────────────────────────────────────
-//
-//  Resolve a template string against SectionContext.
-//  '{time} · მლნ ₾' + ctx.dims.time=2024 → '2024 · მლნ ₾'
-//
-//  Still accepts { year, range } union for PageDef.badge compatibility.
-//  Caller should resolve LocaleString via useResolveLocale() before passing
-//  here (string branch passes through unchanged).
-//
-//  XSS safety: returns a plain string — never HTML.  Callers render it as
-//  React text content (JSX auto-escapes) or as a DOM attribute value.
-//  No `dangerouslySetInnerHTML` path exists in the engine.  If a future
-//  caller renders this as HTML it MUST call encodeHTML() first.
-//
-export function resolveTemplate(
-  tpl:    string | { year: string; range: string },
-  ctx:    SectionContext,
-  extras?: Record<string, unknown>,
-): string {
-  const str = typeof tpl === 'string' ? tpl : (ctx.timeMode === 'year' ? tpl.year : tpl.range)
-  return str.replace(/\{(\w+)\}/g, (_, key) => {
-    if (extras && key in extras) return String(extras[key] ?? `{${key}}`)
-    return String(ctx.dims[key] ?? `{${key}}`)
-  })
 }

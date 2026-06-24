@@ -9,7 +9,8 @@
 // @vitest-environment node
 
 import { describe, it, expect } from 'vitest'
-import type { RowSpec, ColumnDef, TableConfig, VisibilityExpr } from './section'
+import type { RowSpec, ColumnDef, TableConfig } from './data-spec'
+import type { VisibilityExpr }                  from './visibility'
 import type { LocaleString } from '../i18n/types'
 
 // ── utility ───────────────────────────────────────────────────────────────────

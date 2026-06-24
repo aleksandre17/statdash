@@ -1,5 +1,5 @@
 import type { ExprVal, DimVal } from '@statdash/expr'
-import type { DataSpec }        from '../config/section'
+import type { DataSpec }        from '../config/data-spec'
 
 /**
  * Engine-level data-lookup ops — extend @statdash/expr ExprVal with data access.

@@ -5,7 +5,7 @@
 //
 
 import type { EngineRow }                   from '../data/encoding'
-import type { DataSpec, RowSpec, YearsSpec } from '../config/section'
+import type { DataSpec, RowSpec, YearsSpec } from '../config/data-spec'
 import type { SectionContext }               from '../core/context'
 import type { DataStore }                    from '../data/store'
 import { storeVal, storeObs }               from '../data/store'

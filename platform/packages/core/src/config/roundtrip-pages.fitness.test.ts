@@ -16,7 +16,8 @@
 // @vitest-environment node
 
 import { describe, it, expect }    from 'vitest'
-import type { DataSpec, VisibilityExpr, TableConfig } from './section'
+import type { DataSpec, TableConfig } from './data-spec'
+import type { VisibilityExpr }        from './visibility'
 import type { KpiSpec }            from '../data/kpi'
 
 function roundTrip<T>(v: T): T { return JSON.parse(JSON.stringify(v)) as T }
