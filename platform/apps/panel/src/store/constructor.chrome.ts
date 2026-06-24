@@ -10,6 +10,7 @@
 //  into the shell via useSlotConfig. Selecting a chrome element is mutually
 //  exclusive with selecting a page node (one Inspector, one element).
 //
+import { setAtPath } from '../inspector/showWhen'
 import type { ConstructorSession } from './constructor.history'
 import type { ChromeSelection } from '../types/constructor'
 
@@ -48,7 +49,9 @@ export function setChromeVariantPatch(s: ConstructorSession, slot: string, key: 
 /**
  * Write ONE field on a slot's per-element config (merges into chrome[slot].config
  * — the shape ChromeSlot injects into the shell). Seeds a 'default' variant when
- * the slot has no entry yet.
+ * the slot has no entry yet. `field` is the schema field's dot-path (read by the
+ * Inspector via getAtPath); setAtPath is its immutable dual, so a nested chrome
+ * field writes to the same location it displays from, sharing untouched branches.
  */
 export function updateChromeConfigPatch(
   s: ConstructorSession,
@@ -57,7 +60,7 @@ export function updateChromeConfigPatch(
   value: unknown,
 ): ChromePatch {
   const existing = s.site.chrome[slot] ?? { variant: 'default' }
-  const config = { ...(existing.config ?? {}), [field]: value }
+  const config = setAtPath({ ...(existing.config ?? {}) }, field, value)
   return {
     site: {
       ...s.site,

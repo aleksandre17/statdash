@@ -10,6 +10,7 @@ import { CanvasView }    from '../../../canvas/CanvasView'
 import { NodePalette }   from '../../../canvas/NodePalette'
 import { toNodePageConfig } from '../../../canvas/canvasPageAdapter'
 import { Inspector, ChromeInspectorPanel, ChromePalette } from '../../../inspector'
+import { setAtPath } from '../../../inspector/showWhen'
 import { PageWorkflowBar } from '../../page-workflow'
 import '../../../canvas/page-step.css'
 
@@ -66,13 +67,17 @@ export function PageStep() {
     [pageId, page, addNode, updateNode, markPageDirty, selectNode],
   )
 
-  // Write one prop on the selected node (the Inspector's onChange). Supports
-  // dot-path fields by shallow-merging at the top level (PropSchema fields are
-  // top-level in the slices we ship; nested paths are a later enhancement).
+  // Write one prop on the selected node (the Inspector's onChange). `field` is
+  // the schema field's dot-path (the exact path the Inspector READS via
+  // getAtPath); setAtPath is its immutable dual, so a nested field is written to
+  // the same location it is displayed from. Untouched branches keep their
+  // reference (structural sharing) — Zustand change-detection and the
+  // command-pattern undo/redo see only the touched path change. A single-segment
+  // (top-level) field reduces to the prior shallow-merge, exactly preserved.
   const patchProp = useCallback(
     (field: string, value: unknown) => {
       if (!pageId || !selected) return
-      updateNode(pageId, selected.id, { props: { ...selected.props, [field]: value } })
+      updateNode(pageId, selected.id, { props: setAtPath(selected.props, field, value) })
       markPageDirty(pageId)
     },
     [pageId, selected, updateNode, markPageDirty],

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import type { PropField } from '@statdash/react/engine'
-import { isVisible } from './showWhen'
+import { isVisible, getAtPath, setAtPath } from './showWhen'
 import { validateField } from './validateField'
 import { readLocale, writeLocale } from './localeString'
 import { orderLocales } from './useActiveLocales'
@@ -18,6 +18,56 @@ describe('showWhen — safe conditional visibility (no eval)', () => {
   })
   it('treats an unparseable condition as visible (Postel)', () => {
     expect(isVisible('weird && expr', { a: 1 })).toBe(true)
+  })
+})
+
+describe('setAtPath — immutable dual of getAtPath', () => {
+  it('writes a top-level field (the prior shallow-merge behavior, preserved)', () => {
+    const before = { a: 1, b: 2 }
+    const after  = setAtPath(before, 'b', 9)
+    expect(after).toEqual({ a: 1, b: 9 })
+    expect(before).toEqual({ a: 1, b: 2 })   // input untouched (immutable)
+  })
+
+  it('writes a nested dotted path and ONLY that path', () => {
+    const before = { view: { width: 'full', height: 10 }, title: 't' }
+    const after  = setAtPath(before, 'view.width', 'half')
+    expect(getAtPath(after, 'view.width')).toBe('half')
+    expect(getAtPath(after, 'view.height')).toBe(10)   // sibling key preserved
+    expect(getAtPath(after, 'title')).toBe('t')        // sibling branch preserved
+  })
+
+  it('is the exact dual of getAtPath (read back what was written)', () => {
+    const after = setAtPath({}, 'a.b.c', 42)
+    expect(getAtPath(after, 'a.b.c')).toBe(42)
+  })
+
+  it('shares untouched branches by reference (structural sharing)', () => {
+    const before = { view: { width: 'full' }, sibling: { x: 1 } }
+    const after  = setAtPath(before, 'view.width', 'half')
+    expect(after).not.toBe(before)                 // root cloned
+    expect(after.view).not.toBe(before.view)       // touched branch cloned
+    expect(after.sibling).toBe(before.sibling)     // untouched branch shared
+  })
+
+  it('creates intermediate object containers on demand', () => {
+    const after = setAtPath({} as Record<string, unknown>, 'a.b.c', 1)
+    expect(after).toEqual({ a: { b: { c: 1 } } })
+  })
+
+  it('writes an array-index segment positionally', () => {
+    const before = { items: [{ v: 1 }, { v: 2 }] }
+    const after  = setAtPath(before, 'items.1.v', 99)
+    expect(after.items[1].v).toBe(99)
+    expect(after.items[0]).toBe(before.items[0])   // untouched element shared
+    expect(Array.isArray(after.items)).toBe(true)
+    expect(before.items[1].v).toBe(2)              // input untouched
+  })
+
+  it('creates an array intermediate when the segment is a numeric index', () => {
+    const after = setAtPath({} as Record<string, unknown>, 'items.0.label', 'x')
+    expect(Array.isArray((after as { items: unknown }).items)).toBe(true)
+    expect(getAtPath(after, 'items.0.label')).toBe('x')
   })
 })
 

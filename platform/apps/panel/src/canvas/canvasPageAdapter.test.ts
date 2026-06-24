@@ -86,4 +86,23 @@ describe('round-trip fitness (ADR): fromNodePageConfig ∘ toNodePageConfig = id
     const twice = fromNodePageConfig(toNodePageConfig(once), page.title)
     expect(twice).toEqual(once)
   })
+
+  it('preserves NESTED props (object + array) through the round-trip', () => {
+    // A node whose props carry nested structure — the shape a dotted-path schema
+    // field (e.g. "view.width", "series.0.color") authors via setAtPath.
+    const nestedPage: CanvasPage = {
+      id: 'page-n', title: { ka: 'n', en: 'n' }, slug: 'n',
+      nodeIds: ['x1'],
+      nodes: {
+        x1: {
+          id: 'x1', type: 'chart', props: {
+            view:   { width: 'full', height: 240 },
+            series: [{ color: 'red' }, { color: 'blue' }],
+          }, childIds: [],
+        },
+      },
+    }
+    const restored = fromNodePageConfig(toNodePageConfig(nestedPage), nestedPage.title)
+    expect(restored).toEqual(nestedPage)
+  })
 })
