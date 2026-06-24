@@ -16,6 +16,7 @@ import { GeoJSON, MapContainer, useMap } from 'react-leaflet'
 import L, { type PathOptions } from 'leaflet'
 import type { DataRow } from '@statdash/engine'
 import { fmtNum } from '@statdash/engine'
+import { cssVar } from '@statdash/styles'
 
 // ── Types ──────────────────────────────────────────────────────────────
 
@@ -49,17 +50,23 @@ interface GeoFeatureProps {
   [key: string]: string | number | boolean | null
 }
 
-const FILL_COLOR    = '#0080BE'
 const FILL_DEFAULT  = 0.45
 const FILL_SELECTED = 0.85
+
+// Leaflet PathOptions take a literal color string (var() is invalid as a JS-fed
+// fill value) — resolve the semantic token at call-time via cssVar(). The literal
+// fallback is byte-identical to the prior hardcoded value under the un-themed
+// render; a [data-tenant] override rebrands both fill + stroke.
+const fillColor   = () => cssVar('--color-accent', '#0080BE')
+const strokeColor = () => cssVar('--color-surface', '#fff')
 
 // ── Style helpers ──────────────────────────────────────────────────────
 
 function baseStyle(selected: boolean): PathOptions {
   return {
-    fillColor:   FILL_COLOR,
+    fillColor:   fillColor(),
     fillOpacity: selected ? FILL_SELECTED : FILL_DEFAULT,
-    color:       '#fff',
+    color:       strokeColor(),
     weight:      1,
   }
 }
@@ -146,7 +153,7 @@ export function GeoMap({
     layer.on({
       mouseover(e) {
         if (!selectedRef.current.includes(geoId)) {
-          ;(e.target as L.Path).setStyle({ fillOpacity: FILL_SELECTED, color: '#fff', weight: 1 })
+          ;(e.target as L.Path).setStyle({ fillOpacity: FILL_SELECTED, color: strokeColor(), weight: 1 })
         }
       },
       mouseout(e) {

@@ -11,8 +11,8 @@
 //  STRUCTURAL: a new copy-pasted hex fails the build, it cannot regress by
 //  convention. This is the Pfinal flip from warn → ERROR.
 //
-//  Scope: packages/plugins/** + packages/react/src/** (*.css, *.ts, *.tsx).
-//  EXCLUDED: packages/plugins/nodes/geograph/** (a sibling effort owns that dir).
+//  Scope: packages/plugins/** + packages/react/src/** (*.css, *.ts, *.tsx) —
+//  the WHOLE tree, no dir-level exclusions (only dist/test/story files are out).
 //
 //  ALLOWLIST (narrow, each entry commented WHY). It is for non-themeable
 //  STRUCTURAL values and genuine data-viz palettes that MUST be literal — never
@@ -21,7 +21,7 @@
 import { describe, it, expect } from 'vitest'
 import { readdirSync, readFileSync, existsSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
-import { dirname, join, sep } from 'node:path'
+import { dirname, join } from 'node:path'
 
 const here        = dirname(fileURLToPath(import.meta.url))   // .../plugins/nodes/__tests__
 const pluginsRoot  = join(here, '..', '..')                   // .../plugins
@@ -31,8 +31,6 @@ const SCANNED_EXT = ['.css', '.ts', '.tsx']
 
 // Directories/files that are out of scope for the color gate.
 function isExcluded(file: string): boolean {
-  // The geograph node dir is owned by a parallel rename effort.
-  if (file.includes(`${sep}geograph${sep}`)) return true
   // Test fixtures + Storybook stories are not render shells (sample data colors).
   if (/\.test\.[tj]sx?$/.test(file)) return true
   if (/\.stories\.[tj]sx?$/.test(file)) return true
