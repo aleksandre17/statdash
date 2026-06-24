@@ -105,7 +105,7 @@ function StatsCarouselControl({ def }: { def: StatsCarouselNode }) {
                 {stat.change != null && stat.change !== 0 && stat.changeText && (
                   <div
                     className="stats-change"
-                    style={{ color: stat.change > 0 ? '#2A9D8F' : '#E76F51' }}
+                    style={{ color: stat.change > 0 ? 'var(--color-trend-positive)' : 'var(--color-trend-negative)' }}
                   >
                     <span aria-hidden="true">{stat.change > 0 ? '↗' : '↘'}</span>
                     <span style={{ fontWeight: 600 }}>{Math.abs(stat.change)}%</span>

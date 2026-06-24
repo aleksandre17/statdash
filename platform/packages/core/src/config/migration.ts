@@ -14,14 +14,16 @@
 //    2. Register a migration: registerMigration(newVersion, fn).
 //    3. fn receives the previous-version config and returns the next-version config.
 //
-//  Current version: 2.
+//  Current version: 3.
 //    v1 → v2: page-level `color` moved from a flat PageConfigBase field into
 //    `presentation.color` (the presentation-projection registry's single home).
-//    See the registered migrator at the foot of this module.
+//    v2 → v3: node `type: 'georgraph'` renamed to `'geograph'` (misspelling fix),
+//    applied recursively across the whole node tree.
+//    See the registered migrators at the foot of this module.
 //
 
 /** Current schema version for page configs. Bump when introducing breaking config changes. */
-export const CURRENT_SCHEMA_VERSION = 2
+export const CURRENT_SCHEMA_VERSION = 3
 
 /**
  * A migration function.
@@ -168,3 +170,38 @@ registerMigration(2, (config) => {
 
   return { ...rest, presentation: nextPresentation }
 })
+
+// ── v2 → v3: node type 'georgraph' → 'geograph' (misspelling fix) ────────
+//
+//  The public node-type discriminant was misspelled 'georgraph'. It is a
+//  SERIALIZED value (stored page configs + provisioning), so the rename is a
+//  real schema migration, not just a code rename. This migrator rewrites every
+//  `type: 'georgraph'` to `'geograph'` anywhere in the config tree.
+//
+//  Pure + idempotent + structure-preserving:
+//    • walks arrays and plain objects recursively (children, slots, any nesting).
+//    • rewrites ONLY a string `type` field whose value is exactly 'georgraph'.
+//    • a config with no georgraph node passes through structurally unchanged.
+//    • re-running on an already-migrated config is a no-op (no 'georgraph' left).
+//
+//  The migration is the canonical mechanism — no stored config is stranded, and
+//  the renderer/registry knows only 'geograph' (the corrected discriminant).
+//
+const OLD_GEO_TYPE = 'georgraph'
+const NEW_GEO_TYPE = 'geograph'
+
+function renameGeoType(value: unknown): unknown {
+  if (Array.isArray(value)) {
+    return value.map(renameGeoType)
+  }
+  if (value && typeof value === 'object') {
+    const out: Record<string, unknown> = {}
+    for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
+      out[k] = k === 'type' && v === OLD_GEO_TYPE ? NEW_GEO_TYPE : renameGeoType(v)
+    }
+    return out
+  }
+  return value
+}
+
+registerMigration(3, (config) => renameGeoType(config) as Record<string, unknown>)

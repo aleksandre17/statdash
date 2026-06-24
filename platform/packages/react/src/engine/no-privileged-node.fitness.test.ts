@@ -5,7 +5,7 @@
 //  Law 1 applied to plugin elements: NO node type is privileged in the engine.
 //  Dispatch and traversal flow through the nodeRegistry capabilities, never a
 //  `node.type === '<plugin-literal>'` branch. The lone historical violation was
-//  navUtils.ts hardcoding 'section' / 'georgraph' / 'row'; the capability seam
+//  navUtils.ts hardcoding 'section' / 'geograph' / 'row'; the capability seam
 //  (nav-contributor / nav-transparent + NavContribution) removed it. These
 //  fitness functions make the de-privileging UN-REGRESSABLE, mirroring
 //  no-tenant-content.fitness.test.ts and presentation.fitness.test.ts (c).
@@ -16,7 +16,7 @@
 //        enums, cap tokens, or validation corpora (the ADR-audited false
 //        positives). ALLOWLIST = ONLY the structural framework page-roots.
 //    (b) navUtils.ts references the registry (getCaps / getNavContribution) and
-//        names NONE of 'section' / 'row' / 'georgraph'. THE load-bearing assertion.
+//        names NONE of 'section' / 'row' / 'geograph'. THE load-bearing assertion.
 //    (c) a throwaway nav-contributor node registered at runtime is picked up by
 //        extractNavSections with ZERO navUtils edit — proves the OCP seam.
 //
@@ -38,7 +38,7 @@ const navUtils   = resolve(engineDir, 'navUtils.ts')
 // A privilege branch comparing `type` against any of these in engine/core is the
 // smell this FF forbids. Page-roots are listed but allowlisted below.
 const PLUGIN_NODE_TYPES = [
-  'card', 'chart', 'columns', 'divider', 'gauge', 'georgraph', 'grid', 'hero',
+  'card', 'chart', 'columns', 'divider', 'gauge', 'geograph', 'grid', 'hero',
   'kpi-strip', 'links', 'map', 'mode-bar', 'page-header', 'repeat', 'row',
   'section', 'spacer', 'stack', 'stats-carousel', 'table', 'text', 'wrap',
   'filter-bar',
@@ -115,7 +115,7 @@ describe('(b) navUtils.ts routes through the registry, names no plugin node type
   })
 
   it('names NONE of the de-privileged node-type literals', () => {
-    for (const lit of ["'section'", "'georgraph'", "'row'"]) {
+    for (const lit of ["'section'", "'geograph'", "'row'"]) {
       expect(src).not.toContain(lit)
     }
   })

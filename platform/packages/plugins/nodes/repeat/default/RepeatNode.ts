@@ -11,7 +11,7 @@ import type { NodeBase, NodeDef, SlotDef, PropSchema } from '@statdash/react/eng
 //
 //  Usage (static):
 //    { type: 'repeat', as: 'account',
-//      each: [{ code: 'production', label: 'წარმოება', color: '#0080BE' }],
+//      each: [{ code: 'production', label: 'წარმოება', color: 'var(--color-accent)' }],
 //      children: [{ type: 'section', title: '{account_label}', ... }] }
 //
 export interface RepeatNode extends NodeBase {

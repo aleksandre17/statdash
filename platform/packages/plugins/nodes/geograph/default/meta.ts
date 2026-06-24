@@ -1,15 +1,15 @@
 import type { NodeSliceMeta } from '@statdash/react/engine'
-import { GeorgraphSchema, GeorgraphSlots, GeorgraphGroups } from './GeorgraphNode'
+import { GeographSchema, GeographSlots, GeographGroups } from './GeographNode'
 
 export const META: NodeSliceMeta = {
   sliceType:       'node',
-  type:            'georgraph',
+  type:            'geograph',
   variant:         'default',
   label:           { ka: 'გეო-რუკა', en: 'Geo Map' },
   category:        'data',
-  schema:          GeorgraphSchema,
-  slots:           GeorgraphSlots,
-  groups:          GeorgraphGroups,
+  schema:          GeographSchema,
+  slots:           GeographSlots,
+  groups:          GeographGroups,
   canHaveChildren: true,
   caps:            ['collapsible', 'filterable', 'view-toggle', 'nav-contributor'],
   version:         1,

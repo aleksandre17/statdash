@@ -10,6 +10,7 @@
 //
 
 import { interpretSpec }           from '@statdash/engine'
+import { cssVar }                  from '@statdash/styles'
 import type { SectionContext, DataSpec, DataStore } from '@statdash/engine'
 
 // ── Types ─────────────────────────────────────────────────────────────
@@ -107,7 +108,7 @@ export function toApexAnnotations(
         y:           a.value,
         ...(a.valueTo !== undefined ? { y2: a.valueTo } : {}),
         label:       { text: a.label ?? '' },
-        borderColor: a.color ?? '#999',
+        borderColor: a.color ?? cssVar('--color-text-faint', '#999'),
       })),
     xaxis: resolved
       .filter(a => a.axis === 'x')
@@ -115,7 +116,7 @@ export function toApexAnnotations(
         x:           a.value,
         ...(a.valueTo !== undefined ? { x2: a.valueTo } : {}),
         label:       { text: a.label ?? '' },
-        borderColor: a.color ?? '#999',
+        borderColor: a.color ?? cssVar('--color-text-faint', '#999'),
       })),
   }
 }

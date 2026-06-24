@@ -7,6 +7,7 @@
 import type { ApexOptions } from 'apexcharts'
 import type { ChartSeries } from '@statdash/charts'
 import { fmtNum }           from '@statdash/engine'
+import { cssVar }           from '@statdash/styles'
 
 // ── Shared base config ─────────────────────────────────────────────────
 //
@@ -29,7 +30,7 @@ export const BASE: ApexOptions = {
     },
   },
   grid: {
-    borderColor:     '#F0F5F3',
+    get borderColor() { return cssVar('--color-chart-grid', '#F0F5F3') },
     strokeDashArray: 4,
     padding:         { left: 4, right: 4 },
   },

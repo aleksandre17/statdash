@@ -203,8 +203,8 @@ export default function HBarDivergingChart({ output }: { output: ChartOutput }) 
           padding: '6px 10px', boxShadow: '0 4px 16px rgba(0,0,0,.10)',
           zIndex: 99999, pointerEvents: 'none', minWidth: 130,
         }}>
-          <div style={{ fontSize: 10, color: '#718096', marginBottom: 1 }}>{tip.label}</div>
-          <div style={{ fontSize: 10, color: '#94A3B8', marginBottom: 4 }}>{tip.seriesName}</div>
+          <div style={{ fontSize: 10, color: 'var(--color-text-muted)', marginBottom: 1 }}>{tip.label}</div>
+          <div style={{ fontSize: 10, color: 'var(--color-text-faint)', marginBottom: 4 }}>{tip.seriesName}</div>
           <div style={{ fontSize: 13, fontWeight: 700, color: tip.color }}>{tip.formatted}</div>
         </div>,
         document.body,
@@ -230,13 +230,13 @@ export default function HBarDivergingChart({ output }: { output: ChartOutput }) 
           <div key={`sh-${label}`} style={{
             gridColumn: 1,
             gridRow: `${rowStart} / ${rowEnd}`,
-            borderRight: '1px solid #E2E8F0',
-            borderBottom: '2px solid #CBD5E0',
+            borderRight: '1px solid var(--color-border)',
+            borderBottom: '2px solid var(--color-border-strong)',
             padding: `${padV}px 8px ${padV}px 6px`,
             display: 'flex', alignItems: 'center',
           }}>
             <span style={{
-              fontSize: lFs, fontWeight: 700, color: '#2D3748',
+              fontSize: lFs, fontWeight: 700, color: 'var(--color-text-secondary)',
               lineHeight: 1.4, wordBreak: 'break-word' as const,
             }}>
               {label}
@@ -249,7 +249,7 @@ export default function HBarDivergingChart({ output }: { output: ChartOutput }) 
           items.map((item, i) => {
             const row       = rowStart + i
             const isLast    = i === items.length - 1
-            const rowBorder = isLast ? '2px solid #CBD5E0' : '1px solid #F0F4F8'
+            const rowBorder = isLast ? '2px solid var(--color-border-strong)' : '1px solid var(--color-surface-sunken)'
 
             return (
               <Fragment key={`row-${row}`}>
@@ -260,7 +260,7 @@ export default function HBarDivergingChart({ output }: { output: ChartOutput }) 
                   display: 'flex', alignItems: 'center', justifyContent: 'flex-end',
                   padding: `${padV}px 10px ${padV}px 4px`,
                   borderBottom: rowBorder,
-                  borderRight: '1px solid #E2E8F0',
+                  borderRight: '1px solid var(--color-border)',
                 }}>
                   <span style={{
                     fontSize: lFs, color: 'var(--color-text-secondary)', textAlign: 'right',
@@ -288,14 +288,14 @@ export default function HBarDivergingChart({ output }: { output: ChartOutput }) 
                     <div key={tick} style={{
                       position: 'absolute', top: 0, bottom: 0,
                       left: `${toX(tick)}%`, width: 1,
-                      background: '#E8EDF2', pointerEvents: 'none',
+                      background: 'var(--color-border)', pointerEvents: 'none',
                     }} />
                   ))}
                   {/* Zero line */}
                   <div style={{
                     position: 'absolute', top: 0, bottom: 0,
                     left: `${toX(0)}%`, width: 1,
-                    background: '#94A3B8', pointerEvents: 'none',
+                    background: 'var(--color-text-faint)', pointerEvents: 'none',
                   }} />
 
                   {/* One bar per series — in compact mode, skip zero-value slots entirely */}
@@ -328,7 +328,7 @@ export default function HBarDivergingChart({ output }: { output: ChartOutput }) 
       </div>
 
       {/* ── X-axis tick labels ────────────────────────────────────── */}
-      <div style={{ flexShrink: 0, display: 'grid', gridTemplateColumns: gridCols, borderTop: '1px solid #CBD5E0' }}>
+      <div style={{ flexShrink: 0, display: 'grid', gridTemplateColumns: gridCols, borderTop: '1px solid var(--color-border-strong)' }}>
         {hasGroups && <div />}
         <div />
         <div style={{ position: 'relative', height: 22, padding: '0 4px' }}>
@@ -336,7 +336,7 @@ export default function HBarDivergingChart({ output }: { output: ChartOutput }) 
             <div key={tick} style={{
               position: 'absolute', left: `${toX(tick)}%`,
               transform: 'translateX(-50%)',
-              fontSize: 10, color: '#718096', top: 4, whiteSpace: 'nowrap',
+              fontSize: 10, color: 'var(--color-text-muted)', top: 4, whiteSpace: 'nowrap',
             }}>
               {fmtTick(tick)}
             </div>
@@ -345,7 +345,7 @@ export default function HBarDivergingChart({ output }: { output: ChartOutput }) 
           <div style={{
             position: 'absolute', left: `${toX(0)}%`,
             transform: 'translateX(-50%)',
-            fontSize: 10, color: '#718096', top: 4, whiteSpace: 'nowrap',
+            fontSize: 10, color: 'var(--color-text-muted)', top: 4, whiteSpace: 'nowrap',
           }}>
             0
           </div>

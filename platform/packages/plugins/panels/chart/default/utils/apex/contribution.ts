@@ -9,6 +9,7 @@
 import type { ApexOptions } from 'apexcharts'
 import type { ChartOutput } from '@statdash/charts'
 import { BASE, yFormatter, collectFormatted, scaledPx, BP_MD, BP_SM, BP_XS } from './base'
+import { cssVar } from '@statdash/styles'
 
 // Split a label string into lines so no line exceeds maxChars characters.
 // ApexCharts xaxis.categories accepts string[][] for multi-line labels.
@@ -35,7 +36,7 @@ export function buildContribution(output: ChartOutput): ApexOptions {
   // Per-bar colors via distributed — avoids {x,y,fillColor} extended format which
   // conflicts with xaxis.categories and breaks y-axis rendering.
   const barColors  = series.flatMap((s) =>
-      s.data.map((pt) => pt.thresholdColor ?? s.color ?? '#0080BE'),
+      s.data.map((pt) => pt.thresholdColor ?? s.color ?? cssVar('--color-accent', '#0080BE')),
   )
   const apexSeries = series.map((s) => ({
     name: s.name,
@@ -52,17 +53,17 @@ export function buildContribution(output: ChartOutput): ApexOptions {
       // string[][] → each sub-array renders as stacked tspan lines (ApexCharts documented).
       categories: categories.map((c) => wrapLabel(c)) as unknown as string[],
       labels: {
-        style:                 { fontSize: FS_XS, colors: '#6B7B8D' },
+        style:                 { fontSize: FS_XS, colors: cssVar('--color-text-muted', '#6B7B8D') },
         rotate:                0,
         maxHeight:             80,
         hideOverlappingLabels: false,
       },
-      axisBorder: { color: '#E0EBE8' },
-      axisTicks:  { color: '#E0EBE8' },
+      axisBorder: { color: cssVar('--color-chart-frame', '#E0EBE8') },
+      axisTicks:  { color: cssVar('--color-chart-frame', '#E0EBE8') },
     },
     yaxis: {
       labels: {
-        style:     { fontSize: FS_SM, colors: '#6B7B8D' },
+        style:     { fontSize: FS_SM, colors: cssVar('--color-text-muted', '#6B7B8D') },
         formatter: yFormatter(axes.y.unit, axes.y.decimals),
       },
     },
@@ -82,7 +83,7 @@ export function buildContribution(output: ChartOutput): ApexOptions {
       style: {
         fontSize:   FS_XS,
         fontWeight: 400,
-        colors:     ['#6B7B8D'],
+        colors:     [cssVar('--color-text-muted', '#6B7B8D')],
       },
     },
     legend: { show: false },

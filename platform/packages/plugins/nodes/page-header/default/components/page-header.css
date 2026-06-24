@@ -31,15 +31,15 @@
   align-items: center;
   gap: 0.3125rem;
   font-size: 0.6875rem;
-  color: #B0C4CC;
+  color: var(--color-text-faint);
 }
 .page-header__breadcrumb a {
-  color: #B0C4CC;
+  color: var(--color-text-faint);
   text-decoration: none;
   transition: color 0.15s;
 }
 .page-header__breadcrumb a:hover { color: var(--color-accent); }
-.page-header__bc-sep { color: #D8E4E8; font-size: 0.625rem; }
+.page-header__bc-sep { color: var(--color-breadcrumb-separator); font-size: 0.625rem; }
 
 .page-header__title {
   font-family: 'Noto Serif Georgian', 'Noto Sans Georgian', sans-serif;
@@ -94,7 +94,7 @@
   cursor: pointer;
   border: 1px solid var(--color-border);
   background: var(--color-surface);
-  color: #5A7A8A;
+  color: var(--color-text-muted);
   transition: all 0.15s;
   font-family: 'Noto Sans Georgian', system-ui, sans-serif;
 }

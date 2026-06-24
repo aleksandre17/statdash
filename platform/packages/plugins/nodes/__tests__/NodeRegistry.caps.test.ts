@@ -32,7 +32,7 @@ import { META as mapMeta }        from '../../panels/map/default/meta'
 import { META as kpiStripMeta }   from '../../panels/kpi-strip/default/meta'
 import { META as gaugeMeta }      from '../../panels/gauge/default/meta'
 import { META as sectionMeta }    from '../section/default/meta'
-import { META as georgraphMeta }  from '../georgraph/default/meta'
+import { META as geographMeta }  from '../geograph/default/meta'
 import { META as repeatMeta }     from '../repeat/default/meta'
 import { META as pageHeaderMeta } from '../page-header/default/meta'
 import { META as filterBarMeta }  from '../filter-bar/default/meta'
@@ -50,7 +50,7 @@ function makeRegistry(): NodeRegistry {
 
   const allMetas = [
     chartMeta, tableMeta, mapMeta, kpiStripMeta, gaugeMeta,
-    sectionMeta, georgraphMeta, repeatMeta,
+    sectionMeta, geographMeta, repeatMeta,
     pageHeaderMeta, filterBarMeta, rowMeta, wrapMeta,
   ]
 
@@ -128,14 +128,14 @@ describe('getByCapability("collapsible")', () => {
 // ── filterable cap ────────────────────────────────────────────────────────────
 
 describe('getByCapability("filterable")', () => {
-  it('returns chart, table, kpi-strip, gauge, map, georgraph, repeat', () => {
+  it('returns chart, table, kpi-strip, gauge, map, geograph, repeat', () => {
     const types = reg.getByCapability('filterable').map(e => e.type)
     expect(types).toContain('chart')
     expect(types).toContain('table')
     expect(types).toContain('kpi-strip')
     expect(types).toContain('gauge')
     expect(types).toContain('map')
-    expect(types).toContain('georgraph')
+    expect(types).toContain('geograph')
     expect(types).toContain('repeat')
   })
 
@@ -150,11 +150,11 @@ describe('getByCapability("filterable")', () => {
 // ── view-toggle cap ───────────────────────────────────────────────────────────
 
 describe('getByCapability("view-toggle")', () => {
-  it('returns chart, map, and georgraph', () => {
+  it('returns chart, map, and geograph', () => {
     const types = reg.getByCapability('view-toggle').map(e => e.type)
     expect(types).toContain('chart')
     expect(types).toContain('map')
-    expect(types).toContain('georgraph')
+    expect(types).toContain('geograph')
   })
 
   it('does not return table (table is a toggle target, not a toggler)', () => {
@@ -222,8 +222,8 @@ describe('nav capabilities are declared in META, not hardcoded in navUtils', () 
     expect(reg.getCaps('row')).toEqual(['nav-transparent'])
   })
 
-  it('section + georgraph are nav contributors', () => {
+  it('section + geograph are nav contributors', () => {
     expect(reg.getCaps('section')).toContain('nav-contributor')
-    expect(reg.getCaps('georgraph')).toContain('nav-contributor')
+    expect(reg.getCaps('geograph')).toContain('nav-contributor')
   })
 })

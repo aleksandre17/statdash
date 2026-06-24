@@ -4,6 +4,7 @@ import type { ApexOptions } from 'apexcharts'
 import type { ChartOutput } from '@statdash/charts'
 import { fmtNum }           from '@statdash/engine'
 import { BASE, scaledPx, BP_MD, BP_SM, BP_XS } from './base'
+import { cssVar } from '@statdash/styles'
 
 const fmtDonutCenter = (n: number) => fmtNum(n, 0)
 
@@ -17,7 +18,7 @@ export function buildPie(output: ChartOutput): ApexOptions {
   // Per-slice colors come from DataRow.color (via interpreter)
   // We store them as thresholdColor (since that's what per-point color maps to)
   // Fall back to a built-in palette if not present.
-  const colors   = slices.map((pt) => pt.thresholdColor ?? output.series[0]?.color ?? '#6B7B8D')
+  const colors   = slices.map((pt) => pt.thresholdColor ?? output.series[0]?.color ?? cssVar('--color-text-muted', '#6B7B8D'))
   const formatted = slices.map((pt) => pt.formatted)
 
   const hasTotal  = output.type === 'donut' && output.total !== undefined
@@ -52,21 +53,21 @@ export function buildPie(output: ChartOutput): ApexOptions {
                 label:      output.centerLabel ?? output.axes.y.unit ?? '',
                 fontSize:   FS_SM,
                 fontWeight: 400,
-                color:      '#6B7B8D',
+                color:      cssVar('--color-text-muted', '#6B7B8D'),
                 formatter:  () => totalText,
               },
               value: {
                 show:       true,
                 fontSize:   scaledPx(1.4, 18, 24),
                 fontWeight: 700,
-                color:      '#1A2332',
+                color:      cssVar('--color-text-primary', '#1A2332'),
                 offsetY:    4,
                 formatter:  () => totalText,
               },
               name: {
                 show:    true,
                 offsetY: -4,
-                color:   '#6B7B8D',
+                color:   cssVar('--color-text-muted', '#6B7B8D'),
               },
             },
           } : {}),
@@ -79,7 +80,7 @@ export function buildPie(output: ChartOutput): ApexOptions {
       position:   output.legend.position ?? 'bottom',
       fontFamily: 'BPG Arial, Roboto, sans-serif',
       fontSize:   FS_MD,
-      labels:     { colors: '#4A5568' },
+      labels:     { colors: cssVar('--color-text-secondary', '#4A5568') },
       markers:    { size: 6 },
       itemMargin: { horizontal: 12 },
       formatter:  (seriesName: string, opts: { w: { globals: { series: number[] } }; seriesIndex: number }) => {

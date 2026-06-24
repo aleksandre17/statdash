@@ -29,7 +29,7 @@
 
 .data-table tbody tr td {
   padding: 0.75rem 1.25rem;
-  color: #2D3748;
+  color: var(--color-text-secondary);
   border-bottom: 1px solid var(--color-surface-sunken);
   vertical-align: middle;
 }
@@ -108,7 +108,7 @@
 .bar-pct {
   font-size: 0.8125rem;
   font-weight: 600;
-  color: #2D3748;
+  color: var(--color-text-secondary);
   min-width: 3rem;
   text-align: right;
   font-variant-numeric: tabular-nums;
@@ -128,10 +128,10 @@
   text-transform: uppercase;
   line-height: 1.4;
 }
-.status-badge--p { background: #FFF3CD; color: #856404; }   /* preliminary */
-.status-badge--e { background: #E8F4F8; color: #1B7A9E; }   /* estimate     */
-.status-badge--r { background: #F0F0F0; color: var(--color-text-secondary); }   /* revised      */
-.status-badge--c { background: #FEE2E2; color: #9B1C1C; }   /* confidential */
+.status-badge--p { background: var(--status-obs-preliminary-bg);  color: var(--status-obs-preliminary-fg);  }   /* preliminary  */
+.status-badge--e { background: var(--status-obs-estimate-bg);     color: var(--status-obs-estimate-fg);     }   /* estimate     */
+.status-badge--r { background: var(--status-obs-revised-bg);      color: var(--status-obs-revised-fg);      }   /* revised      */
+.status-badge--c { background: var(--status-obs-confidential-bg); color: var(--status-obs-confidential-fg); }   /* confidential */
 
 /* Table caption — source / provenance note (IMF standard) */
 .data-table__caption {
@@ -160,10 +160,10 @@
 .data-table tfoot tr.t-footer th,
 .data-table tfoot tr.t-footer td {
   padding: 0.5rem 1.25rem;
-  border-top: 2px solid #BDD5D0;
-  background: #EFF6F5;
+  border-top: 2px solid var(--status-total-border);
+  background: var(--status-total-bg);
   font-weight: 700;
-  color: #1A4A3E;
+  color: var(--status-total-fg);
   font-size: 0.8125rem;
   font-variant-numeric: tabular-nums;
 }

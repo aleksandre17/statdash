@@ -25,12 +25,42 @@ import type { MetricDef }                              from '@statdash/engine'
 import { registeredKinds }                  from './storeManifest'
 import { filterControlRegistry }            from './filterControlRegistry'
 
+// ── contractVersion — the SemVer of the capability contract (SSOT) ────────────
+//
+//  describeApp() ships externally: the panel/Constructor builds its whole UI
+//  (palette, property panel, chart/spec/mode pickers, datasource manager) from
+//  this manifest, and apps/api serves a JSON Schema GENERATED from it. The
+//  manifest IS the published API/contract of the renderer engine. A capability
+//  that silently disappears is a SILENT BREAKING CHANGE for every consumer.
+//
+//  CONTRACT_VERSION is the single, manifest-owned SemVer of that contract. It is
+//  the ONLY version source — the generated page-config JSON Schema derives its
+//  version from here (no parallel truth). Bump it CONSCIOUSLY when the contract
+//  surface changes, per the policy below.
+//
+//  ── Bump policy (SemVer over the capability SURFACE) ──────────────────────────
+//    MAJOR — a capability is REMOVED, or a surface shape changes incompatibly:
+//            a manifest axis dropped/renamed, a node type / panel type / spec
+//            type retired, or a field's type changed in a breaking way.
+//    MINOR — a capability is ADDED back-compatibly: a new manifest axis, a new
+//            node/panel/spec type, a new chart type, mode, datasource kind, etc.
+//            (Adding VALUES is back-compatible; existing consumers keep working.)
+//    PATCH — doc / metadata-only change: clarified description, label text, an
+//            example tweak — nothing a consumer can observe structurally.
+//
+//  The contract-surface fitness (constructor.fitness.test.ts) locks the SET of
+//  axes + the SET of built-in capability ids that ship at import time. Removing
+//  one fails that test, forcing this constant to be bumped consciously rather
+//  than drifting silently.
+export const CONTRACT_VERSION = '1.0.0' as const
+
 // ── AppManifest — the Constructor's full build contract ───────────────────────
 
 /**
  * Full Constructor manifest — JSON-serializable.
  *
- * Every field corresponds to one axis of the visual builder:
+ * `contractVersion` is the SemVer of this whole surface (see CONTRACT_VERSION).
+ * Every other field corresponds to one axis of the visual builder:
  *   palette             → draggable node/panel/page tiles
  *   propertySchemas     → property-panel form per tile
  *   chartTypes          → chart-type picker inside the chart panel
@@ -43,6 +73,12 @@ import { filterControlRegistry }            from './filterControlRegistry'
  *   filterControlTypes  → filter control type picker in the filter-bar builder
  */
 export interface AppManifest {
+  /**
+   * SemVer of the capability contract this manifest expresses (== CONTRACT_VERSION).
+   * The SINGLE version source: the generated page-config JSON Schema derives its
+   * version from here. Bump policy is documented on CONTRACT_VERSION above.
+   */
+  contractVersion:  string
   /** Node/page/panel palette tiles with display metadata and caps. */
   palette:          RegistryManifest['palette']
   /** Typed property schemas keyed by `${type}:${variant}`. */
@@ -94,6 +130,7 @@ export interface AppManifest {
 export function describeApp(): AppManifest {
   const { palette, propertySchemas } = nodeRegistry.describeRegistry()
   return {
+    contractVersion: CONTRACT_VERSION,
     palette,
     propertySchemas,
     chartTypes:      chartRegistry.chartTypes(),

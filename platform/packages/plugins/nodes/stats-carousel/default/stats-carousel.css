@@ -39,7 +39,7 @@
 .stats-tab {
   flex: 1;
   padding: clamp(0.55rem, 1.4vh, 1.125rem) clamp(0.6rem, 1.4vw, 1.25rem);
-  background: #f8f9fa;
+  background: var(--color-surface-raised);
   color: var(--color-text-secondary);
   border: none;
   cursor: pointer;

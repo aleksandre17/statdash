@@ -10,8 +10,8 @@
 }
 
 .app-header-transparent-wrap .app-header {
-  background: rgba(255, 255, 255, 0.8);
+  background: var(--color-surface-translucent);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
-  border-bottom-color: rgba(255, 255, 255, 0.4);
+  border-bottom-color: var(--color-border-translucent);
 }

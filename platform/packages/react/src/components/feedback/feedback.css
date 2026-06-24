@@ -66,8 +66,8 @@
 
 /* ── Node error — panel-level, matches .section shape ─────────────── */
 .node-error {
-  background: #FFF8F8;
-  border: 1px solid #F5D0C8;
+  background: var(--color-error-bg);
+  border: 1px solid var(--color-error-border);
   border-radius: 14px;
   padding: 1.5rem 1.25rem;
   display: flex;
@@ -75,18 +75,18 @@
   align-items: center;
   gap: 0.75rem;
   text-align: center;
-  color: #9B5040;
+  color: var(--color-error-text);
 }
 .node-error__icon { font-size: 1.5rem; line-height: 1; }
 .node-error__title {
   font-size: 0.875rem;
   font-weight: 600;
-  color: #7A3D30;
+  color: var(--color-error-text-strong);
   margin: 0;
 }
 .node-error__body {
   font-size: 0.8125rem;
-  color: #B06050;
+  color: var(--color-error-text-soft);
   margin: 0;
 }
 .node-error__retry {
@@ -94,13 +94,13 @@
   padding: 0.375rem 1rem;
   font-size: 0.8125rem;
   font-weight: 500;
-  border: 1px solid #F5D0C8;
+  border: 1px solid var(--color-error-border);
   border-radius: 6px;
   background: var(--color-surface);
-  color: #7A3D30;
+  color: var(--color-error-text-strong);
   cursor: pointer;
 }
-.node-error__retry:hover { background: #FFF0EE; }
+.node-error__retry:hover { background: var(--color-error-bg-hover); }
 
 /* ── Empty state — no-data result ────────────────────────────────── */
 .empty-state {
@@ -117,7 +117,7 @@
 .empty-state__title {
   font-size: 0.9375rem;
   font-weight: 600;
-  color: #6B8899;
+  color: var(--color-text-muted);
   margin: 0;
 }
 .empty-state__desc {

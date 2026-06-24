@@ -3,21 +3,21 @@ import { resolveTemplate }                     from '@statdash/engine'
 import { defineShell, resolvePreliminary }     from '@statdash/react/engine'
 import type { ShellProps }                     from '@statdash/react/engine'
 import { useT, useInject, PANEL_LAYOUT, useExtensions, PANEL_TITLE_BADGE } from '@statdash/react'
-import type { GeorgraphNode }                  from './GeorgraphNode'
+import type { GeographNode }                   from './GeographNode'
 import { GeoMap }                              from './components/GeoMap'
 
-export const GeorgraphShell = defineShell<GeorgraphNode>({
+export const GeographShell = defineShell<GeographNode>({
   render({ def, ctx, children, vs }) {
-    return <GeorgraphControl def={def} ctx={ctx} vs={vs} table={children.rendered[0] ?? null} />
+    return <GeographControl def={def} ctx={ctx} vs={vs} table={children.rendered[0] ?? null} />
   },
 })
 
-function GeorgraphControl({ def, ctx, vs, table }: Pick<ShellProps<GeorgraphNode>, 'def' | 'ctx' | 'vs'> & { table: ReactNode }) {
+function GeographControl({ def, ctx, vs, table }: Pick<ShellProps<GeographNode>, 'def' | 'ctx' | 'vs'> & { table: ReactNode }) {
   const PanelLayout = useInject(ctx.ui, PANEL_LAYOUT)
-  const t = useT('georgraph')
+  const t = useT('geograph')
 
   const titleBadges = useExtensions(ctx.extensions, PANEL_TITLE_BADGE, {
-    nodeType:    'georgraph',
+    nodeType:    'geograph',
     nodeId:      def.id,
     preliminary: resolvePreliminary(def, ctx),
   })

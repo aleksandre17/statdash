@@ -3,6 +3,7 @@
 import type { ApexOptions } from 'apexcharts'
 import type { ChartOutput } from '@statdash/charts'
 import { BASE, scaledPx, BP_MD, BP_SM, BP_XS } from './base'
+import { cssVar } from '@statdash/styles'
 
 export function buildTreemap(output: ChartOutput): ApexOptions {
   const { series, categories } = output
@@ -25,13 +26,13 @@ export function buildTreemap(output: ChartOutput): ApexOptions {
     dataLabels: {
       enabled: true,
       formatter: (text: string) => text,
-      style: { fontSize: FS_LG, fontWeight: '500', colors: ['#ffffff'] },
+      style: { fontSize: FS_LG, fontWeight: '500', colors: [cssVar('--color-text-inverse', '#ffffff')] },
     },
-    stroke: { width: 2, colors: ['#ffffff'] },
+    stroke: { width: 2, colors: [cssVar('--color-text-inverse', '#ffffff')] },
     plotOptions: {
       treemap: { distributed: true, enableShades: false, useFillColorAsStroke: false },
     },
-    colors: [series[0]?.color ?? '#0080BE'],
+    colors: [series[0]?.color ?? cssVar('--color-accent', '#0080BE')],
     tooltip: {
       ...BASE.tooltip,
       enabled: output.tooltip.show,

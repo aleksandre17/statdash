@@ -8,6 +8,7 @@
 import type { ApexOptions } from 'apexcharts'
 import type { ChartOutput } from '@statdash/charts'
 import { BASE, yFormatter, makeDataLabelFormatter, collectFormatted, scaledPx, BP_MD, BP_SM, BP_XS } from './base'
+import { cssVar } from '@statdash/styles'
 
 export function buildHBarDiverging(output: ChartOutput): ApexOptions {
   const { series, axes } = output
@@ -41,21 +42,21 @@ export function buildHBarDiverging(output: ChartOutput): ApexOptions {
       ...(groups.length > 0 ? {
         group: {
           groups: groups.map((g) => ({ title: g.label, cols: g.length })),
-          style:  { fontSize: FS_SM, fontWeight: 700, colors: '#4A5568' },
+          style:  { fontSize: FS_SM, fontWeight: 700, colors: cssVar('--color-text-secondary', '#4A5568') },
         },
       } : {}),
       min:        axes.y.min,
       max:        axes.y.max,
       labels: {
-        style:     { fontSize: FS_XS, colors: '#6B7B8D' },
+        style:     { fontSize: FS_XS, colors: cssVar('--color-text-muted', '#6B7B8D') },
         formatter: (val: string) => yFormatter(axes.y.unit, axes.y.decimals)(Number(val)),
         hideOverlappingLabels: true,
       },
-      axisBorder: { color: '#E0EBE8' },
-      axisTicks:  { color: '#E0EBE8' },
+      axisBorder: { color: cssVar('--color-chart-frame', '#E0EBE8') },
+      axisTicks:  { color: cssVar('--color-chart-frame', '#E0EBE8') },
     },
     yaxis: {
-      labels: { style: { fontSize: FS_SM, colors: '#6B7B8D' } },
+      labels: { style: { fontSize: FS_SM, colors: cssVar('--color-text-muted', '#6B7B8D') } },
     },
     plotOptions: {
       bar: {
@@ -68,14 +69,14 @@ export function buildHBarDiverging(output: ChartOutput): ApexOptions {
     dataLabels: {
       enabled:   false,
       formatter: makeDataLabelFormatter(formatted),
-      style:     { fontSize: FS_XS, fontWeight: 400, colors: ['#6B7B8D'] },
+      style:     { fontSize: FS_XS, fontWeight: 400, colors: [cssVar('--color-text-muted', '#6B7B8D')] },
     },
     legend: {
       show:       output.legend.show,
       position:   output.legend.position ?? 'bottom',
       fontFamily: 'BPG Arial, Roboto, sans-serif',
       fontSize:   FS_MD,
-      labels:     { colors: '#4A5568' },
+      labels:     { colors: cssVar('--color-text-secondary', '#4A5568') },
       markers:    { size: 6 },
       itemMargin: { horizontal: 12 },
     },

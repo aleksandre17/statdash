@@ -305,7 +305,7 @@ export interface PanelSliceMeta {
 }
 
 /**
- * META for general node slices (section, filter-bar, georgraph, hero, links…).
+ * META for general node slices (section, filter-bar, geograph, hero, links…).
  * category groups the Constructor palette. transparent nodes are expanded in-place.
  */
 export interface NodeSliceMeta {

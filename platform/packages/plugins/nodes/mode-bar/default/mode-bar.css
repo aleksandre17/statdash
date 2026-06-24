@@ -3,7 +3,7 @@
   justify-content: flex-end;
   gap: 2px;
   padding: 3px;
-  background: var(--color-surface-alt, #f0f0f0);
+  background: var(--color-surface-frame);
   border-radius: var(--radius-md, 6px);
 }
 
@@ -26,7 +26,7 @@
 }
 
 .mode-tab-btn:hover:not(.mode-tab-btn--active) {
-  background: var(--color-surface-hover, rgba(0, 0, 0, 0.04));
+  background: var(--color-surface-hover);
 }
 
 .mode-tab-icon {
@@ -39,7 +39,7 @@
   width: 72px;
   height: 28px;
   justify-content: flex-end;
-  background: var(--color-skeleton, #e8e8e8);
+  background: var(--color-skeleton);
   border-radius: var(--radius-sm, 4px);
   animation: skeleton-pulse 1.4s ease-in-out infinite;
 }

@@ -22,7 +22,7 @@ export { META as section }       from './nodes/section'
 export { META as modeBar }       from './nodes/mode-bar'
 export { META as filterBar }     from './nodes/filter-bar'
 export { META as pageHeader }    from './nodes/page-header'
-export { META as georgraph }     from './nodes/georgraph'
+export { META as geograph }      from './nodes/geograph'
 export { META as links }         from './nodes/links'
 export { META as repeat }        from './nodes/repeat'
 export { META as hero }          from './nodes/hero'
@@ -50,7 +50,7 @@ import { META as sectionMeta }       from './nodes/section/default/meta'
 import { META as modeBarMeta }       from './nodes/mode-bar/default/meta'
 import { META as filterBarMeta }     from './nodes/filter-bar/default/meta'
 import { META as pageHeaderMeta }    from './nodes/page-header/default/meta'
-import { META as georgraphMeta }     from './nodes/georgraph/default/meta'
+import { META as geographMeta }      from './nodes/geograph/default/meta'
 import { META as linksMeta }         from './nodes/links/default/meta'
 import { META as repeatMeta }        from './nodes/repeat/default/meta'
 import { META as heroMeta }          from './nodes/hero/default/meta'
@@ -125,7 +125,7 @@ const PALETTE_META: SliceMeta[] = [
     .filter((m): m is SliceMeta => m != null),
   // structural + content nodes
   sectionMeta, modeBarMeta, filterBarMeta, pageHeaderMeta,
-  georgraphMeta, linksMeta, repeatMeta, heroMeta, statsCarouselMeta,
+  geographMeta, linksMeta, repeatMeta, heroMeta, statsCarouselMeta,
   // data panels
   chartMeta, kpiStripMeta, tableMeta, mapMeta, gaugeMeta,
   // content panels

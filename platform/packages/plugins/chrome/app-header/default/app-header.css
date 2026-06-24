@@ -50,7 +50,7 @@
   white-space: nowrap;
 }
 .app-header__nav-link:hover {
-  background: #EFF3F3;
+  background: var(--color-surface-frame);
   color: var(--color-text-primary);
 }
 

@@ -33,16 +33,15 @@
 .hero__title {
   font-family: 'Noto Serif Georgian', 'Noto Sans Georgian', sans-serif;
   font-size: clamp(2rem, 4vw, 3.125rem);
-  color: #0d3b66;
+  color: var(--color-heading-display);
   line-height: 1.15;
-  /* off-table heading color — left literal pending an ADR role */
   margin-bottom: 12px;
   max-width: 700px;
 }
 
 .hero__subtitle {
   font-size: 1rem;
-  color: #5A7A8A;
+  color: var(--color-text-muted);
   max-width: 32rem;
   line-height: 1.6;
   margin-bottom: clamp(1.25rem, 3.25vw, 2.5rem);

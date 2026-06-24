@@ -11,6 +11,7 @@ import { useState }         from 'react'
 import { createPortal }     from 'react-dom'
 import type { ChartOutput } from '@statdash/charts'
 import { fmtNum } from '@statdash/engine'
+import { cssVar } from '@statdash/styles'
 
 const GAP = 3
 
@@ -35,12 +36,12 @@ function Tooltip({ item, pct, cursor }: { item: Item; pct: string; cursor: Curso
   return (
     <div style={{
       position: 'fixed', left: cursor.x + 16, top: cursor.y - 10,
-      width: 210, background: '#fff', border: `1px solid ${item.color}`,
+      width: 210, background: 'var(--color-surface)', border: `1px solid ${item.color}`,
       borderRadius: 7, padding: '9px 11px', pointerEvents: 'none',
       boxShadow: '0 2px 10px rgba(0,0,0,0.12)', zIndex: 99999,
       fontFamily: 'BPG Arial, Roboto, sans-serif',
     }}>
-      <div style={{ fontSize: 10, color: '#5A7A8A', lineHeight: 1.45, marginBottom: 5 }}>
+      <div style={{ fontSize: 10, color: 'var(--color-text-muted)', lineHeight: 1.45, marginBottom: 5 }}>
         {item.clean}
       </div>
       <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--color-text-primary)' }}>
@@ -79,7 +80,7 @@ function Block({
         <div style={{
           position: 'absolute', top: 5, left: 7, pointerEvents: 'none',
           fontSize: 10, fontWeight: 700, fontFamily: 'monospace',
-          color: light ? '#1A2332' : '#fff', opacity: 0.55,
+          color: light ? 'var(--color-text-primary)' : 'var(--color-text-inverse)', opacity: 0.55,
         }}>
           {item.op}
         </div>
@@ -88,7 +89,7 @@ function Block({
         position: 'absolute', inset: 0,
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         padding: '4px 10px', pointerEvents: 'none',
-        color: light ? '#1A2332' : '#fff', overflow: 'hidden',
+        color: light ? 'var(--color-text-primary)' : 'var(--color-text-inverse)', overflow: 'hidden',
       }}>
         <span style={{
           fontSize: 12, fontFamily: 'BPG Arial, Roboto, sans-serif',
@@ -113,7 +114,7 @@ export default function TreemapChart({ output }: { output: ChartOutput }) {
   const cats = output.categories
   if (!pts.length) return null
 
-  const base = output.series[0]?.color ?? '#0080BE'
+  const base = output.series[0]?.color ?? cssVar('--color-accent', '#0080BE')
 
   const items: Item[] = cats
     .map((rawLabel, i) => {
@@ -175,7 +176,7 @@ export default function TreemapChart({ output }: { output: ChartOutput }) {
               <div style={{
                 position: 'absolute', top: 5, left: 7, pointerEvents: 'none',
                 fontSize: 10, fontWeight: 700, fontFamily: 'monospace',
-                color: light ? '#1A2332' : '#fff', opacity: 0.55,
+                color: light ? 'var(--color-text-primary)' : 'var(--color-text-inverse)', opacity: 0.55,
               }}>
                 {totalItem.op}
               </div>
@@ -184,7 +185,7 @@ export default function TreemapChart({ output }: { output: ChartOutput }) {
               position: 'absolute', inset: 0,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               padding: 12, textAlign: 'center', pointerEvents: 'none',
-              color: light ? '#1A2332' : '#fff',
+              color: light ? 'var(--color-text-primary)' : 'var(--color-text-inverse)',
             }}>
               <span style={{ fontSize: 12, fontFamily: 'BPG Arial, Roboto, sans-serif', lineHeight: 1.35 }}>
                 {totalItem.clean}

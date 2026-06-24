@@ -22,9 +22,10 @@ import { nodeRegistry }          from './register-all'
 
 describe('describeApp() — shape', () => {
 
-  it('returns an object with all 10 required fields', () => {
+  it('returns an object with all required fields', () => {
     const manifest = describeApp()
 
+    expect(manifest).toHaveProperty('contractVersion')
     expect(manifest).toHaveProperty('palette')
     expect(manifest).toHaveProperty('propertySchemas')
     expect(manifest).toHaveProperty('chartTypes')

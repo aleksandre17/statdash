@@ -41,7 +41,7 @@ export const SectionSlots: Record<string, SlotDef> = {
   children: {
     field:   'children',
     label:   { ka: 'შიგთავსი', en: 'Content' },
-    accepts: ['chart', 'table', 'kpi-strip', 'row', 'wrap', 'georgraph'],
+    accepts: ['chart', 'table', 'kpi-strip', 'row', 'wrap', 'geograph'],
     multi:   true,
   },
 }

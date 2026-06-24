@@ -63,9 +63,9 @@
   font-size: 0.5625rem;
   font-weight: 700;
   letter-spacing: 0.06em;
-  color: #856404;
-  background: #FFF3CD;
-  border: 1px solid #FFE69C;
+  color: var(--status-obs-preliminary-fg);
+  background: var(--status-obs-preliminary-bg);
+  border: 1px solid var(--status-obs-preliminary-border);
   border-radius: 3px;
   padding: 0.125rem 0.3125rem;
   line-height: 1.4;
@@ -85,7 +85,7 @@
 /* Explanatory note below trend */
 .kpi-note {
   font-size: 0.625rem;
-  color: #B0C4CC;
+  color: var(--color-text-faint);
   margin: 0;
   margin-top: auto;
   padding-top: 0.125rem;
@@ -118,13 +118,13 @@
   font-size: 0.8rem;
   font-weight: 600;
 }
-.kpi-trend-up   { color: #2A9D8F; }
-.kpi-trend-down { color: #E76F51; }
+.kpi-trend-up   { color: var(--color-trend-positive); }
+.kpi-trend-down { color: var(--color-trend-negative); }
 .kpi-trend-flat { color: var(--color-text-faint); }
 
 .kpi-trend-sub {
   font-size: 0.6875rem;
-  color: #B0C4CC;
+  color: var(--color-text-faint);
   font-weight: 400;
 }
 

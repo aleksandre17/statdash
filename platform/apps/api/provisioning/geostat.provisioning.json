@@ -2937,7 +2937,7 @@
                 "multiSelect": true,
                 "paramKey": "region",
                 "title": "მთლიანი შიდა პროდუქტი — რეგიონების მიხედვით",
-                "type": "georgraph",
+                "type": "geograph",
                 "view": {
                   "styles": {
                     "height": "16:9"
@@ -3443,7 +3443,7 @@
                 },
                 "paramKey": "region",
                 "title": "მთლიანი შიდა პროდუქტი — რეგიონების მიხედვით",
-                "type": "georgraph",
+                "type": "geograph",
                 "view": {
                   "styles": {
                     "height": "16:9"
@@ -3854,7 +3854,7 @@
             }
           }
         },
-        "schemaVersion": 2,
+        "schemaVersion": 3,
         "storeKey": "regional",
         "type": "inner-page",
         "vars": {

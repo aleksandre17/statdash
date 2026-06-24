@@ -59,6 +59,9 @@ export {
 // ── Style helpers ─────────────────────────────────────────────────────
 export { px, ratio, fluid, spacing } from './utils/helpers'
 
+// ── Token resolution (computed value for SVG-attr / JS-parsed fills) ──
+export { cssVar } from './utils/cssVar'
+
 // ── Validation ────────────────────────────────────────────────────────
 export { validateNodeStyles }    from './utils/validate'
 export type { StyleIssue }       from './utils/validate'

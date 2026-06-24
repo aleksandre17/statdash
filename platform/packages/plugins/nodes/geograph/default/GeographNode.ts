@@ -1,8 +1,8 @@
 import type { NodeBase, NodeDef, ViewParams, PropertyGroup, SlotDef, PropSchema } from '@statdash/react/engine'
 import type { DataSpec }                                               from '@statdash/engine'
 
-export interface GeorgraphNode extends NodeBase {
-  type:             'georgraph'
+export interface GeographNode extends NodeBase {
+  type:             'geograph'
   id:               string
   title:            string
   label?:           string
@@ -25,7 +25,7 @@ export interface GeorgraphNode extends NodeBase {
   maxSelect?:       number
 }
 
-export const GeorgraphSchema: PropSchema = [
+export const GeographSchema: PropSchema = [
   { field: 'title',       type: 'string',  label: 'სათაური',     required: true },
   { field: 'geoJsonUrl',  type: 'string',  label: 'GeoJSON URL',  required: true },
   { field: 'paramKey',    type: 'string',  label: 'Param Key',    required: true },
@@ -36,7 +36,7 @@ export const GeorgraphSchema: PropSchema = [
   { field: 'maxSelect',   type: 'number',  label: 'Max Select',   default: 2 },
 ]
 
-export const GeorgraphSlots: Record<string, SlotDef> = {
+export const GeographSlots: Record<string, SlotDef> = {
   children: {
     field:   'children',
     label:   { ka: 'ცხრილი', en: 'Table' },
@@ -46,11 +46,11 @@ export const GeorgraphSlots: Record<string, SlotDef> = {
   },
 }
 
-export const GeorgraphGroups: PropertyGroup[] = [
+export const GeographGroups: PropertyGroup[] = [
   { label: { ka: 'შიგთავსი',   en: 'Content'  }, fields: ['title', 'label', 'color'] },
   { label: { ka: 'კარტოგრაფია', en: 'Map'      }, fields: ['geoJsonUrl', 'paramKey', 'isoField', 'unit', 'multiSelect', 'maxSelect'] },
 ]
 
 declare module '@statdash/react/engine' {
-  interface NodeTypeMap { 'georgraph': GeorgraphNode }
+  interface NodeTypeMap { 'geograph': GeographNode }
 }

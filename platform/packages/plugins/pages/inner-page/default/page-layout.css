@@ -61,7 +61,7 @@
   align-items: center;
   gap: 0.375rem;
   font-size: 0.8rem;
-  color: #5A7A8A;
+  color: var(--color-text-muted);
   text-decoration: none;
   padding: 0.375rem 0.75rem;
   border-radius: 8px;
@@ -71,8 +71,8 @@
 }
 .links-row__item:hover {
   color: var(--color-accent);
-  border-color: #CCE8F5;
-  background: #F0F8FF;
+  border-color: var(--color-accent-chip-border);
+  background: var(--color-accent-muted);
 }
 
 /* ── Region selector strip ────────────────────────────────────── */
@@ -94,7 +94,7 @@
   background: var(--color-surface);
   font-size: 0.8rem;
   font-weight: 500;
-  color: #5A7A8A;
+  color: var(--color-text-muted);
   cursor: pointer;
   transition: all 0.15s;
   white-space: nowrap;

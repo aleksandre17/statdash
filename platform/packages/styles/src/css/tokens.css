@@ -196,8 +196,36 @@
   --color-accent-secondary: var(--teal-600);
   --color-accent-ring:      color-mix(in srgb, var(--color-accent) 15%, transparent);
 
+  /* Accent chip (pill: tinted bg + slightly stronger tinted border, accent text).
+     bg reuses --color-accent-muted; the chip border is a distinct, slightly more
+     saturated tint of the accent family — a tenant theme rebinds it. */
+  --color-accent-chip-bg:     var(--color-accent-muted);
+  --color-accent-chip-border: var(--blue-100);
+
+  /* Display heading — the largest hero title; a deeper, richer tone than
+     --color-text-primary. Brand-neutral default; a tenant theme rebinds. */
+  --color-heading-display: var(--blue-900);
+
+  /* Trend axis (data direction signal: up vs down). NOT the generic status
+     family — this is the KPI/sparkline direction pair. Brand-neutral default
+     (neutral teal / neutral terracotta); a tenant theme rebinds to its palette.
+     Always paired with a glyph/arrow — never color-only (WCAG 1.4.1). */
+  --color-trend-positive: var(--teal-600);
+  --color-trend-negative: #b06a52;
+
   /* Chart frame (chrome around data-viz; the categorical palette is --chart-color-*) */
   --color-chart-frame:    #E0EBE8;
+  --color-chart-grid:     #F0F5F3;   /* apex cartesian grid lines (lighter than frame) */
+
+  /* Surface/border extras (the cohesion roles the shells needed) */
+  --color-surface-hover:    rgba(0, 0, 0, 0.04);   /* neutral overlay hover (theme-agnostic darken) */
+  --color-skeleton:         #e8e8e8;  /* loading-placeholder fill (neutral grey) */
+  --color-breadcrumb-separator: var(--color-border-frame);  /* faint "/" between crumbs */
+
+  /* Translucent surfaces (frosted-glass overlays — derive from the surface role
+     so they re-tint with the theme; default theme surface is white). */
+  --color-surface-translucent: color-mix(in srgb, var(--color-surface) 80%, transparent);
+  --color-border-translucent:  color-mix(in srgb, var(--color-surface) 40%, transparent);
 
   /* ── Status / feedback colors (bg / border / fg per status) ─── */
   --status-positive-bg:     #e6f4ea;
@@ -220,6 +248,40 @@
   --status-preliminary-bg:     #f3eefb;
   --status-preliminary-border: #c9b8e8;
   --status-preliminary-fg:     #5b3a9b;
+
+  /* ── SDMX OBS_STATUS badges (IMF / Eurostat data-quality codes) ──────
+     A DISTINCT taxonomy from the generic feedback --status-* above: these
+     flag the provenance of an individual observation (preliminary / estimate
+     / revised / confidential), per the SDMX OBS_STATUS code list. Their tones
+     are tuned for inline cell badges (warmer/softer than the alert palette),
+     so they are their own role family rather than aliases of --status-*. */
+  --status-obs-preliminary-bg:     #FFF3CD;
+  --status-obs-preliminary-border: #FFE69C;
+  --status-obs-preliminary-fg:     #856404;
+  --status-obs-estimate-bg:        #E8F4F8;
+  --status-obs-estimate-fg:        #1B7A9E;
+  --status-obs-revised-bg:         #F0F0F0;
+  --status-obs-revised-fg:         var(--color-text-secondary);
+  --status-obs-confidential-bg:    #FEE2E2;
+  --status-obs-confidential-fg:    #9B1C1C;
+  /* tfoot aggregate row (IMF/Eurostat total row) — a quiet teal-tinted emphasis */
+  --status-total-bg:     #EFF6F5;
+  --status-total-border: #BDD5D0;
+  --status-total-fg:     #1A4A3E;
+
+  /* ── Feedback: node-error surface (warm terracotta error state) ──────
+     The panel-level error card. A warm error family, perceptibly distinct
+     from the cooler --status-negative-* alert tones, so its own roles. */
+  --color-error-bg:         #FFF8F8;
+  --color-error-bg-hover:   #FFF0EE;
+  --color-error-border:     #F5D0C8;
+  --color-error-text:       #9B5040;
+  --color-error-text-strong:#7A3D30;
+  --color-error-text-soft:  #B06050;
+
+  /* Vivid action-red — required-field marker / destructive affordance.
+     Brighter than --status-negative-fg (which is a muted alert tone). */
+  --color-danger-fg: #dc2626;
 
   /* ── Chart palette (categorical, deuteranopia-distinguishable) ─
      Blue leads; ordered for maximum pairwise separation.

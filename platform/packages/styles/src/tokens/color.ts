@@ -57,8 +57,31 @@ export const COLOR = {
   accentBg:        'var(--color-accent-bg)',
   accentSecondary: 'var(--color-accent-secondary)',
   accentRing:      'var(--color-accent-ring)',
+  accentChipBg:     'var(--color-accent-chip-bg)',
+  accentChipBorder: 'var(--color-accent-chip-border)',
+  // Display heading (deep hero title)
+  headingDisplay: 'var(--color-heading-display)',
+  // Trend axis (data-direction signal; pair with a glyph, never color-only)
+  trendPositive: 'var(--color-trend-positive)',
+  trendNegative: 'var(--color-trend-negative)',
+  // Surface/border extras
+  surfaceHover:        'var(--color-surface-hover)',
+  surfaceTranslucent:  'var(--color-surface-translucent)',
+  borderTranslucent:   'var(--color-border-translucent)',
+  skeleton:            'var(--color-skeleton)',
+  breadcrumbSeparator: 'var(--color-breadcrumb-separator)',
+  // Feedback: node-error surface (warm error family)
+  errorBg:         'var(--color-error-bg)',
+  errorBgHover:    'var(--color-error-bg-hover)',
+  errorBorder:     'var(--color-error-border)',
+  errorText:       'var(--color-error-text)',
+  errorTextStrong: 'var(--color-error-text-strong)',
+  errorTextSoft:   'var(--color-error-text-soft)',
+  // Vivid action-red (required-field / destructive affordance)
+  dangerFg: 'var(--color-danger-fg)',
   // Chart chrome
   chartFrame:    'var(--color-chart-frame)',
+  chartGrid:     'var(--color-chart-grid)',
 } as const satisfies Record<string, string>
 
 // ── Status / feedback colors ────────────────────────────────────────────
@@ -81,6 +104,19 @@ export const STATUS = {
   preliminaryBg:     'var(--status-preliminary-bg)',
   preliminaryBorder: 'var(--status-preliminary-border)',
   preliminaryFg:     'var(--status-preliminary-fg)',
+  // SDMX OBS_STATUS data-quality badges (distinct from the alert tones above)
+  obsPreliminaryBg:     'var(--status-obs-preliminary-bg)',
+  obsPreliminaryBorder: 'var(--status-obs-preliminary-border)',
+  obsPreliminaryFg:     'var(--status-obs-preliminary-fg)',
+  obsEstimateBg:        'var(--status-obs-estimate-bg)',
+  obsEstimateFg:        'var(--status-obs-estimate-fg)',
+  obsRevisedBg:         'var(--status-obs-revised-bg)',
+  obsRevisedFg:         'var(--status-obs-revised-fg)',
+  obsConfidentialBg:    'var(--status-obs-confidential-bg)',
+  obsConfidentialFg:    'var(--status-obs-confidential-fg)',
+  totalBg:     'var(--status-total-bg)',
+  totalBorder: 'var(--status-total-border)',
+  totalFg:     'var(--status-total-fg)',
 } as const satisfies Record<string, string>
 
 // ── Chart / data-visualization palette ──────────────────────────────────

@@ -4,7 +4,7 @@
 //  hardcoded node type: it consults the nodeRegistry capabilities for each child.
 //    - `nav-contributor` → emit a NavSection via the node's NavContribution
 //      reader (default: id `anchor ?? id`, title `title`, navMode from
-//      `view.visibleWhen`). section + georgraph declare this in their META.
+//      `view.visibleWhen`). section + geograph declare this in their META.
 //    - `nav-transparent`  → a REAL-DOM container (row) the extractor descends
 //      through: its `view.visibleWhen` nav-mode is inherited by the contributor
 //      children it wraps (reuses the generic `collectChildNodes` walker).

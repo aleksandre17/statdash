@@ -30,7 +30,7 @@
   background: transparent;
   font-size: 0.8125rem;
   font-weight: 500;
-  color: #5A7A8A;
+  color: var(--color-text-muted);
   cursor: pointer;
   transition: background 0.15s, color 0.15s;
   white-space: nowrap;

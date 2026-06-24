@@ -38,7 +38,7 @@ import { META as section }       from '../section/default/meta'
 import { META as modeBar }       from '../mode-bar/default/meta'
 import { META as filterBar }     from '../filter-bar/default/meta'
 import { META as pageHeader }    from '../page-header/default/meta'
-import { META as georgraph }     from '../georgraph/default/meta'
+import { META as geograph }     from '../geograph/default/meta'
 import { META as links }         from '../links/default/meta'
 import { META as repeat }        from '../repeat/default/meta'
 import { META as hero }          from '../hero/default/meta'
@@ -83,7 +83,7 @@ function metaId(m: object): string {
 }
 
 const ALL_METAS: ReadonlyArray<MetaWithDefaults & object> = [
-  section, modeBar, filterBar, pageHeader, georgraph, links, repeat, hero,
+  section, modeBar, filterBar, pageHeader, geograph, links, repeat, hero,
   statsCarousel,
   row, grid, columns, stack, card, divider, spacer, wrap,
   chart, kpiStrip, table, map, gauge, text,

@@ -35,7 +35,7 @@ export interface NavContribution {
  * Default reader applied when a node declares the `nav-contributor` cap but no
  * explicit `navContribution` descriptor. Encodes the historical hardcoded
  * behaviour (`anchor ?? id`, `title`, `view.visibleWhen`) so the generic path
- * is byte-identical to the legacy section/georgraph special-case.
+ * is byte-identical to the legacy section/geograph special-case.
  */
 export const DEFAULT_NAV_CONTRIBUTION: Required<NavContribution> = {
   idFields:   ['anchor', 'id'],

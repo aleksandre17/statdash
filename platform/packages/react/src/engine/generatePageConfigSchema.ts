@@ -54,10 +54,25 @@ interface OneOfRefs { oneOf: Array<{ $ref: string } | JsonSchemaProperty> }
 export interface PageConfigSchema {
   $schema:     typeof DRAFT_2020_12
   $id:         string
+  /**
+   * SemVer of the capability contract — DERIVED from the manifest's
+   * contractVersion (the SSOT, owned by constructor.ts). NOT a parallel version:
+   * this schema is generated from describeApp(), so it carries that same version
+   * verbatim. Threaded into the versioned `$id` too (…/<version>/page-config…).
+   */
+  version:     string
   title:       string
   description: string
   $defs:       Record<string, JsonSubSchema | OneOfRefs>
   oneOf:       Array<{ $ref: string }>
+}
+
+// ── $id — version-pinned, derived from the manifest contractVersion (SSOT) ────
+//  A versioned $id is the JSON-Schema-idiomatic way to pin a contract revision
+//  (cf. how published schemas embed the version in the canonical URI). Built
+//  ONLY from the manifest's contractVersion — no second version literal.
+function schemaId(version: string): string {
+  return `https://statdash.dev/schema/${version}/page-config.schema.json`
 }
 
 // ── Naming — stable, collision-free $defs keys (no magic strings) ────────────
@@ -129,7 +144,8 @@ export function generatePageConfigSchema(
 
   return {
     $schema:     DRAFT_2020_12,
-    $id:         'https://statdash.dev/schema/page-config.schema.json',
+    $id:         schemaId(manifest.contractVersion),
+    version:     manifest.contractVersion,
     title:       'StatDash Page Config',
     description:
       'The whole-config wire contract for a StatDash page (NodePageConfig). ' +

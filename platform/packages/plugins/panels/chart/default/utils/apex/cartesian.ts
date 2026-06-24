@@ -3,6 +3,7 @@
 import type { ApexOptions } from 'apexcharts'
 import type { ChartOutput } from '@statdash/charts'
 import { BASE, yFormatter, collectFormatted, scaledPx, BP_MD, BP_SM, BP_XS } from './base'
+import { cssVar } from '@statdash/styles'
 
 export function buildCartesian(output: ChartOutput): ApexOptions {
   const { type, series, categories, axes, stacked, horizontal } = output
@@ -73,11 +74,11 @@ export function buildCartesian(output: ChartOutput): ApexOptions {
   //
   const yAxisBase: ApexYAxis = horizontal
       ? {
-        labels: { style: { fontSize: FS_SM, colors: '#6B7B8D' }, maxWidth: 220 },
+        labels: { style: { fontSize: FS_SM, colors: cssVar('--color-text-muted', '#6B7B8D') }, maxWidth: 220 },
       }
       : {
         labels: {
-          style:     { fontSize: FS_SM, colors: '#6B7B8D' },
+          style:     { fontSize: FS_SM, colors: cssVar('--color-text-muted', '#6B7B8D') },
           formatter: yFormatter(axes.y.unit, axes.y.decimals),
         },
         min:            type === 'area' || type === 'line' ? 0 : axes.y.min,
@@ -91,7 +92,7 @@ export function buildCartesian(output: ChartOutput): ApexOptions {
         {
           opposite: true,
           labels: {
-            style:     { fontSize: FS_SM, colors: '#6B7B8D' },
+            style:     { fontSize: FS_SM, colors: cssVar('--color-text-muted', '#6B7B8D') },
             formatter: yFormatter(axes.y2?.unit, axes.y2?.decimals),
           },
           min: axes.y2?.min,
@@ -148,13 +149,13 @@ export function buildCartesian(output: ChartOutput): ApexOptions {
       ...(horizontal ? { min: axes.y.min, max: axes.y.max } : {}),
       labels: horizontal
           ? {
-            style:     { fontSize: FS_SM, colors: '#6B7B8D' },
+            style:     { fontSize: FS_SM, colors: cssVar('--color-text-muted', '#6B7B8D') },
             // xaxis.labels.formatter receives a string — parse back to number first
             formatter: (val: string) => yFormatter(axes.y.unit, axes.y.decimals)(Number(val)),
             hideOverlappingLabels: true,
           }
           : {
-            style:        { fontSize: FS_SM, colors: '#6B7B8D' },
+            style:        { fontSize: FS_SM, colors: cssVar('--color-text-muted', '#6B7B8D') },
             rotate:       -45,
             rotateAlways: false,
             trim:         true,
@@ -164,8 +165,8 @@ export function buildCartesian(output: ChartOutput): ApexOptions {
             maxHeight: 100,
             hideOverlappingLabels: true,
           },
-      axisBorder: { color: '#E0EBE8' },
-      axisTicks:  { color: '#E0EBE8' },
+      axisBorder: { color: cssVar('--color-chart-frame', '#E0EBE8') },
+      axisTicks:  { color: cssVar('--color-chart-frame', '#E0EBE8') },
     },
     yaxis,
     plotOptions: {
@@ -188,8 +189,8 @@ export function buildCartesian(output: ChartOutput): ApexOptions {
         fontWeight: 600,
         colors:    isWaterfall
             // waterfall: only label the visible series
-            ? series.map((s) => s.name === '__spacer__' ? 'transparent' : '#2D3748')
-            : horizontal ? ['#2D3748'] : ['#6B7B8D'],
+            ? series.map((s) => s.name === '__spacer__' ? 'transparent' : cssVar('--color-text-secondary', '#2D3748'))
+            : horizontal ? [cssVar('--color-text-secondary', '#2D3748')] : [cssVar('--color-text-muted', '#6B7B8D')],
       },
       dropShadow: { enabled: false },
     },
@@ -206,13 +207,13 @@ export function buildCartesian(output: ChartOutput): ApexOptions {
           ? series.map((s) => (s.seriesType ?? 'bar') === 'line' ? 2.5 : 0)
           : isStackedArea ? 2 : (type === 'line' || type === 'area') ? 3 : 0,
       // stacked area: white stroke separates areas and makes the top line visible
-      colors: isStackedArea ? series.map(() => '#ffffff') : undefined,
+      colors: isStackedArea ? series.map(() => cssVar('--color-surface', '#ffffff')) : undefined,
       curve: 'smooth',
     },
     markers: type === 'area' && !stacked || type === 'line' ? {
       size:         5,
       strokeWidth:  2,
-      strokeColors: '#fff',
+      strokeColors: cssVar('--color-surface', '#fff'),
       hover:        { size: 7 },
     } : {},
     legend: {
@@ -220,7 +221,7 @@ export function buildCartesian(output: ChartOutput): ApexOptions {
       position: output.legend.position ?? 'bottom',
       fontFamily: 'BPG Arial, Roboto, sans-serif',
       fontSize:   FS_MD,
-      labels:     { colors: '#4A5568' },
+      labels:     { colors: cssVar('--color-text-secondary', '#4A5568') },
       markers:    { size: 6 },
       itemMargin: { horizontal: 12 },
     },
@@ -242,7 +243,7 @@ export function buildCartesian(output: ChartOutput): ApexOptions {
       yaxis: [{
         y:               yMax,
         strokeDashArray: 4,
-        borderColor:     '#94A3B8',
+        borderColor:     cssVar('--color-text-faint', '#94A3B8'),
         borderWidth:     1.5,
         label:           { text: '' },
       }],

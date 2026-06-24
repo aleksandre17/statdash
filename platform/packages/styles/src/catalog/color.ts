@@ -126,11 +126,53 @@ export const COLOR_TOKENS: Record<string, TokenDescriptor> = {
     label:       { ka: 'აქცენტის რგოლი', en: 'Accent Ring' },
     description: { ka: 'ფოკუსის / არჩევის რგოლი აქცენტიდან.', en: 'Focus / selection ring derived from accent.' },
   },
+  'color.accent-chip-border': {
+    group:   'color',
+    cssVar:  'var(--color-accent-chip-border)',
+    label:       { ka: 'ჩიპის საზღვარი', en: 'Accent Chip Border' },
+    description: { ka: 'აქცენტური ჩიპის (pill) საზღვარი.', en: 'Accent chip (pill) border color.' },
+  },
+  'color.heading-display': {
+    group:   'color',
+    cssVar:  'var(--color-heading-display)',
+    label:       { ka: 'სათაური (დიდი)', en: 'Heading Display' },
+    description: { ka: 'უმსხვილესი hero სათაურის ფერი.', en: 'Largest hero/display heading color.' },
+  },
+  'color.trend-positive': {
+    group:   'color',
+    cssVar:  'var(--color-trend-positive)',
+    label:       { ka: 'ზრდის ტენდენცია', en: 'Trend Positive' },
+    description: { ka: 'მონაცემთა ზრდის მიმართულების ფერი (გლიფთან ერთად).', en: 'Upward-trend data color (always paired with a glyph).' },
+  },
+  'color.trend-negative': {
+    group:   'color',
+    cssVar:  'var(--color-trend-negative)',
+    label:       { ka: 'კლების ტენდენცია', en: 'Trend Negative' },
+    description: { ka: 'მონაცემთა კლების მიმართულების ფერი (გლიფთან ერთად).', en: 'Downward-trend data color (always paired with a glyph).' },
+  },
+  'color.breadcrumb-separator': {
+    group:   'color',
+    cssVar:  'var(--color-breadcrumb-separator)',
+    label:       { ka: 'breadcrumb გამყოფი', en: 'Breadcrumb Separator' },
+    description: { ka: 'breadcrumb-ის "/" გამყოფის ფერი.', en: 'Breadcrumb "/" separator color.' },
+  },
+  'color.danger-fg': {
+    group:   'color',
+    cssVar:  'var(--color-danger-fg)',
+    label:       { ka: 'მკვეთრი წითელი', en: 'Danger Foreground' },
+    description: { ka: 'სავალდებულო ველის / დესტრუქციული მოქმედების წითელი.', en: 'Required-field / destructive-action red.' },
+  },
   'color.chart-frame': {
     group:   'color',
     cssVar:  'var(--color-chart-frame)',
     label:       { ka: 'სქემის ჩარჩო', en: 'Chart Frame' },
     description: { ka: 'მონაცემთა ვიზუალიზაციის ჩარჩოს ფერი.', en: 'Data-viz frame color (chrome around charts).' },
+  },
+  'color.chart-grid': {
+    group:   'color',
+    cssVar:  'var(--color-chart-grid)',
+    label:       { ka: 'სქემის ბადე', en: 'Chart Grid' },
+    description: { ka: 'სქემის ბადის ხაზების ფერი.', en: 'Chart grid-line color.' },
   },
 
   // ── Z-index ───────────────────────────────────────────────────────────────

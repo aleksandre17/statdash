@@ -35,7 +35,7 @@ import { META as section }       from '../../plugins/nodes/section/default/meta'
 import { META as modeBar }       from '../../plugins/nodes/mode-bar/default/meta'
 import { META as filterBar }     from '../../plugins/nodes/filter-bar/default/meta'
 import { META as pageHeader }    from '../../plugins/nodes/page-header/default/meta'
-import { META as georgraph }     from '../../plugins/nodes/georgraph/default/meta'
+import { META as geograph }      from '../../plugins/nodes/geograph/default/meta'
 import { META as links }         from '../../plugins/nodes/links/default/meta'
 import { META as repeat }        from '../../plugins/nodes/repeat/default/meta'
 import { META as hero }          from '../../plugins/nodes/hero/default/meta'
@@ -69,7 +69,7 @@ type PlaceableMeta = NodeSliceMeta | PanelSliceMeta | PageSliceMeta
 
 const ALL_METAS: PlaceableMeta[] = [
   innerPage, containerPage, tabPage,
-  section, modeBar, filterBar, pageHeader, georgraph, links, repeat, hero, statsCarousel,
+  section, modeBar, filterBar, pageHeader, geograph, links, repeat, hero, statsCarousel,
   row, grid, columns, stack, card, divider, spacer, wrap,
   chart, kpiStrip, table, map, text, gauge,
 ]

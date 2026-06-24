@@ -1,6 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://statdash.dev/schema/page-config.schema.json",
+  "$id": "https://statdash.dev/schema/1.0.0/page-config.schema.json",
+  "version": "1.0.0",
   "title": "StatDash Page Config",
   "description": "The whole-config wire contract for a StatDash page (NodePageConfig). Generated from describeApp() — the registry manifest is the SSOT.",
   "$defs": {
@@ -540,7 +541,7 @@
       ],
       "additionalProperties": true
     },
-    "node_georgraph__default": {
+    "node_geograph__default": {
       "type": "object",
       "properties": {
         "title": {
@@ -585,7 +586,7 @@
           "type": "number"
         },
         "type": {
-          "const": "georgraph"
+          "const": "geograph"
         },
         "id": {
           "type": "string",
@@ -1491,7 +1492,7 @@
           "$ref": "#/$defs/node_page-header__default"
         },
         {
-          "$ref": "#/$defs/node_georgraph__default"
+          "$ref": "#/$defs/node_geograph__default"
         },
         {
           "$ref": "#/$defs/node_links__default"

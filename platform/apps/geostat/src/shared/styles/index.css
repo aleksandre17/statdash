@@ -27,6 +27,17 @@
   /* --color-accent-ring derives from --color-accent via color-mix in the
      default theme — no per-tenant override needed (resolves to a #0080BE
      ring under geostat automatically). */
+
+  /* Accent chip — chip-bg derives from accent-muted; only the border is brand. */
+  --color-accent-chip-border: #CCE8F5;
+
+  /* Display heading + breadcrumb separator (geostat chrome tones). */
+  --color-heading-display:      #0d3b66;
+  --color-breadcrumb-separator: #D8E4E8;
+
+  /* Trend axis — geostat's teal / coral direction pair. */
+  --color-trend-positive: #2A9D8F;
+  --color-trend-negative: #E76F51;
 }
 
 /* ========================================

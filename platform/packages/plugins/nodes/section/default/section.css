@@ -97,7 +97,7 @@
 }
 .section__icon-btn:hover {
   background: var(--color-surface-sunken);
-  color: #5A7A8A;
+  color: var(--color-text-muted);
   border-color: var(--color-border-strong);
 }
 
@@ -125,7 +125,7 @@
   font-weight: 700;
   letter-spacing: 0.07em;
   text-transform: uppercase;
-  color: #B0C4CC;
+  color: var(--color-text-faint);
   padding: 0.25rem 0.25rem 0;
   display: flex;
   align-items: center;
@@ -163,7 +163,7 @@
   transition: all 0.15s;
   white-space: nowrap;
 }
-.section__view-btn:hover { color: #5A7A8A; }
+.section__view-btn:hover { color: var(--color-text-muted); }
 .section__view-btn.active {
   background: var(--color-surface);
   color: var(--sc, var(--color-accent));
@@ -175,7 +175,7 @@
 /* ── Methodology disclosure panel ─────────────────────────────── */
 .section__methodology {
   border-top:   1px solid var(--color-surface-frame);
-  background:   #F7FAFA;
+  background:   var(--color-surface-sunken);
   padding:      0.875rem 1.25rem;
   display:      flex;
   flex-direction: column;
@@ -184,20 +184,20 @@
 
 .section__methodology-note {
   font-size:    0.8125rem;
-  color:        #445A66;
+  color:        var(--color-text-secondary);
   margin:       0;
   line-height:  1.5;
 }
 
 .section__methodology-meta {
   font-size:    0.75rem;
-  color:        #6B8899;
+  color:        var(--color-text-muted);
   margin:       0;
 }
 
 .section__methodology-label {
   font-weight:  600;
-  color:        #445A66;
+  color:        var(--color-text-secondary);
 }
 
 .section__methodology-close {
@@ -209,7 +209,7 @@
   border:       1px solid var(--color-border-strong);
   border-radius: 5px;
   background:   var(--color-surface);
-  color:        #445A66;
+  color:        var(--color-text-secondary);
   cursor:       pointer;
   transition:   background 0.15s;
 }

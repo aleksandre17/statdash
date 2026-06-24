@@ -7,7 +7,7 @@ metadata:
 
 `getGroupedPaletteEntries()` in `apps/panel/src/canvas/paletteEntries.ts` is the live consumer of `nodeRegistry.getByCapability(CAPS.*)`. Partition logic:
 
-- `CAPS.FILTERABLE` → "Data panels" group (chart, table, kpi-strip, gauge, map, georgraph, repeat)
+- `CAPS.FILTERABLE` → "Data panels" group (chart, table, kpi-strip, gauge, map, geograph, repeat)
 - `CAPS.COLLAPSIBLE` (non-filterable) → "Layout" group (section)
 - Neither → "Content" group (hero, links, page-header, row, wrap, …)
 

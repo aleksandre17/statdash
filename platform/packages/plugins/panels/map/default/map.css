@@ -14,7 +14,7 @@
   flex-direction: column;
   gap:            var(--space-3, 0.75rem);
   padding:        var(--space-4, 1rem);
-  background:     var(--color-surface-subtle, #f8fafc);
+  background:     var(--color-surface-raised);
   border:         1px dashed var(--color-border);
   border-radius:  var(--radius-md, 0.375rem);
 }
