@@ -2,6 +2,7 @@
  *
  *  BEM blocks:
  *    .canvas-root      — positioning context for the two stacked layers
+ *    .canvas-toolbar   — chrome above the canvas (preview-mode toggle + badge)
  *    .canvas-layer     — full-bleed layer (renderer | overlay)
  *    .canvas-overlay   — interaction layer (selection + drop zones)
  *    .canvas-node      — per-node hit/selection frame
@@ -28,6 +29,83 @@
 .canvas-layer {
   position: absolute;
   inset: 0;
+}
+
+/* ── Canvas toolbar — preview-mode toggle + fail-soft badge ─────────────────
+ *
+ *  Floats at the top of the canvas, above both stacked layers (z-index), with
+ *  pointer-events re-enabled so the toggle is operable. It does NOT alter the
+ *  layer geometry (layers stay inset:0), so the overlay's anchor measurement —
+ *  relative to .canvas-root — is unchanged. */
+.canvas-toolbar {
+  position: absolute;
+  top: var(--space-2, 8px);
+  right: var(--space-2, 8px);
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2, 8px);
+  pointer-events: auto;
+}
+
+.canvas-toolbar__modes {
+  display: inline-flex;
+  border: 1px solid var(--canvas-accent-soft);
+  border-radius: var(--canvas-radius);
+  overflow: hidden;
+  background: var(--color-surface, #fff);
+}
+
+.canvas-toolbar__mode {
+  appearance: none;
+  border: 0;
+  margin: 0;
+  padding: 4px 10px;
+  font-size: 12px;
+  line-height: 1.6;
+  cursor: pointer;
+  color: var(--color-text, #1a1a1a);
+  background: transparent;
+  transition: background-color 120ms ease, color 120ms ease;
+}
+
+.canvas-toolbar__mode + .canvas-toolbar__mode {
+  border-left: 1px solid var(--canvas-accent-soft);
+}
+
+.canvas-toolbar__mode:hover {
+  background: var(--canvas-accent-soft);
+}
+
+.canvas-toolbar__mode:focus-visible {
+  outline: var(--canvas-outline) solid var(--canvas-accent);
+  outline-offset: -2px;
+}
+
+/* Selected mode — carries weight + fill, not color alone (WCAG: the active state
+ * is also bold, so it reads without relying on hue). */
+.canvas-toolbar__mode--active {
+  color: var(--color-text-inverse, #fff);
+  background: var(--canvas-accent);
+  font-weight: 600;
+}
+
+.canvas-toolbar__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  font-size: 11px;
+  line-height: 1.5;
+  border-radius: var(--canvas-radius);
+  color: var(--color-text, #1a1a1a);
+  background: var(--color-warning-soft, #fff4e5);
+  border: 1px solid var(--color-warning, #c77700);
+}
+
+.canvas-toolbar__badge-icon {
+  font-size: 12px;
+  color: var(--color-warning, #c77700);
 }
 
 /* Layer 1 — the real renderer. Non-interactive so all pointer events fall

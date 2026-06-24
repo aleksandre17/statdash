@@ -9,9 +9,18 @@
 //    Layer 2  overlay   — CanvasOverlay: selection frames + slot drop zones,
 //                         pointer-events re-enabled per interactive element.
 //
-//  Data: the canvas renders against a staticStore (empty rows) wrapped in a
-//  SiteProvider — never a real API call. Charts/tables render their empty/
+//  Data: by DEFAULT the canvas renders against a staticStore (empty rows) wrapped
+//  in a SiteProvider — never a real API call. Charts/tables render their empty/
 //  placeholder state, which is exactly the structural preview the editor wants.
+//
+//  G3.1 — LIVE PREVIEW (opt-in): a structural|live toggle in the canvas chrome
+//  lets the author preview against the REAL stats cube. Live mode swaps the
+//  `stores` prop for a map built through the SHARED 'stats' store-builder
+//  (buildStoreManifest) — the SAME seam the geostat runner uses. The toggle is
+//  view-state local to this component (transient, like `dragging`), defaulting to
+//  structural so the canvas opens zero-fetch and byte-identical to pre-G3. Live is
+//  FAIL-SOFT: no cube-bound source / profile error / API unreachable falls back to
+//  the static store and shows a non-blocking badge — the editor never crashes.
 //
 //  Registry: setupCanvasRegistry() must have run so every node type the page
 //  references has a registered shell. CanvasView calls it defensively (the
@@ -20,14 +29,15 @@
 //  Law 3: CanvasView lives in apps/panel — the engine stays app-agnostic. It
 //  consumes NodePageRenderer as-is; no fork.
 //
-import { useMemo }            from 'react'
+import { useState }           from 'react'
 import { MemoryRouter }       from 'react-router-dom'
 import { SiteProvider }       from '@statdash/react'
 import { NodePageRenderer }   from '@statdash/react/engine'
-import { staticStore }        from '@statdash/engine'
 import type { NodePageConfig } from '@statdash/react/engine'
 import { setupCanvasRegistry } from './setupCanvasRegistry'
 import { CanvasOverlay }      from './CanvasOverlay'
+import { CanvasToolbar }      from './CanvasToolbar'
+import { useLivePreviewStores, type PreviewMode } from './useLivePreviewStores'
 import type { NodeBase }      from '@statdash/react/engine'
 import './canvas.css'
 
@@ -51,15 +61,23 @@ export interface CanvasViewProps {
 export function CanvasView({
   page, selectedNodeId, dragging, onSelectNode, onDropNode,
 }: CanvasViewProps) {
-  // Empty static store under every key a page might reference. The canvas is a
-  // structural preview — no rows, no fetch. resolveStore falls back to the first
-  // key, so a single 'default' entry covers any storeKey.
-  const stores = useMemo(() => ({ default: staticStore }), [])
+  // Preview mode is canvas view-state — transient and local to this component
+  // (the same pattern as `dragging`; there is no persisted canvas-view-state slice
+  // in the constructor store). Default 'structural': the canvas opens zero-fetch.
+  const [mode, setMode] = useState<PreviewMode>('structural')
+
+  // Resolve the store map for the requested mode. Structural ≡ pre-G3 static map
+  // (byte-identical). Live builds through the shared 'stats' builder and degrades
+  // to the static map (status 'unavailable') on any failure — never throws.
+  const { stores, status } = useLivePreviewStores(mode)
 
   const rootClass = `canvas-root${dragging ? ' canvas-root--dragging' : ''}`
 
   return (
     <div className={rootClass} data-testid="canvas-root">
+      {/* Canvas chrome — preview-mode toggle + fail-soft badge. */}
+      <CanvasToolbar mode={mode} status={status} onModeChange={setMode} />
+
       {/* Layer 1 — the real renderer, visually live but non-interactive. */}
       <div className="canvas-layer canvas-layer--renderer" aria-hidden="true">
         <MemoryRouter>
