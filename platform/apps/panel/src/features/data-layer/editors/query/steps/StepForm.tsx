@@ -1,16 +1,25 @@
 import { useState } from 'react'
 import { Box, TextField, Typography } from '@mui/material'
 import type { TransformStep } from '@statdash/engine'
+import { getTransformStepSchema } from '@statdash/engine'
 import { DeriveStepForm } from './DeriveStepForm'
 import { LookupStepForm } from './LookupStepForm'
 import { SortStepForm } from './SortStepForm'
 import { FilterStepForm } from './FilterStepForm'
+import { TransformStepEditor } from './TransformStepEditor'
 
-// ── StepForm — dispatcher: renders the right form per op ───────────────────────
+// ── StepForm — dispatcher: renders the right editor per op ─────────────────────
 //
-//  Supported visually: derive, lookup, sort, filter.
-//  Any other op (melt, rename, group, aggregate, rollup, join, …) falls back to
-//  a raw-JSON textarea so the step is still editable and round-trips losslessly.
+//  Resolution order (OCP, the ADR's "schema-driven, not a bespoke form per op"):
+//    1. derive/lookup/sort/filter — keep their hand-tuned bespoke forms (richer
+//       list/expression UX), UNCHANGED and byte-identical (their unit tests pin
+//       them). These predate the schema-registry and stay the best surface.
+//    2. ANY other op carrying an authoring PropSchema → the GENERIC schema-driven
+//       TransformStepEditor (the same Inspector that authors node properties).
+//       Registering a new op + schema makes it authorable with zero panel code.
+//    3. No schema (today only `joinByField`, which carries resolved rows) →
+//       a raw-JSON textarea: still editable, round-trips losslessly. This is the
+//       shrinking COVERAGE_TODO surface tracked by Fitness #1.
 //
 
 export interface StepFormProps {
@@ -24,7 +33,10 @@ export function StepForm({ step, onChange }: StepFormProps) {
     case 'lookup': return <LookupStepForm step={step} onChange={onChange} />
     case 'sort':   return <SortStepForm   step={step} onChange={onChange} />
     case 'filter': return <FilterStepForm step={step} onChange={onChange} />
-    default:       return <RawStepForm    step={step} onChange={onChange} />
+    default:
+      return getTransformStepSchema(step.op)
+        ? <TransformStepEditor step={step} onChange={onChange} />
+        : <RawStepForm step={step} onChange={onChange} />
   }
 }
 

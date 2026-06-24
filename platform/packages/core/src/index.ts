@@ -68,7 +68,8 @@ export { applyPipeline, applyStep, getFormatter, FORMATTERS, fmtNum }   from './
 // + the plugin extension seam (registerTransformStep). Built-in ops registered via
 // the './data/transform' side-effect above.
 export type { StepFn }                                                  from './data/transform/step-registry'
-export { registerTransformStep, getTransformStep, listTransformOps }   from './data/transform/step-registry'
+export { registerTransformStep, getTransformStep, listTransformOps,
+         getTransformStepSchema, listTransformOpSchemas }              from './data/transform/step-registry'
 
 // ── FieldConfig — Grafana-equivalent display configuration ────────────
 export type { Threshold, ColorMode, FieldOverride, FieldConfig }        from './field/config'
@@ -83,6 +84,20 @@ export type {
   TableConfig,
 }                                                                        from './config/data-spec'
 export type { VisibilityExpr }              from './config/visibility'
+// ── Discriminant manifests — runtime SSOT mirrors for Coverage Fitness #1 ──
+//  Compile-time-verified-exhaustive tuples of the authorable union discriminants
+//  (DataSpec / ParamDef / VisibilityExpr). The Constructor coverage gate
+//  enumerates these (TransformStep ops use listTransformOps()).
+export type { DataSpecDiscriminant, ParamDefType, VisibilityOp } from './config/discriminant-manifest'
+export { DATASPEC_DISCRIMINANTS, PARAMDEF_TYPES, VISIBILITY_OPS } from './config/discriminant-manifest'
+// ── PropSchema — typed authoring-form vocabulary (Constructor) ─────────
+//  Lives in core (not react) because a TransformStep op now CARRIES its own
+//  authoring PropSchema (OCP) and core may not import react (the arrow).
+//  react/slice-meta re-exports these, so existing import sites are unchanged.
+export type {
+  PropFieldType, PropFieldSource, PropFieldOption, PropFieldValidation,
+  PropField, PropSchema, PropertyGroup,
+}                                           from './config/prop-schema'
 export type { LinkIconKey, LinkDef }        from './config/links'
 export { evalVisibility }                   from './config/visibility'
 export { resolveTemplate }                  from './config/template'

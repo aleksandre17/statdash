@@ -11,8 +11,10 @@ import {
 import { CSS } from '@dnd-kit/utilities'
 import { DndContext, type DragEndEvent, closestCenter } from '@dnd-kit/core'
 import type { TransformStep } from '@statdash/engine'
+import { listTransformOps } from '@statdash/engine'
 import { useDndSensors } from '../../../../shared/dnd/useDndSensors'
 import { StepForm } from './steps/StepForm'
+import { defaultStep } from './steps/defaultStep'
 
 // ── PipelineBuilder — D&D sortable list of TransformSteps ─────────────────────
 //
@@ -21,24 +23,17 @@ import { StepForm } from './steps/StepForm'
 //  `value`. Reordering applies arrayMove to both in lockstep. The uids never
 //  touch the emitted config (Law 2: config stays declarative).
 //
+//  The op picker is built from the engine SSOT (listTransformOps) — every
+//  registered op is offerable, so a newly-registered op (with its schema)
+//  appears with zero panel code. `joinByField` is excluded: it carries
+//  already-resolved EngineRow[], not a declaratively-authorable shape.
+//
 
-const OP_OPTIONS: { value: TransformStep['op']; label: string }[] = [
-  { value: 'derive', label: 'derive' },
-  { value: 'lookup', label: 'lookup' },
-  { value: 'sort',   label: 'sort' },
-  { value: 'filter', label: 'filter' },
-]
+const NON_AUTHORABLE_OPS = new Set(['joinByField'])
 
-// ── Default step factory — sensible empty step per op ─────────────────────────
-function defaultStep(op: TransformStep['op']): TransformStep {
-  switch (op) {
-    case 'derive': return { op: 'derive', as: '', expr: '' }
-    case 'lookup': return { op: 'lookup', key: '', from: { $d: '' }, fields: [] }
-    case 'sort':   return { op: 'sort', by: '', dir: 'asc' }
-    case 'filter': return { op: 'filter', where: {} }
-    default:       return { op: 'derive', as: '', expr: '' }
-  }
-}
+const OP_OPTIONS: { value: string; label: string }[] = listTransformOps()
+  .filter((op) => !NON_AUTHORABLE_OPS.has(op))
+  .map((op) => ({ value: op, label: op }))
 
 let uidCounter = 0
 const nextUid = () => `step-${uidCounter++}`
@@ -75,7 +70,7 @@ export function PipelineBuilder({ value, onChange }: PipelineBuilderProps) {
     onChange(value.filter((_s, i) => i !== index))
   }
 
-  const addStep = (op: TransformStep['op']) => {
+  const addStep = (op: string) => {
     setUids([...uids, nextUid()])
     onChange([...value, defaultStep(op)])
   }
@@ -161,14 +156,14 @@ function StepCard({ uid, step, onChange, onRemove }: StepCardProps) {
 }
 
 // ── AddStepControl — op picker + add button ───────────────────────────────────
-function AddStepControl({ onAdd }: { onAdd: (op: TransformStep['op']) => void }) {
+function AddStepControl({ onAdd }: { onAdd: (op: string) => void }) {
   return (
     <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
       <Select
         size="small"
         displayEmpty
         value=""
-        onChange={(e) => { if (e.target.value) onAdd(e.target.value as TransformStep['op']) }}
+        onChange={(e) => { if (e.target.value) onAdd(String(e.target.value)) }}
         sx={{ width: 160 }}
         renderValue={(v) => (v ? String(v) : 'ოპერაცია...')}
       >
