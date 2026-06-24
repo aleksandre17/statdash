@@ -38,8 +38,13 @@ Note: `statdash-validate-pg` is freshly migrated; `statdash-validate-api` is **s
 
 ---
 
-## In flight / next (for the morning)
+## Constructor vision + execution (post-validation)
 
-- **Constructor vision study** (strongest architect, Opus) — running in background: surveys every best-in-class config/visual builder (Webflow/Builder.io/Plasmic/Grafana/Retool/Gutenberg/Tableau/…), audits FULL coverage (nothing in our renderer un-authorable in the Constructor), the non-programmer-UX vision, the packages decision, a prioritized roadmap. Synthesis lands in architect memory `adr_*` + I'll relay it.
-- **Deferred (by design)**: the `validateConfig` WARN→hard-reject flip (run the backfill audit on a real config corpus, then one boolean); gold-plating doors (Vega view-composition, RSC, PDF target, full ESMS) — YAGNI until needed.
-- **Remaining quality sweeps** held until the Constructor study returns (it reads the panel/engine broadly — avoiding concurrent edits).
+- **Constructor vision study DONE** → `architect/adr_constructor_vision_north_star.md`. Verdict: our Constructor spine is best-in-class (one-renderer lossless WYSIWYG, open registry, cube-profile discovery, VariantDef authoring); we lag on total renderer COVERAGE (the hard requirement) + binding ergonomics. Coverage-gap inventory + non-programmer-UX vision + packages decision (adopt dnd-kit/cmdk/react-colorful; refuse RJSF/Monaco/Craft.js — a 2nd render model breaks our lossless round-trip) + a V0–V7 roadmap.
+- **EXECUTED — Coverage Fitness #1 + V1** (commit 0b9fb7b): a north-star gate that enumerates every DataSpec/transform-op/ParamDef/VisibilityExpr from the engine SSOT (compile-time-exhaustive) and asserts each has an authoring surface or a roadmap-keyed `COVERAGE_TODO` entry — "build anything" is now MEASURABLE + regression-proof. V1 closed **13/14 transform ops** schema-driven (op carries its PropSchema → the Inspector renders it; no bespoke forms).
+- **Build-enforced coverage backlog** (the visible gap list): V0 FilterSchema/ParamDef authoring (biggest gap) · V2 row-list/by-mode/pivot/transform DataSpec editors · V3 Page Inspector + methodology · V4 VisibilityExpr builder.
+- **Rendering + data-reference study RUNNING** (architect, Opus, background): best-in-class renderers (Vega-Lite/Grafana/Tableau-VizQL/Malloy/Cube/Looker…), the DATA-REFERENCE-TYPES audit ("how many ways nodes reference data, what's improvable"), and ADAPT-ours-up recommendations (possibly a unified semantic-layer model). The coverage builds (V0/V2/V4) are HELD for it — it may reshape the data-reference model, and it reads those layers broadly.
+
+## Deferred (by design)
+- `validateConfig` WARN→hard-reject flip (needs a real config corpus; WARN is the correct safe state).
+- Gold-plating doors: Vega view-composition, RSC, PDF target, full ESMS — YAGNI until needed.
