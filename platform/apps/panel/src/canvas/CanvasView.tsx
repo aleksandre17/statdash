@@ -38,6 +38,7 @@ import { setupCanvasRegistry } from './setupCanvasRegistry'
 import { CanvasOverlay }      from './CanvasOverlay'
 import { CanvasToolbar }      from './CanvasToolbar'
 import { useLivePreviewStores, type PreviewMode } from './useLivePreviewStores'
+import { useDebouncedLivePage } from './useDebouncedLivePage'
 import type { NodeBase }      from '@statdash/react/engine'
 import './canvas.css'
 
@@ -71,6 +72,13 @@ export function CanvasView({
   // to the static map (status 'unavailable') on any failure — never throws.
   const { stores, status } = useLivePreviewStores(mode)
 
+  // G3.2 — request-volume guard: in live mode, only the SETTLED page descriptor
+  // drives the data-fetching renderer (Layer 1), so an edit burst collapses to a
+  // single live query. Structural mode is identity passthrough (byte-identical,
+  // instant). The overlay (Layer 2) keeps the live `page` so selection/drop stay
+  // responsive — the debounce is scoped to the data-fetch layer only.
+  const renderedPage = useDebouncedLivePage(page, mode)
+
   const rootClass = `canvas-root${dragging ? ' canvas-root--dragging' : ''}`
 
   return (
@@ -82,7 +90,7 @@ export function CanvasView({
       <div className="canvas-layer canvas-layer--renderer" aria-hidden="true">
         <MemoryRouter>
           <SiteProvider stores={stores} nav={[]} pages={{}} i18n={CANVAS_I18N}>
-            <NodePageRenderer page={page} />
+            <NodePageRenderer page={renderedPage} />
           </SiteProvider>
         </MemoryRouter>
       </div>

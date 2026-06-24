@@ -129,6 +129,36 @@ describe('CanvasView — G3.1 live preview', () => {
     expect(buildStoreManifest).not.toHaveBeenCalled()
   })
 
+  it('(d) G3.2: rapid page (DataSpec) edits in live mode do NOT rebuild the store map', async () => {
+    // The live-store map keys off the cube binding (descriptors), NOT the page.
+    // Editing a node's DataSpec changes the page but not the descriptors, so the
+    // expensive buildStoreManifest must run ONCE across an edit burst — the map is
+    // stable and the debounced page feeds the renderer without cache-busting it.
+    const liveStore = { kind: 'live-store' }
+    buildStoreManifest.mockResolvedValue({ default: liveStore })
+    profile.mockResolvedValue(READY_PROFILE)
+    act(() => { useConstructorStore.setState({ dataSources: [cubeSource] }) })
+
+    const editedPage = (n: number) =>
+      ({ ...(page as object), _edit: n }) as unknown as NodePageConfig
+
+    const { rerender } = render(
+      <CanvasView page={editedPage(0)} onSelectNode={vi.fn()} onDropNode={vi.fn()} />,
+    )
+    fireEvent.click(screen.getByRole('radio', { name: 'ცოცხალი მონაცემები' }))
+    await waitFor(() => expect(buildStoreManifest).toHaveBeenCalledTimes(1))
+
+    // A burst of rapid DataSpec edits (new page identity each time).
+    for (let n = 1; n <= 8; n++) {
+      rerender(<CanvasView page={editedPage(n)} onSelectNode={vi.fn()} onDropNode={vi.fn()} />)
+    }
+
+    // The store map is built off the (unchanged) cube binding — still ONE build,
+    // no per-edit rebuild that would discard the cache (root-cause: descriptors,
+    // not page, drive the build).
+    expect(buildStoreManifest).toHaveBeenCalledTimes(1)
+  })
+
   it('(c3) fail-soft: buildStoreManifest throws → badge, no crash', async () => {
     buildStoreManifest.mockRejectedValue(new Error('API down'))
     profile.mockResolvedValue(READY_PROFILE)

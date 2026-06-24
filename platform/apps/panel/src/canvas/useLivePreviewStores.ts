@@ -25,7 +25,7 @@
 //  source change mid-flight never clobbers the current map.
 //
 import { useEffect, useMemo, useRef, useState } from 'react'
-import type { DataStore } from '@statdash/engine'
+import type { DataStore, DatasourceInstanceConfig } from '@statdash/engine'
 import { staticStore } from '@statdash/engine'
 import { buildStoreManifest } from '@statdash/react/engine'
 import { useActiveProfile } from '../discovery/useActiveProfile'
@@ -73,36 +73,41 @@ export function useLivePreviewStores(mode: PreviewMode): LivePreview {
   // dataset), 'loading', and 'error' all gate live OFF (fail-soft, no throw).
   const profileReady = profile.status === 'ready'
 
-  const [live, setLive] = useState<Record<string, DataStore> | null>(null)
-  const [failed, setFailed] = useState(false)
+  // The async build's outcome, TAGGED with the descriptors it was built for. The
+  // tag lets render decide validity by identity (below) instead of an effect
+  // clearing the state on every input change — so the effect owns ONLY the async
+  // build, never a synchronous mirror of the `canBuildLive` predicate.
+  //   • { for, map }    — a live map built for `for` (the descriptors identity).
+  //   • { for, failed } — the build for `for` failed soft (API down / unknown kind).
+  // `null` = nothing built yet for any input.
+  type BuildResult =
+    | { for: DatasourceInstanceConfig[]; map: Record<string, DataStore> }
+    | { for: DatasourceInstanceConfig[]; failed: true }
+  const [result, setResult] = useState<BuildResult | null>(null)
 
   // Monotonic build token — guards against a stale async build resolving after a
-  // newer request (toggle flip / source edit) and clobbering the current map.
+  // newer request (toggle flip / source edit) and clobbering the current result.
   const tokenRef = useRef(0)
 
   const canBuildLive = mode === 'live' && profileReady && descriptors.length > 0
 
   useEffect(() => {
-    // Not live (or cannot be) → drop any prior live map; structural takes over.
-    if (!canBuildLive) {
-      setLive(null)
-      setFailed(false)
-      return
-    }
+    // Single job: run the async build when (and only when) live is buildable. The
+    // "not buildable" case needs NO setState here — render derives structural
+    // purely from `canBuildLive`, and a stale `result` is ignored by its tag.
+    if (!canBuildLive) return
 
     const token = ++tokenRef.current
-    setFailed(false)
 
     buildStoreManifest(descriptors)
       .then((map) => {
         if (token !== tokenRef.current) return   // superseded — ignore
-        setLive(map)
+        setResult({ for: descriptors, map })
       })
       .catch(() => {
         if (token !== tokenRef.current) return
         // API unreachable / unknown kind → fail soft to structural + badge.
-        setLive(null)
-        setFailed(true)
+        setResult({ for: descriptors, failed: true })
       })
 
     // On unmount or dependency change, invalidate the in-flight build.
@@ -112,17 +117,22 @@ export function useLivePreviewStores(mode: PreviewMode): LivePreview {
   return useMemo<LivePreview>(() => {
     if (mode !== 'live') return { stores: STRUCTURAL_STORES, status: 'structural' }
 
-    // Live requested. A built map → live. Otherwise structural fallback, flagged
-    // 'unavailable' so the caller surfaces the non-blocking badge. The 'loading'
-    // window (descriptors valid, build in flight) also shows structural without a
-    // badge — it is the expected transient, not a failure.
-    if (live) return { stores: live, status: 'live' }
+    // A stored result counts only when it belongs to the CURRENT descriptors and
+    // live is still buildable — otherwise it is stale (toggle-off / source edit)
+    // and render derives structural directly, no setState reset needed.
+    const current = canBuildLive && result?.for === descriptors ? result : null
+
+    // Built map → live. Otherwise structural fallback, flagged 'unavailable' so the
+    // caller surfaces the non-blocking badge. The 'loading' window (descriptors
+    // valid, build in flight) shows structural WITHOUT a badge — the expected
+    // transient, not a failure.
+    if (current && 'map' in current) return { stores: current.map, status: 'live' }
 
     const unavailable =
-      failed || !profileReady || descriptors.length === 0
+      (current?.failed ?? false) || !profileReady || descriptors.length === 0
     return {
       stores: STRUCTURAL_STORES,
       status: unavailable ? 'unavailable' : 'structural',
     }
-  }, [mode, live, failed, profileReady, descriptors])
+  }, [mode, canBuildLive, result, profileReady, descriptors])
 }
