@@ -9,7 +9,7 @@
 //
 
 import type { DataSpec } from '@statdash/engine'
-import type { ChromeSlotConfig } from '@statdash/react/engine'
+import type { ChromeSlotConfig, PageConfigBase } from '@statdash/react/engine'
 
 // ── Layer 1: Data ─────────────────────────────────────────────────────────────
 
@@ -118,6 +118,22 @@ export interface CanvasNode {
   childIds:  string[]
 }
 
+/**
+ * Page-level config carried losslessly across the edit→save round-trip.
+ *
+ * Everything on `PageConfigBase` EXCEPT the structural identity fields the
+ * CanvasPage already models as first-class columns:
+ *   - `id`   ⇒ CanvasPage.id
+ *   - `path` ⇒ CanvasPage.slug
+ * (`type`/`children` are NODE-structural, owned by the inner-page root + nodeIds.)
+ *
+ * So `meta` holds frame · chrome · color · presentation · filterSchema · vars ·
+ * modeOrder · schemaVersion — and AUTOMATICALLY any field a future PageConfigBase
+ * grows, because canvasPageAdapter carries it by structural pass-through, not by
+ * a hand-maintained key list (mirrors how CanvasNode.props carries node body fields).
+ */
+export type PageMeta = Omit<PageConfigBase, 'id' | 'path'>
+
 export interface CanvasPage {
   id:       string
   title:    { ka: string; en: string }
@@ -126,6 +142,13 @@ export interface CanvasPage {
   nodeIds:  string[]
   /** All nodes keyed by id (flat map for O(1) lookup). */
   nodes:    Record<string, CanvasNode>
+  /**
+   * Page-level engine config (frame/chrome/color/presentation/filterSchema/vars/
+   * modeOrder/…) preserved verbatim across edit→save. Absent when the page carries
+   * none. See {@link PageMeta}. Carried generically by canvasPageAdapter so a new
+   * PageConfigBase field survives the round-trip with zero adapter change.
+   */
+  meta?:    PageMeta
 }
 
 // ── Wizard ────────────────────────────────────────────────────────────────────

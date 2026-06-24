@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { toNodePageConfig, fromNodePageConfig } from './canvasPageAdapter'
-import type { CanvasPage }  from '../types/constructor'
-import type { NodePageConfig } from '@statdash/react/engine'
+import type { CanvasPage, PageMeta }  from '../types/constructor'
+import type { NodePageConfig, PageConfigBase } from '@statdash/react/engine'
 
 const page: CanvasPage = {
   id:    'page-2',
@@ -106,3 +106,130 @@ describe('round-trip fitness (ADR): fromNodePageConfig ∘ toNodePageConfig = id
     expect(restored).toEqual(nestedPage)
   })
 })
+
+// ── PAGE-LEVEL round-trip fitness (P-3): every PageConfigBase field survives ──
+//
+//  The subtree-only round-trip above is a FALSE-GREEN for page-level config:
+//  toNodePageConfig used to hardcode { type,id,path,children } and DROP frame /
+//  chrome / color / presentation / filterSchema / vars / modeOrder / schemaVersion.
+//  This block populates EVERY non-identity PageConfigBase field and asserts a
+//  complete round-trip, so dropping ANY of them fails the test.
+//
+//  COVERAGE GUARD: `META_FIELD_COVERAGE` is a `Record<keyof PageMeta, true>` — it
+//  will not type-check unless it lists every field PageMeta has (= PageConfigBase
+//  minus the id/path identity columns). We then assert at runtime that the fixture's
+//  `meta` carries each guarded key, so the test can't rot as PageConfigBase grows:
+//  a new field forces a compile error here AND a new fixture value.
+
+// id/path are CanvasPage identity columns (id/slug), not part of `meta`.
+const META_FIELD_COVERAGE: Record<keyof PageMeta, true> = {
+  schemaVersion: true,
+  frame:         true,
+  chrome:        true,
+  color:         true,
+  presentation:  true,
+  filterSchema:  true,
+  vars:          true,
+  modeOrder:     true,
+}
+
+// A fully-populated PageMeta — one concrete value per guarded field.
+const fullMeta: PageMeta = {
+  schemaVersion: 2,
+  frame:         'landing',
+  chrome:        { header: 'minimal', sidebar: { variant: 'compact', config: { collapsed: true } } },
+  color:         '#1f77b4',
+  presentation:  { color: '#1f77b4', label: 'overview' },
+  filterSchema: {
+    bars: {
+      main: {
+        position: 'sticky',
+        filters: {
+          time: { type: 'year-select', label: { ka: 'წელი', en: 'Year' }, default: 2023 },
+        },
+      },
+    },
+    context: { timeMode: 'mode', dims: { time: 'time' } },
+  },
+  vars:      { yearLabel: { op: 'lookup', key: 'time', map: { '2023': 'Y2023' } } },
+  modeOrder: ['year', 'range'],
+}
+
+// A COMPLETE page: identity columns + every page-level field + a nested subtree.
+const fullPage: CanvasPage = {
+  id:      'page-full',
+  title:   { ka: 'სრული', en: 'Full' },
+  slug:    'full',
+  nodeIds: ['n1', 'n2'],
+  nodes: {
+    n1: { id: 'n1', type: 'filter-bar', props: { position: 'sticky' }, childIds: [] },
+    n2: { id: 'n2', type: 'section', variant: 'card', props: { title: 'Sec' }, childIds: ['c1'] },
+    c1: { id: 'c1', type: 'kpi-strip', props: { items: [{ id: 'k' }] }, childIds: [] },
+  },
+  meta: fullMeta,
+}
+
+describe('page-level round-trip fitness (P-3): every PageConfigBase field survives', () => {
+  it('coverage guard — fixture exercises every PageMeta field (cannot rot as type grows)', () => {
+    // The Record<keyof PageMeta, true> above is the compile-time half; this is the
+    // runtime half — the fixture's meta must actually carry each guarded key.
+    for (const key of Object.keys(META_FIELD_COVERAGE) as Array<keyof PageMeta>) {
+      expect(fullMeta[key], `fixture meta is missing PageConfigBase field "${key}"`).toBeDefined()
+    }
+  })
+
+  it('toNodePageConfig spreads every meta field onto the page root', () => {
+    const cfg = toNodePageConfig(fullPage) as unknown as Record<string, unknown>
+    expect(cfg.frame).toBe('landing')
+    expect(cfg.chrome).toEqual(fullMeta.chrome)
+    expect(cfg.color).toBe('#1f77b4')
+    expect(cfg.presentation).toEqual(fullMeta.presentation)
+    expect(cfg.filterSchema).toEqual(fullMeta.filterSchema)
+    expect(cfg.vars).toEqual(fullMeta.vars)
+    expect(cfg.modeOrder).toEqual(['year', 'range'])
+    expect(cfg.schemaVersion).toBe(2)
+    // identity columns still come from the CanvasPage, not meta
+    expect(cfg.id).toBe('page-full')
+    expect(cfg.path).toBe('full')
+    expect(cfg.type).toBe('inner-page')
+  })
+
+  it('fromNodePageConfig(toNodePageConfig(p)) ≡ p — COMPLETE page is lossless', () => {
+    const restored = fromNodePageConfig(toNodePageConfig(fullPage), fullPage.title)
+    expect(restored).toEqual(fullPage)
+  })
+
+  it('is idempotent under repeated round-trips with full meta', () => {
+    const once  = fromNodePageConfig(toNodePageConfig(fullPage), fullPage.title)
+    const twice = fromNodePageConfig(toNodePageConfig(once), fullPage.title)
+    expect(twice).toEqual(once)
+  })
+
+  it('a meta-less page round-trips WITHOUT a spurious empty meta object', () => {
+    // `page` (top of file) has no page-level fields → restored must have no `meta`.
+    const restored = fromNodePageConfig(toNodePageConfig(page), page.title)
+    expect('meta' in restored).toBe(false)
+  })
+
+  it('carries a NEW (unmodelled) page-root field generically — structural pass-through', () => {
+    // Proves the adapter is pass-through, not a hand-listed allowlist: a field the
+    // adapter has never heard of still survives, so a future PageConfigBase field
+    // round-trips with zero adapter edit.
+    const cfg = {
+      type: 'inner-page', id: 'p', path: 'p',
+      futureField: { some: 'value' },
+      children: [],
+    } as unknown as NodePageConfig
+    const restored = fromNodePageConfig(cfg)
+    expect((restored.meta as Record<string, unknown>).futureField).toEqual({ some: 'value' })
+    const reprojected = toNodePageConfig(restored) as unknown as Record<string, unknown>
+    expect(reprojected.futureField).toEqual({ some: 'value' })
+  })
+})
+
+// Type-level sanity: PageMeta is exactly PageConfigBase minus id/path. If a future
+// PageConfigBase field is added, META_FIELD_COVERAGE above stops type-checking.
+type _AssertMetaMatchesContract =
+  keyof PageMeta extends Exclude<keyof PageConfigBase, 'id' | 'path'> ? true : never
+const _metaContractHolds: _AssertMetaMatchesContract = true
+void _metaContractHolds
