@@ -1,6 +1,10 @@
 # BOARD — statdash-platform
 
-_Last updated: 2026-06-23_
+_Last updated: 2026-06-24._
+> ⚠️ This board has lagged reality repeatedly. The AUTHORITATIVE current state is
+> **`work/OVERNIGHT-2.md`** (real-stack validated: V1→V31 + 1194 tests on real Postgres;
+> wire-contract floor, theming spine, variant spine, capability-driven nav, de-privileging,
+> engine/api quality sweeps — all GREEN on `main`). Trust the code + that report over rows below.
 
 ---
 
