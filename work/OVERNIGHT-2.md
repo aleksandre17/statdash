@@ -45,6 +45,22 @@ Note: `statdash-validate-pg` is freshly migrated; `statdash-validate-api` is **s
 - **Build-enforced coverage backlog** (the visible gap list): V0 FilterSchema/ParamDef authoring (biggest gap) · V2 row-list/by-mode/pivot/transform DataSpec editors · V3 Page Inspector + methodology · V4 VisibilityExpr builder.
 - **Rendering + data-reference study RUNNING** (architect, Opus, background): best-in-class renderers (Vega-Lite/Grafana/Tableau-VizQL/Malloy/Cube/Looker…), the DATA-REFERENCE-TYPES audit ("how many ways nodes reference data, what's improvable"), and ADAPT-ours-up recommendations (possibly a unified semantic-layer model). The coverage builds (V0/V2/V4) are HELD for it — it may reshape the data-reference model, and it reads those layers broadly.
 
+## Two architecture studies delivered (architect memory)
+- **`adr_constructor_vision_north_star.md`** — best-in-class builder survey + full coverage audit + non-programmer UX + packages + V0–V7 roadmap.
+- **`adr_data_reference_render_vision.md`** — "strong grammar, fragmented reference surface": **12 overlapping data-reference mechanisms**, 3 fault lines (F-A spec sprawl, F-B five `$`-ref vocabularies + a `$ctx` name collision, F-C the **semantic layer is orphaned/unwired**). Lead: long-format `EngineRow`, `extractRequirements` (zero N+1). Decisive move = **wire the orphan**. Roadmap R1→R6→R4→R3→R2→R5.
+
+## Executed overnight (all green, pushed, byte-identical/additive)
+- **R1 — wired the semantic layer into the binding path** (`resolveMeasureRef`): a metric-id now flows unit/methodology/default-dims/agg into queries; raw codes byte-identical (same object ref). The decisive data-model move. (fdc2ea9)
+- **Constructor coverage** (the hard requirement — "nothing un-authorable"): a north-star **Coverage Fitness #1** gate (compile-time-exhaustive from the engine SSOT) + closed **3 of 4 categories** — **V1** transform ops (13/14, schema-driven) · **V0** page-level FilterSchema/ParamDef authoring (the biggest gap, 7 types) · **V4** recursive VisibilityExpr show-when builder (10 ops). All schema-driven (OCP — op/param/visibility carries its PropSchema → the **existing Inspector** renders it; cube-bound pick-don't-type).
+
+## Remaining roadmap — for your greenlight (model-reshaping, has trade-offs)
+- **V2** — DataSpec convenience editors (row-list/by-mode/pivot/transform). The LAST coverage category. Best done AFTER **R3** (desugar) so fewer primitives need editors.
+- **R3** (desugar timeseries/growth/ratio-list/pivot → `query`+sugar → 3 primitives) · **R4** (unify the 5 `$`-ref vocabularies under one dispatcher + fix the `$ctx` collision; serialized-config → migration) · **R2** (enrich encoding channels with type/key) · **R5** (first-class timeDimension). These reshape the (real-DB-validated) data-model — your call before I execute.
+- **V5–V7** Constructor UX polish (field-wells/Show-Me · Outline tree + Cmd-K · templates) — adopt `dnd-kit`(in)/`cmdk`/`react-colorful`.
+
 ## Deferred (by design)
 - `validateConfig` WARN→hard-reject flip (needs a real config corpus; WARN is the correct safe state).
-- Gold-plating doors: Vega view-composition, RSC, PDF target, full ESMS — YAGNI until needed.
+- Gold-plating doors: Vega view-composition, RSC, PDF target, full ESMS, LOD/granularity — YAGNI until needed.
+
+## State at handoff
+build:engine+geostat+panel ✅ · typecheck ✅ · lint **0 errors** ✅ · **1209 tests** (offline) / **1194 validated on real Postgres** ✅ · all pushed to `main`.
