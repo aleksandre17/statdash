@@ -4,27 +4,30 @@ import { resolve, dirname, join } from 'path'
 import { existsSync, readFileSync } from 'fs'
 import { createRequire } from 'module'
 
-// ── Optional-peer singleton resolution (clean-install / Docker correctness) ──
+// ── Source-package peer resolution (clean-install / Docker correctness) ──
 //
-// react-leaflet · leaflet · react-apexcharts · apexcharts are declared as OPTIONAL
-// peerDependencies of @statdash/plugins (split-ready design; .npmrc
-// shamefully-hoist=false keeps strict isolation). The app resolves @statdash/* to
-// package SOURCE (the aliases below), so Vite walks the plugins source and hits the
-// bare `import { GeoJSON } from 'react-leaflet'` (and apexcharts) from WITHIN
-// packages/plugins. Under strict isolation those optional peers are NOT linked into
-// packages/plugins/node_modules, so on a clean install Vite substitutes an empty
-// `__vite-optional-peer-dep:react-leaflet:@statdash/plugins` stub → MISSING_EXPORT.
-// (A dirty local node_modules masks this; the Docker build does not.)
+// The app resolves @statdash/* to package SOURCE (the aliases below), so Vite/Rolldown
+// walks that source and hits the workspace packages' OWN bare peer imports from WITHIN
+// packages/* — `import … from 'react-router-dom'` in packages/react, `from 'i18next'`,
+// `from 'react-leaflet'` in packages/plugins, etc. Those are declared as
+// `peerDependencies` of the @statdash/* packages (split-ready design; the map/chart
+// peers are additionally `optional` — not every consumer renders them). With .npmrc
+// shamefully-hoist=false enforcing strict isolation, those peers are NOT linked into
+// packages/<pkg>/node_modules, so on a clean install the bundler cannot resolve them
+// in-graph: required peers fail with `failed to resolve import`, and optional peers get
+// substituted with an empty `__vite-optional-peer-dep:…` stub → MISSING_EXPORT. (A
+// dirty local node_modules masks this; the clean Docker build does not.)
 //
-// This app DECLARES all four as DIRECT dependencies, so the real copies live in its
-// resolvable graph. We pin each bare specifier (exact-match regex /^id$/, so subpath
-// imports like 'leaflet/dist/leaflet.css' stay untouched) to that package's best ESM
-// ENTRY FILE, resolved from the app's OWN require — an ABSOLUTE path to the actual
-// installed location, computed at config load. Install-structure INDEPENDENT: it asks
-// the app's resolver where the package really is (no hoist assumption, no guessed
-// string), so a clean Docker install resolves the same as a dirty local one. dedupe
-// additionally pins these + react/react-dom to a single copy without disturbing the
-// node_modules-path-based chunk groups above.
+// FIX (data-driven, no whack-a-mole list): we read the `peerDependencies` of every
+// @statdash/* package the app bundles from source (SOURCE_PACKAGE_DIRS — the SSOT is
+// each package.json), take their UNION, and pin each bare specifier to the app's OWN
+// installed copy. The app DECLARES every one of these as a DIRECT dependency, so the
+// real copy lives in its resolvable graph; we never guess a hoist path. Each alias is
+// an exact-match regex /^id$/, so subpath imports like 'leaflet/dist/leaflet.css' stay
+// untouched. The optional map/chart peers are simply members of this union — no
+// separate hardcoded list. dedupe additionally pins the singletons (react/react-dom/
+// react-router-dom) to a single copy without disturbing the node_modules-path-based
+// chunk groups above.
 //
 // peerEntry() resolves the package ROOT (walk up to the package.json whose `name`
 // matches — react-leaflet does NOT expose "./package.json", so we cannot resolve that
@@ -35,25 +38,82 @@ import { createRequire } from 'module'
 // no `default` export (MISSING_EXPORT). Its exports `import` condition is the right
 // ESM build, which this selection picks.
 const req = createRequire(import.meta.url)
+// Resolve a package-exports `.` target to a string subpath, walking nested condition
+// objects (e.g. i18next's exports['.'].import is itself { types, default }). We prefer
+// the ESM/browser conditions in order. Returns undefined if no string target is found.
+const pickExportTarget = (node: unknown): string | undefined => {
+  if (typeof node === 'string') return node
+  if (node && typeof node === 'object') {
+    const obj = node as Record<string, unknown>
+    for (const cond of ['source', 'import', 'browser', 'module', 'default']) {
+      if (cond in obj) {
+        const hit = pickExportTarget(obj[cond])
+        if (hit) return hit
+      }
+    }
+  }
+  return undefined
+}
 const peerEntry = (id: string): string => {
-  for (let dir = dirname(req.resolve(id)); dir !== dirname(dir); dir = dirname(dir)) {
+  let resolved: string
+  try {
+    resolved = req.resolve(id)
+  } catch {
+    // The app declares every source-package peer as a direct dependency, so this should
+    // never happen. Fail loudly (never emit `undefined` into resolve.alias) if it does.
+    throw new Error(
+      `[vite.config] peer "${id}" (a peerDependency of a bundled @statdash/* package) ` +
+        `is not resolvable from this app — declare it as a direct dependency.`,
+    )
+  }
+  for (let dir = dirname(resolved); dir !== dirname(dir); dir = dirname(dir)) {
     const manifest = join(dir, 'package.json')
     if (existsSync(manifest)) {
       const pkg = JSON.parse(readFileSync(manifest, 'utf8'))
       if (pkg.name !== id) continue
-      const dot = pkg.exports?.['.']
-      const sub =
-        (typeof dot === 'string' ? dot : dot?.import ?? dot?.default) ?? pkg.module ?? pkg.main
+      // exports['.'] ESM target (recursive through nested conditions) → module → main.
+      const sub = pickExportTarget(pkg.exports?.['.']) ?? pkg.module ?? pkg.main
+      if (typeof sub !== 'string') {
+        throw new Error(`[vite.config] cannot determine ESM entry subpath for "${id}"`)
+      }
       return resolve(dir, sub)
     }
   }
   throw new Error(`[vite.config] cannot resolve entry for "${id}"`)
 }
-const OPTIONAL_PEERS = ['react-leaflet', 'leaflet', 'react-apexcharts', 'apexcharts'] as const
-const optionalPeerAliases = OPTIONAL_PEERS.map((id) => ({
+
+// The @statdash/* packages this app bundles from SOURCE (mirror of the resolve.alias
+// source entries below). Their package.json `peerDependencies` are the SSOT for which
+// bare peers Vite will encounter in-graph.
+const SOURCE_PACKAGE_DIRS = [
+  'contracts',
+  'expr',
+  'core',
+  'charts',
+  'react',
+  'plugins',
+  'styles',
+].map((d) => resolve(__dirname, '../../packages', d))
+
+const sourcePackagePeers = (): string[] => {
+  const names = new Set<string>()
+  for (const dir of SOURCE_PACKAGE_DIRS) {
+    const manifest = join(dir, 'package.json')
+    if (!existsSync(manifest)) continue
+    const pkg = JSON.parse(readFileSync(manifest, 'utf8'))
+    for (const name of Object.keys(pkg.peerDependencies ?? {})) names.add(name)
+  }
+  return [...names]
+}
+
+const PEER_PACKAGES = sourcePackagePeers()
+const peerAliases = PEER_PACKAGES.map((id) => ({
   find: new RegExp(`^${id}$`),
   replacement: peerEntry(id),
 }))
+// Singletons that MUST be a single copy across the graph (the always-required peers).
+// dedupe is by bare-name; optional/feature peers don't need single-instance pinning.
+const PEER_SINGLETONS = ['react', 'react-dom', 'react-router-dom']
 
 // Panel (Constructor platform) — package layers resolved via aliases.
 //
@@ -111,14 +171,16 @@ export default defineConfig({
     // exports maps (e.g. "@statdash/expr": { source: "./index.ts", import: "./dist/index.js" })
     // without needing a build step during development.
     conditions: ['source', 'browser', 'module', 'import', 'default'],
-    // Force a single copy of these singletons (the optional peers + React runtime)
-    // regardless of where pnpm physically places them in the .pnpm store.
-    dedupe: ['react', 'react-dom', 'react-leaflet', 'leaflet', 'react-apexcharts', 'apexcharts'],
+    // Force a single copy of the always-required peer singletons regardless of where
+    // pnpm physically places them in the .pnpm store.
+    dedupe: PEER_SINGLETONS,
     alias: [
-      // Optional-peer singletons FIRST (exact-match regex) so the bare-specifier
-      // imports inside packages/plugins source resolve to the app's REAL installed
-      // copy instead of the empty __vite-optional-peer-dep stub. See header note.
-      ...optionalPeerAliases,
+      // Source-package peers FIRST (exact-match regex) so the bare-specifier imports
+      // inside the @statdash/* source (react-router-dom, i18next, react-leaflet, …)
+      // resolve to the app's REAL installed copy instead of an unresolved import or
+      // the empty __vite-optional-peer-dep stub. Data-driven from package peerDeps;
+      // see header note.
+      ...peerAliases,
       // @statdash/contracts — zero-dep shared boundary types (innermost layer).
       { find: '@statdash/contracts', replacement: resolve(__dirname, '../../packages/contracts/src/index.ts') },
       // @statdash/plugins must come before @plugins (more specific prefix wins).

@@ -46,17 +46,12 @@ ENV VITE_API_STATS_URL=$VITE_API_STATS_URL
 COPY . .
 # Production packaging runs vite ONLY — never `tsc -b` (type-checking the whole
 # monorepo via ../../packages is a category error in a per-app image; the `build`
-# script keeps tsc as the local gate). Vite builds @statdash/* from SOURCE, so the
-# build must resolve those packages' PEER deps (react-router-dom, i18next,
-# react-leaflet, …) FROM the package source. Under the repo's `shamefully-hoist=false`
-# (strict isolation, a deliberate dev-time split-ready guarantee), pnpm never places a
-# package's peers in its own node_modules, so a source build can't resolve them. We
-# therefore HOIST only inside this throwaway builder layer (`--shamefully-hoist`):
-# node_modules goes flat → every source package resolves its peers from the root. The
-# committed `.npmrc` is untouched (the split-ready guarantee holds for dev/CI); the
-# final nginx stage carries only the static dist. (vite.config.ts's resolve.alias still
-# pins the optional-peer singletons — esp. react-apexcharts' ESM entry.)
-RUN pnpm install --frozen-lockfile --shamefully-hoist
+# script keeps tsc as the local gate). Vite builds @statdash/* from SOURCE, so it must
+# resolve those packages' PEER deps (react/react-dom/react-router-dom/i18next +
+# optional leaflet/apexcharts). Under `shamefully-hoist=false` strict isolation those
+# peers aren't in the source packages' node_modules — so apps/geostat/vite.config.ts
+# resolve.alias's EVERY such peer to the app's own installed copy (the app declares
+# them all as direct deps). The filtered deps install is therefore sufficient.
 RUN pnpm --filter ./apps/geostat exec vite build
 
 # ─── Stage 5: production (nginx serving the static dist) ──────────────────────
