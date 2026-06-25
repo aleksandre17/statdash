@@ -98,7 +98,14 @@ const COVERAGE_TODO = {
     // joinByField carries already-resolved EngineRow[] (the caller resolves any
     // DataSpec to rows first) — NOT declaratively authorable by a non-programmer.
     // Permanent allowlist (same class as DataSpec `custom`): a programmatic op.
-    joinByField: 'PERMANENT — carries resolved EngineRow[], not a declarative shape',
+    //
+    // Its DECLARATIVE front-door is the `blend` op (B0): blend NAMES a secondary
+    // store + ObsQuery + shared-dim key (pure data, Law 2), carries a PropSchema
+    // (so it is surfaced, NOT allowlisted), and the react binding layer desugars
+    // blend → joinByField. So the "cross-store join" capability IS authorable via
+    // blend; joinByField stays the schema-less engine + permanent programmer
+    // escape underneath. (D3 / adr-data-blending-decision.)
+    joinByField: 'PERMANENT — carries resolved EngineRow[]; declarative front-door is `blend`',
   },
   dataSpecs: {
     // V2 DONE — the remaining DataSpec editors all shipped (full authoring

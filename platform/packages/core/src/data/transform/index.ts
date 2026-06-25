@@ -28,14 +28,24 @@ import {
   meltSchema, renameSchema, castSchema, concatSchema, templateSchema,
   addFieldSchema, selectSchema, aggregateSchema, rollupSchema, groupSchema,
   reduceSchema, windowSchema, joinSchema, deriveSchema, lookupSchema,
-  sortSchema, filterSchema,
+  sortSchema, filterSchema, blendSchema,
 } from './op-schemas'
+import type { RawRow } from './types'
 
 // Each op registers its handler AND its authoring PropSchema (OCP — the op is
 // the SSOT for both its runtime behavior and its Constructor editor; the panel
 // renders the schema through the generic Inspector, not a per-op form).
 registerTransformStep('addField',     applyAddField     as StepFn, addFieldSchema)
 registerTransformStep('aggregate',    applyAggregate    as StepFn, aggregateSchema)
+// blend — DECLARATIVE cross-store enrichment. It is the Constructor-authorable
+// front-door for joinByField (carries a schema → leaves COVERAGE_TODO), but it
+// has NO real core handler: resolving its secondary store needs the react
+// manifest (ctx.stores), which core must not see (Law 3). The react binding
+// layer (resolveBlends) rewrites every blend → joinByField BEFORE the pipeline
+// runs. The identity handler registered here is the safe fallback ONLY for a
+// blend that somehow reaches the core pipeline un-desugared: it cannot reach a
+// second store, so it passes rows through unchanged rather than crashing.
+registerTransformStep('blend',        ((rows: RawRow[]) => rows) as StepFn, blendSchema)
 registerTransformStep('cast',         applyCast         as StepFn, castSchema)
 registerTransformStep('concat',       applyConcat       as StepFn, concatSchema)
 registerTransformStep('derive',       applyDerive       as StepFn, deriveSchema)

@@ -13,7 +13,7 @@
 //
 
 import { interpretSpec, staticStore, CachedStore, applyEncoding, storeVal, applyPipeline, specDataSource } from '@statdash/engine'
-import type { DataRow, DataStore, EncodingSpec, PipelineContext, RawRow, SectionContext, DataSpec } from '@statdash/engine'
+import type { DataRow, DataStore, EncodingSpec, EngineRow, PipelineContext, RawRow, SectionContext, DataSpec, TransformStep } from '@statdash/engine'
 import type { NodeBase, RenderContext }                                                     from './types'
 
 // ── effectiveStoreKey — the metric→store precedence [M1] ──────────────
@@ -71,6 +71,105 @@ export function resolveStore(ctx: Pick<RenderContext, 'stores' | 'pageStoreKey'>
   return wrapper
 }
 
+// ── resolveStoreByKey — explicit-key store resolution (non-cascade) ───
+//
+//  The EXPLICIT-key sibling of resolveStore (which walks the pageStoreKey
+//  CSS cascade). A `blend` step NAMES its secondary store by key, so it must
+//  be fetched by that exact key — never the cascade winner. Falls back to the
+//  same staticStore the cascade does when the key is absent (a misconfigured
+//  blend then resolves zero secondary rows → a left/inner join is a safe no-op,
+//  never a crash).
+//
+//  Reuses the same _storeCache WeakMap wrapping as resolveStore, so the
+//  secondary store is wrapped in the SAME CachedStore instance whether it is
+//  reached as a primary (cascade) or a secondary (blend) — no N+1, no double
+//  fetch, val cache shared. The async/streaming bypasses mirror resolveStore.
+export function resolveStoreByKey(
+  ctx: Pick<RenderContext, 'stores'>,
+  key: string,
+): DataStore {
+  const raw = ctx.stores[key] ?? staticStore
+  if (raw === staticStore) return raw
+  if (raw.caps?.sync === false) return raw
+  if (raw.caps?.streaming === true) return raw
+  const cached = _storeCache.get(raw)
+  if (cached) return cached
+  const wrapper = new CachedStore(raw)
+  _storeCache.set(raw, wrapper)
+  return wrapper
+}
+
+// ── resolveBlends — the cross-store desugar (B1, the gap-crossing) ─────
+//
+//  Lowers every declarative `blend` step in a node's pipeline to the existing
+//  `joinByField` engine, resolved HERE in the react binding layer — the only
+//  layer that holds the store manifest (ctx.stores), so the arrow holds and
+//  core stays single-store (Law 3). For each blend step:
+//
+//    1. resolve `from.storeKey` against the manifest (resolveStoreByKey)
+//    2. interpretSpec the secondary `from.query` against THAT store (exactly
+//       as any primary query — same { type:'query', query, encoding } path)
+//    3. rewrite the step → { op:'joinByField', by, mode, source: secondaryRows }
+//
+//  Non-blend steps pass through unchanged (byte-identical to today's pipeline).
+//  The rewritten joinByField then runs in the existing applyPipeline — the
+//  engine is untouched. This is the Strangler-Fig desugar-in-the-binding-layer
+//  move: a declarative cross-store step compiles to the tested join engine.
+//
+//  `fields`/`rename` shape the secondary rows BEFORE the join (joinByField has
+//  no field-projection of its own — A-wins handles clobber, so we project the
+//  secondary rows down to the requested fields here). Default: all fields.
+export function resolveBlends(
+  transforms: TransformStep[],
+  ctx: RenderContext,
+): TransformStep[] {
+  // Fast path: no blend present ⇒ return the array untouched (byte-identical).
+  if (!transforms.some((s) => s.op === 'blend')) return transforms
+
+  return transforms.map((step) => {
+    if (step.op !== 'blend') return step
+    const { from, by, mode, fields, rename } = step
+
+    const secondaryStore = resolveStoreByKey(ctx, from.storeKey)
+    const rawSecondary   = interpretSpec(
+      { type: 'query', query: from.query, encoding: from.encoding } as DataSpec,
+      ctx.sectionCtx,
+      secondaryStore,
+    )
+    const enc = from.encoding
+    const resolved = enc
+      ? applyEncoding(rawSecondary, enc, (code) => storeVal(secondaryStore, code, ctx.sectionCtx))
+      : rawSecondary
+
+    const source = projectSecondary(resolved as EngineRow[], by, fields, rename)
+
+    return { op: 'joinByField', by, mode: mode ?? 'left', source } as TransformStep
+  })
+}
+
+// projectSecondary — narrow + rename the secondary rows before joinByField.
+//  Always keeps the join key `by`. `fields` (when present) restricts which
+//  other fields are merged; `rename` maps source field → target field. Pure,
+//  non-mutating (mirrors joinByField's own non-mutation contract).
+function projectSecondary(
+  rows:    EngineRow[],
+  by:      string,
+  fields?: string[],
+  rename?: Record<string, string>,
+): EngineRow[] {
+  if (!fields && !rename) return rows
+  const keep = fields ? new Set([by, ...fields]) : undefined
+  return rows.map((row) => {
+    const out: EngineRow = {}
+    for (const k of Object.keys(row)) {
+      if (keep && !keep.has(k)) continue
+      const target = k === by ? k : (rename?.[k] ?? k)
+      out[target] = row[k]
+    }
+    return out
+  })
+}
+
 export function resolveNodeRows(node: NodeBase, ctx: RenderContext): DataRow[] {
   const store = resolveStore(ctx)
 
@@ -92,7 +191,11 @@ export function resolveNodeRows(node: NodeBase, ctx: RenderContext): DataRow[] {
       display:     store.display,
       section:     ctx.sectionCtx,
     }
-    rows = applyPipeline(rows as unknown as RawRow[], node.transforms, pipeCtx) as unknown as DataRow[]
+    // B1: lower any declarative `blend` step → joinByField HERE (react holds the
+    // store manifest, so the second-store fetch lives in the binding layer — core
+    // stays single-store, Law 3). A pipeline with no blend returns untouched.
+    const lowered = resolveBlends(node.transforms, ctx)
+    rows = applyPipeline(rows as unknown as RawRow[], lowered, pipeCtx) as unknown as DataRow[]
   }
 
   return rows

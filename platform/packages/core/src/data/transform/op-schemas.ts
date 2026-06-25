@@ -174,6 +174,27 @@ export const filterSchema: PropSchema = [
     required: true },
 ]
 
+// ── blend — declarative cross-store enrichment lookup ─────────────────
+//  The Constructor-authorable front-door for joinByField: it NAMES a secondary
+//  store + an ObsQuery (resolved in the react binding layer where the manifest
+//  lives) rather than baking pre-resolved rows into config. `from` is a typed
+//  object sub-editor ({ storeKey, query, encoding? }) — the secondary-source
+//  declaration; `by` is the shared GENERIC dim key (Law 1); `mode` maps onto
+//  joinByField. This schema is what closes the joinByField coverage gap — the
+//  step is pure data (Law 2), so it round-trips and is non-programmer authorable.
+export const blendSchema: PropSchema = [
+  { field: 'from',   type: 'object', label: bi('მეორე წყარო ({storeKey,query,encoding?})', 'Secondary source ({storeKey,query,encoding?})'),
+    required: true },
+  { field: 'by',     type: 'string', label: bi('საერთო განზომილება', 'Shared dimension'), required: true },
+  { field: 'mode',   type: 'string', label: bi('შეერთების რეჟიმი', 'Join mode'), options: [
+    { value: 'left',  label: bi('მარცხენა (ნაგულისხმევი)', 'left (default)') },
+    { value: 'inner', label: bi('შიდა', 'inner') },
+    { value: 'outer', label: bi('გარე', 'outer') },
+  ] },
+  { field: 'fields', type: 'array',  label: bi('ასაღები ველები (ცარიელი = ყველა)', 'Fields to merge (empty = all)') },
+  { field: 'rename', type: 'object', label: bi('სახელის ცვლილებები', 'Renames') },
+]
+
 // ── join — SQL LEFT JOIN against an array source ──────────────────────
 export const joinSchema: PropSchema = [
   { field: 'with',    type: 'object', label: bi('წყარო ({$cl}/{$d}/inline)', 'Source ({$cl}/{$d}/inline)'),

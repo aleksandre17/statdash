@@ -1,5 +1,5 @@
-import type { DimVal, FilterValue }            from '../../sdmx'
-import type { EngineRow }                       from '../encoding'
+import type { DimVal, FilterValue, ObsQuery }  from '../../sdmx'
+import type { EngineRow, EncodingSpec }         from '../encoding'
 
 // ── RawRow — typed data row (Phase 2.1: alias to EngineRow) ──────────
 export type RawRow = EngineRow
@@ -300,6 +300,38 @@ export type TransformStep =
    * Field conflict: left (A) wins — right rows add new fields only.
    */
   | { op: 'joinByField'; by: string; mode: 'inner'|'left'|'outer'; source: readonly EngineRow[] }
+  /**
+   * blend — DECLARATIVE cross-store enrichment lookup (the authorable front-door
+   * for joinByField). The Constructor-safe way to join a SECOND store's rows onto
+   * the primary node's rows on a shared generic dimension (Tableau primary/secondary
+   * blend · Vega-Lite `lookup` whose `from` names a store · Grafana Mixed + join).
+   *
+   *   from   — the SECONDARY source, declared as pure data (Law 2 — NO functions):
+   *     storeKey — names the secondary store in the react manifest (`ctx.stores`).
+   *     query    — an ordinary ObsQuery resolved against THAT store.
+   *     encoding — optional EncodingSpec shaping the secondary rows.
+   *   by     — shared dimension key the join is keyed on (Law 1 — a GENERIC dim
+   *            name like 'time'/'geo', never a privileged 'year').
+   *   mode   — join mode (default 'left' — Tableau primary-driven). Maps 1:1 onto
+   *            joinByField's mode.
+   *   fields — which secondary fields to merge (default: all non-key).
+   *   rename — optional secondary field rename (avoid clobber; A/left wins).
+   *
+   * RESOLUTION (the arrow, Law 3): blend carries NO resolved rows and NO core
+   * handler can fetch the second store — the manifest lives only in react. The
+   * react binding layer (resolveNodeRows) resolves `from.storeKey` against
+   * `ctx.stores`, interpretSpec's `from.query` against that store, and REWRITES
+   * this step into a `joinByField` carrying the resolved `source` BEFORE the
+   * pipeline runs. Core stays single-store; a blend that ever reaches the core
+   * pipeline un-desugared is a safe no-op (it cannot reach a second store).
+   */
+  | { op:      'blend'
+      from:    { storeKey: string; query: ObsQuery; encoding?: EncodingSpec }
+      by:      string
+      mode?:   'inner' | 'left' | 'outer'
+      fields?: string[]
+      rename?: Record<string, string>
+    }
 
 // ── PipelineContext — services injected into pipe steps ───────────────
 //
