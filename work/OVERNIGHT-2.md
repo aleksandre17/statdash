@@ -53,10 +53,15 @@ Note: `statdash-validate-pg` is freshly migrated; `statdash-validate-api` is **s
 - **R1 — wired the semantic layer into the binding path** (`resolveMeasureRef`): a metric-id now flows unit/methodology/default-dims/agg into queries; raw codes byte-identical (same object ref). The decisive data-model move. (fdc2ea9)
 - **Constructor coverage** (the hard requirement — "nothing un-authorable"): a north-star **Coverage Fitness #1** gate (compile-time-exhaustive from the engine SSOT) + closed **3 of 4 categories** — **V1** transform ops (13/14, schema-driven) · **V0** page-level FilterSchema/ParamDef authoring (the biggest gap, 7 types) · **V4** recursive VisibilityExpr show-when builder (10 ops). All schema-driven (OCP — op/param/visibility carries its PropSchema → the **existing Inspector** renders it; cube-bound pick-don't-type).
 
-## Remaining roadmap — for your greenlight (model-reshaping, has trade-offs)
-- **V2** — DataSpec convenience editors (row-list/by-mode/pivot/transform). The LAST coverage category. Best done AFTER **R3** (desugar) so fewer primitives need editors.
-- **R3** (desugar timeseries/growth/ratio-list/pivot → `query`+sugar → 3 primitives) · **R4** (unify the 5 `$`-ref vocabularies under one dispatcher + fix the `$ctx` collision; serialized-config → migration) · **R2** (enrich encoding channels with type/key) · **R5** (first-class timeDimension). These reshape the (real-DB-validated) data-model — your call before I execute.
-- **V5–V7** Constructor UX polish (field-wells/Show-Me · Outline tree + Cmd-K · templates) — adopt `dnd-kit`(in)/`cmdk`/`react-colorful`.
+## Canonical-roadmap execution (continued — all green, byte-identical/additive, pushed)
+- **R4** ✅ — unified the 5 `$`-ref vocabularies under one `resolveRef` dispatcher (six sites) + fixed the `$ctx` collision (DataLink `$ctx`→`$param`, v4→v5 migrator; no live config used the old token → byte-identical). (a2c1283)
+- **R3** ✅ — desugared `pivot`→transform+melt **row-identically** (FF-DESUGAR-EQUIV vs the frozen resolver); **correctly left timeseries/growth/ratio-list DIRECT** (they read via `storeVal` OLAP-cell semantics `query`+pipe can't reconstruct — exact gap reported, no forced row-change). (471e035)
+- **V2** ✅ — DataSpec editors (row-list/by-mode-recursive/transform; pivot friendly) → **FULL authoring coverage**: the gate now proves every DataSpec/transform-op/ParamDef/VisibilityExpr has an authoring surface (only permanent `custom`/`joinByField`). (3d1d073)
+
+## Remaining (canonical order) + in-flight
+- **Multi-store / `storeId` study RUNNING** (strongest architect, Opus, background) — recover the sidelined multi-store vision from docs/records, compare to best-in-class multi-datasource (Grafana mixed-datasource/Superset/Tableau-blending/Cube/Looker/Retool), and a critical re-adoption verdict. (User-requested; reads the store/data layer broadly → R2/R5 held to avoid overlap.)
+- **R2** (enrich encoding channels with type/key — additive) · **R5** (first-class `timeDimension` — folds YearsSpec/fromDim/toDim) — next canonical data-model steps, after the multi-store study.
+- **V5–V7** Constructor UX polish (field-wells/Show-Me · Outline tree + Cmd-K · templates) — `dnd-kit`(in)/`cmdk`/`react-colorful`.
 
 ## Deferred (by design)
 - `validateConfig` WARN→hard-reject flip (needs a real config corpus; WARN is the correct safe state).
