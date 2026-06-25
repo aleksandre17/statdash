@@ -27,6 +27,7 @@
     "@emotion/react":       "catalog:",
     "@emotion/styled":      "catalog:",
     "zustand":              "catalog:",
+    "cmdk":                 "catalog:",
     "@dnd-kit/core":        "catalog:",
     "@dnd-kit/sortable":    "catalog:",
     "@dnd-kit/utilities":   "catalog:"

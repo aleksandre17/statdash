@@ -40,6 +40,8 @@ import {
   addNodePatch,
   updateNodePatch,
   removeNodePatch,
+  insertNodePatch,
+  moveNodePatch,
 } from './constructor.pages'
 
 // ── Full Store ─────────────────────────────────────────────────────────────────
@@ -80,6 +82,10 @@ export interface ConstructorStore extends ConstructorSession, WizardSlice, Histo
   addNode:          (pageId: string, node: CanvasNode, afterId?: string) => void
   updateNode:       (pageId: string, nodeId: string, patch: Partial<CanvasNode>) => void
   removeNode:       (pageId: string, nodeId: string) => void
+  /** Insert a NEW node into a container (parentId === pageId ⇒ top-level) at an index. */
+  insertNode:       (pageId: string, node: CanvasNode, parentId: string, index?: number) => void
+  /** Move an EXISTING node to a container at an index — Outline reorder / re-nest. */
+  moveNode:         (pageId: string, nodeId: string, parentId: string, index?: number) => void
 
   // History
   undo: () => void
@@ -278,6 +284,10 @@ export const useConstructorStore = create<ConstructorStore>()(
         set((s) => ({ ...pushHistory(s as ConstructorStore, `Update node`), ...updateNodePatch(s, pageId, nodeId, patch) }), false, 'canvas/updateNode'),
       removeNode: (pageId, nodeId) =>
         set((s) => ({ ...pushHistory(s as ConstructorStore, `Remove node`), ...removeNodePatch(s, pageId, nodeId) }), false, 'canvas/removeNode'),
+      insertNode: (pageId, node, parentId, index) =>
+        set((s) => ({ ...pushHistory(s as ConstructorStore, `Add ${node.type}`), ...insertNodePatch(s, pageId, node, parentId, index) }), false, 'canvas/insertNode'),
+      moveNode: (pageId, nodeId, parentId, index) =>
+        set((s) => ({ ...pushHistory(s as ConstructorStore, `Move node`), ...moveNodePatch(s, pageId, nodeId, parentId, index) }), false, 'canvas/moveNode'),
 
       // ── Page lifecycle (server FSM mirror) — thin wiring over pure reducers ──
       // These reflect SERVER truth + authoring UI state; deliberately NOT pushed

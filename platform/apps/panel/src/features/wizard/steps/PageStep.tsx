@@ -3,11 +3,13 @@ import { Box, Typography, Paper, Chip, Divider, Button } from '@mui/material'
 import DashboardIcon from '@mui/icons-material/Dashboard'
 import ViewModuleIcon from '@mui/icons-material/ViewModule'
 import DeleteIcon from '@mui/icons-material/Delete'
-import { nodeRegistry } from '@statdash/react/engine'
+import SearchIcon from '@mui/icons-material/Search'
 import { useConstructorStore, useActivePage, useSelectedNode, useChromeSelection } from '../../../store/constructor.store'
-import type { CanvasNode } from '../../../types/constructor'
 import { CanvasView }    from '../../../canvas/CanvasView'
 import { NodePalette }   from '../../../canvas/NodePalette'
+import { OutlineTree }   from '../../../outline'
+import { CommandPalette, useCommandPalette } from '../../../command'
+import { makeNode }      from '../../../canvas/insertNode'
 import { toNodePageConfig } from '../../../canvas/canvasPageAdapter'
 import { Inspector, ChromeInspectorPanel, ChromePalette } from '../../../inspector'
 import { setAtPath } from '../../../inspector/showWhen'
@@ -26,13 +28,14 @@ export function PageStep() {
   const selectedId    = useSelectedNode()
   const chromeSel     = useChromeSelection()
   const selectNode    = useConstructorStore((s) => s.selectNode)
-  const addNode      = useConstructorStore((s) => s.addNode)
+  const insertNode   = useConstructorStore((s) => s.insertNode)
   const updateNode   = useConstructorStore((s) => s.updateNode)
   const removeNode   = useConstructorStore((s) => s.removeNode)
   const markPageDirty = useConstructorStore((s) => s.markPageDirty)
   const goToStep     = useConstructorStore((s) => s.goToStep)
 
   const [dragging, setDragging] = useState(false)
+  const cmdk = useCommandPalette()
 
   const pageId   = page?.id ?? null
   const selected = page && selectedId ? page.nodes[selectedId] ?? null : null
@@ -43,32 +46,21 @@ export function PageStep() {
   // ── Drop handler: palette type → slot of a parent node ──────────────────
   //
   //  The overlay reports the parent node id (the engine node that owns the
-  //  slot) + the slot key. The page-root id === the CanvasPage id → a drop on
-  //  the page's content slot is a top-level addNode. A drop on any other node
-  //  appends to that node's children (store children[] are id references).
+  //  slot) + the slot key. The page-root id === the CanvasPage id → a top-level
+  //  insert; any other parentId nests under that node. Both go through the SAME
+  //  insertNode store path that Cmd-K / slash / Outline use, building the node
+  //  with the SAME makeNode helper — so an insert is byte-identical regardless
+  //  of the surface that triggered it (the V6 invariant).
   //
   const handleDrop = useCallback(
     (parentId: string, _slotKey: string, nodeType: string) => {
       if (!pageId || !page) return
-      const id = newNodeId()
-      // Seed props from the slice's registry defaults (open registry; no closed
-      // enum). A newly-registered type is storable the moment it's draggable.
-      const props = { ...(nodeRegistry.getDefaults(nodeType) ?? {}) }
-      const node: CanvasNode = { id, type: nodeType, props, childIds: [] }
-
-      if (parentId === pageId) {
-        addNode(pageId, node)
-      } else {
-        const parent = page.nodes[parentId]
-        if (!parent) return
-        // Register the node in the flat map, then link it under the parent.
-        addNode(pageId, node)
-        updateNode(pageId, parentId, { childIds: [...parent.childIds, id] })
-      }
+      const node = makeNode(nodeType, newNodeId())
+      insertNode(pageId, node, parentId)
       markPageDirty(pageId)   // local edit → reflect in the lifecycle badge
-      selectNode(id)
+      selectNode(node.id)
     },
-    [pageId, page, addNode, updateNode, markPageDirty, selectNode],
+    [pageId, page, insertNode, markPageDirty, selectNode],
   )
 
   // Write one prop on the selected node (the Inspector's onChange). `field` is
@@ -124,9 +116,25 @@ export function PageStep() {
       </Box>
 
       {/* ── Draft → publish workflow (list/open/save/publish/history) ──────── */}
-      <PageWorkflowBar />
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+        <Box sx={{ flex: 1 }}><PageWorkflowBar /></Box>
+        {/* Cmd-K entry point — the button is the discoverable equivalent of the
+            ⌘K shortcut (the palette is keyboard-first; this surfaces it). */}
+        <Button
+          size="small"
+          variant="outlined"
+          startIcon={<SearchIcon />}
+          onClick={() => cmdk.setOpen(true)}
+          sx={{ flex: '0 0 auto' }}
+        >
+          ⌘K
+        </Button>
+      </Box>
 
-      <Box sx={{ display: 'grid', gridTemplateColumns: '220px 1fr 280px', gap: 2, flex: 1, minHeight: 400 }}>
+      {/* Cmd-K / slash command palette — registry-driven insert + navigate. */}
+      <CommandPalette open={cmdk.open} onOpenChange={cmdk.setOpen} />
+
+      <Box sx={{ display: 'grid', gridTemplateColumns: '200px 200px 1fr 280px', gap: 2, flex: 1, minHeight: 400 }}>
         {/* ── Palette (engine registry) ─────────────────────────────────── */}
         <Paper variant="outlined" sx={{ p: 1.5, overflow: 'auto' }}>
           <Typography variant="overline" color="text.secondary">პალიტრა</Typography>
@@ -134,6 +142,12 @@ export function PageStep() {
           <Divider sx={{ my: 1.5 }} />
           <Typography variant="overline" color="text.secondary">გარსი</Typography>
           <ChromePalette />
+        </Paper>
+
+        {/* ── Outline (Webflow Navigator) — structural tree over the store ─ */}
+        <Paper variant="outlined" sx={{ p: 1, overflow: 'auto' }}>
+          <Typography variant="overline" color="text.secondary" sx={{ px: 0.5 }}>სტრუქტურა</Typography>
+          <OutlineTree />
         </Paper>
 
         {/* ── Live WYSIWYG canvas ───────────────────────────────────────── */}
