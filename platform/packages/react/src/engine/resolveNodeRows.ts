@@ -12,9 +12,28 @@
 //  Canonical target lives in migration/03-pipeline.md.
 //
 
-import { interpretSpec, staticStore, CachedStore, applyEncoding, storeVal, applyPipeline } from '@statdash/engine'
+import { interpretSpec, staticStore, CachedStore, applyEncoding, storeVal, applyPipeline, specDataSource } from '@statdash/engine'
 import type { DataRow, DataStore, EncodingSpec, PipelineContext, RawRow, SectionContext, DataSpec } from '@statdash/engine'
 import type { NodeBase, RenderContext }                                                     from './types'
+
+// ── effectiveStoreKey — the metric→store precedence [M1] ──────────────
+//
+//  PRECEDENCE (documented + locked by FF-METRIC-NAMES-STORE):
+//    explicit node `storeKey`  >  metric `dataSource`  >  page `pageStoreKey`  >  'default'
+//
+//  The middle tier (metric dataSource) is derived from the node's DataSpec via
+//  specDataSource (core) — a node with NO explicit storeKey whose spec
+//  references a metric naming a `dataSource` routes to that store. Returns the
+//  storeKey to set as pageStoreKey for this node + its descendants, or undefined
+//  to leave the page/default cascade untouched (byte-identical: a spec with no
+//  metric-with-dataSource yields undefined ⇒ exactly today's storeKey-only path).
+//
+//  Pure + framework-free — exported so the precedence is testable without a
+//  React render harness (renderNode consumes it inline).
+export function effectiveStoreKey(node: Pick<NodeBase, 'storeKey' | 'data'>): string | undefined {
+  if (node.storeKey) return node.storeKey
+  return node.data ? specDataSource(node.data as DataSpec) : undefined
+}
 
 // ── resolveStore — CSS cascade: nearest storeKey wins ─────────────────
 //

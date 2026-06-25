@@ -233,6 +233,10 @@ export type { KpiSpec, KpiValueSpec, KpiTrendSpec }                     from './
 export type { MetricDef, ResolvedMeasure }                             from './data/metric'
 export { registerMetric, getMetric, listMetrics, listMetricDefs,
          resolveMeasureRef, withMetricProvenance }                     from './data/metric'
+// metric→store binding [M1] — the Cube.dev `dataSource` middle tier. A node's
+// DataSpec → the storeKey its referenced metric names (plain string; react's
+// resolveStore consumes it, no core→react import — arrow clean).
+export { specDataSource, specMeasureRefs }                             from './data/metric-store'
 
 // ── Export formats [N16] — registry + built-ins (csv, sdmx-json) ──────
 //  Re-exporting the barrel also runs its side-effect: the csv / sdmx-json

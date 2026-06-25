@@ -27,7 +27,7 @@ import type { ScopeOverride }            from '@statdash/engine'
 import type { NodeDef, RenderContext, ChildrenArg, NodeBase, SlotChildren, VarMap } from './types'
 import { nodeRegistry }                  from './register-all'
 import { skeletonRegistry }              from './skeletonRegistry'
-import { resolveNodeRows, resolveCompareRows, resolveStore } from './resolveNodeRows'
+import { resolveNodeRows, resolveCompareRows, resolveStore, effectiveStoreKey } from './resolveNodeRows'
 import { NodeErrorBoundary }             from './NodeErrorBoundary'
 import { WrapStyleContext }              from './wrapStyleContext'
 import { middlewareRegistry }            from './middleware/registry'
@@ -244,13 +244,25 @@ export function renderNode(node: NodeBase, ctx: RenderContext): ReactNode {
   let ctxM: RenderContext = ctx
   for (const mw of mws) if (mw.before) ctxM = mw.before(migrated, ctxM)
 
-  // 2. node.storeKey cascade — nearest override wins for this node AND its descendants.
+  // 2. Effective-store cascade — nearest override wins for this node AND its descendants.
   //    pageStoreKey is the CSS-cascade variable resolveStore reads (resolveNodeRows.ts:19);
   //    renderNode previously never updated it from node.storeKey, so a section with
   //    storeKey:'accounts' inside a gdp page silently resolved the gdp store (gap #15/#23).
-  //    Setting it on ctxM here fixes this node's resolution and threads to children.
-  if (migrated.storeKey && migrated.storeKey !== ctxM.pageStoreKey) {
-    ctxM = { ...ctxM, pageStoreKey: migrated.storeKey }
+  //
+  //    M1 — metric→store binding (Cube.dev `dataSource`). PRECEDENCE, documented:
+  //      explicit node `storeKey`  >  metric `dataSource`  >  page `pageStoreKey`  >  'default'
+  //    The middle tier is derived from the node's DataSpec: if the node sets NO
+  //    explicit storeKey AND its spec references a metric that names a `dataSource`,
+  //    that metric's store wins over the page default. specDataSource (core) walks
+  //    the spec + resolves the metric ref through the SSOT seam, returning a plain
+  //    storeKey string — the routing crosses the arrow as data (no core→react import).
+  //    Byte-identical for every config without a metric-with-dataSource: the spec
+  //    returns undefined ⇒ this falls through to today's node.storeKey-only behaviour.
+  //    The precedence lives in effectiveStoreKey (resolveNodeRows.ts) — testable
+  //    without a React render harness, locked by FF-METRIC-NAMES-STORE.
+  const storeKey = effectiveStoreKey(migrated)
+  if (storeKey && storeKey !== ctxM.pageStoreKey) {
+    ctxM = { ...ctxM, pageStoreKey: storeKey }
   }
 
   // 2.x Resolve data rows (includes TransformStep pipeline in resolveNodeRows)

@@ -28,8 +28,14 @@ export interface MetricDef {
   methodology?:  string
   /** Longer description for tooltips / info-affordance. */
   description?:  LocaleString
-  /** Datasource id this metric belongs to. If absent, section default is used. */
-  datasource?:   string
+  /**
+   * Datasource id (storeKey) this metric lives in — the Cube.dev `dataSource`
+   * pattern: a measure NAMES its store. A node whose DataSpec references this
+   * metric routes to this store unless the node sets an explicit `storeKey`.
+   * If absent, the page/section default store is used (byte-identical to the
+   * single-store status quo). Pure data — a storeKey string, never a function.
+   */
+  dataSource?:   string
   /** Default dimension filters (e.g. { adjustment: 'S' }). Merged with query-time filters. */
   dims?:         Partial<Record<string, FilterValue>>
 }
@@ -94,6 +100,15 @@ export interface ResolvedMeasure {
   agg?:         'sum' | 'avg' | 'last'
   /** Metric-default dimension filters — merged into the query as DEFAULTS (explicit query-time filters win). */
   dims?:        Partial<Record<string, FilterValue>>
+  /**
+   * The storeKey the metric declares it lives in (Cube.dev `dataSource`).
+   * Present ONLY when the ref resolved to a registered metric-id that named a
+   * `dataSource`. The binding layer (react `resolveStore`) routes a referencing
+   * node to this store unless the node sets an explicit `storeKey` (precedence:
+   * explicit node storeKey > metric dataSource > page > 'default'). A plain
+   * string — flows across the arrow with no core→react import.
+   */
+  dataSource?:  string
 }
 
 /**
@@ -129,6 +144,7 @@ export function resolveMeasureRef(ref: string | string[]): ResolvedMeasure {
     if (out.unit        === undefined && metric.unit        !== undefined) out.unit        = metric.unit
     if (out.methodology === undefined && metric.methodology !== undefined) out.methodology = metric.methodology
     if (out.agg         === undefined && metric.agg         !== undefined) out.agg         = metric.agg
+    if (out.dataSource  === undefined && metric.dataSource  !== undefined) out.dataSource  = metric.dataSource
     if (metric.dims) {
       // Earlier metric's dims win on key collision (first-wins, mirrors scalars).
       dims = { ...metric.dims, ...dims }

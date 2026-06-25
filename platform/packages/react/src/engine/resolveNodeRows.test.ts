@@ -7,10 +7,10 @@
 //  the resolveStore() contract so a refactor can never silently regress it.
 //
 
-import { describe, it, expect }     from 'vitest'
-import { resolveStore, _storeCache } from './resolveNodeRows'
-import { staticStore }              from '@statdash/engine'
-import type { RenderContext }       from './types'
+import { describe, it, expect, beforeEach } from 'vitest'
+import { resolveStore, _storeCache, effectiveStoreKey } from './resolveNodeRows'
+import { staticStore, registerMetric }   from '@statdash/engine'
+import type { RenderContext, NodeBase }  from './types'
 
 // Minimal DataStore stub — only the fields resolveStore() reads.
 // resolveStore() wraps every non-static store in a CachedStore, so the returned
@@ -81,5 +81,98 @@ describe('resolveStore — storeKey cascade', () => {
     }
     const result = resolveStore(ctx)
     expect(_storeCache.get(gdp)).toBe(result)
+  })
+})
+
+// ── FF-MULTISTORE-ROUTES — three real cubes are distinctly routable [M0] ─
+//
+//  Uses the three SEEDED cube keys (gdp / accounts / regional — see
+//  apps/api/scripts/seed-data-sources.ts). A page binding two storeKeys with a
+//  node-level override must resolve each to its OWN distinct store, never the
+//  page default. Guards renderNode.ts:252 + resolveStore against silent
+//  cross-cube regression.
+
+describe('FF-MULTISTORE-ROUTES — distinct cubes route to distinct stores', () => {
+  it('a page default + a node-level override resolve to two DIFFERENT real cubes', () => {
+    const gdp      = makeStore('gdp')
+    const accounts = makeStore('accounts')
+    const regional = makeStore('regional')
+    const stores   = { gdp, accounts, regional }
+
+    // Page default = gdp.
+    const pageResult = resolveStore({ stores, pageStoreKey: 'gdp' })
+    // Node override = regional (renderNode threads node.storeKey → pageStoreKey).
+    const nodeResult = resolveStore({ stores, pageStoreKey: 'regional' })
+
+    expect(_storeCache.get(gdp)).toBe(pageResult)
+    expect(_storeCache.get(regional)).toBe(nodeResult)
+    // Distinct stores — the override did NOT bleed into the page default.
+    expect(pageResult).not.toBe(nodeResult)
+  })
+
+  it('all three seeded cube keys are independently addressable', () => {
+    const gdp      = makeStore('gdp')
+    const accounts = makeStore('accounts')
+    const regional = makeStore('regional')
+    const stores   = { gdp, accounts, regional }
+
+    // resolveStore caches on first call — run it before reading the WeakMap.
+    const gdpResult      = resolveStore({ stores, pageStoreKey: 'gdp' })
+    const accountsResult = resolveStore({ stores, pageStoreKey: 'accounts' })
+    const regionalResult = resolveStore({ stores, pageStoreKey: 'regional' })
+
+    expect(_storeCache.get(gdp)).toBe(gdpResult)
+    expect(_storeCache.get(accounts)).toBe(accountsResult)
+    expect(_storeCache.get(regional)).toBe(regionalResult)
+  })
+})
+
+// ── FF-METRIC-NAMES-STORE (react half) — the effective-store precedence ─
+//
+//  PRECEDENCE: explicit node storeKey > metric dataSource > page > 'default'.
+//  effectiveStoreKey derives the storeKey renderNode sets as pageStoreKey for a
+//  node + its descendants. Locks that a metric's dataSource routes a node, and
+//  an explicit node storeKey overrides it.
+
+describe('FF-METRIC-NAMES-STORE — node effective-store precedence', () => {
+  beforeEach(() => {
+    registerMetric('metric:m-regional', {
+      code: 'B1G', label: { en: 'Regional GVA' }, dataSource: 'regional',
+    })
+    registerMetric('metric:m-nostore', { code: 'D1', label: { en: 'Wages' } })
+  })
+
+  const node = (over: Partial<NodeBase>): NodeBase =>
+    ({ type: 'kpi', ...over } as NodeBase)
+
+  it('a node whose spec references a metric routes to the metric dataSource', () => {
+    const n = node({ data: { type: 'timeseries', code: 'metric:m-regional', years: [2023] } })
+    expect(effectiveStoreKey(n)).toBe('regional')
+  })
+
+  it('an explicit node storeKey OVERRIDES the metric dataSource', () => {
+    const n = node({
+      storeKey: 'gdp',
+      data:     { type: 'timeseries', code: 'metric:m-regional', years: [2023] },
+    })
+    expect(effectiveStoreKey(n)).toBe('gdp')
+  })
+
+  it('a metric without dataSource falls through (undefined ⇒ page/default kept)', () => {
+    const n = node({ data: { type: 'timeseries', code: 'metric:m-nostore', years: [2023] } })
+    expect(effectiveStoreKey(n)).toBeUndefined()
+  })
+
+  it('a raw-code spec falls through — byte-identical single-store behaviour', () => {
+    const n = node({ data: { type: 'timeseries', code: 'B1G', years: [2023] } })
+    expect(effectiveStoreKey(n)).toBeUndefined()
+  })
+
+  it('a node with no data and no storeKey yields undefined (inherits parent cascade)', () => {
+    expect(effectiveStoreKey(node({}))).toBeUndefined()
+  })
+
+  it('an explicit storeKey with no data still wins (parent-section override)', () => {
+    expect(effectiveStoreKey(node({ storeKey: 'accounts' }))).toBe('accounts')
   })
 })
