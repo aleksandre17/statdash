@@ -81,9 +81,18 @@ Data-model **R1–R6** · multi-store **M0–M2** · source spectrum **S0–S2**
 - **Security hardening:** `EMBED_SECRET` now **fail-fast in prod** (was a forgeable dev-default) — verified LIVE (prod boot without it crashes loud). Class-scanned: it was the only sibling.
 - **Deploy runbook:** `platform/DEPLOY.md` (env contract, the Flyway chain, the **V24 existing-DB precondition**, cutover steps, post-ship flips).
 
-## Remaining = deferred-by-design (named triggers; YAGNI)
-- **D-HREF** (remote/url sources) · **ApiResponse envelope** (Tier-2/3) · **per-source auth** · **data-blending (Mixed)** · SDMX REST surface — each opens on its real trigger.
-- **Carry into deploy runbook before first prod cutover:** the V24 existing-populated-DB precondition (greenfield is safe/automatic).
+## ✅ DEFERRED DOORS — FINISHED (the buildable ones)
+- **D-HREF** ✅ — the 3rd data-source mode (static/href/storeId complete, the spectrum the user asked for). `href` source KIND behind the one `DataStore` port (fetch in the plugins/datasources adapter; engine pure) + **format-parser registry** (json/csv, OCP, no new dep) + **auth seam** (none/bearer/header) + **SSRF-safe default** (allowlist; blocked + no fetch without it; tokens never logged) + M2 Constructor authoring. FF-HREF-DOOR tests.
+- **data-blending** ✅ (the ship-now half) — node-level **`blend`** transform: declarative, Constructor-authorable cross-store join that **desugars to the tested `joinByField`** in the react binding layer. **Core stays single-store** (never sees the manifest, Law 3); the arrow holds. Fixes a config-hygiene smell (blend references a store vs baking an inline source array). 5 FF-BLEND nets.
+- **Loose ends** ✅ — `pnpm check-laws` path bug fixed (class, 5 sibling-ops refs; now runs from `platform/`) · **`ENFORCE_CONFIG_VALIDATION` WARN→REJECT** (audit clean 5/5 → flipped; malformed config → 400 problem+json, not persisted) · **geostat bundle split** (entry 1,254 kB → 67.79 kB).
+- **Security** ✅ — `EMBED_SECRET` prod fail-fast (verified live).
+
+## Remaining = genuinely planner-level / trigger-dependent (architect + chief-engineer: do NOT build blind)
+- **D3-PLANNER** (symmetric N-store query planner, pushdown, server-side blend execution) · **metric-level blended view** (the R1 destination — deferred until reuse) · **full auth framework / ApiResponse envelope** beyond the shipped basic seams (need a real authenticated remote source) · **SDMX REST surface** (per-tenant gold-plating). Each is wrong-if-built-blind; the seams/escapes bridge them.
+- **Deploy:** carry the V24 existing-populated-DB precondition into the runbook (greenfield is safe/automatic). `platform/DEPLOY.md`.
+
+## Final state
+**1456 tests** (44 DB-gated validated on real Postgres) · typecheck 0 · lint 0 · check-laws clean · builds engine/geostat/panel green · panel 63 kB / geostat 68 kB entry · full stack boots in prod against real Postgres · **chief-engineer: SHIP-READY** · all on `main`.
 
 ## Deferred (by design)
 - `validateConfig` WARN→hard-reject flip (needs a real config corpus; WARN is the correct safe state).
