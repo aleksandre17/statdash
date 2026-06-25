@@ -65,10 +65,18 @@ Three more architect studies delivered + acted on (architect memory): `adr_multi
 - **S0–S2** data-source spectrum restored — registered the **`static`** store kind (one `DataStore` port, OCP kinds), cleaned the **HREF ghost**, **`href` deferred behind door D-HREF** (named trigger: first author-supplied external source).
 - **Full Constructor coverage** (V0–V4 + V2): every DataSpec/transform-op/ParamDef/VisibilityExpr authorable; + Page Inspector + methodology (V3).
 
-## Remaining — Constructor UX (for your morning steering; UX-design-heavy)
-- **M2** — Constructor source-authoring seam (`getMetadata`/`testConnection`; add→test→browse→write a source — now `static`/`stats` are real kinds to author).
-- **V5–V7** — field-wells/Show-Me · Outline tree + Cmd-K · templates/data-first (adopt `dnd-kit`(in)/`cmdk`/`react-colorful`).
-- **Deferred doors (YAGNI, named triggers):** D-HREF (remote sources), D1 ApiResponse envelope, D2 per-source auth, D3 data-blending.
+## ✅ CONSTRUCTOR UX (V5–V7) + M2 + perf — COMPLETE
+- **M2** — source-authoring seam (`getMetadata`/`testConnection`; add→test→browse→write; FF-SOURCE-AUTHORABLE — a Constructor-authored `static` source builds a live store, zero code).
+- **V5** field-wells + Show-Me (bind by drag/pick, not typing; reuses `suggestPanels`) · **V6** Outline tree + Cmd-K/slash (`cmdk`; insert byte-identical to the palette) · **V7** templates/starters + data-first generate (validateConfig + round-trip + save-guard proven).
+- **perf** — code-split the panel: entry **1.9 MB → 63 kB** (ApexCharts/engine/controls on-demand; accessible Suspense).
+- **small-packages sweep** (charts/expr/styles/contracts — Law-1 clean) + **check-laws** catalog allowlist reconciled.
+
+## ⭐ THE WHOLE ROADMAP IS DONE
+Data-model **R1–R6** · multi-store **M0–M2** · source spectrum **S0–S2** · Constructor coverage+UX **V0–V7**. The Constructor can build **anything** the renderer renders (gate-proven), bind by drag, suggest charts, author sources, start from templates — on a unified data-model (semantic-layer binding spine, one `$`-ref dispatcher, source kinds, first-class timeDimension). **1410 tests** · lint 0 · law-scan clean · builds green · all on `main`.
+
+## Remaining = deferred-by-design (named triggers; YAGNI)
+- **D-HREF** (remote/url sources) · **ApiResponse envelope** (Tier-2/3) · **per-source auth** · **data-blending (Mixed)** — each opens on its real trigger (first external source, etc.).
+- **Pre-ship:** a final real-Postgres re-validation (the engine data-layer changed a lot — all byte-identical/additive + unit+fitness-proven, but a real-DB re-run is the responsible last check).
 
 ## Deferred (by design)
 - `validateConfig` WARN→hard-reject flip (needs a real config corpus; WARN is the correct safe state).
