@@ -38,10 +38,12 @@ No CORS, CSP `'self'` (api same-origin), relative `/api`, reproducible vite-only
 (postgres + flyway V1→V31+seed + api internal + geostat/panel). See `platform/DEPLOY.md`.
 
 ## ⚠️ Flagged for your morning call (NOT pipeline bugs — config/data nuances)
-1. **"რეალური ზრდა +88 425.6%"** — a "real growth" KPI shows the GDP *level* (88425.6) as a
-   growth %. This is a provisioning-config / data-semantics issue (which measure is the real-growth
-   rate, and does the seed carry it?), not a render bug. I did **not** guess the intended semantics —
-   needs your steer. (Everything else on the page is correct.)
+1. **"რეალური ზრდა +88 425.6%"** — diagnosed precisely: the `gdp-growth` KPI **config is correct**
+   (`value.measure:"GDP_GROWTH"`, `format:"sign_pct"`, `unit:"%"` — provisioning L1260-1277). The
+   problem is the **seed data**: the `GDP_GROWTH` measure holds the GDP *level* (~88425) instead of a
+   real growth RATE (~3-5%), so a correct "signed %" of the level prints +88425.6%. Fix = correct the
+   `GDP_GROWTH` values in the seed (`ops/postgres/seed/R__seed_geostat_gold.sql` / the seed pipeline) —
+   the data-owner has the real rates; I did NOT guess them. Config + pipeline are correct.
 2. **Panel canvas** — I verified the panel loads clean (data-sources connected, Constructor
    functional, zero errors) and it shares the EXACT fixed renderer+stores the front uses; I could
    not fully automate the PageBrowser page-select in the probe, so a human visual confirm of a
