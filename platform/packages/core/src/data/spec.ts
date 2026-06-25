@@ -6,6 +6,7 @@ import type { EngineRow }        from './encoding'
 import type { DataSpec }         from '../config/data-spec'
 import type { SectionContext }   from '../core/context'
 import { TIME_DIM }              from '../core/context'
+import { effectiveYears }        from '../core/time-dimension'
 import type { DataStore, Requirement } from './store'
 import { defaultRegistry }       from '../registry/engine'
 import { emitDiagnostic }        from '../registry/diagnostics'
@@ -131,19 +132,24 @@ export function extractRequirements(
         return reqs
       })
 
-    case 'timeseries':
-      // 'all' — years resolved at runtime from store; no static requirements extractable
-      if (spec.years === 'all') return []
+    case 'timeseries': {
+      // 'all' — years resolved at runtime from store; no static requirements extractable.
+      // effectiveYears folds the legacy `years` (wins) with timeDimension.range (R5):
+      // an existing spec returns its own `years` ⇒ byte-identical requirements.
+      const tsYears = effectiveYears(spec)
+      if (tsYears === 'all') return []
       return resolveMeasureRef(spec.code).codes.flatMap((code) =>
-        (spec.years as readonly number[]).map((year) => ({ code, dims: { ...ctx.dims, [TIME_DIM]: year } })),
+        (tsYears as readonly number[]).map((year) => ({ code, dims: { ...ctx.dims, [TIME_DIM]: year } })),
       )
+    }
 
     case 'growth': {
-      // 'all' — years resolved at runtime from store; no static requirements extractable
-      if (spec.years === 'all') return []
+      // 'all' — years resolved at runtime from store; no static requirements extractable.
+      const grYears = effectiveYears(spec)
+      if (grYears === 'all') return []
       const codes = resolveMeasureRef(spec.code).codes
       return codes.flatMap((code) =>
-        (spec.years as readonly number[]).map((year) => ({ code, dims: { ...ctx.dims, [TIME_DIM]: year } })),
+        (grYears as readonly number[]).map((year) => ({ code, dims: { ...ctx.dims, [TIME_DIM]: year } })),
       )
     }
 

@@ -7,7 +7,7 @@
 //  Constructor (phase 2) generates any of these without writing code.
 //
 
-import type { DimVal, ObsQuery } from '../sdmx'
+import type { CtxRef, DimVal, ObsQuery } from '../sdmx'
 import type { LocaleString }     from '../i18n/types'
 import type { ModeId }                   from '../mode/types'
 import type { EncodingSpec }              from '../data/encoding'
@@ -57,6 +57,67 @@ export interface RowSpec {
 //
 export type YearsSpec = readonly number[] | 'all'
 
+// ── timeDimension — FIRST-CLASS time concept [ADR R5] ─────────────────
+//
+//  Cube.dev `timeDimensions` / Looker / Power-BI parity: time gets ONE
+//  canonical, granularity-aware shape instead of three scattered forms
+//  (YearsSpec on timeseries/growth · fromDim/toDim range-clamp · time
+//  buried in ObsQuery.filter). adr_data_reference_render_vision R5.
+//
+//  ADDITIVE + Postel: every legacy form still resolves byte-identically.
+//  `timeDimension` is an ALTERNATIVE that the resolver normalizes into the
+//  SAME (years + from/to-clamp) inputs the existing code already consumes —
+//  one resolution path, no behaviour fork. When absent, nothing changes.
+//
+//  No privileged dimension (Law 1): `dim` is the GENERIC time-axis key.
+//  Authors set it to the conventional time key (TIME_DIM, the SDMX
+//  TIME_PERIOD SSOT in core/context.ts); the resolver pins/clamps via that
+//  same SSOT, never a hardcoded literal.
+
+/**
+ * A single time-range BOUND. A literal year (number) OR a runtime ctx
+ * reference (`{ $ctx: 'startYear' }`) resolved against ctx.dims at
+ * interpret time — exactly mirroring the legacy fromDim/toDim ctx lookup,
+ * so the `[from,to]` form folds those two loose fields byte-identically.
+ */
+export type TimeBound = number | CtxRef
+
+/**
+ * The time selection. Two forms, disambiguated by SHAPE:
+ *   YearsSpec               — explicit year list / 'all' (folds `years`). A
+ *                             tuple of two LITERAL numbers is a YearsSpec (it
+ *                             SELECTS those years), not a clamp.
+ *   [TimeBound, TimeBound]  — a [from,to] CLAMP, reserved for ctx-ref bounds
+ *                             (`{ $ctx }`). This is the byte-identical fold
+ *                             target of the legacy fromDim/toDim (which are
+ *                             always ctx lookups). The clamp form is detected
+ *                             when at least one bound is a `{ $ctx }` ref.
+ */
+export type TimeRange = YearsSpec | readonly [TimeBound, TimeBound]
+
+/** SDMX/Cube grain. Carried metadata (default-derived) — foresight for LOD. */
+export type TimeGranularity = 'year' | 'quarter' | 'month' | 'week' | 'day'
+
+/**
+ * timeDimension — the canonical, first-class time concept on a DataSpec.
+ *
+ *   dim          — GENERIC time-axis dimension key (Law 1). Set to the
+ *                  conventional TIME_PERIOD key (TIME_DIM); resolved via the
+ *                  TIME_DIM SSOT, never special-cased.
+ *   range        — the selection: a YearsSpec (explicit list) OR a [from,to]
+ *                  tuple. Folds YearsSpec + fromDim/toDim into one field.
+ *   granularity  — the grain. Default = the current implicit grain (year), so
+ *                  absent ⇒ byte-identical. Door for LOD/declared-granularity.
+ *
+ *  100% JSON-serializable — no functions. Constructor (phase 2) emits this
+ *  verbatim (a time-dimension picker with granularity — door, not built here).
+ */
+export interface TimeDimensionSpec {
+  dim:          string
+  range?:       TimeRange
+  granularity?: TimeGranularity
+}
+
 // ── DataSpec — discriminated union ────────────────────────────────────
 //
 //  'query'      — universal: ObsQuery + pipe + EncodingSpec. Any dimension, any store.
@@ -86,6 +147,12 @@ export type DataSpec =
       fromDim?: string
       toDim?:   string
       /**
+       * First-class time concept [ADR R5]. ADDITIVE alternative to fromDim/toDim
+       * — normalized into the SAME range clamp. Explicit fromDim/toDim win on
+       * overlap (Postel). Absent ⇒ byte-identical.
+       */
+      timeDimension?: TimeDimensionSpec
+      /**
        * Optional row cap for pagination (P2-1).
        * Constructor-authorable — JSON number, no functions.
        * When set, walkNode slices interpretSpec rows to this limit and records
@@ -97,10 +164,19 @@ export type DataSpec =
   | { type: 'row-list';   rows: RowSpec[] }
   | { type: 'timeseries'; code: string; years: YearsSpec
       fromDim?: string
-      toDim?:   string }
+      toDim?:   string
+      /**
+       * First-class time concept [ADR R5]. ADDITIVE: supplies the year list
+       * (range = YearsSpec) and/or the from/to clamp (range = [from,to] tuple)
+       * when the legacy `years`/`fromDim`/`toDim` are absent. Explicit legacy
+       * fields win on overlap (Postel). Absent ⇒ byte-identical.
+       */
+      timeDimension?: TimeDimensionSpec }
   | { type: 'growth';     code: string | string[]; years: YearsSpec
       fromDim?: string
-      toDim?:   string }
+      toDim?:   string
+      /** First-class time concept [ADR R5]. See timeseries (additive, Postel). */
+      timeDimension?: TimeDimensionSpec }
   | { type: 'ratio-list'; pairs: { code: string; denom: string; label?: string }[]; pipe?: TransformStep[] }
   | { type: 'by-mode';    modes: Record<ModeId, DataSpec> }
   | { type: 'pivot'

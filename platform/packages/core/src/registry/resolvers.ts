@@ -8,6 +8,7 @@ import type { EngineRow }                   from '../data/encoding'
 import type { DataSpec, RowSpec, YearsSpec } from '../config/data-spec'
 import type { SectionContext }               from '../core/context'
 import { atTime, TIME_DIM }                  from '../core/context'
+import { clampYears, effectiveYears, effectiveBounds } from '../core/time-dimension'
 import type { DataStore }                    from '../data/store'
 import { storeVal, storeObs }               from '../data/store'
 import type { CtxRef, DimVal, FilterValue, NeCtxRef, ObsQuery }  from '../sdmx'
@@ -183,24 +184,6 @@ class RowListResolver implements SpecResolver<Extract<DataSpec, { type: 'row-lis
   }
 }
 
-// ── clampYears — shared helper for fromDim / toDim ────────────────────
-
-function clampYears(
-  years:  number[],
-  spec:   { fromDim?: string; toDim?: string },
-  ctx:    SectionContext,
-): number[] {
-  let out = years
-  if (spec.fromDim) {
-    const from = Number(ctx.dims[spec.fromDim] ?? 0)
-    if (from) out = out.filter((y) => y >= from)
-  }
-  if (spec.toDim) {
-    const to = Number(ctx.dims[spec.toDim] ?? Infinity)
-    if (to) out = out.filter((y) => y <= to)
-  }
-  return out
-}
 
 // ── TimeseriesResolver ────────────────────────────────────────────────
 
@@ -213,7 +196,7 @@ class TimeseriesResolver implements SpecResolver<Extract<DataSpec, { type: 'time
     store: DataStore,
   ): EngineRow[] {
     const code  = resolveCode(spec.code)
-    const years = clampYears(resolveYears(spec.years, code, store, ctx), spec, ctx)
+    const years = clampYears(resolveYears(effectiveYears(spec), code, store, ctx), spec, ctx)
     const vals  = years.map((y) => storeVal(store, code, atTime(y, ctx)))
     const max   = Math.max(...vals.map(Math.abs), 1)
     return years.map((y, i) => ({
@@ -236,7 +219,7 @@ class GrowthResolver implements SpecResolver<Extract<DataSpec, { type: 'growth' 
     store: DataStore,
   ): EngineRow[] {
     const codes = (Array.isArray(spec.code) ? spec.code : [spec.code]).map(resolveCode)
-    const years = clampYears(resolveYears(spec.years, codes[0], store, ctx), spec, ctx)
+    const years = clampYears(resolveYears(effectiveYears(spec), codes[0], store, ctx), spec, ctx)
 
     if (codes.length === 1) {
       return years.slice(1).map((y, i) => {
@@ -307,12 +290,15 @@ class QueryResolver implements SpecResolver<Extract<DataSpec, { type: 'query' }>
     ctx:   SectionContext,
     store: DataStore,
   ): EngineRow[] {
-    const raw     = storeObs(store, resolveQueryMeasures(spec.query), ctx)
-    const clamped = (spec.fromDim || spec.toDim)
+    const raw = storeObs(store, resolveQueryMeasures(spec.query), ctx)
+
+    // Time range clamp [R5]: legacy fromDim/toDim AND the canonical timeDimension
+    // fold into ONE (from,to) bound pair (effectiveBounds, legacy wins on overlap).
+    // No active bound ⇒ raw passes untouched (byte-identical to the pre-R5 guard).
+    const { from, to } = effectiveBounds(spec, ctx)
+    const clamped = (from || to !== Infinity)
       ? raw.filter((o) => {
-          const t    = Number(o[TIME_DIM])
-          const from = spec.fromDim ? Number(ctx.dims[spec.fromDim] ?? 0)        : 0
-          const to   = spec.toDim   ? Number(ctx.dims[spec.toDim]   ?? Infinity) : Infinity
+          const t = Number(o[TIME_DIM])
           return (!from || t >= from) && (!to || t <= to)
         })
       : raw

@@ -89,7 +89,15 @@ export type {
   RowSpec,
   DataSpec,
   TableConfig,
+  YearsSpec,
+  TimeBound,
+  TimeRange,
+  TimeGranularity,
+  TimeDimensionSpec,
 }                                                                        from './config/data-spec'
+// ── timeDimension — first-class time normalization seam [ADR R5] ──────
+export { resolveTimeDimension, clampToBounds, effectiveBounds, effectiveYears } from './core/time-dimension'
+export type { NormalizedTime, LegacyTimeSpec }                          from './core/time-dimension'
 export type { VisibilityExpr }              from './config/visibility'
 // ── Discriminant manifests — runtime SSOT mirrors for Coverage Fitness #1 ──
 //  Compile-time-verified-exhaustive tuples of the authorable union discriminants
