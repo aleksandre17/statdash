@@ -1,4 +1,5 @@
 {
+  "version": 1,
   "pages": [
     {
       "config": {
@@ -4106,5 +4107,58 @@
       ]
     }
   ],
-  "version": 1
+  "dataSources": [
+    {
+      "name": "gdp",
+      "type": "rest",
+      "status": "connected",
+      "config": {
+        "datasetCode": "GDP_ANNUAL",
+        "nonTimeDims": [
+          "measure",
+          "geo"
+        ],
+        "classifierDims": [
+          "measure",
+          "geo"
+        ]
+      }
+    },
+    {
+      "name": "accounts",
+      "type": "rest",
+      "status": "connected",
+      "config": {
+        "datasetCode": "ACCOUNTS_SEQUENCE",
+        "nonTimeDims": [
+          "measure",
+          "account",
+          "side"
+        ],
+        "classifierDims": [
+          "measure",
+          "account",
+          "side"
+        ]
+      }
+    },
+    {
+      "name": "regional",
+      "type": "rest",
+      "status": "connected",
+      "config": {
+        "datasetCode": "REGIONAL_GVA",
+        "nonTimeDims": [
+          "measure",
+          "geo",
+          "sector"
+        ],
+        "classifierDims": [
+          "measure",
+          "geo",
+          "sector"
+        ]
+      }
+    }
+  ]
 }

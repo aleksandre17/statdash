@@ -25,7 +25,14 @@ interface DataSourceSeed {
   config: Record<string, unknown>
 }
 
-const STATS_API_URL = process.env.API_BASE_URL ?? 'http://localhost:3001'
+// url DEFAULTS TO NULL — the single-origin reverse-proxy deploy: the SPAs call the
+// api same-origin via a relative `/api`, and toSourceDescriptor uses a NULL url to
+// fall back to the front's own relative base. Only set API_BASE_URL when the store
+// genuinely lives at a different ORIGIN (cross-origin / split deploy). NEVER point it
+// at localhost:3001 — that breaks the proxied SPA. NOTE: the authoritative seed of
+// these rows is now boot provisioning (provisioning/geostat.provisioning.json →
+// upsertDataSource); this script remains for the standalone seed path.
+const STATS_API_URL = process.env.API_BASE_URL ?? null
 
 const DATA_SOURCES: DataSourceSeed[] = [
   {

@@ -65,16 +65,25 @@ navItems:                      # top-level nav only (nested trees → CRUD API)
 dataSources:
   - name: geostat-sdmx
     type: sdmx-json            # sdmx-json | rest | static
-    url: https://example.org/sdmx
+    url: https://example.org/sdmx  # OMIT for single-origin (=> NULL, see below)
+    status: connected          # idle | connected | error | pending (default: connected)
     config: {}
 ```
+
+**`url` — omit it for the single-origin reverse-proxy deploy.** The SPAs call the api
+same-origin via a relative `/api`; the client uses a NULL `url` to fall back to its own
+relative base. A non-null `url` is only for a genuinely cross-origin / external source —
+**never** `http://localhost:3001`. **`status` defaults to `connected`** (a declared
+source is meant to be live, mirroring a page defaulting to `published`): the public
+`GET /api/data-sources` filters `status='connected'`, so an unset/`idle` source would
+not surface. The DB column default (`idle`) is deliberately not relied on.
 
 ## Idempotency keys
 
 | Resource    | Key (ON CONFLICT)            | Notes                                                              |
 | ----------- | ---------------------------- | ----------------------------------------------------------------- |
 | page        | `slug` (UNIQUE)              | A new immutable `page_version` is appended **only** when the config tree changed. |
-| dataSource  | `name`                       | No DB UNIQUE on name; emulated with `SELECT … FOR UPDATE`.         |
+| dataSource  | `name`                       | No DB UNIQUE on name; emulated with `SELECT … FOR UPDATE`. An unchanged row (type/url/config/status) short-circuits to `unchanged`. |
 | navItem     | localized label (top-level)  | Nested nav trees are authored via the CRUD API, not provisioned.  |
 
 ## Round-trip / export

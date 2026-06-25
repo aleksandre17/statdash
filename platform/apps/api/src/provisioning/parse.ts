@@ -11,7 +11,7 @@ import type {
   ContentConstraintProvision, ContentConstraintMemberProvision,
 } from './types.js'
 import {
-  isObject, isLocaleString, asArray, pickString, pickStatus, slugFromPath, errMsg,
+  isObject, isLocaleString, asArray, pickString, pickStatus, pickConnectionStatus, slugFromPath, errMsg,
 } from './util.js'
 
 const SUPPORTED = new Set(['.json', '.yaml', '.yml'])
@@ -183,5 +183,8 @@ export function asDataSourceProvision(v: unknown): DataSourceProvision {
     type,
     url:    pickString(v.url),
     config: isObject(v.config) ? v.config : {},
+    // Postel: an absent or unrecognized status narrows to undefined; the upserter
+    // then applies its 'connected' default. A valid status passes through verbatim.
+    status: pickConnectionStatus(v.status),
   }
 }

@@ -7,10 +7,14 @@
 
 import type {
   PgPool, ApplyCtx, ResourceResult, UpsertOutcome,
-  PageProvision, NavItemProvision, DataSourceProvision, SiteConfigProvision,
+  PageProvision, NavItemProvision, SiteConfigProvision,
   ContentConstraintProvision, ContentConstraintMemberProvision,
 } from './types.js'
 import { jsonEqual, errMsg } from './util.js'
+
+// Re-exported so consumers keep a single import surface (./upsert.js) across the
+// per-concern split. The data_source upserter lives in its own one-body file.
+export { upsertDataSource } from './upsert-data-source.js'
 
 /**
  * Upsert a page: identity by slug, a new immutable version appended ONLY when the
@@ -111,51 +115,6 @@ export async function upsertPage(pg: PgPool, page: PageProvision, ctx: ApplyCtx)
     await client.query('ROLLBACK').catch(() => {})
     ctx.log.error({ slug: key, error: errMsg(err) }, 'provisioning: page failed')
     return { kind: 'page', key, outcome: 'skipped', reason: errMsg(err) }
-  } finally {
-    client.release()
-  }
-}
-
-/**
- * Upsert a data source by name. V3 has no UNIQUE on name, so the conflict key is
- * emulated with SELECT … FOR UPDATE inside the transaction (no check-then-write
- * race against concurrent boots).
- */
-export async function upsertDataSource(pg: PgPool, src: DataSourceProvision, ctx: ApplyCtx): Promise<ResourceResult> {
-  const key = src.name
-  if (ctx.dryRun) {
-    ctx.log.info({ name: key, type: src.type }, 'provisioning[dry-run]: would upsert data source')
-    return { kind: 'dataSource', key, outcome: 'skipped', reason: 'dry-run' }
-  }
-
-  const client = await pg.connect()
-  try {
-    await client.query('BEGIN')
-    const { rows: existing } = await client.query<{ id: string }>(
-      `SELECT id FROM config.data_source WHERE name = $1 FOR UPDATE`,
-      [key],
-    )
-    let outcome: UpsertOutcome
-    if (existing[0]) {
-      await client.query(
-        `UPDATE config.data_source SET type = $2, url = $3, config = $4 WHERE id = $1`,
-        [existing[0].id, src.type, src.url ?? null, JSON.stringify(src.config ?? {})],
-      )
-      outcome = 'updated'
-    } else {
-      await client.query(
-        `INSERT INTO config.data_source (name, type, url, config) VALUES ($1, $2, $3, $4)`,
-        [key, src.type, src.url ?? null, JSON.stringify(src.config ?? {})],
-      )
-      outcome = 'created'
-    }
-    await client.query('COMMIT')
-    ctx.log.info({ name: key, outcome }, 'provisioning: data source')
-    return { kind: 'dataSource', key, outcome }
-  } catch (err) {
-    await client.query('ROLLBACK').catch(() => {})
-    ctx.log.error({ name: key, error: errMsg(err) }, 'provisioning: data source failed')
-    return { kind: 'dataSource', key, outcome: 'skipped', reason: errMsg(err) }
   } finally {
     client.release()
   }

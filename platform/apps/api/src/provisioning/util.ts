@@ -3,7 +3,7 @@
 // detection. Pure functions: trivially unit-testable, shared by parse + upsert.
 
 import { isAbsolute, resolve } from 'node:path'
-import type { LocaleString, PageProvision } from './types.js'
+import type { ConnectionStatus, LocaleString, PageProvision } from './types.js'
 
 export function resolveDir(dir: string): string {
   return isAbsolute(dir) ? dir : resolve(process.cwd(), dir)
@@ -27,6 +27,10 @@ export function pickString(v: unknown): string | undefined {
 
 export function pickStatus(v: unknown): PageProvision['status'] | undefined {
   return v === 'draft' || v === 'published' || v === 'archived' ? v : undefined
+}
+
+export function pickConnectionStatus(v: unknown): ConnectionStatus | undefined {
+  return v === 'idle' || v === 'connected' || v === 'error' || v === 'pending' ? v : undefined
 }
 
 export function slugFromPath(path?: string): string | undefined {

@@ -22,7 +22,8 @@ const ARTIFACT_PATH = resolve(here, '../../provisioning/geostat.provisioning.jso
 
 interface PageEntry { slug: string; title: Record<string, string>; config: { id?: unknown }; status?: string }
 interface SiteEntry { key: string; value: unknown }
-interface Artifact  { version: number; pages: PageEntry[]; siteConfig: SiteEntry[] }
+interface DataSourceEntry { name: string; type: string; url?: unknown; status?: string; config: { datasetCode?: unknown; nonTimeDims?: unknown } }
+interface Artifact  { version: number; pages: PageEntry[]; siteConfig: SiteEntry[]; dataSources?: DataSourceEntry[] }
 
 describe('committed geostat provisioning artifact (ADR-0026 Phase B)', () => {
   let artifact: Artifact
@@ -65,5 +66,38 @@ describe('committed geostat provisioning artifact (ADR-0026 Phase B)', () => {
     expect(typeof indexId).toBe('string')
     const pageIds = new Set(artifact.pages.map((p) => p.config.id))
     expect(pageIds.has(indexId as string)).toBe(true)
+  })
+
+  // ── data_source invariants (P3-4) ─────────────────────────────────────────────
+  // The geostat front + panel build their store manifest from these rows via
+  // GET /api/data-sources. The two load-bearing invariants — url=NULL (single-origin
+  // relative base) and status='connected' (else the public read hides the row) — are
+  // gated here on the committed artifact so a hand-edit that regresses them fails CI.
+
+  it('declares the 3 geostat data sources (gdp, accounts, regional)', () => {
+    expect(Array.isArray(artifact.dataSources)).toBe(true)
+    expect((artifact.dataSources ?? []).map((d) => d.name).sort()).toEqual(['accounts', 'gdp', 'regional'])
+  })
+
+  it('every data source has NO url (=> NULL: single-origin relative base, never localhost)', () => {
+    for (const ds of artifact.dataSources ?? []) {
+      // Absent entirely (preferred) or explicitly null — anything else (esp. a
+      // localhost/origin string) breaks the proxied SPA's relative-base fallback.
+      expect(ds.url == null).toBe(true)
+    }
+  })
+
+  it('every data source is status=connected (so the public read surfaces it)', () => {
+    for (const ds of artifact.dataSources ?? []) {
+      expect(ds.status).toBe('connected')
+    }
+  })
+
+  it('every data source carries a datasetCode + nonTimeDims (the store-builder reads them)', () => {
+    for (const ds of artifact.dataSources ?? []) {
+      expect(typeof ds.config.datasetCode).toBe('string')
+      expect(Array.isArray(ds.config.nonTimeDims)).toBe(true)
+      expect((ds.config.nonTimeDims as unknown[]).length).toBeGreaterThan(0)
+    }
   })
 })

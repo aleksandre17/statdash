@@ -74,12 +74,27 @@ export interface NavItemProvision {
   ord?:    number
 }
 
+export type ConnectionStatus = 'idle' | 'connected' | 'error' | 'pending'
+
 export interface DataSourceProvision {
   /** Idempotency key (emulated UNIQUE — no DB UNIQUE on name in V3). */
   name:   string
   type:   'sdmx-json' | 'rest' | 'static'
+  /**
+   * Store base URL. OMITTED (→ NULL) for the single-origin reverse-proxy topology:
+   * the public client uses its OWN relative `/api` base when this is null. A non-null
+   * url is only for an external/cross-origin source. Never default this to localhost.
+   */
   url?:   string
   config?: Record<string, unknown>
+  /**
+   * Lifecycle. Defaults to 'connected' at upsert time (a declared source is meant to
+   * be live — mirrors PageProvision.status defaulting to 'published'). Set explicitly
+   * to keep a provisioned source out of the public GET /api/data-sources read, which
+   * surfaces only status='connected'. The DB column default ('idle') is NOT relied on:
+   * an unset status here would render the source invisible to the client.
+   */
+  status?: ConnectionStatus
 }
 
 /**
