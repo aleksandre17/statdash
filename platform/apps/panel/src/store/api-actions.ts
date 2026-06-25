@@ -28,7 +28,7 @@ import {
   type PageVersionRow,
 } from '../lib/api'
 import type { PageStatus } from './constructor.lifecycle'
-import { validatePageForSave, type SaveIssue } from '../save/saveGuard'
+import type { SaveIssue } from '../save/saveGuard'
 import { resolveActiveLocales } from '../inspector/useActiveLocales'
 
 /** Coerce a server status string into the lifecycle FSM enum (default draft). */
@@ -52,8 +52,16 @@ export class SaveGuardError extends Error {
   }
 }
 
+// The save guard pulls the engine graph (nodeRegistry + canvasPageAdapter +
+// validateField → @statdash/react/engine, ~150 kB). It is reached ONLY on a save
+// (createPage / savePage), never on boot, so it is loaded lazily here to keep the
+// engine chunk off the eager boot path. The save thunks are already async, so the
+// dynamic import is transparent (same behavior, deferred load).
+const loadSaveGuard = () => import('../save/saveGuard')
+
 /** Run the C5 save guard for a page against the session's active locales. */
-function assertSaveable(page: CanvasPage): void {
+async function assertSaveable(page: CanvasPage): Promise<void> {
+  const { validatePageForSave } = await loadSaveGuard()
   const { activeLocales, defaultLocale } = useConstructorStore.getState().site
   const report = validatePageForSave(page, {
     activeLocales: resolveActiveLocales(activeLocales, defaultLocale),
@@ -213,7 +221,7 @@ export async function saveSite(patch: Partial<SiteDef>): Promise<void> {
 
 export async function createPage(input: Omit<CanvasPage, 'id'>): Promise<CanvasPage> {
   // C5 save guard — block an invalid config before it ever reaches the server.
-  assertSaveable({ ...input, id: '' })
+  await assertSaveable({ ...input, id: '' })
   const { id } = await configApi.pages.create(toApiPage({ ...input, id: '' }))
   const page: CanvasPage = { ...input, id }
   const store = useConstructorStore.getState()
@@ -275,7 +283,9 @@ export async function savePage(
 
   // C5 save guard — runs on the WHOLE merged page (the artefact persisted). The
   // guard is the gate: a failure is an authoring error to fix (recorded as inline
-  // issues), never a config that reaches the server.
+  // issues), never a config that reaches the server. Loaded lazily (see
+  // loadSaveGuard) so the engine graph it pulls stays off the eager boot path.
+  const { validatePageForSave } = await loadSaveGuard()
   const report = validatePageForSave(merged, {
     activeLocales: resolveActiveLocales(store.site.activeLocales, store.site.defaultLocale),
   })

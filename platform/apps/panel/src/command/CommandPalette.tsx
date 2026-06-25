@@ -13,7 +13,7 @@
 //      INSERT-only and uses the text after "/" as the query — the Notion/
 //      Gutenberg slash quick-insert, in-place at the current selection.
 //
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { Command } from 'cmdk'
 import { useActivePage, useSelectedNode } from '../store/constructor.store'
 import { buildCommands, type Command as Cmd } from './commandModel'
@@ -108,27 +108,4 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
       </Command.List>
     </Command.Dialog>
   )
-}
-
-/**
- * useCommandPalette — owns the open state + the global ⌘K / Ctrl-K shortcut.
- * A "/" pressed while no input is focused also opens the palette in slash mode
- * (Notion ergonomics) — but only when not already typing in a field, so it never
- * hijacks a real "/" keystroke in an Inspector text input.
- */
-export function useCommandPalette() {
-  const [open, setOpen] = useState(false)
-
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && (e.key === 'k' || e.key === 'K')) {
-        e.preventDefault()
-        setOpen((o) => !o)
-      }
-    }
-    document.addEventListener('keydown', onKey)
-    return () => document.removeEventListener('keydown', onKey)
-  }, [])
-
-  return { open, setOpen }
 }

@@ -1,15 +1,29 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, lazy, Suspense } from 'react'
 import { Box, Typography, Paper, Chip, Divider, Button } from '@mui/material'
 import DashboardIcon from '@mui/icons-material/Dashboard'
 import ViewModuleIcon from '@mui/icons-material/ViewModule'
 import DeleteIcon from '@mui/icons-material/Delete'
 import SearchIcon from '@mui/icons-material/Search'
 import { useConstructorStore, useActivePage, useSelectedNode, useChromeSelection } from '../../../store/constructor.store'
-import { CanvasView }    from '../../../canvas/CanvasView'
 import { NodePalette }   from '../../../canvas/NodePalette'
 import { OutlineTree }   from '../../../outline'
-import { CommandPalette, useCommandPalette } from '../../../command'
+import { useCommandPalette } from '../../../command/useCommandPalette'
+import { SuspenseFallback } from '../../../shared/SuspenseFallback'
 import { makeNode }      from '../../../canvas/insertNode'
+
+// ── Heavy sub-surfaces, split out of the PageStep chunk ───────────────────────
+//
+//  CanvasView is the single heaviest dependency in the panel: it mounts the REAL
+//  @statdash/react NodePageRenderer, which pulls the whole panel registry and
+//  ApexCharts. CommandPalette pulls cmdk. Both are deferred to their own chunks so
+//  they load only when the canvas paints / the palette opens — transparent (same
+//  components, identical behavior), just no longer in the eager PageStep chunk.
+const CanvasView = lazy(() =>
+  import('../../../canvas/CanvasView').then((m) => ({ default: m.CanvasView })),
+)
+const CommandPalette = lazy(() =>
+  import('../../../command/CommandPalette').then((m) => ({ default: m.CommandPalette })),
+)
 import { toNodePageConfig } from '../../../canvas/canvasPageAdapter'
 import { Inspector, ChromeInspectorPanel, ChromePalette } from '../../../inspector'
 import { setAtPath } from '../../../inspector/showWhen'
@@ -131,8 +145,16 @@ export function PageStep() {
         </Button>
       </Box>
 
-      {/* Cmd-K / slash command palette — registry-driven insert + navigate. */}
-      <CommandPalette open={cmdk.open} onOpenChange={cmdk.setOpen} />
+      {/* Cmd-K / slash command palette — registry-driven insert + navigate.
+          Mounted only once opened so the cmdk chunk loads on first invocation,
+          not on PageStep paint. The palette renders its own portal/overlay, so
+          a fill fallback would be invisible — the inline (non-fill) variant
+          announces the load via aria-live without reserving canvas space. */}
+      {cmdk.open && (
+        <Suspense fallback={<SuspenseFallback label="Loading command palette" fill={false} />}>
+          <CommandPalette open={cmdk.open} onOpenChange={cmdk.setOpen} />
+        </Suspense>
+      )}
 
       <Box sx={{ display: 'grid', gridTemplateColumns: '200px 200px 1fr 280px', gap: 2, flex: 1, minHeight: 400 }}>
         {/* ── Palette (engine registry) ─────────────────────────────────── */}
@@ -154,13 +176,15 @@ export function PageStep() {
         <Paper variant="outlined" sx={{ overflow: 'hidden', minHeight: 360 }}>
           {nodeConfig
             ? (
-              <CanvasView
-                page={nodeConfig}
-                selectedNodeId={selectedId ?? undefined}
-                dragging={dragging}
-                onSelectNode={selectNode}
-                onDropNode={handleDrop}
-              />
+              <Suspense fallback={<SuspenseFallback label="Loading canvas" />}>
+                <CanvasView
+                  page={nodeConfig}
+                  selectedNodeId={selectedId ?? undefined}
+                  dragging={dragging}
+                  onSelectNode={selectNode}
+                  onDropNode={handleDrop}
+                />
+              </Suspense>
             )
             : (
               <Box sx={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'text.disabled' }}>
