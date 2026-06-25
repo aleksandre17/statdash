@@ -12,4 +12,5 @@
 //  tenant content — no pages, datasets, or brand.
 
 export { registerStoreBuilders } from './stats-registrations'
+export { registerStaticStoreBuilder } from './static-registrations'
 export * from './stats-api'

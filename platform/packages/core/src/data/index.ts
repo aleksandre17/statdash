@@ -1,7 +1,7 @@
 export type { DimVal, CtxRef, FilterValue, Observation, ObsQuery } from '../sdmx'
 export type {
   SelectOption, ChipOption,
-  StaticSource, QuerySource, ApiSource, RemoteSource,
+  StaticSource, QuerySource, InlineSource, RemoteSource,
   SelectFieldMap, ChipFieldMap, YearsFieldMap,
   OptionsSource, ChipSource, YearsSource,
 }                                                                   from './source'

@@ -2,7 +2,7 @@
 // DataSource — universal data-fetching abstraction
 //
 //  Grafana/Retool/AppSmith pattern (B+C hybrid):
-//    Generic core  — StaticSource<T> · QuerySource · ApiSource · RemoteSource
+//    Generic core  — StaticSource<T> · QuerySource · InlineSource · RemoteSource
 //    Field mapping — SelectFieldMap · ChipFieldMap · YearsFieldMap
 //    Typed aliases — OptionsSource · ChipSource · YearsSource
 //
@@ -11,6 +11,11 @@
 //
 //  Extending: add a new source type to RemoteSource once →
 //    OptionsSource, ChipSource, YearsSource all gain it automatically.
+//
+//  HREF in the SELECTOR layer is DELETED (was `ApiSource = { type:'api'; url }`,
+//  a ghost whose resolver returned null and pointed at a deleted file). HREF
+//  re-enters as a STORE kind (a DataStore behind buildStoreManifest), NOT a
+//  selector source — see door D-HREF in adr_data_source_reference_spectrum.
 // ─────────────────────────────────────────────────────────────────────────────
 
 import type { DimRef, ObsQuery }       from '../sdmx'
@@ -30,7 +35,6 @@ export type StaticSource<T>  = { type: 'static'; items: T[] }
  * data (Grafana / Malloy / Cube.dev pattern).
  */
 export type QuerySource      = { type: 'query';  query: ObsQuery; pipe?: TransformStep[] }
-export type ApiSource        = { type: 'api';    url: string;      pipe?: TransformStep[] }
 /**
  * Inline-items source — arbitrary in-memory rows with optional pipeline.
  * Items are either a literal or a dim ref (`{ $cl: 'dim' }` for structural
@@ -38,7 +42,12 @@ export type ApiSource        = { type: 'api';    url: string;      pipe?: Transf
  * at apply time. 100% JSON-serializable.
  */
 export type InlineSource     = { type: 'inline'; items: DimRef | readonly Record<string, unknown>[]; pipe?: TransformStep[] }
-export type RemoteSource     = QuerySource | ApiSource
+/**
+ * Remote (store-backed) selector source. Today only QuerySource — HREF (url) was
+ * removed (door D-HREF). A future remote selector source is added here once and
+ * OptionsSource/ChipSource/YearsSource gain it automatically.
+ */
+export type RemoteSource     = QuerySource
 
 // ── Field mapping specs — per output type (no nesting, config stays flat) ────
 
@@ -50,7 +59,6 @@ export type YearsFieldMap  = { field: string }
 //
 //  OptionsSource = StaticSource<SelectOption>
 //               | (QuerySource  & SelectFieldMap)   → { type:'query',  …, valueField, labelField? }
-//               | (ApiSource    & SelectFieldMap)   → { type:'api',    …, valueField, labelField? }
 //               | (InlineSource & SelectFieldMap)   → { type:'inline', items, valueField, labelField? }
 //
 //  Same pattern for ChipSource and YearsSource.

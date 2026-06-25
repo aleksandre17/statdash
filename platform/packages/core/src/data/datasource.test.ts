@@ -62,4 +62,23 @@ describe('DatasourceInstanceConfig', () => {
     expect(result).not.toHaveProperty('url')
     expect(result).not.toHaveProperty('params')
   })
+
+  // FF-CONFIG-ROUNDTRIP (extend) — a 'static' source's inline `params.values`
+  // survive JSON round-trip unchanged. This is the offline/portability invariant
+  // made executable: a config that embeds its own data serializes losslessly.
+  // (ADR adr_data_source_reference_spectrum — the STATIC kind.)
+  it("round-trips a 'static' descriptor's inline values losslessly", () => {
+    const cfg: DatasourceInstanceConfig = {
+      id:     'demo',
+      kind:   'static',
+      params: {
+        values: [
+          { measure: 'GDP', time: 2020, value: 100 },
+          { measure: 'GDP', time: 2021, value: 110 },
+        ],
+        classifiers: { time: [] },
+      },
+    }
+    expect(roundTrip(cfg)).toEqual(cfg)
+  })
 })

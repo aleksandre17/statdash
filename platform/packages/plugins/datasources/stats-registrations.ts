@@ -33,8 +33,14 @@
 //
 
 import { registerStoreBuilder } from '@statdash/react/engine'
+import { registerStaticStoreBuilder } from './static-registrations'
 
 export function registerStoreBuilders(): void {
+  // 'static' source kind — config-level inline literal data (zero network).
+  // Registered alongside 'stats' so BOTH apps get it through this one shared
+  // call. See static-registrations.ts + adr_data_source_reference_spectrum.
+  registerStaticStoreBuilder()
+
   registerStoreBuilder('stats', async (config) => {
     const base        = config.url ?? (import.meta.env.VITE_API_STATS_URL ?? 'http://localhost:3001')
     const datasetCode = (config.params?.datasetCode as string) ?? config.id

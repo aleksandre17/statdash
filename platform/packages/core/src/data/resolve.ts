@@ -1,8 +1,11 @@
 // ── DataSource Resolvers — sync resolution of OptionsSource / ChipSource / YearsSource ──
 //
 //  Pure functions — no React, no side effects, fully testable.
-//  API sources (type: 'api') return [] here; the async fetch in FilterSchema.tsx
-//  populates asyncOpts/asyncYears/asyncChips state which takes precedence.
+//  Sources are STATIC (literal items), INLINE (literal/dim-ref), or QUERY
+//  (store.observe). There is no async/remote selector source: HREF (url+format)
+//  is deferred behind door D-HREF — see adr_data_source_reference_spectrum;
+//  trigger: first author-supplied external source. When it lands, HREF re-enters
+//  as a STORE kind (a DataStore behind buildStoreManifest), NOT a selector type.
 //
 
 import type { DataStore }                                    from './store'
@@ -19,12 +22,10 @@ import type { TransformStep }                                from './transform/t
 // Resolves the pre-pipeline row array for a non-static source.
 function resolveRaw(
   src:   { type: 'query'; query: import('../sdmx').ObsQuery }
-       | { type: 'api' }
        | { type: 'inline'; items: DimRef | readonly Record<string, unknown>[] },
   store: DataStore,
   ctx:   SectionContext,
 ): readonly Record<string, DimVal>[] | null {
-  if (src.type === 'api')    return null
   if (src.type === 'inline') {
     // An inline source is a dim-scope ref (`$cl`/`$d`) OR a literal array; the
     // ref resolves through the ONE dispatcher (../ref).

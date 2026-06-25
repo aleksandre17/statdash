@@ -52,7 +52,7 @@ export { REF_SCOPES, refScope, isRef, resolveRef }                              
 // ── DataSource — universal options/years/chips abstraction ───────────
 export type {
   SelectOption, ChipOption,
-  StaticSource, QuerySource, ApiSource, RemoteSource,
+  StaticSource, QuerySource, InlineSource, RemoteSource,
   SelectFieldMap, ChipFieldMap, YearsFieldMap,
   OptionsSource, ChipSource, YearsSource,
 }                                                                        from './data/source'
