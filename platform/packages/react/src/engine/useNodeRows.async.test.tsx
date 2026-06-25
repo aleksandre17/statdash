@@ -59,24 +59,45 @@ function makeNode(overrides?: Partial<NodeBase>): NodeBase {
   return {
     type: 'panel',
     id:   'n1',
-    data: { type: 'query', measure: 'GDP' } as unknown as NodeBase['data'],
+    // A 'query' spec — extractRequirements yields a val req + the obs warm query.
+    data: { type: 'query', query: { measure: 'GDP' } } as unknown as NodeBase['data'],
     ...overrides,
   } as NodeBase
 }
 
 /**
- * Build a fake async store (caps.sync === false).
- * queryAsync resolves with the supplied rows (or a QueryResult directly).
+ * Build a fake async store (caps.sync === false) that honours Cache-Aside:
+ *   - queryAsync resolves with the supplied QueryResult AND warms an internal
+ *     cache keyed on the obs query measure.
+ *   - querySync returns the warmed rows (so the post-warm sync engine read in
+ *     useNodeRows succeeds) — and THROWS cold, mirroring ApiStore, so a test
+ *     that reads without warming first reproduces the original bug.
+ *
+ * useNodeRows now warms via queryAsync, then reads synchronously through
+ * resolveNodeRows/interpretSpec; this fake therefore feeds the warmed rows back
+ * out of the 'query'/'obs' resolver path (storeObs → querySync).
  */
 function makeAsyncStore(
   result: QueryResult | (() => Promise<QueryResult>),
 ): DataStore {
   const getResult = typeof result === 'function' ? result : () => Promise.resolve(result)
+  let isWarm = false
+  let warmRows: EngineRow[] = []
   return {
     ...staticStore,
-    caps: { queryTypes: ['obs'], batching: false, streaming: false, sync: false },
-    queryAsync(_q: StoreQuery, _ctx: SectionContext): Promise<QueryResult> {
-      return getResult()
+    caps: { queryTypes: ['obs', 'val'], batching: false, streaming: false, sync: false },
+    async queryAsync(_q: StoreQuery, _ctx: SectionContext): Promise<QueryResult> {
+      const r = await getResult()
+      if (r.state === 'done') { isWarm = true; warmRows = r.data }
+      return r
+    },
+    querySync(q: StoreQuery, _ctx: SectionContext): EngineRow[] {
+      if (!isWarm) {
+        throw new Error('cold cache — caps.sync=false; queryAsync must warm first')
+      }
+      // obs reads return the warmed rows; val reads return a scalar from row 0.
+      if (q.type === 'val') return [{ value: warmRows[0]?.['value'] ?? 0 }]
+      return warmRows
     },
   } as DataStore
 }

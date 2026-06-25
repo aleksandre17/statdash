@@ -11,8 +11,8 @@
 import type { Classifier, DimVal, DisplayMap, ObsQuery, Observation }  from '../sdmx'
 import type { SectionContext }                                          from '../core/context'
 import type { EngineRow }                                              from './encoding'
-import { storeVal }                                                    from './store'
-import type { DataStore, Requirement, ResultMeta, StoreCaps, StoreQuery } from './store'
+import { storeVal, asyncFromSync }                                     from './store'
+import type { DataStore, QueryResult, Requirement, ResultMeta, StoreCaps, StoreQuery } from './store'
 import { dimKey, matchesFilter, matchesLeaves, DimResolver }           from './store-filter'
 import type { LeafFn }                                                 from './store-filter'
 import { roundAgg }                                                    from './round'
@@ -68,11 +68,20 @@ export class CachedStore implements DataStore {
   ) {
     this.source = source
     this.ttlMs  = ttlMs
+    // Capability-transparent: inherit the wrapped source's sync/streaming flags
+    // rather than hardcoding sync:true. A SYNC source (caps.sync !== false →
+    // ExternalStore, staticStore) keeps caps.sync === true ⇒ byte-identical to
+    // the legacy wrapper. An ASYNC source (ApiStore, caps.sync === false) is no
+    // longer masked: the wrapper now ALSO reports sync:false so renderNode routes
+    // it through useNodeRows' queryAsync suspend path instead of cold querySync.
+    // streaming is likewise inherited (CachedStore does not proxy subscribe(), so
+    // a streaming source still bypasses CachedStore upstream in resolveStore —
+    // inheriting the flag keeps the cap honest if it ever is wrapped).
     this.caps        = {
       queryTypes: source.caps?.queryTypes ?? ['val', 'obs'],
       batching:   false,
-      streaming:  false,
-      sync:       true,
+      streaming:  source.caps?.streaming ?? false,
+      sync:       source.caps?.sync ?? true,
     }
     this.classifiers = source.classifiers
     this.display     = source.display
@@ -103,6 +112,42 @@ export class CachedStore implements DataStore {
       case 'schema':
       case 'distinct': return this.source.querySync(q, ctx)
     }
+  }
+
+  // ── queryAsync — async primary path (capability-transparent) ──────────
+  //
+  //  Delegates to source.queryAsync (deriving it from source.querySync via
+  //  asyncFromSync when the source is sync-only) and memoizes the resolved rows
+  //  into the SAME caches querySync reads. This is the Cache-Aside warm step
+  //  (ADR-STORE-001): awaiting queryAsync once populates the obs/val cache so a
+  //  subsequent querySync(q, ctx) for the same key returns synchronously instead
+  //  of throwing on a cold async source.
+  //
+  //  Memoization (obs queries): the resolved rows are written into _obsCache under
+  //  obsCacheKey — the SAME key CachedStore.querySync reads — so a warmed obs query
+  //  is served from this wrapper's cache on the next sync read.
+  //
+  //  val queries: delegated to source.queryAsync to warm the SOURCE's own cache
+  //  (e.g. ApiStore keys val/obs identically on the request params). The wrapper's
+  //  valCache is NOT written here because the source — not the wrapper — defines a
+  //  val's aggregation; CachedStore._val (sync) recomputes it via storeVal against
+  //  the now-warm source, keeping the OLAP-sum semantics intact. This avoids
+  //  caching a raw first-row value as if it were the aggregate.
+  async queryAsync(q: StoreQuery, ctx: SectionContext): Promise<QueryResult<EngineRow>> {
+    const run = this.source.queryAsync
+      ? (qq: StoreQuery) => this.source.queryAsync!(qq, ctx)
+      : (qq: StoreQuery) => asyncFromSync(this.source)(qq, ctx)
+
+    const result = await run(q)
+    if (result.state !== 'done') return result
+
+    if (q.type === 'obs') {
+      this._obsCache.set(obsCacheKey(q, ctx), {
+        rows:      result.data,
+        expiresAt: Date.now() + this.ttlMs,
+      })
+    }
+    return result
   }
 
   queryFrame(q: StoreQuery, ctx: SectionContext): { rows: EngineRow[]; meta: ResultMeta } {

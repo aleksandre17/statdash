@@ -23,11 +23,12 @@
 
 import { createElement, Fragment, Suspense, type ReactNode } from 'react'
 import { evalVisibility, mergeScope, emitDiagnostic, diagWarning } from '@statdash/engine'
-import type { ScopeOverride }            from '@statdash/engine'
+import type { ScopeOverride, DataRow }   from '@statdash/engine'
 import type { NodeDef, RenderContext, ChildrenArg, NodeBase, SlotChildren, VarMap } from './types'
 import { nodeRegistry }                  from './register-all'
 import { skeletonRegistry }              from './skeletonRegistry'
 import { resolveNodeRows, resolveCompareRows, resolveStore, effectiveStoreKey } from './resolveNodeRows'
+import { useNodeRows }                   from './useNodeRows'
 import { NodeErrorBoundary }             from './NodeErrorBoundary'
 import { WrapStyleContext }              from './wrapStyleContext'
 import { middlewareRegistry }            from './middleware/registry'
@@ -265,132 +266,196 @@ export function renderNode(node: NodeBase, ctx: RenderContext): ReactNode {
     ctxM = { ...ctxM, pageStoreKey: storeKey }
   }
 
-  // 2.x Resolve data rows (includes TransformStep pipeline in resolveNodeRows)
-  const rows = resolveNodeRows(migrated, ctxM)
-
-  // 2.y Compare wiring (N37) — resolve second dataset when view.scope.compare is set
-  const viewScope = (migrated.view as { scope?: ScopeOverride } | undefined)?.scope
-  if (viewScope?.compare) {
-    const panelCtx = mergeScope(ctxM.sectionCtx, viewScope)
-    const store    = resolveStore(ctxM)
-    const result   = resolveCompareRows(migrated, panelCtx, viewScope.compare, store)
-    ctxM = { ...ctxM, compareRows: result.compareRows, compareLabel: result.compareLabel }
-  }
-
-  // 2.5. Node-level vars (Gap 7) — evaluate migrated.vars with node's filter context
-  const nodeVarMap = (migrated as U)['vars'] as VarMap | undefined
-  if (nodeVarMap) {
-    const nodeVars = evalVarMap(nodeVarMap, ctxM)
-    ctxM = { ...ctxM, vars: { ...ctxM.vars, ...nodeVars } }
-  }
-
-  // 3. Propagate view + cascade fieldConfig + inject rows
-  const nodeFc = (migrated as U)['fieldConfig'] as import('@statdash/engine').FieldConfig | undefined
-  ctxM = {
-    ...ctxM,
-    rows,
-    ...(migrated.view  ? { view:        migrated.view  } : {}),
-    ...(nodeFc         ? { fieldConfig: nodeFc         } : {}),
-  }
-
-  // 4. Shell lookup — zero branching on type
-  const shell = nodeRegistry.get(type, variant)
-  if (!shell) return null
-
-  // ── 5. Children dispatch — lazy rendered proxy + SlotDef-driven slots ─────
+  // 2.x Resolve data rows.
   //
-  //  Primary slot (backward compat):
-  //    Reads node.children ?? node.items with transparent-node expansion.
-  //    rendered[] is a lazy Proxy — renderNode deferred to first access.
-  //    renderChild(i) uses the same lazy cache.
+  //  Two paths — selected by the resolved store's caps.sync (resolveStore reads
+  //  ctxM.pageStoreKey, just as resolveNodeRows does internally):
   //
-  //  Named slots (Gap 1 — Builder.io multi-slot):
-  //    Populated from SlotDef registry (getSlots). Each slot uses its own
-  //    lazy cache. Shells opt-in via children.slots['name'].renderChild(i).
+  //    caps.sync !== false (static / in-memory — every Phase-1 store):
+  //      SYNC fast-lane. resolveNodeRows runs here, the continuation runs inline.
+  //      BYTE-IDENTICAL to the pre-async-routing path: no extra component
+  //      boundary, no Suspense suspension, no promise cache touched.
   //
-  const raw: NodeBase[] = (migrated as U)['children'] as NodeBase[]
-    ?? (migrated as U)['items']    as NodeBase[]
-    ?? []
+  //    caps.sync === false (ApiStore + future network stores):
+  //      ASYNC path. resolveNodeRows would call querySync on a cold cache and
+  //      THROW (caps.sync=false stores answer only via queryAsync). So we defer
+  //      the whole continuation into an inner component that runs useNodeRows —
+  //      which suspends on queryAsync (warming the Cache-Aside cache) via
+  //      React.use() and re-reads on resume. The Suspense + NodeErrorBoundary
+  //      scaffolding below catches the suspension + any error envelope.
+  //
+  //  `renderWithRows` is the shared continuation (steps 2.y → 7.5): everything
+  //  downstream of row resolution. Both paths feed it the resolved rows, so the
+  //  shell, children, compare wiring, vars, and middleware are identical
+  //  regardless of how the rows were obtained.
+  const store  = resolveStore(ctxM)
+  const isSync = !store.caps || store.caps.sync !== false
 
-  // Expand transparent wrapper nodes into a flat list of { node, styles }
-  type ExpandedItem = { node: NodeBase; key: string | number; pos?: string; styles: unknown | null }
-  const expanded: ExpandedItem[] = []
-
-  raw.forEach((c, i) => {
-    const u    = c as U
-    const cVar = (u['variant'] as string | undefined) ?? 'default'
-    if (!nodeRegistry.isTransparent(c.type, cVar)) {
-      const key = (u['id'] as string | undefined) ?? i
-      warnSlotPlacement(type, variant, c.type, key)  // Gap: render-time slot check
-      expanded.push({ node: c, key, pos: c.view?.position, styles: null })
-      return
-    }
-    const styles = u['styles'] ?? null
-    ;((u['children'] as NodeBase[] | undefined) ?? []).forEach((wc, j) => {
-      const wu  = wc as U
-      const key = (wu['id'] as string | undefined) ?? `${i}.${j}`
-      // Transparent wrappers (e.g. wrap) flatten into the parent slot, so the
-      // grandchild is what effectively lands in parentType's primary slot.
-      warnSlotPlacement(type, variant, wc.type, key)
-      expanded.push({ node: wc, key, pos: wc.view?.position, styles })
-    })
-  })
-
-  // Lazy render cache shared between rendered[] proxy and renderChild()
-  const renderCache: ReactNode[] = []
-  function computeAt(i: number): ReactNode {
-    if (renderCache[i] === undefined) {
-      const { node: c, key, pos, styles } = expanded[i]
-      let el = renderNode(c, ctxM)
-      el = el == null ? null : toSlot(el, key, pos)
-      if (styles != null && el != null)
-        el = createElement(WrapStyleContext.Provider, { value: styles }, el)
-      renderCache[i] = el
-    }
-    return renderCache[i]
+  if (isSync) {
+    const rows = resolveNodeRows(migrated, ctxM)
+    return renderWithRows(rows)
   }
 
-  const rendered    = makeLazyRendered(expanded.length, computeAt)
-  const childDefs   = expanded.map(e => e.node as NodeDef)
-
-  // Named slots via SlotDef (Gap 1 — multi-slot nodes)
-  const slotDefs = nodeRegistry.getSlots(type, variant)
-  const slots: Record<string, SlotChildren> = {}
-  if (slotDefs) {
-    for (const [slotName, slotDef] of Object.entries(slotDefs)) {
-      const slotRaw  = (migrated as U)[slotDef.field]
-      const slotItems: NodeBase[] = Array.isArray(slotRaw) ? slotRaw as NodeBase[]
-                                  : slotRaw ? [slotRaw as NodeBase] : []
-      slots[slotName] = makeSlotChildren(slotItems, ctxM)
-    }
+  // Async store: suspend on queryAsync inside an inner component. useNodeRows
+  // returns the warmed rows on resume; renderWithRows then builds the node.
+  // The component lets React.use()'s Suspense integration drive the re-render.
+  function AsyncRows(): ReactNode {
+    const rows = useNodeRows(migrated, ctxM)
+    return renderWithRows(rows) as ReactNode
   }
 
-  const childrenArg: ChildrenArg = {
-    defs:        childDefs,
-    rendered,
-    renderChild: (i: number) => computeAt(i),
-    slots,
-  }
+  const asyncSkeletonFn = skeletonRegistry.get(type, variant)
+  const asyncFallback   = asyncSkeletonFn ? asyncSkeletonFn(migrated, ctxM) : null
+  const asyncErrorFb    = nodeRegistry.getErrorFallback(type, variant)
 
-  // 6–7. ErrorBoundary (per-slice fallback) + Suspense (skeleton)
-  const skeletonFn    = skeletonRegistry.get(type, variant)
-  const fallback      = skeletonFn ? skeletonFn(migrated, ctxM) : null
-  const errorFallback = nodeRegistry.getErrorFallback(type, variant)
-
-  const wrapped = createElement(
+  const asyncWrapped = createElement(
     Suspense,
-    { fallback },
+    { fallback: asyncFallback },
     createElement(NodeErrorBoundary, {
       node:     migrated,
-      fallback: errorFallback,
-      children: shell(migrated as NodeDef, ctxM, childrenArg),
+      fallback: asyncErrorFb,
+      children: createElement(AsyncRows),
     }),
   )
 
-  // 7.5. Middleware after — wrap element (e.g. edit-mode overlay, analytics)
-  if (mws.length === 0) return wrapped
-  let element: ReactNode = wrapped
+  if (mws.length === 0) return asyncWrapped
+  let asyncElement: ReactNode = asyncWrapped
   for (let i = mws.length - 1; i >= 0; i--)
-    if (mws[i].after) element = mws[i].after!(element, migrated, ctxM) ?? element
-  return element
+    if (mws[i].after) asyncElement = mws[i].after!(asyncElement, migrated, ctxM) ?? asyncElement
+  return asyncElement
+
+  // ── renderWithRows — post-resolution continuation (steps 2.y → 7.5) ───────
+  //
+  //  Hoisted closure over migrated/ctxM/type/variant/mws. Given the resolved
+  //  rows, builds the final element. Shared by the sync fast-lane (called inline)
+  //  and the async path (called inside AsyncRows after useNodeRows resolves).
+  function renderWithRows(rows: DataRow[]): ReactNode {
+    let ctxN = ctxM
+
+    // 2.y Compare wiring (N37) — resolve second dataset when view.scope.compare is set
+    const viewScope = (migrated.view as { scope?: ScopeOverride } | undefined)?.scope
+    if (viewScope?.compare) {
+      const panelCtx    = mergeScope(ctxN.sectionCtx, viewScope)
+      const compareStore = resolveStore(ctxN)
+      const result      = resolveCompareRows(migrated, panelCtx, viewScope.compare, compareStore)
+      ctxN = { ...ctxN, compareRows: result.compareRows, compareLabel: result.compareLabel }
+    }
+
+    // 2.5. Node-level vars (Gap 7) — evaluate migrated.vars with node's filter context
+    const nodeVarMap = (migrated as U)['vars'] as VarMap | undefined
+    if (nodeVarMap) {
+      const nodeVars = evalVarMap(nodeVarMap, ctxN)
+      ctxN = { ...ctxN, vars: { ...ctxN.vars, ...nodeVars } }
+    }
+
+    // 3. Propagate view + cascade fieldConfig + inject rows
+    const nodeFc = (migrated as U)['fieldConfig'] as import('@statdash/engine').FieldConfig | undefined
+    ctxN = {
+      ...ctxN,
+      rows,
+      ...(migrated.view  ? { view:        migrated.view  } : {}),
+      ...(nodeFc         ? { fieldConfig: nodeFc         } : {}),
+    }
+
+    // 4. Shell lookup — zero branching on type
+    const shell = nodeRegistry.get(type, variant)
+    if (!shell) return null
+
+    // ── 5. Children dispatch — lazy rendered proxy + SlotDef-driven slots ─────
+    //
+    //  Primary slot (backward compat):
+    //    Reads node.children ?? node.items with transparent-node expansion.
+    //    rendered[] is a lazy Proxy — renderNode deferred to first access.
+    //    renderChild(i) uses the same lazy cache.
+    //
+    //  Named slots (Gap 1 — Builder.io multi-slot):
+    //    Populated from SlotDef registry (getSlots). Each slot uses its own
+    //    lazy cache. Shells opt-in via children.slots['name'].renderChild(i).
+    //
+    const raw: NodeBase[] = (migrated as U)['children'] as NodeBase[]
+      ?? (migrated as U)['items']    as NodeBase[]
+      ?? []
+
+    // Expand transparent wrapper nodes into a flat list of { node, styles }
+    type ExpandedItem = { node: NodeBase; key: string | number; pos?: string; styles: unknown | null }
+    const expanded: ExpandedItem[] = []
+
+    raw.forEach((c, i) => {
+      const u    = c as U
+      const cVar = (u['variant'] as string | undefined) ?? 'default'
+      if (!nodeRegistry.isTransparent(c.type, cVar)) {
+        const key = (u['id'] as string | undefined) ?? i
+        warnSlotPlacement(type, variant, c.type, key)  // Gap: render-time slot check
+        expanded.push({ node: c, key, pos: c.view?.position, styles: null })
+        return
+      }
+      const styles = u['styles'] ?? null
+      ;((u['children'] as NodeBase[] | undefined) ?? []).forEach((wc, j) => {
+        const wu  = wc as U
+        const key = (wu['id'] as string | undefined) ?? `${i}.${j}`
+        // Transparent wrappers (e.g. wrap) flatten into the parent slot, so the
+        // grandchild is what effectively lands in parentType's primary slot.
+        warnSlotPlacement(type, variant, wc.type, key)
+        expanded.push({ node: wc, key, pos: wc.view?.position, styles })
+      })
+    })
+
+    // Lazy render cache shared between rendered[] proxy and renderChild()
+    const renderCache: ReactNode[] = []
+    function computeAt(i: number): ReactNode {
+      if (renderCache[i] === undefined) {
+        const { node: c, key, pos, styles } = expanded[i]
+        let el = renderNode(c, ctxN)
+        el = el == null ? null : toSlot(el, key, pos)
+        if (styles != null && el != null)
+          el = createElement(WrapStyleContext.Provider, { value: styles }, el)
+        renderCache[i] = el
+      }
+      return renderCache[i]
+    }
+
+    const rendered    = makeLazyRendered(expanded.length, computeAt)
+    const childDefs   = expanded.map(e => e.node as NodeDef)
+
+    // Named slots via SlotDef (Gap 1 — multi-slot nodes)
+    const slotDefs = nodeRegistry.getSlots(type, variant)
+    const slots: Record<string, SlotChildren> = {}
+    if (slotDefs) {
+      for (const [slotName, slotDef] of Object.entries(slotDefs)) {
+        const slotRaw  = (migrated as U)[slotDef.field]
+        const slotItems: NodeBase[] = Array.isArray(slotRaw) ? slotRaw as NodeBase[]
+                                    : slotRaw ? [slotRaw as NodeBase] : []
+        slots[slotName] = makeSlotChildren(slotItems, ctxN)
+      }
+    }
+
+    const childrenArg: ChildrenArg = {
+      defs:        childDefs,
+      rendered,
+      renderChild: (i: number) => computeAt(i),
+      slots,
+    }
+
+    // 6–7. ErrorBoundary (per-slice fallback) + Suspense (skeleton)
+    const skeletonFn    = skeletonRegistry.get(type, variant)
+    const fallback      = skeletonFn ? skeletonFn(migrated, ctxN) : null
+    const errorFallback = nodeRegistry.getErrorFallback(type, variant)
+
+    const wrapped = createElement(
+      Suspense,
+      { fallback },
+      createElement(NodeErrorBoundary, {
+        node:     migrated,
+        fallback: errorFallback,
+        children: shell(migrated as NodeDef, ctxN, childrenArg),
+      }),
+    )
+
+    // 7.5. Middleware after — wrap element (e.g. edit-mode overlay, analytics)
+    if (mws.length === 0) return wrapped
+    let element: ReactNode = wrapped
+    for (let i = mws.length - 1; i >= 0; i--)
+      if (mws[i].after) element = mws[i].after!(element, migrated, ctxN) ?? element
+    return element
+  }
 }

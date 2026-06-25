@@ -55,14 +55,17 @@ export function resolveStore(ctx: Pick<RenderContext, 'stores' | 'pageStoreKey'>
   const key = ctx.pageStoreKey ?? 'default'
   const raw = ctx.stores[key] ?? ctx.stores[Object.keys(ctx.stores)[0]] ?? staticStore
   if (raw === staticStore) return raw  // static store: nothing to cache
-  // Async-only stores (caps.sync === false) cannot be wrapped in CachedStore:
-  // CachedStore.querySync() delegates to the raw store's querySync which may
-  // not return meaningful rows, and CachedStore hardcodes caps.sync = true,
-  // hiding the async-only flag from useNodeRows (N34c).
-  if (raw.caps?.sync === false) return raw
-  // Streaming stores (caps.streaming === true) must bypass CachedStore:
-  // CachedStore hardcodes caps.streaming = false and does not proxy subscribe(),
-  // which would hide the live-subscription capability from useNodeStream (N34d).
+  // Async-only stores (caps.sync === false) ARE now wrapped: CachedStore became
+  // capability-transparent (store-impl.ts) — it inherits the source's caps.sync
+  // so the wrapper still reports sync:false to useNodeRows (no masking), AND it
+  // implements queryAsync that memoizes into the same cache querySync reads. So
+  // the async warm (queryAsync) + the post-resume sync read (querySync) share one
+  // CachedStore instance — the Cache-Aside contract (ADR-STORE-001) holds end to
+  // end. Wrapping an async source was previously impossible (caps masked); the
+  // transparency fix is exactly what lets it be wrapped here.
+  // Streaming stores (caps.streaming === true) STILL bypass CachedStore:
+  // CachedStore does not proxy subscribe(), which would hide the live-subscription
+  // capability from useNodeStream (N34d).
   if (raw.caps?.streaming === true) return raw
   const cached = _storeCache.get(raw)
   if (cached) return cached

@@ -29,8 +29,8 @@
 //
 
 import { use, useMemo }                         from 'react'
-import type { DataRow, EngineRow, DataSpec, StoreQuery } from '@statdash/engine'
-import { asyncFromSync }                         from '@statdash/engine'
+import type { DataRow, DataSpec, QueryResult, Requirement } from '@statdash/engine'
+import { extractRequirements }                   from '@statdash/engine'
 import type { NodeBase, RenderContext }          from './types'
 import { resolveNodeRows, resolveStore }         from './resolveNodeRows'
 import { specDimKey }                            from './specDimKey'
@@ -46,7 +46,7 @@ import { specDimKey }                            from './specDimKey'
 //  (filter change produces a new specDimKey) maps to a new Promise; the old
 //  entry is evicted if the cache is full.
 //
-const _promiseCache = new Map<string, Promise<EngineRow[]>>()
+const _promiseCache = new Map<string, Promise<DataRow[]>>()
 const CACHE_MAX = 200
 
 /** Exported for testing only — do not use in production code. */
@@ -99,36 +99,77 @@ export function useNodeRows(node: NodeBase, ctx: RenderContext): DataRow[] {
     return syncRows as DataRow[]
   }
 
-  // ── Async path: store has caps.sync === false (future network stores) ─────
+  // ── Async path: store has caps.sync === false (live network stores) ───────
   //
-  //  1. If no DataSpec is present, return inherited rows synchronously.
-  //  2. Compute the promise-cache key from specDimKey (already in depKey).
-  //  3. If no cached Promise exists for this key, create one via queryAsync.
-  //     asyncFromSync is used as a fallback if queryAsync is absent (defensive).
-  //  4. React.use() can be called conditionally (it is NOT a hook — it is a
-  //     React 19 API that suspends for Promises and reads from contexts).
-  //     The Suspense boundary in renderNode catches the suspension.
-  //     On rejection, NodeErrorBoundary renders the error UI.
+  //  Cache-Aside, per ADR-STORE-001 (NOT eager whole-cube prefetch). Two steps:
+  //
+  //    1. WARM — await store.queryAsync for every query the spec will issue. The
+  //       queries are derived from the SAME static analysis the sync resolvers
+  //       use (extractRequirements → val reqs; plus the spec's obs query for
+  //       'query' specs), so we fetch exactly the slice the node needs. The store
+  //       (a capability-transparent CachedStore over ApiStore) memoizes each
+  //       result into the cache its querySync reads.
+  //
+  //    2. READ — once warm, run resolveNodeRows SYNCHRONOUSLY. It drives the full
+  //       engine (desugar → resolver → encoding → transforms) exactly as the sync
+  //       fast-lane does; every storeObs/storeVal hits the now-warm cache instead
+  //       of throwing on a cold async source. This is why the read goes through
+  //       resolveNodeRows and not a hand-built StoreQuery: only interpretSpec
+  //       applies encoding/pipeline/multi-measure resolution.
+  //
+  //  The whole warm-then-read is wrapped in one Promise, cached by depKey, and
+  //  consumed via React.use() — Suspense shows the skeleton while it settles;
+  //  NodeErrorBoundary catches a rejected warm.
   //
   if (!node.data) {
     return ctx.rows ?? []
   }
 
   if (!_promiseCache.has(depKey)) {
-    const queryAsync = store.queryAsync
-      ? (q: StoreQuery) => store.queryAsync!(q, ctx.sectionCtx)
-      : (q: StoreQuery) => asyncFromSync(store)(q, ctx.sectionCtx)
+    const spec = node.data as DataSpec
 
-    // Construct the StoreQuery by spreading the DataSpec fields under { type:'obs' }.
-    // Network stores that implement queryAsync interpret the full spec payload;
-    // asyncFromSync fallback stores route it through querySync as-is.
-    // Cast is safe: an async-only store (caps.sync === false) must implement
-    // queryAsync and must handle whatever shape it advertises in its DataSpec.
-    const query = { type: 'obs', ...(node.data as Record<string, unknown>) } as StoreQuery
+    // Static analysis → the exact (code, dims) slices this spec reads. For a
+    // 'query' spec extractRequirements yields one val req per measure×year; we
+    // ALSO warm the obs query so obs-shaped reads (QueryResolver.storeObs) hit a
+    // warm cache. Both are keyed identically to what querySync will look up.
+    const reqs: Requirement[] = (() => {
+      try { return extractRequirements(spec, ctx.sectionCtx) }
+      catch { return [] }
+    })()
 
-    const promise = queryAsync(query).then(result => {
-      if (result.state === 'error') throw new Error(result.error ?? 'query failed')
-      return (result.data ?? []) as EngineRow[]
+    // Warm BOTH shapes the resolvers may read per code:
+    //   • val  — storeVal point reads (row-list, ratio-list, timeseries, growth)
+    //   • obs  — storeObs reads (the 'query' resolver; row-list label/color lookup)
+    // The (code, dims) of each req keys the warm exactly like the later sync read.
+    // Bind to `store` — store.queryAsync is a method that reads `this` (e.g.
+    // CachedStore.queryAsync → this.source); a bare reference would drop `this`.
+    const qa = store.queryAsync ? store.queryAsync.bind(store) : undefined
+    const warm: Promise<QueryResult[]> = qa
+      ? Promise.all(
+          reqs.flatMap((r): Promise<QueryResult>[] => {
+            const reqCtx = { ...ctx.sectionCtx, dims: { ...ctx.sectionCtx.dims, ...r.dims } }
+            return [
+              qa({ type: 'val', code: r.code }, reqCtx),
+              qa({ type: 'obs', measure: r.code }, reqCtx),
+            ]
+          }).concat(
+            // 'query' specs carry their own obs query (measure/filter/orderBy)
+            // that extractRequirements lowers to val reqs — warm the obs form too.
+            spec.type === 'query'
+              ? [qa(
+                  { type: 'obs', measure: spec.query.measure, filter: spec.query.filter, orderBy: spec.query.orderBy },
+                  ctx.sectionCtx,
+                )]
+              : [],
+          ),
+        )
+      : Promise.resolve([])
+
+    const promise = warm.then(results => {
+      const failed = results.find(r => r.state === 'error')
+      if (failed) throw new Error(failed.error ?? 'query failed')
+      // Cache is warm — the sync engine path now reads it without throwing.
+      return resolveNodeRows(node, ctx)
     })
 
     // Evict oldest entry on overflow (LRU approximation — Map insertion order)
@@ -142,6 +183,5 @@ export function useNodeRows(node: NodeBase, ctx: RenderContext): DataRow[] {
   // React.use() with a Promise suspends until the promise settles.
   // Per React 19 docs, use() with a Resource CAN be called conditionally
   // (unlike hooks, it is not subject to the "no conditional hooks" rule).
-  const rows = use(_promiseCache.get(depKey)!)
-  return rows as unknown as DataRow[]
+  return use(_promiseCache.get(depKey)!)
 }
