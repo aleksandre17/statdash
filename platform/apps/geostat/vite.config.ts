@@ -54,7 +54,11 @@ const pickExportTarget = (node: unknown): string | undefined => {
   }
   return undefined
 }
-const peerEntry = (id: string): string => {
+// Walk up from a resolved file to the package ROOT directory — the dir containing the
+// package.json whose `name === id`. Single robust lookup shared by peerEntry (ESM entry)
+// and peerDir (subpath base): react-leaflet does NOT expose "./package.json", so we
+// cannot resolve that subpath directly and must walk.
+const peerPackageDir = (id: string): { dir: string; pkg: Record<string, unknown> } => {
   let resolved: string
   try {
     resolved = req.resolve(id)
@@ -71,16 +75,30 @@ const peerEntry = (id: string): string => {
     if (existsSync(manifest)) {
       const pkg = JSON.parse(readFileSync(manifest, 'utf8'))
       if (pkg.name !== id) continue
-      // exports['.'] ESM target (recursive through nested conditions) → module → main.
-      const sub = pickExportTarget(pkg.exports?.['.']) ?? pkg.module ?? pkg.main
-      if (typeof sub !== 'string') {
-        throw new Error(`[vite.config] cannot determine ESM entry subpath for "${id}"`)
-      }
-      return resolve(dir, sub)
+      return { dir, pkg }
     }
   }
-  throw new Error(`[vite.config] cannot resolve entry for "${id}"`)
+  throw new Error(`[vite.config] cannot resolve package dir for "${id}"`)
 }
+const peerEntry = (id: string): string => {
+  const { dir, pkg } = peerPackageDir(id)
+  // exports['.'] ESM target (recursive through nested conditions) → module → main.
+  const exportsDot =
+    pkg.exports && typeof pkg.exports === 'object'
+      ? (pkg.exports as Record<string, unknown>)['.']
+      : undefined
+  const sub = pickExportTarget(exportsDot) ?? pkg.module ?? pkg.main
+  if (typeof sub !== 'string') {
+    throw new Error(`[vite.config] cannot determine ESM entry subpath for "${id}"`)
+  }
+  return resolve(dir, sub)
+}
+// The package DIRECTORY with a trailing separator, so a /^id\// → <dir>/ alias forms a
+// valid path: `leaflet/dist/leaflet.css` → <leaflet-dir>/dist/leaflet.css. We use the
+// directory (NOT the ESM entry) ONLY for subpaths — bare imports still hit peerEntry
+// above, so the react-apexcharts browser-field/IIFE trap is never re-triggered (a
+// directory base only ever resolves an explicit subpath here, never a main-field lookup).
+const peerDir = (id: string): string => peerPackageDir(id).dir + '/'
 
 // The @statdash/* packages this app bundles from SOURCE (mirror of the resolve.alias
 // source entries below). Their package.json `peerDependencies` are the SSOT for which
@@ -107,10 +125,21 @@ const sourcePackagePeers = (): string[] => {
 }
 
 const PEER_PACKAGES = sourcePackagePeers()
-const peerAliases = PEER_PACKAGES.map((id) => ({
-  find: new RegExp(`^${id}$`),
-  replacement: peerEntry(id),
-}))
+// Two aliases per peer, ORDER-CRITICAL (Vite alias is first-match):
+//   1. exact /^id$/      → the ESM ENTRY FILE  (bare `leaflet` → leaflet ESM build;
+//                          avoids the react-apexcharts browser-field/IIFE trap).
+//   2. prefix /^id\//    → the package DIRECTORY (with trailing slash) so SUBPATH
+//                          imports resolve to the app's own installed copy
+//                          (`leaflet/dist/leaflet.css` → <leaflet-dir>/dist/leaflet.css).
+// Without (2), a subpath of a source-bundled @statdash/* peer has no resolution under
+// the filtered install + shamefully-hoist=false, and Vite emits a RUNTIME "Could not
+// resolve" stub instead of failing the build (e.g. leaflet/dist/leaflet.css imported by
+// @statdash/plugins). The exact alias MUST precede the prefix alias so bare imports still
+// hit the entry file.
+const peerAliases = PEER_PACKAGES.flatMap((id) => [
+  { find: new RegExp(`^${id}$`), replacement: peerEntry(id) },
+  { find: new RegExp(`^${id}/`), replacement: peerDir(id) },
+])
 // Singletons that MUST be a single copy across the graph (the always-required peers).
 // dedupe is by bare-name; optional/feature peers don't need single-instance pinning.
 const PEER_SINGLETONS = ['react', 'react-dom', 'react-router-dom']
