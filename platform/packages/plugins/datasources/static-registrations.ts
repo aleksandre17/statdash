@@ -40,8 +40,10 @@
 //  'stats' builder; neither app imports the other.
 //
 
-import { registerStoreBuilder } from '@statdash/react/engine'
-import type { Classifier, DisplayMap, Observation } from '@statdash/engine'
+import { registerStoreBuilder, registerStoreCapabilities } from '@statdash/react/engine'
+import type {
+  Classifier, DisplayMap, Observation, SourceMetadata, SourceTestResult,
+} from '@statdash/engine'
 
 /** Kind-specific params for a 'static' datasource descriptor. */
 interface StaticParams {
@@ -51,6 +53,60 @@ interface StaticParams {
   classifiers?: Record<string, Classifier>
   /** Inline display maps for label resolution. */
   display?:     Record<string, DisplayMap>
+}
+
+// ── Reserved measure-ish keys — the engine's canonical non-dimension columns ──
+//  An inline static row mixes DIMENSION columns (geo, sector, …) with the
+//  measure/value column + obs metadata. To browse a static source's structure we
+//  split the keys: `value` is THE measure; the obs-metadata keys are neither dim
+//  nor measure; everything else is a dimension. This is the static analogue of a
+//  cube's DSD (dims) + measure list — derived PURELY from the inline rows.
+const RESERVED_VALUE_KEYS = new Set(['value', 'obsStatus', 'time'])
+
+/**
+ * Derive a SourceMetadata from inline static rows — PURE, zero network. Unions
+ * the keys across all rows (rows may be ragged): every non-reserved key is a
+ * dimension; `value` (when present) is the single measure. The static source's
+ * "structure" the Constructor browses, the same dims/measures shape the live
+ * cube reports — so the Sources panel renders both kinds identically (OCP).
+ */
+export function deriveStaticMetadata(values: Observation[] | undefined): SourceMetadata {
+  const dimKeys = new Set<string>()
+  let hasValue = false
+  for (const row of values ?? []) {
+    for (const key of Object.keys(row)) {
+      if (key === 'value') { hasValue = true; continue }
+      if (RESERVED_VALUE_KEYS.has(key)) continue
+      dimKeys.add(key)
+    }
+  }
+  return {
+    kind:       'static',
+    dimensions: [...dimKeys].map((code) => ({ code })),
+    measures:   hasValue ? [{ code: 'value' }] : [],
+    note:       `Derived from ${(values ?? []).length} inline row(s).`,
+  }
+}
+
+/**
+ * Validate an inline static source — PURE, zero network. Well-formed = a
+ * non-empty array of plain-object rows. Empty / non-array / non-object rows are
+ * the author-fixable error cases the Test action surfaces.
+ */
+export function testStaticSource(values: unknown): SourceTestResult {
+  if (!Array.isArray(values)) {
+    return { ok: false, message: 'params.values must be an array of rows.' }
+  }
+  if (values.length === 0) {
+    return { ok: false, message: 'No rows — add at least one inline row.' }
+  }
+  const allObjects = values.every(
+    (r) => r !== null && typeof r === 'object' && !Array.isArray(r),
+  )
+  if (!allObjects) {
+    return { ok: false, message: 'Every row must be a JSON object.' }
+  }
+  return { ok: true, message: `${values.length} row(s) — well-formed.` }
 }
 
 /**
@@ -67,5 +123,16 @@ export function registerStaticStoreBuilder(): void {
       classifiers: params.classifiers,
       display:     params.display,
     })
+  })
+
+  // M2 authoring capabilities — both PURE (no network), as befits inline data.
+  // getMetadata = derive dims/measures from the inline rows' keys; testConnection
+  // = the rows are present + well-formed. This is what makes a static source
+  // browsable + testable in the Constructor BEFORE it is saved.
+  registerStoreCapabilities('static', {
+    getMetadata: (config) =>
+      Promise.resolve(deriveStaticMetadata((config.params as StaticParams | undefined)?.values)),
+    testConnection: (config) =>
+      Promise.resolve(testStaticSource((config.params as StaticParams | undefined)?.values)),
   })
 }

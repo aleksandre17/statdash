@@ -24,6 +24,15 @@ import { requestAt } from './api'
 // The cube discovery scope. A leading-empty prefix in requestAt + the full
 // path here keeps all cube URLs assembled in this one file.
 const CUBE_PREFIX = '/api/cube'
+// The stats scope — sibling public read used to LIST datasets (the cube picker
+// for source authoring). Distinct server scope, same transport (Law 5).
+const STATS_PREFIX = '/api/stats'
+
+/** One row of GET /api/stats/datasets — a pickable cube (code + display label). */
+export interface CubeDatasetRow {
+  code:  string
+  label: string
+}
 
 // ── Wire shapes (exact mirror of the api cube route contract) ────────────────
 
@@ -108,6 +117,14 @@ export interface CubeClassifyResult {
 // ── Endpoint group ───────────────────────────────────────────────────────────
 
 export const cubeApi = {
+  /**
+   * List the available cubes — the PICK-don't-type source for the stats
+   * source-authoring cube picker (Law 2: the author selects a real dataset code,
+   * never hand-types 'NAT_ACCOUNTS'). Reads the public stats datasets surface.
+   */
+  datasets: () =>
+    requestAt<CubeDatasetRow[]>('', 'GET', `${STATS_PREFIX}/datasets`),
+
   /** Read the introspection bundle for a dataset. 404 if the dataset is unknown. */
   profile: (datasetCode: string) =>
     requestAt<CubeProfile>('', 'GET', `${CUBE_PREFIX}/${encodeURIComponent(datasetCode)}/profile`),

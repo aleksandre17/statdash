@@ -136,7 +136,10 @@ export type { SkeletonFn }                                from './skeletonRegist
 
 // ── DataSource manifest factory ───────────────────────────────────────
 export { registerStoreBuilder, buildStoreManifest, registeredKinds } from './storeManifest'
-export type { StoreBuilderFn }                      from './storeManifest'
+export {
+  registerStoreCapabilities, getStoreCapabilities, getSourceMetadata, testSource,
+}                                                   from './storeManifest'
+export type { StoreBuilderFn, StoreCapabilities }   from './storeManifest'
 
 // ── Slice registration hub ─────────────────────────────────────────────
 export { registerSlice }               from './registerSlice'

@@ -41,3 +41,51 @@ export interface DatasourceInstanceConfig {
   /** Kind-specific parameters — JSON-serializable; passed to the store builder. */
   params?: Record<string, unknown>
 }
+
+// ── SourceMetadata — the introspectable STRUCTURE of one source (M2) ─────────
+//
+//  The kind-agnostic shape a Constructor BROWSES to know what a source offers:
+//  its dimensions + measures. The store-builder registry's optional
+//  `getMetadata(config)` capability returns this (see @statdash/react/engine
+//  storeManifest). It is the source-tier analogue of the cube-profile bundle
+//  (apps/panel cubeApi `CubeProfile`) — but normalized across ALL kinds:
+//    • 'stats'  derives it from the live cube-profile (datasetCode → dims/measures).
+//    • 'static' derives it PURELY from the inline `params.values` keys (no network).
+//  A new kind that implements getMetadata becomes browsable with ZERO UI change
+//  (OCP — the Sources panel renders whatever metadata the kind reports).
+//
+//  JSON-serializable (Law 2): plain code/label records, never functions. Kept
+//  deliberately minimal (codes + optional labels) — richer per-kind detail (cube
+//  members, units) stays in the kind's own richer profile; this is the COMMON
+//  denominator every kind can answer.
+
+/** One dimension a source exposes — a code, with an optional display label. */
+export interface SourceMetadataDimension {
+  code:   string
+  label?: string
+}
+
+/** One measure a source exposes — a code, with an optional display label. */
+export interface SourceMetadataMeasure {
+  code:   string
+  label?: string
+}
+
+/**
+ * The kind-agnostic structural bundle a Constructor browses for a source.
+ * `kind` echoes the source's discriminant (provenance); `dimensions`/`measures`
+ * are the browsable axes. `note` carries an optional human hint (e.g. how the
+ * structure was derived) — never load-bearing, purely informational.
+ */
+export interface SourceMetadata {
+  kind:       string
+  dimensions: SourceMetadataDimension[]
+  measures:   SourceMetadataMeasure[]
+  note?:      string
+}
+
+/** Result of a source's optional `testConnection` capability. */
+export interface SourceTestResult {
+  ok:       boolean
+  message?: string
+}

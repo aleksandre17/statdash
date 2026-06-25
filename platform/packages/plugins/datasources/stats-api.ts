@@ -81,6 +81,19 @@ export interface PublicDataSourceRow {
   config: Record<string, unknown>
 }
 
+/**
+ * Minimal projection of GET /api/cube/:code/profile — just the browsable axes
+ * the source-authoring Constructor needs (dims/measures codes + labels). The
+ * full profile bundle (members, units, actual-region) is richer; this reads only
+ * what SourceMetadata reports. Mirrors the route's CubeProfile shape exactly (the
+ * app owns its own wire contract — Law 3). Labels are SDMX LocaleString records.
+ */
+export interface StatsCubeProfileRow {
+  datasetCode: string
+  dimensions:  { code: string; conceptRole: string | null }[]
+  measures:    { code: string; label: Record<string, string> | null }[]
+}
+
 /** Row of GET /classifiers/:dim_code — one codelist member. */
 export interface StatsClassifierRow {
   id:        number
@@ -96,6 +109,7 @@ export interface StatsClassifierRow {
 
 const STATS_PREFIX = '/api/stats'
 const API_PREFIX   = '/api'
+const CUBE_PREFIX  = '/api/cube'
 
 async function get<T>(base: string, path: string): Promise<T> {
   return getAt<T>(base, STATS_PREFIX, path)
@@ -223,6 +237,17 @@ export async function fetchDimClassifiers(base: string, dimCode: string): Promis
  */
 export async function fetchDatasetMeta(base: string, datasetCode: string): Promise<StatsDatasetMetaRow> {
   return get<StatsDatasetMetaRow>(base, `/datasets/${encodeURIComponent(datasetCode)}`)
+}
+
+/**
+ * GET /api/cube/:code/profile → the introspection bundle (M2 — the source's
+ * browsable structure). Reuses the SAME HTTP boundary (getAt) on the public cube
+ * scope (NOT /api/stats — the cube profile is its own least-privilege read).
+ * This is what the 'stats' kind's `getMetadata` maps to SourceMetadata. 404 ⇒
+ * throws (unknown dataset) — the caller surfaces it as a Test/Browse error.
+ */
+export async function fetchCubeProfile(base: string, datasetCode: string): Promise<StatsCubeProfileRow> {
+  return getAt<StatsCubeProfileRow>(base, CUBE_PREFIX, `/${encodeURIComponent(datasetCode)}/profile`)
 }
 
 // ── Per-query observation fetcher — the on-demand read (ADR-STORE-001) ─────

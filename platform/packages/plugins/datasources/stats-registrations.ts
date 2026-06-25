@@ -32,14 +32,62 @@
 //    app adapters (Law 3 / dependency arrow).
 //
 
-import { registerStoreBuilder } from '@statdash/react/engine'
+import { registerStoreBuilder, registerStoreCapabilities } from '@statdash/react/engine'
+import type { SourceMetadata, SourceTestResult } from '@statdash/engine'
 import { registerStaticStoreBuilder } from './static-registrations'
+
+/**
+ * Resolve the stats API base for one source config — the SAME precedence the
+ * 'stats' builder uses (config.url → VITE_API_STATS_URL → localhost). Shared by
+ * the builder + the M2 capabilities so a source's metadata/test hit exactly the
+ * endpoint the live store will.
+ */
+function resolveStatsBase(url: string | undefined): string {
+  return url ?? (import.meta.env.VITE_API_STATS_URL ?? 'http://localhost:3001')
+}
 
 export function registerStoreBuilders(): void {
   // 'static' source kind — config-level inline literal data (zero network).
   // Registered alongside 'stats' so BOTH apps get it through this one shared
   // call. See static-registrations.ts + adr_data_source_reference_spectrum.
   registerStaticStoreBuilder()
+
+  // M2 authoring capabilities for 'stats' — both go over the network (the cube
+  // is live). getMetadata = the cube-profile (dims/measures) for datasetCode;
+  // testConnection = the dataset resolves (its meta is reachable). These let a
+  // non-programmer pick a cube and BROWSE/TEST it before saving the source.
+  registerStoreCapabilities('stats', {
+    getMetadata: async (config): Promise<SourceMetadata> => {
+      const base        = resolveStatsBase(config.url)
+      const datasetCode = (config.params?.datasetCode as string) ?? config.id
+      const { fetchCubeProfile } = await import('./stats-api')
+      const profile = await fetchCubeProfile(base, datasetCode)
+      return {
+        kind:       'stats',
+        dimensions: profile.dimensions.map((d) => ({
+          code:  d.code,
+          label: d.conceptRole ? `${d.code} (${d.conceptRole})` : d.code,
+        })),
+        measures:   profile.measures.map((m) => ({
+          code:  m.code,
+          label: m.label?.['en'] ?? m.label?.['ka'] ?? m.code,
+        })),
+        note:       `Live cube '${datasetCode}'.`,
+      }
+    },
+    testConnection: async (config): Promise<SourceTestResult> => {
+      const base        = resolveStatsBase(config.url)
+      const datasetCode = (config.params?.datasetCode as string) ?? config.id
+      if (!datasetCode) return { ok: false, message: 'No datasetCode — pick a cube.' }
+      const { fetchDatasetMeta } = await import('./stats-api')
+      try {
+        const meta = await fetchDatasetMeta(base, datasetCode)
+        return { ok: true, message: `Resolved cube '${meta.code}'.` }
+      } catch (e) {
+        return { ok: false, message: e instanceof Error ? e.message : 'Dataset did not resolve.' }
+      }
+    },
+  })
 
   registerStoreBuilder('stats', async (config) => {
     const base        = config.url ?? (import.meta.env.VITE_API_STATS_URL ?? 'http://localhost:3001')

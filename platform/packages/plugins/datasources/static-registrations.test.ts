@@ -17,9 +17,15 @@ import {
   registeredKinds,
   buildStoreManifest,
   registerStoreBuilder,
+  getStoreCapabilities,
+  getSourceMetadata,
+  testSource,
 } from '@statdash/react/engine'
 import type { DatasourceInstanceConfig, Observation } from '@statdash/engine'
-import { registerStoreBuilders, registerStaticStoreBuilder } from './index'
+import {
+  registerStoreBuilders, registerStaticStoreBuilder,
+  deriveStaticMetadata, testStaticSource, toSourceDescriptor, typeForKind,
+} from './index'
 
 describe("'static' source kind — FF-STATIC-KIND", () => {
   it('registers a reachable static kind via the shared boot fn', () => {
@@ -118,6 +124,88 @@ describe('config is declarative — FF-NO-FETCH-IN-CONFIG', () => {
     }
     expect(hasFunctionValue(transformSpec)).toBe(false)
     expect(hasFunctionValue(pivotSpec)).toBe(false)
+  })
+})
+
+// ── M2 — source authoring (getMetadata / testConnection) ──────────────────────
+describe("'static' authoring capabilities — FF-SOURCE-AUTHORABLE", () => {
+  const VALUES: Observation[] = [
+    { measure: 'GDP', geo: 'GE', time: 2020, value: 100 },
+    { measure: 'GDP', geo: 'AB', time: 2021, value: 110 },
+    { measure: 'CPI', geo: 'GE', time: 2021, value: 5 },
+  ]
+
+  it('registers getMetadata + testConnection alongside the static builder', () => {
+    registerStaticStoreBuilder()
+    const caps = getStoreCapabilities('static')
+    expect(typeof caps.getMetadata).toBe('function')
+    expect(typeof caps.testConnection).toBe('function')
+  })
+
+  it('deriveStaticMetadata splits inline keys into dims + the value measure (pure)', () => {
+    const md = deriveStaticMetadata(VALUES)
+    expect(md.kind).toBe('static')
+    expect(md.dimensions.map((d) => d.code).sort()).toEqual(['geo', 'measure'])
+    expect(md.measures.map((m) => m.code)).toEqual(['value'])
+    // `time`/`obsStatus` are reserved obs columns — neither dim nor measure.
+    expect(md.dimensions.find((d) => d.code === 'time')).toBeUndefined()
+  })
+
+  it('getSourceMetadata dispatches to the static capability (no network)', async () => {
+    registerStaticStoreBuilder()
+    const fetchSpy = vi.spyOn(globalThis, 'fetch')
+    const md = await getSourceMetadata({ id: 's', kind: 'static', params: { values: VALUES } })
+    expect(md?.measures.map((m) => m.code)).toEqual(['value'])
+    expect(fetchSpy).not.toHaveBeenCalled()
+    fetchSpy.mockRestore()
+  })
+
+  it('testStaticSource validates well-formed rows + rejects the error cases', () => {
+    expect(testStaticSource(VALUES).ok).toBe(true)
+    expect(testStaticSource([]).ok).toBe(false)
+    expect(testStaticSource('nope').ok).toBe(false)
+    expect(testStaticSource([1, 2, 3]).ok).toBe(false)
+  })
+
+  it('testSource dispatches to the static capability', async () => {
+    registerStaticStoreBuilder()
+    expect((await testSource({ id: 's', kind: 'static', params: { values: VALUES } }))?.ok).toBe(true)
+    expect((await testSource({ id: 's', kind: 'static', params: { values: [] } }))?.ok).toBe(false)
+  })
+
+  it('FF-SOURCE-AUTHORABLE — an authored static row builds a live store, zero code', async () => {
+    registerStaticStoreBuilder()
+    // Simulate exactly what the Constructor persists: a wire row (type+config),
+    // then the shared row→descriptor mapping (toSourceDescriptor) the runner boot
+    // uses. The same path a non-programmer drives through the UI.
+    const persistedRow = {
+      name:   'authored-gdp',
+      type:   typeForKind('static')!,           // 'static' wire type
+      url:    null,
+      config: { values: VALUES },               // the inline rows authored in the panel
+    }
+    expect(persistedRow.type).toBe('static')
+
+    const descriptor = toSourceDescriptor(persistedRow)!
+    expect(descriptor).toMatchObject({ id: 'authored-gdp', kind: 'static' })
+
+    const fetchSpy = vi.spyOn(globalThis, 'fetch')
+    const stores = await buildStoreManifest([descriptor])
+    const store  = stores['authored-gdp']!
+    expect(store).toBeDefined()
+
+    // The live store serves the authored rows — the success test of the vision.
+    expect(store.querySync({ type: 'val', code: 'GDP' }, { timeMode: 'year', dims: { time: 2020 } })[0]?.['value'])
+      .toBe(100)
+    expect(fetchSpy).not.toHaveBeenCalled()
+    fetchSpy.mockRestore()
+  })
+
+  it('toSourceDescriptor skips a type with no registered kind (open for extension)', () => {
+    expect(toSourceDescriptor({ name: 'x', type: 'sdmx-json', config: {} })).toBeUndefined()
+    // round-trip the kind↔type table
+    expect(typeForKind('stats')).toBe('rest')
+    expect(typeForKind('static')).toBe('static')
   })
 })
 

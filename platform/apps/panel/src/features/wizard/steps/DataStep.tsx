@@ -2,7 +2,8 @@ import { useState } from 'react'
 import { Box, Typography, Button, Chip, Paper, Divider } from '@mui/material'
 import StorageIcon from '@mui/icons-material/Storage'
 import DataObjectIcon from '@mui/icons-material/DataObject'
-import CheckCircleIcon from '@mui/icons-material/CheckCircle'
+import AddIcon from '@mui/icons-material/Add'
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline'
 import DragIndicatorIcon from '@mui/icons-material/DragIndicator'
 import {
   SortableContext, verticalListSortingStrategy,
@@ -13,12 +14,18 @@ import { DndContext, type DragEndEvent, closestCenter } from '@dnd-kit/core'
 import { useConstructorStore, useDataSources, useDataSpecs } from '../../../store/constructor.store'
 import { useDndSensors } from '../../../shared/dnd/useDndSensors'
 import { DataSpecEditor } from '../../data-layer'
+import { SourceAuthoringPanel } from '../../datasources/SourceAuthoringPanel'
+import { deleteDataSource } from '../../../store/api-actions'
 import type { ConnectionStatus } from '../../../types/constructor'
 
 // ── Selection model ───────────────────────────────────────────────────────────
 // Right panel is driven by a discriminated selection: which list + which id.
+//  - 'source'     edit an existing source (authoring panel, prefilled)
+//  - 'source-new' add a new source       (authoring panel, blank)
+//  - 'spec'       edit a DataSpec
 type Selection =
   | { kind: 'source'; id: string }
+  | { kind: 'source-new' }
   | { kind: 'spec';   id: string }
   | null
 
@@ -109,6 +116,8 @@ export function DataStep() {
 
   const selectedSource = selection?.kind === 'source' ? sources.find((d) => d.id === selection.id) ?? null : null
   const selectedSpec   = selection?.kind === 'spec'   ? specs.find((d) => d.id === selection.id) ?? null   : null
+  // The authoring panel shows for both an existing source and a brand-new one.
+  const showAuthoring  = selection?.kind === 'source' || selection?.kind === 'source-new'
 
   return (
     <Box sx={{ p: 3, display: 'flex', flexDirection: 'column', gap: 2, height: '100%' }}>
@@ -126,7 +135,15 @@ export function DataStep() {
         {/* ── LEFT: Browser ─────────────────────────────────────────────────── */}
         <Paper variant="outlined" sx={{ p: 1.5, display: 'flex', flexDirection: 'column', gap: 2, overflow: 'auto' }}>
           <Box>
-            <Typography variant="overline" color="text.secondary">მონაცემების წყაროები</Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <Typography variant="overline" color="text.secondary">მონაცემების წყაროები</Typography>
+              <Button
+                size="small" startIcon={<AddIcon />}
+                onClick={() => setSelection({ kind: 'source-new' })}
+              >
+                დამატება
+              </Button>
+            </Box>
             <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleSourceDragEnd}>
               <SortableContext items={sources.map((d) => d.id)} strategy={verticalListSortingStrategy}>
                 {sources.map((ds) => (
@@ -171,42 +188,30 @@ export function DataStep() {
             <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column',
                        alignItems: 'center', justifyContent: 'center', color: 'text.disabled', gap: 1 }}>
               <DataObjectIcon sx={{ fontSize: 48 }} />
-              <Typography variant="body2">აირჩიეთ წყარო ან სპეც-ი სანახავად</Typography>
+              <Typography variant="body2">აირჩიეთ წყარო ან სპეც-ი — ან დაამატეთ ახალი</Typography>
             </Box>
           )}
 
-          {selectedSource && (
+          {showAuthoring && (
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <Typography variant="h6" fontWeight={600}>{selectedSource.name}</Typography>
-                {selectedSource.status === 'connected' && <CheckCircleIcon color="success" fontSize="small" />}
-              </Box>
-              <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-                <Chip size="small" label={selectedSource.type.toUpperCase()} color="primary" variant="outlined" />
-                <Chip size="small" label={selectedSource.status} color={STATUS_COLOR[selectedSource.status]} />
-              </Box>
-              <Box>
-                <Typography variant="caption" color="text.secondary">URL მისამართი</Typography>
-                <Typography variant="body2" sx={{ fontFamily: 'monospace', wordBreak: 'break-all' }}>
-                  {selectedSource.url ?? '—'}
-                </Typography>
-              </Box>
-
-              <Divider />
-              <Typography variant="overline" color="text.secondary">გადახედვა</Typography>
-              <Box component="table" sx={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
-                <Box component="thead">
-                  <Box component="tr" sx={{ '& th': { textAlign: 'left', borderBottom: '1px solid', borderColor: 'divider', py: 0.5 } }}>
-                    <Box component="th">Property</Box>
-                    <Box component="th">Value</Box>
-                  </Box>
+              {selectedSource && (
+                <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+                  <Chip size="small" label={selectedSource.type.toUpperCase()} color="primary" variant="outlined" />
+                  <Chip size="small" label={selectedSource.status} color={STATUS_COLOR[selectedSource.status]} />
+                  <Box sx={{ flex: 1 }} />
+                  <Button
+                    size="small" color="error" startIcon={<DeleteOutlineIcon />}
+                    onClick={() => { void deleteDataSource(selectedSource.id); setSelection(null) }}
+                  >
+                    წაშლა
+                  </Button>
                 </Box>
-                <Box component="tbody" sx={{ '& td': { borderBottom: '1px solid', borderColor: 'divider', py: 0.5 } }}>
-                  <Box component="tr"><Box component="td">id</Box><Box component="td">{selectedSource.id}</Box></Box>
-                  <Box component="tr"><Box component="td">type</Box><Box component="td">{selectedSource.type}</Box></Box>
-                  <Box component="tr"><Box component="td">status</Box><Box component="td">{selectedSource.status}</Box></Box>
-                </Box>
-              </Box>
+              )}
+              <SourceAuthoringPanel
+                key={selectedSource?.id ?? 'new'}
+                existing={selectedSource}
+                onSaved={(id) => setSelection({ kind: 'source', id })}
+              />
             </Box>
           )}
 

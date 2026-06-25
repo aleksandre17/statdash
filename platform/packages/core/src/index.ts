@@ -192,6 +192,9 @@ export { ExternalStore, CachedStore }                                  from './d
 export type { RawObsRow }                                              from './data/store-api'
 export { ApiStore }                                                    from './data/store-api'
 export type { DatasourceInstanceConfig }                                from './data/datasource'
+export type {
+  SourceMetadata, SourceMetadataDimension, SourceMetadataMeasure, SourceTestResult,
+}                                                                       from './data/datasource'
 export type { AggOp, AggregationRule }                                  from './data/aggregate'
 export { groupAggregate }                                               from './data/aggregate'
 
