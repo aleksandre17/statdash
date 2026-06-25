@@ -40,16 +40,12 @@ ARG VITE_API_URL
 ENV VITE_API_URL=$VITE_API_URL
 COPY . .
 # Production packaging runs vite ONLY — never `tsc -b` (type-checking the whole
-# monorepo, which apps/panel/tsconfig.app.json pulls in via ../../packages, is a
-# category error inside a per-app image; the `build` script keeps tsc as the local
-# gate). BUT vite resolves @statdash/* via SOURCE aliases, so it must resolve those
-# packages' (optional) PEER deps — e.g. react-leaflet/leaflet, declared as OPTIONAL
-# peers by @statdash/plugins. Under `.npmrc shamefully-hoist=false`, a FILTERED
-# install leaves those peers unresolved and vite emits `__vite-optional-peer-dep`
-# stubs → MISSING_EXPORT. A full frozen install (the whole workspace is COPYd by
-# now) mirrors the local build's resolution. The weight stays in this discarded
-# builder layer; the final nginx stage carries only the static dist.
-RUN pnpm install --frozen-lockfile
+# monorepo via ../../packages is a category error in a per-app image; the `build`
+# script keeps tsc as the local gate). Vite builds @statdash/* from SOURCE; the
+# OPTIONAL peer deps of @statdash/plugins (react-leaflet/leaflet/apexcharts/
+# react-apexcharts) resolve via explicit resolve.alias in apps/panel/vite.config.ts
+# (require.resolve'd to the app's own installed copies), so the FILTERED deps install
+# is sufficient — no full-monorepo re-install.
 RUN pnpm --filter ./apps/panel exec vite build
 
 # ─── Stage 5: production (nginx serving the static dist) ──────────────────────
