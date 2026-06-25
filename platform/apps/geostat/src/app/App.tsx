@@ -1,11 +1,18 @@
-import { useState, useEffect }     from 'react'
-import { Routes, Route, Navigate }  from 'react-router-dom'
-import { SiteProvider }             from '@statdash/react'
+import { useState, useEffect, lazy, Suspense } from 'react'
 import { modeRegistry }             from '@statdash/engine'
-import { LocaleGuard }              from './LocaleGuard'
 import { bootstrapSite }            from '@/data/site-manifest'
 import type { SiteBootstrap }       from '@/data/site-manifest'
 import { registerFormatters }       from '@/i18n/formatters'
+import { SuspenseFallback }         from './SuspenseFallback'
+
+// ── Code-split renderer boundary ──────────────────────────────────────────────
+//  The heavy renderer graph — the @statdash/react engine + the panel/node plugins
+//  (ApexCharts, Leaflet) registered by setupRegistrations() — lives behind this
+//  React.lazy boundary. Keeping it out of the eager entry chunk means the shell
+//  (bootstrap + AppSkeleton) stays small; the engine downloads once the site has
+//  bootstrapped and the first page is about to render. Lazy is transparent — the
+//  same manifest renders through the same SiteProvider/routes (see RendererSurface).
+const RendererSurface = lazy(() => import('./RendererSurface'))
 
 function AppSkeleton() {
   return (
@@ -40,19 +47,12 @@ export default function App() {
 
   const { manifest, stores } = bootstrap
 
+  // The renderer chunk is in flight only on the very first page load; the
+  // accessible SuspenseFallback reuses the AppSkeleton structure so there is no
+  // layout shift between boot and the renderer mounting (WCAG / Law 9).
   return (
-    <SiteProvider
-      stores={stores}
-      pages={manifest.pages}
-      nav={manifest.nav}
-      chrome={manifest.chrome}
-      chromeConfig={manifest.chromeConfig}
-      i18n={manifest.i18n}
-    >
-      <Routes>
-        <Route path="/:locale/*" element={<LocaleGuard manifest={manifest} />} />
-        <Route path="*"          element={<Navigate to={`/${manifest.i18n.defaultLocale}`} replace />} />
-      </Routes>
-    </SiteProvider>
+    <Suspense fallback={<SuspenseFallback label="Loading…" />}>
+      <RendererSurface manifest={manifest} stores={stores} />
+    </Suspense>
   )
 }

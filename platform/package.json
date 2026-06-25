@@ -20,13 +20,13 @@
     "typecheck": "tsc -b apps/geostat/tsconfig.app.json --noEmit",
     "preview": "pnpm --filter ./apps/geostat run preview",
     "test": "vitest run",
-    "check-laws": "bash ops/scripts/check-laws.sh",
-    "validate:local": "bash ops/scripts/validate-local.sh",
-    "layer-status": "bash ops/scripts/layer-status.sh",
-    "build-verify": "bash ops/scripts/build-verify.sh",
-    "compose:up": "docker compose -f ops/compose/docker-compose.yml -f ops/compose/docker-compose.override.yml up",
-    "compose:down": "docker compose -f ops/compose/docker-compose.yml down",
-    "compose:prod": "docker compose -f ops/compose/docker-compose.yml -f ops/compose/docker-compose.prod.yml up -d"
+    "check-laws": "bash ../ops/scripts/check-laws.sh",
+    "validate:local": "bash ../ops/scripts/validate-local.sh",
+    "layer-status": "bash ../ops/scripts/layer-status.sh",
+    "build-verify": "bash ../ops/scripts/build-verify.sh",
+    "compose:up": "docker compose -f ../ops/compose/docker-compose.yml -f ../ops/compose/docker-compose.override.yml up",
+    "compose:down": "docker compose -f ../ops/compose/docker-compose.yml down",
+    "compose:prod": "docker compose -f ../ops/compose/docker-compose.yml -f ../ops/compose/docker-compose.prod.yml up -d"
   },
   "devDependencies": {
     "@changesets/cli": "^2.27.10",

@@ -202,10 +202,21 @@ describe("'static' authoring capabilities — FF-SOURCE-AUTHORABLE", () => {
   })
 
   it('toSourceDescriptor skips a type with no registered kind (open for extension)', () => {
-    expect(toSourceDescriptor({ name: 'x', type: 'sdmx-json', config: {} })).toBeUndefined()
-    // round-trip the kind↔type table
+    // An unknown wire type (no row in SOURCE_KIND_BY_TYPE) is skipped, not failed.
+    expect(toSourceDescriptor({ name: 'x', type: 'no-such-type', config: {} })).toBeUndefined()
+    // round-trip the kind↔type table — all three modes now have a live kind.
     expect(typeForKind('stats')).toBe('rest')
     expect(typeForKind('static')).toBe('static')
+    expect(typeForKind('href')).toBe('sdmx-json')
+  })
+
+  it("the 'sdmx-json' wire type maps to the live 'href' kind, carrying the url", () => {
+    const descriptor = toSourceDescriptor({
+      name: 'remote', type: 'sdmx-json', url: 'https://example.org/data.json', config: { format: 'json' },
+    })
+    expect(descriptor).toMatchObject({
+      id: 'remote', kind: 'href', url: 'https://example.org/data.json', params: { format: 'json' },
+    })
   })
 })
 

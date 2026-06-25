@@ -15,6 +15,13 @@ export { registerStoreBuilders } from './stats-registrations'
 export {
   registerStaticStoreBuilder, deriveStaticMetadata, testStaticSource,
 } from './static-registrations'
+export {
+  registerHrefStoreBuilder,
+  registerHrefFormatParser, registeredHrefFormats,
+  registerHrefAuthStrategy, registeredHrefAuthSchemes,
+  assertHrefAllowed, fetchHrefRows,
+} from './href-registrations'
+export type { HrefParams, HrefAuthConfig, HrefFormatParser, HrefAuthStrategy } from './href-registrations'
 export * from './stats-api'
 export {
   SOURCE_KIND_BY_TYPE, kindForType, typeForKind, toSourceDescriptor,

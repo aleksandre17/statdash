@@ -28,6 +28,39 @@ import { resolve } from 'path'
 
 export default defineConfig({
   plugins: [react()],
+  build: {
+    // ── Vendor chunk splitting (secondary lever; lazy boundaries are primary) ──
+    //
+    //  The primary size win is the route-level React.lazy boundary in App.tsx
+    //  (./app/RendererSurface), which pulls the heavy renderer graph — the
+    //  @statdash/react engine plus the panel/node plugins (ApexCharts, Leaflet)
+    //  registered by setupRegistrations() — out of the eager entry chunk. These
+    //  codeSplitting groups additionally peel the large, rarely-changing vendors
+    //  into their own cacheable chunks: they ride along with whichever lazy chunk
+    //  first needs them rather than bloating the entry, and change independently
+    //  of app code (better long-term caching).
+    //
+    //  Rolldown (Vite 8) ignores manualChunks-as-function in favour of this
+    //  declarative group API (codeSplitting.groups[{ name, test, priority }];
+    //  advancedChunks is the deprecated alias of the same shape).
+    rolldownOptions: {
+      output: {
+        codeSplitting: {
+          groups: [
+            // react-vendor FIRST (highest priority) so the shared React runtime
+            // (incl. react/jsx-runtime, which every component statically needs)
+            // lands in the small eager vendor chunk — NOT pulled into apexcharts
+            // by includeDependenciesRecursively, which would force the entry to
+            // eager-load the ~540 kB charting lib just to reach jsx-runtime.
+            { name: 'react-vendor', test: /[\\/]node_modules[\\/](react|react-dom|react-router|react-router-dom|scheduler)[\\/]/, priority: 40 },
+            { name: 'apexcharts',   test: /[\\/]node_modules[\\/](apexcharts|react-apexcharts)[\\/]/, priority: 30 },
+            { name: 'leaflet',      test: /[\\/]node_modules[\\/](leaflet|react-leaflet|@react-leaflet)[\\/]/, priority: 30 },
+            { name: 'i18n',         test: /[\\/]node_modules[\\/](i18next|react-i18next)[\\/]/, priority: 25 },
+          ],
+        },
+      },
+    },
+  },
   resolve: {
     // 'source' condition lets Vite pick the TypeScript source entry from package.json
     // exports maps (e.g. "@statdash/expr": { source: "./index.ts", import: "./dist/index.js" })

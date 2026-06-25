@@ -3,12 +3,15 @@ import ReactDOM from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
 import i18next from 'i18next'
 import App from './app/App'
-import { setupRegistrations } from './setupRegistrations'
 import './shared/styles/index.css'
 import './shared/styles/inner.css'
 
 // i18next.init() synchronously creates ResourceStore and assigns addResources/addResourceBundle
-// to the instance — must run before setupRegistrations() which calls registerSlice() with i18n.
+// to the instance — must run before setupRegistrations() (which calls registerSlice() with i18n).
+// setupRegistrations now runs at the top of the lazy ./app/RendererSurface module (so the heavy
+// panel/node plugin graph — ApexCharts, Leaflet — stays out of the eager entry chunk); React
+// resolves that module only AFTER this synchronous init, before any page renders, so the original
+// init → register → render ordering holds across the code-split boundary.
 // 'en' is the runner's tenant-neutral baseline (ADR-0028); the active manifest's
 // i18n catalog supplies tenant locales at boot.
 i18next.init({ lng: 'en', fallbackLng: 'en', resources: {}, interpolation: { escapeValue: false } })
@@ -20,8 +23,6 @@ i18next.init({ lng: 'en', fallbackLng: 'en', resources: {}, interpolation: { esc
 // (tenant × mode are orthogonal root axes). The multi-tenant target injects
 // this from manifest.theme at boot — same one-line seam, no shell change.
 document.documentElement.dataset.tenant = 'geostat'
-
-setupRegistrations()
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>

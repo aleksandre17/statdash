@@ -1,15 +1,18 @@
-// ── Save-path config validation — WARN mode contract (ADR §6) ──────────────────
+// ── Save-path config validation — REJECT mode contract (ADR §6) ────────────────
 //
 //  The save guard validates every config against the engine's structural floor
-//  (validateConfig — the SAME validator the renderer runs), but in WARN/OBSERVE
-//  mode: a failing config is LOGGED and STILL PERSISTED. This suite pins that
-//  contract WITHOUT a real DB — a fake pg records the INSERT so we can assert the
-//  config was stored, and a capturing logger records whether a warn was emitted.
+//  (validateConfig — the SAME validator the renderer runs). ENFORCE_CONFIG_
+//  VALIDATION is now flipped to REJECT (the backfill audit proved the stored
+//  corpus clean, 2026-06-25): a failing config is REJECTED at the api boundary
+//  with the RFC-9457 `validation` problem (400, application/problem+json) and is
+//  NOT persisted; a clean config persists (201) with no validation warning. This
+//  suite pins that contract WITHOUT a real DB — a fake pg records any INSERT so we
+//  can assert a rejected config never reached the version table.
 //
 //  We deliberately use a corpus invalid case whose failure is REGISTRY-INDEPENDENT
-//  (e.g. a non-page root type / missing children) so the assertion holds in the
-//  api process where the node-type registry is empty (fail-open) — exactly the
-//  state a deployed api runs in until react injects its set.
+//  (a non-page root type) so the assertion holds in the api process where the
+//  node-type registry is empty (fail-open) — exactly the state a deployed api runs
+//  in until react injects its set.
 
 import { describe, it, expect } from 'vitest'
 import type { FastifyInstance, FastifyBaseLogger } from 'fastify'
@@ -84,13 +87,13 @@ async function buildApp(stored: StoredVersion[], warns: WarnRecord[]): Promise<F
   return app
 }
 
-describe('POST /api/config/pages — config validation WARN mode (ADR §6)', () => {
+describe('POST /api/config/pages — config validation REJECT mode (ADR §6)', () => {
   it('fixtures sit on the expected sides of the structural floor', () => {
     expect(floorErrors(INVALID_CONFIG)).toContain('INVALID_PAGE_ROOT_TYPE')
     expect(floorErrors(VALID_CONFIG)).toEqual([])
   })
 
-  it('an INVALID config logs a warning AND is still persisted (the WARN contract)', async () => {
+  it('an INVALID config is REJECTED at the boundary (RFC-9457) and NOT persisted', async () => {
     const stored: StoredVersion[] = []
     const warns: WarnRecord[] = []
     const app = await buildApp(stored, warns)
@@ -101,20 +104,21 @@ describe('POST /api/config/pages — config validation WARN mode (ADR §6)', () 
       payload: { slug: 'bad-page', title: { ka: 'ც', en: 'C' }, config: INVALID_CONFIG },
     })
 
-    // Still persisted (WARN, not REJECT) — 201 + the version row was written.
-    expect(res.statusCode).toBe(201)
-    expect(stored).toHaveLength(1)
-    // And the STORED config is the MIGRATED one (schemaVersion stamped to current).
-    expect((stored[0].config as { schemaVersion?: number }).schemaVersion).toBe(CURRENT_SCHEMA_VERSION)
+    // REJECT: 400 with the RFC-9457 problem+json envelope (validation kind).
+    expect(res.statusCode).toBe(400)
+    expect(res.headers['content-type']).toContain('application/problem+json')
+    const body = res.json() as { type: string; title: string; status: number; issues?: { code: string }[] }
+    expect(body.type).toMatch(/validation$/)
+    expect(body.status).toBe(400)
+    // The structural-floor errors are surfaced as the typed `issues` extension —
+    // the SAME wire contract a Zod request failure uses (Postel / one contract).
+    expect(body.issues?.some((i) => i.code === 'INVALID_PAGE_ROOT_TYPE')).toBe(true)
 
-    // A structured warn was emitted carrying the page ref + failing paths.
-    const warn = warns.find((w) => /structural validation/i.test(w.msg))
-    expect(warn).toBeDefined()
-    expect((warn!.obj as { problemCount: number }).problemCount).toBeGreaterThan(0)
-    expect((warn!.obj as { pageRef: string }).pageRef).toBe('bad-page')
+    // NOT persisted — the rejecting throw happens before the version INSERT.
+    expect(stored).toHaveLength(0)
   })
 
-  it('a VALID config persists and logs NO validation warning', async () => {
+  it('a VALID config persists (201) and logs NO validation warning', async () => {
     const stored: StoredVersion[] = []
     const warns: WarnRecord[] = []
     const app = await buildApp(stored, warns)
@@ -127,6 +131,8 @@ describe('POST /api/config/pages — config validation WARN mode (ADR §6)', () 
 
     expect(res.statusCode).toBe(201)
     expect(stored).toHaveLength(1)
+    // The STORED config is the MIGRATED one (schemaVersion stamped to current).
+    expect((stored[0].config as { schemaVersion?: number }).schemaVersion).toBe(CURRENT_SCHEMA_VERSION)
     expect(warns.some((w) => /structural validation/i.test(w.msg))).toBe(false)
   })
 })

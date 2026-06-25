@@ -25,14 +25,20 @@ export type SourceWireType = 'sdmx-json' | 'rest' | 'static'
 /**
  * Wire `type` → store `kind`. The live stats cube is persisted as `type='rest'`
  * (a REST endpoint) and builds the registered 'stats' kind; inline literal data
- * is persisted as `type='static'` and builds the 'static' kind. `sdmx-json` has
- * no live builder yet (its kind is reserved) — it is skipped at boot until one
- * is registered (open for extension).
+ * is persisted as `type='static'` and builds the 'static' kind. An author-supplied
+ * remote url is persisted as `type='sdmx-json'` and builds the 'href' kind — the
+ * fetch-a-remote-document mode (D-HREF). All three have live builders (open for
+ * extension: a new wire type → kind is one row here).
+ *
+ * Naming note: the `sdmx-json` wire type predates the spectrum (it was the
+ * documented external-SDMX-endpoint mode); it now carries the GENERIC 'href' kind
+ * (any remote url + a `format` parser — json/csv/…, not only SDMX-JSON). The wire
+ * label is retained to avoid a CHECK-constraint migration; the kind is generic.
  */
 export const SOURCE_KIND_BY_TYPE: Record<SourceWireType, string | null> = {
   rest:         'stats',
   static:       'static',
-  'sdmx-json':  null,
+  'sdmx-json':  'href',
 }
 
 /** The store kind a wire `type` builds, or null when no builder exists yet. */

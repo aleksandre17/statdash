@@ -35,6 +35,7 @@
 import { registerStoreBuilder, registerStoreCapabilities } from '@statdash/react/engine'
 import type { SourceMetadata, SourceTestResult } from '@statdash/engine'
 import { registerStaticStoreBuilder } from './static-registrations'
+import { registerHrefStoreBuilder } from './href-registrations'
 
 /**
  * Resolve the stats API base for one source config — the SAME precedence the
@@ -51,6 +52,11 @@ export function registerStoreBuilders(): void {
   // Registered alongside 'stats' so BOTH apps get it through this one shared
   // call. See static-registrations.ts + adr_data_source_reference_spectrum.
   registerStaticStoreBuilder()
+
+  // 'href' source kind — author-supplied remote url + format (the 3rd mode of
+  // the spectrum, D-HREF). Fetch + parse lives in the adapter layer; the engine
+  // stays pure. SSRF-safe by default (blocked unless an origin is allowlisted).
+  registerHrefStoreBuilder()
 
   // M2 authoring capabilities for 'stats' — both go over the network (the cube
   // is live). getMetadata = the cube-profile (dims/measures) for datasetCode;

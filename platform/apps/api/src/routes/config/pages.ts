@@ -21,7 +21,7 @@ import type { AuditLogger } from '../../lib/audit-log.js'
 //  config with the `validation` problem (configValidationProblem), identical wire
 //  contract to a Zod failure. No other line changes (Protected Variations: this
 //  flag is the single seam the WARN↔REJECT decision lives behind).
-const ENFORCE_CONFIG_VALIDATION = false // flip to true after the backfill audit is green
+const ENFORCE_CONFIG_VALIDATION = true // REJECT mode: backfill audit green (stored corpus 5/5 clean, 2026-06-25)
 
 /**
  * Structural-floor guard for a config about to be saved. Validates the (already
