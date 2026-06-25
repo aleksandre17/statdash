@@ -1,4 +1,5 @@
 import { staticStore }           from './store'
+import { desugar }               from './desugar'
 import { resolveFilterForReqs }  from '../registry/resolvers'
 import { resolveMeasureRef }     from './metric'
 import type { EngineRow }        from './encoding'
@@ -52,7 +53,10 @@ export function interpretSpec(
   ctx:   SectionContext,
   store: DataStore = staticStore,
 ): EngineRow[] {
-  const resolver = defaultRegistry.spec(spec.type)
+  // R3: desugar convenience specs to primitives FIRST, then resolve. A spec with
+  // no desugar rule (every primitive) is returned unchanged ⇒ untouched path.
+  const lowered  = desugar(spec)
+  const resolver = defaultRegistry.spec(lowered.type)
   if (!resolver) {
     emitDiagnostic(diagWarning(
       'UNKNOWN_SPEC_TYPE',
@@ -61,9 +65,11 @@ export function interpretSpec(
     ))
     return []
   }
-  const rows = resolver.resolve(spec as DataSpec, ctx, store)
+  const rows = resolver.resolve(lowered as DataSpec, ctx, store)
 
   // Notify observer (app layer wires this; engine never couples to console/Vite).
+  // Tag uses the ORIGINAL spec — observability reflects authored intent, not the
+  // lowered primitive.
   if (_observer) {
     _observer(_specTag(spec, ctx), ctx, rows)
   }
@@ -103,6 +109,10 @@ export function extractRequirements(
   ctx:  SectionContext,
 ): Requirement[] {
   const time = ctx.dims[TIME_DIM] as number
+
+  // R3: analyse the lowered primitive — the same path interpretSpec resolves.
+  // pivot lowers to transform (both extract []), so the result is identical.
+  spec = desugar(spec)
 
   switch (spec.type) {
 

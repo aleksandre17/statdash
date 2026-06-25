@@ -218,6 +218,7 @@ export { mergeScope }                                                   from './
 // ── Core Resolvers ────────────────────────────────────────────────────
 export type { SpecResolveObserver }                                     from './data/spec'
 export { interpretSpec, extractRequirements, setSpecResolveObserver }  from './data/spec'
+export { desugar }                                                      from './data/desugar'
 export { interpretKpis }                                                from './data/kpi'
 export type { KpiSpec, KpiValueSpec, KpiTrendSpec }                     from './data/kpi'
 

@@ -19,5 +19,6 @@ export { ExternalStore, CachedStore }                              from './store
 export type { RawObsRow }                                          from './store-api'
 export { ApiStore }                                                from './store-api'
 export { interpretSpec, extractRequirements }                       from './spec'
+export { desugar }                                                  from './desugar'
 export { interpretKpis }                                            from './kpi'
 export type { KpiSpec, KpiValueSpec, KpiTrendSpec }                 from './kpi'

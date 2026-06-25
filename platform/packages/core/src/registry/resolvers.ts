@@ -12,10 +12,11 @@ import type { DataStore }                    from '../data/store'
 import { storeVal, storeObs }               from '../data/store'
 import type { CtxRef, DimVal, FilterValue, NeCtxRef, ObsQuery }  from '../sdmx'
 import { resolveMeasureRef }                  from '../data/metric'
+import { desugar }                             from '../data/desugar'
 import { resolveRef }                          from '../ref/ref'
 import { resolveLocaleString }                from '../i18n/types'
 import type { SpecResolver }                 from './engine'
-import { applyPipeline, applyStep }          from '../data/transform'
+import { applyPipeline }                      from '../data/transform'
 import { defaultRegistry }                   from './engine'
 import { emitDiagnostic }                    from './diagnostics'
 import { diagWarning }                        from '../core/diagnostic'
@@ -324,24 +325,28 @@ class QueryResolver implements SpecResolver<Extract<DataSpec, { type: 'query' }>
   }
 }
 
-// ── PivotResolver ─────────────────────────────────────────────────────
-
+// ── PivotResolver — desugar delegate [ADR R3] ─────────────────────────
+//
+//  `pivot` is sugar for transform + melt (F-A). Its bespoke melt-and-shape
+//  logic now lives as ONE desugar rule (data/desugar.ts); this resolver is the
+//  thin delegate that lowers the spec and resolves the resulting primitive.
+//  Kept registered so `pivot` stays a KNOWN spec type (validateDataSpec +
+//  Constructor manifest) and so a by-mode branch nesting a pivot still resolves
+//  through the registry. interpretSpec also desugars up-front, so this path is
+//  reached only via direct registry dispatch (e.g. by-mode) — one rewrite, one
+//  resolution. FF-DESUGAR-EQUIV proves the lowered output is row-identical.
+//
 class PivotResolver implements SpecResolver<Extract<DataSpec, { type: 'pivot' }>> {
   readonly type = 'pivot' as const
 
-  resolve(spec: Extract<DataSpec, { type: 'pivot' }>): EngineRow[] {
-    const melted = applyStep(spec.rows, {
-      op: 'melt', idFields: [spec.keyField], valueFields: spec.valueFields,
-      seriesKey: 'series', valueKey: 'value',
-    })
-    return melted.map((row) => {
-      const label  = String(row[spec.keyField] ?? '')
-      const series = String(row['series'] ?? '')
-      const out: EngineRow = { id: `${label}::${series}`, label, series, value: Number(row['value'] ?? 0) }
-      const color = spec.colors?.[series]
-      if (color) out['color'] = color
-      return out
-    })
+  resolve(
+    spec:  Extract<DataSpec, { type: 'pivot' }>,
+    ctx:   SectionContext,
+    store: DataStore,
+  ): EngineRow[] {
+    const lowered  = desugar(spec)
+    const resolver = defaultRegistry.spec(lowered.type)
+    return resolver ? resolver.resolve(lowered, ctx, store) : []
   }
 }
 
