@@ -38,6 +38,11 @@ CMD ["sh", "-c", "pnpm --filter ./apps/geostat dev -- --host 0.0.0.0 --port ${AP
 FROM deps AS builder
 ARG VITE_API_URL
 ENV VITE_API_URL=$VITE_API_URL
+# The geostat SPA reads its statistical-data base from VITE_API_STATS_URL
+# (src/data/site-manifest.ts) — distinct from VITE_API_URL. Expose it as a build
+# arg so the stats API origin is baked into the static bundle at build time.
+ARG VITE_API_STATS_URL
+ENV VITE_API_STATS_URL=$VITE_API_STATS_URL
 COPY . .
 RUN pnpm --filter ./apps/geostat build
 
