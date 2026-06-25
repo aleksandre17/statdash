@@ -41,14 +41,17 @@ ENV VITE_API_URL=$VITE_API_URL
 COPY . .
 # Production packaging runs vite ONLY — never `tsc -b` (type-checking the whole
 # monorepo via ../../packages is a category error in a per-app image; the `build`
-# script keeps tsc as the local gate). Vite builds @statdash/* from SOURCE, so it
-# must resolve those packages' peer deps two ways:
-#  • REGULAR peers (react-router-dom, i18next) resolve from package source ONLY if
-#    present in the workspace → a full frozen install (whole workspace is COPYd now).
-#  • OPTIONAL peers (react-leaflet/leaflet/apexcharts/react-apexcharts) are stubbed by
-#    vite even when installed → fixed by the resolve.alias in apps/panel/vite.config.ts.
-# Both are needed; the install weight stays in this discarded builder layer.
-RUN pnpm install --frozen-lockfile
+# script keeps tsc as the local gate). Vite builds @statdash/* from SOURCE, so the
+# build must resolve those packages' PEER deps (react-router-dom, i18next,
+# react-leaflet, …) FROM the package source. Under the repo's `shamefully-hoist=false`
+# (strict isolation, a deliberate dev-time split-ready guarantee), pnpm never places a
+# package's peers in its own node_modules, so a source build can't resolve them. We
+# therefore HOIST only inside this throwaway builder layer (`--shamefully-hoist`):
+# node_modules goes flat → every source package resolves its peers from the root. The
+# committed `.npmrc` is untouched (the split-ready guarantee holds for dev/CI); the
+# final nginx stage carries only the static dist. (vite.config.ts's resolve.alias still
+# pins the optional-peer singletons — esp. react-apexcharts' ESM entry.)
+RUN pnpm install --frozen-lockfile --shamefully-hoist
 RUN pnpm --filter ./apps/panel exec vite build
 
 # ─── Stage 5: production (nginx serving the static dist) ──────────────────────
