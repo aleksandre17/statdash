@@ -37,9 +37,11 @@ import { z } from 'zod'
 import { ok, notFound, parseParams, parseBody, HttpError } from '../../lib/http.js'
 import {
   loadActualRegion,
+  loadTimeCoverage,
   classifyCombos,
   viewExists,
   type ActualRegion,
+  type TimeCoverage,
 } from './actual-region.js'
 import { isDatasetDiscoverable } from '../stats/lifecycle.js'
 
@@ -121,6 +123,14 @@ interface CubeProfile {
    * degradation — Protected Variations: the consumer handles the unavailable case).
    */
   actualRegion: ActualRegion
+  /**
+   * The dataset's available TIME coverage (ADR time-range-readiness-seam): the
+   * realised time bounds + the distinct ASCENDING period list, aggregated from the
+   * V26 cube_actual_region lineage. The store-builder folds `periods` into
+   * `classifiers['time']` so a year-select default resolves to the latest year.
+   * Absent view / empty dataset degrades to `{min:null, max:null, periods:[]}`.
+   */
+  timeCoverage: TimeCoverage
 }
 
 // ── Server-internal row shapes (never leaked verbatim) ────────────────────────
@@ -269,11 +279,17 @@ export const cubeRoutes: FastifyPluginAsync = async (app) => {
       },
     }))
 
-    // 4) The actual-region read (V26 stats.cube_actual_region). Guarded so a missing
-    //    view degrades to available:false instead of 500ing the whole profile.
-    const actualRegion = await loadActualRegion(app, datasetCode)
+    // 4) The two V26-region-derived reads (stats.cube_actual_region lineage): the
+    //    realised combinations and the dataset's time coverage. No data dependency
+    //    between them → concurrent (one round-trip latency). Both are independently
+    //    guarded so a missing view / read fault degrades that seam (available:false /
+    //    timeCoverage empty) instead of 500ing the whole profile.
+    const [actualRegion, timeCoverage] = await Promise.all([
+      loadActualRegion(app, datasetCode),
+      loadTimeCoverage(app, datasetCode),
+    ])
 
-    const profile: CubeProfile = { datasetCode, dimensions, measures, actualRegion }
+    const profile: CubeProfile = { datasetCode, dimensions, measures, actualRegion, timeCoverage }
 
     // Constructor-preview read, not a hot delivery path → revalidate-friendly but
     // no ETag probe (the profile is cheap relative to a separate MAX(updated_at)

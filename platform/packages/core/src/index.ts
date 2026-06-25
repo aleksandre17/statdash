@@ -26,6 +26,10 @@ export { diagError, diagWarning, diagInfo, ok, err }                     from '.
 export type { ObsStatus, ProvenanceRecord, MetadataPort }                from './core/provenance'
 export { OBS_STATUS_LABELS }                                             from './core/provenance'
 export type { ModeId, TimeMode, Unit, ChartType, Indicator, SectionContext } from './core/context'
+// TIME_DIM — the SSOT key for the conventional time axis. Exported so the
+// store-builder (plugins) can fall back to it when a profile's DSD time-dim is
+// absent, WITHOUT hardcoding the 'time' literal (Law 1).
+export { TIME_DIM, atTime }                                              from './core/context'
 export { groupBySpan }                                                   from './core/layout'
 export type { DataLookupOp, DeriveEntry, NodeDeriveMap }                from './core/types'
 export { evalNodeDerive }                                                from './core/evalNodeDerive'

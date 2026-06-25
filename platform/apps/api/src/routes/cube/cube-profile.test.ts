@@ -74,6 +74,11 @@ interface ProfileBundle {
       lastTimePeriod: string | null
     }> | null
   }
+  timeCoverage: {
+    min: string | null
+    max: string | null
+    periods: string[]
+  }
 }
 
 interface ClassifyResponse {
@@ -268,6 +273,31 @@ dbSuite('GET /api/cube/:datasetCode/profile — bundle shape (live DB)', () => {
     expect(realised!.obsCount).toBe(2)
     expect(realised!.firstTimePeriod).toBe('2020')
     expect(realised!.lastTimePeriod).toBe('2021')
+  })
+
+  it('exposes timeCoverage (min/max + ascending distinct periods) from the V26 region lineage', async () => {
+    // Seed three observations across two periods for the realised combo. min/max come
+    // from cube_actual_region's first/last_time_period; the distinct ascending period
+    // list comes from the observation table (the documented periods SSOT, T0).
+    await client.query(
+      `INSERT INTO stats.observation (dataset_code, time_period, time_period_date, dim_key, obs_value) VALUES
+         ($1, '2020', stats.parse_time_period('2020'), $2::jsonb, 100),
+         ($1, '2021', stats.parse_time_period('2021'), $2::jsonb, 110),
+         ($1, '2022', stats.parse_time_period('2022'), $2::jsonb, 120)
+       ON CONFLICT DO NOTHING`,
+      [DS, JSON.stringify({ measure: M_CODE, geo: G_CODE })],
+    )
+
+    const res = await app.inject({ method: 'GET', url: `/api/cube/${DS}/profile` })
+    expect(res.statusCode).toBe(200)
+    const { data } = res.json() as { data: ProfileBundle }
+
+    expect(data.timeCoverage).toBeDefined()
+    // min/max are the realised bounds (first/last realised period across combinations).
+    expect(data.timeCoverage.min).toBe('2020')
+    expect(data.timeCoverage.max).toBe('2022')
+    // periods is the distinct list, ASCENDING (the selector population list).
+    expect(data.timeCoverage.periods).toEqual(['2020', '2021', '2022'])
   })
 
   it('classify route returns the three-way has-data / empty-by-design / missing (V26 SSOT)', async () => {

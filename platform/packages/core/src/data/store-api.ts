@@ -37,6 +37,26 @@ export interface RawObsRow {
 }
 
 
+// ── isUnsetTime — "no time bound resolved yet" guard ─────────────────
+//
+//  An unset time dim means "unbounded → all periods" (the observations route
+//  reads absent from/to as no filter). A spurious 0 / '0' / NaN must be treated
+//  as unset too: otherwise it becomes from=0&to=0, which the route's
+//  sdmxTimePeriod regex rejects (400). Comma-range strings ('2015,2020') and any
+//  real period are NOT unset and pass through. Single-value 0 (number or string)
+//  and NaN are unset.
+function isUnsetTime(timeDim: unknown): boolean {
+  if (timeDim === undefined || timeDim === null || timeDim === '') return true
+  if (typeof timeDim === 'number') return timeDim === 0 || Number.isNaN(timeDim)
+  const s = String(timeDim).trim()
+  if (s === '' || s === '0') return true
+  // A bare numeric string that parses to 0/NaN is unset; non-numeric (e.g. a
+  // comma-range or period code like '2015-Q1') is a real bound, kept.
+  if (/^-?\d+(\.\d+)?$/.test(s)) return Number(s) === 0
+  return false
+}
+
+
 // ── ApiStore ─────────────────────────────────────────────────────────
 
 export class ApiStore implements DataStore {
@@ -200,9 +220,14 @@ export class ApiStore implements DataStore {
   private toObsParams(q: StoreQuery, ctx: SectionContext): Record<string, string> {
     const params: Record<string, string> = { dataset: this.datasetCode }
 
-    // Time bounds
+    // Time bounds. An UNSET time dim means "unbounded → all periods": the
+    // observations route reads absent from/to as no filter. We must omit BOTH
+    // bounds when time is unset — crucially treating 0 / '0' / NaN as unset too
+    // (a spurious 0 would become from=0&to=0 → the sdmxTimePeriod regex 400s).
+    // Defense-in-depth pair with autoParse's no-value sentinel (filter-eval.ts):
+    // an unresolved year-select never poisons the query with a fake period 0.
     const timeDim = ctx.dims[TIME_DIM]
-    if (timeDim !== undefined && timeDim !== '') {
+    if (!isUnsetTime(timeDim)) {
       const timeStr = String(timeDim)
       if (timeStr.includes(',')) {
         const [from, to] = timeStr.split(',')

@@ -16,7 +16,16 @@ import type { EngineRow } from '../data/encoding'
 /** Parse a raw URL string into the typed value for a given ParamDef. */
 export function autoParse(def: ParamDef, raw: string): unknown {
   switch (def.type) {
-    case 'year-select':  return Number(raw) || Number(def.default) || 0
+    // A real numeric year parses through; an empty/non-numeric raw returns a
+    // no-value sentinel ('') so an UNRESOLVED year is ABSENT from ctx.dims rather
+    // than a spurious 0. (`def.default` here is the OptionsDefault object
+    // {from,pick}, so `Number(def.default)` was always NaN — the old `|| 0` was
+    // the bug that poisoned toObsParams with from=0&to=0 → 400.) Pairs with the
+    // store-api isUnsetTime guard: absent time ⇒ omitted bounds ⇒ all years.
+    case 'year-select': {
+      const n = Number(raw)
+      return Number.isNaN(n) || raw === '' ? '' : n
+    }
     case 'cascade':      return raw ? raw.split(',').map(Number) : []
     case 'range': {
       const p = raw ? raw.split(',').map(Number) : []

@@ -90,8 +90,21 @@ export interface PublicDataSourceRow {
  */
 export interface StatsCubeProfileRow {
   datasetCode: string
-  dimensions:  { code: string; conceptRole: string | null }[]
+  // `isTime` mirrors the route's ProfileDimension.isTime (DSD is_time_dim, the
+  // per-dataset truth of WHICH axis is time). The store-builder reads it to fold
+  // time coverage under the dataset's own time-dim key — never a hardcoded 'time'
+  // (Law 1). Projected here because the builder needs the time-dim identity, not
+  // just the dim codes SourceMetadata reports.
+  dimensions:  { code: string; conceptRole: string | null; isTime: boolean }[]
   measures:    { code: string; label: Record<string, string> | null }[]
+  /**
+   * The dataset's available TIME RANGE (V26 cube_actual_region SSOT): MIN/MAX
+   * bound plus the distinct period list ASCENDING. The store-builder folds
+   * `periods` into `classifiers[<timeDim>]` so a year-select `{from:'options',
+   * pick:'last'}` resolves to the real latest period synchronously. Degraded
+   * source ⇒ `{ min:null, max:null, periods:[] }` (all-years render, never 400).
+   */
+  timeCoverage: { min: string | null; max: string | null; periods: string[] }
 }
 
 /** Row of GET /classifiers/:dim_code — one codelist member. */

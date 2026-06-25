@@ -55,6 +55,21 @@ export interface ActualRegion {
   combinations: ActualCombination[] | null
 }
 
+/**
+ * A dataset's available TIME COVERAGE — the time axis bounds plus the distinct
+ * ascending period list (ADR time-range-readiness-seam, T0). `min`/`max` are the
+ * dataset's earliest/latest realised period; `periods` is every distinct period that
+ * exists, ASCENDING (the selector population list). Downstream the store-builder
+ * folds `periods` into `classifiers['time']` so a year-select `{from:options,pick:last}`
+ * resolves to the real latest year. Absent view / empty dataset degrades to
+ * `{min:null, max:null, periods:[]}` (graceful degradation, mirrors loadActualRegion).
+ */
+export interface TimeCoverage {
+  min:     string | null
+  max:     string | null
+  periods: string[]
+}
+
 /** The three-way SDMX classification of a dim-value combination (ADR-0027). */
 export type ComboClassification = 'has-data' | 'empty-by-design' | 'missing'
 
@@ -123,6 +138,84 @@ export async function loadActualRegion(app: App, datasetCode: string): Promise<A
       'cube-profile: stats.cube_actual_region read failed — degrading actualRegion to unavailable',
     )
     return { available: false, combinations: null }
+  }
+}
+
+// ── Server-internal row shapes for time coverage (never leaked verbatim) ──────
+interface TimeBoundsRow {
+  min: string | null
+  max: string | null
+}
+interface TimePeriodRow {
+  time_period: string
+}
+
+// ── loadTimeCoverage — the dataset's available time axis (ADR T0) ─────────────
+//
+//  Sources the dataset's TIME coverage for the cube profile bundle so the
+//  store-builder can fold the period list into classifiers['time'] (the year-select
+//  default then resolves to the real latest year). Two reads, both off the V26
+//  realised-region SSOT lineage:
+//
+//   · min/max — MIN(first_time_period)/MAX(last_time_period) over
+//     stats.cube_actual_region (the SAME V26 table loadActualRegion reads; the
+//     dataset's earliest/latest realised period across all combinations).
+//
+//   · periods — the distinct ascending list from stats.observation. The region view
+//     stores per-COMBINATION first/last (not every period), so the full distinct
+//     period set is read from the observation table the region is itself built from.
+//     FF-TIME-COVERAGE-SSOT: this single observation read is the documented "what
+//     periods exist" SSOT — we do NOT fork a second period-enumeration rule elsewhere
+//     (it is the same source table cube_actual_region aggregates from).
+//
+//  GRACEFUL DEGRADATION mirrors loadActualRegion exactly: an absent V26 view (rolling
+//  migration window) or a read fault degrades to {min:null, max:null, periods:[]} —
+//  the year default then falls back to unbounded "all years", never a throw, never a
+//  500. Time coverage is an enrichment, not a profile precondition.
+export async function loadTimeCoverage(app: App, datasetCode: string): Promise<TimeCoverage> {
+  const EMPTY: TimeCoverage = { min: null, max: null, periods: [] }
+
+  // Feature-check: V26 region view present in THIS database? Same precondition probe
+  // loadActualRegion uses — absent view (V26 not applied here) → coverage stays empty.
+  if (!(await viewExists(app))) {
+    app.log.debug(
+      { datasetCode },
+      'cube-profile: stats.cube_actual_region absent (V26 not applied here) — timeCoverage empty',
+    )
+    return EMPTY
+  }
+
+  try {
+    // min/max from the V26 realised-region SSOT (same table loadActualRegion reads).
+    const { rows: boundsRows } = await app.pg.query<TimeBoundsRow>(
+      `SELECT MIN(first_time_period) AS min, MAX(last_time_period) AS max
+         FROM stats.cube_actual_region
+        WHERE dataset_code = $1`,
+      [datasetCode],
+    )
+    // periods — the distinct ascending list, the documented period SSOT (the same
+    // observation table the region view is built from). ORDER BY guarantees ascending.
+    const { rows: periodRows } = await app.pg.query<TimePeriodRow>(
+      `SELECT DISTINCT time_period
+         FROM stats.observation
+        WHERE dataset_code = $1
+        ORDER BY time_period`,
+      [datasetCode],
+    )
+
+    const bounds = boundsRows[0]
+    return {
+      // MIN/MAX over an empty set returns a single NULL row — already the EMPTY shape.
+      min:     bounds?.min ?? null,
+      max:     bounds?.max ?? null,
+      periods: periodRows.map((r) => r.time_period),
+    }
+  } catch (err) {
+    app.log.warn(
+      { err, datasetCode },
+      'cube-profile: time coverage read failed — degrading timeCoverage to empty',
+    )
+    return EMPTY
   }
 }
 

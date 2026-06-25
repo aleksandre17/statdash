@@ -100,7 +100,7 @@ export function registerStoreBuilders(): void {
     const datasetCode = (config.params?.datasetCode as string) ?? config.id
     const nonTimeDims = (config.params?.nonTimeDims as string[]) ?? []
 
-    const [{ fetchDimClassifiers, fromStatsObsRow, fetchDatasetMeta }, { ApiStore, CachedStore }] =
+    const [{ fetchDimClassifiers, fromStatsObsRow, fetchDatasetMeta, fetchCubeProfile }, { ApiStore, CachedStore, TIME_DIM }] =
       await Promise.all([
         import('./stats-api'),
         import('@statdash/engine'),
@@ -111,9 +111,32 @@ export function registerStoreBuilders(): void {
     const classifierArrays = await Promise.all(
       nonTimeDims.map((dim) => fetchDimClassifiers(base, dim)),
     )
-    const classifiers = Object.fromEntries(
+    const classifiers: Record<string, import('@statdash/engine').Classifier> = Object.fromEntries(
       nonTimeDims.map((dim, i) => [dim, classifierArrays[i]]),
     )
+
+    // ── Time-range readiness seam (ADR adr_time_range_readiness_seam) ──────────
+    //  Fold the dataset's available TIME RANGE into classifiers[<timeDim>] so a
+    //  year-select `{from:'options',pick:'last'}` resolves to the REAL latest
+    //  period synchronously (the inline {$cl:'time'} ref reads this classifier).
+    //
+    //  Readiness = THIS awaited fetch (the store-construction promise the manifest
+    //  already awaits before any filter renders) — so it can never hang. Graceful
+    //  degradation: `.catch(() => undefined)` mirrors the meta read above — a
+    //  missing/failed coverage read leaves the time classifier absent, so the year
+    //  default falls to the core guards (unbounded "all years"), never a 400.
+    //
+    //  Law 1: the time-dim KEY is read from the profile's own DSD
+    //  (dimensions[].isTime), NOT a hardcoded 'time' — TIME_DIM is only the
+    //  documented fallback when the profile is absent/degraded.
+    const profile = await fetchCubeProfile(base, datasetCode).catch(() => undefined)
+    const timeDimKey = profile?.dimensions?.find((d) => d.isTime)?.code ?? TIME_DIM
+    const periods = profile?.timeCoverage?.periods ?? []
+    if (periods.length > 0) {
+      // PREFER the explicit period list (ascending) so quarterly/gapped series are
+      // exact — code IS the value the inline {$cl:'time'} ref + year-select read.
+      classifiers[timeDimKey] = periods.map((code) => ({ code }))
+    }
 
     // P2-3 — dataset-level provenance, read once at build time alongside the
     // classifiers and folded into a MetadataPort (the existing engine seam, not

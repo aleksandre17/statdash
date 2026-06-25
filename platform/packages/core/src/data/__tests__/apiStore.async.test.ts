@@ -152,6 +152,57 @@ describe('ApiStore.queryAsync', () => {
 
 })
 
+// ── FF-NO-ZERO-TIME (params half) — toObsParams omits unset/0 bounds ──────────
+//
+//  ADR adr_time_range_readiness_seam (T3, guard 1). An unset time dim means
+//  "unbounded → all periods": the observations route reads absent from/to as no
+//  filter. A spurious 0 / '0' / NaN must NOT become from=0&to=0 (the route's
+//  sdmxTimePeriod regex 400s on '0'). A real year and a comma-range pass through.
+describe('FF-NO-ZERO-TIME — toObsParams never emits from/to = 0', () => {
+  function firstCallUrl(): URL {
+    return new URL(vi.mocked(fetch).mock.calls[0][0] as string)
+  }
+
+  it.each([
+    ['time absent', {}],
+    ['time empty string', { time: '' }],
+    ['time numeric 0', { time: 0 }],
+    ['time string "0"', { time: '0' }],
+    ['time NaN', { time: NaN }],
+  ])('omits BOTH from/to when %s', async (_label, timeDims) => {
+    vi.mocked(fetch).mockResolvedValueOnce(makeOkResponse([rawRow]))
+    const store = makeStore()
+    await store.queryAsync(obsQuery, { timeMode: 'year', dims: { geo: 'GE', ...timeDims } })
+
+    const url = firstCallUrl()
+    expect(url.searchParams.has('from')).toBe(false)
+    expect(url.searchParams.has('to')).toBe(false)
+    // Never the poisoned value, under any param name.
+    expect(url.searchParams.get('from')).not.toBe('0')
+    expect(url.searchParams.get('to')).not.toBe('0')
+  })
+
+  it('keeps a real single year as from=to', async () => {
+    vi.mocked(fetch).mockResolvedValueOnce(makeOkResponse([rawRow]))
+    const store = makeStore()
+    await store.queryAsync(obsQuery, { timeMode: 'year', dims: { time: 2025, geo: 'GE' } })
+
+    const url = firstCallUrl()
+    expect(url.searchParams.get('from')).toBe('2025')
+    expect(url.searchParams.get('to')).toBe('2025')
+  })
+
+  it('keeps a comma-range unchanged', async () => {
+    vi.mocked(fetch).mockResolvedValueOnce(makeOkResponse([rawRow]))
+    const store = makeStore()
+    await store.queryAsync(obsQuery, { timeMode: 'range', dims: { time: '2015,2020', geo: 'GE' } })
+
+    const url = firstCallUrl()
+    expect(url.searchParams.get('from')).toBe('2015')
+    expect(url.searchParams.get('to')).toBe('2020')
+  })
+})
+
 describe('ApiStore.querySync', () => {
 
   it('5 — throws on cold cache with message containing caps.sync=false', () => {
