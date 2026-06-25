@@ -2,10 +2,19 @@
 
 > Production cutover guide. The stack is **ship-ready** (verified: 1454 tests on real TimescaleDB; the api image boots in `NODE_ENV=production` against real Postgres on an isolated network, provisions config, and serves `/health` + `/api/bootstrap` + `/api/schema/page-config`; the env fail-fast gate verified live).
 
-## 1. Services
-- **api** (`apps/api`) — multi-stage Dockerfile, runs `USER node`. Boots → fail-fast env check → Flyway-migrated DB → provisions config (boot upsert) → serves.
-- **geostat** / **panel** (`apps/geostat`, `apps/panel`) — static Vite builds (the renderer site + the Constructor). Serve behind any static host / CDN. `panel` entry is code-split (~63 kB initial; heavy surfaces lazy).
+## 1. Services — single-origin reverse-proxy topology (ADR adr_deployment_topology)
+- **geostat** / **panel** — each app's **nginx serves the SPA at `/` AND proxies `/api/` to the internal api** (`statdash-api:3001`). The SPAs are built with EMPTY `VITE_API_URL`/`VITE_API_STATS_URL` → relative `/api/...` → **same-origin** → no CORS, no baked host/IP, CSP `connect-src 'self'`. These are the ONLY published ports.
+- **api** (`apps/api`) — **internal only** (never published). Multi-stage, `USER node`. Boots → fail-fast env → Flyway-migrated DB → provisions config → serves on `:3001`.
 - **postgres** (TimescaleDB-HA pg16) + **flyway** — schema owner.
+- One unified stack: **`ops/compose/docker-compose.prod.yml`**. Run it:
+  ```
+  # fill the three env files first (all gitignored):
+  #   ops/compose/.env         (compose interpolation — see .env.example)
+  #   ops/config/db/.env       (POSTGRES_USER/PASSWORD/DB)
+  #   ops/config/api/.env.prod (the api fail-fast contract; CORS_ORIGIN=false)
+  GEOSTAT_PORT=3002 PANEL_PORT=3003 docker compose -f ops/compose/docker-compose.prod.yml up -d --build
+  ```
+  Image build notes: a per-app image runs **vite only** (never `tsc -b` — typecheck is the local/CI gate); vite builds `@statdash/*` from source, so each app's `vite.config.ts` `resolve.alias`'s every `@statdash/*` peerDependency to the app's own copy (data-driven from package.json) — this is what lets the filtered install build cleanly under `shamefully-hoist=false`.
 
 ## 2. Env contract (ALL fail-fast at boot — `apps/api/src/env.ts`)
 | Var | Rule |
