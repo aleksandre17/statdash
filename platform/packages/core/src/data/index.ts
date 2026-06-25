@@ -6,7 +6,10 @@ export type {
   OptionsSource, ChipSource, YearsSource,
 }                                                                   from './source'
 export { resolveYears, resolveOptions, resolveChips }              from './resolve'
-export type { EncodingSpec, DataRow }                               from './encoding'
+export type { EncodingSpec, DataRow,
+              MeasurementType, ChannelDef, EncodingChannel }       from './encoding'
+export { channelField, channelType, channelKey,
+         deriveMeasurementType, resolveMeasurementType }           from './encoding'
 export type { FieldMeta, FieldSchema, FieldType, FieldRole }         from './fieldSchema'
 export { toFieldMeta, schemasToFieldMeta, suggestEncodings }        from './fieldSchema'
 export type { RawRow, DeriveExpr, TransformStep }                   from './transform'

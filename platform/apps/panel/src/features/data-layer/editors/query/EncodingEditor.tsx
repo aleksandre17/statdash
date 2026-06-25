@@ -1,5 +1,6 @@
 import { Box, MenuItem, Select, TextField, Typography } from '@mui/material'
 import type { EncodingSpec } from '@statdash/engine'
+import { channelField } from '@statdash/engine'
 
 // ── EncodingEditor — channel → field-name mapper ──────────────────────────────
 //
@@ -52,14 +53,14 @@ export function EncodingEditor({ value, onChange }: EncodingEditorProps) {
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
       <ChannelRow label="ეტიკეტი" required>
         <TextField
-          size="small" fullWidth value={enc.label}
+          size="small" fullWidth value={channelField(enc.label) ?? ''}
           onChange={(e) => setLabel(e.target.value)}
         />
       </ChannelRow>
 
       <ChannelRow label="მნიშვნელობა">
         <TextField
-          size="small" fullWidth value={enc.value ?? ''}
+          size="small" fullWidth value={channelField(enc.value) ?? ''}
           placeholder="value"
           onChange={(e) => setChannel('value', e.target.value)}
         />
@@ -67,7 +68,7 @@ export function EncodingEditor({ value, onChange }: EncodingEditorProps) {
 
       <ChannelRow label="ფერი">
         <TextField
-          size="small" fullWidth value={enc.color ?? ''}
+          size="small" fullWidth value={channelField(enc.color) ?? ''}
           placeholder="color"
           onChange={(e) => setChannel('color', e.target.value)}
         />

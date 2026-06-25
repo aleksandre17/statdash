@@ -59,8 +59,10 @@ export type {
 export { resolveYears, resolveOptions, resolveChips }                    from './data/resolve'
 
 // ── Standard 3: Grammar of Graphics — Vega-Lite Encoding ─────────────
-export type { EngineRow, EncodingSpec, DataRow }                         from './data/encoding'
-export { applyEncoding }                                                 from './data/encoding'
+export type { EngineRow, EncodingSpec, DataRow,
+              MeasurementType, ChannelDef, EncodingChannel }            from './data/encoding'
+export { applyEncoding, channelField, channelType, channelKey,
+         deriveMeasurementType, resolveMeasurementType }               from './data/encoding'
 export type { FieldMeta, FieldType, FieldRole, FieldSchema }            from './data/fieldSchema'
 export { deriveFieldSchema, toFieldMeta, schemasToFieldMeta,
          suggestEncodings }                                            from './data/fieldSchema'
