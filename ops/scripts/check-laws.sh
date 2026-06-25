@@ -14,6 +14,20 @@
 #   Law 6 — Dependency arrow correctness (enforced by eslint no-restricted-imports gate)
 #   Law 7 — JSON-serializable config (JSON.parse/stringify round-trip — runtime test only)
 #
+# SCOPE — why this scan covers packages/ ONLY (the panel-i18n decision):
+#   The tenant-content / i18n laws (Law 1 no-privileged-dims, Law 4 no hardcoded
+#   locale) gate RENDERED OUTPUT — the library packages whose code becomes tenant-
+#   facing dashboard output. apps/panel is the AUTHORING TOOL (the Constructor): it
+#   GENERATES tenant config, it is not itself tenant-rendered content. Its chrome
+#   strings are TOOL UI (the editor's own buttons/labels), localized via the panel's
+#   own i18n mechanism if/when needed — they are NOT subject to the tenant-content
+#   law the way packages/* rendered output is. So leaving apps/panel out of this
+#   scan is correct-by-design, not an oversight. The ONLY thing that would change
+#   this: genuine tenant content leaking THROUGH the panel into rendered output —
+#   but rendered output lives in packages/* (already scanned), so the boundary holds.
+#   (The authoring-LABEL catalogs that DO live in packages/core are the inverse case:
+#   tool UI that happens to live library-side — allowlisted below, not gated.)
+#
 # Exits 0 = clean, 1 = violations found
 
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
@@ -30,6 +44,27 @@ else
   echo "═══════════════════════════════════════"
 fi
 
+# ── Authoring-label catalog allowlist (Constructor i18n catalogs) ─────────────
+#
+#  These files are the SAME legitimate class as spec-catalog.ts: schema-driven
+#  EDITOR field labels that the Constructor's generic Inspector renders. They are
+#  INTENTIONALLY bilingual ({ ka, en } via the `bi(ka, en)` helper) authoring
+#  metadata — NOT tenant-rendered content, NOT single-locale hardcodes. They are
+#  the Constructor's authoring-label CATALOGS:
+#    - spec-catalog.ts          DataSpec type picker descriptors
+#    - op-schemas.ts            transform-step (TransformStep) StepForm labels   [V1]
+#    - param-schemas.ts         page-level ParamDef filter-control labels        [V0]
+#    - visibility-schemas.ts    VisibilityExpr "show when" leaf-condition labels [V4]
+#    - rowspec-schemas.ts       row-list RowSpec entry labels                    [V2]
+#  This list is the bash twin of the SSOT allowlist in
+#  platform/tests/no-tenant-content.fitness.test.ts (the ALLOW set) — keep the two
+#  in sync. The exemption is for Georgian SCRIPT only (Law 4 heuristic); a genuine
+#  single-locale Georgian hardcode in any OTHER engine file still fails, and the
+#  vitest gate still enforces TIER-1 (currency / brand / ['ka','en'] literal)
+#  EVERYWHERE incl. these catalogs. This is a STATED-INTENT exemption, never a
+#  blanket suppression.
+LAW4_CATALOG_ALLOW='(spec-catalog|op-schemas|param-schemas|visibility-schemas|rowspec-schemas)\.ts:'
+
 check_ts() {
   local label="$1"
   local pattern="$2"
@@ -38,19 +73,14 @@ check_ts() {
 
   # grep -rn output format: "path:line:content"
   # Filter out lines where the *content* (after path:num:) is a comment (// or *)
-  #
-  # Law 4 — "full benefit of the standard, not partial": the rule forbids a
-  # SINGLE-LOCALE hardcode, NOT bilingual content. A line carrying a Georgian
-  # fragment alongside an `en:` sibling is a compliant LocaleString / catalog
-  # entry ({ ka: '…', en: '…' }) — the standard fully applied — so it is exempt.
-  # Self-Describing Module catalogs (*-catalog.ts: spec-catalog, ops-catalog, …)
-  # spread their bilingual entries across multiple lines (ka: on its own line),
-  # so those files are exempt as a whole (like .test. files). A genuine
-  # single-locale Georgian hardcode (no en: pair, not in a catalog) still fails.
+  # and the named authoring-label catalogs (see LAW4_CATALOG_ALLOW above) as a
+  # whole. A line carrying a Georgian fragment alongside an `en:` sibling is also
+  # a compliant inline LocaleString ({ ka: '…', en: '…' }) — the standard fully
+  # applied — so it is exempt too.
   results=$(grep -rn --include="*.ts" --include="*.tsx" "$pattern" "$path" 2>/dev/null \
     | grep -v "^Binary" \
     | grep -v "\.test\." \
-    | grep -v "catalog\.ts:" \
+    | grep -vE "$LAW4_CATALOG_ALLOW" \
     | grep -vE "\ben\b[[:space:]]*:" \
     | grep -vE ":[0-9]+:[[:space:]]*//" \
     | grep -vE ":[0-9]+:[[:space:]]*\*" \

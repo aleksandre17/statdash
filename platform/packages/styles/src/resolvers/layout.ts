@@ -5,10 +5,11 @@
 //  resolveLayoutItem  — placement props → CSS grid/flex item styles.
 //
 
-import { resolveResponsive }       from '../resolve'
+import { resolveResponsive, BREAKPOINT_KEYS_CASCADE } from '../resolve'
 import type { NodeStyles, ResponsiveVal } from '../types'
 
-const BP_KEYS = ['default', '2xl', 'xl', 'lg', 'md', 'sm', 'xs'] as const
+// Default-first, large → small — mirrors the node.ts gap-var cascade. SSOT in resolve.ts.
+const BP_KEYS = BREAKPOINT_KEYS_CASCADE
 
 // Translates a gap value into CSS custom properties for layout containers.
 //

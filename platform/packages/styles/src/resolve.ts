@@ -7,9 +7,29 @@ import type { ResponsiveVal, ResolvedResponsive, StyleValue, FluidValue } from '
 // Note: FluidValue objects have { fluid, min, max } — NOT breakpoint keys.
 // resolveResponsive correctly identifies them as flat values (not breakpoint objects).
 //
-// Breakpoint key set — SSOT for the object-form detection guard below.
-// Keep in sync with the Breakpoint type and BREAKPOINTS in tokens.ts.
-const BREAKPOINT_KEYS = ['default', 'xs', 'sm', 'md', 'lg', 'xl', '2xl'] as const
+// ── Breakpoint key orderings — the styles-package SSOT ──────────────────
+//
+//  The responsive resolver, the per-property var cascade (node.ts) and the
+//  layout-gap cascade (layout.ts) all iterate the breakpoint key set. They
+//  previously each re-declared a literal copy with a "keep in sync" comment.
+//  These two exports are the single home (mirror the Breakpoint type in
+//  types.ts and BREAKPOINTS in tokens/effects.ts).
+//
+//  Two orderings, both load-bearing:
+//   • BREAKPOINT_KEYS  — mobile-first (small → large), default-first. Used for
+//     object-form detection and the --ar-* aspect-ratio var emission.
+//   • BREAKPOINT_KEYS_CASCADE — desktop-default (large → small), default-first.
+//     Used where the EMISSION order must match the CSS max-width cascade so a
+//     smaller breakpoint's rule wins (the --<prop>-<bp> cascade in node.ts).
+
+/** Breakpoint keys, default-first, mobile-first (small → large). */
+export const BREAKPOINT_KEYS = ['default', 'xs', 'sm', 'md', 'lg', 'xl', '2xl'] as const
+
+/** Breakpoint keys, default-first, desktop-cascade (large → small). */
+export const BREAKPOINT_KEYS_CASCADE = ['default', '2xl', 'xl', 'lg', 'md', 'sm', 'xs'] as const
+
+/** Non-default cascade keys — drives the data-<prop>-responsive presence flag. */
+export const BREAKPOINT_KEYS_NON_DEFAULT = ['2xl', 'xl', 'lg', 'md', 'sm', 'xs'] as const
 
 export function resolveResponsive<T>(val: ResponsiveVal<T> | undefined): ResolvedResponsive<T> {
   if (val === undefined) return {}

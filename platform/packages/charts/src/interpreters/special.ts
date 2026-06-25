@@ -5,6 +5,7 @@ import { formatFieldValue, resolveFieldConfig } from '@statdash/engine'
 import type { ChartDef, ChartOutput, ChartSeries, ChartDataPoint } from '../types'
 import type { ChartInterpreter } from '../registry'
 import { buildDataPoint, buildAxes, buildLegend, buildTooltip, groupBySeries, uniqueLabels } from './shared'
+import { DEFAULT_SERIES_COLOR, DEFAULT_ACCENT_COLOR, DEFAULT_TOTAL_COLOR } from '../colors'
 
 // ── WaterfallInterpreter ───────────────────────────────────────────────
 //
@@ -42,7 +43,7 @@ class WaterfallInterpreter implements ChartInterpreter {
 
     const series: ChartSeries[] = [
       { name: '__spacer__', data: spacerData, color: 'transparent' },
-      { name: def.label,    data: barData,    color: rows[0]?.color ?? '#6B7B8D' },
+      { name: def.label,    data: barData,    color: rows[0]?.color ?? DEFAULT_SERIES_COLOR },
     ]
 
     return {
@@ -84,7 +85,7 @@ class ComboInterpreter implements ChartInterpreter {
           const r = rowsByLabel.get(lbl)
           return r ? buildDataPoint(r, resolved) : { value: 0, formatted: formatFieldValue(0, resolved) }
         }),
-        color: seriesRows[0]?.color || '#6B7B8D',
+        color: seriesRows[0]?.color || DEFAULT_SERIES_COLOR,
         seriesType, yAxis,
       }
     })
@@ -123,7 +124,7 @@ class TreemapInterpreter implements ChartInterpreter {
     const series: ChartSeries[] = [{
       name:  def.label,
       data:  chartRows.map((r) => buildDataPoint(r, resolveFieldConfig(fc, r.label))),
-      color: chartRows[0]?.color ?? '#0080BE',
+      color: chartRows[0]?.color ?? DEFAULT_ACCENT_COLOR,
     }]
     return {
       type: 'treemap', height: def.height,
@@ -156,7 +157,7 @@ class HBarDivergingInterpreter implements ChartInterpreter {
 
     for (const row of rows) {
       if (row.isSeparator) {
-        groups.push({ label: row.label, color: row.color ?? '#6B7B8D', length: 0 })
+        groups.push({ label: row.label, color: row.color ?? DEFAULT_SERIES_COLOR, length: 0 })
       } else {
         if (groups.length > 0) groups[groups.length - 1].length++
         dataRows.push(row)
@@ -181,7 +182,7 @@ class HBarDivergingInterpreter implements ChartInterpreter {
       return {
         name,
         data,
-        color: seriesRows.find((r) => !r.isSeparator)?.color ?? '#6B7B8D',
+        color: seriesRows.find((r) => !r.isSeparator)?.color ?? DEFAULT_SERIES_COLOR,
       }
     })
 
@@ -253,7 +254,7 @@ class ContributionInterpreter implements ChartInterpreter {
       pts.push({
         value:          totalRow.value,
         formatted:      formatFieldValue(totalRow.value, resolved),
-        thresholdColor: totalRow.color || '#E53E3E',
+        thresholdColor: totalRow.color || DEFAULT_TOTAL_COLOR,
       })
     }
 
@@ -261,7 +262,7 @@ class ContributionInterpreter implements ChartInterpreter {
       type:        'contribution',
       height:      def.height,
       categories,
-      series:      [{ name: def.label, data: pts, color: '#0080BE' }],
+      series:      [{ name: def.label, data: pts, color: DEFAULT_ACCENT_COLOR }],
       axes:        buildAxes(def),
       stacked:     false,
       horizontal:  false,

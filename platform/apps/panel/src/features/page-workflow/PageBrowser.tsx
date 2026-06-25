@@ -11,10 +11,12 @@ import {
   List, ListItemButton, ListItemText, Divider, TextField, Box, Stack, Alert,
 } from '@mui/material'
 import AddIcon from '@mui/icons-material/Add'
+import WidgetsIcon from '@mui/icons-material/Widgets'
 import { usePages } from '../../store/constructor.store'
 import { useConstructorStore } from '../../store/constructor.store'
 import { openPage, createPage } from '../../store/api-actions'
 import { PageStatusBadge } from './PageStatusBadge'
+import { TemplateGallery } from '../templates'
 
 export interface PageBrowserProps {
   open:    boolean
@@ -34,6 +36,7 @@ export function PageBrowser({ open, onClose }: PageBrowserProps) {
   const [titleEn,  setTitleEn]  = useState('')
   const [error,    setError]    = useState<string | null>(null)
   const [busy,     setBusy]     = useState(false)
+  const [gallery,  setGallery]  = useState(false)
 
   const handleOpen = async (id: string) => {
     setBusy(true)
@@ -85,9 +88,19 @@ export function PageBrowser({ open, onClose }: PageBrowserProps) {
         <Divider sx={{ my: 2 }} />
 
         {!creating ? (
-          <Button startIcon={<AddIcon />} onClick={() => { setCreating(true); setError(null) }} data-testid="new-page-toggle">
-            New page
-          </Button>
+          <Stack direction="row" spacing={1}>
+            {/* Templates-first (ADR V7 "never start blank") — the PRIMARY path. */}
+            <Button
+              variant="contained" startIcon={<WidgetsIcon />}
+              onClick={() => setGallery(true)} data-testid="template-gallery-open"
+            >
+              From template
+            </Button>
+            {/* Blank page — the escape hatch for an author who wants an empty canvas. */}
+            <Button startIcon={<AddIcon />} onClick={() => { setCreating(true); setError(null) }} data-testid="new-page-toggle">
+              Blank page
+            </Button>
+          </Stack>
         ) : (
           <Stack spacing={2} data-testid="new-page-form">
             <TextField label="Title (ka)" value={titleKa} size="small" required
@@ -105,6 +118,10 @@ export function PageBrowser({ open, onClose }: PageBrowserProps) {
       <DialogActions>
         <Button onClick={onClose}>Close</Button>
       </DialogActions>
+
+      {/* Templates-first gallery — picking/generating a page closes both dialogs
+          (createFromTemplate has already set the new page active). */}
+      <TemplateGallery open={gallery} onClose={() => setGallery(false)} onCreated={onClose} />
     </Dialog>
   )
 }

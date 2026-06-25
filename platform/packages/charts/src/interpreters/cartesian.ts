@@ -5,6 +5,7 @@ import { formatFieldValue, resolveFieldConfig } from '@statdash/engine'
 import type { ChartDef, ChartOutput, ChartSeries } from '../types'
 import type { ChartInterpreter } from '../registry'
 import { buildDataPoint, buildAxes, buildLegend, buildTooltip, groupBySeries, uniqueLabels } from './shared'
+import { DEFAULT_SERIES_COLOR } from '../colors'
 
 // ── BarInterpreter (handles 'bar' and 'hbar') ─────────────────────────
 
@@ -29,7 +30,7 @@ class BarInterpreter implements ChartInterpreter {
           const r = rowsByLabel.get(lbl)
           return r ? buildDataPoint(r, resolved) : { value: 0, formatted: formatFieldValue(0, resolved) }
         }),
-        color: seriesRows[0]?.color || '#6B7B8D',
+        color: seriesRows[0]?.color || DEFAULT_SERIES_COLOR,
       }
     })
 

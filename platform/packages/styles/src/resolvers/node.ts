@@ -24,18 +24,22 @@
 //  Shell contract: spread vs.body directly — no inspection, no if/switch.
 //
 
-import { resolveResponsive, parseStyleValue, isAspectRatio } from '../resolve'
+import {
+  resolveResponsive, parseStyleValue, isAspectRatio,
+  BREAKPOINT_KEYS, BREAKPOINT_KEYS_CASCADE, BREAKPOINT_KEYS_NON_DEFAULT,
+} from '../resolve'
 import type {
   NodeStyles, StyleAttrs, BodyStyleAttrs, PseudoStyles,
   ResponsiveVal, StyleValue, ResolvedResponsive,
 } from '../types'
 import { applyPanelStyles }           from './panel'
 
-// Per-breakpoint cascade keys, default-first (SSOT mirrors BREAKPOINT_KEYS in
-// resolve.ts / the Breakpoint type). The non-default keys drive the data-attr
-// presence flag + the --<prop>-<bp> vars node-styles.css reads.
-const BP_KEYS = ['default', '2xl', 'xl', 'lg', 'md', 'sm', 'xs'] as const
-const BP_NON_DEFAULT = ['2xl', 'xl', 'lg', 'md', 'sm', 'xs'] as const
+// Per-breakpoint cascade keys (default-first, large → small) — the emission
+// order must match the CSS max-width cascade so a smaller breakpoint's rule
+// wins. The non-default keys drive the data-<prop>-responsive presence flag +
+// the --<prop>-<bp> vars node-styles.css reads. SSOT in resolve.ts.
+const BP_KEYS = BREAKPOINT_KEYS_CASCADE
+const BP_NON_DEFAULT = BREAKPOINT_KEYS_NON_DEFAULT
 
 // camelCase → kebab-case for the data-<prop>-responsive flag (backgroundColor →
 // background-color). The --<prop>-<bp> vars keep the camelCase stem (CSS custom
@@ -240,10 +244,9 @@ export function applyNodeStyles(
   // node-styles.css handles all responsive behavior via [data-aspect].
   const ar = resolveResponsive(styles?.aspectRatio)
   const dataAspect: Record<string, string> = {}
-  const arKeys = ['default', 'xs', 'sm', 'md', 'lg', 'xl', '2xl'] as const
-  if (arKeys.some(k => ar[k] !== undefined)) {
+  if (BREAKPOINT_KEYS.some(k => ar[k] !== undefined)) {
     dataAspect['data-aspect'] = ''
-    for (const k of arKeys) {
+    for (const k of BREAKPOINT_KEYS) {
       const v = ar[k]
       if (v) extra[`--ar-${k}`] = v
     }

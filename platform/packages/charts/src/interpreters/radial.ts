@@ -6,6 +6,7 @@ import type { ChartDef, ChartOutput, ChartSeries } from '../types'
 import type { ChartInterpreter } from '../registry'
 import { buildDataPoint, buildLegend, buildTooltip } from './shared'
 import { placeholderOutput } from '../interpret'
+import { DEFAULT_SERIES_COLOR } from '../colors'
 
 // ── PieInterpreter (handles 'pie' and 'donut') ────────────────────────
 
@@ -21,7 +22,7 @@ class PieInterpreter implements ChartInterpreter {
     const series: ChartSeries[] = [{
       name:  def.label,
       data:  sliceRows.map((r) => buildDataPoint(r, resolveFieldConfig(fc, r.label))),
-      color: '#6B7B8D',
+      color: DEFAULT_SERIES_COLOR,
     }]
     return {
       type: this.type, height: def.height,
