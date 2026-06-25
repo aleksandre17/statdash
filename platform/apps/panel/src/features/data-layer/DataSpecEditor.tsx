@@ -10,6 +10,10 @@ import { QuerySpecEditor } from './editors/QuerySpecEditor'
 import { TimeseriesEditor } from './editors/TimeseriesEditor'
 import { GrowthEditor } from './editors/GrowthEditor'
 import { RatioListEditor } from './editors/RatioListEditor'
+import { RowListEditor } from './editors/rowlist/RowListEditor'
+import { ByModeEditor } from './editors/ByModeEditor'
+import { TransformEditor } from './editors/TransformEditor'
+import { PivotEditor } from './editors/PivotEditor'
 
 // ── DataSpecEditor — type picker + routes to type-specific editor ─────────────
 //
@@ -108,6 +112,10 @@ function SpecBody({ value, onChange }: { value: DataSpec; onChange: (spec: DataS
     case 'timeseries': return <TimeseriesEditor value={value} onChange={onChange} />
     case 'growth':     return <GrowthEditor     value={value} onChange={onChange} />
     case 'ratio-list': return <RatioListEditor  value={value} onChange={onChange} />
+    case 'row-list':   return <RowListEditor    value={value} onChange={onChange} />
+    case 'by-mode':    return <ByModeEditor     value={value} onChange={onChange} />
+    case 'transform':  return <TransformEditor  value={value} onChange={onChange} />
+    case 'pivot':      return <PivotEditor      value={value} onChange={onChange} />
     default:           return <JsonFallback     value={value} onChange={onChange} />
   }
 }

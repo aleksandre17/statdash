@@ -122,6 +122,11 @@ const ALLOW = new Set(
     // renders to author node-level "show when" leaf conditions (eq/neq/in/isset/
     // mode-*). Not rendering/logic code; an i18n catalog (V4 visibility builder).
     'packages/core/src/config/visibility-schemas.ts',
+    // RowSpec authoring catalog — the SAME class as param-schemas.ts: a Constructor
+    // descriptor carrying bilingual PropField labels the Inspector renders to author
+    // one entry of a `row-list` DataSpec (code/label/color/negate/isTotal/pctOf).
+    // Not rendering/logic code; an i18n catalog (V2 DataSpec editors).
+    'packages/core/src/config/rowspec-schemas.ts',
     // Data-integrity authoring fragment — the SAME class as the *-schemas catalogs:
     // a Constructor descriptor carrying bilingual PropField labels the Inspector
     // renders so every data panel can author the `preliminary` flag (Law 9). A

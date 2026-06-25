@@ -44,8 +44,20 @@ import {
  */
 const BESPOKE_STEP_FORMS = new Set(['derive', 'lookup', 'sort', 'filter'])
 
-/** DataSpec discriminants with a dedicated (non-JSON-fallback) editor today. */
-const DATASPEC_EDITORS = new Set(['query', 'timeseries', 'growth', 'ratio-list'])
+/**
+ * DataSpec discriminants with a dedicated (non-JSON-fallback) editor today. As of
+ * [V2] this is EVERY non-`custom` discriminant — the full authoring surface:
+ *   query/timeseries/growth/ratio-list  — scalar/list editors (V0–V1)
+ *   row-list                            — RowListEditor (RowSpec[] via the Inspector)
+ *   by-mode                             — ByModeEditor (recursive per-ModeId DataSpecEditor)
+ *   transform                           — TransformEditor (PipelineBuilder + EncodingEditor)
+ *   pivot                               — PivotEditor (friendly rows/keyField/valueFields/colors)
+ * Only `custom` (a code-resolver ref) remains JSON-only — PERMANENT.
+ */
+const DATASPEC_EDITORS = new Set([
+  'query', 'timeseries', 'growth', 'ratio-list',
+  'row-list', 'by-mode', 'transform', 'pivot',
+])
 
 /**
  * ParamDef types are surfaced exactly like transform ops [V0]: a type is
@@ -89,11 +101,16 @@ const COVERAGE_TODO = {
     joinByField: 'PERMANENT — carries resolved EngineRow[], not a declarative shape',
   },
   dataSpecs: {
-    // V2 — remaining DataSpec editors (recursive / structured).
-    'row-list':  'V2 — RowSpec[] editor (code/label/color/negate/isTotal/pctOf)',
-    'by-mode':   'V2 — recursive per-ModeId sub-DataSpec editor',
-    'pivot':     'V2 — rows/keyField/valueFields/colors editor',
-    'transform': 'V2 — source+steps+encoding editor (reuse PipelineBuilder)',
+    // V2 DONE — the remaining DataSpec editors all shipped (full authoring
+    // coverage; nothing un-authorable). Each non-`custom` discriminant now has a
+    // dedicated editor rendered through DataSpecEditor:
+    //   row-list  → RowListEditor    (RowSpec[] authored via the generic Inspector,
+    //                                 schema carried in the engine rowspec registry)
+    //   by-mode   → ByModeEditor      (recursive per-ModeId DataSpecEditor reuse)
+    //   transform → TransformEditor   (PipelineBuilder + EncodingEditor + JSON source)
+    //   pivot     → PivotEditor       (friendly rows/keyField/valueFields/colors)
+    // The allowlist is down to `custom` only — a type without an editor now FAILS.
+    //
     // PERMANENT — a code-resolver ref dropdown at most; never free code (Law 2).
     'custom':    'PERMANENT — resolver-name reference only, never authorable code',
   },

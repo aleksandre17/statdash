@@ -115,6 +115,13 @@ export {
   isVisibilityOpAuthorable, listVisibilitySurfaces,
 } from './config/visibility-schema-registry'
 import './config/visibility-schemas' // side-effect: register built-in VisibilityExpr authoring surfaces
+// ── RowSpec authoring-schema registry — `row-list` row entries [V2] ────────────
+//  A RowSpec (one entry of a `row-list` DataSpec) CARRIES its authoring PropSchema,
+//  registered via the rowspec-schemas side-effect. The panel's rowSpecSchemaSource
+//  resolves it through getRowSpecSchema into the SAME generic Inspector — no bespoke
+//  per-field form (mirrors getParamSchema / getTransformStepSchema, one rung down).
+export { registerRowSpecSchema, getRowSpecSchema, ROW_SPEC_KEY } from './config/rowspec-schema-registry'
+import './config/rowspec-schemas' // side-effect: register the built-in RowSpec authoring schema
 // ── PropSchema — typed authoring-form vocabulary (Constructor) ─────────
 //  Lives in core (not react) because a TransformStep op now CARRIES its own
 //  authoring PropSchema (OCP) and core may not import react (the arrow).
