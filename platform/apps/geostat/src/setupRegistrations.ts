@@ -5,7 +5,6 @@ import * as Nodes     from '@plugins/nodes'
 import * as Controls  from '@plugins/controls'
 import { registerSlice, middlewareRegistry } from '@statdash/react/engine'
 import { createElement }                     from 'react'
-import { registerStoreBuilders } from '@statdash/plugins/datasources'
 import { registerPresentationProjectors } from '@statdash/plugins/presentation'
 import { registerFeedbackI18n }  from './i18n/feedback'
 import { setupExtensions }       from './extensions/setupExtensions'
@@ -13,7 +12,11 @@ import { setupExtensions }       from './extensions/setupExtensions'
 // (App.tsx, post-bootstrap) — see i18n/formatters.ts registerFormatters().
 
 export function setupRegistrations(): void {
-  registerStoreBuilders()
+  // NOTE: the datasource store-builders (stats/static/href) are registered
+  // EAGERLY in main.tsx via bootRegistrations() — they MUST exist before
+  // App's bootstrapSite() builds the store manifest, and this function lives in
+  // the LAZY RendererSurface chunk that only loads AFTER bootstrap resolves.
+  // This function owns the heavy slice/projector/i18n wiring only (SRP).
 
   // Presentation projectors [N-ADR-0029 v2] — color → CSS var, crumbs →
   // navContext.crumbs. The renderer iterates these generically; a new concern
