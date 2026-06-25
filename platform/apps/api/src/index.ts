@@ -1,7 +1,7 @@
 import 'dotenv/config'
 import Fastify from 'fastify'
 import cors from '@fastify/cors'
-import { env } from './env.js'
+import { env, corsOrigin } from './env.js'
 import { dbPlugin } from './db.js'
 import { registerProblemErrorHandler } from './lib/error-handler.js'
 import { configRoutes } from './routes/config/index.js'
@@ -41,7 +41,10 @@ registerProblemErrorHandler(app, { includeStack: env.NODE_ENV === 'development' 
 // single instance so the admin trail reflects exactly what the producers wrote.
 const audit = createInMemoryAuditLogger(1000)
 
-await app.register(cors, { origin: env.CORS_ORIGIN })
+// Same-origin topology (ADR adr-deployment-topology): prod sets CORS_ORIGIN to a
+// disabling sentinel → corsOrigin() yields `false` → @fastify/cors emits no CORS
+// headers. A real origin string still passes through for any cross-origin dev setup.
+await app.register(cors, { origin: corsOrigin() })
 await app.register(dbPlugin)
 await app.register(authRoutes, { prefix: '/api/auth' })
 await app.register(configRoutes(audit), { prefix: '/api/config' })

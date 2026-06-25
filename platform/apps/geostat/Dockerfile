@@ -34,7 +34,7 @@ COPY . .
 EXPOSE ${APP_DEV_PORT}
 CMD ["sh", "-c", "pnpm --filter ./apps/geostat dev -- --host 0.0.0.0 --port ${APP_DEV_PORT}"]
 
-# ─── Stage 4: builder (tsc -b && vite build → apps/geostat/dist) ──────────────
+# ─── Stage 4: builder (vite-only build → apps/geostat/dist) ───────────────────
 FROM deps AS builder
 ARG VITE_API_URL
 ENV VITE_API_URL=$VITE_API_URL
@@ -44,13 +44,15 @@ ENV VITE_API_URL=$VITE_API_URL
 ARG VITE_API_STATS_URL
 ENV VITE_API_STATS_URL=$VITE_API_STATS_URL
 COPY . .
-# The deps stage installed only the apps/geostat filtered closure, but `tsc -b`
-# compiles the full referenced project graph (packages/react, packages/plugins +
-# their test files) whose external deps (apexcharts, react-router-dom, i18next,
-# ajv, …) live outside that closure. With the whole workspace now copied, a full
-# frozen install resolves every referenced package's deps for the build.
-RUN pnpm install --frozen-lockfile
-RUN pnpm --filter ./apps/geostat build
+# Production packaging runs vite ONLY — never `tsc -b`. The app `build` script
+# (tsc -b && vite build) stays the local/CI typecheck gate; type-checking the
+# whole monorepo (apps/geostat/tsconfig.app.json includes ../../packages, so
+# `tsc -b` compiles every package's source + test files needing peer/dev deps
+# like ajv) is a category error inside a per-app image. Vite resolves @statdash/*
+# via source aliases and bundles only the bare deps actually imported — all of
+# which the apps declare as direct dependencies — so the filtered deps install is
+# sufficient; no full-monorepo re-install needed.
+RUN pnpm --filter ./apps/geostat exec vite build
 
 # ─── Stage 5: production (nginx serving the static dist) ──────────────────────
 FROM nginx:${NGINX_VERSION} AS production

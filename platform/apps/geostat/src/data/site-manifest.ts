@@ -139,7 +139,8 @@ export async function fetchBootstrap(baseUrl: string): Promise<SiteManifest> {
 //  empty state is the offline/unconfigured net, NOT tenant content.
 
 async function resolveManifest(): Promise<SiteManifest> {
-  const base = import.meta.env.VITE_API_STATS_URL ?? 'http://localhost:3001'
+  // Empty fallback → relative `/api/...` (same-origin). See ADR RC-2 / D1.
+  const base = import.meta.env.VITE_API_STATS_URL ?? ''
   try {
     return await fetchBootstrap(base)
   } catch (err) {
@@ -182,7 +183,8 @@ async function fetchStores(base: string): Promise<Record<string, DataStore>> {
 //  fallback), then compose into the SiteBootstrap App.tsx renders from.
 
 export async function bootstrapSite(): Promise<SiteBootstrap> {
-  const base = import.meta.env.VITE_API_STATS_URL ?? 'http://localhost:3001'
+  // Empty fallback → relative `/api/...` (same-origin). See ADR RC-2 / D1.
+  const base = import.meta.env.VITE_API_STATS_URL ?? ''
   const [manifest, stores] = await Promise.all([resolveManifest(), fetchStores(base)])
   return { manifest, stores }
 }

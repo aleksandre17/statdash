@@ -8,11 +8,18 @@
     <!--
       Content-Security-Policy baseline (Phase 9.5 [N24]).
       - style-src 'unsafe-inline': required by ApexCharts (SVG inline styles).
-      - connect-src 'self' https:: allows the stats/chat APIs; restrict to
-        specific origins via HTTP header (nginx/server) in production.
-      - frame-ancestors: must be set via HTTP header (meta tag ignored by spec).
-      Production hardening: add `Content-Security-Policy` HTTP header in nginx
-      that overrides this meta, restricting connect-src to the actual API domain.
+      - connect-src 'self': the api is SAME-ORIGIN in production (single-origin
+        reverse-proxy topology — nginx serves the SPA and proxies /api/ to the
+        internal api). No http origin or IP is whitelisted, and none is needed.
+      - frame-ancestors: the one directive a <meta> CSP cannot express (ignored
+        by spec), so it MUST live in the nginx HTTP header.
+      Header vs meta — note (corrects a prior misconception): an nginx
+      `Content-Security-Policy` HTTP header CANNOT loosen this meta policy. When a
+      document carries multiple policies (one from meta, one from a header), the
+      browser enforces EACH independently — the effective policy is their
+      INTERSECTION (most-restrictive wins). A header can only further restrict,
+      never relax. So a production header adds frame-ancestors /
+      X-Content-Type-Options; it does not (and cannot) re-open connect-src.
     -->
     <meta http-equiv="Content-Security-Policy" content="
       default-src 'self';

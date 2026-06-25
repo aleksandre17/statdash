@@ -1,19 +1,162 @@
-# Production app overlay
-# Usage: docker compose -f ops/compose/docker-compose.yml -f ops/compose/docker-compose.prod.yml up -d
+# ─────────────────────────────────────────────────────────────────────────────
+# Unified production stack — single-origin reverse-proxy topology
+# (ADR adr-deployment-topology, D1/D4).
+#
+#   docker compose -f ops/compose/docker-compose.prod.yml up -d --build
+#
+# One self-contained stack on ONE network (statdash-net):
+#   geostat / panel  — each app's nginx serves the SPA at / AND proxies /api/ to
+#                      the INTERNAL api by service name. The ONLY published ports.
+#   statdash-api     — internal only (NO ports:). Reachable as `statdash-api:3001`.
+#   postgres         — TimescaleDB-HA pg16, internal only.
+#   flyway           — applies V1→V31 + R__ seed once postgres is healthy, exits 0.
+#
+# Boot order (depends_on + healthchecks):
+#   postgres healthy → flyway completes → api healthy → geostat/panel start.
+#
+# The SPAs are built with EMPTY VITE_API_URL / VITE_API_STATS_URL → relative
+# /api/... base → every request is same-origin → no CORS, no baked host/IP.
+# ─────────────────────────────────────────────────────────────────────────────
+
+name: statdash-prod
+
 services:
-  geostat-app:
+  # ── PostgreSQL (TimescaleDB-HA pg16) — internal, schema owned by Flyway ───────
+  postgres:
+    image: timescale/timescaledb-ha:pg16
+    container_name: statdash-postgres
+    env_file:
+      - ../config/db/.env
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - statdash-net
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${POSTGRES_USER:-statdash} -d ${POSTGRES_DB:-statdash}",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+
+  # ── Flyway — versioned migrations V1→V31 + R__ seed; runs once, then exits 0 ──
+  flyway:
+    image: flyway/flyway:10-alpine
+    container_name: statdash-flyway
+    # Vnn (immutable contract) applied first, then R__ repeatable seed (re-applied
+    # on checksum change). placeholderReplacement=false: migrations are static SQL.
+    command: >-
+      -url=jdbc:postgresql://postgres:5432/${POSTGRES_DB:-statdash}
+      -user=${POSTGRES_USER:-statdash}
+      -password=${POSTGRES_PASSWORD}
+      -locations=filesystem:/flyway/sql,filesystem:/flyway/seed
+      -placeholderReplacement=false
+      migrate
+    env_file:
+      - ../config/db/.env
+    volumes:
+      - ../postgres/migrations:/flyway/sql:ro
+      - ../postgres/seed:/flyway/seed:ro
+    networks:
+      - statdash-net
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: on-failure
+
+  # ── API — INTERNAL ONLY (no ports:). Same-origin → CORS disabled via .env.prod ─
+  statdash-api:
+    image: statdash-api
+    container_name: statdash-api
     build:
+      context: ../../platform
+      dockerfile: apps/api/Dockerfile
+    # NO ports: — the api is never published. The app proxies reach it by service
+    # name on statdash-net (http://statdash-api:3001).
+    env_file:
+      - ../config/api/.env.prod
+    networks:
+      - statdash-net
+    depends_on:
+      postgres:
+        condition: service_healthy
+      flyway:
+        condition: service_completed_successfully
+    restart: unless-stopped
+    mem_limit: 256m
+    cpus: 0.5
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3001/health | grep -q ok || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+  # ── geostat SPA + reverse proxy — PUBLISHED ──────────────────────────────────
+  geostat:
+    image: statdash-geostat
+    container_name: statdash-geostat
+    build:
+      context: ../../platform
+      dockerfile: apps/geostat/Dockerfile
       target: production
       args:
-        VITE_API_URL: ${VITE_API_URL:-}
+        # Empty → relative /api/... base (single-origin). Never a host/IP.
+        VITE_API_URL: ""
+        VITE_API_STATS_URL: ""
     ports:
-      - "${DEPLOY_HOST_PORT:-5171}:80"
-    env_file:
-      - ../config/geostat/.env.prod
+      - "${GEOSTAT_PORT:-8080}:80"
+    networks:
+      - statdash-net
+    depends_on:
+      statdash-api:
+        condition: service_healthy
     restart: unless-stopped
+    mem_limit: 128m
+    cpus: 0.5
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost/"]
       interval: 30s
       timeout: 5s
       retries: 3
       start_period: 10s
+
+  # ── panel (Constructor) SPA + reverse proxy — PUBLISHED ──────────────────────
+  panel:
+    image: statdash-panel
+    container_name: statdash-panel
+    build:
+      context: ../../platform
+      dockerfile: apps/panel/Dockerfile
+      target: production
+      args:
+        # Empty → relative /api/... base (single-origin). Never a host/IP.
+        VITE_API_URL: ""
+    ports:
+      - "${PANEL_PORT:-8081}:80"
+    networks:
+      - statdash-net
+    depends_on:
+      statdash-api:
+        condition: service_healthy
+    restart: unless-stopped
+    mem_limit: 128m
+    cpus: 0.5
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+networks:
+  statdash-net:
+    name: statdash-net
+
+volumes:
+  postgres_data:
+    name: statdash-prod-pgdata

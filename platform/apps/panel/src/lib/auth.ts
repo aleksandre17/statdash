@@ -13,7 +13,10 @@
 
 const TOKEN_KEY = 'geostat_panel_token'
 
-const BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:3001'
+// Empty fallback → relative `/api/...` (same-origin). Dev supplies VITE_API_URL
+// (or the Vite proxy); only the production fallback is relative. See ADR
+// deployment-topology RC-2 / D1 (single-origin, CORS-free).
+const BASE = import.meta.env.VITE_API_URL ?? ''
 
 // ── Storage helpers ────────────────────────────────────────────────────────────
 

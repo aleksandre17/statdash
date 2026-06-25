@@ -3,7 +3,7 @@
 interface ImportMetaEnv {
   /** 'static' (default) | 'api' | 'stats' — selects the data layer */
   readonly VITE_STORE_MODE?: 'static' | 'api' | 'stats'
-  /** Base URL of the real stats API (stats mode). Default: http://localhost:3001 */
+  /** Base URL of the real stats API (stats mode). Empty/unset → relative `/api/...` (same-origin). */
   readonly VITE_API_STATS_URL?: string
 }
 

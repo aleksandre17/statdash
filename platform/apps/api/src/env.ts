@@ -16,6 +16,13 @@ const schema = z.object({
   PORT:         z.coerce.number().default(3001),
   HOST:         z.string().default('0.0.0.0'),
   DATABASE_URL: z.string().min(1), // postgres://user:pass@pgbouncer:5432/statdash
+  // CORS allow-list origin. In the single-origin reverse-proxy topology (ADR
+  // adr-deployment-topology) the browser issues NO cross-origin requests, so CORS
+  // must be OFF in production — @fastify/cors disables it entirely with the boolean
+  // `origin: false` (no Access-Control-Allow-Origin emitted), which is correct for
+  // same-origin. But this var is a string, so we accept a sentinel ('false' or '')
+  // that maps to the boolean off-switch (see corsOrigin() below). Never '*': a
+  // wildcard re-opens the cross-origin surface the proxy topology exists to close.
   CORS_ORIGIN:  z.string().default('http://localhost:5175'),
   NODE_ENV:     z.enum(['development', 'production', 'test']).default('development'),
   // Auth — symmetric-key JWT + single admin credential (Constructor write access).
@@ -78,3 +85,23 @@ const schema = z.object({
 export const env = schema.parse(process.env)
 
 export type Env = z.infer<typeof schema>
+
+// The sentinel values of CORS_ORIGIN that mean "no cross-origin allowance" —
+// the same-origin proxy topology needs none. Named once (SSOT) so the mapping
+// can't drift from the .env.prod that sets it.
+const CORS_DISABLED_SENTINELS = new Set(['false', ''])
+
+/**
+ * Maps the string CORS_ORIGIN contract onto the `origin` option @fastify/cors
+ * actually wants. A sentinel ('false' or empty) → boolean `false`, which makes
+ * @fastify/cors emit NO CORS headers at all (correct for same-origin); any other
+ * value is a real allow-list origin passed through verbatim.
+ *
+ * Why a function and not a transform on the field: the field stays a plain
+ * `z.string()` (so `.env` files, examples and the existing contract are
+ * unchanged), and the string→boolean widening lives at the single seam that
+ * consumes it (index.ts), not smeared across the schema.
+ */
+export function corsOrigin(value: string = env.CORS_ORIGIN): string | false {
+  return CORS_DISABLED_SENTINELS.has(value.trim()) ? false : value
+}
