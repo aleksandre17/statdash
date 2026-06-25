@@ -39,6 +39,12 @@ FROM deps AS builder
 ARG VITE_API_URL
 ENV VITE_API_URL=$VITE_API_URL
 COPY . .
+# The deps stage installed only the apps/panel filtered closure, but `tsc -b`
+# compiles the full referenced project graph (packages/react, packages/plugins +
+# their test files) whose external deps (apexcharts, react-router-dom, i18next,
+# ajv, …) live outside that closure. With the whole workspace now copied, a full
+# frozen install resolves every referenced package's deps for the build.
+RUN pnpm install --frozen-lockfile
 RUN pnpm --filter ./apps/panel build
 
 # ─── Stage 5: production (nginx serving the static dist) ──────────────────────
