@@ -243,7 +243,7 @@ export { mergeScope }                                                   from './
 export type { SpecResolveObserver }                                     from './data/spec'
 export { interpretSpec, extractRequirements, setSpecResolveObserver }  from './data/spec'
 export { desugar }                                                      from './data/desugar'
-export { interpretKpis }                                                from './data/kpi'
+export { interpretKpis, extractKpiRequirements }                        from './data/kpi'
 export type { KpiSpec, KpiValueSpec, KpiTrendSpec }                     from './data/kpi'
 
 // ── Metric registry [N26] — Constructor metric vocabulary + extension seam ──

@@ -58,6 +58,12 @@ export class CachedStore implements DataStore {
 
   private valCache = new Map<string, number>()
   private readonly _obsCache = new Map<string, { rows: EngineRow[]; expiresAt: number }>()
+  // In-flight queryAsync dedup — keyed identically to the cache it warms. A second
+  // concurrent queryAsync for the same key (React StrictMode's double-invoke, or two
+  // warm consumers naming the same slice) reuses the FIRST promise instead of firing
+  // a second fetch that races/aborts the first. Settled entries are cleared so a real
+  // re-fetch is never blocked, and a rejection still propagates (errors not suppressed).
+  private readonly _inflight = new Map<string, Promise<QueryResult<EngineRow>>>()
 
   private readonly source: DataStore
   private readonly ttlMs: number
@@ -134,20 +140,39 @@ export class CachedStore implements DataStore {
   //  the now-warm source, keeping the OLAP-sum semantics intact. This avoids
   //  caching a raw first-row value as if it were the aggregate.
   async queryAsync(q: StoreQuery, ctx: SectionContext): Promise<QueryResult<EngineRow>> {
+    // Dedup concurrent identical fetches (StrictMode double-invoke / two warm
+    // consumers naming the same slice). Key on the full (q, ctx.dims) fingerprint
+    // — for obs this is exactly obsCacheKey (the cache key the result lands under);
+    // val/distinct/schema get their own stable key. A pending fetch is shared; once
+    // it settles the entry is cleared so a later read can re-fetch (no stale lock).
+    const flightKey = q.type === 'obs'
+      ? obsCacheKey(q, ctx)
+      : JSON.stringify({ q, dims: ctx.dims })
+
+    const pending = this._inflight.get(flightKey)
+    if (pending) return pending
+
     const run = this.source.queryAsync
       ? (qq: StoreQuery) => this.source.queryAsync!(qq, ctx)
       : (qq: StoreQuery) => asyncFromSync(this.source)(qq, ctx)
 
-    const result = await run(q)
-    if (result.state !== 'done') return result
+    const flight = run(q).then((result) => {
+      // Memoize a done obs result into the SAME cache querySync reads.
+      if (result.state === 'done' && q.type === 'obs') {
+        this._obsCache.set(obsCacheKey(q, ctx), {
+          rows:      result.data,
+          expiresAt: Date.now() + this.ttlMs,
+        })
+      }
+      return result
+    })
 
-    if (q.type === 'obs') {
-      this._obsCache.set(obsCacheKey(q, ctx), {
-        rows:      result.data,
-        expiresAt: Date.now() + this.ttlMs,
-      })
-    }
-    return result
+    // Clear the in-flight slot on settle (resolve OR reject) — never lock out a
+    // future fetch, never swallow a rejection (the caller still awaits `flight`).
+    this._inflight.set(flightKey, flight)
+    flight.finally(() => { this._inflight.delete(flightKey) })
+
+    return flight
   }
 
   queryFrame(q: StoreQuery, ctx: SectionContext): { rows: EngineRow[]; meta: ResultMeta } {

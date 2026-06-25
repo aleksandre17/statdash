@@ -13,8 +13,9 @@
 //
 
 import type { CtxRef, DimVal }  from '../sdmx'
-import type { DataStore }       from './store'
+import type { DataStore, Requirement } from './store'
 import { storeVal }            from './store'
+import { resolveMeasureRef }    from './metric'
 import type { SectionContext }  from '../core/context'
 import { atTime, TIME_DIM }      from '../core/context'
 import type { KpiDef }          from '../config/kpi'
@@ -219,4 +220,96 @@ export function interpretKpis(
   return specs
     .filter((s) => s.mode === 'both' || s.mode === ctx.timeMode)
     .map((s) => interpretKpi(s, ctx, store))
+}
+
+// ── extractKpiRequirements ────────────────────────────────────────────
+//
+//  Static analysis of a KpiSpec[] — the SSOT requirement set for the KPI
+//  read surface, the sibling of extractRequirements (DataSpec). Returns every
+//  {code, dims} pair interpretKpis WILL read via storeVal, WITHOUT executing
+//  it — so a warm consumer (ApiStore.prefetch / CachedStore.warm / the react
+//  KPI warm path) can batch-load exactly the slices a kpi-strip needs.
+//
+//  CRITICAL — the comparison period. A 'yoy' value/trend reads BOTH atTime(t)
+//  AND atTime(t-1): the previous year is a real store read. extractRequirements
+//  for a 'growth' DataSpec enumerates each year; this does the same for KPIs —
+//  it MUST yield t-1 so the warm covers it, else querySync cold-throws on the
+//  previous-period read (the kpi-strip crash). 'cagr' reads from AND to; 'share'
+//  reads num AND denom at their own pinned times; 'expr' reads every code at t.
+//
+//  Mode-filtered identically to interpretKpis (a 'year'-only KPI contributes no
+//  requirements in 'range' mode and vice-versa) so the warm set is the EXACT
+//  superset of the synchronous render's reads — no more, no less.
+//
+//  Mirrors the resolveMeasureRef + atTime + withFilter seams interpretKpi uses,
+//  so a metric ref expands to its underlying codes exactly as the read will.
+//
+export function extractKpiRequirements(
+  specs: KpiSpec[],
+  ctx:   SectionContext,
+): Requirement[] {
+  const out: Requirement[] = []
+
+  // One (code, dims@time) requirement per underlying code of a measure ref.
+  const push = (measure: string, c: SectionContext, t: number): void => {
+    const dims = atTime(t, c).dims
+    for (const code of resolveMeasureRef(measure).codes) out.push({ code, dims })
+  }
+
+  const fromValue = (spec: KpiValueSpec, base: SectionContext): void => {
+    switch (spec.type) {
+      case 'point': {
+        const c = withFilter(base, spec.filter)
+        push(spec.measure, c, resolveTime(spec.time, c))
+        return
+      }
+      case 'yoy': {
+        const c = withFilter(base, spec.filter)
+        const t = resolveTime(spec.time, c)
+        push(spec.measure, c, t)
+        push(spec.measure, c, t - 1)   // the comparison period — the crash year
+        return
+      }
+      case 'cagr': {
+        const c = withFilter(base, spec.filter)
+        push(spec.measure, c, resolveTime(spec.from, c))
+        push(spec.measure, c, resolveTime(spec.to, c))
+        return
+      }
+      case 'share': {
+        const cn = withFilter(base, spec.num.filter)
+        const cd = withFilter(base, spec.denom.filter)
+        push(spec.num.measure,   cn, resolveTime(spec.num.time, cn))
+        push(spec.denom.measure, cd, resolveTime(spec.denom.time, cd))
+        return
+      }
+      case 'expr': {
+        const c = withFilter(base, spec.filter)
+        const t = resolveTime(spec.time, c)
+        for (const code of spec.codes) push(code, c, t)
+        return
+      }
+    }
+  }
+
+  const fromTrend = (spec: KpiTrendSpec, base: SectionContext): void => {
+    if (spec.type === 'static') return
+    const c = withFilter(base, spec.filter)
+    if (spec.type === 'yoy') {
+      const t = resolveTime(spec.time, c)
+      push(spec.measure, c, t)
+      push(spec.measure, c, t - 1)   // the comparison period — the crash year
+    } else {
+      push(spec.measure, c, resolveTime(spec.from, c))
+      push(spec.measure, c, resolveTime(spec.to, c))
+    }
+  }
+
+  for (const spec of specs) {
+    if (!(spec.mode === 'both' || spec.mode === ctx.timeMode)) continue
+    fromValue(spec.value, ctx)
+    if (spec.trend) fromTrend(spec.trend, ctx)
+  }
+
+  return out
 }

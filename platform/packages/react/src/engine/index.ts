@@ -106,6 +106,12 @@ export { resolvePreliminary }      from './resolvePreliminary'
 //  shell consumes ONE capability instead of re-deriving the badge inline.
 export { usePanelTitleBadge }      from './usePanelTitleBadge'
 export { useNodeStream }           from './useNodeStream'
+// ── KPI warm seam — async-store-safe KpiSpec[] → KpiDef[] resolution ───────
+//  useKpiRows(specs, ctx) gives the kpi-strip read surface the SAME Cache-Aside
+//  warm-then-read treatment useNodeRows gives the DataSpec surface — warming the
+//  year-1 comparison period a 'yoy' KPI reads (extractKpiRequirements, core) so
+//  interpretKpis' querySync is never cold against an async store.
+export { useKpiRows }              from './useKpiRows'
 
 // ── Shell UI hooks — app-agnostic, reusable by ANY shell ──────────────────
 //  useCollapsible — disclosure state + header a11y/keyboard contract (accordion,
