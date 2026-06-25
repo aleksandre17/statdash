@@ -13,9 +13,11 @@ import { CSS } from '@dnd-kit/utilities'
 import { DndContext, type DragEndEvent, closestCenter } from '@dnd-kit/core'
 import { useConstructorStore, useDataSources, useDataSpecs } from '../../../store/constructor.store'
 import { useDndSensors } from '../../../shared/dnd/useDndSensors'
+import type { DataSpec } from '@statdash/engine'
 import { DataSpecEditor } from '../../data-layer'
+import { ShowMe } from '../../data-layer/showme/ShowMe'
 import { SourceAuthoringPanel } from '../../datasources/SourceAuthoringPanel'
-import { deleteDataSource } from '../../../store/api-actions'
+import { deleteDataSource, createDataSpec } from '../../../store/api-actions'
 import type { ConnectionStatus } from '../../../types/constructor'
 
 // ── Selection model ───────────────────────────────────────────────────────────
@@ -114,6 +116,14 @@ export function DataStep() {
     reorderSpecs(arrayMove(specs, oldIndex, newIndex).map((d) => d.id))
   }
 
+  // Show-Me: a suggested chart → a persisted, populated DataSpec, then selected
+  // for editing. Reuses createDataSpec (the same path the data layer already
+  // uses to add a spec) — Show-Me only supplies the populated spec + a name.
+  const handleSuggestionInsert = (spec: DataSpec, panelType: string) => {
+    void createDataSpec({ name: `${panelType} (შემოთავაზებული)`, spec })
+      .then((created) => setSelection({ kind: 'spec', id: created.id }))
+  }
+
   const selectedSource = selection?.kind === 'source' ? sources.find((d) => d.id === selection.id) ?? null : null
   const selectedSpec   = selection?.kind === 'spec'   ? specs.find((d) => d.id === selection.id) ?? null   : null
   // The authoring panel shows for both an existing source and a brand-new one.
@@ -165,6 +175,9 @@ export function DataStep() {
 
           <Box>
             <Typography variant="overline" color="text.secondary">მონაცემების სპეც-ები</Typography>
+            <Box sx={{ mb: 1 }}>
+              <ShowMe onInsert={handleSuggestionInsert} />
+            </Box>
             <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleSpecDragEnd}>
               <SortableContext items={specs.map((d) => d.id)} strategy={verticalListSortingStrategy}>
                 {specs.map((spec) => (

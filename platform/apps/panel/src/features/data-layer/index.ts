@@ -16,3 +16,12 @@ export { RowSpecEditor } from './editors/rowlist/RowSpecEditor'
 export { ByModeEditor } from './editors/ByModeEditor'
 export { TransformEditor } from './editors/TransformEditor'
 export { PivotEditor } from './editors/PivotEditor'
+
+// V5 — drag-to-bind field wells + Tableau "Show Me" suggested charts.
+export { FieldWells } from './fieldwells/FieldWells'
+export { FieldPalette } from './fieldwells/FieldPalette'
+export { FieldWell } from './fieldwells/FieldWell'
+export { ShowMe } from './showme/ShowMe'
+export { fieldChips } from './fieldwells/fieldChips'
+export type { FieldChip, FieldKind } from './fieldwells/fieldChips'
+export { buildSuggestedSpec } from './showme/buildSuggestedSpec'
