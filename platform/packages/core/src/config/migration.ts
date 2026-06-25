@@ -14,7 +14,7 @@
 //    2. Register a migration: registerMigration(newVersion, fn).
 //    3. fn receives the previous-version config and returns the next-version config.
 //
-//  Current version: 4.
+//  Current version: 5.
 //    v1 → v2: page-level `color` moved from a flat PageConfigBase field into
 //    `presentation.color` (the presentation-projection registry's single home).
 //    v2 → v3: node `type: 'georgraph'` renamed to `'geograph'` (misspelling fix),
@@ -22,11 +22,16 @@
 //    v3 → v4: a section's two mutually-exclusive `view.hero` / `view.compact`
 //    booleans collapse into ONE declared `variants.emphasis` enum
 //    ('hero' | 'compact') — the variant-style spine. Applied recursively.
-//    See the registered migrators at the foot of this module.
+//    v4 → v5: a DataLink param's filter-param source token `$ctx` renamed to
+//    `$param` — fixing the Ref-taxonomy NAME COLLISION where `$ctx` meant BOTH
+//    `ctx.dims` (ObsQuery) and "filter param" (DataLink). Now `$ctx` means ONE
+//    thing everywhere (ctx.dims); the DataLink filter-param scope is `$param`.
+//    Rewrites ONLY `$ctx` keys inside `dataLinks[].params` values — every other
+//    `$ctx` (ObsQuery filters, vars) is left untouched. See the foot of module.
 //
 
 /** Current schema version for page configs. Bump when introducing breaking config changes. */
-export const CURRENT_SCHEMA_VERSION = 4
+export const CURRENT_SCHEMA_VERSION = 5
 
 /**
  * A migration function.
@@ -265,3 +270,67 @@ function migrateEmphasis(value: unknown): unknown {
 }
 
 registerMigration(4, (config) => migrateEmphasis(config) as Record<string, unknown>)
+
+// ── v4 → v5: DataLink param `$ctx` → `$param` (Ref-taxonomy collision fix) ────
+//
+//  The Ref taxonomy [R4] gives every `$`-ref ONE scope per token. The DataLink
+//  filter-param source historically used `$ctx` — the SAME token an ObsQuery
+//  filter uses for `ctx.dims` (a Least-Astonishment NAME COLLISION). The fix
+//  renames the DataLink filter-param scope to `$param`, so `$ctx` means exactly
+//  `ctx.dims` everywhere. Because the token is SERIALIZED in stored configs
+//  (`dataLinks[].params`), retiring it is a real migration.
+//
+//  SCOPE-PRECISE rewrite (this is the subtlety): a config has MANY `$ctx` refs
+//  that must NOT change — ObsQuery `filter` values, page `vars`. Only the `$ctx`
+//  that lives as a DataLink param value is the colliding one. So the migrator
+//  walks the tree, and ONLY when it enters a `dataLinks` array does it rewrite
+//  `{ $ctx }` → `{ $param }` within each link's `params` map values. Every other
+//  `$ctx` in the tree is left byte-identical.
+//
+//  Pure, idempotent, structure-preserving:
+//    • recurses the whole node tree (children, slots, any nesting) to find every
+//      `dataLinks` array regardless of depth.
+//    • within a dataLink's `params`, rewrites a param VALUE `{ $ctx: k }` to
+//      `{ $param: k }` (the only place the colliding token can legally appear).
+//    • a config with no DataLink `$ctx` passes through structurally unchanged.
+//    • re-running on a migrated config is a no-op (no DataLink `$ctx` remains).
+//
+
+/** Rewrite a single dataLink's `params` map: `{ $ctx }` value → `{ $param }`. */
+function migrateLinkParams(link: unknown): unknown {
+  if (!link || typeof link !== 'object' || Array.isArray(link)) return link
+  const l = link as Record<string, unknown>
+  const params = l.params
+  if (!params || typeof params !== 'object' || Array.isArray(params)) return link
+
+  let changed = false
+  const nextParams: Record<string, unknown> = {}
+  for (const [k, v] of Object.entries(params as Record<string, unknown>)) {
+    if (v && typeof v === 'object' && !Array.isArray(v) && '$ctx' in (v as object)) {
+      nextParams[k] = { $param: (v as { $ctx: string }).$ctx }
+      changed = true
+    } else {
+      nextParams[k] = v
+    }
+  }
+  return changed ? { ...l, params: nextParams } : link
+}
+
+function migrateDataLinkCtx(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(migrateDataLinkCtx)
+  if (!value || typeof value !== 'object') return value
+
+  const node = value as Record<string, unknown>
+  const out: Record<string, unknown> = {}
+  for (const [k, v] of Object.entries(node)) {
+    if (k === 'dataLinks' && Array.isArray(v)) {
+      // The ONLY place the colliding `$ctx` is rewritten — inside a dataLink param.
+      out[k] = v.map((link) => migrateLinkParams(migrateDataLinkCtx(link)))
+    } else {
+      out[k] = migrateDataLinkCtx(v)
+    }
+  }
+  return out
+}
+
+registerMigration(5, (config) => migrateDataLinkCtx(config) as Record<string, unknown>)

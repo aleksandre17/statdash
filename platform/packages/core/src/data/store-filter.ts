@@ -14,6 +14,7 @@
 import type { Classifier, ClassifierEntry, CtxRef, DimVal,
               FilterValue, NeCtxRef, NeRef }                           from '../sdmx'
 import type { SectionContext }                                         from '../core/context'
+import { resolveRef }                                                   from '../ref/ref'
 
 
 // ── dimKey ────────────────────────────────────────────────────────────
@@ -45,7 +46,8 @@ export function resolveFilter(
 ): DimVal[] | null {
   if (Array.isArray(fv)) return fv as DimVal[]
   if (typeof fv === 'object' && '$ctx' in (fv as object)) {
-    const val = ctx.dims[(fv as CtxRef).$ctx]
+    // ctx-scope ref → SectionContext.dims, via the one resolver (../ref).
+    const val = resolveRef(fv as CtxRef, { dims: ctx.dims }) as DimVal | undefined
     if (val === '' || val === null || val === undefined) return null         // wildcard
     if (typeof val === 'string' && val.includes(',')) {
       const parts = val.split(',').filter(Boolean) as DimVal[]
@@ -68,7 +70,8 @@ export function matchesFilter(
       const ne = fv as NeRef | NeCtxRef
       if (String(obs[dim]) === String(ne.$ne)) return false
       if ('$ctx' in ne) {
-        const ctxVal = ctx.dims[(ne as NeCtxRef).$ctx]
+        // The NeCtxRef's optional ctx-scope narrowing resolves via the one dispatcher.
+        const ctxVal = resolveRef({ $ctx: (ne as NeCtxRef).$ctx }, { dims: ctx.dims }) as DimVal | undefined
         if (ctxVal !== '' && ctxVal !== null && ctxVal !== undefined) {
           const leaves = expand ? expand(dim, ctxVal) : [ctxVal]
           if (!matchesLeaves(leaves, obs[dim])) return false

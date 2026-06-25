@@ -16,13 +16,19 @@ import type { LocaleString } from '../i18n/types'
 
 // ── DataLinkParam — value source for resolved link params ────────────────
 //
-//  '$row'  — resolved from the clicked DataRow (e.g. bar's geo code)
-//  '$ctx'  — resolved from current filter params (e.g. active time)
-//  literal — constant string value
+//  A DataLink param value is a `$`-ref in the unified Ref taxonomy (../ref):
+//  '$row'    — resolved from the clicked DataRow (row scope; e.g. bar's geo code)
+//  '$param'  — resolved from current filter params (param scope; e.g. active time)
+//  literal   — constant string value
+//
+//  NOTE [R4]: the filter-param source was historically `$ctx` here — the SAME
+//  token that means `ctx.dims` in an ObsQuery filter (a Least-Astonishment name
+//  collision). It is now `$param` (the `param` scope), so `$ctx` means ONE thing
+//  everywhere (ctx.dims). Stored configs are migrated v4→v5 (config/migration.ts).
 //
 export type DataLinkParam =
-  | { $row: string }      // row[field]
-  | { $ctx: string }      // filterParams[key]
+  | { $row: string }      // row scope    — row[field]
+  | { $param: string }    // param scope  — filterParams[key]
   | string                // literal constant
 
 // ── NavigateDataLink — navigate to a page or URL ─────────────────────────

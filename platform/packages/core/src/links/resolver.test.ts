@@ -151,6 +151,40 @@ describe('resolveDataLinks — navigate targets (regression)', () => {
   })
 })
 
+describe('resolveDataLinks — $param scope (renamed from $ctx) [R4]', () => {
+  it('resolves a $param value from filterParams (the de-collided filter-param scope)', () => {
+    const links: DataLinkDef[] = [
+      {
+        title:  { en: 'Drill with active time' },
+        target: 'page',
+        page:   '/regional',
+        params: { time: { $param: 'time' } },
+      },
+    ]
+    const result = resolveDataLinks(links, ROW, { time: 2023 }, LOCALE, FALLBACK)
+    const link = result[0]
+    expect(link.action).toBe('navigate')
+    if (link.action === 'navigate') expect(link.href).toContain('time=2023')
+  })
+
+  it('mixes $row (row scope) and $param (param scope) in one link', () => {
+    const links: DataLinkDef[] = [
+      {
+        title:  { en: 'Drill' },
+        target: 'page',
+        page:   '/regional',
+        params: { region: { $row: 'regionId' }, time: { $param: 'time' } },
+      },
+    ]
+    const result = resolveDataLinks(links, ROW, { time: 2020 }, LOCALE, FALLBACK)
+    const link = result[0]
+    if (link.action === 'navigate') {
+      expect(link.href).toContain('region=GE-TB')
+      expect(link.href).toContain('time=2020')
+    }
+  })
+})
+
 describe('resolveDataLinks — mixed link array', () => {
   it('handles filter + navigate links in the same array', () => {
     const links: DataLinkDef[] = [

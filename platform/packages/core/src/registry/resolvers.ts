@@ -12,6 +12,7 @@ import type { DataStore }                    from '../data/store'
 import { storeVal, storeObs }               from '../data/store'
 import type { CtxRef, DimVal, FilterValue, NeCtxRef, ObsQuery }  from '../sdmx'
 import { resolveMeasureRef }                  from '../data/metric'
+import { resolveRef }                          from '../ref/ref'
 import { resolveLocaleString }                from '../i18n/types'
 import type { SpecResolver }                 from './engine'
 import { applyPipeline, applyStep }          from '../data/transform'
@@ -89,13 +90,19 @@ function resolveCode(code: string): string {
   return resolveMeasureRef(code).codes[0] ?? code
 }
 
-/** Resolve a FilterValue to a flat list of DimVals (used by extractRequirements). */
+/**
+ * Resolve a FilterValue to a flat list of DimVals (used by extractRequirements).
+ * The ctx-scope lookups route through the one Ref dispatcher (../ref) — the same
+ * resolution path the runtime filter (store-filter.ts) uses for `$ctx`.
+ */
 export function resolveFilterForReqs(fv: FilterValue, ctx: SectionContext): DimVal[] {
   if (Array.isArray(fv)) return fv as DimVal[]
   if (typeof fv === 'object' && !Array.isArray(fv)) {
-    if ('$ctx' in (fv as object) && !('$ne' in (fv as object))) return [ctx.dims[(fv as CtxRef).$ctx]]
+    if ('$ctx' in (fv as object) && !('$ne' in (fv as object))) {
+      return [resolveRef(fv as CtxRef, { dims: ctx.dims }) as DimVal]
+    }
     if ('$ne'  in (fv as object) && '$ctx' in (fv as object)) {
-      const ctxVal = ctx.dims[(fv as NeCtxRef).$ctx]
+      const ctxVal = resolveRef({ $ctx: (fv as NeCtxRef).$ctx }, { dims: ctx.dims }) as DimVal | undefined
       return ctxVal !== '' && ctxVal != null ? [ctxVal] : []
     }
     if ('$ne'  in (fv as object)) return []   // can't enumerate excluded values statically

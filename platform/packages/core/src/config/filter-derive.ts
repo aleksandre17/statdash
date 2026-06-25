@@ -15,7 +15,8 @@
 import type { Classifier, DimRef, DisplayMap } from '../sdmx'
 import type { WhenMap }                        from './filter-condition'
 import type { CascadeNode }                    from './filter-params'
-import { isDimRef, resolveDimRef }             from '../data/codelist'
+import { isDimRef }                            from '../data/codelist'
+import { resolveRef }                          from '../ref/ref'
 import { evalWhen }                            from './filter-condition'
 import type { ExprVal }                        from '@statdash/expr'
 
@@ -85,13 +86,15 @@ export interface DeriveContext {
   display?:     Record<string, DisplayMap>
 }
 
+// A derive `source` is an inline array OR a dim-scope ref (`$cl`/`$d`). The ref
+// resolves through the ONE dispatcher (../ref) — same path as every other ref.
 function resolveSource(
   source: DimRef | readonly Record<string, unknown>[],
   classifiers?: Record<string, Classifier>,
   display?:     Record<string, DisplayMap>,
 ): readonly Record<string, unknown>[] {
   if (!isDimRef(source)) return source
-  const resolved = resolveDimRef(source, classifiers, display, 'items')
+  const resolved = resolveRef(source, { classifiers, display, defaultView: 'items' })
   return Array.isArray(resolved) ? resolved as readonly Record<string, unknown>[] : []
 }
 
@@ -126,8 +129,10 @@ export function evalFilterDerive(
     case 'if-else': {
       const matches = evalWhen(expr.when, raw)
       const result  = matches ? expr.then : expr.else
+      // A `{ $ref: paramKey }` else-value is a var-scope ref → the param's value,
+      // resolved through the ONE dispatcher (../ref).
       if (result != null && typeof result === 'object' && '$ref' in (result as object)) {
-        return values[(result as { $ref: string }).$ref]
+        return resolveRef(result as { $ref: string }, { vars: values })
       }
       return result
     }

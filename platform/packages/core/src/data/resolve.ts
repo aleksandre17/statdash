@@ -11,7 +11,8 @@ import type { SectionContext }                               from '../core/conte
 import type { SelectOption, ChipOption }                     from './source'
 import type { OptionsSource, ChipSource, YearsSource }       from './source'
 import type { DimRef, DimVal }                               from '../sdmx'
-import { isDimRef, resolveDimRef }                            from './codelist'
+import { isDimRef }                                           from './codelist'
+import { resolveRef }                                         from '../ref/ref'
 import { applyPipeline }                                     from './transform'
 import type { TransformStep }                                from './transform/types'
 
@@ -25,8 +26,10 @@ function resolveRaw(
 ): readonly Record<string, DimVal>[] | null {
   if (src.type === 'api')    return null
   if (src.type === 'inline') {
+    // An inline source is a dim-scope ref (`$cl`/`$d`) OR a literal array; the
+    // ref resolves through the ONE dispatcher (../ref).
     const items = isDimRef(src.items)
-      ? resolveDimRef(src.items, store.classifiers, store.display, 'items')
+      ? resolveRef(src.items, { classifiers: store.classifiers, display: store.display, defaultView: 'items' })
       : src.items
     return Array.isArray(items)
       ? (items as readonly Record<string, DimVal>[])

@@ -20,7 +20,7 @@ describe('migratePageConfig — version stamping', () => {
     const v0 = { id: 'gdp', type: 'inner-page', children: [] }
     const out = migratePageConfig(v0)
     expect(out.schemaVersion).toBe(CURRENT_SCHEMA_VERSION)
-    expect(out.schemaVersion).toBe(4)
+    expect(out.schemaVersion).toBe(5)
   })
 
   it('returns a config already at the current version unchanged in content', () => {

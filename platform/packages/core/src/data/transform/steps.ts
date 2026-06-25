@@ -1,5 +1,6 @@
 ﻿import type { CtxRef, DimVal, FilterValue }  from '../../sdmx'
-import { isDimRef, resolveDimRef }            from '../codelist'
+import { isDimRef }                           from '../codelist'
+import { resolveRef }                         from '../../ref/ref'
 import { roundAgg }                           from '../round'
 import type { RawRow, TransformStep, PipelineContext } from './types'
 
@@ -44,10 +45,10 @@ export function applyFilter(
   return rows.filter((row) =>
     Object.entries(step.where).every(([field, condition]) => {
       const val = row[field]
-      // Resolve CtxRef against SectionContext.dims
+      // Resolve a ctx-scope ref against SectionContext.dims via the one dispatcher (../ref).
       let resolved: FilterValue | DimVal | undefined = condition
       if (isCtxRef(condition)) {
-        const cv = ctx?.section?.dims[(condition as CtxRef).$ctx]
+        const cv = resolveRef(condition as CtxRef, { dims: ctx?.section?.dims }) as DimVal | undefined
         if (cv === '' || cv === null || cv === undefined) return true   // wildcard
         resolved = cv
       }
@@ -249,7 +250,7 @@ export function applyJoin(
   ctx?: PipelineContext,
 ): RawRow[] {
   const right = isDimRef(step.with)
-    ? (resolveDimRef(step.with, ctx?.classifiers, ctx?.display, 'items') as readonly Record<string, unknown>[])
+    ? (resolveRef(step.with, { classifiers: ctx?.classifiers, display: ctx?.display, defaultView: 'items' }) as readonly Record<string, unknown>[])
     : step.with
   const onLeft  = step.on
   const onRight = step.onRight ?? (isDimRef(step.with) ? 'code' : step.on)
@@ -311,7 +312,7 @@ export function applyLookup(
 ): RawRow[] {
   const from: Record<string, Record<string, DimVal | undefined>> =
     isDimRef(step.from)
-      ? (resolveDimRef(step.from, ctx?.classifiers, ctx?.display, 'byCode') as Record<string, Record<string, DimVal | undefined>>)
+      ? (resolveRef(step.from, { classifiers: ctx?.classifiers, display: ctx?.display, defaultView: 'byCode' }) as Record<string, Record<string, DimVal | undefined>>)
       : step.from
   return rows.map((row) => {
     const entry = from[String(row[step.key] ?? '')]

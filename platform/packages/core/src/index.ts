@@ -44,6 +44,11 @@ export { codelistOf, itemsOf, leavesOf, rollupsOf, codesOf,
          isClassifierRef, isDisplayRef, isDimRef,
          resolveClassifierRef, resolveDisplayRef, resolveDimRef } from './data/codelist'
 
+// ── Ref taxonomy + one resolution dispatcher [R4] — the SSOT for `$`-refs ──
+export type { Ref, RefScope, RefServices, DimViewResult,
+              CtxScopeRef, ParamScopeRef, RowScopeRef, VarScopeRef, DimScopeRef } from './ref/ref'
+export { REF_SCOPES, refScope, isRef, resolveRef }                                from './ref/ref'
+
 // ── DataSource — universal options/years/chips abstraction ───────────
 export type {
   SelectOption, ChipOption,

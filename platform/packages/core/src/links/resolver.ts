@@ -7,15 +7,17 @@
 import type { DimVal }        from '../sdmx'
 import type { DataLinkDef, DataLinkParam, ResolvedLink } from './types'
 import { resolveLocaleString } from '../i18n/types'
+import { resolveRef, isRef }   from '../ref/ref'
 
+// A DataLink param is a literal OR a `$`-ref (row / param scope). Refs resolve
+// through the ONE dispatcher (../ref) — no link-local ref resolution survives.
 function resolveParam(
   param:        DataLinkParam,
   row:          Record<string, DimVal>,
   filterParams: Record<string, unknown>,
 ): string {
   if (typeof param === 'string') return param
-  if ('$row' in param) return String(row[param.$row] ?? '')
-  if ('$ctx' in param) return String(filterParams[param.$ctx] ?? '')
+  if (isRef(param)) return String(resolveRef(param, { row, params: filterParams }) ?? '')
   return ''
 }
 
