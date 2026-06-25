@@ -41,11 +41,14 @@ ENV VITE_API_URL=$VITE_API_URL
 COPY . .
 # Production packaging runs vite ONLY — never `tsc -b` (type-checking the whole
 # monorepo via ../../packages is a category error in a per-app image; the `build`
-# script keeps tsc as the local gate). Vite builds @statdash/* from SOURCE; the
-# OPTIONAL peer deps of @statdash/plugins (react-leaflet/leaflet/apexcharts/
-# react-apexcharts) resolve via explicit resolve.alias in apps/panel/vite.config.ts
-# (require.resolve'd to the app's own installed copies), so the FILTERED deps install
-# is sufficient — no full-monorepo re-install.
+# script keeps tsc as the local gate). Vite builds @statdash/* from SOURCE, so it
+# must resolve those packages' peer deps two ways:
+#  • REGULAR peers (react-router-dom, i18next) resolve from package source ONLY if
+#    present in the workspace → a full frozen install (whole workspace is COPYd now).
+#  • OPTIONAL peers (react-leaflet/leaflet/apexcharts/react-apexcharts) are stubbed by
+#    vite even when installed → fixed by the resolve.alias in apps/panel/vite.config.ts.
+# Both are needed; the install weight stays in this discarded builder layer.
+RUN pnpm install --frozen-lockfile
 RUN pnpm --filter ./apps/panel exec vite build
 
 # ─── Stage 5: production (nginx serving the static dist) ──────────────────────
