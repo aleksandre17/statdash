@@ -74,9 +74,16 @@ Three more architect studies delivered + acted on (architect memory): `adr_multi
 ## ⭐ THE WHOLE ROADMAP IS DONE
 Data-model **R1–R6** · multi-store **M0–M2** · source spectrum **S0–S2** · Constructor coverage+UX **V0–V7**. The Constructor can build **anything** the renderer renders (gate-proven), bind by drag, suggest charts, author sources, start from templates — on a unified data-model (semantic-layer binding spine, one `$`-ref dispatcher, source kinds, first-class timeDimension). **1410 tests** · lint 0 · law-scan clean · builds green · all on `main`.
 
+## ✅ SHIP-READY — verified end-to-end on real infra
+- **chief-engineer final review: SHIP — READY** (no ship-blocker; green gate real, every prior finding root-cause-resolved, seams + deploy path sound).
+- **Real-Postgres re-validation:** **1454/1454 tests** (1410 offline + 44 DB-gated) on real TimescaleDB.
+- **Full stack runs:** the api image (shipped code `25a8a75`) builds + boots in **`NODE_ENV=production`** against real Postgres on `statdash-net`, **provisions config on boot**, serves `/health` ok + `/api/bootstrap` (`schemaVersion 5`) + `/api/schema/page-config` 200.
+- **Security hardening:** `EMBED_SECRET` now **fail-fast in prod** (was a forgeable dev-default) — verified LIVE (prod boot without it crashes loud). Class-scanned: it was the only sibling.
+- **Deploy runbook:** `platform/DEPLOY.md` (env contract, the Flyway chain, the **V24 existing-DB precondition**, cutover steps, post-ship flips).
+
 ## Remaining = deferred-by-design (named triggers; YAGNI)
-- **D-HREF** (remote/url sources) · **ApiResponse envelope** (Tier-2/3) · **per-source auth** · **data-blending (Mixed)** — each opens on its real trigger (first external source, etc.).
-- **Pre-ship:** a final real-Postgres re-validation (the engine data-layer changed a lot — all byte-identical/additive + unit+fitness-proven, but a real-DB re-run is the responsible last check).
+- **D-HREF** (remote/url sources) · **ApiResponse envelope** (Tier-2/3) · **per-source auth** · **data-blending (Mixed)** · SDMX REST surface — each opens on its real trigger.
+- **Carry into deploy runbook before first prod cutover:** the V24 existing-populated-DB precondition (greenfield is safe/automatic).
 
 ## Deferred (by design)
 - `validateConfig` WARN→hard-reject flip (needs a real config corpus; WARN is the correct safe state).
