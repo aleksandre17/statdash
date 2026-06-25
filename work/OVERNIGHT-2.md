@@ -58,10 +58,17 @@ Note: `statdash-validate-pg` is freshly migrated; `statdash-validate-api` is **s
 - **R3** ✅ — desugared `pivot`→transform+melt **row-identically** (FF-DESUGAR-EQUIV vs the frozen resolver); **correctly left timeseries/growth/ratio-list DIRECT** (they read via `storeVal` OLAP-cell semantics `query`+pipe can't reconstruct — exact gap reported, no forced row-change). (471e035)
 - **V2** ✅ — DataSpec editors (row-list/by-mode-recursive/transform; pivot friendly) → **FULL authoring coverage**: the gate now proves every DataSpec/transform-op/ParamDef/VisibilityExpr has an authoring surface (only permanent `custom`/`joinByField`). (3d1d073)
 
-## Remaining (canonical order) + in-flight
-- **Multi-store / `storeId` study RUNNING** (strongest architect, Opus, background) — recover the sidelined multi-store vision from docs/records, compare to best-in-class multi-datasource (Grafana mixed-datasource/Superset/Tableau-blending/Cube/Looker/Retool), and a critical re-adoption verdict. (User-requested; reads the store/data layer broadly → R2/R5 held to avoid overlap.)
-- **R2** (enrich encoding channels with type/key — additive) · **R5** (first-class `timeDimension` — folds YearsSpec/fromDim/toDim) — next canonical data-model steps, after the multi-store study.
-- **V5–V7** Constructor UX polish (field-wells/Show-Me · Outline tree + Cmd-K · templates) — `dnd-kit`(in)/`cmdk`/`react-colorful`.
+## ✅ CANONICAL DATA-MODEL + SOURCE ROADMAP — COMPLETE (3 more studies + their execution)
+Three more architect studies delivered + acted on (architect memory): `adr_multistore_storeid_reintroduction`, `adr_data_source_reference_spectrum`. The full canonical sequence, all green/byte-identical/fitness-locked:
+- **R1** semantic layer wired · **R2** encoding channels (type/key) · **R3** pivot desugar (rest correctly left direct) · **R4** `$`-ref unification + `$ctx` collision fix · **R5** first-class `timeDimension` (folds fromDim/toDim) · **R6** fitness nets.
+- **M0+M1** multi-store middle tier — a metric names its store (the spine was already LIVE; finished the tier, extends R1).
+- **S0–S2** data-source spectrum restored — registered the **`static`** store kind (one `DataStore` port, OCP kinds), cleaned the **HREF ghost**, **`href` deferred behind door D-HREF** (named trigger: first author-supplied external source).
+- **Full Constructor coverage** (V0–V4 + V2): every DataSpec/transform-op/ParamDef/VisibilityExpr authorable; + Page Inspector + methodology (V3).
+
+## Remaining — Constructor UX (for your morning steering; UX-design-heavy)
+- **M2** — Constructor source-authoring seam (`getMetadata`/`testConnection`; add→test→browse→write a source — now `static`/`stats` are real kinds to author).
+- **V5–V7** — field-wells/Show-Me · Outline tree + Cmd-K · templates/data-first (adopt `dnd-kit`(in)/`cmdk`/`react-colorful`).
+- **Deferred doors (YAGNI, named triggers):** D-HREF (remote sources), D1 ApiResponse envelope, D2 per-source auth, D3 data-blending.
 
 ## Deferred (by design)
 - `validateConfig` WARN→hard-reject flip (needs a real config corpus; WARN is the correct safe state).
