@@ -67,6 +67,20 @@ function main() {
     else console.log('    anomalies: none');
   }
 
+  console.log('\n--- LABEL CORRECTIONS applied (codes UNCHANGED) ---');
+  let anyCorr = false;
+  for (const { ds } of written) {
+    for (const dim of ds.dimensions) {
+      if (dim === 'time') continue;
+      const cl = ds.codelists[dim];
+      for (const a of (cl.applied || [])) {
+        anyCorr = true;
+        console.log(`    ${ds.datasetCode} CL_${dim.toUpperCase()} code="${a.code}" ${a.field}: "${a.from}" → "${a.to}"`);
+      }
+    }
+  }
+  if (!anyCorr) console.log('    none');
+
   console.log('\n--- FLAGS (labels/data needing human attention) ---');
   if (!flags.length) console.log('    none');
   else for (const f of flags) console.log('    • ' + f);

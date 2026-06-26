@@ -14,6 +14,19 @@ const SRC_NAME = '1.National Accounts_Data.xlsx';
 //             5 aggregate(Resources label) |6 Resources value |7 aggregate-no
 const C = { year: 0, accNo: 1, accName: 2, balItem: 3, uses: 4, aggName: 5, res: 6, aggNo: 7 };
 
+/**
+ * Display-label corrections for CL_MEASURE (codes UNCHANGED). Keyed by the stable code.
+ * - D5: en typo "rest of the word"→"rest of the world".
+ * - B6G: ka typo "განკარგვარი"→"განკარგვადი" (en "Gross Disposable income" is fine).
+ * - D1: en typo "employess"→"employees" (additional unambiguous typo spotted in-sheet;
+ *   ka "შრომის ანაზღაურება" is correct).
+ */
+const ACCOUNTS_MEASURE_CORRECTIONS = {
+  D5: { name_en: 'Current transfers receivable from the rest of the world' },
+  B6G: { name_ka: 'მთლიანი განკარგვადი შემოსავალი' },
+  D1: { name_en: 'Compensation of employees' },
+};
+
 function buildAccountsSequence(dataDir, flags) {
   const file = `${dataDir}/${SRC_NAME}`;
   const geo = readSheet(file, 'GEO');
@@ -92,6 +105,8 @@ function buildAccountsSequence(dataDir, flags) {
       data.push({ account: accCode, side: 'R', measure: measureCode(cleanLabel(g[C.aggName]), cleanLabel(e[C.aggName])), time, obs_value: resVal, obs_status: 'A', seq_pos: seqPos });
     }
   }
+
+  clMeasure.applyCorrections(ACCOUNTS_MEASURE_CORRECTIONS);
 
   return {
     datasetCode: 'ACCOUNTS_SEQUENCE',

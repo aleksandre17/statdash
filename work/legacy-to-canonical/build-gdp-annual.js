@@ -10,6 +10,23 @@ const { cleanLabel, liftCode, liftSign, transliterate, slugify, makeCodelist, is
 
 const SRC_NAME = '2 GDP მონაცემები.xlsx';
 
+/**
+ * Display-label corrections for CL_MEASURE (codes UNCHANGED — SDMX: a published code is a
+ * stable series-key id; we only fix the typo'd display label). Keyed by the stable code.
+ * - compensation-of-emploees: en typo "Emploees"→"Employees" (ka already correct).
+ * - net-taxes (PRODUCTION-approach entry) → taxes-less-subsidies ON PRODUCTS (SNA 2008 /
+ *   ESA 2010 production-approach GDP).
+ * - net-taxes_2 (INCOME-approach entry) → taxes-less-subsidies ON PRODUCTION AND IMPORTS
+ *   (income-approach GDP). Disambiguates the two formerly-identical "Net taxes" rows.
+ *   NOTE: the Georgian wording for both net-taxes entries is a faithful translation —
+ *   flagged for user review (swap for the official Geostat term if preferred).
+ */
+const GDP_MEASURE_CORRECTIONS = {
+  'compensation-of-emploees': { name_en: 'Compensation of Employees' },
+  'net-taxes': { name_en: 'Net taxes on products', name_ka: 'წმინდა გადასახადები პროდუქტებზე' },
+  'net-taxes_2': { name_en: 'Net taxes on production and imports', name_ka: 'წმინდა გადასახადები წარმოებასა და იმპორტზე' },
+};
+
 function approachOf(nameEn) {
   const n = nameEn.toLowerCase();
   if (n.startsWith('gdp by production')) return { code: 'PROD', en: 'Production approach', ka: 'წარმოების მეთოდი' };
@@ -73,6 +90,8 @@ function buildGdpAnnual(dataDir, flags) {
       data.push({ approach: appr.code, measure: measureCode, geo: 'GE', time: y.time, obs_value: v, obs_status: y.prelim ? 'P' : 'A', contribution_role: role });
     }
   }
+
+  clMeasure.applyCorrections(GDP_MEASURE_CORRECTIONS);
 
   return {
     datasetCode: 'GDP_ANNUAL',

@@ -82,3 +82,30 @@ The 3 flawless canonical workbooks (`DATA/canonical/{GDP_ANNUAL,ACCOUNTS_SEQUENC
 are on disk but **untracked in git** — they're binary data artifacts, so whether to version them is
 your call. Say the word and I'll commit them (or add `DATA/canonical/` to `.gitignore` if they should
 stay local-only).
+
+---
+
+## Update — LIVE DEMO now serves the REAL data (cutover complete, ADR-0032)
+
+The live demo no longer shows placeholder seed data — it serves **your real canonical data**, loaded
+the real way (through the ingestion pipeline). Done via prove-then-cutover: an isolated staging twin
+proved the whole flow + a real-browser probe BEFORE any live mutation; the live DB was backed up first.
+
+- **Live gold:** GDP_ANNUAL 288 (4-dim `measure,approach,time,geo`, via governed version-mint),
+  ACCOUNTS_SEQUENCE 415, REGIONAL_GVA 1554 — all ingested through `POST /api/ingest/canonical`.
+- **Render verified live** (Playwright probe): GDP / ACCOUNTS / REGIONAL all render real values,
+  zero empty panels, zero console/page errors. GDP 2024 = ₾93,022M.
+- **Loose ends RESOLVED canonically** (not deferred): (1) SDMX multi-value key selection on the
+  observations route (`{"geo":["R2","R3"]}` = OR-within-dim) — unblocks the multi-region comparison;
+  (2) ACCOUNTS KPI/timeline pinned to the deriving SNA rows; (3) canonical upload idempotent on
+  partial-failure retry; (4) **a config↔cube fitness guard** that fails CI if any page query under-pins
+  a KPI or references a code absent from the dataset — so this whole class can't ship again.
+- **Reworked page configs:** GDP (4-dim: KPI strip + Production/Expenditure/Income breakdowns),
+  REGIONAL (real region/sector codes + ISO→region map fix). Committed `52738a3`, `52475ef`.
+- **State:** all 4 prod containers healthy; single-origin; backup at
+  `/tmp/statdash-preCutover-20260626T131739Z.dump` (restorable); staging twin torn down.
+  Green: typecheck 0 · lint 0 errors · check-laws clean · offline 1631 passed · DB-gated suites in CI.
+
+Data-quality flags for the data owner (used as-is, source-level — not blocking): workbook label
+typos (`compensation-of-emploees`, `receivable from the rest of the word`, `განკარგვარი`);
+`net-taxes` vs `net-taxes_2`; region sector breakdowns are a partial NACE selection (don't sum to 100%).

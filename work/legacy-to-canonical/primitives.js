@@ -85,6 +85,7 @@ const isNum = (v) => typeof v === 'number' && Number.isFinite(v);
 function makeCodelist(dim) {
   const byCode = new Map();
   const conflicts = [];
+  const applied = []; // display-label corrections actually applied (for the report)
   const conflictSeen = new Set(); // dedupe: one report per distinct (code,field,had,got)
   const flagConflict = (code, field, had, got) => {
     const k = `${code}|${field}|${had}|${got}`;
@@ -108,8 +109,31 @@ function makeCodelist(dim) {
     },
     has(code) { return byCode.has(code); },
     get(code) { return byCode.get(code); },
+    /**
+     * DISPLAY-LABEL corrections (SDMX practice: a published code is a stable series-key
+     * identity — we fix a typo'd display label, never rename the code). `corrections` is
+     * a map { code: { name_en?, name_ka? } }. Runs AFTER codes are derived (codes are
+     * slugified/lifted from the original — possibly typo'd — source labels, so they are
+     * unaffected). Each application is recorded in `applied` for the report. Fails fast
+     * if a correction targets a code that is not in this codelist (catches drift, e.g.
+     * a renamed code, instead of silently no-opping).
+     */
+    applyCorrections(corrections) {
+      if (!corrections) return;
+      for (const [code, patch] of Object.entries(corrections)) {
+        const ex = byCode.get(code);
+        if (!ex) throw new Error(`correction targets unknown ${dim} code "${code}" — codelist drift; review the correction map`);
+        for (const field of ['name_en', 'name_ka']) {
+          if (patch[field] == null) continue;
+          if (patch[field] === ex[field]) continue; // already correct → no-op, not recorded
+          applied.push({ dim, code, field, from: ex[field], to: patch[field] });
+          ex[field] = patch[field];
+        }
+      }
+    },
     rows() { return [...byCode.values()].sort((a, b) => a.order - b.order); },
     conflicts,
+    applied,
   };
 }
 
