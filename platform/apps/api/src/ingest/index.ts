@@ -6,8 +6,10 @@
 
 export * from './types.js'
 export { conformObsRows } from './conform.js'
-export { validateObs, validateClassifiers, validateDisplays } from './validate.js'
-export { runFactRules, checkContractCompat } from './validate-integrity.js'
+export { validateObs, validateClassifiers, validateDisplays, fetchActiveLocales } from './validate.js'
+export { runFactRules, checkContractCompat, precheckContractCompat } from './validate-integrity.js'
+export { recognizeReferenceMetadata } from './reference-metadata-map.js'
+export type { RecognizedReferenceMetadata } from './reference-metadata-map.js'
 export type { RuleSpec, RuleKind } from './rules/registry.js'
 export { resolveRules, ruleSpecRejection, DEFAULT_EPSILON } from './rules/registry.js'
 export { runRules } from './rules/evaluator.js'

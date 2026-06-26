@@ -26,7 +26,7 @@ import { loadAllowedRegion, firstRegionViolation } from './region.js'
  * about what gold will accept. Called once per validator and shared across rows
  * (no per-row round-trip).
  */
-async function fetchActiveLocales(db: Queryable): Promise<string[]> {
+export async function fetchActiveLocales(db: Queryable): Promise<string[]> {
   const { rows } = await db.query<{ code: string }>(
     `SELECT code FROM config.locale WHERE is_active = true ORDER BY ord`,
   )

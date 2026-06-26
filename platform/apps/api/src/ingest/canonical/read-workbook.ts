@@ -43,3 +43,18 @@ export function readWorkbook(buffer: Buffer | Uint8Array): SheetMatrices {
   }
   return out
 }
+
+/**
+ * The inverse ACL capability: sheet matrices → .xlsx bytes. The ONLY xlsx WRITER in
+ * apps/api, colocated with the reader so the vendor SDK stays confined to this one
+ * file (F-3). It exists so tests + the SECONDARY converter can produce canonical
+ * workbook bytes without leaking `import xlsx` past the boundary — `readWorkbook`
+ * round-trips its output. Not on the upload hot path (the route only reads).
+ */
+export function writeWorkbook(sheets: SheetMatrices): Buffer {
+  const wb = XLSX.utils.book_new()
+  for (const [name, matrix] of Object.entries(sheets)) {
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(matrix), name)
+  }
+  return XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' }) as Buffer
+}

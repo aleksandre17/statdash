@@ -23,6 +23,7 @@ import type { Queryable, QueryableClient, SubmissionKind } from './types.js'
 import { upsertClassifier, bumpDatasetVersion } from './upsert.js'
 import type { AuditLogger } from '../lib/audit-log.js'
 import { errMsg } from './util.js'
+import { publishReferenceMetadata } from './publish-reference-metadata.js'
 
 // ── Silver row readers (the staged shapes as persisted in stats_stage.*) ──────
 
@@ -244,6 +245,16 @@ async function publishFacts(client: QueryableClient, submissionId: string): Prom
   )
   const datasets = new Set<string>()
   for (const r of written) datasets.add(r.dataset_code)
+
+  // ADR-0031 §6 / Wave 3b — metadata slot → V31 reference_metadata. Extracted to its
+  // own file (one concern per file): the canonical route projects CanonicalDsd.meta's
+  // recognized keys onto the facts bronze blob; here, at the dataset-scoped publish
+  // point, an SCD-2 report row is landed inside this same txn (a dry-run ROLLBACK
+  // discards it with the gold writes; a failure leaves no orphan report).
+  for (const dc of datasets) {
+    await publishReferenceMetadata(client, submissionId, dc)
+  }
+
   // revised count is captured by the V8 trigger into observation_revision; the
   // approver-facing number came from the validate preview. Here we report writes.
   return { published: written.length, revised: 0, datasets }

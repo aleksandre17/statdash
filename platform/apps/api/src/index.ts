@@ -17,6 +17,7 @@ import { adminRoutes } from './routes/admin/index.js'
 import { setupRoutes } from './routes/admin/setup.js'
 import { displaysRoutes } from './routes/admin/displays.js'
 import { ingestRoutes } from './routes/ingest/index.js'
+import { canonicalRoutes } from './routes/ingest/canonical.js'
 import { createInMemoryAuditLogger } from './lib/audit-log.js'
 import { runProvisioning } from './provisioning/loader.js'
 import { runIngestionWorker } from './ingest/index.js'
@@ -113,6 +114,14 @@ await app.register(displaysRoutes, { prefix: '/api/admin/displays' })
 // the route owns its own guard and is independently testable (mirrors the
 // data-sources public sibling pattern). Mounted at /api/ingest.
 await app.register(ingestRoutes(audit), { prefix: '/api/ingest' })
+
+// ADR-0031 Wave 3a — canonical-workbook UPLOAD. The PRIMARY steady-state ingest:
+// a curator POSTs a conformant .xlsx; the route parses it at the boundary (the
+// worker never sees Excel) and lands up to 3 ordered submissions (codelists →
+// displays → facts) into the SAME pipeline. Own scope (JWT + curator-role guard),
+// a self-contained SIBLING — NOT nested under ingestRoutes — so it owns its octet-
+// stream body parser + guard and is independently testable (mirrors displaysRoutes).
+await app.register(canonicalRoutes, { prefix: '/api/ingest/canonical' })
 
 app.get('/health', async () => ({ status: 'ok', ts: new Date().toISOString() }))
 

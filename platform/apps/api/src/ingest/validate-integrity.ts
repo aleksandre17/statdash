@@ -16,7 +16,7 @@ import type { Queryable, StagedObsRow, ValidationIssue } from './types.js'
 import { makeIssue } from './util.js'
 import { resolveRules } from './rules/registry.js'
 import { runRules } from './rules/evaluator.js'
-import { classifyContractChange, type DsdSnapshot } from './canonical/compat.js'
+import { classifyContractChange, type ContractChange, type DsdSnapshot } from './canonical/compat.js'
 
 // ── DQAF integrity rules (validation-as-data — ADR-0031 §4 improvement 3) ─────
 //
@@ -105,4 +105,28 @@ export async function checkContractCompat(
   return change.issues.map((i) =>
     makeIssue(submissionId, 'validate', i.severity, i.code, { ...i.detail, contractChange: change.kind }),
   )
+}
+
+/**
+ * The ROUTE-FACING pre-pass (ADR-0031 §6 Wave 3a). Same gold-snapshot load + pure
+ * classification as checkContractCompat, but returns the raw ContractChange (no
+ * submissionId, no issue-stamping) so the upload route can DECIDE at the HTTP boundary
+ * — BEFORE any createSubmission — whether to block (an unversioned DSD_INCOMPATIBLE →
+ * 400, do not submit) or carry the warns forward (CODELIST_EXTENDED/CODELIST_DEPRECATED
+ * do not block). This is the gate the user asked for: DSD governed, codelist open.
+ *
+ * For a first-ever load (the dataset is unregistered in gold) there is no prior contract
+ * to break → kind='routine' with no issues (the parser's structural gate + validateObs
+ * own the first-load checks). One DB-reading SSOT for the gold snapshot, shared with the
+ * worker-stage checkContractCompat (no duplicate gold read).
+ */
+export async function precheckContractCompat(
+  db: Queryable,
+  declared: DsdSnapshot,
+): Promise<ContractChange> {
+  const gold = await loadGoldDsdSnapshot(db, declared.datasetCode)
+  if (!gold) {
+    return { kind: 'routine', mode: 'BACKWARD', codelistDeltas: [], issues: [] }
+  }
+  return classifyContractChange(declared, gold)
 }
