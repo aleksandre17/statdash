@@ -32,9 +32,9 @@ describe('classifyContractChange — DSD gate (GOVERNED)', () => {
     expect(change.dsdDelta?.versioned).toBe(false)
   })
 
-  it('reorder dims → DSD_INCOMPATIBLE error (the series-key order is structural)', () => {
+  it('reorder dims (same set) → routine, NOT a DSD break (dimKey is a map — order-irrelevant)', () => {
     const declared: DsdSnapshot = { ...gold, dimensions: ['time', 'measure', 'approach', 'geo'] }
-    expect(classifyContractChange(declared, gold).issues[0].code).toBe('DSD_INCOMPATIBLE')
+    expect(classifyContractChange(declared, gold).kind).toBe('routine')
   })
 
   it('measure concept change → DSD_INCOMPATIBLE error', () => {

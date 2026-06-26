@@ -160,11 +160,19 @@ describe('POST /api/ingest/canonical — boundary (DB-free)', () => {
 
 // ── DB-GATED route-contract nets ────────────────────────────────────────────────
 // Bind app.pg to a per-test txn client (rolled back in afterEach — never mutates the
-// cube), POST via inject, and assert the route's REAL contract: createSubmission
-// writes the bronze rows SYNCHRONOUSLY before the 202 (the worker drain fires via
-// setImmediate and no-ops on a single client — fire-and-forget, caught/logged), so the
-// kind/order/format/provenance/sourceDigest are all assertable in-txn. The full
-// worker→publish→gold render is the Wave-5 e2e (real Pool, boot+poll).
+// cube). This suite covers the PRE-SUBMIT boundary nets that resolve before any worker
+// drain or publish — they assert in-txn on a single rolled-back client and never need a
+// real Pool:
+//   · DSD_INCOMPATIBLE → 400, no submission created (the compat pre-pass GATE).
+//   · Wave-3b metadata → a reference_metadata row (drives publishSubmission DIRECTLY).
+//
+// The route NOW ORCHESTRATES the seed-pipeline ordering: it drives codelists/displays to
+// PUBLISHED gold IN-PROCESS (runIngestionWorker + publishSubmission over a real Pool) and
+// returns the facts jobId staged. That happy-path (202 + ordered jobIds) and F-2
+// idempotency therefore COMMIT to gold and require a real connect()-capable Pool — they
+// are proven end-to-end by the Wave-5 e2e (canonical-ingest.e2e.test.ts: 202, ordered
+// jobIds, gold counts, F-2 409), not re-cloned here against a rolled-back single client
+// (which cannot run the in-process publish).
 //
 // config.locale must hold ka+en (the standard seed) for the parser's label gate.
 const DATABASE_URL = process.env.DATABASE_URL
@@ -203,64 +211,6 @@ dbSuite('POST /api/ingest/canonical — route contract (live DB, txn-rolled-back
     method: 'POST', url: '/api/ingest/canonical',
     headers: { 'content-type': 'application/octet-stream', authorization: `Bearer ${adminJwt}`, 'x-filename': 'GDP_ANNUAL.xlsx' },
     payload: buf,
-  })
-
-  it('202 + ordered jobIds (codelists → facts) with provenance stamped, for GDP_ANNUAL.xlsx', async () => {
-    const buf = readFileSync(join(findDataDir(), 'GDP_ANNUAL.xlsx'))
-    const res = await upload(buf)
-    expect(res.statusCode).toBe(202)
-    const { data } = res.json()
-    expect(data.datasetCode).toBe('GDP_ANNUAL')
-    expect(typeof data.sourceDigest).toBe('string')
-
-    // ORDER is load-bearing: codelists BEFORE facts (no DISPLAY sheet → no displays job).
-    const kinds = data.jobIds.map((j: { kind: string }) => j.kind)
-    expect(kinds).toEqual(['codelists', 'facts'])
-
-    // Provenance + format stamped on EVERY submission (sampled by jobId).
-    for (const j of data.jobIds) {
-      const { rows } = await client.query<{ format: string; source_digest: string; provenance: { parserVersion: string; sourceDigest: string } | null }>(
-        `SELECT format, source_digest, provenance FROM stats_stage.submission WHERE id = $1`, [j.jobId])
-      expect(rows[0].format).toBe('canonical-xlsx')
-      expect(rows[0].source_digest).toBe(data.sourceDigest)
-      expect(rows[0].provenance?.parserVersion).toBe('canonical-workbook@1')
-      expect(rows[0].provenance?.sourceDigest).toBe(data.sourceDigest)
-    }
-
-    // The facts submission is dataset-scoped; codelists is cross-dataset (NULL).
-    const facts = data.jobIds.find((j: { kind: string }) => j.kind === 'facts')
-    const { rows: f } = await client.query<{ dataset_code: string | null }>(
-      `SELECT dataset_code FROM stats_stage.submission WHERE id = $1`, [facts.jobId])
-    expect(f[0].dataset_code).toBe('GDP_ANNUAL')
-  })
-
-  it('F-2 idempotency — an already-published identical facts payload → 409', async () => {
-    // Seed the published terminal state the Idempotent Receiver guards: the SAME content
-    // hash the route will compute for the facts payload, on a published submission for
-    // the same dataset. Re-POST then collides → 409 ALREADY_PUBLISHED.
-    const { contentHash } = await import('../../ingest/index.js')
-    const { readWorkbook } = await import('../../ingest/canonical/read-workbook.js')
-    const { parseCanonicalWorkbook } = await import('../../ingest/canonical/parse.js')
-
-    const buf = readFileSync(join(findDataDir(), 'GDP_ANNUAL.xlsx'))
-    const { dsd, bronze } = parseCanonicalWorkbook(readWorkbook(buf), { activeLocales: ['ka', 'en'] })
-    const referenceMetadata = (await import('../../ingest/reference-metadata-map.js'))
-      .recognizeReferenceMetadata(dsd.meta)
-    const factsPayload = { obs: bronze.obs, ...(referenceMetadata ? { referenceMetadata } : {}) }
-    const hash = contentHash(factsPayload)
-
-    const { rows: sub } = await client.query<{ id: string }>(
-      `INSERT INTO stats_stage.submission (kind, dataset_code, format, dry_run, status, published_at)
-       VALUES ('facts', 'GDP_ANNUAL', 'canonical-xlsx', false, 'published', now()) RETURNING id`)
-    await client.query(
-      `INSERT INTO stats_stage.submission_blob (submission_id, content_hash, raw_content, byte_size)
-       VALUES ($1, $2, $3, $4)`,
-      [sub[0].id, hash, JSON.stringify(factsPayload), Buffer.byteLength(JSON.stringify(factsPayload))])
-
-    const res = await upload(buf)
-    expect(res.statusCode).toBe(409)
-    expect(res.json().code).toBe('ALREADY_PUBLISHED')
-    expect(res.json().existingJobId).toBe(sub[0].id)
   })
 
   it('DSD_INCOMPATIBLE — a workbook whose dims differ from registered gold → 400, no submission', async () => {

@@ -7,7 +7,7 @@
 // worker NEVER sees Excel (`format:'canonical-xlsx'` is a provenance LABEL, not a
 // worker branch — exactly the displays.ts CSV-at-boundary precedent).
 //
-// FLOW (mirrors admin/displays.ts EXACTLY):
+// FLOW (mirrors admin/displays.ts at the boundary; orchestrates seed-pipeline ordering):
 //   POST /api/ingest/canonical  raw application/octet-stream body (the .xlsx bytes),
 //   requireWrite (admin|editor) →
 //     1. readWorkbook(buffer)              the ONLY xlsx boundary (ACL).
@@ -17,12 +17,35 @@
 //     4. PRE-PASS precheckContractCompat   an unversioned DSD_INCOMPATIBLE → 400/block
 //        (do NOT submit); CODELIST_EXTENDED/DEPRECATED warns are carried forward (the
 //        pipeline records them at validate; they never block — codelist OPEN, DSD GATED).
-//     5. for each NON-EMPTY kind IN ORDER (codelists → displays → facts):
-//        createSubmission({ format:'canonical-xlsx', payload, sourceDigest, provenance }).
-//        Order matters: classifier members must exist in gold before the facts that
-//        reference them validate (validateObs checks codes against gold is_current).
-//   → 202 { jobIds }.   409 on duplicate identical bytes (the Idempotent Receiver —
-//        an identical already-published payload for the same dataset).
+//     5. ORCHESTRATE the seed-pipeline ORDERING (the e2e ordering bug fix). The pipeline
+//        requires REFERENCE DATA published to GOLD before facts validate — validateObs
+//        checks every code against stats.classifier is_current=true. A single batched
+//        submit (codelists+displays+facts, each staged-and-validated immediately) breaks
+//        this: facts validate while the classifiers are only STAGED, never gold → every
+//        code rejects UNKNOWN_CODE. So this route drives each REFERENCE kind FULLY to gold
+//        FIRST, exactly like scripts/seed-pipeline.ts submitAndPublish (submit → drain the
+//        worker → poll 'staged' → publish → poll 'published'), THEN submits facts:
+//          a. codelists (if any) → submitToGold (auto-published; additive, compat-gated).
+//          b. displays  (if any) → submitToGold (auto-published; additive, compat-gated).
+//          c. facts               → createSubmission + drive to 'staged' ONLY. The facts are
+//             the approval-gated DATA: the route returns the facts jobId STAGED, awaiting a
+//             curator's POST /jobs/:id/publish. It does NOT auto-publish them.
+//        Reference data (codelists/displays) auto-publishing in the route is correct + safe:
+//        they are additive and already governed by the compat pre-pass (CODELIST_EXTENDED/
+//        DEPRECATED/DSD_INCOMPATIBLE). The facts stay behind the publish/approval gate.
+//   → 202 { jobIds }: the published codelist/display summaries + the facts jobId (staged,
+//        the one the curator approves).   409 on duplicate identical bytes (the Idempotent
+//        Receiver — an identical already-published payload for the same dataset).
+//        400 on parse issues / unversioned DSD_INCOMPATIBLE / empty workbook.
+//
+// THE WORKER NEVER SEES EXCEL: the route parses at the boundary; the worker/publish only
+// ever read the JSON bronze blob. We drive the worker IN-PROCESS (runIngestionWorker over
+// app.pg, a Pool) so staging is deterministic — createSubmission fires the worker via
+// setImmediate (out of band), so a naive "submit then publish" would race an unstaged job.
+// runIngestionWorker DRAINS every claimable 'received' row and only returns once none
+// remain claimable; we then poll the job FSM to its terminal staging status (fail-fast on
+// rejected/failed) before reusing the SAME publish path (publishSubmission) — no duplicate
+// publish logic. SKIP LOCKED makes the racing setImmediate worker a harmless no-op.
 //
 // AUTH — own scope (authPlugin then a curator-role gate: admin OR editor), the same
 // two-layer guard + WRITE_ROLES as ingestRoutes / displaysRoutes. 401 = no/invalid
@@ -39,9 +62,11 @@ import { problem, alreadyPublished } from '../../lib/problem.js'
 import { authPlugin } from '../../auth.js'
 import {
   createSubmission, AlreadyPublishedError, fetchActiveLocales, precheckContractCompat,
+  runIngestionWorker, publishSubmission,
 } from '../../ingest/index.js'
 import type {
   RawObsRow, RawClassifierRow, RawDisplayRow, DsdSnapshot,
+  Queryable, IngestLogger, SubmissionStatus,
 } from '../../ingest/index.js'
 import { readWorkbook } from '../../ingest/canonical/read-workbook.js'
 import { parseCanonicalWorkbook } from '../../ingest/canonical/parse.js'
@@ -67,10 +92,92 @@ const PARSER_VERSION = 'canonical-workbook@1'
 // headroom for a multi-sheet workbook while bounding a hostile upload (fail-fast).
 const MAX_UPLOAD_BYTES = 25 * 1024 * 1024
 
-/** One submission this upload produced — the kind + its pipeline jobId. */
+/**
+ * One submission this upload produced — the kind, its pipeline jobId, and the FSM
+ * status the route left it in. Reference data (codelists/displays) is left 'published'
+ * (the route drove it to gold); facts are left 'staged' (the curator-approval gate).
+ */
 interface KindJob {
   kind: 'codelists' | 'displays' | 'facts'
   jobId: string
+  status: SubmissionStatus
+}
+
+// ── In-process FSM drive (mirrors seed-pipeline.ts submitAndPublish) ───────────
+//
+// createSubmission fires runIngestionWorker via setImmediate (out of band): the bronze
+// row is durably 'received' but staging happens AFTER the createSubmission call returns.
+// To order reference-data-before-facts DETERMINISTICALLY in one request we drive the
+// worker ourselves and poll the job FSM — never assume the async drain has run.
+
+const POLL_INTERVAL_MS = 50
+const POLL_TIMEOUT_MS = 60_000
+const sleep = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms))
+
+/** Read one job's current FSM status (the gold/silver SSOT, stats_stage.submission). */
+async function readStatus(db: Queryable, jobId: string): Promise<SubmissionStatus> {
+  const { rows } = await db.query<{ status: SubmissionStatus }>(
+    `SELECT status FROM stats_stage.submission WHERE id = $1`, [jobId],
+  )
+  if (!rows[0]) throw new HttpError(500, `submission ${jobId} vanished mid-pipeline`)
+  return rows[0].status
+}
+
+/**
+ * Drive the worker, then poll one job to 'staged' (fail-fast on rejected/failed/timeout).
+ * runIngestionWorker drains every claimable 'received' row and returns once none remain,
+ * so the target status is normally already set when it returns; the poll is the robust
+ * confirmation (and tolerates the racing setImmediate worker still committing — SKIP
+ * LOCKED guarantees only one drains a given row). 'published' counts as past 'staged'.
+ */
+async function driveToStaged(db: Queryable, log: IngestLogger, jobId: string): Promise<void> {
+  await runIngestionWorker(db, { logger: log })
+  const deadline = Date.now() + POLL_TIMEOUT_MS
+  for (;;) {
+    const status = await readStatus(db, jobId)
+    if (status === 'staged' || status === 'published') return
+    if (status === 'rejected' || status === 'failed') {
+      // A reference-data submission that fails validation is a curator-facing data
+      // error — surface it (fail-fast), do not silently 202. The per-row report is at
+      // GET /jobs/:id/issues; here we name the kind + terminal status (RFC 9457).
+      throw problem('bad-request', `canonical submission ${jobId} ${status} during staging`, {
+        code: 'SUBMISSION_REJECTED',
+        jobId,
+        status,
+      })
+    }
+    if (Date.now() >= deadline) {
+      throw new HttpError(504, `submission ${jobId} did not reach 'staged' within ${POLL_TIMEOUT_MS / 1000}s (last: '${status}')`)
+    }
+    await sleep(POLL_INTERVAL_MS)
+  }
+}
+
+/**
+ * Submit a REFERENCE-DATA kind (codelists | displays) and drive it to PUBLISHED gold:
+ * createSubmission → driveToStaged → publishSubmission (the EXISTING publish path, reused
+ * — no duplicate publish logic) → confirm 'published'. This is the seed-pipeline's
+ * submitAndPublish, in-process, so the classifier members exist in gold before the facts
+ * that reference them validate. Returns the published KindJob.
+ */
+async function submitToGold(
+  db: Queryable,
+  log: IngestLogger,
+  args: Parameters<typeof createSubmission>[2] & { kind: 'codelists' | 'displays' },
+  publishOpts: { userId?: string },
+): Promise<KindJob> {
+  const jobId = await createSubmission(db, log, args)
+  await driveToStaged(db, log, jobId)
+  // Idempotent re-run: if the worker already advanced it past 'staged' to 'published'
+  // (it cannot here, but the seed-pipeline guards this), skip the publish.
+  if ((await readStatus(db, jobId)) !== 'published') {
+    await publishSubmission(db, jobId, { userId: publishOpts.userId })
+  }
+  const status = await readStatus(db, jobId)
+  if (status !== 'published') {
+    throw new HttpError(500, `reference submission ${jobId} did not publish (status '${status}')`)
+  }
+  return { kind: args.kind, jobId, status }
 }
 
 /**
@@ -168,35 +275,42 @@ export const canonicalRoutes: FastifyPluginAsync = async (app) => {
     // dataset-scoped submission); the publish path lands it as an SCD-2 report row.
     const referenceMetadata = recognizeReferenceMetadata(dsd.meta)
 
-    // 5. Submit each NON-EMPTY kind IN ORDER: codelists → displays → facts. Order is
-    // load-bearing — classifier members must exist in gold before the facts that
-    // reference them validate (validateObs checks codes against gold is_current=true).
+    // 5. ORCHESTRATE the seed-pipeline ORDERING (submit → stage → PUBLISH → next kind):
+    // REFERENCE DATA (codelists, then displays) is driven FULLY to gold BEFORE facts are
+    // submitted, so classifier members exist in gold (stats.classifier is_current=true)
+    // before validateObs checks the facts' codes against them. This is the fix for the
+    // e2e ordering bug: a single batched submit validated facts while the classifiers
+    // were only STAGED → every code rejected UNKNOWN_CODE.
     const jobs: KindJob[] = []
     try {
+      // a. Codelists → published gold (auto-published: additive + compat-gated reference data).
       if (bronze.classifiers.length > 0) {
-        const jobId = await createSubmission(app.pg, app.log, {
+        jobs.push(await submitToGold(app.pg, app.log, {
           kind: 'codelists',
           datasetCode: null, // codelists span dimensions, not one dataset (DB chk enforces NULL)
           format: FORMAT,
           payload: { classifiers: bronze.classifiers } satisfies { classifiers: RawClassifierRow[] },
           dryRun: false,
           source, submittedBy, sourceDigest, provenance,
-        })
-        jobs.push({ kind: 'codelists', jobId })
+        }, { userId: submittedBy }))
       }
 
+      // b. Displays → published gold (auto-published: additive overlays on the members).
       if (bronze.displays.length > 0) {
-        const jobId = await createSubmission(app.pg, app.log, {
+        jobs.push(await submitToGold(app.pg, app.log, {
           kind: 'displays',
           datasetCode: null,
           format: FORMAT,
           payload: { displays: bronze.displays } satisfies { displays: RawDisplayRow[] },
           dryRun: false,
           source, submittedBy, sourceDigest, provenance,
-        })
-        jobs.push({ kind: 'displays', jobId })
+        }, { userId: submittedBy }))
       }
 
+      // c. Facts → STAGED ONLY (the approval-gated DATA). createSubmission + drive to
+      // 'staged'; the facts now validate against the PUBLISHED classifiers. We return the
+      // facts jobId staged — the curator approves it via POST /jobs/:id/publish. We do
+      // NOT auto-publish facts: the publish/approval gate is preserved by design.
       if (bronze.obs.length > 0) {
         const jobId = await createSubmission(app.pg, app.log, {
           kind: 'facts',
@@ -210,7 +324,8 @@ export const canonicalRoutes: FastifyPluginAsync = async (app) => {
           dryRun: false,
           source, submittedBy, sourceDigest, provenance,
         })
-        jobs.push({ kind: 'facts', jobId })
+        await driveToStaged(app.pg, app.log, jobId)
+        jobs.push({ kind: 'facts', jobId, status: await readStatus(app.pg, jobId) })
       }
     } catch (err) {
       if (err instanceof AlreadyPublishedError) {

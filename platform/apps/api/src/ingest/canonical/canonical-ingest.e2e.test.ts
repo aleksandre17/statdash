@@ -4,20 +4,27 @@
 // (DATA/canonical/{GDP_ANNUAL,ACCOUNTS_SEQUENCE,REGIONAL_GVA}.xlsx) ingest through
 // the FULL real pipeline and the geostat-front serve endpoints return them.
 //
-//   POST /api/ingest/canonical  (route parses .xlsx at the boundary → up to 3
-//      ordered submissions: codelists → displays → facts; the worker NEVER sees Excel)
-//   → worker drains received → staged (setImmediate; we POLL, never assume sync)
-//   → POST /api/ingest/jobs/:id/publish  (the EXPLICIT approval gate → gold; auto-
-//      opens a singleton release, stamps observation.release_id, bumps the version)
+//   POST /api/ingest/canonical  (route parses .xlsx at the boundary → up to 3 ordered
+//      submissions: codelists → displays → facts; the worker NEVER sees Excel). The route
+//      ORCHESTRATES the seed-pipeline ordering: it drives REFERENCE DATA (codelists, then
+//      displays) to PUBLISHED gold IN-PROCESS, then submits the facts STAGED. So the
+//      classifier members are in gold (is_current=true) BEFORE the facts validate against
+//      them — the fix for the ordering bug where a batched submit validated facts while
+//      the codes were only staged (every code → UNKNOWN_CODE).
+//   → the route returns: codelists/displays 'published' + the facts jobId 'staged'.
+//   → POST /api/ingest/jobs/:factsId/publish  (the EXPLICIT approval gate → gold; the
+//      route deliberately does NOT auto-publish facts — auto-opens a singleton release,
+//      stamps observation.release_id, bumps the version)
 //   → published.   Then the SERVE path the geostat front consumes:
 //   GET /api/cube/:code/profile  (dims + members + timeCoverage)
 //   GET /api/stats/observations?dataset=…  (the published facts).
 //
-// THE FSM IS NOT AUTO-PUBLISH: worker.ts advances received → staged|rejected ONLY;
-// publish is a separate curator action. So this e2e drives BOTH halves (poll→publish→
-// poll), mirroring the proven live harness scripts/seed-pipeline.ts, here in-process.
-// The plumbing (boot real-Pool app, preconditions, FSM drive, fresh-state reset) lives
-// in ./canonical-ingest.e2e-harness.ts — this file owns the ASSERTIONS only.
+// THE FACTS FSM IS NOT AUTO-PUBLISH: the route leaves facts 'staged'; publish is a
+// separate curator action. So this e2e approves only the FACTS (poll→publish→poll),
+// mirroring the proven live harness scripts/seed-pipeline.ts. Reference data is already
+// gold (the route published it). The plumbing (boot real-Pool app, preconditions, FSM
+// drive, fresh-state reset) lives in ./canonical-ingest.e2e-harness.ts — this file owns
+// the ASSERTIONS only.
 //
 // DB-GATED: skips clean without DATABASE_URL (no-op locally; the real gate in CI
 // against the migrated DB). Needs a real Pool (worker + publish own their own
@@ -74,6 +81,18 @@ dbSuite('E2E — canonical-workbook ingestion → gold → serve (ADR-0031 Wave 
       // codelists + facts at minimum, IN ORDER (no DISPLAY sheet → no displays job).
       expect(kinds[0]).toBe('codelists')
       expect(kinds[kinds.length - 1]).toBe('facts')
+
+      // THE ORDERING FIX, asserted on the route response itself: the route drove the
+      // REFERENCE DATA (codelists/displays) to PUBLISHED gold before submitting facts,
+      // and left the FACTS 'staged' for the curator-approval gate. So when the facts
+      // validated against the classifiers they were already gold (no UNKNOWN_CODE).
+      for (const j of jobIds) {
+        if (j.kind === 'facts') {
+          expect(j.status, `${code} facts left staged (approval gate)`).toBe('staged')
+        } else {
+          expect(j.status, `${code} ${j.kind} auto-published by the route`).toBe('published')
+        }
+      }
     }
   }, 120_000)
 

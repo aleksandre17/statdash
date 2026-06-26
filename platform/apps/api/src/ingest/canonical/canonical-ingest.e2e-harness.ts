@@ -204,8 +204,18 @@ async function publish(h: E2eHarness, jobId: string): Promise<void> {
   await pollStatus(h, jobId, 'published')
 }
 
-/** Upload one canonical workbook through the route → publish every job it produced, IN ORDER. */
-export async function ingestAndPublish(h: E2eHarness, code: string): Promise<{ kind: string; jobId: string }[]> {
+/**
+ * Upload one canonical workbook → drive it to published gold the way a real curator does.
+ *
+ * THE ROUTE now orchestrates the seed-pipeline ordering: it drives REFERENCE DATA
+ * (codelists, then displays) to PUBLISHED gold IN-PROCESS before submitting facts, then
+ * returns the FACTS jobId 'staged' (the curator-approval gate; the facts validate against
+ * the now-published classifiers). So this harness no longer publishes codelists itself —
+ * the route did. It only approves the FACTS: poll the facts job to 'staged' (the route
+ * left it there) → POST /publish → poll 'published'. Each returned job carries the FSM
+ * status the route left it in: 'published' for reference data, 'staged' for facts.
+ */
+export async function ingestAndPublish(h: E2eHarness, code: string): Promise<{ kind: string; jobId: string; status?: string }[]> {
   const buf = readFileSync(join(findDataDir(), `${code}.xlsx`))
   const res = await h.app.inject({
     method: 'POST', url: '/api/ingest/canonical',
@@ -217,9 +227,13 @@ export async function ingestAndPublish(h: E2eHarness, code: string): Promise<{ k
     payload: buf,
   })
   if (res.statusCode !== 202) throw new Error(`${code} upload → ${res.statusCode}: ${res.body}`)
-  const { data } = res.json() as { data: { datasetCode: string; jobIds: { kind: string; jobId: string }[] } }
-  // Publish IN ORDER (codelists → [displays] → facts) — classifier members must be in
-  // gold before the facts that reference them publish (the route's submission order).
-  for (const j of data.jobIds) await publish(h, j.jobId)
+  const { data } = res.json() as {
+    data: { datasetCode: string; jobIds: { kind: string; jobId: string; status?: string }[] }
+  }
+  // The route already published the reference data (codelists/displays) to gold. The
+  // curator approves only the FACTS (the approval gate the route deliberately preserves).
+  const facts = data.jobIds.find((j) => j.kind === 'facts')
+  if (!facts) throw new Error(`${code} upload produced no facts job (jobIds: ${JSON.stringify(data.jobIds)})`)
+  await publish(h, facts.jobId)
   return data.jobIds
 }
