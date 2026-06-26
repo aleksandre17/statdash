@@ -106,6 +106,21 @@ function _specTag(spec: DataSpec, ctx: SectionContext): string {
 //  spec will need, without executing it. Used by ApiStore.prefetch()
 //  and CachedStore.warm() to batch-load exactly what is needed.
 //
+/**
+ * "No single time year is resolved" — range/dynamics mode (the read is
+ * unbounded). Mirrors ApiStore.isUnsetTime: undefined/null/''/0/NaN are unset; a
+ * real year (or a comma range) is set. Used to decide whether the query branch
+ * warms an unbounded slice (range) or per-year slices (year mode) — GAP 4.
+ */
+function isUnsetTimeDim(t: unknown): boolean {
+  if (t === undefined || t === null || t === '') return true
+  if (typeof t === 'number') return t === 0 || Number.isNaN(t)
+  const s = String(t).trim()
+  if (s === '' || s === '0') return true
+  if (/^-?\d+(\.\d+)?$/.test(s)) return Number(s) === 0
+  return false
+}
+
 export function extractRequirements(
   spec: DataSpec,
   ctx:  SectionContext,
@@ -165,8 +180,18 @@ export function extractRequirements(
 
       const filter     = spec.query.filter
       const timeFilter = filter?.[TIME_DIM]
-      let years: number[]
 
+      // GAP 4 — range-awareness. When the query has NO time filter AND `time` is
+      // unset (range/dynamics mode: bounds come from fromDim/toDim/timeDimension,
+      // clamped POST-fetch), the READ issues an UNBOUNDED obs query (no time on
+      // the wire). Warming a spurious `time:0` slice would key DIFFERENTLY from
+      // that read → cold cache → empty charts (the GAP 4 symptom). Emit ONE
+      // unbounded requirement per measure (no `time` pin) so the warm slice keys
+      // IDENTICALLY to the read. In year mode `time` is a real year and the
+      // per-year pin below is byte-identical to the pre-GAP-4 behaviour.
+      const rangeMode = timeFilter === undefined && isUnsetTimeDim(time)
+
+      let years: number[]
       if (timeFilter !== undefined) {
         years = resolveFilterForReqs(timeFilter, ctx)
           .map(Number)
@@ -190,6 +215,11 @@ export function extractRequirements(
           const vals = resolveFilterForReqs(fv, ctx)
           if (vals.length === 1) pinned[dim] = vals[0]!
         }
+      }
+
+      if (rangeMode) {
+        // Unbounded: one req per measure, NO time pin — matches the unbounded read.
+        return measures.map((code) => ({ code, dims: { ...ctx.dims, ...pinned } }))
       }
 
       return measures.flatMap((code) =>

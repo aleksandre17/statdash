@@ -1,6 +1,7 @@
 # Architect Memory Index
 
 ## Project
+- [API Demo Parity](project_api_demo_parity.md) — root causes blocking NEW :3002 demo from OLD parity: pipe engine survived de-tenanting; gaps are ApiStore missing `display` channel + stats-api classifier/obs wire drift (label:{en,ka}, obs_value string, seq_pos in obs_attribute) + empty `aggregates` classifier + regional `_T` pollution; OLD spec at git 7a47e5d^
 - [Live Provisioning](project_live_provisioning.md) — live statdash demo seeded by Flyway V1-V32 + R__ repeatable GOLD seed (NOT V5); fresh DB always re-seeds 3-dim placeholders unless R__ neutralized; GDP_ANNUAL canonical adds `approach` (DSD conflict), ACCOUNTS/REGIONAL match dim-set
 - [GDP Page Dim Underspecification](project_gdp_page_dim_underspecification.md) — GDP page panels pin only measure+time; obs route does NO aggregation (dim_key @> raw rows); a 4-dim real GDP needs approach+geo pinned in every panel query or render garbles
 - [Platform Layout](project_platform_layout.md) — real engine/* + apps/* paths; chart/table/kpi are *panels* not nodes; where framework seams live

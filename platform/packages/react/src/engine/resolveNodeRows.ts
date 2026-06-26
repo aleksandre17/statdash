@@ -12,8 +12,8 @@
 //  Canonical target lives in migration/03-pipeline.md.
 //
 
-import { interpretSpec, staticStore, CachedStore, applyEncoding, storeVal, applyPipeline, specDataSource } from '@statdash/engine'
-import type { DataRow, DataStore, EncodingSpec, EngineRow, PipelineContext, RawRow, SectionContext, DataSpec, TransformStep } from '@statdash/engine'
+import { interpretSpec, staticStore, CachedStore, applyEncoding, storeVal, applyPipeline, specDataSource, resolveLocaleString } from '@statdash/engine'
+import type { DataRow, DataStore, EncodingSpec, EngineRow, PipelineContext, RawRow, SectionContext, DataSpec, TransformStep, DimVal } from '@statdash/engine'
 import type { NodeBase, RenderContext }                                                     from './types'
 
 // ── effectiveStoreKey — the metric→store precedence [M1] ──────────────
@@ -178,11 +178,20 @@ export function resolveNodeRows(node: NodeBase, ctx: RenderContext): DataRow[] {
 
   let rows: DataRow[]
   if (node.data) {
-    const rawRows = interpretSpec(node.data, ctx.sectionCtx, store)
+    // i18n boundary (GAP 5b): resolve LocaleString cells to ctx.locale on the RAW
+    // rows — BEFORE applyEncoding, which `String()`-coerces the label channel (a
+    // LocaleString would flatten to "[object Object]"). Display labels enter here
+    // via the spec's `$d` lookup join (runs inside interpretSpec). Resolving up
+    // front means the engine's locale-agnostic encoding/charts only ever see
+    // concrete strings. A plain scalar cell is untouched (no-op single-locale).
+    const rawRows = resolveRowLocales(
+      interpretSpec(node.data, ctx.sectionCtx, store) as unknown as DataRow[],
+      ctx.locale,
+    )
     const enc     = (node.data as { encoding?: EncodingSpec }).encoding
     rows = enc
-      ? applyEncoding(rawRows, enc, (code) => storeVal(store, code, ctx.sectionCtx)) as DataRow[]
-      : rawRows as unknown as DataRow[]
+      ? applyEncoding(rawRows as unknown as EngineRow[], enc, (code) => storeVal(store, code, ctx.sectionCtx)) as DataRow[]
+      : rawRows
   } else {
     rows = ctx.rows ?? []
   }
@@ -201,7 +210,41 @@ export function resolveNodeRows(node: NodeBase, ctx: RenderContext): DataRow[] {
     rows = applyPipeline(rows as unknown as RawRow[], lowered, pipeCtx) as unknown as DataRow[]
   }
 
-  return rows
+  // ── i18n boundary (GAP 5b) — resolve LocaleString cells to ctx.locale ──────
+  //  Display labels are carried END-TO-END as LocaleString objects `{ en, ka }`
+  //  (the store-builder runs once at boot with no user locale; flattening there
+  //  would lose i18n). They enter rows via the `$d` lookup join in the pipeline.
+  //  THIS is the React render boundary the engine designates for resolution —
+  //  the only layer holding the active locale — so a row never reaches the
+  //  locale-agnostic chart/table interpreters as `[object Object]`. A plain
+  //  string / number / null cell is returned untouched (byte-identical for any
+  //  single-locale store), so this is a no-op when no LocaleString is present.
+  return resolveRowLocales(rows, ctx.locale)
+}
+
+/** True for a LocaleString object `{ en, ka }` (not a string/number/null/array). */
+function isLocaleObject(v: unknown): v is Record<string, string> {
+  return typeof v === 'object' && v !== null && !Array.isArray(v)
+}
+
+/**
+ * Resolve every LocaleString-object cell in a row set to the active locale. Pure,
+ * non-mutating. Rows with no object-valued cell are returned by reference (the
+ * common single-locale case — zero allocation, byte-identical).
+ */
+function resolveRowLocales(rows: DataRow[], locale: string): DataRow[] {
+  return rows.map((row) => {
+    const bag = row as unknown as Record<string, unknown>
+    let copy: Record<string, unknown> | undefined
+    for (const k of Object.keys(bag)) {
+      const v = bag[k]
+      if (isLocaleObject(v)) {
+        copy ??= { ...bag }
+        copy[k] = resolveLocaleString(v, locale, 'en') as DimVal
+      }
+    }
+    return (copy ?? bag) as unknown as DataRow
+  })
 }
 
 // ── resolveCompareRows — comparison dataset for N37 compare mode ──────

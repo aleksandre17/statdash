@@ -9,7 +9,7 @@ import type { DataSpec, RowSpec, YearsSpec } from '../config/data-spec'
 import type { SectionContext }               from '../core/context'
 import { atTime, TIME_DIM }                  from '../core/context'
 import { clampYears, effectiveYears, effectiveBounds } from '../core/time-dimension'
-import type { DataStore }                    from '../data/store'
+import type { DataStore, StoreQuery }        from '../data/store'
 import { storeVal, storeObs }               from '../data/store'
 import type { CtxRef, DimVal, FilterValue, NeCtxRef, ObsQuery }  from '../sdmx'
 import { resolveMeasureRef }                  from '../data/metric'
@@ -79,6 +79,29 @@ export function resolveQueryMeasures(query: ObsQuery): ObsQuery {
   return filter !== undefined
     ? { ...query, measure, filter }
     : { ...query, measure }
+}
+
+/**
+ * queryReadObs — the EXACT obs StoreQuery the QueryResolver read issues for a
+ * `query` spec (GAP 4 — warm/read key SSOT). The async warm step (useNodeRows)
+ * must fetch under the IDENTICAL (measure, filter, orderBy) the sync read looks
+ * up, or warm-key ≠ read-key and the cache stays cold (empty charts).
+ *
+ * The read does `storeObs(store, resolveQueryMeasures(spec.query), ctx)` →
+ * querySync({ type:'obs', measure, filter, orderBy }, ctx). Crucially:
+ *   • measure/filter flow through `resolveQueryMeasures` (metric expansion +
+ *     default-dim merge) — warming the raw `spec.query.measure` would miss for
+ *     a metric-id and collide for merged dims.
+ *   • NO time bound is on the query (range mode clamps POST-fetch via
+ *     effectiveBounds), so the SAME `ctx` (time unset in range mode) yields the
+ *     SAME obsCacheKey for warm and read — identical in BOTH year and range modes.
+ *
+ * This is the single SSOT key-derivation path: both the read and the warm derive
+ * their (code,dims) cache identity from this one function.
+ */
+export function queryReadObs(query: ObsQuery): StoreQuery {
+  const resolved = resolveQueryMeasures(query)
+  return { type: 'obs', measure: resolved.measure, filter: resolved.filter, orderBy: resolved.orderBy }
 }
 
 /**

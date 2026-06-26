@@ -14,7 +14,7 @@
 //    - LookML dimension      (schema + drill_values helper)
 //
 
-import type { Classifier, ClassifierEntry, ClassifierRef, ClassifierView, DimRef, DimVal, DisplayMap, DisplayRef } from '../sdmx'
+import type { AttrVal, Classifier, ClassifierEntry, ClassifierRef, ClassifierView, DimRef, DimVal, DisplayMap, DisplayRef } from '../sdmx'
 
 // ── Normalizers — array ↔ record both accepted ────────────────────────
 
@@ -168,7 +168,7 @@ export function resolveDisplayRef(
   classifiers:  Record<string, Classifier> | undefined,
   display:      Record<string, DisplayMap> | undefined,
   defaultView:  ClassifierView,
-): Record<string, Record<string, DimVal>> | Record<string, DimVal>[] {
+): Record<string, Record<string, AttrVal>> | Record<string, AttrVal>[] {
   const c    = classifiers?.[ref.$d]
   const d    = display?.[ref.$d] ?? {}
   const view = ref.view ?? defaultView
@@ -178,9 +178,12 @@ export function resolveDisplayRef(
     ? viewEntries(c, view)
     : Object.keys(d).map((id) => [id, { code: id }] as Pair)   // fallback
 
-  const buildEntry = (id: string, entry: ClassifierEntry): Record<string, DimVal> => {
+  // Attr values may be a scalar DimVal OR a LocaleString {en,ka} (i18n labels
+  // carried intact from the wire — resolved to a concrete string at the React
+  // boundary, never flattened here where no user locale is known).
+  const buildEntry = (id: string, entry: ClassifierEntry): Record<string, AttrVal> => {
     const overlay = d[id]
-    const out: Record<string, DimVal> = { code: entry.code }
+    const out: Record<string, AttrVal> = { code: entry.code }
     if (overlay) {
       for (const [k, v] of Object.entries(overlay)) {
         if (v !== undefined && k !== 'code') out[k] = v
@@ -190,7 +193,7 @@ export function resolveDisplayRef(
   }
 
   if (view === 'byCode') {
-    const out: Record<string, Record<string, DimVal>> = {}
+    const out: Record<string, Record<string, AttrVal>> = {}
     for (const [id, entry] of pairs) out[String(entry.code)] = buildEntry(id, entry)
     return out
   }
@@ -203,7 +206,7 @@ export function resolveDimRef(
   classifiers:  Record<string, Classifier> | undefined,
   display:      Record<string, DisplayMap> | undefined,
   defaultView:  ClassifierView,
-): Record<string, ClassifierEntry> | ClassifierEntry[] | Record<string, Record<string, DimVal>> | Record<string, DimVal>[] {
+): Record<string, ClassifierEntry> | ClassifierEntry[] | Record<string, Record<string, AttrVal>> | Record<string, AttrVal>[] {
   if (isClassifierRef(ref)) return resolveClassifierRef(ref, classifiers, defaultView)
   return resolveDisplayRef(ref, classifiers, display, defaultView)
 }

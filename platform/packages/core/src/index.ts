@@ -42,7 +42,7 @@ export { modeRegistry }                                                  from '.
 export type { DimVal, CtxRef, FilterValue, NeRef, NeCtxRef, Observation, ObsQuery } from './sdmx'
 
 // ── Kimball Classifier — per-dim surrogate-key codelist + hierarchy edges ──
-export type { ClassifierEntry, Classifier, ClassifierRef, ClassifierView,
+export type { AttrVal, ClassifierEntry, Classifier, ClassifierRef, ClassifierView,
               DisplayMap, DisplayRef, DimRef, DataBundle } from './sdmx'
 export { codelistOf, itemsOf, leavesOf, rollupsOf, codesOf,
          isClassifierRef, isDisplayRef, isDimRef,
@@ -242,6 +242,9 @@ export { mergeScope }                                                   from './
 // ── Core Resolvers ────────────────────────────────────────────────────
 export type { SpecResolveObserver }                                     from './data/spec'
 export { interpretSpec, extractRequirements, setSpecResolveObserver }  from './data/spec'
+// GAP 4 — the SSOT obs-query the QueryResolver read issues; the async warm path
+// (useNodeRows) fetches under this IDENTICAL query so warm-key ≡ read-key.
+export { queryReadObs }                                                 from './registry/resolvers'
 export { desugar }                                                      from './data/desugar'
 export { interpretKpis, extractKpiRequirements }                        from './data/kpi'
 export type { KpiSpec, KpiValueSpec, KpiTrendSpec }                     from './data/kpi'

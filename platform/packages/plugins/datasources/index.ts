@@ -23,6 +23,7 @@ export {
 } from './href-registrations'
 export type { HrefParams, HrefAuthConfig, HrefFormatParser, HrefAuthStrategy } from './href-registrations'
 export * from './stats-api'
+export { buildDisplayOverlay } from './stats-display'
 export {
   SOURCE_KIND_BY_TYPE, kindForType, typeForKind, toSourceDescriptor,
 } from './source-descriptor'

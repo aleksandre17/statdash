@@ -17,6 +17,22 @@
 
 import type { DimVal } from '@statdash/expr'
 export type { DimVal }
+import type { LocaleString } from './i18n/types'
+
+/**
+ * AttrVal — the value type of an open structural/display attribute bag.
+ *
+ * A scalar `DimVal` covers codes, colors, orders, flags. A `LocaleString`
+ * (`{ en, ka, … }`) covers i18n labels carried END-TO-END: the wire boundary
+ * (`fromStatsClassifiers`) keeps the multilingual object intact rather than
+ * flattening to one locale at build time (the store builder runs once, before
+ * any user locale is known). Resolution to a concrete string happens at the
+ * React render boundary (`resolveLocaleString`), per dim-ref consumer.
+ *
+ * A plain `string` LocaleString collapses to `DimVal` — existing single-locale
+ * classifiers/overlays remain byte-identical (backward compatible).
+ */
+export type AttrVal = DimVal | LocaleString
 
 /**
  * Runtime reference to SectionContext.dims — resolved at interpretSpec call time.
@@ -86,8 +102,13 @@ export interface ClassifierEntry {
   code:    DimVal
   /** Parent id (as map key) — optional; absent = root. */
   parent?: DimVal
-  /** Open bag for additional structural attrs (isoCode, nutsLevel, …). No display. */
-  [attr: string]: DimVal | undefined
+  /**
+   * Open bag for additional attrs (isoCode, nutsLevel, …). A value may be a
+   * scalar `DimVal` OR a `LocaleString` `{ en, ka }` — i18n labels are carried
+   * intact from the wire (resolved to a concrete string at the React boundary,
+   * never flattened at build time when no user locale exists yet).
+   */
+  [attr: string]: AttrVal | undefined
 }
 
 /**
@@ -115,7 +136,7 @@ export type Classifier = ClassifierEntry[] | Record<string, ClassifierEntry>
  *
  * Per-locale i18n: swap one DisplayMap, leave classifier untouched.
  */
-export type DisplayMap = Record<string /*id*/, Record<string /*attr*/, DimVal | undefined>>
+export type DisplayMap = Record<string /*id*/, Record<string /*attr*/, AttrVal | undefined>>
 
 /**
  * DataBundle — universal contract every dataset module exports. Datasets

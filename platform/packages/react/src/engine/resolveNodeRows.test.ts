@@ -8,9 +8,10 @@
 //
 
 import { describe, it, expect, beforeEach } from 'vitest'
-import { resolveStore, _storeCache, effectiveStoreKey } from './resolveNodeRows'
-import { staticStore, registerMetric }   from '@statdash/engine'
+import { resolveStore, _storeCache, effectiveStoreKey, resolveNodeRows } from './resolveNodeRows'
+import { staticStore, registerMetric, ExternalStore } from '@statdash/engine'
 import type { RenderContext, NodeBase }  from './types'
+import type { DataStore, SectionContext } from '@statdash/engine'
 
 // Minimal DataStore stub — only the fields resolveStore() reads.
 // resolveStore() wraps every non-static store in a CachedStore, so the returned
@@ -174,5 +175,78 @@ describe('FF-METRIC-NAMES-STORE — node effective-store precedence', () => {
 
   it('an explicit storeKey with no data still wins (parent-section override)', () => {
     expect(effectiveStoreKey(node({ storeKey: 'accounts' }))).toBe('accounts')
+  })
+})
+
+// ── GAP 5b — i18n boundary: LocaleString labels resolve to ctx.locale ─────────
+//
+//  Display labels are carried END-TO-END as LocaleString `{ en, ka }` (the store
+//  builder runs at boot with no user locale). They enter rows via the `$d` lookup
+//  join. resolveNodeRows is the React render boundary that resolves them to the
+//  active locale so a locale-agnostic chart/table never sees `[object Object]`.
+
+function makeRowCtx(store: DataStore, locale: string): RenderContext {
+  const sectionCtx: SectionContext = { dims: { time: 2024 }, timeMode: 'year' }
+  return {
+    sectionCtx,
+    stores:         { main: store },
+    pageStoreKey:   'main',
+    filterParams:   {},
+    vars:           {},
+    locale,
+    fallbackLocale: 'en',
+    timeModeKey:    'mode',
+    mode:           { current: 'year', available: [], set: () => {} },
+    effects:        [],
+    rows:           [],
+    eventBus:       { publish: () => {}, subscribe: () => () => {} } as unknown as RenderContext['eventBus'],
+    set:            () => {},
+    resolveLinks:   () => [],
+    renderNode:     () => null,
+  } as unknown as RenderContext
+}
+
+describe('resolveNodeRows — LocaleString resolution at the React boundary', () => {
+  // A store whose `geo` display overlay carries LocaleString labels {en,ka}.
+  function makeStore(): DataStore {
+    return new ExternalStore(
+      [{ measure: 'GDP', geo: 'GE', time: 2024, value: 100 }],
+      {
+        classifiers: { geo: [{ code: 'GE' }] },
+        display:     { geo: { GE: { label: { en: 'Georgia', ka: 'საქართველო' } } } },
+      },
+    )
+  }
+
+  // A query node whose pipe joins the `geo` display label onto each row via $d.
+  const labelNode: NodeBase = {
+    type: 'chart',
+    data: {
+      type:  'query',
+      query: { measure: 'GDP' },
+      pipe:  [{ op: 'lookup', from: { $d: 'geo' }, key: 'geo', fields: ['label'] }],
+      // encoding.label selects the joined display label as DataRow.label — the
+      // LocaleString flows through to the row, then resolveNodeRows resolves it.
+      encoding: { label: 'label', value: 'value' } as never,
+    },
+  } as unknown as NodeBase
+
+  it("resolves a LocaleString label to the active locale ('ka')", () => {
+    const rows = resolveNodeRows(labelNode, makeRowCtx(makeStore(), 'ka'))
+    expect((rows[0] as { label: unknown }).label).toBe('საქართველო')
+  })
+
+  it("resolves the same row to 'en' under an English locale (real i18n end-to-end)", () => {
+    const rows = resolveNodeRows(labelNode, makeRowCtx(makeStore(), 'en'))
+    expect((rows[0] as { label: unknown }).label).toBe('Georgia')
+  })
+
+  it('leaves a plain scalar label untouched (no-op for single-locale stores)', () => {
+    const store = new ExternalStore(
+      [{ measure: 'GDP', geo: 'GE', time: 2024, value: 100 }],
+      { classifiers: { geo: [{ code: 'GE' }] }, display: { geo: { GE: { label: 'Georgia' } } } },
+    )
+    const rows = resolveNodeRows(labelNode, makeRowCtx(store, 'ka'))
+    expect((rows[0] as { label: unknown }).label).toBe('Georgia')
   })
 })

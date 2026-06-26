@@ -30,7 +30,7 @@
 
 import { use, useMemo }                         from 'react'
 import type { DataRow, DataSpec, QueryResult, Requirement } from '@statdash/engine'
-import { extractRequirements }                   from '@statdash/engine'
+import { extractRequirements, queryReadObs }      from '@statdash/engine'
 import type { NodeBase, RenderContext }          from './types'
 import { resolveNodeRows, resolveStore }         from './resolveNodeRows'
 import { specDimKey }                            from './specDimKey'
@@ -153,13 +153,16 @@ export function useNodeRows(node: NodeBase, ctx: RenderContext): DataRow[] {
               qa({ type: 'obs', measure: r.code }, reqCtx),
             ]
           }).concat(
-            // 'query' specs carry their own obs query (measure/filter/orderBy)
-            // that extractRequirements lowers to val reqs — warm the obs form too.
+            // 'query' specs carry their own obs query that the QueryResolver read
+            // issues. GAP 4: warm under the EXACT query the read uses — derived by
+            // the SSOT `queryReadObs` (resolveQueryMeasures: metric expansion +
+            // default-dim merge, NO time bound — clamped post-fetch). Warming the
+            // raw `spec.query.measure` would miss a metric-id and, in range mode,
+            // the wasted time:0 val reqs never matched the unbounded read → cold
+            // cache → empty charts. Same `ctx.sectionCtx` (time unset in range
+            // mode) ⇒ warm-key ≡ read-key in BOTH year and range modes.
             spec.type === 'query'
-              ? [qa(
-                  { type: 'obs', measure: spec.query.measure, filter: spec.query.filter, orderBy: spec.query.orderBy },
-                  ctx.sectionCtx,
-                )]
+              ? [qa(queryReadObs(spec.query), ctx.sectionCtx)]
               : [],
           ),
         )

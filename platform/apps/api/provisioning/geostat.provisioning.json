@@ -885,17 +885,17 @@
             ],
             "each": [
               {
-                "code": "production",
+                "code": "production-account",
                 "color": "#0080BE",
                 "label": "წარმოების ანგარიში"
               },
               {
-                "code": "income_gen",
+                "code": "generation-of-income-account",
                 "color": "#E76F51",
                 "label": "შემოსავლის ფორმირება"
               },
               {
-                "code": "capital",
+                "code": "capital-account",
                 "color": "#4472C4",
                 "label": "კაპიტალის ანგარიში"
               }
@@ -2884,6 +2884,9 @@
                   ],
                   "query": {
                     "filter": {
+                      "geo": {
+                        "$ne": "_T"
+                      },
                       "measure": "GVA",
                       "sector": {
                         "$ctx": "sector"
@@ -3037,6 +3040,9 @@
                         "$ctx": "geo"
                       },
                       "measure": "GVA",
+                      "sector": {
+                        "$ne": "_T"
+                      },
                       "time": {
                         "$ctx": "time"
                       }
@@ -3148,9 +3154,13 @@
                   "query": {
                     "filter": {
                       "geo": {
-                        "$ctx": "geo"
+                        "$ctx": "geo",
+                        "$ne": "_T"
                       },
                       "measure": "GVA",
+                      "sector": {
+                        "$ne": "_T"
+                      },
                       "time": {
                         "$ctx": "time"
                       }
@@ -3299,7 +3309,8 @@
               "query": {
                 "filter": {
                   "geo": {
-                    "$ctx": "geo"
+                    "$ctx": "geo",
+                    "$ne": "_T"
                   },
                   "measure": "GVA",
                   "sector": {
@@ -3396,6 +3407,9 @@
                   ],
                   "query": {
                     "filter": {
+                      "geo": {
+                        "$ne": "_T"
+                      },
                       "measure": "GVA",
                       "sector": {
                         "$ctx": "sector"
@@ -3606,7 +3620,7 @@
                   },
                   "measure": "GVA",
                   "sector": {
-                    "$ctx": "sector"
+                    "$ne": "_T"
                   }
                 },
                 "measure": "GVA"

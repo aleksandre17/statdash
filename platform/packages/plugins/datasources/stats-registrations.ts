@@ -100,9 +100,10 @@ export function registerStoreBuilders(): void {
     const datasetCode = (config.params?.datasetCode as string) ?? config.id
     const nonTimeDims = (config.params?.nonTimeDims as string[]) ?? []
 
-    const [{ fetchDimClassifiers, fromStatsObsRow, fetchDatasetMeta, fetchCubeProfile }, { ApiStore, CachedStore, TIME_DIM }] =
+    const [{ fetchDimClassifiers, fromStatsObsRow, fetchDatasetMeta, fetchCubeProfile }, { buildDisplayOverlay }, { ApiStore, CachedStore, TIME_DIM }] =
       await Promise.all([
         import('./stats-api'),
+        import('./stats-display'),
         import('@statdash/engine'),
       ])
 
@@ -113,6 +114,18 @@ export function registerStoreBuilders(): void {
     )
     const classifiers: Record<string, import('@statdash/engine').Classifier> = Object.fromEntries(
       nonTimeDims.map((dim, i) => [dim, classifierArrays[i]]),
+    )
+
+    // ── GAP 5 — DISPLAY overlay (SSOT: the SAME classifier rows) ───────────────
+    //  resolveDisplayRef joins each `{ $d:'<dim>' }` ref against this overlay
+    //  (id → label/color/order). Build it from the classifier arrays we already
+    //  fetched — no second endpoint, no duplication. Keyed by `code` to match the
+    //  array-form classifier join. label is carried as a LocaleString {en,ka}
+    //  (exceed-the-old i18n); resolved to a concrete string at the React boundary.
+    //  $cl (structural) vs $d (display) separation is preserved: resolveDisplayRef
+    //  reads label/color ONLY from this overlay, never off the structural entry.
+    const display: Record<string, import('@statdash/engine').DisplayMap> = Object.fromEntries(
+      nonTimeDims.map((dim, i) => [dim, buildDisplayOverlay(classifierArrays[i])]),
     )
 
     // ── Time-range readiness seam (ADR adr_time_range_readiness_seam) ──────────
@@ -165,6 +178,7 @@ export function registerStoreBuilders(): void {
       classifiers,
       fromStatsObsRow,
       metadata,
+      display,
     )
 
     return new CachedStore(apiStore)

@@ -103,16 +103,26 @@ const isPlainObject = (v: unknown): v is Record<string, unknown> =>
   typeof v === 'object' && v !== null && !Array.isArray(v)
 
 const isCtxRef = (v: unknown): boolean => isPlainObject(v) && '$ctx' in v
+const isNeRef = (v: unknown): boolean => isPlainObject(v) && '$ne' in v
 const isWildcard = (v: unknown): boolean => v === '' || v === null || v === '*'
 
-/** Classify a filter map into {pinned codes, wildcard dims, ctx-bound dims}. */
+/**
+ * Classify a filter map into {pinned codes, wildcard dims, ctx-bound dims}.
+ * A `$ne` exclusion (NeRef `{$ne}` / NeCtxRef `{$ctx,$ne}`) is NOT a concrete
+ * pinned code — it removes a member from a fan-out (the rollup, per
+ * FF-NO-ROLLUP-IN-COMPARISON). It binds no single code, so it is routed exactly
+ * like a ctx/wildcard, never into `pinned` (else the code-existence check would
+ * try to look up the literal `{$ne:…}` object as a member). A NeCtxRef also
+ * carries `$ctx`, so it counts as ctx-bound (satisfies single-value pinning).
+ */
 function classifyFilter(filter: Record<string, unknown>): Pick<ObsSite, 'filter' | 'wildcardDims' | 'ctxDims'> {
   const pinned: Record<string, unknown> = {}
   const wildcardDims = new Set<string>()
   const ctxDims = new Set<string>()
   for (const [dim, val] of Object.entries(filter)) {
     if (dim === TIME_DIM) continue
-    if (isCtxRef(val)) { ctxDims.add(dim); continue }
+    if (isCtxRef(val)) { ctxDims.add(dim); continue }   // covers NeCtxRef ({$ctx,$ne}) too
+    if (isNeRef(val)) { wildcardDims.add(dim); continue } // {$ne} alone — fan-out minus rollup, no concrete pin
     if (isWildcard(val)) { wildcardDims.add(dim); continue }
     // Array = multi-value SDMX key selection (OR within dim) — each member is a code.
     pinned[dim] = val

@@ -17,7 +17,7 @@
 //  populated the cache. A cold querySync call is a caller bug (caps.sync
 //  === false means the caller must use queryAsync) and throws descriptively.
 
-import type { Classifier }                                             from '../sdmx'
+import type { Classifier, DisplayMap }                                 from '../sdmx'
 import type { SectionContext }                                         from '../core/context'
 import { TIME_DIM, MEASURE_DIM }                                       from '../core/context'
 import type { EngineRow }                                              from './encoding'
@@ -27,11 +27,20 @@ import type { MetadataPort }                                           from '../
 
 // ── RawObsRow — server contract shape ───────────────────────────────
 
-/** Raw shape returned by GET /api/stats/observations (server contract). */
+/**
+ * Raw shape returned by GET /api/stats/observations (server contract).
+ *
+ * `obs_value` is `string | number | null`: pg serializes a `numeric` column as
+ * a STRING to preserve precision, so the wire carries "42367.21"; a suppressed
+ * cell is `null`. The injected `mapRow` (the app's `fromStatsObsRow`) coerces it
+ * to a real `number | null` at the adapter seam — the engine never does value
+ * math on a raw row, so it stays type-faithful to the wire here and lets the ACL
+ * own the coercion (Ports & Adapters).
+ */
 export interface RawObsRow {
   time_period:   string
   dim_key:       Record<string, string>
-  obs_value:     number | null
+  obs_value:     string | number | null
   obs_status:    string
   obs_attribute: Record<string, unknown>
 }
@@ -83,6 +92,15 @@ export class ApiStore implements DataStore {
   private readonly datasetCode: string
   private readonly nonTimeDims: string[]
   readonly classifiers:         Record<string, Classifier>
+  /**
+   * Display overlay (GAP 5) — the UI/presentation channel `resolveDisplayRef`
+   * joins at consumer-facing `{ $d: '<dim>' }` refs (id → label/color/order).
+   * Mirrors `classifiers` (structural). The store-builder constructs it from the
+   * SAME classifier rows it already fetched (no second endpoint, no duplication),
+   * keyed by `code` to match resolveDisplayRef's join over array-form classifiers.
+   * Absent ⇒ a `$d` ref returns `{ code }` only (the pre-GAP-5 behaviour).
+   */
+  readonly display:             Record<string, DisplayMap>
   private readonly mapRow:      (raw: RawObsRow) => EngineRow
 
   constructor(
@@ -92,6 +110,7 @@ export class ApiStore implements DataStore {
     classifiers:  Record<string, Classifier> = {},
     mapRow:       (raw: RawObsRow) => EngineRow,
     metadata?:    MetadataPort,
+    display:      Record<string, DisplayMap> = {},
   ) {
     this.baseUrl     = baseUrl
     this.datasetCode = datasetCode
@@ -99,6 +118,7 @@ export class ApiStore implements DataStore {
     this.classifiers = classifiers
     this.mapRow      = mapRow
     this.metadata    = metadata
+    this.display     = display
   }
 
   // ── queryAsync — primary async path ──────────────────────────────

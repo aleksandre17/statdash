@@ -36,14 +36,19 @@ export interface StatsDatasetRow {
  * declared here so the app owns its own wire contract (the engine never
  * imports app types — Law 3 / dependency arrow).
  *
- * `obs_value` is `number | null`: the route returns it verbatim from pg and a
- * missing/suppressed cell is null, not 0 — the mapper preserves that.
+ * `obs_value` is a pg `numeric` serialized as a STRING (e.g. "42367.21") — pg
+ * returns numeric/decimal as text to preserve arbitrary precision. The adapter
+ * coerces it to a real `number` (GAP 3); a missing/suppressed cell is `null`,
+ * NOT 0 — the mapper preserves null (suppressed ≠ 0). It also accepts a real
+ * `number` so a stub/typed source still works.
  * `dim_key` is opaque generic (Law 1): never named dims here.
+ * `obs_attribute` is a generic bag (e.g. `{ seq_pos }`) lifted to camelCase
+ * engine fields by the mapper.
  */
 export interface RawStatsObsRow {
   time_period:   string
   dim_key:       Record<string, string>
-  obs_value:     number | null
+  obs_value:     string | number | null
   obs_status:    string
   obs_attribute: Record<string, unknown>
 }
@@ -107,15 +112,31 @@ export interface StatsCubeProfileRow {
   timeCoverage: { min: string | null; max: string | null; periods: string[] }
 }
 
-/** Row of GET /classifiers/:dim_code — one codelist member. */
+/**
+ * Row of GET /classifiers/:dim_code — one codelist member.
+ *
+ * WIRE CONTRACT (GAP 5b): the live route SELECTs `label` and `parent_code`
+ * straight from `stats.classifier`. Two things changed vs the legacy shape and
+ * the adapter must track them at THIS seam (Postel normalization, single ACL):
+ *
+ *   • `label` is a LocaleString object `{ en, ka }` (V-i18n), no longer a flat
+ *     string. Stored as-is into the engine `ClassifierEntry.label` so real i18n
+ *     is preserved end-to-end (resolved to a concrete string at the React
+ *     boundary). A legacy flat `string` still parses (LocaleString ⊇ string).
+ *   • the hierarchy edge is `parent_code` (the stable business key, ADR-0023),
+ *     NOT the dropped surrogate `parent_id`. It maps DIRECTLY to the array-form
+ *     classifier's `parent` (which is a code) — no codeById indirection.
+ */
 export interface StatsClassifierRow {
-  id:        number
-  code:      string
-  label:     string | null
-  color:     string | null
-  parent_id: number | null
-  ord:       number
-  metadata:  unknown
+  id:          number
+  code:        string
+  /** LocaleString `{ en, ka }` (or a legacy flat string). */
+  label:       Record<string, string> | string | null
+  color:       string | null
+  /** Parent's business CODE (ADR-0023 code-chain edge); null = root. */
+  parent_code: string | null
+  ord:         number
+  metadata:    unknown
 }
 
 // ── HTTP boundary — the ONLY fetch in stats mode (Law 5) ──────────────────
@@ -177,11 +198,56 @@ function parseTimePeriod(tp: string): number | null {
 export function fromStatsObsRow(row: RawStatsObsRow): Observation {
   const time = parseTimePeriod(row.time_period)
   return {
-    ...(row.dim_key as Record<string, DimVal>), // measure, geo, sector, …
-    value: row.obs_value,
+    ...(row.dim_key as Record<string, DimVal>),       // measure, geo, sector, …
+    ...liftObsAttributes(row.obs_attribute),          // seqPos (camelCase), …
+    value: toNumericValue(row.obs_value),             // GAP 3: numeric, null preserved
     obsStatus: normalizeObsStatus(row.obs_status),
     ...(time !== null ? { time } : {}),
   }
+}
+
+/**
+ * GAP 3: coerce the wire `obs_value` to a real `number`. pg serializes `numeric`
+ * as a STRING ("42367.21"); passing it verbatim makes every downstream
+ * `aggregate{sum}` / `pct{sumOf}` / growth ratio do STRING math (NaN or
+ * concatenation). A suppressed/missing cell is `null` and MUST stay null
+ * (suppressed ≠ 0), so an aggregate omits it rather than counting a zero. A
+ * non-finite parse (corrupt cell) also degrades to null rather than poisoning a
+ * sum with NaN.
+ */
+function toNumericValue(v: string | number | null): number | null {
+  if (v === null) return null
+  const n = typeof v === 'number' ? v : Number(v)
+  return Number.isFinite(n) ? n : null
+}
+
+/**
+ * GAP 3: surface obs attributes generically (Law 1 — never name a specific dim),
+ * lifting snake_case wire keys to the engine's camelCase convention. The
+ * accounts config sorts `by:'seqPos'` and carry-forward-filters on `seqPos>0`,
+ * but the value lives in `obs_attribute.seq_pos` — only `dim_key` was spread
+ * before, so the field was MISSING and the sequence collapsed. The OLD adapter
+ * lifted `seqPos` from dims; this mirrors it for the live wire shape. Values are
+ * coerced to `DimVal` scalars; numeric strings become numbers so `seqPos>0`
+ * compares numerically.
+ */
+function liftObsAttributes(attr: Record<string, unknown>): Record<string, DimVal> {
+  const out: Record<string, DimVal> = {}
+  for (const [k, v] of Object.entries(attr)) {
+    if (v === undefined || v === null) continue
+    const key = snakeToCamel(k)
+    if (typeof v === 'number' || typeof v === 'boolean') { out[key] = v; continue }
+    const s = String(v)
+    // A numeric attribute (e.g. seq_pos) becomes a number so numeric comparisons
+    // (seqPos>0) and ordering (by:'seqPos') work; non-numeric stays a string.
+    out[key] = /^-?\d+(\.\d+)?$/.test(s) ? Number(s) : s
+  }
+  return out
+}
+
+/** snake_case → camelCase (seq_pos → seqPos). Single-segment keys pass through. */
+function snakeToCamel(key: string): string {
+  return key.replace(/_([a-z0-9])/g, (_m, c: string) => c.toUpperCase())
 }
 
 /**
@@ -198,17 +264,38 @@ function normalizeObsStatus(raw: string): string {
 
 /**
  * StatsClassifierRow[] → Classifier (array form). Code IS the key, matching the
- * codes observations carry. parent_id is resolved to the parent's *code* so the
- * hierarchy works in array form (DimResolver reads parent as a code there).
+ * codes observations carry.
+ *
+ * GAP 5b fixes at this single ACL seam:
+ *   • `label` is carried INTACT as a LocaleString `{ en, ka }` (or flat string),
+ *     not stored as `[object Object]` (the old `label ?? code` stringified the
+ *     object). Real i18n end-to-end; resolved at the React boundary. A null/empty
+ *     label degrades to the `code` (Postel: always something renderable).
+ *   • `parent` maps DIRECTLY from `parent_code` (already a business code) — the
+ *     array form reads `parent` as a code, so no codeById id→code indirection.
  */
 export function fromStatsClassifiers(rows: StatsClassifierRow[]): Classifier {
-  const codeById = new Map(rows.map((r) => [r.id, r.code]))
   return rows.map((r): ClassifierEntry => ({
-    code:  r.code,
-    label: r.label ?? r.code,
-    color: r.color ?? undefined,
-    parent: r.parent_id !== null ? codeById.get(r.parent_id) : undefined,
+    code:   r.code,
+    label:  normalizeClassifierLabel(r.label, r.code),
+    color:  r.color ?? undefined,
+    parent: r.parent_code ?? undefined,
   }))
+}
+
+/**
+ * A wire `label` is either a LocaleString object `{ en, ka }`, a legacy flat
+ * string, or null. Keep the object/string intact (i18n preserved); fall back to
+ * the code only when there is genuinely nothing to show. An empty object (no
+ * locales) also degrades to the code so a consumer never renders `{}`.
+ */
+function normalizeClassifierLabel(
+  label: Record<string, string> | string | null,
+  code:  string,
+): import('@statdash/engine').LocaleString {
+  if (label === null) return code
+  if (typeof label === 'string') return label === '' ? code : label
+  return Object.keys(label).length > 0 ? label : code
 }
 
 // ── Resource fetchers — typed reads over the HTTP boundary ────────────────

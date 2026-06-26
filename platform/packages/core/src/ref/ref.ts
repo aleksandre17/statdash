@@ -30,7 +30,7 @@
 //  for measure refs [R1]; `resolveRef` is the single wire point for `$`-refs.
 //
 
-import type { Classifier, ClassifierEntry, ClassifierView, DimRef, DimVal,
+import type { AttrVal, Classifier, ClassifierEntry, ClassifierView, DimRef, DimVal,
               DisplayMap }                                  from '../sdmx'
 import { isDimRef, resolveDimRef }                          from '../data/codelist'
 
@@ -106,8 +106,8 @@ export interface RefServices {
 export type DimViewResult =
   | Record<string, ClassifierEntry>
   | ClassifierEntry[]
-  | Record<string, Record<string, DimVal>>
-  | Record<string, DimVal>[]
+  | Record<string, Record<string, AttrVal>>
+  | Record<string, AttrVal>[]
 
 // ── resolveRef — THE one dispatcher ──────────────────────────────────────────
 //

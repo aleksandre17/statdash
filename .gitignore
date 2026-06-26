@@ -43,3 +43,4 @@ pipeline_extracted.txt
 *.njsproj
 *.sln
 *.sw?
+work/live-shots/
