@@ -3,15 +3,20 @@
 # ════════════════════════════════════════════════════════════════════════════
 #
 # Same 8 stages, same contract, for a docker-capable Windows host:
-#   network + Postgres → Flyway migrate (V1→V29 + R__) → build:engine → seed →
+#   network + Postgres → Flyway migrate (V1→V34, structure only) → build:engine →
 #   DB-gated test suite (DATABASE_URL un-skips them) → API one-shot + /health →
-#   verify-parity → teardown (unless -Keep).
+#   canonical ingest (DATA/canonical/*.xlsx → pipeline → gold, self-verifying
+#   counts + anchors) → teardown (unless -Keep).
+#
+# SSOT (ADR-0032): the demo-data SSOT is the canonical workbooks; the legacy bundle
+# seed (ops/seed-data/*.bundle.json) is a RETIRED 3-dim-GDP lane that would fail the
+# V34 canonical 4-dim DSD. This script no longer touches it — one demo-data SSOT.
 #
 # USAGE
 #   pwsh ops/scripts/validate-local.ps1            # full run + teardown
 #   pwsh ops/scripts/validate-local.ps1 -Keep      # leave the stack up
 #
-# PREREQ: docker (+ compose v2), pnpm, node, curl, on a docker-capable machine.
+# PREREQ: docker (+ compose v2), pnpm, node, curl, bash, on a docker-capable machine.
 # Fail-fast: $ErrorActionPreference=Stop + explicit exit-code checks; any stage
 # failure aborts with a non-zero exit (never a false green).
 # ════════════════════════════════════════════════════════════════════════════
@@ -42,7 +47,9 @@ function Invoke-OrDie {
 }
 
 # ── Preflight ─────────────────────────────────────────────────────────────────
-foreach ($tool in 'docker','pnpm','node','curl') {
+# bash is required for the canonical ingest driver (ops/scripts/ingest-canonical.sh),
+# which STAGE 6 runs (Git-for-Windows / WSL bash both work).
+foreach ($tool in 'docker','pnpm','node','curl','bash') {
   if (-not (Get-Command $tool -ErrorAction SilentlyContinue)) {
     Err "required command not found: $tool"; exit 127
   }
@@ -75,7 +82,7 @@ $PgDb   = if ($db.ContainsKey('POSTGRES_DB'))       { $db['POSTGRES_DB'] }      
 $PgPort = if ($db.ContainsKey('POSTGRES_PORT'))     { $db['POSTGRES_PORT'] }     else { '5432' }
 
 # DATABASE_URL → localhost (port published to 127.0.0.1). THE switch that
-# un-skips the DB-gated suites + drives seed/verify-parity.
+# un-skips the DB-gated suites and that the API boots against.
 $env:DATABASE_URL  = "postgres://${PgUser}:${PgPass}@localhost:${PgPort}/${PgDb}"
 $env:JWT_SECRET    = if ($env:JWT_SECRET)    { $env:JWT_SECRET }    else { 'validate-local-jwt-secret-at-least-32-chars!!' }
 $env:ADMIN_USERNAME= if ($env:ADMIN_USERNAME){ $env:ADMIN_USERNAME }else { 'admin' }
@@ -83,6 +90,9 @@ $env:ADMIN_PASSWORD= if ($env:ADMIN_PASSWORD){ $env:ADMIN_PASSWORD }else { 'vali
 
 $ApiPort = 3001
 $script:ApiProc = $null
+
+# Canonical demo-data SSOT (ADR-0032): the 3 workbooks the bring-up ingest POSTs.
+$CanonicalDir = Join-Path $Root 'DATA/canonical'
 
 # ── Teardown ──────────────────────────────────────────────────────────────────
 function Invoke-Cleanup {
@@ -111,12 +121,15 @@ try {
   Invoke-OrDie { docker @Compose up -d --wait postgres } 'postgres up'
   Ok "Postgres healthy on localhost:${PgPort} (db=$PgDb user=$PgUser)"
 
-  # ══ STAGE 2 — Flyway migrate V1→V29 + R__ ═══════════════════════════════════
-  Info 'STAGE 2/8 — Flyway migrate (V1→V29 + R__seed_geostat_gold)'
+  # ══ STAGE 2 — Flyway migrate V1→V34 (structure only) ════════════════════════
+  Info 'STAGE 2/8 — Flyway migrate (V1→V34, structure only)'
+  # The flyway service mounts ONLY ops/postgres/migrations (Vnn); R__seed_geostat_gold
+  # is unmounted (ADR-0032) — its 3-dim GDP would fail V34's canonical 4-dim DSD.
+  # Demo data is loaded by the canonical ingest in STAGE 6, not by SQL.
   Invoke-OrDie {
     docker @Compose -f $FlywayYml up --abort-on-container-exit --exit-code-from flyway flyway
   } 'flyway migrate'
-  Ok 'migrations applied clean from scratch (V1→V29 + R__ gold seed)'
+  Ok 'migrations applied clean from scratch (V1→V34, incl. V34 canonical 4-dim GDP DSD)'
 
   # ══ STAGE 3 — build engine dist ═════════════════════════════════════════════
   Info 'STAGE 3/8 — pnpm build:engine'
@@ -124,19 +137,17 @@ try {
   Invoke-OrDie { pnpm -C $Platform build:engine } 'build:engine'
   Ok 'engine packages built to dist'
 
-  # ══ STAGE 4 — seed the cube ═════════════════════════════════════════════════
-  Info 'STAGE 4/8 — seed the cube'
-  Invoke-OrDie { pnpm -C $Platform --filter '@statdash/api' seed } 'seed'
-  Ok 'cube seeded (GDP_ANNUAL, ACCOUNTS_SEQUENCE, REGIONAL_GVA)'
-
-  # ══ STAGE 5 — DB-gated test suite ═══════════════════════════════════════════
-  Info 'STAGE 5/8 — pnpm test with DATABASE_URL set (DB-gated proofs RUN)'
+  # ══ STAGE 4 — DB-gated test suite ═══════════════════════════════════════════
+  # These suites SELF-PROVISION their own fixtures (rolled-back tx / runProvisioning
+  # into a temp dir) — they do NOT depend on any prior cube seed, so this stage now
+  # runs on a fresh-migrated DB BEFORE any demo-data load.
+  Info 'STAGE 4/8 — pnpm test with DATABASE_URL set (DB-gated proofs RUN)'
   $env:NODE_ENV = 'test'
   Invoke-OrDie { pnpm -C $Platform test } 'pnpm test'
   Ok 'all suites green, including the live-DB proofs'
 
-  # ══ STAGE 6 — start API one-shot, wait /health ══════════════════════════════
-  Info 'STAGE 6/8 — start API one-shot (tsx src/index.ts), wait for /health'
+  # ══ STAGE 5 — start API one-shot, wait /health ══════════════════════════════
+  Info 'STAGE 5/8 — start API one-shot (tsx src/index.ts), wait for /health'
   $apiLog = Join-Path ([System.IO.Path]::GetTempPath()) ("statdash-api-{0}.log" -f ([guid]::NewGuid().ToString('N')))
   $apiEnv = @{
     NODE_ENV='production'; PORT="$ApiPort"; HOST='0.0.0.0'; CORS_ORIGIN='http://localhost:5175'
@@ -169,11 +180,24 @@ try {
   }
   Ok "API healthy at http://localhost:$ApiPort"
 
-  # ══ STAGE 7 — verify-parity ═════════════════════════════════════════════════
-  Info 'STAGE 7/8 — verify-parity (P1-3 gate)'
-  $env:API_BASE_URL = "http://localhost:$ApiPort"
-  Invoke-OrDie { pnpm -C $Platform --filter '@statdash/api' verify-parity } 'verify-parity'
-  Ok 'parity holds — bundle reference equals the live API row-for-row'
+  # ══ STAGE 6 — canonical bring-up ingest (demo-data SSOT → gold, the REAL way) ═
+  # Drive the SAME script the prod compose `ingest` one-shot runs: POST each
+  # DATA/canonical/*.xlsx to /api/ingest/canonical, publish through the FSM, then
+  # serve-assert counts (GDP=288, ACCOUNTS=415, REGIONAL=1554) + the 3 anchors. The
+  # GDP anchor (geo=GE, approach=_Z, 2010 ≈ 22148.65) only resolves if GDP is 4-dim
+  # — the live proof that V34 + the canonical workbook agree. Idempotent (409 on a
+  # re-run). REPLACES the retired bundle verify-parity.
+  Info 'STAGE 6/8 — canonical ingest (DATA/canonical/*.xlsx -> pipeline -> gold)'
+  $env:API_BASE_URL  = "http://localhost:$ApiPort"
+  $env:CANONICAL_DIR = $CanonicalDir
+  Invoke-OrDie {
+    bash (Join-Path $ScriptDir 'ingest-canonical.sh')
+  } 'canonical ingest'
+  Ok 'canonical demo data ingested, served + anchors verified (4-dim GDP)'
+
+  # ══ STAGE 7 — (folded into STAGE 6) ═════════════════════════════════════════
+  Info 'STAGE 7/8 — parity covered by STAGE 6 canonical serve+anchor asserts'
+  Ok 'row-level parity holds against the canonical SSOT (no separate gate needed)'
 
   # ══ STAGE 8 — stop API ══════════════════════════════════════════════════════
   Info 'STAGE 8/8 — stopping API; stack teardown on exit'

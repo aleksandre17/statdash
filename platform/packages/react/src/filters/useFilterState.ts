@@ -16,7 +16,7 @@ import { autoParse, resolveDefaults, evalWhen }  from '@statdash/engine'
 import { resolveYears, resolveOptions }          from '@statdash/engine'
 import type { WhenMap }                          from '@statdash/engine'
 import type { ParamDef, ParamCascadeNode, CascadeNode } from '@statdash/engine'
-import type { ParamYearSelect, ParamSelect, ParamMultiSelect } from '@statdash/engine'
+import type { ParamYearSelect, ParamSelect, ParamMultiSelect, ParamHidden } from '@statdash/engine'
 import type { EngineRow }                        from '@statdash/engine'
 import type { BarNode, ParamNode }               from '@statdash/engine'
 
@@ -125,7 +125,15 @@ export function useFilterState(
         )
         return opts.map(o => ({ code: o.value }) as EngineRow)
       }
-      // cascade, hidden, range, chip-select: Tier 3 not applicable
+      // hidden WITH an options source: a derived state variable whose default
+      // follows the cube (e.g. span min/max). Resolve identically to select so
+      // its Tier 3 OptionsDefault pick:first/last lands on a real member. A
+      // plain hidden (no options) carries only a literal default → null here.
+      if (def.type === 'hidden' && (def as ParamHidden).options) {
+        const opts = resolveOptions((def as ParamHidden).options!, store, STUB_CTX)
+        return opts.map(o => ({ code: o.value }) as EngineRow)
+      }
+      // cascade, plain hidden, range, chip-select: Tier 3 not applicable
       return null
     },
     [flatParams, store],

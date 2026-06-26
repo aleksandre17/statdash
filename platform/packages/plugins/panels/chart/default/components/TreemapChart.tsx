@@ -114,7 +114,10 @@ export default function TreemapChart({ output }: { output: ChartOutput }) {
   const cats = output.categories
   if (!pts.length) return null
 
-  const base = output.series[0]?.color ?? cssVar('--color-accent', '#0080BE')
+  // `||` not `??`: an unmapped measure yields color '' from the lookup pipe
+  // (an empty STRING, which `??` would keep → a transparent, invisible block).
+  // Fall back to the theme accent so every tile paints.
+  const base = output.series[0]?.color || cssVar('--color-accent', '#0080BE')
 
   const items: Item[] = cats
     .map((rawLabel, i) => {
@@ -127,7 +130,7 @@ export default function TreemapChart({ output }: { output: ChartOutput }) {
         op:        label.match(/^\((.)\) /)?.[1] ?? '',
         value:     pt.value,
         formatted: pt.formatted,
-        color:     pt.thresholdColor ?? base,
+        color:     pt.thresholdColor || base,
         isTotal:   label.startsWith('(=) '),
       }
     })

@@ -27,7 +27,13 @@ export default function Chart({ output, bodyAttrs, onDataHover, onDataLeave, onD
   // PanelLayout view toggle provides sighted keyboard access to the table view.
   return (
     <div {...bodyAttrs} className="chart-wrap">
-      <div aria-hidden="true">
+      {/* height:100% so a renderer that fills its parent (the custom flexbox
+          TreemapChart root is `height:100%`) resolves against .chart-wrap's
+          resolved height — without it this wrapper shrinks to content and the
+          treemap blocks collapse to 0 (blank panel). Apex renderers measure the
+          box and are unaffected; donut/bar already fill. Same height-chain class
+          as the regional GeoMap panel. */}
+      <div aria-hidden="true" className="chart-wrap__render">
         {createElement(Renderer, { output, onDataHover, onDataLeave, onDataClick })}
       </div>
       <ChartDataTable output={output} label={ariaLabel} />

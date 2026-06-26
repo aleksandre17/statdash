@@ -123,8 +123,11 @@ class TreemapInterpreter implements ChartInterpreter {
       : rows
     const series: ChartSeries[] = [{
       name:  def.label,
+      // `||` not `??`: an unmapped measure's color is '' (empty string) from the
+      // lookup pipe, which `??` would keep → a transparent treemap fill. Seed the
+      // neutral accent so the tile paints (the adapter layers the themed fallback).
       data:  chartRows.map((r) => buildDataPoint(r, resolveFieldConfig(fc, r.label))),
-      color: chartRows[0]?.color ?? DEFAULT_ACCENT_COLOR,
+      color: chartRows[0]?.color || DEFAULT_ACCENT_COLOR,
     }]
     return {
       type: 'treemap', height: def.height,

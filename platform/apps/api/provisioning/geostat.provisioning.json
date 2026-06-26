@@ -2640,7 +2640,7 @@
               {
                 "color": "#7B6CF6",
                 "id": "reg-cagr-year",
-                "label": "საშუალო წლიური ზრდა ({fromYear}–{toYear})",
+                "label": "საშუალო წლიური ზრდა ({spanFrom}–{spanTo})",
                 "mode": "year",
                 "trend": {
                   "filter": {
@@ -2649,15 +2649,15 @@
                     "sector": "_T"
                   },
                   "from": {
-                    "$ctx": "fromYear"
+                    "$ctx": "spanFrom"
                   },
                   "measure": "GVA",
                   "to": {
-                    "$ctx": "toYear"
+                    "$ctx": "spanTo"
                   },
                   "type": "cagr"
                 },
-                "trendSub": "{fromYear}–{toYear}",
+                "trendSub": "{spanFrom}–{spanTo}",
                 "unit": "%",
                 "value": {
                   "filter": {
@@ -2666,11 +2666,11 @@
                     "sector": "_T"
                   },
                   "from": {
-                    "$ctx": "fromYear"
+                    "$ctx": "spanFrom"
                   },
                   "measure": "GVA",
                   "to": {
-                    "$ctx": "toYear"
+                    "$ctx": "spanTo"
                   },
                   "type": "cagr"
                 }
@@ -3699,6 +3699,50 @@
                   "default": "_T",
                   "type": "hidden"
                 },
+                "spanFrom": {
+                  "default": {
+                    "from": "options",
+                    "pick": "first"
+                  },
+                  "options": {
+                    "items": {
+                      "$d": "time"
+                    },
+                    "labelField": "code",
+                    "pipe": [
+                      {
+                        "by": "code",
+                        "dir": "asc",
+                        "op": "sort"
+                      }
+                    ],
+                    "type": "inline",
+                    "valueField": "code"
+                  },
+                  "type": "hidden"
+                },
+                "spanTo": {
+                  "default": {
+                    "from": "options",
+                    "pick": "first"
+                  },
+                  "options": {
+                    "items": {
+                      "$d": "time"
+                    },
+                    "labelField": "code",
+                    "pipe": [
+                      {
+                        "by": "code",
+                        "dir": "desc",
+                        "op": "sort"
+                      }
+                    ],
+                    "type": "inline",
+                    "valueField": "code"
+                  },
+                  "type": "hidden"
+                },
                 "toYear": {
                   "default": {
                     "from": "options",
@@ -3737,6 +3781,50 @@
                 },
                 "region": {
                   "default": "",
+                  "type": "hidden"
+                },
+                "spanFrom": {
+                  "default": {
+                    "from": "options",
+                    "pick": "first"
+                  },
+                  "options": {
+                    "items": {
+                      "$d": "time"
+                    },
+                    "labelField": "code",
+                    "pipe": [
+                      {
+                        "by": "code",
+                        "dir": "asc",
+                        "op": "sort"
+                      }
+                    ],
+                    "type": "inline",
+                    "valueField": "code"
+                  },
+                  "type": "hidden"
+                },
+                "spanTo": {
+                  "default": {
+                    "from": "options",
+                    "pick": "first"
+                  },
+                  "options": {
+                    "items": {
+                      "$d": "time"
+                    },
+                    "labelField": "code",
+                    "pipe": [
+                      {
+                        "by": "code",
+                        "dir": "desc",
+                        "op": "sort"
+                      }
+                    ],
+                    "type": "inline",
+                    "valueField": "code"
+                  },
                   "type": "hidden"
                 },
                 "sector": {
@@ -3798,6 +3886,8 @@
               "geo": "region",
               "geos": "geos",
               "sector": "sector",
+              "spanFrom": "spanFrom",
+              "spanTo": "spanTo",
               "time": "year",
               "toYear": "toYear"
             },

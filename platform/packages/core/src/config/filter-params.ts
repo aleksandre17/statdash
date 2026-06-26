@@ -73,9 +73,20 @@ type ParamMeta = {
 
 // ── ParamDef discriminated union ──────────────────────────────────────────────
 
-/** Hidden parameter — carries URL state, never rendered. */
+/**
+ * Hidden parameter — carries URL state, never rendered.
+ *
+ * `options` is OPTIONAL: when present, a Tier 3 OptionsDefault
+ * ({ from:'options', pick }) resolves the hidden value's default from this
+ * data-driven list — a "derived state variable" whose value follows the cube
+ * (e.g. the full data span's min/max year) without ever surfacing a control.
+ * Absent → the hidden param is literal-default only (Tier 1 / Tier 2). This is
+ * the open-extension seam for span-/cube-derived headline metrics that must
+ * resolve in EVERY mode (not just the mode whose bar owns the selector).
+ */
 export type ParamHidden = ParamMeta & {
-  type: 'hidden'
+  type:     'hidden'
+  options?: OptionsSource
 }
 
 /**

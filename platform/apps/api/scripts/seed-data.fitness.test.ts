@@ -318,20 +318,35 @@ describe('ADR-0028 SSOT — seed-data bundle files are well-formed + self-consis
 })
 
 // ════════════════════════════════════════════════════════════════════════
-// TIER 2 — DB-GATED (skips without DATABASE_URL; a real gate in CI)
+// TIER 2 — RETIRED (ADR-0032): stage-1 SQL gold == bundle files
 // ════════════════════════════════════════════════════════════════════════
 //
-// The real preservation proof: stage-1 SQL gold == the bundle files, against a
-// LIVE migrated DB that has had R__seed_geostat_gold.sql applied (Flyway). Reads
-// stats.observation back and compares to the file projection via ParityRow.
-// stage-2 (pipeline) gold is verified by verify-parity.ts against a running API;
-// this tier covers stage-1 (the SQL net) so both preservation paths are gated.
-// Skipped offline so it is a no-op locally and a real assertion where the
-// migrated+seeded DB exists.
+// This tier compared R__seed_geostat_gold.sql gold (applied via Flyway) to the
+// bundle files, row-for-row. BOTH sides of that compare are now OFF the
+// provisioning path:
+//   • R__seed_geostat_gold.sql is NEUTRALIZED (ADR-0032) — unmounted from both
+//     flyway lanes (ops/compose/infra/services/flyway.yml + the prod compose),
+//     because its 3-dim GDP facts fail the V22 dim_key trigger against V34's
+//     canonical 4-dim [measure, approach, time, geo] DSD. A migrated DB no longer
+//     has any R__ gold to read, so this tier would compare an EMPTY cube (0 rows)
+//     to the 367-row file and fail spuriously.
+//   • The bundle files (ops/seed-data/geostat/*) are a RETIRED parity lane: their
+//     3-dim GDP no longer matches the canonical DSD, and their generator
+//     (export-seed-data.ts) was deleted with the geostat TS SSOT (ADR-0028 strip),
+//     so they cannot be regenerated 4-dim.
+//
+// The demo-data SSOT is now the canonical workbooks (DATA/canonical/*.xlsx),
+// ingested through POST /api/ingest/canonical + the publish FSM. The LIVE
+// preservation proof for that SSOT is:
+//   • canonical-ingest.e2e.test.ts (DB-gated) — full publish→gold + serve asserts,
+//   • ops/scripts/ingest-canonical.sh — the bring-up driver's serve+anchor checks,
+//     run by validate-local STAGE 6 and the prod compose `ingest` one-shot.
+// So this stale SQL-vs-bundle tier is permanently skipped (describe.skip), not
+// gated on DATABASE_URL. TIER 1 above (DB-free structural integrity of the
+// committed files) still runs as a harmless artifact check.
 const DATABASE_URL = process.env.DATABASE_URL
-const dbSuite = DATABASE_URL ? describe : describe.skip
 
-dbSuite('ADR-0028 PROVE — stage-1 SQL gold == bundle files (DB-gated)', () => {
+describe.skip('ADR-0028 PROVE — stage-1 SQL gold == bundle files (RETIRED, ADR-0032)', () => {
   // Imported lazily so the pg dependency is only touched when the suite runs.
   let pool: import('pg').Pool
 
