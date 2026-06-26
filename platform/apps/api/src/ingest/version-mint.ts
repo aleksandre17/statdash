@@ -104,23 +104,29 @@ export async function mintDatasetVersion(
 
     const addedDims: string[] = []
     for (const dim of plan.dimensions) {
-      // 1. The axis row must exist (FK dataset_dimension.dim_code → stats.dimension).
-      //    A new dim is a ROW (Law 1) — upsert it idempotently with the declared label
-      //    (or a minimal code-as-label fallback so the NOT-NULL label holds). Existing
-      //    axes are left exactly as registered (DO NOTHING preserves the seed label/ord).
-      const label = plan.dimLabels?.[dim.dimCode] ?? { en: dim.dimCode }
-      await client.query(
-        `INSERT INTO stats.dimension (code, label) VALUES ($1, $2::jsonb)
-         ON CONFLICT (code) DO NOTHING`,
-        [dim.dimCode, JSON.stringify(label)],
-      )
+      // The newly-added set is derived from the pre-read `known` snapshot — a dim absent
+      // before this mint is genuinely new.
+      const isNew = !known.has(dim.dimCode)
+
+      // 1. The axis row must exist (FK dataset_dimension.dim_code → stats.dimension), but
+      //    insert it ONLY for a genuinely NEW dim. Re-validating an EXISTING axis' label
+      //    would fail the locale-completeness CHECK on stats.dimension.label (every active
+      //    locale required) — e.g. `time` has no codelist, so no bilingual label is derivable
+      //    and the {en:code} fallback is locale-incomplete. A new NON-time dim carries a
+      //    bilingual label from its codelist (built into dimLabels); existing axes are left
+      //    exactly as registered (DO NOTHING preserves the seed label/ord).
+      if (isNew) {
+        const label = plan.dimLabels?.[dim.dimCode] ?? { en: dim.dimCode }
+        await client.query(
+          `INSERT INTO stats.dimension (code, label) VALUES ($1, $2::jsonb)
+           ON CONFLICT (code) DO NOTHING`,
+          [dim.dimCode, JSON.stringify(label)],
+        )
+      }
 
       // 2. Widen the DSD: add the dim to the series key in STRUCTURE order. ON CONFLICT
       //    DO NOTHING makes a re-ingest converge (the dim is already there) and leaves an
-      //    existing dim's ord untouched — only genuinely new dims are appended. The
-      //    newly-added set is derived from the pre-read `known` snapshot (the port exposes
-      //    only { rows }, not rowCount) — a non-time dim absent before this mint is new.
-      const isNew = !known.has(dim.dimCode)
+      //    existing dim's ord untouched — only genuinely new dims are appended.
       await client.query(
         `INSERT INTO stats.dataset_dimension (dataset_code, dim_code, is_time_dim, ord)
          VALUES ($1, $2, $3, $4)

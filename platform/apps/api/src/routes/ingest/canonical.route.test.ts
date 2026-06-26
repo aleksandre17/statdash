@@ -239,45 +239,57 @@ dbSuite('POST /api/ingest/canonical — route contract (live DB, txn-rolled-back
   })
 
   it('Wave 3b — a published facts payload carrying methodology_ref lands a reference_metadata row', async () => {
-    // Drive the publish path directly (the route returns at bronze; publish lands the
-    // V31 row). Build a minimal facts submission whose blob carries the recognized
-    // metadata, register the dataset published, publish, then assert the report row.
+    // Drive the publish path directly (the route returns at bronze; publish lands the V31
+    // row). publishSubmission OWNS its transaction boundary (BEGIN/COMMIT, and a ROLLBACK on
+    // any internal error) — so it CANNOT run inside this describe's shared rolled-back client
+    // (its COMMIT would commit the harness txn; an internal ROLLBACK would discard the test's
+    // own setup). This one test therefore runs against the REAL pool with real commits and
+    // cleans up its synthetic META_DS afterwards (the canonical-version suite's pattern).
     const { publishSubmission } = await import('../../ingest/index.js')
-    await client.query(
-      `INSERT INTO stats.dataset (code, label, frequency, status)
-         VALUES ('META_DS', '{"ka":"მ","en":"m"}', 'A', 'published')
-       ON CONFLICT (code) DO UPDATE SET status='published'`)
-    await client.query(
-      `INSERT INTO stats.metadataflow (code, label) VALUES ('ESMS_LITE','{"ka":"ნ","en":"f"}')
-       ON CONFLICT (code) DO NOTHING`)
-
-    const factsPayload = {
-      obs: [],
-      referenceMetadata: { methodologyUrl: 'https://geostat.ge/method', lastUpdated: '2026-06-26' },
+    const META = 'META_DS'
+    const clean = async (): Promise<void> => {
+      await pool.query(`DELETE FROM stats.reference_metadata WHERE dataset_code = $1`, [META]).catch(() => {})
+      await pool.query(`DELETE FROM stats.observation WHERE dataset_code = $1`, [META]).catch(() => {})
+      await pool.query(`DELETE FROM stats.release WHERE dataset_code = $1`, [META]).catch(() => {})
+      await pool.query(`DELETE FROM stats.dataset_version WHERE dataset_code = $1`, [META]).catch(() => {})
+      await pool.query(`DELETE FROM stats_stage.submission_blob WHERE submission_id IN (SELECT id FROM stats_stage.submission WHERE dataset_code = $1)`, [META]).catch(() => {})
+      await pool.query(`DELETE FROM stats_stage.submission WHERE dataset_code = $1`, [META]).catch(() => {})
+      await pool.query(`DELETE FROM stats.dataset WHERE code = $1`, [META]).catch(() => {})
     }
-    const { rows: sub } = await client.query<{ id: string }>(
-      `INSERT INTO stats_stage.submission (kind, dataset_code, format, dry_run, status)
-       VALUES ('facts','META_DS','canonical-xlsx',false,'staged') RETURNING id`)
-    await client.query(
-      `INSERT INTO stats_stage.submission_blob (submission_id, content_hash, raw_content, byte_size)
-       VALUES ($1,'h-meta',$2,$3)`,
-      [sub[0].id, JSON.stringify(factsPayload), Buffer.byteLength(JSON.stringify(factsPayload))])
+    await clean()
+    try {
+      await pool.query(
+        `INSERT INTO stats.dataset (code, label, frequency, status)
+           VALUES ($1, '{"ka":"მ","en":"m"}', 'A', 'published')
+         ON CONFLICT (code) DO UPDATE SET status='published'`, [META])
+      await pool.query(
+        `INSERT INTO stats.metadataflow (code, label) VALUES ('ESMS_LITE','{"ka":"ნ","en":"f"}')
+         ON CONFLICT (code) DO NOTHING`)
 
-    // publishSubmission needs a pool (it opens its own txn). Use a Queryable whose
-    // connect() returns OUR client so the publish runs inside this rolled-back txn.
-    const poolish = {
-      query: (...a: unknown[]) => (client.query as (...x: unknown[]) => unknown)(...a),
-      connect: async () => ({
-        query: (...a: unknown[]) => (client.query as (...x: unknown[]) => unknown)(...a),
-        release: () => {},
-      }),
+      const factsPayload = {
+        obs: [],
+        referenceMetadata: { methodologyUrl: 'https://geostat.ge/method', lastUpdated: '2026-06-26' },
+      }
+      const { rows: sub } = await pool.query<{ id: string }>(
+        `INSERT INTO stats_stage.submission (kind, dataset_code, format, dry_run, status)
+         VALUES ('facts',$1,'canonical-xlsx',false,'staged') RETURNING id`, [META])
+      await pool.query(
+        `INSERT INTO stats_stage.submission_blob (submission_id, content_hash, raw_content, byte_size)
+         VALUES ($1,'h-meta',$2,$3)`,
+        [sub[0].id, JSON.stringify(factsPayload), Buffer.byteLength(JSON.stringify(factsPayload))])
+
+      await publishSubmission(pool as never, sub[0].id)
+
+      // last_updated is a DATE; cast to text so the comparison is TZ-independent (node-pg
+      // parses a date column into a JS Date at the process's LOCAL midnight, which shifts
+      // the wall-clock date under a non-UTC server TZ — ::text returns the stored date as-is).
+      const { rows } = await pool.query<{ methodology_url: string; last_updated: string }>(
+        `SELECT methodology_url, last_updated::text AS last_updated FROM stats.reference_metadata
+          WHERE dataset_code = $1 AND target_type = 'dataset' AND is_current`, [META])
+      expect(rows[0]?.methodology_url).toBe('https://geostat.ge/method')
+      expect(rows[0]?.last_updated).toBe('2026-06-26')
+    } finally {
+      await clean()
     }
-    await publishSubmission(poolish as never, sub[0].id)
-
-    const { rows } = await client.query<{ methodology_url: string; last_updated: string }>(
-      `SELECT methodology_url, last_updated FROM stats.reference_metadata
-        WHERE dataset_code = 'META_DS' AND target_type = 'dataset' AND is_current`)
-    expect(rows[0]?.methodology_url).toBe('https://geostat.ge/method')
-    expect(rows[0]?.last_updated).toBe('2026-06-26')
   })
 })

@@ -251,9 +251,14 @@ async function publishFacts(client: QueryableClient, submissionId: string): Prom
   // recognized keys onto the facts bronze blob; here, at the dataset-scoped publish
   // point, an SCD-2 report row is landed inside this same txn (a dry-run ROLLBACK
   // discards it with the gold writes; a failure leaves no orphan report).
-  for (const dc of datasets) {
-    await publishReferenceMetadata(client, submissionId, dc)
-  }
+  // Publish the metadata slot for the submission's dataset — derived from the SUBMISSION
+  // (not the written obs), so a metadata-only facts submission (zero new obs) still lands
+  // its reference_metadata row. A facts submission is single-dataset.
+  const { rows: subRow } = await client.query<{ dataset_code: string | null }>(
+    `SELECT dataset_code FROM stats_stage.submission WHERE id = $1`, [submissionId],
+  )
+  const metaDataset = subRow[0]?.dataset_code ?? null
+  if (metaDataset) await publishReferenceMetadata(client, submissionId, metaDataset)
 
   // revised count is captured by the V8 trigger into observation_revision; the
   // approver-facing number came from the validate preview. Here we report writes.

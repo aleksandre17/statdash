@@ -1,6 +1,7 @@
 # Senior Backend Developer — Memory Index
 
 ## Project
+- [versioned ingestion governance](project_versioned_ingestion.md) — ?datasetVersion resolves the DSD gate → new vintage; mints in the route (before facts validate), reuses dataset_dimension/dimension/bump_dataset_version/metadata, NOT V28 supersession
 - [pnpm workspace root is platform/](project_workspace_root.md) — lockfile + catalog live under platform/, not repo root; shapes Dockerfile/compose context
 - [package build/dist resolution](project_package_build_resolution.md) — tsup --dts exposes undeclared sibling deps / self-imports / deep-internal imports that Vite+Vitest source aliases hide
 - [API TS build overrides](project_api_tsconfig_overrides.md) — apps/api must override root tsconfig's noEmit/bundler/allowImportingTsExtensions to emit
