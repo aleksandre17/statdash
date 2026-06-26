@@ -98,9 +98,9 @@ export async function ensurePreconditions(h: E2eHarness): Promise<void> {
   const { pool } = h
 
   await pool.query(
-    `INSERT INTO config.locale (code, label, is_active, is_default, ord) VALUES
-       ('ka', 'ქართული', true, true,  0),
-       ('en', 'English',  true, false, 1)
+    `INSERT INTO config.locale (code, name, name_en, is_active, is_default, icu_locale, ord) VALUES
+       ('ka', 'ქართული', 'Georgian', true, true,  'ka', 0),
+       ('en', 'English',  'English',  true, false, 'en', 1)
      ON CONFLICT (code) DO UPDATE SET is_active = true`,
   )
 
@@ -123,8 +123,8 @@ export async function ensurePreconditions(h: E2eHarness): Promise<void> {
     const { dsd } = parseCanonicalWorkbook(readWorkbook(buf), { activeLocales: ['ka', 'en'] })
 
     await pool.query(
-      `INSERT INTO stats.dataset (code, label, frequency, status, valid_from)
-         VALUES ($1, $2::jsonb, 'A', 'draft', now())
+      `INSERT INTO stats.dataset (code, label, frequency, status)
+         VALUES ($1, $2::jsonb, 'A', 'draft')
        ON CONFLICT (code) DO NOTHING`,
       [code, JSON.stringify({ ka: dsd.name.ka ?? code, en: dsd.name.en ?? code })],
     )

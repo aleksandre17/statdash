@@ -58,11 +58,13 @@ export function runFactRules(
 
 /** Load the registered (gold) DSD as the compat snapshot: ordered dims + measure + current members. */
 async function loadGoldDsdSnapshot(db: Queryable, datasetCode: string): Promise<DsdSnapshot | null> {
-  const { rows: ds } = await db.query<{ measure: string | null }>(
-    `SELECT measure FROM stats.dataset WHERE code = $1`, [datasetCode],
+  const { rows: ds } = await db.query<{ code: string }>(
+    `SELECT code FROM stats.dataset WHERE code = $1`, [datasetCode],
   )
   if (!ds[0]) return null // unregistered dataset — validateObs already raises UNKNOWN_DATASET.
-  const measureConcept = ds[0].measure ?? 'OBS_VALUE'
+  // stats.dataset has no measure-concept column; OBS_VALUE is the SDMX primary-measure
+  // default and matches the canonical STRUCTURE.measure, so compat compares like-for-like.
+  const measureConcept = 'OBS_VALUE'
 
   // Ordered dimensions (include the time dim so dim set/order compares like-for-like
   // with the declared DSD, which lists `time` in STRUCTURE.dimensions — Law 1).

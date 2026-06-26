@@ -97,9 +97,16 @@ export interface ContractChange {
 // ── The classifier (pure) ───────────────────────────────────────────────────────
 
 function sameDimensions(a: string[], b: string[]): boolean {
-  // Order matters (the series-key is ordered — a reorder is a DSD change, SDMX).
+  // Compare the dim SET, not the order. Our `dimKey` is a map (Record<dim,code>), so the
+  // observation identity is order-INDEPENDENT — a pure reorder of the same dims is NOT a
+  // breaking structural change (the canonical STRUCTURE order is authoritative for dim
+  // DISPLAY; realigning gold `ord` on publish is a SEAM-DEFER, not a compat break). A real
+  // DSD break is an ADD/REMOVE of a dim (the set differs) — still caught by the size + set
+  // comparison below.
   if (a.length !== b.length) return false
-  for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return false
+  const sa = [...a].sort()
+  const sb = [...b].sort()
+  for (let i = 0; i < sa.length; i++) if (sa[i] !== sb[i]) return false
   return true
 }
 

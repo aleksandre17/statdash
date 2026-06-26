@@ -92,7 +92,7 @@ export async function publishSubmission(
     await client.query(`UPDATE stats_stage.submission SET status = 'publishing' WHERE id = $1`, [submissionId])
 
     // Provenance: every V8 revision row in this txn is stamped with the submission.
-    await client.query(`SET LOCAL app.revised_by = $1`, [submissionId])
+    await client.query(`SELECT set_config('app.revised_by', $1, true)`, [submissionId])
 
     // ADR-0025 — resolve the RELEASE for this publish (the vintage key). A curator
     // may have pre-attached one (sub.release_id, bundled path); otherwise auto-open
@@ -132,7 +132,7 @@ export async function publishSubmission(
     // Stamp the release on every gold write in this txn: the BEFORE trigger on
     // stats.observation reads app.release_id and writes observation.release_id;
     // the extended V8 capture trigger stamps the pre-image's set_by/superseded_by.
-    await client.query(`SET LOCAL app.release_id = $1`, [releaseId])
+    await client.query(`SELECT set_config('app.release_id', $1, true)`, [releaseId])
 
     const result = await publishByKind(client, sub)
 
