@@ -218,8 +218,8 @@ dbSuite('POST /api/ingest/canonical — route contract (live DB, txn-rolled-back
     // upload the real workbook (dims time,approach,measure,geo). The pre-pass classifies
     // a DSD change → DSD_INCOMPATIBLE (unversioned = error) → 400, BEFORE any submission.
     await client.query(
-      `INSERT INTO stats.dataset (code, label, measure) VALUES ('GDP_ANNUAL', '{"ka":"მშპ","en":"GDP"}', 'OBS_VALUE')
-       ON CONFLICT (code) DO UPDATE SET measure = 'OBS_VALUE'`)
+      `INSERT INTO stats.dataset (code, label) VALUES ('GDP_ANNUAL', '{"ka":"მშპ","en":"GDP"}')
+       ON CONFLICT (code) DO NOTHING`)
     await client.query(
       `INSERT INTO stats.dimension (code, label) VALUES ('time','{"ka":"დრო","en":"t"}'),('approach','{"ka":"მ","en":"a"}')
        ON CONFLICT (code) DO NOTHING`)
@@ -244,8 +244,8 @@ dbSuite('POST /api/ingest/canonical — route contract (live DB, txn-rolled-back
     // metadata, register the dataset published, publish, then assert the report row.
     const { publishSubmission } = await import('../../ingest/index.js')
     await client.query(
-      `INSERT INTO stats.dataset (code, label, frequency, status, valid_from)
-         VALUES ('META_DS', '{"ka":"მ","en":"m"}', 'A', 'published', now())
+      `INSERT INTO stats.dataset (code, label, frequency, status)
+         VALUES ('META_DS', '{"ka":"მ","en":"m"}', 'A', 'published')
        ON CONFLICT (code) DO UPDATE SET status='published'`)
     await client.query(
       `INSERT INTO stats.metadataflow (code, label) VALUES ('ESMS_LITE','{"ka":"ნ","en":"f"}')

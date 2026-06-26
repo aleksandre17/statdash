@@ -116,8 +116,8 @@ dbSuite('POST /api/ingest/canonical — versioned DSD change (live DB)', () => {
   async function registerPriorDsd(): Promise<void> {
     await cleanup(pool)
     await pool.query(
-      `INSERT INTO stats.dataset (code, label, frequency, status, valid_from)
-         VALUES ($1, '{"ka":"ვ","en":"v"}', 'A', 'published', now())
+      `INSERT INTO stats.dataset (code, label, frequency, status)
+         VALUES ($1, '{"ka":"ვ","en":"v"}', 'A', 'published')
        ON CONFLICT (code) DO UPDATE SET status='published'`, [DS])
     await pool.query(
       `INSERT INTO stats.dataset_dimension (dataset_code, dim_code, is_time_dim, ord) VALUES
