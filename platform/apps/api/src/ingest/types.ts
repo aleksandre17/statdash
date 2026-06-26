@@ -79,6 +79,13 @@ export interface SubmissionJob {
   /** ADR-0025 — the publication-event release this submission is bundled into
    *  (nullable: the single-submission path auto-opens a singleton at publish). */
   releaseId?: string
+  /** ADR-0031 improvement 4 — SHA-256 of the SOURCE bytes (the workbook), distinct
+   *  from the bronze content_hash of the JSON payload. Nullable (V32). */
+  sourceDigest?: string
+  /** ADR-0031 improvement 4 — W3C PROV lineage bag (parserVersion, sourceDigest,
+   *  sourceFilename, mappingId, rulesetId). Nullable JSONB (V32). The PROV graph is
+   *  DERIVABLE from this + the release/revision spine — no parallel store. */
+  provenance?: Record<string, unknown>
 }
 
 // ── Release (ADR-0025 — vintage-as-release) ───────────────────────────────────
@@ -172,6 +179,19 @@ export type IssueCode =
   | 'UNKNOWN_MEMBER'      // (dim_code, code) does not resolve to a classifier member
   | 'UNKNOWN_LOCALE'      // locale is not a known locale
   | 'EMPTY_DISPLAY'       // display is not a non-empty object
+  // validate — DQAF integrity rules (ADR-0031 §4 improvement 3, validation-as-data).
+  // warn-severity (DQAF = surface, never silently drop): a rounding-level gap is
+  // reported with the offending rows but does NOT block publish — only a schema
+  // error does. The evaluator (ingest/rules/) dispatches these on RuleSpec.kind.
+  | 'BALANCE_MISMATCH'    // Σ(lhs side) ≉ Σ(rhs) within ε for a balance-rule group
+  | 'IDENTITY_MISMATCH'   // two approaches to the same aggregate disagree beyond ε
+  | 'TOTAL_RECONCILE'     // Σ(parts) ≉ the declared total within ε
+  // validate — data-contract compatibility pre-pass (ADR-0031 §4 improvement 5).
+  // Codelist is OPEN (BACKWARD-auto): extensions/deprecations warn and proceed.
+  // DSD is GOVERNED (FULL-required): a structural change is an error unless versioned.
+  | 'CODELIST_EXTENDED'   // declared codelist adds members vs gold (warn, auto-applied)
+  | 'CODELIST_DEPRECATED' // a previously-present member is absent (warn, SCD-2 retire — never hard-delete)
+  | 'DSD_INCOMPATIBLE'    // the DSD (dim set/order or measure) differs without a declared dataset_version (error)
 
 export interface ValidationIssue {
   submissionId: string

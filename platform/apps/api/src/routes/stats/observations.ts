@@ -1,7 +1,8 @@
 import type { FastifyPluginAsync } from 'fastify'
 import { z } from 'zod'
-import { ok, parseQuery, notFound } from '../../lib/http.js'
+import { parseQuery, notFound } from '../../lib/http.js'
 import { isDatasetDiscoverable } from './lifecycle.js'
+import { formatField, resolveSerializer, serializeReply } from './serialize/dispatch.js'
 
 // filter arrives as a JSON string in the query string; refine it to a plain
 // object so it can feed dim_key @> $::jsonb (GIN containment), never raw text.
@@ -47,6 +48,10 @@ const ObsQuery = z.object({
   // than the current cube. Absent ⇒ EXACTLY the prior behaviour (back-compatible).
   // z.coerce.date accepts an ISO-8601 timestamp or date in the query string.
   asOf:    z.coerce.date().optional(),
+  // ADR-0031 §6 — the reserved serializer port's `?format=` content-negotiation slot.
+  // Absent ⇒ the default (`json`), byte-identical to the pre-port response. An
+  // unregistered value (typo OR a reserved-not-yet-built format) → 400 (dispatch.ts).
+  format:  formatField,
 })
 
 // GAP 5a — weak ETag for a dataset, built from stats.dataset_version (V6). The
@@ -180,6 +185,14 @@ export const observationsRoutes: FastifyPluginAsync = async (app) => {
     const q = parseQuery(ObsQuery, req.query)
     const filterJson = q.filter ? JSON.stringify(q.filter) : null
 
+    // ADR-0031 §6 — fail-fast at the boundary: an unsupported `?format=` is a 400
+    // (RFC 9457) BEFORE any work — before the discovery gate, the version probe, or
+    // the ETag/304 short-circuit. Asking for a format we cannot honour must not be
+    // answered with a 304 or a covert json body (least-astonishment). Resolving here
+    // also proves the dispatch is wired; the resolved serializer is re-used at the
+    // return sites (which, for `json`, is byte-identical to the prior `ok(rows)`).
+    resolveSerializer(q.format)
+
     // ADR SDMX-P1-B — published-only projection (lifecycle filter) for the CURRENT
     // cube read. A draft/superseded dataset is absent from the public delivery
     // surface, so a current-cube read of one 404s (it is not discoverable) —
@@ -230,7 +243,7 @@ export const observationsRoutes: FastifyPluginAsync = async (app) => {
         filter:  q.filter,
         limit:   q.limit,
       })
-      return ok(rows)
+      return serializeReply(reply, q.format, rows)
     }
 
     // Frequency-generic range bounds (no annual assumption). The DB resolves the
@@ -257,7 +270,7 @@ export const observationsRoutes: FastifyPluginAsync = async (app) => {
         q.limit,
       ],
     )
-    return ok(rows)
+    return serializeReply(reply, q.format, rows)
   })
 }
 

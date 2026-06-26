@@ -26,6 +26,7 @@ import type {
 import { consoleIngestLogger } from './types.js'
 import { conformObsRows } from './conform.js'
 import { validateObs, validateClassifiers, validateDisplays } from './validate.js'
+import { runFactRules } from './validate-integrity.js'
 import { errMsg, normalizeObsStatus } from './util.js'
 
 interface ClaimedSubmission {
@@ -194,11 +195,17 @@ async function runFilters(client: QueryableClient, sub: ClaimedSubmission): Prom
     const conformed = await conformObsRows(client, sub.id, sub.dataset_code, raw)
     const validated = await validateObs(client, sub.id, sub.dataset_code, conformed.rows)
 
+    // DQAF integrity rules (validation-as-data, ADR-0031 §4 improvement 3) run AFTER
+    // the schema validator, over the conformed silver rows. warn-severity only: these
+    // do NOT block publish (the preview's canPublish gate keys off error-severity from
+    // validateObs); they surface a balance/identity/total gap with the offending rows.
+    const ruleIssues = runFactRules(sub.id, sub.dataset_code, conformed.rows)
+
     // Single write: the conformed silver rows land in stats_stage.obs_staging.
     await insertStagedObs(client, sub.id, conformed.rows)
 
     return {
-      issues: [...conformed.issues, ...validated.issues],
+      issues: [...conformed.issues, ...validated.issues, ...ruleIssues],
       preview: validated.preview,
       staged: { count: conformed.rows.length },
     }

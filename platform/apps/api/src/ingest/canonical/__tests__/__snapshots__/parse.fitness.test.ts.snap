@@ -1,0 +1,136 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`canonical parser — real fixtures (F-1 purity, F-5 Law-1) > ACCOUNTS_SEQUENCE > F-1: bronze contract is stable (snapshot of the first/last obs + counts) 1`] = `
+{
+  "classifierCount": 27,
+  "firstClassifier": {
+    "code": "production-account",
+    "dimCode": "account",
+    "label": {
+      "en": "Production Account",
+      "ka": "წარმოების ანგარიში",
+    },
+    "metadata": {},
+    "ord": 1,
+    "parentCode": undefined,
+    "rowIndex": 1,
+  },
+  "firstObs": {
+    "dimKey": {
+      "account": "allocation-of-primary-income-account",
+      "measure": "B2G_B3G",
+      "side": "R",
+    },
+    "obsAttribute": {
+      "seq_pos": 1,
+    },
+    "obsStatus": "A",
+    "obsValue": 14327.024925198513,
+    "rowIndex": 1,
+    "timePeriod": "2010",
+  },
+  "lastObs": {
+    "dimKey": {
+      "account": "use-of-disposable-income-account",
+      "measure": "P3",
+      "side": "U",
+    },
+    "obsAttribute": {
+      "seq_pos": 2,
+    },
+    "obsStatus": "A",
+    "obsValue": 88425.60255782693,
+    "rowIndex": 415,
+    "timePeriod": "2025",
+  },
+  "obsCount": 415,
+}
+`;
+
+exports[`canonical parser — real fixtures (F-1 purity, F-5 Law-1) > GDP_ANNUAL > F-1: bronze contract is stable (snapshot of the first/last obs + counts) 1`] = `
+{
+  "classifierCount": 21,
+  "firstClassifier": {
+    "code": "PROD",
+    "dimCode": "approach",
+    "label": {
+      "en": "Production approach",
+      "ka": "წარმოების მეთოდი",
+    },
+    "metadata": {},
+    "ord": 1,
+    "parentCode": undefined,
+    "rowIndex": 1,
+  },
+  "firstObs": {
+    "dimKey": {
+      "approach": "_Z",
+      "geo": "GE",
+      "measure": "gdp-per-capita-usd",
+    },
+    "obsAttribute": {},
+    "obsStatus": "A",
+    "obsValue": 3281.185162092694,
+    "rowIndex": 1,
+    "timePeriod": "2010",
+  },
+  "lastObs": {
+    "dimKey": {
+      "approach": "PROD",
+      "geo": "GE",
+      "measure": "services",
+    },
+    "obsAttribute": {
+      "contribution_role": "add",
+    },
+    "obsStatus": "P",
+    "obsValue": 66877.29711546733,
+    "rowIndex": 288,
+    "timePeriod": "2025",
+  },
+  "obsCount": 288,
+}
+`;
+
+exports[`canonical parser — real fixtures (F-1 purity, F-5 Law-1) > REGIONAL_GVA > F-1: bronze contract is stable (snapshot of the first/last obs + counts) 1`] = `
+{
+  "classifierCount": 23,
+  "firstClassifier": {
+    "code": "_T",
+    "dimCode": "geo",
+    "label": {
+      "en": "Georgia",
+      "ka": "საქართველო",
+    },
+    "metadata": {},
+    "ord": 1,
+    "parentCode": undefined,
+    "rowIndex": 1,
+  },
+  "firstObs": {
+    "dimKey": {
+      "geo": "_T",
+      "measure": "GVA",
+      "sector": "_T",
+    },
+    "obsAttribute": {},
+    "obsStatus": "A",
+    "obsValue": 21821.56922225763,
+    "rowIndex": 1,
+    "timePeriod": "2010",
+  },
+  "lastObs": {
+    "dimKey": {
+      "geo": "R9",
+      "measure": "GVA",
+      "sector": "OTH",
+    },
+    "obsAttribute": {},
+    "obsStatus": "A",
+    "obsValue": 950.2325177828116,
+    "rowIndex": 1554,
+    "timePeriod": "2023",
+  },
+  "obsCount": 1554,
+}
+`;

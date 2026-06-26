@@ -10,3 +10,4 @@
 - [time_period↔date SSOT](project_time_period_date_ssot.md) — period↔date math lives only in stats.parse_time_period (start) + parse_time_period_end (V16, end); routes pass raw SDMX text, never compute dates
 - [RBAC vocabulary](project_rbac_vocabulary.md) — roles are admin/editor/viewer only; no publisher; publish gated to admin (editor saves, admin publishes)
 - [api env fail-fast seam](project_api_env_failfast_seam.md) — env.ts is the single boot-time fail-fast seam; PROD_REQUIRED_SECRETS gate + how to test boot via resetModules
+- [GeoStat source quirks](project_geostat_source_quirks.md) — raw DATA/ Excel defects: File1 ENG GDP column year-shifted (GEO=value SSOT), B6G ka typo, File3 partial activity breakdown + Excel lock hazard

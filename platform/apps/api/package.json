@@ -20,7 +20,8 @@
     "fastify-plugin":       "catalog:",
     "zod":                  "catalog:",
     "dotenv":               "catalog:",
-    "js-yaml":              "catalog:"
+    "js-yaml":              "catalog:",
+    "xlsx":                 "0.18.5"
   },
   "devDependencies": {
     "tsx":                  "catalog:",

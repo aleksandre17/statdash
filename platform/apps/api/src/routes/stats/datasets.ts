@@ -1,11 +1,18 @@
 import type { FastifyPluginAsync } from 'fastify'
 import type { ReferenceMetadataContract } from '@statdash/contracts'
 import { z } from 'zod'
-import { ok, notFound, parseParams } from '../../lib/http.js'
+import { ok, notFound, parseParams, parseQuery } from '../../lib/http.js'
 import { relationExists } from '../../lib/relation-exists.js'
 import { isDatasetDiscoverable } from './lifecycle.js'
+import { formatField, resolveSerializer, serializeReply } from './serialize/dispatch.js'
 
 const CodeParams = z.object({ code: z.string().min(1) })
+
+// ADR-0031 §6 — the serializer port's `?format=` slot for the dataset reads. Absent ⇒
+// the default (`json`), byte-identical to the pre-port response; an unregistered value
+// → 400 (dispatch.ts). Scoped to the generic dataset/DSD query results (GET / and
+// GET /:code); the /:code/metadata sub-resource has its own typed wire contract.
+const FormatQuery = z.object({ format: formatField })
 
 // ── Reference-metadata serve shapes (V31, ADR SDMX-P1-D) ──────────────────────
 //
@@ -45,7 +52,8 @@ async function referenceMetadataTableExists(
 
 export const datasetsRoutes: FastifyPluginAsync = async (app) => {
   // GET / — datasets with their DSD (dimension structure) aggregated inline.
-  app.get('/', async () => {
+  app.get('/', async (req, reply) => {
+    const { format } = parseQuery(FormatQuery, req.query)
     const { rows } = await app.pg.query(
       `SELECT d.code, d.label, d.frequency, d.source, d.metadata,
               COALESCE(
@@ -63,7 +71,7 @@ export const datasetsRoutes: FastifyPluginAsync = async (app) => {
         GROUP BY d.code, d.label, d.frequency, d.source, d.metadata
         ORDER BY d.code`,
     )
-    return ok(rows)
+    return serializeReply(reply, format, rows)
   })
 
   // GET /:code — one dataset + its DSD (dataset_dimension rows) + its cube
@@ -73,6 +81,11 @@ export const datasetsRoutes: FastifyPluginAsync = async (app) => {
   // dataset with no version row yet still returns (version → null).
   app.get('/:code', async (req, reply) => {
     const { code } = parseParams(CodeParams, req.params)
+    const { format } = parseQuery(FormatQuery, req.query)
+    // ADR-0031 §6 — fail-fast: an unsupported `?format=` is a 400 BEFORE the version
+    // probe / ETag header is set (a format we cannot honour must not be answered with
+    // a cached-validator response). Re-used at the return site below.
+    resolveSerializer(format)
     // P2-3: `preliminary` is a dataset-level provenance flag (IMF/Eurostat data
     // integrity standard) — true ⟺ the dataset has ANY observation flagged
     // preliminary (SDMX OBS_STATUS = 'P'). Computed as a correlated EXISTS so it
@@ -112,7 +125,7 @@ export const datasetsRoutes: FastifyPluginAsync = async (app) => {
       reply.header('ETag', `W/"${rows[0].code}.${rows[0].version}"`)
       reply.header('Cache-Control', 'no-cache')
     }
-    return ok(rows[0])
+    return serializeReply(reply, format, rows[0])
   })
 
   // GET /:code/metadata — the dataset's STRUCTURED reference metadata (V31, SDMX

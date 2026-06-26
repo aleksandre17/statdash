@@ -213,5 +213,30 @@ export default defineConfig([
     },
   },
 
+  // ── apps/api — xlsx Anti-Corruption Layer (F-3, ADR-0031 §5) ───────────────
+  //
+  //  The `xlsx` vendor SDK is confined to ONE file: the canonical workbook reader
+  //  (`ingest/canonical/read-workbook.ts`). Every other file in apps/api is banned
+  //  from importing it, so the spreadsheet's idioms cannot leak past the ACL
+  //  boundary into the pure parser, the worker hot path, or the routes. A new
+  //  `import xlsx` anywhere else is an ERROR (`pnpm lint` fails). The single
+  //  permitted file is exempted by the scoped override directly below.
+  {
+    files: ['apps/api/**/*.{ts,tsx}'],
+    ignores: ['apps/api/src/ingest/canonical/read-workbook.ts'],
+    rules: {
+      'no-restricted-imports': ['error', {
+        paths: [{
+          name: 'xlsx',
+          message: 'xlsx is confined to ingest/canonical/read-workbook.ts (the ACL boundary, ADR-0031 §5 / F-3). Parse already-read sheet matrices instead.',
+        }],
+      }],
+    },
+  },
+  {
+    files: ['apps/api/src/ingest/canonical/read-workbook.ts'],
+    rules: { 'no-restricted-imports': 'off' },
+  },
+
   // apps/geostat is the outermost layer — no import restrictions.
 ])

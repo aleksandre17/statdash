@@ -33,6 +33,26 @@ export class AlreadyPublishedError extends Error {
   }
 }
 
+/**
+ * W3C PROV lineage stamped on every ingest (ADR-0031 §4 improvement 4). Pure data —
+ * the derivable PROV graph (Entity = obs/dataset, Activity = submission/release,
+ * Agent = curator) is reconstructed from the existing submission→release→revision
+ * spine + these fields; NO parallel provenance store. All optional (Postel: the JSON
+ * ingest routes that do not parse a source file simply omit it).
+ */
+export interface SubmissionProvenance {
+  /** The parser/version that produced the bronze payload (e.g. 'canonical-workbook@1'). */
+  parserVersion?: string
+  /** SHA-256 of the SOURCE bytes (the workbook), distinct from contentHash of the JSON payload. */
+  sourceDigest?: string
+  /** The uploaded filename, for the audit trail. */
+  sourceFilename?: string
+  /** The SECONDARY-path TemplateMapping id, when the source came via a legacy mapping. */
+  mappingId?: string
+  /** The RuleSpec set applied (validation-as-data lineage). */
+  rulesetId?: string
+}
+
 export interface CreateSubmissionArgs {
   kind: SubmissionKind
   datasetCode: string | null
@@ -41,6 +61,10 @@ export interface CreateSubmissionArgs {
   dryRun: boolean
   source?: string
   submittedBy?: string
+  /** SHA-256 of the source bytes — the top-level provenance key (also mirrored in `provenance`). */
+  sourceDigest?: string
+  /** Full lineage bag, persisted to stats_stage.submission.provenance (JSONB). */
+  provenance?: SubmissionProvenance
 }
 
 /**
@@ -85,11 +109,21 @@ export async function createSubmission(
   // FK (ON DELETE CASCADE) ties them. A worker can only claim a 'received' row, and
   // the blob is written before we return, so by the time the async trigger fires the
   // bronze record is durable.
+  // Provenance is stamped at the bronze write (improvement 4). source_digest is the
+  // top-level lineage key; provenance JSONB carries the full bag. Both are nullable
+  // columns (V32) so the JSON ingest routes that omit them write NULL — derivable
+  // PROV stays correct for the rows that DO carry lineage, Postel for those that don't.
+  const sourceDigest = args.sourceDigest ?? args.provenance?.sourceDigest ?? null
+  const provenance = args.provenance ?? null
   const { rows } = await db.query<{ id: string }>(
-    `INSERT INTO stats_stage.submission (kind, dataset_code, format, source, submitted_by, dry_run)
-     VALUES ($1, $2, $3, $4, $5, $6)
+    `INSERT INTO stats_stage.submission (kind, dataset_code, format, source, submitted_by, dry_run, source_digest, provenance)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8::jsonb)
      RETURNING id`,
-    [args.kind, args.datasetCode, args.format, args.source ?? null, args.submittedBy ?? null, args.dryRun],
+    [
+      args.kind, args.datasetCode, args.format, args.source ?? null,
+      args.submittedBy ?? null, args.dryRun,
+      sourceDigest, provenance === null ? null : JSON.stringify(provenance),
+    ],
   )
   const id = rows[0].id
 
