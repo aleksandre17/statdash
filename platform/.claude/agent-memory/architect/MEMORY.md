@@ -1,6 +1,8 @@
 # Architect Memory Index
 
 ## Project
+- [Live Provisioning](project_live_provisioning.md) — live statdash demo seeded by Flyway V1-V32 + R__ repeatable GOLD seed (NOT V5); fresh DB always re-seeds 3-dim placeholders unless R__ neutralized; GDP_ANNUAL canonical adds `approach` (DSD conflict), ACCOUNTS/REGIONAL match dim-set
+- [GDP Page Dim Underspecification](project_gdp_page_dim_underspecification.md) — GDP page panels pin only measure+time; obs route does NO aggregation (dim_key @> raw rows); a 4-dim real GDP needs approach+geo pinned in every panel query or render garbles
 - [Platform Layout](project_platform_layout.md) — real engine/* + apps/* paths; chart/table/kpi are *panels* not nodes; where framework seams live
 - [Deferred Framework Seams](project_deferred_framework_seams.md) — published-but-unconsumed seams (getByCapability, node:status, PropSchemaForm, SwitchNode) + their activation triggers
 - [Typecheck Baseline](project_typecheck_baseline.md) — root `tsc --noEmit`=0 is a FALSE GREEN; real gate is `cd apps/geostat && tsc -b` = ~293 pre-existing errors; tests 571/571 green

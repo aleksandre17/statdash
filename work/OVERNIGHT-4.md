@@ -53,3 +53,32 @@ ADRs: `adr_ingestion_build_ready` (ADR-0031), `adr_excel_ingestion`, `adr_statis
 - Fix the flagged source-data issues (the GDP_GROWTH seed values; the ENG year-shift in file 1) — data-owner decisions.
 
 State: 1572 tests · typecheck 0 · lint 0 · check-laws clean · all on `main`. e2e-pg torn down.
+
+---
+
+## Update — versioned-DSD governance + metadata slot PROVEN on real Postgres (continued)
+
+Closed the last open threads from the build. The whole ingest chain is now **proven green on a
+real Postgres DB**, not just offline.
+
+- **DB-gated ingest suite: 83/83 green (8 files)** — canonical e2e, the **versioned-DSD mint**
+  (a `+approach` DSD change → 400 unversioned / 202 + governed new vintage when `?datasetVersion=`),
+  the route contract, the DQAF RuleSpec rules, and the **Wave-3b reference-metadata slot**.
+- **Three real bugs fixed + committed** (`8e9cb27`):
+  1. `version-mint` tripped the locale-completeness CHECK by re-touching the existing `time` axis
+     (no codelist → no bilingual label) → now only a genuinely NEW dim gets an axis-label insert.
+  2. `publishFacts` skipped the V31 metadata row when a facts submission carried zero new obs
+     (the target set was derived from written obs) → now derived from the submission's dataset_code,
+     so a metadata-only update still lands its report row.
+  3. The Wave-3b route test drove `publishSubmission` (which owns its BEGIN/COMMIT) inside the
+     suite's shared rolled-back txn — incompatible → moved to the real pool with explicit cleanup;
+     `last_updated` compared as `::text` (node-pg parses a DATE at process-local midnight → TZ drift).
+- **Green-gate:** offline 1611 passed / 60 DB-skipped / 0 failed · DB-gated 83/83 · typecheck 0 ·
+  lint 0 errors · check-laws clean. On `feat/tenant-agnostic-platform`. **e2e-pg torn down, 5456
+  tunnel closed, all 4 prod containers (panel/api/geostat/postgres) intact.**
+
+### One decision waiting for you
+The 3 flawless canonical workbooks (`DATA/canonical/{GDP_ANNUAL,ACCOUNTS_SEQUENCE,REGIONAL_GVA}.xlsx`)
+are on disk but **untracked in git** — they're binary data artifacts, so whether to version them is
+your call. Say the word and I'll commit them (or add `DATA/canonical/` to `.gitignore` if they should
+stay local-only).

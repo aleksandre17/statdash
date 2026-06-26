@@ -1239,22 +1239,31 @@
             "type": "mode-bar"
           },
           {
+            "type": "kpi-strip",
             "items": [
               {
                 "color": "#0080BE",
                 "id": "gdp-total",
-                "label": "მშპ საბაზრო ფასებში",
+                "label": "მშპ მიმდინარე ფასებში",
                 "mode": "year",
-                "trend": {
-                  "measure": "GDP",
-                  "type": "yoy"
-                },
-                "trendSub": "წინა წელთან შედარებით",
                 "unit": "მლნ ₾",
+                "trendSub": "წინა წელთან შედარებით",
                 "value": {
+                  "type": "point",
                   "format": "mln_gel",
-                  "measure": "GDP",
-                  "type": "point"
+                  "measure": "gross-domestic-product-at-current-prices",
+                  "filter": {
+                    "geo": "GE",
+                    "approach": "_Z"
+                  }
+                },
+                "trend": {
+                  "type": "yoy",
+                  "measure": "gross-domestic-product-at-current-prices",
+                  "filter": {
+                    "geo": "GE",
+                    "approach": "_Z"
+                  }
                 }
               },
               {
@@ -1262,17 +1271,21 @@
                 "id": "gdp-growth",
                 "label": "რეალური ზრდა",
                 "mode": "year",
-                "trend": {
-                  "dir": "up",
-                  "type": "static",
-                  "value": "რეალური"
-                },
-                "trendSub": "წინა წელთან შედარებით",
                 "unit": "%",
+                "trendSub": "წინა წელთან შედარებით",
                 "value": {
+                  "type": "point",
                   "format": "sign_pct",
-                  "measure": "GDP_GROWTH",
-                  "type": "point"
+                  "measure": "real-gdp-growth-rates",
+                  "filter": {
+                    "geo": "GE",
+                    "approach": "_Z"
+                  }
+                },
+                "trend": {
+                  "type": "static",
+                  "dir": "up",
+                  "value": "რეალური"
                 }
               },
               {
@@ -1280,271 +1293,154 @@
                 "id": "gdp-per-capita",
                 "label": "მშპ ერთ სულზე",
                 "mode": "year",
-                "trend": {
-                  "measure": "GDP_PER_CAPITA",
-                  "type": "yoy"
-                },
-                "trendSub": "წინა წელთან შედარებით",
                 "unit": "$",
+                "trendSub": "წინა წელთან შედარებით",
                 "value": {
+                  "type": "point",
                   "format": "mln_gel",
-                  "measure": "GDP_PER_CAPITA",
-                  "type": "point"
-                }
-              },
-              {
-                "color": "#7B6CF6",
-                "id": "gdp-deflator",
-                "label": "მშპ-ს დეფლატორი",
-                "mode": "year",
-                "trend": {
-                  "measure": "GDP_DEFLATOR",
-                  "type": "yoy"
+                  "measure": "gdp-per-capita-usd",
+                  "filter": {
+                    "geo": "GE",
+                    "approach": "_Z"
+                  }
                 },
-                "trendSub": "ფასების ცვლილება",
-                "unit": "%",
-                "value": {
-                  "format": "sign_pct",
-                  "measure": "GDP_DEFLATOR",
-                  "type": "point"
+                "trend": {
+                  "type": "yoy",
+                  "measure": "gdp-per-capita-usd",
+                  "filter": {
+                    "geo": "GE",
+                    "approach": "_Z"
+                  }
                 }
               },
               {
                 "color": "#0080BE",
                 "id": "gdp-cagr",
-                "label": "მშპ — საშუალო წლიური ზრდა",
+                "label": "მშპ — საშ. წლიური ზრდა",
                 "mode": "range",
-                "trend": {
-                  "from": {
-                    "$ctx": "fromYear"
-                  },
-                  "measure": "GDP",
-                  "to": {
-                    "$ctx": "toYear"
-                  },
-                  "type": "cagr"
-                },
-                "trendSub": "{fromYear}–{toYear}",
                 "unit": "%",
-                "value": {
-                  "from": {
-                    "$ctx": "fromYear"
-                  },
-                  "measure": "GDP",
-                  "to": {
-                    "$ctx": "toYear"
-                  },
-                  "type": "cagr"
-                }
-              },
-              {
-                "color": "#00A896",
-                "id": "gdp-growth-avg",
-                "label": "საშუალო რეალური ზრდა",
-                "mode": "range",
-                "trend": {
-                  "from": {
-                    "$ctx": "fromYear"
-                  },
-                  "measure": "GDP_GROWTH",
-                  "to": {
-                    "$ctx": "toYear"
-                  },
-                  "type": "cagr"
-                },
                 "trendSub": "{fromYear}–{toYear}",
-                "unit": "%",
                 "value": {
+                  "type": "cagr",
+                  "measure": "gross-domestic-product-at-current-prices",
                   "from": {
                     "$ctx": "fromYear"
                   },
-                  "measure": "GDP_GROWTH",
                   "to": {
                     "$ctx": "toYear"
                   },
-                  "type": "cagr"
+                  "filter": {
+                    "geo": "GE",
+                    "approach": "_Z"
+                  }
+                },
+                "trend": {
+                  "type": "cagr",
+                  "measure": "gross-domestic-product-at-current-prices",
+                  "from": {
+                    "$ctx": "fromYear"
+                  },
+                  "to": {
+                    "$ctx": "toYear"
+                  },
+                  "filter": {
+                    "geo": "GE",
+                    "approach": "_Z"
+                  }
                 }
               },
               {
                 "color": "#4ECDC4",
-                "id": "gdp-per-cap-last",
-                "label": "ერთ სულ მოსახლეზე",
+                "id": "gdp-per-cap-cagr",
+                "label": "ერთ სულზე — საშ. ზრდა",
                 "mode": "range",
-                "trend": {
-                  "measure": "GDP_PER_CAPITA",
-                  "time": {
-                    "$ctx": "toYear"
-                  },
-                  "type": "yoy"
-                },
-                "trendSub": "{toYear}",
-                "unit": "$",
+                "unit": "%",
+                "trendSub": "{fromYear}–{toYear}",
                 "value": {
-                  "format": "mln_gel",
-                  "measure": "GDP_PER_CAPITA",
-                  "time": {
+                  "type": "cagr",
+                  "measure": "gdp-per-capita-usd",
+                  "from": {
+                    "$ctx": "fromYear"
+                  },
+                  "to": {
                     "$ctx": "toYear"
                   },
-                  "type": "point"
+                  "filter": {
+                    "geo": "GE",
+                    "approach": "_Z"
+                  }
+                },
+                "trend": {
+                  "type": "cagr",
+                  "measure": "gdp-per-capita-usd",
+                  "from": {
+                    "$ctx": "fromYear"
+                  },
+                  "to": {
+                    "$ctx": "toYear"
+                  },
+                  "filter": {
+                    "geo": "GE",
+                    "approach": "_Z"
+                  }
                 }
               },
               {
                 "color": "#7B6CF6",
-                "id": "gdp-svc-cagr",
-                "label": "მშპ-ს დეფლატორი",
+                "id": "gdp-total-last",
+                "label": "მშპ — საბოლოო წელი",
                 "mode": "range",
-                "trend": {
-                  "from": {
-                    "$ctx": "fromYear"
-                  },
-                  "measure": "GDP_SVC",
-                  "to": {
-                    "$ctx": "toYear"
-                  },
-                  "type": "cagr"
-                },
-                "trendSub": "{fromYear}–{toYear}",
-                "unit": "%",
+                "unit": "მლნ ₾",
+                "trendSub": "{toYear}",
                 "value": {
-                  "from": {
-                    "$ctx": "fromYear"
-                  },
-                  "measure": "GDP_SVC",
-                  "to": {
+                  "type": "point",
+                  "format": "mln_gel",
+                  "measure": "gross-domestic-product-at-current-prices",
+                  "time": {
                     "$ctx": "toYear"
                   },
-                  "type": "cagr"
+                  "filter": {
+                    "geo": "GE",
+                    "approach": "_Z"
+                  }
+                },
+                "trend": {
+                  "type": "yoy",
+                  "measure": "gross-domestic-product-at-current-prices",
+                  "time": {
+                    "$ctx": "toYear"
+                  },
+                  "filter": {
+                    "geo": "GE",
+                    "approach": "_Z"
+                  }
                 }
               }
-            ],
-            "type": "kpi-strip"
+            ]
           },
           {
+            "type": "columns",
+            "count": {
+              "default": 2,
+              "md": 1,
+              "sm": 1
+            },
+            "view": {
+              "visibleWhen": {
+                "op": "eq",
+                "param": "mode",
+                "is": "year"
+              }
+            },
             "children": [
               {
-                "children": [
-                  {
-                    "children": [
-                      {
-                        "centerLabel": "მშპ",
-                        "chartType": "donut",
-                        "label": "სექტორული სტრუქტურა — % მშპ-დან",
-                        "type": "chart",
-                        "view": {
-                          "label": "დიაგრამა",
-                          "role": "chart"
-                        }
-                      },
-                      {
-                        "colLabel": "სექტორი",
-                        "color": "#0080BE",
-                        "columns": [
-                          {
-                            "key": "value",
-                            "label": "მლნ ₾"
-                          },
-                          {
-                            "bar": {
-                              "max": 100
-                            },
-                            "format": "pct",
-                            "key": "pct",
-                            "label": "წილი"
-                          }
-                        ],
-                        "transforms": [
-                          {
-                            "by": "label",
-                            "dir": "asc",
-                            "op": "sort"
-                          }
-                        ],
-                        "type": "table",
-                        "view": {
-                          "label": "ცხრილი",
-                          "role": "table"
-                        }
-                      }
-                    ],
-                    "styles": {
-                      "aspectRatio": {
-                        "default": "16 / 9",
-                        "sm": "4 / 3"
-                      }
-                    },
-                    "type": "wrap"
-                  }
-                ],
+                "type": "section",
+                "id": "production",
                 "color": "#0080BE",
-                "data": {
-                  "encoding": {
-                    "color": "color",
-                    "isTotal": "isTotal",
-                    "label": "label",
-                    "pct": {
-                      "of": "GDP"
-                    },
-                    "value": "value"
-                  },
-                  "pipe": [
-                    {
-                      "as": "isTotal",
-                      "expr": "measure == 'GDP' ? 1 : 0",
-                      "op": "derive"
-                    },
-                    {
-                      "fields": [
-                        "label",
-                        "color"
-                      ],
-                      "from": {
-                        "$d": "measure"
-                      },
-                      "key": "measure",
-                      "op": "lookup"
-                    },
-                    {
-                      "as": "label",
-                      "expr": "isTotal == 1 ? 'მშპ სულ' : label",
-                      "op": "derive"
-                    },
-                    {
-                      "by": [
-                        {
-                          "dir": "asc",
-                          "field": "isTotal"
-                        },
-                        {
-                          "dir": "desc",
-                          "field": "value"
-                        }
-                      ],
-                      "op": "sort"
-                    }
-                  ],
-                  "query": {
-                    "filter": {
-                      "time": {
-                        "$ctx": "time"
-                      }
-                    },
-                    "measure": [
-                      "GDP_SVC",
-                      "GDP_NET_TAX",
-                      "GDP_IND",
-                      "GDP_CON",
-                      "GDP_AGRI",
-                      "GDP"
-                    ]
-                  },
-                  "type": "query"
-                },
+                "title": "მთლიანი შიდა პროდუქტი წარმოების მეთოდით",
                 "fieldConfig": {
                   "unit": "მლნ ₾"
                 },
-                "id": "production",
-                "title": "მთლიანი შიდა პროდუქტი წარმოების მეთოდით",
-                "type": "section",
                 "vars": {
                   "periodLabel": {
                     "op": "template",
@@ -1553,662 +1449,612 @@
                 },
                 "view": {
                   "subtitle": "{periodLabel} · მლნ ₾"
-                }
-              },
-              {
+                },
+                "data": {
+                  "type": "query",
+                  "query": {
+                    "measure": "*",
+                    "filter": {
+                      "geo": "GE",
+                      "approach": "PROD",
+                      "time": {
+                        "$ctx": "time"
+                      }
+                    }
+                  },
+                  "pipe": [
+                    {
+                      "op": "lookup",
+                      "key": "measure",
+                      "from": {
+                        "$d": "measure"
+                      },
+                      "fields": [
+                        "label",
+                        "color"
+                      ]
+                    },
+                    {
+                      "op": "sort",
+                      "by": "value",
+                      "dir": "desc"
+                    }
+                  ],
+                  "encoding": {
+                    "label": "label",
+                    "value": "value",
+                    "color": "color",
+                    "pct": {
+                      "sumOf": "value"
+                    }
+                  }
+                },
                 "children": [
                   {
-                    "children": [
-                      {
-                        "chartType": "contribution",
-                        "label": "C + I + X − M = მშპ",
-                        "type": "chart",
-                        "view": {
-                          "label": "დიაგრამა",
-                          "role": "chart"
-                        }
-                      },
-                      {
-                        "color": "#00A896",
-                        "type": "table",
-                        "valueLabel": "მლნ ₾",
-                        "view": {
-                          "label": "ცხრილი",
-                          "role": "table"
-                        }
-                      }
-                    ],
+                    "type": "wrap",
                     "styles": {
                       "aspectRatio": {
                         "default": "16 / 9",
                         "sm": "4 / 3"
                       }
                     },
-                    "type": "wrap"
+                    "children": [
+                      {
+                        "type": "chart",
+                        "chartType": "donut",
+                        "centerLabel": "მშპ",
+                        "label": "სექტორული სტრუქტურა — % მშპ-დან",
+                        "view": {
+                          "role": "chart",
+                          "label": "დიაგრამა"
+                        }
+                      },
+                      {
+                        "type": "table",
+                        "colLabel": "სექტორი",
+                        "color": "#0080BE",
+                        "columns": [
+                          {
+                            "key": "value",
+                            "label": "მლნ ₾"
+                          },
+                          {
+                            "key": "pct",
+                            "label": "წილი",
+                            "format": "pct",
+                            "bar": {
+                              "max": 100
+                            }
+                          }
+                        ],
+                        "transforms": [
+                          {
+                            "op": "sort",
+                            "by": "value",
+                            "dir": "desc"
+                          }
+                        ],
+                        "view": {
+                          "role": "table",
+                          "label": "ცხრილი"
+                        }
+                      }
+                    ]
                   }
-                ],
+                ]
+              },
+              {
+                "type": "section",
+                "id": "expenditure",
                 "color": "#00A896",
+                "title": "მთლიანი შიდა პროდუქტი დანახარჯების მეთოდით",
+                "fieldConfig": {
+                  "unit": "მლნ ₾"
+                },
+                "view": {
+                  "subtitle": "{time} · მლნ ₾"
+                },
                 "data": {
-                  "encoding": {
-                    "color": "color",
-                    "isTotal": "isTotal",
-                    "label": "label",
-                    "value": "value"
+                  "type": "query",
+                  "query": {
+                    "measure": "*",
+                    "filter": {
+                      "geo": "GE",
+                      "approach": "EXP",
+                      "time": {
+                        "$ctx": "time"
+                      }
+                    }
                   },
                   "pipe": [
                     {
+                      "op": "derive",
                       "as": "value",
-                      "expr": "measure == 'M' ? value * -1 : value",
-                      "op": "derive"
+                      "expr": "measure == 'imports-of-goods-and-services' ? value * -1 : value"
                     },
                     {
+                      "op": "derive",
                       "as": "isTotal",
-                      "expr": "measure == 'GDP' ? 1 : 0",
-                      "op": "derive"
+                      "expr": "measure == 'gross-domestic-product-at-current-prices' ? 1 : 0"
                     },
                     {
-                      "fields": [
-                        "label",
-                        "color"
-                      ],
+                      "op": "lookup",
+                      "key": "measure",
                       "from": {
                         "$d": "measure"
                       },
-                      "key": "measure",
-                      "op": "lookup"
+                      "fields": [
+                        "label",
+                        "color"
+                      ]
                     },
                     {
+                      "op": "derive",
                       "as": "label",
-                      "expr": "isTotal == 1 ? 'მშპ' : label",
-                      "op": "derive"
+                      "expr": "isTotal == 1 ? 'მშპ' : label"
                     },
                     {
+                      "op": "derive",
                       "as": "color",
-                      "expr": "isTotal == 1 ? '#E53E3E' : '#0080BE'",
-                      "op": "derive"
+                      "expr": "isTotal == 1 ? '#E53E3E' : '#0080BE'"
                     },
                     {
+                      "op": "sort",
                       "by": [
                         {
                           "field": "measure",
                           "using": [
-                            "C",
-                            "I_GFCF",
-                            "X",
-                            "M",
-                            "GDP"
+                            "final-consumption-expenditure",
+                            "gross-capital-formation",
+                            "exports-of-goods-and-services",
+                            "imports-of-goods-and-services",
+                            "gross-domestic-product-at-current-prices"
                           ]
                         }
-                      ],
-                      "op": "sort"
+                      ]
                     }
                   ],
-                  "query": {
-                    "filter": {
-                      "time": {
-                        "$ctx": "time"
+                  "encoding": {
+                    "label": "label",
+                    "value": "value",
+                    "color": "color",
+                    "isTotal": "isTotal"
+                  }
+                },
+                "children": [
+                  {
+                    "type": "wrap",
+                    "styles": {
+                      "aspectRatio": {
+                        "default": "16 / 9",
+                        "sm": "4 / 3"
                       }
                     },
-                    "measure": [
-                      "C",
-                      "I_GFCF",
-                      "X",
-                      "M",
-                      "GDP"
+                    "children": [
+                      {
+                        "type": "chart",
+                        "chartType": "contribution",
+                        "label": "C + I + X − M = მშპ",
+                        "view": {
+                          "role": "chart",
+                          "label": "დიაგრამა"
+                        }
+                      },
+                      {
+                        "type": "table",
+                        "color": "#00A896",
+                        "valueLabel": "მლნ ₾",
+                        "view": {
+                          "role": "table",
+                          "label": "ცხრილი"
+                        }
+                      }
                     ]
-                  },
-                  "type": "query"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "columns",
+            "count": {
+              "default": 2,
+              "md": 1,
+              "sm": 1
+            },
+            "view": {
+              "visibleWhen": {
+                "op": "eq",
+                "param": "mode",
+                "is": "range"
+              }
+            },
+            "children": [
+              {
+                "type": "section",
+                "id": "gdp-dynamics",
+                "color": "#0080BE",
+                "title": "მშპ ისტორიული დინამიკა",
+                "view": {
+                  "subtitle": "{fromYear}–{toYear} · მლნ ₾",
+                  "styles": {
+                    "height": "16:9"
+                  }
                 },
+                "data": {
+                  "type": "query",
+                  "query": {
+                    "measure": "gross-domestic-product-at-current-prices",
+                    "filter": {
+                      "geo": "GE",
+                      "approach": "_Z",
+                      "measure": "gross-domestic-product-at-current-prices"
+                    }
+                  },
+                  "fromDim": "fromYear",
+                  "toDim": "toYear",
+                  "pipe": [
+                    {
+                      "op": "sort",
+                      "by": "time",
+                      "dir": "asc"
+                    }
+                  ],
+                  "encoding": {
+                    "label": "time",
+                    "value": "value"
+                  }
+                },
+                "children": [
+                  {
+                    "type": "wrap",
+                    "styles": {
+                      "aspectRatio": {
+                        "default": "16 / 9",
+                        "sm": "4 / 3"
+                      }
+                    },
+                    "children": [
+                      {
+                        "type": "chart",
+                        "chartType": "combo",
+                        "fieldConfig": {
+                          "unit": "მლნ ₾"
+                        },
+                        "label": "მშპ ისტორიული დინამიკა",
+                        "view": {
+                          "role": "chart",
+                          "label": "დიაგრამა"
+                        }
+                      },
+                      {
+                        "type": "table",
+                        "colLabel": "წელი",
+                        "color": "#0080BE",
+                        "columns": [
+                          {
+                            "key": "value",
+                            "label": "მლნ ₾",
+                            "bar": true
+                          }
+                        ],
+                        "transforms": [
+                          {
+                            "op": "sort",
+                            "by": "label",
+                            "dir": "asc"
+                          }
+                        ],
+                        "view": {
+                          "role": "table",
+                          "label": "ცხრილი"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "section",
+                "id": "per-capita-dynamics",
+                "color": "#7B6CF6",
+                "title": "მშპ ერთ სულ მოსახლეზე",
+                "view": {
+                  "subtitle": "{fromYear}–{toYear} · $",
+                  "styles": {
+                    "height": "16:9"
+                  }
+                },
+                "data": {
+                  "type": "query",
+                  "query": {
+                    "measure": "gdp-per-capita-usd",
+                    "filter": {
+                      "geo": "GE",
+                      "approach": "_Z",
+                      "measure": "gdp-per-capita-usd"
+                    }
+                  },
+                  "fromDim": "fromYear",
+                  "toDim": "toYear",
+                  "pipe": [
+                    {
+                      "op": "sort",
+                      "by": "time",
+                      "dir": "asc"
+                    }
+                  ],
+                  "encoding": {
+                    "label": "time",
+                    "value": "value"
+                  }
+                },
+                "children": [
+                  {
+                    "type": "wrap",
+                    "styles": {
+                      "aspectRatio": {
+                        "default": "16 / 9",
+                        "sm": "4 / 3"
+                      }
+                    },
+                    "children": [
+                      {
+                        "type": "chart",
+                        "chartType": "line",
+                        "fieldConfig": {
+                          "unit": "$"
+                        },
+                        "label": "მშპ ერთ სულ მოსახლეზე",
+                        "view": {
+                          "role": "chart",
+                          "label": "დიაგრამა"
+                        }
+                      },
+                      {
+                        "type": "table",
+                        "colLabel": "წელი",
+                        "color": "#7B6CF6",
+                        "columns": [
+                          {
+                            "key": "value",
+                            "label": "$",
+                            "format": "mln_gel"
+                          }
+                        ],
+                        "transforms": [
+                          {
+                            "op": "sort",
+                            "by": "label",
+                            "dir": "asc"
+                          }
+                        ],
+                        "view": {
+                          "role": "table",
+                          "label": "ცხრილი"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "columns",
+            "count": {
+              "default": 1,
+              "md": 1,
+              "sm": 1
+            },
+            "view": {
+              "visibleWhen": {
+                "op": "eq",
+                "param": "mode",
+                "is": "year"
+              }
+            },
+            "children": [
+              {
+                "type": "section",
+                "id": "income",
+                "color": "#7B6CF6",
+                "title": "მთლიანი შიდა პროდუქტი შემოსავლების მეთოდით",
                 "fieldConfig": {
                   "unit": "მლნ ₾"
                 },
-                "id": "expenditure",
-                "title": "მთლიანი შიდა პროდუქტი დანახარჯების მეთოდით",
-                "type": "section",
                 "view": {
                   "subtitle": "{time} · მლნ ₾"
-                }
-              }
-            ],
-            "count": {
-              "default": 2,
-              "md": 1,
-              "sm": 1
-            },
-            "type": "columns",
-            "view": {
-              "visibleWhen": {
-                "is": "year",
-                "op": "eq",
-                "param": "mode"
-              }
-            }
-          },
-          {
-            "children": [
-              {
-                "children": [
-                  {
-                    "chartType": "combo",
-                    "fieldConfig": {
-                      "unit": "მლნ ₾"
-                    },
-                    "label": "მშპ ისტორიული დინამიკა",
-                    "type": "chart",
-                    "view": {
-                      "label": "დიაგრამა",
-                      "role": "chart"
-                    }
-                  },
-                  {
-                    "colLabel": "წელი",
-                    "color": "#0080BE",
-                    "columns": [
-                      {
-                        "bar": true,
-                        "key": "value",
-                        "label": "მლნ ₾"
-                      }
-                    ],
-                    "transforms": [
-                      {
-                        "by": "label",
-                        "dir": "asc",
-                        "op": "sort"
-                      }
-                    ],
-                    "type": "table",
-                    "view": {
-                      "label": "ცხრილი",
-                      "role": "table"
-                    }
-                  }
-                ],
-                "color": "#0080BE",
+                },
                 "data": {
-                  "encoding": {
-                    "label": "time",
-                    "pct": {
-                      "sumOf": "value"
-                    },
-                    "value": "value"
+                  "type": "query",
+                  "query": {
+                    "measure": "*",
+                    "filter": {
+                      "geo": "GE",
+                      "approach": "INC",
+                      "time": {
+                        "$ctx": "time"
+                      }
+                    }
                   },
-                  "fromDim": "fromYear",
                   "pipe": [
                     {
-                      "by": "time",
-                      "dir": "asc",
-                      "op": "sort"
+                      "op": "filter",
+                      "where": {
+                        "measure": {
+                          "$ne": "gross-domestic-product-at-current-prices"
+                        }
+                      }
+                    },
+                    {
+                      "op": "lookup",
+                      "key": "measure",
+                      "from": {
+                        "$d": "measure"
+                      },
+                      "fields": [
+                        "label",
+                        "color"
+                      ]
+                    },
+                    {
+                      "op": "sort",
+                      "by": "value",
+                      "dir": "desc"
                     }
                   ],
-                  "query": {
-                    "measure": "GDP"
-                  },
-                  "toDim": "toYear",
-                  "type": "query"
-                },
-                "id": "production-range",
-                "title": "მთლიანი შიდა პროდუქტი წარმოების მეთოდით",
-                "type": "section",
-                "view": {
-                  "styles": {
-                    "height": "16:9"
-                  },
-                  "subtitle": "{fromYear}–{toYear} · მლნ ₾"
-                }
-              },
-              {
-                "children": [
-                  {
-                    "chartType": "line",
-                    "fieldConfig": {
-                      "unit": "$"
-                    },
-                    "label": "ერთ სულ მოსახლეზე — ტრენდი",
-                    "type": "chart",
-                    "view": {
-                      "label": "დიაგრამა",
-                      "role": "chart"
-                    }
-                  },
-                  {
-                    "colLabel": "წელი",
-                    "color": "#7B6CF6",
-                    "columns": [
-                      {
-                        "bar": true,
-                        "format": "mln_gel",
-                        "key": "value",
-                        "label": "$"
-                      }
-                    ],
-                    "type": "table",
-                    "view": {
-                      "label": "ცხრილი",
-                      "role": "table"
-                    }
-                  }
-                ],
-                "color": "#7B6CF6",
-                "data": {
                   "encoding": {
-                    "label": "time",
+                    "label": "label",
+                    "value": "value",
+                    "color": "color",
                     "pct": {
                       "sumOf": "value"
-                    },
-                    "value": "value"
-                  },
-                  "fromDim": "fromYear",
-                  "pipe": [
-                    {
-                      "by": "time",
-                      "dir": "asc",
-                      "op": "sort"
                     }
-                  ],
-                  "query": {
-                    "measure": "GDP_PER_CAPITA"
-                  },
-                  "toDim": "toYear",
-                  "type": "query"
+                  }
                 },
-                "id": "income-range",
-                "title": "მთლიანი შიდა პროდუქტი ერთ სულ მოსახლეზე",
-                "type": "section",
-                "view": {
-                  "styles": {
-                    "height": "16:9"
-                  },
-                  "subtitle": "{fromYear}–{toYear} · $"
-                }
-              }
-            ],
-            "count": {
-              "default": 2,
-              "md": 1,
-              "sm": 1
-            },
-            "type": "columns",
-            "view": {
-              "visibleWhen": {
-                "is": "range",
-                "op": "eq",
-                "param": "mode"
-              }
-            }
-          },
-          {
-            "children": [
-              {
                 "children": [
                   {
+                    "type": "wrap",
+                    "styles": {
+                      "aspectRatio": {
+                        "default": "16 / 9",
+                        "sm": "4 / 3"
+                      }
+                    },
                     "children": [
                       {
+                        "type": "chart",
                         "chartType": "treemap",
                         "fieldConfig": {
                           "unit": "მლნ ₾"
                         },
                         "label": "შემოსავლების სტრუქტურა",
-                        "type": "chart",
                         "view": {
-                          "label": "დიაგრამა",
-                          "role": "chart"
+                          "role": "chart",
+                          "label": "დიაგრამა"
                         }
                       },
                       {
-                        "color": "#7B6CF6",
                         "type": "table",
+                        "color": "#7B6CF6",
                         "valueLabel": "მლნ ₾",
                         "view": {
-                          "label": "ცხრილი",
-                          "role": "table"
+                          "role": "table",
+                          "label": "ცხრილი"
                         }
                       }
-                    ],
-                    "styles": {
-                      "aspectRatio": {
-                        "default": "16 / 9",
-                        "sm": "4 / 3"
-                      }
-                    },
-                    "type": "wrap"
-                  }
-                ],
-                "color": "#7B6CF6",
-                "data": {
-                  "encoding": {
-                    "isTotal": "isTotal",
-                    "label": "prefixedLabel",
-                    "pct": {
-                      "of": "GDP"
-                    },
-                    "value": "value"
-                  },
-                  "pipe": [
-                    {
-                      "as": "isTotal",
-                      "expr": "measure == 'GDP' ? 1 : 0",
-                      "op": "derive"
-                    },
-                    {
-                      "fields": [
-                        "fullLabel"
-                      ],
-                      "from": {
-                        "$d": "measure"
-                      },
-                      "key": "measure",
-                      "op": "lookup"
-                    },
-                    {
-                      "as": "prefix",
-                      "expr": "isTotal == 1 ? '(=) ' : '(+) '",
-                      "op": "derive"
-                    },
-                    {
-                      "as": "prefixedLabel",
-                      "fields": [
-                        "prefix",
-                        "fullLabel"
-                      ],
-                      "op": "concat",
-                      "sep": ""
-                    },
-                    {
-                      "by": [
-                        {
-                          "field": "isTotal",
-                          "last": 1
-                        },
-                        {
-                          "dir": "desc",
-                          "field": "value"
-                        }
-                      ],
-                      "op": "sort"
-                    }
-                  ],
-                  "query": {
-                    "filter": {
-                      "time": {
-                        "$ctx": "time"
-                      }
-                    },
-                    "measure": [
-                      "OS_GROSS",
-                      "D1",
-                      "MIXED_INC",
-                      "NET_TAX_PROD",
-                      "GDP"
                     ]
-                  },
-                  "type": "query"
-                },
-                "id": "income",
-                "title": "შემოსავლების ფორმირების ანგარიში",
-                "type": "section",
-                "view": {
-                  "subtitle": "{time} · მლნ ₾"
-                }
-              },
-              {
-                "children": [
-                  {
-                    "children": [
-                      {
-                        "chartType": "donut",
-                        "fieldConfig": {
-                          "decimals": 1,
-                          "unit": "%"
-                        },
-                        "label": "GFCF სტრუქტურა — % GFCF-სგან",
-                        "type": "chart",
-                        "view": {
-                          "label": "დიაგრამა",
-                          "role": "chart"
-                        }
-                      },
-                      {
-                        "color": "#F4A261",
-                        "columns": [
-                          {
-                            "format": "pct",
-                            "key": "value",
-                            "label": "% GFCF-ისგ."
-                          }
-                        ],
-                        "type": "table",
-                        "view": {
-                          "label": "ცხრილი",
-                          "role": "table"
-                        }
-                      }
-                    ],
-                    "styles": {
-                      "aspectRatio": {
-                        "default": "16 / 9",
-                        "sm": "4 / 3"
-                      }
-                    },
-                    "type": "wrap"
                   }
-                ],
-                "color": "#F4A261",
-                "data": {
-                  "pairs": [
-                    {
-                      "code": "GFCF_RES",
-                      "denom": "I_GFCF"
-                    },
-                    {
-                      "code": "GFCF_STRUCT",
-                      "denom": "I_GFCF"
-                    },
-                    {
-                      "code": "GFCF_MACH",
-                      "denom": "I_GFCF"
-                    },
-                    {
-                      "code": "GFCF_BIO",
-                      "denom": "I_GFCF"
-                    },
-                    {
-                      "code": "GFCF_IP",
-                      "denom": "I_GFCF"
-                    }
-                  ],
-                  "pipe": [
-                    {
-                      "fields": [
-                        "label",
-                        "color"
-                      ],
-                      "from": {
-                        "$d": "measure"
-                      },
-                      "key": "measure",
-                      "op": "lookup"
-                    },
-                    {
-                      "by": "value",
-                      "dir": "desc",
-                      "op": "sort"
-                    }
-                  ],
-                  "type": "ratio-list"
-                },
-                "id": "structural",
-                "title": "მთლიანი კაპიტალის ფორმირების სტრუქტურა, %",
-                "type": "section",
-                "view": {
-                  "subtitle": "{time}"
-                }
+                ]
               }
-            ],
-            "count": {
-              "default": 2,
-              "md": 1,
-              "sm": 1
-            },
-            "type": "columns",
-            "view": {
-              "visibleWhen": {
-                "is": "year",
-                "op": "eq",
-                "param": "mode"
-              }
-            }
+            ]
           },
           {
-            "children": [
-              {
-                "children": [
-                  {
-                    "axes": {
-                      "y": {
-                        "decimals": 1
-                      }
-                    },
-                    "chartType": "bar",
-                    "fieldConfig": {
-                      "decimals": 1,
-                      "unit": "%"
-                    },
-                    "label": "მშპ წლიური ზრდის ტემპები",
-                    "type": "chart",
-                    "view": {
-                      "label": "დიაგრამა",
-                      "role": "chart"
-                    }
-                  },
-                  {
-                    "colLabel": "წელი",
-                    "color": "#E76F51",
-                    "columns": [
-                      {
-                        "format": "sign_pct",
-                        "key": "value",
-                        "label": "%"
-                      }
-                    ],
-                    "type": "table",
-                    "view": {
-                      "label": "ცხრილი",
-                      "role": "table"
-                    }
-                  }
-                ],
-                "color": "#E76F51",
-                "data": {
-                  "encoding": {
-                    "label": "time",
-                    "value": "value"
-                  },
-                  "fromDim": "fromYear",
-                  "pipe": [
-                    {
-                      "by": "time",
-                      "dir": "asc",
-                      "op": "sort"
-                    }
-                  ],
-                  "query": {
-                    "measure": "GDP_GROWTH"
-                  },
-                  "toDim": "toYear",
-                  "type": "query"
-                },
-                "id": "growth-dynamics",
-                "title": "რეალური მთლიანი შიდა პროდუქტის ზრდა",
-                "type": "section",
-                "view": {
-                  "styles": {
-                    "height": "16:9"
-                  },
-                  "subtitle": "{fromYear}–{toYear} · %"
-                }
-              },
-              {
-                "children": [
-                  {
-                    "axes": {
-                      "y": {
-                        "decimals": 1
-                      }
-                    },
-                    "chartType": "bar",
-                    "fieldConfig": {
-                      "decimals": 1,
-                      "unit": "%"
-                    },
-                    "label": "დაუკვირვებადი ეკონომიკის წილი, %",
-                    "type": "chart",
-                    "view": {
-                      "label": "დიაგრამა",
-                      "role": "chart"
-                    }
-                  },
-                  {
-                    "colLabel": "წელი",
-                    "color": "#6B7B8D",
-                    "columns": [
-                      {
-                        "format": "pct",
-                        "key": "value",
-                        "label": "%"
-                      }
-                    ],
-                    "type": "table",
-                    "view": {
-                      "label": "ცხრილი",
-                      "role": "table"
-                    }
-                  }
-                ],
-                "color": "#6B7B8D",
-                "data": {
-                  "encoding": {
-                    "label": "time",
-                    "value": "value"
-                  },
-                  "fromDim": "fromYear",
-                  "pipe": [
-                    {
-                      "by": "time",
-                      "dir": "asc",
-                      "op": "sort"
-                    }
-                  ],
-                  "query": {
-                    "measure": "NOE_SHARE"
-                  },
-                  "toDim": "toYear",
-                  "type": "query"
-                },
-                "id": "noe-share",
-                "title": "დაუკვირვებადი დამატებული ღირებულების წილი მთლიან დამატებულ ღირებულებაში",
-                "type": "section",
-                "view": {
-                  "styles": {
-                    "height": "16:9"
-                  },
-                  "subtitle": "{fromYear}–{toYear} · % · მიმდინარე ფასებში"
-                }
-              }
-            ],
+            "type": "columns",
             "count": {
-              "default": 2,
+              "default": 1,
               "md": 1,
               "sm": 1
             },
-            "type": "columns",
             "view": {
               "visibleWhen": {
-                "is": "range",
                 "op": "eq",
-                "param": "mode"
+                "param": "mode",
+                "is": "range"
               }
-            }
+            },
+            "children": [
+              {
+                "type": "section",
+                "id": "growth-dynamics",
+                "color": "#E76F51",
+                "title": "რეალური მთლიანი შიდა პროდუქტის ზრდა",
+                "view": {
+                  "subtitle": "{fromYear}–{toYear} · %",
+                  "styles": {
+                    "height": "16:9"
+                  }
+                },
+                "data": {
+                  "type": "query",
+                  "query": {
+                    "measure": "real-gdp-growth-rates",
+                    "filter": {
+                      "geo": "GE",
+                      "approach": "_Z",
+                      "measure": "real-gdp-growth-rates"
+                    }
+                  },
+                  "fromDim": "fromYear",
+                  "toDim": "toYear",
+                  "pipe": [
+                    {
+                      "op": "sort",
+                      "by": "time",
+                      "dir": "asc"
+                    }
+                  ],
+                  "encoding": {
+                    "label": "time",
+                    "value": "value"
+                  }
+                },
+                "children": [
+                  {
+                    "type": "wrap",
+                    "styles": {
+                      "aspectRatio": {
+                        "default": "16 / 9",
+                        "sm": "4 / 3"
+                      }
+                    },
+                    "children": [
+                      {
+                        "type": "chart",
+                        "chartType": "bar",
+                        "fieldConfig": {
+                          "unit": "%"
+                        },
+                        "label": "რეალური მთლიანი შიდა პროდუქტის ზრდა",
+                        "axes": {
+                          "y": {
+                            "decimals": 1
+                          }
+                        },
+                        "view": {
+                          "role": "chart",
+                          "label": "დიაგრამა"
+                        }
+                      },
+                      {
+                        "type": "table",
+                        "colLabel": "წელი",
+                        "color": "#E76F51",
+                        "columns": [
+                          {
+                            "key": "value",
+                            "label": "%",
+                            "format": "sign_pct"
+                          }
+                        ],
+                        "transforms": [
+                          {
+                            "op": "sort",
+                            "by": "label",
+                            "dir": "asc"
+                          }
+                        ],
+                        "view": {
+                          "role": "table",
+                          "label": "ცხრილი"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
           },
           {
             "items": [
@@ -2652,12 +2498,22 @@
                 "label": "მთლიანი დამატებული ღირებულება",
                 "mode": "year",
                 "trend": {
+                  "filter": {
+                    "geo": "_T",
+                    "measure": "GVA",
+                    "sector": "_T"
+                  },
                   "measure": "GVA",
                   "type": "yoy"
                 },
                 "trendSub": "წინა წელთან შედარებით",
                 "unit": "მლნ ₾",
                 "value": {
+                  "filter": {
+                    "geo": "_T",
+                    "measure": "GVA",
+                    "sector": "_T"
+                  },
                   "format": "mln_gel",
                   "measure": "GVA",
                   "type": "point"
@@ -2669,12 +2525,22 @@
                 "label": "წლიური ზრდა",
                 "mode": "year",
                 "trend": {
+                  "filter": {
+                    "geo": "_T",
+                    "measure": "GVA",
+                    "sector": "_T"
+                  },
                   "measure": "GVA",
                   "type": "yoy"
                 },
                 "trendSub": "წინა წელთან შედარებით",
                 "unit": "%",
                 "value": {
+                  "filter": {
+                    "geo": "_T",
+                    "measure": "GVA",
+                    "sector": "_T"
+                  },
                   "measure": "GVA",
                   "type": "yoy"
                 }
@@ -2682,23 +2548,30 @@
               {
                 "color": "#4ECDC4",
                 "id": "reg-share",
-                "label": "ეროვნული მშპ-ში წილი",
+                "label": "თბილისის წილი ეროვნულ მაჩვენებელში",
                 "mode": "year",
                 "trend": {
                   "dir": "flat",
                   "type": "static",
-                  "value": "ეროვნული ჯამიდან"
+                  "value": "თბილისი / საქართველო"
                 },
                 "trendSub": "ეროვნული ჯამიდან",
                 "unit": "%",
                 "value": {
                   "denom": {
                     "filter": {
-                      "geo": ""
+                      "geo": "_T",
+                      "measure": "GVA",
+                      "sector": "_T"
                     },
                     "measure": "GVA"
                   },
                   "num": {
+                    "filter": {
+                      "geo": "R2",
+                      "measure": "GVA",
+                      "sector": "_T"
+                    },
                     "measure": "GVA"
                   },
                   "type": "share"
@@ -2710,6 +2583,11 @@
                 "label": "საშუალო წლიური ზრდა ({fromYear}–{toYear})",
                 "mode": "year",
                 "trend": {
+                  "filter": {
+                    "geo": "_T",
+                    "measure": "GVA",
+                    "sector": "_T"
+                  },
                   "from": {
                     "$ctx": "fromYear"
                   },
@@ -2722,6 +2600,11 @@
                 "trendSub": "{fromYear}–{toYear}",
                 "unit": "%",
                 "value": {
+                  "filter": {
+                    "geo": "_T",
+                    "measure": "GVA",
+                    "sector": "_T"
+                  },
                   "from": {
                     "$ctx": "fromYear"
                   },
@@ -2738,6 +2621,11 @@
                 "label": "დამატებული ღირებულება — საშუალო წლიური ზრდა",
                 "mode": "range",
                 "trend": {
+                  "filter": {
+                    "geo": "_T",
+                    "measure": "GVA",
+                    "sector": "_T"
+                  },
                   "from": {
                     "$ctx": "fromYear"
                   },
@@ -2750,6 +2638,11 @@
                 "trendSub": "{fromYear}–{toYear}",
                 "unit": "%",
                 "value": {
+                  "filter": {
+                    "geo": "_T",
+                    "measure": "GVA",
+                    "sector": "_T"
+                  },
                   "from": {
                     "$ctx": "fromYear"
                   },
@@ -2766,6 +2659,11 @@
                 "label": "დამატებული ღირებულება — {toYear}",
                 "mode": "range",
                 "trend": {
+                  "filter": {
+                    "geo": "_T",
+                    "measure": "GVA",
+                    "sector": "_T"
+                  },
                   "measure": "GVA",
                   "time": {
                     "$ctx": "toYear"
@@ -2775,6 +2673,11 @@
                 "trendSub": "{toYear}",
                 "unit": "მლნ ₾",
                 "value": {
+                  "filter": {
+                    "geo": "_T",
+                    "measure": "GVA",
+                    "sector": "_T"
+                  },
                   "format": "mln_gel",
                   "measure": "GVA",
                   "time": {
@@ -2796,6 +2699,11 @@
                 "trendSub": "{fromYear}",
                 "unit": "მლნ ₾",
                 "value": {
+                  "filter": {
+                    "geo": "_T",
+                    "measure": "GVA",
+                    "sector": "_T"
+                  },
                   "format": "mln_gel",
                   "measure": "GVA",
                   "time": {
@@ -2810,6 +2718,11 @@
                 "label": "საშუალო წლიური ზრდა",
                 "mode": "range",
                 "trend": {
+                  "filter": {
+                    "geo": "_T",
+                    "measure": "GVA",
+                    "sector": "_T"
+                  },
                   "from": {
                     "$ctx": "fromYear"
                   },
@@ -2822,6 +2735,11 @@
                 "trendSub": "{fromYear}–{toYear} · საშუალო წლიური ზრდა",
                 "unit": "%",
                 "value": {
+                  "filter": {
+                    "geo": "_T",
+                    "measure": "GVA",
+                    "sector": "_T"
+                  },
                   "from": {
                     "$ctx": "fromYear"
                   },
@@ -2906,6 +2824,7 @@
                   ],
                   "query": {
                     "filter": {
+                      "measure": "GVA",
                       "sector": {
                         "$ctx": "sector"
                       },
@@ -2918,17 +2837,17 @@
                   "type": "query"
                 },
                 "geoCodeMap": {
-                  "GE-AJ": "adjara",
-                  "GE-GU": "guria",
-                  "GE-IM": "imereti",
-                  "GE-KA": "kakheti",
-                  "GE-KK": "kvemo_kartli",
-                  "GE-MM": "mtskheta",
-                  "GE-RL": "racha",
-                  "GE-SJ": "samtskhe",
-                  "GE-SK": "shida_kartli",
-                  "GE-SZ": "samegrelo",
-                  "GE-TB": "tbilisi"
+                  "GE-AJ": "R3",
+                  "GE-GU": "R4",
+                  "GE-IM": "R5",
+                  "GE-KA": "R6",
+                  "GE-KK": "R11",
+                  "GE-MM": "R7",
+                  "GE-RL": "R8",
+                  "GE-SJ": "R10",
+                  "GE-SK": "R12",
+                  "GE-SZ": "R9",
+                  "GE-TB": "R2"
                 },
                 "geoJsonUrl": "/data/georgia-regions.geojson",
                 "id": "geo-map",
@@ -3057,6 +2976,7 @@
                       "geo": {
                         "$ctx": "geo"
                       },
+                      "measure": "GVA",
                       "time": {
                         "$ctx": "time"
                       }
@@ -3170,6 +3090,7 @@
                       "geo": {
                         "$ctx": "geo"
                       },
+                      "measure": "GVA",
                       "time": {
                         "$ctx": "time"
                       }
@@ -3320,6 +3241,7 @@
                   "geo": {
                     "$ctx": "geo"
                   },
+                  "measure": "GVA",
                   "sector": {
                     "$ctx": "sector"
                   },
@@ -3414,6 +3336,7 @@
                   ],
                   "query": {
                     "filter": {
+                      "measure": "GVA",
                       "sector": {
                         "$ctx": "sector"
                       },
@@ -3426,17 +3349,17 @@
                   "type": "query"
                 },
                 "geoCodeMap": {
-                  "GE-AJ": "adjara",
-                  "GE-GU": "guria",
-                  "GE-IM": "imereti",
-                  "GE-KA": "kakheti",
-                  "GE-KK": "kvemo_kartli",
-                  "GE-MM": "mtskheta",
-                  "GE-RL": "racha",
-                  "GE-SJ": "samtskhe",
-                  "GE-SK": "shida_kartli",
-                  "GE-SZ": "samegrelo",
-                  "GE-TB": "tbilisi"
+                  "GE-AJ": "R3",
+                  "GE-GU": "R4",
+                  "GE-IM": "R5",
+                  "GE-KA": "R6",
+                  "GE-KK": "R11",
+                  "GE-MM": "R7",
+                  "GE-RL": "R8",
+                  "GE-SJ": "R10",
+                  "GE-SK": "R12",
+                  "GE-SZ": "R9",
+                  "GE-TB": "R2"
                 },
                 "geoJsonUrl": "/data/georgia-regions.geojson",
                 "id": "geo-map-range",
@@ -3516,6 +3439,7 @@
                       "geo": {
                         "$ctx": "geo"
                       },
+                      "measure": "GVA",
                       "sector": {
                         "$ctx": "sector"
                       }
@@ -3620,6 +3544,7 @@
                   "geo": {
                     "$ctx": "geo"
                   },
+                  "measure": "GVA",
                   "sector": {
                     "$ctx": "sector"
                   }
@@ -3693,7 +3618,7 @@
                   "type": "hidden"
                 },
                 "region": {
-                  "default": "total",
+                  "default": "",
                   "type": "hidden"
                 },
                 "sector": {
@@ -3737,7 +3662,7 @@
                   "type": "hidden"
                 },
                 "region": {
-                  "default": "total",
+                  "default": "",
                   "type": "hidden"
                 },
                 "sector": {
@@ -4115,10 +4040,12 @@
       "config": {
         "datasetCode": "GDP_ANNUAL",
         "nonTimeDims": [
+          "approach",
           "measure",
           "geo"
         ],
         "classifierDims": [
+          "approach",
           "measure",
           "geo"
         ]

@@ -1,0 +1,157 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# docker-compose.staging.yml — ISOLATED STAGING stack (ADR-0032, "prove" half).
+#
+# DO NOT COMMIT. Throwaway secrets. Tear down after the prove-then-cutover probe.
+#
+#   docker-compose -f ops/compose/docker-compose.staging.yml -p statdash-stg up -d
+#
+# A FULLY ISOLATED twin of docker-compose.prod.yml on the SAME host as the live
+# `statdash-prod` stack, sharing NOTHING with it:
+#   project        statdash-stg            (≠ statdash-prod)
+#   network        statdash-stg-net        (≠ statdash-net)
+#   volume         statdash-stg-pgdata     (≠ statdash-prod-pgdata)
+#   containers     statdash-stg-*          (≠ statdash-*)
+#   published      pg 5457, api 3009, geostat 3008 (≠ live 5432/3001-internal/3002/3003)
+#
+# WHY a STANDALONE file (not a `-f prod -f staging` override merge): the seed
+# NEUTRALIZATION (ADR-0032 D2) must REMOVE the live flyway `/flyway/seed` mount +
+# its `-locations` entry — compose merge can only ADD list items, never drop a
+# bind mount or rewrite the scalar `command`. A self-contained file also stops the
+# merge from inheriting the live container_names / prod network / prod env_files.
+# It reuses the SAME images, env contract, and boot order as prod (the "based on"
+# requirement) without any risk of touching the live stack.
+#
+# SEED NEUTRALIZED (ADR-0032 D2): the live flyway mounts ops/postgres/seed and
+# adds it to -locations, so R__seed_geostat_gold.sql lands the 3-dim PLACEHOLDER
+# gold on migrate. Here flyway mounts ONLY /flyway/sql and -locations names ONLY
+# it → staging gold starts EMPTY of observations (verify: stats.observation = 0),
+# so the canonical 4-dim GDP DSD registers FRESH through the real route.
+#
+# Boot order (depends_on + healthchecks): pg healthy → flyway 0 → api healthy →
+# geostat starts.
+# ─────────────────────────────────────────────────────────────────────────────
+
+name: statdash-stg
+
+services:
+  # ── Staging PostgreSQL — PUBLISHED on 5457 so the orchestrator can probe gold ──
+  postgres:
+    image: timescale/timescaledb-ha:pg16
+    container_name: statdash-stg-pg
+    environment:
+      POSTGRES_DB: statdash
+      POSTGRES_USER: statdash
+      # Throwaway staging secret — this stack is reversible and never holds real data.
+      POSTGRES_PASSWORD: stg_throwaway_db_pw
+    ports:
+      - "5457:5432"
+    volumes:
+      - stg_pgdata:/var/lib/postgresql/data
+    networks:
+      - statdash-stg-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U statdash -d statdash"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+
+  # ── Flyway — V1→V32 ONLY (SEED NEUTRALIZED). Runs once, exits 0. ──────────────
+  # -locations names ONLY /flyway/sql (the Vnn migrations). The seed dir is neither
+  # mounted nor listed → R__seed_geostat_gold.sql never runs → gold starts EMPTY.
+  flyway:
+    image: flyway/flyway:10-alpine
+    container_name: statdash-stg-flyway
+    command: >-
+      -url=jdbc:postgresql://postgres:5432/statdash
+      -user=statdash
+      -password=stg_throwaway_db_pw
+      -locations=filesystem:/flyway/sql
+      -placeholderReplacement=false
+      migrate
+    volumes:
+      - ../postgres/migrations:/flyway/sql:ro
+    networks:
+      - statdash-stg-net
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: on-failure
+
+  # ── API — PUBLISHED on 3009 (throwaway). Same env contract as the prod api. ────
+  # Network ALIAS `statdash-api`: the geostat image bakes nginx `proxy_pass
+  # http://statdash-api:3001`. The alias makes that baked name resolve to THIS
+  # staging api — but ONLY on statdash-stg-net (never on the live statdash-net),
+  # so the render probe works with zero image/nginx changes and zero live impact.
+  api:
+    image: statdash-api:latest
+    container_name: statdash-stg-api
+    environment:
+      PORT: "3001"
+      HOST: 0.0.0.0
+      NODE_ENV: production
+      # CORS must stay OPEN-CONTROLLED here: the api is published directly on 3009
+      # for the curl ingest, AND proxied same-origin via geostat:3008. 'false' →
+      # @fastify/cors origin:false (no CORS headers) is correct for same-origin; the
+      # direct-3009 curl path needs no CORS (curl is not a browser). Keep parity w/ prod.
+      CORS_ORIGIN: "false"
+      DATABASE_URL: postgres://statdash:stg_throwaway_db_pw@postgres:5432/statdash
+      # Throwaway staging secrets (>=32 chars / >=8 chars per env.ts fail-fast gates).
+      JWT_SECRET: stg_throwaway_jwt_secret_min_32_chars_xx
+      ADMIN_USERNAME: admin
+      ADMIN_PASSWORD: stg_admin_pw_123
+      EMBED_SECRET: stg_throwaway_embed_secret_min_32_chr_yy
+      PROVISIONING_DIR: ./provisioning
+      PROVISIONING_DRY_RUN: "false"
+    ports:
+      - "3009:3001"
+    networks:
+      statdash-stg-net:
+        aliases:
+          - statdash-api
+    depends_on:
+      postgres:
+        condition: service_healthy
+      flyway:
+        condition: service_completed_successfully
+    restart: unless-stopped
+    mem_limit: 256m
+    cpus: 0.5
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:3001/health | grep -q ok || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+  # ── geostat SPA + reverse proxy — PUBLISHED on 3008 for the render probe ──────
+  # Reuses the live image (statdash-geostat:latest). Its baked nginx proxies /api/
+  # to `statdash-api:3001`, resolved to statdash-stg-api by the alias above.
+  geostat:
+    image: statdash-geostat:latest
+    container_name: statdash-stg-geostat
+    ports:
+      - "3008:80"
+    networks:
+      - statdash-stg-net
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped
+    mem_limit: 128m
+    cpus: 0.5
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+networks:
+  statdash-stg-net:
+    name: statdash-stg-net
+
+volumes:
+  stg_pgdata:
+    name: statdash-stg-pgdata
