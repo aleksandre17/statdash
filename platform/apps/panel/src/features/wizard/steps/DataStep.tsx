@@ -3,6 +3,7 @@ import { Box, Typography, Button, Chip, Paper, Divider } from '@mui/material'
 import StorageIcon from '@mui/icons-material/Storage'
 import DataObjectIcon from '@mui/icons-material/DataObject'
 import AddIcon from '@mui/icons-material/Add'
+import UploadFileIcon from '@mui/icons-material/UploadFile'
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline'
 import DragIndicatorIcon from '@mui/icons-material/DragIndicator'
 import {
@@ -17,17 +18,20 @@ import type { DataSpec } from '@statdash/engine'
 import { DataSpecEditor } from '../../data-layer'
 import { ShowMe } from '../../data-layer/showme/ShowMe'
 import { SourceAuthoringPanel } from '../../datasources/SourceAuthoringPanel'
-import { deleteDataSource, createDataSpec } from '../../../store/api-actions'
+import { ExcelUpload } from '../../datasources/ExcelUpload'
+import { deleteDataSource, createDataSpec, refreshDataSources } from '../../../store/api-actions'
 import type { ConnectionStatus } from '../../../types/constructor'
 
 // ── Selection model ───────────────────────────────────────────────────────────
 // Right panel is driven by a discriminated selection: which list + which id.
 //  - 'source'     edit an existing source (authoring panel, prefilled)
 //  - 'source-new' add a new source       (authoring panel, blank)
+//  - 'upload'     drop a canonical .xlsx  (Excel ingest → validate → approve)
 //  - 'spec'       edit a DataSpec
 type Selection =
   | { kind: 'source'; id: string }
   | { kind: 'source-new' }
+  | { kind: 'upload' }
   | { kind: 'spec';   id: string }
   | null
 
@@ -147,12 +151,20 @@ export function DataStep() {
           <Box>
             <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <Typography variant="overline" color="text.secondary">მონაცემების წყაროები</Typography>
-              <Button
-                size="small" startIcon={<AddIcon />}
-                onClick={() => setSelection({ kind: 'source-new' })}
-              >
-                დამატება
-              </Button>
+              <Box sx={{ display: 'flex', gap: 0.5 }}>
+                <Button
+                  size="small" startIcon={<UploadFileIcon />}
+                  onClick={() => setSelection({ kind: 'upload' })}
+                >
+                  Excel
+                </Button>
+                <Button
+                  size="small" startIcon={<AddIcon />}
+                  onClick={() => setSelection({ kind: 'source-new' })}
+                >
+                  დამატება
+                </Button>
+              </Box>
             </Box>
             <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleSourceDragEnd}>
               <SortableContext items={sources.map((d) => d.id)} strategy={verticalListSortingStrategy}>
@@ -226,6 +238,10 @@ export function DataStep() {
                 onSaved={(id) => setSelection({ kind: 'source', id })}
               />
             </Box>
+          )}
+
+          {selection?.kind === 'upload' && (
+            <ExcelUpload onIngested={() => { void refreshDataSources() }} />
           )}
 
           {selectedSpec && (

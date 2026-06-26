@@ -156,6 +156,24 @@ export async function deleteDataSource(id: string): Promise<void> {
   }
 }
 
+/**
+ * Re-list data sources from the server and replace the store's set. The refresh
+ * path after an OUT-OF-BAND write the panel did not author through the CRUD thunks
+ * — e.g. an Excel ingest that publishes new gold data. Returns true on success,
+ * false on an API failure (the caller keeps the stale-but-usable list — graceful
+ * degradation, never a blank list). Read-only sync, so it never throws to the UI.
+ */
+export async function refreshDataSources(): Promise<boolean> {
+  try {
+    const rows = await configApi.dataSources.list()
+    useConstructorStore.getState().setDataSources(rows.map(fromApiDataSource))
+    return true
+  } catch (e) {
+    console.error('[api] refreshDataSources failed', e)
+    return false
+  }
+}
+
 // ── Data specs ──────────────────────────────────────────────────────────────────
 
 export async function createDataSpec(

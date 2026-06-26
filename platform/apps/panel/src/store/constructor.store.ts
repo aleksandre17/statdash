@@ -54,6 +54,7 @@ export interface ConstructorStore extends ConstructorSession, WizardSlice, Histo
 
   // Data Layer actions
   addDataSource:     (ds: DataSourceDef) => void
+  setDataSources:    (sources: DataSourceDef[]) => void
   updateDataSource:  (id: string, patch: Partial<DataSourceDef>) => void
   removeDataSource:  (id: string) => void
   reorderDataSources: (orderedIds: string[]) => void
@@ -138,6 +139,12 @@ export const useConstructorStore = create<ConstructorStore>()(
           false,
           'data/addDataSource',
         ),
+      // Replace the whole sources list with the server's authoritative set — the
+      // refresh path after an out-of-band write (e.g. an Excel ingest publishes new
+      // gold data + may register a source). Not history-tracked: a server-state sync
+      // is not a user edit to undo.
+      setDataSources: (sources) =>
+        set({ dataSources: sources }, false, 'data/setDataSources'),
       updateDataSource: (id, patch) =>
         set(
           (s) => ({
