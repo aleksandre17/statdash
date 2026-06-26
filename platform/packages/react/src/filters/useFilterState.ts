@@ -12,8 +12,9 @@ import { useFilter }                     from '../context/FilterContext'
 import type { SectionContext, TimeMode, DimVal } from '@statdash/engine'
 import type { Effect, FilterSchemaInput }        from '@statdash/engine'
 import type { DataStore }                        from '@statdash/engine'
-import { autoParse, resolveDefaults }            from '@statdash/engine'
+import { autoParse, resolveDefaults, evalWhen }  from '@statdash/engine'
 import { resolveYears, resolveOptions }          from '@statdash/engine'
+import type { WhenMap }                          from '@statdash/engine'
 import type { ParamDef, ParamCascadeNode, CascadeNode } from '@statdash/engine'
 import type { ParamYearSelect, ParamSelect, ParamMultiSelect } from '@statdash/engine'
 import type { EngineRow }                        from '@statdash/engine'
@@ -69,15 +70,37 @@ export function useFilterState(
 ): FilterState {
   const { state } = useFilter()
 
-  // Flatten all [key, ParamDef] pairs from all bars — order within each bar preserved.
-  const flatParams: Array<{ key: string; def: ParamDef }> = useMemo(
+  // Flatten all [key, ParamDef] pairs from all bars — order within each bar
+  // preserved. Each entry keeps its owning bar's `showWhen` so default
+  // resolution can be gated by the bar's current visibility (below).
+  const flatParamEntries: Array<{ key: string; def: ParamDef; barShowWhen?: WhenMap }> = useMemo(
     () =>
       Object.values(schema?.bars ?? {}).flatMap(bar =>
-        Object.entries(bar.filters).map(([key, def]) => ({ key, def })),
+        Object.entries(bar.filters).map(([key, def]) => ({ key, def, barShowWhen: bar.showWhen })),
       ),
     // schema is static config — deps empty intentional
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [],
+  )
+
+  const flatParams: Array<{ key: string; def: ParamDef }> = flatParamEntries
+
+  // Defaults must NOT be resolved for a param whose bar is hidden in the current
+  // mode (its bar's `showWhen` fails for `state`). A time-mode toggle hides one
+  // bar and shows another (e.g. year-bar `mode≠range` vs range-bar `mode=range`);
+  // an effect clears the hidden bar's keys, but resolveDefaults would otherwise
+  // immediately RE-FILL them from their DefaultSpec — re-pinning a single `year`
+  // in range/dynamics mode. That spurious `time` pin makes the query resolver's
+  // range-mode read (unbounded → client-clamp) collapse to one warmed year on the
+  // async store (the timeseries shows a single bar). Gating by bar visibility
+  // keeps the inactive bar's params unset, so range mode stays time-unbounded and
+  // year mode stays range-unbounded — the modes do not cross-pin each other.
+  const defaultParams = useMemo(
+    () =>
+      flatParamEntries
+        .filter(({ barShowWhen }) => !barShowWhen || evalWhen(barShowWhen, state))
+        .map(({ key, def }) => ({ key, def })),
+    [flatParamEntries, state],
   )
 
   // Tier 3 options getter — maps a param key to its EngineRow list for
@@ -116,8 +139,8 @@ export function useFilterState(
   //   key they set to null would need a second resolveDefaults call on the next
   //   render — tracked as Step 3.2d.
   const { dims: resolvedDims, pendingKeys } = useMemo(
-    () => resolveDefaults(flatParams, state, getOptions),
-    [flatParams, state, getOptions],
+    () => resolveDefaults(defaultParams, state, getOptions),
+    [defaultParams, state, getOptions],
   )
 
   // raw: Record<string, string> — callers depend on string values throughout.

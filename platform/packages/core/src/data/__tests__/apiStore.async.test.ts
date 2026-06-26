@@ -342,6 +342,28 @@ describe('toObsParams + applyClientFilter — $ne exclusion', () => {
     // The positive $ctx scope IS wire-expressible (scalar) — sent; $ne stays client-side.
     expect(firstFilter()['geo']).toBe('GE')
   })
+
+  it('REGRESSION: a pure $ne DROPS a stale ctx-baseline pin (empty sector donut)', async () => {
+    // The regional sector donut: ctx.dims['sector']='_T' (the "all sectors" select
+    // default) + the donut query `sector:{$ne:'_T'}` (break down by sector). The ctx
+    // baseline must NOT scope the fetch to '_T' — else matchesFilter's `$ne:'_T'`
+    // drops every returned row and the donut shows "No data".
+    vi.mocked(fetch).mockResolvedValueOnce(makeOkResponse([
+      { time_period: '2023', dim_key: { geo: 'R2', sector: '_T'  }, obs_value: 999, obs_status: 'A', obs_attribute: {} },
+      { time_period: '2023', dim_key: { geo: 'R2', sector: 'S13' }, obs_value: 10,  obs_status: 'A', obs_attribute: {} },
+      { time_period: '2023', dim_key: { geo: 'R2', sector: 'S14' }, obs_value: 20,  obs_status: 'A', obs_attribute: {} },
+    ]))
+    const store = makeStore()
+    const res = await store.queryAsync(
+      { type: 'obs', measure: 'GVA', filter: { sector: { $ne: '_T' } } },
+      { timeMode: 'year', dims: { time: 2023, sector: '_T' } },
+    )
+    // The wire must NOT pin sector to the excluded value (broad fetch).
+    expect(firstFilter()['sector']).toBeUndefined()
+    // Client-side $ne keeps the real sectors, drops the _T total.
+    const sectors = res.data.map((r) => (r as Record<string, unknown>)['sector'])
+    expect(sectors).toEqual(['S13', 'S14'])
+  })
 })
 
 describe('ApiStore.querySync', () => {

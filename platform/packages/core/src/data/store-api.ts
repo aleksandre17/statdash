@@ -19,11 +19,11 @@
 
 import type { Classifier, DisplayMap }                                 from '../sdmx'
 import type { SectionContext }                                         from '../core/context'
-import { TIME_DIM, MEASURE_DIM }                                       from '../core/context'
+import { TIME_DIM }                                                    from '../core/context'
 import { isUnsetTime }                                                 from '../core/time-dimension'
 import type { EngineRow }                                              from './encoding'
 import type { DataStore, QueryResult, ResultMeta, StoreCaps, StoreQuery } from './store'
-import { matchesFilter } from './store-filter'
+import { matchesFilter, buildObsFilterParam } from './store-filter'
 import type { DimVal, FilterValue } from '../sdmx'
 import type { MetadataPort }                                           from '../core/provenance'
 
@@ -253,81 +253,12 @@ export class ApiStore implements DataStore {
       }
     }
 
-    // Non-time dim filters: ctx.dims baseline, q.filter overrides. The canonical
-    // wire shape (observations route · dim-filter.ts) is a JSON object whose value
-    // per dim is EITHER a scalar (AND containment) OR a JSON ARRAY (OR within the
-    // dim — the SDMX multi-value key selection, e.g. a cross-region panel sending
-    // geo ∈ {R2,R3}). We preserve arrays AS arrays here (no comma-join collapse):
-    // the route reads `["R2","R3"]` as the OR-set, which `,`-joining would have
-    // flattened into the single literal value "R2,R3" (an unmatchable code).
-    const filterRecord: Record<string, string | string[]> = {}
-
-    for (const dim of this.nonTimeDims) {
-      const ctxVal = ctx.dims[dim]
-      if (ctxVal !== undefined && ctxVal !== '' && ctxVal !== null) {
-        filterRecord[dim] = String(ctxVal)
-      }
-    }
-
-    // A `val` query is an OLAP point-read for ONE measure: its `code` IS the
-    // measure-dim selection (ExternalStore._val matches obs[MEASURE_DIM] === code).
-    // The async store MUST pin it on the wire — otherwise the server returns every
-    // measure in the (time × dims) slice and the caller's storeVal reads rows[0],
-    // collapsing every per-measure KPI onto whichever measure sorts first.
-    // This pin is the val SSOT (MEASURE_DIM); it wins over any inherited ctx value.
-    if (q.type === 'val') {
-      filterRecord[MEASURE_DIM] = q.code
-    }
-
-    if (q.type === 'obs' && q.filter) {
-      for (const [dim, fv] of Object.entries(q.filter)) {
-        if (dim === TIME_DIM || fv === undefined || fv === null) continue
-        const isObj = typeof fv === 'object' && !Array.isArray(fv)
-        if (isObj && '$ne' in (fv as object)) {
-          // `$ne` (exclusion) is a CLIENT-SIDE operator: the observations route's
-          // filter schema accepts only scalars and arrays-of-scalars (dim-filter.ts
-          // expresses `@>` containment + `= ANY`, never `<>`), so it would REJECT an
-          // object value — and the old `else` branch String()-ified it to the
-          // unmatchable literal "[object Object]" (the empty regional map). We must
-          // NOT put `$ne` on the wire. If the ref ALSO carries a `$ctx` positive
-          // scope, that scalar IS wire-expressible — send it (narrow the fetch); the
-          // `$ne` exclusion is then applied to the returned rows by applyClientFilter
-          // (the SSOT matchesFilter predicate). A pure `{$ne}` sends NO dim filter
-          // (fetch the broader set) and excludes client-side.
-          const ne = fv as { $ne: unknown; $ctx?: string }
-          if (ne.$ctx !== undefined) {
-            const val = ctx.dims[ne.$ctx]
-            if (val !== undefined && val !== '' && val !== null) filterRecord[dim] = String(val)
-          }
-        } else if (isObj && '$ctx' in (fv as object)) {
-          const ref = (fv as { $ctx: string }).$ctx
-          const val = ctx.dims[ref]
-          if (val !== undefined && val !== '' && val !== null) filterRecord[dim] = String(val)
-        } else if (Array.isArray(fv)) {
-          // Multi-value selection → keep the array (OR within the dim). Empty arrays
-          // are dropped: an empty selection scopes nothing and would 0-match every row.
-          const vals = (fv as Array<string | number>).map((v) => String(v))
-          if (vals.length > 0) filterRecord[dim] = vals
-        } else {
-          filterRecord[dim] = String(fv)
-        }
-      }
-    }
-
-    if (Object.keys(filterRecord).length > 0) {
-      // Canonical (key-sorted) serialization. The filter object is assembled from
-      // multiple sources in a source-dependent ORDER (nonTimeDims loop, then the val
-      // measure pin, then q.filter) — so two reads of the SAME logical slice can emit
-      // the same dims in a DIFFERENT insertion order. Since this string is BOTH the
-      // wire param AND (via cacheKeyFor) the cache identity, an order-unstable JSON
-      // would make the warm key and the synchronous read key diverge for one slice →
-      // querySync cold-throw (the range/dynamics kpi-strip crash). Sorting keys makes
-      // the key insertion-order-invariant (SSOT for cache identity) and the wire
-      // request deterministic. Values (incl. array OR-sets) are untouched.
-      const sorted: Record<string, string | string[]> = {}
-      for (const k of Object.keys(filterRecord).sort()) sorted[k] = filterRecord[k]
-      params['filter'] = JSON.stringify(sorted)
-    }
+    // Non-time dim filters: ctx.dims baseline merged with q.filter overrides,
+    // key-sorted for a deterministic wire param + insertion-order-invariant cache
+    // identity. The full precedence + `$ne` client-side semantics live in the one
+    // helper (buildObsFilterParam, store-filter.ts) shared as the SSOT.
+    const filter = buildObsFilterParam(q, ctx, this.nonTimeDims)
+    if (filter !== undefined) params['filter'] = filter
 
     params['limit'] = String((q as { limit?: number }).limit ?? 1000)
     return params

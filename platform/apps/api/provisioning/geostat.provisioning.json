@@ -1123,7 +1123,7 @@
                 "toYear": {
                   "default": {
                     "from": "options",
-                    "pick": "last"
+                    "pick": "first"
                   },
                   "options": {
                     "items": {
@@ -2172,7 +2172,7 @@
                 "toYear": {
                   "default": {
                     "from": "options",
-                    "pick": "last"
+                    "pick": "first"
                   },
                   "options": {
                     "items": {
@@ -3702,7 +3702,7 @@
                 "toYear": {
                   "default": {
                     "from": "options",
-                    "pick": "last"
+                    "pick": "first"
                   },
                   "options": {
                     "items": {

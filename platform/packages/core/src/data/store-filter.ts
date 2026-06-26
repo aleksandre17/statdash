@@ -14,7 +14,81 @@
 import type { Classifier, ClassifierEntry, CtxRef, DimVal,
               FilterValue, NeCtxRef, NeRef }                           from '../sdmx'
 import type { SectionContext }                                         from '../core/context'
+import { TIME_DIM, MEASURE_DIM }                                       from '../core/context'
 import { resolveRef }                                                   from '../ref/ref'
+import type { StoreQuery }                                             from './store'
+
+
+// ── buildObsFilterParam — StoreQuery → wire `filter` JSON (or undefined) ──
+//
+//  Assembles the non-time dim filter for the observations wire param. Sources,
+//  in precedence order:
+//    1. ctx.dims baseline (every nonTimeDim with a concrete value)
+//    2. a `val` query's MEASURE_DIM pin (the OLAP point-read measure SSOT)
+//    3. q.filter overrides ($ctx scope · array OR-set · scalar · `$ne` exclusion)
+//
+//  `$ne` is a CLIENT-SIDE operator (the route's dim-filter schema has no `<>`): a
+//  pure `{$ne}` sends NO positive pin AND drops any ctx-baseline pin for that dim
+//  (q.filter intent wins — else the baseline scopes the fetch TO the excluded
+//  value and matchesFilter drops every row). A `{$ne,$ctx}` sends the $ctx scalar.
+//
+//  The result is key-sorted so the wire param (and the cache identity derived from
+//  it) is insertion-order-invariant — two reads of one logical slice key identically.
+export function buildObsFilterParam(
+  q:           StoreQuery,
+  ctx:         SectionContext,
+  nonTimeDims: readonly string[],
+): string | undefined {
+  const filterRecord: Record<string, string | string[]> = {}
+
+  for (const dim of nonTimeDims) {
+    const ctxVal = ctx.dims[dim]
+    if (ctxVal !== undefined && ctxVal !== '' && ctxVal !== null) {
+      filterRecord[dim] = String(ctxVal)
+    }
+  }
+
+  // A `val` query is an OLAP point-read for ONE measure: pin MEASURE_DIM (the val
+  // SSOT) — else the server returns every measure and storeVal collapses onto rows[0].
+  if (q.type === 'val') {
+    filterRecord[MEASURE_DIM] = q.code
+  }
+
+  if (q.type === 'obs' && q.filter) {
+    for (const [dim, fv] of Object.entries(q.filter)) {
+      if (dim === TIME_DIM || fv === undefined || fv === null) continue
+      const isObj = typeof fv === 'object' && !Array.isArray(fv)
+      if (isObj && '$ne' in (fv as object)) {
+        const ne = fv as { $ne: unknown; $ctx?: string }
+        if (ne.$ctx !== undefined) {
+          const val = ctx.dims[ne.$ctx]
+          if (val !== undefined && val !== '' && val !== null) filterRecord[dim] = String(val)
+        } else {
+          // Pure `{$ne}`: fetch the broader set, exclude client-side. Drop any
+          // stale ctx-baseline pin so it does not scope the fetch to the excluded
+          // value (the empty sector donut: ctx.dims['sector']='_T' + `$ne:'_T'`).
+          delete filterRecord[dim]
+        }
+      } else if (isObj && '$ctx' in (fv as object)) {
+        const ref = (fv as { $ctx: string }).$ctx
+        const val = ctx.dims[ref]
+        if (val !== undefined && val !== '' && val !== null) filterRecord[dim] = String(val)
+      } else if (Array.isArray(fv)) {
+        // Multi-value OR-set (kept as an array; empty → dropped, scopes nothing).
+        const vals = (fv as Array<string | number>).map((v) => String(v))
+        if (vals.length > 0) filterRecord[dim] = vals
+      } else {
+        filterRecord[dim] = String(fv)
+      }
+    }
+  }
+
+  if (Object.keys(filterRecord).length === 0) return undefined
+
+  const sorted: Record<string, string | string[]> = {}
+  for (const k of Object.keys(filterRecord).sort()) sorted[k] = filterRecord[k]
+  return JSON.stringify(sorted)
+}
 
 
 // ── dimKey ────────────────────────────────────────────────────────────
