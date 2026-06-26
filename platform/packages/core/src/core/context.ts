@@ -73,6 +73,20 @@ export interface SectionContext {
 //
 export const TIME_DIM = 'time'
 
+// ── MEASURE_DIM — canonical measure (SDMX flow code) dimension key ────
+//
+//  The SDMX MEASURE / OBS-flow code key. A `{ type:'val', code }` query
+//  selects the cell for THIS measure: stores match `obs[MEASURE_DIM] === code`
+//  (ExternalStore._val) and the wire filter pins it as `filter[MEASURE_DIM]`.
+//
+//  Like TIME_DIM, this is NOT a privileged dimension — it is the single named
+//  SSOT for the one conventional key the OLAP point-read (`val`) operates on,
+//  replacing a magic 'measure' literal scattered across stores. The async
+//  ApiStore MUST thread the val `code` through this key or every val read
+//  degenerates to "all measures in the slice" → rows[0] mis-binding.
+//
+export const MEASURE_DIM = 'measure'
+
 // ── atTime — pin the time-axis dim to a specific value ────────────────
 //
 //  Returns ctx unchanged when already at t (referential-equality fast path

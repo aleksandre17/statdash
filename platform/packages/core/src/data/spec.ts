@@ -3,6 +3,7 @@ import { desugar }               from './desugar'
 import { resolveFilterForReqs }  from '../registry/resolvers'
 import { resolveMeasureRef }     from './metric'
 import type { EngineRow }        from './encoding'
+import type { DimVal }           from '../sdmx'
 import type { DataSpec }         from '../config/data-spec'
 import type { SectionContext }   from '../core/context'
 import { TIME_DIM }              from '../core/context'
@@ -162,7 +163,8 @@ export function extractRequirements(
     case 'query': {
       const measures = resolveMeasureRef(spec.query.measure).codes
 
-      const timeFilter = spec.query.filter?.[TIME_DIM]
+      const filter     = spec.query.filter
+      const timeFilter = filter?.[TIME_DIM]
       let years: number[]
 
       if (timeFilter !== undefined) {
@@ -173,8 +175,25 @@ export function extractRequirements(
         years = [time]
       }
 
+      // Fold the query's NON-time filter dims into the requirement dims so each
+      // pinned slice is uniquely identified. Two `query` specs that differ ONLY by
+      // a filter pin (e.g. approach:'PROD' vs 'EXP') MUST yield distinct
+      // requirements — otherwise their specDimKey collides and useNodeRows' promise
+      // cache returns one panel's rows for the other. The pin also flows into the
+      // warm reqCtx so the prefetched slice is correctly scoped. $ctx refs resolve
+      // against ctx exactly as the read does; multi-value/$ne pins (non-scalar) are
+      // left to the obs read (they don't narrow to a single cache identity here).
+      const pinned: Record<string, DimVal> = {}
+      if (filter) {
+        for (const [dim, fv] of Object.entries(filter)) {
+          if (dim === TIME_DIM || fv === undefined || fv === null) continue
+          const vals = resolveFilterForReqs(fv, ctx)
+          if (vals.length === 1) pinned[dim] = vals[0]!
+        }
+      }
+
       return measures.flatMap((code) =>
-        years.map((year) => ({ code, dims: { ...ctx.dims, [TIME_DIM]: year } })),
+        years.map((year) => ({ code, dims: { ...ctx.dims, ...pinned, [TIME_DIM]: year } })),
       )
     }
 

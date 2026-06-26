@@ -19,7 +19,7 @@
 
 import type { Classifier }                                             from '../sdmx'
 import type { SectionContext }                                         from '../core/context'
-import { TIME_DIM }                                                    from '../core/context'
+import { TIME_DIM, MEASURE_DIM }                                       from '../core/context'
 import type { EngineRow }                                              from './encoding'
 import type { DataStore, QueryResult, ResultMeta, StoreCaps, StoreQuery } from './store'
 import type { MetadataPort }                                           from '../core/provenance'
@@ -253,6 +253,16 @@ export class ApiStore implements DataStore {
       if (ctxVal !== undefined && ctxVal !== '' && ctxVal !== null) {
         filterRecord[dim] = String(ctxVal)
       }
+    }
+
+    // A `val` query is an OLAP point-read for ONE measure: its `code` IS the
+    // measure-dim selection (ExternalStore._val matches obs[MEASURE_DIM] === code).
+    // The async store MUST pin it on the wire — otherwise the server returns every
+    // measure in the (time × dims) slice and the caller's storeVal reads rows[0],
+    // collapsing every per-measure KPI onto whichever measure sorts first.
+    // This pin is the val SSOT (MEASURE_DIM); it wins over any inherited ctx value.
+    if (q.type === 'val') {
+      filterRecord[MEASURE_DIM] = q.code
     }
 
     if (q.type === 'obs' && q.filter) {
