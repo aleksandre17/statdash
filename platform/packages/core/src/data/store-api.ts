@@ -125,10 +125,15 @@ export class ApiStore implements DataStore {
       }
     }
 
-    // Conditional GET: attach If-None-Match when we have a stored ETag
+    // Conditional GET: send If-None-Match ONLY when THIS slice is already cached.
+    // The ETag is dataset-level, but each (from,to,filter) slice is its OWN cache
+    // entry. A 304 = "your cached copy of THIS resource is fresh" — usable only if we
+    // HOLD that slice. Sending it for a never-fetched slice invites a 304 whose branch
+    // returns [] WITHOUT caching → the post-warm querySync(val, thatSlice) cold-throws
+    // (the range/dynamics kpi-strip crash: first slice 200s, later slices 304 to empty).
     const headers: Record<string, string> = {}
     const storedETag = this._eTags.get(this.datasetCode)
-    if (storedETag) headers['If-None-Match'] = storedETag
+    if (storedETag && this._cache.has(cacheKey)) headers['If-None-Match'] = storedETag
 
     let res: Response
     try {
@@ -310,7 +315,18 @@ export class ApiStore implements DataStore {
     }
 
     if (Object.keys(filterRecord).length > 0) {
-      params['filter'] = JSON.stringify(filterRecord)
+      // Canonical (key-sorted) serialization. The filter object is assembled from
+      // multiple sources in a source-dependent ORDER (nonTimeDims loop, then the val
+      // measure pin, then q.filter) — so two reads of the SAME logical slice can emit
+      // the same dims in a DIFFERENT insertion order. Since this string is BOTH the
+      // wire param AND (via cacheKeyFor) the cache identity, an order-unstable JSON
+      // would make the warm key and the synchronous read key diverge for one slice →
+      // querySync cold-throw (the range/dynamics kpi-strip crash). Sorting keys makes
+      // the key insertion-order-invariant (SSOT for cache identity) and the wire
+      // request deterministic. Values (incl. array OR-sets) are untouched.
+      const sorted: Record<string, string | string[]> = {}
+      for (const k of Object.keys(filterRecord).sort()) sorted[k] = filterRecord[k]
+      params['filter'] = JSON.stringify(sorted)
     }
 
     params['limit'] = String((q as { limit?: number }).limit ?? 1000)

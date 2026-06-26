@@ -18,6 +18,7 @@
   "sideEffects": [
     "./src/index.ts",
     "./src/data/spec.ts",
+    "./src/data/transform/index.ts",
     "./src/registry/resolvers.ts",
     "./src/registry/interpreters.ts"
   ],
