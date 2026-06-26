@@ -143,6 +143,50 @@ describe('useKpiRows — async store warms BOTH periods of a yoy KPI', () => {
     expect(urls.some(u => u.includes('from=2025&to=2025'))).toBe(true)
   })
 
+  it('warms under the EXACT read dims when a KPI filter wildcards a page-pinned dim (no cold-throw)', async () => {
+    // REGRESSION (range/dynamics kpi-strip "Failed to load component"): a KPI on a
+    // region-pinned page that reads the NATIONAL total wildcards geo (filter geo:'').
+    // extractKpiRequirements DELETES geo (withFilter wildcard) so the read's cacheKey
+    // carries NO geo. The warm previously rebuilt its ctx as { ...sectionCtx.dims,
+    // ...r.dims }, which REINTRODUCED geo='R2' from sectionCtx → warm key had geo,
+    // read key did not → cache miss → ApiStore.querySync cold-throw. The fix warms
+    // under r.dims VERBATIM.
+    vi.mocked(fetch).mockImplementation(async () =>
+      okResponse([{ time_period: '2025', dim_key: {}, obs_value: 100, obs_status: 'A', obs_attribute: {} }]),
+    )
+
+    const NATIONAL_KPI: KpiSpec = {
+      id: 'natl', label: 'GDP (national)', unit: 'mln', color: '#000', mode: 'both',
+      value: { type: 'point', measure: 'GDP', format: 'mln_gel', filter: { geo: '' } }, // '' = wildcard → drop geo
+    }
+    const node: NodeBase = { type: 'kpi-async', items: [NATIONAL_KPI] } as unknown as NodeBase
+
+    // A store with `geo` as a non-time dim so a ctx-pinned geo reaches the wire
+    // filter — the channel through which the warm/read key could diverge.
+    const geoStore = new CachedStore(
+      new ApiStore(BASE, 'GDP_ANNUAL', ['geo'], {}, mapRow),
+    ) as unknown as DataStore
+
+    // The page pins geo='R2'; the KPI must read across geo (national total).
+    const ctx = makeCtx(geoStore)
+    ;(ctx.sectionCtx as { dims: Record<string, unknown> }).dims = { time: 2025, geo: 'R2' }
+
+    let result!: ReturnType<typeof render>
+    await act(async () => {
+      result = render(renderNode(node, ctx) as React.ReactElement)
+    })
+
+    // No NodeErrorBoundary fallback — the warm covered the actual (geo-less) read
+    // key, so interpretKpis' querySync resolves synchronously instead of cold-throwing.
+    expect(result.queryByText('Failed to load component')).toBeNull()
+    expect(result.getByTestId('kpi-shell')).toBeTruthy()
+
+    // The warmed request carries NO geo filter (it matches the geo-less read key) —
+    // proving the warm used r.dims verbatim, not the geo-reintroducing merge.
+    const urls = vi.mocked(fetch).mock.calls.map(c => String(c[0]))
+    expect(urls.some(u => u.includes('geo'))).toBe(false)
+  })
+
   it('a duplicated concurrent queryAsync for the same key reuses ONE in-flight promise', async () => {
     // One pending Response — both concurrent calls must share it (no second fetch).
     let resolveFetch!: (r: Response) => void

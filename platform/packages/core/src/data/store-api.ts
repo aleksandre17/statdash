@@ -20,8 +20,11 @@
 import type { Classifier, DisplayMap }                                 from '../sdmx'
 import type { SectionContext }                                         from '../core/context'
 import { TIME_DIM, MEASURE_DIM }                                       from '../core/context'
+import { isUnsetTime }                                                 from '../core/time-dimension'
 import type { EngineRow }                                              from './encoding'
 import type { DataStore, QueryResult, ResultMeta, StoreCaps, StoreQuery } from './store'
+import { matchesFilter } from './store-filter'
+import type { DimVal, FilterValue } from '../sdmx'
 import type { MetadataPort }                                           from '../core/provenance'
 
 
@@ -46,24 +49,9 @@ export interface RawObsRow {
 }
 
 
-// ── isUnsetTime — "no time bound resolved yet" guard ─────────────────
-//
-//  An unset time dim means "unbounded → all periods" (the observations route
-//  reads absent from/to as no filter). A spurious 0 / '0' / NaN must be treated
-//  as unset too: otherwise it becomes from=0&to=0, which the route's
-//  sdmxTimePeriod regex rejects (400). Comma-range strings ('2015,2020') and any
-//  real period are NOT unset and pass through. Single-value 0 (number or string)
-//  and NaN are unset.
-function isUnsetTime(timeDim: unknown): boolean {
-  if (timeDim === undefined || timeDim === null || timeDim === '') return true
-  if (typeof timeDim === 'number') return timeDim === 0 || Number.isNaN(timeDim)
-  const s = String(timeDim).trim()
-  if (s === '' || s === '0') return true
-  // A bare numeric string that parses to 0/NaN is unset; non-numeric (e.g. a
-  // comma-range or period code like '2015-Q1') is a real bound, kept.
-  if (/^-?\d+(\.\d+)?$/.test(s)) return Number(s) === 0
-  return false
-}
+// isUnsetTime is the SSOT predicate in core/time-dimension.ts — toObsParams and
+// extractRequirements both import it so the warm/read-key invariant (GAP 4) rests
+// on ONE definition, never two copies that can drift.
 
 
 // ── ApiStore ─────────────────────────────────────────────────────────
@@ -125,7 +113,7 @@ export class ApiStore implements DataStore {
 
   async queryAsync(q: StoreQuery, ctx: SectionContext): Promise<QueryResult<EngineRow>> {
     const params   = this.toObsParams(q, ctx)
-    const cacheKey = JSON.stringify(params)
+    const cacheKey = this.cacheKeyFor(q, ctx)
 
     // Warm read — return cached result immediately
     const cached = this._cache.get(cacheKey)
@@ -171,11 +159,12 @@ export class ApiStore implements DataStore {
     const etag = res.headers.get('ETag')
     if (etag) this._eTags.set(this.datasetCode, etag)
 
-    // Parse, map, order, cache
+    // Parse, map, client-filter (the wire-inexpressible operators), order, cache.
     const json    = await res.json() as { data: RawObsRow[] }
     const limit   = Number(params['limit'] ?? 1000)
     const rows    = json.data.map(raw => this.mapRow(raw))
-    const ordered = this.applyOrderBy(rows, q)
+    const filtered = this.applyClientFilter(rows, q, ctx)
+    const ordered = this.applyOrderBy(filtered, q)
 
     this._cache.set(cacheKey, ordered)
     return {
@@ -197,7 +186,7 @@ export class ApiStore implements DataStore {
   //  first for live stores (caps.sync === false).
 
   queryFrame(q: StoreQuery, ctx: SectionContext): { rows: EngineRow[]; meta: ResultMeta } {
-    const cacheKey = JSON.stringify(this.toObsParams(q, ctx))
+    const cacheKey = this.cacheKeyFor(q, ctx)
     const cached   = this._cache.get(cacheKey)
     if (cached) {
       const limit = (q as { limit?: number }).limit ?? 1000
@@ -220,7 +209,7 @@ export class ApiStore implements DataStore {
   // ── querySync — warm-cache fast-lane only ─────────────────────────
 
   querySync(q: StoreQuery, ctx: SectionContext): EngineRow[] {
-    const cacheKey = JSON.stringify(this.toObsParams(q, ctx))
+    const cacheKey = this.cacheKeyFor(q, ctx)
     const cached   = this._cache.get(cacheKey)
     if (cached) return cached
     throw new Error(
@@ -288,7 +277,24 @@ export class ApiStore implements DataStore {
     if (q.type === 'obs' && q.filter) {
       for (const [dim, fv] of Object.entries(q.filter)) {
         if (dim === TIME_DIM || fv === undefined || fv === null) continue
-        if (typeof fv === 'object' && !Array.isArray(fv) && '$ctx' in (fv as object)) {
+        const isObj = typeof fv === 'object' && !Array.isArray(fv)
+        if (isObj && '$ne' in (fv as object)) {
+          // `$ne` (exclusion) is a CLIENT-SIDE operator: the observations route's
+          // filter schema accepts only scalars and arrays-of-scalars (dim-filter.ts
+          // expresses `@>` containment + `= ANY`, never `<>`), so it would REJECT an
+          // object value — and the old `else` branch String()-ified it to the
+          // unmatchable literal "[object Object]" (the empty regional map). We must
+          // NOT put `$ne` on the wire. If the ref ALSO carries a `$ctx` positive
+          // scope, that scalar IS wire-expressible — send it (narrow the fetch); the
+          // `$ne` exclusion is then applied to the returned rows by applyClientFilter
+          // (the SSOT matchesFilter predicate). A pure `{$ne}` sends NO dim filter
+          // (fetch the broader set) and excludes client-side.
+          const ne = fv as { $ne: unknown; $ctx?: string }
+          if (ne.$ctx !== undefined) {
+            const val = ctx.dims[ne.$ctx]
+            if (val !== undefined && val !== '' && val !== null) filterRecord[dim] = String(val)
+          }
+        } else if (isObj && '$ctx' in (fv as object)) {
           const ref = (fv as { $ctx: string }).$ctx
           const val = ctx.dims[ref]
           if (val !== undefined && val !== '' && val !== null) filterRecord[dim] = String(val)
@@ -309,6 +315,56 @@ export class ApiStore implements DataStore {
 
     params['limit'] = String((q as { limit?: number }).limit ?? 1000)
     return params
+  }
+
+  // ── cacheKeyFor — cache identity = wire params + client-side $ne discriminant ──
+  //
+  //  The cached entry holds the rows AFTER applyClientFilter, so the cache key MUST
+  //  reflect the `$ne` exclusion — otherwise two queries that resolve to the SAME
+  //  wire slice but DIFFERENT exclusions (`geo:{$ne:'_T'}` vs `geo:{$ne:'R2'}`)
+  //  collide and the second reads the first's filtered rows (the dropped-pin class
+  //  of bug). `$ne` never reaches the wire params (the route can't express it), so
+  //  we fold it into the key here. A query with no `$ne` yields exactly the wire
+  //  params key (byte-identical to the pre-fix key — no cache churn).
+  private cacheKeyFor(q: StoreQuery, ctx: SectionContext): string {
+    const params = this.toObsParams(q, ctx)
+    const ne: Record<string, unknown> = {}
+    if (q.type === 'obs' && q.filter) {
+      for (const [dim, fv] of Object.entries(q.filter)) {
+        if (fv !== null && typeof fv === 'object' && !Array.isArray(fv) && '$ne' in (fv as object)) {
+          const r = fv as { $ne: unknown; $ctx?: string }
+          // Resolve a $ctx-scoped exclusion to its concrete value so the key reflects
+          // the ACTUAL excluded code, not the unresolved ref (mirrors matchesFilter).
+          ne[dim] = r.$ctx !== undefined ? { $ne: r.$ne, ctx: ctx.dims[r.$ctx] } : { $ne: r.$ne }
+        }
+      }
+    }
+    return Object.keys(ne).length > 0
+      ? JSON.stringify({ params, ne })
+      : JSON.stringify(params)
+  }
+
+  // ── applyClientFilter — exclusion ($ne) the wire route can't express ─────
+  //
+  //  The observations route scopes via containment (@>) + array membership
+  //  (= ANY) only — NO `<>`. So a `$ne` (exclusion) filter is resolved HERE,
+  //  client-side, over the returned rows using the SSOT predicate matchesFilter
+  //  (store-filter.ts — the SAME predicate ExternalStore uses, so static and live
+  //  stores honour `$ne` identically). Only `$ne`-bearing dims are post-filtered;
+  //  scalar/array dims were already scoped server-side, so this is a cheap pass
+  //  that re-checks just the exclusion (matchesFilter on a scalar that already
+  //  matched is a no-op). A query with no `$ne` returns rows untouched.
+  //
+  private applyClientFilter(rows: EngineRow[], q: StoreQuery, ctx: SectionContext): EngineRow[] {
+    if (q.type !== 'obs' || !q.filter) return rows
+    const neFilter: Partial<Record<string, FilterValue>> = {}
+    for (const [dim, fv] of Object.entries(q.filter)) {
+      if (fv !== null && typeof fv === 'object' && !Array.isArray(fv) && '$ne' in (fv as object)) {
+        neFilter[dim] = fv as FilterValue
+      }
+    }
+    if (Object.keys(neFilter).length === 0) return rows
+    return rows.filter((row) => matchesFilter(row as Record<string, DimVal>, neFilter, ctx))
   }
 
   // ── applyOrderBy — client-side sort (mirrors ExternalStore) ──────

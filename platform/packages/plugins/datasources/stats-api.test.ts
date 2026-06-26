@@ -131,4 +131,31 @@ describe('GAP 5b — fromStatsClassifiers label + parent_code mapping', () => {
     ]) as unknown as Array<{ label: unknown }>
     expect(cl[0].label).toBe('Georgia')
   })
+
+  // REGRESSION (accounts SNA chart empty): the `aggregates` classifier carries
+  // metadata:{ account, isClosing }; the chart's { $cl:'aggregates' } join reads
+  // isClosing for the _isTotal encoding. The old ACL DROPPED metadata, so the join
+  // injected nothing and the diverging chart lost its closing markers. The lift must
+  // surface every scalar metadata key as a first-class entry attr.
+  it('lifts metadata fields (isClosing, account) to first-class entry attrs', () => {
+    const cl = fromStatsClassifiers([
+      { id: 1, code: 'P1',  label: 'Output',  color: '#000', parent_code: null, ord: 0,
+        metadata: { account: 'production', isClosing: 0 } },
+      { id: 2, code: 'B1G', label: 'GVA',     color: '#000', parent_code: null, ord: 1,
+        metadata: { account: 'production', isClosing: 1 } },
+    ]) as unknown as Array<{ code: string; isClosing?: number; account?: string }>
+    expect(cl[0].isClosing).toBe(0)
+    expect(cl[1].isClosing).toBe(1)
+    expect(cl[1].account).toBe('production')
+  })
+
+  it('the explicit code/label/color/parent win over a same-named metadata key', () => {
+    const cl = fromStatsClassifiers([
+      { id: 1, code: 'P1', label: 'Output', color: '#000', parent_code: 'X', ord: 0,
+        metadata: { code: 'WRONG', parent: 'WRONG', extra: 'kept' } },
+    ]) as unknown as Array<{ code: string; parent?: string; extra?: string }>
+    expect(cl[0].code).toBe('P1')      // explicit column wins
+    expect(cl[0].parent).toBe('X')     // parent_code wins over metadata.parent
+    expect(cl[0].extra).toBe('kept')   // non-clashing metadata still lifted
+  })
 })

@@ -222,23 +222,53 @@ export function resolveNodeRows(node: NodeBase, ctx: RenderContext): DataRow[] {
   return resolveRowLocales(rows, ctx.locale)
 }
 
-/** True for a LocaleString object `{ en, ka }` (not a string/number/null/array). */
-function isLocaleObject(v: unknown): v is Record<string, string> {
+// Reserved DataRow fields whose value is an OBJECT that is NOT a LocaleString and
+// MUST survive resolveRowLocales structurally intact. A LocaleString, a
+// ProvenanceRecord and a seriesFormat map are all "plain objects" — structurally
+// indistinguishable — so a structure-only `isLocaleObject` test flattens ALL of
+// them, silently collapsing `provenance` to a random scalar (Object.values(s)[0])
+// and killing resolvePreliminary.rowIsPreliminary (`r.provenance?.status` →
+// undefined ⇒ no preliminary/last-updated/methodology badge, a Law-9 data-integrity
+// regression). We therefore discriminate by FIELD IDENTITY, not by shape: these
+// keys are known carriers of non-LocaleString objects and are never locale-resolved.
+// (DataRow.provenance: ProvenanceRecord; EncodingSpec.seriesFormat: Record<string,
+// string>.) Any genuine display LocaleString enters via the `$d` join under a
+// DISPLAY attr key (label/series/etc.), never under one of these reserved keys.
+const NON_LOCALE_ROW_FIELDS = new Set<string>(['provenance', 'seriesFormat'])
+
+/**
+ * True for a LocaleString object `{ en, ka }` — a plain object that is NOT one of
+ * the reserved non-LocaleString DataRow carriers (provenance / seriesFormat). The
+ * field key is part of the discriminant precisely because the VALUE shape cannot
+ * distinguish a LocaleString from a ProvenanceRecord on its own.
+ */
+function isLocaleObject(key: string, v: unknown): v is Record<string, string> {
+  if (NON_LOCALE_ROW_FIELDS.has(key)) return false
   return typeof v === 'object' && v !== null && !Array.isArray(v)
 }
 
 /**
  * Resolve every LocaleString-object cell in a row set to the active locale. Pure,
  * non-mutating. Rows with no object-valued cell are returned by reference (the
- * common single-locale case — zero allocation, byte-identical).
+ * common single-locale case — zero allocation, byte-identical). Reserved object
+ * fields (provenance / seriesFormat) are passed through untouched — see
+ * NON_LOCALE_ROW_FIELDS: a row carrying `provenance` survives with
+ * `provenance.status` intact so the data-integrity badges keep firing.
  */
+// Exported as a test-only escape hatch (leading-underscore convention, mirrors
+// _storeCache): the provenance-survival invariant is asserted directly on this
+// pure function without a full interpretSpec render harness. Not public API.
+export function _resolveRowLocales(rows: DataRow[], locale: string): DataRow[] {
+  return resolveRowLocales(rows, locale)
+}
+
 function resolveRowLocales(rows: DataRow[], locale: string): DataRow[] {
   return rows.map((row) => {
     const bag = row as unknown as Record<string, unknown>
     let copy: Record<string, unknown> | undefined
     for (const k of Object.keys(bag)) {
       const v = bag[k]
-      if (isLocaleObject(v)) {
+      if (isLocaleObject(k, v)) {
         copy ??= { ...bag }
         copy[k] = resolveLocaleString(v, locale, 'en') as DimVal
       }

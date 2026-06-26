@@ -251,6 +251,60 @@ describe('toObsParams — multi-value (array) filter encoding', () => {
   })
 })
 
+// ── $ne (exclusion) — a CLIENT-SIDE operator the wire route can't express ──────
+//
+//  The observations route filter schema accepts only scalars + arrays-of-scalars
+//  (dim-filter.ts has @> and = ANY, never <>). A `$ne` filter (the regional map's
+//  `geo:{$ne:'_T'}` — every region except the national total) must therefore NOT be
+//  serialized onto the wire (the old code String()-ified it to "[object Object]",
+//  an unmatchable literal → the empty regional map). It is dropped from the wire
+//  filter and applied to the returned rows via the SSOT matchesFilter predicate.
+describe('toObsParams + applyClientFilter — $ne exclusion', () => {
+  function firstFilter(): Record<string, unknown> {
+    const url = new URL(vi.mocked(fetch).mock.calls[0][0] as string)
+    return JSON.parse(url.searchParams.get('filter') ?? '{}')
+  }
+
+  it('never serializes a $ne object onto the wire (no "[object Object]")', async () => {
+    vi.mocked(fetch).mockResolvedValueOnce(makeOkResponse([rawRow]))
+    const store = makeStore()
+    await store.queryAsync(
+      { type: 'obs', measure: 'GVA', filter: { geo: { $ne: '_T' } } },
+      { timeMode: 'year', dims: { time: 2023 } },
+    )
+    // geo carries NO wire filter (broader fetch); the exclusion is applied client-side.
+    expect(firstFilter()['geo']).toBeUndefined()
+    const raw = JSON.stringify(firstFilter())
+    expect(raw).not.toContain('[object Object]')
+  })
+
+  it('excludes the $ne value from the returned rows (client-side)', async () => {
+    vi.mocked(fetch).mockResolvedValueOnce(makeOkResponse([
+      { time_period: '2023', dim_key: { geo: '_T', sector: 'S13' }, obs_value: 999, obs_status: 'A', obs_attribute: {} },
+      { time_period: '2023', dim_key: { geo: 'R2', sector: 'S13' }, obs_value: 10,  obs_status: 'A', obs_attribute: {} },
+      { time_period: '2023', dim_key: { geo: 'R3', sector: 'S13' }, obs_value: 20,  obs_status: 'A', obs_attribute: {} },
+    ]))
+    const store = makeStore()
+    const res = await store.queryAsync(
+      { type: 'obs', measure: 'GVA', filter: { geo: { $ne: '_T' } } },
+      { timeMode: 'year', dims: { time: 2023 } },
+    )
+    const geos = res.data.map((r) => (r as Record<string, unknown>)['geo'])
+    expect(geos).toEqual(['R2', 'R3'])   // _T excluded, regions kept
+  })
+
+  it('sends the $ctx scalar to the wire while excluding $ne client-side', async () => {
+    vi.mocked(fetch).mockResolvedValueOnce(makeOkResponse([rawRow]))
+    const store = makeStore()
+    await store.queryAsync(
+      { type: 'obs', measure: 'GVA', filter: { geo: { $ctx: 'geo', $ne: '_T' } } },
+      { timeMode: 'year', dims: { time: 2023, geo: 'GE' } },
+    )
+    // The positive $ctx scope IS wire-expressible (scalar) — sent; $ne stays client-side.
+    expect(firstFilter()['geo']).toBe('GE')
+  })
+})
+
 describe('ApiStore.querySync', () => {
 
   it('5 — throws on cold cache with message containing caps.sync=false', () => {

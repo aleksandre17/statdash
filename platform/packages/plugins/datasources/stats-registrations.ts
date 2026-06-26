@@ -100,6 +100,24 @@ export function registerStoreBuilders(): void {
     const datasetCode = (config.params?.datasetCode as string) ?? config.id
     const nonTimeDims = (config.params?.nonTimeDims as string[]) ?? []
 
+    // classifierDims = the AUTHORITATIVE set of classifiers to LOAD for the store's
+    // $cl (structural join) and $d (display lookup) refs. This is a SUPERSET of
+    // nonTimeDims: a chart may join an AUXILIARY classifier that is NOT a wire-filter
+    // dimension. The accounts SNA charts join { $cl:'aggregates' } / { $d:'aggregates' }
+    // — a classifier keyed by MEASURE code carrying isClosing + label/color — yet
+    // `aggregates` is not an observations-query dimension (the wire dims are measure /
+    // account / side). Loading classifiers from nonTimeDims ONLY left classifiers
+    // .aggregates absent, so the join injected no isClosing/label/color → the hero
+    // diverging chart rendered bars with no labels and the per-account panels lost
+    // their closing-balance markers. Load from classifierDims when present; fall back
+    // to nonTimeDims (byte-identical to the pre-fix behaviour) when it is absent.
+    // INVARIANT: classifierDims ⊇ nonTimeDims — we union them so a wire dim is never
+    // dropped from the classifier set even if a config omits it from classifierDims.
+    const declaredClassifierDims = (config.params?.classifierDims as string[] | undefined)
+    const classifierDims = Array.from(
+      new Set([...(declaredClassifierDims ?? nonTimeDims), ...nonTimeDims]),
+    )
+
     const [{ fetchDimClassifiers, fromStatsObsRow, fetchDatasetMeta, fetchCubeProfile }, { buildDisplayOverlay }, { ApiStore, CachedStore, TIME_DIM }] =
       await Promise.all([
         import('./stats-api'),
@@ -109,11 +127,21 @@ export function registerStoreBuilders(): void {
 
     // Build-time classifier load — small, needed immediately (dim resolution +
     // filter dropdown options). NOT moved to the lazy path.
+    //
+    // Graceful degradation (mirrors the fetchCubeProfile/fetchDatasetMeta `.catch`
+    // below): a per-dim `.catch(() => [])` so ONE missing/failed classifier endpoint
+    // (e.g. an auxiliary `aggregates` not yet seeded in some environment) degrades to
+    // an empty classifier — the $cl/$d join then injects nothing for that ref — rather
+    // than rejecting the whole Promise.all and breaking EVERY chart on the page. The
+    // wire-filter dims (nonTimeDims) are normally present; an empty fallback there
+    // simply disables rollup/label for that dim, never a crash.
     const classifierArrays = await Promise.all(
-      nonTimeDims.map((dim) => fetchDimClassifiers(base, dim)),
+      classifierDims.map((dim) =>
+        fetchDimClassifiers(base, dim).catch(() => [] as import('@statdash/engine').Classifier),
+      ),
     )
     const classifiers: Record<string, import('@statdash/engine').Classifier> = Object.fromEntries(
-      nonTimeDims.map((dim, i) => [dim, classifierArrays[i]]),
+      classifierDims.map((dim, i) => [dim, classifierArrays[i]]),
     )
 
     // ── GAP 5 — DISPLAY overlay (SSOT: the SAME classifier rows) ───────────────
@@ -125,7 +153,7 @@ export function registerStoreBuilders(): void {
     //  $cl (structural) vs $d (display) separation is preserved: resolveDisplayRef
     //  reads label/color ONLY from this overlay, never off the structural entry.
     const display: Record<string, import('@statdash/engine').DisplayMap> = Object.fromEntries(
-      nonTimeDims.map((dim, i) => [dim, buildDisplayOverlay(classifierArrays[i])]),
+      classifierDims.map((dim, i) => [dim, buildDisplayOverlay(classifierArrays[i])]),
     )
 
     // ── Time-range readiness seam (ADR adr_time_range_readiness_seam) ──────────

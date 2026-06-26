@@ -169,3 +169,29 @@ export function effectiveYears(
   if (range !== undefined && isYearsSpec(range)) return range
   return 'all'
 }
+
+// ── isUnsetTime — "no single time bound resolved yet" (the SSOT predicate) ─────
+//
+//  An unset time dim means "unbounded → all periods": the observations route reads
+//  absent from/to as no filter, and extractRequirements warms an unbounded slice.
+//  A spurious 0 / '0' / NaN MUST count as unset too — otherwise it becomes
+//  from=0&to=0, which the route's sdmxTimePeriod regex rejects (HTTP 400). Comma-
+//  range strings ('2015,2020') and any real single period are NOT unset and pass
+//  through. Single-value 0 (number or string) and NaN are unset.
+//
+//  THIS is the one authoritative definition. ApiStore.toObsParams (the warm/read
+//  key wire shape) and extractRequirements (which decides unbounded-vs-per-year
+//  warming) BOTH gate on it; the warm/read-key invariant (GAP 4) rests on them
+//  agreeing, so they must derive from a single function — two byte-identical copies
+//  could silently drift apart and reopen the cold-read / from=0 class of bug.
+//
+export function isUnsetTime(timeDim: unknown): boolean {
+  if (timeDim === undefined || timeDim === null || timeDim === '') return true
+  if (typeof timeDim === 'number') return timeDim === 0 || Number.isNaN(timeDim)
+  const s = String(timeDim).trim()
+  if (s === '' || s === '0') return true
+  // A bare numeric string that parses to 0/NaN is unset; non-numeric (e.g. a
+  // comma-range or a period code like '2015-Q1') is a real bound, kept.
+  if (/^-?\d+(\.\d+)?$/.test(s)) return Number(s) === 0
+  return false
+}

@@ -7,7 +7,7 @@ import type { DimVal }           from '../sdmx'
 import type { DataSpec }         from '../config/data-spec'
 import type { SectionContext }   from '../core/context'
 import { TIME_DIM }              from '../core/context'
-import { effectiveYears }        from '../core/time-dimension'
+import { effectiveYears, isUnsetTime } from '../core/time-dimension'
 import type { DataStore, Requirement } from './store'
 import { defaultRegistry }       from '../registry/engine'
 import { emitDiagnostic }        from '../registry/diagnostics'
@@ -106,20 +106,10 @@ function _specTag(spec: DataSpec, ctx: SectionContext): string {
 //  spec will need, without executing it. Used by ApiStore.prefetch()
 //  and CachedStore.warm() to batch-load exactly what is needed.
 //
-/**
- * "No single time year is resolved" — range/dynamics mode (the read is
- * unbounded). Mirrors ApiStore.isUnsetTime: undefined/null/''/0/NaN are unset; a
- * real year (or a comma range) is set. Used to decide whether the query branch
- * warms an unbounded slice (range) or per-year slices (year mode) — GAP 4.
- */
-function isUnsetTimeDim(t: unknown): boolean {
-  if (t === undefined || t === null || t === '') return true
-  if (typeof t === 'number') return t === 0 || Number.isNaN(t)
-  const s = String(t).trim()
-  if (s === '' || s === '0') return true
-  if (/^-?\d+(\.\d+)?$/.test(s)) return Number(s) === 0
-  return false
-}
+// "No single time year is resolved" — range/dynamics mode (the read is unbounded).
+// Decides whether the query branch warms an unbounded slice (range) or per-year
+// slices (year mode) — GAP 4. Shares the ONE isUnsetTime predicate with
+// ApiStore.toObsParams (core/time-dimension.ts) so warm-key and read-key agree.
 
 export function extractRequirements(
   spec: DataSpec,
@@ -189,7 +179,7 @@ export function extractRequirements(
       // unbounded requirement per measure (no `time` pin) so the warm slice keys
       // IDENTICALLY to the read. In year mode `time` is a real year and the
       // per-year pin below is byte-identical to the pre-GAP-4 behaviour.
-      const rangeMode = timeFilter === undefined && isUnsetTimeDim(time)
+      const rangeMode = timeFilter === undefined && isUnsetTime(time)
 
       let years: number[]
       if (timeFilter !== undefined) {

@@ -16,7 +16,13 @@
 //  BOTH the geostat runner and the panel Constructor share ONE store-builder
 //  (Law 3: plugins is below apps; it imports only @statdash/engine types here).
 //
-import type { Observation, Classifier, ClassifierEntry, DimVal } from '@statdash/engine'
+import type { Observation, Classifier, DimVal } from '@statdash/engine'
+import { fromStatsClassifiers, type StatsClassifierRow } from './stats-classifiers'
+// Re-export the classifier ACL surface so existing import sites (stats-api.test.ts,
+// barrels) keep resolving `fromStatsClassifiers` / `StatsClassifierRow` from here
+// even though the implementation now lives in stats-classifiers.ts (one concern
+// per file — 05/09 hygiene). The HTTP fetch (fetchDimClassifiers) stays here.
+export { fromStatsClassifiers, type StatsClassifierRow } from './stats-classifiers'
 
 // ── Wire shapes — exact contract of GET /api/stats/* responses ────────────
 
@@ -112,32 +118,6 @@ export interface StatsCubeProfileRow {
   timeCoverage: { min: string | null; max: string | null; periods: string[] }
 }
 
-/**
- * Row of GET /classifiers/:dim_code — one codelist member.
- *
- * WIRE CONTRACT (GAP 5b): the live route SELECTs `label` and `parent_code`
- * straight from `stats.classifier`. Two things changed vs the legacy shape and
- * the adapter must track them at THIS seam (Postel normalization, single ACL):
- *
- *   • `label` is a LocaleString object `{ en, ka }` (V-i18n), no longer a flat
- *     string. Stored as-is into the engine `ClassifierEntry.label` so real i18n
- *     is preserved end-to-end (resolved to a concrete string at the React
- *     boundary). A legacy flat `string` still parses (LocaleString ⊇ string).
- *   • the hierarchy edge is `parent_code` (the stable business key, ADR-0023),
- *     NOT the dropped surrogate `parent_id`. It maps DIRECTLY to the array-form
- *     classifier's `parent` (which is a code) — no codeById indirection.
- */
-export interface StatsClassifierRow {
-  id:          number
-  code:        string
-  /** LocaleString `{ en, ka }` (or a legacy flat string). */
-  label:       Record<string, string> | string | null
-  color:       string | null
-  /** Parent's business CODE (ADR-0023 code-chain edge); null = root. */
-  parent_code: string | null
-  ord:         number
-  metadata:    unknown
-}
 
 // ── HTTP boundary — the ONLY fetch in stats mode (Law 5) ──────────────────
 
@@ -260,42 +240,6 @@ function normalizeObsStatus(raw: string): string {
   if (raw === '' || raw === 'A') return raw
   const lower = raw.toLowerCase()
   return (lower === 'p' || lower === 'e' || lower === 'r' || lower === 'c') ? lower : raw
-}
-
-/**
- * StatsClassifierRow[] → Classifier (array form). Code IS the key, matching the
- * codes observations carry.
- *
- * GAP 5b fixes at this single ACL seam:
- *   • `label` is carried INTACT as a LocaleString `{ en, ka }` (or flat string),
- *     not stored as `[object Object]` (the old `label ?? code` stringified the
- *     object). Real i18n end-to-end; resolved at the React boundary. A null/empty
- *     label degrades to the `code` (Postel: always something renderable).
- *   • `parent` maps DIRECTLY from `parent_code` (already a business code) — the
- *     array form reads `parent` as a code, so no codeById id→code indirection.
- */
-export function fromStatsClassifiers(rows: StatsClassifierRow[]): Classifier {
-  return rows.map((r): ClassifierEntry => ({
-    code:   r.code,
-    label:  normalizeClassifierLabel(r.label, r.code),
-    color:  r.color ?? undefined,
-    parent: r.parent_code ?? undefined,
-  }))
-}
-
-/**
- * A wire `label` is either a LocaleString object `{ en, ka }`, a legacy flat
- * string, or null. Keep the object/string intact (i18n preserved); fall back to
- * the code only when there is genuinely nothing to show. An empty object (no
- * locales) also degrades to the code so a consumer never renders `{}`.
- */
-function normalizeClassifierLabel(
-  label: Record<string, string> | string | null,
-  code:  string,
-): import('@statdash/engine').LocaleString {
-  if (label === null) return code
-  if (typeof label === 'string') return label === '' ? code : label
-  return Object.keys(label).length > 0 ? label : code
 }
 
 // ── Resource fetchers — typed reads over the HTTP boundary ────────────────

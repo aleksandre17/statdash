@@ -41,7 +41,7 @@ const DATA_SOURCES: DataSourceSeed[] = [
   },
   {
     name: 'accounts', type: 'rest', url: STATS_API_URL,
-    config: { datasetCode: 'ACCOUNTS_SEQUENCE', nonTimeDims: ['measure', 'account', 'side'], classifierDims: ['measure', 'account', 'side'] },
+    config: { datasetCode: 'ACCOUNTS_SEQUENCE', nonTimeDims: ['measure', 'account', 'side'], classifierDims: ['measure', 'account', 'side', 'aggregates'] },
   },
   {
     name: 'regional', type: 'rest', url: STATS_API_URL,

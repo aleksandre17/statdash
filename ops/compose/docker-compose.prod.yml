@@ -9,10 +9,22 @@
 #                      the INTERNAL api by service name. The ONLY published ports.
 #   statdash-api     — internal only (NO ports:). Reachable as `statdash-api:3001`.
 #   postgres         — TimescaleDB-HA pg16, internal only.
-#   flyway           — applies V1→V31 + R__ seed once postgres is healthy, exits 0.
+#   flyway           — applies V1→V34 (STRUCTURE only) once postgres is healthy, exits 0.
+#   ingest           — one-shot: POSTs the 3 canonical workbooks through the real
+#                      ingest pipeline (the DEMO-DATA SSOT), then exits 0.
+#
+# DEMO-DATA SSOT (ADR-0032 — R__ neutralized in prod): the Flyway R__ gold seed is
+# NO LONGER mounted/listed here. It is a stale (pre-canonical, 3-dim GDP) generated
+# parity twin that conflicts with the canonical 4-dim cube and forks the data SSOT.
+# The demo data's single source of truth is the canonical workbooks DATA/canonical/
+# *.xlsx, landed the real way by the `ingest` one-shot below — so a FRESH `compose up`
+# reproduces the live cutover deterministically (fresh clone → up → correct demo).
+# Migration V34 pre-registers GDP_ANNUAL's DSD as the canonical 4-dim
+# [measure, approach, time, geo], so the GDP ingest is routine (no version mint).
 #
 # Boot order (depends_on + healthchecks):
-#   postgres healthy → flyway completes → api healthy → geostat/panel start.
+#   postgres healthy → flyway completes → api healthy → ingest completes →
+#   geostat/panel start (so the SPAs only come up once the real data is queryable).
 #
 # The SPAs are built with EMPTY VITE_API_URL / VITE_API_STATS_URL → relative
 # /api/... base → every request is same-origin → no CORS, no baked host/IP.
@@ -43,24 +55,26 @@ services:
       start_period: 30s
     restart: unless-stopped
 
-  # ── Flyway — versioned migrations V1→V31 + R__ seed; runs once, then exits 0 ──
+  # ── Flyway — versioned migrations V1→V34 (STRUCTURE only); runs once, exits 0 ──
   flyway:
     image: flyway/flyway:10-alpine
     container_name: statdash-flyway
-    # Vnn (immutable contract) applied first, then R__ repeatable seed (re-applied
-    # on checksum change). placeholderReplacement=false: migrations are static SQL.
+    # Vnn migrations ONLY. The R__ gold seed is NOT mounted/listed (ADR-0032
+    # neutralization): -locations names ONLY /flyway/sql, and the seed dir is not a
+    # volume → R__seed_geostat_gold.sql never runs. Gold starts EMPTY of observations;
+    # the real demo data is ingested by the `ingest` one-shot from the canonical
+    # workbooks (the demo-data SSOT). placeholderReplacement=false: static SQL.
     command: >-
       -url=jdbc:postgresql://postgres:5432/${POSTGRES_DB:-statdash}
       -user=${POSTGRES_USER:-statdash}
       -password=${POSTGRES_PASSWORD}
-      -locations=filesystem:/flyway/sql,filesystem:/flyway/seed
+      -locations=filesystem:/flyway/sql
       -placeholderReplacement=false
       migrate
     env_file:
       - ../config/db/.env
     volumes:
       - ../postgres/migrations:/flyway/sql:ro
-      - ../postgres/seed:/flyway/seed:ro
     networks:
       - statdash-net
     depends_on:
@@ -98,6 +112,46 @@ services:
       retries: 3
       start_period: 20s
 
+  # ── ingest — ONE-SHOT bring-up of the canonical demo data (then exits 0) ──────
+  # Reproduces the live cutover deterministically: POSTs the 3 canonical workbooks
+  # through POST /api/ingest/canonical + the publish FSM, so a FRESH `compose up`
+  # serves the REAL data (not placeholders). Idempotent — a re-run hits 409
+  # ALREADY_PUBLISHED per dataset and converges (never duplicates). The SPAs gate on
+  # this completing, so they only come up once the data is queryable.
+  #
+  # Uses a small curl+jq image (no api-image coupling); mounts the version-controlled
+  # driver (ops/scripts/ingest-canonical.sh) + the demo-data SSOT (DATA/canonical).
+  # Reaches the internal api by service name on statdash-net.
+  ingest:
+    image: alpine:3.20
+    container_name: statdash-ingest
+    # ADMIN_USERNAME / ADMIN_PASSWORD come from the api env (the curator creds the
+    # ingest authenticates with). API_BASE_URL is the internal api service name.
+    env_file:
+      - ../config/api/.env.prod
+    environment:
+      API_BASE_URL: http://statdash-api:3001
+      CANONICAL_DIR: /canonical
+    volumes:
+      - ../scripts/ingest-canonical.sh:/ingest-canonical.sh:ro
+      - ../../DATA/canonical:/canonical:ro
+    networks:
+      - statdash-net
+    depends_on:
+      statdash-api:
+        condition: service_healthy
+    # One-shot: install deps, run the driver, exit with its status. Success exits 0
+    # and dependents proceed; a bounded retry (max 3) absorbs a transient api race
+    # without looping forever on a genuine failure (which then surfaces, fail-fast).
+    command: >-
+      sh -c "apk add --no-cache bash curl jq >/dev/null && bash /ingest-canonical.sh"
+    deploy:
+      restart_policy:
+        condition: on-failure
+        max_attempts: 3
+        delay: 5s
+    restart: on-failure
+
   # ── geostat SPA + reverse proxy — PUBLISHED ──────────────────────────────────
   geostat:
     image: statdash-geostat
@@ -117,6 +171,8 @@ services:
     depends_on:
       statdash-api:
         condition: service_healthy
+      ingest:
+        condition: service_completed_successfully
     restart: unless-stopped
     mem_limit: 128m
     cpus: 0.5
@@ -145,6 +201,8 @@ services:
     depends_on:
       statdash-api:
         condition: service_healthy
+      ingest:
+        condition: service_completed_successfully
     restart: unless-stopped
     mem_limit: 128m
     cpus: 0.5

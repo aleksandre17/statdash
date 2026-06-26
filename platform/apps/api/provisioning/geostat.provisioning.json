@@ -4139,7 +4139,8 @@
         "classifierDims": [
           "measure",
           "account",
-          "side"
+          "side",
+          "aggregates"
         ]
       }
     },

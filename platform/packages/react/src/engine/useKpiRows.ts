@@ -108,7 +108,18 @@ export function useKpiRows(specs: KpiSpec[], ctx: RenderContext): KpiDef[] {
     const warm: Promise<QueryResult[]> = qa
       ? Promise.all(
           reqs.flatMap((r): Promise<QueryResult>[] => {
-            const reqCtx = { ...sectionCtx, dims: { ...sectionCtx.dims, ...r.dims } }
+            // r.dims is the AUTHORITATIVE resolved dim-set the synchronous read will
+            // use — extractKpiRequirements built it as atTime(t, withFilter(ctx, filter)),
+            // which already pins the time AND honours a wildcard filter that DELETES a
+            // dim (e.g. a national-total KPI on a region-pinned page sets geo:''). It is
+            // therefore the EXACT ctx interpretKpi's storeVal read derives its cacheKey
+            // from. We must warm under r.dims VERBATIM — spreading sectionCtx.dims under
+            // it (the old `{ ...sectionCtx.dims, ...r.dims }`) silently REINTRODUCES the
+            // deleted dim, so the warm key carried geo=R2 while the read key carried no
+            // geo → cache miss → ApiStore.querySync cold-throw (the range/dynamics
+            // kpi-strip "Failed to load component"). Only the non-dims SectionContext
+            // fields (timeMode, locale, …) come from sectionCtx; dims is r.dims alone.
+            const reqCtx = { ...sectionCtx, dims: r.dims }
             // Warm BOTH shapes a KPI read may take: val (storeVal point reads —
             // every KpiValueSpec/KpiTrendSpec lowers to storeVal) and obs (so an
             // obs-shaped read of the same slice also hits the warm cache).

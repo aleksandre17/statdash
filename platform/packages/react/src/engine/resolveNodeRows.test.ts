@@ -8,7 +8,7 @@
 //
 
 import { describe, it, expect, beforeEach } from 'vitest'
-import { resolveStore, _storeCache, effectiveStoreKey, resolveNodeRows } from './resolveNodeRows'
+import { resolveStore, _storeCache, effectiveStoreKey, resolveNodeRows, _resolveRowLocales } from './resolveNodeRows'
 import { staticStore, registerMetric, ExternalStore } from '@statdash/engine'
 import type { RenderContext, NodeBase }  from './types'
 import type { DataStore, SectionContext } from '@statdash/engine'
@@ -248,5 +248,42 @@ describe('resolveNodeRows — LocaleString resolution at the React boundary', ()
     )
     const rows = resolveNodeRows(labelNode, makeRowCtx(store, 'ka'))
     expect((rows[0] as { label: unknown }).label).toBe('Georgia')
+  })
+})
+
+describe('resolveRowLocales — provenance / seriesFormat survive (Law 9 data integrity)', () => {
+  // REGRESSION: a structure-only LocaleString test flattens ANY plain object,
+  // collapsing DataRow.provenance (a ProvenanceRecord) to a random scalar via
+  // Object.values(s)[0] — which silently kills resolvePreliminary.rowIsPreliminary
+  // (r.provenance?.status → undefined ⇒ no preliminary/last-updated/methodology
+  // badge). The fix discriminates by field identity, not by shape.
+
+  it('keeps provenance.status intact while still resolving the LocaleString label', () => {
+    const row = {
+      id: 'r1', label: { en: 'GDP', ka: 'მშპ' }, value: 100,
+      provenance: { status: 'p', source: 'StatsOffice', methodology: 'https://x' },
+    } as unknown as import('@statdash/engine').DataRow
+
+    const [out] = _resolveRowLocales([row], 'ka')
+
+    // label LocaleString → concrete 'ka' string (the i18n boundary still works).
+    expect((out as { label: unknown }).label).toBe('მშპ')
+    // provenance survives as the ORIGINAL object — NOT flattened to 'p'/a scalar.
+    expect((out as { provenance: { status?: string } }).provenance).toEqual({
+      status: 'p', source: 'StatsOffice', methodology: 'https://x',
+    })
+    expect((out as { provenance: { status?: string } }).provenance.status).toBe('p')
+  })
+
+  it('keeps a seriesFormat map intact (Record<string,string> is not a LocaleString)', () => {
+    const row = {
+      id: 'r2', label: 'plain', value: 1,
+      seriesFormat: { 'Series A': 'mln_gel', 'Series B': 'pct' },
+    } as unknown as import('@statdash/engine').DataRow
+
+    const [out] = _resolveRowLocales([row], 'ka')
+    expect((out as unknown as { seriesFormat: unknown }).seriesFormat).toEqual({
+      'Series A': 'mln_gel', 'Series B': 'pct',
+    })
   })
 })
