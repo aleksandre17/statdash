@@ -203,4 +203,92 @@ dbSuite('E2E — canonical-workbook ingestion → gold → serve (ADR-0031 Wave 
     )
     expect(after.rows[0].n, 'no duplicate gold rows').toBe(before.rows[0].n)
   })
+
+  // ── (g) PARTIAL-FAILURE → RETRY → CONVERGE: reference published, facts orphaned ─
+  //
+  // The resilience loose end this proves CLOSED. A canonical upload publishes reference
+  // data (codelists) to gold BEFORE facts. If a run CRASHES after the codelist publish
+  // but before the facts land, the codelist submission is durably 'published' and the
+  // facts never landed. The legitimate RETRY re-derives the IDENTICAL codelist payload;
+  // the Idempotent Receiver matches (content_hash + status='published' + dataset_code)
+  // and BEFORE the fix raised 409 ALREADY_PUBLISHED at the codelist step — blocking the
+  // facts retry forever. The fix makes the identical already-published reference payload
+  // a CONVERGED NO-OP within the upload, so the retry resumes the tail and the facts land.
+  //
+  // We reproduce the partial failure precisely: upload (codelists published, facts staged),
+  // then DELETE the staged facts submission — leaving exactly the orphaned published
+  // codelist + zero facts. The retry must then 202 (not 409), re-stage facts, and publish.
+  it('partial failure (orphaned published codelist) → retry converges, no 409, facts land', async () => {
+    const code = 'GDP_ANNUAL'
+    await freshState(pool) // clean slate: no facts, no canonical submissions for this ds
+
+    const upload = () => app.inject({
+      method: 'POST', url: '/api/ingest/canonical',
+      headers: {
+        'content-type': 'application/octet-stream',
+        authorization: `Bearer ${h.adminJwt}`,
+        'x-filename': `${code}.xlsx`,
+      },
+      payload: readFileSync(join(findDataDir(), `${code}.xlsx`)),
+    })
+
+    // 1. First run: codelists driven to PUBLISHED gold; facts left STAGED (not approved).
+    const first = await upload()
+    expect(first.statusCode, 'first upload stages the facts').toBe(202)
+    const firstJobs = (first.json() as {
+      data: { jobIds: { kind: string; jobId: string; status?: string }[] }
+    }).data.jobIds
+    const codelist = firstJobs.find((j) => j.kind === 'codelists')
+    const facts1 = firstJobs.find((j) => j.kind === 'facts')
+    expect(codelist?.status, 'codelist published to gold').toBe('published')
+    expect(facts1, 'facts job exists').toBeDefined()
+
+    // 2. SIMULATE THE CRASH: delete the staged facts submission, orphaning the published
+    //    codelist (reference in gold, facts gone) — exactly the partial-failure residue.
+    await pool.query(`DELETE FROM stats_stage.submission WHERE id = $1`, [facts1!.jobId])
+    const orphan = await pool.query<{ status: string }>(
+      `SELECT status FROM stats_stage.submission WHERE id = $1`, [codelist!.jobId],
+    )
+    expect(orphan.rows[0]?.status, 'codelist remains published (the orphan)').toBe('published')
+
+    // 3. THE RETRY: re-POST the SAME bytes. BEFORE the fix this 409'd at the codelist
+    //    re-submit. NOW the identical already-published codelist is a converged no-op and
+    //    the upload proceeds to re-stage the facts → 202.
+    const retry = await upload()
+    expect(retry.statusCode, 'retry converges (NOT 409 ALREADY_PUBLISHED)').toBe(202)
+    const retryJobs = (retry.json() as {
+      data: { jobIds: { kind: string; jobId: string; status?: string; converged?: boolean }[] }
+    }).data.jobIds
+
+    // The codelist step converged: it reused the orphan's published job (converged flag),
+    // and the facts were re-staged for approval.
+    const codelist2 = retryJobs.find((j) => j.kind === 'codelists')
+    const facts2 = retryJobs.find((j) => j.kind === 'facts')
+    expect(codelist2?.status, 'codelist still published').toBe('published')
+    expect(codelist2?.converged, 'codelist adopted as a converged no-op').toBe(true)
+    expect(codelist2?.jobId, 'converged onto the orphaned published codelist job').toBe(codelist!.jobId)
+    expect(facts2?.status, 'facts re-staged on retry').toBe('staged')
+
+    // 4. The facts retry now LANDS: approve → published → gold has the expected count.
+    const publishRes = await app.inject({
+      method: 'POST', url: `/api/ingest/jobs/${facts2!.jobId}/publish`,
+      headers: { authorization: `Bearer ${h.adminJwt}` },
+    })
+    expect(publishRes.statusCode, 'facts publish succeeds after converge').toBe(200)
+
+    // Poll to published, then assert gold (the tail completed — the loose end is closed).
+    for (let i = 0; i < 240; i++) {
+      const st = await pool.query<{ status: string }>(
+        `SELECT status FROM stats_stage.submission WHERE id = $1`, [facts2!.jobId],
+      )
+      if (st.rows[0]?.status === 'published') break
+      await new Promise((r) => setTimeout(r, 250))
+    }
+    const goldCount = await pool.query<{ n: string }>(
+      `SELECT count(*)::text AS n FROM stats.observation WHERE dataset_code = $1`, [code],
+    )
+    expect(Number(goldCount.rows[0].n), 'facts landed after the converged retry').toBe(EXPECTED_OBS[code])
+
+    await freshState(pool) // leave the shared DB clean for sibling tests
+  }, 120_000)
 })

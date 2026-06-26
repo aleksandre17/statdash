@@ -27,7 +27,7 @@ import { authPlugin } from '../../auth.js'
 import type { AuditLogger } from '../../lib/audit-log.js'
 import type { Release, ReleaseStatus } from '../../ingest/index.js'
 import { publishBundle } from '../../ingest/index.js'
-import { queryAsOf } from './observations.js'
+import { queryAsOf, filterSchema, scalarFilterSchema } from './observations.js'
 
 // ── Curator-write role gate (admin OR editor) — same contract as ingestRoutes ──
 const WRITE_ROLES = ['admin', 'editor'] as const
@@ -57,26 +57,6 @@ const OpenBody = z.object({
 
 const AttachBody = z.object({ submissionId: z.string().uuid() })
 
-// vintage / triangle reads reuse the observations route's SDMX period + filter
-// boundary contract (Postel: liberal-but-bounded). filter arrives as JSON text.
-const filterSchema = z
-  .string()
-  .optional()
-  .transform((s, ctx) => {
-    if (s === undefined || s === '') return undefined
-    try {
-      const parsed: unknown = JSON.parse(s)
-      if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
-        ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'filter must be a JSON object' })
-        return z.NEVER
-      }
-      return parsed as Record<string, unknown>
-    } catch {
-      ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'filter must be valid JSON' })
-      return z.NEVER
-    }
-  })
-
 const sdmxTimePeriod = z
   .string()
   .regex(
@@ -84,6 +64,9 @@ const sdmxTimePeriod = z
     'must be an SDMX TIME_PERIOD: 2020 | 2020-S1 | 2020-Q1 | 2020-W01 | 2020-06 | 2020-01-15',
   )
 
+// The vintage read is a multi-series projection (same key-selection contract as the
+// observations route) → the SHARED multi-value filterSchema (SSOT, imported — no
+// copy). A cross-region vintage `geo ∈ {R2,R3}` is now expressible here too.
 const VintageQuery = z.object({
   from:   sdmxTimePeriod.optional(),
   to:     sdmxTimePeriod.optional(),
@@ -91,10 +74,13 @@ const VintageQuery = z.object({
   limit:  z.coerce.number().int().positive().max(10000).default(1000),
 })
 
+// The revision-triangle resolves exactly ONE series (md5($filter::jsonb::text) →
+// dim_key_hash), so it takes the SCALAR-ONLY variant: a multi-value array would hash
+// to a key matching no single series (rejected at the boundary, fail-fast).
 const TriangleQuery = z.object({
   dataset: z.string().min(1),
   period:  sdmxTimePeriod,            // the single period whose estimate evolution we trace
-  filter:  filterSchema,             // resolves to ONE series via its dim_key_hash
+  filter:  scalarFilterSchema,       // resolves to ONE series via its dim_key_hash
 })
 
 // ── Row → API shape (snake_case columns → the camelCase Release contract) ──────

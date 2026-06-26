@@ -62,11 +62,10 @@ import { problem, alreadyPublished } from '../../lib/problem.js'
 import { authPlugin } from '../../auth.js'
 import {
   createSubmission, AlreadyPublishedError, fetchActiveLocales, precheckContractCompat,
-  runIngestionWorker, publishSubmission, mintDatasetVersion,
+  mintDatasetVersion,
 } from '../../ingest/index.js'
 import type {
-  RawObsRow, RawClassifierRow, RawDisplayRow,
-  Queryable, IngestLogger, SubmissionStatus, VersionMintResult,
+  RawObsRow, RawClassifierRow, RawDisplayRow, VersionMintResult,
 } from '../../ingest/index.js'
 import { readWorkbook } from '../../ingest/canonical/read-workbook.js'
 import { parseCanonicalWorkbook } from '../../ingest/canonical/parse.js'
@@ -74,6 +73,9 @@ import { recognizeReferenceMetadata } from '../../ingest/reference-metadata-map.
 import {
   resolveDeclaredVersion, declaredSnapshot, buildMintPlan,
 } from './canonical-dsd-inputs.js'
+import {
+  submitToGold, driveToStaged, readStatus, type KindJob,
+} from './canonical-fsm-drive.js'
 
 // ── Curator-write role gate (admin OR editor) — same surface as ingestRoutes ───
 const WRITE_ROLES = ['admin', 'editor'] as const
@@ -94,93 +96,8 @@ const PARSER_VERSION = 'canonical-workbook@1'
 // headroom for a multi-sheet workbook while bounding a hostile upload (fail-fast).
 const MAX_UPLOAD_BYTES = 25 * 1024 * 1024
 
-/**
- * One submission this upload produced — the kind, its pipeline jobId, and the FSM
- * status the route left it in. Reference data (codelists/displays) is left 'published'
- * (the route drove it to gold); facts are left 'staged' (the curator-approval gate).
- */
-interface KindJob {
-  kind: 'codelists' | 'displays' | 'facts'
-  jobId: string
-  status: SubmissionStatus
-}
-
-// ── In-process FSM drive (mirrors seed-pipeline.ts submitAndPublish) ───────────
-//
-// createSubmission fires runIngestionWorker via setImmediate (out of band): the bronze
-// row is durably 'received' but staging happens AFTER the createSubmission call returns.
-// To order reference-data-before-facts DETERMINISTICALLY in one request we drive the
-// worker ourselves and poll the job FSM — never assume the async drain has run.
-
-const POLL_INTERVAL_MS = 50
-const POLL_TIMEOUT_MS = 60_000
-const sleep = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms))
-
-/** Read one job's current FSM status (the gold/silver SSOT, stats_stage.submission). */
-async function readStatus(db: Queryable, jobId: string): Promise<SubmissionStatus> {
-  const { rows } = await db.query<{ status: SubmissionStatus }>(
-    `SELECT status FROM stats_stage.submission WHERE id = $1`, [jobId],
-  )
-  if (!rows[0]) throw new HttpError(500, `submission ${jobId} vanished mid-pipeline`)
-  return rows[0].status
-}
-
-/**
- * Drive the worker, then poll one job to 'staged' (fail-fast on rejected/failed/timeout).
- * runIngestionWorker drains every claimable 'received' row and returns once none remain,
- * so the target status is normally already set when it returns; the poll is the robust
- * confirmation (and tolerates the racing setImmediate worker still committing — SKIP
- * LOCKED guarantees only one drains a given row). 'published' counts as past 'staged'.
- */
-async function driveToStaged(db: Queryable, log: IngestLogger, jobId: string): Promise<void> {
-  await runIngestionWorker(db, { logger: log })
-  const deadline = Date.now() + POLL_TIMEOUT_MS
-  for (;;) {
-    const status = await readStatus(db, jobId)
-    if (status === 'staged' || status === 'published') return
-    if (status === 'rejected' || status === 'failed') {
-      // A reference-data submission that fails validation is a curator-facing data
-      // error — surface it (fail-fast), do not silently 202. The per-row report is at
-      // GET /jobs/:id/issues; here we name the kind + terminal status (RFC 9457).
-      throw problem('bad-request', `canonical submission ${jobId} ${status} during staging`, {
-        code: 'SUBMISSION_REJECTED',
-        jobId,
-        status,
-      })
-    }
-    if (Date.now() >= deadline) {
-      throw new HttpError(504, `submission ${jobId} did not reach 'staged' within ${POLL_TIMEOUT_MS / 1000}s (last: '${status}')`)
-    }
-    await sleep(POLL_INTERVAL_MS)
-  }
-}
-
-/**
- * Submit a REFERENCE-DATA kind (codelists | displays) and drive it to PUBLISHED gold:
- * createSubmission → driveToStaged → publishSubmission (the EXISTING publish path, reused
- * — no duplicate publish logic) → confirm 'published'. This is the seed-pipeline's
- * submitAndPublish, in-process, so the classifier members exist in gold before the facts
- * that reference them validate. Returns the published KindJob.
- */
-async function submitToGold(
-  db: Queryable,
-  log: IngestLogger,
-  args: Parameters<typeof createSubmission>[2] & { kind: 'codelists' | 'displays' },
-  publishOpts: { userId?: string },
-): Promise<KindJob> {
-  const jobId = await createSubmission(db, log, args)
-  await driveToStaged(db, log, jobId)
-  // Idempotent re-run: if the worker already advanced it past 'staged' to 'published'
-  // (it cannot here, but the seed-pipeline guards this), skip the publish.
-  if ((await readStatus(db, jobId)) !== 'published') {
-    await publishSubmission(db, jobId, { userId: publishOpts.userId })
-  }
-  const status = await readStatus(db, jobId)
-  if (status !== 'published') {
-    throw new HttpError(500, `reference submission ${jobId} did not publish (status '${status}')`)
-  }
-  return { kind: args.kind, jobId, status }
-}
+// The in-process FSM drive (readStatus / driveToStaged / submitToGold) + KindJob live
+// in ./canonical-fsm-drive.js — this file is the HTTP boundary + orchestration only.
 
 export const canonicalRoutes: FastifyPluginAsync = async (app) => {
   await app.register(authPlugin)

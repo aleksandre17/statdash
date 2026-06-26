@@ -239,8 +239,14 @@ export class ApiStore implements DataStore {
       }
     }
 
-    // Non-time dim filters: ctx.dims baseline, q.filter overrides
-    const filterRecord: Record<string, string> = {}
+    // Non-time dim filters: ctx.dims baseline, q.filter overrides. The canonical
+    // wire shape (observations route · dim-filter.ts) is a JSON object whose value
+    // per dim is EITHER a scalar (AND containment) OR a JSON ARRAY (OR within the
+    // dim — the SDMX multi-value key selection, e.g. a cross-region panel sending
+    // geo ∈ {R2,R3}). We preserve arrays AS arrays here (no comma-join collapse):
+    // the route reads `["R2","R3"]` as the OR-set, which `,`-joining would have
+    // flattened into the single literal value "R2,R3" (an unmatchable code).
+    const filterRecord: Record<string, string | string[]> = {}
 
     for (const dim of this.nonTimeDims) {
       const ctxVal = ctx.dims[dim]
@@ -257,7 +263,10 @@ export class ApiStore implements DataStore {
           const val = ctx.dims[ref]
           if (val !== undefined && val !== '' && val !== null) filterRecord[dim] = String(val)
         } else if (Array.isArray(fv)) {
-          filterRecord[dim] = (fv as string[]).join(',')
+          // Multi-value selection → keep the array (OR within the dim). Empty arrays
+          // are dropped: an empty selection scopes nothing and would 0-match every row.
+          const vals = (fv as Array<string | number>).map((v) => String(v))
+          if (vals.length > 0) filterRecord[dim] = vals
         } else {
           filterRecord[dim] = String(fv)
         }

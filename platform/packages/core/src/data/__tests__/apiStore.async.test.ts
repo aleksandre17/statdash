@@ -203,6 +203,54 @@ describe('FF-NO-ZERO-TIME — toObsParams never emits from/to = 0', () => {
   })
 })
 
+// ── MULTI-VALUE filter encoding — the SDMX OR-within-dim wire shape ────────────
+//
+//  A cross-region panel sends an ARRAY for a dimension (geo ∈ {R2,R3}). The store
+//  must preserve it AS a JSON array in the filter param — never comma-join it into
+//  a single literal "R2,R3" (an unmatchable code). The observations route reads the
+//  array as the OR-set (dim_key->>'geo' = ANY). Scalar dims stay scalar (back-compat).
+describe('toObsParams — multi-value (array) filter encoding', () => {
+  function firstFilter(): Record<string, unknown> {
+    const url = new URL(vi.mocked(fetch).mock.calls[0][0] as string)
+    return JSON.parse(url.searchParams.get('filter') ?? '{}')
+  }
+
+  it('preserves an array filter value as a JSON array (OR within the dim)', async () => {
+    vi.mocked(fetch).mockResolvedValueOnce(makeOkResponse([rawRow]))
+    const store = makeStore()
+    await store.queryAsync(
+      { type: 'obs', measure: 'GDP', filter: { geo: ['R2', 'R3'] } },
+      // ctx has no geo so the array is the sole source of geo (no ctx baseline override).
+      { timeMode: 'year', dims: { time: 2023 } },
+    )
+    const filter = firstFilter()
+    expect(filter['geo']).toEqual(['R2', 'R3'])     // array, NOT "R2,R3"
+    expect(typeof filter['geo']).toBe('object')
+  })
+
+  it('mixes a multi-value dim with scalar dims (AND of scalar + OR-set)', async () => {
+    vi.mocked(fetch).mockResolvedValueOnce(makeOkResponse([rawRow]))
+    const store = makeStore()
+    await store.queryAsync(
+      { type: 'obs', measure: 'GVA', filter: { geo: ['R2', 'R3'], sector: '_T' } },
+      { timeMode: 'year', dims: { time: 2023 } },
+    )
+    const filter = firstFilter()
+    expect(filter['geo']).toEqual(['R2', 'R3'])
+    expect(filter['sector']).toBe('_T')             // scalar stays scalar
+  })
+
+  it('drops an empty array filter (empty selection would 0-match every row)', async () => {
+    vi.mocked(fetch).mockResolvedValueOnce(makeOkResponse([rawRow]))
+    const store = makeStore()
+    await store.queryAsync(
+      { type: 'obs', measure: 'GDP', filter: { geo: [] } },
+      { timeMode: 'year', dims: { time: 2023 } },
+    )
+    expect(firstFilter()['geo']).toBeUndefined()
+  })
+})
+
 describe('ApiStore.querySync', () => {
 
   it('5 — throws on cold cache with message containing caps.sync=false', () => {

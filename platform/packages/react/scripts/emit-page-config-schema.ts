@@ -112,7 +112,6 @@ function main(): void {
   const outPath = join(outDir, 'page-config.schema.json')
 
   writeFileSync(outPath, JSON.stringify(schema, null, 2) + '\n', 'utf8')
-  // eslint-disable-next-line no-console
   console.log(
     `[gen:schema] wrote ${outPath} — ` +
     `${schema.oneOf.length} page-root branch(es), ${Object.keys(schema.$defs).length} $defs`,

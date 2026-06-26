@@ -3,25 +3,80 @@ import { z } from 'zod'
 import { parseQuery, notFound } from '../../lib/http.js'
 import { isDatasetDiscoverable } from './lifecycle.js'
 import { formatField, resolveSerializer, serializeReply } from './serialize/dispatch.js'
+import { buildDimFilter, type DimFilter, type DimFilterPredicate } from './dim-filter.js'
 
-// filter arrives as a JSON string in the query string; refine it to a plain
-// object so it can feed dim_key @> $::jsonb (GIN containment), never raw text.
-const filterSchema = z
+// filter arrives as a JSON string in the query string; refine it to the canonical
+// SDMX-aligned key-selection map (dim-filter.ts): one entry per scoped dimension,
+// whose value is EITHER a scalar (AND containment, back-compat) OR a JSON array
+// (OR within that dimension — the multi-value form). It feeds buildDimFilter, never
+// raw text. A leaf may only be a primitive (string/number/boolean) — a nested object
+// is not a dimension selection and is rejected at the boundary (fail-fast).
+const isLeaf = (v: unknown): v is string | number | boolean =>
+  typeof v === 'string' || typeof v === 'number' || typeof v === 'boolean'
+
+export const filterSchema = z
   .string()
   .optional()
   .transform((s, ctx) => {
     if (s === undefined || s === '') return undefined
+    let parsed: unknown
     try {
-      const parsed: unknown = JSON.parse(s)
-      if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
-        ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'filter must be a JSON object' })
-        return z.NEVER
-      }
-      return parsed as Record<string, unknown>
+      parsed = JSON.parse(s)
     } catch {
       ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'filter must be valid JSON' })
       return z.NEVER
     }
+    if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'filter must be a JSON object' })
+      return z.NEVER
+    }
+    // Each value must be a scalar leaf OR an array of scalar leaves (the multi-value
+    // OR-set). A nested object / array-of-objects is not a dimension selection.
+    for (const [dim, value] of Object.entries(parsed as Record<string, unknown>)) {
+      const ok = Array.isArray(value) ? value.every(isLeaf) : isLeaf(value)
+      if (!ok) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: `filter['${dim}'] must be a scalar or an array of scalars`,
+        })
+        return z.NEVER
+      }
+    }
+    return parsed as DimFilter
+  })
+
+/**
+ * Scalar-only variant of {@link filterSchema} for single-series resolution paths (the
+ * revision-triangle, which hashes the filter to ONE dim_key_hash via md5(::jsonb::text)).
+ * A multi-value array would hash to a key that matches no single series, so an array
+ * value is rejected at the boundary (fail-fast) rather than silently returning empty.
+ */
+export const scalarFilterSchema = z
+  .string()
+  .optional()
+  .transform((s, ctx) => {
+    if (s === undefined || s === '') return undefined
+    let parsed: unknown
+    try {
+      parsed = JSON.parse(s)
+    } catch {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'filter must be valid JSON' })
+      return z.NEVER
+    }
+    if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'filter must be a JSON object' })
+      return z.NEVER
+    }
+    for (const [dim, value] of Object.entries(parsed as Record<string, unknown>)) {
+      if (!isLeaf(value)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: `filter['${dim}'] must be a scalar (this read resolves a single series)`,
+        })
+        return z.NEVER
+      }
+    }
+    return parsed as Record<string, string | number | boolean>
   })
 
 // SDMX TIME_PERIOD format — the SAME accept-set as V9's obs_time_period_fmt_chk
@@ -96,9 +151,21 @@ function vintageETag(datasetCode: string, asOf: Date, version: string): string {
 // collapses each series to the single value live AT D. The from/to/filter predicates
 // compose into BOTH legs so partition pruning + GIN containment still apply to live.
 //
-// $1 dataset · $2 from(period|null) · $3 to(period|null) · $4 filter(jsonb|null)
-// $5 asOf(timestamptz) · $6 limit
-const AS_OF_SQL = `
+// Static binds: $1 dataset · $2 from(period|null) · $3 to(period|null) · $4 asOf(tstz).
+// The SDMX key selection (dim-filter.ts) binds AFTER the static slots: the SAME
+// selection is applied to BOTH legs (against o.dim_key in live, live_obs.dim_key in
+// preimg), so its params appear TWICE. The LIMIT is the final positional param.
+// buildAsOfSql threads the parameter numbering so scalar+multi-value compose into
+// each leg generically (no privileged dims, byte-identical to the prior single-jsonb
+// containment for a scalar-only filter).
+const AS_OF_STATIC_BINDS = 4 // $1 dataset, $2 from, $3 to, $4 asOf
+
+function buildAsOfSql(
+  liveFilter: DimFilterPredicate,
+  preimgFilter: DimFilterPredicate,
+  limitIndex: number,
+): string {
+  return `
   WITH live AS (
     SELECT o.dataset_code, o.time_period, o.time_period_date, o.dim_key, o.dim_key_hash,
            o.obs_value, o.obs_status, o.obs_attribute,
@@ -108,8 +175,8 @@ const AS_OF_SQL = `
       JOIN stats.release r ON r.id = o.release_id
      WHERE o.dataset_code = $1
        AND r.published_at IS NOT NULL
-       AND r.published_at <= $5::timestamptz
-       AND ($4::jsonb IS NULL OR o.dim_key @> $4::jsonb)
+       AND r.published_at <= $4::timestamptz
+       AND ${liveFilter.sql}
   ),
   preimg AS (
     SELECT rev.dataset_code, rev.time_period,
@@ -132,9 +199,9 @@ const AS_OF_SQL = `
        AND live_obs.dim_key_hash = rev.dim_key_hash
      WHERE rev.dataset_code = $1
        AND sr.published_at IS NOT NULL
-       AND sr.published_at <= $5::timestamptz
-       AND (xr.published_at IS NULL OR xr.published_at > $5::timestamptz)
-       AND ($4::jsonb IS NULL OR live_obs.dim_key @> $4::jsonb)
+       AND sr.published_at <= $4::timestamptz
+       AND (xr.published_at IS NULL OR xr.published_at > $4::timestamptz)
+       AND ${preimgFilter.sql}
   ),
   candidates AS (
     SELECT * FROM live
@@ -147,8 +214,9 @@ const AS_OF_SQL = `
    WHERE ($2::text IS NULL OR time_period_date >= stats.parse_time_period($2))
      AND ($3::text IS NULL OR time_period_date <= stats.parse_time_period_end($3))
    ORDER BY dataset_code, time_period, dim_key_hash, valid_from DESC
-   LIMIT $6
+   LIMIT $${limitIndex}
 `
+}
 
 /**
  * Run the as-of reconstruction for one dataset at one instant. Shared by the
@@ -162,18 +230,32 @@ export async function queryAsOf(
     asOf: Date
     from?: string
     to?: string
-    filter?: Record<string, unknown>
+    filter?: DimFilter
     limit: number
   },
 ): Promise<Record<string, unknown>[]> {
-  const { rows } = await pg.query<Record<string, unknown>>(AS_OF_SQL, [
+  // The SAME key selection scopes BOTH legs, against different column aliases
+  // (live.o.dim_key, preimg.live_obs.dim_key). Build it twice, threading the
+  // positional indices: the live filter binds first (after the 4 static binds),
+  // the preimg filter binds next, then LIMIT is last.
+  const liveFilter   = buildDimFilter(args.filter, AS_OF_STATIC_BINDS + 1, 'o.dim_key')
+  const preimgStart  = AS_OF_STATIC_BINDS + 1 + liveFilter.params.length
+  const preimgFilter = buildDimFilter(args.filter, preimgStart, 'live_obs.dim_key')
+  const limitIndex   = preimgStart + preimgFilter.params.length
+
+  const params = [
     args.dataset,
     args.from ?? null,
     args.to ?? null,
-    args.filter ? JSON.stringify(args.filter) : null,
     args.asOf,
+    ...liveFilter.params,
+    ...preimgFilter.params,
     args.limit,
-  ])
+  ]
+  const { rows } = await pg.query<Record<string, unknown>>(
+    buildAsOfSql(liveFilter, preimgFilter, limitIndex),
+    params,
+  )
   return rows
 }
 
@@ -183,7 +265,6 @@ export const observationsRoutes: FastifyPluginAsync = async (app) => {
   // With ?asOf=<instant> it returns the vintage (the series as published at D).
   app.get('/', async (req, reply) => {
     const q = parseQuery(ObsQuery, req.query)
-    const filterJson = q.filter ? JSON.stringify(q.filter) : null
 
     // ADR-0031 §6 — fail-fast at the boundary: an unsupported `?format=` is a 400
     // (RFC 9457) BEFORE any work — before the discovery gate, the version probe, or
@@ -253,22 +334,26 @@ export const observationsRoutes: FastifyPluginAsync = async (app) => {
     // <= 2020-03-31. A plain '2020' is the annual period: >= 2020-01-01 /
     // <= 2020-12-31, preserving the old behaviour. Passing the raw period text
     // (not a pre-computed date) keeps date logic in one place, never the route.
+    //
+    // Key selection (SDMX-aligned, dim-filter.ts): scalar dims collapse into one
+    // GIN-indexable `dim_key @> $::jsonb`; each multi-value dim emits a
+    // `dim_key->>'<dim>' = ANY($::text[])` (OR within the dim). For a scalar-only
+    // filter the emitted predicate + params are byte-identical to the prior
+    // single-jsonb form. $1 dataset · $2 from · $3 to are static; the filter binds
+    // $4..$n; LIMIT is last so it always trails the variable-length filter params.
+    const dimFilter = buildDimFilter(q.filter, 4)
+    const params = [q.dataset, q.from ?? null, q.to ?? null, ...dimFilter.params, q.limit]
+    const limitIdx = params.length
     const { rows } = await app.pg.query(
       `SELECT time_period, dim_key, obs_value, obs_status, obs_attribute
          FROM stats.observation
         WHERE dataset_code = $1
           AND ($2::text IS NULL OR time_period_date >= stats.parse_time_period($2))
           AND ($3::text IS NULL OR time_period_date <= stats.parse_time_period_end($3))
-          AND ($4::jsonb IS NULL OR dim_key @> $4::jsonb)
+          AND ${dimFilter.sql}
         ORDER BY time_period_date DESC, dim_key
-        LIMIT $5`,
-      [
-        q.dataset,
-        q.from ?? null,
-        q.to ?? null,
-        filterJson,
-        q.limit,
-      ],
+        LIMIT $${limitIdx}`,
+      params,
     )
     return serializeReply(reply, q.format, rows)
   })

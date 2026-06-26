@@ -35,12 +35,20 @@
                 "label": "მთლიანი ეროვნული შემოსავალი (B5G)",
                 "mode": "year",
                 "trend": {
+                  "filter": {
+                    "account": "allocation-of-primary-income-account",
+                    "side": "U"
+                  },
                   "measure": "B5G",
                   "type": "yoy"
                 },
                 "trendSub": "წინა წელთან შედარებით",
                 "unit": "მლნ ₾",
                 "value": {
+                  "filter": {
+                    "account": "allocation-of-primary-income-account",
+                    "side": "U"
+                  },
                   "format": "mln_gel",
                   "measure": "B5G",
                   "type": "point"
@@ -52,12 +60,20 @@
                 "label": "მთლიანი განკარგვადი შემოსავალი (B6G)",
                 "mode": "year",
                 "trend": {
+                  "filter": {
+                    "account": "secondary-distribution-of-income-account",
+                    "side": "U"
+                  },
                   "measure": "B6G",
                   "type": "yoy"
                 },
                 "trendSub": "წინა წელთან შედარებით",
                 "unit": "მლნ ₾",
                 "value": {
+                  "filter": {
+                    "account": "secondary-distribution-of-income-account",
+                    "side": "U"
+                  },
                   "format": "mln_gel",
                   "measure": "B6G",
                   "type": "point"
@@ -69,12 +85,20 @@
                 "label": "მთლიანი დანაზოგი (B8G)",
                 "mode": "year",
                 "trend": {
+                  "filter": {
+                    "account": "use-of-disposable-income-account",
+                    "side": "U"
+                  },
                   "measure": "B8G",
                   "type": "yoy"
                 },
                 "trendSub": "წინა წელთან შედარებით",
                 "unit": "მლნ ₾",
                 "value": {
+                  "filter": {
+                    "account": "use-of-disposable-income-account",
+                    "side": "U"
+                  },
                   "format": "mln_gel",
                   "measure": "B8G",
                   "type": "point"
@@ -86,12 +110,20 @@
                 "label": "წმინდა დაკრედიტება/სესხება (B9)",
                 "mode": "year",
                 "trend": {
+                  "filter": {
+                    "account": "capital-account",
+                    "side": "U"
+                  },
                   "measure": "B9",
                   "type": "yoy"
                 },
                 "trendSub": "წინა წელთან შედარებით",
                 "unit": "მლნ ₾",
                 "value": {
+                  "filter": {
+                    "account": "capital-account",
+                    "side": "U"
+                  },
                   "format": "mln_gel",
                   "measure": "B9",
                   "type": "point"
@@ -103,6 +135,10 @@
                 "label": "დამატებული ღირებულება — საშუალო წლიური ზრდა",
                 "mode": "range",
                 "trend": {
+                  "filter": {
+                    "account": "production-account",
+                    "side": "U"
+                  },
                   "from": {
                     "$ctx": "fromYear"
                   },
@@ -115,6 +151,10 @@
                 "trendSub": "{fromYear}–{toYear}",
                 "unit": "%",
                 "value": {
+                  "filter": {
+                    "account": "production-account",
+                    "side": "U"
+                  },
                   "from": {
                     "$ctx": "fromYear"
                   },
@@ -131,6 +171,10 @@
                 "label": "გამოშვება — საშუალო წლიური ზრდა",
                 "mode": "range",
                 "trend": {
+                  "filter": {
+                    "account": "production-account",
+                    "side": "R"
+                  },
                   "from": {
                     "$ctx": "fromYear"
                   },
@@ -143,6 +187,10 @@
                 "trendSub": "{fromYear}–{toYear}",
                 "unit": "%",
                 "value": {
+                  "filter": {
+                    "account": "production-account",
+                    "side": "R"
+                  },
                   "from": {
                     "$ctx": "fromYear"
                   },
@@ -167,12 +215,20 @@
                 "unit": "%",
                 "value": {
                   "denom": {
+                    "filter": {
+                      "account": "production-account",
+                      "side": "U"
+                    },
                     "measure": "B1G",
                     "time": {
                       "$ctx": "toYear"
                     }
                   },
                   "num": {
+                    "filter": {
+                      "account": "generation-of-income-account",
+                      "side": "U"
+                    },
                     "measure": "D1",
                     "time": {
                       "$ctx": "toYear"
@@ -195,6 +251,10 @@
                 "unit": "მლნ ₾",
                 "value": {
                   "abs": true,
+                  "filter": {
+                    "account": "capital-account",
+                    "side": "U"
+                  },
                   "format": "mln_gel",
                   "measure": "B9",
                   "time": {
@@ -862,14 +922,14 @@
                   "fromDim": "fromYear",
                   "pipe": [
                     {
-                      "as": "isCarryForward",
-                      "expr": "side == 'R' && seqPos > 0 ? 1 : 0",
+                      "as": "_isDeriving",
+                      "expr": "(measure == 'P1' && account == 'production-account' && side == 'R') || (side == 'U' && ((measure == 'B1G' && account == 'production-account') || (measure == 'B5G' && account == 'allocation-of-primary-income-account') || (measure == 'B6G' && account == 'secondary-distribution-of-income-account') || (measure == 'B8G' && account == 'use-of-disposable-income-account') || (measure == 'B9' && account == 'capital-account'))) ? 1 : 0",
                       "op": "derive"
                     },
                     {
                       "op": "filter",
                       "where": {
-                        "isCarryForward": 0
+                        "_isDeriving": 1
                       }
                     },
                     {
@@ -931,14 +991,14 @@
                   "fromDim": "fromYear",
                   "pipe": [
                     {
-                      "as": "isCarryForward",
-                      "expr": "side == 'R' && seqPos > 0 ? 1 : 0",
+                      "as": "_isDeriving",
+                      "expr": "(measure == 'P1' && account == 'production-account' && side == 'R') || (side == 'U' && ((measure == 'B1G' && account == 'production-account') || (measure == 'B5G' && account == 'allocation-of-primary-income-account') || (measure == 'B6G' && account == 'secondary-distribution-of-income-account') || (measure == 'B8G' && account == 'use-of-disposable-income-account') || (measure == 'B9' && account == 'capital-account'))) ? 1 : 0",
                       "op": "derive"
                     },
                     {
                       "op": "filter",
                       "where": {
-                        "isCarryForward": 0
+                        "_isDeriving": 1
                       }
                     },
                     {

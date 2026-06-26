@@ -34,11 +34,20 @@ which clears the Idempotent-Receiver match. The retry then re-runs codelists (go
 mint → facts cleanly. Never deletes gold (`stats.classifier`/`stats.dimension`/
 `stats.observation`); never touches the live stack.
 
-**Platform improvement worth flagging to the architect (not yet built):** the route should
-make the whole canonical upload resumable/atomic — e.g. tie the codelist+facts submissions of
-one upload into a bundle (a `release`/correlation id) so a retry resumes the tail instead of
-409-ing on already-landed reference data; or make `submitToGold` treat an identical already-
-published reference payload as a converged no-op (skip, not throw) WITHIN a canonical upload.
-Today it is a manual stage-table cleanup.
+**RESOLVED (2026-06-26) — converged-no-op chosen over resumable-bundle.** `submitToGold`
+(now in `apps/api/src/routes/ingest/canonical-fsm-drive.ts`, extracted from the route for the
+400-line bloat ceiling) CATCHES `AlreadyPublishedError` for the reference kinds and treats an
+identical already-published reference payload as a CONVERGED NO-OP: it adopts the existing
+published job (`KindJob.converged=true`) and continues to the mint/facts tail instead of
+bubbling the 409. Rationale over the resumable/correlation-id bundle: the reference re-publish
+IS genuinely a no-op (additive, compat-gated members already in gold) so the Idempotent
+Receiver is right to refuse a NEW submission but wrong to abort the orchestration; the bundle
+approach is a much larger contract change (new release/bundle entity + FSM) — YAGNI for this
+loose end. Convergence is SCOPED to reference kinds + `AlreadyPublishedError` only; facts stay
+behind the curator publish gate, and a full already-published-facts re-POST still 409s (F-2).
+Tests: `canonical-fsm-drive.test.ts` (DB-free, real createSubmission throws the real error →
+converges) + the `(g)` partial-failure→retry→converge case in `canonical-ingest.e2e.test.ts`
+(DB-gated: orphan the published codelist, retry → 202 not 409, facts land). The manual
+stage-table cleanup below is no longer needed for this case (kept for historical recovery).
 
 Related: [[project_versioned_ingestion]] · [[version-mint-locale-incomplete-label]].
