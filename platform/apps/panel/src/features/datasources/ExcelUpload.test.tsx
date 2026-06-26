@@ -12,7 +12,8 @@ import { render, screen, fireEvent, waitFor, within } from '@testing-library/rea
 import { IngestProblem, type CanonicalUploadResult } from '../../lib/ingestApi'
 
 // ── Mock the one transport seam — no real fetch/auth in a component test ───────
-const uploadCanonical = vi.fn<(b: ArrayBuffer, n: string) => Promise<CanonicalUploadResult>>()
+const uploadCanonical =
+  vi.fn<(b: ArrayBuffer, n: string, opts?: { datasetVersion?: string }) => Promise<CanonicalUploadResult>>()
 const getJob = vi.fn().mockResolvedValue({
   job: { id: 'facts-1', kind: 'facts', status: 'staged' },
   issuesBySeverity: { error: 0, warn: 2, info: 0 },
@@ -23,7 +24,8 @@ const publishJob = vi.fn().mockResolvedValue({})
 vi.mock('../../lib/ingestApi', async (orig) => ({
   ...(await orig<typeof import('../../lib/ingestApi')>()),
   ingestApi: {
-    uploadCanonical: (b: ArrayBuffer, n: string) => uploadCanonical(b, n),
+    uploadCanonical: (b: ArrayBuffer, n: string, opts?: { datasetVersion?: string }) =>
+      uploadCanonical(b, n, opts),
     getJob:    (id: string) => getJob(id),
     publishJob: (id: string) => publishJob(id),
   },
@@ -178,5 +180,92 @@ describe('ExcelUpload — error mapping (RFC 9457 → friendly)', () => {
     fireEvent.change(fileInput(), { target: { files: [xlsxFile()] } })
     const alert = await screen.findByRole('alert')
     expect(within(alert).getByText(/უკვე ჩატვირთულია/)).toBeInTheDocument()
+  })
+})
+
+// ── DSD-change → "ingest as a new version" governance flow ─────────────────────
+//
+//  A 400 DSD_INCOMPATIBLE (a richer/different DSD than the registered dataset) is NOT
+//  a dead-end error: it opens the governance panel — the plain-language structural diff
+//  + the version-mint action. Confirming re-POSTs the SAME bytes with ?datasetVersion=
+//  and renders the 202 success. WCAG: the version input is a labelled, keyboard-operable
+//  control focused on open; the parent announces the diff + outcome via aria-live.
+
+/** A 400 DSD_INCOMPATIBLE problem: the workbook ADDS the `approach` dimension. */
+function dsdIncompatible(): IngestProblem {
+  return new IngestProblem(400, {
+    type: 'urn:statdash:problem:bad-request',
+    title: 'Bad request',
+    status: 400,
+    code: 'DSD_INCOMPATIBLE',
+    datasetCode: 'GDP_BY_SECTOR',
+    dimensionsBefore: ['time', 'sector'],
+    dimensionsAfter:  ['time', 'sector', 'approach'],
+    reason: 'the workbook declares a dimension the registered dataset does not have',
+    versioned: false,
+  }, 'fallback')
+}
+
+describe('ExcelUpload — DSD change → ingest as a new version', () => {
+  it('renders the structural diff in plain language instead of a flat error', async () => {
+    uploadCanonical.mockRejectedValue(dsdIncompatible())
+    render(<ExcelUpload />)
+    fireEvent.change(fileInput(), { target: { files: [xlsxFile()] } })
+
+    // The governance panel (a labelled group), naming the dataset + the ADDED dimension.
+    const panel = await screen.findByRole('group', { name: /სტრუქტურული ცვლილება/ })
+    expect(within(panel).getByText('GDP_BY_SECTOR')).toBeInTheDocument()
+    expect(within(panel).getByText('+ approach')).toBeInTheDocument()
+    // It is the version panel, not the generic error Alert.
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+  })
+
+  it('exposes a labelled, defaulted, keyboard-focusable version input', async () => {
+    uploadCanonical.mockRejectedValue(dsdIncompatible())
+    render(<ExcelUpload />)
+    fireEvent.change(fileInput(), { target: { files: [xlsxFile()] } })
+
+    const input = await screen.findByLabelText('ვერსიის ნიშნული')
+    // Defaulted to a sensible value (today's ISO date) — never empty.
+    expect((input as HTMLInputElement).value).toMatch(/^\d{4}-\d{2}-\d{2}$/)
+    // Focused on open so the curator lands on the action (WCAG 2.4.3).
+    await waitFor(() => expect(input).toHaveFocus())
+  })
+
+  it('confirming re-POSTs the SAME bytes with ?datasetVersion= and shows success', async () => {
+    uploadCanonical
+      .mockRejectedValueOnce(dsdIncompatible())   // first upload → DSD change
+      .mockResolvedValueOnce(RESULT_202)          // version-mint re-POST → 202
+    render(<ExcelUpload />)
+    fireEvent.change(fileInput(), { target: { files: [xlsxFile('v2.xlsx')] } })
+
+    const input = await screen.findByLabelText('ვერსიის ნიშნული')
+    fireEvent.change(input, { target: { value: 'v2' } })
+    fireEvent.click(screen.getByRole('button', { name: /ახალ ვერსიად ჩატვირთვა/ }))
+
+    // Re-POSTed with the same filename + the version label (NOT a re-drop).
+    await waitFor(() => expect(uploadCanonical).toHaveBeenCalledTimes(2))
+    const rePost = uploadCanonical.mock.calls[1]
+    expect(rePost[1]).toBe('v2.xlsx')
+    expect(rePost[2]).toEqual({ datasetVersion: 'v2' })
+
+    // The 202 success renders (the dataset + the staged-facts approve action).
+    expect(await screen.findByText('GDP_BY_SECTOR')).toBeInTheDocument()
+    expect(await screen.findByRole('button', { name: /დადასტურება და გამოქვეყნება/ })).toBeInTheDocument()
+  })
+
+  it('Enter in the version input confirms (keyboard equivalent of the button)', async () => {
+    uploadCanonical
+      .mockRejectedValueOnce(dsdIncompatible())
+      .mockResolvedValueOnce(RESULT_202)
+    render(<ExcelUpload />)
+    fireEvent.change(fileInput(), { target: { files: [xlsxFile()] } })
+
+    const input = await screen.findByLabelText('ვერსიის ნიშნული')
+    fireEvent.change(input, { target: { value: 'v2' } })
+    fireEvent.keyDown(input, { key: 'Enter' })
+
+    await waitFor(() => expect(uploadCanonical).toHaveBeenCalledTimes(2))
+    expect(uploadCanonical.mock.calls[1][2]).toEqual({ datasetVersion: 'v2' })
   })
 })

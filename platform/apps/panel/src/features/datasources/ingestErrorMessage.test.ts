@@ -6,7 +6,7 @@
 //  AuthError names the session; a bare Error keeps its message.
 //
 import { describe, it, expect } from 'vitest'
-import { ingestErrorMessage } from './ingestErrorMessage'
+import { ingestErrorMessage, parseDsdChange } from './ingestErrorMessage'
 import { IngestProblem } from '../../lib/ingestApi'
 import { AuthError } from '../../lib/auth'
 
@@ -27,6 +27,26 @@ describe('ingestErrorMessage', () => {
     const r = ingestErrorMessage(problem(400, { code: 'DSD_INCOMPATIBLE', reason: 'dim removed' }))
     expect(r.message).toMatch(/ახალი ვერსია/)
     expect(r.message).toMatch(/dim removed/)
+  })
+
+  it('DSD_INCOMPATIBLE with a dimension diff → carries the parsed versionable change', () => {
+    const r = ingestErrorMessage(problem(400, {
+      code: 'DSD_INCOMPATIBLE',
+      datasetCode: 'GDP_BY_SECTOR',
+      dimensionsBefore: ['time', 'sector'],
+      dimensionsAfter: ['time', 'sector', 'approach'],
+      reason: 'richer DSD',
+      versioned: false,
+    }))
+    expect(r.dsdChange).toBeDefined()
+    expect(r.dsdChange?.datasetCode).toBe('GDP_BY_SECTOR')
+    expect(r.dsdChange?.added).toEqual(['approach'])
+    expect(r.dsdChange?.removed).toEqual([])
+  })
+
+  it('DSD_INCOMPATIBLE without the diff shape → no dsdChange (flat headline only)', () => {
+    const r = ingestErrorMessage(problem(400, { code: 'DSD_INCOMPATIBLE', reason: 'dim removed' }))
+    expect(r.dsdChange).toBeUndefined()
   })
 
   it('ALREADY_PUBLISHED → duplicate message', () => {
@@ -55,5 +75,26 @@ describe('ingestErrorMessage', () => {
 
   it('a non-error value gets a safe generic fallback', () => {
     expect(ingestErrorMessage('weird').message).toMatch(/ვერ მოხერხდა/)
+  })
+})
+
+describe('parseDsdChange', () => {
+  const body = (b: Record<string, unknown>) => ({ type: 't', title: 'T', status: 400, ...b })
+
+  it('diffs after − before into added / removed dimension sets', () => {
+    const c = parseDsdChange(body({
+      datasetCode: 'D', dimensionsBefore: ['a', 'b'], dimensionsAfter: ['a', 'c'],
+    }))
+    expect(c).not.toBeNull()
+    expect(c?.added).toEqual(['c'])
+    expect(c?.removed).toEqual(['b'])
+  })
+
+  it('returns null when neither dimension list is present (nothing to version)', () => {
+    expect(parseDsdChange(body({ datasetCode: 'D', reason: 'x' }))).toBeNull()
+  })
+
+  it('returns null without a datasetCode (cannot target a version)', () => {
+    expect(parseDsdChange(body({ dimensionsAfter: ['a'] }))).toBeNull()
   })
 })

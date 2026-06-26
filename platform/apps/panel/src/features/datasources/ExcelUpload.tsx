@@ -20,21 +20,19 @@
 //
 import { useState, useRef, useCallback, useId } from 'react'
 import {
-  Box, Typography, Button, Chip, Alert, AlertTitle, CircularProgress,
-  Stack, Link, List, ListItem, ListItemText, Divider,
+  Box, Typography, Alert, AlertTitle, CircularProgress,
+  Link, List, ListItem, ListItemText,
 } from '@mui/material'
 import UploadFileIcon from '@mui/icons-material/UploadFile'
-import CheckCircleIcon from '@mui/icons-material/CheckCircle'
-import HourglassTopIcon from '@mui/icons-material/HourglassTop'
-import WarningAmberIcon from '@mui/icons-material/WarningAmber'
 import TableChartIcon from '@mui/icons-material/TableChart'
 import {
   ingestApi,
   type CanonicalUploadResult,
-  type IngestKindJob,
   type IngestJobView,
 } from '../../lib/ingestApi'
-import { ingestErrorMessage } from './ingestErrorMessage'
+import { ingestErrorMessage, type DsdChange } from './ingestErrorMessage'
+import { DsdVersionPanel, dsdChangeSummary } from './DsdVersionPanel'
+import { IngestResultPanel } from './IngestResultPanel'
 
 // The link target documenting the canonical workbook format (STRUCTURE + CL_* +
 // DATA). Runtime-config seam: an env override lets a deployment point at its own
@@ -46,11 +44,20 @@ const FORMAT_DOC_HREF =
 const XLSX_EXT = '.xlsx'
 const XLSX_MIME = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
 
-type Phase = 'idle' | 'uploading' | 'result' | 'approving' | 'done'
+// 'versioning' = the DSD-change governance panel is showing (a structural diff +
+// the version-mint action); 're-uploading' = the version-labelled re-POST is in flight.
+type Phase = 'idle' | 'uploading' | 'result' | 'approving' | 'done' | 'versioning' | 're-uploading'
 
 interface UploadError {
-  message: string
-  lines:   string[]
+  message:    string
+  lines:      string[]
+  /** When set, the upload was a versionable DSD change → render the governance panel. */
+  dsdChange?: DsdChange
+}
+
+/** A sensible default version label: today's date (ISO yyyy-mm-dd) — SDMX-style. */
+function defaultVersionLabel(): string {
+  return new Date().toISOString().slice(0, 10)
 }
 
 export interface ExcelUploadProps {
@@ -71,36 +78,83 @@ export function ExcelUpload({ onIngested }: ExcelUploadProps) {
   const [filename, setName] = useState<string | null>(null)
   // The polled facts-job view (WARN issues) — methodology transparency before approve.
   const [jobView, setJobView] = useState<IngestJobView | null>(null)
+  // The version label the curator confirms (defaulted to today; editable).
+  const [versionLabel, setVersionLabel] = useState<string>(defaultVersionLabel)
+  // The DSD change being resolved — held separately from the transient `error` so the
+  // governance panel STAYS MOUNTED (keeps focus + busy state) across the version-mint
+  // re-POST, which clears `error`. Cleared on a fresh upload or on success.
+  const [dsdChange, setDsdChange] = useState<DsdChange | null>(null)
 
   const inputRef = useRef<HTMLInputElement>(null)
+  // The cached source bytes — so the version-mint re-POST never re-drops the file.
+  const bytesRef = useRef<ArrayBuffer | null>(null)
   const statusId = useId()
 
   const factsJob = result?.jobIds.find((j) => j.kind === 'facts') ?? null
 
-  // ── Upload — read bytes → POST → 202 result | friendly error ────────────────
+  /** Apply a 202 result: clear any DSD panel, render the dataset + poll WARN issues. */
+  const applyResult = useCallback((res: CanonicalUploadResult) => {
+    setDsdChange(null)
+    setResult(res)
+    setPhase('result')
+    const facts = res.jobIds.find((j) => j.kind === 'facts')
+    if (facts) {
+      ingestApi.getJob(facts.jobId).then(setJobView).catch(() => { /* advisory only */ })
+    }
+  }, [])
+
+  /** Map a thrown error → friendly message; route a versionable DSD change to the panel. */
+  const handleFailure = useCallback((e: unknown) => {
+    const mapped = ingestErrorMessage(e)
+    setError(mapped)
+    if (mapped.dsdChange) {
+      // A versionable DSD change is a RESOLUTION, not a dead end: open the governance
+      // panel (the structural diff + the version-mint action) instead of just erroring.
+      setDsdChange(mapped.dsdChange)
+      setPhase('versioning')
+    } else {
+      setPhase('idle')
+    }
+  }, [])
+
+  // ── Upload — read bytes → POST → 202 result | DSD-change panel | friendly error ─
   const upload = useCallback(async (file: File) => {
     if (!isXlsx(file)) {
       setError({ message: `მხოლოდ ${XLSX_EXT} ფაილებია დაშვებული. აირჩიეთ Excel სამუშაო წიგნი.`, lines: [] })
       return
     }
-    setError(null); setResult(null); setJobView(null)
+    setError(null); setResult(null); setJobView(null); setDsdChange(null)
     setName(file.name)
+    setVersionLabel(defaultVersionLabel())
     setPhase('uploading')
     try {
       const bytes = await file.arrayBuffer()
+      bytesRef.current = bytes // cache for a possible version-mint re-POST
       const res = await ingestApi.uploadCanonical(bytes, file.name)
-      setResult(res)
-      setPhase('result')
-      // Best-effort: poll the staged facts job for its WARN issues (DQAF integrity).
-      const facts = res.jobIds.find((j) => j.kind === 'facts')
-      if (facts) {
-        ingestApi.getJob(facts.jobId).then(setJobView).catch(() => { /* advisory only */ })
-      }
+      applyResult(res)
     } catch (e) {
-      setError(ingestErrorMessage(e))
-      setPhase('idle')
+      handleFailure(e)
     }
-  }, [])
+  }, [applyResult, handleFailure])
+
+  // ── Version-mint — re-POST the SAME cached bytes with ?datasetVersion=<label> ──
+  // The canonical resolution to a DSD change (SDMX governance): a structural change
+  // WITH a version succeeds (warn-governed) → 202 with the new version.
+  const ingestAsVersion = useCallback(async () => {
+    const bytes = bytesRef.current
+    const label = versionLabel.trim()
+    if (!bytes || !filename || label === '') return
+    setError(null)
+    setPhase('re-uploading')
+    try {
+      const res = await ingestApi.uploadCanonical(bytes, filename, { datasetVersion: label })
+      applyResult(res)
+    } catch (e) {
+      // Stay on the governance panel (dsdChange held) so the curator can correct the
+      // label and retry; only a non-DSD failure (e.g. session) collapses back to idle.
+      handleFailure(e)
+    }
+  }, [versionLabel, filename, applyResult, handleFailure])
 
   // ── Approve — publish the staged facts → gold, then refresh the parent ──────
   const approve = useCallback(async () => {
@@ -138,13 +192,18 @@ export function ExcelUpload({ onIngested }: ExcelUploadProps) {
     }
   }, [])
 
-  const busy = phase === 'uploading' || phase === 'approving'
+  const busy = phase === 'uploading' || phase === 'approving' || phase === 're-uploading'
+  const showVersionPanel = (phase === 'versioning' || phase === 're-uploading') && dsdChange !== null
 
-  // The status line that the aria-live region announces on each transition.
+  // The status line that the aria-live region announces on each transition. For a DSD
+  // change we announce the plain-language structural diff so a screen-reader curator
+  // hears WHY a version is required (not just that an error occurred).
   const liveStatus =
     phase === 'uploading' ? `${filename ?? 'ფაილი'} იტვირთება…`
+    : phase === 're-uploading' ? `ახალი ვერსია იქმნება: ${versionLabel}…`
     : phase === 'approving' ? 'მონაცემები ქვეყნდება…'
     : phase === 'done' ? 'მონაცემები ჩაიტვირთა.'
+    : phase === 'versioning' && dsdChange ? dsdChangeSummary(dsdChange)
     : error ? error.message
     : phase === 'result' ? 'სამუშაო წიგნი დამუშავდა — საჭიროა დადასტურება.'
     : ''
@@ -225,8 +284,10 @@ export function ExcelUpload({ onIngested }: ExcelUploadProps) {
         {liveStatus}
       </Box>
 
-      {/* ── Error — friendly, mapped from the RFC 9457 code (never a raw blob) ── */}
-      {error && (
+      {/* ── Error — friendly, mapped from the RFC 9457 code (never a raw blob). A
+            versionable DSD change is NOT a flat error: it renders the governance panel
+            below instead, so here we render the flat Alert for every OTHER error. ─── */}
+      {error && !showVersionPanel && (
         <Alert severity="error" variant="outlined">
           <AlertTitle>{error.message}</AlertTitle>
           {error.lines.length > 0 && (
@@ -241,9 +302,20 @@ export function ExcelUpload({ onIngested }: ExcelUploadProps) {
         </Alert>
       )}
 
+      {/* ── DSD change → "ingest as a new version" governance panel ────────────── */}
+      {showVersionPanel && dsdChange && (
+        <DsdVersionPanel
+          change={dsdChange}
+          versionLabel={versionLabel}
+          onVersionLabelChange={setVersionLabel}
+          onConfirm={() => void ingestAsVersion()}
+          busy={phase === 're-uploading'}
+        />
+      )}
+
       {/* ── 202 result — the dataset, published reference data, the staged facts ── */}
       {result && (phase === 'result' || phase === 'approving' || phase === 'done') && (
-        <ResultPanel
+        <IngestResultPanel
           result={result}
           factsJob={factsJob}
           jobView={jobView}
@@ -255,82 +327,3 @@ export function ExcelUpload({ onIngested }: ExcelUploadProps) {
   )
 }
 
-// ── ResultPanel — the 202 outcome + the curator-approval action ────────────────
-function ResultPanel({
-  result, factsJob, jobView, phase, onApprove,
-}: {
-  result:    CanonicalUploadResult
-  factsJob:  IngestKindJob | null
-  jobView:   IngestJobView | null
-  phase:     Phase
-  onApprove: () => void
-}) {
-  const published = result.jobIds.filter((j) => j.kind !== 'facts')
-  const warnCount = jobView?.issuesBySeverity.warn ?? 0
-
-  return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, p: 2, border: '1px solid', borderColor: 'divider', borderRadius: 1 }}>
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-        <Typography variant="subtitle2">მონაცემთა ნაკრები:</Typography>
-        <Chip size="small" color="primary" variant="outlined" label={result.datasetCode} />
-      </Box>
-
-      {/* Published reference data (codelists/displays) — auto, already in gold. */}
-      {published.length > 0 && (
-        <Box>
-          <Typography variant="caption" color="text.secondary">საცნობარო მონაცემები (გამოქვეყნდა)</Typography>
-          <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap', mt: 0.5 }}>
-            {published.map((j) => (
-              <Chip
-                key={j.jobId}
-                size="small" color="success" variant="outlined"
-                icon={<CheckCircleIcon />}
-                label={j.kind}
-              />
-            ))}
-          </Stack>
-        </Box>
-      )}
-
-      <Divider />
-
-      {/* The facts — the approval-gated DATA. Staged until the curator publishes. */}
-      {factsJob ? (
-        phase === 'done' ? (
-          <Alert severity="success" variant="outlined" icon={<CheckCircleIcon />}>
-            მონაცემები ჩაიტვირთა ✓
-          </Alert>
-        ) : (
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <Chip size="small" color="warning" variant="outlined" icon={<HourglassTopIcon />} label="facts — staged" />
-              <Typography variant="caption" color="text.secondary">
-                მონაცემები მზადაა დასადასტურებლად
-              </Typography>
-            </Box>
-
-            {/* DQAF integrity rules surface as WARN — show them (they do NOT block). */}
-            {warnCount > 0 && (
-              <Alert severity="warning" variant="outlined" icon={<WarningAmberIcon />}>
-                {warnCount} გაფრთხილება მონაცემთა ხარისხის შესახებ — გამოქვეყნებას არ აბრკოლებს.
-              </Alert>
-            )}
-
-            <Button
-              variant="contained"
-              disabled={phase === 'approving'}
-              startIcon={phase === 'approving' ? <CircularProgress size={16} color="inherit" /> : <CheckCircleIcon />}
-              onClick={onApprove}
-            >
-              დადასტურება და გამოქვეყნება
-            </Button>
-          </Box>
-        )
-      ) : (
-        <Typography variant="body2" color="text.secondary">
-          ფაქტობრივი მონაცემები არ იყო — მხოლოდ საცნობარო მონაცემები განახლდა.
-        </Typography>
-      )}
-    </Box>
-  )
-}

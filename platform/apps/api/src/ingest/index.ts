@@ -22,6 +22,8 @@ export type {
 } from './canonical/compat.js'
 export { publishSubmission } from './publish.js'
 export type { PublishOpts } from './publish.js'
+export { mintDatasetVersion } from './version-mint.js'
+export type { VersionMintPlan, VersionMintResult, DsdDimension } from './version-mint.js'
 export { publishBundle } from './publish-bundle.js'
 export type { PublishBundleResult } from './publish-bundle.js'
 export { runIngestionWorker } from './worker.js'

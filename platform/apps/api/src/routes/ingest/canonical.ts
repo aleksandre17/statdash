@@ -62,16 +62,18 @@ import { problem, alreadyPublished } from '../../lib/problem.js'
 import { authPlugin } from '../../auth.js'
 import {
   createSubmission, AlreadyPublishedError, fetchActiveLocales, precheckContractCompat,
-  runIngestionWorker, publishSubmission,
+  runIngestionWorker, publishSubmission, mintDatasetVersion,
 } from '../../ingest/index.js'
 import type {
-  RawObsRow, RawClassifierRow, RawDisplayRow, DsdSnapshot,
-  Queryable, IngestLogger, SubmissionStatus,
+  RawObsRow, RawClassifierRow, RawDisplayRow,
+  Queryable, IngestLogger, SubmissionStatus, VersionMintResult,
 } from '../../ingest/index.js'
 import { readWorkbook } from '../../ingest/canonical/read-workbook.js'
 import { parseCanonicalWorkbook } from '../../ingest/canonical/parse.js'
-import type { CanonicalDsd } from '../../ingest/canonical/types.js'
 import { recognizeReferenceMetadata } from '../../ingest/reference-metadata-map.js'
+import {
+  resolveDeclaredVersion, declaredSnapshot, buildMintPlan,
+} from './canonical-dsd-inputs.js'
 
 // ── Curator-write role gate (admin OR editor) — same surface as ingestRoutes ───
 const WRITE_ROLES = ['admin', 'editor'] as const
@@ -180,27 +182,6 @@ async function submitToGold(
   return { kind: args.kind, jobId, status }
 }
 
-/**
- * Build the DECLARED DsdSnapshot for the compat pre-pass from the parsed DSD + the
- * emitted classifier rows. dims + measure come from STRUCTURE; members are the codes
- * this workbook declares per dim (so the classifier can diff them against gold). A
- * dataset_version STRUCTURE row (if present) lets a governed DSD change pass.
- */
-function declaredSnapshot(dsd: CanonicalDsd, classifiers: RawClassifierRow[]): DsdSnapshot {
-  const members: Record<string, string[]> = {}
-  for (const c of classifiers) {
-    ;(members[c.dimCode] ??= []).push(c.code)
-  }
-  const datasetVersion = (dsd.meta.dataset_version ?? '').trim() || undefined
-  return {
-    datasetCode: dsd.datasetCode,
-    dimensions: dsd.dimensions,
-    measureConcept: dsd.measureConcept,
-    members,
-    datasetVersion,
-  }
-}
-
 export const canonicalRoutes: FastifyPluginAsync = async (app) => {
   await app.register(authPlugin)
 
@@ -254,7 +235,19 @@ export const canonicalRoutes: FastifyPluginAsync = async (app) => {
     // 4. PRE-PASS — data-contract compatibility. An UNVERSIONED DSD change is the gate:
     // block (400) and do NOT submit. Codelist deltas (extend/deprecate) are warns the
     // pipeline records at validate — they are carried forward, never blocked here.
-    const declared = declaredSnapshot(dsd, bronze.classifiers)
+    //
+    // VERSION RESOLUTION (the governance vehicle): ?datasetVersion / x-dataset-version /
+    // STRUCTURE row (query wins). A declared version flips a DSD change from a 400 gate
+    // to a governed warn (compat.ts) — the SDMX-canonical "new version" response to a
+    // structural change. WITHOUT a version a DSD change stays 400 (the gate holds).
+    const declaredVersion = resolveDeclaredVersion(
+      dsd,
+      typeof (req.query as Record<string, unknown>)?.datasetVersion === 'string'
+        ? (req.query as { datasetVersion: string }).datasetVersion : undefined,
+      typeof req.headers['x-dataset-version'] === 'string'
+        ? req.headers['x-dataset-version'] : undefined,
+    )
+    const declared = declaredSnapshot(dsd, bronze.classifiers, declaredVersion)
     const change = await precheckContractCompat(app.pg, declared)
     const blockingDsd = change.issues.find((i) => i.code === 'DSD_INCOMPATIBLE' && i.severity === 'error')
     if (blockingDsd) {
@@ -265,6 +258,15 @@ export const canonicalRoutes: FastifyPluginAsync = async (app) => {
         ...blockingDsd.detail,
       })
     }
+
+    // A VERSIONED DSD change is the GOVERNED path: the gate did not block (the warn-
+    // governed branch), so this is a new dataset VERSION. Detect it = the change is a
+    // dsd-change AND a version was declared (compat.ts marked dsdDelta.versioned). The
+    // actual mint is applied below — AFTER reference data lands in gold, BEFORE facts are
+    // submitted — because the DSD widen must be committed before validateObs/the V4 gold
+    // trigger check the facts' dim_key against the (now new) structure.
+    const isVersionedDsdChange =
+      change.kind === 'dsd-change' && change.dsdDelta?.versioned === true && !!declaredVersion
 
     // The shared provenance bag, stamped on EVERY submission this upload produces.
     const provenance = { parserVersion: PARSER_VERSION, sourceDigest, sourceFilename }
@@ -282,6 +284,7 @@ export const canonicalRoutes: FastifyPluginAsync = async (app) => {
     // e2e ordering bug: a single batched submit validated facts while the classifiers
     // were only STAGED → every code rejected UNKNOWN_CODE.
     const jobs: KindJob[] = []
+    let versionMint: VersionMintResult | undefined
     try {
       // a. Codelists → published gold (auto-published: additive + compat-gated reference data).
       if (bronze.classifiers.length > 0) {
@@ -305,6 +308,22 @@ export const canonicalRoutes: FastifyPluginAsync = async (app) => {
           dryRun: false,
           source, submittedBy, sourceDigest, provenance,
         }, { userId: submittedBy }))
+      }
+
+      // b.5. VERSION MINT (the governed structural change). When the pre-pass classified
+      // a VERSIONED dsd-change, apply it NOW — after the codelist members for the new
+      // dim(s) are in gold, BEFORE facts are submitted. mintDatasetVersion widens
+      // stats.dataset_dimension to the canonical STRUCTURE (adds the new dim in order),
+      // records the version label on the dataset's metadata slot, and bumps the V6 ETag
+      // counter (the new version row). It is ATOMIC + IDEMPOTENT: a re-ingest of the same
+      // versioned workbook converges (no dup dim, no dup version churn beyond the counter).
+      // Old observations are untouched (as-of preserved). The facts submitted next then
+      // validate against the NEW (widened) DSD — DIM_KEY_MISMATCH no longer fires.
+      if (isVersionedDsdChange && bronze.obs.length > 0) {
+        versionMint = await mintDatasetVersion(
+          app.pg,
+          buildMintPlan(dsd, bronze.classifiers, declaredVersion as string),
+        )
       }
 
       // c. Facts → STAGED ONLY (the approval-gated DATA). createSubmission + drive to
@@ -350,6 +369,10 @@ export const canonicalRoutes: FastifyPluginAsync = async (app) => {
       datasetCode: dsd.datasetCode,
       sourceDigest,
       jobIds: jobs,
+      // Present ONLY on a governed versioned DSD-change: the minted version label, the
+      // dims added to the series key, and the new ETag counter. Absent on every routine /
+      // codelist-only / non-versioned ingest (the panel keys its "new version" UX on it).
+      ...(versionMint ? { versionMint } : {}),
     }))
   })
 }

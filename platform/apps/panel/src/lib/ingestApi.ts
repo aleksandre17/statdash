@@ -134,9 +134,22 @@ export const ingestApi = {
    * the original filename in x-filename (the route's provenance label). The bytes
    * are sent verbatim (no multipart wrap — the route decodes a raw Buffer). Returns
    * the 202 result; throws IngestProblem on 400/409, AuthError on 401.
+   *
+   * `datasetVersion` opts into the SDMX version-mint path: a structural (DSD) change
+   * that WITHOUT a version returns 400 DSD_INCOMPATIBLE will, WITH a `?datasetVersion=`
+   * label, be accepted as a new governed version (202). The SAME bytes are re-POSTed —
+   * the caller caches them so resolving a DSD change never requires re-dropping the file.
    */
-  uploadCanonical: async (bytes: ArrayBuffer, filename: string): Promise<CanonicalUploadResult> => {
-    const res = await fetch(`${BASE}${INGEST_PREFIX}/canonical`, {
+  uploadCanonical: async (
+    bytes: ArrayBuffer,
+    filename: string,
+    opts: { datasetVersion?: string } = {},
+  ): Promise<CanonicalUploadResult> => {
+    const query =
+      opts.datasetVersion !== undefined && opts.datasetVersion !== ''
+        ? `?datasetVersion=${encodeURIComponent(opts.datasetVersion)}`
+        : ''
+    const res = await fetch(`${BASE}${INGEST_PREFIX}/canonical${query}`, {
       method:  'POST',
       headers: authHeaders({
         'Content-Type': 'application/octet-stream',
