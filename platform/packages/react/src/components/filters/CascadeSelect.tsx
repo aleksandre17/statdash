@@ -1,6 +1,9 @@
+import { useResolveLocaleSafe } from '../../context/SiteContext'
+import type { LocaleString }    from '@statdash/engine'
+
 interface CascadeNode {
   id: number
-  value: string
+  value: LocaleString
   children?: CascadeNode[]
 }
 
@@ -8,12 +11,15 @@ interface Props {
   tree:         CascadeNode[]
   path:         number[]
   onChange:     (path: number[]) => void
-  allLabel:     string
+  allLabel:     LocaleString
   placeholders?: string[]
   disabled?:    boolean
 }
 
 export default function CascadeSelect({ tree, path, onChange, allLabel, placeholders = [], disabled }: Props) {
+  // i18n boundary: resolve LocaleString node values + allLabel to the active locale
+  // (no-op on plain strings) so a bilingual cascade label never renders [object Object].
+  const t = useResolveLocaleSafe()
   const levels: CascadeNode[][] = [tree]
   for (let i = 0; i < path.length; i++) {
     const node = levels[i]?.find((n) => n.id === path[i])
@@ -40,10 +46,10 @@ export default function CascadeSelect({ tree, path, onChange, allLabel, placehol
           disabled={disabled}
           aria-label={placeholders?.[levelIdx] ?? String(levelIdx + 1)}
         >
-          <option value="">{allLabel}</option>
+          <option value="">{t(allLabel)}</option>
           {nodes.map((n) => (
             <option key={n.id} value={n.id}>
-              {n.value}
+              {t(n.value)}
             </option>
           ))}
         </select>

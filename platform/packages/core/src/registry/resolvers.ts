@@ -15,7 +15,8 @@ import type { CtxRef, DimVal, FilterValue, NeCtxRef, ObsQuery }  from '../sdmx'
 import { resolveMeasureRef }                  from '../data/metric'
 import { desugar }                             from '../data/desugar'
 import { resolveRef }                          from '../ref/ref'
-import { resolveLocaleString }                from '../i18n/types'
+import { tagLocaleString }                    from '../i18n/types'
+import type { LocaleString }                  from '../i18n/types'
 import type { SpecResolver }                 from './engine'
 import { applyPipeline }                      from '../data/transform'
 import { defaultRegistry }                   from './engine'
@@ -182,21 +183,24 @@ class RowListResolver implements SpecResolver<Extract<DataSpec, { type: 'row-lis
       const code = resolveCode(r.code)
       const raw = storeVal(store, code, ctx)
 
-      let label = r.label
+      let label: LocaleString | undefined = r.label
       let color = r.color
       if (!label || !color) {
         const obs = storeObs(store, { measure: code }, ctx)[0]
         if (obs) {
-          if (!label) label = String(obs['label'] ?? code)
+          // Carry the store label as-is (may be a LocaleString) — DO NOT String()-
+          // flatten it here (locale-agnostic layer → "[object Object]"/wrong locale).
+          if (!label) label = (obs['label'] as LocaleString | undefined) ?? code
           if (!color) color = String(obs['color'] ?? '') || undefined
         }
       }
 
       const row: EngineRow = {
         id:    code,
-        // Flatten LocaleString → string at the data boundary; the React/i18n
-        // layer performs locale-aware classifier resolution downstream.
-        label: label !== undefined ? resolveLocaleString(label, 'en', 'en') : code,
+        // i18n boundary [GAP 5b]: TAG an object-valued LocaleString label so the
+        // React resolveRowLocales boundary localizes it to the active locale (Law 1
+        // — the engine never picks a locale). A scalar label passes through untouched.
+        label: (typeof label === 'object' && label !== null ? tagLocaleString(label) : (label ?? code)) as DimVal,
         value: r.negate ? -raw : raw,
       }
       if (r.pctOf !== undefined) row['pct'] = (Math.abs(raw) / storeVal(store, resolveCode(r.pctOf), ctx)) * 100

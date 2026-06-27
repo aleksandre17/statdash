@@ -270,7 +270,7 @@ export { resolveDataLinks }                                              from '.
 
 // ── I18n Primitives ───────────────────────────────────────────────────
 export type { LocaleString }                                             from './i18n/types'
-export { resolveLocaleString, resolveLabel, tagLocaleString, isTaggedLocaleString } from './i18n/types'
+export { resolveLocaleString, resolveLabel, tagLocaleString, isTaggedLocaleString, composeLocale, localeKeysOf } from './i18n/types'
 export type { LocaleFormatter }                                          from './i18n/format'
 export { formatterRegistry }                                             from './i18n/format'
 

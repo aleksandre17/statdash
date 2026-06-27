@@ -66,6 +66,58 @@ export function resolveLocaleString(
   return s[locale] ?? s[fallback] ?? Object.values(s)[0] ?? ''
 }
 
+// ── localeKeysOf / composeLocale — locale-preserving STRING COMPOSITION ───────
+//
+//  A pipeline step that COMBINES cell values into a new string (template `{x}`,
+//  concat) must NOT `String()` a tagged LocaleString — that bakes "[object Object]"
+//  into the value BEFORE the React i18n boundary can resolve it (the engine has no
+//  user locale here). Instead it composes the new value PER LOCALE and re-tags the
+//  result, so a `{label} ({code})` over a bilingual `label` yields a bilingual
+//  result `{ en:'GDP (B1)', ka:'მშპ (B1)' }` carried intact to resolveRowLocales.
+//
+//  This keeps the engine locale-AGNOSTIC (it never picks a locale) while staying
+//  locale-CORRECT (no premature flatten). Mirrors tagLocaleString at the $d origin.
+
+/** The union of concrete locale keys carried by any tagged-LocaleString operand. */
+export function localeKeysOf(values: readonly unknown[]): string[] {
+  const keys = new Set<string>()
+  for (const v of values) {
+    if (isTaggedLocaleString(v)) for (const k of Object.keys(v)) keys.add(k)
+  }
+  return [...keys]
+}
+
+/**
+ * composeLocale — build a composed cell value, locale-aware.
+ *
+ *  `render(pick)` produces the composed STRING for one locale, where `pick(v)`
+ *  resolves a single operand to that locale (a scalar passes through; a tagged
+ *  LocaleString is read for that locale, falling back to its first value).
+ *
+ *  - No operand is a multi-locale LocaleString ⇒ returns a plain `string`
+ *    (byte-identical to the old `String()` path — zero-allocation common case).
+ *  - At least one operand is bilingual ⇒ returns a TAGGED LocaleString spanning
+ *    every locale present, resolved at the React boundary like any `$d` label.
+ */
+export function composeLocale(
+  operands: readonly unknown[],
+  render:   (pick: (v: unknown) => string) => string,
+): string | LocaleString {
+  const locales = localeKeysOf(operands)
+  const scalarPick = (v: unknown): string =>
+    isTaggedLocaleString(v) ? (Object.values(v)[0] ?? '') : (v == null ? '' : String(v))
+
+  if (locales.length === 0) return render(scalarPick)
+
+  const out: Record<string, string> = {}
+  for (const loc of locales) {
+    out[loc] = render((v) =>
+      isTaggedLocaleString(v) ? (v[loc] ?? Object.values(v)[0] ?? '') : scalarPick(v),
+    )
+  }
+  return tagLocaleString(out)
+}
+
 // ── resolveLabel — code + classifier → locale-aware label ────────────────────
 
 export function resolveLabel(

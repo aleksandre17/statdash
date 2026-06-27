@@ -23,6 +23,7 @@ import './data-table.css'
 
 import type { DataRow }                        from '@statdash/engine'
 import type { ColumnDef, TableConfig }         from '@statdash/engine'
+import { useResolveLocaleSafe }                from '@statdash/react'
 import { SimpleTable }                         from './SimpleTable'
 import { PivotTable }                          from './PivotTable'
 
@@ -46,13 +47,20 @@ export default function DataTable({
   seriesOrder,
   highlightedLabel,
 }: TableConfig & { rows: DataRow[]; highlightedLabel?: string }) {
-  const effectiveCols: ColumnDef[] = columns ?? [{ key: 'value', label: valueLabel }]
+  // i18n boundary: column-header labels are tenant CONTENT from TableConfig and may
+  // be LocaleStrings ({en,ka}). THIS React layer holds the active locale, so resolve
+  // them here (no-op on plain strings) — the agnostic table components then receive
+  // concrete strings and never hardcode a locale or render [object Object].
+  const t = useResolveLocaleSafe()
+  const effectiveCols: ColumnDef[] = (columns ?? [{ key: 'value', label: valueLabel }])
+    .map((c) => ({ ...c, label: t(c.label) }))
+  const resolvedColLabel = t(colLabel ?? '')
   const isMultiSeries = rows.some((r) => r.series !== undefined)
 
   return isMultiSeries
     ? <PivotTable
         rows={rows}
-        colLabel={colLabel ?? ''}
+        colLabel={resolvedColLabel}
         columns={effectiveCols}
         footer={footer}
         caption={caption}
@@ -62,7 +70,7 @@ export default function DataTable({
       />
     : <SimpleTable
         rows={rows}
-        colLabel={colLabel ?? ''}
+        colLabel={resolvedColLabel}
         columns={effectiveCols}
         indent={indent ?? false}
         statusFlags={statusFlags ?? false}

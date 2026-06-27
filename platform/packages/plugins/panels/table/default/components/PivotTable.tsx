@@ -8,7 +8,7 @@
 //
 
 import type { DataRow, ColumnDef } from '@statdash/engine'
-import { getFormatter, resolveLocaleString } from '@statdash/engine'
+import { getFormatter }            from '@statdash/engine'
 import type { AggType }            from './_footer'
 import { getCellValue, colFmt }    from './_helpers'
 import { computeAggregate, defaultFooterLabel } from './_footer'
@@ -69,7 +69,8 @@ export function PivotTable({ rows, colLabel, columns, caption, footer, footerLab
                 {series.flatMap((s) =>
                   columns.map((col) => (
                     <th key={`${s}-${col.key}`} scope="col" className="r t-col-sub">
-                      {resolveLocaleString(col.label, 'en', 'en')}
+                      {/* col.label is pre-resolved to the active locale by DataTable */}
+                      {col.label as string}
                     </th>
                   ))
                 )}

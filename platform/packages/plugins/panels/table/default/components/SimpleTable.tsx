@@ -1,7 +1,6 @@
 // ── Mode A: SimpleTable ───────────────────────────────────────────────
 
 import type { DataRow, ColumnDef } from '@statdash/engine'
-import { resolveLocaleString }     from '@statdash/engine'
 import type { AggType }            from './_footer'
 import { getCellValue, colFmt }    from './_helpers'
 import { computeAggregate, defaultFooterLabel } from './_footer'
@@ -49,7 +48,8 @@ export function SimpleTable({ rows, colLabel, columns, indent, statusFlags, capt
                 className={col.align === 'r' ? 'r' : ''}
                 style={col.width ? { width: col.width } : col.bar ? { width: '40%' } : undefined}
               >
-                {resolveLocaleString(col.label, 'en', 'en')}
+                {/* col.label is pre-resolved to the active locale by DataTable */}
+                {col.label as string}
               </th>
             ))}
           </tr>

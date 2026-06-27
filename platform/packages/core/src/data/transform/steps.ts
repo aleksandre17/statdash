@@ -1,5 +1,6 @@
 ﻿import type { CtxRef, DimVal, FilterValue }  from '../../sdmx'
 import { isDimRef }                           from '../codelist'
+import { composeLocale }                       from '../../i18n/types'
 import { resolveRef }                         from '../../ref/ref'
 import { roundAgg }                           from '../round'
 import type { RawRow, TransformStep, PipelineContext } from './types'
@@ -106,17 +107,29 @@ export function applySort(rows: RawRow[], step: Extract<TransformStep, { op: 'so
 
 export function applyConcat(rows: RawRow[], step: Extract<TransformStep, { op: 'concat' }>): RawRow[] {
   const sep = step.sep ?? '-'
-  return rows.map(row => ({
-    ...row,
-    [step.as]: step.fields.map(f => String(row[f] ?? '')).join(sep),
-  }))
+  return rows.map(row => {
+    const operands = step.fields.map(f => row[f])
+    // i18n boundary [GAP 5b]: a tagged LocaleString operand is composed PER LOCALE
+    // and re-tagged — never String()-flattened to "[object Object]" before the React
+    // resolve boundary. All-scalar operands → a plain string (byte-identical).
+    return { ...row, [step.as]: composeLocale(operands, pick => operands.map(pick).join(sep)) as DimVal }
+  })
 }
 
 export function applyTemplate(rows: RawRow[], step: Extract<TransformStep, { op: 'template' }>): RawRow[] {
-  return rows.map(row => ({
-    ...row,
-    [step.as]: step.tpl.replace(/\{(\w+)\}/g, (_, f: string) => String(row[f] ?? '')),
-  }))
+  return rows.map(row => {
+    // Operands are the fields referenced by the template's `{field}` tokens.
+    const fields = [...step.tpl.matchAll(/\{(\w+)\}/g)].map(m => m[1])
+    const operands = fields.map(f => row[f])
+    // i18n boundary [GAP 5b]: compose the template PER LOCALE when any referenced
+    // field is a tagged LocaleString (so `{label} ({code})` over a bilingual label
+    // yields a bilingual result), re-tagged for resolveRowLocales. All-scalar → string.
+    const value = composeLocale(operands, pick => {
+      let i = 0
+      return step.tpl.replace(/\{(\w+)\}/g, () => pick(operands[i++]))
+    })
+    return { ...row, [step.as]: value as DimVal }
+  })
 }
 
 export function applyAddField(rows: RawRow[], step: Extract<TransformStep, { op: 'addField' }>): RawRow[] {

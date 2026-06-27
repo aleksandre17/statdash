@@ -19,12 +19,19 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import type { DimRef, ObsQuery }       from '../sdmx'
+import type { LocaleString }            from '../i18n/types'
 import type { TransformStep }           from './transform'
 
 // ── Value types ───────────────────────────────────────────────────────────────
+//
+//  `label` is a LocaleString: a query/inline source whose labelField holds a
+//  bilingual classifier label `{ en, ka }` carries it intact (tagged) to the
+//  React control shell, which resolves it to the active locale — NEVER String()-
+//  flattened in this locale-agnostic layer (that bakes "[object Object]" into the
+//  option). A single-locale (string) label is a LocaleString too (backward compat).
 
-export interface SelectOption { value: string; label: string }
-export interface ChipOption   { value: string; label: string; color?: string }
+export interface SelectOption { value: string; label: LocaleString }
+export interface ChipOption   { value: string; label: LocaleString; color?: string }
 
 // ── Generic core ──────────────────────────────────────────────────────────────
 

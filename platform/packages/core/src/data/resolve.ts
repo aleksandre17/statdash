@@ -18,6 +18,17 @@ import { isDimRef }                                           from './codelist'
 import { resolveRef }                                         from '../ref/ref'
 import { applyPipeline }                                     from './transform'
 import type { TransformStep }                                from './transform/types'
+import type { LocaleString }                                 from '../i18n/types'
+import { isTaggedLocaleString }                              from '../i18n/types'
+
+// optionLabel — carry the label field as a LocaleString. A tagged LocaleString
+// (bilingual classifier label from a $cl/$d ref) passes through INTACT so the React
+// control shell resolves it to the active locale; a scalar coerces to its string.
+// NEVER String()-flatten a LocaleString here (locale-agnostic layer → "[object Object]").
+function optionLabel(v: DimVal | LocaleString | undefined): LocaleString {
+  if (isTaggedLocaleString(v)) return v
+  return v == null ? '' : String(v)
+}
 
 // Resolves the pre-pipeline row array for a non-static source.
 function resolveRaw(
@@ -86,7 +97,7 @@ export function resolveOptions(
   return rows
     .map((o) => ({
       value: String(o[src.valueField]                    ?? ''),
-      label: String(o[src.labelField ?? src.valueField]  ?? ''),
+      label: optionLabel(o[src.labelField ?? src.valueField]),
     }))
     .filter((o) => o.value && !seen.has(o.value) && !!seen.add(o.value))
 }
@@ -106,7 +117,7 @@ export function resolveChips(
   return rows
     .map((o) => ({
       value: String(o[src.valueField]                    ?? ''),
-      label: String(o[src.labelField ?? src.valueField]  ?? ''),
+      label: optionLabel(o[src.labelField ?? src.valueField]),
       color: src.colorField ? String(o[src.colorField]   ?? '') : undefined,
     }))
     .filter((o) => o.value && !seen.has(o.value) && !!seen.add(o.value))
