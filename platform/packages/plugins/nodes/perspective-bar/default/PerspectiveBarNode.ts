@@ -16,7 +16,7 @@ export interface PerspectiveBarNode extends NodeBase {
 }
 
 export const PerspectiveBarSchema: PropSchema = [
-  { field: 'key', type: 'string', label: 'Axis Param Key' },
+  { field: 'key', type: 'string', label: { ka: 'ღერძის პარამეტრის გასაღები', en: 'Axis Param Key' } },
 ]
 
 declare module '@statdash/react/engine' {

@@ -5,7 +5,7 @@ export const META: NodeSliceMeta = {
   sliceType:       'node',
   type:            'perspective-bar',
   variant:         'default',
-  label:           { ka: 'Perspective Tab Bar', en: 'Perspective Tab Bar' },
+  label:           { ka: 'პერსპექტივის ტაბ-ბარი', en: 'Perspective Tab Bar' },
   icon:            'tabs',
   category:        'layout',
   schema:          PerspectiveBarSchema,
