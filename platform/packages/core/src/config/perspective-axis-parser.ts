@@ -231,8 +231,8 @@ export function scopeCtxByPerspective(
       // ABSENT targetKeys ⇒ the conventional `${dim}From`/`${dim}To` byte-for-byte.
       const { from, to } = effectiveBounds({ timeDimension: { dim, range } }, ctx)
       dims ??= { ...ctx.dims }
-      if (from) dims[targetKey(tb, dim, 'from')] = from as DimVal
-      if (to && to !== Infinity) dims[targetKey(tb, dim, 'to')] = to as DimVal
+      if (from) writeBound(dims, targetKey(tb, dim, 'from'), from)
+      if (to && to !== Infinity) writeBound(dims, targetKey(tb, dim, 'to'), to)
     }
   }
 
@@ -250,4 +250,25 @@ function targetKey(tb: PerspectiveTimeBinding, dim: string, side: 'from' | 'to')
   const declared = tb.targetKeys?.[side]
   if (declared) return declared
   return side === 'from' ? `${dim}From` : `${dim}To`
+}
+
+// ── writeBound — REPRESENTATION-preserving window write ────────────────────────
+//
+//  effectiveBounds returns a NUMBER (the clamp arithmetic). But when the target key
+//  is an ECHO of a ctx-ref source param the bound was read from (geostat: the window
+//  reads `{$ctx:fromYear}` and writes back `fromYear`), the value already lives in
+//  `ctx.dims[key]` in its ORIGINAL representation — a STRING, the way the legacy
+//  range-bar select wrote it. Re-coercing that echo to a number would diverge from
+//  the legacy two-bar render byte-for-byte (ctx.dims.fromYear `"2020"` vs `2020`).
+//
+//  So: when the dim already holds a value whose numeric form EQUALS the resolved
+//  bound (the echo case — the window did not transform it), KEEP the existing value
+//  verbatim. Only when the bound genuinely DIFFERS (a literal/clamped window the
+//  source did not already carry) do we write the resolved number. This is byte-
+//  identical for an echo window AND correct for a transforming one (FF-SNAPSHOT-VIEW-
+//  EQUIV / FF-BINDING-TARGET-KEYS).
+function writeBound(dims: Record<string, DimVal>, key: string, bound: number): void {
+  const existing = dims[key]
+  if (existing !== undefined && existing !== '' && Number(existing) === bound) return
+  dims[key] = bound as DimVal
 }

@@ -628,9 +628,8 @@
               },
               "subtitle": "{time} · მლნ ₾",
               "visibleWhen": {
-                "is": "year",
-                "op": "eq",
-                "param": "mode"
+                "op": "perspective-is",
+                "perspective": "year"
               }
             }
           },
@@ -903,9 +902,8 @@
             "type": "repeat",
             "view": {
               "visibleWhen": {
-                "is": "year",
-                "op": "eq",
-                "param": "mode"
+                "op": "perspective-is",
+                "perspective": "year"
               }
             }
           },
@@ -1053,9 +1051,8 @@
               },
               "subtitle": "2020–2025 · მლნ ₾",
               "visibleWhen": {
-                "is": "range",
-                "op": "eq",
-                "param": "mode"
+                "op": "perspective-is",
+                "perspective": "range"
               }
             }
           },
@@ -1082,11 +1079,28 @@
         ],
         "filterSchema": {
           "bars": {
-            "range-bar": {
+            "bar": {
               "filters": {
                 "account": {
                   "default": "",
-                  "type": "hidden"
+                  "emptyLabel": "ყველა",
+                  "label": "ანგარიში:",
+                  "options": {
+                    "items": {
+                      "$d": "account"
+                    },
+                    "labelField": "label",
+                    "pipe": [
+                      {
+                        "by": "order",
+                        "dir": "asc",
+                        "op": "sort"
+                      }
+                    ],
+                    "type": "inline",
+                    "valueField": "code"
+                  },
+                  "type": "select"
                 },
                 "fromYear": {
                   "default": {
@@ -1142,44 +1156,6 @@
                   },
                   "suffix": "-მდე",
                   "type": "select"
-                }
-              },
-              "order": 0,
-              "position": "sticky",
-              "showWhen": {
-                "mode": "range"
-              }
-            },
-            "year-bar": {
-              "filters": {
-                "account": {
-                  "default": "",
-                  "emptyLabel": "ყველა",
-                  "label": "ანგარიში:",
-                  "options": {
-                    "items": {
-                      "$d": "account"
-                    },
-                    "labelField": "label",
-                    "pipe": [
-                      {
-                        "by": "order",
-                        "dir": "asc",
-                        "op": "sort"
-                      }
-                    ],
-                    "type": "inline",
-                    "valueField": "code"
-                  },
-                  "type": "select"
-                },
-                "measure": {
-                  "default": "",
-                  "type": "hidden"
-                },
-                "mode": {
-                  "default": "year",
-                  "type": "hidden"
                 },
                 "year": {
                   "default": {
@@ -1197,12 +1173,7 @@
                 }
               },
               "order": 0,
-              "position": "sticky",
-              "showWhen": {
-                "mode": {
-                  "neq": "range"
-                }
-              }
+              "position": "sticky"
             }
           },
           "context": {
@@ -1212,31 +1183,8 @@
               "measure": "measure",
               "time": "year",
               "toYear": "toYear"
-            },
-            "timeMode": "mode"
-          },
-          "effects": [
-            {
-              "set": {
-                "account": "",
-                "measure": ""
-              },
-              "when": {
-                "mode": "range"
-              }
-            },
-            {
-              "set": {
-                "fromYear": "",
-                "toYear": ""
-              },
-              "when": {
-                "mode": {
-                  "neq": "range"
-                }
-              }
             }
-          ]
+          }
         },
         "id": "accounts",
         "modeOrder": [
@@ -1244,6 +1192,51 @@
           "range"
         ],
         "path": "/accounts",
+        "perspectives": {
+          "mode": {
+            "perspectives": [
+              {
+                "id": "year",
+                "label": {
+                  "en": "Year",
+                  "ka": "წელი"
+                },
+                "scope": {
+                  "timeBinding": {
+                    "dim": "time",
+                    "pin": {
+                      "$ctx": "year"
+                    }
+                  }
+                }
+              },
+              {
+                "id": "range",
+                "label": {
+                  "en": "Range",
+                  "ka": "შუალედი"
+                },
+                "scope": {
+                  "timeBinding": {
+                    "dim": "time",
+                    "range": [
+                      {
+                        "$ctx": "fromYear"
+                      },
+                      {
+                        "$ctx": "toYear"
+                      }
+                    ],
+                    "targetKeys": {
+                      "from": "fromYear",
+                      "to": "toYear"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
         "presentation": {
           "color": "#0080BE"
         },
@@ -1487,9 +1480,8 @@
             },
             "view": {
               "visibleWhen": {
-                "op": "eq",
-                "param": "mode",
-                "is": "year"
+                "op": "perspective-is",
+                "perspective": "year"
               }
             },
             "children": [
@@ -1724,9 +1716,8 @@
             },
             "view": {
               "visibleWhen": {
-                "op": "eq",
-                "param": "mode",
-                "is": "range"
+                "op": "perspective-is",
+                "perspective": "range"
               }
             },
             "children": [
@@ -1909,9 +1900,8 @@
             },
             "view": {
               "visibleWhen": {
-                "op": "eq",
-                "param": "mode",
-                "is": "year"
+                "op": "perspective-is",
+                "perspective": "year"
               }
             },
             "children": [
@@ -2019,9 +2009,8 @@
             },
             "view": {
               "visibleWhen": {
-                "op": "eq",
-                "param": "mode",
-                "is": "range"
+                "op": "perspective-is",
+                "perspective": "range"
               }
             },
             "children": [
@@ -2139,7 +2128,7 @@
         ],
         "filterSchema": {
           "bars": {
-            "range-bar": {
+            "bar": {
               "filters": {
                 "fromYear": {
                   "default": {
@@ -2191,19 +2180,6 @@
                   },
                   "suffix": "-მდე",
                   "type": "select"
-                }
-              },
-              "order": 0,
-              "position": "sticky",
-              "showWhen": {
-                "mode": "range"
-              }
-            },
-            "year-bar": {
-              "filters": {
-                "mode": {
-                  "default": "year",
-                  "type": "hidden"
                 },
                 "year": {
                   "default": {
@@ -2221,12 +2197,7 @@
                 }
               },
               "order": 0,
-              "position": "sticky",
-              "showWhen": {
-                "mode": {
-                  "neq": "range"
-                }
-              }
+              "position": "sticky"
             }
           },
           "context": {
@@ -2234,30 +2205,8 @@
               "fromYear": "fromYear",
               "time": "year",
               "toYear": "toYear"
-            },
-            "timeMode": "mode"
-          },
-          "effects": [
-            {
-              "set": {
-                "year": ""
-              },
-              "when": {
-                "mode": "range"
-              }
-            },
-            {
-              "set": {
-                "fromYear": "",
-                "toYear": ""
-              },
-              "when": {
-                "mode": {
-                  "neq": "range"
-                }
-              }
             }
-          ]
+          }
         },
         "id": "gdp",
         "modeOrder": [
@@ -2265,6 +2214,51 @@
           "range"
         ],
         "path": "/gdp",
+        "perspectives": {
+          "mode": {
+            "perspectives": [
+              {
+                "id": "year",
+                "label": {
+                  "en": "Year",
+                  "ka": "წელი"
+                },
+                "scope": {
+                  "timeBinding": {
+                    "dim": "time",
+                    "pin": {
+                      "$ctx": "year"
+                    }
+                  }
+                }
+              },
+              {
+                "id": "range",
+                "label": {
+                  "en": "Range",
+                  "ka": "შუალედი"
+                },
+                "scope": {
+                  "timeBinding": {
+                    "dim": "time",
+                    "range": [
+                      {
+                        "$ctx": "fromYear"
+                      },
+                      {
+                        "$ctx": "toYear"
+                      }
+                    ],
+                    "targetKeys": {
+                      "from": "fromYear",
+                      "to": "toYear"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
         "presentation": {
           "color": "#0080BE"
         },
@@ -3194,9 +3188,8 @@
             "type": "columns",
             "view": {
               "visibleWhen": {
-                "is": "year",
-                "op": "eq",
-                "param": "mode"
+                "op": "perspective-is",
+                "perspective": "year"
               }
             }
           },
@@ -3330,9 +3323,8 @@
             "view": {
               "subtitle": "{time} · მლნ ₾",
               "visibleWhen": {
-                "is": "year",
-                "op": "eq",
-                "param": "mode"
+                "op": "perspective-is",
+                "perspective": "year"
               }
             }
           },
@@ -3542,9 +3534,8 @@
             "type": "columns",
             "view": {
               "visibleWhen": {
-                "is": "range",
-                "op": "eq",
-                "param": "mode"
+                "op": "perspective-is",
+                "perspective": "range"
               }
             }
           },
@@ -3637,9 +3628,8 @@
               },
               "subtitle": "{fromYear}–{toYear} · მლნ ₾",
               "visibleWhen": {
-                "is": "range",
-                "op": "eq",
-                "param": "mode"
+                "op": "perspective-is",
+                "perspective": "range"
               }
             }
           },
@@ -3661,7 +3651,7 @@
         ],
         "filterSchema": {
           "bars": {
-            "range-bar": {
+            "bar": {
               "filters": {
                 "fromYear": {
                   "default": {
@@ -3697,47 +3687,32 @@
                 },
                 "sector": {
                   "default": "_T",
-                  "type": "hidden"
-                },
-                "toYear": {
-                  "default": {
-                    "from": "options",
-                    "pick": "first"
-                  },
+                  "emptyLabel": "ყველა",
+                  "label": "სექტორი:",
                   "options": {
                     "items": {
-                      "$d": "time"
+                      "$d": "sector"
                     },
-                    "labelField": "code",
+                    "labelField": "label",
                     "pipe": [
                       {
-                        "by": "code",
-                        "dir": "desc",
+                        "op": "filter",
+                        "where": {
+                          "code": {
+                            "$ne": "_T"
+                          }
+                        }
+                      },
+                      {
+                        "by": "label",
+                        "dir": "asc",
                         "op": "sort"
                       }
                     ],
                     "type": "inline",
                     "valueField": "code"
                   },
-                  "suffix": "-მდე",
                   "type": "select"
-                }
-              },
-              "order": 0,
-              "position": "sticky",
-              "showWhen": {
-                "mode": "range"
-              }
-            },
-            "year-bar": {
-              "filters": {
-                "mode": {
-                  "default": "year",
-                  "type": "hidden"
-                },
-                "region": {
-                  "default": "",
-                  "type": "hidden"
                 },
                 "spanFrom": {
                   "alwaysResolve": true,
@@ -3785,33 +3760,27 @@
                   },
                   "type": "hidden"
                 },
-                "sector": {
-                  "default": "_T",
-                  "emptyLabel": "ყველა",
-                  "label": "სექტორი:",
+                "toYear": {
+                  "default": {
+                    "from": "options",
+                    "pick": "first"
+                  },
                   "options": {
                     "items": {
-                      "$d": "sector"
+                      "$d": "time"
                     },
-                    "labelField": "label",
+                    "labelField": "code",
                     "pipe": [
                       {
-                        "op": "filter",
-                        "where": {
-                          "code": {
-                            "$ne": "_T"
-                          }
-                        }
-                      },
-                      {
-                        "by": "label",
-                        "dir": "asc",
+                        "by": "code",
+                        "dir": "desc",
                         "op": "sort"
                       }
                     ],
                     "type": "inline",
                     "valueField": "code"
                   },
+                  "suffix": "-მდე",
                   "type": "select"
                 },
                 "year": {
@@ -3830,12 +3799,7 @@
                 }
               },
               "order": 0,
-              "position": "sticky",
-              "showWhen": {
-                "mode": {
-                  "neq": "range"
-                }
-              }
+              "position": "sticky"
             }
           },
           "context": {
@@ -3848,31 +3812,8 @@
               "spanTo": "spanTo",
               "time": "year",
               "toYear": "toYear"
-            },
-            "timeMode": "mode"
-          },
-          "effects": [
-            {
-              "set": {
-                "sector": "_T",
-                "year": ""
-              },
-              "when": {
-                "mode": "range"
-              }
-            },
-            {
-              "set": {
-                "fromYear": "",
-                "toYear": ""
-              },
-              "when": {
-                "mode": {
-                  "neq": "range"
-                }
-              }
             }
-          ]
+          }
         },
         "id": "regional",
         "modeOrder": [
@@ -3880,6 +3821,51 @@
           "range"
         ],
         "path": "/regional",
+        "perspectives": {
+          "mode": {
+            "perspectives": [
+              {
+                "id": "year",
+                "label": {
+                  "en": "Year",
+                  "ka": "წელი"
+                },
+                "scope": {
+                  "timeBinding": {
+                    "dim": "time",
+                    "pin": {
+                      "$ctx": "year"
+                    }
+                  }
+                }
+              },
+              {
+                "id": "range",
+                "label": {
+                  "en": "Range",
+                  "ka": "შუალედი"
+                },
+                "scope": {
+                  "timeBinding": {
+                    "dim": "time",
+                    "range": [
+                      {
+                        "$ctx": "fromYear"
+                      },
+                      {
+                        "$ctx": "toYear"
+                      }
+                    ],
+                    "targetKeys": {
+                      "from": "fromYear",
+                      "to": "toYear"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
         "presentation": {
           "color": {
             "by": "region",
