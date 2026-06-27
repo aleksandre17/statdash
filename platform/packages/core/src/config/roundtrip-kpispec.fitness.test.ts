@@ -26,7 +26,7 @@ describe('KpiSpec — KpiValueSpec round-trip', () => {
     label: 'მშპ',
     unit:  'მლნ ₾',
     color: '#1f77b4',
-    mode:  'year',
+    when:  { op: 'perspective-is', perspective: 'year' },
     value: { type: 'point', measure: 'B1G', format: 'mln_gel' },
   }))
 
@@ -36,7 +36,7 @@ describe('KpiSpec — KpiValueSpec round-trip', () => {
       label: { ka: 'მშპ', en: 'GDP' },
       unit:  'მლნ ₾',
       color: '#1f77b4',
-      mode:  'year',
+      when:  { op: 'perspective-is', perspective: 'year' },
       value: { type: 'point', measure: 'B1G', time: { $ctx: 'time' }, format: 'mln_gel', abs: false },
     }
     expectRoundTrip(spec)
@@ -49,7 +49,7 @@ describe('KpiSpec — KpiValueSpec round-trip', () => {
     label: 'GDP (GE)',
     unit:  'მლნ ₾',
     color: '#1f77b4',
-    mode:  'year',
+    when:  { op: 'perspective-is', perspective: 'year' },
     value: { type: 'point', measure: 'B1G', filter: { geo: 'GE' }, format: 'mln_gel' },
   }))
 
@@ -58,7 +58,7 @@ describe('KpiSpec — KpiValueSpec round-trip', () => {
     label: 'მშპ ზრდა',
     unit:  '%',
     color: '#2ca02c',
-    mode:  'year',
+    when:  { op: 'perspective-is', perspective: 'year' },
     value: { type: 'yoy', measure: 'B1G' },
     trend: { type: 'yoy', measure: 'B1G' },
   }))
@@ -68,7 +68,7 @@ describe('KpiSpec — KpiValueSpec round-trip', () => {
     label: 'CAGR 2018–2023',
     unit:  '%',
     color: '#d62728',
-    mode:  'range',
+    when:  { op: 'perspective-is', perspective: 'range' },
     value: { type: 'cagr', measure: 'B1G', from: 2018, to: 2023 },
   }))
 
@@ -78,7 +78,7 @@ describe('KpiSpec — KpiValueSpec round-trip', () => {
       label: 'CAGR',
       unit:  '%',
       color: '#9467bd',
-      mode:  'range',
+      when:  { op: 'perspective-is', perspective: 'range' },
       value: { type: 'cagr', measure: 'B1G', from: { $ctx: 'startYear' }, to: { $ctx: 'endYear' } },
     }
     expectRoundTrip(spec)
@@ -92,7 +92,6 @@ describe('KpiSpec — KpiValueSpec round-trip', () => {
     label: 'Wage Share',
     unit:  '%',
     color: '#8c564b',
-    mode:  'both',
     value: {
       type:  'share',
       num:   { measure: 'D1',  filter: { geo: 'GE' } },
@@ -105,7 +104,7 @@ describe('KpiSpec — KpiValueSpec round-trip', () => {
     label: 'Net Surplus',
     unit:  'მლნ ₾',
     color: '#e377c2',
-    mode:  'year',
+    when:  { op: 'perspective-is', perspective: 'year' },
     value: { type: 'expr', op: 'subtract', codes: ['B1G', 'D1'], format: 'mln_gel' },
   }))
 
@@ -114,7 +113,7 @@ describe('KpiSpec — KpiValueSpec round-trip', () => {
     label: 'Combined',
     unit:  'მლნ ₾',
     color: '#7f7f7f',
-    mode:  'year',
+    when:  { op: 'perspective-is', perspective: 'year' },
     value: { type: 'expr', op: 'add', codes: ['B2A3G', 'D1'], format: 'decimal1' },
   }))
 
@@ -129,7 +128,7 @@ describe('KpiSpec — KpiTrendSpec round-trip', () => {
     label: 'T',
     unit:  '%',
     color: '#7f7f7f',
-    mode:  'year',
+    when:  { op: 'perspective-is', perspective: 'year' },
   }
 
   it('trend yoy', () => expectRoundTrip<KpiSpec>({
@@ -162,7 +161,6 @@ describe('KpiSpec — all optional fields preserved', () => {
       label:          { ka: 'სრული', en: 'Full' },
       unit:           '%',
       color:          '#17becf',
-      mode:           'both',
       value:          { type: 'point', measure: 'B1G', format: 'sign_pct' },
       trend:          { type: 'yoy', measure: 'B1G' },
       trendSub:       '{time} წ.',

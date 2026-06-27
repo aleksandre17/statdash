@@ -23,6 +23,8 @@ import type { LocaleString }    from '../i18n/types'
 import { resolveLocaleString }  from '../i18n/types'
 import { getFormatter }         from './transform'
 import { resolveTemplate }      from '../config/template'
+import type { VisibilityExpr }  from '../config/visibility'
+import { evalVisibility }       from '../config/visibility'
 
 // ── Types ─────────────────────────────────────────────────────────────
 
@@ -59,7 +61,15 @@ export interface KpiSpec {
   label:           LocaleString
   unit:            string
   color:           string
-  mode:            'year' | 'range' | 'both'
+  /**
+   * OPTIONAL perspective-scoped visibility — the declarative replacement for the
+   * retired privileged `mode: 'year'|'range'|'both'` union (Law 1). A
+   * `{op:'perspective-is', perspective:'year'}` shows the card only in the `year`
+   * perspective; absent ⇒ the card shows in EVERY perspective (the old `'both'`).
+   * Evaluated against `ctx.perspectiveState` by the SHARED `kpiVisible` predicate,
+   * at BOTH the render (`interpretKpis`) and warm (`extractKpiRequirements`) sites.
+   */
+  when?:           VisibilityExpr
   value:           KpiValueSpec
   trend?:          KpiTrendSpec
   trendSub?:       string
@@ -180,6 +190,25 @@ function resolveTrend(
   }
 }
 
+// ── kpiVisible — the SHARED per-card visibility predicate (P5.2 (2)) ──────────
+//
+//  ONE SSOT both the render path (interpretKpis) and the warm path
+//  (extractKpiRequirements) call, so the warm requirement set is the EXACT visible
+//  set the render reads — no drift (the §0b kpi-strip-crash invariant: a card warmed
+//  but not rendered, or rendered but not warmed, breaks an async store).
+//
+//  A card's `when?` is a VisibilityExpr (canonically `perspective-is(id)`), evaluated
+//  against `ctx.perspectiveState` — the SAME SSOT the node visibility gate reads. The
+//  declarative replacement for the retired `mode: 'year'|'range'|'both'` union:
+//    • `when` present → evalVisibility (perspective-is/in/not/and/or/…),
+//    • `when` ABSENT  → visible in every perspective (the old `'both'`).
+//  `evalVisibility`'s filterParams arg is `ctx.dims` (a perspective-* op ignores it;
+//  this keeps the predicate general for any future fr-reading `when`).
+function kpiVisible(spec: KpiSpec, ctx: SectionContext): boolean {
+  if (!spec.when) return true
+  return evalVisibility(spec.when, ctx.dims, ctx.perspectiveState)
+}
+
 // ── Public API ────────────────────────────────────────────────────────
 
 export function interpretKpi(
@@ -218,7 +247,7 @@ export function interpretKpis(
   store:  DataStore,
 ): KpiDef[] {
   return specs
-    .filter((s) => s.mode === 'both' || s.mode === ctx.timeMode)
+    .filter((s) => kpiVisible(s, ctx))
     .map((s) => interpretKpi(s, ctx, store))
 }
 
@@ -237,9 +266,10 @@ export function interpretKpis(
 //  previous-period read (the kpi-strip crash). 'cagr' reads from AND to; 'share'
 //  reads num AND denom at their own pinned times; 'expr' reads every code at t.
 //
-//  Mode-filtered identically to interpretKpis (a 'year'-only KPI contributes no
-//  requirements in 'range' mode and vice-versa) so the warm set is the EXACT
-//  superset of the synchronous render's reads — no more, no less.
+//  Visibility-filtered identically to interpretKpis via the SHARED `kpiVisible`
+//  predicate (a year-only KPI contributes no requirements in the range perspective
+//  and vice-versa) so the warm set is the EXACT superset of the synchronous render's
+//  reads — no more, no less (warm === render, one SSOT, no drift).
 //
 //  Mirrors the resolveMeasureRef + atTime + withFilter seams interpretKpi uses,
 //  so a metric ref expands to its underlying codes exactly as the read will.
@@ -306,7 +336,7 @@ export function extractKpiRequirements(
   }
 
   for (const spec of specs) {
-    if (!(spec.mode === 'both' || spec.mode === ctx.timeMode)) continue
+    if (!kpiVisible(spec, ctx)) continue   // SAME predicate as interpretKpis — warm === render
     fromValue(spec.value, ctx)
     if (spec.trend) fromTrend(spec.trend, ctx)
   }

@@ -64,7 +64,7 @@ import './config/perspective-scope-schemas' // side-effect: register built-in sc
 export { PERSPECTIVE_PARAM, LEGACY_MODE_PARAM, activePerspective }       from './config/perspective-state'
 export type { ParsePerspectiveInput, PerspectiveOwnership }             from './config/perspective-axis-parser'
 export { parsePerspectiveAxes, activeIdForAxis, scopeCtxByPerspective,
-         perspectiveOwnedParamKeys }                                    from './config/perspective-axis-parser'
+         perspectiveOwnedParamKeys, perspectiveModeDefs }               from './config/perspective-axis-parser'
 
 // ── Standard 2: SDMX Observation Model (ISO 17369) ───────────────────
 export type { DimVal, CtxRef, FilterValue, NeRef, NeCtxRef, Observation, ObsQuery } from './sdmx'

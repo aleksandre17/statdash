@@ -18,6 +18,8 @@
 import type { SectionContext }     from '../core/context'
 import { TIME_DIM }                from '../core/context'
 import type { DimVal }             from '../sdmx'
+import type { ModeDef }            from '../mode/types'
+import { resolveLocaleString }     from '../i18n/types'
 import type { PerspectiveAxis, PerspectivesByParam, PerspectiveDef, PerspectiveTimeBinding } from './perspective-axis'
 import { effectiveBounds, isYearsSpec, resolveTimePin } from '../core/time-dimension'
 import { PERSPECTIVE_PARAM }       from './perspective-state'
@@ -86,6 +88,31 @@ export function activeIdForAxis(
     return fromState
   }
   return axis.perspectives[0]?.id
+}
+
+// ── perspectiveModeDefs — the toggle's available list, FROM THE AXIS (P5.2 (1)) ──
+//
+//  Decision (B): the perspective axis OWNS its toggle presentation. A switcher that
+//  renders this axis (the `perspective-bar` node, which reads `ctx.mode.available`)
+//  derives its options HERE — id + label + icon straight off each `PerspectiveDef`,
+//  in array order (= the nav-sort order). No `modeRegistry` lookup: the label/icon
+//  SSOT is the authored `PerspectiveDef`, not a separately-registered ModeDef.
+//
+//  Returns the EXISTING `ModeDef` shape (the toggle's `available` element type) so
+//  the `mode` triad on RenderContext is fed unchanged (the `mode` field is renamed
+//  to `perspective` in P6). `PerspectiveDef.label` is a LocaleString → resolved to
+//  the active locale here (the one place a locale is in scope); `ModeDef.label` is a
+//  plain string, exactly as the live mode-bar consumed it. `icon` carries through.
+export function perspectiveModeDefs(
+  axis:     PerspectiveAxis,
+  locale:   string,
+  fallback: string,
+): ModeDef[] {
+  return axis.perspectives.map((p) => ({
+    id:    p.id,
+    label: resolveLocaleString(p.label, locale, fallback),
+    ...(p.icon !== undefined ? { icon: p.icon } : {}),
+  }))
 }
 
 /**

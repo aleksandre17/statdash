@@ -145,7 +145,7 @@ function makeGetOptions(flat: Array<{ key: string; def: ParamDef }>) {
 function deriveCtx(
   schema:       FilterSchema,
   perspectives: Perspectives,
-  modeOrder:    readonly string[],
+  modeOrder:    readonly string[] | undefined,
   activeMode:   string,
 ): SectionContext {
   // URL state for a clean permalink of this perspective: only the param is set.
@@ -185,8 +185,12 @@ function deriveCtx(
     if (parsed !== '' && parsed !== undefined) regularDims[dk] = parsed as DimVal
   }
 
-  // ctx.timeMode = useModeContext(mode, modeOrder).current = state.mode || modeOrder[0].
-  const ctxTimeMode = (state.mode && modeOrder.includes(state.mode) ? state.mode : modeOrder[0]) as never
+  // ctx.timeMode = useModeContext(mode, modeIds).current = state.mode || modeIds[0].
+  // P5.2 (3): the mode-id list now derives FROM THE AXIS (perspectives[].id), not
+  // the retired page.modeOrder — exactly as SiteRenderer's `modeList` does. For the
+  // legacy fixture (no perspectives) it falls back to the frozen modeOrder.
+  const modeIds = axes?.['mode']?.perspectives.map((p) => p.id) ?? modeOrder ?? []
+  const ctxTimeMode = (state.mode && modeIds.includes(state.mode) ? state.mode : modeIds[0]) as never
 
   const base: SectionContext = { timeMode: ctxTimeMode, dims: regularDims, perspectiveState }
 

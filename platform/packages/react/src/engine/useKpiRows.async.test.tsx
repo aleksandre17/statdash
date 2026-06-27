@@ -74,7 +74,7 @@ function valueForYear(url: string): number {
 function makeCtx(store: DataStore): RenderContext {
   const holder = { ctx: null as unknown as RenderContext }
   holder.ctx = {
-    sectionCtx:     { dims: { time: 2025 }, timeMode: 'year' },
+    sectionCtx:     { dims: { time: 2025 }, timeMode: 'year', perspectiveState: { mode: 'year' } },
     stores:         { main: store },
     pageStoreKey:   'main',
     filterParams:   {},
@@ -99,7 +99,7 @@ const YOY_KPI: KpiSpec = {
   label: 'GDP',
   unit:  'mln',
   color: '#000',
-  mode:  'year',
+  when:  { op: 'perspective-is', perspective: 'year' },
   value: { type: 'point', measure: 'GDP', format: 'mln_gel' },
   trend: { type: 'yoy',   measure: 'GDP' },   // reads atTime(2025) AND atTime(2024)
 }
@@ -156,7 +156,7 @@ describe('useKpiRows — async store warms BOTH periods of a yoy KPI', () => {
     )
 
     const NATIONAL_KPI: KpiSpec = {
-      id: 'natl', label: 'GDP (national)', unit: 'mln', color: '#000', mode: 'both',
+      id: 'natl', label: 'GDP (national)', unit: 'mln', color: '#000',
       value: { type: 'point', measure: 'GDP', format: 'mln_gel', filter: { geo: '' } }, // '' = wildcard → drop geo
     }
     const node: NodeBase = { type: 'kpi-async', items: [NATIONAL_KPI] } as unknown as NodeBase

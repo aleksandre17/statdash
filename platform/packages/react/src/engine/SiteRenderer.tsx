@@ -28,7 +28,7 @@ import {
 import { GlobalStateProvider }         from '../context/GlobalState'
 import { applyEffects, resolveDataLinks } from '@statdash/engine'
 import { parsePerspectiveAxes, scopeCtxByPerspective,
-         perspectiveOwnedParamKeys } from '@statdash/engine'
+         perspectiveOwnedParamKeys, perspectiveModeDefs } from '@statdash/engine'
 import type { ModeId }                from '@statdash/engine'
 import { FiltersProvider }             from '../context/FiltersContext'
 import { evalVarMap }                  from './evalVarMap'
@@ -127,13 +127,35 @@ const NodePageRendererInner = memo(function NodePageRendererInner({
     [bars, timeModeKey, effects],
   )
 
-  const modeList   = useMemo(() => page.modeOrder ?? [], [page.modeOrder])
-  const mode       = useModeContext(timeModeKey, modeList)
-
-  // ── Perspective axis [VISION #3 / P1] ─────────────────────────────────────
-  //  `axes` is parsed above (it now ALSO feeds the P4.5 perspective-ownership gate
+  // ── Perspective axis [VISION #3 / P1 · P5.2 (1)] ──────────────────────────
+  //  `axes` is parsed above (it ALSO feeds the P4.5 perspective-ownership gate
   //  threaded into useFilterState); `timeModeKey` returned by the hook === the
-  //  pre-hook `timeModeKeyPre`, so the single parse is canonical.
+  //  pre-hook `timeModeKeyPre`, so the single parse is canonical. The single
+  //  active axis at this param drives both the toggle and the nav ordering.
+  const activeAxis = axes?.[timeModeKey]
+
+  // The toggle's id list + order — FROM THE AXIS (decision B), no longer the
+  // legacy page.modeOrder. `useModeContext` still owns `current` (URL-param read)
+  // and `set` (URL write); we feed it the axis ids so its `current` fallback and
+  // membership check resolve. `available` is then OVERRIDDEN below with the axis-
+  // OWNED label/icon defs (perspectiveModeDefs) — the axis owns its presentation.
+  const modeList = useMemo(
+    () => activeAxis?.perspectives.map(p => p.id) ?? [],
+    [activeAxis],
+  )
+  const modeFromUrl = useModeContext(timeModeKey, modeList)
+
+  // Axis-owned available list: id + PerspectiveDef.label (resolved to the active
+  // locale) + PerspectiveDef.icon. Byte-identical to the live mode-bar in ka (the
+  // PerspectiveDefs carry the manifest.modes labels+icons); locale-correct in en.
+  const axisModeDefs = useMemo(
+    () => activeAxis ? perspectiveModeDefs(activeAxis, locale, fallbackLocale) : [],
+    [activeAxis, locale, fallbackLocale],
+  )
+  const mode = useMemo(
+    () => activeAxis ? { ...modeFromUrl, available: axisModeDefs } : modeFromUrl,
+    [activeAxis, modeFromUrl, axisModeDefs],
+  )
 
   // Bridge: sectionCtx.timeMode = mode.current (Postel — legacy template
   // readers still consult it until P6). The active perspective id now ALSO flows
@@ -187,9 +209,12 @@ const NodePageRendererInner = memo(function NodePageRendererInner({
 
   const navSections = useMemo(() => {
     const children = page.type === 'inner-page' ? page.children : []
-    return extractNavSectionsFromChildren(children, timeModeKey, page.modeOrder)
+    // Nav-section ordering comes FROM THE AXIS (P5.2 (3)): the perspective ids in
+    // declaration order — the same order the legacy `page.modeOrder` carried, now
+    // sourced from the single SSOT. `modeList` is `activeAxis.perspectives.map(id)`.
+    return extractNavSectionsFromChildren(children, timeModeKey, modeList)
       .filter(s => !s.navMode || s.navMode === modeCtx.current)
-  }, [page, timeModeKey, modeCtx])
+  }, [page, timeModeKey, modeList, modeCtx])
 
   // One EventBus per page — created once, survives filter changes (same ref).
   const eventBus = useMemo(() => new EventBus<PlatformEventMap>(), [])

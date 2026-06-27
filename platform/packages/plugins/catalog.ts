@@ -20,6 +20,7 @@ import type { SliceCategory, SliceMeta } from '@statdash/react/engine'
 // ── Nodes ─────────────────────────────────────────────────────────────────────
 export { META as section }       from './nodes/section'
 export { META as modeBar }       from './nodes/mode-bar'
+export { META as perspectiveBar } from './nodes/perspective-bar'
 export { META as filterBar }     from './nodes/filter-bar'
 export { META as pageHeader }    from './nodes/page-header'
 export { META as geograph }      from './nodes/geograph'
@@ -48,6 +49,7 @@ export * from './controls'
 // ── Imports for the structured index (direct meta.ts paths — no Shell in graph) ─
 import { META as sectionMeta }       from './nodes/section/default/meta'
 import { META as modeBarMeta }       from './nodes/mode-bar/default/meta'
+import { META as perspectiveBarMeta } from './nodes/perspective-bar/default/meta'
 import { META as filterBarMeta }     from './nodes/filter-bar/default/meta'
 import { META as pageHeaderMeta }    from './nodes/page-header/default/meta'
 import { META as geographMeta }      from './nodes/geograph/default/meta'
@@ -124,7 +126,7 @@ const PALETTE_META: SliceMeta[] = [
     .map(ns => ns.META)
     .filter((m): m is SliceMeta => m != null),
   // structural + content nodes
-  sectionMeta, modeBarMeta, filterBarMeta, pageHeaderMeta,
+  sectionMeta, modeBarMeta, perspectiveBarMeta, filterBarMeta, pageHeaderMeta,
   geographMeta, linksMeta, repeatMeta, heroMeta, statsCarouselMeta,
   // data panels
   chartMeta, kpiStripMeta, tableMeta, mapMeta, gaugeMeta,

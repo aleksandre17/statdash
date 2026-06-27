@@ -154,13 +154,6 @@
         "vars": {
           "type": "object",
           "description": "Node-scoped derived vars"
-        },
-        "modeOrder": {
-          "type": "array",
-          "description": "View-mode ordering",
-          "items": {
-            "type": "string"
-          }
         }
       },
       "required": [
@@ -238,13 +231,6 @@
         "vars": {
           "type": "object",
           "description": "Node-scoped derived vars"
-        },
-        "modeOrder": {
-          "type": "array",
-          "description": "View-mode ordering",
-          "items": {
-            "type": "string"
-          }
         }
       },
       "required": [
@@ -322,13 +308,6 @@
         "vars": {
           "type": "object",
           "description": "Node-scoped derived vars"
-        },
-        "modeOrder": {
-          "type": "array",
-          "description": "View-mode ordering",
-          "items": {
-            "type": "string"
-          }
         }
       },
       "required": [
@@ -437,6 +416,45 @@
         },
         "type": {
           "const": "mode-bar"
+        },
+        "id": {
+          "type": "string",
+          "description": "Node id"
+        },
+        "variant": {
+          "type": "string",
+          "description": "Registry variant"
+        },
+        "data": {
+          "$ref": "#/$defs/DataSpec"
+        },
+        "view": {
+          "type": "object",
+          "description": "ViewParams"
+        },
+        "children": {
+          "type": "array",
+          "description": "Child nodes",
+          "items": {
+            "$ref": "#/$defs/AnyNode"
+          }
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "additionalProperties": true
+    },
+    "node_perspective-bar__default": {
+      "type": "object",
+      "properties": {
+        "key": {
+          "title": "Axis Param Key",
+          "description": "string field",
+          "type": "string"
+        },
+        "type": {
+          "const": "perspective-bar"
         },
         "id": {
           "type": "string",
@@ -1512,6 +1530,9 @@
         },
         {
           "$ref": "#/$defs/node_mode-bar__default"
+        },
+        {
+          "$ref": "#/$defs/node_perspective-bar__default"
         },
         {
           "$ref": "#/$defs/node_filter-bar__default"

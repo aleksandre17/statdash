@@ -39,7 +39,8 @@ const navUtils   = resolve(engineDir, 'navUtils.ts')
 // smell this FF forbids. Page-roots are listed but allowlisted below.
 const PLUGIN_NODE_TYPES = [
   'card', 'chart', 'columns', 'divider', 'gauge', 'geograph', 'grid', 'hero',
-  'kpi-strip', 'links', 'map', 'mode-bar', 'page-header', 'repeat', 'row',
+  'kpi-strip', 'links', 'map', 'mode-bar', 'perspective-bar', 'page-header',
+  'repeat', 'row',
   'section', 'spacer', 'stack', 'stats-carousel', 'table', 'text', 'wrap',
   'filter-bar',
 ]

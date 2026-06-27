@@ -21,11 +21,7 @@
             "type": "filter-bar"
           },
           {
-            "modes": [
-              "year",
-              "range"
-            ],
-            "type": "mode-bar"
+            "type": "perspective-bar"
           },
           {
             "items": [
@@ -33,7 +29,10 @@
                 "color": "#4ECDC4",
                 "id": "b5g",
                 "label": "მთლიანი ეროვნული შემოსავალი (B5G)",
-                "mode": "year",
+                "when": {
+                  "op": "perspective-is",
+                  "perspective": "year"
+                },
                 "trend": {
                   "filter": {
                     "account": "allocation-of-primary-income-account",
@@ -58,7 +57,10 @@
                 "color": "#7B6CF6",
                 "id": "b6g",
                 "label": "მთლიანი განკარგვადი შემოსავალი (B6G)",
-                "mode": "year",
+                "when": {
+                  "op": "perspective-is",
+                  "perspective": "year"
+                },
                 "trend": {
                   "filter": {
                     "account": "secondary-distribution-of-income-account",
@@ -83,7 +85,10 @@
                 "color": "#F4A261",
                 "id": "b8g",
                 "label": "მთლიანი დანაზოგი (B8G)",
-                "mode": "year",
+                "when": {
+                  "op": "perspective-is",
+                  "perspective": "year"
+                },
                 "trend": {
                   "filter": {
                     "account": "use-of-disposable-income-account",
@@ -108,7 +113,10 @@
                 "color": "#E76F51",
                 "id": "b9-year",
                 "label": "წმინდა დაკრედიტება/სესხება (B9)",
-                "mode": "year",
+                "when": {
+                  "op": "perspective-is",
+                  "perspective": "year"
+                },
                 "trend": {
                   "filter": {
                     "account": "capital-account",
@@ -133,7 +141,10 @@
                 "color": "#00A896",
                 "id": "b1g-cagr",
                 "label": "დამატებული ღირებულება — საშუალო წლიური ზრდა",
-                "mode": "range",
+                "when": {
+                  "op": "perspective-is",
+                  "perspective": "range"
+                },
                 "trend": {
                   "filter": {
                     "account": "production-account",
@@ -169,7 +180,10 @@
                 "color": "#0080BE",
                 "id": "p1-cagr",
                 "label": "გამოშვება — საშუალო წლიური ზრდა",
-                "mode": "range",
+                "when": {
+                  "op": "perspective-is",
+                  "perspective": "range"
+                },
                 "trend": {
                   "filter": {
                     "account": "production-account",
@@ -205,7 +219,10 @@
                 "color": "#4ECDC4",
                 "id": "labor-share",
                 "label": "შრომის წილი დამატებულ ღირებულებაში",
-                "mode": "range",
+                "when": {
+                  "op": "perspective-is",
+                  "perspective": "range"
+                },
                 "trend": {
                   "dir": "flat",
                   "type": "static",
@@ -241,7 +258,10 @@
                 "color": "#E76F51",
                 "id": "b9",
                 "label": "წმინდა დაკრედიტება/სესხება  (B9)",
-                "mode": "range",
+                "when": {
+                  "op": "perspective-is",
+                  "perspective": "range"
+                },
                 "trend": {
                   "dir": "down",
                   "type": "static",
@@ -1199,10 +1219,6 @@
           }
         },
         "id": "accounts",
-        "modeOrder": [
-          "year",
-          "range"
-        ],
         "path": "/accounts",
         "perspectives": {
           "mode": {
@@ -1210,9 +1226,10 @@
               {
                 "id": "year",
                 "label": {
-                  "en": "Year",
-                  "ka": "წელი"
+                  "en": "Annual",
+                  "ka": "წლიური"
                 },
+                "icon": "calendar",
                 "scope": {
                   "timeBinding": {
                     "dim": "time",
@@ -1225,9 +1242,10 @@
               {
                 "id": "range",
                 "label": {
-                  "en": "Range",
-                  "ka": "შუალედი"
+                  "en": "Dynamics",
+                  "ka": "დინამიკა"
                 },
+                "icon": "calendar-range",
                 "scope": {
                   "timeBinding": {
                     "dim": "time",
@@ -1297,11 +1315,7 @@
             "type": "filter-bar"
           },
           {
-            "modes": [
-              "year",
-              "range"
-            ],
-            "type": "mode-bar"
+            "type": "perspective-bar"
           },
           {
             "type": "kpi-strip",
@@ -1310,7 +1324,10 @@
                 "color": "#0080BE",
                 "id": "gdp-total",
                 "label": "მშპ მიმდინარე ფასებში",
-                "mode": "year",
+                "when": {
+                  "op": "perspective-is",
+                  "perspective": "year"
+                },
                 "unit": "მლნ ₾",
                 "trendSub": "წინა წელთან შედარებით",
                 "value": {
@@ -1335,7 +1352,10 @@
                 "color": "#00A896",
                 "id": "gdp-growth",
                 "label": "რეალური ზრდა",
-                "mode": "year",
+                "when": {
+                  "op": "perspective-is",
+                  "perspective": "year"
+                },
                 "unit": "%",
                 "trendSub": "წინა წელთან შედარებით",
                 "value": {
@@ -1357,7 +1377,10 @@
                 "color": "#4ECDC4",
                 "id": "gdp-per-capita",
                 "label": "მშპ ერთ სულზე",
-                "mode": "year",
+                "when": {
+                  "op": "perspective-is",
+                  "perspective": "year"
+                },
                 "unit": "$",
                 "trendSub": "წინა წელთან შედარებით",
                 "value": {
@@ -1382,7 +1405,10 @@
                 "color": "#0080BE",
                 "id": "gdp-cagr",
                 "label": "მშპ — საშ. წლიური ზრდა",
-                "mode": "range",
+                "when": {
+                  "op": "perspective-is",
+                  "perspective": "range"
+                },
                 "unit": "%",
                 "trendSub": "{fromYear}–{toYear}",
                 "value": {
@@ -1418,7 +1444,10 @@
                 "color": "#4ECDC4",
                 "id": "gdp-per-cap-cagr",
                 "label": "ერთ სულზე — საშ. ზრდა",
-                "mode": "range",
+                "when": {
+                  "op": "perspective-is",
+                  "perspective": "range"
+                },
                 "unit": "%",
                 "trendSub": "{fromYear}–{toYear}",
                 "value": {
@@ -1454,7 +1483,10 @@
                 "color": "#7B6CF6",
                 "id": "gdp-total-last",
                 "label": "მშპ — საბოლოო წელი",
-                "mode": "range",
+                "when": {
+                  "op": "perspective-is",
+                  "perspective": "range"
+                },
                 "unit": "მლნ ₾",
                 "trendSub": "{toYear}",
                 "value": {
@@ -2233,10 +2265,6 @@
           }
         },
         "id": "gdp",
-        "modeOrder": [
-          "year",
-          "range"
-        ],
         "path": "/gdp",
         "perspectives": {
           "mode": {
@@ -2244,9 +2272,10 @@
               {
                 "id": "year",
                 "label": {
-                  "en": "Year",
-                  "ka": "წელი"
+                  "en": "Annual",
+                  "ka": "წლიური"
                 },
+                "icon": "calendar",
                 "scope": {
                   "timeBinding": {
                     "dim": "time",
@@ -2259,9 +2288,10 @@
               {
                 "id": "range",
                 "label": {
-                  "en": "Range",
-                  "ka": "შუალედი"
+                  "en": "Dynamics",
+                  "ka": "დინამიკა"
                 },
+                "icon": "calendar-range",
                 "scope": {
                   "timeBinding": {
                     "dim": "time",
@@ -2562,11 +2592,7 @@
             "type": "filter-bar"
           },
           {
-            "modes": [
-              "year",
-              "range"
-            ],
-            "type": "mode-bar"
+            "type": "perspective-bar"
           },
           {
             "items": [
@@ -2574,7 +2600,10 @@
                 "color": "#0080BE",
                 "id": "reg-gva",
                 "label": "მთლიანი დამატებული ღირებულება",
-                "mode": "year",
+                "when": {
+                  "op": "perspective-is",
+                  "perspective": "year"
+                },
                 "trend": {
                   "filter": {
                     "geo": "_T",
@@ -2601,7 +2630,10 @@
                 "color": "#00A896",
                 "id": "reg-growth",
                 "label": "წლიური ზრდა",
-                "mode": "year",
+                "when": {
+                  "op": "perspective-is",
+                  "perspective": "year"
+                },
                 "trend": {
                   "filter": {
                     "geo": "_T",
@@ -2627,7 +2659,10 @@
                 "color": "#4ECDC4",
                 "id": "reg-share",
                 "label": "თბილისის წილი ეროვნულ მაჩვენებელში",
-                "mode": "year",
+                "when": {
+                  "op": "perspective-is",
+                  "perspective": "year"
+                },
                 "trend": {
                   "dir": "flat",
                   "type": "static",
@@ -2659,7 +2694,10 @@
                 "color": "#7B6CF6",
                 "id": "reg-cagr-year",
                 "label": "საშუალო წლიური ზრდა ({spanFrom}–{spanTo})",
-                "mode": "year",
+                "when": {
+                  "op": "perspective-is",
+                  "perspective": "year"
+                },
                 "trend": {
                   "filter": {
                     "geo": "_T",
@@ -2697,7 +2735,10 @@
                 "color": "#0080BE",
                 "id": "reg-cagr",
                 "label": "დამატებული ღირებულება — საშუალო წლიური ზრდა",
-                "mode": "range",
+                "when": {
+                  "op": "perspective-is",
+                  "perspective": "range"
+                },
                 "trend": {
                   "filter": {
                     "geo": "_T",
@@ -2735,7 +2776,10 @@
                 "color": "#00A896",
                 "id": "reg-gva-last",
                 "label": "დამატებული ღირებულება — {toYear}",
-                "mode": "range",
+                "when": {
+                  "op": "perspective-is",
+                  "perspective": "range"
+                },
                 "trend": {
                   "filter": {
                     "geo": "_T",
@@ -2768,7 +2812,10 @@
                 "color": "#4ECDC4",
                 "id": "reg-gva-first",
                 "label": "დამატებული ღირებულება — {fromYear}",
-                "mode": "range",
+                "when": {
+                  "op": "perspective-is",
+                  "perspective": "range"
+                },
                 "trend": {
                   "dir": "flat",
                   "type": "static",
@@ -2794,7 +2841,10 @@
                 "color": "#7B6CF6",
                 "id": "reg-avg-growth",
                 "label": "საშუალო წლიური ზრდა",
-                "mode": "range",
+                "when": {
+                  "op": "perspective-is",
+                  "perspective": "range"
+                },
                 "trend": {
                   "filter": {
                     "geo": "_T",
@@ -3852,10 +3902,6 @@
           }
         },
         "id": "regional",
-        "modeOrder": [
-          "year",
-          "range"
-        ],
         "path": "/regional",
         "perspectives": {
           "mode": {
@@ -3863,9 +3909,10 @@
               {
                 "id": "year",
                 "label": {
-                  "en": "Year",
-                  "ka": "წელი"
+                  "en": "Annual",
+                  "ka": "წლიური"
                 },
+                "icon": "calendar",
                 "scope": {
                   "timeBinding": {
                     "dim": "time",
@@ -3878,9 +3925,10 @@
               {
                 "id": "range",
                 "label": {
-                  "en": "Range",
-                  "ka": "შუალედი"
+                  "en": "Dynamics",
+                  "ka": "დინამიკა"
                 },
+                "icon": "calendar-range",
                 "scope": {
                   "timeBinding": {
                     "dim": "time",

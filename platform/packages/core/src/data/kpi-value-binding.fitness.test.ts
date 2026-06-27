@@ -127,7 +127,7 @@ describe('FF-VALUE-BINDING · Bug A — val query scopes by its measure', () => 
     installServer()
 
     const mkKpi = (id: string, measure: string): KpiSpec => ({
-      id, label: id, unit: '', color: '#000', mode: 'both',
+      id, label: id, unit: '', color: '#000',
       value: { type: 'point', measure, format: 'decimal1', filter: { geo: 'GE', approach: '_Z' } },
     })
     const specs = [

@@ -60,6 +60,13 @@ export interface PerspectiveDef {
   /** User-facing label. Multi-locale wire projection (ContractLocaleString); core refines to LocaleString. */
   label:      ContractLocaleString
   /**
+   * OPTIONAL toggle icon — an agnostic icon-registry KEY (e.g. 'calendar'), never
+   * inline SVG (Law 1). The perspective axis OWNS its toggle presentation: a switcher
+   * that renders this axis (the `perspective-bar` node) reads label+icon from HERE, the
+   * SSOT — not from a separate registry. Thin optional field; absent ⇒ no icon.
+   */
+  icon?:      string
+  /**
    * OPTIONAL visibility override. Default = `perspective-is(id)` (the identity gate);
    * present ONLY for a non-identity membership rule (e.g. "show in year OR compare").
    * Structural envelope here (JsonRecord); core refines to VisibilityExpr. The
