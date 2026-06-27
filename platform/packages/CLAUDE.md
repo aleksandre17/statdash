@@ -17,7 +17,7 @@ DataSpec → interpretSpec(spec, ctx, store) → DataRow[]
    DataTable           interpretChart(def, rows, ctx) → ChartOutput → toApexOptions → <ReactApexChart />
 ```
 
-**DataSpec types:** `query` · `row-list` · `timeseries` · `growth` · `ratio-list` · `pivot` · `transform` · `custom`
+**DataSpec types:** `query` · `row-list` · `timeseries` · `growth` · `ratio-list` · `pivot` · `transform` (extend via `registerSpec`, the single extension path — no `custom`/`fn` escape hatch)
 
 ---
 

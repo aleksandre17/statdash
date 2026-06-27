@@ -116,11 +116,6 @@ export function validateDataSpec(
       if (!spec.encoding?.label)
         v.error(path + '.encoding.label', 'MISSING_ENCODING', 'query requires encoding.label')
       break
-
-    case 'custom':
-      v.warn(path + '.type', 'DEPRECATED_CUSTOM_FN',
-        'custom spec uses a function — not JSON-serializable. Consider a declarative spec type.')
-      break
   }
 
   return v.build()

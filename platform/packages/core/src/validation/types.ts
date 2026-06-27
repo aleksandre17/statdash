@@ -13,7 +13,6 @@ export type ValidationCode =
   | 'MISSING_ENCODING'
   | 'INCOMPATIBLE_VISIBLE_IN'
   | 'NO_CHART_FOR_MODE'
-  | 'DEPRECATED_CUSTOM_FN'
   | 'THRESHOLD_ORDER'
   | 'UNREACHABLE_SPEC'
   // ── Structural-floor codes (validateConfig — ADR §7.2) ──────────────

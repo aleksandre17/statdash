@@ -14,10 +14,11 @@
 //  its `NodePageConfig` and hands it here — core never imports the react page type.
 
 import type { SectionContext }     from '../core/context'
-import { TIME_DIM }                from '../core/context'
+import { TIME_DIM, MEASURE_DIM }   from '../core/context'
 import type { DimVal }             from '../sdmx'
 import type { PerspectiveOption }  from '../perspective/types'
 import { resolveLocaleString }     from '../i18n/types'
+import { resolveMeasureRef }       from '../data/metric'
 import type { PerspectiveAxis, PerspectivesByParam, PerspectiveDef, PerspectiveTimeBinding } from './perspective-axis'
 import { effectiveBounds, isYearsSpec, resolveTimePin } from '../core/time-dimension'
 
@@ -176,6 +177,18 @@ export function perspectiveOwnedParamKeys(
 //  (under the binding's own `dim` + the conventional from/to convention the legacy
 //  resolvers read). Generic over the dim key (Law 1) — no 'time' literal here.
 //
+//  TWO registered scope-keys are applied here (perspective-scope-registry):
+//    • `timeBinding` — the year-pin / [from,to] window fold described above.
+//    • `metric`      — a perspective-wide MEASURE swap [ENG-10]. The active
+//      perspective's `scope.metric` (a MetricDef ref, raw measure code today) is
+//      resolved through the binding SSOT `resolveMeasureRef` to its underlying
+//      store code and pinned on the conventional MEASURE_DIM (the named SDMX
+//      MEASURE SSOT in core/context — NOT a privileged literal, the same way
+//      timeBinding pins TIME_DIM). A spec/KPI whose `measure` is `{$ctx:'measure'}`
+//      then resolves the swapped code; raw-code refs pass through byte-identically
+//      (Postel). This closes the authored≠wired no-op: `scope.metric` was
+//      authorable + persisted + validated but folded NOTHING at runtime.
+//
 //  IDENTITY when there is no active binding: a page with no axes (parse → undefined),
 //  or an active perspective with no `scope.timeBinding`, returns `ctx` UNCHANGED
 //  (referential-equality preserved) — byte-identical, the N=1-free path. Legacy
@@ -191,6 +204,18 @@ export function scopeCtxByPerspective(
 
   let dims: Record<string, DimVal> | undefined
   for (const def of activeDefs(axes, perspectiveState)) {
+    // (metric) Perspective-wide MEASURE swap [ENG-10]. Resolve the MetricDef ref
+    // through the binding SSOT and pin the underlying code on MEASURE_DIM. An
+    // absent ref / unresolvable code writes NOTHING (identity preserved).
+    const metricRef = def.scope?.metric
+    if (metricRef !== undefined) {
+      const code = resolveMeasureRef(metricRef).codes[0]
+      if (code !== undefined) {
+        dims ??= { ...ctx.dims }
+        dims[MEASURE_DIM] = code as DimVal
+      }
+    }
+
     const tb = def.scope?.timeBinding
     if (!tb) continue
     const dim = tb.dim || TIME_DIM

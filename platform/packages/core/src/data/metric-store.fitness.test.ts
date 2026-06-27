@@ -94,8 +94,8 @@ describe('FF-METRIC-NAMES-STORE — a metric routes a referencing spec to its st
       rows: [{ code: 'A', pctOf: 'B' }, { code: 'C' }] })).toEqual(['A', 'B', 'C'])
   })
 
-  it('pivot / transform / custom specs carry no measure refs ⇒ no store', () => {
-    expect(specDataSource({ type: 'custom', fn: 'x' })).toBeUndefined()
+  it('pivot / transform specs carry no measure refs ⇒ no store', () => {
+    expect(specDataSource({ type: 'pivot', rows: [], keyField: 'k', valueFields: ['v'] })).toBeUndefined()
     expect(specMeasureRefs({ type: 'transform', source: [], steps: [],
       encoding: { label: 'l', value: 'v' } })).toEqual([])
   })

@@ -18,7 +18,7 @@ import { resolve }      from 'path'
 import { describe, it, expect, beforeEach } from 'vitest'
 
 import { interpretSpec, extractRequirements } from './spec'
-import { resolveMeasureRef, registerMetric, withMetricProvenance } from './metric'
+import { resolveMeasureRef, registerMetric, registerMetrics, listMetricDefs, withMetricProvenance } from './metric'
 import { resolveQueryMeasures }   from '../registry/resolvers'
 import { ExternalStore }          from './store-impl'
 import type { SectionContext }    from '../core/context'
@@ -49,6 +49,26 @@ beforeEach(() => {
   registerMetric('metric:gdp-raw', {
     code:  'B1G',
     label: { en: 'GDP (no governance)' },
+  })
+})
+
+// ── FF-METRIC-CATALOG-REGISTER — the bulk delivery seam [ENG-05] ───────
+
+describe('registerMetrics — the agnostic bulk catalog seam', () => {
+  it('bulk-registers a catalog keyed by id; each flows through the binding seam', () => {
+    registerMetrics({
+      'metric:bulk-a': { code: 'B1G', label: { en: 'A' } },
+      'metric:bulk-b': { code: ['B5G', 'B6G'], label: { en: 'B' } },
+    })
+    expect(resolveMeasureRef('metric:bulk-a').codes).toEqual(['B1G'])
+    expect(resolveMeasureRef('metric:bulk-b').codes).toEqual(['B5G', 'B6G'])
+    expect(listMetricDefs()['metric:bulk-b']?.label).toEqual({ en: 'B' })
+  })
+
+  it('an empty catalog is a no-op (Postel — raw-code status quo preserved)', () => {
+    const before = Object.keys(listMetricDefs()).length
+    registerMetrics({})
+    expect(Object.keys(listMetricDefs()).length).toBe(before)
   })
 })
 

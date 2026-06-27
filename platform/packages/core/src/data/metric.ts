@@ -47,6 +47,19 @@ export function registerMetric(id: string, def: MetricDef): void {
   _registry.set(id, def)
 }
 
+/**
+ * Bulk-register a metric catalog keyed by id — the agnostic seam a tenant's
+ * semantic layer is delivered through [ENG-05]. The catalog is pure DATA (a
+ * `Record<id, MetricDef>`), so it carries NO tenant identity into core: the app
+ * boot reads its tenant catalog (from the manifest, the same way the runner reads
+ * `manifest.datasources` to register store-builders) and hands it here. Idempotent
+ * + last-write-wins per id, mirroring registerMetric. Empty catalog ⇒ no-op
+ * (byte-identical to the raw-code status quo via Postel/FF-RAW-CODE-IDENTICAL).
+ */
+export function registerMetrics(catalog: Record<string, MetricDef>): void {
+  for (const [id, def] of Object.entries(catalog)) _registry.set(id, def)
+}
+
 /** Look up a registered metric by id. */
 export function getMetric(id: string): MetricDef | undefined {
   return _registry.get(id)

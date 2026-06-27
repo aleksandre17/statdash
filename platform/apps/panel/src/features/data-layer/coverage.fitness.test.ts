@@ -123,17 +123,17 @@ const COVERAGE_TODO = {
     joinByField: 'PERMANENT — carries resolved EngineRow[]; declarative front-door is `blend`',
   },
   dataSpecs: {
-    // V2 DONE — the remaining DataSpec editors all shipped (full authoring
-    // coverage; nothing un-authorable). Each non-`custom` discriminant now has a
-    // dedicated editor rendered through DataSpecEditor:
+    // V2 DONE + ENG-16 — EVERY DataSpec discriminant now has a dedicated editor
+    // rendered through DataSpecEditor, and the dead `custom`/`fn` escape hatch was
+    // REMOVED from the union wholesale (the single extension path is `registerSpec`,
+    // not a competing function-pointer). So this allowlist is EMPTY: every
+    // discriminant the engine ships is authorable; a type without an editor FAILS:
+    //   query     → QueryEditor
     //   row-list  → RowListEditor    (RowSpec[] authored via the generic Inspector,
     //                                 schema carried in the engine rowspec registry)
+    //   timeseries/growth/ratio-list → dedicated editors
     //   transform → TransformEditor   (PipelineBuilder + EncodingEditor + JSON source)
     //   pivot     → PivotEditor       (friendly rows/keyField/valueFields/colors)
-    // The allowlist is down to `custom` only — a type without an editor now FAILS.
-    //
-    // PERMANENT — a code-resolver ref dropdown at most; never free code (Law 2).
-    'custom':    'PERMANENT — resolver-name reference only, never authorable code',
   },
   paramDefs: {
     // V0 — page-level FilterSchema/ParamDef authoring is DONE. Every ParamDef

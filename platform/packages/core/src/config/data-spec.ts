@@ -128,7 +128,11 @@ export interface TimeDimensionSpec {
 //  'transform'  — full declarative pipeline (Vega-Lite transform analogue).
 //
 //  All branches are 100% JSON-serializable and Constructor-authorable.
-//  To add a custom resolver: `defaultRegistry.registerSpec(myResolver)` in app bootstrap.
+//  The SINGLE extension path is the resolver registry: to add a new capability,
+//  `defaultRegistry.registerSpec(myResolver)` in app bootstrap (a new discriminant
+//  = a new registered resolver, interpreter unchanged — true OCP, Law 8). There is
+//  no second `custom`/`fn` escape hatch (a named function-pointer in config was a
+//  Law-2 smell + a competing extension mechanism — removed, ENG-16).
 //
 export type DataSpec =
   | { type: 'query'
@@ -187,7 +191,6 @@ export type DataSpec =
       steps:    TransformStep[]
       encoding: EncodingSpec
     }
-  | { type: 'custom'; fn: string; params?: Record<string, unknown> }
 
 // ── TableConfig ───────────────────────────────────────────────────────
 export interface TableConfig {

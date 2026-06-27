@@ -50,7 +50,6 @@ function measureRefs(spec: DataSpec): string[] {
       return spec.pairs.flatMap((p) => [p.code, p.denom])
     case 'pivot':
     case 'transform':
-    case 'custom':
       return []
     // A spec whose discriminant is none of the above (e.g. a malformed/unknown
     // type) carries no measure refs ⇒ no metric-store routing. Mirrors

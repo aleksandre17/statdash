@@ -275,7 +275,7 @@ export type { KpiSpec, KpiValueSpec, KpiTrendSpec }                     from './
 
 // ── Metric registry [N26] — Constructor metric vocabulary + extension seam ──
 export type { MetricDef, ResolvedMeasure }                             from './data/metric'
-export { registerMetric, getMetric, listMetrics, listMetricDefs,
+export { registerMetric, registerMetrics, getMetric, listMetrics, listMetricDefs,
          resolveMeasureRef, withMetricProvenance }                     from './data/metric'
 // metric→store binding [M1] — the Cube.dev `dataSource` middle tier. A node's
 // DataSpec → the storeKey its referenced metric names (plain string; react's

@@ -146,12 +146,6 @@ describe('DataSpec ratio-list / pivot / transform / custom — round-trip', () =
     encoding: { label: 'year', value: 'value' },
   }))
 
-  it('custom — fn reference + params', () => expectRoundTrip<DataSpec>({
-    type:   'custom',
-    fn:     'myCustomResolver',
-    params: { indicator: 'B1G', base: 2020 },
-  }))
-
   it('JSON.stringify does not throw on any DataSpec branch', () => {
     const specs: DataSpec[] = [
       { type: 'query',      query: { measure: 'B1G' }, encoding: { label: 'time' } },
@@ -161,7 +155,6 @@ describe('DataSpec ratio-list / pivot / transform / custom — round-trip', () =
       { type: 'ratio-list', pairs: [{ code: 'D1', denom: 'B1G' }] },
       { type: 'pivot',      rows: [], keyField: 'geo', valueFields: ['value'] },
       { type: 'transform',  source: [], steps: [], encoding: { label: 'time' } },
-      { type: 'custom',     fn: 'myFn' },
     ]
     specs.forEach(spec => expect(() => JSON.stringify(spec)).not.toThrow())
   })

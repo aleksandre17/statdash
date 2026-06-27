@@ -211,7 +211,6 @@ export function extractRequirements(
 
     case 'pivot':
     case 'transform':
-    case 'custom':
       return []
   }
 }
