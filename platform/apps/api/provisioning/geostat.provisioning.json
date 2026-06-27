@@ -1124,7 +1124,11 @@
                     "valueField": "code"
                   },
                   "suffix": "-დან",
-                  "type": "select"
+                  "type": "select",
+                  "visibleWhen": {
+                    "op": "perspective-is",
+                    "perspective": "range"
+                  }
                 },
                 "measure": {
                   "default": "",
@@ -1155,7 +1159,11 @@
                     "valueField": "code"
                   },
                   "suffix": "-მდე",
-                  "type": "select"
+                  "type": "select",
+                  "visibleWhen": {
+                    "op": "perspective-is",
+                    "perspective": "range"
+                  }
                 },
                 "year": {
                   "default": {
@@ -1163,6 +1171,10 @@
                     "pick": "last"
                   },
                   "type": "year-select",
+                  "visibleWhen": {
+                    "op": "perspective-is",
+                    "perspective": "year"
+                  },
                   "years": {
                     "field": "code",
                     "items": {
@@ -2152,7 +2164,11 @@
                     "valueField": "code"
                   },
                   "suffix": "-დან",
-                  "type": "select"
+                  "type": "select",
+                  "visibleWhen": {
+                    "op": "perspective-is",
+                    "perspective": "range"
+                  }
                 },
                 "mode": {
                   "default": "year",
@@ -2179,7 +2195,11 @@
                     "valueField": "code"
                   },
                   "suffix": "-მდე",
-                  "type": "select"
+                  "type": "select",
+                  "visibleWhen": {
+                    "op": "perspective-is",
+                    "perspective": "range"
+                  }
                 },
                 "year": {
                   "default": {
@@ -2187,6 +2207,10 @@
                     "pick": "last"
                   },
                   "type": "year-select",
+                  "visibleWhen": {
+                    "op": "perspective-is",
+                    "perspective": "year"
+                  },
                   "years": {
                     "field": "code",
                     "items": {
@@ -3675,7 +3699,11 @@
                     "valueField": "code"
                   },
                   "suffix": "-დან",
-                  "type": "select"
+                  "type": "select",
+                  "visibleWhen": {
+                    "op": "perspective-is",
+                    "perspective": "range"
+                  }
                 },
                 "mode": {
                   "default": "year",
@@ -3781,7 +3809,11 @@
                     "valueField": "code"
                   },
                   "suffix": "-მდე",
-                  "type": "select"
+                  "type": "select",
+                  "visibleWhen": {
+                    "op": "perspective-is",
+                    "perspective": "range"
+                  }
                 },
                 "year": {
                   "default": {
@@ -3789,6 +3821,10 @@
                     "pick": "last"
                   },
                   "type": "year-select",
+                  "visibleWhen": {
+                    "op": "perspective-is",
+                    "perspective": "year"
+                  },
                   "years": {
                     "field": "code",
                     "items": {

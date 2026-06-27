@@ -14,6 +14,7 @@
 //
 
 import type { WhenMap }                                from './filter-condition'
+import type { VisibilityExpr }                          from './visibility'
 import type { LocaleString }                            from '../i18n/types'
 import type { Validator }                              from './filter-validator'
 import type { OptionsSource, ChipSource, YearsSource } from '../data/source'
@@ -64,6 +65,25 @@ type ParamMeta = {
   description?: string
   /** Hide this control when the condition is false. */
   showWhen?:    WhenMap
+  /**
+   * Perspective-scoped control visibility — RENDER-ONLY [P5.1].
+   *
+   * DISTINCT from `showWhen` (a `WhenMap` over raw filter state): this is the
+   * cross-cutting NODE-style visibility expression, mirroring a node's
+   * `view.visibleWhen` exactly (same `VisibilityExpr` grammar, same
+   * `evalVisibility` evaluator, same `perspective-is` canon). The filter-bar shell
+   * SKIPS rendering this control when the expression is false against the active
+   * `perspectiveState` — e.g. a year-selector shown only in the `year` perspective,
+   * the from/to range pair only in `range`, after the two time-mode bars collapse
+   * to one (P5).
+   *
+   * STRICT-SOLID thin base: a single optional cross-cutting field on the shared
+   * `ParamMeta`, NOT an element-specific prop and NOT an overload of `showWhen`'s
+   * grammar. NEVER consulted by default resolution (useFilterState gates that on
+   * the P4.5 perspective-ownership seam) — gating ONLY which control DISPLAYS, so
+   * a hidden-but-owned param still resolves and the chart render stays identical.
+   */
+  visibleWhen?: VisibilityExpr
   /** Disable this control when the condition is false. */
   enableWhen?:  WhenMap
   /** Fail validation when the value is empty. String = custom message. */
