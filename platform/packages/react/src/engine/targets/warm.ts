@@ -118,17 +118,25 @@ export type SnapshotScope = 'active' | 'all-perspectives'
 /**
  * Build the active-perspective visibility gate from a StaticRenderContext, or
  * `undefined` for `'all-perspectives'` (gate disabled ⇒ every node warms = the
- * union of all perspectives). The active perspective id is `staticCtx.mode.current`
- * — the SAME source `renderNode` reads (`ctx.mode.current`, renderNode.ts:229).
- * This stays correct after the perspective rename (`mode-is`→`perspective-is` aliases).
+ * union of all perspectives).
+ *
+ * The active id is sourced from the `ctx.perspectiveState` SSOT (VISION #3 / P1 —
+ * HIGH-3), the SAME record `renderNode` reads (`renderNode.ts:229`). When a SSR
+ * caller populated only the legacy `mode`/`timeModeKey` (no `perspectiveState`), it
+ * is derived here as `{ [timeModeKey]: mode.current }` — one source, no parallel
+ * mode param. `buildStaticContext` seeds `perspectiveState` from `mode` so the
+ * common SSR path already carries the SSOT.
  */
 export function activeViewGate(
   staticCtx: StaticRenderContext,
   scope:     SnapshotScope,
 ): VisibilityGate | undefined {
   if (scope === 'all-perspectives') return undefined
+  const perspectiveState =
+    staticCtx.sectionCtx.perspectiveState ??
+    { [staticCtx.timeModeKey]: staticCtx.mode.current }
   return {
     filterParams: staticCtx.filterParams,
-    activeView:   staticCtx.mode.current,
+    perspectiveState,
   }
 }

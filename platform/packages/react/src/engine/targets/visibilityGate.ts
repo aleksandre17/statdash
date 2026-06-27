@@ -19,9 +19,14 @@ import type { VisibilityExpr } from '@statdash/engine'
 /** The active-perspective gate inputs — mirrors renderNode.ts:229 exactly. */
 export interface VisibilityGate {
   /** ctx.filterParams — the filter values evalVisibility resolves param refs against. */
-  filterParams: Record<string, unknown>
-  /** The active perspective id — ctx.mode.current on the live path. */
-  activeView:   string | undefined
+  filterParams:     Record<string, unknown>
+  /**
+   * The active perspective id PER axis param — the ctx.perspectiveState SSOT
+   * (VISION #3 / P1 — HIGH-3). The SAME record renderNode reads; evalVisibility
+   * resolves the legacy mode-* ops (and, P2, the generic perspective-* ops) against
+   * it. Undefined ⇒ a mode-* gate is false (N=1-free), matching the live path.
+   */
+  perspectiveState: Record<string, string> | undefined
 }
 
 /**
@@ -30,11 +35,11 @@ export interface VisibilityGate {
  *
  * ```ts
  * if (migrated.view?.visibleWhen)
- *   if (!evalVisibility(migrated.view.visibleWhen, ctx.filterParams, ctx.mode.current)) return null
+ *   if (!evalVisibility(migrated.view.visibleWhen, ctx.filterParams, ctx.sectionCtx.perspectiveState)) return null
  * ```
  *
  * A node with no `view.visibleWhen` is always visible (ungated). When gated,
- * the result is `evalVisibility(expr, gate.filterParams, gate.activeView)`.
+ * the result is `evalVisibility(expr, gate.filterParams, gate.perspectiveState)`.
  *
  * Generic node access (Record-typed) so the same predicate serves both the
  * untyped warm walk and the api walk without coupling to a concrete node shape.
@@ -46,5 +51,5 @@ export function isNodeVisibleInActiveView(
   const view = node['view'] as { visibleWhen?: VisibilityExpr } | undefined
   const expr = view?.visibleWhen
   if (!expr) return true
-  return evalVisibility(expr, gate.filterParams, gate.activeView)
+  return evalVisibility(expr, gate.filterParams, gate.perspectiveState)
 }

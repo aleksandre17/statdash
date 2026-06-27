@@ -288,10 +288,23 @@ export interface FilterSchemaInput {
 //    raw['year']   → ctx.dims['time']  (auto-parsed to number for year-select)
 //    raw['region'] → ctx.dims['geo']
 //
+//  EXPAND-CONTRACT (VISION #3 / P1 — HIGH-2). `timeMode` is now OPTIONAL. It was
+//  MANDATORY (the privileged time-mode weave); relaxing it BEFORE any config
+//  migrates is what keeps every existing page typecheckable while the new
+//  `page.perspectives` axis is wired in. A page that declares a `PerspectiveAxis`
+//  binds its active id through `ctx.perspectiveState[param]` and needs NO `timeMode`
+//  binding; a legacy page keeps setting it (Postel-tolerated, retired in P6). When a
+//  legacy `timeMode` is present and no `perspectives` axis is declared, the parser
+//  DERIVES a single-axis `PerspectiveAxis` from `modeOrder`+`timeMode` so the legacy
+//  config flows into the SAME new path unchanged (deriveLegacyPerspectiveAxis).
+//
 
 export interface ContextMapping<P = Record<string, unknown>> {
-  timeMode: keyof P & string
-  dims?:    Record<string, keyof P & string>
+  /** OPTIONAL (P1, was mandatory) — the param key whose value is the active
+   *  perspective id ('year' | 'range' | …). Absent on a page that declares a
+   *  `PerspectiveAxis` (the active id flows through `ctx.perspectiveState`). */
+  timeMode?: keyof P & string
+  dims?:     Record<string, keyof P & string>
 }
 
 // ── NodeDef-based param types (Constructor-ready) ─────────────────────────────

@@ -56,6 +56,15 @@ export { registerPerspectiveScopeKey, getPerspectiveScopeKeySchema,
          listPerspectiveScopeKeys }                                      from './config/perspective-scope-registry'
 import './config/perspective-scope-schemas' // side-effect: register built-in scope-key authoring schemas (timeBinding, metric)
 
+//  P1 — the active-id SSOT readers + the parser + the ctx-scoping step. The active
+//  perspective id flows ONLY through ctx.perspectiveState (HIGH-3); parsePerspectiveAxes
+//  yields ONE internal representation (declared `perspectives`, else a legacy
+//  modeOrder+timeMode desugar); scopeCtxByPerspective folds the active perspective's
+//  timeBinding into ctx.dims before interpretSpec (the declarative time-mode replacement).
+export { PERSPECTIVE_PARAM, LEGACY_MODE_PARAM, activePerspective }       from './config/perspective-state'
+export type { ParsePerspectiveInput }                                   from './config/perspective-axis-parser'
+export { parsePerspectiveAxes, activeIdForAxis, scopeCtxByPerspective }  from './config/perspective-axis-parser'
+
 // ── Standard 2: SDMX Observation Model (ISO 17369) ───────────────────
 export type { DimVal, CtxRef, FilterValue, NeRef, NeCtxRef, Observation, ObsQuery } from './sdmx'
 

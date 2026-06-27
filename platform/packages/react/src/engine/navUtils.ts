@@ -49,9 +49,21 @@ function readPath(raw: Raw, path: string): unknown {
   )
 }
 
+/**
+ * Extract which PERSPECTIVE a nav section belongs to, from its `view.visibleWhen`.
+ *
+ * VISION #3 / P1 — the 6th mode-reading site, brought onto the SAME perspective
+ * vocabulary the visibility gate uses (one SSOT for "what perspective is this"). It
+ * reads the EXPRESSION (the section's declared membership), not the active id:
+ *   • legacy `{ op:'eq', param:<timeModeKey> }`  → the `is` value (System A),
+ *   • legacy `{ op:'mode-is' }` / `{ op:'mode-not' }` → the `mode` value,
+ *   • (P2) `{ op:'perspective-is', param }` will resolve here too.
+ * Anything else ⇒ undefined (ungated / not a single-perspective membership).
+ */
 function getNavMode(vw: VisibilityExpr | undefined, timeModeKey: string): string | undefined {
   if (!vw) return undefined
   if (vw.op === 'eq' && vw.param === timeModeKey) return String(vw.is)
+  if (vw.op === 'mode-is' || vw.op === 'mode-not') return vw.mode
   return undefined
 }
 

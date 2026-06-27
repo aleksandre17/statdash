@@ -130,6 +130,7 @@ const META_FIELD_COVERAGE: Record<keyof PageMeta, true> = {
   filterSchema:  true,
   vars:          true,
   modeOrder:     true,
+  perspectives:  true,
 }
 
 // A fully-populated PageMeta — one concrete value per guarded field.
@@ -154,6 +155,16 @@ const fullMeta: PageMeta = {
   },
   vars:      { yearLabel: { op: 'lookup', key: 'time', map: { '2023': 'Y2023' } } },
   modeOrder: ['year', 'range'],
+  // VISION #3 / P1 — the declared perspective axes (keyed by URL param). Carried
+  // generically through the same meta spread; round-trips byte-identically.
+  perspectives: {
+    perspective: {
+      perspectives: [
+        { id: 'year',  label: { ka: 'წელი',  en: 'Year'  } },
+        { id: 'range', label: { ka: 'პერიოდი', en: 'Range' } },
+      ],
+    },
+  },
 }
 
 // A COMPLETE page: identity columns + every page-level field + a nested subtree.
@@ -187,6 +198,7 @@ describe('page-level round-trip fitness (P-3): every PageConfigBase field surviv
     expect(cfg.filterSchema).toEqual(fullMeta.filterSchema)
     expect(cfg.vars).toEqual(fullMeta.vars)
     expect(cfg.modeOrder).toEqual(['year', 'range'])
+    expect(cfg.perspectives).toEqual(fullMeta.perspectives)
     expect(cfg.schemaVersion).toBe(2)
     // identity columns still come from the CanvasPage, not meta
     expect(cfg.id).toBe('page-full')

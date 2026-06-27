@@ -27,6 +27,7 @@ import {
 } from '@statdash/react'
 import { GlobalStateProvider }         from '../context/GlobalState'
 import { applyEffects, resolveDataLinks } from '@statdash/engine'
+import { parsePerspectiveAxes, scopeCtxByPerspective } from '@statdash/engine'
 import type { ModeId }                from '@statdash/engine'
 import { FiltersProvider }             from '../context/FiltersContext'
 import { evalVarMap }                  from './evalVarMap'
@@ -103,13 +104,41 @@ const NodePageRendererInner = memo(function NodePageRendererInner({
   const modeList   = useMemo(() => page.modeOrder ?? [], [page.modeOrder])
   const mode       = useModeContext(timeModeKey, modeList)
 
-  // Bridge: sectionCtx.timeMode = mode.current (validates against available modes;
-  // interpretSpec reads sectionCtx.timeMode for DataSpec.by-mode branch selection).
+  // ── Perspective axis [VISION #3 / P1] ─────────────────────────────────────
+  //  ONE internal representation: the declared `page.perspectives` Record, else a
+  //  single-axis desugar of the legacy modeOrder+timeMode. Absent ⇒ undefined (the
+  //  N=1-free path — no scoping, no axis machinery). Parsed once per page.
+  const axes = useMemo(
+    () => parsePerspectiveAxes({
+      perspectives:  page.perspectives,
+      modeOrder:     page.modeOrder,
+      timeModeParam: timeModeKey,
+    }),
+    [page.perspectives, page.modeOrder, timeModeKey],
+  )
+
+  // Bridge: sectionCtx.timeMode = mode.current (Postel — legacy by-mode/template
+  // readers still consult it until P6). The active perspective id now ALSO flows
+  // through the ctx.perspectiveState SSOT (HIGH-3): the ONE source the visibility
+  // gate + the SSR walkers read. `perspectiveState[timeModeKey] = mode.current` —
+  // mode.current is itself the URL param value (useModeContext reads FilterContext),
+  // so the SSOT is seeded from the SAME source ModeContext reads (one source).
   // Destructure current first so the dep is a stable string, not a property access.
   const { current: currentMode } = mode
   const sectionCtx = useMemo(
-    () => ({ ...rawSectionCtx, timeMode: currentMode }),
-    [rawSectionCtx, currentMode],
+    () => {
+      const perspectiveState = { [timeModeKey]: currentMode }
+      const withState: typeof rawSectionCtx = {
+        ...rawSectionCtx,
+        timeMode: currentMode,
+        perspectiveState,
+      }
+      // Scope ctx.dims by the active perspective's timeBinding BEFORE resolution —
+      // the declarative replacement for the legacy imperative time-mode. Identity
+      // when no axis / no scope.timeBinding (legacy pages, until P5 authors it).
+      return scopeCtxByPerspective(withState, axes, perspectiveState)
+    },
+    [rawSectionCtx, currentMode, timeModeKey, axes],
   )
 
   const { state, set: filterSet, setMany } = useFilter()

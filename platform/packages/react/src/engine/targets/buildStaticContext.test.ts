@@ -42,9 +42,28 @@ describe('buildStaticContext() — shape', () => {
     expect(ctx).toHaveProperty('effects')
   })
 
-  it('passes sectionCtx through unchanged', () => {
+  it('passes sectionCtx dims/timeMode through + seeds the perspectiveState SSOT', () => {
+    // VISION #3 / P1 — buildStaticContext seeds ctx.perspectiveState from the active
+    // id (mode.current) keyed by timeModeKey, so the SSR walkers + the visibility gate
+    // read the SAME source the live DOM reads. The caller's object is NOT mutated
+    // (immutable augmentation — a shallow clone with the SSOT added).
     const ctx = buildStaticContext(MINIMAL_INPUT)
-    expect(ctx.sectionCtx).toBe(MINIMAL_INPUT.sectionCtx)
+    expect(ctx.sectionCtx.dims).toBe(MINIMAL_INPUT.sectionCtx.dims)
+    expect(ctx.sectionCtx.timeMode).toBe('year')
+    expect(ctx.sectionCtx.perspectiveState).toEqual({ mode: 'year' })
+    // caller's object untouched (no perspectiveState leaked back onto the input)
+    expect('perspectiveState' in MINIMAL_INPUT.sectionCtx).toBe(false)
+  })
+
+  it('preserves a caller-supplied perspectiveState (does not overwrite the SSOT)', () => {
+    const input = {
+      sectionCtx: { dims: { time: 2024 }, timeMode: 'range' as const,
+                    perspectiveState: { perspective: 'range' } },
+      stores:     {},
+    }
+    const ctx = buildStaticContext(input)
+    expect(ctx.sectionCtx).toBe(input.sectionCtx)           // already seeded ⇒ passthrough
+    expect(ctx.sectionCtx.perspectiveState).toEqual({ perspective: 'range' })
   })
 
   it('passes stores through unchanged', () => {

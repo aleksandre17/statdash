@@ -28,6 +28,7 @@ import type {
   BarNode,
   ParamNode,
   ScopeOverride,
+  PerspectivesByParam,
 }                                from '@statdash/engine'
 import type { NodeStyles }       from '@statdash/styles'
 import type { ChromeEntry }       from '../slice-meta'
@@ -226,7 +227,21 @@ export interface PageConfigBase {
   presentation?: PagePresentation
   filterSchema?: FilterSchemaInput
   vars?:         VarMap
+  /**
+   * Legacy ordered perspective ids (System A). Retired in P6 — the new
+   * `perspectives` axis below supersedes it (its array order is the SSOT for
+   * nav-sort + the default). Kept readable so un-migrated pages parse via the
+   * legacy desugar (parsePerspectiveAxes).
+   */
   modeOrder?:    string[]
+  /**
+   * The page's perspective axes [VISION #3 / P1], keyed by URL param — the generic,
+   * declarative replacement for the `modeOrder`+`timeMode` weave. One key today
+   * (`{ perspective: {…} }`); multi-axis = a second key (D-MULTIAXIS), zero rename.
+   * ADDITIVE: absent ⇒ the engine derives a single axis from legacy
+   * `modeOrder`+`timeMode` (Postel desugar), so existing pages render identically.
+   */
+  perspectives?: PerspectivesByParam
 }
 
 export type NodePageConfig =

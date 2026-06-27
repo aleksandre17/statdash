@@ -164,7 +164,9 @@ export function useFilterState(
   const isLoading = pendingKeys.length > 0
 
   const context     = schema?.context
-  const ctxTimeMode = context
+  // context.timeMode is now OPTIONAL (P1 expand-contract): a page that declares a
+  // PerspectiveAxis carries no legacy timeMode binding. Absent ⇒ default 'year'.
+  const ctxTimeMode = context?.timeMode
     ? ((raw[context.timeMode] as TimeMode) || 'year')
     : 'year'
 

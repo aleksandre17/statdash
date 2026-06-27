@@ -149,10 +149,12 @@ describe('VisibilityExpr — lossless round-trip + evalVisibility agreement (V4)
   })
 
   it('evalVisibility agrees: visible only when region=GE AND mode=year', () => {
-    expect(evalVisibility(tree, { region: 'GE' }, 'year')).toBe(true)
-    expect(evalVisibility(tree, { region: 'AM' }, 'year')).toBe(false) // wrong region
-    expect(evalVisibility(tree, { region: 'GE' }, 'range')).toBe(false) // wrong mode
-    expect(evalVisibility(tree, {}, 'year')).toBe(false)                // region unset
+    // P1 — the active perspective id is the perspectiveState SSOT (Record<param,id>),
+    // not a positional string. A param-less mode-is op reads the conventional axis.
+    expect(evalVisibility(tree, { region: 'GE' }, { mode: 'year' })).toBe(true)
+    expect(evalVisibility(tree, { region: 'AM' }, { mode: 'year' })).toBe(false) // wrong region
+    expect(evalVisibility(tree, { region: 'GE' }, { mode: 'range' })).toBe(false) // wrong mode
+    expect(evalVisibility(tree, {}, { mode: 'year' })).toBe(false)                // region unset
   })
 
   it('a nested not/or tree evaluates correctly (recursive composition)', () => {

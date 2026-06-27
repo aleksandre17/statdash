@@ -140,9 +140,24 @@ export function buildStaticContext(
   const presentation: PagePresentation | undefined =
     input.presentation ?? (Object.keys(legacyPresentation).length ? legacyPresentation : undefined)
 
+  const timeModeKey = input.timeModeKey ?? 'mode'
+  // mode: default to the sectionCtx.timeMode for consistency
+  const mode = input.mode ?? {
+    current:   input.sectionCtx.timeMode ?? 'year',
+    available: [],
+    set:       () => {},
+  }
+  // Seed the ctx.perspectiveState SSOT (VISION #3 / P1 — HIGH-3) so the SSR walkers
+  // and the visibility gate read the SAME source the live DOM reads (one source, no
+  // parallel mode param). Derived from the active id (`mode.current`) keyed by the
+  // axis param. Preserves any perspectiveState the caller already set.
+  const sectionCtx: SectionContext = input.sectionCtx.perspectiveState
+    ? input.sectionCtx
+    : { ...input.sectionCtx, perspectiveState: { [timeModeKey]: mode.current } }
+
   return {
     // ── required ───────────────────────────────────────────────────────
-    sectionCtx:     input.sectionCtx,
+    sectionCtx,
     stores:         input.stores,
     // ── common overrides ───────────────────────────────────────────────
     pageStoreKey:   input.pageStoreKey,
@@ -153,13 +168,8 @@ export function buildStaticContext(
     color:          input.color,
     locale:         input.locale        ?? 'en',
     fallbackLocale: input.fallbackLocale ?? 'en',
-    timeModeKey:    input.timeModeKey   ?? 'mode',
-    // mode: default to the sectionCtx.timeMode for consistency
-    mode: input.mode ?? {
-      current:   input.sectionCtx.timeMode ?? 'year',
-      available: [],
-      set:       () => {},
-    },
+    timeModeKey,
+    mode,
     effects:    input.effects    ?? [],
     crumbs:     input.crumbs,
     presentation,
