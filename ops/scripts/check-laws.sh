@@ -56,6 +56,7 @@ fi
 #    - param-schemas.ts         page-level ParamDef filter-control labels        [V0]
 #    - visibility-schemas.ts    VisibilityExpr "show when" leaf-condition labels [V4]
 #    - rowspec-schemas.ts       row-list RowSpec entry labels                    [V2]
+#    - perspective-scope-schemas.ts  PerspectiveAxis scope-key labels      [VISION #3]
 #  This list is the bash twin of the SSOT allowlist in
 #  platform/tests/no-tenant-content.fitness.test.ts (the ALLOW set) — keep the two
 #  in sync. The exemption is for Georgian SCRIPT only (Law 4 heuristic); a genuine
@@ -63,7 +64,7 @@ fi
 #  vitest gate still enforces TIER-1 (currency / brand / ['ka','en'] literal)
 #  EVERYWHERE incl. these catalogs. This is a STATED-INTENT exemption, never a
 #  blanket suppression.
-LAW4_CATALOG_ALLOW='(spec-catalog|op-schemas|param-schemas|visibility-schemas|rowspec-schemas)\.ts:'
+LAW4_CATALOG_ALLOW='(spec-catalog|op-schemas|param-schemas|visibility-schemas|rowspec-schemas|perspective-scope-schemas)\.ts:'
 
 check_ts() {
   local label="$1"
