@@ -15,6 +15,7 @@
 //
 
 import type { AttrVal, Classifier, ClassifierEntry, ClassifierRef, ClassifierView, DimRef, DimVal, DisplayMap, DisplayRef } from '../sdmx'
+import { tagLocaleString } from '../i18n/types'
 
 // ── Normalizers — array ↔ record both accepted ────────────────────────
 
@@ -180,13 +181,19 @@ export function resolveDisplayRef(
 
   // Attr values may be a scalar DimVal OR a LocaleString {en,ka} (i18n labels
   // carried intact from the wire — resolved to a concrete string at the React
-  // boundary, never flattened here where no user locale is known).
+  // boundary, never flattened here where no user locale is known). This is the
+  // ORIGIN where a display LocaleString becomes a row-cell candidate, so it is
+  // where we POSITIVELY TAG it (tagLocaleString): an object-valued attr is branded
+  // as a genuine i18n carrier. resolveRowLocales (react boundary) then localizes
+  // ONLY tagged cells — never structure-guessing a provenance object into a label.
+  // A scalar attr passes through untouched (tagLocaleString is a no-op on strings).
   const buildEntry = (id: string, entry: ClassifierEntry): Record<string, AttrVal> => {
     const overlay = d[id]
     const out: Record<string, AttrVal> = { code: entry.code }
     if (overlay) {
       for (const [k, v] of Object.entries(overlay)) {
-        if (v !== undefined && k !== 'code') out[k] = v
+        if (v === undefined || k === 'code') continue
+        out[k] = typeof v === 'object' && v !== null ? tagLocaleString(v) : v
       }
     }
     return out

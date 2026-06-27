@@ -64,8 +64,16 @@ export class ApiStore implements DataStore {
     sync:       false,   // async-primary: activates useNodeRows suspend path
   }
 
-  private readonly _cache = new Map<string, EngineRow[]>()
+  // Per-slice cache entry. `expiresAt` drives freshness: a FRESH entry (now <
+  // expiresAt) is served without a network round-trip; a STALE-but-present entry
+  // (TTL elapsed) is re-validated with a conditional GET (If-None-Match: dataset
+  // ETag) — a 304 reuses the held rows + refreshes the TTL, a 200 replaces them.
+  // The dataset-level ETag is the correct validator for ANY slice's freshness: a
+  // dataset-version bump invalidates every slice at once (server returns a new
+  // ETag ⇒ 200 on the next revalidation of each slice).
+  private readonly _cache = new Map<string, { rows: EngineRow[]; expiresAt: number }>()
   private readonly _eTags = new Map<string, string>()
+  private readonly ttlMs: number
 
   /**
    * Optional provenance seam (P2-3). When supplied, renderers reach dataset-level
@@ -99,6 +107,7 @@ export class ApiStore implements DataStore {
     mapRow:       (raw: RawObsRow) => EngineRow,
     metadata?:    MetadataPort,
     display:      Record<string, DisplayMap> = {},
+    ttlMs:        number = 5 * 60 * 1000,
   ) {
     this.baseUrl     = baseUrl
     this.datasetCode = datasetCode
@@ -107,6 +116,7 @@ export class ApiStore implements DataStore {
     this.mapRow      = mapRow
     this.metadata    = metadata
     this.display     = display
+    this.ttlMs       = ttlMs
   }
 
   // ── queryAsync — primary async path ──────────────────────────────
@@ -115,25 +125,39 @@ export class ApiStore implements DataStore {
     const params   = this.toObsParams(q, ctx)
     const cacheKey = this.cacheKeyFor(q, ctx)
 
-    // Warm read — return cached result immediately
+    // ── Freshness gate (conditional-GET / 304 revalidation) ───────────────────
+    //
+    // Three cases for the cached slice at `cacheKey`:
+    //   FRESH (now < expiresAt)        → serve immediately, no network round-trip.
+    //   STALE (entry present, expired) → re-validate with a CONDITIONAL GET
+    //                                    (If-None-Match: <dataset ETag>). On 304
+    //                                    the held rows are still current → reuse +
+    //                                    refresh TTL (no re-download). On 200 the
+    //                                    dataset moved → replace.
+    //   MISS (no entry)                → nothing to validate → UNCONDITIONAL GET.
+    //                                    Sending the ETag here would invite a
+    //                                    304-to-empty for a never-held slice (the
+    //                                    range/dynamics kpi-strip crash), so the
+    //                                    conditional header is omitted on a miss.
+    //
+    // The ETag is dataset-level, which is the CORRECT validator for any slice: a
+    // dataset-version bump changes the ETag, so the next revalidation of EVERY
+    // stale slice 200s (replaces) rather than 304s (reuses).
     const cached = this._cache.get(cacheKey)
-    if (cached) {
+    if (cached && Date.now() < cached.expiresAt) {
       return {
         state: 'done',
-        data:  cached,
-        meta:  { totalRows: cached.length, truncated: false, source: 'api', cacheHit: true },
+        data:  cached.rows,
+        meta:  { totalRows: cached.rows.length, truncated: false, source: 'api', cacheHit: true },
       }
     }
 
-    // Conditional GET: send If-None-Match ONLY when THIS slice is already cached.
-    // The ETag is dataset-level, but each (from,to,filter) slice is its OWN cache
-    // entry. A 304 = "your cached copy of THIS resource is fresh" — usable only if we
-    // HOLD that slice. Sending it for a never-fetched slice invites a 304 whose branch
-    // returns [] WITHOUT caching → the post-warm querySync(val, thatSlice) cold-throws
-    // (the range/dynamics kpi-strip crash: first slice 200s, later slices 304 to empty).
+    // STALE-but-present slice → conditional revalidation. The conditional header is
+    // sent ONLY when we already HOLD the slice (so a 304 has rows to serve); a true
+    // MISS stays unconditional.
     const headers: Record<string, string> = {}
     const storedETag = this._eTags.get(this.datasetCode)
-    if (storedETag && this._cache.has(cacheKey)) headers['If-None-Match'] = storedETag
+    if (storedETag && cached) headers['If-None-Match'] = storedETag
 
     let res: Response
     try {
@@ -145,13 +169,15 @@ export class ApiStore implements DataStore {
       return { state: 'error', data: [], error: String(err) }
     }
 
-    // 304 Not Modified — ETag matched; serve from existing cache entry
-    if (res.status === 304) {
-      const stale = this._cache.get(cacheKey) ?? ([] as EngineRow[])
+    // 304 Not Modified — the held slice is still current. Reuse it and refresh its
+    // TTL (a re-validated entry is fresh again). Reachable ONLY for a stale slice we
+    // hold (the conditional header was sent because `cached` was present).
+    if (res.status === 304 && cached) {
+      cached.expiresAt = Date.now() + this.ttlMs
       return {
         state: 'done',
-        data:  stale,
-        meta:  { totalRows: stale.length, truncated: false, source: 'api', cacheHit: true },
+        data:  cached.rows,
+        meta:  { totalRows: cached.rows.length, truncated: false, source: 'api', cacheHit: true },
       }
     }
 
@@ -171,7 +197,7 @@ export class ApiStore implements DataStore {
     const filtered = this.applyClientFilter(rows, q, ctx)
     const ordered = this.applyOrderBy(filtered, q)
 
-    this._cache.set(cacheKey, ordered)
+    this._cache.set(cacheKey, { rows: ordered, expiresAt: Date.now() + this.ttlMs })
     return {
       state: 'done',
       data:  ordered,
@@ -196,10 +222,10 @@ export class ApiStore implements DataStore {
     if (cached) {
       const limit = (q as { limit?: number }).limit ?? 1000
       return {
-        rows: cached,
+        rows: cached.rows,
         meta: {
-          totalRows: cached.length,
-          truncated: cached.length === limit,
+          totalRows: cached.rows.length,
+          truncated: cached.rows.length === limit,
           source:    'api',
           cacheHit:  true,
         },
@@ -216,7 +242,10 @@ export class ApiStore implements DataStore {
   querySync(q: StoreQuery, ctx: SectionContext): EngineRow[] {
     const cacheKey = this.cacheKeyFor(q, ctx)
     const cached   = this._cache.get(cacheKey)
-    if (cached) return cached
+    // A held slice resolves synchronously even when TTL-stale: querySync is the
+    // post-resume read after queryAsync warmed the cache. Freshness re-validation
+    // is queryAsync's job (network) — querySync must never throw on a slice we hold.
+    if (cached) return cached.rows
     throw new Error(
       `ApiStore.querySync called cold (cache miss). ` +
       `This store has caps.sync=false — use queryAsync. ` +

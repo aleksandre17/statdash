@@ -95,10 +95,18 @@ export function useFilterState(
   // async store (the timeseries shows a single bar). Gating by bar visibility
   // keeps the inactive bar's params unset, so range mode stays time-unbounded and
   // year mode stays range-unbounded — the modes do not cross-pin each other.
+  //
+  // EXCEPTION — `alwaysResolve` (bar-independent default): a SPAN/CUBE-derived
+  // hidden param (e.g. spanFrom/spanTo, the full data extent) is a PAGE-level state
+  // variable, not a property of one bar's visibility. It must resolve in EVERY mode,
+  // so it is hoisted OUT of the visibility gate — letting it be declared ONCE rather
+  // than copy-pasted into each time-mode bar (the OCP-clean, Constructor-ready form).
   const defaultParams = useMemo(
     () =>
       flatParamEntries
-        .filter(({ barShowWhen }) => !barShowWhen || evalWhen(barShowWhen, state))
+        .filter(({ def, barShowWhen }) =>
+          isAlwaysResolve(def) || !barShowWhen || evalWhen(barShowWhen, state),
+        )
         .map(({ key, def }) => ({ key, def })),
     [flatParamEntries, state],
   )
@@ -211,6 +219,16 @@ export function useFilterState(
   const bars        = useMemo(() => schemaToBarNodes(schema), [schema])
 
   return { ctx, raw, timeModeKey, effects, bars, isLoading }
+}
+
+// ── isAlwaysResolve — bar-independent default predicate ──────────────────
+//
+//  True for a hidden param flagged `alwaysResolve` — a page-level state variable
+//  (span/cube-derived) whose default resolves regardless of its bar's visibility.
+//  Only `hidden` params carry the flag (the type union gates it); any other param
+//  type is bar-gated as before.
+function isAlwaysResolve(def: ParamDef): boolean {
+  return def.type === 'hidden' && (def as ParamHidden).alwaysResolve === true
 }
 
 // ── cascadeDeepestCode — traverse cascade path to deepest selected node ──

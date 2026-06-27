@@ -10,6 +10,7 @@
 
 import type { Classifier, DimVal, DisplayMap, ObsQuery, Observation }  from '../sdmx'
 import type { SectionContext }                                          from '../core/context'
+import { MEASURE_DIM }                                                  from '../core/context'
 import type { EngineRow }                                              from './encoding'
 import { storeVal, asyncFromSync }                                     from './store'
 import type { DataStore, QueryResult, Requirement, ResultMeta, StoreCaps, StoreQuery } from './store'
@@ -266,7 +267,7 @@ export class ExternalStore implements DataStore {
   private _val(code: string, ctx: SectionContext): number {
     let sum = 0
     for (const o of this.observations) {
-      if (String(o['measure'] ?? '') !== code) continue
+      if (String(o[MEASURE_DIM] ?? '') !== code) continue
       if (Number(o['isCarryForward'] ?? 0) === 1) continue
       let ok = true
       for (const [dim, val] of Object.entries(ctx.dims)) {
@@ -288,7 +289,7 @@ export class ExternalStore implements DataStore {
     const matchAll = measures.length === 1 && measures[0] === '*'
 
     let result = this.observations.filter((obs) => {
-      if (!matchAll && !measures.includes(String(obs['measure'] ?? ''))) return false
+      if (!matchAll && !measures.includes(String(obs[MEASURE_DIM] ?? ''))) return false
       if (query.filter && !matchesFilter(obs as Record<string, DimVal>, query.filter, ctx, this.leafSet)) return false
       return true
     })
@@ -333,7 +334,7 @@ export class ExternalStore implements DataStore {
       case 'schema': {
         const seen = new Map<string, EngineRow>()
         for (const o of this.observations) {
-          const m = String(o['measure'] ?? '')
+          const m = String(o[MEASURE_DIM] ?? '')
           if (m && !seen.has(m)) {
             seen.set(m, {
               measure: m,

@@ -83,10 +83,21 @@ type ParamMeta = {
  * Absent → the hidden param is literal-default only (Tier 1 / Tier 2). This is
  * the open-extension seam for span-/cube-derived headline metrics that must
  * resolve in EVERY mode (not just the mode whose bar owns the selector).
+ *
+ * `alwaysResolve` (bar-independent default): by default a param's DEFAULT is
+ * resolved only while its owning bar is VISIBLE in the current mode (so a hidden
+ * year-bar's `time` pin does not bleed into range mode — see useFilterState). A
+ * SPAN/CUBE-derived hidden param (e.g. `spanFrom`/`spanTo` — the full data extent)
+ * is a page-level state variable, NOT a property of one bar's visibility: it must
+ * resolve regardless of which time-mode bar is showing. Setting `alwaysResolve:true`
+ * declares this, so the param is hoisted out of the bar-visibility gate and can be
+ * declared ONCE (not copy-pasted into every bar). Generic: any hidden param, any
+ * dataset. Absent/false → today's bar-gated behaviour (byte-identical).
  */
 export type ParamHidden = ParamMeta & {
-  type:     'hidden'
-  options?: OptionsSource
+  type:           'hidden'
+  options?:       OptionsSource
+  alwaysResolve?: boolean
 }
 
 /**

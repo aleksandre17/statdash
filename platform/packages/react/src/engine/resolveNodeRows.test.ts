@@ -9,7 +9,7 @@
 
 import { describe, it, expect, beforeEach } from 'vitest'
 import { resolveStore, _storeCache, effectiveStoreKey, resolveNodeRows, _resolveRowLocales } from './resolveNodeRows'
-import { staticStore, registerMetric, ExternalStore } from '@statdash/engine'
+import { staticStore, registerMetric, ExternalStore, tagLocaleString } from '@statdash/engine'
 import type { RenderContext, NodeBase }  from './types'
 import type { DataStore, SectionContext } from '@statdash/engine'
 
@@ -251,37 +251,53 @@ describe('resolveNodeRows — LocaleString resolution at the React boundary', ()
   })
 })
 
-describe('resolveRowLocales — provenance / seriesFormat survive (Law 9 data integrity)', () => {
-  // REGRESSION: a structure-only LocaleString test flattens ANY plain object,
-  // collapsing DataRow.provenance (a ProvenanceRecord) to a random scalar via
-  // Object.values(s)[0] — which silently kills resolvePreliminary.rowIsPreliminary
-  // (r.provenance?.status → undefined ⇒ no preliminary/last-updated/methodology
-  // badge). The fix discriminates by field identity, not by shape.
+describe('resolveRowLocales — positive identification (Protected Variations, Law 9)', () => {
+  // POSITIVE identification: resolveRowLocales localizes ONLY a cell TAGGED at its
+  // i18n origin (the `$d` join → tagLocaleString). The old structure-only test
+  // flattened ANY plain object — collapsing DataRow.provenance (a ProvenanceRecord)
+  // to a random scalar via Object.values(s)[0], silently killing
+  // resolvePreliminary.rowIsPreliminary (r.provenance?.status → undefined ⇒ no
+  // preliminary/last-updated/methodology badge). The Symbol brand removes the
+  // shape-guess entirely: an UNTAGGED object — provenance, seriesFormat, or any
+  // FUTURE object metadata key a new join might surface — is never touched.
 
-  it('keeps provenance.status intact while still resolving the LocaleString label', () => {
+  it('a row with BOTH a $d label LocaleString AND a provenance object: label localized, provenance intact', () => {
+    // The label is a tagged LocaleString (exactly what the `$d` display-attr join
+    // emits via resolveDisplayRef → tagLocaleString). provenance is an UNTAGGED
+    // plain object — structurally identical to a LocaleString, yet must survive.
     const row = {
-      id: 'r1', label: { en: 'GDP', ka: 'მშპ' }, value: 100,
+      id: 'r1', value: 100,
+      label:      tagLocaleString({ en: 'GDP', ka: 'მშპ' }),
       provenance: { status: 'p', source: 'StatsOffice', methodology: 'https://x' },
     } as unknown as import('@statdash/engine').DataRow
 
     const [out] = _resolveRowLocales([row], 'ka')
 
-    // label LocaleString → concrete 'ka' string (the i18n boundary still works).
+    // The tagged label → concrete 'ka' string (the i18n boundary still works).
     expect((out as { label: unknown }).label).toBe('მშპ')
-    // provenance survives as the ORIGINAL object — NOT flattened to 'p'/a scalar.
+    // provenance survives as the ORIGINAL object — never flattened to a scalar.
     expect((out as { provenance: { status?: string } }).provenance).toEqual({
       status: 'p', source: 'StatsOffice', methodology: 'https://x',
     })
     expect((out as { provenance: { status?: string } }).provenance.status).toBe('p')
   })
 
-  it('keeps a seriesFormat map intact (Record<string,string> is not a LocaleString)', () => {
+  it('an UNTAGGED object that happens to look like a LocaleString is left untouched', () => {
+    // The Protected-Variations win: a NEW object-valued field (here a fictitious
+    // `meta` carrier a future $cl join might surface) is NOT structure-guessed into
+    // a label — only the genuinely tagged `label` is resolved.
     const row = {
-      id: 'r2', label: 'plain', value: 1,
+      id: 'r2', value: 1,
+      label: tagLocaleString({ en: 'Wages', ka: 'ხელფასი' }),
+      meta:  { en: 'not a label', ka: 'არც ეს' },      // looks like a LocaleString, but UNTAGGED
       seriesFormat: { 'Series A': 'mln_gel', 'Series B': 'pct' },
     } as unknown as import('@statdash/engine').DataRow
 
     const [out] = _resolveRowLocales([row], 'ka')
+    // label (tagged) is resolved …
+    expect((out as { label: unknown }).label).toBe('ხელფასი')
+    // … while the untagged objects survive structurally intact.
+    expect((out as unknown as { meta: unknown }).meta).toEqual({ en: 'not a label', ka: 'არც ეს' })
     expect((out as unknown as { seriesFormat: unknown }).seriesFormat).toEqual({
       'Series A': 'mln_gel', 'Series B': 'pct',
     })

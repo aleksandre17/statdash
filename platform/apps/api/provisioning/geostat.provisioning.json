@@ -3699,50 +3699,6 @@
                   "default": "_T",
                   "type": "hidden"
                 },
-                "spanFrom": {
-                  "default": {
-                    "from": "options",
-                    "pick": "first"
-                  },
-                  "options": {
-                    "items": {
-                      "$d": "time"
-                    },
-                    "labelField": "code",
-                    "pipe": [
-                      {
-                        "by": "code",
-                        "dir": "asc",
-                        "op": "sort"
-                      }
-                    ],
-                    "type": "inline",
-                    "valueField": "code"
-                  },
-                  "type": "hidden"
-                },
-                "spanTo": {
-                  "default": {
-                    "from": "options",
-                    "pick": "first"
-                  },
-                  "options": {
-                    "items": {
-                      "$d": "time"
-                    },
-                    "labelField": "code",
-                    "pipe": [
-                      {
-                        "by": "code",
-                        "dir": "desc",
-                        "op": "sort"
-                      }
-                    ],
-                    "type": "inline",
-                    "valueField": "code"
-                  },
-                  "type": "hidden"
-                },
                 "toYear": {
                   "default": {
                     "from": "options",
@@ -3784,6 +3740,7 @@
                   "type": "hidden"
                 },
                 "spanFrom": {
+                  "alwaysResolve": true,
                   "default": {
                     "from": "options",
                     "pick": "first"
@@ -3806,6 +3763,7 @@
                   "type": "hidden"
                 },
                 "spanTo": {
+                  "alwaysResolve": true,
                   "default": {
                     "from": "options",
                     "pick": "first"

@@ -1,12 +1,14 @@
 // ── ApiStore async tests ──────────────────────────────────────────────
 //
-//  Covers the six behaviours specified in ADR-STORE-001 P1-1:
+//  Covers the behaviours specified in ADR-STORE-001 P1-1:
 //    1. queryAsync builds correct URL params
 //    2. queryAsync handles non-2xx → state:'error'
 //    3. queryAsync caches result (fetch called once for two identical calls)
-//    4. queryAsync sends If-None-Match on second call
 //    5. querySync throws on cold cache with message containing 'caps.sync=false'
 //    6. querySync returns from warm cache after queryAsync has populated it
+//
+//  The ETag / conditional-GET / 304 freshness re-validation behaviours (the old
+//  behaviour 4) live in their own concern file: apiStore.revalidation.test.ts.
 //
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
@@ -42,8 +44,8 @@ const rawRow: RawObsRow = {
 // Simple identity mapper — engine-agnostic; tests verify raw→Row projection
 const mapRow = (raw: RawObsRow) => ({ ...raw.dim_key, value: raw.obs_value ?? 0 })
 
-function makeStore() {
-  return new ApiStore(BASE_URL, DATASET_CODE, NON_TIME_DIMS, {}, mapRow)
+function makeStore(ttlMs?: number) {
+  return new ApiStore(BASE_URL, DATASET_CODE, NON_TIME_DIMS, {}, mapRow, undefined, {}, ttlMs)
 }
 
 function makeOkResponse(rows: RawObsRow[], etag?: string): Response {
@@ -115,79 +117,8 @@ describe('ApiStore.queryAsync', () => {
     expect(r2.data).toBe(r1.data) // same array reference from cache
   })
 
-  it('4 — sends If-None-Match only for an ALREADY-CACHED slice, never an uncached one', async () => {
-    const etag = '"abc123"'
-    // First call (slice A, time 2023): fresh 200 with ETag. Caches slice A.
-    vi.mocked(fetch).mockResolvedValueOnce(makeOkResponse([rawRow], etag))
-
-    const store = makeStore()
-    await store.queryAsync(obsQuery, ctx)
-
-    // Second call for a DIFFERENT slice (time 2022) — NOT yet cached. The ETag is
-    // dataset-level but this slice is unheld, so a conditional GET here would invite a
-    // 304-to-empty that never caches the slice → the post-warm querySync cold-throw
-    // (the range/dynamics kpi-strip crash). The conditional MUST be omitted so this is
-    // an unconditional 200 that caches slice B.
-    const ctx2: SectionContext = { timeMode: 'year', dims: { time: 2022, geo: 'GE', sector: 'S13' } }
-    vi.mocked(fetch).mockResolvedValueOnce(makeOkResponse([rawRow], etag))
-    await store.queryAsync(obsQuery, ctx2)
-
-    expect(fetch).toHaveBeenCalledTimes(2)
-    const uncachedSliceHeaders = vi.mocked(fetch).mock.calls[1][1]?.headers as Record<string, string>
-    expect(uncachedSliceHeaders?.['If-None-Match']).toBeUndefined()
-
-    // Third call: a REPEAT of slice A. It is now cached, so the conditional GET IS
-    // sent — a 304 here is safe (we hold the rows to serve). Note the cache short-
-    // circuits before fetch for an in-memory hit, so to exercise the header path we
-    // evict via TTL is unnecessary: the in-memory cache returns slice A without a
-    // fetch. Assert the cache-hit fast-path instead (no third fetch).
-    const r3 = await store.queryAsync(obsQuery, ctx)
-    expect(fetch).toHaveBeenCalledTimes(2)        // served from cache, no new request
-    expect(r3.meta?.cacheHit).toBe(true)
-  })
-
-  it('4b — REGRESSION: a 304 on an uncached slice must not strand it empty', async () => {
-    // Reproduces the kpi-strip dynamics crash at the store seam: the dataset ETag is
-    // known (from an earlier slice), then a NEW slice is warmed. The fix gates the
-    // conditional on a per-slice cache hit, so the new slice fetches unconditionally
-    // (200) and lands in cache — a subsequent querySync resolves synchronously instead
-    // of cold-throwing.
-    const etag = '"v1"'
-    const store = makeStore()
-
-    // Warm slice A (time 2023) — 200 + ETag.
-    vi.mocked(fetch).mockResolvedValueOnce(makeOkResponse([rawRow], etag))
-    await store.queryAsync(obsQuery, ctx)
-
-    // Warm slice B (time 2010) — must NOT carry If-None-Match, so the server 200s and
-    // we cache it. (If it carried the conditional, a 304 would return [] uncached.)
-    const ctxB: SectionContext = { timeMode: 'range', dims: { time: 2010, geo: 'GE', sector: 'S13' } }
-    vi.mocked(fetch).mockResolvedValueOnce(makeOkResponse([rawRow], etag))
-    const warmB = await store.queryAsync(obsQuery, ctxB)
-    expect(warmB.state).toBe('done')
-    expect(warmB.data.length).toBe(1)
-
-    // The post-warm synchronous read for slice B now resolves from cache (no throw).
-    expect(() => store.querySync(obsQuery, ctxB)).not.toThrow()
-    expect(store.querySync(obsQuery, ctxB).length).toBe(1)
-  })
-
-  it('4b — returns state:done from cache on 304 Not Modified', async () => {
-    const etag = '"v1"'
-    vi.mocked(fetch).mockResolvedValueOnce(makeOkResponse([rawRow], etag))
-
-    const store = makeStore()
-    // Warm the cache
-    await store.queryAsync(obsQuery, ctx)
-
-    // Force a 304 by directly returning a 304 for a different ctx (bypasses in-mem cache)
-    const ctx304: SectionContext = { timeMode: 'year', dims: { time: 2020, geo: 'GE', sector: 'S13' } }
-    vi.mocked(fetch).mockResolvedValueOnce(new Response(null, { status: 304 }))
-    const result = await store.queryAsync(obsQuery, ctx304)
-
-    expect(result.state).toBe('done')
-    expect(result.meta?.cacheHit).toBe(true)
-  })
+  // ETag / conditional-GET / 304 freshness re-validation → apiStore.revalidation.test.ts
+  //   (split out to keep one concern per file under the 400-line ceiling).
 
 })
 

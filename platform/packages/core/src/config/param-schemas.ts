@@ -46,8 +46,13 @@ const labelField = {
 
 // ── hidden — URL-state-only param (never rendered) ────────────────────────────
 //  Carries state, no visible control. The author sets only the default value.
+//  `alwaysResolve` (optional, default off): a bar-independent default — a span/cube
+//  derived state variable (e.g. spanFrom/spanTo) resolves in EVERY mode, not only
+//  while its owning bar is visible. Lets it be declared once instead of per bar.
 export const hiddenSchema: PropSchema = [
   { field: 'default', type: 'string', label: bi('მნიშვნელობა (URL-მდგომარეობა)', 'Value (URL state)') },
+  { field: 'alwaysResolve', type: 'boolean',
+    label: bi('ყოველთვის გამოთვლა (ბარისგან დამოუკიდებლად)', 'Always resolve (bar-independent)') },
 ]
 
 // ── year-select — year selector with optional year ↔ range toggle ─────────────
