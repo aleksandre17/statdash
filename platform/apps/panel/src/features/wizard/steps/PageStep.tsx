@@ -30,6 +30,7 @@ import { setAtPath } from '../../../inspector/showWhen'
 import { PageWorkflowBar } from '../../page-workflow'
 import { FiltersDrawer } from '../../filters'
 import { PageInspectorPanel } from '../../page-config'
+import { PerspectivesPane } from '../../perspectives'
 import { VisibilitySection } from '../../visibility'
 import type { VisibilityExpr } from '@statdash/engine'
 import '../../../canvas/page-step.css'
@@ -235,6 +236,14 @@ export function PageStep() {
           {/*  Schema). Round-trips losslessly through page.meta.               */}
           <Divider sx={{ my: 2 }} />
           <PageInspectorPanel />
+
+          {/* ── Perspectives pane (PerspectiveAxis authoring, P-final) ───── */}
+          {/*  Page-scoped: authors the page's perspective axes (named, ordered  */}
+          {/*  query-views — Power BI bookmark-pane IA) through the SAME generic  */}
+          {/*  Inspector + VisibilityBuilder. Replaces the raw `perspectives`     */}
+          {/*  JSON field; round-trips losslessly through page.meta.perspectives. */}
+          <Divider sx={{ my: 2 }} />
+          <PerspectivesPane />
 
           {/* ── Page-level filters (FilterSchema authoring, V0) ──────────── */}
           {/*  Page-scoped, not element-scoped: shown regardless of node       */}

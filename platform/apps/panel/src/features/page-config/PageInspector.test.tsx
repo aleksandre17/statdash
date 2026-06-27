@@ -37,12 +37,14 @@ describe('pageSchemaSource — schema reflects the registered projectors', () =>
   it('projects presentationPropSchema() into prefixed presentation.* fields', () => {
     const schema = pageSchema()
     const fields = schema.map((f) => f.field)
-    // frame (static select) + the projected presentation fields + perspectives + vars.
+    // frame (static select) + the projected presentation fields + vars.
     expect(fields).toContain('frame')
     expect(fields).toContain('presentation.color')   // colorProjector → presentation.color
     expect(fields).toContain('presentation.crumbs')  // crumbsProjector → presentation.crumbs
-    expect(fields).toContain('perspectives')
     expect(fields).toContain('vars')
+    // `perspectives` is NO LONGER a raw page-root field — the dedicated PerspectivesPane
+    // (P-final) authors the PerspectiveAxis; it still round-trips through page.meta.
+    expect(fields).not.toContain('perspectives')
     // No page-root `type` field — the kind is fixed by the adapter (see source note).
     expect(fields).not.toContain('type')
   })

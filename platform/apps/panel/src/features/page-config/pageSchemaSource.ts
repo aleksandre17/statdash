@@ -14,9 +14,12 @@
 //  the `presentation.` dot-path the Inspector reads/writes. A new projector's
 //  PropField appears here automatically (OCP / Law 1), zero edits.
 //
-//  Pick-don't-type (Law 2): `frame` is a static-option select; `perspectives`/`vars`
-//  are the documented object JSON sub-editor (the same escape hatch FilterSchema
-//  bars + op-schema collections use). A bespoke Perspectives panel is a later slice.
+//  Pick-don't-type (Law 2): `frame` is a static-option select; `vars` is the
+//  documented object JSON sub-editor (the same escape hatch FilterSchema bars +
+//  op-schema collections use). `perspectives` is NO LONGER a raw JSON field here —
+//  the dedicated PerspectivesPane (features/perspectives, P-final) authors the
+//  PerspectiveAxis through the generic Inspector + VisibilityBuilder, replacing the
+//  raw object sub-editor with the named-ordered-list pane (Power BI bookmark-pane IA).
 //
 //  Page-root KIND (`type`) is deliberately NOT authored here: the adapter
 //  (canvasPageAdapter) hardwires the root to `inner-page` and strips `type` from
@@ -55,10 +58,10 @@ export function pageSchema(): PropSchema {
   return [
     { field: 'frame', type: 'string', label: { ka: 'ჩარჩო', en: 'Frame' }, options: FRAME_OPTIONS },
     ...presentation,
-    // The page's perspective axes, keyed by URL param (the perspectives[] order is
-    // the toggle + nav-sort SSOT). The object JSON sub-editor (the documented
-    // collection escape hatch) — a bespoke Perspectives panel is a later slice.
-    { field: 'perspectives', type: 'object', label: { ka: 'პერსპექტივები', en: 'Perspectives' } },
+    // NOTE: `perspectives` is authored by the dedicated PerspectivesPane (P-final),
+    // NOT a raw JSON field here — the named-ordered-list pane replaces the object
+    // sub-editor (Power BI bookmark-pane IA, schema-driven scope fields).
+    //
     // Generic page-scoped derived variables (zero reserved keys — Law 1). The
     // object JSON sub-editor, exactly like node `vars`.
     { field: 'vars',      type: 'object', label: { ka: 'ცვლადები',       en: 'Variables' } },
@@ -71,7 +74,6 @@ export function pageGroups(): PropertyGroup[] {
   return [
     { label: { ka: 'განლაგება',    en: 'Layout'       }, fields: ['frame'] },
     { label: { ka: 'პრეზენტაცია',  en: 'Presentation' }, fields: presentationFields },
-    { label: { ka: 'პერსპექტივები', en: 'Perspectives' }, fields: ['perspectives'] },
     { label: { ka: 'ცვლადები',     en: 'Variables'    }, fields: ['vars'] },
   ]
 }
