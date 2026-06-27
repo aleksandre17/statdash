@@ -13,7 +13,6 @@ export { GrowthEditor } from './editors/GrowthEditor'
 export { RatioListEditor } from './editors/RatioListEditor'
 export { RowListEditor } from './editors/rowlist/RowListEditor'
 export { RowSpecEditor } from './editors/rowlist/RowSpecEditor'
-export { ByModeEditor } from './editors/ByModeEditor'
 export { TransformEditor } from './editors/TransformEditor'
 export { PivotEditor } from './editors/PivotEditor'
 

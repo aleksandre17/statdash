@@ -60,7 +60,7 @@ const EXPECTED_AXES: ReadonlySet<string> = new Set([
 //  The DataSpec types are the canonical SPEC_CATALOG (static in @statdash/engine).
 //  Removing any is a MAJOR break in what the Constructor's spec picker can offer.
 const EXPECTED_SPEC_TYPES: readonly string[] = [
-  'query', 'row-list', 'timeseries', 'growth', 'ratio-list', 'pivot', 'by-mode',
+  'query', 'row-list', 'timeseries', 'growth', 'ratio-list', 'pivot',
 ]
 
 //  The core transform ops the pipeline editor relies on (subset of the full set;

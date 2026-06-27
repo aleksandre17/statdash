@@ -10,7 +10,6 @@ export type ModeId = string
 
 /**
  * ModeDef — one registered rendering mode.
- * dataKey: matches DataSpec.by-mode key. Defaults to id if not set.
  * icon:    agnostic string key — resolved by icon registry at render time, never hardcoded SVG.
  */
 export interface ModeDef {

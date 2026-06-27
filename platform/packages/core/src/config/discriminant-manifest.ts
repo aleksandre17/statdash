@@ -33,7 +33,7 @@ type Discriminants<U, K extends keyof U> = U[K]
 // ── DataSpec.type ─────────────────────────────────────────────────────
 export const DATASPEC_DISCRIMINANTS = [
   'query', 'row-list', 'timeseries', 'growth', 'ratio-list',
-  'by-mode', 'pivot', 'transform', 'custom',
+  'pivot', 'transform', 'custom',
 ] as const satisfies readonly Discriminants<DataSpec, 'type'>[]
 
 export type DataSpecDiscriminant = (typeof DATASPEC_DISCRIMINANTS)[number]

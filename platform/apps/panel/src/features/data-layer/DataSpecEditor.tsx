@@ -11,13 +11,12 @@ import { TimeseriesEditor } from './editors/TimeseriesEditor'
 import { GrowthEditor } from './editors/GrowthEditor'
 import { RatioListEditor } from './editors/RatioListEditor'
 import { RowListEditor } from './editors/rowlist/RowListEditor'
-import { ByModeEditor } from './editors/ByModeEditor'
 import { TransformEditor } from './editors/TransformEditor'
 import { PivotEditor } from './editors/PivotEditor'
 
 // ── DataSpecEditor — type picker + routes to type-specific editor ─────────────
 //
-//  Top: Select over SPEC_CATALOG (9 DataSpec discriminants). Changing the type
+//  Top: Select over SPEC_CATALOG (7 DataSpec discriminants). Changing the type
 //  initializes a fresh spec of that type with sensible defaults.
 //  Below: the matching editor (query / timeseries / growth / ratio-list) or a
 //  raw-JSON fallback for the other types.
@@ -44,8 +43,6 @@ function defaultSpec(type: SpecType): DataSpec {
       return { type: 'growth', code: '', years: 'all' }
     case 'ratio-list':
       return { type: 'ratio-list', pairs: [] }
-    case 'by-mode':
-      return { type: 'by-mode', modes: {} }
     case 'pivot':
       return { type: 'pivot', rows: [], keyField: '', valueFields: [] }
     case 'transform':
@@ -113,7 +110,6 @@ function SpecBody({ value, onChange }: { value: DataSpec; onChange: (spec: DataS
     case 'growth':     return <GrowthEditor     value={value} onChange={onChange} />
     case 'ratio-list': return <RatioListEditor  value={value} onChange={onChange} />
     case 'row-list':   return <RowListEditor    value={value} onChange={onChange} />
-    case 'by-mode':    return <ByModeEditor     value={value} onChange={onChange} />
     case 'transform':  return <TransformEditor  value={value} onChange={onChange} />
     case 'pivot':      return <PivotEditor      value={value} onChange={onChange} />
     default:           return <JsonFallback     value={value} onChange={onChange} />

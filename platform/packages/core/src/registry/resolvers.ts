@@ -20,8 +20,6 @@ import type { LocaleString }                  from '../i18n/types'
 import type { SpecResolver }                 from './engine'
 import { applyPipeline }                      from '../data/transform'
 import { defaultRegistry }                   from './engine'
-import { emitDiagnostic }                    from './diagnostics'
-import { diagWarning }                        from '../core/diagnostic'
 
 // ── Shared utilities ───────────────────────────────────────────────────
 //
@@ -134,39 +132,6 @@ export function resolveFilterForReqs(fv: FilterValue, ctx: SectionContext): DimV
     if ('$ne'  in (fv as object)) return []   // can't enumerate excluded values statically
   }
   return [fv as DimVal]
-}
-
-// ── ByModeResolver ────────────────────────────────────────────────────
-
-class ByModeResolver implements SpecResolver<Extract<DataSpec, { type: 'by-mode' }>> {
-  readonly type = 'by-mode' as const
-
-  resolve(
-    spec:  Extract<DataSpec, { type: 'by-mode' }>,
-    ctx:   SectionContext,
-    store: DataStore,
-  ): EngineRow[] {
-    const modeKeys = Object.keys(spec.modes)
-    const branch   = spec.modes[ctx.timeMode]
-
-    let active: DataSpec | undefined
-    if (branch) {
-      active = branch
-    } else {
-      // Active mode key absent — emit a diagnostic then fall back to first branch.
-      const fallbackKey = modeKeys[0]
-      emitDiagnostic(diagWarning(
-        'by-mode:missing-branch',
-        `timeMode '${ctx.timeMode}' not found in modes [${modeKeys.join(', ')}]; falling back to '${fallbackKey ?? '(none)'}'`,
-      ))
-      active = fallbackKey ? spec.modes[fallbackKey] : undefined
-    }
-
-    if (!active) return []
-    const resolver = defaultRegistry.spec(active.type)
-    if (resolver) return resolver.resolve(active as DataSpec, ctx, store)
-    return []
-  }
 }
 
 // ── RowListResolver ───────────────────────────────────────────────────
@@ -344,9 +309,8 @@ class QueryResolver implements SpecResolver<Extract<DataSpec, { type: 'query' }>
 //  logic now lives as ONE desugar rule (data/desugar.ts); this resolver is the
 //  thin delegate that lowers the spec and resolves the resulting primitive.
 //  Kept registered so `pivot` stays a KNOWN spec type (validateDataSpec +
-//  Constructor manifest) and so a by-mode branch nesting a pivot still resolves
-//  through the registry. interpretSpec also desugars up-front, so this path is
-//  reached only via direct registry dispatch (e.g. by-mode) — one rewrite, one
+//  Constructor manifest). interpretSpec also desugars up-front, so this thin
+//  delegate is reached only via direct registry dispatch — one rewrite, one
 //  resolution. FF-DESUGAR-EQUIV proves the lowered output is row-identical.
 //
 class PivotResolver implements SpecResolver<Extract<DataSpec, { type: 'pivot' }>> {
@@ -382,7 +346,6 @@ class TransformResolver implements SpecResolver<Extract<DataSpec, { type: 'trans
 //
 
 defaultRegistry
-  .registerSpec(new ByModeResolver())
   .registerSpec(new RowListResolver())
   .registerSpec(new TimeseriesResolver())
   .registerSpec(new GrowthResolver())

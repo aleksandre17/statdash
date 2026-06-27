@@ -129,7 +129,7 @@ describe('describeApp() — specTypes', () => {
 
   it('includes the canonical spec type strings', () => {
     const { specTypes } = describeApp()
-    const expectedKeys = ['query', 'row-list', 'timeseries', 'growth', 'ratio-list', 'pivot', 'by-mode']
+    const expectedKeys = ['query', 'row-list', 'timeseries', 'growth', 'ratio-list', 'pivot']
 
     expectedKeys.forEach(key => {
       expect(specTypes).toHaveProperty(key)

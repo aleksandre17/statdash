@@ -30,10 +30,6 @@ import { resolveMeasureRef } from './metric'
  * order (the same order extractRequirements walks). Returns the AUTHORED refs
  * (raw codes AND metric-ids) without resolving them, so the caller resolves
  * each through the one resolveMeasureRef seam.
- *
- * `by-mode` unions every branch's refs in mode-key order: store routing must be
- * ctx-independent — a node resolves to ONE store regardless of the active
- * timeMode — so we cannot pick a single branch here.
  */
 // Module-local implementation; specMeasureRefs (exported) + specDataSource both
 // delegate to it. The switch is TOTAL (a default arm) so it always returns an
@@ -52,10 +48,6 @@ function measureRefs(spec: DataSpec): string[] {
       return Array.isArray(spec.code) ? [...spec.code] : [spec.code]
     case 'ratio-list':
       return spec.pairs.flatMap((p) => [p.code, p.denom])
-    case 'by-mode':
-      return Object.keys(spec.modes).flatMap((k) =>
-        measureRefs(spec.modes[k as keyof typeof spec.modes]),
-      )
     case 'pivot':
     case 'transform':
     case 'custom':

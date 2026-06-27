@@ -155,7 +155,6 @@ describe('FF-DESUGAR-EQUIV — pivot desugars row-identically to transform+melt'
       { type: 'timeseries', code: 'B1G', years: 'all' },
       { type: 'growth', code: 'B1G', years: [2020, 2021] },
       { type: 'ratio-list', pairs: [{ code: 'D1', denom: 'B1G' }] },
-      { type: 'by-mode', modes: { year: { type: 'row-list', rows: [] } } },
       { type: 'custom', fn: 'myFn' },
     ]
     for (const p of primitives) expect(desugar(p)).toBe(p) // identity ⇒ untouched path

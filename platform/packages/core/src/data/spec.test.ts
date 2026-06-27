@@ -145,36 +145,6 @@ describe('interpretSpec — growth', () => {
   })
 })
 
-// ── by-mode ───────────────────────────────────────────────────────────
-
-describe('interpretSpec — by-mode', () => {
-  const spec = {
-    type:  'by-mode' as const,
-    modes: {
-      year:  { type: 'row-list'   as const, rows: [{ code: 'B1G', label: 'GDP' }] },
-      range: { type: 'timeseries' as const, code: 'B1G', years: [2022, 2023] as readonly number[] },
-    },
-  }
-
-  it('uses year branch when timeMode is year', () => {
-    const rows = interpretSpec(spec, { ...ctx, timeMode: 'year' }, store)
-    expect(rows).toHaveLength(1)
-    expect(rows[0].value).toBe(1000)
-  })
-
-  it('uses range branch when timeMode is range', () => {
-    const rows = interpretSpec(spec, { ...ctx, timeMode: 'range' }, store)
-    expect(rows).toHaveLength(2)
-    expect(rows.map((r) => r.label)).toEqual(['2022', '2023'])
-  })
-
-  it('falls back to first available branch for unknown timeMode', () => {
-    const rows = interpretSpec(spec, { ...ctx, timeMode: 'unknown' }, store)
-    expect(rows).toHaveLength(1)
-    expect(rows[0].value).toBe(1000)
-  })
-})
-
 // ── unregistered type ─────────────────────────────────────────────────
 
 describe('interpretSpec — unknown type', () => {

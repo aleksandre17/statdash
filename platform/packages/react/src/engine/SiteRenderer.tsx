@@ -117,7 +117,7 @@ const NodePageRendererInner = memo(function NodePageRendererInner({
     [page.perspectives, page.modeOrder, timeModeKey],
   )
 
-  // Bridge: sectionCtx.timeMode = mode.current (Postel — legacy by-mode/template
+  // Bridge: sectionCtx.timeMode = mode.current (Postel — legacy template
   // readers still consult it until P6). The active perspective id now ALSO flows
   // through the ctx.perspectiveState SSOT (HIGH-3): the ONE source the visibility
   // gate + the SSR walkers read. `perspectiveState[timeModeKey] = mode.current` —

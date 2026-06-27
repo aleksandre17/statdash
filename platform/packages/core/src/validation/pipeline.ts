@@ -121,13 +121,6 @@ export function validateDataSpec(
       v.warn(path + '.type', 'DEPRECATED_CUSTOM_FN',
         'custom spec uses a function — not JSON-serializable. Consider a declarative spec type.')
       break
-
-    case 'by-mode': {
-      const results = Object.entries(spec.modes).map(([key, branch]) =>
-        validateDataSpec(branch, `${path}.modes.${key}`)
-      )
-      return mergeResults(results)
-    }
   }
 
   return v.build()
@@ -147,15 +140,6 @@ export function validateDataSpec(
 // `validateConfig` reuses this same {path,code,severity} ValidationError model
 // (it calls validateDataSpec for each node's `data`), so there is no shape
 // reconciliation to do here.
-
-// ── Helpers ────────────────────────────────────────────────────────────
-
-function mergeResults(results: ValidationResult[]): ValidationResult {
-  const errors   = results.flatMap(r => r.errors)
-  const warnings = results.flatMap(r => r.warnings)
-  const infos    = results.flatMap(r => r.infos)
-  return { valid: errors.length === 0, errors, warnings, infos }
-}
 
 // Re-export types for convenience
 export type { ValidationSeverity, ValidationCode, ValidationError, ValidationResult }

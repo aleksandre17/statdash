@@ -3,7 +3,7 @@
 //  The DESUGARING layer of the data-reference model (adr_data_reference_
 //  render_vision, R3 / fault line F-A). The DataSpec union carries a handful
 //  of CONVENIENCE discriminants that are authoring affordances over the few
-//  orthogonal primitives (`query` · `transform` · `by-mode`). This module is
+//  orthogonal primitives (`query` · `transform`). This module is
 //  the single, pure rewrite that lowers a convenience spec to its EQUIVALENT
 //  primitive form so the engine resolves ONE set of primitives.
 //

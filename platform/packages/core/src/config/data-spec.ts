@@ -9,7 +9,6 @@
 
 import type { CtxRef, DimVal, ObsQuery } from '../sdmx'
 import type { LocaleString }     from '../i18n/types'
-import type { ModeId }                   from '../mode/types'
 import type { EncodingSpec }              from '../data/encoding'
 import type { TransformStep }             from '../data/transform'
 
@@ -125,7 +124,6 @@ export interface TimeDimensionSpec {
 //  'timeseries' — single measure × time range.
 //  'growth'     — YoY growth rates. Multi-code → pivot table.
 //  'ratio-list' — each row = measure / denominator × 100.
-//  'by-mode'    — branch on timeMode.
 //  'pivot'      — wide→long shorthand (sugar for transform + melt).
 //  'transform'  — full declarative pipeline (Vega-Lite transform analogue).
 //
@@ -178,7 +176,6 @@ export type DataSpec =
       /** First-class time concept [ADR R5]. See timeseries (additive, Postel). */
       timeDimension?: TimeDimensionSpec }
   | { type: 'ratio-list'; pairs: { code: string; denom: string; label?: string }[]; pipe?: TransformStep[] }
-  | { type: 'by-mode';    modes: Record<ModeId, DataSpec> }
   | { type: 'pivot'
       rows:        Record<string, DimVal>[]
       keyField:    string

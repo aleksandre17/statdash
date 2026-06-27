@@ -66,17 +66,6 @@
           "type": "object",
           "properties": {
             "type": {
-              "const": "by-mode"
-            }
-          },
-          "required": [
-            "type"
-          ]
-        },
-        {
-          "type": "object",
-          "properties": {
-            "type": {
               "const": "pivot"
             }
           },

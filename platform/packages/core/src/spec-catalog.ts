@@ -99,19 +99,6 @@ export const SPEC_CATALOG: Record<string, SpecDescriptor> = {
     example: '{ "type": "ratio-list", "pairs": [{ "code": "EXP", "denom": "GDP", "label": "ექსპორტი/მშპ" }] }',
   },
 
-  'by-mode': {
-    label:            { ka: 'რეჟიმის მიხედვით', en: 'By Mode' },
-    description:      {
-      ka: 'timeMode-ზე განშტოება — ყოველ ModeId-ს ცალკე DataSpec.',
-      en: 'Branch on timeMode — a separate DataSpec per ModeId.',
-    },
-    constructorReady: true,
-    fields: [
-      { key: 'modes', label: { ka: 'რეჟიმები', en: 'Modes' }, description: { ka: 'Record<ModeId, DataSpec> — "year" და/ან "range" კლავიშები.', en: 'Record<ModeId, DataSpec> — "year" and/or "range" keys.' }, required: true, type: 'Record<ModeId, DataSpec>' },
-    ],
-    example: '{ "type": "by-mode", "modes": { "year": { "type": "row-list", "rows": [...] }, "range": { "type": "timeseries", "code": "GDP", "years": "all" } } }',
-  },
-
   'pivot': {
     label:            { ka: 'პივოტი',   en: 'Pivot' },
     description:      {

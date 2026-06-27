@@ -50,14 +50,13 @@ const BESPOKE_STEP_FORMS = new Set(['derive', 'lookup', 'sort', 'filter'])
  * [V2] this is EVERY non-`custom` discriminant — the full authoring surface:
  *   query/timeseries/growth/ratio-list  — scalar/list editors (V0–V1)
  *   row-list                            — RowListEditor (RowSpec[] via the Inspector)
- *   by-mode                             — ByModeEditor (recursive per-ModeId DataSpecEditor)
  *   transform                           — TransformEditor (PipelineBuilder + EncodingEditor)
  *   pivot                               — PivotEditor (friendly rows/keyField/valueFields/colors)
  * Only `custom` (a code-resolver ref) remains JSON-only — PERMANENT.
  */
 const DATASPEC_EDITORS = new Set([
   'query', 'timeseries', 'growth', 'ratio-list',
-  'row-list', 'by-mode', 'transform', 'pivot',
+  'row-list', 'transform', 'pivot',
 ])
 
 /**
@@ -129,7 +128,6 @@ const COVERAGE_TODO = {
     // dedicated editor rendered through DataSpecEditor:
     //   row-list  → RowListEditor    (RowSpec[] authored via the generic Inspector,
     //                                 schema carried in the engine rowspec registry)
-    //   by-mode   → ByModeEditor      (recursive per-ModeId DataSpecEditor reuse)
     //   transform → TransformEditor   (PipelineBuilder + EncodingEditor + JSON source)
     //   pivot     → PivotEditor       (friendly rows/keyField/valueFields/colors)
     // The allowlist is down to `custom` only — a type without an editor now FAILS.

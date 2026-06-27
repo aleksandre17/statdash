@@ -39,9 +39,9 @@ export function setupCanvasRegistry(): void {
   if (done) return
   done = true
 
-  // Modes drive timeMode-aware nodes (mode-bar, by-mode DataSpec). The canvas
-  // renders with a staticStore so no data flows, but mode metadata must exist
-  // for the shells to resolve their labels without throwing.
+  // Modes drive timeMode-aware nodes (mode-bar). The canvas renders with a
+  // staticStore so no data flows, but mode metadata must exist for the shells
+  // to resolve their labels without throwing.
   modeRegistry.register({ id: 'year',    label: 'წლიური',    icon: 'calendar',       dataKey: 'year'    })
   modeRegistry.register({ id: 'range',   label: 'დინამიკა',  icon: 'calendar-range', dataKey: 'range'   })
   modeRegistry.register({ id: 'compare', label: 'შედარება',  icon: 'git-compare',    dataKey: 'compare' })

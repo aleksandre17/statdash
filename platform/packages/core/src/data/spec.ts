@@ -73,14 +73,14 @@ export function interpretSpec(
   // Tag uses the ORIGINAL spec — observability reflects authored intent, not the
   // lowered primitive.
   if (_observer) {
-    _observer(_specTag(spec, ctx), ctx, rows)
+    _observer(_specTag(spec), ctx, rows)
   }
 
   return rows
 }
 
 // _specTag is a logging concern — used only by the observability seam above.
-function _specTag(spec: DataSpec, ctx: SectionContext): string {
+function _specTag(spec: DataSpec): string {
   switch (spec.type) {
     case 'query': {
       const m = spec.query.measure
@@ -93,8 +93,6 @@ function _specTag(spec: DataSpec, ctx: SectionContext): string {
       const c = spec.code
       return `${spec.type}[${Array.isArray(c) ? c[0] : c}]`
     }
-    case 'by-mode':
-      return `by-mode[${ctx.timeMode}]`
     default:
       return spec.type
   }
@@ -122,12 +120,6 @@ export function extractRequirements(
   spec = desugar(spec)
 
   switch (spec.type) {
-
-    case 'by-mode': {
-      const active = spec.modes[ctx.timeMode] ?? spec.modes[Object.keys(spec.modes)[0]!]
-      if (!active) return []
-      return extractRequirements(active, ctx)
-    }
 
     case 'row-list':
       // Resolve each ref through the SSOT seam so prefetch warms the underlying

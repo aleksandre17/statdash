@@ -117,7 +117,7 @@ describe('DataSpec growth — round-trip', () => {
 
 // ── remaining branches ────────────────────────────────────────────────────────
 
-describe('DataSpec ratio-list / by-mode / pivot / transform / custom — round-trip', () => {
+describe('DataSpec ratio-list / pivot / transform / custom — round-trip', () => {
 
   it('ratio-list with pipe', () => expectRoundTrip<DataSpec>({
     type:  'ratio-list',
@@ -126,14 +126,6 @@ describe('DataSpec ratio-list / by-mode / pivot / transform / custom — round-t
       { code: 'B2A3G', denom: 'B1G' },
     ],
     pipe: [{ op: 'sort', by: 'value', dir: 'desc' }],
-  }))
-
-  it('by-mode — branches on timeMode', () => expectRoundTrip<DataSpec>({
-    type:  'by-mode',
-    modes: {
-      year:  { type: 'row-list', rows: [{ code: 'B1G' }] },
-      range: { type: 'timeseries', code: 'B1G', years: 'all' },
-    },
   }))
 
   it('pivot — wide→long shorthand', () => expectRoundTrip<DataSpec>({
@@ -167,7 +159,6 @@ describe('DataSpec ratio-list / by-mode / pivot / transform / custom — round-t
       { type: 'timeseries', code: 'B1G', years: 'all' },
       { type: 'growth',     code: 'B1G', years: [2020, 2021] },
       { type: 'ratio-list', pairs: [{ code: 'D1', denom: 'B1G' }] },
-      { type: 'by-mode',    modes: { year: { type: 'row-list', rows: [] }, range: { type: 'timeseries', code: 'B1G', years: 'all' } } },
       { type: 'pivot',      rows: [], keyField: 'geo', valueFields: ['value'] },
       { type: 'transform',  source: [], steps: [], encoding: { label: 'time' } },
       { type: 'custom',     fn: 'myFn' },

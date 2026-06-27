@@ -87,18 +87,6 @@ describe('FF-METRIC-NAMES-STORE — a metric routes a referencing spec to its st
     expect(specDataSource(spec)).toBe('regional')
   })
 
-  it('by-mode unions every branch (ctx-independent routing)', () => {
-    // raw-code branch first; the metric branch still contributes its store.
-    const spec = {
-      type: 'by-mode',
-      modes: {
-        year:  { type: 'timeseries', code: 'B1G',        years: [2023] },
-        range: { type: 'timeseries', code: 'metric:gdp', years: [2023] },
-      },
-    } as DataSpec
-    expect(specDataSource(spec)).toBe('gdp')
-  })
-
   it('specMeasureRefs enumerates raw + metric refs in deterministic order', () => {
     expect(specMeasureRefs({ type: 'ratio-list',
       pairs: [{ code: 'metric:gdp', denom: 'B1G' }] })).toEqual(['metric:gdp', 'B1G'])
