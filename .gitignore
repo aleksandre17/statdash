@@ -44,3 +44,7 @@ pipeline_extracted.txt
 *.sln
 *.sw?
 work/live-shots/
+work/sweep/
+work/gdp-sections-probe.js
+work/kpi-probe.js
+work/treemap-probe.js
