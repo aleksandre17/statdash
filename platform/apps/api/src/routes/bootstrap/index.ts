@@ -38,6 +38,7 @@ import {
   type DatasourceInstanceConfig,
 } from '@statdash/engine'
 import { relationExists } from '../../lib/relation-exists.js'
+import { redactDataSourceConfig } from '../../lib/redact.js'
 
 // ── Manifest envelope ─────────────────────────────────────────────────────────
 //
@@ -291,7 +292,10 @@ export const bootstrapRoutes: FastifyPluginAsync = async (app) => {
       id:     r.name,
       kind:   r.type,
       ...(r.url != null ? { url: r.url } : {}),
-      params: r.config,
+      // API-08 — redact at this public serialization boundary: the anonymous boot
+      // client never receives a credential-bearing config field (same seam as the
+      // /api/data-sources read).
+      params: redactDataSourceConfig(r.config),
     }))
 
     const manifest: SiteManifest = {

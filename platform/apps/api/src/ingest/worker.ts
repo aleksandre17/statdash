@@ -80,7 +80,9 @@ async function claimNext(db: Queryable, log: IngestLogger): Promise<ClaimedSubmi
       await client.query('ROLLBACK')
       return null
     }
-    await client.query(`UPDATE stats_stage.submission SET status = 'parsing' WHERE id = $1`, [claimed.id])
+    // Stamp claimed_at = now() with the status flip (API-02): the visibility-timeout
+    // marker the boot reclaim sweep reads to recover a row stranded by a worker crash.
+    await client.query(`UPDATE stats_stage.submission SET status = 'parsing', claimed_at = now() WHERE id = $1`, [claimed.id])
     await client.query('COMMIT')
     log.info({ id: claimed.id, kind: claimed.kind }, 'ingest worker: claimed submission')
     return claimed
@@ -112,9 +114,11 @@ async function processOne(db: Queryable, sub: ClaimedSubmission, log: IngestLogg
     // Validation outcome → terminal staging status. error-severity ⇒ rejected
     // (cannot publish); otherwise staged (ready for the approval gate).
     const status = preview.canPublish ? 'staged' : 'rejected'
+    // Clear the claim stamp on the terminal staging transition — the row is no
+    // longer in-flight, so it must not look stranded to the reclaim sweep (API-02).
     await client.query(
       `UPDATE stats_stage.submission
-          SET status = $2, staged_at = now(), staged_count = $3, issue_count = $4
+          SET status = $2, staged_at = now(), staged_count = $3, issue_count = $4, claimed_at = NULL
         WHERE id = $1`,
       [sub.id, status, staged.count, issues.length],
     )
@@ -123,7 +127,7 @@ async function processOne(db: Queryable, sub: ClaimedSubmission, log: IngestLogg
   } catch (err) {
     await client.query('ROLLBACK').catch(() => {})
     await db.query(
-      `UPDATE stats_stage.submission SET status = 'failed', error_detail = $2 WHERE id = $1`,
+      `UPDATE stats_stage.submission SET status = 'failed', error_detail = $2, claimed_at = NULL WHERE id = $1`,
       [sub.id, errMsg(err)],
     ).catch(() => {})
     log.error({ id: sub.id, error: errMsg(err) }, 'ingest worker: submission failed')

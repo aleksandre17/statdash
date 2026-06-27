@@ -55,11 +55,12 @@
 // displays.ts decision (no @fastify/multipart for a single curator route). A raw
 // binary upload is the dependency-free equivalent of the multipart 'file' field.
 
-import type { FastifyPluginAsync } from 'fastify'
+import type { FastifyPluginAsync, FastifyInstance, FastifyRequest, FastifyReply } from 'fastify'
 import { createHash } from 'node:crypto'
 import { ok, HttpError } from '../../lib/http.js'
-import { problem, alreadyPublished } from '../../lib/problem.js'
+import { problem, alreadyPublished, tooManyRequests } from '../../lib/problem.js'
 import { authPlugin } from '../../auth.js'
+import { BulkheadRejectedError, createBulkhead, type Bulkhead } from '../../lib/bulkhead.js'
 import {
   createSubmission, AlreadyPublishedError, fetchActiveLocales, precheckContractCompat,
   mintDatasetVersion,
@@ -96,10 +97,21 @@ const PARSER_VERSION = 'canonical-workbook@1'
 // headroom for a multi-sheet workbook while bounding a hostile upload (fail-fast).
 const MAX_UPLOAD_BYTES = 25 * 1024 * 1024
 
+// Retry-After (seconds) advertised when the ingest bulkhead sheds a request: the
+// drive is fast, so a short backoff lets a legitimate caller retry promptly.
+const INGEST_SHED_RETRY_AFTER_SECONDS = 5
+
 // The in-process FSM drive (readStatus / driveToStaged / submitToGold) + KindJob live
 // in ./canonical-fsm-drive.js — this file is the HTTP boundary + orchestration only.
 
-export const canonicalRoutes: FastifyPluginAsync = async (app) => {
+// The bulkhead is injected at the app layer (index.ts) so it is ONE semaphore
+// shared across all uploads. It defaults to an unbounded passthrough for tests /
+// offline use (no shedding) — production always wires a bounded instance.
+const PASSTHROUGH_BULKHEAD: Bulkhead = createBulkhead({
+  name: 'ingest-passthrough', maxConcurrent: Number.MAX_SAFE_INTEGER, maxQueue: 0,
+})
+
+export const canonicalRoutes = (bulkhead: Bulkhead = PASSTHROUGH_BULKHEAD): FastifyPluginAsync => async (app) => {
   await app.register(authPlugin)
 
   // ── octet-stream body parser (scoped to this plugin) ────────────────────────
@@ -114,7 +126,34 @@ export const canonicalRoutes: FastifyPluginAsync = async (app) => {
   )
 
   // ── POST / — upload a canonical workbook → up to 3 ordered submissions ──────-
+  // BULKHEAD (API-11): the whole synchronous drive (parse → stage → publish
+  // reference → stage facts) runs under a bounded-concurrency semaphore so a burst
+  // of large uploads cannot saturate the event loop + pg pool. Beyond N concurrent
+  // + a small queue, the request is LOAD-SHED with a 429 (Retry-After), fail-fast,
+  // rather than piling onto an overloaded server.
   app.post('/', { onRequest: async (req) => requireWrite(req.jwtPayload?.roles) }, async (req, reply) => {
+    try {
+      return await bulkhead.run(() => handleCanonicalUpload(app, req, reply))
+    } catch (err) {
+      if (err instanceof BulkheadRejectedError) {
+        throw tooManyRequests(
+          'ingest is saturated — too many concurrent uploads; retry shortly',
+          INGEST_SHED_RETRY_AFTER_SECONDS,
+          'INGEST_BUSY',
+        )
+      }
+      throw err
+    }
+  })
+}
+
+// The upload handler proper — extracted so the route registration stays a thin
+// bulkhead wrapper. Returns the 202 reply or throws an RFC 9457 Problem.
+async function handleCanonicalUpload(
+  app: FastifyInstance,
+  req: FastifyRequest,
+  reply: FastifyReply,
+): Promise<unknown> {
     const buffer = req.body
     if (!Buffer.isBuffer(buffer) || buffer.length === 0) {
       throw new HttpError(400, 'empty body — POST the .xlsx bytes as application/octet-stream')
@@ -291,5 +330,4 @@ export const canonicalRoutes: FastifyPluginAsync = async (app) => {
       // codelist-only / non-versioned ingest (the panel keys its "new version" UX on it).
       ...(versionMint ? { versionMint } : {}),
     }))
-  })
 }

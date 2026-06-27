@@ -27,13 +27,14 @@ const EmbedParamsSchema = z.object({
   expiresAt:   z.number().int().positive().optional(),
 })
 
-const CreateSnapshotBody = z.object({
+// Exported as the OpenAPI SSOT (API-16) — the doc is generated FROM these.
+export const CreateSnapshotBody = z.object({
   snapshot: SnapshotShape,
   embed:    EmbedParamsSchema.optional(),
 })
 
-const TokenParams = z.object({ token: z.string().min(1) })
-const SigQuery    = z.object({ sig: z.string().min(1) })
+export const TokenParams = z.object({ token: z.string().min(1) })
+export const SigQuery    = z.object({ sig: z.string().min(1) })
 
 // The store outlives any single request and is shared by both routes, so it is
 // created once at the app layer (index.ts) and injected here — a port, not a
@@ -57,7 +58,7 @@ export const snapshotsRoutes = (
     const token = mintToken()
     const sig   = sign(token, env.EMBED_SECRET)
 
-    store.set(token, {
+    await store.set(token, {
       // The boundary schema guaranteed generatedAt + passthrough, which is exactly
       // the PageDataSnapshot DTO this layer stores. No cast: the shapes align.
       snapshot:  body.snapshot satisfies PageDataSnapshot,
@@ -101,7 +102,7 @@ export const embedRoutes = (store: SnapshotStore): FastifyPluginAsync => async (
       throw new HttpError(403, 'Invalid embed signature')
     }
 
-    const stored = store.get(token)
+    const stored = await store.get(token)
     if (!stored) throw notFound('Snapshot')
 
     const { expiresAt } = stored.params

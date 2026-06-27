@@ -6,7 +6,9 @@ import { issueToken } from '../../lib/auth.js'
 import { env } from '../../env.js'
 import { findUserByUsername, verifyPassword, hasAdminUser } from '../../lib/users.js'
 
-const LoginBody = z.object({
+// Exported as the OpenAPI SSOT for the login request body (API-16): the doc is
+// generated FROM this schema, never a hand-written parallel copy.
+export const LoginBody = z.object({
   username: z.string().min(1),
   password: z.string().min(1),
 })

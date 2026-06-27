@@ -20,6 +20,7 @@
 
 import type { FastifyPluginAsync } from 'fastify'
 import { ok } from '../../lib/http.js'
+import { redactDataSourceConfig } from '../../lib/redact.js'
 
 /** Public projection of a connected data source — the minimal surface the client binds a store to. */
 export interface PublicDataSourceRow {
@@ -32,8 +33,10 @@ export interface PublicDataSourceRow {
 export const publicDataSourcesRoutes: FastifyPluginAsync = async (app) => {
   // GET /api/data-sources — connected sources only, minimal projection.
   // No auth: this is the boot-time read for the public dashboard. The SELECT
-  // itself enforces both the status filter and the column projection, so the
-  // narrowing is at the data boundary, not a post-query map a future edit could drop.
+  // enforces the status filter and column projection; the config JSONB is then
+  // REDACTED (API-08) at this serialization boundary so no credential-bearing
+  // field (the auth envelope / any token/secret/apiKey) ever reaches the anonymous
+  // client — defense in depth even though today's sources carry no secrets.
   app.get('/', async () => {
     const { rows } = await app.pg.query<PublicDataSourceRow>(
       `SELECT name, type, url, config
@@ -41,6 +44,6 @@ export const publicDataSourcesRoutes: FastifyPluginAsync = async (app) => {
         WHERE status = 'connected'
         ORDER BY name ASC`,
     )
-    return ok(rows)
+    return ok(rows.map((r) => ({ ...r, config: redactDataSourceConfig(r.config) })))
   })
 }

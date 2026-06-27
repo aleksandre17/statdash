@@ -75,7 +75,7 @@ async function buildBoundaryApp(): Promise<{ app: FastifyInstance; adminJwt: str
   const app = Fastify()
   registerProblemErrorHandler(app)
   app.decorate('pg', fakeLocalePg() as never)
-  await app.register(canonicalRoutes, { prefix: '/api/ingest/canonical' })
+  await app.register(canonicalRoutes(), { prefix: '/api/ingest/canonical' })
   await app.ready()
 
   return {
@@ -198,7 +198,7 @@ dbSuite('POST /api/ingest/canonical — route contract (live DB, txn-rolled-back
     registerProblemErrorHandler(app)
     // app.pg forwards to OUR single per-test client (no .connect — the worker no-ops).
     app.decorate('pg', { query: (...a: unknown[]) => (client.query as (...x: unknown[]) => unknown)(...a) } as never)
-    await app.register(canonicalRoutes, { prefix: '/api/ingest/canonical' })
+    await app.register(canonicalRoutes(), { prefix: '/api/ingest/canonical' })
     await app.ready()
     adminJwt = issueToken('admin', env.JWT_SECRET, undefined, ['admin'])
   })

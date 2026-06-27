@@ -27,8 +27,22 @@ export function registerProblemErrorHandler(
     else app.log.warn(error)
 
     const body = problem.toProblemDetails(req.url)
+    // Correlation: stamp the request id (x-request-id propagated or minted, see
+    // lib/observability.ts) into the problem body so a client can quote ONE id
+    // that also appears on every server log line for the request (req.log binds
+    // reqId). Closes the log↔error loop without the client parsing headers.
+    if (req.id) body['requestId'] = req.id
     if (opts.includeStack && error instanceof Error && error.stack) {
       body['stack'] = error.stack
+    }
+
+    // RFC 9110 §10.2.3 Retry-After on a 429: a Problem carrying retryAfterSeconds
+    // (rate-limit / bulkhead load-shed) sets the standard header here, ONE place,
+    // so every throw site just throws tooManyRequests(detail, n, code) and the
+    // header follows automatically (no per-route header plumbing).
+    const retryAfter = problem.extensions['retryAfterSeconds']
+    if (typeof retryAfter === 'number') {
+      reply.header('retry-after', String(Math.ceil(retryAfter)))
     }
 
     // Serialize ourselves and set the content-type via header so the RFC 9457

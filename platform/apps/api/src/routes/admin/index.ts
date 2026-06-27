@@ -22,7 +22,8 @@ import type { AuditLogger } from '../../lib/audit-log.js'
 
 // limit: default 50, capped at 500 to bound response size. coerce so ?limit=10
 // (a string in the query) becomes a number; reject non-positive / non-integer.
-const AuditLogQuery = z.object({
+// Exported as the OpenAPI SSOT (API-16) — the doc is generated FROM this schema.
+export const AuditLogQuery = z.object({
   limit: z.coerce.number().int().positive().max(500).default(50),
 })
 
@@ -40,7 +41,7 @@ export const adminRoutes = (audit: AuditLogger): FastifyPluginAsync => async (ap
   // GET /audit-log — most-recent-first audit entries (default 50, max 500).
   app.get('/audit-log', async (req) => {
     const { limit } = parseQuery(AuditLogQuery, req.query)
-    return ok(audit.recent(limit))
+    return ok(await audit.recent(limit))
   })
 
   // /export/* — config → provisioning-manifest export (P2-5). Registered in a

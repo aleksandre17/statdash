@@ -27,6 +27,7 @@ export type { VersionMintPlan, VersionMintResult, DsdDimension } from './version
 export { publishBundle } from './publish-bundle.js'
 export type { PublishBundleResult } from './publish-bundle.js'
 export { runIngestionWorker } from './worker.js'
+export { reclaimStrandedSubmissions, DEFAULT_STALE_AFTER_MS } from './reclaim.js'
 export { createSubmission, contentHash, AlreadyPublishedError } from './submit.js'
 export type { CreateSubmissionArgs, SubmissionProvenance } from './submit.js'
 export {

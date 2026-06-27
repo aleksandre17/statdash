@@ -68,6 +68,13 @@ export const PROBLEM_REGISTRY = {
   },
   /** 410 — the resource existed but is permanently gone (expired embed token). */
   gone: { urn: 'gone', title: 'Gone', status: 410 },
+  /**
+   * 429 — the client exceeded a rate budget OR a bounded resource (the ingest
+   * bulkhead) is saturated and the request was load-shed. Carries a `Retry-After`
+   * response header (set at the throw site) and a `code` extension that
+   * distinguishes the cause (RATE_LIMITED vs INGEST_BUSY) for the client.
+   */
+  'too-many-requests': { urn: 'too-many-requests', title: 'Too many requests', status: 429 },
   /** 500 — an unexpected server fault. The fallback for any non-Problem throw. */
   internal: { urn: 'internal', title: 'Internal server error', status: 500 },
 } as const satisfies Record<string, ProblemDef>
@@ -161,6 +168,20 @@ export const alreadyPublished = (existingJobId: string): Problem =>
 export const gone = (detail: string): Problem =>
   new Problem('gone', detail)
 
+/**
+ * 429 — rate budget exceeded or a bounded resource is saturated (load-shed). The
+ * caller sets the `Retry-After` response header from `retryAfterSeconds`; here it
+ * also rides as a typed extension member so a JSON-only client can read it without
+ * parsing headers. `code` names the cause (RATE_LIMITED | INGEST_BUSY) so the
+ * client can back off differently for a per-IP throttle vs a server-busy shed.
+ */
+export const tooManyRequests = (
+  detail: string,
+  retryAfterSeconds: number,
+  code: 'RATE_LIMITED' | 'INGEST_BUSY',
+): Problem =>
+  new Problem('too-many-requests', detail, { code, retryAfterSeconds })
+
 /** 400 — well-formed but semantically invalid. */
 export const badRequest = (detail: string): Problem =>
   new Problem('bad-request', detail)
@@ -220,6 +241,7 @@ function kindForStatus(status: number): ProblemKind {
     case 404: return 'not-found'
     case 409: return 'conflict'
     case 410: return 'gone'
+    case 429: return 'too-many-requests'
     default:  return status >= 500 ? 'internal' : 'bad-request'
   }
 }

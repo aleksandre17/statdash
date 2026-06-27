@@ -43,6 +43,17 @@ const schema = z.object({
     .enum(['true', 'false'])
     .default('false')
     .transform((v) => v === 'true'),
+  // ── Rate limiting + load shedding (API-11) — per-IP budgets, 12-Factor config.
+  // Defaults: tight on login (anti-brute-force), moderate on the expensive ingest
+  // upload, generous global so the public reads tolerate a real dashboard's burst.
+  RATE_LIMIT_AUTH_PER_MIN:   z.coerce.number().int().positive().default(5),
+  RATE_LIMIT_INGEST_PER_MIN: z.coerce.number().int().positive().default(20),
+  RATE_LIMIT_GLOBAL_PER_MIN: z.coerce.number().int().positive().default(300),
+  // ── Ingest bulkhead (API-11/API-14) — bounded concurrency on the synchronous
+  // canonical drive. At most N uploads run at once; a small queue absorbs a burst;
+  // beyond that, uploads are load-shed (429) rather than saturating the pg pool.
+  INGEST_MAX_CONCURRENT:     z.coerce.number().int().positive().default(2),
+  INGEST_MAX_QUEUE:          z.coerce.number().int().nonnegative().default(8),
 })
   // Production secret gate — fail-fast, LOUD, at boot (not at first embed request).
   //

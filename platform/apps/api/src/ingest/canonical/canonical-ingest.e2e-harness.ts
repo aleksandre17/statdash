@@ -76,7 +76,7 @@ export async function bootHarness(databaseUrl: string): Promise<E2eHarness> {
   const app = Fastify()
   registerProblemErrorHandler(app)
   app.decorate('pg', pool as never) // the REAL pool — .connect() is live (worker/publish)
-  await app.register(canonicalRoutes, { prefix: '/api/ingest/canonical' })
+  await app.register(canonicalRoutes(), { prefix: '/api/ingest/canonical' })
   await app.register(ingestRoutes(), { prefix: '/api/ingest' })
   await app.register(cubeRoutes, { prefix: '/api/cube' })
   await app.register(statsRoutes(), { prefix: '/api/stats' })

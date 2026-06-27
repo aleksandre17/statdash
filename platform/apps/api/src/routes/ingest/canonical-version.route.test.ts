@@ -75,7 +75,7 @@ dbSuite('POST /api/ingest/canonical — versioned DSD change (live DB)', () => {
     app = Fastify()
     registerProblemErrorHandler(app)
     app.decorate('pg', pool as never) // REAL pool — worker/mint/publish open their own txns
-    await app.register(canonicalRoutes, { prefix: '/api/ingest/canonical' })
+    await app.register(canonicalRoutes(), { prefix: '/api/ingest/canonical' })
     await app.register(ingestRoutes(), { prefix: '/api/ingest' })
     await app.ready()
     adminJwt = issueToken('admin', env.JWT_SECRET, undefined, ['admin'])
