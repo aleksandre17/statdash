@@ -40,7 +40,6 @@ describe('buildStaticContext() — shape', () => {
     expect(ctx).toHaveProperty('fallbackLocale')
     expect(ctx).toHaveProperty('perspectiveKey')
     expect(ctx).toHaveProperty('perspective')
-    expect(ctx).toHaveProperty('effects')
   })
 
   it('passes sectionCtx dims through + seeds the perspectiveState SSOT', () => {
@@ -99,10 +98,6 @@ describe('buildStaticContext() — defaults (minimal input)', () => {
 
   it('perspectiveKey defaults to "mode"', () => {
     expect(buildStaticContext(MINIMAL_INPUT).perspectiveKey).toBe('mode')
-  })
-
-  it('effects defaults to empty array', () => {
-    expect(buildStaticContext(MINIMAL_INPUT).effects).toEqual([])
   })
 
   it('pageStoreKey defaults to undefined', () => {
@@ -186,13 +181,6 @@ describe('buildStaticContext() — caller overrides', () => {
     const vars = { threshold: 100 }
     const ctx  = buildStaticContext({ ...MINIMAL_INPUT, vars })
     expect(ctx.vars).toBe(vars)
-  })
-
-  it('overrides effects', () => {
-    const effects = [{ type: 'sync-filters' as const, params: {} }]
-    // @ts-expect-error — Effect shape is engine-internal; cast is safe for the override test
-    const ctx = buildStaticContext({ ...MINIMAL_INPUT, effects })
-    expect(ctx.effects).toBe(effects)
   })
 
   it('overrides perspective entirely', () => {

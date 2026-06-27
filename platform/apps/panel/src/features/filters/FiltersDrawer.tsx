@@ -13,7 +13,7 @@
 //      page.meta.filterSchema, which the page round-trip already carries LOSSLESS
 //      (canvasPageAdapter structural pass-through, P-3) — validateConfig unaffected.
 //
-//  YAGNI (this slice): the advanced top-level keys effects / crossValidate /
+//  YAGNI (this slice): the advanced top-level keys crossValidate /
 //  context / computed are PRESERVED verbatim (setBarParams never touches them) but
 //  not yet authored here — surfacing the bars + ParamDefs is the core "build the
 //  filters" need. A later slice adds their builders behind the same Inspector seam.

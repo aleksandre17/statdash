@@ -202,11 +202,18 @@ function resolveTrend(
 //  declarative replacement for the retired `mode: 'year'|'range'|'both'` union:
 //    • `when` present → evalVisibility (perspective-is/in/not/and/or/…),
 //    • `when` ABSENT  → visible in every perspective (the old `'both'`).
-//  `evalVisibility`'s filterParams arg is `ctx.dims` (a perspective-* op ignores it;
-//  this keeps the predicate general for any future fr-reading `when`).
-function kpiVisible(spec: KpiSpec, ctx: SectionContext): boolean {
+//  `evalVisibility`'s `fr` (filter-param) arg is the SAME surface `renderNode` passes
+//  for a node's `view.visibleWhen` — `ctx.filterParams` (the raw URL filter Record),
+//  NOT `ctx.dims`. This keeps the visibility SSOT uniform: an `eq`/`isset`/`in` `when`
+//  resolves identically on a kpi card and on a node (a perspective-* op ignores `fr`
+//  and reads `perspectiveState`, so today's perspective-only `when` is unaffected).
+function kpiVisible(
+  spec:         KpiSpec,
+  ctx:          SectionContext,
+  filterParams: Record<string, unknown>,
+): boolean {
   if (!spec.when) return true
-  return evalVisibility(spec.when, ctx.dims, ctx.perspectiveState)
+  return evalVisibility(spec.when, filterParams, ctx.perspectiveState)
 }
 
 // ── Public API ────────────────────────────────────────────────────────
@@ -242,12 +249,13 @@ export function interpretKpi(
 }
 
 export function interpretKpis(
-  specs:  KpiSpec[],
-  ctx:    SectionContext,
-  store:  DataStore,
+  specs:        KpiSpec[],
+  ctx:          SectionContext,
+  store:        DataStore,
+  filterParams: Record<string, unknown> = {},
 ): KpiDef[] {
   return specs
-    .filter((s) => kpiVisible(s, ctx))
+    .filter((s) => kpiVisible(s, ctx, filterParams))
     .map((s) => interpretKpi(s, ctx, store))
 }
 
@@ -275,8 +283,9 @@ export function interpretKpis(
 //  so a metric ref expands to its underlying codes exactly as the read will.
 //
 export function extractKpiRequirements(
-  specs: KpiSpec[],
-  ctx:   SectionContext,
+  specs:        KpiSpec[],
+  ctx:          SectionContext,
+  filterParams: Record<string, unknown> = {},
 ): Requirement[] {
   const out: Requirement[] = []
 
@@ -336,7 +345,7 @@ export function extractKpiRequirements(
   }
 
   for (const spec of specs) {
-    if (!kpiVisible(spec, ctx)) continue   // SAME predicate as interpretKpis — warm === render
+    if (!kpiVisible(spec, ctx, filterParams)) continue   // SAME predicate (+fr) as interpretKpis — warm === render
     fromValue(spec.value, ctx)
     if (spec.trend) fromTrend(spec.trend, ctx)
   }

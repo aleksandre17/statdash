@@ -16,7 +16,8 @@
 
 import React, { createElement, type ReactNode } from 'react'
 import { renderToStaticMarkup }          from 'react-dom/server'
-import type { PerspectiveContext, DataStore, SectionContext, Effect } from '@statdash/engine'
+import type { PerspectiveContext, DataStore, SectionContext } from '@statdash/engine'
+import { LEGACY_MODE_PARAM }            from '@statdash/engine'
 import type { NavSection }                                     from '../navUtils'
 import { EventBus }                      from '../../events/EventBus'
 import type { PlatformEventMap }         from '../../events/events'
@@ -69,7 +70,6 @@ export interface StaticRenderContext {
   fallbackLocale: string
   perspectiveKey: string
   perspective:    PerspectiveContext
-  effects:        Effect[]
   /** Visual theme for the snapshot — forwarded to `ctx.theme` and the
    *  `data-theme` attribute on the outermost element. Optional ⇒ 'default'. */
   theme?:         'default' | 'high-contrast'
@@ -140,7 +140,7 @@ export function buildStaticContext(
   const presentation: PagePresentation | undefined =
     input.presentation ?? (Object.keys(legacyPresentation).length ? legacyPresentation : undefined)
 
-  const perspectiveKey = input.perspectiveKey ?? 'mode'
+  const perspectiveKey = input.perspectiveKey ?? LEGACY_MODE_PARAM
   // perspective: default the active id from any seeded perspectiveState, else 'year'.
   const perspective = input.perspective ?? {
     current:   input.sectionCtx.perspectiveState?.[perspectiveKey] ?? 'year',
@@ -170,7 +170,6 @@ export function buildStaticContext(
     fallbackLocale: input.fallbackLocale ?? 'en',
     perspectiveKey,
     perspective,
-    effects:    input.effects    ?? [],
     crumbs:     input.crumbs,
     presentation,
     navContext: input.navContext,
@@ -196,7 +195,6 @@ export function buildStaticContext(
  *   locale: appLocale, fallbackLocale: 'en',
  *   perspectiveKey: 'mode',
  *   perspective: { current: 'year', available: [], set: () => {} },
- *   effects: [],
  * })
  * ```
  */
@@ -273,7 +271,6 @@ export function renderPageToHTML(
     fallbackLocale: staticCtx.fallbackLocale,
     perspectiveKey: staticCtx.perspectiveKey,
     perspective:    staticCtx.perspective,
-    effects:        staticCtx.effects,
     navContext:     staticNavContext,
     theme:          staticCtx.theme,
     auth:           staticCtx.auth,
@@ -304,7 +301,7 @@ export function renderPageToHTML(
   // GlobalStateProvider default is a no-op store — no provider needed.
   const wrapped = createElement(
     FiltersProvider,
-    { value: { bars: [], perspectiveKey: staticCtx.perspectiveKey, effects: staticCtx.effects } },
+    { value: { bars: [], perspectiveKey: staticCtx.perspectiveKey } },
     createElement(
       PageStoreProvider,
       { store: pageStore },

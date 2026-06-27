@@ -263,7 +263,6 @@ function walkNode(
  *   locale: appLocale, fallbackLocale: 'en',
  *   perspectiveKey: 'mode',
  *   perspective: { current: 'year', available: [], set: () => {} },
- *   effects: [],
  * })
  * ```
  */

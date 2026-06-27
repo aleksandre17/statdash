@@ -61,7 +61,7 @@ export function toBarViews(schema: FilterSchemaInput | undefined): BarView[] {
 /**
  * Write an edited bar's controls back into a FilterSchemaInput, preserving every
  * OTHER bar, the bar's own non-filter config, and all advanced top-level keys
- * (effects / crossValidate / context / computed) verbatim — additive, lossless.
+ * (crossValidate / context / computed) verbatim — additive, lossless.
  */
 export function setBarParams(
   schema: FilterSchemaInput | undefined,

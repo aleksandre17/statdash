@@ -188,7 +188,6 @@ export type {
   CascadeNode,
   Condition, WhenMap,
   ValidatorPredicate, Validator, CrossValidator,
-  Effect,
   ParamHidden, ParamYearSelect, ParamCascade, ParamSelect,
   ParamRange, ParamMultiSelect, ParamChipSelect, ParamDef,
   BarDef, BarsConfig,
@@ -208,7 +207,7 @@ export type {
 }                                                                        from './config/filter'
 export { evalCondition, evalWhen, evalValidatorPredicate, validators,
          autoParse, isVisible, isEnabled,
-         validateField, applyCrossValidation, applyEffects,
+         validateField, applyCrossValidation,
          evalFilterDerive, setFilterDeriveObserver,
          resolveDefaults, validateCascadeValues }                        from './config/filter'
 

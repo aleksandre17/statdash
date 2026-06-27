@@ -28,7 +28,8 @@ import {
 import { GlobalStateProvider }         from '../context/GlobalState'
 import { resolveDataLinks }           from '@statdash/engine'
 import { parsePerspectiveAxes, scopeCtxByPerspective,
-         perspectiveOwnedParamKeys, perspectiveOptions } from '@statdash/engine'
+         perspectiveOwnedParamKeys, perspectiveOptions,
+         LEGACY_MODE_PARAM } from '@statdash/engine'
 import { FiltersProvider }             from '../context/FiltersContext'
 import { evalVarMap }                  from './evalVarMap'
 import { EventBus }                    from '../events/EventBus'
@@ -96,7 +97,10 @@ const NodePageRendererInner = memo(function NodePageRendererInner({
   //  timeBinding ⇒ empty ownership ⇒ the gate resolves every non-owned param exactly.
   const { state, set: filterSet, setMany } = useFilter()
 
-  const perspectiveKeyPre = page.perspectives ? Object.keys(page.perspectives)[0] ?? 'mode' : 'mode'
+  // The page's axis param = the first key of `page.perspectives` (the axis SSOT). A
+  // page with no declared axis falls back to the conventional axis-param constant
+  // (LEGACY_MODE_PARAM — never a raw 'mode' literal, Law 1); inert as a Record slot.
+  const perspectiveKeyPre = (page.perspectives && Object.keys(page.perspectives)[0]) || LEGACY_MODE_PARAM
   const axes = useMemo(
     () => parsePerspectiveAxes({ perspectives: page.perspectives }),
     [page.perspectives],
@@ -115,13 +119,12 @@ const NodePageRendererInner = memo(function NodePageRendererInner({
   const {
     ctx: rawSectionCtx,
     raw,
-    effects,
     bars,
   } = useFilterState(page.filterSchema ?? null, pageStore, ownership)
 
   const filtersCtx = useMemo(
-    () => ({ bars, perspectiveKey, effects }),
-    [bars, perspectiveKey, effects],
+    () => ({ bars, perspectiveKey }),
+    [bars, perspectiveKey],
   )
 
   // ── Perspective axis [VISION #3] ─────────────────────────────────────────
@@ -178,6 +181,15 @@ const NodePageRendererInner = memo(function NodePageRendererInner({
       ? evalVarMap(page.vars, { filterParams: mergedFilterParams, vars: {}, stores, pageStoreKey: page.storeKey })
       : {} as Record<string, unknown>,
     [page.vars, page.storeKey, mergedFilterParams, stores],
+  )
+
+  // ctx.filterParams — the visibility/eval surface threaded into RenderContext.
+  // Memoized for a STABLE reference: renderNode reads it for `view.visibleWhen`
+  // and useKpiRows reads it for kpi `when` (the SAME SSOT surface), so an unstable
+  // per-render object would thrash those memos. (vars layer over the raw params.)
+  const filterParams = useMemo(
+    () => ({ ...mergedFilterParams, ...vars }),
+    [mergedFilterParams, vars],
   )
 
   const navSections = useMemo(() => {
@@ -275,13 +287,12 @@ const NodePageRendererInner = memo(function NodePageRendererInner({
     sectionCtx,
     stores,
     pageStoreKey: page.storeKey,
-    filterParams: { ...mergedFilterParams, ...vars },
+    filterParams,
     set,
     vars,
     locale,
     fallbackLocale,
     perspectiveKey,
-    effects,
     perspective,
     extensions,
     eventBus,

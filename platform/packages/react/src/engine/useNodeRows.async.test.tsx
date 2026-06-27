@@ -44,7 +44,6 @@ function makeCtx(store: DataStore, extraDims?: Record<string, unknown>): RenderC
     fallbackLocale: 'en',
     perspectiveKey: 'mode',
     perspective:           { current: 'year', available: [], set: () => {} },
-    effects:        [],
     rows:           [],
     eventBus:       { publish: () => {}, subscribe: () => () => {} } as unknown as RenderContext['eventBus'],
     set:            () => {},

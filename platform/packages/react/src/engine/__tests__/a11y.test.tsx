@@ -76,7 +76,6 @@ function makeCtx(stores: Record<string, DataStore>): RenderContext {
     fallbackLocale: 'en',
     perspectiveKey: 'mode',
     perspective,
-    effects:        [],
     extensions:     new ExtensionRegistry(),
     ui:             createDefaultUI(),
     eventBus:       { publish: () => {}, subscribe: () => () => {} } as unknown as RenderContext['eventBus'],

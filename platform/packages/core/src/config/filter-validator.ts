@@ -73,24 +73,6 @@ export interface CrossValidator {
   attachTo?: string
 }
 
-// ── Effect — reactive side-effect on filter change ───────────────────────────
-//
-//  When a filter value changes and `when` evaluates to true, `set` mutations
-//  are applied atomically.
-//
-//  Commercial equivalents:
-//    Grafana   — chained template variables (${region} change resets ${city})
-//    AppSmith  — widget event handlers (onChange → resetWidget)
-//    Retool    — component event handlers (onChange → setValue)
-//
-//  set values are static strings — 100% JSON-serializable, Constructor-authorable.
-//
-
-export interface Effect {
-  when: WhenMap
-  set:  Record<string, string>
-}
-
 /** Collect cross-field validation errors, returning a key → message map. */
 export function applyCrossValidation(
   crossValidate: CrossValidator[],
@@ -109,27 +91,4 @@ export function applyCrossValidation(
     }
   }
   return extra
-}
-
-/**
- * Apply effects triggered by a filter change, writing all mutations atomically.
- *
- * setMany is injected by the caller (React hook) — function stays pure/testable.
- */
-export function applyEffects(
-  key:     string,
-  value:   string,
-  raw:     Record<string, string>,
-  effects: Effect[],
-  setMany: (m: Record<string, string>) => void,
-): void {
-  const projected = { ...raw, [key]: value }
-  const mutations: Record<string, string> = { [key]: value }
-  for (const effect of effects) {
-    if (evalWhen(effect.when, projected)) {
-      for (const [k, v] of Object.entries(effect.set))
-        mutations[k] = v
-    }
-  }
-  setMany(mutations)
 }

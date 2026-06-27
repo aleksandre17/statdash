@@ -43,7 +43,7 @@ export type {
   ParamDef, ParamHidden, ParamYearSelect, ParamCascade,
   ParamSelect, ParamRange, ParamMultiSelect, ParamChipSelect,
   ChipOption, SelectOption, OptionsSource, ChipSource, YearsSource,
-  Validator, CrossValidator, Effect, Condition, WhenMap,
+  Validator, CrossValidator, Condition, WhenMap,
   CascadeNode, ContextMapping,
   FilterBarNode, BarNode, ParamNode, FilterDerive, VarMap,
   ParamHiddenNode, ParamYearSelectNode, ParamCascadeNode, ParamSelectNode,

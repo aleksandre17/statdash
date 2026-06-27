@@ -3,7 +3,7 @@
 //  Pins the editor-boundary adapter: the stored MAP form ⇄ the ordered ParamNode[]
 //  view is LOSSLESS (an unedited schema round-trips byte-identical), order is
 //  preserved on reorder, and add/edit/remove rebuild the map without touching any
-//  OTHER bar or the advanced top-level keys (effects / crossValidate / context).
+//  OTHER bar or the advanced top-level keys (crossValidate / context).
 //
 import { describe, it, expect } from 'vitest'
 import type { FilterSchemaInput } from '@statdash/engine'
@@ -25,7 +25,7 @@ const schema: FilterSchemaInput = {
       filters: { mode: { type: 'hidden', default: 'year' } },
     },
   },
-  effects: [{ when: { region: 'GE' }, set: { mode: 'range' } } as never],
+  crossValidate: [{ fields: ['year'], check: { year: 'isset' }, message: 'required' } as never],
 }
 
 describe('filterSchemaModel — flat⇄node adapters (V0)', () => {
@@ -49,7 +49,7 @@ describe('filterSchemaModel — flat⇄node adapters (V0)', () => {
     for (const v of views) rebuilt = setBarParams(rebuilt, v.id, v.params)
     expect(rebuilt).toEqual(schema)
     // Advanced top-level keys are preserved verbatim.
-    expect(rebuilt.effects).toEqual(schema.effects)
+    expect(rebuilt.crossValidate).toEqual(schema.crossValidate)
   })
 
   it('add appends a control to one bar and leaves other bars untouched', () => {
@@ -58,7 +58,7 @@ describe('filterSchemaModel — flat⇄node adapters (V0)', () => {
     const next = setBarParams(schema, 'main', added)
     expect(Object.keys(next.bars.main.filters)).toEqual(['year', 'region', 'sector'])
     expect(next.bars.other).toEqual(schema.bars.other)   // untouched
-    expect(next.effects).toEqual(schema.effects)         // untouched
+    expect(next.crossValidate).toEqual(schema.crossValidate)  // untouched
   })
 
   it('reorder reflects the new order in the rebuilt map', () => {

@@ -71,7 +71,7 @@ function kpiDepKey(reqs: Requirement[], specs: KpiSpec[], dims: Record<string, u
  * synchronously. NodeErrorBoundary (in renderNode) catches a rejected warm.
  */
 export function useKpiRows(specs: KpiSpec[], ctx: RenderContext): KpiDef[] {
-  const { sectionCtx } = ctx
+  const { sectionCtx, filterParams } = ctx
   const store = useMemo(
     () => resolveStore(ctx),
     // resolveStore reads only stores + pageStoreKey — keying on those keeps the
@@ -83,14 +83,19 @@ export function useKpiRows(specs: KpiSpec[], ctx: RenderContext): KpiDef[] {
 
   // Always-computed (hooks rules): for sync stores this is the result; for async
   // stores its reqs feed the promise-cache key (the synchronous read runs later).
+  // `filterParams` is the SAME visibility surface renderNode passes for node
+  // `view.visibleWhen` — threaded into the kpi `when` predicate so the SSOT holds
+  // uniformly (kpiVisible). SiteRenderer memoizes ctx.filterParams for a stable ref,
+  // so these memos don't thrash; BOTH the warm (reqs) and render (syncKpis) sites read
+  // the SAME value, preserving warm === render.
   const reqs = useMemo<Requirement[]>(
-    () => { try { return extractKpiRequirements(specs, sectionCtx) } catch { return [] } },
-    [specs, sectionCtx],
+    () => { try { return extractKpiRequirements(specs, sectionCtx, filterParams) } catch { return [] } },
+    [specs, sectionCtx, filterParams],
   )
 
   const syncKpis = useMemo(
-    () => (isSync ? interpretKpis(specs, sectionCtx, store) : null),
-    [isSync, specs, sectionCtx, store],
+    () => (isSync ? interpretKpis(specs, sectionCtx, store, filterParams) : null),
+    [isSync, specs, sectionCtx, store, filterParams],
   )
 
   // ── Fast-lane: sync stores (every Phase-1 store) — promise cache untouched ──
@@ -135,7 +140,7 @@ export function useKpiRows(specs: KpiSpec[], ctx: RenderContext): KpiDef[] {
       const failed = results.find(r => r.state === 'error')
       if (failed) throw new Error(failed.error ?? 'kpi warm failed')
       // Cache warm — interpretKpis' storeVal reads now resolve synchronously.
-      return interpretKpis(specs, sectionCtx, store)
+      return interpretKpis(specs, sectionCtx, store, filterParams)
     })
 
     if (_promiseCache.size >= CACHE_MAX) {

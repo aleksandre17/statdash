@@ -68,7 +68,6 @@ describe('SSR fast-lane — renderPageToJSON uses only querySync (N34 risk #1)',
       fallbackLocale: 'en',
       perspectiveKey: 'mode',
       perspective:    { current: 'year', available: [], set: () => {} },
-      effects:        [],
     }
 
     renderPageToJSON(asPage({ type: 'inner-page', children: [] }), ctx)
@@ -87,7 +86,6 @@ describe('SSR fast-lane — renderPageToJSON uses only querySync (N34 risk #1)',
       fallbackLocale: 'en',
       perspectiveKey: 'mode',
       perspective:    { current: 'year', available: [], set: () => {} },
-      effects:        [],
     }
 
     const page = asPage({
@@ -115,7 +113,6 @@ describe('SSR fast-lane — renderPageToJSON uses only querySync (N34 risk #1)',
       fallbackLocale: 'en',
       perspectiveKey: 'mode',
       perspective:    { current: 'year', available: [], set: () => {} },
-      effects:        [],
     }
 
     const page = asPage({
@@ -150,7 +147,6 @@ describe('SSR fast-lane — renderPageToJSON uses only querySync (N34 risk #1)',
       fallbackLocale: 'en',
       perspectiveKey: 'mode',
       perspective:    { current: 'year', available: [], set: () => {} },
-      effects:        [],
     }
 
     renderPageToJSON(asPage({
@@ -177,7 +173,6 @@ describe('SSR fast-lane — renderPageToJSON uses only querySync (N34 risk #1)',
       fallbackLocale: 'en',
       perspectiveKey: 'mode',
       perspective:    { current: 'year', available: [], set: () => {} },
-      effects:        [],
     }
 
     renderPageToJSON(asPage({

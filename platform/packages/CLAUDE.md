@@ -26,10 +26,9 @@ DataSpec → interpretSpec(spec, ctx, store) → DataRow[]
 ```ts
 defineFilters({
   bars: { barId: { position: 'sticky'|'float', order?: number, filters: { key: ParamDef } } },
-  effects?:       Effect[],
   crossValidate?: CrossValidator[],
   computed?:      DeriveMap,
-  context?:       { timeMode, dims },
+  context?:       { dims },
   store?:         DataStore,
 })
 // Returns: bars · typed values · ctx · errors · isLoading

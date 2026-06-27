@@ -25,10 +25,11 @@ import { describe, it, expect } from 'vitest'
 import {
   perspectiveOptions, activeIdForAxis,
   interpretKpis, extractKpiRequirements,
-  resolveLocaleString,
+  resolveLocaleString, evalVisibility,
 } from '../index'
 import type {
   PerspectiveAxis, KpiSpec, SectionContext, DataStore, EngineRow, StoreQuery,
+  VisibilityExpr,
 } from '../index'
 
 // ── The geostat single axis (ka labels+icons === manifest.modes) ──────────────
@@ -161,5 +162,52 @@ describe('P5.2 (2) — KpiSpec.when replaces KpiSpec.mode (warm === render)', ()
 
   it('no card carries a `mode` field — the privileged union is gone from the authoring', () => {
     for (const s of SPECS) expect('mode' in s).toBe(false)
+  })
+})
+
+// ── kpi `when` uses the SAME context surface as renderNode (visibility SSOT) ──────
+//
+//  renderNode gates a node's `view.visibleWhen` with `evalVisibility(expr,
+//  ctx.filterParams, ctx.sectionCtx.perspectiveState)`. The kpi `when` predicate
+//  (kpiVisible, via interpretKpis/extractKpiRequirements) MUST evaluate against the
+//  SAME `fr` surface — `filterParams`, NOT `ctx.dims` — so a future non-perspective
+//  kpi `when` (eq/isset/in) behaves identically on a card and on a node. This pins
+//  that agreement; before the fix the kpi path read `ctx.dims` and would diverge.
+
+describe('kpi `when` agrees with renderNode visibility (same fr surface)', () => {
+  // An eq-card gated on a RAW filter param (`region`), plus an unconditional card.
+  const EQ_WHEN: VisibilityExpr = { op: 'eq', param: 'region', is: 'GE' }
+  const EQ_SPECS: KpiSpec[] = [
+    { id: 'geo', label: 'GEO', unit: '', color: '#000', when: EQ_WHEN,
+      value: { type: 'point', measure: 'GEO', format: 'mln_gel' } },
+    { id: 'b', label: 'B', unit: '', color: '#000',
+      value: { type: 'point', measure: 'B', format: 'mln_gel' } },
+  ]
+  // dims.region is DELIBERATELY conflicting ('XX') to prove the predicate reads
+  // filterParams, not dims. (perspectiveState present but irrelevant to an eq op.)
+  const ctx: SectionContext = { dims: { region: 'XX' }, perspectiveState: { mode: 'year' } }
+
+  it('the eq-card shows iff filterParams.region === "GE" (reads filterParams, not dims)', () => {
+    const show = interpretKpis(EQ_SPECS, ctx, STUB_STORE, { region: 'GE' }).map(k => k.label)
+    const hide = interpretKpis(EQ_SPECS, ctx, STUB_STORE, { region: 'XX' }).map(k => k.label)
+    expect(show).toEqual(['GEO', 'B'])   // filterParams matches ⇒ visible
+    expect(hide).toEqual(['B'])          // filterParams differs ⇒ hidden (dims='XX' is NOT consulted)
+  })
+
+  it('warm (extractKpiRequirements) gates on the SAME filterParams — no warm/render drift', () => {
+    const warmShow = new Set(extractKpiRequirements(EQ_SPECS, ctx, { region: 'GE' }).map(r => r.code))
+    const warmHide = new Set(extractKpiRequirements(EQ_SPECS, ctx, { region: 'XX' }).map(r => r.code))
+    expect([...warmShow].sort()).toEqual(['B', 'GEO'])
+    expect([...warmHide].sort()).toEqual(['B'])
+  })
+
+  it('kpi visibility === the literal renderNode call evalVisibility(expr, filterParams, ps)', () => {
+    // The exact expression+surface renderNode passes; the kpi card is visible iff this is.
+    for (const fp of [{ region: 'GE' }, { region: 'XX' }, {}]) {
+      const renderNodeResult = evalVisibility(EQ_WHEN, fp, ctx.perspectiveState)
+      const kpiVisible = interpretKpis(EQ_SPECS, ctx, STUB_STORE, fp)
+        .some(k => k.label === 'GEO')
+      expect(kpiVisible).toBe(renderNodeResult)
+    }
   })
 })

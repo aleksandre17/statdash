@@ -59,7 +59,6 @@ function ctxFor(
     fallbackLocale: 'en',
     perspectiveKey: 'mode',
     perspective: { current: activeView, available: [], set: () => {} },
-    effects:        [],
   }
 }
 

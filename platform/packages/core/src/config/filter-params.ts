@@ -273,12 +273,11 @@ export type BarsConfig = Record<string, BarDef>
 //  Retool:  global variables — components bind to page-level state.
 //
 
-import type { CrossValidator, Effect } from './filter-validator'
+import type { CrossValidator } from './filter-validator'
 
 export interface FilterSchemaInput {
   bars:           Record<string, BarDef>
   context?:       ContextMapping
-  effects?:       Effect[]
   crossValidate?: CrossValidator[]
 }
 

@@ -47,7 +47,6 @@ function makeCtx(auth?: AuthContext): RenderContext {
     fallbackLocale: 'en',
     perspectiveKey: 'mode',
     perspective,
-    effects:        [],
     ...(auth ? { auth } : {}),
     extensions:     new ExtensionRegistry(),
     ui:             createDefaultUI(),

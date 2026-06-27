@@ -197,7 +197,6 @@ function makeRowCtx(store: DataStore, locale: string): RenderContext {
     fallbackLocale: 'en',
     perspectiveKey: 'mode',
     perspective:           { current: 'year', available: [], set: () => {} },
-    effects:        [],
     rows:           [],
     eventBus:       { publish: () => {}, subscribe: () => () => {} } as unknown as RenderContext['eventBus'],
     set:            () => {},

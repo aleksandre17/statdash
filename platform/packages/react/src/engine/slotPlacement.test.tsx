@@ -36,7 +36,6 @@ function makeCtx(): RenderContext {
     fallbackLocale: 'en',
     perspectiveKey: 'mode',
     perspective:           { current: 'year', available: [], set: () => {} },
-    effects:        [],
     eventBus:       { publish: () => {}, subscribe: () => () => {} } as unknown as RenderContext['eventBus'],
     set:            () => {},
     resolveLinks:   () => [],

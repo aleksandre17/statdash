@@ -22,7 +22,6 @@ import type {
   DataRow,
   SelectOption,
   ChipOption,
-  Effect,
   PerspectiveContext,
   FieldConfig,
   DataLinkDef,
@@ -72,7 +71,6 @@ export interface RenderContext {
    */
   auth?:         AuthContext
   paramOptions?: number[] | SelectOption[] | ChipOption[]
-  effects:       Effect[]
   rows?:         DataRow[]
   /** Active UI theme — shells may adapt contrast/colour (N44). */
   theme?:        'default' | 'high-contrast'

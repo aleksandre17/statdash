@@ -58,7 +58,6 @@ function makeStaticCtx(
       available: [],
       set:       () => {},
     },
-    effects: [],
   }
 }
 

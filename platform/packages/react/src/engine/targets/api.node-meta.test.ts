@@ -33,7 +33,6 @@ const staticCtx: StaticRenderContext = {
     available: [],
     set:       () => {},
   },
-  effects: [],
 }
 
 function asPage(obj: object): NodePageConfig {

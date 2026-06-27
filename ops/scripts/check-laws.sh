@@ -131,6 +131,20 @@ if [[ -z "$TARGET" ]]; then
   check_ts "Law 5: No console.log in packages/engine (use observer seam)" \
     'console\.log' "$ENGINE/src"
 
+  # Retirement lock (Law 6 / Lehman) — the orphaned filter-effect subsystem
+  # (`Effect` type · `applyEffects` · `schema.effects` · the RenderContext/FiltersCtx
+  # threading) was deleted WHOLESALE: P6 removed its only caller (System A), leaving a
+  # caller-less mechanism where a declared `schema.effects` was a SILENT no-op (a
+  # footgun, not a feature). Lock it out so it cannot silently return (same spirit as
+  # the perspective grep-zero acceptance). The three tokens hit the function, the
+  # `Effect[]` type (incl. a reintroduced `effects?: Effect[]` field), and `.effects`
+  # property access — never the unrelated word "side-effect" in a comment.
+  check_ts "Retired: no applyEffects / Effect[] / .effects filter-effect subsystem in engine" \
+    'applyEffects\|Effect\[\]\|\.effects\b' "$ENGINE/src"
+
+  check_ts "Retired: no applyEffects / Effect[] / .effects filter-effect subsystem in react" \
+    'applyEffects\|Effect\[\]\|\.effects\b' "$REACT/src"
+
 else
   check_ts "Law 1: No privileged dimensions" \
     'ctx\.\(year\|regionId\|region\b\)' "$TARGET"

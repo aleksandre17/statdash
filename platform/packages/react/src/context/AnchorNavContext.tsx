@@ -1,5 +1,6 @@
 
 import { createContext, useContext, useEffect, useRef, useState } from 'react'
+import { LEGACY_MODE_PARAM }                                       from '@statdash/engine'
 import { stickyOffset }                                            from '../engine/navUtils'
 import type { NavSection }                                         from '../engine/navUtils'
 
@@ -20,7 +21,9 @@ interface AnchorNavCtxValue {
 const AnchorNavCtx = createContext<AnchorNavCtxValue>({
   sections:    [],
   activeId:    null,
-  perspectiveKey: 'mode',
+  // Default-context fallback only (a real provider always supplies the axis key);
+  // the SSOT conventional-axis param, never a raw 'mode' literal (Law 1).
+  perspectiveKey: LEGACY_MODE_PARAM,
 })
 
 export function AnchorNavProvider({

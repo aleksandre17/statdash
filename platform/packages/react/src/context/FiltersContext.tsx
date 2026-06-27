@@ -9,15 +9,18 @@
 
 import { createContext, useContext }  from 'react'
 import type { ReactNode }             from 'react'
-import type { BarNode, Effect }       from '@statdash/engine'
+import type { BarNode }               from '@statdash/engine'
+import { LEGACY_MODE_PARAM }          from '@statdash/engine'
 
 export interface FiltersCtx {
   bars:        BarNode[]
   perspectiveKey: string
-  effects:     Effect[]
 }
 
-const EMPTY: FiltersCtx = { bars: [], perspectiveKey: 'mode', effects: [] }
+// No-axis fallback key: the conventional perspective-axis param name (SSOT, never a
+// raw 'mode' literal — Law 1). Inert when no `page.perspectives` is declared; the
+// key is a Record slot, never branched on.
+const EMPTY: FiltersCtx = { bars: [], perspectiveKey: LEGACY_MODE_PARAM }
 
 const Ctx = createContext<FiltersCtx>(EMPTY)
 

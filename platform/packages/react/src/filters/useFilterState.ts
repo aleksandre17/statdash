@@ -10,9 +10,9 @@
 import { useMemo, useCallback } from 'react'
 import { useFilter }                     from '../context/FilterContext'
 import type { SectionContext, DimVal } from '@statdash/engine'
-import type { Effect, FilterSchemaInput }        from '@statdash/engine'
+import type { FilterSchemaInput }                from '@statdash/engine'
 import type { DataStore }                        from '@statdash/engine'
-import { autoParse, resolveDefaults }            from '@statdash/engine'
+import { autoParse, resolveDefaults, LEGACY_MODE_PARAM } from '@statdash/engine'
 import { resolveYears, resolveOptions }          from '@statdash/engine'
 import type { ParamDef, ParamCascadeNode, CascadeNode } from '@statdash/engine'
 import type { ParamYearSelect, ParamSelect, ParamMultiSelect, ParamHidden } from '@statdash/engine'
@@ -26,7 +26,6 @@ export interface FilterState {
   ctx:            SectionContext
   raw:            Record<string, string>
   perspectiveKey: string
-  effects:        Effect[]
   bars:           BarNode[]
   /** True when one or more Tier 3 (OptionsDefault) defaults are still loading. */
   isLoading:      boolean
@@ -51,8 +50,6 @@ function schemaToBarNodes(schema: FilterSchemaInput | null | undefined): BarNode
 }
 
 // ── Stable fallbacks ──────────────────────────────────────────────────
-
-const NO_EFFECTS: Effect[] = []
 
 // Minimal SectionContext stub used when resolving Tier 3 option defaults.
 // At this point the real context hasn't been computed yet (chicken-and-egg):
@@ -143,13 +140,9 @@ export function useFilterState(
     [flatParams, store],
   )
 
-  // Pass 1 — resolve DefaultSpec for every param whose key is absent in URL state.
+  // Resolve DefaultSpec for every param whose key is absent in URL state.
   //   Tier 1 (literal DimVal) and Tier 3 (OptionsDefault) are resolved here.
   //   Tier 2 (ExprVal) is resolved in topological order inside resolveDefaults.
-  //   Pass 2 (re-resolving after effects null a key) is a follow-up task: effects
-  //   are applied by the caller (SiteRenderer) after this hook returns, so any
-  //   key they set to null would need a second resolveDefaults call on the next
-  //   render — tracked as Step 3.2d.
   const { dims: resolvedDims, pendingKeys } = useMemo(
     () => resolveDefaults(defaultParams, state, getOptions),
     [defaultParams, state, getOptions],
@@ -207,13 +200,13 @@ export function useFilterState(
   }, [ctxKey])
 
   // The conventional perspective-axis URL param. Page-level `perspectives` may name
-  // it; SiteRenderer overrides with the actual axis key. Default 'mode' (the
-  // conventional time-axis param) so a no-axis page still has a stable key.
-  const perspectiveKey = 'mode'
-  const effects        = schema?.effects ?? NO_EFFECTS
+  // it; SiteRenderer overrides with the actual axis key. Defaults to the SSOT
+  // conventional axis param (LEGACY_MODE_PARAM — never a raw 'mode' literal, Law 1)
+  // so a no-axis page still has a stable key.
+  const perspectiveKey = LEGACY_MODE_PARAM
   const bars           = useMemo(() => schemaToBarNodes(schema), [schema])
 
-  return { ctx, raw, perspectiveKey, effects, bars, isLoading }
+  return { ctx, raw, perspectiveKey, bars, isLoading }
 }
 
 // ── isAlwaysResolve — bar-independent default predicate ──────────────────

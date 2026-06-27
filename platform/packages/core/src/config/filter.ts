@@ -5,8 +5,8 @@
 //
 //  Sub-modules:
 //    filter-condition.ts  — Condition, WhenMap, evalCondition, evalWhen
-//    filter-validator.ts  — Validator, validators, CrossValidator, Effect,
-//                           applyCrossValidation, applyEffects
+//    filter-validator.ts  — Validator, validators, CrossValidator,
+//                           applyCrossValidation
 //    filter-params.ts     — CascadeNode, ParamDef union, BarDef, FilterSchemaInput,
 //                           ContextMapping, NodeDef-based types
 //    filter-derive.ts     — FilterDerive, DeriveContext, evalFilterDerive,
@@ -17,9 +17,9 @@
 export type { Condition, WhenMap }                    from './filter-condition'
 export { evalCondition, evalWhen }                    from './filter-condition'
 
-export type { ValidatorPredicate, Validator, CrossValidator, Effect } from './filter-validator'
+export type { ValidatorPredicate, Validator, CrossValidator } from './filter-validator'
 export { evalValidatorPredicate, validators,
-         applyCrossValidation, applyEffects }         from './filter-validator'
+         applyCrossValidation }                       from './filter-validator'
 
 export type {
   CascadeNode,

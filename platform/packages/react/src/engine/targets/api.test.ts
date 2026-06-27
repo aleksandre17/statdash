@@ -21,7 +21,7 @@ import type { NodePageConfig }           from '../types'
 //  Only the fields that renderPageToJSON / walkNode consume:
 //    - sectionCtx  (passed through to the snapshot + to interpretSpec)
 //    - stores      (resolveStore reads this)
-//    - filterParams / vars / locale / fallbackLocale / perspectiveKey / perspective / effects
+//    - filterParams / vars / locale / fallbackLocale / perspectiveKey / perspective
 //      are carried by StaticRenderContext but not read by renderPageToJSON itself;
 //      they are included to satisfy the type.
 //
@@ -41,7 +41,6 @@ const staticCtx: StaticRenderContext = {
     available: [],
     set:       () => {},
   },
-  effects: [],
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
