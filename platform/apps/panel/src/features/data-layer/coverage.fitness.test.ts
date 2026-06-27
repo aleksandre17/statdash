@@ -32,6 +32,7 @@ import { describe, it, expect } from 'vitest'
 import {
   listTransformOps, getTransformStepSchema, getParamSchema,
   isVisibilityOpAuthorable,
+  listPerspectiveScopeKeys, getPerspectiveScopeKeySchema,
   DATASPEC_DISCRIMINANTS, PARAMDEF_TYPES, VISIBILITY_OPS,
 } from '@statdash/engine'
 
@@ -86,6 +87,21 @@ function visibilityOpAuthorable(op: string): boolean {
   return isVisibilityOpAuthorable(op)
 }
 
+/**
+ * PerspectiveScope keys are surfaced exactly like transform ops / ParamDefs / Vis ops
+ * [VISION #3 / SYNTHESIS §1.4]: a scope key is authorable iff it CARRIES an authoring
+ * PropSchema in the engine perspective-scope-key registry (getPerspectiveScopeKeySchema),
+ * which the Perspectives pane (P-final) renders through the generic Inspector via a
+ * perspectiveScopeSchemaSource — no bespoke per-key form. The registry IS the surface
+ * set: a key registered (timeBinding/metric) is surfaced by construction; a future
+ * deferred key (store/dims/blend/facet) is NOT enumerated until it registers (a new
+ * door = a register() call, OCP) — so the gate cannot silently drift, and the deferred
+ * keys are a VISIBLE roadmap in COVERAGE_TODO.perspectiveScope below.
+ */
+function perspectiveScopeKeyAuthorable(key: string): boolean {
+  return getPerspectiveScopeKeySchema(key) != null
+}
+
 // ── COVERAGE_TODO — the explicit, roadmap-keyed gap allowlist ───────────────────
 //
 //  Each entry: a capability with NO authoring surface yet, tagged with the
@@ -136,6 +152,23 @@ const COVERAGE_TODO = {
     // VisibilityBuilder (VisibilitySection in the node Inspector), bound to the
     // cube-profile / authored ParamDefs / registered modes. The allowlist is empty:
     // an op without a surface now FAILS the gate.
+  },
+  perspectiveScope: {
+    // VISION #3 / SYNTHESIS §1.4 — the page-level PerspectiveAxis scope keys. The
+    // engine perspective-scope-key registry registers `timeBinding` + `metric` TODAY
+    // (the two real keys time-mode needs); both carry an authoring PropSchema → they
+    // are SURFACED by construction (they will render in the Perspectives pane, P-final).
+    //
+    // The DEFERRED scope doors are NOT registered yet (a door opens with a real second
+    // caller — OCP), so they are NOT enumerated by listPerspectiveScopeKeys() and need
+    // NO allowlist entry to keep the gate green. This block is the VISIBLE roadmap of
+    // those doors (documentation, not a live allowlist) so the future is legible:
+    //   store  — multistore-D1   (a perspective reading a different cube)
+    //   dims   — non-time pins    (a perspective pinning a non-time dimension)
+    //   blend  — D3-PLANNER       (a compare/benchmark perspective)
+    //   facet  — faceting door    (RELOCATED to PerspectiveAxis.render, SYNTHESIS §3.2 — NOT a scope key)
+    // Each becomes a registerPerspectiveScopeKey() call when its trigger fires; it then
+    // surfaces automatically and this comment shrinks.
   },
 } as const
 
@@ -195,6 +228,21 @@ describe('Coverage Fitness #1 — every renderer capability is authorable (or an
     expect(gaps, `un-surfaced VisibilityExpr ops not in COVERAGE_TODO: ${gaps.join(', ')}`).toEqual([])
   })
 
+  it('PerspectiveScope keys: each registered key is surfaced OR allowlisted', () => {
+    const keys = listPerspectiveScopeKeys()
+    // Non-vacuous: the registry must be populated (module-init ran; timeBinding+metric).
+    expect(keys.length, 'perspective-scope registry is empty — module-init did not run').toBeGreaterThan(0)
+
+    const gaps: string[] = []
+    for (const k of keys) {
+      const authorable  = perspectiveScopeKeyAuthorable(k)
+      const allowlisted = k in COVERAGE_TODO.perspectiveScope
+      if (!authorable && !allowlisted) gaps.push(k)
+      if (authorable && allowlisted) gaps.push(`${k} (surfaced but still in COVERAGE_TODO — remove it)`)
+    }
+    expect(gaps, `un-surfaced perspective-scope keys not in COVERAGE_TODO: ${gaps.join(', ')}`).toEqual([])
+  })
+
   it('COVERAGE_TODO is keyed to KNOWN union members only (no stale/typo entries)', () => {
     // A stale allowlist entry (a member that no longer exists) is itself drift —
     // catch it so the gap list stays an accurate mirror of the real unions.
@@ -202,10 +250,14 @@ describe('Coverage Fitness #1 — every renderer capability is authorable (or an
     const allSpecs  = new Set<string>(DATASPEC_DISCRIMINANTS)
     const allParams = new Set<string>(PARAMDEF_TYPES)
     const allVis    = new Set<string>(VISIBILITY_OPS)
+    const allScope  = new Set(listPerspectiveScopeKeys())
 
     expect(Object.keys(COVERAGE_TODO.transformOps).filter((o) => !allOps.has(o))).toEqual([])
     expect(Object.keys(COVERAGE_TODO.dataSpecs).filter((d) => !allSpecs.has(d))).toEqual([])
     expect(Object.keys(COVERAGE_TODO.paramDefs).filter((p) => !allParams.has(p))).toEqual([])
     expect(Object.keys(COVERAGE_TODO.visibilityOps).filter((o) => !allVis.has(o))).toEqual([])
+    // perspectiveScope: the allowlist is empty today (deferred keys are doc-only, not
+    // registered) — so any KEY in it must be a registered scope key (a stale/typo guard).
+    expect(Object.keys(COVERAGE_TODO.perspectiveScope).filter((k) => !allScope.has(k))).toEqual([])
   })
 })

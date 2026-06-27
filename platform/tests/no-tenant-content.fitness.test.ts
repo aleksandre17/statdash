@@ -127,6 +127,11 @@ const ALLOW = new Set(
     // one entry of a `row-list` DataSpec (code/label/color/negate/isTotal/pctOf).
     // Not rendering/logic code; an i18n catalog (V2 DataSpec editors).
     'packages/core/src/config/rowspec-schemas.ts',
+    // PerspectiveScope authoring catalog — the SAME class as param-schemas.ts: a
+    // Constructor descriptor carrying bilingual PropField labels the Inspector renders
+    // to author a page-level PerspectiveAxis perspective's scope keys (timeBinding /
+    // metric). Not rendering/logic code; an i18n catalog (VISION #3 Perspectives pane).
+    'packages/core/src/config/perspective-scope-schemas.ts',
     // Data-integrity authoring fragment — the SAME class as the *-schemas catalogs:
     // a Constructor descriptor carrying bilingual PropField labels the Inspector
     // renders so every data panel can author the `preliminary` flag (Law 9). A

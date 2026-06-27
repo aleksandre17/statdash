@@ -24,6 +24,10 @@ import type { StaticRenderContext }       from './html'
 import { resolveStore }                   from '../resolveNodeRows'
 import { collectChildNodes }              from './nodeWalk'
 import { warmPageStore }                  from './warm'
+import type { SnapshotScope }             from './warm'
+import { activeViewGate }                 from './warm'
+import { isNodeVisibleInActiveView }      from './visibilityGate'
+import type { VisibilityGate }            from './visibilityGate'
 
 // ── Output types ─────────────────────────────────────────────────────────
 
@@ -126,6 +130,7 @@ function rollupStatus(entries: NodeDataEntry[]): 'ok' | 'partial' | 'error' {
 function walkNode(
   node:  Record<string, unknown> & { type: string },
   ctx:   StaticRenderContext,
+  gate:  VisibilityGate | undefined,
 ): NodeDataEntry {
   const entry: NodeDataEntry = {
     type:     node['type'],
@@ -135,6 +140,18 @@ function walkNode(
 
   if (typeof node['id'] === 'string') {
     entry.id = node['id']
+  }
+
+  // ── P-opt: active-perspective gate ──────────────────────────────────────
+  // A node hidden by `view.visibleWhen` in the active perspective is NEVER
+  // resolved on the live DOM (renderNode.ts:228 returns null before
+  // resolveNodeRows). Mirror that here: no data resolution, no descent into
+  // the hidden subtree — the entry is status:'empty' (present in the tree but
+  // carrying no frame), exactly the live behaviour. When `gate` is undefined
+  // (`snapshot:'all-perspectives'`) every node resolves = the pre-P-opt union.
+  if (gate && !isNodeVisibleInActiveView(node, gate)) {
+    entry.status = 'empty'
+    return entry
   }
 
   // ── G3: Node metadata (variant, title, specType) ───────────────────────
@@ -209,7 +226,7 @@ function walkNode(
   // ── Recurse into child nodes ───────────────────────────────────────────
   const childNodeObjects = collectChildNodes(node)
   for (const child of childNodeObjects) {
-    entry.children.push(walkNode(child, ctx))
+    entry.children.push(walkNode(child, ctx, gate))
   }
 
   return entry
@@ -229,6 +246,15 @@ function walkNode(
  * Pass `opts.warm: true` to pre-warm the store before walking (useful when
  * the store supports batched prefetch — e.g. CachedStore).
  *
+ * Perspective-aware (P-opt): by default (`opts.snapshot:'active'`) only the
+ * ACTIVE perspective's nodes resolve — a node hidden by `view.visibleWhen` in
+ * the active perspective yields `status:'empty'` with no frame, exactly as the
+ * live DOM never resolves it (`renderNode.ts:228`). This makes the active-view
+ * snapshot render-equivalent to the active-view live render. Pass
+ * `opts.snapshot:'all-perspectives'` to resolve the union of every perspective
+ * (a self-contained export, preserving Law-9 completeness). `snapshot` is a
+ * render-CALL option, not a config field — render-intent (Vision #3 SYNTHESIS).
+ *
  * ```ts
  * const snapshot = renderPageToJSON(myPage, {
  *   sectionCtx: { dims: { time: 2024 }, timeMode: 'year' },
@@ -244,15 +270,18 @@ function walkNode(
 export function renderPageToJSON(
   page:      NodePageConfig,
   staticCtx: StaticRenderContext,
-  opts?:     { warm?: boolean },
+  opts?:     { warm?: boolean; snapshot?: SnapshotScope },
 ): PageDataSnapshot {
   const t0 = Date.now()
 
+  const scope: SnapshotScope = opts?.snapshot ?? 'active'
+  const gate = activeViewGate(staticCtx, scope)
+
   if (opts?.warm) {
-    warmPageStore(page, staticCtx)
+    warmPageStore(page, staticCtx, { snapshot: scope })
   }
 
-  const pageEntry = walkNode(page as unknown as Record<string, unknown> & { type: string }, staticCtx)
+  const pageEntry = walkNode(page as unknown as Record<string, unknown> & { type: string }, staticCtx, gate)
 
   const nodes = [pageEntry]
 

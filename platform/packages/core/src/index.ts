@@ -36,7 +36,25 @@ export { evalNodeDerive }                                                from '.
 
 // ── Mode System ───────────────────────────────────────────────────────
 export type { ModeDef, ModeContext }                                     from './mode/types'
-export { modeRegistry }                                                  from './mode/registry'
+//  perspectiveRegistry is the CANONICAL name (VISION #3); modeRegistry is a
+//  back-compat alias of the SAME singleton (retires in P6). One instance, two names.
+export { modeRegistry, perspectiveRegistry }                             from './mode/registry'
+
+// ── Perspective Axis [VISION #3] — the generic OLAP query-perspective axis ──────
+//  The structural envelope lives in @statdash/contracts (shared by panel/api/core);
+//  core REFINES the opaque blobs (when/available → VisibilityExpr, scope → the two
+//  registered scope-keys). P0 is purely additive — nothing reads these yet (the
+//  ctx-scoping step + axis parser land in P1/P4). A page with no `perspectives`
+//  declared touches none of this (byte-identical render, FF-ONE-VIEW-NO-MACHINERY).
+export type { PerspectiveScope, PerspectiveDef, PerspectiveAxis,
+              PerspectivesByParam }                                      from './config/perspective-axis'
+//  The scope-key registry — the OCP seam (SYNTHESIS §1.4): every scope door is a
+//  registration, not an interface widening. timeBinding + metric registered today;
+//  the coverage gate reads listPerspectiveScopeKeys() directly (the 5th axis).
+export type { PerspectiveScopeKey }                                      from './config/perspective-scope-registry'
+export { registerPerspectiveScopeKey, getPerspectiveScopeKeySchema,
+         listPerspectiveScopeKeys }                                      from './config/perspective-scope-registry'
+import './config/perspective-scope-schemas' // side-effect: register built-in scope-key authoring schemas (timeBinding, metric)
 
 // ── Standard 2: SDMX Observation Model (ISO 17369) ───────────────────
 export type { DimVal, CtxRef, FilterValue, NeRef, NeCtxRef, Observation, ObsQuery } from './sdmx'

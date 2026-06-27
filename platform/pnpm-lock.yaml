@@ -384,6 +384,9 @@ importers:
 
   packages/core:
     dependencies:
+      '@statdash/contracts':
+        specifier: workspace:*
+        version: link:../contracts
       '@statdash/expr':
         specifier: workspace:*
         version: link:../expr

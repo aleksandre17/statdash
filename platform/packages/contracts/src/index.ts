@@ -22,6 +22,7 @@
 
 export * from './json'
 export * from './manifest'
+export * from './perspective-axis'
 export * from './problem'
 export * from './reference-metadata'
 export * from './site'
