@@ -35,9 +35,8 @@ describe('bootstrapSite — fail-soft to generic empty manifest (ADR-0028)', () 
     expect(manifest.indexPageId).toBe('__offline')
     expect(manifest.pages[manifest.indexPageId]).toBeDefined()
 
-    // Tenant-agnostic empty chrome: no nav, no modes, no datasources, no stores.
+    // Tenant-agnostic empty chrome: no nav, no datasources, no stores.
     expect(manifest.nav).toEqual([])
-    expect(manifest.modes).toEqual([])
     expect(manifest.datasources).toEqual([])
     expect(stores).toEqual({})
 

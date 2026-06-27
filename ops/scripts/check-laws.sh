@@ -96,6 +96,30 @@ check_ts() {
   fi
 }
 
+# ── check_zero — strict retirement lock (scans EVERYTHING, incl. comments+tests) ──
+#
+#  Unlike check_ts (which exempts comments + .test. files for the i18n/dim laws),
+#  a RETIREMENT lock must catch a deleted surface returning ANYWHERE — code, a
+#  comment, a test, or a seed JSON. So this scans *.ts/*.tsx/*.json with no comment
+#  or test exclusions: a token that was grep-zeroed cannot creep back under any guise.
+#  Args: label, ERE pattern, then one-or-more paths to scan.
+check_zero() {
+  local label="$1"
+  local pattern="$2"
+  shift 2
+  local results
+  results=$(grep -rnE --include="*.ts" --include="*.tsx" --include="*.json" "$pattern" "$@" 2>/dev/null \
+    | grep -v "^Binary" \
+    | head -10)
+  if [[ -n "$results" ]]; then
+    echo "❌ $label"
+    echo "$results" | sed 's/^/   /'
+    VIOLATIONS=$((VIOLATIONS + 1))
+  else
+    echo "✅ $label"
+  fi
+}
+
 if [[ -z "$TARGET" ]]; then
   ENGINE="$ROOT/platform/packages/core"
   REACT="$ROOT/platform/packages/react"
@@ -144,6 +168,32 @@ if [[ -z "$TARGET" ]]; then
 
   check_ts "Retired: no applyEffects / Effect[] / .effects filter-effect subsystem in react" \
     'applyEffects\|Effect\[\]\|\.effects\b' "$REACT/src"
+
+  # ── Retired System-A island: the site-scoped `modes` perspective registry ──────
+  #
+  #  MED-2 deleted the write-with-no-read `SiteManifestContract.modes` channel: the
+  #  ManifestMode type, the bootstrap serve path (DEFAULT_MODES / site_config 'modes'
+  #  key), the App.tsx consumer, and the runner `modes` field. The perspective-bar
+  #  derives from each page's authored `page.perspectives` axis (the SSOT); the
+  #  Constructor palette fills perspectiveRegistry itself (apps/panel setupCanvasRegistry).
+  #  This is the grep-zero acceptance the P6 System-A claim excluded — it extends the
+  #  lock into the contracts + apps/api + apps/geostat tiers so the `modes` vocabulary
+  #  cannot silently return. (The legitimate `?mode=` URL param + `mode:` hidden filter
+  #  param + `page.perspectives` axis are a DIFFERENT, live surface — not matched here.)
+  #  NOTE: this code lock co-ships with the V35 Flyway DELETE of the orphaned prod row.
+  CONTRACTS="$ROOT/platform/packages/contracts/src"
+  API_SRC="$ROOT/platform/apps/api/src"
+  GEOSTAT_SRC="$ROOT/platform/apps/geostat/src"
+  PROVISIONING="$ROOT/platform/apps/api/provisioning"
+
+  check_zero "Retired System-A: no ManifestMode / DEFAULT_MODES (contracts+api+geostat)" \
+    'ManifestMode|DEFAULT_MODES' "$CONTRACTS" "$API_SRC" "$GEOSTAT_SRC"
+
+  check_zero "Retired System-A: no manifest .modes field access (contracts+api+geostat)" \
+    '\.modes\b' "$CONTRACTS" "$API_SRC" "$GEOSTAT_SRC"
+
+  check_zero "Retired System-A: no site_config 'modes' seed key (provisioning artifact)" \
+    '"key":[[:space:]]*"modes"' "$PROVISIONING"
 
 else
   check_ts "Law 1: No privileged dimensions" \

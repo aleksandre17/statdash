@@ -17,7 +17,7 @@
 //           Retool fetchAppManifest (resources + pages in one bootstrap call).
 //
 import type { SiteManifestContract }                          from '@statdash/contracts'
-import type { DataStore, DatasourceInstanceConfig, PerspectiveOption } from '@statdash/engine'
+import type { DataStore, DatasourceInstanceConfig } from '@statdash/engine'
 import type { NavEntry, I18nConfig, ChromeConfig, ChromeEntry } from '@statdash/react'
 import type { NodePageConfig }                                 from '@statdash/react/engine'
 
@@ -28,15 +28,15 @@ import type { NodePageConfig }                                 from '@statdash/r
 //  (pages/nav/chrome/chromeConfig/i18n) as opaque JSON because the backend must not
 //  own the config schema; HERE — the consumer that DOES own the renderer types — we
 //  REFINE those fields to NodePageConfig / NavEntry / ChromeEntry / ChromeConfig /
-//  I18nConfig. `modes`/`datasources` are likewise narrowed to their engine types
-//  (structurally identical to the contract's ManifestMode / ManifestDatasource).
+//  I18nConfig. `datasources` is likewise narrowed to its engine type
+//  (structurally identical to the contract's ManifestDatasource).
 //  Refine, never re-declare: the envelope is single-sourced; only the blob fields
 //  are tightened. Every field stays plain JSON — the same shape serializes from the
 //  DB and renders here.
 
 export interface SiteManifest extends Omit<
   SiteManifestContract,
-  'pages' | 'nav' | 'chrome' | 'chromeConfig' | 'i18n' | 'modes' | 'datasources'
+  'pages' | 'nav' | 'chrome' | 'chromeConfig' | 'i18n' | 'datasources'
 > {
   /** All page configs — keyed by pageId, drives dynamic routes */
   pages:        Record<string, NodePageConfig>
@@ -48,8 +48,6 @@ export interface SiteManifest extends Omit<
   chromeConfig: ChromeConfig
   /** Locale configuration */
   i18n:         I18nConfig
-  /** Registered perspectives — the boot-time perspective vocabulary (Constructor palette + visibility-leaf picker). */
-  modes:        PerspectiveOption[]
   /** Named datasource descriptors — JSON-serializable; engine.buildStoreManifest(datasources) builds stores. */
   datasources?: DatasourceInstanceConfig[]
 }
@@ -109,7 +107,6 @@ export function emptyManifest(): SiteManifest {
     chrome:       {},
     chromeConfig: {} as ChromeConfig,
     i18n:         { locales: ['en'], defaultLocale: 'en', fallbackLocale: 'en' },
-    modes:        [],
     datasources:  [],
   }
 }

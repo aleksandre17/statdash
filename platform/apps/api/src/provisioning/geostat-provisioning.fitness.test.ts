@@ -53,10 +53,10 @@ describe('committed geostat provisioning artifact (ADR-0026 Phase B)', () => {
     }
   })
 
-  it('carries the 6 site_config keys (decision 1)', () => {
+  it('carries the 5 site_config keys (decision 1)', () => {
     const keys = artifact.siteConfig.map((s) => s.key).sort()
     expect(keys).toEqual(
-      ['chrome', 'chrome_config', 'i18n', 'index_page_id', 'modes', 'nav'].sort(),
+      ['chrome', 'chrome_config', 'i18n', 'index_page_id', 'nav'].sort(),
     )
   })
 

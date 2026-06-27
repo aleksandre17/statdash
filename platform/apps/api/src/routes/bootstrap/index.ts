@@ -18,7 +18,7 @@
 //    - PUBLISHED page versions  (config.page + page_version where is_published),
 //      each forward-migrated via migratePageConfig (lazy migration on read).
 //    - nav tree                 (config.nav_item recursive CTE — same as config/nav).
-//    - site_config key/value    → indexPageId + chrome + chromeConfig + i18n + modes.
+//    - site_config key/value    → indexPageId + chrome + chromeConfig + i18n.
 //    - connected data sources   (config.data_source where status='connected')
 //      → DatasourceInstanceConfig[] (id/kind/url/params).
 //
@@ -27,12 +27,11 @@
 //  api cannot import @statdash/react across the dependency arrow, so the contract
 //  lives in the zero-dep contracts package, not re-declared on each side). The
 //  runner refines the renderer-owned blobs (pages/nav/chrome/i18n) to its precise
-//  types. ManifestMode (the perspective vocabulary) is the contract's own type;
-//  DatasourceInstanceConfig from @statdash/engine is structurally the contract's
-//  ManifestDatasource — assignable without a cast.
+//  types. DatasourceInstanceConfig from @statdash/engine is structurally the
+//  contract's ManifestDatasource — assignable without a cast.
 
 import type { FastifyPluginAsync } from 'fastify'
-import type { SiteManifestContract, ManifestMode } from '@statdash/contracts'
+import type { SiteManifestContract } from '@statdash/contracts'
 import {
   migratePageConfig,
   CURRENT_SCHEMA_VERSION,
@@ -47,7 +46,7 @@ import { relationExists } from '../../lib/relation-exists.js'
 //  stored verbatim in config.*; the backend does not own their inner shape (the
 //  renderer does), so the contract types them as opaque JSON and the runner refines
 //  them. This keeps the delivery surface a pass-through projection, not a second
-//  source of truth for the config schema. `modes`/`datasources` are precise.
+//  source of truth for the config schema. `datasources` is precise.
 
 type JsonRecord = Record<string, unknown>
 
@@ -82,7 +81,7 @@ type SiteManifest = SiteManifestContract & {
 // ── Phase A defaults for site_config keys Phase B will seed ───────────────────
 //
 //  ADR-0026 Phase B defines these site_config keys (index_page_id, chrome,
-//  chrome_config, i18n, modes). For Phase A the endpoint must EXIST and return
+//  chrome_config, i18n). For Phase A the endpoint must EXIST and return
 //  the shape, reading whatever site_config currently holds; any absent key falls
 //  back to a sensible default below (and is reported so Phase B seeds it). The
 //  defaults render a minimal-but-valid site rather than crashing the boot read
@@ -91,7 +90,6 @@ type SiteManifest = SiteManifestContract & {
 const DEFAULT_INDEX_PAGE_ID = 'landing'
 const DEFAULT_I18N: JsonRecord = { locales: ['ka'], defaultLocale: 'ka', fallbackLocale: 'ka' }
 const DEFAULT_CHROME_CONFIG: JsonRecord = { logoUrl: '', logoAlt: '' }
-const DEFAULT_MODES: ManifestMode[] = []
 
 // site_config keys this route consumes. Open key/value table → we read the whole
 // map once and pick these out, defaulting + recording any that are absent.
@@ -100,7 +98,6 @@ const SITE_KEY = {
   chrome:       'chrome',
   chromeConfig: 'chrome_config',
   i18n:         'i18n',
-  modes:        'modes',
   // ADR-0026 Phase B (gap #2): the runner's nav is a NavEntry[] presentation blob
   // (color/icon/path/section anchors) richer than the relational config.nav_item
   // tree. Stored verbatim as a site_config blob; read here, with a CTE fallback.
@@ -266,8 +263,6 @@ export const bootstrapRoutes: FastifyPluginAsync = async (app) => {
     const chrome       = pick(SITE_KEY.chrome,       {} as JsonRecord, isObject)
     const chromeConfig = pick(SITE_KEY.chromeConfig, DEFAULT_CHROME_CONFIG, isObject)
     const i18n         = pick(SITE_KEY.i18n,         DEFAULT_I18N, isObject)
-    const modes        = pick(SITE_KEY.modes,        DEFAULT_MODES,
-                              (v): v is ManifestMode[] => Array.isArray(v))
 
     // nav: prefer the site_config 'nav' blob (NavEntry[] verbatim — the runner's
     // rich presentation shape). FALL BACK to the relational nav_item recursive CTE
@@ -307,7 +302,6 @@ export const bootstrapRoutes: FastifyPluginAsync = async (app) => {
       chrome,
       chromeConfig,
       i18n,
-      modes,
       datasources,
       // ADR SDMX-P1-C — included only when V29 yielded a tree (else the key is
       // absent and a consumer that does not know it is unaffected — Postel).

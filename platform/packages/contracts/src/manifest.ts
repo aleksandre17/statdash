@@ -7,9 +7,9 @@
 //  cannot import `@statdash/react`. This is the shared home.
 //
 //  LAYERING of the fields (why some are precise, some opaque):
-//    - Backend/engine-owned JSON DTOs (modes, datasources) are JSON-serializable and
+//    - Backend/engine-owned JSON DTOs (datasources) are JSON-serializable and
 //      tenant-agnostic, so they are typed precisely here. They are STRUCTURALLY
-//      identical to engine's ModeDef / DatasourceInstanceConfig (the engine remains
+//      identical to engine's DatasourceInstanceConfig (the engine remains
 //      their semantic owner; this is the wire mirror, kept assignable both ways so
 //      the engine type and the contract interoperate without a cast).
 //    - React/renderer-owned blobs (pages, nav, chrome, chromeConfig, i18n) have their
@@ -19,17 +19,6 @@
 //      refines them to its precise types via `SiteManifest = SiteManifestContract & {…}`.
 
 import type { JsonRecord } from './json'
-
-/**
- * Rendering mode descriptor (year/range/compare …). Wire mirror of engine ModeDef.
- * JSON-serializable; an open `id` string keeps it Constructor-extensible.
- */
-export interface ManifestMode {
-  id:       string
-  label:    string
-  icon?:    string
-  dataKey?: string
-}
 
 /**
  * Named datasource descriptor. Wire mirror of engine DatasourceInstanceConfig.
@@ -66,8 +55,6 @@ export interface SiteManifestContract {
   chromeConfig: JsonRecord
   /** Locale configuration. Inner shape = I18nConfig (renderer-owned). */
   i18n:         JsonRecord
-  /** Filter modes registered at boot. */
-  modes:        ManifestMode[]
   /** Connected datasource descriptors. */
   datasources?: ManifestDatasource[]
 }

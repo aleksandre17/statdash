@@ -68,7 +68,6 @@ function manifestWithSidebarConfig(): SiteManifest {
     },
     chromeConfig: { logoUrl: '', logoAlt: '' },
     i18n: { locales: ['en'], defaultLocale: 'en', fallbackLocale: 'en' },
-    modes: [],
     datasources: [],
   }
 }

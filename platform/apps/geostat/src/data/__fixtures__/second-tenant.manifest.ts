@@ -14,7 +14,6 @@
 //    • Branding  — BrewMetrics logo/alt/copyright, NOT GeoStat.
 //    • Locales   — { en, de }, default `de` (NOT ka/en, no Georgian).
 //    • Filters   — product + channel `select` bars (NOT account/year/measure).
-//    • Modes     — `quarterly` / `annual` (NOT year/range/compare).
 //    • indexPageId — `overview` (NOT `landing`).
 //
 //  Pure JSON-serializable data: it uses ONLY registered node/panel/page/chrome/
@@ -45,7 +44,6 @@ export const BREW = {
     { value: 'online',    label: 'Online Shop' },
     { value: 'wholesale', label: 'Wholesale' },
   ],
-  modes: ['quarterly', 'annual'] as const,
 } as const
 
 // ── overview page — canonical anatomy: page-header → section ────────────────────
@@ -174,11 +172,6 @@ export function secondTenantManifest(): SiteManifest {
       defaultLocale: BREW.defaultLocale,
       fallbackLocale: 'en',
     },
-    // Rendering modes: quarterly / annual (NOT year/range/compare).
-    modes: [
-      { id: 'quarterly', label: 'Quarterly', dataKey: 'quarter' },
-      { id: 'annual',    label: 'Annual',    dataKey: 'year' },
-    ],
     // No datasources — the pages bind to no store (the fitness target is the
     // manifest/render path, not real observations; the empty-store path is valid).
     datasources: [],

@@ -4121,29 +4121,6 @@
       "value": "landing"
     },
     {
-      "key": "modes",
-      "value": [
-        {
-          "dataKey": "year",
-          "icon": "calendar",
-          "id": "year",
-          "label": "წლიური"
-        },
-        {
-          "dataKey": "range",
-          "icon": "calendar-range",
-          "id": "range",
-          "label": "დინამიკა"
-        },
-        {
-          "dataKey": "compare",
-          "icon": "git-compare",
-          "id": "compare",
-          "label": "შედარება"
-        }
-      ]
-    },
-    {
       "key": "nav",
       "value": [
         {

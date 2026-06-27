@@ -30,9 +30,9 @@ export function setupRegistrations(): void {
   // Extension point contributions — plugin-style registration for app-tier slots.
   setupExtensions()
 
-  // Modes are app DATA, not a compiled capability — they now live in the
-  // SiteManifest (manifest.modes) and are registered at boot from whichever
-  // manifest is active (App.tsx). See data/modes.config.ts (offline fallback).
+  // Perspectives are page DATA, not a compiled capability: each page authors its
+  // own `page.perspectives` axis (PerspectiveContext derives the perspective-bar
+  // from it directly). No site-level perspective registration runs at boot.
 
   ;[
     ...Object.values(Chrome),

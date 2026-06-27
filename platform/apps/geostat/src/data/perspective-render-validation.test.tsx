@@ -30,7 +30,6 @@ import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { dirname, resolve } from 'node:path'
 import { SiteProvider } from '@statdash/react'
-import { perspectiveRegistry } from '@statdash/engine'
 import { LocaleGuard } from '../app/LocaleGuard'
 import { setupRegistrations } from '../setupRegistrations'
 import { registerFormatters } from '../i18n/formatters'
@@ -51,7 +50,6 @@ function buildManifest(): SiteManifest {
     chrome: sc.chrome,
     chromeConfig: sc.chrome_config,
     i18n: sc.i18n,
-    modes: sc.modes,
     datasources: [],
   } as unknown as SiteManifest
 }
@@ -61,7 +59,6 @@ beforeAll(() => {
   i18next.init({ lng: 'ka', fallbackLng: 'ka', resources: {}, interpolation: { escapeValue: false } })
   setupRegistrations()
   const manifest = buildManifest()
-  manifest.modes.forEach((m) => perspectiveRegistry.register(m))
   registerFormatters(manifest.i18n.locales)
 })
 

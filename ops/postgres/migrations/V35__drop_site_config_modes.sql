@@ -1,0 +1,32 @@
+-- ════════════════════════════════════════════════════════════════════════
+-- V35__drop_site_config_modes.sql — retire the System-A `modes` site_config
+--                                    vocabulary island (MED-2)
+-- ════════════════════════════════════════════════════════════════════════
+-- WHAT THIS DOES (and WHY) — forward-only data cleanup; V1-V34 are applied + immutable.
+--
+--   THE ISLAND. `config.site_config` key 'modes' held a site-scoped perspective
+--   vocabulary (year / range / compare) served by GET /api/bootstrap into
+--   SiteManifestContract.modes → perspectiveRegistry. The runner NEVER read that
+--   registry: the perspective-bar derives its options from each page's authored
+--   `page.perspectives` axis (the SSOT), and the Constructor palette fills the
+--   registry itself (apps/panel setupCanvasRegistry). The channel was a
+--   write-with-no-read; the `compare` kind was already rot (its machinery was
+--   grep-zero-deleted). MED-2 (S1-S6) removed the contract field, the serve path,
+--   the consumer, and the provisioning seed entry. This migration removes the last
+--   trace: the orphaned prod row.
+--
+--   PRECONDITION (co-ship). `upsertSiteConfig` re-applies the provisioning artifact
+--   on every api boot, AFTER Flyway. The S6 artifact edit (drop the 'modes'
+--   siteConfig entry) MUST be in the deployed api image alongside this migration —
+--   otherwise the row this DELETEs is re-inserted the same boot. S6 + S7 + the api
+--   image ship in one release.
+--
+--   SAFETY. Idempotent (DELETE of an absent row is a no-op). No schema change, no
+--   read-path dependency, no downtime. The deleted data is trivially reconstructible
+--   (3 static kinds, also in apps/panel setupCanvasRegistry + artifact git history),
+--   so the one-way Flyway door is LOW-risk. Flyway-immutable: never edit this once
+--   applied — a correction is a NEW V-migration (Flyway 10, `clean` disabled,
+--   migrate-only; a forward DELETE is the sanctioned removal in prod).
+-- ════════════════════════════════════════════════════════════════════════
+
+DELETE FROM config.site_config WHERE key = 'modes';

@@ -14,7 +14,8 @@
 //  The api MUST NOT import @statdash/react/@statdash/engine across the arrow, yet it
 //  validates structure + ref-existence; the engine refines the opaque blobs to its
 //  rich types. This is the SAME "structural envelope here, refined by the consumer"
-//  pattern SiteManifestContract.pages / ManifestMode ⇄ ModeDef already use.
+//  pattern SiteManifestContract.pages / ManifestDatasource ⇄ DatasourceInstanceConfig
+//  already use.
 //
 //  LAYERING (why `when`/`scope`/`available` are opaque here):
 //    `PerspectiveDef.when` / `available` are VisibilityExpr trees and `scope.timeBinding`
@@ -46,8 +47,8 @@ import type { ContractLocaleString } from './reference-metadata'
 //  closed `{ timeBinding, metric }` interface would force every door to WIDEN it.)
 //
 //  `packages/core` REFINES this to the known keys: `{ timeBinding?: TimeDimensionSpec;
-//  metric?: string }` — assignable to/from this generic Record (the ManifestMode ⇄
-//  ModeDef widen/refine relationship).
+//  metric?: string }` — assignable to/from this generic Record (the same generic-envelope
+//  ⇄ refined-type widen/refine relationship the manifest DTOs use).
 export type PerspectiveScope = Record<string, unknown>
 
 // ── PerspectiveDef — one named perspective (a state of the axis) ──────────────

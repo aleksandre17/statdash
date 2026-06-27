@@ -24,7 +24,6 @@ import { afterEach } from 'vitest'
 import { MemoryRouter, Routes, Route, Navigate } from 'react-router-dom'
 import i18next from 'i18next'
 import { SiteProvider } from '@statdash/react'
-import { perspectiveRegistry } from '@statdash/engine'
 import { LocaleGuard } from '../app/LocaleGuard'
 import { setupRegistrations } from '../setupRegistrations'
 import { registerFormatters } from '../i18n/formatters'
@@ -44,13 +43,12 @@ afterEach(() => cleanup())
 
 // ── renderTenant — the App.tsx composition, manifest injected at the seam ──────
 //
-//  Replicates App.tsx verbatim: register manifest.modes + formatters at boot, then
-//  SiteProvider(stores, pages, nav, chrome, chromeConfig, i18n) wrapping the locale
-//  route → LocaleGuard. `initialEntry` is the tenant URL the runner would route to.
+//  Replicates App.tsx verbatim: register the manifest's locale formatters at boot,
+//  then SiteProvider(stores, pages, nav, chrome, chromeConfig, i18n) wrapping the
+//  locale route → LocaleGuard. `initialEntry` is the tenant URL the runner routes to.
 function renderTenant(manifest: SiteManifest, initialEntry: string) {
-  // Boot-time registration from manifest data (App.tsx useEffect) — modes + locale
+  // Boot-time registration from manifest data (App.tsx useEffect) — locale
   // formatters come from the ACTIVE manifest, not from compiled-in code.
-  manifest.modes.forEach((m) => perspectiveRegistry.register(m))
   registerFormatters(manifest.i18n.locales)
 
   return render(

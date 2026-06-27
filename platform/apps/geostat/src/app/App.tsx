@@ -1,5 +1,4 @@
 import { useState, useEffect, lazy, Suspense } from 'react'
-import { perspectiveRegistry }      from '@statdash/engine'
 import { bootstrapSite }            from '@/data/site-manifest'
 import type { SiteBootstrap }       from '@/data/site-manifest'
 import { registerFormatters }       from '@/i18n/formatters'
@@ -31,13 +30,13 @@ export default function App() {
 
   useEffect(() => {
     bootstrapSite().then((boot) => {
-      // Perspectives + locale formatters are manifest data (ADR-0026): register
-      // whichever set the active manifest carries — local fallback or
-      // /api/bootstrap — before any page renders (App gates render on
-      // `bootstrap`, and the AppSkeleton has no formatted content, so this
-      // always runs first). Downstream the Constructor perspective palette +
-      // useFmt() read the registries at render time.
-      boot.manifest.modes.forEach((m) => perspectiveRegistry.register(m))
+      // Locale formatters are manifest data (ADR-0026): register the active
+      // manifest's locale set before any page renders (App gates render on
+      // `bootstrap`, and the AppSkeleton has no formatted content, so this always
+      // runs first). Downstream useFmt() reads the formatter registry at render
+      // time. The perspective vocabulary is NOT registered here: the runner's
+      // perspective-bar derives its options from each page's authored
+      // `page.perspectives` axis (PerspectiveContext), not from a site registry.
       registerFormatters(boot.manifest.i18n.locales)
       setBootstrap(boot)
     })

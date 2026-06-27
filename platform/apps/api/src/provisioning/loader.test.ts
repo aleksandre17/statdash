@@ -291,7 +291,7 @@ describe('runProvisioning', () => {
   })
 
   it('dryRun does not write site_config', async () => {
-    await withDir({ 'site.json': JSON.stringify({ version: 1, siteConfig: [{ key: 'modes', value: [] }] }) }, async (dir) => {
+    await withDir({ 'site.json': JSON.stringify({ version: 1, siteConfig: [{ key: 'chrome', value: {} }] }) }, async (dir) => {
       const report = await runProvisioning(pg, { dir, dryRun: true, logger: silent })
       expect(report.results[0]).toMatchObject({ kind: 'siteConfig', outcome: 'skipped', reason: 'dry-run' })
       expect(pg.siteConfig).toHaveLength(0)

@@ -11,7 +11,7 @@
 // forward-migrates pages on read, and derives datasources from config.data_source
 // (covered separately by seed-data-sources). The canonical projection compared:
 //   { indexPageId, pages (by config.id, migrated BOTH sides), nav (NavEntry[]),
-//     chrome, chromeConfig, i18n, modes }.
+//     chrome, chromeConfig, i18n }.
 // datasources are excluded (their parity is verify-parity.ts's concern).
 //
 // WHY the comparison target is the committed JSON, not buildManifest() imported
@@ -78,7 +78,6 @@ interface BootstrapManifest {
   chrome:        unknown
   chromeConfig:  unknown
   i18n:          { locales?: unknown; defaultLocale?: unknown }
-  modes:         unknown
   datasources:   unknown[]
 }
 
@@ -147,7 +146,6 @@ suite('DB-served bootstrap === committed geostat manifest (ADR-0026 Phase B)', (
     ['chrome',        'chrome'],
     ['chrome_config', 'chromeConfig'],
     ['i18n',          'i18n'],
-    ['modes',         'modes'],
     ['nav',           'nav'],
   ]
   for (const [siteKey, manifestField] of blobKeys) {
