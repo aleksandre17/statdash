@@ -20,7 +20,7 @@
 //  constant, not a branch); `metric` is a generic MetricDef ref. LAW 2: pure JSON,
 //  no functions, Constructor-authorable.
 
-import type { TimeDimensionSpec }  from './data-spec'
+import type { TimeBound, TimeDimensionSpec } from './data-spec'
 import type { VisibilityExpr }     from './visibility'
 import type {
   PerspectiveScope as ContractPerspectiveScope,
@@ -47,9 +47,38 @@ import type {
 //  half), so a future optional field is purely additive (OCP, SYNTHESIS §1.4).
 export type PerspectiveScope = ContractPerspectiveScope & {
   /** Year-pin vs [from,to] window — the time-axis binding the active perspective applies before resolution. */
-  timeBinding?: TimeDimensionSpec
+  timeBinding?: PerspectiveTimeBinding
   /** Perspective-wide measurement swap — a MetricDef ref (raw measure code today; metric-id when registered). */
   metric?:      string
+}
+
+// ── PerspectiveTimeBinding — the perspective-scoped REFINEMENT of TimeDimensionSpec ─
+//
+//  A `timeBinding` is a `TimeDimensionSpec` (dim/range/granularity — the canonical
+//  time shape every data spec shares) PLUS two perspective-OWNED options that the
+//  shared `TimeDimensionSpec` must NOT carry (they are meaningless to a data spec —
+//  strict-SOLID: never bloat a shared type with one consumer's fields). Both are
+//  OPTIONAL and ADDITIVE — absent ⇒ the binding behaves byte-identically to a bare
+//  `TimeDimensionSpec` (FF-BINDING-ADDITIVE-IDENTITY):
+//
+//    pin        — a SINGLE-PERIOD pin (the `year` perspective): a literal year or a
+//                 `{ $ctx:'<param>' }` ref to the user-tracked year param. Resolved
+//                 through the SAME `resolveTimeBound` dispatcher the legacy `{$ctx}`
+//                 read uses; an unset/NaN resolution writes NOTHING (the all-years
+//                 path via the `isUnsetTime` SSOT). [FF-BINDING-PIN-CTX-REF]
+//    targetKeys — the window's DESTINATION dim keys (the `range` perspective): a
+//                 declared `{ from, to }` so the resolved [from,to] window writes the
+//                 keys the existing resolvers read (geostat: `fromYear`/`toYear`),
+//                 not the hardcoded `${dim}From`/`${dim}To`. Absent ⇒ `${dim}From`/
+//                 `${dim}To` byte-for-byte. [FF-BINDING-TARGET-KEYS]
+//
+//  Stays ASSIGNABLE to `TimeDimensionSpec` (intersection, not a re-declared interface)
+//  so the existing `effectiveBounds`/`resolveTimeDimension` seam consumes it unchanged.
+export type PerspectiveTimeBinding = TimeDimensionSpec & {
+  /** Single-period pin (literal year or `{$ctx:'<param>'}` ref). Unset/NaN ⇒ writes nothing. */
+  pin?:        TimeBound
+  /** Window destination dim keys. Absent ⇒ `${dim}From`/`${dim}To`. */
+  targetKeys?: { from?: string; to?: string }
 }
 
 // ── PerspectiveDef (core) — `when`/`available` refined to VisibilityExpr ───────

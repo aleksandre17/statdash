@@ -19,6 +19,7 @@ import type { ParamDef, ParamCascadeNode, CascadeNode } from '@statdash/engine'
 import type { ParamYearSelect, ParamSelect, ParamMultiSelect, ParamHidden } from '@statdash/engine'
 import type { EngineRow }                        from '@statdash/engine'
 import type { BarNode, ParamNode }               from '@statdash/engine'
+import type { PerspectiveOwnership }             from '@statdash/engine'
 
 // ── FilterState — return type ─────────────────────────────────────────
 
@@ -67,6 +68,7 @@ const STUB_CTX: SectionContext = { timeMode: 'year', dims: {} }
 export function useFilterState(
   schema: FilterSchemaInput | null | undefined,
   store?:  DataStore | null,
+  ownership?: PerspectiveOwnership,
 ): FilterState {
   const { state } = useFilter()
 
@@ -101,14 +103,29 @@ export function useFilterState(
   // variable, not a property of one bar's visibility. It must resolve in EVERY mode,
   // so it is hoisted OUT of the visibility gate — letting it be declared ONCE rather
   // than copy-pasted into each time-mode bar (the OCP-clean, Constructor-ready form).
+  //
+  // PERSPECTIVE-SCOPE gate (P4.5 (c) — Protected Variations): when an active
+  // `scope.timeBinding` OWNS a param, default resolution follows PERSPECTIVE ownership
+  // instead of bar visibility — the seam that lets the two bars collapse to one
+  // byte-identically. A key the ACTIVE perspective owns MUST resolve; a key owned ONLY
+  // by a NON-active perspective (in `all` but not `active`) and by no live default is
+  // SUPPRESSED — so a collapsed single bar in `range` leaves the year-owned `time`
+  // unset ⇒ the dynamics timeseries renders the FULL span (the parity fix, preserved
+  // STRUCTURALLY without two bars). When `ownership` is absent/empty (an un-migrated
+  // page, no binding) the perspective branches are inert and this reduces to the legacy
+  // `isAlwaysResolve || !barShowWhen || evalWhen` gate EXACTLY (additive, byte-identical).
+  const ownsActive = ownership?.active
+  const ownsAny    = ownership?.all
   const defaultParams = useMemo(
     () =>
       flatParamEntries
-        .filter(({ def, barShowWhen }) =>
-          isAlwaysResolve(def) || !barShowWhen || evalWhen(barShowWhen, state),
+        .filter(({ key, def, barShowWhen }) =>
+          isAlwaysResolve(def) ||
+          ownsActive?.has(key) ||
+          (!ownsAny?.has(key) && (!barShowWhen || evalWhen(barShowWhen, state))),
         )
         .map(({ key, def }) => ({ key, def })),
-    [flatParamEntries, state],
+    [flatParamEntries, state, ownsActive, ownsAny],
   )
 
   // Tier 3 options getter — maps a param key to its EngineRow list for

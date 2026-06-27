@@ -47,7 +47,7 @@ export { modeRegistry, perspectiveRegistry }                             from '.
 //  ctx-scoping step + axis parser land in P1/P4). A page with no `perspectives`
 //  declared touches none of this (byte-identical render, FF-ONE-VIEW-NO-MACHINERY).
 export type { PerspectiveScope, PerspectiveDef, PerspectiveAxis,
-              PerspectivesByParam }                                      from './config/perspective-axis'
+              PerspectivesByParam, PerspectiveTimeBinding }              from './config/perspective-axis'
 //  The scope-key registry — the OCP seam (SYNTHESIS §1.4): every scope door is a
 //  registration, not an interface widening. timeBinding + metric registered today;
 //  the coverage gate reads listPerspectiveScopeKeys() directly (the 5th axis).
@@ -62,8 +62,9 @@ import './config/perspective-scope-schemas' // side-effect: register built-in sc
 //  modeOrder+timeMode desugar); scopeCtxByPerspective folds the active perspective's
 //  timeBinding into ctx.dims before interpretSpec (the declarative time-mode replacement).
 export { PERSPECTIVE_PARAM, LEGACY_MODE_PARAM, activePerspective }       from './config/perspective-state'
-export type { ParsePerspectiveInput }                                   from './config/perspective-axis-parser'
-export { parsePerspectiveAxes, activeIdForAxis, scopeCtxByPerspective }  from './config/perspective-axis-parser'
+export type { ParsePerspectiveInput, PerspectiveOwnership }             from './config/perspective-axis-parser'
+export { parsePerspectiveAxes, activeIdForAxis, scopeCtxByPerspective,
+         perspectiveOwnedParamKeys }                                    from './config/perspective-axis-parser'
 
 // ── Standard 2: SDMX Observation Model (ISO 17369) ───────────────────
 export type { DimVal, CtxRef, FilterValue, NeRef, NeCtxRef, Observation, ObsQuery } from './sdmx'

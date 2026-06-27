@@ -24,7 +24,7 @@
 
 import type { SectionContext }                       from './context'
 import type { TimeBound, TimeDimensionSpec, TimeRange, YearsSpec } from '../config/data-spec'
-import type { CtxRef }                                from '../sdmx'
+import type { CtxRef, DimVal }                        from '../sdmx'
 import { resolveRef }                                 from '../ref/ref'
 
 // ── clampToBounds — the ONE numeric clamp (legacy + timeDimension share it) ──
@@ -62,6 +62,34 @@ export function resolveTimeBound(
   if (typeof bound === 'number') return Number(bound ?? missing)
   const v = resolveRef(bound as CtxRef, { dims: ctx.dims })
   return Number(v ?? missing)
+}
+
+// ── resolveTimePin — one TimeBound → a single resolved period (or unset) ──
+//
+//  The single-period PIN seam (perspective `year` view, P4.5 capability (a)). A
+//  literal year passes through; a `{ $ctx:'<param>' }` ref resolves against ctx.dims
+//  through the SAME Ref dispatcher `resolveTimeBound` uses (so a pin reading the
+//  user-tracked `year` param yields the SAME value the legacy `pick:last` default
+//  resolved — byte-identical while both coexist).
+//
+//  Returns `undefined` when the bound resolves to an UNSET time (absent / '' / 0 /
+//  NaN — the `isUnsetTime` SSOT). An unset pin writes NOTHING ⇒ `ctx.dims[dim]` stays
+//  unset ⇒ the all-periods path. This is the structural parity move: a pin whose
+//  source param is empty leaves time unbounded exactly as a hidden bar would.
+//
+//  NOTE: distinct from `resolveTimeBound` (which coerces a missing bound to a numeric
+//  default 0/Infinity for the CLAMP arithmetic). A pin is a discrete SELECTION, so an
+//  unset value must be ABSENT (undefined), never a spurious 0 that would pin year 0.
+//
+export function resolveTimePin(
+  bound: TimeBound,
+  ctx:   SectionContext,
+): DimVal | undefined {
+  const raw = typeof bound === 'number'
+    ? bound
+    : resolveRef(bound as CtxRef, { dims: ctx.dims }) as DimVal | undefined
+  if (isUnsetTime(raw)) return undefined
+  return raw as DimVal
 }
 
 // ── isYearsRange — does the range carry an explicit year list? ────────

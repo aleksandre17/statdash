@@ -27,7 +27,8 @@ import {
 } from '@statdash/react'
 import { GlobalStateProvider }         from '../context/GlobalState'
 import { applyEffects, resolveDataLinks } from '@statdash/engine'
-import { parsePerspectiveAxes, scopeCtxByPerspective } from '@statdash/engine'
+import { parsePerspectiveAxes, scopeCtxByPerspective,
+         perspectiveOwnedParamKeys } from '@statdash/engine'
 import type { ModeId }                from '@statdash/engine'
 import { FiltersProvider }             from '../context/FiltersContext'
 import { evalVarMap }                  from './evalVarMap'
@@ -88,13 +89,38 @@ const NodePageRendererInner = memo(function NodePageRendererInner({
     [stores, page.storeKey],
   )
 
+  // ── Perspective ownership (P4.5 (c)) — computed BEFORE useFilterState ─────────
+  //  The default-resolution gate now follows PERSPECTIVE ownership (not bar
+  //  visibility) for params an active timeBinding owns. We need the axes + active id
+  //  BEFORE the hook resolves defaults, so they are derived here from the page config
+  //  + the URL filter state directly (timeModeKey = the legacy context.timeMode param
+  //  ?? 'mode' — the same value useFilterState returns). Empty ownership (no axis / no
+  //  timeBinding — an un-migrated page) ⇒ the gate reduces to the legacy bar branch exactly.
+  const { state, set: filterSet, setMany } = useFilter()
+
+  const timeModeKeyPre = page.filterSchema?.context?.timeMode ?? 'mode'
+  const axes = useMemo(
+    () => parsePerspectiveAxes({
+      perspectives:  page.perspectives,
+      modeOrder:     page.modeOrder,
+      timeModeParam: timeModeKeyPre,
+    }),
+    [page.perspectives, page.modeOrder, timeModeKeyPre],
+  )
+
+  const ownership = useMemo(() => {
+    const perspectiveState = { [timeModeKeyPre]: state[timeModeKeyPre] ?? '' }
+    return perspectiveOwnedParamKeys(axes, perspectiveState)
+    // active id falls back to perspectives[0] inside activeDefs when state is unset.
+  }, [axes, timeModeKeyPre, state])
+
   const {
     ctx: rawSectionCtx,
     raw,
     timeModeKey,
     effects,
     bars,
-  } = useFilterState(page.filterSchema ?? null, pageStore)
+  } = useFilterState(page.filterSchema ?? null, pageStore, ownership)
 
   const filtersCtx = useMemo(
     () => ({ bars, timeModeKey, effects }),
@@ -105,17 +131,9 @@ const NodePageRendererInner = memo(function NodePageRendererInner({
   const mode       = useModeContext(timeModeKey, modeList)
 
   // ── Perspective axis [VISION #3 / P1] ─────────────────────────────────────
-  //  ONE internal representation: the declared `page.perspectives` Record, else a
-  //  single-axis desugar of the legacy modeOrder+timeMode. Absent ⇒ undefined (the
-  //  N=1-free path — no scoping, no axis machinery). Parsed once per page.
-  const axes = useMemo(
-    () => parsePerspectiveAxes({
-      perspectives:  page.perspectives,
-      modeOrder:     page.modeOrder,
-      timeModeParam: timeModeKey,
-    }),
-    [page.perspectives, page.modeOrder, timeModeKey],
-  )
+  //  `axes` is parsed above (it now ALSO feeds the P4.5 perspective-ownership gate
+  //  threaded into useFilterState); `timeModeKey` returned by the hook === the
+  //  pre-hook `timeModeKeyPre`, so the single parse is canonical.
 
   // Bridge: sectionCtx.timeMode = mode.current (Postel — legacy template
   // readers still consult it until P6). The active perspective id now ALSO flows
@@ -140,8 +158,6 @@ const NodePageRendererInner = memo(function NodePageRendererInner({
     },
     [rawSectionCtx, currentMode, timeModeKey, axes],
   )
-
-  const { state, set: filterSet, setMany } = useFilter()
 
   const set = useCallback(
     (key: string, val: unknown) => filterSet(key, String(val)),

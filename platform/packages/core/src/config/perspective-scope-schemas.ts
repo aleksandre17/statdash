@@ -16,12 +16,12 @@ import { registerPerspectiveScopeKey } from './perspective-scope-registry'
 
 registerPerspectiveScopeKey('timeBinding', [
   // The time dimension the binding scopes — a cube-profile dimension (pick-don't-type, Law 2).
-  { field: 'timeBinding.dim',  type: 'enum-ref', source: 'cube.dimensions', label: { ka: 'დროის განზომილება', en: 'Time dimension' } },
-  // Single-period pin (year perspective) — a $ctx ref or literal year.
-  { field: 'timeBinding.pick', type: 'string',   label: { ka: 'წელი', en: 'Pick (year)' } },
-  // Window bounds (range perspective) — $ctx refs or literal years.
-  { field: 'timeBinding.from', type: 'string',   label: { ka: 'დან', en: 'From' } },
-  { field: 'timeBinding.to',   type: 'string',   label: { ka: 'მდე', en: 'To' } },
+  { field: 'timeBinding.dim',            type: 'enum-ref', source: 'cube.dimensions', label: { ka: 'დროის განზომილება', en: 'Time dimension' } },
+  // Single-period PIN (year perspective) — a $ctx ref or literal year (P4.5 (a)).
+  { field: 'timeBinding.pin',            type: 'string',   label: { ka: 'წელი (პინი)', en: 'Pin (year)' } },
+  // Window DESTINATION keys (range perspective) — the dim keys the window writes (P4.5 (b)).
+  { field: 'timeBinding.targetKeys.from', type: 'string',  label: { ka: 'დან-გასაღები', en: 'Target key (from)' } },
+  { field: 'timeBinding.targetKeys.to',   type: 'string',  label: { ka: 'მდე-გასაღები', en: 'Target key (to)' } },
 ])
 
 registerPerspectiveScopeKey('metric', [

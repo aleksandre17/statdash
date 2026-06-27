@@ -18,8 +18,8 @@
 import type { SectionContext }     from '../core/context'
 import { TIME_DIM }                from '../core/context'
 import type { DimVal }             from '../sdmx'
-import type { PerspectiveAxis, PerspectivesByParam, PerspectiveDef } from './perspective-axis'
-import { effectiveBounds, isYearsSpec } from '../core/time-dimension'
+import type { PerspectiveAxis, PerspectivesByParam, PerspectiveDef, PerspectiveTimeBinding } from './perspective-axis'
+import { effectiveBounds, isYearsSpec, resolveTimePin } from '../core/time-dimension'
 import { PERSPECTIVE_PARAM }       from './perspective-state'
 
 // ── ParsePerspectiveInput — the three legacy/new inputs, extracted by the caller ──
@@ -106,6 +106,66 @@ function activeDefs(
   return out
 }
 
+// ── perspectiveOwnedParamKeys — the default-resolution ownership seam (P4.5 (c)) ──
+//
+//  A `timeBinding` OWNS the filter params it binds: the pin's `{$ctx:'<param>'}`
+//  source param (the user-tracked year) and the window's `targetKeys` destinations
+//  (geostat: `fromYear`/`toYear`). The React default-resolution gate uses this to
+//  shift the seam from BAR-visibility to PERSPECTIVE-ownership (Protected Variations):
+//  a param owned ONLY by a non-active perspective's binding must NOT resolve its
+//  default (range ⇒ `time` unset ⇒ full span), exactly as a hidden bar achieves today
+//  — but driven by perspective ownership, not two bars.
+//
+//  Returns `{ active, all }`: `active` = keys owned by the ACTIVE perspective(s) (these
+//  MUST resolve); `all` = keys owned by ANY perspective (a key in `all` but not
+//  `active` is owned by a non-active perspective ⇒ must NOT resolve unless some other
+//  live default covers it). A page with no axes / no timeBinding yields empty sets ⇒
+//  the React gate reduces to the legacy `barShowWhen` branch EXACTLY (additive, inert).
+//
+//  Engine-pure (packages/core) — the React hook threads `(axes, perspectiveState)` in
+//  and reads the two sets, crossing no arrow.
+export interface PerspectiveOwnership {
+  /** Param keys the ACTIVE perspective's binding owns — these resolve their default. */
+  active: ReadonlySet<string>
+  /** Param keys ANY perspective's binding owns — a non-active-owned key suppresses its default. */
+  all:    ReadonlySet<string>
+}
+
+function bindingOwnedKeys(tb: PerspectiveTimeBinding, into: Set<string>): void {
+  // The pin's ctx-ref source param (the user-tracked year). A literal pin owns no param.
+  if (tb.pin !== undefined && typeof tb.pin === 'object' && '$ctx' in tb.pin) {
+    into.add(tb.pin.$ctx)
+  }
+  // The window's destination keys. When targetKeys are declared they ARE the owned
+  // params (geostat fromYear/toYear); else the conventional `${dim}From`/`${dim}To`.
+  const range = tb.range
+  if (range !== undefined && !isYearsSpec(range)) {
+    const dim = tb.dim || TIME_DIM
+    into.add(tb.targetKeys?.from ?? `${dim}From`)
+    into.add(tb.targetKeys?.to   ?? `${dim}To`)
+  }
+}
+
+export function perspectiveOwnedParamKeys(
+  axes:             PerspectivesByParam | undefined,
+  perspectiveState: Record<string, string> | undefined,
+): PerspectiveOwnership {
+  const active = new Set<string>()
+  const all    = new Set<string>()
+  if (!axes) return { active, all }
+
+  const activeSet = new Set(activeDefs(axes, perspectiveState))
+  for (const axis of Object.values(axes)) {
+    for (const def of axis.perspectives) {
+      const tb = def.scope?.timeBinding
+      if (!tb) continue
+      bindingOwnedKeys(tb, all)
+      if (activeSet.has(def)) bindingOwnedKeys(tb, active)
+    }
+  }
+  return { active, all }
+}
+
 // ── scopeCtxByPerspective — the declarative replacement for legacy time-mode ──
 //
 //  Apply the ACTIVE perspective's `scope.timeBinding` to `ctx.dims` BEFORE
@@ -136,7 +196,23 @@ export function scopeCtxByPerspective(
   for (const def of activeDefs(axes, perspectiveState)) {
     const tb = def.scope?.timeBinding
     if (!tb) continue
-    const dim   = tb.dim || TIME_DIM
+    const dim = tb.dim || TIME_DIM
+
+    // (a) EXPLICIT ctx-ref/literal single-period PIN (P4.5). `pin` resolves through
+    // the SAME Ref dispatcher the legacy `{$ctx}` read used (resolveTimePin →
+    // resolveRef). A resolved period writes `dims[dim]`; an UNSET/NaN resolution
+    // writes NOTHING (the all-years path via the isUnsetTime SSOT). This lets the
+    // `year` perspective declaratively pin `time` = the user-tracked year param,
+    // byte-identical to the legacy `pick:last` year default while both coexist.
+    if (tb.pin !== undefined) {
+      const pinned = resolveTimePin(tb.pin, ctx)
+      if (pinned !== undefined) {
+        dims ??= { ...ctx.dims }
+        dims[dim] = pinned
+      }
+      continue
+    }
+
     const range = tb.range
     if (range === undefined) continue
 
@@ -150,14 +226,28 @@ export function scopeCtxByPerspective(
     } else {
       // A [from,to] WINDOW (range perspective): resolve the ctx-ref/literal bounds
       // through the SAME seam the legacy fromDim/toDim used (effectiveBounds), then
-      // write them under the conventional from/to keys so the existing range
-      // resolvers read them. `effectiveBounds` reads ctx-ref bounds from ctx.dims.
+      // write them under the DECLARED target keys (geostat: fromYear/toYear) so the
+      // existing range resolvers read them — (b) configurable target-keys (P4.5).
+      // ABSENT targetKeys ⇒ the conventional `${dim}From`/`${dim}To` byte-for-byte.
       const { from, to } = effectiveBounds({ timeDimension: { dim, range } }, ctx)
       dims ??= { ...ctx.dims }
-      if (from) dims[`${dim}From`] = from as DimVal
-      if (to && to !== Infinity) dims[`${dim}To`] = to as DimVal
+      if (from) dims[targetKey(tb, dim, 'from')] = from as DimVal
+      if (to && to !== Infinity) dims[targetKey(tb, dim, 'to')] = to as DimVal
     }
   }
 
   return dims ? { ...ctx, dims } : ctx
+}
+
+// ── targetKey — the window's DESTINATION dim key (configurable, P4.5 (b)) ──────
+//
+//  The declared `targetKeys.{from,to}` when present (geostat declares
+//  `{from:'fromYear', to:'toYear'}` so the window drives the EXISTING
+//  `{$ctx:'fromYear'}`/`{$ctx:'toYear'}` resolvers via effectiveBounds's
+//  fromDim/toDim); ABSENT ⇒ the conventional `${dim}From`/`${dim}To` byte-for-byte
+//  (every existing caller — no targetKeys — is unaffected).
+function targetKey(tb: PerspectiveTimeBinding, dim: string, side: 'from' | 'to'): string {
+  const declared = tb.targetKeys?.[side]
+  if (declared) return declared
+  return side === 'from' ? `${dim}From` : `${dim}To`
 }
