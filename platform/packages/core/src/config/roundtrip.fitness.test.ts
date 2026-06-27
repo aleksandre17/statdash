@@ -49,6 +49,10 @@ describe('VisibilityExpr — round-trip (all ops)', () => {
   it('mode-is',  () => expectRoundTrip<VisibilityExpr>({ op: 'mode-is',  mode:  'year' }))
   it('mode-in',  () => expectRoundTrip<VisibilityExpr>({ op: 'mode-in',  modes: ['year', 'range'] }))
   it('mode-not', () => expectRoundTrip<VisibilityExpr>({ op: 'mode-not', mode:  'compare' }))
+  it('perspective-is',       () => expectRoundTrip<VisibilityExpr>({ op: 'perspective-is',  perspective:  'year' }))
+  it('perspective-is+param', () => expectRoundTrip<VisibilityExpr>({ op: 'perspective-is',  perspective:  'national', param: 'geo' }))
+  it('perspective-in',       () => expectRoundTrip<VisibilityExpr>({ op: 'perspective-in',  perspectives: ['year', 'range'] }))
+  it('perspective-not',      () => expectRoundTrip<VisibilityExpr>({ op: 'perspective-not', perspective:  'compare' }))
 
   it('null "is" value survives (no-selection state)', () =>
     expectRoundTrip<VisibilityExpr>({ op: 'eq', param: 'geo', is: null }))
