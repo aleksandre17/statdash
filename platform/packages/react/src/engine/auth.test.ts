@@ -23,7 +23,7 @@ vi.mock('i18next', () => ({
 }))
 import { createElement, type ReactNode }   from 'react'
 import { renderToStaticMarkup }            from 'react-dom/server'
-import type { DataStore, SectionContext, ModeContext } from '@statdash/engine'
+import type { DataStore, SectionContext, PerspectiveContext } from '@statdash/engine'
 import { renderNode }                      from './renderNode'
 import { nodeRegistry }                    from './register-all'
 import type { RenderContext, NodeBase, NodeDef, AuthContext } from './types'
@@ -33,8 +33,8 @@ import { DefaultCommandBus }              from './commands/CommandBus'
 
 // ── Minimal engine-only RenderContext (mirrors a11y.test.tsx harness) ───────
 function makeCtx(auth?: AuthContext): RenderContext {
-  const sectionCtx: SectionContext = { dims: { time: 2024 }, timeMode: 'year' }
-  const mode: ModeContext = { current: 'year', available: [], set: () => {} }
+  const sectionCtx: SectionContext = { dims: { time: 2024 }, perspectiveState: { mode: 'year' } }
+  const perspective: PerspectiveContext = { current: 'year', available: [], set: () => {} }
   const stores: Record<string, DataStore> = {}
 
   const holder = { ctx: null as unknown as RenderContext }
@@ -45,8 +45,8 @@ function makeCtx(auth?: AuthContext): RenderContext {
     vars:           {},
     locale:         'en',
     fallbackLocale: 'en',
-    timeModeKey:    'mode',
-    mode,
+    perspectiveKey: 'mode',
+    perspective,
     effects:        [],
     ...(auth ? { auth } : {}),
     extensions:     new ExtensionRegistry(),

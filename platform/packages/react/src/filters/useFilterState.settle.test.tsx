@@ -44,7 +44,7 @@ const SCHEMA: FilterSchemaInput = {
       },
     },
   },
-  context: { timeMode: 'mode', dims: { time: 'year' } },
+  context: { dims: { time: 'year' } },
 } as unknown as FilterSchemaInput
 
 function wrapper({ children }: { children: ReactNode }) {

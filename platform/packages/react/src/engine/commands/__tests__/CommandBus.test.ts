@@ -72,13 +72,13 @@ describe('DefaultCommandBus', () => {
 
   it('different command types can each have their own handler', () => {
     const bus = new DefaultCommandBus()
-    const filterHandler  = vi.fn()
-    const modeHandler    = vi.fn()
+    const filterHandler       = vi.fn()
+    const perspectiveHandler  = vi.fn()
     bus.handle('filter:set', filterHandler)
-    bus.handle('mode:set', modeHandler)
+    bus.handle('perspective:set', perspectiveHandler)
     bus.dispatch({ type: 'filter:set', key: 'k', value: 'v' })
-    bus.dispatch({ type: 'mode:set', id: 'year' })
+    bus.dispatch({ type: 'perspective:set', id: 'year' })
     expect(filterHandler).toHaveBeenCalledTimes(1)
-    expect(modeHandler).toHaveBeenCalledTimes(1)
+    expect(perspectiveHandler).toHaveBeenCalledTimes(1)
   })
 })

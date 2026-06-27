@@ -6,7 +6,6 @@
 //
 //  Contract (approved N37-Q2):
 //    - Shallow merge of dims: { ...base.dims, ...scope.dimOverride }
-//    - timeMode override wins when present: scope.timeMode ?? base.timeMode
 //    - Returns base reference unchanged when scope is undefined
 //    - Does NOT deep-clone — safe because interpretSpec never mutates context
 //
@@ -18,12 +17,9 @@ export function mergeScope(
   base:  SectionContext,
   scope: ScopeOverride | undefined,
 ): SectionContext {
-  if (!scope) return base
+  if (!scope?.dimOverride) return base
   return {
     ...base,
-    timeMode: scope.timeMode ?? base.timeMode,
-    dims: scope.dimOverride
-      ? { ...base.dims, ...scope.dimOverride }
-      : base.dims,
+    dims: { ...base.dims, ...scope.dimOverride },
   }
 }

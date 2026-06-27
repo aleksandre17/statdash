@@ -27,15 +27,15 @@ import type { RenderContext, NodeBase, NodeDef, ChildrenArg } from './types'
 function makeCtx(): RenderContext {
   const holder = { ctx: null as unknown as RenderContext }
   holder.ctx = {
-    sectionCtx:     { dims: { time: 2024 }, timeMode: 'year' },
+    sectionCtx:     { dims: { time: 2024 } },
     stores:         {},
     filterParams:   {},
     vars:           {},
     color:          '#0080BE',
     locale:         'en',
     fallbackLocale: 'en',
-    timeModeKey:    'mode',
-    mode:           { current: 'year', available: [], set: () => {} },
+    perspectiveKey: 'mode',
+    perspective:           { current: 'year', available: [], set: () => {} },
     effects:        [],
     eventBus:       { publish: () => {}, subscribe: () => () => {} } as unknown as RenderContext['eventBus'],
     set:            () => {},

@@ -22,7 +22,6 @@ export * from './controls'
 
 // ── Nodes ─────────────────────────────────────────────────────────────────────
 export * as section        from './nodes/section'
-export * as modeBar        from './nodes/mode-bar'
 export * as perspectiveBar from './nodes/perspective-bar'
 export * as filterBar      from './nodes/filter-bar'
 export * as pageHeader     from './nodes/page-header'

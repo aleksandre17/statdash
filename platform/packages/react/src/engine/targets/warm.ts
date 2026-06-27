@@ -121,11 +121,10 @@ export type SnapshotScope = 'active' | 'all-perspectives'
  * union of all perspectives).
  *
  * The active id is sourced from the `ctx.perspectiveState` SSOT (VISION #3 / P1 —
- * HIGH-3), the SAME record `renderNode` reads (`renderNode.ts:229`). When a SSR
- * caller populated only the legacy `mode`/`timeModeKey` (no `perspectiveState`), it
- * is derived here as `{ [timeModeKey]: mode.current }` — one source, no parallel
- * mode param. `buildStaticContext` seeds `perspectiveState` from `mode` so the
- * common SSR path already carries the SSOT.
+ * HIGH-3), the SAME record `renderNode` reads. When a SSR caller populated only the
+ * `perspective`/`perspectiveKey` triad (no `perspectiveState`), it is derived here as
+ * `{ [perspectiveKey]: perspective.current }` — one source. `buildStaticContext`
+ * seeds `perspectiveState` from the triad so the common SSR path already carries it.
  */
 export function activeViewGate(
   staticCtx: StaticRenderContext,
@@ -134,7 +133,7 @@ export function activeViewGate(
   if (scope === 'all-perspectives') return undefined
   const perspectiveState =
     staticCtx.sectionCtx.perspectiveState ??
-    { [staticCtx.timeModeKey]: staticCtx.mode.current }
+    { [staticCtx.perspectiveKey]: staticCtx.perspective.current }
   return {
     filterParams: staticCtx.filterParams,
     perspectiveState,

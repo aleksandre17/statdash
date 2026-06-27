@@ -28,7 +28,6 @@ const DATASET_CODE = 'NA_GDP'
 const NON_TIME_DIMS: string[] = ['geo', 'sector']
 
 const ctx: SectionContext = {
-  timeMode: 'year',
   dims: { time: 2023, geo: 'GE', sector: 'S13' },
 }
 
@@ -85,7 +84,7 @@ describe('ApiStore — ETag conditional-GET freshness re-validation', () => {
     // but this slice is a MISS — sending If-None-Match here would invite a 304-to-empty
     // that never caches the slice (the range/dynamics kpi-strip crash). It MUST be an
     // unconditional GET that 200s and caches slice B.
-    const ctxB: SectionContext = { timeMode: 'year', dims: { time: 2022, geo: 'GE', sector: 'S13' } }
+    const ctxB: SectionContext = { dims: { time: 2022, geo: 'GE', sector: 'S13' } }
     vi.mocked(fetch).mockResolvedValueOnce(makeOkResponse([rawRow], etag))
     await store.queryAsync(obsQuery, ctxB)
 

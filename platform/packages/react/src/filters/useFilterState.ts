@@ -9,12 +9,11 @@
 
 import { useMemo, useCallback } from 'react'
 import { useFilter }                     from '../context/FilterContext'
-import type { SectionContext, TimeMode, DimVal } from '@statdash/engine'
+import type { SectionContext, DimVal } from '@statdash/engine'
 import type { Effect, FilterSchemaInput }        from '@statdash/engine'
 import type { DataStore }                        from '@statdash/engine'
-import { autoParse, resolveDefaults, evalWhen }  from '@statdash/engine'
+import { autoParse, resolveDefaults }            from '@statdash/engine'
 import { resolveYears, resolveOptions }          from '@statdash/engine'
-import type { WhenMap }                          from '@statdash/engine'
 import type { ParamDef, ParamCascadeNode, CascadeNode } from '@statdash/engine'
 import type { ParamYearSelect, ParamSelect, ParamMultiSelect, ParamHidden } from '@statdash/engine'
 import type { EngineRow }                        from '@statdash/engine'
@@ -24,13 +23,13 @@ import type { PerspectiveOwnership }             from '@statdash/engine'
 // ── FilterState — return type ─────────────────────────────────────────
 
 export interface FilterState {
-  ctx:         SectionContext
-  raw:         Record<string, string>
-  timeModeKey: string
-  effects:     Effect[]
-  bars:        BarNode[]
+  ctx:            SectionContext
+  raw:            Record<string, string>
+  perspectiveKey: string
+  effects:        Effect[]
+  bars:           BarNode[]
   /** True when one or more Tier 3 (OptionsDefault) defaults are still loading. */
-  isLoading:   boolean
+  isLoading:      boolean
 }
 
 // ── schemaToBarNodes — local helper, converts FilterSchemaInput to BarNode[] ──
@@ -43,8 +42,6 @@ function schemaToBarNodes(schema: FilterSchemaInput | null | undefined): BarNode
     position:   barDef.position,
     order:      barDef.order,
     layout:     barDef.layout,
-    timeToggle: barDef.timeToggle,
-    timeModes:  barDef.timeModes,
     showWhen:   barDef.showWhen,
     items:      Object.entries(barDef.filters).map(([key, paramDef]) => ({
       key,
@@ -61,7 +58,7 @@ const NO_EFFECTS: Effect[] = []
 // At this point the real context hasn't been computed yet (chicken-and-egg):
 // options lists feed the context, not the other way around. Static/inline
 // sources ignore ctx.dims entirely, so this stub is safe for Phase 1.
-const STUB_CTX: SectionContext = { timeMode: 'year', dims: {} }
+const STUB_CTX: SectionContext = { dims: {} }
 
 // ── useFilterState ────────────────────────────────────────────────────
 
@@ -72,13 +69,11 @@ export function useFilterState(
 ): FilterState {
   const { state } = useFilter()
 
-  // Flatten all [key, ParamDef] pairs from all bars — order within each bar
-  // preserved. Each entry keeps its owning bar's `showWhen` so default
-  // resolution can be gated by the bar's current visibility (below).
-  const flatParamEntries: Array<{ key: string; def: ParamDef; barShowWhen?: WhenMap }> = useMemo(
+  // Flatten all [key, ParamDef] pairs from all bars — order within each bar preserved.
+  const flatParamEntries: Array<{ key: string; def: ParamDef }> = useMemo(
     () =>
       Object.values(schema?.bars ?? {}).flatMap(bar =>
-        Object.entries(bar.filters).map(([key, def]) => ({ key, def, barShowWhen: bar.showWhen })),
+        Object.entries(bar.filters).map(([key, def]) => ({ key, def })),
       ),
     // schema is static config — deps empty intentional
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -87,45 +82,29 @@ export function useFilterState(
 
   const flatParams: Array<{ key: string; def: ParamDef }> = flatParamEntries
 
-  // Defaults must NOT be resolved for a param whose bar is hidden in the current
-  // mode (its bar's `showWhen` fails for `state`). A time-mode toggle hides one
-  // bar and shows another (e.g. year-bar `mode≠range` vs range-bar `mode=range`);
-  // an effect clears the hidden bar's keys, but resolveDefaults would otherwise
-  // immediately RE-FILL them from their DefaultSpec — re-pinning a single `year`
-  // in range/dynamics mode. That spurious `time` pin makes the query resolver's
-  // range-mode read (unbounded → client-clamp) collapse to one warmed year on the
-  // async store (the timeseries shows a single bar). Gating by bar visibility
-  // keeps the inactive bar's params unset, so range mode stays time-unbounded and
-  // year mode stays range-unbounded — the modes do not cross-pin each other.
+  // Default-resolution gate — PERSPECTIVE OWNERSHIP is the sole SSOT (VISION #3 / P6).
   //
-  // EXCEPTION — `alwaysResolve` (bar-independent default): a SPAN/CUBE-derived
-  // hidden param (e.g. spanFrom/spanTo, the full data extent) is a PAGE-level state
-  // variable, not a property of one bar's visibility. It must resolve in EVERY mode,
-  // so it is hoisted OUT of the visibility gate — letting it be declared ONCE rather
-  // than copy-pasted into each time-mode bar (the OCP-clean, Constructor-ready form).
-  //
-  // PERSPECTIVE-SCOPE gate (P4.5 (c) — Protected Variations): when an active
-  // `scope.timeBinding` OWNS a param, default resolution follows PERSPECTIVE ownership
-  // instead of bar visibility — the seam that lets the two bars collapse to one
-  // byte-identically. A key the ACTIVE perspective owns MUST resolve; a key owned ONLY
-  // by a NON-active perspective (in `all` but not `active`) and by no live default is
-  // SUPPRESSED — so a collapsed single bar in `range` leaves the year-owned `time`
-  // unset ⇒ the dynamics timeseries renders the FULL span (the parity fix, preserved
-  // STRUCTURALLY without two bars). When `ownership` is absent/empty (an un-migrated
-  // page, no binding) the perspective branches are inert and this reduces to the legacy
-  // `isAlwaysResolve || !barShowWhen || evalWhen` gate EXACTLY (additive, byte-identical).
+  // A param the ACTIVE perspective's `scope.timeBinding` OWNS MUST resolve its default;
+  // a param owned ONLY by a NON-active perspective (in `all` but not `active`) is
+  // SUPPRESSED — so a single collapsed bar in `range` leaves the year-owned `time`
+  // unset ⇒ the dynamics timeseries renders the FULL span (the parity fix, expressed
+  // by perspective ownership, not two bars). Any param NO perspective owns resolves
+  // normally. `alwaysResolve` (a page-level span/cube extent like spanFrom/spanTo) is
+  // a bar-independent state variable hoisted out of the gate so it resolves in EVERY
+  // perspective, declared ONCE (the OCP-clean form). With no axis/binding, ownership
+  // is empty ⇒ every non-`alwaysResolve` param resolves (the legacy single-bar page).
   const ownsActive = ownership?.active
   const ownsAny    = ownership?.all
   const defaultParams = useMemo(
     () =>
       flatParamEntries
-        .filter(({ key, def, barShowWhen }) =>
+        .filter(({ key, def }) =>
           isAlwaysResolve(def) ||
           ownsActive?.has(key) ||
-          (!ownsAny?.has(key) && (!barShowWhen || evalWhen(barShowWhen, state))),
+          !ownsAny?.has(key),
         )
         .map(({ key, def }) => ({ key, def })),
-    [flatParamEntries, state, ownsActive, ownsAny],
+    [flatParamEntries, ownsActive, ownsAny],
   )
 
   // Tier 3 options getter — maps a param key to its EngineRow list for
@@ -181,12 +160,6 @@ export function useFilterState(
   const isLoading = pendingKeys.length > 0
 
   const context     = schema?.context
-  // context.timeMode is now OPTIONAL (P1 expand-contract): a page that declares a
-  // PerspectiveAxis carries no legacy timeMode binding. Absent ⇒ default 'year'.
-  const ctxTimeMode = context?.timeMode
-    ? ((raw[context.timeMode] as TimeMode) || 'year')
-    : 'year'
-
   const dimsKey = context?.dims
     ? Object.entries(context.dims)
         .map(([dk, pk]) => `${dk}:${raw[pk] ?? ''}`)
@@ -207,13 +180,14 @@ export function useFilterState(
     })
     .filter(([, code]) => code !== '')
 
-  const ctxKey = `${ctxTimeMode}|${dimsKey}|${cascadeEntries.map(([k, v]) => `${k}:${v}`).join(',')}`
+  const ctxKey = `${dimsKey}|${cascadeEntries.map(([k, v]) => `${k}:${v}`).join(',')}`
 
   // SectionContext — stable identity keyed on ctxKey. useMemo returns the same
   // reference until ctxKey changes, so downstream consumers don't re-render on
   // unrelated parent renders. (ctxKey is the exhaustive derived dependency; the
-  // values it is built from — ctxTimeMode, dims, cascade codes — all feed into
-  // it, so re-deriving inside the memo is correct and ref-write-free.)
+  // values it is built from — dims, cascade codes — all feed into it, so
+  // re-deriving inside the memo is correct and ref-write-free.) The active
+  // perspective id is added to ctx.perspectiveState by SiteRenderer (not here).
   const ctx = useMemo<SectionContext>(() => {
     const regularDims = context?.dims
       ? Object.fromEntries(
@@ -227,17 +201,19 @@ export function useFilterState(
         )
       : {}
     return {
-      timeMode: ctxTimeMode,
-      dims:     { ...regularDims, ...Object.fromEntries(cascadeEntries) },
+      dims: { ...regularDims, ...Object.fromEntries(cascadeEntries) },
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- ctxKey is the exhaustive derived key (see comment above)
   }, [ctxKey])
 
-  const timeModeKey = context?.timeMode ?? 'mode'
-  const effects     = schema?.effects ?? NO_EFFECTS
-  const bars        = useMemo(() => schemaToBarNodes(schema), [schema])
+  // The conventional perspective-axis URL param. Page-level `perspectives` may name
+  // it; SiteRenderer overrides with the actual axis key. Default 'mode' (the
+  // conventional time-axis param) so a no-axis page still has a stable key.
+  const perspectiveKey = 'mode'
+  const effects        = schema?.effects ?? NO_EFFECTS
+  const bars           = useMemo(() => schemaToBarNodes(schema), [schema])
 
-  return { ctx, raw, timeModeKey, effects, bars, isLoading }
+  return { ctx, raw, perspectiveKey, effects, bars, isLoading }
 }
 
 // ── isAlwaysResolve — bar-independent default predicate ──────────────────

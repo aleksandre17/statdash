@@ -25,7 +25,7 @@ import * as Nodes     from '@plugins/nodes'
 import * as Controls  from '@plugins/controls'
 import { createElement }              from 'react'
 import { registerSlice, middlewareRegistry } from '@statdash/react/engine'
-import { modeRegistry }   from '@statdash/engine'
+import { perspectiveRegistry }   from '@statdash/engine'
 import { registerStoreBuilders } from '@statdash/plugins/datasources'
 import { registerPresentationProjectors } from '@statdash/plugins/presentation'
 
@@ -39,12 +39,11 @@ export function setupCanvasRegistry(): void {
   if (done) return
   done = true
 
-  // Modes drive timeMode-aware nodes (mode-bar). The canvas renders with a
-  // staticStore so no data flows, but mode metadata must exist for the shells
-  // to resolve their labels without throwing.
-  modeRegistry.register({ id: 'year',    label: 'წლიური',    icon: 'calendar',       dataKey: 'year'    })
-  modeRegistry.register({ id: 'range',   label: 'დინამიკა',  icon: 'calendar-range', dataKey: 'range'   })
-  modeRegistry.register({ id: 'compare', label: 'შედარება',  icon: 'git-compare',    dataKey: 'compare' })
+  // Perspectives populate the Constructor's perspective palette (the perspective-*
+  // visibility leaf picker). The canvas renders with a staticStore so no data flows;
+  // this metadata exists so the visibility builder offers the registered ids.
+  perspectiveRegistry.register({ id: 'year',  label: 'წლიური',   icon: 'calendar',       dataKey: 'year'  })
+  perspectiveRegistry.register({ id: 'range', label: 'დინამიკა', icon: 'calendar-range', dataKey: 'range' })
 
   ;[
     ...Object.values(Chrome),

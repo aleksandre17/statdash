@@ -57,7 +57,7 @@ const SCHEMA: FilterSchemaInput = {
       },
     },
   },
-  context: { timeMode: 'mode', dims: { spanFrom: 'spanFrom', spanTo: 'spanTo' } },
+  context: { dims: { spanFrom: 'spanFrom', spanTo: 'spanTo' } },
 } as unknown as FilterSchemaInput
 
 function wrapper({ children }: { children: ReactNode }) {

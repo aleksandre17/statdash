@@ -218,10 +218,6 @@ function buildPageBaseProperties(): Record<string, JsonSchemaProperty> {
     presentation:  { type: 'object', properties: presentationSub.properties, additionalProperties: true },
     filterSchema:  { type: 'object', description: 'Declarative filter schema' },
     vars:          { type: 'object', description: 'Node-scoped derived vars' },
-    // `modeOrder` retired (P5.2 (3)) — perspective ORDER now derives from
-    // `perspectives[].id` (the axis SSOT). The legacy field stays on the engine
-    // NodePageConfig type for the Postel desugar of un-migrated pages (deleted in
-    // P6), but it is no longer a wire-schema field. `additionalProperties:true`
-    // (buildNodeDef) keeps any residual legacy config structurally valid.
+    perspectives:  { type: 'object', description: 'Perspective axes keyed by URL param; perspectives[] order is the toggle + nav-sort SSOT' },
   }
 }

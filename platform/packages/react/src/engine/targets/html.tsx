@@ -16,12 +16,12 @@
 
 import React, { createElement, type ReactNode } from 'react'
 import { renderToStaticMarkup }          from 'react-dom/server'
-import type { ModeContext, DataStore, SectionContext, Effect } from '@statdash/engine'
+import type { PerspectiveContext, DataStore, SectionContext, Effect } from '@statdash/engine'
 import type { NavSection }                                     from '../navUtils'
 import { EventBus }                      from '../../events/EventBus'
 import type { PlatformEventMap }         from '../../events/events'
 import { PageStoreProvider }             from '../../context/PageStoreContext'
-import { ModeProvider }                  from '../../context/ModeContext'
+import { PerspectiveProvider }           from '../../context/PerspectiveContext'
 import { FiltersProvider }               from '../../context/FiltersContext'
 import { renderNode as renderNodeFn }    from '../renderNode'
 import { projectPresentation }           from '../presentation'
@@ -56,7 +56,7 @@ export const SNAPSHOT_WRAPPER_CLASS = 'statdash-snapshot'
 //  Corresponds to RenderContext's "A: Serializable data" fields.
 //
 //  Build this from the current page filter state for a specific snapshot:
-//    { sectionCtx: { dims: { time: 2024 }, timeMode: 'year', … }, … }
+//    { sectionCtx: { dims: { time: 2024 }, perspectiveState: { mode: 'year' }, … }, … }
 //
 export interface StaticRenderContext {
   sectionCtx:     SectionContext
@@ -67,8 +67,8 @@ export interface StaticRenderContext {
   color?:         string
   locale:         string
   fallbackLocale: string
-  timeModeKey:    string
-  mode:           ModeContext
+  perspectiveKey: string
+  perspective:    PerspectiveContext
   effects:        Effect[]
   /** Visual theme for the snapshot — forwarded to `ctx.theme` and the
    *  `data-theme` attribute on the outermost element. Optional ⇒ 'default'. */
@@ -94,7 +94,7 @@ export interface StaticRenderContext {
    * Section navigation — forwarded to `ctx.navContext` so InnerPageShell
    * renders the sidebar nav correctly in static snapshots.
    */
-  navContext?:    { sections: NavSection[]; timeModeKey: string }
+  navContext?:    { sections: NavSection[]; perspectiveKey: string }
   /**
    * Presentation-projection contributions [N-ADR-0029 v2] — the generic bag the
    * registry projects (CSS vars on the wrapper, nav patch into navContext). When
@@ -113,7 +113,7 @@ export interface StaticRenderContext {
 //
 //  Minimal usage:
 //    renderPageToHTML(page, buildStaticContext({
-//      sectionCtx: { dims: { time: 2024 }, timeMode: 'year' },
+//      sectionCtx: { dims: { time: 2024 }, perspectiveState: { mode: 'year' } },
 //      stores: { main: myStore },
 //    }))
 //
@@ -140,20 +140,20 @@ export function buildStaticContext(
   const presentation: PagePresentation | undefined =
     input.presentation ?? (Object.keys(legacyPresentation).length ? legacyPresentation : undefined)
 
-  const timeModeKey = input.timeModeKey ?? 'mode'
-  // mode: default to the sectionCtx.timeMode for consistency
-  const mode = input.mode ?? {
-    current:   input.sectionCtx.timeMode ?? 'year',
+  const perspectiveKey = input.perspectiveKey ?? 'mode'
+  // perspective: default the active id from any seeded perspectiveState, else 'year'.
+  const perspective = input.perspective ?? {
+    current:   input.sectionCtx.perspectiveState?.[perspectiveKey] ?? 'year',
     available: [],
     set:       () => {},
   }
   // Seed the ctx.perspectiveState SSOT (VISION #3 / P1 — HIGH-3) so the SSR walkers
-  // and the visibility gate read the SAME source the live DOM reads (one source, no
-  // parallel mode param). Derived from the active id (`mode.current`) keyed by the
-  // axis param. Preserves any perspectiveState the caller already set.
+  // and the visibility gate read the SAME source the live DOM reads (one source).
+  // Derived from the active id (`perspective.current`) keyed by the axis param.
+  // Preserves any perspectiveState the caller already set.
   const sectionCtx: SectionContext = input.sectionCtx.perspectiveState
     ? input.sectionCtx
-    : { ...input.sectionCtx, perspectiveState: { [timeModeKey]: mode.current } }
+    : { ...input.sectionCtx, perspectiveState: { [perspectiveKey]: perspective.current } }
 
   return {
     // ── required ───────────────────────────────────────────────────────
@@ -168,8 +168,8 @@ export function buildStaticContext(
     color:          input.color,
     locale:         input.locale        ?? 'en',
     fallbackLocale: input.fallbackLocale ?? 'en',
-    timeModeKey,
-    mode,
+    perspectiveKey,
+    perspective,
     effects:    input.effects    ?? [],
     crumbs:     input.crumbs,
     presentation,
@@ -190,12 +190,12 @@ export function buildStaticContext(
  *
  * ```ts
  * const html = renderPageToHTML(myPage, {
- *   sectionCtx: { dims: { time: 2024 }, timeMode: 'year' },
+ *   sectionCtx: { dims: { time: 2024 }, perspectiveState: { mode: 'year' } },
  *   stores:     { main: myStore },
  *   filterParams: { time: '2024' },
  *   locale: appLocale, fallbackLocale: 'en',
- *   timeModeKey: 'mode',
- *   mode: { current: 'year', modes: [], set: () => {} },
+ *   perspectiveKey: 'mode',
+ *   perspective: { current: 'year', available: [], set: () => {} },
  *   effects: [],
  * })
  * ```
@@ -260,7 +260,7 @@ export function renderPageToHTML(
   const staticNavContext = staticCtx.navContext
     ? { ...staticCtx.navContext, ...sink.nav }
     : navPatchKeys.length
-      ? { sections: [], timeModeKey: staticCtx.timeModeKey, ...sink.nav }
+      ? { sections: [], perspectiveKey: staticCtx.perspectiveKey, ...sink.nav }
       : staticCtx.navContext
 
   ctxHolder.ctx = {
@@ -271,8 +271,8 @@ export function renderPageToHTML(
     vars:           { ...(staticCtx.vars ?? {}) },
     locale:         staticCtx.locale,
     fallbackLocale: staticCtx.fallbackLocale,
-    timeModeKey:    staticCtx.timeModeKey,
-    mode:           staticCtx.mode,
+    perspectiveKey: staticCtx.perspectiveKey,
+    perspective:    staticCtx.perspective,
     effects:        staticCtx.effects,
     navContext:     staticNavContext,
     theme:          staticCtx.theme,
@@ -304,13 +304,13 @@ export function renderPageToHTML(
   // GlobalStateProvider default is a no-op store — no provider needed.
   const wrapped = createElement(
     FiltersProvider,
-    { value: { bars: [], timeModeKey: staticCtx.timeModeKey, effects: staticCtx.effects } },
+    { value: { bars: [], perspectiveKey: staticCtx.perspectiveKey, effects: staticCtx.effects } },
     createElement(
       PageStoreProvider,
       { store: pageStore },
       createElement(
-        ModeProvider,
-        { value: staticCtx.mode },
+        PerspectiveProvider,
+        { value: staticCtx.perspective },
         createElement(
           'div',
           {

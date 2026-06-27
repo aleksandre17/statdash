@@ -30,7 +30,7 @@ const obs: Observation[] = [
   { measure: 'B1G', value:  700, time: 2020, geo: 'GE', label: 'GDP', isCarryForward: 0 },
 ]
 const store = new ExternalStore(obs)
-const ctx: SectionContext = { timeMode: 'year', dims: { time: 2023, geo: 'GE' } }
+const ctx: SectionContext = { dims: { time: 2023, geo: 'GE' } }
 
 describe('FF-TIMEDIMENSION — YearsSpec ↔ timeDimension.range (years list)', () => {
   it('timeseries: legacy years == timeDimension range (YearsSpec)', () => {

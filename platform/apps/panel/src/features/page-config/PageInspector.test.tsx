@@ -1,7 +1,7 @@
 // ── Page Inspector — schema-driven PAGE-ROOT authoring + round-trip [V3] ───────
 //
 //  Proves the ADR mechanism for page-level config: the page root's PageConfigBase
-//  (presentation · frame · modeOrder · vars) is authored through the SAME generic
+//  (presentation · frame · perspectives · vars) is authored through the SAME generic
 //  Inspector (pageSchemaSource — presentation via presentationPropSchema), the
 //  edits land in page.meta, and the page round-trips losslessly through
 //  canvasPageAdapter. No bespoke page form, no second engine.
@@ -37,11 +37,11 @@ describe('pageSchemaSource — schema reflects the registered projectors', () =>
   it('projects presentationPropSchema() into prefixed presentation.* fields', () => {
     const schema = pageSchema()
     const fields = schema.map((f) => f.field)
-    // frame (static select) + the projected presentation fields + modeOrder + vars.
+    // frame (static select) + the projected presentation fields + perspectives + vars.
     expect(fields).toContain('frame')
     expect(fields).toContain('presentation.color')   // colorProjector → presentation.color
     expect(fields).toContain('presentation.crumbs')  // crumbsProjector → presentation.crumbs
-    expect(fields).toContain('modeOrder')
+    expect(fields).toContain('perspectives')
     expect(fields).toContain('vars')
     // No page-root `type` field — the kind is fixed by the adapter (see source note).
     expect(fields).not.toContain('type')
@@ -96,7 +96,10 @@ describe('PageInspectorPanel — authors page config through the generic Inspect
     seedPage({
       frame: 'minimal',
       presentation: { color: '#abcdef' },
-      modeOrder: ['year', 'range'],
+      perspectives: { mode: { perspectives: [
+        { id: 'year',  label: { ka: 'წ', en: 'Y' } },
+        { id: 'range', label: { ka: 'დ', en: 'R' } },
+      ] } },
       vars: { y: { op: 'lookup', key: 'time', map: { '2023': 'Y' } } },
     })
     const page = useConstructorStore.getState().pages[0]
@@ -104,6 +107,6 @@ describe('PageInspectorPanel — authors page config through the generic Inspect
     expect(restored).toEqual(page)
     expect(restored.meta?.frame).toBe('minimal')
     expect(restored.meta?.presentation).toEqual({ color: '#abcdef' })
-    expect(restored.meta?.modeOrder).toEqual(['year', 'range'])
+    expect(restored.meta?.perspectives).toBeDefined()
   })
 })

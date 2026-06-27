@@ -13,11 +13,11 @@ import type { BarNode, Effect }       from '@statdash/engine'
 
 export interface FiltersCtx {
   bars:        BarNode[]
-  timeModeKey: string
+  perspectiveKey: string
   effects:     Effect[]
 }
 
-const EMPTY: FiltersCtx = { bars: [], timeModeKey: 'mode', effects: [] }
+const EMPTY: FiltersCtx = { bars: [], perspectiveKey: 'mode', effects: [] }
 
 const Ctx = createContext<FiltersCtx>(EMPTY)
 

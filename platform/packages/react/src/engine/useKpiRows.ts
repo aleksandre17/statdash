@@ -118,7 +118,7 @@ export function useKpiRows(specs: KpiSpec[], ctx: RenderContext): KpiDef[] {
             // deleted dim, so the warm key carried geo=R2 while the read key carried no
             // geo → cache miss → ApiStore.querySync cold-throw (the range/dynamics
             // kpi-strip "Failed to load component"). Only the non-dims SectionContext
-            // fields (timeMode, locale, …) come from sectionCtx; dims is r.dims alone.
+            // fields (perspectiveState, locale, …) come from sectionCtx; dims is r.dims alone.
             const reqCtx = { ...sectionCtx, dims: r.dims }
             // Warm BOTH shapes a KPI read may take: val (storeVal point reads —
             // every KpiValueSpec/KpiTrendSpec lowers to storeVal) and obs (so an

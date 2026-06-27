@@ -93,7 +93,7 @@ function makeStore(): ApiStore {
   return new ApiStore('http://test', 'GDP_ANNUAL', ['geo', 'approach', 'measure'], {}, mapRow)
 }
 
-const baseCtx: SectionContext = { timeMode: 'year', dims: { time: 2025, geo: 'GE', approach: '_Z' } }
+const baseCtx: SectionContext = { dims: { time: 2025, geo: 'GE', approach: '_Z' } }
 
 let savedFetch: typeof globalThis.fetch
 beforeEach(() => { savedFetch = globalThis.fetch })
@@ -168,7 +168,7 @@ describe('FF-VALUE-BINDING · Bug B — query filter scopes the cache identity',
   } as DataSpec
 
   it('two query specs differing only by approach yield DISTINCT requirements', () => {
-    const ctx: SectionContext = { timeMode: 'year', dims: { time: 2025, geo: 'GE' } }
+    const ctx: SectionContext = { dims: { time: 2025, geo: 'GE' } }
     const rp = extractRequirements(prod, ctx)
     const re = extractRequirements(exp, ctx)
     // The pin must surface in req.dims so specDimKey (built from these) cannot collide.

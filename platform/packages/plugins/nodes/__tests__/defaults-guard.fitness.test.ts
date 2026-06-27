@@ -35,7 +35,6 @@ import type { PropField, PropSchema } from '@statdash/react/engine/slice-meta'
 
 // ── Node metas ────────────────────────────────────────────────────────────────
 import { META as section }       from '../section/default/meta'
-import { META as modeBar }       from '../mode-bar/default/meta'
 import { META as perspectiveBar } from '../perspective-bar/default/meta'
 import { META as filterBar }     from '../filter-bar/default/meta'
 import { META as pageHeader }    from '../page-header/default/meta'
@@ -84,7 +83,7 @@ function metaId(m: object): string {
 }
 
 const ALL_METAS: ReadonlyArray<MetaWithDefaults & object> = [
-  section, modeBar, perspectiveBar, filterBar, pageHeader, geograph, links, repeat, hero,
+  section, perspectiveBar, filterBar, pageHeader, geograph, links, repeat, hero,
   statsCarousel,
   row, grid, columns, stack, card, divider, spacer, wrap,
   chart, kpiStrip, table, map, gauge, text,

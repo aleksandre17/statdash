@@ -2,7 +2,7 @@ import { useFilter, useCurrentStore, useResolveLocaleSafe } from '@statdash/reac
 import { resolveOptions }                         from '@statdash/engine'
 import type { ParamSelectNode }                   from '@statdash/engine'
 
-const EMPTY_CTX = { timeMode: 'year' as const, dims: {} }
+const EMPTY_CTX = { dims: {} }
 
 export function SelectShell({ filterKey, config }: { filterKey: string; config: ParamSelectNode }) {
   const { state, set } = useFilter()

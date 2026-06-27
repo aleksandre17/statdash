@@ -45,7 +45,6 @@ const ROW_A: EngineRow = { value: 1 }
 const ROW_B: EngineRow = { value: 2 }
 
 const SECTION_CTX = {
-  timeMode: 'year' as const,
   dims:     { time: '2023' },
 }
 

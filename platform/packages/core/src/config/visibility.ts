@@ -7,15 +7,13 @@
 //
 
 import type { DimVal } from '../sdmx'
-import type { ModeId } from '../mode/types'
 import { activePerspective } from './perspective-state'
 
 /**
  * Resolve the active id for a perspective-* op. With an explicit `param` the op
  * reads `perspectiveState[param]` directly (the multi-axis path — Law 1, the param
  * is data). Param-less, it resolves the conventional single axis via
- * `activePerspective` — which is EXACTLY what the legacy `mode-*` ops do, so a
- * param-less `perspective-is` and a `mode-is` are byte-identical.
+ * `activePerspective`.
  */
 function activeForExpr(
   perspectiveState: Record<string, string> | undefined,
@@ -38,7 +36,7 @@ export type VisibilityExpr =
   | { op: 'and';      exprs: VisibilityExpr[] }
   | { op: 'or';       exprs: VisibilityExpr[] }
   | { op: 'not';      expr:  VisibilityExpr  }
-  // ── Perspective-aware ops — the CANONICAL names (VISION #3 / P2) ───────────
+  // ── Perspective-aware ops — the CANONICAL perspective-axis gate (VISION #3) ──
   //  Read the active id from the `perspectiveState` SSOT, NOT filterParams. An
   //  explicit `param` selects the axis (`perspectiveState[param]`) — Law 1, the
   //  param is data, so a page may carry many orthogonal axes. Param-less, the op
@@ -47,13 +45,6 @@ export type VisibilityExpr =
   | { op: 'perspective-is';  perspective:  string;   param?: string }
   | { op: 'perspective-in';  perspectives: string[]; param?: string }
   | { op: 'perspective-not'; perspective:  string;   param?: string }
-  // ── Mode-aware ops — LEGACY ALIASES of perspective-* (retire P6) ───────────
-  //  Behaviourally identical to a PARAM-LESS perspective-* op: both resolve the
-  //  active id via `activePerspective`. Kept so existing `mode-*` configs render
-  //  byte-identically. Old `{ op:'eq', param:'mode' }` still works (reads filterParams).
-  | { op: 'mode-is';  mode:  ModeId   }
-  | { op: 'mode-in';  modes: ModeId[] }
-  | { op: 'mode-not'; mode:  ModeId   }
 
 // ── evalVisibility ────────────────────────────────────────────────────
 //
@@ -64,14 +55,12 @@ export type VisibilityExpr =
 //  fr = PageFiltersResult cast to Record<string, unknown>.
 //  undefined values normalised to null (no-selection state).
 //
-//  THE SSOT MIGRATION (VISION #3 / P1 — HIGH-3): the active perspective id no
-//  longer arrives as a positional `mode?` sourced from a React `ModeContext`; it is
-//  read from the `perspectiveState: Record<param, activeId>` SSOT (the Harel
-//  orthogonal-regions container on SectionContext). EVERY callsite passes the SAME
-//  record (renderNode, both SSR walkers, navUtils). A param-less `mode-*` op resolves
-//  the active id via `activePerspective` (the conventional axis). Absent
-//  perspectiveState ⇒ a `mode-*` op is false — byte-identical to the pre-P1 path
-//  where an undefined positional `mode` made the op false (N=1-free).
+//  THE SSOT (VISION #3 / P1 — HIGH-3): the active perspective id is read from the
+//  `perspectiveState: Record<param, activeId>` SSOT (the Harel orthogonal-regions
+//  container on SectionContext). EVERY callsite passes the SAME record (renderNode,
+//  both SSR walkers, navUtils, the kpi-strip). A param-less `perspective-*` op
+//  resolves the active id via `activePerspective` (the conventional axis). Absent
+//  perspectiveState ⇒ a `perspective-*` op is false (the N=1-free default).
 //
 export function evalVisibility(
   expr:             VisibilityExpr,
@@ -91,10 +80,5 @@ export function evalVisibility(
     case 'perspective-is':  { const m = activeForExpr(perspectiveState, expr.param); return m != null && m === expr.perspective }
     case 'perspective-in':  { const m = activeForExpr(perspectiveState, expr.param); return m != null && expr.perspectives.includes(m) }
     case 'perspective-not': { const m = activeForExpr(perspectiveState, expr.param); return m != null && m !== expr.perspective }
-    // Legacy mode-* aliases — param-less, resolve via activePerspective (== the
-    // param-less perspective-* path above, byte-identical). Retire P6.
-    case 'mode-is':  { const m = activePerspective(perspectiveState); return m != null && m === expr.mode }
-    case 'mode-in':  { const m = activePerspective(perspectiveState); return m != null && expr.modes.includes(m) }
-    case 'mode-not': { const m = activePerspective(perspectiveState); return m != null && m !== expr.mode }
   }
 }

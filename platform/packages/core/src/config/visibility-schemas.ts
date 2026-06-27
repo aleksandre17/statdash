@@ -9,8 +9,8 @@
 //  op-schemas.ts EXACTLY — one rung down: a VisibilityExpr op instead of a
 //  ParamDef / TransformStep.
 //
-//  LEAF ops (eq/neq/in/isset/mode-*) carry a PropSchema (registerVisibilityLeaf
-//  Schema), rendered by the panel's visibilityLeafSchemaSource. COMPOSITE ops
+//  LEAF ops (eq/neq/in/isset/perspective-*) carry a PropSchema (registerVisibility
+//  LeafSchema), rendered by the panel's visibilityLeafSchemaSource. COMPOSITE ops
 //  (and/or/not) carry NO schema — their "fields" are CHILD VisibilityExprs, which
 //  the recursive VisibilityBuilder renders directly — so they are recorded with
 //  registerVisibilityComposite (the OCP marker the coverage gate counts).
@@ -20,10 +20,10 @@
 //      the author PICKS one of the page's authored filter controls, never types a
 //      raw param name. `is`/`values` then scope to that param's dimension members
 //      via 'cube.members' (sourceDim: 'param') where the binding is resolvable.
-//    • `mode`/`modes` (mode-*) are 'enum-ref' on the 'modes' source — the author
-//      PICKS a registered ModeId, never types a raw mode string.
+//    • `perspective`/`perspectives` (perspective-*) are 'enum-ref' on the
+//      'perspectives' source — the author PICKS a registered perspective id.
 //
-//  COLLECTION FIELDS (`in.values`, `mode-in.modes`) carry a list value. They use
+//  COLLECTION FIELDS (`in.values`, `perspective-in.perspectives`) carry a list value. They use
 //  the typed 'array' field — the documented, bounded sub-editor SCOPED to that one
 //  field (the same escape hatch op-schemas / param-schemas use for collections).
 //  Still schema-driven: the op DECLARES the field, its kind, label, required-ness.
@@ -76,12 +76,12 @@ export const issetSchema: PropSchema = [
   paramField,
 ]
 
-// ── perspective-is / perspective-not — the CANONICAL perspective leaves [P2] ──
-//  `perspective` binds to the registered perspective set (== the `modes` source —
-//  perspectiveRegistry IS modeRegistry, P0) — pick-don't-type. Mirrors mode-*
-//  EXACTLY, one field renamed `mode`→`perspective`; same generic Inspector, same UX.
+// ── perspective-is / perspective-not — the CANONICAL perspective leaves ───────
+//  `perspective` binds to the registered perspective set (the 'perspectives'
+//  source, fed by perspectiveRegistry.list()) — pick-don't-type. Same generic
+//  Inspector renders it; no bespoke per-op form.
 const perspectiveField = {
-  field: 'perspective', type: 'enum-ref' as const, source: 'modes' as const, required: true,
+  field: 'perspective', type: 'enum-ref' as const, source: 'perspectives' as const, required: true,
   label: bi('პერსპექტივა', 'Perspective'),
 }
 
@@ -96,25 +96,6 @@ export const perspectiveInSchema: PropSchema = [
     label: bi('პერსპექტივებში (["year","range"])', 'In perspectives (["year","range"])') },
 ]
 
-// ── mode-is / mode-not — mode-equality leaves: { mode } [LEGACY ALIASES] ──────
-//  `mode` binds to the registered ModeId set (pick-don't-type). Behaviourally an
-//  alias of param-less perspective-* (retire P6); kept so existing configs author.
-const modeField = {
-  field: 'mode', type: 'enum-ref' as const, source: 'modes' as const, required: true,
-  label: bi('რეჟიმი', 'Mode'),
-}
-
-export const modeIsSchema:  PropSchema = [modeField]
-export const modeNotSchema: PropSchema = [
-  { ...modeField, label: bi('რეჟიმი (გარდა)', 'Mode (except)') },
-]
-
-// ── mode-in — mode-membership leaf: { modes[] } ───────────────────────────────
-export const modeInSchema: PropSchema = [
-  { field: 'modes', type: 'array', required: true,
-    label: bi('რეჟიმებში (["year","range"])', 'In modes (["year","range"])') },
-]
-
 // ── Registration (the OCP side-effect — imported by config/index.ts) ──────────
 //  Each VisibilityExpr op carries its surface. Adding an op here (with its union
 //  member in visibility.ts and its case in evalVisibility) makes it authorable
@@ -123,13 +104,10 @@ registerVisibilityLeafSchema('eq',              eqSchema)
 registerVisibilityLeafSchema('neq',             neqSchema)
 registerVisibilityLeafSchema('in',              inSchema)
 registerVisibilityLeafSchema('isset',           issetSchema)
-// Canonical perspective-* (P2) + legacy mode-* aliases — both authorable.
+// Canonical perspective-* leaves — the perspective-axis visibility gate.
 registerVisibilityLeafSchema('perspective-is',  perspectiveIsSchema)
 registerVisibilityLeafSchema('perspective-not', perspectiveNotSchema)
 registerVisibilityLeafSchema('perspective-in',  perspectiveInSchema)
-registerVisibilityLeafSchema('mode-is',         modeIsSchema)
-registerVisibilityLeafSchema('mode-not',        modeNotSchema)
-registerVisibilityLeafSchema('mode-in',         modeInSchema)
 
 // Composites: no PropSchema (children are sub-exprs) — the recursive builder
 // renders the sub-tree. Recorded so the coverage gate counts them as surfaced.

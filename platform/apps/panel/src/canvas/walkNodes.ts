@@ -10,7 +10,7 @@ import type { NodeBase } from '@statdash/react/engine'
 
 const DATA_KEYS = new Set([
   'data', 'transforms', 'fieldConfig', 'dataLinks', 'vars', 'view',
-  'filterSchema', 'modeOrder', 'computed', 'crossValidate', 'context', 'store',
+  'filterSchema', 'perspectives', 'computed', 'crossValidate', 'context', 'store',
 ])
 
 export function isNodeObject(val: unknown): val is NodeBase {

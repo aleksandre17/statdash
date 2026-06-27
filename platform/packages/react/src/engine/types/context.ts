@@ -23,7 +23,7 @@ import type {
   SelectOption,
   ChipOption,
   Effect,
-  ModeContext,
+  PerspectiveContext,
   FieldConfig,
   DataLinkDef,
   ResolvedLink,
@@ -61,8 +61,10 @@ export interface RenderContext {
   vars:          Record<string, unknown>
   locale:        string
   fallbackLocale: string
-  timeModeKey:   string
-  mode:          ModeContext
+  /** URL param of the page's conventional perspective axis (PerspectiveAxis key). */
+  perspectiveKey: string
+  /** Active-perspective triad ({ current, available, set }) for the page axis. */
+  perspective:   PerspectiveContext
   /**
    * Resolved identity for RBAC visibility [N41]. Injected by the app tier;
    * absent ⇒ anonymous (no roles). Read by renderNode to enforce
@@ -72,10 +74,6 @@ export interface RenderContext {
   paramOptions?: number[] | SelectOption[] | ChipOption[]
   effects:       Effect[]
   rows?:         DataRow[]
-  /** Comparison dataset resolved by resolveCompareRows (N37 compare mode). */
-  compareRows?:  DataRow[]
-  /** Human-readable label for the comparison series (e.g. 'Prior year'). */
-  compareLabel?: string
   /** Active UI theme — shells may adapt contrast/colour (N44). */
   theme?:        'default' | 'high-contrast'
   view?:         ViewParams
@@ -87,9 +85,9 @@ export interface RenderContext {
    * packages/react stays agnostic: no InnerLayout import here.
    */
   navContext?: {
-    sections:    NavSection[]
-    timeModeKey: string
-    crumbs?:     Crumb[]
+    sections:       NavSection[]
+    perspectiveKey: string
+    crumbs?:        Crumb[]
   }
 
   // ── B: Runtime services (functions — NOT serializable) ────────────────
@@ -120,8 +118,8 @@ export interface RenderContext {
   eventBus:      EventBus<PlatformEventMap>
   /**
    * Typed command bus — all platform state mutations flow through here (CQS).
-   * Replaces direct calls to ctx.set / ctx.mode.set in shells.
-   * Strangler-Fig: ctx.set and ctx.mode remain until shells migrate.
+   * Replaces direct calls to ctx.set / ctx.perspective.set in shells.
+   * Strangler-Fig: ctx.set and ctx.perspective remain until shells migrate.
    */
   bus:           CommandBus
 }

@@ -27,7 +27,7 @@ import type { ScopeOverride, DataRow }   from '@statdash/engine'
 import type { NodeDef, RenderContext, ChildrenArg, NodeBase, SlotChildren, VarMap } from './types'
 import { nodeRegistry }                  from './register-all'
 import { skeletonRegistry }              from './skeletonRegistry'
-import { resolveNodeRows, resolveCompareRows, resolveStore, effectiveStoreKey } from './resolveNodeRows'
+import { resolveNodeRows, resolveStore, effectiveStoreKey } from './resolveNodeRows'
 import { useNodeRows }                   from './useNodeRows'
 import { NodeErrorBoundary }             from './NodeErrorBoundary'
 import { WrapStyleContext }              from './wrapStyleContext'
@@ -261,13 +261,13 @@ export function renderNode(node: NodeBase, ctx: RenderContext): ReactNode {
   function renderWithRows(rows: DataRow[]): ReactNode {
     let ctxN = ctxM
 
-    // 2.y Compare wiring (N37) — resolve second dataset when view.scope.compare is set
+    // 2.y Per-panel scope override — merge view.scope.dimOverride onto the panel's
+    //  SectionContext (Grafana scopedVars). Absent ⇒ ctxN.sectionCtx unchanged
+    //  (mergeScope returns the base reference). No config sets view.scope today, so
+    //  this is inert (byte-identical) — the capability stays live for authoring.
     const viewScope = (migrated.view as { scope?: ScopeOverride } | undefined)?.scope
-    if (viewScope?.compare) {
-      const panelCtx    = mergeScope(ctxN.sectionCtx, viewScope)
-      const compareStore = resolveStore(ctxN)
-      const result      = resolveCompareRows(migrated, panelCtx, viewScope.compare, compareStore)
-      ctxN = { ...ctxN, compareRows: result.compareRows, compareLabel: result.compareLabel }
+    if (viewScope?.dimOverride) {
+      ctxN = { ...ctxN, sectionCtx: mergeScope(ctxN.sectionCtx, viewScope) }
     }
 
     // 2.5. Node-level vars (Gap 7) — evaluate migrated.vars with node's filter context

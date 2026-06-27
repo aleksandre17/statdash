@@ -16,7 +16,7 @@ import type { NodeBase, RenderContext } from './types'
 // Minimal RenderContext — only the fields resolvePreliminary reads.
 function makeCtx(over: Partial<RenderContext>): RenderContext {
   return {
-    sectionCtx: { timeMode: 'year', dims: {} },
+    sectionCtx: { dims: {} },
     stores:     {},
     rows:       [],
     ...over,

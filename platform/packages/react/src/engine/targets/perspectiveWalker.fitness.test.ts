@@ -20,8 +20,8 @@
 //     frame if it were visible, so the skip is a real subtraction, not a no-op.
 //
 //  Test page (a 2-perspective page, mirroring the gdp/accounts shape):
-//    - a YEAR-only node   gated by { op:'mode-is', mode:'year'  } carrying code Y
-//    - a RANGE-only node  gated by { op:'mode-is', mode:'range' } carrying code R
+//    - a YEAR-only node   gated by { op:'perspective-is', perspective:'year'  } carrying code Y
+//    - a RANGE-only node  gated by { op:'perspective-is', perspective:'range' } carrying code R
 //    - an UNGATED node    (always visible) carrying code U
 //
 
@@ -50,15 +50,15 @@ function ctxFor(
   stores: Record<string, import('@statdash/engine').DataStore>,
 ): StaticRenderContext {
   return {
-    sectionCtx:     { dims: { time: 2024 }, timeMode: activeView as 'year' | 'range' },
+    sectionCtx:     { dims: { time: 2024 } },
     stores,
     pageStoreKey:   'main',
     filterParams:   {},
     vars:           {},
     locale:         'en',
     fallbackLocale: 'en',
-    timeModeKey:    'mode',
-    mode:           { current: activeView, available: [], set: () => {} },
+    perspectiveKey: 'mode',
+    perspective: { current: activeView, available: [], set: () => {} },
     effects:        [],
   }
 }
@@ -70,13 +70,13 @@ const TWO_PERSPECTIVE_PAGE = asPage({
     {
       type: 'section',
       id:   'year-only',
-      view: { visibleWhen: { op: 'mode-is', mode: 'year' } },
+      view: { visibleWhen: { op: 'perspective-is', perspective: 'year' } },
       data: { type: 'row-list', rows: [{ code: 'Y' }] },
     },
     {
       type: 'section',
       id:   'range-only',
-      view: { visibleWhen: { op: 'mode-is', mode: 'range' } },
+      view: { visibleWhen: { op: 'perspective-is', perspective: 'range' } },
       data: { type: 'row-list', rows: [{ code: 'R' }] },
     },
     {

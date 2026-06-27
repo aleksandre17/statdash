@@ -2,8 +2,8 @@
 //
 //  The engine-side half of Coverage Fitness #1 for VisibilityExpr ops: each op
 //  (the SSOT tuple VISIBILITY_OPS) registers an authoring surface — a leaf
-//  PropSchema (eq/neq/in/isset/mode-*) or a composite marker (and/or/not). Leaf
-//  schemas bind `param`/`mode` to pick-don't-type sources. This pins the OCP
+//  PropSchema (eq/neq/in/isset/perspective-*) or a composite marker (and/or/not). Leaf
+//  schemas bind `param`/`perspective` to pick-don't-type sources. This pins the OCP
 //  contract at the registration layer (the panel's coverage test pins it at the
 //  surface layer); evalVisibility agreement is proven in the panel round-trip.
 //
@@ -16,7 +16,6 @@ import {
 const LEAF_OPS      = [
   'eq', 'neq', 'in', 'isset',
   'perspective-is', 'perspective-in', 'perspective-not',
-  'mode-is', 'mode-in', 'mode-not',
 ] as const
 const COMPOSITE_OPS = ['and', 'or', 'not'] as const
 
@@ -65,25 +64,12 @@ describe('visibility-schemas — VisibilityExpr authoring surfaces (V4)', () => 
     }
   })
 
-  it('mode-* leaves pick their mode from the registered modes (pick-don\'t-type)', () => {
-    const modeIs  = getVisibilityLeafSchema('mode-is')!.find((f) => f.field === 'mode')!
-    const modeNot = getVisibilityLeafSchema('mode-not')!.find((f) => f.field === 'mode')!
-    for (const f of [modeIs, modeNot]) {
-      expect(f.type).toBe('enum-ref')
-      expect(f.source).toBe('modes')
-    }
-    const modesField = getVisibilityLeafSchema('mode-in')!.find((f) => f.field === 'modes')!
-    expect(modesField.type).toBe('array')
-  })
-
-  it('perspective-* leaves mirror mode-* EXACTLY (canonical names, same pick source)', () => {
-    // The canonical perspective-* ops surface like mode-*: a single value field
-    // bound to the registered perspective/mode set (pick-don't-type, P2).
+  it('perspective-* leaves pick their perspective from the registered perspectives (pick-don\'t-type)', () => {
     const isField  = getVisibilityLeafSchema('perspective-is')!.find((f) => f.field === 'perspective')!
     const notField = getVisibilityLeafSchema('perspective-not')!.find((f) => f.field === 'perspective')!
     for (const f of [isField, notField]) {
       expect(f.type).toBe('enum-ref')
-      expect(f.source).toBe('modes') // perspectiveRegistry IS modeRegistry (P0)
+      expect(f.source).toBe('perspectives') // the perspectiveRegistry-backed source
       expect(f.required).toBe(true)
     }
     const perspsField = getVisibilityLeafSchema('perspective-in')!.find((f) => f.field === 'perspectives')!

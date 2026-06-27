@@ -74,15 +74,15 @@ function valueForYear(url: string): number {
 function makeCtx(store: DataStore): RenderContext {
   const holder = { ctx: null as unknown as RenderContext }
   holder.ctx = {
-    sectionCtx:     { dims: { time: 2025 }, timeMode: 'year', perspectiveState: { mode: 'year' } },
+    sectionCtx:     { dims: { time: 2025 }, perspectiveState: { mode: 'year' } },
     stores:         { main: store },
     pageStoreKey:   'main',
     filterParams:   {},
     vars:           {},
     locale:         'en',
     fallbackLocale: 'en',
-    timeModeKey:    'mode',
-    mode:           { current: 'year', available: [], set: () => {} },
+    perspectiveKey: 'mode',
+    perspective:           { current: 'year', available: [], set: () => {} },
     effects:        [],
     rows:           [],
     eventBus:       { publish: () => {}, subscribe: () => () => {} } as unknown as RenderContext['eventBus'],
@@ -195,7 +195,7 @@ describe('useKpiRows — async store warms BOTH periods of a yoy KPI', () => {
 
     const store = makeLiveStore()
     const qa    = (store.queryAsync as DataStore['queryAsync'])!.bind(store)
-    const ctx2  = { dims: { time: 2025 }, timeMode: 'year' as const }
+    const ctx2  = { dims: { time: 2025 } as const }
 
     // Two concurrent identical val queries — same cacheKey ⇒ one fetch, one promise.
     const p1 = qa({ type: 'val', code: 'GDP' }, ctx2)

@@ -48,7 +48,7 @@ const EXPECTED_AXES: ReadonlySet<string> = new Set([
   'propertySchemas',
   'chartTypes',
   'specTypes',
-  'modes',
+  'perspectives',
   'datasourceKinds',
   'transformOps',
   'metrics',

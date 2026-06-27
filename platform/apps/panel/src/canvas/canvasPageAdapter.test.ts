@@ -111,7 +111,7 @@ describe('round-trip fitness (ADR): fromNodePageConfig ∘ toNodePageConfig = id
 //
 //  The subtree-only round-trip above is a FALSE-GREEN for page-level config:
 //  toNodePageConfig used to hardcode { type,id,path,children } and DROP frame /
-//  chrome / color / presentation / filterSchema / vars / modeOrder / schemaVersion.
+//  chrome / color / presentation / filterSchema / vars / perspectives / schemaVersion.
 //  This block populates EVERY non-identity PageConfigBase field and asserts a
 //  complete round-trip, so dropping ANY of them fails the test.
 //
@@ -129,7 +129,6 @@ const META_FIELD_COVERAGE: Record<keyof PageMeta, true> = {
   presentation:  true,
   filterSchema:  true,
   vars:          true,
-  modeOrder:     true,
   perspectives:  true,
 }
 
@@ -151,11 +150,10 @@ const fullMeta: PageMeta = {
         },
       },
     },
-    context: { timeMode: 'mode', dims: { time: 'time' } },
+    context: { dims: { time: 'time' } },
   },
   vars:      { yearLabel: { op: 'lookup', key: 'time', map: { '2023': 'Y2023' } } },
-  modeOrder: ['year', 'range'],
-  // VISION #3 / P1 — the declared perspective axes (keyed by URL param). Carried
+  // VISION #3 — the declared perspective axes (keyed by URL param). Carried
   // generically through the same meta spread; round-trips byte-identically.
   perspectives: {
     perspective: {
@@ -197,7 +195,6 @@ describe('page-level round-trip fitness (P-3): every PageConfigBase field surviv
     expect(cfg.presentation).toEqual(fullMeta.presentation)
     expect(cfg.filterSchema).toEqual(fullMeta.filterSchema)
     expect(cfg.vars).toEqual(fullMeta.vars)
-    expect(cfg.modeOrder).toEqual(['year', 'range'])
     expect(cfg.perspectives).toEqual(fullMeta.perspectives)
     expect(cfg.schemaVersion).toBe(2)
     // identity columns still come from the CanvasPage, not meta

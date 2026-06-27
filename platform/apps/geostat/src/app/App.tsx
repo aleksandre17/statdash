@@ -1,5 +1,5 @@
 import { useState, useEffect, lazy, Suspense } from 'react'
-import { modeRegistry }             from '@statdash/engine'
+import { perspectiveRegistry }      from '@statdash/engine'
 import { bootstrapSite }            from '@/data/site-manifest'
 import type { SiteBootstrap }       from '@/data/site-manifest'
 import { registerFormatters }       from '@/i18n/formatters'
@@ -31,13 +31,13 @@ export default function App() {
 
   useEffect(() => {
     bootstrapSite().then((boot) => {
-      // Modes + locale formatters are manifest data (ADR-0026): register
+      // Perspectives + locale formatters are manifest data (ADR-0026): register
       // whichever set the active manifest carries — local fallback or
       // /api/bootstrap — before any page renders (App gates render on
       // `bootstrap`, and the AppSkeleton has no formatted content, so this
-      // always runs first). Downstream ModeContext.resolve() / useFmt() read
-      // the registries at render time.
-      boot.manifest.modes.forEach((m) => modeRegistry.register(m))
+      // always runs first). Downstream the Constructor perspective palette +
+      // useFmt() read the registries at render time.
+      boot.manifest.modes.forEach((m) => perspectiveRegistry.register(m))
       registerFormatters(boot.manifest.i18n.locales)
       setBootstrap(boot)
     })

@@ -60,14 +60,14 @@ describe('SSR fast-lane — renderPageToJSON uses only querySync (N34 risk #1)',
   it('empty page — queryAsync is never called', () => {
     const store = makeSpyStore()
     const ctx: StaticRenderContext = {
-      sectionCtx:     { dims: { time: 2024 }, timeMode: 'year' },
+      sectionCtx:     { dims: { time: 2024 } },
       stores:         { main: store },
       filterParams:   {},
       vars:           {},
       locale:         'en',
       fallbackLocale: 'en',
-      timeModeKey:    'mode',
-      mode:           { current: 'year', available: [], set: () => {} },
+      perspectiveKey: 'mode',
+      perspective:    { current: 'year', available: [], set: () => {} },
       effects:        [],
     }
 
@@ -79,14 +79,14 @@ describe('SSR fast-lane — renderPageToJSON uses only querySync (N34 risk #1)',
   it('page with data node — queryAsync is never called (querySync may be called or throw, async path is never entered)', () => {
     const store = makeSpyStore()
     const ctx: StaticRenderContext = {
-      sectionCtx:     { dims: { time: 2024 }, timeMode: 'year' },
+      sectionCtx:     { dims: { time: 2024 } },
       stores:         { main: store },
       filterParams:   {},
       vars:           {},
       locale:         'en',
       fallbackLocale: 'en',
-      timeModeKey:    'mode',
-      mode:           { current: 'year', available: [], set: () => {} },
+      perspectiveKey: 'mode',
+      perspective:    { current: 'year', available: [], set: () => {} },
       effects:        [],
     }
 
@@ -107,14 +107,14 @@ describe('SSR fast-lane — renderPageToJSON uses only querySync (N34 risk #1)',
   it('deeply nested page — queryAsync is never called at any depth', () => {
     const store = makeSpyStore()
     const ctx: StaticRenderContext = {
-      sectionCtx:     { dims: { time: 2024 }, timeMode: 'year' },
+      sectionCtx:     { dims: { time: 2024 } },
       stores:         { main: store },
       filterParams:   {},
       vars:           {},
       locale:         'en',
       fallbackLocale: 'en',
-      timeModeKey:    'mode',
-      mode:           { current: 'year', available: [], set: () => {} },
+      perspectiveKey: 'mode',
+      perspective:    { current: 'year', available: [], set: () => {} },
       effects:        [],
     }
 
@@ -142,14 +142,14 @@ describe('SSR fast-lane — renderPageToJSON uses only querySync (N34 risk #1)',
     expect(store.caps!.sync).toBe(true)  // pre-condition
 
     const ctx: StaticRenderContext = {
-      sectionCtx:     { dims: { time: 2024 }, timeMode: 'year' },
+      sectionCtx:     { dims: { time: 2024 } },
       stores:         { main: store },
       filterParams:   {},
       vars:           {},
       locale:         'en',
       fallbackLocale: 'en',
-      timeModeKey:    'mode',
-      mode:           { current: 'year', available: [], set: () => {} },
+      perspectiveKey: 'mode',
+      perspective:    { current: 'year', available: [], set: () => {} },
       effects:        [],
     }
 
@@ -169,14 +169,14 @@ describe('SSR fast-lane — renderPageToJSON uses only querySync (N34 risk #1)',
     const asyncSpy = vi.spyOn(store, 'queryAsync')
 
     const ctx: StaticRenderContext = {
-      sectionCtx:     { dims: { time: 2024 }, timeMode: 'year' },
+      sectionCtx:     { dims: { time: 2024 } },
       stores:         { main: store },
       filterParams:   {},
       vars:           {},
       locale:         'en',
       fallbackLocale: 'en',
-      timeModeKey:    'mode',
-      mode:           { current: 'year', available: [], set: () => {} },
+      perspectiveKey: 'mode',
+      perspective:    { current: 'year', available: [], set: () => {} },
       effects:        [],
     }
 

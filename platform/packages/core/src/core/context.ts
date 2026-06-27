@@ -4,13 +4,6 @@
 //  Kept minimal — only types that truly belong at the foundation layer.
 //
 import type { DimVal } from '../sdmx'
-import type { ModeId }  from '../mode/types'
-
-// ── UI Mode ────────────────────────────────────────────────────────────
-
-export type { ModeId }
-/** Backward compat alias — widened from closed union to open ModeId string. */
-export type TimeMode = ModeId
 
 // ── Unit ───────────────────────────────────────────────────────────────
 
@@ -51,11 +44,11 @@ export interface Indicator {
 //    'geo'   → region / area   (SDMX REF_AREA)
 //  Any other dimension can be added without touching this interface.
 //
-//  timeMode is UI meta-state (which DataSpec branch to use),
-//  not a data dimension — kept separate from dims for that reason.
+//  Which named perspective is active is UI meta-state — carried in
+//  `perspectiveState` (below), NOT in `dims` (a perspective id never enters a
+//  store query). No privileged time-mode field (Law 1, retired VISION #3 / P6).
 //
 export interface SectionContext {
-  timeMode: TimeMode
   dims:     Record<string, DimVal>
   /** Active UI locale — ExternalStore passes as ?lang= query param (Phase 2). Engine never reads. */
   locale?:  string
@@ -69,8 +62,9 @@ export interface SectionContext {
    * Separate from `dims` ON PURPOSE: a perspective id is UI meta-state (which named
    * query-view is active), NOT a data dimension — it never enters a store query
    * (resolveTime/withFilter keep reading `dims`, SCOPED BY the active perspective).
-   * This RETIRES the Law-1-violating privileged `timeMode` field (deleted in P6) with
-   * a generic Record<param, id> — one axis now, multi-axis free later (another key).
+   * The generic Record<param, id> REPLACED the Law-1-violating privileged `timeMode`
+   * field (System A, retired VISION #3 / P6) — one axis now, multi-axis free later
+   * (another key). The conventional time axis names its param `'mode'`/`'perspective'`.
    */
   perspectiveState?: Record<string, string>
 }

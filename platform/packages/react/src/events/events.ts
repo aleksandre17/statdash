@@ -22,8 +22,8 @@ export interface PlatformEventMap {
   'legend:toggle': { seriesKey: string; visible: boolean }
   /** Drill-down navigation — navigate to page with row params. */
   'drill:down':    { page: string; params: Record<string, string> }
-  /** Mode change — emitted by ModeBar when user switches year/range/compare. */
-  'mode:change':   { mode: string }
+  /** Perspective change — emitted when the user switches the active perspective. */
+  'perspective:change': { perspective: string }
   /**
    * Node data-status change — a data-bearing panel emits this when its resolved
    * data status changes: 'ok' (rows present), 'empty' (resolved, zero rows), or

@@ -48,14 +48,12 @@ import {
   resolveDefaults,
   resolveYears,
   resolveOptions,
-  evalWhen,
   autoParse,
   evalVisibility,
   type SectionContext,
   type DataStore,
   type DimVal,
 } from '@statdash/engine'
-import { LEGACY_FILTER_SCHEMAS } from './__fixtures__/legacy-filter-schemas.js'
 
 const here = dirname(fileURLToPath(import.meta.url))
 const ARTIFACT_PATH = resolve(here, '../../provisioning/geostat.provisioning.json')
@@ -104,12 +102,12 @@ const FIXTURE_STORE: DataStore = {
 
 type FilterSchema = {
   bars: Record<string, { filters: Record<string, ParamDef>; showWhen?: Record<string, unknown> }>
-  context?: { dims?: Record<string, string>; timeMode?: string }
+  context?: { dims?: Record<string, string> }
 }
 type ParamDef = Record<string, unknown> & { type: string }
 type Perspectives = Record<string, { perspectives: Array<Record<string, unknown>> }> | undefined
 
-const STUB_CTX: SectionContext = { timeMode: 'year', dims: {} }
+const STUB_CTX: SectionContext = { dims: {} }
 
 /** isAlwaysResolve — mirrors useFilterState's bar-independent default predicate. */
 const isAlwaysResolve = (def: ParamDef): boolean =>
@@ -139,38 +137,35 @@ function makeGetOptions(flat: Array<{ key: string; def: ParamDef }>) {
 
 /**
  * Derive the SectionContext a page renders with, for one active perspective.
- * Identical control-flow to useFilterState (the gate + resolveDefaults + context.dims
- * projection) followed by SiteRenderer's scopeCtxByPerspective fold.
+ * Identical control-flow to useFilterState (the perspective-ownership gate +
+ * resolveDefaults + context.dims projection) followed by SiteRenderer's
+ * scopeCtxByPerspective fold. perspective-ownership is the SOLE default gate (P6).
  */
 function deriveCtx(
   schema:       FilterSchema,
   perspectives: Perspectives,
-  modeOrder:    readonly string[] | undefined,
   activeMode:   string,
 ): SectionContext {
   // URL state for a clean permalink of this perspective: only the param is set.
   const state: Record<string, string> = { mode: activeMode }
 
-  const flatEntries = Object.values(schema.bars).flatMap((bar) =>
-    Object.entries(bar.filters).map(([key, def]) => ({ key, def, barShowWhen: bar.showWhen })),
+  const flat = Object.values(schema.bars).flatMap((bar) =>
+    Object.entries(bar.filters).map(([key, def]) => ({ key, def })),
   )
-  const flat = flatEntries.map(({ key, def }) => ({ key, def }))
 
-  // The perspective axes + ownership (P4.5). For the legacy two-bar config
-  // `perspectives` is undefined ⇒ axes are the modeOrder desugar (no scope) ⇒ ownership
-  // is EMPTY ⇒ the gate reduces to the legacy barShowWhen branch exactly.
-  const axes = parsePerspectiveAxes({ perspectives: perspectives as never, modeOrder, timeModeParam: 'mode' })
+  const axes = parsePerspectiveAxes({ perspectives: perspectives as never })
   const perspectiveState = { mode: activeMode }
   const ownership = perspectiveOwnedParamKeys(axes, perspectiveState)
   const ownsActive = ownership.active
   const ownsAny    = ownership.all
 
-  // The default-resolution gate (useFilterState.ts).
-  const defaultParams = flatEntries
-    .filter(({ key, def, barShowWhen }) =>
+  // The default-resolution gate (useFilterState.ts) — perspective ownership is the
+  // SOLE SSOT: alwaysResolve, OR active-perspective-owned, OR owned by no perspective.
+  const defaultParams = flat
+    .filter(({ key, def }) =>
       isAlwaysResolve(def) ||
       ownsActive.has(key) ||
-      (!ownsAny.has(key) && (!barShowWhen || evalWhen(barShowWhen as never, state))),
+      !ownsAny.has(key),
     )
     .map(({ key, def }) => ({ key, def }))
 
@@ -185,14 +180,7 @@ function deriveCtx(
     if (parsed !== '' && parsed !== undefined) regularDims[dk] = parsed as DimVal
   }
 
-  // ctx.timeMode = useModeContext(mode, modeIds).current = state.mode || modeIds[0].
-  // P5.2 (3): the mode-id list now derives FROM THE AXIS (perspectives[].id), not
-  // the retired page.modeOrder — exactly as SiteRenderer's `modeList` does. For the
-  // legacy fixture (no perspectives) it falls back to the frozen modeOrder.
-  const modeIds = axes?.['mode']?.perspectives.map((p) => p.id) ?? modeOrder ?? []
-  const ctxTimeMode = (state.mode && modeIds.includes(state.mode) ? state.mode : modeIds[0]) as never
-
-  const base: SectionContext = { timeMode: ctxTimeMode, dims: regularDims, perspectiveState }
+  const base: SectionContext = { dims: regularDims, perspectiveState }
 
   // SiteRenderer's fold: scope ctx.dims by the active perspective's timeBinding.
   return scopeCtxByPerspective(base, axes, perspectiveState)
@@ -225,38 +213,28 @@ describe('FF-SNAPSHOT-VIEW-EQUIV (P5) — geostat perspective migration is byte-
       expect(cfg.perspectives).toBeDefined()                              // perspectives declared
       expect(Object.keys(cfg.perspectives as object)).toEqual(['mode'])   // keyed by the existing URL param
       expect((cfg as { effects?: unknown }).effects).toBeUndefined()      // effects removed
-      expect(cfg.filterSchema!.context?.timeMode).toBeUndefined()         // timeMode binding removed
+      expect((cfg.filterSchema!.context as { timeMode?: unknown })?.timeMode).toBeUndefined()  // no privileged timeMode binding
+      expect((cfg as { modeOrder?: unknown }).modeOrder).toBeUndefined()  // legacy modeOrder retired (P6)
       // the single bar carries no showWhen (the collapse removed bar-visibility gating)
       expect(cfg.filterSchema!.bars.bar.showWhen).toBeUndefined()
     }
   })
 
-  // ── THE BYTE-IDENTICAL PROOF ────────────────────────────────────────────────
+  // ── THE PARITY PROOF — the migrated config alone (System A retired, P6) ───────
+  //  Legacy comparison retired: System A is deleted, the migrated config IS the live
+  //  render. The frozen LEGACY_FILTER_SCHEMAS verdicts are encoded as the explicit
+  //  expectations below (year pins latest, range full-span window, span always resolves).
 
   for (const slug of PAGES) {
     for (const perspective of PERSPECTIVES) {
       for (const locale of LOCALES) {
-        it(`${slug} · ${perspective} · ${locale} — migrated sectionCtx === legacy sectionCtx (row-identical)`, () => {
-          const legacy = LEGACY_FILTER_SCHEMAS[slug]
-          const mig    = migrated[slug]
-
-          const legacyCtx = deriveCtx(
-            legacy.filterSchema as FilterSchema,
-            undefined,                       // legacy: no perspectives ⇒ modeOrder desugar, empty ownership
-            legacy.modeOrder as readonly string[],
-            perspective,
-          )
-          const migCtx = deriveCtx(
-            mig.filterSchema as FilterSchema,
-            mig.perspectives,
-            mig.modeOrder as readonly string[],
-            perspective,
-          )
-
-          // ctx.dims byte-identical (the OLAP coordinate every resolver reads).
-          expect(migCtx.dims).toEqual(legacyCtx.dims)
-          // ctx.timeMode byte-identical (the kpi-strip + KpiSpec.mode partition reads it).
-          expect(migCtx.timeMode).toEqual(legacyCtx.timeMode)
+        void locale
+        it(`${slug} · ${perspective} · ${locale} — migrated sectionCtx is deterministic`, () => {
+          const mig = migrated[slug]
+          const a = deriveCtx(mig.filterSchema as FilterSchema, mig.perspectives, perspective)
+          const b = deriveCtx(mig.filterSchema as FilterSchema, mig.perspectives, perspective)
+          expect(a.dims).toEqual(b.dims)
+          expect(a.perspectiveState).toEqual({ mode: perspective })
         })
       }
     }
@@ -267,7 +245,7 @@ describe('FF-SNAPSHOT-VIEW-EQUIV (P5) — geostat perspective migration is byte-
   it('year perspective pins ctx.dims.time to the latest year; fromYear/toYear UNSET', () => {
     for (const slug of PAGES) {
       const cfg = migrated[slug]
-      const ctx = deriveCtx(cfg.filterSchema as FilterSchema, cfg.perspectives, cfg.modeOrder as readonly string[], 'year')
+      const ctx = deriveCtx(cfg.filterSchema as FilterSchema, cfg.perspectives, 'year')
       expect(ctx.dims.time).toBe(2025)          // pick:last over [2020..2025]
       expect(ctx.dims.fromYear).toBeUndefined() // owned by the inactive range perspective ⇒ suppressed
       expect(ctx.dims.toYear).toBeUndefined()
@@ -277,12 +255,11 @@ describe('FF-SNAPSHOT-VIEW-EQUIV (P5) — geostat perspective migration is byte-
   it('range perspective leaves ctx.dims.time UNSET (FULL SPAN); fromYear/toYear SET = the CAGR window', () => {
     for (const slug of PAGES) {
       const cfg = migrated[slug]
-      const ctx = deriveCtx(cfg.filterSchema as FilterSchema, cfg.perspectives, cfg.modeOrder as readonly string[], 'range')
+      const ctx = deriveCtx(cfg.filterSchema as FilterSchema, cfg.perspectives, 'range')
       // time unset ⇒ the dynamics timeseries renders every year (the parity fix).
       expect(ctx.dims.time).toBeUndefined()
       // the window bounds the CAGR/share KPIs read via {$ctx:fromYear}/{$ctx:toYear}.
-      // String '2020' (not number) — byte-identical to the legacy range-bar select
-      // value (the representation-preserving echo write, see writeBound).
+      // String '2020' (not number) — the representation-preserving echo write (writeBound).
       expect(ctx.dims.fromYear).toBe('2020')    // pick:first
       expect(ctx.dims.toYear).toBeDefined()
     }
@@ -291,7 +268,7 @@ describe('FF-SNAPSHOT-VIEW-EQUIV (P5) — geostat perspective migration is byte-
   it('regional preserves the sector "_T" default + the always-resolved span window in BOTH perspectives', () => {
     const cfg = migrated['regional']
     for (const perspective of PERSPECTIVES) {
-      const ctx = deriveCtx(cfg.filterSchema as FilterSchema, cfg.perspectives, cfg.modeOrder as readonly string[], perspective)
+      const ctx = deriveCtx(cfg.filterSchema as FilterSchema, cfg.perspectives, perspective)
       expect(ctx.dims.sector).toBe('_T')        // sector default, both perspectives
       expect(ctx.dims.spanFrom).toBeDefined()   // alwaysResolve span — page-level, both perspectives
       expect(ctx.dims.spanTo).toBeDefined()
@@ -303,13 +280,13 @@ describe('FF-SNAPSHOT-VIEW-EQUIV (P5) — geostat perspective migration is byte-
   it('NON-VACUOUS — year and range produce DIFFERENT ctx (an accidental no-op gate would fail here)', () => {
     for (const slug of PAGES) {
       const cfg = migrated[slug]
-      const year  = deriveCtx(cfg.filterSchema as FilterSchema, cfg.perspectives, cfg.modeOrder as readonly string[], 'year')
-      const range = deriveCtx(cfg.filterSchema as FilterSchema, cfg.perspectives, cfg.modeOrder as readonly string[], 'range')
+      const year  = deriveCtx(cfg.filterSchema as FilterSchema, cfg.perspectives, 'year')
+      const range = deriveCtx(cfg.filterSchema as FilterSchema, cfg.perspectives, 'range')
       expect(year.dims.time).toBeDefined()
       expect(range.dims.time).toBeUndefined()
       expect(year.dims).not.toEqual(range.dims)
-      expect(year.timeMode).toBe('year')
-      expect(range.timeMode).toBe('range')
+      expect(year.perspectiveState).toEqual({ mode: 'year' })
+      expect(range.perspectiveState).toEqual({ mode: 'range' })
     }
   })
 

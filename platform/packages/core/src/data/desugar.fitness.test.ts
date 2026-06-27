@@ -29,7 +29,7 @@ import type { DataSpec }        from '../config/data-spec'
 import type { DimVal }          from '../sdmx'
 import type { SectionContext }  from '../core/context'
 
-const ctx: SectionContext = { timeMode: 'year', dims: { time: 2023, geo: 'GE' } }
+const ctx: SectionContext = { dims: { time: 2023, geo: 'GE' } }
 // pivot is store-free; an empty store proves the desugared path never reaches it.
 const store = new ExternalStore([])
 

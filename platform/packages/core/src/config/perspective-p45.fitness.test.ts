@@ -34,7 +34,7 @@ import {
 // ── helpers ─────────────────────────────────────────────────────────────────
 
 function ctx(dims: Record<string, number | string>): SectionContext {
-  return { timeMode: 'year', dims }
+  return { dims }
 }
 
 // The geostat-shaped collapsed axis (what P5 will author): the `year` perspective

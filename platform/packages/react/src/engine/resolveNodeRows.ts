@@ -13,7 +13,7 @@
 //
 
 import { interpretSpec, staticStore, CachedStore, applyEncoding, storeVal, applyPipeline, specDataSource, resolveLocaleString, isTaggedLocaleString } from '@statdash/engine'
-import type { DataRow, DataStore, EncodingSpec, EngineRow, PipelineContext, RawRow, SectionContext, DataSpec, TransformStep, DimVal } from '@statdash/engine'
+import type { DataRow, DataStore, EncodingSpec, EngineRow, PipelineContext, RawRow, DataSpec, TransformStep, DimVal } from '@statdash/engine'
 import type { NodeBase, RenderContext }                                                     from './types'
 
 // ── effectiveStoreKey — the metric→store precedence [M1] ──────────────
@@ -261,32 +261,4 @@ function resolveRowLocales(rows: DataRow[], locale: string): DataRow[] {
     }
     return (copy ?? bag) as unknown as DataRow
   })
-}
-
-// ── resolveCompareRows — comparison dataset for N37 compare mode ──────
-//
-//  Clones the panel's SectionContext with one dim overridden to the compare
-//  value, runs interpretSpec, and returns the resulting rows + label.
-//  Returns empty rows (never throws) so a bad compare config never blocks
-//  the primary render path.
-//
-//  Called by renderNode when node.view.scope.compare is set.
-//
-export function resolveCompareRows(
-  node:     NodeBase,
-  panelCtx: SectionContext,
-  compare:  { dim: string; value: import('@statdash/engine').DimVal; label: string },
-  store:    DataStore,
-): { compareRows: DataRow[]; compareLabel: string } {
-  if (!('data' in node) || !node.data) return { compareRows: [], compareLabel: compare.label }
-  const compareCtx: SectionContext = {
-    ...panelCtx,
-    dims: { ...panelCtx.dims, [compare.dim]: compare.value },
-  }
-  try {
-    const rows = interpretSpec(node.data as DataSpec, compareCtx, store)
-    return { compareRows: rows as unknown as DataRow[], compareLabel: compare.label }
-  } catch {
-    return { compareRows: [], compareLabel: compare.label }
-  }
 }

@@ -9,17 +9,17 @@
 //
 import { describe, it, expect, vi, beforeAll } from 'vitest'
 import { render, screen, fireEvent, within } from '@testing-library/react'
-import { evalVisibility, getVisibilityLeafSchema, modeRegistry } from '@statdash/engine'
+import { evalVisibility, getVisibilityLeafSchema, perspectiveRegistry } from '@statdash/engine'
 import type { VisibilityExpr } from '@statdash/engine'
 import { VisibilityLeafEditor, type VisibilityLeaf } from './VisibilityLeafEditor'
 import { VisibilityBuilder } from './VisibilityBuilder'
 import { makeVisibilityExpr } from './visibilityFactory'
 
-// The `mode` leaf field is an enum-ref bound to the modeRegistry — register the
-// built-in modes so the picker has options to select in the test environment.
+// The `perspective` leaf field is an enum-ref bound to the perspectiveRegistry —
+// register the built-in perspectives so the picker has options in the test env.
 beforeAll(() => {
-  modeRegistry.register({ id: 'year',  label: 'Year' })
-  modeRegistry.register({ id: 'range', label: 'Range' })
+  perspectiveRegistry.register({ id: 'year',  label: 'Year' })
+  perspectiveRegistry.register({ id: 'range', label: 'Range' })
 })
 
 /** Pick an option in a MUI Select (not a native <select> — open, then click). */
@@ -42,16 +42,16 @@ describe('VisibilityLeafEditor — schema-driven leaf authoring (V4)', () => {
 
   it('round-trips a scalar edit and preserves the op discriminant', () => {
     const onChange = vi.fn<(next: VisibilityLeaf) => void>()
-    const leaf: VisibilityLeaf = { op: 'mode-is', mode: '' }
+    const leaf: VisibilityLeaf = { op: 'perspective-is', perspective: '' }
     render(<VisibilityLeafEditor path="root" leaf={leaf} onChange={onChange} />)
 
-    const input = document.getElementById('insp-mode') as HTMLElement
+    const input = document.getElementById('insp-perspective') as HTMLElement
     fireEvent.change(input, { target: { value: 'year' } })
 
     expect(onChange).toHaveBeenCalled()
     const next = onChange.mock.calls.at(-1)![0]
-    expect(next).toMatchObject({ op: 'mode-is', mode: 'year' })
-    expect(next.op).toBe('mode-is') // discriminant immutable through the editor
+    expect(next).toMatchObject({ op: 'perspective-is', perspective: 'year' })
+    expect(next.op).toBe('perspective-is') // discriminant immutable through the editor
   })
 
   it('every leaf op carries a schema that renders a populated Inspector', () => {
@@ -60,9 +60,9 @@ describe('VisibilityLeafEditor — schema-driven leaf authoring (V4)', () => {
       { op: 'neq',      param: 'r', is: null },
       { op: 'in',       param: 'r', values: [] },
       { op: 'isset',    param: 'r' },
-      { op: 'mode-is',  mode: '' },
-      { op: 'mode-in',  modes: [] },
-      { op: 'mode-not', mode: '' },
+      { op: 'perspective-is',  perspective: '' },
+      { op: 'perspective-in',  perspectives: [] },
+      { op: 'perspective-not', perspective: '' },
     ]
     for (const leaf of LEAVES) {
       expect(getVisibilityLeafSchema(leaf.op), `${leaf.op} should carry a schema`).toBeTruthy()
@@ -140,7 +140,7 @@ describe('VisibilityExpr — lossless round-trip + evalVisibility agreement (V4)
     op: 'and',
     exprs: [
       { op: 'eq', param: 'region', is: 'GE' },
-      { op: 'mode-is', mode: 'year' },
+      { op: 'perspective-is', perspective: 'year' },
     ],
   }
 
@@ -148,12 +148,12 @@ describe('VisibilityExpr — lossless round-trip + evalVisibility agreement (V4)
     expect(JSON.parse(JSON.stringify(tree))).toEqual(tree)
   })
 
-  it('evalVisibility agrees: visible only when region=GE AND mode=year', () => {
-    // P1 — the active perspective id is the perspectiveState SSOT (Record<param,id>),
-    // not a positional string. A param-less mode-is op reads the conventional axis.
+  it('evalVisibility agrees: visible only when region=GE AND perspective=year', () => {
+    // The active perspective id is the perspectiveState SSOT (Record<param,id>), not a
+    // positional string. A param-less perspective-is op reads the conventional axis.
     expect(evalVisibility(tree, { region: 'GE' }, { mode: 'year' })).toBe(true)
     expect(evalVisibility(tree, { region: 'AM' }, { mode: 'year' })).toBe(false) // wrong region
-    expect(evalVisibility(tree, { region: 'GE' }, { mode: 'range' })).toBe(false) // wrong mode
+    expect(evalVisibility(tree, { region: 'GE' }, { mode: 'range' })).toBe(false) // wrong perspective
     expect(evalVisibility(tree, {}, { mode: 'year' })).toBe(false)                // region unset
   })
 

@@ -31,7 +31,7 @@ import { render, cleanup }                 from '@testing-library/react'
 import axe                                 from 'axe-core'
 import { createElement, type ReactNode }   from 'react'
 import { staticStore }                     from '@statdash/engine'
-import type { DataStore, SectionContext, ModeContext } from '@statdash/engine'
+import type { DataStore, SectionContext, PerspectiveContext } from '@statdash/engine'
 import { renderNode }                      from '../renderNode'
 import { nodeRegistry }                    from '../register-all'
 import type { RenderContext, NodeBase, NodeDef, ChildrenArg } from '../types'
@@ -63,8 +63,8 @@ async function runAxe(container: HTMLElement): Promise<axe.AxeResults> {
 //  services. Self-referential renderNode closure handles recursion.
 //
 function makeCtx(stores: Record<string, DataStore>): RenderContext {
-  const sectionCtx: SectionContext = { dims: { time: 2024 }, timeMode: 'year' }
-  const mode: ModeContext = { current: 'year', available: [], set: () => {} }
+  const sectionCtx: SectionContext = { dims: { time: 2024 }, perspectiveState: { mode: 'year' } }
+  const perspective: PerspectiveContext = { current: 'year', available: [], set: () => {} }
 
   const holder = { ctx: null as unknown as RenderContext }
   holder.ctx = {
@@ -74,8 +74,8 @@ function makeCtx(stores: Record<string, DataStore>): RenderContext {
     vars:           {},
     locale:         'en',
     fallbackLocale: 'en',
-    timeModeKey:    'mode',
-    mode,
+    perspectiveKey: 'mode',
+    perspective,
     effects:        [],
     extensions:     new ExtensionRegistry(),
     ui:             createDefaultUI(),

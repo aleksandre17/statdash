@@ -54,8 +54,9 @@ export type PropFieldType =
 //    'filterParams'     — keys of the active page's authored ParamDefs (V4 — the
 //                         `param` a VisibilityExpr leaf binds to: pick an authored
 //                         filter control, never type a raw param name — Law 2)
-//    'modes'            — registered ModeId set (V4 — the `mode(s)` a mode-* leaf
-//                         binds to: pick a registered mode, never type a raw id)
+//    'perspectives'     — registered perspective set (the `perspective(s)` a
+//                         perspective-* leaf binds to: pick a registered perspective,
+//                         never type a raw id)
 //
 export type PropFieldSource =
   | 'cube.measures'
@@ -65,7 +66,7 @@ export type PropFieldSource =
   | 'tokens'
   | 'pages'
   | 'filterParams'
-  | 'modes'
+  | 'perspectives'
   | (string & {})
 
 /** One option for an enum-like select field. */

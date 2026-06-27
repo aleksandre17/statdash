@@ -3,7 +3,7 @@
 //  Phase-2 factory: JSON datasource descriptors → live DataStore map.
 //
 //  Pattern: Grafana datasource provisioning (type → plugin → handler).
-//           Consistent with modeRegistry / formatterRegistry / EngineRegistry.
+//           Consistent with perspectiveRegistry / formatterRegistry / EngineRegistry.
 //
 //  Phase 1 (now):   No kinds registered; app still builds stores imperatively.
 //                   `buildStoreManifest([])` returns `{}` safely.
@@ -133,7 +133,7 @@ export async function testSource(
  * List every datasource kind that has a registered StoreBuilder.
  *
  * Constructor entry point: feeds the `datasourceKinds` axis of describeApp()
- * (the datasource-kind picker). Mirrors modeRegistry.list() / listTransformOps()
+ * (the datasource-kind picker). Mirrors perspectiveRegistry.list() / listTransformOps()
  * — registries expose what they hold so the visual builder sees only what is
  * registered. Returns [] in a bare test/node env where no builders are booted.
  */

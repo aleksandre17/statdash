@@ -78,7 +78,7 @@ describe('renderPageToHTML applies the projected --sc var on the wrapper (byte-i
 
   it('the snapshot wrapper sets --sc to the page color', () => {
     const html = renderPageToHTML(page, buildStaticContext({
-      sectionCtx: { dims: {}, timeMode: 'year' },
+      sectionCtx: { dims: {} },
       stores: {},
     }))
     // The generic cssVars bag produced the same wrapper the old --sc literal did.
@@ -90,7 +90,7 @@ describe('renderPageToHTML applies the projected --sc var on the wrapper (byte-i
       id: 'p2', type: 'inner-page', children: [],
     } as unknown as NodePageConfig
     const html = renderPageToHTML(plain, buildStaticContext({
-      sectionCtx: { dims: {}, timeMode: 'year' },
+      sectionCtx: { dims: {} },
       stores: {},
       color: '#FF0000',
     }))
@@ -102,7 +102,7 @@ describe('renderPageToHTML applies the projected --sc var on the wrapper (byte-i
       id: 'p3', type: 'inner-page', children: [],
     } as unknown as NodePageConfig
     const html = renderPageToHTML(plain, buildStaticContext({
-      sectionCtx: { dims: {}, timeMode: 'year' },
+      sectionCtx: { dims: {} },
       stores: {},
     }))
     expect(html).not.toContain('--sc')

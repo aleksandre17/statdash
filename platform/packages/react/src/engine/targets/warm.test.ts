@@ -45,7 +45,6 @@ function makeStaticCtx(
   return {
     sectionCtx: {
       dims:     { time: 2024 },
-      timeMode: 'year' as const,
     },
     stores,
     pageStoreKey,
@@ -53,8 +52,8 @@ function makeStaticCtx(
     vars:           {},
     locale:         'en',
     fallbackLocale: 'en',
-    timeModeKey:    'mode',
-    mode: {
+    perspectiveKey: 'mode',
+    perspective: {
       current:   'year',
       available: [],
       set:       () => {},

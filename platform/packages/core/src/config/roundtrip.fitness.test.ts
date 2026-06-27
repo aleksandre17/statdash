@@ -46,9 +46,6 @@ describe('VisibilityExpr — round-trip (all ops)', () => {
   it('and',      () => expectRoundTrip<VisibilityExpr>({ op: 'and',   exprs: [leaf, leaf2] }))
   it('or',       () => expectRoundTrip<VisibilityExpr>({ op: 'or',    exprs: [leaf, { op: 'isset', param: 'breakdown' }] }))
   it('not',      () => expectRoundTrip<VisibilityExpr>({ op: 'not',   expr: leaf }))
-  it('mode-is',  () => expectRoundTrip<VisibilityExpr>({ op: 'mode-is',  mode:  'year' }))
-  it('mode-in',  () => expectRoundTrip<VisibilityExpr>({ op: 'mode-in',  modes: ['year', 'range'] }))
-  it('mode-not', () => expectRoundTrip<VisibilityExpr>({ op: 'mode-not', mode:  'compare' }))
   it('perspective-is',       () => expectRoundTrip<VisibilityExpr>({ op: 'perspective-is',  perspective:  'year' }))
   it('perspective-is+param', () => expectRoundTrip<VisibilityExpr>({ op: 'perspective-is',  perspective:  'national', param: 'geo' }))
   it('perspective-in',       () => expectRoundTrip<VisibilityExpr>({ op: 'perspective-in',  perspectives: ['year', 'range'] }))
@@ -63,7 +60,7 @@ describe('VisibilityExpr — round-trip (all ops)', () => {
       exprs: [
         { op: 'or',       exprs: [leaf, leaf2] },
         { op: 'not',      expr:  { op: 'in', param: 'geo', values: ['RU'] } },
-        { op: 'mode-in',  modes: ['year'] },
+        { op: 'perspective-in', perspectives: ['year'] },
       ],
     }
     expectRoundTrip(expr)

@@ -27,7 +27,7 @@ import { evalVisibility } from './visibility'
 // ── helpers ─────────────────────────────────────────────────────────────────
 
 function ctx(dims: Record<string, number | string>): SectionContext {
-  return { timeMode: 'year', dims }
+  return { dims }
 }
 
 // A real, two-perspective axis: a year-PIN binding + a range-WINDOW binding.
@@ -46,10 +46,9 @@ const AXES: PerspectivesByParam = {
 
 describe('FF-ONE-VIEW-NO-MACHINERY — a 0/1-perspective page touches no perspective machinery', () => {
 
-  it('no perspectives + no legacy modeOrder ⇒ parser yields undefined (no axis instantiated)', () => {
+  it('no perspectives ⇒ parser yields undefined (no axis instantiated)', () => {
     expect(parsePerspectiveAxes({})).toBeUndefined()
     expect(parsePerspectiveAxes({ perspectives: {} })).toBeUndefined()
-    expect(parsePerspectiveAxes({ modeOrder: [] })).toBeUndefined()
   })
 
   it('no axis ⇒ scopeCtxByPerspective is the IDENTITY (same reference, no dims mutation)', () => {
@@ -75,12 +74,14 @@ describe('FF-ONE-VIEW-NO-MACHINERY — a 0/1-perspective page touches no perspec
     expect(true).toBe(true)
   })
 
-  it('the legacy desugar fires ONLY when modeOrder is non-empty (no false axis)', () => {
-    expect(parsePerspectiveAxes({ modeOrder: ['year', 'range'], timeModeParam: 'mode' }))
-      .toEqual({ mode: { perspectives: [
-        { id: 'year',  label: { ka: 'year',  en: 'year'  } },
-        { id: 'range', label: { ka: 'range', en: 'range' } },
-      ] } })
+  it('declared perspectives are returned as-is (the single parse path)', () => {
+    const axis: PerspectivesByParam = {
+      mode: { perspectives: [
+        { id: 'year',  label: { ka: 'წ', en: 'Y' } },
+        { id: 'range', label: { ka: 'დ', en: 'R' } },
+      ] },
+    }
+    expect(parsePerspectiveAxes({ perspectives: axis })).toBe(axis)
   })
 
 })
@@ -119,12 +120,12 @@ describe('FF-PERSPECTIVE-IS-PURE-FUNCTION — switching the param mutates no oth
   })
 
   it('the perspective-is gate reads the perspectiveState SSOT — switching the param flips visibility', () => {
-    const yearGate = { op: 'mode-is', mode: 'year' } as const
+    const yearGate = { op: 'perspective-is', perspective: 'year' } as const
     const fr = {}
     // Visible in year, hidden in range — driven SOLELY by the perspectiveState record.
     expect(evalVisibility(yearGate, fr, { perspective: 'year' })).toBe(true)
     expect(evalVisibility(yearGate, fr, { perspective: 'range' })).toBe(false)
-    // Absent perspectiveState ⇒ false (N=1-free, the pre-P1 undefined-mode behaviour).
+    // Absent perspectiveState ⇒ false (the N=1-free default).
     expect(evalVisibility(yearGate, fr, undefined)).toBe(false)
   })
 

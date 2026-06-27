@@ -25,7 +25,7 @@ import type { SectionContext }    from '../core/context'
 import type { Observation }       from '../sdmx'
 import type { MetadataPort }      from '../core/provenance'
 
-const ctx: SectionContext = { timeMode: 'year', dims: { time: 2023, geo: 'GE' } }
+const ctx: SectionContext = { dims: { time: 2023, geo: 'GE' } }
 
 const obs: Observation[] = [
   { measure: 'B1G', value: 1000, time: 2023, geo: 'GE', adjustment: 'S', label: 'GDP' },

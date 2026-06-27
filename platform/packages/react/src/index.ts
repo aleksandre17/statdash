@@ -23,7 +23,7 @@ import './styles/index.css'
 //
 export type {
   // Core context
-  ModeId, ModeDef, ModeContext, TimeMode, SectionContext, DimVal,
+  PerspectiveId, PerspectiveOption, PerspectiveContext, SectionContext, DimVal,
   // Config vocabulary
   DataSpec, ColumnDef, RowSpec, TableConfig, VisibilityExpr,
   KpiDef, FieldConfig,
@@ -79,8 +79,8 @@ export { PageStoreProvider, useCurrentStore } from './context/PageStoreContext'
 // ── Filter context ────────────────────────────────────────────────────
 export { FilterProvider, useFilter } from './context/FilterContext'
 
-// ── Mode context ──────────────────────────────────────────────────────
-export { useModeContext, ModeProvider, useMode } from './context/ModeContext'
+// ── Perspective context ───────────────────────────────────────────────
+export { usePerspectiveContext, PerspectiveProvider, usePerspective } from './context/PerspectiveContext'
 
 // ── Chart renderer registry — extension point for external chart types ──
 export { chartRendererRegistry }   from './engine/ChartRendererRegistry'

@@ -3,7 +3,7 @@
 //  The Constructor's ONE generic Inspector renders any element's property panel
 //  from a PropSchema resolved through a SchemaSource port. The PAGE ROOT is just
 //  another such element: its config is `PageConfigBase` (presentation · frame ·
-//  modeOrder · vars · page-root kind), carried losslessly in `page.meta`
+//  perspectives · vars · page-root kind), carried losslessly in `page.meta`
 //  (canvasPageAdapter structural pass-through, P-3). This source returns the
 //  page-root's PropSchema — so the page is authored by the SAME Inspector that
 //  renders node / panel / chrome / transform-step / filter-control properties,
@@ -14,10 +14,9 @@
 //  the `presentation.` dot-path the Inspector reads/writes. A new projector's
 //  PropField appears here automatically (OCP / Law 1), zero edits.
 //
-//  Pick-don't-type (Law 2): `frame` is a static-option select; `modeOrder`/`vars`
-//  are the documented array/object JSON sub-editor (the same escape hatch
-//  FilterSchema bars + op-schema collections use). A bespoke ordered mode-picker
-//  is a later slice (YAGNI).
+//  Pick-don't-type (Law 2): `frame` is a static-option select; `perspectives`/`vars`
+//  are the documented object JSON sub-editor (the same escape hatch FilterSchema
+//  bars + op-schema collections use). A bespoke Perspectives panel is a later slice.
 //
 //  Page-root KIND (`type`) is deliberately NOT authored here: the adapter
 //  (canvasPageAdapter) hardwires the root to `inner-page` and strips `type` from
@@ -56,10 +55,10 @@ export function pageSchema(): PropSchema {
   return [
     { field: 'frame', type: 'string', label: { ka: 'ჩარჩო', en: 'Frame' }, options: FRAME_OPTIONS },
     ...presentation,
-    // Ordered list of registered mode ids the page exposes (mode-bar). The
-    // array JSON sub-editor (the documented collection escape hatch) — a bespoke
-    // ordered mode-picker is a later slice (YAGNI).
-    { field: 'modeOrder', type: 'array',  label: { ka: 'რეჟიმების რიგი', en: 'Mode order' } },
+    // The page's perspective axes, keyed by URL param (the perspectives[] order is
+    // the toggle + nav-sort SSOT). The object JSON sub-editor (the documented
+    // collection escape hatch) — a bespoke Perspectives panel is a later slice.
+    { field: 'perspectives', type: 'object', label: { ka: 'პერსპექტივები', en: 'Perspectives' } },
     // Generic page-scoped derived variables (zero reserved keys — Law 1). The
     // object JSON sub-editor, exactly like node `vars`.
     { field: 'vars',      type: 'object', label: { ka: 'ცვლადები',       en: 'Variables' } },
@@ -72,7 +71,7 @@ export function pageGroups(): PropertyGroup[] {
   return [
     { label: { ka: 'განლაგება',    en: 'Layout'       }, fields: ['frame'] },
     { label: { ka: 'პრეზენტაცია',  en: 'Presentation' }, fields: presentationFields },
-    { label: { ka: 'რეჟიმები',     en: 'Modes'        }, fields: ['modeOrder'] },
+    { label: { ka: 'პერსპექტივები', en: 'Perspectives' }, fields: ['perspectives'] },
     { label: { ka: 'ცვლადები',     en: 'Variables'    }, fields: ['vars'] },
   ]
 }

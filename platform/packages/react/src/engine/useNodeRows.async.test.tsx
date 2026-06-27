@@ -33,7 +33,6 @@ import { NodeErrorBoundary }                 from './NodeErrorBoundary'
 function makeCtx(store: DataStore, extraDims?: Record<string, unknown>): RenderContext {
   const sectionCtx: SectionContext = {
     dims:     { time: 2024, ...extraDims },
-    timeMode: 'year',
   }
   return {
     sectionCtx,
@@ -43,8 +42,8 @@ function makeCtx(store: DataStore, extraDims?: Record<string, unknown>): RenderC
     vars:           {},
     locale:         'en',
     fallbackLocale: 'en',
-    timeModeKey:    'mode',
-    mode:           { current: 'year', available: [], set: () => {} },
+    perspectiveKey: 'mode',
+    perspective:           { current: 'year', available: [], set: () => {} },
     effects:        [],
     rows:           [],
     eventBus:       { publish: () => {}, subscribe: () => () => {} } as unknown as RenderContext['eventBus'],

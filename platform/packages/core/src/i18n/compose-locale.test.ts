@@ -69,7 +69,7 @@ describe('resolveOptions — option labels carry the LocaleString, never flatten
         { code: 'TB', label: tagLocaleString({ en: 'Tbilisi', ka: 'თბილისი' }) },
       ], valueField: 'code', labelField: 'label' } as never,
       store,
-      { timeMode: 'year', dims: {} },
+      { dims: {} },
     )
     expect(opts).toHaveLength(1)
     expect(isTaggedLocaleString(opts[0].label)).toBe(true)
@@ -84,7 +84,7 @@ describe('resolveOptions — option labels carry the LocaleString, never flatten
     const opts = resolveOptions(
       { type: 'inline', items: [{ code: '2024', label: 2024 }], valueField: 'code', labelField: 'label' } as never,
       store,
-      { timeMode: 'year', dims: {} },
+      { dims: {} },
     )
     expect(opts[0].label).toBe('2024')
   })

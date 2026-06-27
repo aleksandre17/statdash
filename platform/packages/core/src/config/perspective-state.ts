@@ -3,9 +3,9 @@
 //  `ctx.perspectiveState: Record<param, activeId>` (core/context.ts) is the ONE
 //  source for "which perspective is active" — the Harel orthogonal-regions container
 //  (HIGH-3). This module is the SSOT for READING it: every mode-reading callsite
-//  (renderNode, both SSR walkers, navUtils, the SSR-gate) extracts the active id
-//  through `activePerspective(...)` rather than a positional `mode?` sourced from a
-//  React `ModeContext`. One record in, one id out — no parallel mode param survives.
+//  (renderNode, both SSR walkers, navUtils, the SSR-gate, the kpi-strip) extracts the
+//  active id through `activePerspective(...)`. One record in, one id out — no parallel
+//  perspective param survives.
 //
 //  LAW 1 (no privileged dimension): the param NAME is data. The conventional default
 //  is the string `'perspective'` (and the legacy `'mode'`), but the engine NEVER
@@ -24,16 +24,16 @@ export const PERSPECTIVE_PARAM = 'perspective'
 export const LEGACY_MODE_PARAM = 'mode'
 
 /**
- * Read the active perspective id from the `perspectiveState` SSOT for the *legacy
- * param-less* ops (`mode-is`/`mode-in`/`mode-not`), which name no param. Resolution:
+ * Read the active perspective id from the `perspectiveState` SSOT for a *param-less*
+ * `perspective-*` op (which names no axis param). Resolution:
  *   1. the conventional `'perspective'` key,
- *   2. else the legacy `'mode'` key (a config mid-migration),
+ *   2. else the conventional time-axis `'mode'` key,
  *   3. else — when exactly one axis is active — that single value (param-agnostic).
- * Returns undefined when no axis is active (the N=1-free default ⇒ a `mode-*` gate
- * is simply false, exactly as the pre-P1 positional `mode` was undefined).
+ * Returns undefined when no axis is active (the N=1-free default ⇒ a param-less
+ * `perspective-*` gate is simply false).
  *
- * The new `perspective-*` ops (P2) carry an EXPLICIT param and read
- * `perspectiveState[expr.param]` directly — they never need this fallback.
+ * A `perspective-*` op WITH an explicit param reads `perspectiveState[expr.param]`
+ * directly — it never needs this conventional-axis fallback.
  */
 export function activePerspective(
   perspectiveState: Record<string, string> | undefined,

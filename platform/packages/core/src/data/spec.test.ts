@@ -7,7 +7,6 @@ import type { Observation }     from '../sdmx'
 // ── Shared fixtures ───────────────────────────────────────────────────
 
 const ctx: SectionContext = {
-  timeMode: 'year',
   dims:     { time: 2023, geo: 'GE' },
 }
 

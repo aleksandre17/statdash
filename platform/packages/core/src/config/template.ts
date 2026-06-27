@@ -5,13 +5,16 @@
 //
 
 import type { SectionContext } from '../core/context'
+import { activePerspective }   from './perspective-state'
 
 // ── resolveTemplate ───────────────────────────────────────────────────
 //
 //  Resolve a template string against SectionContext.
 //  '{time} · მლნ ₾' + ctx.dims.time=2024 → '2024 · მლნ ₾'
 //
-//  Still accepts { year, range } union for PageDef.badge compatibility.
+//  Still accepts { year, range } union for PageDef.badge compatibility — the
+//  branch is chosen by the ACTIVE PERSPECTIVE id (ctx.perspectiveState, the SSOT),
+//  not the retired privileged `ctx.timeMode` field (System A, VISION #3 / P6).
 //  Caller should resolve LocaleString via useResolveLocale() before passing
 //  here (string branch passes through unchanged).
 //
@@ -25,7 +28,9 @@ export function resolveTemplate(
   ctx:    SectionContext,
   extras?: Record<string, unknown>,
 ): string {
-  const str = typeof tpl === 'string' ? tpl : (ctx.timeMode === 'year' ? tpl.year : tpl.range)
+  const str = typeof tpl === 'string'
+    ? tpl
+    : (activePerspective(ctx.perspectiveState) === 'year' ? tpl.year : tpl.range)
   return str.replace(/\{(\w+)\}/g, (_, key) => {
     if (extras && key in extras) return String(extras[key] ?? `{${key}}`)
     return String(ctx.dims[key] ?? `{${key}}`)

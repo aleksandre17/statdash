@@ -24,7 +24,7 @@ import { afterEach } from 'vitest'
 import { MemoryRouter, Routes, Route, Navigate } from 'react-router-dom'
 import i18next from 'i18next'
 import { SiteProvider } from '@statdash/react'
-import { modeRegistry } from '@statdash/engine'
+import { perspectiveRegistry } from '@statdash/engine'
 import { LocaleGuard } from '../app/LocaleGuard'
 import { setupRegistrations } from '../setupRegistrations'
 import { registerFormatters } from '../i18n/formatters'
@@ -50,7 +50,7 @@ afterEach(() => cleanup())
 function renderTenant(manifest: SiteManifest, initialEntry: string) {
   // Boot-time registration from manifest data (App.tsx useEffect) — modes + locale
   // formatters come from the ACTIVE manifest, not from compiled-in code.
-  manifest.modes.forEach((m) => modeRegistry.register(m))
+  manifest.modes.forEach((m) => perspectiveRegistry.register(m))
   registerFormatters(manifest.i18n.locales)
 
   return render(

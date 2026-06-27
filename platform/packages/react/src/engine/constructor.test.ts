@@ -6,7 +6,7 @@
 //    - real SPEC_CATALOG (static, 9 entries)
 //    - real chartRegistry (pre-populated by @statdash/charts side-effect import)
 //    - singleton nodeRegistry (empty in node test env — no setupRegistrations)
-//    - singleton modeRegistry (empty in node test env — modes registered at app boot)
+//    - singleton perspectiveRegistry (empty in node test env — registered at app boot)
 //    - singleton storeManifest _registry (empty in node test env)
 //
 //  Strategy: structural invariants, not content equality. Avoids coupling
@@ -30,7 +30,7 @@ describe('describeApp() — shape', () => {
     expect(manifest).toHaveProperty('propertySchemas')
     expect(manifest).toHaveProperty('chartTypes')
     expect(manifest).toHaveProperty('specTypes')
-    expect(manifest).toHaveProperty('modes')
+    expect(manifest).toHaveProperty('perspectives')
     expect(manifest).toHaveProperty('datasourceKinds')
     expect(manifest).toHaveProperty('transformOps')
     expect(manifest).toHaveProperty('metrics')
@@ -83,8 +83,8 @@ describe('describeApp() — shape', () => {
     expect(Array.isArray(specTypes)).toBe(false)
   })
 
-  it('modes is an array', () => {
-    expect(Array.isArray(describeApp().modes)).toBe(true)
+  it('perspectives is an array', () => {
+    expect(Array.isArray(describeApp().perspectives)).toBe(true)
   })
 
   it('datasourceKinds is an array', () => {

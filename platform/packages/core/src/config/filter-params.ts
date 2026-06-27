@@ -121,19 +121,15 @@ export type ParamHidden = ParamMeta & {
 }
 
 /**
- * Year selector with optional year ↔ range toggle.
+ * Year selector.
  *
  * Grafana: time range variable (from/to with quick ranges).
- * rangeKey references the hidden 'mode' param; when mode='range' the
- * selector renders as a range chip instead of a dropdown.
- * years: YearsSource — static list, DataStore query, or REST API.
+ * years: YearsSource — static list, DataStore query, or REST API. Perspective-
+ * scoped visibility (year vs range) is declared via `visibleWhen: perspective-is`,
+ * not a privileged toggle key (System A retired, VISION #3 / P6).
  */
 export type ParamYearSelect = ParamMeta & {
   type:        'year-select'
-  /** Key of the hidden 'mode' param that controls year ↔ range toggle. */
-  rangeKey?:   string
-  /** Label shown when mode = 'range'. */
-  rangeLabel?: string
   years?:      YearsSource
 }
 
@@ -248,11 +244,6 @@ export type ParamDef =
 //  AppSmith: filter widgets are placed in a header container.
 //
 
-export interface TimeModeItem {
-  id:    string
-  label: string
-}
-
 export interface BarDef {
   /** CSS positioning of the filter-bar element. Default: 'sticky'. */
   position?:   'sticky' | 'float'
@@ -264,10 +255,6 @@ export interface BarDef {
    * 'strip' — auto-height wrapping row (AppSmith header-style).
    */
   layout?:     'bar' | 'strip'
-  /** Attach the year ↔ range time-mode toggle to this bar. */
-  timeToggle?: boolean
-  /** Custom time-mode labels — overrides default year/range. */
-  timeModes?:  TimeModeItem[]
   /** Hide this bar when the condition is false — evaluated against raw filter state. */
   showWhen?:   WhenMap
   /** Filter controls belonging to this bar, keyed by param name. */
@@ -300,31 +287,19 @@ export interface FilterSchemaInput {
 //  Declares which flat param keys populate the SectionContext used by
 //  interpretSpec, interpretChart, interpretKpis.
 //
-//  timeMode → the param key whose value is 'year' | 'range'.
-//  dims     → { dimName: paramKey } — maps context dimensions to param values.
+//  dims → { dimName: paramKey } — maps context dimensions to param values.
 //
-//  Example: { timeMode: 'mode', dims: { time: 'year', geo: 'region' } }
-//    raw['mode']   → ctx.timeMode
+//  Example: { dims: { time: 'year', geo: 'region' } }
 //    raw['year']   → ctx.dims['time']  (auto-parsed to number for year-select)
 //    raw['region'] → ctx.dims['geo']
 //
-//  EXPAND-CONTRACT (VISION #3 / P1 — HIGH-2). `timeMode` is now OPTIONAL. It was
-//  MANDATORY (the privileged time-mode weave); relaxing it BEFORE any config
-//  migrates is what keeps every existing page typecheckable while the new
-//  `page.perspectives` axis is wired in. A page that declares a `PerspectiveAxis`
-//  binds its active id through `ctx.perspectiveState[param]` and needs NO `timeMode`
-//  binding; a legacy page keeps setting it (Postel-tolerated, retired in P6). When a
-//  legacy `timeMode` is present and no `perspectives` axis is declared, the parser
-//  DERIVES a single-axis `PerspectiveAxis` from `modeOrder`+`timeMode` so the legacy
-//  config flows into the SAME new path unchanged (deriveLegacyPerspectiveAxis).
+//  The active perspective id is NOT a context dim — it flows through
+//  `ctx.perspectiveState[param]` (the axis URL param), declared by `page.perspectives`.
+//  The privileged `timeMode` binding was retired with System A (VISION #3 / P6).
 //
 
 export interface ContextMapping<P = Record<string, unknown>> {
-  /** OPTIONAL (P1, was mandatory) — the param key whose value is the active
-   *  perspective id ('year' | 'range' | …). Absent on a page that declares a
-   *  `PerspectiveAxis` (the active id flows through `ctx.perspectiveState`). */
-  timeMode?: keyof P & string
-  dims?:     Record<string, keyof P & string>
+  dims?: Record<string, keyof P & string>
 }
 
 // ── NodeDef-based param types (Constructor-ready) ─────────────────────────────
@@ -366,8 +341,5 @@ export interface BarNode {
   position?:   'sticky' | 'float'
   order?:      number
   layout?:     'bar' | 'strip'
-  timeToggle?: boolean
-  /** When set, overrides the default year/range tab list. JSON-serializable. */
-  timeModes?:  TimeModeItem[]
   items:       ParamNode[]
 }

@@ -1,6 +1,6 @@
 // ── PageInspectorPanel — author the PAGE ROOT's config [V3] ───────────────────
 //
-//  The page root carries PageConfigBase config (presentation · frame · modeOrder ·
+//  The page root carries PageConfigBase config (presentation · frame · perspectives ·
 //  vars) that was, until now, entirely UN-AUTHORABLE in the Constructor (a real
 //  coverage gap the study flagged: page-level config un-authorable). This panel
 //  closes it — WITHOUT a parallel form engine:

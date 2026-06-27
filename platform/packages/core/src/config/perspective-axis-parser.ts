@@ -1,73 +1,45 @@
-// ── perspective-axis parser + ctx-scoping [VISION #3 / P1] ────────────────────
+// ── perspective-axis parser + ctx-scoping [VISION #3] ─────────────────────────
 //
 //  ONE internal representation downstream. The engine reads a page's declared
-//  `perspectives` (the `PerspectivesByParam` Record) if present; ELSE it DERIVES a
-//  single-axis `PerspectiveAxis` from the LEGACY `modeOrder` + `ContextMapping.timeMode`
-//  (the Postel desugar) so every un-migrated config flows into the SAME new path
-//  unchanged (Strangler-Fig). When NEITHER is present the parser returns `undefined`
-//  — no axis instantiated, no registry lookup, no scoping mutation: the N=1-free
-//  property (FF-ONE-VIEW-NO-MACHINERY), byte-identical render.
+//  `perspectives` (the `PerspectivesByParam` Record). When absent the parser returns
+//  `undefined` — no axis instantiated, no registry lookup, no scoping mutation: the
+//  N=1-free property (FF-ONE-VIEW-NO-MACHINERY), byte-identical render. Every page
+//  declares its axis explicitly (the legacy `modeOrder`/`timeMode` desugar was
+//  retired with System A, VISION #3 / P6).
 //
 //  LAW 1: the axis param is the Record KEY (data); the engine never branches on a
-//  literal. LAW 2: the derived axis is pure data (label/timeBinding), no functions.
+//  literal. LAW 2: the axis is pure data (label/timeBinding), no functions.
 //
-//  ARROW: engine-pure (packages/core). The React layer EXTRACTS the three inputs
-//  from its `NodePageConfig` (perspectives, modeOrder, the context timeMode param)
-//  and hands them here — core never imports the react page type.
+//  ARROW: engine-pure (packages/core). The React layer EXTRACTS `perspectives` from
+//  its `NodePageConfig` and hands it here — core never imports the react page type.
 
 import type { SectionContext }     from '../core/context'
 import { TIME_DIM }                from '../core/context'
 import type { DimVal }             from '../sdmx'
-import type { ModeDef }            from '../mode/types'
+import type { PerspectiveOption }  from '../perspective/types'
 import { resolveLocaleString }     from '../i18n/types'
 import type { PerspectiveAxis, PerspectivesByParam, PerspectiveDef, PerspectiveTimeBinding } from './perspective-axis'
 import { effectiveBounds, isYearsSpec, resolveTimePin } from '../core/time-dimension'
-import { PERSPECTIVE_PARAM }       from './perspective-state'
 
-// ── ParsePerspectiveInput — the three legacy/new inputs, extracted by the caller ──
+// ── ParsePerspectiveInput — the declared axes, extracted by the caller ────────
 //
-//  The React SiteRenderer / SSR builders read these off `NodePageConfig`:
-//    perspectives  — page.perspectives (the new declared axes), if any.
-//    modeOrder     — page.modeOrder (legacy ordered mode ids).
-//    timeModeParam — page.filterSchema.context.timeMode (the legacy URL param name).
+//  The React SiteRenderer / SSR builders read `perspectives` off `NodePageConfig`.
 //  Keeping the parser input a plain bag keeps core decoupled from the react page type.
 export interface ParsePerspectiveInput {
-  perspectives?:  PerspectivesByParam
-  modeOrder?:     readonly string[]
-  timeModeParam?: string
+  perspectives?: PerspectivesByParam
 }
 
 /**
  * Parse a page's perspective axes into ONE internal representation.
  *
- *   1. `perspectives` declared   → returned as-is (the new path).
- *   2. else legacy `modeOrder` (+ a `timeModeParam`) → DERIVE a single-axis
- *      `{ [param]: { perspectives: [...] } }` (the desugar) keyed by the legacy
- *      param name (so `?mode=range` keeps selecting the active id).
- *   3. else `undefined` — no axis (N=1-free; the caller runs the plain path).
- *
- * The derived perspectives carry only `id` + a minimal `label` (id echoed for both
- * locales — legacy mode ids have no authored label here; the legacy `timeModes`
- * labels stay owned by the mode bar). NO `scope` is derived: legacy pages keep
- * binding time imperatively through their own filter params until P5 authors
- * `scope.timeBinding`. The derived axis exists so the SSOT (`perspectiveState`) and
- * the visibility gate flow through the new path; it does not yet relocate the
- * legacy time binding (that is P5's config migration).
+ *   1. `perspectives` declared → returned as-is.
+ *   2. else `undefined` — no axis (N=1-free; the caller runs the plain path).
  */
 export function parsePerspectiveAxes(
   input: ParsePerspectiveInput,
 ): PerspectivesByParam | undefined {
   if (input.perspectives && Object.keys(input.perspectives).length > 0) {
     return input.perspectives
-  }
-  const order = input.modeOrder
-  if (order && order.length > 0) {
-    const param = input.timeModeParam ?? PERSPECTIVE_PARAM
-    const perspectives: PerspectiveDef[] = order.map((id) => ({
-      id,
-      label: { ka: id, en: id },
-    }))
-    return { [param]: { perspectives } }
   }
   return undefined
 }
@@ -90,24 +62,22 @@ export function activeIdForAxis(
   return axis.perspectives[0]?.id
 }
 
-// ── perspectiveModeDefs — the toggle's available list, FROM THE AXIS (P5.2 (1)) ──
+// ── perspectiveOptions — the toggle's available list, FROM THE AXIS ───────────
 //
-//  Decision (B): the perspective axis OWNS its toggle presentation. A switcher that
-//  renders this axis (the `perspective-bar` node, which reads `ctx.mode.available`)
-//  derives its options HERE — id + label + icon straight off each `PerspectiveDef`,
-//  in array order (= the nav-sort order). No `modeRegistry` lookup: the label/icon
-//  SSOT is the authored `PerspectiveDef`, not a separately-registered ModeDef.
+//  Decision (B): the perspective axis OWNS its toggle presentation. The switcher
+//  (the `perspective-bar` node, which reads `ctx.perspective.available`) derives its
+//  options HERE — id + label + icon straight off each `PerspectiveDef`, in array
+//  order (= the nav-sort order). The label/icon SSOT is the authored `PerspectiveDef`.
 //
-//  Returns the EXISTING `ModeDef` shape (the toggle's `available` element type) so
-//  the `mode` triad on RenderContext is fed unchanged (the `mode` field is renamed
-//  to `perspective` in P6). `PerspectiveDef.label` is a LocaleString → resolved to
-//  the active locale here (the one place a locale is in scope); `ModeDef.label` is a
-//  plain string, exactly as the live mode-bar consumed it. `icon` carries through.
-export function perspectiveModeDefs(
+//  Returns `PerspectiveOption[]` (the toggle's `available` element type) feeding the
+//  `perspective` triad on RenderContext. `PerspectiveDef.label` is a LocaleString →
+//  resolved to the active locale here (the one place a locale is in scope);
+//  `PerspectiveOption.label` is a plain string. `icon` carries through.
+export function perspectiveOptions(
   axis:     PerspectiveAxis,
   locale:   string,
   fallback: string,
-): ModeDef[] {
+): PerspectiveOption[] {
   return axis.perspectives.map((p) => ({
     id:    p.id,
     label: resolveLocaleString(p.label, locale, fallback),

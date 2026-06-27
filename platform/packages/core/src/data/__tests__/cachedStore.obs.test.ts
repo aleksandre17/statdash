@@ -22,7 +22,6 @@ import type { EngineRow }                         from '../encoding'
 // ── Fixtures ──────────────────────────────────────────────────────────
 
 const ctx: SectionContext = {
-  timeMode: 'year',
   dims: { time: 2023, geo: 'GE', sector: 'S13' },
 }
 
@@ -211,7 +210,7 @@ describe('CachedStore — obs caching (P2-6)', () => {
   })
 
   it('cache key is sensitive to ctx.dims — different dims = different cache entry', () => {
-    const ctx2: SectionContext = { timeMode: 'year', dims: { time: 2022, geo: 'GE', sector: 'S13' } }
+    const ctx2: SectionContext = { dims: { time: 2022, geo: 'GE', sector: 'S13' } }
     const source = makeSource()
     const store  = new CachedStore(source)
 

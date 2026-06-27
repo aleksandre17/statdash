@@ -53,7 +53,7 @@ export interface ViewParams {
   role?:        string
   label?:       string
   position?:    string
-  /** Per-panel context override — dims/timeMode/compare wiring (N37). */
+  /** Per-panel context override — dimOverride wiring (Grafana scopedVars). */
   scope?:       ScopeOverride
   /**
    * Opt-in polling for non-streaming stores (N34d).
@@ -228,18 +228,11 @@ export interface PageConfigBase {
   filterSchema?: FilterSchemaInput
   vars?:         VarMap
   /**
-   * Legacy ordered perspective ids (System A). Retired in P6 — the new
-   * `perspectives` axis below supersedes it (its array order is the SSOT for
-   * nav-sort + the default). Kept readable so un-migrated pages parse via the
-   * legacy desugar (parsePerspectiveAxes).
-   */
-  modeOrder?:    string[]
-  /**
-   * The page's perspective axes [VISION #3 / P1], keyed by URL param — the generic,
-   * declarative replacement for the `modeOrder`+`timeMode` weave. One key today
-   * (`{ perspective: {…} }`); multi-axis = a second key (D-MULTIAXIS), zero rename.
-   * ADDITIVE: absent ⇒ the engine derives a single axis from legacy
-   * `modeOrder`+`timeMode` (Postel desugar), so existing pages render identically.
+   * The page's perspective axes [VISION #3], keyed by URL param — the generic,
+   * declarative perspective-axis declaration. One key today (`{ mode: {…} }`);
+   * multi-axis = a second key (D-MULTIAXIS), zero rename. The `perspectives[]`
+   * array order is the SSOT for both the toggle order and the nav-sort rank.
+   * Absent ⇒ no axis (N=1-free; byte-identical render, FF-ONE-VIEW-NO-MACHINERY).
    */
   perspectives?: PerspectivesByParam
 }

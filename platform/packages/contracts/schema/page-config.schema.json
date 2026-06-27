@@ -154,6 +154,10 @@
         "vars": {
           "type": "object",
           "description": "Node-scoped derived vars"
+        },
+        "perspectives": {
+          "type": "object",
+          "description": "Perspective axes keyed by URL param; perspectives[] order is the toggle + nav-sort SSOT"
         }
       },
       "required": [
@@ -231,6 +235,10 @@
         "vars": {
           "type": "object",
           "description": "Node-scoped derived vars"
+        },
+        "perspectives": {
+          "type": "object",
+          "description": "Perspective axes keyed by URL param; perspectives[] order is the toggle + nav-sort SSOT"
         }
       },
       "required": [
@@ -308,6 +316,10 @@
         "vars": {
           "type": "object",
           "description": "Node-scoped derived vars"
+        },
+        "perspectives": {
+          "type": "object",
+          "description": "Perspective axes keyed by URL param; perspectives[] order is the toggle + nav-sort SSOT"
         }
       },
       "required": [
@@ -372,50 +384,6 @@
         },
         "type": {
           "const": "section"
-        },
-        "id": {
-          "type": "string",
-          "description": "Node id"
-        },
-        "variant": {
-          "type": "string",
-          "description": "Registry variant"
-        },
-        "data": {
-          "$ref": "#/$defs/DataSpec"
-        },
-        "view": {
-          "type": "object",
-          "description": "ViewParams"
-        },
-        "children": {
-          "type": "array",
-          "description": "Child nodes",
-          "items": {
-            "$ref": "#/$defs/AnyNode"
-          }
-        }
-      },
-      "required": [
-        "type"
-      ],
-      "additionalProperties": true
-    },
-    "node_mode-bar__default": {
-      "type": "object",
-      "properties": {
-        "modes": {
-          "title": "Mode IDs",
-          "description": "array field",
-          "type": "array"
-        },
-        "key": {
-          "title": "Param Key",
-          "description": "string field",
-          "type": "string"
-        },
-        "type": {
-          "const": "mode-bar"
         },
         "id": {
           "type": "string",
@@ -1527,9 +1495,6 @@
         },
         {
           "$ref": "#/$defs/node_section__default"
-        },
-        {
-          "$ref": "#/$defs/node_mode-bar__default"
         },
         {
           "$ref": "#/$defs/node_perspective-bar__default"

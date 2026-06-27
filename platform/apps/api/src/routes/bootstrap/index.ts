@@ -27,15 +27,15 @@
 //  api cannot import @statdash/react across the dependency arrow, so the contract
 //  lives in the zero-dep contracts package, not re-declared on each side). The
 //  runner refines the renderer-owned blobs (pages/nav/chrome/i18n) to its precise
-//  types. ModeDef + DatasourceInstanceConfig from @statdash/engine are structurally
-//  the contract's ManifestMode / ManifestDatasource — assignable without a cast.
+//  types. ManifestMode (the perspective vocabulary) is the contract's own type;
+//  DatasourceInstanceConfig from @statdash/engine is structurally the contract's
+//  ManifestDatasource — assignable without a cast.
 
 import type { FastifyPluginAsync } from 'fastify'
-import type { SiteManifestContract } from '@statdash/contracts'
+import type { SiteManifestContract, ManifestMode } from '@statdash/contracts'
 import {
   migratePageConfig,
   CURRENT_SCHEMA_VERSION,
-  type ModeDef,
   type DatasourceInstanceConfig,
 } from '@statdash/engine'
 import { relationExists } from '../../lib/relation-exists.js'
@@ -91,7 +91,7 @@ type SiteManifest = SiteManifestContract & {
 const DEFAULT_INDEX_PAGE_ID = 'landing'
 const DEFAULT_I18N: JsonRecord = { locales: ['ka'], defaultLocale: 'ka', fallbackLocale: 'ka' }
 const DEFAULT_CHROME_CONFIG: JsonRecord = { logoUrl: '', logoAlt: '' }
-const DEFAULT_MODES: ModeDef[] = []
+const DEFAULT_MODES: ManifestMode[] = []
 
 // site_config keys this route consumes. Open key/value table → we read the whole
 // map once and pick these out, defaulting + recording any that are absent.
@@ -267,7 +267,7 @@ export const bootstrapRoutes: FastifyPluginAsync = async (app) => {
     const chromeConfig = pick(SITE_KEY.chromeConfig, DEFAULT_CHROME_CONFIG, isObject)
     const i18n         = pick(SITE_KEY.i18n,         DEFAULT_I18N, isObject)
     const modes        = pick(SITE_KEY.modes,        DEFAULT_MODES,
-                              (v): v is ModeDef[] => Array.isArray(v))
+                              (v): v is ManifestMode[] => Array.isArray(v))
 
     // nav: prefer the site_config 'nav' blob (NavEntry[] verbatim — the runner's
     // rich presentation shape). FALL BACK to the relational nav_item recursive CTE

@@ -35,7 +35,7 @@ import type { RenderContext } from '../types/context'
 //  Cheap guard first: undefined passes through as undefined; a string with no
 //  `{` passes through unchanged (no regex). Only `{…}`-bearing strings hit the
 //  engine primitive. `{ year, range }` union templates always resolve (the
-//  primitive selects by ctx.timeMode) — they have no string form to guard on.
+//  primitive selects by the active perspective) — they have no string form to guard on.
 //
 // A definite template (string or {year,range}) ALWAYS resolves to a string;
 // only an `undefined` input yields `undefined`. The overloads make that precise

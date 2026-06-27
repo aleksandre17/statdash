@@ -25,7 +25,7 @@ export { diagError, diagWarning, diagInfo, ok, err }                     from '.
 // ── Provenance — data quality + lineage record [N14] ──────────────────
 export type { ObsStatus, ProvenanceRecord, MetadataPort }                from './core/provenance'
 export { OBS_STATUS_LABELS }                                             from './core/provenance'
-export type { ModeId, TimeMode, Unit, ChartType, Indicator, SectionContext } from './core/context'
+export type { Unit, ChartType, Indicator, SectionContext } from './core/context'
 // TIME_DIM — the SSOT key for the conventional time axis. Exported so the
 // store-builder (plugins) can fall back to it when a profile's DSD time-dim is
 // absent, WITHOUT hardcoding the 'time' literal (Law 1).
@@ -34,11 +34,9 @@ export { groupBySpan }                                                   from '.
 export type { DataLookupOp, DeriveEntry, NodeDeriveMap }                from './core/types'
 export { evalNodeDerive }                                                from './core/evalNodeDerive'
 
-// ── Mode System ───────────────────────────────────────────────────────
-export type { ModeDef, ModeContext }                                     from './mode/types'
-//  perspectiveRegistry is the CANONICAL name (VISION #3); modeRegistry is a
-//  back-compat alias of the SAME singleton (retires in P6). One instance, two names.
-export { modeRegistry, perspectiveRegistry }                             from './mode/registry'
+// ── Perspective System ────────────────────────────────────────────────
+export type { PerspectiveId, PerspectiveOption, PerspectiveContext }     from './perspective/types'
+export { perspectiveRegistry }                                           from './perspective/registry'
 
 // ── Perspective Axis [VISION #3] — the generic OLAP query-perspective axis ──────
 //  The structural envelope lives in @statdash/contracts (shared by panel/api/core);
@@ -59,12 +57,12 @@ import './config/perspective-scope-schemas' // side-effect: register built-in sc
 //  P1 — the active-id SSOT readers + the parser + the ctx-scoping step. The active
 //  perspective id flows ONLY through ctx.perspectiveState (HIGH-3); parsePerspectiveAxes
 //  yields ONE internal representation (declared `perspectives`, else a legacy
-//  modeOrder+timeMode desugar); scopeCtxByPerspective folds the active perspective's
-//  timeBinding into ctx.dims before interpretSpec (the declarative time-mode replacement).
+//  scopeCtxByPerspective folds the active perspective's timeBinding into ctx.dims
+//  before interpretSpec (the declarative replacement for the retired time-mode).
 export { PERSPECTIVE_PARAM, LEGACY_MODE_PARAM, activePerspective }       from './config/perspective-state'
 export type { ParsePerspectiveInput, PerspectiveOwnership }             from './config/perspective-axis-parser'
 export { parsePerspectiveAxes, activeIdForAxis, scopeCtxByPerspective,
-         perspectiveOwnedParamKeys, perspectiveModeDefs }               from './config/perspective-axis-parser'
+         perspectiveOwnedParamKeys, perspectiveOptions }                from './config/perspective-axis-parser'
 
 // ── Standard 2: SDMX Observation Model (ISO 17369) ───────────────────
 export type { DimVal, CtxRef, FilterValue, NeRef, NeCtxRef, Observation, ObsQuery } from './sdmx'
@@ -197,7 +195,6 @@ export type {
   ContextMapping,
   FilterSchemaInput,
   // NodeDef-based filter types
-  TimeModeItem,
   BarNode,
   ParamHiddenNode, ParamYearSelectNode, ParamCascadeNode, ParamSelectNode,
   ParamRangeNode, ParamMultiSelectNode, ParamChipSelectNode, ParamNode,

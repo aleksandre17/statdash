@@ -230,7 +230,7 @@ export function PageStep() {
 
           {/* ── Page Inspector (PageConfigBase authoring, V3) ────────────── */}
           {/*  Page-scoped, not element-scoped: authors the page ROOT's         */}
-          {/*  presentation / frame / modeOrder / vars through the SAME generic */}
+          {/*  presentation / frame / perspectives / vars through the SAME generic */}
           {/*  Inspector (pageSchemaSource — presentation via presentationProp-  */}
           {/*  Schema). Round-trips losslessly through page.meta.               */}
           <Divider sx={{ my: 2 }} />

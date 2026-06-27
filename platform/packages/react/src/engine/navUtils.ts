@@ -52,18 +52,14 @@ function readPath(raw: Raw, path: string): unknown {
 /**
  * Extract which PERSPECTIVE a nav section belongs to, from its `view.visibleWhen`.
  *
- * VISION #3 / P1 — the 6th mode-reading site, brought onto the SAME perspective
- * vocabulary the visibility gate uses (one SSOT for "what perspective is this"). It
- * reads the EXPRESSION (the section's declared membership), not the active id:
- *   • legacy `{ op:'eq', param:<timeModeKey> }`  → the `is` value (System A),
- *   • legacy `{ op:'mode-is' }` / `{ op:'mode-not' }` → the `mode` value,
- *   • (P2) `{ op:'perspective-is', param }` will resolve here too.
- * Anything else ⇒ undefined (ungated / not a single-perspective membership).
+ * Reads the EXPRESSION (the section's declared membership), not the active id —
+ * the generic eq-on-the-perspective-param form: `{ op:'eq', param:<perspectiveKey> }`
+ * → the `is` value. Anything else ⇒ undefined (ungated / not a single-perspective
+ * membership — a `perspective-is` section is ungated in the nav-sort, unchanged).
  */
-function getNavMode(vw: VisibilityExpr | undefined, timeModeKey: string): string | undefined {
+function getNavMode(vw: VisibilityExpr | undefined, perspectiveKey: string): string | undefined {
   if (!vw) return undefined
-  if (vw.op === 'eq' && vw.param === timeModeKey) return String(vw.is)
-  if (vw.op === 'mode-is' || vw.op === 'mode-not') return vw.mode
+  if (vw.op === 'eq' && vw.param === perspectiveKey) return String(vw.is)
   return undefined
 }
 
@@ -75,7 +71,7 @@ function getNavMode(vw: VisibilityExpr | undefined, timeModeKey: string): string
 function readContribution(
   raw:         Raw,
   reader:      Required<NavContribution>,
-  timeModeKey: string,
+  perspectiveKey: string,
   inherited?:  string,
 ): NavSection | undefined {
   let id: string | undefined
@@ -87,26 +83,26 @@ function readContribution(
   if (id === undefined || typeof title !== 'string') return undefined
 
   const vw = readPath(raw, reader.modeField) as VisibilityExpr | undefined
-  return { id, title, navMode: getNavMode(vw, timeModeKey) ?? inherited }
+  return { id, title, navMode: getNavMode(vw, perspectiveKey) ?? inherited }
 }
 
 export function extractNavSectionsFromChildren(
   children:    NodeDef[],
-  timeModeKey: string,
-  modeOrder?:  string[],
+  perspectiveKey: string,
+  perspectiveOrder?:  string[],
 ): NavSection[] {
-  return _extract(children.map(asRaw), timeModeKey, modeOrder)
+  return _extract(children.map(asRaw), perspectiveKey, perspectiveOrder)
 }
 
 export function extractNavSections(
   sections:    (NodeBase & { id: string; title: string })[],
-  timeModeKey: string,
-  modeOrder?:  string[],
+  perspectiveKey: string,
+  perspectiveOrder?:  string[],
 ): NavSection[] {
-  return _extract(sections.map(asRaw), timeModeKey, modeOrder)
+  return _extract(sections.map(asRaw), perspectiveKey, perspectiveOrder)
 }
 
-function _extract(nodes: Raw[], timeModeKey: string, modeOrder?: string[]): NavSection[] {
+function _extract(nodes: Raw[], perspectiveKey: string, perspectiveOrder?: string[]): NavSection[] {
   const out: NavSection[] = []
 
   for (const node of nodes) {
@@ -118,28 +114,28 @@ function _extract(nodes: Raw[], timeModeKey: string, modeOrder?: string[]): NavS
       // Real-DOM container: inherit its own nav-mode, descend into its child
       // nodes generically, and emit the contributor children it wraps.
       const containerVw = readPath(node, 'view.visibleWhen') as VisibilityExpr | undefined
-      const inherited   = getNavMode(containerVw, timeModeKey)
+      const inherited   = getNavMode(containerVw, perspectiveKey)
       for (const child of collectChildNodes(node)) {
         const reader = nodeRegistry.getNavContribution(child.type)
         if (!reader) continue
-        const sec = readContribution(child, reader, timeModeKey, inherited)
+        const sec = readContribution(child, reader, perspectiveKey, inherited)
         if (sec) out.push(sec)
       }
     } else {
       const reader = nodeRegistry.getNavContribution(type)
       if (!reader) continue
-      const sec = readContribution(node, reader, timeModeKey)
+      const sec = readContribution(node, reader, perspectiveKey)
       if (sec) out.push(sec)
     }
   }
 
   const deduped = out.filter((s, i, a) => a.findIndex(x => x.id === s.id) === i)
-  if (!modeOrder?.length) return deduped
+  if (!perspectiveOrder?.length) return deduped
 
   const rank = (m: string | undefined) => {
     if (m == null) return -1
-    const i = modeOrder.indexOf(m)
-    return i === -1 ? modeOrder.length : i
+    const i = perspectiveOrder.indexOf(m)
+    return i === -1 ? perspectiveOrder.length : i
   }
   return [...deduped].sort((a, b) => rank(a.navMode) - rank(b.navMode))
 }

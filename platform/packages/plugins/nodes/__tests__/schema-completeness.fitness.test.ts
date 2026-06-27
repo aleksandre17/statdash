@@ -40,7 +40,6 @@ type PlaceableMeta = NodeSliceMeta | PanelSliceMeta | PageSliceMeta
 
 // ── Node metas ────────────────────────────────────────────────────────────────
 import { META as section }       from '../section/default/meta'
-import { META as modeBar }       from '../mode-bar/default/meta'
 import { META as perspectiveBar } from '../perspective-bar/default/meta'
 import { META as filterBar }     from '../filter-bar/default/meta'
 import { META as pageHeader }    from '../page-header/default/meta'
@@ -95,7 +94,7 @@ const PURE_CONTAINERS: ReadonlySet<string> = new Set<string>([])
 
 // ── Catalog of every page-canvas META (node + panel) ─────────────────────────
 const ALL_METAS: PlaceableMeta[] = [
-  section, modeBar, perspectiveBar, filterBar, pageHeader, geograph, links, repeat, hero,
+  section, perspectiveBar, filterBar, pageHeader, geograph, links, repeat, hero,
   statsCarousel,
   row, grid, columns, stack, card, divider, spacer, wrap,
   chart, kpiStrip, table, map, gauge, text,

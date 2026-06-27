@@ -33,7 +33,6 @@ import type { NodeSliceMeta, PanelSliceMeta, PageSliceMeta } from '../src/engine
 
 // ── Node/panel/page METAs — direct meta.ts imports (node-safe, CSS-free) ─────
 import { META as section }       from '../../plugins/nodes/section/default/meta'
-import { META as modeBar }       from '../../plugins/nodes/mode-bar/default/meta'
 import { META as perspectiveBar } from '../../plugins/nodes/perspective-bar/default/meta'
 import { META as filterBar }     from '../../plugins/nodes/filter-bar/default/meta'
 import { META as pageHeader }    from '../../plugins/nodes/page-header/default/meta'
@@ -71,7 +70,7 @@ type PlaceableMeta = NodeSliceMeta | PanelSliceMeta | PageSliceMeta
 
 const ALL_METAS: PlaceableMeta[] = [
   innerPage, containerPage, tabPage,
-  section, modeBar, perspectiveBar, filterBar, pageHeader, geograph, links, repeat, hero, statsCarousel,
+  section, perspectiveBar, filterBar, pageHeader, geograph, links, repeat, hero, statsCarousel,
   row, grid, columns, stack, card, divider, spacer, wrap,
   chart, kpiStrip, table, map, text, gauge,
 ]

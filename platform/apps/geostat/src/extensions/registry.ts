@@ -5,7 +5,7 @@
 //  Passed to <NodePageRenderer extensions={extensionRegistry} />.
 //
 //  This is the Option A pattern: module-level singleton, same as how
-//  registerSlice / modeRegistry work in this codebase.
+//  registerSlice / perspectiveRegistry work in this codebase.
 //
 import { ExtensionRegistry } from '@statdash/react'
 

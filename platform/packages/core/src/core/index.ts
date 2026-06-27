@@ -1,6 +1,6 @@
 export type { EngineErrorCode } from './error'
 export { EngineError }          from './error'
-export type { TimeMode, Unit, ChartType, Indicator, SectionContext } from './context'
+export type { Unit, ChartType, Indicator, SectionContext } from './context'
 export { groupBySpan }          from './layout'
 export type { DataLookupOp, DeriveEntry, NodeDeriveMap } from './types'
 export { evalNodeDerive }       from './evalNodeDerive'

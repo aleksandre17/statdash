@@ -14,22 +14,22 @@ import type { NavSection }                                         from '../engi
 interface AnchorNavCtxValue {
   sections:    NavSection[]
   activeId:    string | null
-  timeModeKey: string
+  perspectiveKey: string
 }
 
 const AnchorNavCtx = createContext<AnchorNavCtxValue>({
   sections:    [],
   activeId:    null,
-  timeModeKey: 'mode',
+  perspectiveKey: 'mode',
 })
 
 export function AnchorNavProvider({
   sections,
-  timeModeKey,
+  perspectiveKey,
   children,
 }: {
   sections:    NavSection[]
-  timeModeKey: string
+  perspectiveKey: string
   children:    React.ReactNode
 }) {
   const [activeId, setActiveId] = useState<string | null>(null)
@@ -91,7 +91,7 @@ export function AnchorNavProvider({
   }, [sectionKey])
 
   return (
-    <AnchorNavCtx.Provider value={{ sections, activeId, timeModeKey }}>
+    <AnchorNavCtx.Provider value={{ sections, activeId, perspectiveKey }}>
       {children}
     </AnchorNavCtx.Provider>
   )

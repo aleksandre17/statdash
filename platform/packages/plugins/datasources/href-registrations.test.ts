@@ -71,9 +71,9 @@ describe("'href' resolves EngineRow[] through the DataStore port — FF-HREF-DOO
     expect(store).toBeDefined()
 
     // Flows through the SAME OLAP querySync as static/stats — proves one port.
-    expect(store.querySync({ type: 'val', code: 'GDP' }, { timeMode: 'year', dims: { time: 2020 } })[0]?.['value'])
+    expect(store.querySync({ type: 'val', code: 'GDP' }, { dims: { time: 2020 } })[0]?.['value'])
       .toBe(100)
-    const obs = store.querySync({ type: 'obs', measure: 'GDP' }, { timeMode: 'year', dims: {} })
+    const obs = store.querySync({ type: 'obs', measure: 'GDP' }, { dims: {} })
     expect(obs).toHaveLength(2)
     expect(fetchSpy).toHaveBeenCalledOnce()
   })
@@ -97,7 +97,7 @@ describe("'href' resolves EngineRow[] through the DataStore port — FF-HREF-DOO
     }
     const store = (await buildStoreManifest([cfg]))['csv']!
     // numeric cells coerced → the OLAP sum can add them.
-    expect(store.querySync({ type: 'val', code: 'GDP' }, { timeMode: 'year', dims: { time: 2020 } })[0]?.['value'])
+    expect(store.querySync({ type: 'val', code: 'GDP' }, { dims: { time: 2020 } })[0]?.['value'])
       .toBe(100)
   })
 

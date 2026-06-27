@@ -6,7 +6,6 @@ import type { SectionContext }                     from '../core/context'
 // ── minimal fixtures ───────────────────────────────────────────────────
 
 const ctx: SectionContext = {
-  timeMode: 'year',
   dims: { time: 2024 },
 }
 

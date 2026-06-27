@@ -23,13 +23,12 @@ import {
   useStores, useFilterState,
   useLocale, useI18n,
   PageStoreProvider,
-  useModeContext, ModeProvider,
+  usePerspectiveContext, PerspectiveProvider,
 } from '@statdash/react'
 import { GlobalStateProvider }         from '../context/GlobalState'
-import { applyEffects, resolveDataLinks } from '@statdash/engine'
+import { resolveDataLinks }           from '@statdash/engine'
 import { parsePerspectiveAxes, scopeCtxByPerspective,
-         perspectiveOwnedParamKeys, perspectiveModeDefs } from '@statdash/engine'
-import type { ModeId }                from '@statdash/engine'
+         perspectiveOwnedParamKeys, perspectiveOptions } from '@statdash/engine'
 import { FiltersProvider }             from '../context/FiltersContext'
 import { evalVarMap }                  from './evalVarMap'
 import { EventBus }                    from '../events/EventBus'
@@ -90,110 +89,84 @@ const NodePageRendererInner = memo(function NodePageRendererInner({
   )
 
   // ── Perspective ownership (P4.5 (c)) — computed BEFORE useFilterState ─────────
-  //  The default-resolution gate now follows PERSPECTIVE ownership (not bar
-  //  visibility) for params an active timeBinding owns. We need the axes + active id
-  //  BEFORE the hook resolves defaults, so they are derived here from the page config
-  //  + the URL filter state directly (timeModeKey = the legacy context.timeMode param
-  //  ?? 'mode' — the same value useFilterState returns). Empty ownership (no axis / no
-  //  timeBinding — an un-migrated page) ⇒ the gate reduces to the legacy bar branch exactly.
+  //  The default-resolution gate follows PERSPECTIVE ownership for params an active
+  //  timeBinding owns. We need the axes + active id BEFORE the hook resolves defaults,
+  //  so they are derived here from `page.perspectives` + the URL filter state directly
+  //  (perspectiveKey = the page's conventional axis param). A page with no axis / no
+  //  timeBinding ⇒ empty ownership ⇒ the gate resolves every non-owned param exactly.
   const { state, set: filterSet, setMany } = useFilter()
 
-  const timeModeKeyPre = page.filterSchema?.context?.timeMode ?? 'mode'
+  const perspectiveKeyPre = page.perspectives ? Object.keys(page.perspectives)[0] ?? 'mode' : 'mode'
   const axes = useMemo(
-    () => parsePerspectiveAxes({
-      perspectives:  page.perspectives,
-      modeOrder:     page.modeOrder,
-      timeModeParam: timeModeKeyPre,
-    }),
-    [page.perspectives, page.modeOrder, timeModeKeyPre],
+    () => parsePerspectiveAxes({ perspectives: page.perspectives }),
+    [page.perspectives],
   )
 
   const ownership = useMemo(() => {
-    const perspectiveState = { [timeModeKeyPre]: state[timeModeKeyPre] ?? '' }
+    const perspectiveState = { [perspectiveKeyPre]: state[perspectiveKeyPre] ?? '' }
     return perspectiveOwnedParamKeys(axes, perspectiveState)
     // active id falls back to perspectives[0] inside activeDefs when state is unset.
-  }, [axes, timeModeKeyPre, state])
+  }, [axes, perspectiveKeyPre, state])
+
+  // perspectiveKey IS the page's axis param (perspectiveKeyPre) — the authoritative
+  // source is page.perspectives' key, not the filter schema.
+  const perspectiveKey = perspectiveKeyPre
 
   const {
     ctx: rawSectionCtx,
     raw,
-    timeModeKey,
     effects,
     bars,
   } = useFilterState(page.filterSchema ?? null, pageStore, ownership)
 
   const filtersCtx = useMemo(
-    () => ({ bars, timeModeKey, effects }),
-    [bars, timeModeKey, effects],
+    () => ({ bars, perspectiveKey, effects }),
+    [bars, perspectiveKey, effects],
   )
 
-  // ── Perspective axis [VISION #3 / P1 · P5.2 (1)] ──────────────────────────
-  //  `axes` is parsed above (it ALSO feeds the P4.5 perspective-ownership gate
-  //  threaded into useFilterState); `timeModeKey` returned by the hook === the
-  //  pre-hook `timeModeKeyPre`, so the single parse is canonical. The single
-  //  active axis at this param drives both the toggle and the nav ordering.
-  const activeAxis = axes?.[timeModeKey]
+  // ── Perspective axis [VISION #3] ─────────────────────────────────────────
+  //  `axes` is parsed above (it ALSO feeds the perspective-ownership gate threaded
+  //  into useFilterState); `perspectiveKey` returned by the hook === the pre-hook
+  //  `perspectiveKeyPre`, so the single parse is canonical. The single active axis at
+  //  this param drives the toggle (current/available/set) and the nav ordering.
+  const activeAxis = axes?.[perspectiveKey]
 
-  // The toggle's id list + order — FROM THE AXIS (decision B), no longer the
-  // legacy page.modeOrder. `useModeContext` still owns `current` (URL-param read)
-  // and `set` (URL write); we feed it the axis ids so its `current` fallback and
-  // membership check resolve. `available` is then OVERRIDDEN below with the axis-
-  // OWNED label/icon defs (perspectiveModeDefs) — the axis owns its presentation.
-  const modeList = useMemo(
-    () => activeAxis?.perspectives.map(p => p.id) ?? [],
-    [activeAxis],
-  )
-  const modeFromUrl = useModeContext(timeModeKey, modeList)
-
-  // Axis-owned available list: id + PerspectiveDef.label (resolved to the active
-  // locale) + PerspectiveDef.icon. Byte-identical to the live mode-bar in ka (the
-  // PerspectiveDefs carry the manifest.modes labels+icons); locale-correct in en.
-  const axisModeDefs = useMemo(
-    () => activeAxis ? perspectiveModeDefs(activeAxis, locale, fallbackLocale) : [],
+  // The toggle's available list — FROM THE AXIS (decision B): id + PerspectiveDef
+  // .label (resolved to the active locale) + PerspectiveDef.icon, in declaration
+  // order (= the nav-sort order). The axis OWNS its presentation; no registry lookup.
+  const available = useMemo(
+    () => activeAxis ? perspectiveOptions(activeAxis, locale, fallbackLocale) : [],
     [activeAxis, locale, fallbackLocale],
   )
-  const mode = useMemo(
-    () => activeAxis ? { ...modeFromUrl, available: axisModeDefs } : modeFromUrl,
-    [activeAxis, modeFromUrl, axisModeDefs],
-  )
 
-  // Bridge: sectionCtx.timeMode = mode.current (Postel — legacy template
-  // readers still consult it until P6). The active perspective id now ALSO flows
-  // through the ctx.perspectiveState SSOT (HIGH-3): the ONE source the visibility
-  // gate + the SSR walkers read. `perspectiveState[timeModeKey] = mode.current` —
-  // mode.current is itself the URL param value (useModeContext reads FilterContext),
-  // so the SSOT is seeded from the SAME source ModeContext reads (one source).
+  // The active-perspective triad: `current` (URL-param read) + `set` (URL write) +
+  // `available` (axis-owned options). The URL param IS the active id (Harel
+  // orthogonal-regions SSOT); switching it mutates no other filter key.
+  const perspective = usePerspectiveContext(perspectiveKey, available)
+
+  // The active perspective id flows through the ctx.perspectiveState SSOT (HIGH-3):
+  // the ONE source the visibility gate + the SSR walkers + the kpi-strip read.
   // Destructure current first so the dep is a stable string, not a property access.
-  const { current: currentMode } = mode
+  const { current: currentPerspective } = perspective
   const sectionCtx = useMemo(
     () => {
-      const perspectiveState = { [timeModeKey]: currentMode }
+      const perspectiveState = { [perspectiveKey]: currentPerspective }
       const withState: typeof rawSectionCtx = {
         ...rawSectionCtx,
-        timeMode: currentMode,
         perspectiveState,
       }
       // Scope ctx.dims by the active perspective's timeBinding BEFORE resolution —
-      // the declarative replacement for the legacy imperative time-mode. Identity
-      // when no axis / no scope.timeBinding (legacy pages, until P5 authors it).
+      // the declarative replacement for the retired imperative time-mode. Identity
+      // when no axis / no scope.timeBinding.
       return scopeCtxByPerspective(withState, axes, perspectiveState)
     },
-    [rawSectionCtx, currentMode, timeModeKey, axes],
+    [rawSectionCtx, currentPerspective, perspectiveKey, axes],
   )
 
   const set = useCallback(
     (key: string, val: unknown) => filterSet(key, String(val)),
     [filterSet],
   )
-
-  // Effects-aware mode setter — mirrors TimeModeToggle: atomically sets mode + clears
-  // dependent params (e.g. year when switching to range, fromYear/toYear when leaving range).
-  const modeSet = useCallback(
-    (id: ModeId) => applyEffects(timeModeKey, id, state, effects, setMany),
-    [timeModeKey, state, effects, setMany],
-  )
-
-  const modeCtx = useMemo(() => ({ ...mode, set: modeSet }), [mode, modeSet])
 
   const mergedFilterParams = useMemo(
     () => ({ ...raw, ...state }) as Record<string, unknown>,
@@ -209,12 +182,12 @@ const NodePageRendererInner = memo(function NodePageRendererInner({
 
   const navSections = useMemo(() => {
     const children = page.type === 'inner-page' ? page.children : []
-    // Nav-section ordering comes FROM THE AXIS (P5.2 (3)): the perspective ids in
-    // declaration order — the same order the legacy `page.modeOrder` carried, now
-    // sourced from the single SSOT. `modeList` is `activeAxis.perspectives.map(id)`.
-    return extractNavSectionsFromChildren(children, timeModeKey, modeList)
-      .filter(s => !s.navMode || s.navMode === modeCtx.current)
-  }, [page, timeModeKey, modeList, modeCtx])
+    // Nav-section ordering comes FROM THE AXIS: the perspective ids in declaration
+    // order (the single SSOT for both the toggle order and the nav-sort rank).
+    const perspectiveOrder = available.map(o => o.id)
+    return extractNavSectionsFromChildren(children, perspectiveKey, perspectiveOrder)
+      .filter(s => !s.navMode || s.navMode === currentPerspective)
+  }, [page, perspectiveKey, available, currentPerspective])
 
   // One EventBus per page — created once, survives filter changes (same ref).
   const eventBus = useMemo(() => new EventBus<PlatformEventMap>(), [])
@@ -233,16 +206,18 @@ const NodePageRendererInner = memo(function NodePageRendererInner({
   )
 
   // CommandBus — wires platform state mutations to their React-state closures.
-  // Recreated when handler deps change (filterSet, setMany, timeModeKey, state, effects).
+  // Recreated when handler deps change (filterSet, setMany, perspectiveKey).
   // nav:drill delegates to the caller-supplied onNavigate (app layer provides router).
   // data:export is a stub — shells can dispatch for programmatic export; ExportBar
   // retains its own download logic untouched.
   const bus = useMemo((): CommandBus => {
     const b = new DefaultCommandBus()
-    b.handle('filter:set',     ({ key, value }) => filterSet(key, value))
-    b.handle('filter:setMany', ({ values })     => setMany(values))
-    b.handle('filter:clear',   ({ key })        => filterSet(key, ''))
-    b.handle('mode:set',       ({ id })         => applyEffects(timeModeKey, id, state, effects, setMany))
+    b.handle('filter:set',      ({ key, value }) => filterSet(key, value))
+    b.handle('filter:setMany',  ({ values })     => setMany(values))
+    b.handle('filter:clear',    ({ key })        => filterSet(key, ''))
+    // perspective:set is a plain write of the axis URL param — the perspective gate
+    // is a pure function of (config, state); switching it mutates no other key.
+    b.handle('perspective:set', ({ id, param })  => filterSet(param ?? perspectiveKey, id))
     b.handle('nav:drill',      ({ href, target }) => {
       if (onNavigate) {
         onNavigate(href, target)
@@ -260,7 +235,7 @@ const NodePageRendererInner = memo(function NodePageRendererInner({
     })
     if (import.meta.env.DEV) b.use(devLoggerMiddleware)
     return b
-  }, [filterSet, setMany, timeModeKey, state, effects, onNavigate])
+  }, [filterSet, setMany, perspectiveKey, onNavigate])
 
   // Container: platform defaults, then caller overrides applied via uiSetup.
   // Fully typed — callers call c.provide(TOKEN, value); token type constrains value.
@@ -305,16 +280,16 @@ const NodePageRendererInner = memo(function NodePageRendererInner({
     vars,
     locale,
     fallbackLocale,
-    timeModeKey,
+    perspectiveKey,
     effects,
-    mode:         modeCtx,
+    perspective,
     extensions,
     eventBus,
     bus,
     resolveLinks,
     // Merge the generic nav patch — the renderer does NOT know which nav fields
     // (e.g. crumbs) a projector contributed; it spreads the sink's nav bag.
-    navContext:   { sections: navSections, timeModeKey, ...sink.nav },
+    navContext:   { sections: navSections, perspectiveKey, ...sink.nav },
     ui:           uiContainer,
   }
 
@@ -342,7 +317,7 @@ const NodePageRendererInner = memo(function NodePageRendererInner({
     <FiltersProvider value={filtersCtx}>
       <GlobalStateProvider>
         <PageStoreProvider store={pageStore}>
-          <ModeProvider value={modeCtx}>{pageContent}</ModeProvider>
+          <PerspectiveProvider value={perspective}>{pageContent}</PerspectiveProvider>
         </PageStoreProvider>
       </GlobalStateProvider>
     </FiltersProvider>

@@ -78,15 +78,15 @@ const RAW_ROWS: RawObsRow[] = [
 function makeCtx(store: DataStore): RenderContext {
   const holder = { ctx: null as unknown as RenderContext }
   holder.ctx = {
-    sectionCtx:     { dims: { time: 2024, geo: '' }, timeMode: 'year' },
+    sectionCtx:     { dims: { time: 2024, geo: '' } },
     stores:         { main: store },
     pageStoreKey:   'main',
     filterParams:   {},
     vars:           {},
     locale:         'en',
     fallbackLocale: 'en',
-    timeModeKey:    'mode',
-    mode:           { current: 'year', available: [], set: () => {} },
+    perspectiveKey: 'mode',
+    perspective:           { current: 'year', available: [], set: () => {} },
     effects:        [],
     rows:           [],
     eventBus:       { publish: () => {}, subscribe: () => () => {} } as unknown as RenderContext['eventBus'],

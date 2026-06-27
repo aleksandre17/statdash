@@ -23,14 +23,14 @@ import { extractNavSectionsFromChildren }   from './navUtils'
 const TIME_KEY = 'mode'
 
 // Two nav-contributor sections, each gated to one perspective via view.visibleWhen
-// (the `mode-is` legacy alias === param-less perspective-is). Authored OUT of
+// (the generic `eq`-on-the-perspective-param form getNavMode reads). Authored OUT of
 // perspective order (range first) so the SORT is the thing under test.
 function children(): unknown[] {
   return [
     { type: '__nav_sec__', id: 'dynamics', title: 'Dynamics',
-      view: { visibleWhen: { op: 'mode-is', mode: 'range' } } },
+      view: { visibleWhen: { op: 'eq', param: TIME_KEY, is: 'range' } } },
     { type: '__nav_sec__', id: 'annual', title: 'Annual',
-      view: { visibleWhen: { op: 'mode-is', mode: 'year' } } },
+      view: { visibleWhen: { op: 'eq', param: TIME_KEY, is: 'year' } } },
   ]
 }
 

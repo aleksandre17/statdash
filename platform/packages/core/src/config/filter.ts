@@ -25,7 +25,7 @@ export type {
   CascadeNode,
   ParamHidden, ParamYearSelect, ParamCascade, ParamSelect,
   ParamRange, ParamMultiSelect, ParamChipSelect, ParamDef,
-  TimeModeItem, BarDef, BarsConfig,
+  BarDef, BarsConfig,
   FilterSchemaInput, ContextMapping,
   ParamHiddenNode, ParamYearSelectNode, ParamCascadeNode, ParamSelectNode,
   ParamRangeNode, ParamMultiSelectNode, ParamChipSelectNode, ParamNode,

@@ -257,12 +257,12 @@ function walkNode(
  *
  * ```ts
  * const snapshot = renderPageToJSON(myPage, {
- *   sectionCtx: { dims: { time: 2024 }, timeMode: 'year' },
+ *   sectionCtx: { dims: { time: 2024 }, perspectiveState: { mode: 'year' } },
  *   stores:     { main: myStore },
  *   filterParams: { time: '2024' },
  *   locale: appLocale, fallbackLocale: 'en',
- *   timeModeKey: 'mode',
- *   mode: { current: 'year', modes: [], set: () => {} },
+ *   perspectiveKey: 'mode',
+ *   perspective: { current: 'year', available: [], set: () => {} },
  *   effects: [],
  * })
  * ```

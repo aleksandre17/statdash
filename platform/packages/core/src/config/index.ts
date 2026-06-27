@@ -20,7 +20,6 @@ export type {
   BarDef, BarsConfig,
   ContextMapping,
   FilterSchemaInput,
-  TimeModeItem,
   BarNode,
   ParamHiddenNode, ParamYearSelectNode, ParamCascadeNode, ParamSelectNode,
   ParamRangeNode, ParamMultiSelectNode, ParamChipSelectNode, ParamNode,

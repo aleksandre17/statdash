@@ -1,4 +1,4 @@
-.mode-tab-group {
+.perspective-tab-group {
   display: flex;
   justify-content: flex-end;
   gap: 2px;
@@ -7,7 +7,7 @@
   border-radius: var(--radius-md, 6px);
 }
 
-.mode-tab-btn {
+.perspective-tab-btn {
   padding: 4px 14px;
   border: none;
   background: transparent;
@@ -18,24 +18,24 @@
   transition: background 120ms, color 120ms;
 }
 
-.mode-tab-btn[aria-selected="true"] {
+.perspective-tab-btn[aria-selected="true"] {
   background: var(--color-surface);
   color: var(--color-accent);
   font-weight: 600;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
-.mode-tab-btn:hover:not([aria-selected="true"]) {
+.perspective-tab-btn:hover:not([aria-selected="true"]) {
   background: var(--color-surface-hover);
 }
 
-.mode-tab-icon {
+.perspective-tab-icon {
   margin-right: 4px;
   font-size: 0.8em;
   vertical-align: middle;
 }
 
-.mode-tab-group--skeleton .mode-tab-btn {
+.perspective-tab-group--skeleton .perspective-tab-btn {
   width: 72px;
   height: 28px;
   justify-content: flex-end;

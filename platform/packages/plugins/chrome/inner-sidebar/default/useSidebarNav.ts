@@ -30,7 +30,7 @@ export interface SidebarNavParams {
   /** The active time-mode param value on the URL right now. */
   currentMode:  string
   /** The URL key the time-mode is stored under. */
-  timeModeKey:  string
+  perspectiveKey:  string
   setSearchParams: SetURLSearchParams
   scroll:       SidebarScroll
 }
@@ -40,7 +40,7 @@ export function useSidebarNav({
   localePath,
   isCurrentPage,
   currentMode,
-  timeModeKey,
+  perspectiveKey,
   setSearchParams,
   scroll,
 }: SidebarNavParams): (sec: NavSection) => void {
@@ -55,7 +55,7 @@ export function useSidebarNav({
         // the scroll, then flip the mode param in place (no navigation).
         scroll.queueScroll(sec.id)
         setSearchParams(prev => {
-          prev.set(timeModeKey, targetMode)
+          prev.set(perspectiveKey, targetMode)
           return prev
         }, { replace: true })
         return
@@ -70,6 +70,6 @@ export function useSidebarNav({
       // Already here: smooth-scroll to the anchor.
       scroll.scrollToAnchor(sec.id)
     },
-    [navigate, localePath, isCurrentPage, currentMode, timeModeKey, setSearchParams, scroll],
+    [navigate, localePath, isCurrentPage, currentMode, perspectiveKey, setSearchParams, scroll],
   )
 }

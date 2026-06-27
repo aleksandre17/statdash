@@ -17,9 +17,10 @@ vi.mock('i18next', () => ({
 import { buildStaticContext }   from './html'
 import type { StaticRenderContext } from './html'
 
-// Minimal valid input — only the two required fields.
+// Minimal valid input — only the two required fields. No perspectiveState: the
+// factory seeds it from the active perspective default ('year').
 const MINIMAL_INPUT = {
-  sectionCtx: { dims: { time: 2024 }, timeMode: 'year' as const },
+  sectionCtx: { dims: { time: 2024 } },
   stores:     {},
 }
 
@@ -37,19 +38,18 @@ describe('buildStaticContext() — shape', () => {
     expect(ctx).toHaveProperty('color')
     expect(ctx).toHaveProperty('locale')
     expect(ctx).toHaveProperty('fallbackLocale')
-    expect(ctx).toHaveProperty('timeModeKey')
-    expect(ctx).toHaveProperty('mode')
+    expect(ctx).toHaveProperty('perspectiveKey')
+    expect(ctx).toHaveProperty('perspective')
     expect(ctx).toHaveProperty('effects')
   })
 
-  it('passes sectionCtx dims/timeMode through + seeds the perspectiveState SSOT', () => {
-    // VISION #3 / P1 — buildStaticContext seeds ctx.perspectiveState from the active
-    // id (mode.current) keyed by timeModeKey, so the SSR walkers + the visibility gate
-    // read the SAME source the live DOM reads. The caller's object is NOT mutated
+  it('passes sectionCtx dims through + seeds the perspectiveState SSOT', () => {
+    // VISION #3 — buildStaticContext seeds ctx.perspectiveState from the active id
+    // (perspective.current) keyed by perspectiveKey, so the SSR walkers + the visibility
+    // gate read the SAME source the live DOM reads. The caller's object is NOT mutated
     // (immutable augmentation — a shallow clone with the SSOT added).
     const ctx = buildStaticContext(MINIMAL_INPUT)
     expect(ctx.sectionCtx.dims).toBe(MINIMAL_INPUT.sectionCtx.dims)
-    expect(ctx.sectionCtx.timeMode).toBe('year')
     expect(ctx.sectionCtx.perspectiveState).toEqual({ mode: 'year' })
     // caller's object untouched (no perspectiveState leaked back onto the input)
     expect('perspectiveState' in MINIMAL_INPUT.sectionCtx).toBe(false)
@@ -57,8 +57,7 @@ describe('buildStaticContext() — shape', () => {
 
   it('preserves a caller-supplied perspectiveState (does not overwrite the SSOT)', () => {
     const input = {
-      sectionCtx: { dims: { time: 2024 }, timeMode: 'range' as const,
-                    perspectiveState: { perspective: 'range' } },
+      sectionCtx: { dims: { time: 2024 }, perspectiveState: { perspective: 'range' } },
       stores:     {},
     }
     const ctx = buildStaticContext(input)
@@ -98,8 +97,8 @@ describe('buildStaticContext() — defaults (minimal input)', () => {
     expect(buildStaticContext(MINIMAL_INPUT).fallbackLocale).toBe('en')
   })
 
-  it('timeModeKey defaults to "mode"', () => {
-    expect(buildStaticContext(MINIMAL_INPUT).timeModeKey).toBe('mode')
+  it('perspectiveKey defaults to "mode"', () => {
+    expect(buildStaticContext(MINIMAL_INPUT).perspectiveKey).toBe('mode')
   })
 
   it('effects defaults to empty array', () => {
@@ -122,33 +121,33 @@ describe('buildStaticContext() — defaults (minimal input)', () => {
 
 // ── mode default ──────────────────────────────────────────────────────────────
 
-describe('buildStaticContext() — mode default', () => {
+describe('buildStaticContext() — perspective default', () => {
 
-  it('mode.current mirrors sectionCtx.timeMode', () => {
+  it('perspective.current mirrors the seeded perspectiveState id', () => {
     const ctx = buildStaticContext({
-      sectionCtx: { dims: {}, timeMode: 'range' },
+      sectionCtx: { dims: {}, perspectiveState: { mode: 'range' } },
       stores:     {},
     })
-    expect(ctx.mode.current).toBe('range')
+    expect(ctx.perspective.current).toBe('range')
   })
 
-  it('mode.current falls back to "year" when sectionCtx.timeMode is undefined', () => {
+  it('perspective.current falls back to "year" when no perspectiveState is seeded', () => {
     const ctx = buildStaticContext({
       sectionCtx: { dims: {} } as StaticRenderContext['sectionCtx'],
       stores:     {},
     })
-    expect(ctx.mode.current).toBe('year')
+    expect(ctx.perspective.current).toBe('year')
   })
 
-  it('mode.available defaults to empty array', () => {
+  it('perspective.available defaults to empty array', () => {
     const ctx = buildStaticContext(MINIMAL_INPUT)
-    expect(ctx.mode.available).toEqual([])
+    expect(ctx.perspective.available).toEqual([])
   })
 
-  it('mode.set is a no-op function', () => {
+  it('perspective.set is a no-op function', () => {
     const ctx = buildStaticContext(MINIMAL_INPUT)
-    expect(typeof ctx.mode.set).toBe('function')
-    expect(() => ctx.mode.set('year')).not.toThrow()
+    expect(typeof ctx.perspective.set).toBe('function')
+    expect(() => ctx.perspective.set('year')).not.toThrow()
   })
 
 })
@@ -167,9 +166,9 @@ describe('buildStaticContext() — caller overrides', () => {
     expect(ctx.fallbackLocale).toBe('de')
   })
 
-  it('overrides timeModeKey', () => {
-    const ctx = buildStaticContext({ ...MINIMAL_INPUT, timeModeKey: 'view' })
-    expect(ctx.timeModeKey).toBe('view')
+  it('overrides perspectiveKey', () => {
+    const ctx = buildStaticContext({ ...MINIMAL_INPUT, perspectiveKey: 'view' })
+    expect(ctx.perspectiveKey).toBe('view')
   })
 
   it('overrides color', () => {
@@ -196,16 +195,15 @@ describe('buildStaticContext() — caller overrides', () => {
     expect(ctx.effects).toBe(effects)
   })
 
-  it('overrides mode entirely', () => {
-    const customMode = {
-      current: 'compare',
-      modes:   [{ id: 'compare', label: 'Compare' }],
-      set:     () => {},
+  it('overrides perspective entirely', () => {
+    const customPerspective = {
+      current:   'compare',
+      available: [{ id: 'compare', label: 'Compare' }],
+      set:       () => {},
     }
-    // @ts-expect-error — ModeDef shape; cast safe for override test
-    const ctx = buildStaticContext({ ...MINIMAL_INPUT, mode: customMode })
-    expect(ctx.mode).toBe(customMode)
-    expect(ctx.mode.current).toBe('compare')
+    const ctx = buildStaticContext({ ...MINIMAL_INPUT, perspective: customPerspective })
+    expect(ctx.perspective).toBe(customPerspective)
+    expect(ctx.perspective.current).toBe('compare')
   })
 
   it('overrides pageStoreKey', () => {
@@ -222,7 +220,7 @@ describe('buildStaticContext() — caller overrides', () => {
   it('overrides navContext', () => {
     const navContext = {
       sections:    [{ id: 's1', label: 'Section 1', anchor: '#s1', depth: 0 }],
-      timeModeKey: 'mode',
+      perspectiveKey: 'mode',
     }
     // @ts-expect-error — NavSection shape; cast safe for override test
     const ctx = buildStaticContext({ ...MINIMAL_INPUT, navContext })

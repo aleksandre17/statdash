@@ -24,7 +24,7 @@ export const DATA_CARRYING_KEYS = new Set([
   'vars',         // VarMap — variable definitions
   'view',         // ViewParams — config object
   'filterSchema', // FilterSchema — filter definitions
-  'modeOrder',    // string[] — mode config
+  'perspectives', // PerspectivesByParam — perspective-axis config
   'computed',     // ComputedMap — computed filter values
   'crossValidate',// CrossValidator[] — filter validators
   'context',      // SectionContext — context config

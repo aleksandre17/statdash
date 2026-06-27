@@ -16,7 +16,6 @@ import type { VisibilityExpr } from '@statdash/engine'
 export const VISIBILITY_LEAF_OPS = [
   'eq', 'neq', 'in', 'isset',
   'perspective-is', 'perspective-in', 'perspective-not',
-  'mode-is', 'mode-in', 'mode-not',
 ] as const
 export const VISIBILITY_COMPOSITE_OPS = ['and', 'or', 'not'] as const
 
@@ -41,9 +40,6 @@ export function makeVisibilityExpr(op: VisibilityOpId): VisibilityExpr {
     case 'perspective-is':  return { op: 'perspective-is',  perspective: '' }
     case 'perspective-not': return { op: 'perspective-not', perspective: '' }
     case 'perspective-in':  return { op: 'perspective-in',  perspectives: [] }
-    case 'mode-is':  return { op: 'mode-is',  mode: '' }
-    case 'mode-not': return { op: 'mode-not', mode: '' }
-    case 'mode-in':  return { op: 'mode-in',  modes: [] }
     case 'and':      return { op: 'and', exprs: [] }
     case 'or':       return { op: 'or',  exprs: [] }
     case 'not':      return { op: 'not', expr: { op: 'isset', param: '' } }

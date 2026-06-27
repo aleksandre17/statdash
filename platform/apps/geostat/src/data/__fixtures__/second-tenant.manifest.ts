@@ -93,9 +93,9 @@ function salesPage(): SiteManifest['pages'][string] {
     filterSchema: {
       // ContextMapping wires flat params → SectionContext dims. Dimension NAMES are
       // tenant-chosen (`product`/`channel`/`quarter`) — the engine treats them as
-      // opaque keys (no privileged dimension; Law 1).
+      // opaque keys (no privileged dimension; Law 1). The active perspective is the
+      // `mode` URL param (page.perspectives), not a context dim.
       context: {
-        timeMode: 'mode',
         dims: { product: 'product', channel: 'channel', quarter: 'quarter' },
       },
       bars: {

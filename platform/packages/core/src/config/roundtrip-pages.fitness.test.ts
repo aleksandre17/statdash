@@ -37,7 +37,10 @@ describe('Page round-trip — inner-page + kpi-strip', () => {
       // schemaVersion ≥ 2: page color lives ONLY under presentation.color (the
       // flat PageConfigBase.color field was retired by the v1→v2 migrator).
       presentation:  { color: '#1f77b4' },
-      modeOrder:     ['year', 'range'],
+      perspectives:  { mode: { perspectives: [
+        { id: 'year',  label: { ka: 'წ', en: 'Y' } },
+        { id: 'range', label: { ka: 'დ', en: 'R' } },
+      ] } },
       filterSchema: {
         bars: {
           main: {

@@ -12,7 +12,6 @@ import { staticStore } from '@statdash/engine'
 
 // ── Minimal SectionContext ─────────────────────────────────────────────
 const BASE_CTX: SectionContext = {
-  timeMode: 'year',
   dims:     { time: 2024 },
 }
 

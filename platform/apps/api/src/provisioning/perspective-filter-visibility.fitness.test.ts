@@ -34,7 +34,6 @@ import {
   parsePerspectiveAxes,
   perspectiveOwnedParamKeys,
   evalVisibility,
-  evalWhen,
 } from '@statdash/engine'
 
 const here = dirname(fileURLToPath(import.meta.url))
@@ -87,13 +86,13 @@ const isAlwaysResolve = (def: ParamDef): boolean =>
 
 /**
  * The set of param keys the DEFAULT-RESOLUTION gate resolves for one active
- * perspective — replicating useFilterState's gate predicate EXACTLY (the P4.5
- * ownership branch). NEVER reads `visibleWhen` — that is the whole point: the
- * resolve-set is a function of (ownership, barShowWhen, alwaysResolve) only.
+ * perspective — replicating useFilterState's gate predicate EXACTLY. PERSPECTIVE
+ * OWNERSHIP is the SOLE SSOT (P6): alwaysResolve OR active-owned OR owned-by-none.
+ * NEVER reads `visibleWhen` — that is the whole point: the resolve-set is a function
+ * of (ownership, alwaysResolve) only, never of render-only item visibility.
  */
-function resolvedKeys(schema: FilterSchema, perspectives: Perspectives, modeOrder: readonly string[], activeMode: string): string[] {
-  const state = { mode: activeMode }
-  const axes = parsePerspectiveAxes({ perspectives: perspectives as never, modeOrder, timeModeParam: 'mode' })
+function resolvedKeys(schema: FilterSchema, perspectives: Perspectives, activeMode: string): string[] {
+  const axes = parsePerspectiveAxes({ perspectives: perspectives as never })
   const ownership = perspectiveOwnedParamKeys(axes, { mode: activeMode })
   const ownsActive = ownership.active
   const ownsAny    = ownership.all
@@ -101,11 +100,10 @@ function resolvedKeys(schema: FilterSchema, perspectives: Perspectives, modeOrde
   const keys: string[] = []
   for (const bar of Object.values(schema.bars)) {
     for (const [key, def] of Object.entries(bar.filters)) {
-      const barShowWhen = bar.showWhen
       const resolves =
         isAlwaysResolve(def) ||
         ownsActive.has(key) ||
-        (!ownsAny.has(key) && (!barShowWhen || evalWhen(barShowWhen as never, state)))
+        !ownsAny.has(key)
       if (resolves) keys.push(key)
     }
   }
@@ -151,8 +149,8 @@ describe('FF-FILTER-ITEM-PERSPECTIVE-VISIBILITY (P5.1) — perspective-scoped fi
       expect(itemGates(stripped).length).toBe(0)
 
       for (const perspective of PERSPECTIVES) {
-        const withGate    = resolvedKeys(gated,    cfg.perspectives, cfg.modeOrder as readonly string[], perspective)
-        const withoutGate = resolvedKeys(stripped, cfg.perspectives, cfg.modeOrder as readonly string[], perspective)
+        const withGate    = resolvedKeys(gated,    cfg.perspectives, perspective)
+        const withoutGate = resolvedKeys(stripped, cfg.perspectives, perspective)
         // The resolve-set is IDENTICAL with and without visibleWhen ⇒ render-only.
         expect(withoutGate).toEqual(withGate)
       }
@@ -163,7 +161,7 @@ describe('FF-FILTER-ITEM-PERSPECTIVE-VISIBILITY (P5.1) — perspective-scoped fi
     const art = loadArtifact()
     for (const slug of PAGES) {
       const cfg = pageConfig(art, slug)
-      const range = resolvedKeys(cfg.filterSchema!, cfg.perspectives, cfg.modeOrder as readonly string[], 'range')
+      const range = resolvedKeys(cfg.filterSchema!, cfg.perspectives, 'range')
       // fromYear/toYear: visible (visibleWhen:range) AND range-owned ⇒ RESOLVE.
       expect(range).toContain('fromYear')
       expect(range).toContain('toYear')
@@ -171,7 +169,7 @@ describe('FF-FILTER-ITEM-PERSPECTIVE-VISIBILITY (P5.1) — perspective-scoped fi
       // (year-owned/inactive), proven because it does NOT resolve in range…
       expect(range).not.toContain('year')
 
-      const year = resolvedKeys(cfg.filterSchema!, cfg.perspectives, cfg.modeOrder as readonly string[], 'year')
+      const year = resolvedKeys(cfg.filterSchema!, cfg.perspectives, 'year')
       // …and DOES resolve in year (the year-owned pin) — render-only gate never blocked it.
       expect(year).toContain('year')
       // from/to hidden in year AND range-owned/inactive ⇒ suppressed by ownership.

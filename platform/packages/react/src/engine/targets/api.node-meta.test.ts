@@ -21,15 +21,14 @@ import type { NodePageConfig }      from '../types'
 const staticCtx: StaticRenderContext = {
   sectionCtx: {
     dims:     { time: 2024 },
-    timeMode: 'year' as const,
   },
   stores:         { main: staticStore },
   filterParams:   {},
   vars:           {},
   locale:         'en',
   fallbackLocale: 'en',
-  timeModeKey:    'mode',
-  mode: {
+  perspectiveKey: 'mode',
+  perspective: {
     current:   'year',
     available: [],
     set:       () => {},

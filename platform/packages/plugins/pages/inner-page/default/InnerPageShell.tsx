@@ -14,7 +14,7 @@ function InnerPageControl({ def, ctx, children }: {
 }) {
   const nav = ctx.navContext
   return (
-    <AnchorNavProvider sections={nav?.sections ?? []} timeModeKey={nav?.timeModeKey ?? 'mode'}>
+    <AnchorNavProvider sections={nav?.sections ?? []} perspectiveKey={nav?.perspectiveKey ?? 'mode'}>
       <div className="inner-page" data-layout={def.pageLayout ?? 'sidebar'}>
         <ChromeSlot slot="InnerSidebar" />
         <main className="page-content">{children.rendered}</main>

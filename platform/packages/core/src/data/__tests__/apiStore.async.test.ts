@@ -24,7 +24,6 @@ const DATASET_CODE = 'NA_GDP'
 const NON_TIME_DIMS: string[] = ['geo', 'sector']
 
 const ctx: SectionContext = {
-  timeMode: 'year',
   dims: { time: 2023, geo: 'GE', sector: 'S13' },
 }
 
@@ -142,7 +141,7 @@ describe('FF-NO-ZERO-TIME — toObsParams never emits from/to = 0', () => {
   ])('omits BOTH from/to when %s', async (_label, timeDims) => {
     vi.mocked(fetch).mockResolvedValueOnce(makeOkResponse([rawRow]))
     const store = makeStore()
-    await store.queryAsync(obsQuery, { timeMode: 'year', dims: { geo: 'GE', ...timeDims } })
+    await store.queryAsync(obsQuery, { dims: { geo: 'GE', ...timeDims } })
 
     const url = firstCallUrl()
     expect(url.searchParams.has('from')).toBe(false)
@@ -155,7 +154,7 @@ describe('FF-NO-ZERO-TIME — toObsParams never emits from/to = 0', () => {
   it('keeps a real single year as from=to', async () => {
     vi.mocked(fetch).mockResolvedValueOnce(makeOkResponse([rawRow]))
     const store = makeStore()
-    await store.queryAsync(obsQuery, { timeMode: 'year', dims: { time: 2025, geo: 'GE' } })
+    await store.queryAsync(obsQuery, { dims: { time: 2025, geo: 'GE' } })
 
     const url = firstCallUrl()
     expect(url.searchParams.get('from')).toBe('2025')
@@ -165,7 +164,7 @@ describe('FF-NO-ZERO-TIME — toObsParams never emits from/to = 0', () => {
   it('keeps a comma-range unchanged', async () => {
     vi.mocked(fetch).mockResolvedValueOnce(makeOkResponse([rawRow]))
     const store = makeStore()
-    await store.queryAsync(obsQuery, { timeMode: 'range', dims: { time: '2015,2020', geo: 'GE' } })
+    await store.queryAsync(obsQuery, { dims: { time: '2015,2020', geo: 'GE' } })
 
     const url = firstCallUrl()
     expect(url.searchParams.get('from')).toBe('2015')
@@ -191,7 +190,7 @@ describe('toObsParams — multi-value (array) filter encoding', () => {
     await store.queryAsync(
       { type: 'obs', measure: 'GDP', filter: { geo: ['R2', 'R3'] } },
       // ctx has no geo so the array is the sole source of geo (no ctx baseline override).
-      { timeMode: 'year', dims: { time: 2023 } },
+      { dims: { time: 2023 } },
     )
     const filter = firstFilter()
     expect(filter['geo']).toEqual(['R2', 'R3'])     // array, NOT "R2,R3"
@@ -203,7 +202,7 @@ describe('toObsParams — multi-value (array) filter encoding', () => {
     const store = makeStore()
     await store.queryAsync(
       { type: 'obs', measure: 'GVA', filter: { geo: ['R2', 'R3'], sector: '_T' } },
-      { timeMode: 'year', dims: { time: 2023 } },
+      { dims: { time: 2023 } },
     )
     const filter = firstFilter()
     expect(filter['geo']).toEqual(['R2', 'R3'])
@@ -215,7 +214,7 @@ describe('toObsParams — multi-value (array) filter encoding', () => {
     const store = makeStore()
     await store.queryAsync(
       { type: 'obs', measure: 'GDP', filter: { geo: [] } },
-      { timeMode: 'year', dims: { time: 2023 } },
+      { dims: { time: 2023 } },
     )
     expect(firstFilter()['geo']).toBeUndefined()
   })
@@ -240,7 +239,7 @@ describe('toObsParams + applyClientFilter — $ne exclusion', () => {
     const store = makeStore()
     await store.queryAsync(
       { type: 'obs', measure: 'GVA', filter: { geo: { $ne: '_T' } } },
-      { timeMode: 'year', dims: { time: 2023 } },
+      { dims: { time: 2023 } },
     )
     // geo carries NO wire filter (broader fetch); the exclusion is applied client-side.
     expect(firstFilter()['geo']).toBeUndefined()
@@ -257,7 +256,7 @@ describe('toObsParams + applyClientFilter — $ne exclusion', () => {
     const store = makeStore()
     const res = await store.queryAsync(
       { type: 'obs', measure: 'GVA', filter: { geo: { $ne: '_T' } } },
-      { timeMode: 'year', dims: { time: 2023 } },
+      { dims: { time: 2023 } },
     )
     const geos = res.data.map((r) => (r as Record<string, unknown>)['geo'])
     expect(geos).toEqual(['R2', 'R3'])   // _T excluded, regions kept
@@ -268,7 +267,7 @@ describe('toObsParams + applyClientFilter — $ne exclusion', () => {
     const store = makeStore()
     await store.queryAsync(
       { type: 'obs', measure: 'GVA', filter: { geo: { $ctx: 'geo', $ne: '_T' } } },
-      { timeMode: 'year', dims: { time: 2023, geo: 'GE' } },
+      { dims: { time: 2023, geo: 'GE' } },
     )
     // The positive $ctx scope IS wire-expressible (scalar) — sent; $ne stays client-side.
     expect(firstFilter()['geo']).toBe('GE')
@@ -287,7 +286,7 @@ describe('toObsParams + applyClientFilter — $ne exclusion', () => {
     const store = makeStore()
     const res = await store.queryAsync(
       { type: 'obs', measure: 'GVA', filter: { sector: { $ne: '_T' } } },
-      { timeMode: 'year', dims: { time: 2023, sector: '_T' } },
+      { dims: { time: 2023, sector: '_T' } },
     )
     // The wire must NOT pin sector to the excluded value (broad fetch).
     expect(firstFilter()['sector']).toBeUndefined()

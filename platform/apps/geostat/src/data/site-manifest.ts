@@ -17,7 +17,7 @@
 //           Retool fetchAppManifest (resources + pages in one bootstrap call).
 //
 import type { SiteManifestContract }                          from '@statdash/contracts'
-import type { DataStore, DatasourceInstanceConfig, ModeDef }  from '@statdash/engine'
+import type { DataStore, DatasourceInstanceConfig, PerspectiveOption } from '@statdash/engine'
 import type { NavEntry, I18nConfig, ChromeConfig, ChromeEntry } from '@statdash/react'
 import type { NodePageConfig }                                 from '@statdash/react/engine'
 
@@ -48,8 +48,8 @@ export interface SiteManifest extends Omit<
   chromeConfig: ChromeConfig
   /** Locale configuration */
   i18n:         I18nConfig
-  /** Rendering modes (year/range/compare …) — moved out of setupRegistrations; registered at boot. */
-  modes:        ModeDef[]
+  /** Registered perspectives — the boot-time perspective vocabulary (Constructor palette + visibility-leaf picker). */
+  modes:        PerspectiveOption[]
   /** Named datasource descriptors — JSON-serializable; engine.buildStoreManifest(datasources) builds stores. */
   datasources?: DatasourceInstanceConfig[]
 }

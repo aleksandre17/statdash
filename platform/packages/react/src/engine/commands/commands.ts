@@ -7,7 +7,7 @@
 //  no central registry change required for extension.
 //
 
-import type { ModeId }          from '@statdash/engine'
+import type { PerspectiveId }   from '@statdash/engine'
 import type { DataRow }         from '@statdash/engine'
 import type { ExportMeta }      from '@statdash/engine'
 import type { ExportFormatId }  from '@statdash/engine'
@@ -15,12 +15,12 @@ import type { ExportFormatId }  from '@statdash/engine'
 export interface PlatformCommandMap {
   /** Set one filter param. Replaces ctx.set(key, val). */
   'filter:set':     { key: string; value: string }
-  /** Set many filter params atomically. Replaces ctx.setMany (mode + effects). */
+  /** Set many filter params atomically. */
   'filter:setMany': { values: Record<string, string> }
   /** Clear one filter param. */
   'filter:clear':   { key: string }
-  /** Switch time mode. Replaces ctx.mode.set(id). */
-  'mode:set':       { id: ModeId }
+  /** Switch the active perspective. Replaces ctx.perspective.set(id). */
+  'perspective:set': { id: PerspectiveId; param?: string }
   /**
    * Navigate / drill. Centralises all navigation from shells.
    * Migrated from the 'drill:down' EventBus event — one consumer = command, not event.

@@ -12,7 +12,7 @@ export const InnerPageSlots: Record<string, SlotDef> = {
   sticky: {
     field:   'sticky',
     label:   { ka: 'Sticky ზოლი', en: 'Sticky Bar' },
-    accepts: ['filter-bar', 'mode-bar'],
+    accepts: ['filter-bar', 'perspective-bar'],
     multi:   false,
   },
   main: {

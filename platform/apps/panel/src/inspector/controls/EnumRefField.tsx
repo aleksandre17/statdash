@@ -25,7 +25,7 @@
 //  are typed PropField descriptors (the engine names the ref; the panel binds it).
 //
 import { useMemo } from 'react'
-import { modeRegistry } from '@statdash/engine'
+import { perspectiveRegistry } from '@statdash/engine'
 import type { FilterSchemaInput } from '@statdash/engine'
 import type { FieldControlProps } from '../fieldControl.types'
 import { readLocale, type LocaleStringValue } from '../localeString'
@@ -58,10 +58,10 @@ const STORE_SOURCES: Record<
   // leaf binds to. The author PICKS an authored filter control, never types a raw
   // param name (Law 2). Flat-mapped across the page's bars; deduped, order-stable.
   filterParams: (s, locale) => activeFilterParamOptions(s, locale),
-  // V4 — the registered ModeId set: the `mode` a mode-* leaf binds to. Picked from
-  // the live modeRegistry (icon/label registered at boot), never a raw id string.
-  modes:        (_s, locale) =>
-    modeRegistry.list().map((m) => ({ value: m.id, label: readLocale(m.label, locale) || m.id })),
+  // The registered perspective set: the `perspective` a perspective-* leaf binds to.
+  // Picked from the live perspectiveRegistry (icon/label registered at boot).
+  perspectives: (_s, locale) =>
+    perspectiveRegistry.list().map((m) => ({ value: m.id, label: readLocale(m.label, locale) || m.id })),
 }
 
 /**

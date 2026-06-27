@@ -17,10 +17,10 @@
 //
 
 import type { RegistryManifest }  from './NodeRegistry'
-import type { SpecDescriptor, ModeDef } from '@statdash/engine'
+import type { SpecDescriptor, PerspectiveOption } from '@statdash/engine'
 import { nodeRegistry }                     from './register-all'
 import { chartRegistry }                    from '@statdash/charts'
-import { SPEC_CATALOG, modeRegistry, listTransformOps, listMetricDefs, listExportFormats } from '@statdash/engine'
+import { SPEC_CATALOG, perspectiveRegistry, listTransformOps, listMetricDefs, listExportFormats } from '@statdash/engine'
 import type { MetricDef }                              from '@statdash/engine'
 import { registeredKinds }                  from './storeManifest'
 import { filterControlRegistry }            from './filterControlRegistry'
@@ -65,7 +65,7 @@ export const CONTRACT_VERSION = '1.0.0' as const
  *   propertySchemas     → property-panel form per tile
  *   chartTypes          → chart-type picker inside the chart panel
  *   specTypes           → DataSpec type picker inside any data-bearing panel
- *   modes               → view-mode selector (year / range / compare)
+ *   perspectives        → perspective selector (year / range / …)
  *   datasourceKinds     → datasource-kind picker in the datasource manager
  *   transformOps        → transform-step picker in the pipeline editor [N12]
  *   metrics             → data-catalog picker for metric-based specs [N26]
@@ -87,8 +87,8 @@ export interface AppManifest {
   chartTypes:       string[]
   /** All DataSpec types with fields, descriptions, examples. */
   specTypes:        Record<string, SpecDescriptor>
-  /** Registered view modes — drives the mode-switcher palette. */
-  modes:            ModeDef[]
+  /** Registered perspectives — drives the perspective-switcher palette. */
+  perspectives:     PerspectiveOption[]
   /** Registered datasource kind strings — drives the datasource manager. */
   datasourceKinds:  string[]
   /** Registered transform op codes — drives the transform-step picker [N12]. */
@@ -135,7 +135,7 @@ export function describeApp(): AppManifest {
     propertySchemas,
     chartTypes:      chartRegistry.chartTypes(),
     specTypes:       SPEC_CATALOG,
-    modes:           modeRegistry.list(),
+    perspectives:    perspectiveRegistry.list(),
     datasourceKinds: registeredKinds(),
     transformOps:        listTransformOps(),
     metrics:             listMetricDefs(),

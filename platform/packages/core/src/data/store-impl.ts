@@ -189,9 +189,9 @@ export class CachedStore implements DataStore {
 
   warm(reqs: Requirement[]): void {
     for (const { code, dims } of reqs) {
-      // timeMode is a required SectionContext field but is never read by _val
-      // (cache key is dims-only via dimKey) — any registered mode id is inert here.
-      this._val(code, { timeMode: 'year', dims })
+      // SectionContext is dims-only here — the cache key is dims-derived (dimKey),
+      // and the active perspective never enters a store read.
+      this._val(code, { dims })
     }
   }
 

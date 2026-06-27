@@ -55,13 +55,13 @@ describe("'static' source kind — FF-STATIC-KIND", () => {
     expect(store).toBeDefined()
 
     // OLAP point read sums the matching cell — proves values flow through querySync.
-    const ctx = { timeMode: 'year' as const, dims: { time: 2020 } }
+    const ctx = { dims: { time: 2020 } }
     expect(store.querySync({ type: 'val', code: 'GDP' }, ctx)[0]?.['value']).toBe(100)
 
     // Multi-dim obs query returns the matching literal rows.
     const obs = store.querySync(
       { type: 'obs', measure: 'GDP' },
-      { timeMode: 'year', dims: {} },
+      { dims: {} },
     )
     expect(obs).toHaveLength(2)
 
@@ -74,7 +74,7 @@ describe("'static' source kind — FF-STATIC-KIND", () => {
     const stores = await buildStoreManifest([{ id: 'empty', kind: 'static' }])
     const rows = stores['empty']!.querySync(
       { type: 'obs', measure: '*' },
-      { timeMode: 'year', dims: {} },
+      { dims: {} },
     )
     expect(rows).toEqual([])
   })
@@ -195,7 +195,7 @@ describe("'static' authoring capabilities — FF-SOURCE-AUTHORABLE", () => {
     expect(store).toBeDefined()
 
     // The live store serves the authored rows — the success test of the vision.
-    expect(store.querySync({ type: 'val', code: 'GDP' }, { timeMode: 'year', dims: { time: 2020 } })[0]?.['value'])
+    expect(store.querySync({ type: 'val', code: 'GDP' }, { dims: { time: 2020 } })[0]?.['value'])
       .toBe(100)
     expect(fetchSpy).not.toHaveBeenCalled()
     fetchSpy.mockRestore()
@@ -234,7 +234,7 @@ describe('kind-dispatch is OCP — FF-SOURCE-KIND-CLOSED', () => {
     expect(registeredKinds()).toContain('fitness-probe')
 
     const stores = await buildStoreManifest([{ id: 'p', kind: 'fitness-probe' }])
-    expect(stores['p']!.querySync({ type: 'val', code: 'x' }, { timeMode: 'year', dims: {} }))
+    expect(stores['p']!.querySync({ type: 'val', code: 'x' }, { dims: {} }))
       .toBe(SENTINEL)
   })
 })

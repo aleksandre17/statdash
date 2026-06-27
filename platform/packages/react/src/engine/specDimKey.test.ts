@@ -19,7 +19,7 @@ import { specDimKey }            from './specDimKey'
 import type { SectionContext }   from '@statdash/engine'
 
 function makeCtx(dims: Record<string, unknown>): SectionContext {
-  return { timeMode: 'year', dims: dims as Record<string, import('@statdash/engine').DimVal> }
+  return { dims: dims as Record<string, import('@statdash/engine').DimVal> }
 }
 
 // ── query spec ────────────────────────────────────────────────────────────────

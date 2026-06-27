@@ -38,7 +38,7 @@ afterEach(cleanup)
 /** Minimal RenderContext touching only what SectionControl reads. */
 function makeCtx(): ShellProps<SectionNode>['ctx'] {
   return {
-    sectionCtx:   { dims: {}, timeMode: 'year' },
+    sectionCtx:   { dims: {} },
     filterParams: {},
     vars:         {},
     extensions:   {} as never,

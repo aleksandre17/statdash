@@ -1,11 +1,11 @@
 import type { ReactNode } from 'react'
-import '../../mode-bar/default/mode-bar.css'
+import './perspective-bar.css'
 
 export function PerspectiveBarSkeleton(): ReactNode {
   return (
-    <div className="mode-tab-group mode-tab-group--skeleton" aria-hidden>
-      <div className="mode-tab-btn" />
-      <div className="mode-tab-btn" />
+    <div className="perspective-tab-group perspective-tab-group--skeleton" aria-hidden>
+      <div className="perspective-tab-btn" />
+      <div className="perspective-tab-btn" />
     </div>
   )
 }

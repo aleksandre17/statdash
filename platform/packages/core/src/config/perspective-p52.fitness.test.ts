@@ -4,7 +4,7 @@
 //  perspective model). Two contracts:
 //
 //   (1) FF-PERSPECTIVE-BAR-FROM-AXIS — the toggle's available list (id+label+icon)
-//       derives from the parsed `PerspectiveAxis` via `perspectiveModeDefs`, NOT a
+//       derives from the parsed `PerspectiveAxis` via `perspectiveOptions`, NOT a
 //       separately-registered ModeDef registry. Decision (B): the axis OWNS its
 //       toggle presentation. The active id reads from `perspectiveState` via
 //       `activeIdForAxis` (fallback perspectives[0]).
@@ -23,7 +23,7 @@
 
 import { describe, it, expect } from 'vitest'
 import {
-  perspectiveModeDefs, activeIdForAxis,
+  perspectiveOptions, activeIdForAxis,
   interpretKpis, extractKpiRequirements,
   resolveLocaleString,
 } from '../index'
@@ -45,8 +45,8 @@ const AXIS: PerspectiveAxis = {
 // ── (1) FF-PERSPECTIVE-BAR-FROM-AXIS ──────────────────────────────────────────
 
 describe('P5.2 (1) — the toggle available list derives FROM THE AXIS', () => {
-  it('perspectiveModeDefs maps id + label(locale) + icon off each PerspectiveDef, in order', () => {
-    const defs = perspectiveModeDefs(AXIS, 'ka', 'ka')
+  it('perspectiveOptions maps id + label(locale) + icon off each PerspectiveDef, in order', () => {
+    const defs = perspectiveOptions(AXIS, 'ka', 'ka')
     expect(defs).toEqual([
       { id: 'year',  label: 'წლიური',  icon: 'calendar'       },
       { id: 'range', label: 'დინამიკა', icon: 'calendar-range' },
@@ -57,7 +57,7 @@ describe('P5.2 (1) — the toggle available list derives FROM THE AXIS', () => {
 
   it('a PerspectiveDef without an icon yields a ModeDef with no icon key (thin optional)', () => {
     const noIcon: PerspectiveAxis = { perspectives: [{ id: 'x', label: { ka: 'X', en: 'X' } }] }
-    const [d] = perspectiveModeDefs(noIcon, 'ka', 'ka')
+    const [d] = perspectiveOptions(noIcon, 'ka', 'ka')
     expect(d).toEqual({ id: 'x', label: 'X' })
     expect('icon' in d).toBe(false)
   })
@@ -81,11 +81,11 @@ describe('P5.2 (1b) — byte-identical in ka, locale-correct in en', () => {
   ]
 
   it('ka: the axis-derived defs are byte-identical to the live mode-bar', () => {
-    expect(perspectiveModeDefs(AXIS, 'ka', 'ka')).toEqual(LIVE_MODE_BAR)
+    expect(perspectiveOptions(AXIS, 'ka', 'ka')).toEqual(LIVE_MODE_BAR)
   })
 
   it('en: the toggle now shows the English label (the i18n completion)', () => {
-    const en = perspectiveModeDefs(AXIS, 'en', 'ka')
+    const en = perspectiveOptions(AXIS, 'en', 'ka')
     expect(en.map(d => d.label)).toEqual(['Annual', 'Dynamics'])
     // icons unchanged across locale
     expect(en.map(d => d.icon)).toEqual(['calendar', 'calendar-range'])
@@ -117,9 +117,9 @@ const SPECS: KpiSpec[] = [
 ]
 
 function ctxFor(active: string): SectionContext {
-  // timeMode is the legacy field; perspectiveState is the SSOT the new predicate
-  // reads. Both seeded from the same active id (as SiteRenderer does).
-  return { dims: { time: 2025 }, timeMode: active as never, perspectiveState: { mode: active } }
+  // perspectiveState is the SSOT the kpiVisible predicate reads (seeded from the
+  // active perspective id, exactly as SiteRenderer does).
+  return { dims: { time: 2025 }, perspectiveState: { mode: active } }
 }
 
 describe('P5.2 (2) — KpiSpec.when replaces KpiSpec.mode (warm === render)', () => {

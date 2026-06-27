@@ -40,7 +40,7 @@ function obsStore(byMeasure: Record<string, EngineRow[]>): DataStore {
   }
 }
 
-const sectionCtx = { timeMode: 'range', dims: {} } as RenderContext['sectionCtx']
+const sectionCtx = { dims: {} } as RenderContext['sectionCtx']
 
 // Primary store: GDP totals by year. Secondary store: regional GVA by year.
 const gdpStore = obsStore({

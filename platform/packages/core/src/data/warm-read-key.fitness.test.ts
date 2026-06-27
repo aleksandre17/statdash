@@ -57,7 +57,7 @@ function spyStore(): { store: DataStore; lastObs: () => StoreQuery | undefined }
 
 describe('FF-WARM-READ-KEY-EQ — warm obs query ≡ read obs query', () => {
   it('RANGE mode: the read issues exactly queryReadObs(spec.query)', () => {
-    const ctx: SectionContext = { timeMode: 'range', dims: { geo: 'GE', fromYear: 2015, toYear: 2024 } }
+    const ctx: SectionContext = { dims: { geo: 'GE', fromYear: 2015, toYear: 2024 } }
     const { store, lastObs } = spyStore()
 
     // The READ (mirrors QueryResolver.resolve's storeObs call).
@@ -74,7 +74,7 @@ describe('FF-WARM-READ-KEY-EQ — warm obs query ≡ read obs query', () => {
   })
 
   it('YEAR mode: the read issues exactly queryReadObs(spec.query)', () => {
-    const ctx: SectionContext = { timeMode: 'year', dims: { geo: 'GE', time: 2023 } }
+    const ctx: SectionContext = { dims: { geo: 'GE', time: 2023 } }
     const { store, lastObs } = spyStore()
 
     storeObs(store, resolveQueryMeasures(q(yearSpec)), ctx)
@@ -86,7 +86,7 @@ describe('FF-WARM-READ-KEY-EQ — warm obs query ≡ read obs query', () => {
   })
 
   it('RANGE mode: extractRequirements yields NO spurious time pin (matches unbounded read)', () => {
-    const ctx: SectionContext = { timeMode: 'range', dims: { geo: 'GE', fromYear: 2015, toYear: 2024 } }
+    const ctx: SectionContext = { dims: { geo: 'GE', fromYear: 2015, toYear: 2024 } }
     const reqs = extractRequirements(rangeSpec, ctx)
 
     expect(reqs.length).toBeGreaterThan(0)
@@ -98,7 +98,7 @@ describe('FF-WARM-READ-KEY-EQ — warm obs query ≡ read obs query', () => {
   })
 
   it('YEAR mode: extractRequirements pins the real year (byte-identical to read)', () => {
-    const ctx: SectionContext = { timeMode: 'year', dims: { geo: 'GE', time: 2023 } }
+    const ctx: SectionContext = { dims: { geo: 'GE', time: 2023 } }
     const reqs = extractRequirements(yearSpec, ctx)
 
     expect(reqs.length).toBeGreaterThan(0)

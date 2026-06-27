@@ -55,16 +55,15 @@ export const hiddenSchema: PropSchema = [
     label: bi('ყოველთვის გამოთვლა (ბარისგან დამოუკიდებლად)', 'Always resolve (bar-independent)') },
 ]
 
-// ── year-select — year selector with optional year ↔ range toggle ─────────────
+// ── year-select — year selector ───────────────────────────────────────────────
 //  `key` is the time dimension. `years` is a YearsSource (static list / query /
-//  api) — the structured source leaf. `rangeKey` references a sibling hidden
-//  'mode' param that toggles year ↔ range.
+//  api) — the structured source leaf. Perspective-scoped visibility is declared via
+//  `visibleWhen: perspective-is` (no privileged range-toggle key — System A retired).
 export const yearSelectSchema: PropSchema = [
   { field: 'key', type: 'enum-ref', source: 'cube.dimensions', required: true,
     label: bi('დროის განზომილება', 'Time dimension') },
   labelField,
   { field: 'years', type: 'object', label: bi('წლების წყარო (static/query/api)', 'Years source (static/query/api)') },
-  { field: 'rangeKey', type: 'string', label: bi('დიაპაზონის რეჟიმის გასაღები', 'Range-mode key') },
   { field: 'default', type: 'string', label: bi('ნაგულისხმევი წელი', 'Default year') },
 ]
 

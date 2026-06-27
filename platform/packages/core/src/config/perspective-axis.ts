@@ -2,8 +2,8 @@
 //
 //  The renderer-side rich types for the perspective axis (VISION #3). The STRUCTURAL
 //  envelope lives in @statdash/contracts (zero-dep, shared by panel/api/core); this
-//  module REFINES the opaque blobs to their core types — exactly the ManifestMode ⇄
-//  ModeDef / SiteManifestContract-refined-by-runner relationship (FULLSTACK §1):
+//  module REFINES the opaque blobs to their core types — the
+//  SiteManifestContract-refined-by-runner relationship (FULLSTACK §1):
 //
 //    contracts.PerspectiveScope  (Record<string, unknown>)  → CORE { timeBinding?, metric? }
 //    contracts.PerspectiveDef.when/available (JsonRecord)    → CORE VisibilityExpr
@@ -114,8 +114,8 @@ export type PerspectivesByParam = Record<string, PerspectiveAxis>
 
 // ── Static assignability proofs (refine ⇄ widen, compile-time) ────────────────
 //  A core type must remain assignable to its contract counterpart so the api type
-//  and the engine type interoperate without a cast (the ManifestMode ⇄ ModeDef
-//  invariant). These `satisfies`-style checks fail the BUILD if a refinement ever
+//  and the engine type interoperate without a cast (the refine ⇄ widen invariant).
+//  These `satisfies`-style checks fail the BUILD if a refinement ever
 //  diverges structurally from the envelope.
 const _scopeWidens:  (s: PerspectiveScope) => ContractPerspectiveScope = (s) => s
 const _axisWidens:   (a: PerspectiveAxis)  => ContractPerspectiveAxis  = (a) => a

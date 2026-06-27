@@ -28,7 +28,7 @@ export function InnerSidebarShell(): ReactNode {
   const config                              = useChromeConfig()
   const slot                                = useSlotConfig<InnerSidebarConfig>()
   const t                                   = useResolveLocale()
-  const { sections, activeId, timeModeKey } = useAnchorNav()
+  const { sections, activeId, perspectiveKey } = useAnchorNav()
   const [searchParams, setSearchParams]     = useSearchParams()
 
   const pathParts     = location.pathname.split('/').filter(Boolean)
@@ -36,7 +36,7 @@ export function InnerSidebarShell(): ReactNode {
   const [openSection, setOpenSection] = useState(activeSection)
 
   const scroll      = useSidebarScroll(searchParams)
-  const currentMode = searchParams.get(timeModeKey) ?? ''
+  const currentMode = searchParams.get(perspectiveKey) ?? ''
 
   return (
     <aside className={SIDEBAR.root}>
@@ -69,7 +69,7 @@ export function InnerSidebarShell(): ReactNode {
             sections={isActive ? sections : []}
             activeAnchorId={activeId}
             currentMode={currentMode}
-            timeModeKey={timeModeKey}
+            perspectiveKey={perspectiveKey}
             setSearchParams={setSearchParams}
             scroll={scroll}
             onToggle={() => setOpenSection(o => (o === entry.id ? '' : entry.id))}
@@ -101,7 +101,7 @@ interface NavEntryProps {
   sections:       ReturnType<typeof useAnchorNav>['sections']
   activeAnchorId: string | null
   currentMode:    string
-  timeModeKey:    string
+  perspectiveKey:    string
   setSearchParams: ReturnType<typeof useSearchParams>[1]
   scroll:         ReturnType<typeof useSidebarScroll>
   onToggle:       () => void
@@ -116,7 +116,7 @@ function NavEntry({
   sections,
   activeAnchorId,
   currentMode,
-  timeModeKey,
+  perspectiveKey,
   setSearchParams,
   scroll,
   onToggle,
@@ -125,7 +125,7 @@ function NavEntry({
     localePath,
     isCurrentPage,
     currentMode,
-    timeModeKey,
+    perspectiveKey,
     setSearchParams,
     scroll,
   })

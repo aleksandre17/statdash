@@ -8,7 +8,6 @@ import { storeSchema }          from './store'
 // ── Minimal SectionContext fixture ────────────────────────────────────────────
 
 const ctx: SectionContext = {
-  timeMode: 'year',
   dims: { time: '2023' },
 }
 

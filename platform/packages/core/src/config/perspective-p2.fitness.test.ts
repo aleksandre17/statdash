@@ -57,60 +57,20 @@ describe('P2 — perspective-* ops gate off the perspectiveState SSOT', () => {
   })
 })
 
-describe('P2 — mode-* are byte-identical ALIASES of param-less perspective-*', () => {
+describe('P2 — the conventional-axis fallback (param-less perspective-*)', () => {
   // The matrix of states the conventional axis can be in, incl. the legacy `mode`
-  // key and the absent-axis case — every one must agree across alias/canonical.
-  const STATES: Array<Record<string, string> | undefined> = [
-    { perspective: 'year' },
-    { perspective: 'range' },
-    { mode: 'year' },   // a config mid-migration still seeds the legacy key
-    { mode: 'range' },
-    {},                 // empty record ⇒ no active id
-    undefined,          // no perspectiveState at all
-  ]
-
-  it('perspective-is (no param) ≡ mode-is for every state', () => {
-    for (const value of ['year', 'range', 'compare']) {
-      const canonical: VisibilityExpr = { op: 'perspective-is', perspective: value }
-      const alias:     VisibilityExpr = { op: 'mode-is',        mode: value }
-      for (const state of STATES) {
-        expect(
-          evalVisibility(canonical, NO_FILTERS, state),
-          `perspective-is(${value}) vs mode-is(${value}) @ ${JSON.stringify(state)}`,
-        ).toBe(evalVisibility(alias, NO_FILTERS, state))
-      }
-    }
+  // key and the absent-axis case. Param-less perspective-* resolves the active id
+  // via activePerspective (the conventional 'perspective'/'mode' key, or the single axis).
+  it('param-less perspective-is reads the conventional axis (perspective ?? mode key)', () => {
+    expect(evalVisibility({ op: 'perspective-is', perspective: 'year' }, NO_FILTERS, { perspective: 'year' })).toBe(true)
+    expect(evalVisibility({ op: 'perspective-is', perspective: 'year' }, NO_FILTERS, { mode: 'year' })).toBe(true)
+    expect(evalVisibility({ op: 'perspective-is', perspective: 'year' }, NO_FILTERS, { perspective: 'range' })).toBe(false)
+    expect(evalVisibility({ op: 'perspective-is', perspective: 'year' }, NO_FILTERS, {})).toBe(false)
+    expect(evalVisibility({ op: 'perspective-is', perspective: 'year' }, NO_FILTERS, undefined)).toBe(false)
   })
 
-  it('perspective-not (no param) ≡ mode-not for every state', () => {
-    for (const value of ['year', 'range']) {
-      const canonical: VisibilityExpr = { op: 'perspective-not', perspective: value }
-      const alias:     VisibilityExpr = { op: 'mode-not',        mode: value }
-      for (const state of STATES) {
-        expect(evalVisibility(canonical, NO_FILTERS, state))
-          .toBe(evalVisibility(alias, NO_FILTERS, state))
-      }
-    }
-  })
-
-  it('perspective-in (no param) ≡ mode-in for every state', () => {
-    const set = ['year', 'range']
-    const canonical: VisibilityExpr = { op: 'perspective-in', perspectives: set }
-    const alias:     VisibilityExpr = { op: 'mode-in',        modes: set }
-    for (const state of STATES) {
-      expect(evalVisibility(canonical, NO_FILTERS, state))
-        .toBe(evalVisibility(alias, NO_FILTERS, state))
-    }
-  })
-
-  it('the alias-equivalence is NON-VACUOUS — the ops actually flip both ways', () => {
-    // Guard against a degenerate "always false" agreement: prove at least one TRUE
-    // and one FALSE on each side, so equivalence is meaningful, not trivial.
-    const trueState = { perspective: 'year' }
-    const falseState = { perspective: 'range' }
-    expect(evalVisibility({ op: 'perspective-is', perspective: 'year' }, NO_FILTERS, trueState)).toBe(true)
-    expect(evalVisibility({ op: 'perspective-is', perspective: 'year' }, NO_FILTERS, falseState)).toBe(false)
-    expect(evalVisibility({ op: 'mode-is', mode: 'year' }, NO_FILTERS, trueState)).toBe(true)
-    expect(evalVisibility({ op: 'mode-is', mode: 'year' }, NO_FILTERS, falseState)).toBe(false)
+  it('the gate is NON-VACUOUS — it flips both ways on the conventional axis', () => {
+    expect(evalVisibility({ op: 'perspective-is', perspective: 'year' }, NO_FILTERS, { perspective: 'year' })).toBe(true)
+    expect(evalVisibility({ op: 'perspective-is', perspective: 'year' }, NO_FILTERS, { perspective: 'range' })).toBe(false)
   })
 })
