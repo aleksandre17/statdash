@@ -26,7 +26,7 @@
 //  every reorder/remove control is a labelled IconButton; the default perspective
 //  carries a visible "default" chip AND text, never position alone.
 //
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
   Box, Typography, Paper, IconButton, Chip, Divider, Stack, Tooltip, Button,
 } from '@mui/material'
@@ -47,7 +47,17 @@ import { makePerspectiveDef, DEFAULT_PERSPECTIVE_PARAM } from './perspectiveFact
 import type { LocaleStringValue } from '../../inspector/localeString'
 import type { Locale, PageMeta } from '../../types/constructor'
 
-export function PerspectivesPane() {
+export interface PerspectivesPaneProps {
+  /**
+   * Reports the perspective the author is PREVIEWING (the switcher's local selection),
+   * lifted so a sibling surface — the live CanvasView — can render that perspective.
+   * The pane stays the SSOT of the preview interaction; the parent only mirrors it into
+   * the canvas. Absent ⇒ the pane is self-contained (the preview is local-only).
+   */
+  onPreviewChange?: (perspectiveId: string) => void
+}
+
+export function PerspectivesPane({ onPreviewChange }: PerspectivesPaneProps = {}) {
   const page          = useActivePage()
   const updatePage    = useConstructorStore((s) => s.updatePage)
   const markPageDirty = useConstructorStore((s) => s.markPageDirty)
@@ -103,6 +113,7 @@ export function PerspectivesPane() {
           axis={axis}
           locales={locales}
           onCommit={(perspectives) => commitAxis(axis.param, perspectives)}
+          onPreviewChange={onPreviewChange}
         />
       ))}
     </Box>
@@ -112,17 +123,28 @@ export function PerspectivesPane() {
 // ── AxisEditor — one PerspectiveAxis: the ordered list + add + preview ─────────
 
 function AxisEditor({
-  axis, locales, onCommit,
+  axis, locales, onCommit, onPreviewChange,
 }: {
   axis:     PerspectiveAxisView
   locales:  Locale[]
   onCommit: (perspectives: PerspectiveDef[]) => void
+  onPreviewChange?: (perspectiveId: string) => void
 }) {
   const { param, perspectives } = axis
-  // The active perspective for the preview switcher — defaults to perspectives[0]
-  // (the SSOT default). Local UI state: which perspective the author is previewing.
-  const [activeId, setActiveId] = useState<string>(perspectives[0]?.id ?? '')
+  // The previewed perspective is a local UI SELECTION (which the author last clicked).
+  // It is stored raw; the EFFECTIVE preview is derived at render against the current
+  // list, so a reorder/remove that drops the selected id transparently falls back to
+  // perspectives[0] (the SSOT default) — no corrective setState-in-effect needed.
+  const [selectedId, setSelectedId] = useState<string>('')
   const locale = locales[0] ?? 'en'
+
+  const defaultId = perspectives[0]?.id ?? ''
+  const activeId  = perspectives.some((p) => p.id === selectedId) ? selectedId : defaultId
+
+  // Mirror the previewed perspective up to the canvas. Reporting the EFFECTIVE id
+  // (incl. the perspectives[0] default on mount) keeps the live CanvasView in lock-step
+  // with the switcher — the author SEES the selected perspective rendered.
+  useEffect(() => { onPreviewChange?.(activeId) }, [activeId, onPreviewChange])
 
   return (
     <Paper variant="outlined" sx={{ p: 1.5, display: 'flex', flexDirection: 'column', gap: 1.5 }}
@@ -197,7 +219,7 @@ function AxisEditor({
                   label={readLocale(def.label as LocaleStringValue, locale) || def.id}
                   color={activeId === def.id ? 'primary' : 'default'}
                   variant={activeId === def.id ? 'filled' : 'outlined'}
-                  onClick={() => setActiveId(def.id)}
+                  onClick={() => setSelectedId(def.id)}
                 />
               ))}
             </Stack>

@@ -50,6 +50,12 @@ export function PageStep() {
   const goToStep     = useConstructorStore((s) => s.goToStep)
 
   const [dragging, setDragging] = useState(false)
+  // Perspective PREVIEW — the author's local switcher selection (transient canvas
+  // view-state, like `dragging`; not a persisted store slice). Lifted here so the
+  // PerspectivesPane (the switcher SSOT) and the live CanvasView share it: the canvas
+  // renders `perspective = f(previewPerspectiveId)`. undefined ⇒ the engine folds to
+  // perspectives[0] (the SSOT default).
+  const [previewPerspectiveId, setPreviewPerspectiveId] = useState<string | undefined>(undefined)
   const cmdk = useCommandPalette()
 
   const pageId   = page?.id ?? null
@@ -182,6 +188,7 @@ export function PageStep() {
                   page={nodeConfig}
                   selectedNodeId={selectedId ?? undefined}
                   dragging={dragging}
+                  previewPerspectiveId={previewPerspectiveId}
                   onSelectNode={selectNode}
                   onDropNode={handleDrop}
                 />
@@ -243,7 +250,7 @@ export function PageStep() {
           {/*  Inspector + VisibilityBuilder. Replaces the raw `perspectives`     */}
           {/*  JSON field; round-trips losslessly through page.meta.perspectives. */}
           <Divider sx={{ my: 2 }} />
-          <PerspectivesPane />
+          <PerspectivesPane onPreviewChange={setPreviewPerspectiveId} />
 
           {/* ── Page-level filters (FilterSchema authoring, V0) ──────────── */}
           {/*  Page-scoped, not element-scoped: shown regardless of node       */}

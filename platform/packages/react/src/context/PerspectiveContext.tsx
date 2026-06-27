@@ -31,21 +31,35 @@ import { useFilter }                       from './FilterContext'
 //  available: the axis's resolved PerspectiveOption[] (id + label + icon, in order).
 //             The active-id FALLBACK is available[0].id (the axis default — LOW-1).
 //
+//  Permalink (Law 9, URL=permalink): the active id deep-links via the URL param, and
+//  the DEFAULT perspective (available[0].id, the registry-derived SSOT) is ELIDED from
+//  the URL — `set(default)` clears the param rather than writing it, so a permalink is
+//  clean (`?` omitted when the default is active) and only a NON-default perspective
+//  appears in the URL. `current` already folds an absent param back to available[0].id,
+//  so the elided default round-trips byte-identically (deep-link restores it).
+//
 export function usePerspectiveContext(
   param:     string,
   available: PerspectiveOption[],
 ): PerspectiveContext {
   const { state, set: filterSet } = useFilter()
 
+  // The axis default = the first declared perspective (perspectives[0], LOW-1). The
+  // registry/axis OWNS this — never hardcoded. Elision + the active-id fallback both
+  // key off it, so the URL and the rendered state agree on what "default" means.
+  const defaultId = available[0]?.id ?? ''
+
   const current = useMemo((): PerspectiveId => {
     const fromState = state[param] as PerspectiveId | undefined
     const known     = fromState && available.some((o) => o.id === fromState)
-    return known ? fromState! : (available[0]?.id ?? '')
-  }, [state, param, available])
+    return known ? fromState! : defaultId
+  }, [state, param, available, defaultId])
 
   const set = useCallback((id: PerspectiveId): void => {
-    filterSet(param, id)
-  }, [param, filterSet])
+    // Default-elision: writing the default clears the param (FilterContext.set deletes
+    // on an empty value) → a clean permalink. Any non-default id is written verbatim.
+    filterSet(param, id === defaultId ? '' : id)
+  }, [param, filterSet, defaultId])
 
   return useMemo(() => ({ current, available, set }), [current, available, set])
 }

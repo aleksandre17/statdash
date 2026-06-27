@@ -53,6 +53,15 @@ export interface CanvasViewProps {
   selectedNodeId?: string
   /** True while a palette item is being dragged — reveals drop zones. */
   dragging?:       boolean
+  /**
+   * The perspective the author is PREVIEWING (the Perspectives-pane switcher's local
+   * selection). The canvas renders `perspective = f(previewState)` — the SAME
+   * perspectiveState SSOT the live renderer reads — by seeding the canvas router's
+   * URL with the axis param. Constructor-LOCAL (the author's preview, distinct from
+   * runtime URL state); absent ⇒ the engine folds to perspectives[0] (the SSOT
+   * default), so the canvas opens on the default perspective with no param.
+   */
+  previewPerspectiveId?: string
   onSelectNode:   (nodeId: string | null) => void
   onDropNode:     (parentId: string, slotKey: string, nodeType: string) => void
   /** Reserved for node-to-node moves (drag an existing node into another slot). */
@@ -60,7 +69,7 @@ export interface CanvasViewProps {
 }
 
 export function CanvasView({
-  page, selectedNodeId, dragging, onSelectNode, onDropNode,
+  page, selectedNodeId, dragging, previewPerspectiveId, onSelectNode, onDropNode,
 }: CanvasViewProps) {
   // Preview mode is canvas view-state — transient and local to this component
   // (the same pattern as `dragging`; there is no persisted canvas-view-state slice
@@ -81,14 +90,28 @@ export function CanvasView({
 
   const rootClass = `canvas-root${dragging ? ' canvas-root--dragging' : ''}`
 
+  // Perspective PREVIEW — seed the canvas router URL with the active axis param so the
+  // live renderer switches perspective. The renderer's perspectiveState SSOT derives
+  // entirely from the URL filter param (FilterProvider reads location.search on mount →
+  // usePerspectiveContext.current), so the canvas needs no engine prop: setting the
+  // initial entry IS the wiring. The param key is the page's axis key — the SAME
+  // derivation SiteRenderer uses (Object.keys(page.perspectives)[0]). Absent preview /
+  // no axis ⇒ '/' ⇒ the engine folds to perspectives[0] (the SSOT default).
+  const perspectiveKey   = Object.keys(renderedPage.perspectives ?? {})[0]
+  const previewEntry      = perspectiveKey && previewPerspectiveId
+    ? `/?${encodeURIComponent(perspectiveKey)}=${encodeURIComponent(previewPerspectiveId)}`
+    : '/'
+
   return (
     <div className={rootClass} data-testid="canvas-root">
       {/* Canvas chrome — preview-mode toggle + fail-soft badge. */}
       <CanvasToolbar mode={mode} status={status} onModeChange={setMode} />
 
-      {/* Layer 1 — the real renderer, visually live but non-interactive. */}
+      {/* Layer 1 — the real renderer, visually live but non-interactive. The router's
+          initialEntries carries the previewed perspective param (keyed so a preview
+          switch remounts FilterProvider → fresh perspectiveState). */}
       <div className="canvas-layer canvas-layer--renderer" aria-hidden="true">
-        <MemoryRouter>
+        <MemoryRouter key={previewEntry} initialEntries={[previewEntry]}>
           <SiteProvider stores={stores} nav={[]} pages={{}} i18n={CANVAS_I18N}>
             <NodePageRenderer page={renderedPage} />
           </SiteProvider>
