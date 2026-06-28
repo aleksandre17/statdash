@@ -39,22 +39,65 @@
   --size-container-narrow: 640px;
   --size-container-mid:    960px;
   --size-container-wide:   1280px;
+  /* Ultrawide dashboard ceiling — the upper bound of the fluid page measure
+     below. A data dashboard is NOT prose: it earns nothing from a 66ch reading
+     column, so the ceiling is set well above --size-container-wide (charts need
+     room to breathe on large monitors), yet bounded so 2560/3440 never becomes
+     an edge-to-edge ribbon. 1760px ≈ a full desktop's worth of content, centred
+     on ultrawide with symmetric gutters (Stripe/Linear/Looker convention). */
+  --size-container-ultra:  1760px;
 
-  /* ── Panel height band (canonical data-panel sizing) ──────────
-   *  One honest, container-bounded height for every data panel (chart ·
-   *  table · treemap · map), replacing aspect-ratio panel sizing (two
-   *  contradictory constraints — see work/DESIGN-panel-sizing-cqi.md).
-   *  Height is PROPORTIONAL to the panel's OWN width (`cqi`, measured
-   *  against the .section inline-size container) but BOUNDED by a legible
-   *  floor and a sane cap — so a half/third column gets a shorter panel
-   *  than a full-width hero, a narrow/nested column stays readable, and
-   *  ultrawide never balloons. A tenant/layout rebinds the three stops in
-   *  ONE place (OCP). Used as a MIN-height so a stretch row can grow a
-   *  panel to equal its tallest sibling. */
-  --size-panel-h-floor: 380px;
-  --size-panel-h-fluid: 60cqi;
-  --size-panel-h-cap:   560px;
+  /* ── Page measure (SSOT) — the ONE width every page-level region agrees on ──
+     Header chrome, content body, and footer all consume this single token so
+     they share an identical column at every resolution (the R3 coherence law).
+     Fluid by design — three anchors:
+       floor = --size-container-wide  (1280) — never narrower than the prior cap
+       ideal = 90vw                          — tracks the viewport 1280→~1955px,
+                                               so charts gain real width on the
+                                               1440/1680/1920 statistical targets
+       ceil  = --size-container-ultra (1760) — contained past ~1955px; ultrawide
+                                               centres rather than over-stretching
+     A tenant/layout variant rebinds --page-measure to re-measure the whole page
+     in one place — the consumers never change (Open/Closed). */
+  --page-measure: clamp(var(--size-container-wide), 90vw, var(--size-container-ultra));
+
+  /* ── Panel height band — the ONE honest panel-sizing constraint ──────────
+     A data panel (chart / table / treemap / map) occupies the full width of its
+     column and gets its height from a single fluid band: floor → cqi-fluid → cap.
+     This REPLACES the former aspect-ratio model. aspect-ratio + max-height was a
+     contradiction: aspect-ratio derives height from width, then max-height caps
+     it, so past a crossover width the declared ratio is silently violated (a
+     "16:9" panel is no longer 16:9). A height band is one monotonic constraint —
+     honest at every width.
+     The fluid stop is CONTAINER-proportional (cqi = the panel's OWN inline-size),
+     not viewport-coupled: this keeps aspect-ratio's good intent (height tracks the
+     panel's width) without its contradiction, and gives the two properties the
+     owner needs for free —
+       · equal-width siblings (a two-up row's left/right) resolve an IDENTICAL band
+         → their bodies are equal height by construction, no per-panel magic;
+       · a wide single panel earns more height than a narrow paired one (proportional
+         rhythm), each bounded by a legible floor and a sane cap.
+     The band is consumed as a flex-BASIS on the content body (panel-layout.css), so
+     a body also GROWS to fill a card a sibling's taller header has stretched — the
+     chart never letterboxes. Requires container-type:inline-size on the panel
+     ancestor (.section / .panel both declare it; the body's nearest query container
+     is therefore the panel itself). Outside a query container cqi falls back to the
+     small-viewport — still bounded by floor/cap, so always legible.
+     One SSOT band; a tenant/layout rebinds the three stops in one place (OCP). */
+  --size-panel-h-floor: 380px;   /* readable minimum (mobile, narrow column) */
+  --size-panel-h-fluid: 64cqi;   /* ∝ the panel's OWN width (container query inline) */
+  --size-panel-h-cap:   560px;   /* hard ceiling — can't dominate on ultrawide */
   --size-panel-height:  clamp(var(--size-panel-h-floor), var(--size-panel-h-fluid), var(--size-panel-h-cap));
+  /* Deprecated alias — kept so any out-of-tree consumer keeps resolving while the
+     ratio→band migration completes (Strangler-Fig). Points at the band. */
+  --size-panel-max-height: var(--size-panel-height);
+
+  /* Floor for a data panel whose renderer fills its parent via height:100%
+     (the custom flexbox treemap, the GeoMap). On mobile the chart wrapper is
+     height:auto (intrinsic), so a height:100% child resolves against an
+     indefinite height and collapses to 0 (blank panel). This floor guarantees
+     such renderers always have vertical room, independent of the wrapper. */
+  --size-panel-min-height: 14rem;
 
   /* ── Backdrop blur ──────────────────────────────────────────── */
   --blur-sm: blur(4px);
@@ -127,9 +170,18 @@
   --letter-spacing-normal: 0;
   --letter-spacing-wide:   0.04em;
 
-  /* ── Typography: font families (generic; app maps brand) ────── */
-  --font-family-base: system-ui, -apple-system, sans-serif;
-  --font-family-mono: ui-monospace, 'Courier New', monospace;
+  /* ── Typography: font families (generic; app maps brand) ──────
+     Brand-NEUTRAL defaults — packages/ ships NO tenant font name. A tenant
+     theme ([data-tenant] / manifest.theme) rebinds these role VALUES, exactly
+     as it rebinds the accent role; the shells reference the role, never a
+     family. Three roles:
+       base    — body / UI text
+       display — hero titles, section/panel headings, KPI values (the heading
+                 axis that previously leaked tenant fonts into 8 plugin CSS files)
+       mono    — code / tabular figures */
+  --font-family-base:    system-ui, -apple-system, sans-serif;
+  --font-family-display: system-ui, -apple-system, sans-serif;
+  --font-family-mono:    ui-monospace, 'Courier New', monospace;
 
   /* ── TIER 1 · PRIMITIVE — Neutral gray scale (dark mode inverts) ─── */
   --gray-50:  #f8f9fa;

@@ -30,21 +30,97 @@
   flex-direction: column;
 }
 
-/* The body always fills the section (flex:1). The height BAND is a MIN-height
- * (data-height → var(--size-panel-height) in node-styles.css), so flex:1 and
- * the band cooperate: the body fills a stretched/equalized section and never
- * sinks below the band floor. (Was `:not([data-height])` back when data-height
- * meant a fixed aspect-ratio that flex:1 would have overridden — that model is
- * retired.) An explicit named height ([data-height="sm|md|lg|xl"]) still wins
- * via its `height` declaration; flex-basis defers to it. */
 .panel-col > .section .section__body {
   display: flex;
   flex-direction: column;
+}
+
+/* ── Body sizing: the ONE constraint lives on the CONTENT body ─────────
+ *  The height band sizes the BODY — the box that actually holds the chart/table/
+ *  map — never the outer .panel-col wrapper (see the wrapper rule at the foot of
+ *  this file). One sizing box means the header is counted exactly once, so sibling
+ *  cards in a row read EQUAL height without the band being double-counted.
+ *
+ *  Unconstrained body (no height token): grow to fill the section. */
+.panel-col > .section .section__body:not([data-height]) {
   flex: 1;
 }
 
 .panel-col > .section .data-table__wrap {
   flex: 1;
+}
+
+/* Band body (the ratio / aspect height tokens): the band is a flex-BASIS, not a
+ * frozen height. By default the body sits AT the band — a definite clientHeight, so
+ * Apex/treemap/map fill it and a table scrolls inside it — but it GROWS to fill a
+ * card that a sibling's taller (wrapping) header has stretched, so two-up cards stay
+ * flush and the chart never letterboxes. The cqi band (tokens.css) makes that basis
+ * proportional to the panel's OWN width — .section is the query container — so
+ * equal-width siblings resolve an identical band → equal heights by construction.
+ * `height:auto` defeats node-styles' frozen `height: var(--size-panel-height)`;
+ * `min-height:0` lets the basis govern (no min-content blow-out from a tall table). */
+.panel-col > .section > .section__body[data-height="16:9"],
+.panel-col > .section > .section__body[data-height="4:3"],
+.panel-col > .section > .section__body[data-height="1:1"],
+.panel-col > .section > .section__body[data-height="21:9"],
+.panel-col > .section > .section__body[data-aspect] {
+  flex:       1 1 var(--size-panel-height);
+  min-height: 0;
+  height:     auto;
+}
+
+/* Mobile: a TABLE view expands to its natural height (the page scrolls) instead of
+ * scrolling inside the band — the long-table-reads-better-inline behaviour from
+ * node-styles' reflow, re-asserted here because the band rule above out-specifies
+ * it. The chart view keeps the band (a renderer needs a definite box). */
+@media (max-width: 768px) {  /* = --bp-md */
+  .panel-col > .section > .section__body[data-height]:has([data-view="visible"] .data-table__wrap),
+  .panel-col > .section > .section__body[data-aspect]:has([data-view="visible"] .data-table__wrap) {
+    flex:     none;
+    height:   auto;
+    overflow: visible;
+  }
+}
+
+/* Height chain for a .panel node (e.g. geograph map) — a panel is NOT a section, so
+ * the section rules above don't reach it, and the node's height token lands on the
+ * OUTER .panel-col. Mirror the section model exactly: the band is a flex-BASIS on
+ * the panel BODY (the real content box), so the absolutely-positioned Leaflet
+ * container fills a definite height and the map can grow to match a stretched
+ * sibling. cqi resolves against .panel (its own container-type:inline-size), so the
+ * map is proportional to its own width — equal to a same-width sibling. */
+.panel-col > .panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.panel-col > .panel .panel__body {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.panel-col[data-height="16:9"] > .panel > .panel__body,
+.panel-col[data-height="4:3"]  > .panel > .panel__body,
+.panel-col[data-height="1:1"]  > .panel > .panel__body,
+.panel-col[data-height="21:9"] > .panel > .panel__body {
+  flex:       1 1 var(--size-panel-height);
+  min-height: 0;
+}
+
+/* ── Outer wrapper: NEVER carries the content height ───────────────────
+ *  applyPanelStyles emits the height token on BOTH the .panel-col wrapper AND the
+ *  body. The band belongs to the body alone; a fixed height here is the root cause
+ *  of ragged/clipped cards — the wrapper frozen at the band, while header + body-band
+ *  exceeds the band → overflow/mismatch — and, with the cqi band, the wrapper has no
+ *  query container so cqi mis-resolves against the viewport. The wrapper is a pure
+ *  flex column that stretches to its siblings via the row's align-items:stretch. */
+.panel-col[data-height="16:9"],
+.panel-col[data-height="4:3"],
+.panel-col[data-height="1:1"],
+.panel-col[data-height="21:9"] {
+  height: auto;
 }
 
 /* ── Width modifiers — view.width in config ──────────────────────
