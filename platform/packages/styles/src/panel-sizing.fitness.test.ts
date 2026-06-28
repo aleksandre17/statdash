@@ -28,6 +28,15 @@ describe('FF-PANEL-SIZING — one honest constraint', () => {
     expect(tokens).toMatch(/--size-panel-h-cap:/)
   })
 
+  it('the fluid stop is CONTAINER-proportional (cqi), not viewport-coupled', () => {
+    // The canonical model: the band tracks the panel's OWN inline-size (cqi), so
+    // equal-width siblings resolve an identical height and a wide panel earns more
+    // height than a narrow one. A `vh` fluid stop (viewport coupling) is the prior
+    // interim model and a regression — this gate forbids its return.
+    expect(tokens).toMatch(/--size-panel-h-fluid:\s*[\d.]+cqi/)
+    expect(tokens).not.toMatch(/--size-panel-h-fluid:\s*[\d.]+vh/)
+  })
+
   it('the engine applies NO aspect-ratio — the contradiction class is eliminated', () => {
     // The whole point: panels fill width + take the band height. Any `aspect-ratio`
     // in the engine reopens the aspect-vs-max-height contradiction.

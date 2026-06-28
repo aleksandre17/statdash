@@ -63,18 +63,29 @@
 
   /* ── Panel height band — the ONE honest panel-sizing constraint ──────────
      A data panel (chart / table / treemap / map) occupies the full width of its
-     column and gets its height from a single fluid band: floor → vh-fluid → cap.
+     column and gets its height from a single fluid band: floor → cqi-fluid → cap.
      This REPLACES the former aspect-ratio model. aspect-ratio + max-height was a
      contradiction: aspect-ratio derives height from width, then max-height caps
      it, so past a crossover width the declared ratio is silently violated (a
      "16:9" panel is no longer 16:9). A height band is one monotonic constraint —
-     honest at every width: height grows with the viewport up to a cap, floors so
-     a narrow/nested column still gets a readable chart (16:9 in a 1/3 column gave
-     a useless ~200px sliver; the band gives the floor). Width always fills the
-     column, so the panel keeps its horizontal space and never balloons.
+     honest at every width.
+     The fluid stop is CONTAINER-proportional (cqi = the panel's OWN inline-size),
+     not viewport-coupled: this keeps aspect-ratio's good intent (height tracks the
+     panel's width) without its contradiction, and gives the two properties the
+     owner needs for free —
+       · equal-width siblings (a two-up row's left/right) resolve an IDENTICAL band
+         → their bodies are equal height by construction, no per-panel magic;
+       · a wide single panel earns more height than a narrow paired one (proportional
+         rhythm), each bounded by a legible floor and a sane cap.
+     The band is consumed as a flex-BASIS on the content body (panel-layout.css), so
+     a body also GROWS to fill a card a sibling's taller header has stretched — the
+     chart never letterboxes. Requires container-type:inline-size on the panel
+     ancestor (.section / .panel both declare it; the body's nearest query container
+     is therefore the panel itself). Outside a query container cqi falls back to the
+     small-viewport — still bounded by floor/cap, so always legible.
      One SSOT band; a tenant/layout rebinds the three stops in one place (OCP). */
   --size-panel-h-floor: 380px;   /* readable minimum (mobile, narrow column) */
-  --size-panel-h-fluid: 56vh;    /* never claims more than ~half the fold */
+  --size-panel-h-fluid: 64cqi;   /* ∝ the panel's OWN width (container query inline) */
   --size-panel-h-cap:   560px;   /* hard ceiling — can't dominate on ultrawide */
   --size-panel-height:  clamp(var(--size-panel-h-floor), var(--size-panel-h-fluid), var(--size-panel-h-cap));
   /* Deprecated alias — kept so any out-of-tree consumer keeps resolving while the
