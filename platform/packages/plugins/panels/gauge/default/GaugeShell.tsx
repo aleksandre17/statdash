@@ -1,7 +1,7 @@
 import './gauge.css'
 
 import ReactApexChart              from 'react-apexcharts'
-import { defineShell }             from '@statdash/react/engine'
+import { defineShell, useNodeTemplate } from '@statdash/react/engine'
 import { usePanelTitleBadge }      from '@statdash/react/engine'
 import { resolveThresholdColor }   from '@statdash/engine'
 import type { RenderContext, ViewParams } from '@statdash/react/engine'
@@ -20,6 +20,7 @@ function GaugeControl({ def, ctx, merged }: { def: GaugeNode; ctx: RenderContext
   const EmptyState = useInject(ctx.ui, EMPTY_STATE)
   const titleBadge = usePanelTitleBadge(ctx, def, 'gauge')
   const rows       = ctx.rows ?? []
+  const resolve    = useNodeTemplate(ctx)
 
   // Empty-state first — no dial math on the empty path (matches Chart/Map).
   if (rows.length === 0) return <EmptyState />
@@ -34,7 +35,8 @@ function GaugeControl({ def, ctx, merged }: { def: GaugeNode; ctx: RenderContext
   const color      = resolveThresholdColor(raw, def.thresholds ?? [])
   const options    = gaugeApexOptions(raw, color, def.showValue !== false)
 
-  const title = merged.label
+  // merged.label is an i18n carrier — resolve to the active locale for the export meta.
+  const title = resolve(merged.label) ?? ''
   const exportMeta: ExportMeta = {
     title,
     filename: def.id ?? title,

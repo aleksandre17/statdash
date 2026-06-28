@@ -121,6 +121,7 @@ function NavEntry({
   scroll,
   onToggle,
 }: NavEntryProps): ReactNode {
+  const t = useResolveLocale()
   const onSelectSection = useSidebarNav({
     localePath,
     isCurrentPage,
@@ -133,7 +134,7 @@ function NavEntry({
   return (
     <SidebarNavSection
       id={entry.id}
-      label={entry.label}
+      label={t(entry.label)}
       icon={entry.icon}
       color={entry.color}
       localePath={localePath}

@@ -20,7 +20,6 @@ import type { SectionContext }  from '../core/context'
 import { atTime, TIME_DIM }      from '../core/context'
 import type { KpiDef }          from '../config/kpi'
 import type { LocaleString }    from '../i18n/types'
-import { resolveLocaleString }  from '../i18n/types'
 import { getFormatter }         from './transform'
 import { resolveTemplate }      from '../config/template'
 import type { VisibilityExpr }  from '../config/visibility'
@@ -59,7 +58,12 @@ export interface KpiSpec {
    * then template-expanded against ctx.dims.
    */
   label:           LocaleString
-  unit:            string
+  /**
+   * Unit suffix (e.g. 'მლნ ₾', '%'). LocaleString — plain string (legacy) OR
+   * { ka, en } bilingual, resolved to the active locale by interpretKpi (the same
+   * boundary that resolves `label`), so a raw bag never reaches the KpiCard child.
+   */
+  unit:            LocaleString
   color:           string
   /**
    * OPTIONAL perspective-scoped visibility — the declarative replacement for the
@@ -72,7 +76,12 @@ export interface KpiSpec {
   when?:           VisibilityExpr
   value:           KpiValueSpec
   trend?:          KpiTrendSpec
-  trendSub?:       string
+  /**
+   * Caption under the trend line. LocaleString — plain string (legacy) OR { ka, en }
+   * bilingual; resolved to the active locale AND template-expanded (e.g.
+   * '{fromYear}–{toYear}') by interpretKpi via resolveTemplate.
+   */
+  trendSub?:       LocaleString
   /** Mark data as preliminary / subject to revision — renders a "P" badge. */
   preliminary?:    boolean
   /** Short explanatory note rendered below the trend line. */
@@ -230,14 +239,14 @@ export function interpretKpi(
   const code = primaryMeasure(spec.value)
   const prov = code ? store.metadata?.provenance(code, ctx) : undefined
 
-  // LocaleString → concrete string for the active locale, THEN template-expand
-  // against ctx.dims. ctx.locale is the same seam ColumnDef.label resolution uses.
-  const localizedLabel = resolveLocaleString(spec.label, ctx.locale ?? 'ka', 'ka')
-
+  // Every display field funnels through resolveTemplate — which collapses the
+  // LocaleString carrier to the active locale (ctx.locale, generic) THEN template-
+  // expands against ctx.dims. label/unit/trendSub are all i18n carriers; resolving
+  // them at this ONE boundary keeps a raw { ka, en } bag from reaching the KpiCard.
   return {
-    label:           resolveTemplate(localizedLabel, ctx),
+    label:           resolveTemplate(spec.label, ctx),
     value:           formattedValue,
-    unit:            spec.unit,
+    unit:            resolveTemplate(spec.unit, ctx),
     color:           spec.color,
     trend:           trend?.dir ?? 'flat',
     trendValue:      trend?.value ?? '',

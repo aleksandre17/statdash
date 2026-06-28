@@ -29,6 +29,7 @@ import type {
   ParamNode,
   ScopeOverride,
   PerspectivesByParam,
+  LocaleString,
 }                                from '@statdash/engine'
 import type { NodeStyles }       from '@statdash/styles'
 import type { ChromeEntry }       from '../slice-meta'
@@ -51,7 +52,8 @@ export interface ViewParams {
   cols?:        string | number
   styles?:      NodeStyles
   role?:        string
-  label?:       string
+  /** View-toggle label (e.g. chart/table). LocaleString; resolved at the shell. */
+  label?:       LocaleString
   position?:    string
   /** Per-panel context override — dimOverride wiring (Grafana scopedVars). */
   scope?:       ScopeOverride

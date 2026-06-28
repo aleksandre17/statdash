@@ -9,7 +9,7 @@
 
 import { Fragment }       from 'react'
 import type { ReactNode } from 'react'
-import { InfoIcon, ChevronIcon } from '@statdash/react'
+import { InfoIcon, ChevronIcon, useResolveLocale } from '@statdash/react'
 import type { CollapsibleHeadProps, ViewToggle } from '@statdash/react/engine'
 
 type T = (key: string) => string
@@ -45,6 +45,9 @@ export function SectionHeader({
   t,
 }: SectionHeaderProps) {
   const { showToggle, roles, roleLabels, activeRole, setActiveRole } = viewToggle
+  // role labels are i18n carriers (authored view.label may be bilingual) — resolve
+  // each to the active locale at this render boundary.
+  const resolveLocale = useResolveLocale()
 
   return (
     <div className={`section__head${open ? ' open' : ''}`} {...headProps}>
@@ -65,7 +68,7 @@ export function SectionHeader({
                 type="button"
                 aria-pressed={activeRole === r}
               >
-                <span>{roleLabels[r]}</span>
+                <span>{resolveLocale(roleLabels[r])}</span>
               </button>
             ))}
           </div>

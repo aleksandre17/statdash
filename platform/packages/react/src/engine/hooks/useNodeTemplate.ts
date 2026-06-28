@@ -27,8 +27,14 @@
 //
 
 import { resolveTemplate } from '@statdash/engine'
-import type { SectionContext } from '@statdash/engine'
+import type { SectionContext, LocaleString } from '@statdash/engine'
 import type { RenderContext } from '../types/context'
+
+// The template carrier a shell may hand the resolver: a LocaleString ({ ka, en } or
+// a plain string) OR the `{ year, range }` perspective union. resolveTemplate
+// collapses whichever carrier to a single string (active locale / perspective) before
+// expanding `{key}` vars — so a shell never has to pre-resolve the i18n bag.
+type TemplateCarrier = LocaleString | { year: string; range: string }
 
 // ── resolveNodeTemplate — pure, context-param-bound resolver ───────────
 //
@@ -44,21 +50,23 @@ import type { RenderContext } from '../types/context'
 // and the no-`{` short-circuit returns the input string — both string for a
 // string input — so the narrowed signature is sound.
 export function resolveNodeTemplate(
-  tpl:    string | { year: string; range: string },
+  tpl:    TemplateCarrier,
   sectionCtx: SectionContext,
   params: Record<string, unknown>,
 ): string
 export function resolveNodeTemplate(
-  tpl:    string | { year: string; range: string } | undefined,
+  tpl:    TemplateCarrier | undefined,
   sectionCtx: SectionContext,
   params: Record<string, unknown>,
 ): string | undefined
 export function resolveNodeTemplate(
-  tpl:    string | { year: string; range: string } | undefined,
+  tpl:    TemplateCarrier | undefined,
   sectionCtx: SectionContext,
   params: Record<string, unknown>,
 ): string | undefined {
   if (tpl === undefined) return undefined
+  // Fast path: a plain string with no `{` needs no work. An object carrier (LocaleString
+  // or {year,range}) always goes to resolveTemplate, which collapses + expands it.
   if (typeof tpl === 'string' && !tpl.includes('{')) return tpl
   return resolveTemplate(tpl, sectionCtx, params)
 }
@@ -66,8 +74,8 @@ export function resolveNodeTemplate(
 // The bound resolver mirrors resolveNodeTemplate's overloads: a definite
 // template → string, an optional/absent one → string | undefined.
 export interface NodeTemplateResolver {
-  (tpl:  string | { year: string; range: string }): string
-  (tpl?: string | { year: string; range: string }): string | undefined
+  (tpl:  TemplateCarrier): string
+  (tpl?: TemplateCarrier): string | undefined
 }
 
 // ── useNodeTemplate — bind resolveNodeTemplate to a RenderContext ──────
@@ -81,6 +89,6 @@ export function useNodeTemplate(
   ctx: RenderContext,
 ): NodeTemplateResolver {
   const params = { ...ctx.filterParams, ...ctx.vars }
-  return ((tpl?: string | { year: string; range: string }) =>
+  return ((tpl?: TemplateCarrier) =>
     resolveNodeTemplate(tpl, ctx.sectionCtx, params)) as NodeTemplateResolver
 }

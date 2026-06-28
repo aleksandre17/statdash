@@ -20,7 +20,12 @@
 //  Owned here so plugin authors who build dynamic breadcrumbs can import
 //  Crumb from @statdash/react/engine without touching internals.
 //
+//  `label` is a LocaleString (plain string OR { ka, en }); the consuming shell
+//  (PageHeaderShell) resolves it to the active locale before rendering.
+//
+import type { LocaleString } from '@statdash/engine'
+
 export interface Crumb {
-  label: string
+  label: LocaleString
   href?: string
 }

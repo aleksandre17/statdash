@@ -17,12 +17,17 @@
 import { useGlobalVar }            from '../../context/GlobalState'
 import { viewStateKey }            from './viewStateKey'
 import type { NodeDef, NodeBase }  from '../types'
+import type { LocaleString }       from '@statdash/engine'
 
 export interface ViewToggle {
   /** Distinct, declaration-ordered roles found across the children. */
   roles:         string[]
-  /** role → display label (first label authored for that role, else the role). */
-  roleLabels:    Record<string, string>
+  /**
+   * role → display label (the first label authored for that role, else the role
+   * key). A LocaleString carrier (the authored `view.label` may be bilingual);
+   * the rendering shell resolves it to the active locale.
+   */
+  roleLabels:    Record<string, LocaleString>
   /** Currently selected role (persisted; defaults to the first role). */
   activeRole:    string | undefined
   /** Persist a new active role. */
@@ -55,7 +60,7 @@ export function useViewToggle(
 
   const roles = [...new Set(childMeta.map(m => m.role).filter((r): r is string => !!r))]
 
-  const roleLabels: Record<string, string> = {}
+  const roleLabels: Record<string, LocaleString> = {}
   childMeta.forEach(({ role, label }) => {
     if (role && !(role in roleLabels)) roleLabels[role] = label ?? role
   })

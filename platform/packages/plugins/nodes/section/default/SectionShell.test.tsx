@@ -16,9 +16,13 @@
 
 import { describe, it, expect, vi, afterEach } from 'vitest'
 
-// useT → identity-ish translator; useExtensions → no contributions; icons → stubs.
+// useT → identity-ish translator; useResolveLocale → LocaleString resolver (picks the
+// first object value, or passes a plain string through); useExtensions → no
+// contributions; icons → stubs.
 vi.mock('@statdash/react', () => ({
-  useT:          () => (key: string) => key,
+  useT:            () => (key: string) => key,
+  useResolveLocale: () => (s: string | Record<string, string>) =>
+    typeof s === 'string' ? s : (Object.values(s)[0] ?? ''),
   useExtensions: () => [] as unknown[],
   SECTION_HEADER_ACTIONS: { id: 'section.header.actions' },
   InfoIcon:    () => <svg data-icon="info" />,

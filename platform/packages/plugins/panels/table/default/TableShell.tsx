@@ -1,5 +1,5 @@
 import { useState, useEffect }          from 'react'
-import { defineShell }                    from '@statdash/react/engine'
+import { defineShell, useNodeTemplate }   from '@statdash/react/engine'
 import { usePanelTitleBadge }             from '@statdash/react/engine'
 import type { RenderContext }             from '@statdash/react/engine'
 import type { BodyStyleAttrs, ViewParams } from '@statdash/react/engine'
@@ -40,7 +40,8 @@ function TableControl({
     }
   }, [ctx.eventBus])
 
-  const title = merged.label
+  // merged.label is an i18n carrier — resolve to the active locale for the export meta.
+  const title = useNodeTemplate(ctx)(merged.label) ?? ''
   const exportMeta: ExportMeta = {
     title,
     filename: def.id ?? title,

@@ -1,10 +1,13 @@
 import type { NodeBase, PropertyGroup, PropSchema } from '@statdash/react/engine'
+import type { LocaleString }                        from '@statdash/engine'
 
 export interface PageHeaderNode extends NodeBase {
   type:    'page-header'
-  title:   string
-  badge?:  string | { year: string; range: string }
-  crumbs?: { label: string; href?: string }[]
+  /** Page title — LocaleString (plain or { ka, en }); resolved by the shell. */
+  title:   LocaleString
+  /** Badge caption — LocaleString OR the { year, range } perspective union. */
+  badge?:  LocaleString | { year: string; range: string }
+  crumbs?: { label: LocaleString; href?: string }[]
 }
 
 export const PageHeaderSchema: PropSchema = [

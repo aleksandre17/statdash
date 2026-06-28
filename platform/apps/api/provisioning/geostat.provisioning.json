@@ -11,10 +11,16 @@
             },
             "crumbs": [
               {
-                "label": "ეროვნული ანგარიშები"
+                "label": {
+                  "ka": "ეროვნული ანგარიშები",
+                  "en": "National Accounts"
+                }
               }
             ],
-            "title": "ეროვნული ანგარიშების სისტემა",
+            "title": {
+              "ka": "ეროვნული ანგარიშების სისტემა",
+              "en": "System of National Accounts"
+            },
             "type": "page-header"
           },
           {
@@ -28,7 +34,10 @@
               {
                 "color": "#4ECDC4",
                 "id": "b5g",
-                "label": "მთლიანი ეროვნული შემოსავალი (B5G)",
+                "label": {
+                  "ka": "მთლიანი ეროვნული შემოსავალი (B5G)",
+                  "en": "Gross National Income (B5G)"
+                },
                 "when": {
                   "op": "perspective-is",
                   "perspective": "year"
@@ -41,8 +50,14 @@
                   "measure": "B5G",
                   "type": "yoy"
                 },
-                "trendSub": "წინა წელთან შედარებით",
-                "unit": "მლნ ₾",
+                "trendSub": {
+                  "ka": "წინა წელთან შედარებით",
+                  "en": "compared to previous year"
+                },
+                "unit": {
+                  "ka": "მლნ ₾",
+                  "en": "GEL mn"
+                },
                 "value": {
                   "filter": {
                     "account": "allocation-of-primary-income-account",
@@ -56,7 +71,10 @@
               {
                 "color": "#7B6CF6",
                 "id": "b6g",
-                "label": "მთლიანი განკარგვადი შემოსავალი (B6G)",
+                "label": {
+                  "ka": "მთლიანი განკარგვადი შემოსავალი (B6G)",
+                  "en": "Gross Disposable Income (B6G)"
+                },
                 "when": {
                   "op": "perspective-is",
                   "perspective": "year"
@@ -69,8 +87,14 @@
                   "measure": "B6G",
                   "type": "yoy"
                 },
-                "trendSub": "წინა წელთან შედარებით",
-                "unit": "მლნ ₾",
+                "trendSub": {
+                  "ka": "წინა წელთან შედარებით",
+                  "en": "compared to previous year"
+                },
+                "unit": {
+                  "ka": "მლნ ₾",
+                  "en": "GEL mn"
+                },
                 "value": {
                   "filter": {
                     "account": "secondary-distribution-of-income-account",
@@ -84,7 +108,10 @@
               {
                 "color": "#F4A261",
                 "id": "b8g",
-                "label": "მთლიანი დანაზოგი (B8G)",
+                "label": {
+                  "ka": "მთლიანი დანაზოგი (B8G)",
+                  "en": "Gross Saving (B8G)"
+                },
                 "when": {
                   "op": "perspective-is",
                   "perspective": "year"
@@ -97,8 +124,14 @@
                   "measure": "B8G",
                   "type": "yoy"
                 },
-                "trendSub": "წინა წელთან შედარებით",
-                "unit": "მლნ ₾",
+                "trendSub": {
+                  "ka": "წინა წელთან შედარებით",
+                  "en": "compared to previous year"
+                },
+                "unit": {
+                  "ka": "მლნ ₾",
+                  "en": "GEL mn"
+                },
                 "value": {
                   "filter": {
                     "account": "use-of-disposable-income-account",
@@ -112,7 +145,10 @@
               {
                 "color": "#E76F51",
                 "id": "b9-year",
-                "label": "წმინდა დაკრედიტება/სესხება (B9)",
+                "label": {
+                  "ka": "წმინდა დაკრედიტება/სესხება (B9)",
+                  "en": "Net lending/borrowing (B9)"
+                },
                 "when": {
                   "op": "perspective-is",
                   "perspective": "year"
@@ -125,8 +161,14 @@
                   "measure": "B9",
                   "type": "yoy"
                 },
-                "trendSub": "წინა წელთან შედარებით",
-                "unit": "მლნ ₾",
+                "trendSub": {
+                  "ka": "წინა წელთან შედარებით",
+                  "en": "compared to previous year"
+                },
+                "unit": {
+                  "ka": "მლნ ₾",
+                  "en": "GEL mn"
+                },
                 "value": {
                   "filter": {
                     "account": "capital-account",
@@ -140,7 +182,10 @@
               {
                 "color": "#00A896",
                 "id": "b1g-cagr",
-                "label": "დამატებული ღირებულება — საშუალო წლიური ზრდა",
+                "label": {
+                  "ka": "დამატებული ღირებულება — საშუალო წლიური ზრდა",
+                  "en": "Value added — average annual growth"
+                },
                 "when": {
                   "op": "perspective-is",
                   "perspective": "range"
@@ -159,8 +204,14 @@
                   },
                   "type": "cagr"
                 },
-                "trendSub": "{fromYear}–{toYear}",
-                "unit": "%",
+                "trendSub": {
+                  "ka": "{fromYear}–{toYear}",
+                  "en": "{fromYear}–{toYear}"
+                },
+                "unit": {
+                  "ka": "%",
+                  "en": "%"
+                },
                 "value": {
                   "filter": {
                     "account": "production-account",
@@ -179,7 +230,10 @@
               {
                 "color": "#0080BE",
                 "id": "p1-cagr",
-                "label": "გამოშვება — საშუალო წლიური ზრდა",
+                "label": {
+                  "ka": "გამოშვება — საშუალო წლიური ზრდა",
+                  "en": "Output — average annual growth"
+                },
                 "when": {
                   "op": "perspective-is",
                   "perspective": "range"
@@ -198,8 +252,14 @@
                   },
                   "type": "cagr"
                 },
-                "trendSub": "{fromYear}–{toYear}",
-                "unit": "%",
+                "trendSub": {
+                  "ka": "{fromYear}–{toYear}",
+                  "en": "{fromYear}–{toYear}"
+                },
+                "unit": {
+                  "ka": "%",
+                  "en": "%"
+                },
                 "value": {
                   "filter": {
                     "account": "production-account",
@@ -218,7 +278,10 @@
               {
                 "color": "#4ECDC4",
                 "id": "labor-share",
-                "label": "შრომის წილი დამატებულ ღირებულებაში",
+                "label": {
+                  "ka": "შრომის წილი დამატებულ ღირებულებაში",
+                  "en": "Labour share in value added"
+                },
                 "when": {
                   "op": "perspective-is",
                   "perspective": "range"
@@ -228,8 +291,14 @@
                   "type": "static",
                   "value": "სტაბილური"
                 },
-                "trendSub": "{toYear}",
-                "unit": "%",
+                "trendSub": {
+                  "ka": "{toYear}",
+                  "en": "{toYear}"
+                },
+                "unit": {
+                  "ka": "%",
+                  "en": "%"
+                },
                 "value": {
                   "denom": {
                     "filter": {
@@ -257,7 +326,10 @@
               {
                 "color": "#E76F51",
                 "id": "b9",
-                "label": "წმინდა დაკრედიტება/სესხება  (B9)",
+                "label": {
+                  "ka": "წმინდა დაკრედიტება/სესხება  (B9)",
+                  "en": "Net lending/borrowing  (B9)"
+                },
                 "when": {
                   "op": "perspective-is",
                   "perspective": "range"
@@ -267,8 +339,14 @@
                   "type": "static",
                   "value": "−"
                 },
-                "trendSub": "{toYear}",
-                "unit": "მლნ ₾",
+                "trendSub": {
+                  "ka": "{toYear}",
+                  "en": "{toYear}"
+                },
+                "unit": {
+                  "ka": "მლნ ₾",
+                  "en": "GEL mn"
+                },
                 "value": {
                   "abs": true,
                   "filter": {
@@ -449,12 +527,21 @@
                   "type": "query"
                 },
                 "fieldConfig": {
-                  "unit": "მლნ ₾"
+                  "unit": {
+                    "ka": "მლნ ₾",
+                    "en": "GEL mn"
+                  }
                 },
-                "label": "ანგარიშების სრული ჯაჭვი · მლნ ₾",
+                "label": {
+                  "ka": "ანგარიშების სრული ჯაჭვი · მლნ ₾",
+                  "en": "Full sequence of accounts · GEL mn"
+                },
                 "type": "chart",
                 "view": {
-                  "label": "დიაგრამა",
+                  "label": {
+                    "ka": "დიაგრამა",
+                    "en": "Chart"
+                  },
                   "role": "chart"
                 }
               },
@@ -465,7 +552,10 @@
                     "bar": true,
                     "format": "mln_gel",
                     "key": "value",
-                    "label": "მლნ ₾"
+                    "label": {
+                      "ka": "მლნ ₾",
+                      "en": "GEL mn"
+                    }
                   }
                 ],
                 "data": {
@@ -629,14 +719,20 @@
                 "statusFlags": false,
                 "type": "table",
                 "view": {
-                  "label": "ცხრილი",
+                  "label": {
+                    "ka": "ცხრილი",
+                    "en": "Table"
+                  },
                   "role": "table"
                 }
               }
             ],
             "color": "#0080BE",
             "id": "sna-hero",
-            "title": "ეროვნული ანგარიშები",
+            "title": {
+              "ka": "ეროვნული ანგარიშები",
+              "en": "National Accounts"
+            },
             "type": "section",
             "variants": {
               "emphasis": "hero"
@@ -646,7 +742,10 @@
               "styles": {
                 "height": "16:9"
               },
-              "subtitle": "{time} · მლნ ₾",
+              "subtitle": {
+                "ka": "{time} · მლნ ₾",
+                "en": "{time} · GEL mn"
+              },
               "visibleWhen": {
                 "op": "perspective-is",
                 "perspective": "year"
@@ -764,12 +863,21 @@
                       "type": "query"
                     },
                     "fieldConfig": {
-                      "unit": "მლნ ₾"
+                      "unit": {
+                        "ka": "მლნ ₾",
+                        "en": "GEL mn"
+                      }
                     },
-                    "label": "T-ანგარიში · მლნ ₾",
+                    "label": {
+                      "ka": "T-ანგარიში · მლნ ₾",
+                      "en": "T-account · GEL mn"
+                    },
                     "type": "chart",
                     "view": {
-                      "label": "დიაგრამა",
+                      "label": {
+                        "ka": "დიაგრამა",
+                        "en": "Chart"
+                      },
                       "role": "chart"
                     }
                   },
@@ -779,7 +887,10 @@
                         "bar": true,
                         "format": "mln_gel",
                         "key": "value",
-                        "label": "მლნ ₾"
+                        "label": {
+                          "ka": "მლნ ₾",
+                          "en": "GEL mn"
+                        }
                       }
                     ],
                     "data": {
@@ -888,16 +999,25 @@
                     "statusFlags": false,
                     "type": "table",
                     "view": {
-                      "label": "ცხრილი",
+                      "label": {
+                        "ka": "ცხრილი",
+                        "en": "Table"
+                      },
                       "role": "table"
                     }
                   }
                 ],
                 "id": "account-{account_code}",
-                "title": "{account_label}",
+                "title": {
+                  "ka": "{account_label}",
+                  "en": "{account_label}"
+                },
                 "type": "section",
                 "view": {
-                  "subtitle": "{time} · მლნ ₾",
+                  "subtitle": {
+                    "ka": "{time} · მლნ ₾",
+                    "en": "{time} · GEL mn"
+                  },
                   "toggle": true
                 }
               }
@@ -906,17 +1026,26 @@
               {
                 "code": "production-account",
                 "color": "#0080BE",
-                "label": "წარმოების ანგარიში"
+                "label": {
+                  "ka": "წარმოების ანგარიში",
+                  "en": "Production account"
+                }
               },
               {
                 "code": "generation-of-income-account",
                 "color": "#E76F51",
-                "label": "შემოსავლის ფორმირება"
+                "label": {
+                  "ka": "შემოსავლის ფორმირება",
+                  "en": "Generation of income"
+                }
               },
               {
                 "code": "capital-account",
                 "color": "#4472C4",
-                "label": "კაპიტალის ანგარიში"
+                "label": {
+                  "ka": "კაპიტალის ანგარიში",
+                  "en": "Capital account"
+                }
               }
             ],
             "type": "repeat",
@@ -980,24 +1109,39 @@
                   "type": "query"
                 },
                 "fieldConfig": {
-                  "unit": "მლნ ₾"
+                  "unit": {
+                    "ka": "მლნ ₾",
+                    "en": "GEL mn"
+                  }
                 },
-                "label": "P1 · B1G · B5G · B6G · B8G · B9 — სრული ჯაჭვი",
+                "label": {
+                  "ka": "P1 · B1G · B5G · B6G · B8G · B9 — სრული ჯაჭვი",
+                  "en": "P1 · B1G · B5G · B6G · B8G · B9 — full sequence"
+                },
                 "stacked": true,
                 "type": "chart",
                 "view": {
-                  "label": "დიაგრამა",
+                  "label": {
+                    "ka": "დიაგრამა",
+                    "en": "Chart"
+                  },
                   "role": "chart"
                 }
               },
               {
-                "colLabel": "წელი",
+                "colLabel": {
+                  "ka": "წელი",
+                  "en": "Year"
+                },
                 "color": "#0080BE",
                 "columns": [
                   {
                     "format": "mln_gel",
                     "key": "value",
-                    "label": "მლნ ₾"
+                    "label": {
+                      "ka": "მლნ ₾",
+                      "en": "GEL mn"
+                    }
                   }
                 ],
                 "data": {
@@ -1052,14 +1196,20 @@
                 "statusFlags": false,
                 "type": "table",
                 "view": {
-                  "label": "ცხრილი",
+                  "label": {
+                    "ka": "ცხრილი",
+                    "en": "Table"
+                  },
                   "role": "table"
                 }
               }
             ],
             "color": "#0080BE",
             "id": "sna-hero-range",
-            "title": "ეროვნული ანგარიშები",
+            "title": {
+              "ka": "ეროვნული ანგარიშები",
+              "en": "National Accounts"
+            },
             "type": "section",
             "variants": {
               "emphasis": "hero"
@@ -1069,7 +1219,10 @@
               "styles": {
                 "height": "16:9"
               },
-              "subtitle": "2020–2025 · მლნ ₾",
+              "subtitle": {
+                "ka": "2020–2025 · მლნ ₾",
+                "en": "2020–2025 · GEL mn"
+              },
               "visibleWhen": {
                 "op": "perspective-is",
                 "perspective": "range"
@@ -1081,17 +1234,26 @@
               {
                 "href": "https://www.geostat.ge/media/48809/metodologiuri-ganmartebebi.pdf",
                 "icon": "doc",
-                "label": "მეთოდოლოგიური განმარტებები"
+                "label": {
+                  "ka": "მეთოდოლოგიური განმარტებები",
+                  "en": "Methodological notes"
+                }
               },
               {
                 "href": "https://www.geostat.ge/ka/modules/categories/24/mtliani-erovnuli-shemosavali-mesh",
                 "icon": "info",
-                "label": "დამატებითი ინფორმაცია"
+                "label": {
+                  "ka": "დამატებითი ინფორმაცია",
+                  "en": "Additional information"
+                }
               },
               {
                 "href": "https://www.geostat.ge",
                 "icon": "ext",
-                "label": "საქსტატი — geostat.ge"
+                "label": {
+                  "ka": "საქსტატი — geostat.ge",
+                  "en": "Geostat — geostat.ge"
+                }
               }
             ],
             "type": "links"
@@ -1103,8 +1265,14 @@
               "filters": {
                 "account": {
                   "default": "",
-                  "emptyLabel": "ყველა",
-                  "label": "ანგარიში:",
+                  "emptyLabel": {
+                    "ka": "ყველა",
+                    "en": "All"
+                  },
+                  "label": {
+                    "ka": "ანგარიში:",
+                    "en": "Account:"
+                  },
                   "options": {
                     "items": {
                       "$d": "account"
@@ -1127,7 +1295,10 @@
                     "from": "options",
                     "pick": "first"
                   },
-                  "label": "შუალედი:",
+                  "label": {
+                    "ka": "შუალედი:",
+                    "en": "Interval:"
+                  },
                   "options": {
                     "items": {
                       "$d": "time"
@@ -1143,7 +1314,10 @@
                     "type": "inline",
                     "valueField": "code"
                   },
-                  "suffix": "-დან",
+                  "suffix": {
+                    "ka": "-დან",
+                    "en": "from"
+                  },
                   "type": "select",
                   "visibleWhen": {
                     "op": "perspective-is",
@@ -1178,7 +1352,10 @@
                     "type": "inline",
                     "valueField": "code"
                   },
-                  "suffix": "-მდე",
+                  "suffix": {
+                    "ka": "-მდე",
+                    "en": "to"
+                  },
                   "type": "select",
                   "visibleWhen": {
                     "op": "perspective-is",
@@ -1305,10 +1482,16 @@
             },
             "crumbs": [
               {
-                "label": "მთლიანი შიდა პროდუქტი"
+                "label": {
+                  "ka": "მთლიანი შიდა პროდუქტი",
+                  "en": "Gross Domestic Product"
+                }
               }
             ],
-            "title": "მთლიანი შიდა პროდუქტი",
+            "title": {
+              "ka": "მთლიანი შიდა პროდუქტი",
+              "en": "Gross Domestic Product"
+            },
             "type": "page-header"
           },
           {
@@ -1323,13 +1506,22 @@
               {
                 "color": "#0080BE",
                 "id": "gdp-total",
-                "label": "მშპ მიმდინარე ფასებში",
+                "label": {
+                  "ka": "მშპ მიმდინარე ფასებში",
+                  "en": "GDP at current prices"
+                },
                 "when": {
                   "op": "perspective-is",
                   "perspective": "year"
                 },
-                "unit": "მლნ ₾",
-                "trendSub": "წინა წელთან შედარებით",
+                "unit": {
+                  "ka": "მლნ ₾",
+                  "en": "GEL mn"
+                },
+                "trendSub": {
+                  "ka": "წინა წელთან შედარებით",
+                  "en": "compared to previous year"
+                },
                 "value": {
                   "type": "point",
                   "format": "mln_gel",
@@ -1351,13 +1543,22 @@
               {
                 "color": "#00A896",
                 "id": "gdp-growth",
-                "label": "რეალური ზრდა",
+                "label": {
+                  "ka": "რეალური ზრდა",
+                  "en": "Real growth"
+                },
                 "when": {
                   "op": "perspective-is",
                   "perspective": "year"
                 },
-                "unit": "%",
-                "trendSub": "წინა წელთან შედარებით",
+                "unit": {
+                  "ka": "%",
+                  "en": "%"
+                },
+                "trendSub": {
+                  "ka": "წინა წელთან შედარებით",
+                  "en": "compared to previous year"
+                },
                 "value": {
                   "type": "point",
                   "format": "sign_pct",
@@ -1376,13 +1577,22 @@
               {
                 "color": "#4ECDC4",
                 "id": "gdp-per-capita",
-                "label": "მშპ ერთ სულზე",
+                "label": {
+                  "ka": "მშპ ერთ სულზე",
+                  "en": "GDP per capita"
+                },
                 "when": {
                   "op": "perspective-is",
                   "perspective": "year"
                 },
-                "unit": "$",
-                "trendSub": "წინა წელთან შედარებით",
+                "unit": {
+                  "ka": "$",
+                  "en": "$"
+                },
+                "trendSub": {
+                  "ka": "წინა წელთან შედარებით",
+                  "en": "compared to previous year"
+                },
                 "value": {
                   "type": "point",
                   "format": "mln_gel",
@@ -1404,13 +1614,22 @@
               {
                 "color": "#0080BE",
                 "id": "gdp-cagr",
-                "label": "მშპ — საშ. წლიური ზრდა",
+                "label": {
+                  "ka": "მშპ — საშ. წლიური ზრდა",
+                  "en": "GDP — avg. annual growth"
+                },
                 "when": {
                   "op": "perspective-is",
                   "perspective": "range"
                 },
-                "unit": "%",
-                "trendSub": "{fromYear}–{toYear}",
+                "unit": {
+                  "ka": "%",
+                  "en": "%"
+                },
+                "trendSub": {
+                  "ka": "{fromYear}–{toYear}",
+                  "en": "{fromYear}–{toYear}"
+                },
                 "value": {
                   "type": "cagr",
                   "measure": "gross-domestic-product-at-current-prices",
@@ -1443,13 +1662,22 @@
               {
                 "color": "#4ECDC4",
                 "id": "gdp-per-cap-cagr",
-                "label": "ერთ სულზე — საშ. ზრდა",
+                "label": {
+                  "ka": "ერთ სულზე — საშ. ზრდა",
+                  "en": "Per capita — avg. growth"
+                },
                 "when": {
                   "op": "perspective-is",
                   "perspective": "range"
                 },
-                "unit": "%",
-                "trendSub": "{fromYear}–{toYear}",
+                "unit": {
+                  "ka": "%",
+                  "en": "%"
+                },
+                "trendSub": {
+                  "ka": "{fromYear}–{toYear}",
+                  "en": "{fromYear}–{toYear}"
+                },
                 "value": {
                   "type": "cagr",
                   "measure": "gdp-per-capita-usd",
@@ -1482,13 +1710,22 @@
               {
                 "color": "#7B6CF6",
                 "id": "gdp-total-last",
-                "label": "მშპ — საბოლოო წელი",
+                "label": {
+                  "ka": "მშპ — საბოლოო წელი",
+                  "en": "GDP — final year"
+                },
                 "when": {
                   "op": "perspective-is",
                   "perspective": "range"
                 },
-                "unit": "მლნ ₾",
-                "trendSub": "{toYear}",
+                "unit": {
+                  "ka": "მლნ ₾",
+                  "en": "GEL mn"
+                },
+                "trendSub": {
+                  "ka": "{toYear}",
+                  "en": "{toYear}"
+                },
                 "value": {
                   "type": "point",
                   "format": "mln_gel",
@@ -1533,9 +1770,15 @@
                 "type": "section",
                 "id": "production",
                 "color": "#0080BE",
-                "title": "მთლიანი შიდა პროდუქტი წარმოების მეთოდით",
+                "title": {
+                  "ka": "მთლიანი შიდა პროდუქტი წარმოების მეთოდით",
+                  "en": "Gross Domestic Product by production approach"
+                },
                 "fieldConfig": {
-                  "unit": "მლნ ₾"
+                  "unit": {
+                    "ka": "მლნ ₾",
+                    "en": "GEL mn"
+                  }
                 },
                 "vars": {
                   "periodLabel": {
@@ -1544,7 +1787,10 @@
                   }
                 },
                 "view": {
-                  "subtitle": "{periodLabel} · მლნ ₾"
+                  "subtitle": {
+                    "ka": "{periodLabel} · მლნ ₾",
+                    "en": "{periodLabel} · GEL mn"
+                  }
                 },
                 "data": {
                   "type": "query",
@@ -1598,25 +1844,43 @@
                       {
                         "type": "chart",
                         "chartType": "donut",
-                        "centerLabel": "მშპ",
-                        "label": "სექტორული სტრუქტურა — % მშპ-დან",
+                        "centerLabel": {
+                          "ka": "მშპ",
+                          "en": "GDP"
+                        },
+                        "label": {
+                          "ka": "სექტორული სტრუქტურა — % მშპ-დან",
+                          "en": "Sectoral structure — % of GDP"
+                        },
                         "view": {
                           "role": "chart",
-                          "label": "დიაგრამა"
+                          "label": {
+                            "ka": "დიაგრამა",
+                            "en": "Chart"
+                          }
                         }
                       },
                       {
                         "type": "table",
-                        "colLabel": "სექტორი",
+                        "colLabel": {
+                          "ka": "სექტორი",
+                          "en": "Sector"
+                        },
                         "color": "#0080BE",
                         "columns": [
                           {
                             "key": "value",
-                            "label": "მლნ ₾"
+                            "label": {
+                              "ka": "მლნ ₾",
+                              "en": "GEL mn"
+                            }
                           },
                           {
                             "key": "pct",
-                            "label": "წილი",
+                            "label": {
+                              "ka": "წილი",
+                              "en": "Share"
+                            },
                             "format": "pct",
                             "bar": {
                               "max": 100
@@ -1632,7 +1896,10 @@
                         ],
                         "view": {
                           "role": "table",
-                          "label": "ცხრილი"
+                          "label": {
+                            "ka": "ცხრილი",
+                            "en": "Table"
+                          }
                         }
                       }
                     ]
@@ -1643,12 +1910,21 @@
                 "type": "section",
                 "id": "expenditure",
                 "color": "#00A896",
-                "title": "მთლიანი შიდა პროდუქტი დანახარჯების მეთოდით",
+                "title": {
+                  "ka": "მთლიანი შიდა პროდუქტი დანახარჯების მეთოდით",
+                  "en": "Gross Domestic Product by expenditure approach"
+                },
                 "fieldConfig": {
-                  "unit": "მლნ ₾"
+                  "unit": {
+                    "ka": "მლნ ₾",
+                    "en": "GEL mn"
+                  }
                 },
                 "view": {
-                  "subtitle": "{time} · მლნ ₾"
+                  "subtitle": {
+                    "ka": "{time} · მლნ ₾",
+                    "en": "{time} · GEL mn"
+                  }
                 },
                 "data": {
                   "type": "query",
@@ -1730,19 +2006,31 @@
                       {
                         "type": "chart",
                         "chartType": "contribution",
-                        "label": "C + I + X − M = მშპ",
+                        "label": {
+                          "ka": "C + I + X − M = მშპ",
+                          "en": "C + I + X − M = GDP"
+                        },
                         "view": {
                           "role": "chart",
-                          "label": "დიაგრამა"
+                          "label": {
+                            "ka": "დიაგრამა",
+                            "en": "Chart"
+                          }
                         }
                       },
                       {
                         "type": "table",
                         "color": "#00A896",
-                        "valueLabel": "მლნ ₾",
+                        "valueLabel": {
+                          "ka": "მლნ ₾",
+                          "en": "GEL mn"
+                        },
                         "view": {
                           "role": "table",
-                          "label": "ცხრილი"
+                          "label": {
+                            "ka": "ცხრილი",
+                            "en": "Table"
+                          }
                         }
                       }
                     ]
@@ -1769,9 +2057,15 @@
                 "type": "section",
                 "id": "gdp-dynamics",
                 "color": "#0080BE",
-                "title": "მშპ ისტორიული დინამიკა",
+                "title": {
+                  "ka": "მშპ ისტორიული დინამიკა",
+                  "en": "GDP historical dynamics"
+                },
                 "view": {
-                  "subtitle": "{fromYear}–{toYear} · მლნ ₾",
+                  "subtitle": {
+                    "ka": "{fromYear}–{toYear} · მლნ ₾",
+                    "en": "{fromYear}–{toYear} · GEL mn"
+                  },
                   "styles": {
                     "height": "16:9"
                   }
@@ -1814,22 +2108,37 @@
                         "type": "chart",
                         "chartType": "combo",
                         "fieldConfig": {
-                          "unit": "მლნ ₾"
+                          "unit": {
+                            "ka": "მლნ ₾",
+                            "en": "GEL mn"
+                          }
                         },
-                        "label": "მშპ ისტორიული დინამიკა",
+                        "label": {
+                          "ka": "მშპ ისტორიული დინამიკა",
+                          "en": "GDP historical dynamics"
+                        },
                         "view": {
                           "role": "chart",
-                          "label": "დიაგრამა"
+                          "label": {
+                            "ka": "დიაგრამა",
+                            "en": "Chart"
+                          }
                         }
                       },
                       {
                         "type": "table",
-                        "colLabel": "წელი",
+                        "colLabel": {
+                          "ka": "წელი",
+                          "en": "Year"
+                        },
                         "color": "#0080BE",
                         "columns": [
                           {
                             "key": "value",
-                            "label": "მლნ ₾",
+                            "label": {
+                              "ka": "მლნ ₾",
+                              "en": "GEL mn"
+                            },
                             "bar": true
                           }
                         ],
@@ -1842,7 +2151,10 @@
                         ],
                         "view": {
                           "role": "table",
-                          "label": "ცხრილი"
+                          "label": {
+                            "ka": "ცხრილი",
+                            "en": "Table"
+                          }
                         }
                       }
                     ]
@@ -1853,9 +2165,15 @@
                 "type": "section",
                 "id": "per-capita-dynamics",
                 "color": "#7B6CF6",
-                "title": "მშპ ერთ სულ მოსახლეზე",
+                "title": {
+                  "ka": "მშპ ერთ სულ მოსახლეზე",
+                  "en": "GDP per capita"
+                },
                 "view": {
-                  "subtitle": "{fromYear}–{toYear} · $",
+                  "subtitle": {
+                    "ka": "{fromYear}–{toYear} · $",
+                    "en": "{fromYear}–{toYear} · $"
+                  },
                   "styles": {
                     "height": "16:9"
                   }
@@ -1898,22 +2216,37 @@
                         "type": "chart",
                         "chartType": "line",
                         "fieldConfig": {
-                          "unit": "$"
+                          "unit": {
+                            "ka": "$",
+                            "en": "$"
+                          }
                         },
-                        "label": "მშპ ერთ სულ მოსახლეზე",
+                        "label": {
+                          "ka": "მშპ ერთ სულ მოსახლეზე",
+                          "en": "GDP per capita"
+                        },
                         "view": {
                           "role": "chart",
-                          "label": "დიაგრამა"
+                          "label": {
+                            "ka": "დიაგრამა",
+                            "en": "Chart"
+                          }
                         }
                       },
                       {
                         "type": "table",
-                        "colLabel": "წელი",
+                        "colLabel": {
+                          "ka": "წელი",
+                          "en": "Year"
+                        },
                         "color": "#7B6CF6",
                         "columns": [
                           {
                             "key": "value",
-                            "label": "$",
+                            "label": {
+                              "ka": "$",
+                              "en": "$"
+                            },
                             "format": "mln_gel"
                           }
                         ],
@@ -1926,7 +2259,10 @@
                         ],
                         "view": {
                           "role": "table",
-                          "label": "ცხრილი"
+                          "label": {
+                            "ka": "ცხრილი",
+                            "en": "Table"
+                          }
                         }
                       }
                     ]
@@ -1953,12 +2289,21 @@
                 "type": "section",
                 "id": "income",
                 "color": "#7B6CF6",
-                "title": "მთლიანი შიდა პროდუქტი შემოსავლების მეთოდით",
+                "title": {
+                  "ka": "მთლიანი შიდა პროდუქტი შემოსავლების მეთოდით",
+                  "en": "Gross Domestic Product by income approach"
+                },
                 "fieldConfig": {
-                  "unit": "მლნ ₾"
+                  "unit": {
+                    "ka": "მლნ ₾",
+                    "en": "GEL mn"
+                  }
                 },
                 "view": {
-                  "subtitle": "{time} · მლნ ₾"
+                  "subtitle": {
+                    "ka": "{time} · მლნ ₾",
+                    "en": "{time} · GEL mn"
+                  }
                 },
                 "data": {
                   "type": "query",
@@ -2021,21 +2366,36 @@
                         "type": "chart",
                         "chartType": "treemap",
                         "fieldConfig": {
-                          "unit": "მლნ ₾"
+                          "unit": {
+                            "ka": "მლნ ₾",
+                            "en": "GEL mn"
+                          }
                         },
-                        "label": "შემოსავლების სტრუქტურა",
+                        "label": {
+                          "ka": "შემოსავლების სტრუქტურა",
+                          "en": "Income structure"
+                        },
                         "view": {
                           "role": "chart",
-                          "label": "დიაგრამა"
+                          "label": {
+                            "ka": "დიაგრამა",
+                            "en": "Chart"
+                          }
                         }
                       },
                       {
                         "type": "table",
                         "color": "#7B6CF6",
-                        "valueLabel": "მლნ ₾",
+                        "valueLabel": {
+                          "ka": "მლნ ₾",
+                          "en": "GEL mn"
+                        },
                         "view": {
                           "role": "table",
-                          "label": "ცხრილი"
+                          "label": {
+                            "ka": "ცხრილი",
+                            "en": "Table"
+                          }
                         }
                       }
                     ]
@@ -2062,9 +2422,15 @@
                 "type": "section",
                 "id": "growth-dynamics",
                 "color": "#E76F51",
-                "title": "რეალური მთლიანი შიდა პროდუქტის ზრდა",
+                "title": {
+                  "ka": "რეალური მთლიანი შიდა პროდუქტის ზრდა",
+                  "en": "Real Gross Domestic Product growth"
+                },
                 "view": {
-                  "subtitle": "{fromYear}–{toYear} · %",
+                  "subtitle": {
+                    "ka": "{fromYear}–{toYear} · %",
+                    "en": "{fromYear}–{toYear} · %"
+                  },
                   "styles": {
                     "height": "16:9"
                   }
@@ -2107,9 +2473,15 @@
                         "type": "chart",
                         "chartType": "bar",
                         "fieldConfig": {
-                          "unit": "%"
+                          "unit": {
+                            "ka": "%",
+                            "en": "%"
+                          }
                         },
-                        "label": "რეალური მთლიანი შიდა პროდუქტის ზრდა",
+                        "label": {
+                          "ka": "რეალური მთლიანი შიდა პროდუქტის ზრდა",
+                          "en": "Real Gross Domestic Product growth"
+                        },
                         "axes": {
                           "y": {
                             "decimals": 1
@@ -2117,17 +2489,26 @@
                         },
                         "view": {
                           "role": "chart",
-                          "label": "დიაგრამა"
+                          "label": {
+                            "ka": "დიაგრამა",
+                            "en": "Chart"
+                          }
                         }
                       },
                       {
                         "type": "table",
-                        "colLabel": "წელი",
+                        "colLabel": {
+                          "ka": "წელი",
+                          "en": "Year"
+                        },
                         "color": "#E76F51",
                         "columns": [
                           {
                             "key": "value",
-                            "label": "%",
+                            "label": {
+                              "ka": "%",
+                              "en": "%"
+                            },
                             "format": "sign_pct"
                           }
                         ],
@@ -2140,7 +2521,10 @@
                         ],
                         "view": {
                           "role": "table",
-                          "label": "ცხრილი"
+                          "label": {
+                            "ka": "ცხრილი",
+                            "en": "Table"
+                          }
                         }
                       }
                     ]
@@ -2154,17 +2538,26 @@
               {
                 "href": "https://www.geostat.ge/media/29303/Mtliani-shida-produqtis-metodologia.pdf",
                 "icon": "doc",
-                "label": "მეთოდოლოგიური განმარტებები"
+                "label": {
+                  "ka": "მეთოდოლოგიური განმარტებები",
+                  "en": "Methodological notes"
+                }
               },
               {
                 "href": "https://www.geostat.ge/ka/modules/categories/23/gross-domestic-product-gdp",
                 "icon": "info",
-                "label": "დამატებითი ინფორმაცია"
+                "label": {
+                  "ka": "დამატებითი ინფორმაცია",
+                  "en": "Additional information"
+                }
               },
               {
                 "href": "https://www.geostat.ge",
                 "icon": "ext",
-                "label": "საქსტატი — geostat.ge"
+                "label": {
+                  "ka": "საქსტატი — geostat.ge",
+                  "en": "Geostat — geostat.ge"
+                }
               }
             ],
             "type": "links"
@@ -2179,7 +2572,10 @@
                     "from": "options",
                     "pick": "first"
                   },
-                  "label": "შუალედი:",
+                  "label": {
+                    "ka": "შუალედი:",
+                    "en": "Interval:"
+                  },
                   "options": {
                     "items": {
                       "$d": "time"
@@ -2195,7 +2591,10 @@
                     "type": "inline",
                     "valueField": "code"
                   },
-                  "suffix": "-დან",
+                  "suffix": {
+                    "ka": "-დან",
+                    "en": "from"
+                  },
                   "type": "select",
                   "visibleWhen": {
                     "op": "perspective-is",
@@ -2226,7 +2625,10 @@
                     "type": "inline",
                     "valueField": "code"
                   },
-                  "suffix": "-მდე",
+                  "suffix": {
+                    "ka": "-მდე",
+                    "en": "to"
+                  },
                   "type": "select",
                   "visibleWhen": {
                     "op": "perspective-is",
@@ -2399,7 +2801,10 @@
                       "en": "GDP at market prices",
                       "ka": "მშპ საბაზრო ფასებში"
                     },
-                    "unit": "მლნ ₾",
+                    "unit": {
+                      "ka": "მლნ ₾",
+                      "en": "GEL mn"
+                    },
                     "value": "104 598"
                   },
                   {
@@ -2414,7 +2819,10 @@
                       "en": "Per capita",
                       "ka": "ერთ სულ მოსახლეზე"
                     },
-                    "unit": "$",
+                    "unit": {
+                      "ka": "$",
+                      "en": "$"
+                    },
                     "value": "10 200"
                   },
                   {
@@ -2429,7 +2837,10 @@
                       "en": "Real growth",
                       "ka": "რეალური ზრდა"
                     },
-                    "unit": "%",
+                    "unit": {
+                      "ka": "%",
+                      "en": "%"
+                    },
                     "value": "7.5"
                   },
                   {
@@ -2439,7 +2850,10 @@
                       "en": "GDP deflator",
                       "ka": "მშპ-ს დეფლატორი"
                     },
-                    "unit": "%",
+                    "unit": {
+                      "ka": "%",
+                      "en": "%"
+                    },
                     "value": "4.6"
                   }
                 ],
@@ -2461,7 +2875,10 @@
                       "en": "Output at market prices",
                       "ka": "გამოშვება საბაზრო ფასებში"
                     },
-                    "unit": "მლნ ₾",
+                    "unit": {
+                      "ka": "მლნ ₾",
+                      "en": "GEL mn"
+                    },
                     "value": "204 000"
                   },
                   {
@@ -2471,7 +2888,10 @@
                       "en": "Intermediate consumption",
                       "ka": "შუალედური მოხმარება"
                     },
-                    "unit": "მლნ ₾",
+                    "unit": {
+                      "ka": "მლნ ₾",
+                      "en": "GEL mn"
+                    },
                     "value": "99 400"
                   },
                   {
@@ -2481,7 +2901,10 @@
                       "en": "National income",
                       "ka": "ეროვნული შემოსავალი"
                     },
-                    "unit": "მლნ ₾",
+                    "unit": {
+                      "ka": "მლნ ₾",
+                      "en": "GEL mn"
+                    },
                     "value": "108 200"
                   },
                   {
@@ -2491,7 +2914,10 @@
                       "en": "Net lending/borrowing",
                       "ka": "წმინდა დაკრედიტება/სესხება"
                     },
-                    "unit": "მლნ ₾",
+                    "unit": {
+                      "ka": "მლნ ₾",
+                      "en": "GEL mn"
+                    },
                     "value": "6 400"
                   }
                 ],
@@ -2513,7 +2939,10 @@
                       "en": "Tbilisi — GDP",
                       "ka": "თბილისი — მშპ"
                     },
-                    "unit": "მლნ ₾",
+                    "unit": {
+                      "ka": "მლნ ₾",
+                      "en": "GEL mn"
+                    },
                     "value": "54 100"
                   },
                   {
@@ -2523,7 +2952,10 @@
                       "en": "Kvemo Kartli — GDP",
                       "ka": "ქვემო ქართლი — მშპ"
                     },
-                    "unit": "მლნ ₾",
+                    "unit": {
+                      "ka": "მლნ ₾",
+                      "en": "GEL mn"
+                    },
                     "value": "9 500"
                   },
                   {
@@ -2533,7 +2965,10 @@
                       "en": "Imereti — GDP",
                       "ka": "იმერეთი — მშპ"
                     },
-                    "unit": "მლნ ₾",
+                    "unit": {
+                      "ka": "მლნ ₾",
+                      "en": "GEL mn"
+                    },
                     "value": "9 000"
                   },
                   {
@@ -2543,7 +2978,10 @@
                       "en": "Adjara — GDP",
                       "ka": "აჭარა — მშპ"
                     },
-                    "unit": "მლნ ₾",
+                    "unit": {
+                      "ka": "მლნ ₾",
+                      "en": "GEL mn"
+                    },
                     "value": "8 500"
                   }
                 ],
@@ -2582,10 +3020,16 @@
             },
             "crumbs": [
               {
-                "label": "რეგიონული ანგარიშები"
+                "label": {
+                  "ka": "რეგიონული ანგარიშები",
+                  "en": "Regional Accounts"
+                }
               }
             ],
-            "title": "რეგიონული ანგარიშები",
+            "title": {
+              "ka": "რეგიონული ანგარიშები",
+              "en": "Regional Accounts"
+            },
             "type": "page-header"
           },
           {
@@ -2599,7 +3043,10 @@
               {
                 "color": "#0080BE",
                 "id": "reg-gva",
-                "label": "მთლიანი დამატებული ღირებულება",
+                "label": {
+                  "ka": "მთლიანი დამატებული ღირებულება",
+                  "en": "Gross Value Added"
+                },
                 "when": {
                   "op": "perspective-is",
                   "perspective": "year"
@@ -2613,8 +3060,14 @@
                   "measure": "GVA",
                   "type": "yoy"
                 },
-                "trendSub": "წინა წელთან შედარებით",
-                "unit": "მლნ ₾",
+                "trendSub": {
+                  "ka": "წინა წელთან შედარებით",
+                  "en": "compared to previous year"
+                },
+                "unit": {
+                  "ka": "მლნ ₾",
+                  "en": "GEL mn"
+                },
                 "value": {
                   "filter": {
                     "geo": "_T",
@@ -2629,7 +3082,10 @@
               {
                 "color": "#00A896",
                 "id": "reg-growth",
-                "label": "წლიური ზრდა",
+                "label": {
+                  "ka": "წლიური ზრდა",
+                  "en": "Annual growth"
+                },
                 "when": {
                   "op": "perspective-is",
                   "perspective": "year"
@@ -2643,8 +3099,14 @@
                   "measure": "GVA",
                   "type": "yoy"
                 },
-                "trendSub": "წინა წელთან შედარებით",
-                "unit": "%",
+                "trendSub": {
+                  "ka": "წინა წელთან შედარებით",
+                  "en": "compared to previous year"
+                },
+                "unit": {
+                  "ka": "%",
+                  "en": "%"
+                },
                 "value": {
                   "filter": {
                     "geo": "_T",
@@ -2658,7 +3120,10 @@
               {
                 "color": "#4ECDC4",
                 "id": "reg-share",
-                "label": "თბილისის წილი ეროვნულ მაჩვენებელში",
+                "label": {
+                  "ka": "თბილისის წილი ეროვნულ მაჩვენებელში",
+                  "en": "Tbilisi's share of the national total"
+                },
                 "when": {
                   "op": "perspective-is",
                   "perspective": "year"
@@ -2668,8 +3133,14 @@
                   "type": "static",
                   "value": "თბილისი / საქართველო"
                 },
-                "trendSub": "ეროვნული ჯამიდან",
-                "unit": "%",
+                "trendSub": {
+                  "ka": "ეროვნული ჯამიდან",
+                  "en": "Of the national total"
+                },
+                "unit": {
+                  "ka": "%",
+                  "en": "%"
+                },
                 "value": {
                   "denom": {
                     "filter": {
@@ -2693,7 +3164,10 @@
               {
                 "color": "#7B6CF6",
                 "id": "reg-cagr-year",
-                "label": "საშუალო წლიური ზრდა ({spanFrom}–{spanTo})",
+                "label": {
+                  "ka": "საშუალო წლიური ზრდა ({spanFrom}–{spanTo})",
+                  "en": "Average annual growth ({spanFrom}–{spanTo})"
+                },
                 "when": {
                   "op": "perspective-is",
                   "perspective": "year"
@@ -2713,8 +3187,14 @@
                   },
                   "type": "cagr"
                 },
-                "trendSub": "{spanFrom}–{spanTo}",
-                "unit": "%",
+                "trendSub": {
+                  "ka": "{spanFrom}–{spanTo}",
+                  "en": "{spanFrom}–{spanTo}"
+                },
+                "unit": {
+                  "ka": "%",
+                  "en": "%"
+                },
                 "value": {
                   "filter": {
                     "geo": "_T",
@@ -2734,7 +3214,10 @@
               {
                 "color": "#0080BE",
                 "id": "reg-cagr",
-                "label": "დამატებული ღირებულება — საშუალო წლიური ზრდა",
+                "label": {
+                  "ka": "დამატებული ღირებულება — საშუალო წლიური ზრდა",
+                  "en": "Value added — average annual growth"
+                },
                 "when": {
                   "op": "perspective-is",
                   "perspective": "range"
@@ -2754,8 +3237,14 @@
                   },
                   "type": "cagr"
                 },
-                "trendSub": "{fromYear}–{toYear}",
-                "unit": "%",
+                "trendSub": {
+                  "ka": "{fromYear}–{toYear}",
+                  "en": "{fromYear}–{toYear}"
+                },
+                "unit": {
+                  "ka": "%",
+                  "en": "%"
+                },
                 "value": {
                   "filter": {
                     "geo": "_T",
@@ -2775,7 +3264,10 @@
               {
                 "color": "#00A896",
                 "id": "reg-gva-last",
-                "label": "დამატებული ღირებულება — {toYear}",
+                "label": {
+                  "ka": "დამატებული ღირებულება — {toYear}",
+                  "en": "Value added — {toYear}"
+                },
                 "when": {
                   "op": "perspective-is",
                   "perspective": "range"
@@ -2792,8 +3284,14 @@
                   },
                   "type": "yoy"
                 },
-                "trendSub": "{toYear}",
-                "unit": "მლნ ₾",
+                "trendSub": {
+                  "ka": "{toYear}",
+                  "en": "{toYear}"
+                },
+                "unit": {
+                  "ka": "მლნ ₾",
+                  "en": "GEL mn"
+                },
                 "value": {
                   "filter": {
                     "geo": "_T",
@@ -2811,7 +3309,10 @@
               {
                 "color": "#4ECDC4",
                 "id": "reg-gva-first",
-                "label": "დამატებული ღირებულება — {fromYear}",
+                "label": {
+                  "ka": "დამატებული ღირებულება — {fromYear}",
+                  "en": "Value added — {fromYear}"
+                },
                 "when": {
                   "op": "perspective-is",
                   "perspective": "range"
@@ -2821,8 +3322,14 @@
                   "type": "static",
                   "value": "საწყისი"
                 },
-                "trendSub": "{fromYear}",
-                "unit": "მლნ ₾",
+                "trendSub": {
+                  "ka": "{fromYear}",
+                  "en": "{fromYear}"
+                },
+                "unit": {
+                  "ka": "მლნ ₾",
+                  "en": "GEL mn"
+                },
                 "value": {
                   "filter": {
                     "geo": "_T",
@@ -2840,7 +3347,10 @@
               {
                 "color": "#7B6CF6",
                 "id": "reg-avg-growth",
-                "label": "საშუალო წლიური ზრდა",
+                "label": {
+                  "ka": "საშუალო წლიური ზრდა",
+                  "en": "Average annual growth"
+                },
                 "when": {
                   "op": "perspective-is",
                   "perspective": "range"
@@ -2860,8 +3370,14 @@
                   },
                   "type": "cagr"
                 },
-                "trendSub": "{fromYear}–{toYear} · საშუალო წლიური ზრდა",
-                "unit": "%",
+                "trendSub": {
+                  "ka": "{fromYear}–{toYear} · საშუალო წლიური ზრდა",
+                  "en": "{fromYear}–{toYear} · average annual growth"
+                },
+                "unit": {
+                  "ka": "%",
+                  "en": "%"
+                },
                 "value": {
                   "filter": {
                     "geo": "_T",
@@ -2886,12 +3402,18 @@
               {
                 "children": [
                   {
-                    "colLabel": "რეგიონი",
+                    "colLabel": {
+                      "ka": "რეგიონი",
+                      "en": "Region"
+                    },
                     "color": "#0080BE",
                     "columns": [
                       {
                         "key": "value",
-                        "label": "მლნ ₾"
+                        "label": {
+                          "ka": "მლნ ₾",
+                          "en": "GEL mn"
+                        }
                       },
                       {
                         "bar": {
@@ -2899,7 +3421,10 @@
                         },
                         "format": "pct",
                         "key": "pct",
-                        "label": "წილი"
+                        "label": {
+                          "ka": "წილი",
+                          "en": "Share"
+                        }
                       }
                     ],
                     "footer": {
@@ -2907,7 +3432,10 @@
                     },
                     "type": "table",
                     "view": {
-                      "label": "ცხრილი",
+                      "label": {
+                        "ka": "ცხრილი",
+                        "en": "Table"
+                      },
                       "role": "table"
                     }
                   }
@@ -2983,7 +3511,10 @@
                 "geoJsonUrl": "/data/georgia-regions.geojson",
                 "id": "geo-map",
                 "isoField": "shapeISO",
-                "label": "{_regionTitle}",
+                "label": {
+                  "ka": "{_regionTitle}",
+                  "en": "{_regionTitle}"
+                },
                 "labelOverrides": {
                   "GE-AB": "ოკუპირებული ტერიტორია",
                   "GE-OS": "ოკუპირებული ტერიტორია"
@@ -2991,7 +3522,10 @@
                 "maxSelect": 10,
                 "multiSelect": true,
                 "paramKey": "region",
-                "title": "მთლიანი შიდა პროდუქტი — რეგიონების მიხედვით",
+                "title": {
+                  "ka": "მთლიანი შიდა პროდუქტი — რეგიონების მიხედვით",
+                  "en": "Gross Domestic Product — by region"
+                },
                 "type": "geograph",
                 "view": {
                   "styles": {
@@ -3002,25 +3536,43 @@
               {
                 "children": [
                   {
-                    "centerLabel": "მშპ",
+                    "centerLabel": {
+                      "ka": "მშპ",
+                      "en": "GDP"
+                    },
                     "chartType": "donut",
                     "fieldConfig": {
-                      "unit": "მლნ ₾"
+                      "unit": {
+                        "ka": "მლნ ₾",
+                        "en": "GEL mn"
+                      }
                     },
-                    "label": "სექტორული სტრუქტურა — % დამატებული ღირებულებიდან",
+                    "label": {
+                      "ka": "სექტორული სტრუქტურა — % დამატებული ღირებულებიდან",
+                      "en": "Sectoral structure — % of value added"
+                    },
                     "type": "chart",
                     "view": {
-                      "label": "დიაგრამა",
+                      "label": {
+                        "ka": "დიაგრამა",
+                        "en": "Chart"
+                      },
                       "role": "chart"
                     }
                   },
                   {
-                    "colLabel": "სექტორი",
+                    "colLabel": {
+                      "ka": "სექტორი",
+                      "en": "Sector"
+                    },
                     "color": "#0080BE",
                     "columns": [
                       {
                         "key": "value",
-                        "label": "მლნ ₾"
+                        "label": {
+                          "ka": "მლნ ₾",
+                          "en": "GEL mn"
+                        }
                       },
                       {
                         "bar": {
@@ -3028,12 +3580,18 @@
                         },
                         "format": "pct",
                         "key": "pct",
-                        "label": "წილი"
+                        "label": {
+                          "ka": "წილი",
+                          "en": "Share"
+                        }
                       }
                     ],
                     "type": "table",
                     "view": {
-                      "label": "ცხრილი",
+                      "label": {
+                        "ka": "ცხრილი",
+                        "en": "Table"
+                      },
                       "role": "table"
                     }
                   }
@@ -3120,15 +3678,24 @@
                   "type": "query"
                 },
                 "id": "sectors",
-                "label": "{_regionTitle}",
-                "title": "მთლიანი შიდა პროდუქტი სექტორების მიხედვით",
+                "label": {
+                  "ka": "{_regionTitle}",
+                  "en": "{_regionTitle}"
+                },
+                "title": {
+                  "ka": "მთლიანი შიდა პროდუქტი სექტორების მიხედვით",
+                  "en": "Gross Domestic Product by sector"
+                },
                 "type": "section",
                 "view": {
                   "legend": "none",
                   "styles": {
                     "height": "16:9"
                   },
-                  "subtitle": "{time} · მლნ ₾",
+                  "subtitle": {
+                    "ka": "{time} · მლნ ₾",
+                    "en": "{time} · GEL mn"
+                  },
                   "visibleWhen": {
                     "is": "single",
                     "op": "eq",
@@ -3141,28 +3708,46 @@
                   {
                     "chartType": "bar",
                     "fieldConfig": {
-                      "unit": "მლნ ₾"
+                      "unit": {
+                        "ka": "მლნ ₾",
+                        "en": "GEL mn"
+                      }
                     },
-                    "label": "სექტორული სტრუქტურა — რეგიონული შედარება",
+                    "label": {
+                      "ka": "სექტორული სტრუქტურა — რეგიონული შედარება",
+                      "en": "Sectoral structure — regional comparison"
+                    },
                     "stacked": true,
                     "type": "chart",
                     "view": {
-                      "label": "დიაგრამა",
+                      "label": {
+                        "ka": "დიაგრამა",
+                        "en": "Chart"
+                      },
                       "role": "chart"
                     }
                   },
                   {
-                    "colLabel": "სექტორი",
+                    "colLabel": {
+                      "ka": "სექტორი",
+                      "en": "Sector"
+                    },
                     "color": "#0080BE",
                     "columns": [
                       {
                         "key": "value",
-                        "label": "მლნ ₾"
+                        "label": {
+                          "ka": "მლნ ₾",
+                          "en": "GEL mn"
+                        }
                       }
                     ],
                     "type": "table",
                     "view": {
-                      "label": "ცხრილი",
+                      "label": {
+                        "ka": "ცხრილი",
+                        "en": "Table"
+                      },
                       "role": "table"
                     }
                   }
@@ -3238,14 +3823,23 @@
                   "type": "query"
                 },
                 "id": "sectors-multi",
-                "label": "{_regionTitle}",
-                "title": "სექტორული სტრუქტურა — რეგიონული შედარება",
+                "label": {
+                  "ka": "{_regionTitle}",
+                  "en": "{_regionTitle}"
+                },
+                "title": {
+                  "ka": "სექტორული სტრუქტურა — რეგიონული შედარება",
+                  "en": "Sectoral structure — regional comparison"
+                },
                 "type": "section",
                 "view": {
                   "styles": {
                     "height": "16:9"
                   },
-                  "subtitle": "{time} · მლნ ₾",
+                  "subtitle": {
+                    "ka": "{time} · მლნ ₾",
+                    "en": "{time} · GEL mn"
+                  },
                   "visibleWhen": {
                     "is": "multi",
                     "op": "eq",
@@ -3287,12 +3881,21 @@
                   }
                 ],
                 "fieldConfig": {
-                  "unit": "მლნ ₾"
+                  "unit": {
+                    "ka": "მლნ ₾",
+                    "en": "GEL mn"
+                  }
                 },
-                "label": "მთლიანი დამატებული ღირებულება — რეგიონების მიხედვით",
+                "label": {
+                  "ka": "მთლიანი დამატებული ღირებულება — რეგიონების მიხედვით",
+                  "en": "Gross Value Added — by region"
+                },
                 "type": "chart",
                 "view": {
-                  "label": "დიაგრამა",
+                  "label": {
+                    "ka": "დიაგრამა",
+                    "en": "Chart"
+                  },
                   "role": "chart",
                   "styles": {
                     "aspectRatio": {
@@ -3303,12 +3906,18 @@
                 }
               },
               {
-                "colLabel": "რეგიონი",
+                "colLabel": {
+                  "ka": "რეგიონი",
+                  "en": "Region"
+                },
                 "color": "#0080BE",
                 "columns": [
                   {
                     "key": "value",
-                    "label": "მლნ ₾"
+                    "label": {
+                      "ka": "მლნ ₾",
+                      "en": "GEL mn"
+                    }
                   },
                   {
                     "bar": {
@@ -3316,7 +3925,10 @@
                     },
                     "format": "pct",
                     "key": "pct",
-                    "label": "წილი"
+                    "label": {
+                      "ka": "წილი",
+                      "en": "Share"
+                    }
                   }
                 ],
                 "footer": {
@@ -3324,7 +3936,10 @@
                 },
                 "type": "table",
                 "view": {
-                  "label": "ცხრილი",
+                  "label": {
+                    "ka": "ცხრილი",
+                    "en": "Table"
+                  },
                   "role": "table",
                   "styles": {
                     "aspectRatio": {
@@ -3392,10 +4007,16 @@
               "type": "query"
             },
             "id": "regions-bar",
-            "title": "მთლიანი შიდა პროდუქტი — რეგიონული შედარება",
+            "title": {
+              "ka": "მთლიანი შიდა პროდუქტი — რეგიონული შედარება",
+              "en": "Gross Domestic Product — regional comparison"
+            },
             "type": "section",
             "view": {
-              "subtitle": "{time} · მლნ ₾",
+              "subtitle": {
+                "ka": "{time} · მლნ ₾",
+                "en": "{time} · GEL mn"
+              },
               "visibleWhen": {
                 "op": "perspective-is",
                 "perspective": "year"
@@ -3407,12 +4028,18 @@
               {
                 "children": [
                   {
-                    "colLabel": "რეგიონი",
+                    "colLabel": {
+                      "ka": "რეგიონი",
+                      "en": "Region"
+                    },
                     "color": "#0080BE",
                     "columns": [
                       {
                         "key": "value",
-                        "label": "მლნ ₾"
+                        "label": {
+                          "ka": "მლნ ₾",
+                          "en": "GEL mn"
+                        }
                       },
                       {
                         "bar": {
@@ -3420,7 +4047,10 @@
                         },
                         "format": "pct",
                         "key": "pct",
-                        "label": "წილი"
+                        "label": {
+                          "ka": "წილი",
+                          "en": "Share"
+                        }
                       }
                     ],
                     "footer": {
@@ -3428,7 +4058,10 @@
                     },
                     "type": "table",
                     "view": {
-                      "label": "ცხრილი",
+                      "label": {
+                        "ka": "ცხრილი",
+                        "en": "Table"
+                      },
                       "role": "table"
                     }
                   }
@@ -3504,13 +4137,19 @@
                 "geoJsonUrl": "/data/georgia-regions.geojson",
                 "id": "geo-map-range",
                 "isoField": "shapeISO",
-                "label": "{_regionTitle}",
+                "label": {
+                  "ka": "{_regionTitle}",
+                  "en": "{_regionTitle}"
+                },
                 "labelOverrides": {
                   "GE-AB": "ოკუპირებული ტერიტორია",
                   "GE-OS": "ოკუპირებული ტერიტორია"
                 },
                 "paramKey": "region",
-                "title": "მთლიანი შიდა პროდუქტი — რეგიონების მიხედვით",
+                "title": {
+                  "ka": "მთლიანი შიდა პროდუქტი — რეგიონების მიხედვით",
+                  "en": "Gross Domestic Product — by region"
+                },
                 "type": "geograph",
                 "view": {
                   "styles": {
@@ -3524,22 +4163,37 @@
                     "chartType": "bar",
                     "dataLabels": false,
                     "fieldConfig": {
-                      "unit": "მლნ ₾"
+                      "unit": {
+                        "ka": "მლნ ₾",
+                        "en": "GEL mn"
+                      }
                     },
-                    "label": "მთლიანი შიდა პროდუქტის დინამიკა, {fromYear}–{toYear}",
+                    "label": {
+                      "ka": "მთლიანი შიდა პროდუქტის დინამიკა, {fromYear}–{toYear}",
+                      "en": "Gross Domestic Product dynamics, {fromYear}–{toYear}"
+                    },
                     "type": "chart",
                     "view": {
-                      "label": "დიაგრამა",
+                      "label": {
+                        "ka": "დიაგრამა",
+                        "en": "Chart"
+                      },
                       "role": "chart"
                     }
                   },
                   {
-                    "colLabel": "წელი",
+                    "colLabel": {
+                      "ka": "წელი",
+                      "en": "Year"
+                    },
                     "color": "#0080BE",
                     "columns": [
                       {
                         "key": "value",
-                        "label": "მლნ ₾"
+                        "label": {
+                          "ka": "მლნ ₾",
+                          "en": "GEL mn"
+                        }
                       }
                     ],
                     "footer": {
@@ -3547,7 +4201,10 @@
                     },
                     "type": "table",
                     "view": {
-                      "label": "ცხრილი",
+                      "label": {
+                        "ka": "ცხრილი",
+                        "en": "Table"
+                      },
                       "role": "table"
                     }
                   }
@@ -3590,13 +4247,19 @@
                   "type": "query"
                 },
                 "id": "sectors-range",
-                "title": "მთლიანი შიდა პროდუქტის წლიური დინამიკა",
+                "title": {
+                  "ka": "მთლიანი შიდა პროდუქტის წლიური დინამიკა",
+                  "en": "Annual dynamics of Gross Domestic Product"
+                },
                 "type": "section",
                 "view": {
                   "styles": {
                     "height": "16:9"
                   },
-                  "subtitle": "{fromYear}–{toYear} · მლნ ₾"
+                  "subtitle": {
+                    "ka": "{fromYear}–{toYear} · მლნ ₾",
+                    "en": "{fromYear}–{toYear} · GEL mn"
+                  }
                 }
               }
             ],
@@ -3618,26 +4281,44 @@
               {
                 "chartType": "area",
                 "fieldConfig": {
-                  "unit": "მლნ ₾"
+                  "unit": {
+                    "ka": "მლნ ₾",
+                    "en": "GEL mn"
+                  }
                 },
-                "label": "სექტორული მთლიანი დამატებული ღირებულება — ისტორიული ტრენდი",
+                "label": {
+                  "ka": "სექტორული მთლიანი დამატებული ღირებულება — ისტორიული ტრენდი",
+                  "en": "Sectoral Gross Value Added — historical trend"
+                },
                 "stacked": true,
                 "type": "chart",
                 "view": {
-                  "label": "დიაგრამა",
+                  "label": {
+                    "ka": "დიაგრამა",
+                    "en": "Chart"
+                  },
                   "role": "chart"
                 }
               },
               {
-                "colLabel": "წელი",
+                "colLabel": {
+                  "ka": "წელი",
+                  "en": "Year"
+                },
                 "color": "#7B6CF6",
                 "footer": {
                   "value": "avg"
                 },
                 "type": "table",
-                "valueLabel": "მლნ ₾",
+                "valueLabel": {
+                  "ka": "მლნ ₾",
+                  "en": "GEL mn"
+                },
                 "view": {
-                  "label": "ცხრილი",
+                  "label": {
+                    "ka": "ცხრილი",
+                    "en": "Table"
+                  },
                   "role": "table"
                 }
               }
@@ -3694,13 +4375,19 @@
               "type": "query"
             },
             "id": "sector-history",
-            "title": "სექტორული სტრუქტურა — ისტორიული დინამიკა",
+            "title": {
+              "ka": "სექტორული სტრუქტურა — ისტორიული დინამიკა",
+              "en": "Sectoral structure — historical dynamics"
+            },
             "type": "section",
             "view": {
               "styles": {
                 "height": "16:9"
               },
-              "subtitle": "{fromYear}–{toYear} · მლნ ₾",
+              "subtitle": {
+                "ka": "{fromYear}–{toYear} · მლნ ₾",
+                "en": "{fromYear}–{toYear} · GEL mn"
+              },
               "visibleWhen": {
                 "op": "perspective-is",
                 "perspective": "range"
@@ -3712,12 +4399,18 @@
               {
                 "href": "https://www.geostat.ge/ka/modules/categories/23/mtliani-shida-produkti-mshp",
                 "icon": "info",
-                "label": "დამატებითი ინფორმაცია"
+                "label": {
+                  "ka": "დამატებითი ინფორმაცია",
+                  "en": "Additional information"
+                }
               },
               {
                 "href": "https://www.geostat.ge",
                 "icon": "ext",
-                "label": "საქსტატი — geostat.ge"
+                "label": {
+                  "ka": "საქსტატი — geostat.ge",
+                  "en": "Geostat — geostat.ge"
+                }
               }
             ],
             "type": "links"
@@ -3732,7 +4425,10 @@
                     "from": "options",
                     "pick": "first"
                   },
-                  "label": "შუალედი:",
+                  "label": {
+                    "ka": "შუალედი:",
+                    "en": "Interval:"
+                  },
                   "options": {
                     "items": {
                       "$d": "time"
@@ -3748,7 +4444,10 @@
                     "type": "inline",
                     "valueField": "code"
                   },
-                  "suffix": "-დან",
+                  "suffix": {
+                    "ka": "-დან",
+                    "en": "from"
+                  },
                   "type": "select",
                   "visibleWhen": {
                     "op": "perspective-is",
@@ -3765,8 +4464,14 @@
                 },
                 "sector": {
                   "default": "_T",
-                  "emptyLabel": "ყველა",
-                  "label": "სექტორი:",
+                  "emptyLabel": {
+                    "ka": "ყველა",
+                    "en": "All"
+                  },
+                  "label": {
+                    "ka": "სექტორი:",
+                    "en": "Sector:"
+                  },
                   "options": {
                     "items": {
                       "$d": "sector"
@@ -3858,7 +4563,10 @@
                     "type": "inline",
                     "valueField": "code"
                   },
-                  "suffix": "-მდე",
+                  "suffix": {
+                    "ka": "-მდე",
+                    "en": "to"
+                  },
                   "type": "select",
                   "visibleWhen": {
                     "op": "perspective-is",
@@ -3968,7 +4676,10 @@
             "op": "breadcrumbs",
             "prefix": [
               {
-                "label": "რეგიონული ანგარიშები"
+                "label": {
+                  "ka": "რეგიონული ანგარიშები",
+                  "en": "Regional Accounts"
+                }
               }
             ],
             "source": {
@@ -4034,19 +4745,28 @@
                 "fill": false,
                 "href": "https://www.facebook.com/Geostat.ge",
                 "icon": "M18 2h-3a5 5 0 00-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 011-1h3z",
-                "label": "Facebook"
+                "label": {
+                  "ka": "Facebook",
+                  "en": "Facebook"
+                }
               },
               {
                 "fill": true,
                 "href": "https://x.com/GeoStat_Ge",
                 "icon": "M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z",
-                "label": "X (Twitter)"
+                "label": {
+                  "ka": "X (Twitter)",
+                  "en": "X (Twitter)"
+                }
               },
               {
                 "fill": false,
                 "href": "https://www.linkedin.com/company/geostat",
                 "icon": "M16 8a6 6 0 016 6v7h-4v-7a2 2 0 00-2-2 2 2 0 00-2 2v7h-4v-7a6 6 0 016-6zM2 9h4v12H2zM4 6a2 2 0 100-4 2 2 0 000 4z",
-                "label": "LinkedIn"
+                "label": {
+                  "ka": "LinkedIn",
+                  "en": "LinkedIn"
+                }
               }
             ]
           }
@@ -4130,26 +4850,44 @@
           "items": [
             {
               "anchor": "production",
-              "label": "წარმოების მიდგომა"
+              "label": {
+                "ka": "წარმოების მიდგომა",
+                "en": "Production approach"
+              }
             },
             {
               "anchor": "expenditure",
-              "label": "დანახარჯების მიდგომა"
+              "label": {
+                "ka": "დანახარჯების მიდგომა",
+                "en": "Expenditure approach"
+              }
             },
             {
               "anchor": "income",
-              "label": "შემოსავლების ფორმირება"
+              "label": {
+                "ka": "შემოსავლების ფორმირება",
+                "en": "Generation of income"
+              }
             },
             {
               "anchor": "structural",
-              "label": "სტრუქტურული ინდიკატორები"
+              "label": {
+                "ka": "სტრუქტურული ინდიკატორები",
+                "en": "Structural indicators"
+              }
             },
             {
               "anchor": "growth-dynamics",
-              "label": "ზრდის ტემპები"
+              "label": {
+                "ka": "ზრდის ტემპები",
+                "en": "Growth rates"
+              }
             }
           ],
-          "label": "მთლიანი შიდა პროდუქტი",
+          "label": {
+            "ka": "მთლიანი შიდა პროდუქტი",
+            "en": "Gross Domestic Product"
+          },
           "path": "/gdp"
         },
         {
@@ -4159,22 +4897,37 @@
           "items": [
             {
               "anchor": "sna-hero",
-              "label": "SNA სრული სტრუქტურა"
+              "label": {
+                "ka": "SNA სრული სტრუქტურა",
+                "en": "SNA full structure"
+              }
             },
             {
               "anchor": "production-account",
-              "label": "წარმოების ანგარიში"
+              "label": {
+                "ka": "წარმოების ანგარიში",
+                "en": "Production account"
+              }
             },
             {
               "anchor": "income-formation",
-              "label": "შემოსავლის ფორმირება"
+              "label": {
+                "ka": "შემოსავლის ფორმირება",
+                "en": "Generation of income"
+              }
             },
             {
               "anchor": "capital-account",
-              "label": "კაპიტალის ანგარიში"
+              "label": {
+                "ka": "კაპიტალის ანგარიში",
+                "en": "Capital account"
+              }
             }
           ],
-          "label": "ეროვნული ანგარიშები",
+          "label": {
+            "ka": "ეროვნული ანგარიშები",
+            "en": "National Accounts"
+          },
           "path": "/accounts"
         },
         {
@@ -4184,18 +4937,30 @@
           "items": [
             {
               "anchor": "sectors",
-              "label": "სექტორული სტრუქტურა"
+              "label": {
+                "ka": "სექტორული სტრუქტურა",
+                "en": "Sectoral structure"
+              }
             },
             {
               "anchor": "comparison",
-              "label": "რეგიონთაშორისი შედარება"
+              "label": {
+                "ka": "რეგიონთაშორისი შედარება",
+                "en": "Inter-regional comparison"
+              }
             },
             {
               "anchor": "growth-ranking",
-              "label": "ზრდის ტემპები"
+              "label": {
+                "ka": "ზრდის ტემპები",
+                "en": "Growth rates"
+              }
             }
           ],
-          "label": "რეგიონული ანალიზი",
+          "label": {
+            "ka": "რეგიონული ანალიზი",
+            "en": "Regional Analysis"
+          },
           "path": "/regional"
         }
       ]

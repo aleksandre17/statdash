@@ -35,7 +35,7 @@ export function AppHeaderShell({ surface = 'opaque' }: { surface?: HeaderSurface
               to={`/${locale}${item.path}`}
               className={HEADER.navLink}
             >
-              {item.label}
+              {t(item.label)}
             </Link>
           ))}
         </nav>

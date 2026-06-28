@@ -1,5 +1,6 @@
 import { useState }                             from 'react'
 import type { NodeBase, NodeRenderer, ChildrenArg } from '../../engine'
+import { useResolveLocale }                     from '../../context/SiteContext'
 
 // Structural type — packages/react must not import from plugins/
 type TabPageLike = NodeBase & { defaultTab?: number }
@@ -16,6 +17,8 @@ function DefaultTabPageControl({
   children: ChildrenArg
 }) {
   const [activeTab, setActiveTab] = useState(def.defaultTab ?? 0)
+  // view.label is an i18n carrier (LocaleString) — resolve to the active locale.
+  const resolveLocale = useResolveLocale()
 
   if (children.defs.length === 0) return null
   if (children.defs.length === 1) return <>{children.rendered[0]}</>
@@ -32,7 +35,7 @@ function DefaultTabPageControl({
             onClick={() => setActiveTab(i)}
             type="button"
           >
-            {(child as NodeBase).view?.label ?? `Tab ${i + 1}`}
+            {resolveLocale((child as NodeBase).view?.label ?? `Tab ${i + 1}`)}
           </button>
         ))}
       </div>

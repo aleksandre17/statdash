@@ -57,8 +57,12 @@ function GeographControl({ def, ctx, vs, table }: Pick<ShellProps<GeographNode>,
     }
   }
 
-  const rows  = ctx.rows ?? []
-  const label = useNodeTemplate(ctx)(def.label)
+  const rows    = ctx.rows ?? []
+  const resolve = useNodeTemplate(ctx)
+  // title + label are both i18n carriers — resolve at this boundary (PanelLayout
+  // renders them as React children; a raw { ka, en } bag would crash).
+  const title = resolve(def.title)
+  const label = resolve(def.label)
 
   const views = table != null
     ? [
@@ -71,7 +75,7 @@ function GeographControl({ def, ctx, vs, table }: Pick<ShellProps<GeographNode>,
     <div {...vs.panel}>
       <PanelLayout
         id={def.anchor ?? def.id}
-        title={def.title}
+        title={title}
         label={label}
         color={def.color}
         defaultOpen
@@ -88,7 +92,7 @@ function GeographControl({ def, ctx, vs, table }: Pick<ShellProps<GeographNode>,
           isoField={def.isoField}
           geoCodeMap={def.geoCodeMap}
           labelOverrides={def.labelOverrides}
-          unit={def.unit}
+          unit={resolve(def.unit)}
           initialCenter={def.initialCenter}
           initialZoom={def.initialZoom}
         />

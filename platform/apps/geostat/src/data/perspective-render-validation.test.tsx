@@ -87,9 +87,13 @@ function renderPage(slug: string, locale: string, perspective?: string) {
 }
 
 // ── The perspective-axis yardstick (extracted from the provisioning configs) ──
-//  KPI labels are bare Georgian (locale-invariant); the perspective-bar labels are
-//  {ka,en} bags resolved by locale (the only locale-variant surface).
+//  KPI labels are bare Georgian (locale-invariant); the perspective-bar labels AND
+//  the range filter-select label are {ka,en} bags resolved by the active locale (the
+//  locale-variant surfaces — the engine localizes every display LocaleString at its
+//  boundary, so the en render reads the en values, the ka render the ka values).
 const TAB_LABELS = { ka: { year: 'წლიური', range: 'დინამიკა' }, en: { year: 'Annual', range: 'Dynamics' } } as const
+//  The range from-select's aria-label (a bilingual filter label) per active locale.
+const RANGE_LABEL = { ka: 'შუალედი:', en: 'Interval:' } as const
 
 const SPEC = {
   gdp: {
@@ -152,12 +156,12 @@ for (const slug of ['gdp', 'accounts', 'regional'] as const) {
         renderPage(slug, locale)
         const yCombos = comboLabels()
         expect(yCombos, 'year-select present in year').toContain('Year')
-        expect(yCombos, 'from-range hidden in year').not.toContain('შუალედი:')
+        expect(yCombos, 'from-range hidden in year').not.toContain(RANGE_LABEL[locale])
         cleanup()
 
         renderPage(slug, locale, 'range')
         const rCombos = comboLabels()
-        expect(rCombos, 'from-range present in range').toContain('შუალედი:')
+        expect(rCombos, 'from-range present in range').toContain(RANGE_LABEL[locale])
         expect(rCombos, 'year-select hidden in range').not.toContain('Year')
       })
     })
