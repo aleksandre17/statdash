@@ -38,6 +38,14 @@
   /* Trend axis — geostat's teal / coral direction pair. */
   --color-trend-positive: #2A9D8F;
   --color-trend-negative: #E76F51;
+
+  /* Typography — geostat's Georgian brand families. The shared plugin layers
+     reference --font-family-{display,base} roles (brand-neutral by default);
+     this rebinds them to geostat's exact stacks, so the rendered font is
+     byte-identical to the former hardcoded literals. The tenant also owns font
+     LOADING (the Google-Fonts <link>; CSP allows fonts.gstatic.com). */
+  --font-family-display: 'Noto Serif Georgian', 'Noto Sans Georgian', sans-serif;
+  --font-family-base:    'Noto Sans Georgian', system-ui, sans-serif;
 }
 
 /* ========================================
@@ -58,58 +66,6 @@
     color: #1A2332;
     line-height: 1.3;
   }
-}
-
-/* ========================================
-   Component Styles
-   ======================================== */
-@layer components {
-  .page-container {
-    max-width: 1280px;
-    margin-left: auto;
-    margin-right: auto;
-    padding-left: clamp(0.8rem, 2.5vw, 2rem);
-    padding-right: clamp(0.8rem, 2.5vw, 2rem);
-  }
-
-  .section-card {
-    @apply bg-white rounded-xl border border-border p-6 cursor-pointer;
-    transition: all 0.3s ease-out;
-  }
-  .section-card:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 8px 24px rgba(0, 128, 190, 0.12);
-  }
-
-  .chart-card {
-    @apply bg-white rounded-xl border border-border p-5;
-  }
-
-  .filter-btn {
-    @apply px-4 py-2.5 rounded-lg text-sm transition-all duration-200 border border-border text-text-body;
-  }
-  .filter-btn:hover {
-    @apply border-primary/30 bg-primary-light/50;
-  }
-  .filter-btn-active {
-    @apply bg-primary text-white border-primary shadow-sm;
-  }
-
-  .stat-number {
-    @apply text-3xl font-heading text-text-dark tracking-tight;
-  }
-}
-
-/* ========================================
-   Animations
-   ======================================== */
-@keyframes fadeInUp {
-  from { opacity: 0; transform: translateY(16px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-
-.animate-fade-in-up {
-  animation: fadeInUp 0.5s ease-out forwards;
 }
 
 /* ========================================

@@ -19,7 +19,13 @@
      viewport — a strip in a narrow column stacks earlier than the window implies). */
   container-type: inline-size;
   container-name: kpi;
-  padding: var(--spacing-lg) var(--spacing-lg) var(--spacing-xs);
+  /* Vertical rhythm only — NO horizontal padding. The KPI strip is a direct
+     child of .page-content, which already supplies the page side-gutter
+     (clamp(1rem,2.5vw,2rem)). Re-adding horizontal padding here double-inset
+     the cards, so the strip floated inward and its card edges no longer lined
+     up with the section/chart cards below. Zero horizontal = flush with the
+     rest of the page content at every width. */
+  padding: var(--spacing-lg) 0 var(--spacing-xs);
 }
 
 .kpi-strip__grid {
@@ -153,7 +159,7 @@
   flex-wrap: wrap;
 }
 .kpi-value {
-  font-family: 'Noto Serif Georgian', 'Noto Sans Georgian', sans-serif;
+  font-family: var(--font-family-display);
   font-size: 1.625rem;
   font-weight: 700;
   color: var(--color-text-primary);

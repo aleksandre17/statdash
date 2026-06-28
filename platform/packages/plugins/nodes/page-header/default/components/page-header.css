@@ -42,7 +42,7 @@
 .page-header__bc-sep { color: var(--color-breadcrumb-separator); font-size: 0.625rem; }
 
 .page-header__title {
-  font-family: 'Noto Serif Georgian', 'Noto Sans Georgian', sans-serif;
+  font-family: var(--font-family-display);
   /* Fluid scale (18→24px) instead of a fixed 17px — gives the inner-page H1
      continuous prominence across the ladder, matching the type hierarchy. */
   font-size: var(--font-size-fluid-lg);
@@ -98,7 +98,7 @@
   background: var(--color-surface);
   color: var(--color-text-muted);
   transition: all 0.15s;
-  font-family: 'Noto Sans Georgian', system-ui, sans-serif;
+  font-family: var(--font-family-base);
 }
 .page-header__btn:hover {
   background: var(--color-surface-sunken);

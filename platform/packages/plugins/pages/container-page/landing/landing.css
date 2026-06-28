@@ -33,7 +33,7 @@
 /* ── Landing root — page shell ────────────────────────────────────── */
 
 .landing-root {
-  font-family: 'Noto Sans Georgian', system-ui, sans-serif;
+  font-family: var(--font-family-base);
   background: var(--color-surface-sunken);
   height: 100%;
   display: flex;

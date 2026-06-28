@@ -64,7 +64,7 @@
   background: var(--color-surface);
   cursor: pointer;
   outline: none;
-  font-family: 'Noto Sans Georgian', system-ui, sans-serif;
+  font-family: var(--font-family-base);
   transition: border-color 0.15s, box-shadow 0.15s;
   /* Cap to its own column on mobile, the narrow container token on desktop, so a
      long option label can't force the sticky bar to scroll (its scrollbar is
@@ -108,7 +108,7 @@
   padding: 0.25rem;
   white-space: nowrap;
   transition: color 0.15s;
-  font-family: 'Noto Sans Georgian', system-ui, sans-serif;
+  font-family: var(--font-family-base);
 }
 .filter-clear:hover { color: var(--color-trend-negative); }
 

@@ -31,7 +31,7 @@
 }
 
 .hero__title {
-  font-family: 'Noto Serif Georgian', 'Noto Sans Georgian', sans-serif;
+  font-family: var(--font-family-display);
   font-size: clamp(2rem, 4vw, 3.125rem);
   color: var(--color-heading-display);
   line-height: 1.15;

@@ -65,7 +65,7 @@
 
 .section__title-wrap { flex: 1; min-width: 0; }
 .section__title {
-  font-family: 'Noto Serif Georgian', 'Noto Sans Georgian', sans-serif;
+  font-family: var(--font-family-display);
   font-size: 0.9375rem;
   font-weight: 700;
   color: var(--color-text-primary);
