@@ -24,29 +24,42 @@
   .inner-page[data-layout="sidebar"] { flex-direction: column; }
 }
 
-/* full-width: no sidebar, content spans full available width */
+/* full-width: no sidebar, more generous gutters — still bounded by the shared
+   --page-measure so ultrawide never over-stretches (was max-width:none). */
 .inner-page[data-layout="full-width"] > .page-content {
   padding: 1rem 2rem 2.5rem;
-  max-width: none;
 }
 
-/* centered: no sidebar, content max-width centered */
+/* centered: no sidebar; the shared measure + margin-inline:auto already centres
+   the column (no literal 800px cap — that stranded data dashboards as a ribbon
+   on ultrawide). align-items:center keeps the cross-axis centred for any
+   intrinsically-sized siblings. */
 .inner-page[data-layout="centered"] {
   align-items: center;
 }
-.inner-page[data-layout="centered"] > .page-content {
-  width: 100%;
-  max-width: 800px;
-}
 
-/* ── Content area ─────────────────────────────────────────────── */
+/* ── Content area ─────────────────────────────────────────────────────────
+   Single source of truth for the page's measure: --page-measure (defaults to
+   the existing --size-container-wide token, == the AppHeader's own 1280px cap,
+   so header and body finally agree). A tenant/layout variant rebinds
+   --page-measure to re-measure the page — interface unchanged (OCP). */
 .page-content {
   flex: 1 1 0;
   min-width: 0;
+  width: 100%;
+  max-width: var(--page-measure, var(--size-container-wide));
+  margin-inline: auto;
   padding: 1rem 1.5rem 2.5rem;
   display: flex;
   flex-direction: column;
   gap: 1rem;
+}
+
+/* sidebar = full-bleed app shell (rail + content): content hugs the rail rather
+   than floating centre-stage, but stays bounded by --page-measure so ultrawide
+   never over-stretches. (Grafana-class app-shell convention.) */
+.inner-page[data-layout="sidebar"] > .page-content {
+  margin-inline: 0;
 }
 
 /* ── Links footer ─────────────────────────────────────────────── */

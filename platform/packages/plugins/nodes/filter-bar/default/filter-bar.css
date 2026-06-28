@@ -66,6 +66,12 @@
   outline: none;
   font-family: 'Noto Sans Georgian', system-ui, sans-serif;
   transition: border-color 0.15s, box-shadow 0.15s;
+  /* Cap to its own column on mobile, the narrow container token on desktop, so a
+     long option label can't force the sticky bar to scroll (its scrollbar is
+     hidden → no affordance). min-width:0 lets it shrink; the value ellipsises. */
+  min-width: 0;
+  max-width: min(100%, var(--size-container-narrow));
+  text-overflow: ellipsis;
 }
 .filter-select:focus {
   border-color: var(--color-accent);

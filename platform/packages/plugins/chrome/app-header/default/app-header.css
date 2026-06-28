@@ -20,25 +20,33 @@
   height: var(--_hdr-h, var(--app-header-h, 5rem));
 }
 
-/* Brand */
+/* Brand — allowed to SHRINK before the (atomic) actions are pushed off-screen.
+   min-width:0 lets the flex item drop below its logo's intrinsic width; the logo
+   then scales within the shrunk box (max-width:100% + object-fit keeps aspect).
+   This is the canonical flex-overflow guard — without it `space-between` cannot
+   resolve and the actions (locale switcher) overflow the right edge. */
 .app-header__brand {
   display: flex;
   align-items: center;
   text-decoration: none;
-  flex-shrink: 0;
+  flex: 0 1 auto;
+  min-width: 0;
 }
 .app-header__logo {
   height: clamp(2.5rem, 4vw, 3rem);
   width: auto;
+  max-width: 100%;
+  object-fit: contain;
   transition: transform 0.2s;
 }
 .app-header__brand:hover .app-header__logo { transform: scale(1.05); }
 
-/* Nav */
+/* Nav — the flexible middle; may compress (min-width:0) before actions give. */
 .app-header__nav {
   display: flex;
   align-items: center;
   gap: 0.25rem;
+  min-width: 0;
 }
 .app-header__nav-link {
   padding: 0.375rem 0.75rem;

@@ -33,6 +33,12 @@ interface ChartDataTableProps {
  *   - `<th scope="col">` for series headers
  *   - `<th scope="row">` for category labels
  *   - Pre-formatted values from ChartDataPoint.formatted
+ *
+ * The visually-hidden boundary is a `.sr-only` DIV WRAPPER, never the `<table>`
+ * itself: a table's `width:1px` is only a minimum, so a bare `.sr-only` table
+ * keeps its full min-content width and leaks documentElement.scrollWidth
+ * (WCAG 1.4.10 Reflow — phantom horizontal scroll). The wrapper's
+ * `overflow:hidden` 1px box clips the table; AT still reads the full DOM.
  */
 export function ChartDataTable({ output, label }: ChartDataTableProps): React.ReactElement | null {
   const { categories, series } = output
@@ -41,26 +47,28 @@ export function ChartDataTable({ output, label }: ChartDataTableProps): React.Re
   const tableLabel = label ? `${label} — data table` : 'Chart data'
 
   return (
-    <table className="sr-only" aria-label={tableLabel}>
-      <thead>
-        <tr>
-          {/* Corner cell — intentionally blank; aria-hidden so AT skips it */}
-          <td aria-hidden="true" />
-          {series.map((s, i) => (
-            <th key={i} scope="col">{s.name || `Series ${i + 1}`}</th>
-          ))}
-        </tr>
-      </thead>
-      <tbody>
-        {categories.map((cat, rowIdx) => (
-          <tr key={rowIdx}>
-            <th scope="row">{cat}</th>
-            {series.map((s, colIdx) => (
-              <td key={colIdx}>{s.data[rowIdx]?.formatted ?? ''}</td>
+    <div className="sr-only">
+      <table aria-label={tableLabel}>
+        <thead>
+          <tr>
+            {/* Corner cell — intentionally blank; aria-hidden so AT skips it */}
+            <td aria-hidden="true" />
+            {series.map((s, i) => (
+              <th key={i} scope="col">{s.name || `Series ${i + 1}`}</th>
             ))}
           </tr>
-        ))}
-      </tbody>
-    </table>
+        </thead>
+        <tbody>
+          {categories.map((cat, rowIdx) => (
+            <tr key={rowIdx}>
+              <th scope="row">{cat}</th>
+              {series.map((s, colIdx) => (
+                <td key={colIdx}>{s.data[rowIdx]?.formatted ?? ''}</td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
   )
 }
