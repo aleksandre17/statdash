@@ -18,7 +18,7 @@
 //      of truth for the config schema, so those are opaque JSON here. The runner
 //      refines them to its precise types via `SiteManifest = SiteManifestContract & {…}`.
 
-import type { JsonRecord } from './json'
+import type { JsonRecord, JsonValue } from './json'
 
 /**
  * Named datasource descriptor. Wire mirror of engine DatasourceInstanceConfig.
@@ -49,11 +49,52 @@ export interface ManifestDatasource {
  * below. `unit`/`label` are LocaleString maps (Law 4 bilingual). `dataSource` is
  * the storeKey the metric lives in (the Cube.dev `dataSource`-on-measure pattern).
  */
+/**
+ * Wire shape of ONE component of a calculated metric (DC-01) — the zero-dep
+ * mirror of engine `MetricInput`. `measure` is a raw SDMX code OR a metric-id;
+ * `at` pins generic dims (Law 1 — any dim, never time-special) for THIS
+ * component's point-read, merged over ctx.dims. `at` values are JSON scalars
+ * (the `DimVal` universe: string | number | boolean | null) — pure coordinate
+ * data, never a `$ctx`/`$ne` predicate (a point-read addresses a single cell).
+ */
+export interface ManifestMetricInput {
+  measure: string
+  at?:     Record<string, string | number | boolean | null>
+}
+
+/**
+ * Wire shape of a calculated metric's value-algebra (DC-01) — the zero-dep
+ * mirror of engine `MetricCalc`. `inputs` are the named component reads; `expr`
+ * is the measure-algebra expression OVER them (ratio / accounting-identity / …),
+ * carried OPAQUELY here as a JSON blob: the contract cannot import
+ * `@statdash/expr`'s `Expr` across the dependency arrow (contracts ← expr), so
+ * the runner refines this into a real `Expr` at the boot seam — exactly as it
+ * refines the renderer-owned page blobs into their precise types. JSON-only, so
+ * it survives the manifest round-trip (Law 2 — a tree, never a function).
+ */
+export interface ManifestMetricCalc {
+  inputs: Record<string, ManifestMetricInput>
+  expr:   JsonValue
+}
+
 export interface ManifestMetric {
   /** Registry key — the metric-id a DataSpec `measure` references. */
   id:           string
-  /** Underlying SDMX measure code(s) the store is actually queried with. */
-  code:         string | string[]
+  /**
+   * Underlying SDMX measure code(s) the store is actually queried with.
+   * Present for a BASE metric; ABSENT for a CALCULATED metric (whose value comes
+   * from `calc` — its underlying codes are its components'). Exactly one of
+   * `code` / `calc` is present (mirrors engine MetricDef).
+   */
+  code?:        string | string[]
+  /**
+   * Calculated-metric value-algebra (DC-01) — a declarative expression over
+   * named component measures. Present ⟺ a DERIVED metric (then `code` is absent);
+   * the runner refines this opaque blob into engine `MetricCalc` at the boot seam
+   * exactly as it refines `code` into a base `MetricDef`. Pure data — an
+   * expression TREE, never a function (Law 2) — so it survives the JSON round-trip.
+   */
+  calc?:        ManifestMetricCalc
   /** Bilingual display label (LocaleString {ka,en}). */
   label:        Record<string, string>
   /** Bilingual unit of measure (LocaleString). Flows to provenance badges + panels. */

@@ -47,8 +47,16 @@ interface DataSourceEntry {
 interface PageEntry { slug: string; config: PageConfig; status?: string }
 interface PageConfig { id?: string; storeKey?: string; children?: unknown[] }
 interface SiteConfigEntry { key: string; value: unknown }
-/** Semantic-layer metric (the siteConfig 'metrics' blob — ManifestMetric wire shape). */
-interface MetricEntry { id: string; code: string | string[]; dataSource?: string }
+/** One calculated-metric component (DC-01) — a measure read at a generic coordinate. */
+interface MetricInputEntry { measure: string; at?: Record<string, unknown> }
+/** Calculated-metric value-algebra (DC-01) — named components + the expr over them. */
+interface MetricCalcEntry { inputs: Record<string, MetricInputEntry>; expr: unknown }
+/**
+ * Semantic-layer metric (the siteConfig 'metrics' blob — ManifestMetric wire shape).
+ * BASE metric ⇒ `code`; CALCULATED metric (DC-01) ⇒ `calc` (no own `code`). Exactly
+ * one is present, mirroring engine MetricDef.
+ */
+interface MetricEntry { id: string; code?: string | string[]; calc?: MetricCalcEntry; dataSource?: string }
 interface Artifact {
   pages: PageEntry[]
   dataSources?: DataSourceEntry[]
@@ -70,11 +78,20 @@ function loadMetricCatalog(artifact: Artifact): Map<string, MetricEntry> {
  * REAL cube codes after the page migrated raw codes → metric-ids. A registered
  * metric-id expands to its `code`(s); a raw code (not a metric-id) passes through
  * unchanged (Postel / FF-RAW-CODE-IDENTICAL). Non-measure dims never pass here.
+ *
+ * A CALCULATED metric (DC-01) carries no own `code` — it resolves to its
+ * components' underlying codes (recursion handles a component that is itself a
+ * metric-id), exactly as the engine's resolveMeasureRef expands a calc metric for
+ * warming / store-routing. So a page that names a calc metric, and the calc
+ * metric's own definition, both flow to the SAME DSD existence check.
  */
 function resolveMeasureCodes(value: string, catalog: Map<string, MetricEntry>): string[] {
   const metric = catalog.get(value)
   if (!metric) return [value]
-  return Array.isArray(metric.code) ? metric.code : [metric.code]
+  if (metric.calc) {
+    return Object.values(metric.calc.inputs).flatMap((i) => resolveMeasureCodes(i.measure, catalog))
+  }
+  return Array.isArray(metric.code) ? metric.code : metric.code !== undefined ? [metric.code] : []
 }
 
 // ── DSD derived from a canonical workbook ─────────────────────────────────────
@@ -323,13 +340,15 @@ describe('config↔cube contract (every page DataSpec references data that exist
     expect(violations, `under-pinned single-value KPIs:\n${violations.join('\n')}`).toEqual([])
   })
 
-  // CHECK 3 (metric.code ∈ DSD) — the semantic-layer contract: every metric in the
-  // delivered catalog (siteConfig 'metrics') resolves to a measure code that EXISTS
+  // CHECK 3 (metric codes ∈ DSD) — the semantic-layer contract: every metric in the
+  // delivered catalog (siteConfig 'metrics') resolves to measure code(s) that EXIST
   // in the CL_MEASURE of the dataset its `dataSource` names. A metric whose code is
   // not in its dataset's DSD is a dangling semantic definition — it would resolve a
   // referencing DataSpec to data that does not exist (the exact class CHECK 2 kills,
-  // one layer up). Generic over datasets (Law 1).
-  it('every catalog metric.code exists in its dataSource’s dataset DSD', () => {
+  // one layer up). For a CALCULATED metric (DC-01) this resolves to its component
+  // INPUT codes (resolveMeasureCodes expands the calc) — so a calc metric's algebra
+  // can never reference a measure absent from its DSD. Generic over datasets (Law 1).
+  it('every catalog metric resolves to measure code(s) that exist in its dataSource’s dataset DSD', () => {
     expect(metricCatalog.size, 'expected a non-empty semantic-layer catalog').toBeGreaterThan(0)
     const violations: string[] = []
     for (const metric of metricCatalog.values()) {
@@ -348,7 +367,14 @@ describe('config↔cube contract (every page DataSpec references data that exist
         violations.push(`metric '${metric.id}': dataset ${dsd.datasetCode} has no CL_MEASURE codelist`)
         continue
       }
-      const codes = Array.isArray(metric.code) ? metric.code : [metric.code]
+      // Base metric → its own code(s); calc metric → its components' underlying
+      // codes (resolveMeasureCodes expands the calc). A metric that resolves to NO
+      // codes carries neither `code` nor `calc` — a malformed, orphaned definition.
+      const codes = resolveMeasureCodes(metric.id, metricCatalog)
+      if (codes.length === 0) {
+        violations.push(`metric '${metric.id}': resolves to no measure code (neither 'code' nor 'calc')`)
+        continue
+      }
       for (const code of codes) {
         if (!members.has(code)) {
           violations.push(`metric '${metric.id}': code '${code}' absent from CL_MEASURE of ${dsd.datasetCode} (dataSource '${store}')`)

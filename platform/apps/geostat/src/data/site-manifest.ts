@@ -76,8 +76,15 @@ export function registerManifestMetrics(metrics: ManifestMetric[] | undefined): 
   const catalog: Record<string, MetricDef> = {}
   for (const m of metrics) {
     catalog[m.id] = {
-      code:        m.code,
       label:       m.label,
+      // BASE vs CALCULATED metric (DC-01): exactly one of code/calc is present on
+      // the wire. `code` ⇒ a direct measure; `calc` ⇒ the measure-algebra blob the
+      // runner refines into engine MetricCalc (its `expr` is carried opaquely on
+      // the wire as JsonValue — contracts cannot import @statdash/expr across the
+      // arrow — so the refinement to a real Expr happens HERE, the layer that owns
+      // the engine type, exactly like the renderer-owned page blobs are refined).
+      ...(m.code        !== undefined ? { code:        m.code }        : {}),
+      ...(m.calc        !== undefined ? { calc:        m.calc as unknown as MetricDef['calc'] } : {}),
       ...(m.unit        !== undefined ? { unit:        m.unit }        : {}),
       ...(m.methodology !== undefined ? { methodology: m.methodology } : {}),
       ...(m.dims        !== undefined ? { dims:        m.dims as MetricDef['dims'] } : {}),

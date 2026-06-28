@@ -300,27 +300,11 @@
                   "en": "%"
                 },
                 "value": {
-                  "denom": {
-                    "filter": {
-                      "account": "production-account",
-                      "side": "U"
-                    },
-                    "measure": "B1G",
-                    "time": {
-                      "$ctx": "toYear"
-                    }
+                  "metric": "accounts.laborShare",
+                  "time": {
+                    "$ctx": "toYear"
                   },
-                  "num": {
-                    "filter": {
-                      "account": "generation-of-income-account",
-                      "side": "U"
-                    },
-                    "measure": "D1",
-                    "time": {
-                      "$ctx": "toYear"
-                    }
-                  },
-                  "type": "share"
+                  "type": "metric"
                 }
               },
               {
@@ -5110,6 +5094,49 @@
             "en": "Million Georgian Lari"
           },
           "dataSource": "regional"
+        },
+        {
+          "id": "accounts.laborShare",
+          "label": {
+            "ka": "შრომის წილი დამატებულ ღირებულებაში",
+            "en": "Labour share in value added"
+          },
+          "unit": {
+            "ka": "%",
+            "en": "%"
+          },
+          "dataSource": "accounts",
+          "calc": {
+            "inputs": {
+              "num": {
+                "measure": "D1",
+                "at": {
+                  "account": "generation-of-income-account",
+                  "side": "U"
+                }
+              },
+              "denom": {
+                "measure": "B1G",
+                "at": {
+                  "account": "production-account",
+                  "side": "U"
+                }
+              }
+            },
+            "expr": {
+              "op": "mul",
+              "left": {
+                "op": "div",
+                "left": {
+                  "$derived": "num"
+                },
+                "right": {
+                  "$derived": "denom"
+                }
+              },
+              "right": 100
+            }
+          }
         }
       ]
     }
