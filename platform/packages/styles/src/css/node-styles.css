@@ -21,23 +21,33 @@
    ================================================================ */
 
 
-/* ── Height tokens ──────────────────────────────────────────────── */
-
-/* Ratio tokens are DEPRECATED aliases for the panel height band — the ONE honest
- * panel-sizing constraint (tokens.css --size-panel-height). They no longer apply
- * aspect-ratio: the panel fills its column width and takes the band height, so the
- * former aspect-ratio-vs-max-height contradiction (height ∝ width, then capped →
- * the declared ratio silently violated past a crossover width) cannot occur. Kept
- * as aliases so existing provisioning ("height":"16:9") keeps rendering while the
- * config migrates to a size token (Strangler-Fig — see DESIGN §panel-sizing). */
+/* ── Panel height — cqi-bounded band (canonical) ──────────────────
+ *  The legacy ratio tokens (16:9 / 4:3 / 1:1 / 21:9) are Strangler aliases
+ *  that now resolve to ONE honest height BAND (clamp floor..60cqi..cap),
+ *  measured against the panel's own container (.section establishes
+ *  `container-type: inline-size`). This retires aspect-ratio panel sizing —
+ *  two contradictory constraints (aspect derives height from width, then a
+ *  cap silently violates the declared ratio) — see DESIGN-panel-sizing-cqi.md.
+ *  Width always fills the column; height grows with the panel's OWN width up
+ *  to a cap and floors so a narrow/nested column stays legible. It is a
+ *  MIN-height (not height) so a stretch row equalizes siblings to the tallest
+ *  — equal-height is owned by the layout primitive, not a per-panel hack.
+ *  Float-floor fallback first for browsers without `cqi`. */
 [data-height="16:9"],
 [data-height="4:3"],
 [data-height="1:1"],
-[data-height="21:9"] { width: 100%; height: var(--size-panel-height); }
-[data-height="sm"]   { height: 280px; }
-[data-height="md"]   { height: 380px; }
-[data-height="lg"]   { height: 480px; }
-[data-height="xl"]   { height: 600px; }
+[data-height="21:9"] {
+  min-height: var(--size-panel-h-floor);
+  min-height: var(--size-panel-height);
+}
+
+/* Explicit named heights — the fixed-size capability. `flex: 0 0 auto` so the
+ * fixed height is honored even when the element is a flex child that would
+ * otherwise grow (the body is now flex:1 — see react/styles/panel-layout.css). */
+[data-height="sm"]   { height: 280px; flex: 0 0 auto; }
+[data-height="md"]   { height: 380px; flex: 0 0 auto; }
+[data-height="lg"]   { height: 480px; flex: 0 0 auto; }
+[data-height="xl"]   { height: 600px; flex: 0 0 auto; }
 [data-height]        { overflow: hidden; }
 
 /* Content inside a height-constrained ancestor fills the space */
@@ -52,36 +62,20 @@
 }
 
 
-/* ── Aspect ratio — responsive (data-aspect) ────────────────────── */
-/*
- * data-aspect="" presence flag + CSS vars --ar-<bp> per breakpoint
- * (--ar-default / 2xl / xl / lg / md / sm / xs). All responsive logic lives
- * here — shells and component CSS are transparent.
- *
- * Breakpoint scale (desktop-default, max-width cascade):
- *   default → 2xl(1536) → xl(1280) → lg(1024) → md(768) → sm(640) → xs(480)
- *
- * Each step's var() falls through to the NEXT-LARGER set value, so an unset
- * breakpoint inherits from above — exactly the Builder.io override semantics.
- * Completely unset → aspect-ratio is unset (no visual effect).
- *
- * Two query families, identical cascade:
- *   @media     — responds to the VIEWPORT (default, always active)
- *   @container — responds to the nearest ELEMENT declared
- *                `container-type: inline-size` (a chart in a 1/3 column gets
- *                the narrow ratio on a wide screen). Opt-in: a shell wrapper
- *                must declare container-type for @container rules to apply;
- *                until then they are inert, so this is purely additive.
- */
-
-/* data-aspect — DEPRECATED responsive-aspect path, now an alias for the height
- * band (the honest single-constraint model). The --ar-* per-breakpoint vars set
- * by applyNodeStyles become inert (no aspect-ratio is applied); the panel fills
- * its column width and takes the band height. This removes the 12-line @media +
- * @container --ar-* cascade that drove the aspect-vs-max-height contradiction.
- * (aspectRatio remains a NodeStyle for genuine ratio-locked media; data panels —
- * chart / table / map — size by the band. See DESIGN §panel-sizing.) */
-[data-aspect] { width: 100%; height: var(--size-panel-height); }
+/* ── data-aspect — DEPRECATED responsive-aspect path, now a BAND ALIAS ──
+ * The applyNodeStyles --ar-* per-breakpoint vars are INERT: a data panel fills
+ * its column width and takes the honest height band (the same single-constraint
+ * model as the ratio [data-height] tokens above), measured against the panel's
+ * own container. The former aspect-ratio + --ar-* @media/@container cascade is
+ * REMOVED — it was the "two contradictory constraints" lie and left dead --ar-*
+ * vars in the DOM. Genuine ratio-locked media (e.g. a hero image) uses the
+ * aspectRatio NodeStyle directly, not this data-panel path. See
+ * DESIGN-panel-sizing-cqi.md (Strangler: config migrates ratio → size token). */
+[data-aspect] {
+  width:      100%;
+  min-height: var(--size-panel-h-floor);
+  min-height: var(--size-panel-height);
+}
 
 /* Content inside an aspect-constrained element */
 [data-aspect] .chart-wrap,
@@ -153,27 +147,15 @@
 }
 
 
-/* ── Mobile table reflow ─────────────────────────────────────────────
- *  No reset is needed for the panel height itself — the band (--size-panel-height)
- *  is honest at every width (it was the aspect model that needed unwinding on
- *  mobile). The one mobile-specific behaviour we keep: a TABLE view expands to its
- *  natural height (page scrolls) instead of scrolling inside the band — a long
- *  table is easier to read inline on a phone. The CHART view keeps the band (a
- *  chart renderer needs a definite height). Scoped with :has so only a panel whose
- *  ACTIVE view is the table opts out; the chart-only case is untouched. */
-@media (max-width: 768px) {  /* = --bp-md */
-  [data-height]:has([data-view="visible"] .data-table__wrap),
-  [data-aspect]:has([data-view="visible"] .data-table__wrap) {
-    height:     auto;
-    overflow:   visible;
-  }
-  [data-height] [data-view="visible"] .data-table__wrap,
-  [data-aspect] [data-view="visible"] .data-table__wrap {
-    flex:       none;
+/* ── Mobile reset — table view expands to natural height for inline reading.
+ *  The height BAND is honest at every width (min-height + floor), so it needs
+ *  NO aspect-ratio unwind (the former `height:auto !important` band is gone).
+ *  The single legitimate mobile exception: a TABLE view drops the scroll cap
+ *  and reads at natural height on narrow screens (scoped by :has). */
+@media (max-width: 768px) {
+  [data-height]:has(.data-table__wrap) [data-view="visible"] .data-table__wrap {
     overflow-y: visible;
   }
-  [data-height] [data-view="visible"] .data-table thead th,
-  [data-aspect] [data-view="visible"] .data-table thead th { position: static; }
 }
 
 

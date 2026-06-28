@@ -1,35 +1,28 @@
 // ── applyPanelStyles ──────────────────────────────────────────────────
 //
-//  Panel-col wrapper — combines the shorthand width class with NodeStyles height.
+//  Panel-col wrapper — placement + width ONLY. The wrapper's single
+//  responsibility is where the panel sits in its row (the grid/flex cell)
+//  and how wide it is; HEIGHT belongs to the panel body (applyNodeStyles →
+//  data-height → the cqi-bounded band in node-styles.css), measured against
+//  the panel's OWN container (.section). Emitting height here too would (a)
+//  duplicate the body's authority and (b) resolve `cqi` against the row
+//  container, not the panel, defeating per-column proportionality. So this
+//  resolver no longer reads `styles.height`.
+//
 //  view.width is a layout shorthand ('full' | 'half' | 'third'), not raw CSS,
-//  so it is kept separate from NodeStyles and resolved to panel-col modifier classes.
-//  Height → data-height attribute (same CSS contract as applyNodeStyles).
+//  so it maps to panel-col modifier classes the panel grid reads.
 //
 
-import { resolveResponsive }                        from '../resolve'
-import type { NodeStyles, StyleAttrs, ResolvedResponsive, StyleValue } from '../types'
-
-function heightAttrs(
-  resolved: ResolvedResponsive<StyleValue>,
-  base:     string,
-): StyleAttrs {
-  const h = resolved.default
-  if (typeof h === 'string') return { className: base, 'data-height': h }
-  if (typeof h === 'number') return { className: base, 'data-height': 'constrained', style: { height: `${h}px` } }
-  return { className: base }
-}
+import type { NodeStyles, StyleAttrs } from '../types'
 
 export function applyPanelStyles(config: {
   width?:  'full' | 'half' | 'third'
+  /** Accepted for call-site symmetry with applyNodeStyles; height is the body's
+   *  concern, so nothing here is read from it today. */
   styles?: NodeStyles
 }): StyleAttrs {
-  const { width, styles } = config
-  const heightRes = heightAttrs(resolveResponsive(styles?.height), 'panel-col')
+  const { width } = config
   let cls = 'panel-col'
   if (width) cls += ` panel-col--w-${width}`
-  return {
-    className: cls,
-    ...(heightRes['data-height'] && { 'data-height': heightRes['data-height'] }),
-    ...(heightRes.style          && { style: heightRes.style }),
-  }
+  return { className: cls }
 }

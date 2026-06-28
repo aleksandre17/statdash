@@ -1,80 +1,30 @@
 /* ── Chart wrap ──────────────────────────────────────────────────────
- *  Structural CSS only — no data-* logic, no CSS var reads.
+ *  Component-local sizing for the chart renderer (the legit home for
+ *  chart-fill CSS). The OUTER height is governed by @statdash/styles:
+ *    [data-height]  → the panel height band (min-height) on the section body
+ *    [data-aspect]  → responsive aspect-ratio (media nodes only)
+ *  and the body→view flex chain (node-styles.css) gives this wrap its height.
  *
- *  Sizing is fully driven by @statdash/styles / node-styles.css: the panel body
- *  ([data-height] / [data-aspect]) takes the honest height band
- *  (--size-panel-height) at EVERY width, and the chart fills it via height:100%.
- *  There is no mobile height:auto fork any more — the band is definite at all
- *  widths, so a single height:100% is correct everywhere (the former ≤1280
- *  height:auto override collapsed Apex/treemap renderers that need a definite
- *  box, and only existed to unwind the old aspect-ratio model). */
+ *  chart-wrap is a flex COLUMN so the inner (aria-hidden) renderer host gets
+ *  the full height — ApexCharts renders at height="100%", which needs a parent
+ *  with a resolved height at it. Without this, the host div collapses to
+ *  intrinsic height and the chart letterboxes. `height:100%` holds the chain at
+ *  EVERY width (the band is honest at every width — no mobile `height:auto`
+ *  unwind, which was the aspect-ratio era's crutch and caused the 2-column band
+ *  to render ragged, non-filling panels). */
 
 .chart-wrap {
-  height:    100%;
-  min-width: 0;
-  padding:   0.4vw;
-}
-
-/* The visual-render wrapper (sibling of the a11y ChartDataTable). Passes the
- * resolved height through to a renderer that fills its parent — the custom
- * flexbox TreemapChart root is `height:100%` and otherwise collapses to 0 inside
- * a content-sized wrapper (blank treemap). Apex renderers measure the box, so a
- * definite height here only helps. */
-.chart-wrap__render {
-  height:     100%;
-  min-height: 0;
-  min-width:  0;
-}
-
-/* ── Donut legend ────────────────────────────────────────────────────
- *  Structural layout for the custom DonutChart legend. Data-driven values
- *  (swatch colour, hover opacity) stay inline on the elements; only layout
- *  lives here so it can step down responsively. A high-cardinality donut
- *  (10+ sectors) crowds/overlaps at narrow widths — flex-wrap + per-item
- *  ellipsis truncation (with native `title` tooltip) + tightening gaps keep
- *  it legible without overrunning the ring. */
-.donut-legend {
-  flex-shrink:    0;
+  height:         100%;
+  min-width:      0;
+  padding:        0.4vw;
   display:        flex;
-  flex-wrap:      wrap;
-  justify-content: center;
-  gap:            4px 14px;
-  padding:        4px 8px 6px;
-  font-family:    'BPG Arial', Roboto, sans-serif;
+  flex-direction: column;
 }
 
-.donut-legend__item {
-  display:     flex;
-  align-items: center;
-  gap:         5px;
-  min-width:   0;          /* allow the label to shrink + ellipsis */
-  max-width:   16ch;       /* cap so one long name can't span a whole row */
-  transition:  opacity 0.15s;
-}
-
-.donut-legend__swatch {
-  width:         8px;
-  height:        8px;
-  border-radius: 50%;
-  flex-shrink:   0;
-}
-
-.donut-legend__label {
-  font-size:     10px;
-  color:         var(--color-text-secondary);
-  line-height:   1.3;
-  white-space:   nowrap;
-  overflow:      hidden;
-  text-overflow: ellipsis;
-}
-
-@media (max-width: 768px) {
-  .donut-legend       { gap: 3px 10px; padding: 3px 6px 5px; }
-  .donut-legend__item { max-width: 12ch; gap: 4px; }
-  .donut-legend__label { font-size: 9px; }
-}
-
-@media (max-width: 480px) {
-  .donut-legend       { gap: 2px 8px; }
-  .donut-legend__item { max-width: 10ch; }
+/* The renderer host (aria-hidden wrapper around the Apex/SVG chart) fills the
+ * wrap so height="100%" charts resolve against a real height. The sr-only
+ * ChartDataTable sibling is position-clipped, so it does not consume height. */
+.chart-wrap > [aria-hidden="true"] {
+  flex:       1;
+  min-height: 0;
 }
