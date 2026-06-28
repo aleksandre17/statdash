@@ -8,7 +8,7 @@
 
 import type { ApexOptions } from 'apexcharts'
 import type { ChartOutput } from '@statdash/charts'
-import { BASE, yFormatter, collectFormatted, scaledPx, BP_MD, BP_SM, BP_XS } from './base'
+import { BASE, yFormatter, responsiveYAxis, collectFormatted, scaledPx, BP_MD, BP_SM, BP_XS } from './base'
 import { cssVar } from '@statdash/styles'
 
 // Split a label string into lines so no line exceeds maxChars characters.
@@ -32,6 +32,11 @@ export function buildContribution(output: ChartOutput): ApexOptions {
   const formatted = collectFormatted(series)
   const FS_XS = scaledPx(0.60, 9,  11)
   const FS_SM = scaledPx(0.70, 10, 12)
+
+  // Hoisted so the responsive overrides can re-carry it — ApexCharts drops
+  // any formatter a responsive yaxis override doesn't re-supply (see
+  // responsiveYAxis): without this the value axis falls back to raw floats.
+  const yFmt = yFormatter(axes.y.unit, axes.y.decimals)
 
   // Per-bar colors via distributed — avoids {x,y,fillColor} extended format which
   // conflicts with xaxis.categories and breaks y-axis rendering.
@@ -64,7 +69,7 @@ export function buildContribution(output: ChartOutput): ApexOptions {
     yaxis: {
       labels: {
         style:     { fontSize: FS_SM, colors: cssVar('--color-text-muted', '#6B7B8D') },
-        formatter: yFormatter(axes.y.unit, axes.y.decimals),
+        formatter: yFmt,
       },
     },
     plotOptions: {
@@ -104,7 +109,7 @@ export function buildContribution(output: ChartOutput): ApexOptions {
         options: {
           plotOptions: { bar: { borderRadius: 3 } },
           xaxis:       { labels: { style: { fontSize: '10px' } } },
-          yaxis:       { labels: { style: { fontSize: '10px' } } },
+          yaxis:       responsiveYAxis('10px', yFmt),
           dataLabels:  { offsetY: -14, style: { fontSize: '9px' } },
           grid:        { padding: { left: 4, right: 14, top: 18 } },
         },
@@ -115,7 +120,7 @@ export function buildContribution(output: ChartOutput): ApexOptions {
           chart:       { height: 280 },
           plotOptions: { bar: { borderRadius: 2, columnWidth: '75%' } },
           xaxis:       { labels: { style: { fontSize: '9px' } } },
-          yaxis:       { labels: { style: { fontSize: '9px' } } },
+          yaxis:       responsiveYAxis('9px', yFmt),
           dataLabels:  { offsetY: -10, style: { fontSize: '9px' } },
           grid:        { padding: { left: 2, right: 10, top: 14 } },
         },

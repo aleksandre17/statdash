@@ -64,6 +64,25 @@ export function yFormatter(unit?: string, decimals?: number): (val: number) => s
 }
 
 /**
+ * Responsive y-axis font override that PRESERVES the value formatter.
+ *
+ * ApexCharts' responsive merge runs each breakpoint's `yaxis` through
+ * Config.extendYAxis, which rebuilds the axis from library defaults
+ * (`new Options().yAxis`) — silently dropping any `labels.formatter` the
+ * override doesn't re-supply. A bare `{ labels: { style: { fontSize } } }`
+ * override therefore reverts the numeric axis to ApexCharts' built-in float
+ * printer, surfacing raw floats like "120000.000000000000" at narrow widths
+ * (AUDIT F6 / R5). Re-carrying the formatter keeps the canonical fmtNum output
+ * at every breakpoint. Use this for ANY responsive numeric-y-axis font tweak.
+ */
+export function responsiveYAxis(
+    fontSize: string,
+    formatter: (val: number) => string,
+): ApexYAxis {
+  return { labels: { formatter, style: { fontSize } } }
+}
+
+/**
  * Pre-formatted data labels closure.
  * ApexCharts dataLabels.formatter receives (value, opts).
  * We use opts.seriesIndex + opts.dataPointIndex to look up the

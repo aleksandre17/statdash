@@ -2,7 +2,7 @@
 
 import type { ApexOptions } from 'apexcharts'
 import type { ChartOutput } from '@statdash/charts'
-import { BASE, yFormatter, collectFormatted, scaledPx, BP_MD, BP_SM, BP_XS } from './base'
+import { BASE, yFormatter, responsiveYAxis, collectFormatted, scaledPx, BP_MD, BP_SM, BP_XS } from './base'
 import { cssVar } from '@statdash/styles'
 
 export function buildCartesian(output: ChartOutput): ApexOptions {
@@ -15,6 +15,22 @@ export function buildCartesian(output: ChartOutput): ApexOptions {
   const isCombo       = type === 'combo'
   const hasY2         = !!axes.y2
   const isStackedArea = type === 'area' && stacked
+
+  // Value-axis formatters — hoisted so the responsive overrides below can
+  // re-carry them (ApexCharts rebuilds yaxis from defaults on responsive
+  // merge, dropping any formatter not re-supplied — see responsiveYAxis).
+  const yFmt  = yFormatter(axes.y.unit,  axes.y.decimals)
+  const y2Fmt = yFormatter(axes.y2?.unit, axes.y2?.decimals)
+
+  // Responsive numeric-y-axis font override that keeps the formatter alive.
+  // hbar's left axis is categorical (no numeric formatter), so it keeps the
+  // bare style override; vbar/combo carry the value formatter (and y2's).
+  const yaxisFont = (fontSize: string): ApexYAxis | ApexYAxis[] =>
+      horizontal
+          ? { labels: { style: { fontSize }, maxWidth: 220 } }
+          : hasY2
+              ? [responsiveYAxis(fontSize, yFmt), responsiveYAxis(fontSize, y2Fmt)]
+              : responsiveYAxis(fontSize, yFmt)
 
   const stackedMax = isStackedArea && categories.length > 0
       ? Math.max(...categories.map((_, i) =>
@@ -79,7 +95,7 @@ export function buildCartesian(output: ChartOutput): ApexOptions {
       : {
         labels: {
           style:     { fontSize: FS_SM, colors: cssVar('--color-text-muted', '#6B7B8D') },
-          formatter: yFormatter(axes.y.unit, axes.y.decimals),
+          formatter: yFmt,
         },
         min:            type === 'area' || type === 'line' ? 0 : axes.y.min,
         max:            isStackedArea ? yMax : axes.y.max,
@@ -93,7 +109,7 @@ export function buildCartesian(output: ChartOutput): ApexOptions {
           opposite: true,
           labels: {
             style:     { fontSize: FS_SM, colors: cssVar('--color-text-muted', '#6B7B8D') },
-            formatter: yFormatter(axes.y2?.unit, axes.y2?.decimals),
+            formatter: y2Fmt,
           },
           min: axes.y2?.min,
           max: axes.y2?.max,
@@ -151,7 +167,7 @@ export function buildCartesian(output: ChartOutput): ApexOptions {
           ? {
             style:     { fontSize: FS_SM, colors: cssVar('--color-text-muted', '#6B7B8D') },
             // xaxis.labels.formatter receives a string — parse back to number first
-            formatter: (val: string) => yFormatter(axes.y.unit, axes.y.decimals)(Number(val)),
+            formatter: (val: string) => yFmt(Number(val)),
             hideOverlappingLabels: true,
           }
           : {
@@ -268,7 +284,7 @@ export function buildCartesian(output: ChartOutput): ApexOptions {
           },
           ...(showDataLabels && !horizontal ? { dataLabels: { offsetY: -14 } } : {}),
           xaxis:  { labels: { style: { fontSize: '10px' } } },
-          yaxis:  { labels: { style: { fontSize: '10px' } } },
+          yaxis:  yaxisFont('10px'),
           legend: { fontSize: '10px', itemMargin: { horizontal: 8 } },
           grid: {
             padding: {
@@ -292,7 +308,7 @@ export function buildCartesian(output: ChartOutput): ApexOptions {
           },
           ...(showDataLabels && !horizontal ? { dataLabels: { offsetY: -10 } } : {}),
           xaxis:  horizontal ? {} : { labels: { maxHeight: 70, style: { fontSize: '9px' } } },
-          yaxis:  { labels: { style: { fontSize: '9px' } } },
+          yaxis:  yaxisFont('9px'),
           legend: { fontSize: '10px', itemMargin: { horizontal: 6 } },
           grid: {
             padding: {
