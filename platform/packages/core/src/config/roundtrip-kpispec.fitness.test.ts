@@ -117,6 +117,21 @@ describe('KpiSpec — KpiValueSpec round-trip', () => {
     value: { type: 'expr', op: 'add', codes: ['B2A3G', 'D1'], format: 'decimal1' },
   }))
 
+  it('metric — calc-metric ref (DC-01), $ctx time preserved', () => {
+    const spec: KpiSpec = {
+      id:    'labour-share',
+      label: 'Labour share',
+      unit:  '%',
+      color: '#4ECDC4',
+      when:  { op: 'perspective-is', perspective: 'range' },
+      value: { type: 'metric', metric: 'accounts.laborShare', time: { $ctx: 'toYear' } },
+    }
+    expectRoundTrip(spec)
+    const v = roundTrip(spec).value as Extract<typeof spec.value, { type: 'metric' }>
+    expect(v.metric).toBe('accounts.laborShare')
+    expect(v.time).toEqual({ $ctx: 'toYear' })
+  })
+
 })
 
 // ── KpiTrendSpec ──────────────────────────────────────────────────────────────

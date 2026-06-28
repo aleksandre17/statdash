@@ -26,3 +26,4 @@ export { interpretSpec, extractRequirements }                       from './spec
 export { desugar }                                                  from './desugar'
 export { interpretKpis }                                            from './kpi'
 export type { KpiSpec, KpiValueSpec, KpiTrendSpec }                 from './kpi'
+export { resolveMetricValue, calcMetricRequirements, isCalculatedMetric } from './metric-calc'

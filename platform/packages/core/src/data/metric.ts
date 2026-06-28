@@ -5,17 +5,63 @@
 //  Fitness test: metric.fitness.test.ts asserts no such import exists.
 //
 import type { LocaleString }                    from '../i18n/types'
-import type { FilterValue }                      from '../sdmx'
+import type { DimVal, FilterValue }              from '../sdmx'
+import type { Expr }                             from '@statdash/expr'
 import type { MetadataPort, ProvenanceRecord }   from '../core/provenance'
 import type { SectionContext }                   from '../core/context'
+
+/**
+ * One named component of a CALCULATED metric: a measure read at a generic
+ * coordinate. `at` pins dims (Law 1 — any dim, never time-special) for THIS
+ * component's point-read, merged OVER ctx.dims (and over the referenced metric's
+ * default dims). Pure data — a coordinate, never a function (Law 2).
+ */
+export interface MetricInput {
+  /** Underlying measure ref — a raw SDMX code OR a registered metric-id. */
+  measure: string
+  /** Generic coordinate pin merged over ctx.dims for this component's read. */
+  at?:     Partial<Record<string, DimVal>>
+}
+
+/**
+ * A calculated metric's value: a declarative EXPRESSION over named component
+ * measures — measure-algebra in the semantic layer (Malloy/dbt-MetricFlow/Cube
+ * `ratio`/`derived`). Each input is point-read at the active coordinate ⊕ input.at
+ * and bound into the expr scope as `$derived[<name>]`; the expr — REUSING
+ * @statdash/expr, NEVER a second dialect — yields the metric's scalar value.
+ *
+ *   ratio  = mul(div($num, $denom), 100)        // labour share, GDP deflator
+ *   derived= sub($a, $b)                         // an accounting identity
+ *
+ * Law 2: pure data (an Expr tree), never a function. Calc metrics are SCALAR —
+ * consumed at a point coordinate (a KPI `metric` value, the storeValAt domain);
+ * they are not row-set query measures.
+ */
+export interface MetricCalc {
+  /** Named component measures, bound into the expr scope as `$derived[<name>]`. */
+  inputs: Record<string, MetricInput>
+  /** The expression over those inputs. JSON-serializable, Constructor-safe. */
+  expr:   Expr
+}
 
 /**
  * Definition of one named metric.
  * Thin — not a modeling language. No filters, no joins, no SQL.
  */
 export interface MetricDef {
-  /** SDMX measure code(s). string[] for multi-measure metrics. */
-  code:          string | string[]
+  /**
+   * SDMX measure code(s). string[] for multi-measure metrics. ABSENT for a
+   * calculated metric (its value comes from `calc` — see below); a base metric
+   * always carries `code`.
+   */
+  code?:         string | string[]
+  /**
+   * Calculated-metric value — a declarative expression over OTHER measures
+   * (DC-01). Present ⟺ this is a derived metric; its underlying codes (for warm /
+   * store-routing) are its components' codes, expanded by resolveMeasureRef.
+   * Absent ⇒ a base metric, byte-identical to the status quo.
+   */
+  calc?:         MetricCalc
   /** Human-readable label. */
   label:         LocaleString
   /** Unit of measurement (e.g. 'million GEL', '% change'). */
@@ -151,8 +197,16 @@ export function resolveMeasureRef(ref: string | string[]): ResolvedMeasure {
       out.codes.push(r)
       continue
     }
-    const codes = Array.isArray(metric.code) ? metric.code : [metric.code]
-    out.codes.push(...codes)
+    // Underlying codes. A CALCULATED metric expands to its components' codes (so
+    // warming / store-routing a calc metric warms its inputs — recursion handles a
+    // calc input that is itself a metric-id). A base metric expands to its own
+    // code(s); a calc metric carries no `code`, so the guard skips the undefined.
+    if (metric.calc) {
+      for (const input of Object.values(metric.calc.inputs))
+        out.codes.push(...resolveMeasureRef(input.measure).codes)
+    } else if (metric.code !== undefined) {
+      out.codes.push(...(Array.isArray(metric.code) ? metric.code : [metric.code]))
+    }
     // First-metric-wins for scalar governance (order-stable, deterministic).
     if (out.unit        === undefined && metric.unit        !== undefined) out.unit        = metric.unit
     if (out.methodology === undefined && metric.methodology !== undefined) out.methodology = metric.methodology
@@ -186,7 +240,9 @@ export function withMetricProvenance(base: MetadataPort): MetadataPort {
   return {
     provenance(code: string, ctx: SectionContext): ProvenanceRecord | undefined {
       const metric = [..._registry.values()].find((def) => {
-        const codes = Array.isArray(def.code) ? def.code : [def.code]
+        // A calc metric carries no own `code` (it has no direct provenance — its
+        // COMPONENTS, registered separately, carry theirs); guard the undefined.
+        const codes = def.code === undefined ? [] : (Array.isArray(def.code) ? def.code : [def.code])
         return codes.includes(code)
       })
       // Metric-level governance (methodology + unit) fills provenance as a

@@ -282,9 +282,10 @@ export { interpretKpis, extractKpiRequirements }                        from './
 export type { KpiSpec, KpiValueSpec, KpiTrendSpec }                     from './data/kpi'
 
 // ── Metric registry [N26] — Constructor metric vocabulary + extension seam ──
-export type { MetricDef, ResolvedMeasure }                             from './data/metric'
+export type { MetricDef, ResolvedMeasure, MetricInput, MetricCalc }    from './data/metric'
 export { registerMetric, registerMetrics, getMetric, listMetrics, listMetricDefs,
          resolveMeasureRef, withMetricProvenance }                     from './data/metric'
+export { resolveMetricValue, calcMetricRequirements, isCalculatedMetric } from './data/metric-calc'
 // metric→store binding [M1] — the Cube.dev `dataSource` middle tier. A node's
 // DataSpec → the storeKey its referenced metric names (plain string; react's
 // resolveStore consumes it, no core→react import — arrow clean).

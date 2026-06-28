@@ -10,12 +10,14 @@
 //    'cagr'   → compound annual GR  (to/from)^(1/n) − 1
 //    'share'  → ratio × 100         num / denom
 //    'expr'   → derived indicator   D2 − D3  (add / subtract)
+//    'metric' → calculated metric   value of a registered calc MetricDef (DC-01)
 //
 
 import type { CtxRef, DimVal }  from '../sdmx'
 import type { DataStore, Requirement } from './store'
 import { storeVal }            from './store'
 import { resolveMeasureRef }    from './metric'
+import { resolveMetricValue, calcMetricRequirements } from './metric-calc'
 import type { SectionContext }  from '../core/context'
 import { atTime, TIME_DIM }      from '../core/context'
 import type { KpiDef }          from '../config/kpi'
@@ -42,6 +44,12 @@ export type KpiValueSpec =
   | { type: 'cagr';   measure: string; from: TimeRef;  to: TimeRef;       filter?: DimFilter }
   | { type: 'share';  num: ObsRef;     denom: ObsRef }
   | { type: 'expr';   op: 'subtract' | 'add'; codes: string[]; time?: TimeRef; format: FormatKey; filter?: DimFilter }
+  // 'metric' — a calculated MetricDef's value (DC-01). The measure-algebra
+  // (ratio/derived/…) lives ONCE on the named, governed metric; the card just
+  // names it. `time` pins the active period (e.g. {$ctx:'toYear'}) for every
+  // component read; `format` is OPTIONAL — absent ⇒ the same ratio formatting a
+  // `share` card uses (toFixed(1)), so a `share`→`metric` migration is byte-identical.
+  | { type: 'metric'; metric: string;  time?: TimeRef; format?: FormatKey }
 
 export type KpiTrendSpec =
   | { type: 'yoy';    measure: string; time?: TimeRef; filter?: DimFilter }
@@ -97,6 +105,7 @@ function primaryMeasure(spec: KpiValueSpec): string | undefined {
   if ('measure' in spec) return spec.measure          // point | yoy | cagr
   if ('num'     in spec) return spec.num.measure      // share
   if ('codes'   in spec) return spec.codes[0]         // expr — first operand
+  if ('metric'  in spec) return resolveMeasureRef(spec.metric).codes[0]  // calc — first component code
   return undefined
 }
 
@@ -167,6 +176,14 @@ function resolveValue(spec: KpiValueSpec, ctx: SectionContext, store: DataStore)
         ? vals[0] - vals.slice(1).reduce((a, b) => a + b, 0)
         : vals.reduce((a, b) => a + b, 0)
       return getFormatter(spec.format)(n)
+    }
+    case 'metric': {
+      // Evaluate the named calc metric at the pinned period. `?? 0` mirrors the
+      // legacy ratio guard (a non-calc/missing ref or null expr ⇒ 0). Absent
+      // `format` ⇒ fmtKpiPct — the SAME formatter `share` uses (byte-identical).
+      const t = resolveTime(spec.time, ctx)
+      const v = resolveMetricValue(spec.metric, atTime(t, ctx), store) ?? 0
+      return (spec.format ? getFormatter(spec.format) : fmtKpiPct)(v)
     }
   }
 }
@@ -335,6 +352,13 @@ export function extractKpiRequirements(
         const c = withFilter(base, spec.filter)
         const t = resolveTime(spec.time, c)
         for (const code of spec.codes) push(code, c, t)
+        return
+      }
+      case 'metric': {
+        // Warm EXACTLY the component reads resolveMetricValue will issue at the
+        // pinned period — the calc-metric warm SSOT (same period as the read).
+        const t = resolveTime(spec.time, base)
+        for (const req of calcMetricRequirements(spec.metric, atTime(t, base))) out.push(req)
         return
       }
     }
