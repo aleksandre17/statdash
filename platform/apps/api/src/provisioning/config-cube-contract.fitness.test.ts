@@ -46,7 +46,36 @@ interface DataSourceEntry {
 }
 interface PageEntry { slug: string; config: PageConfig; status?: string }
 interface PageConfig { id?: string; storeKey?: string; children?: unknown[] }
-interface Artifact { pages: PageEntry[]; dataSources?: DataSourceEntry[] }
+interface SiteConfigEntry { key: string; value: unknown }
+/** Semantic-layer metric (the siteConfig 'metrics' blob — ManifestMetric wire shape). */
+interface MetricEntry { id: string; code: string | string[]; dataSource?: string }
+interface Artifact {
+  pages: PageEntry[]
+  dataSources?: DataSourceEntry[]
+  siteConfig?: SiteConfigEntry[]
+}
+
+const MEASURE_DIM = 'measure'
+
+/** Load the semantic-layer catalog (siteConfig 'metrics') as an id → MetricEntry map. */
+function loadMetricCatalog(artifact: Artifact): Map<string, MetricEntry> {
+  const entry = (artifact.siteConfig ?? []).find((s) => s.key === 'metrics')
+  const list  = Array.isArray(entry?.value) ? (entry!.value as MetricEntry[]) : []
+  return new Map(list.map((m) => [m.id, m]))
+}
+
+/**
+ * Resolve a measure-dimension pin to its underlying DSD code(s) — the SAME
+ * resolveMeasureRef contract, mirrored here so the DSD existence check sees the
+ * REAL cube codes after the page migrated raw codes → metric-ids. A registered
+ * metric-id expands to its `code`(s); a raw code (not a metric-id) passes through
+ * unchanged (Postel / FF-RAW-CODE-IDENTICAL). Non-measure dims never pass here.
+ */
+function resolveMeasureCodes(value: string, catalog: Map<string, MetricEntry>): string[] {
+  const metric = catalog.get(value)
+  if (!metric) return [value]
+  return Array.isArray(metric.code) ? metric.code : [metric.code]
+}
 
 // ── DSD derived from a canonical workbook ─────────────────────────────────────
 interface Dsd {
@@ -203,9 +232,11 @@ describe('config↔cube contract (every page DataSpec references data that exist
   let artifact: Artifact
   let dsdByDataset: Map<string, Dsd>
   let pageDataset: Map<string, Dsd>  // page slug → DSD it binds to
+  let metricCatalog: Map<string, MetricEntry>
 
   beforeAll(() => {
     artifact = JSON.parse(readFileSync(ARTIFACT_PATH, 'utf8')) as Artifact
+    metricCatalog = loadMetricCatalog(artifact)
 
     // Build a DSD per declared data source, off the canonical workbook.
     dsdByDataset = new Map()
@@ -249,7 +280,13 @@ describe('config↔cube contract (every page DataSpec references data that exist
             violations.push(`${page.slug} · ${site.where}: pins unknown dimension '${dim}' (not in ${dsd.datasetCode} DSD)`)
             continue
           }
-          const codes = Array.isArray(val) ? val.map(String) : [String(val)]
+          const rawCodes = Array.isArray(val) ? val.map(String) : [String(val)]
+          // On the `measure` dim, a pin MAY be a metric-id (post-migration): resolve
+          // it through the catalog to its underlying DSD code(s) before the existence
+          // check (mirrors the engine's resolveMeasureRef). Other dims pass through.
+          const codes = dim === MEASURE_DIM
+            ? rawCodes.flatMap((c) => resolveMeasureCodes(c, metricCatalog))
+            : rawCodes
           for (const code of codes) {
             if (!dsd.members[dim].has(code)) {
               violations.push(`${page.slug} · ${site.where}: '${dim}=${code}' absent from CL_${dim.toUpperCase()} of ${dsd.datasetCode}`)
@@ -284,5 +321,40 @@ describe('config↔cube contract (every page DataSpec references data that exist
       }
     }
     expect(violations, `under-pinned single-value KPIs:\n${violations.join('\n')}`).toEqual([])
+  })
+
+  // CHECK 3 (metric.code ∈ DSD) — the semantic-layer contract: every metric in the
+  // delivered catalog (siteConfig 'metrics') resolves to a measure code that EXISTS
+  // in the CL_MEASURE of the dataset its `dataSource` names. A metric whose code is
+  // not in its dataset's DSD is a dangling semantic definition — it would resolve a
+  // referencing DataSpec to data that does not exist (the exact class CHECK 2 kills,
+  // one layer up). Generic over datasets (Law 1).
+  it('every catalog metric.code exists in its dataSource’s dataset DSD', () => {
+    expect(metricCatalog.size, 'expected a non-empty semantic-layer catalog').toBeGreaterThan(0)
+    const violations: string[] = []
+    for (const metric of metricCatalog.values()) {
+      const store = metric.dataSource
+      if (typeof store !== 'string') {
+        violations.push(`metric '${metric.id}': no dataSource (cannot bind to a dataset DSD)`)
+        continue
+      }
+      const dsd = dsdByDataset.get(store)
+      if (!dsd) {
+        violations.push(`metric '${metric.id}': dataSource '${store}' is not a declared data source`)
+        continue
+      }
+      const members = dsd.members[MEASURE_DIM]
+      if (!members) {
+        violations.push(`metric '${metric.id}': dataset ${dsd.datasetCode} has no CL_MEASURE codelist`)
+        continue
+      }
+      const codes = Array.isArray(metric.code) ? metric.code : [metric.code]
+      for (const code of codes) {
+        if (!members.has(code)) {
+          violations.push(`metric '${metric.id}': code '${code}' absent from CL_MEASURE of ${dsd.datasetCode} (dataSource '${store}')`)
+        }
+      }
+    }
+    expect(violations, `dangling metric definitions:\n${violations.join('\n')}`).toEqual([])
   })
 })

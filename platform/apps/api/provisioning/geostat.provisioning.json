@@ -964,12 +964,12 @@
                   ],
                   "query": {
                     "measure": [
-                      "P1",
-                      "B1G",
-                      "B5G",
-                      "B6G",
-                      "B8G",
-                      "B9"
+                      "accounts.output",
+                      "accounts.gdp",
+                      "accounts.gni",
+                      "accounts.disposableIncome",
+                      "accounts.savings",
+                      "accounts.netLending"
                     ],
                     "orderBy": {
                       "dir": "asc",
@@ -1033,12 +1033,12 @@
                   ],
                   "query": {
                     "measure": [
-                      "P1",
-                      "B1G",
-                      "B5G",
-                      "B6G",
-                      "B8G",
-                      "B9"
+                      "accounts.output",
+                      "accounts.gdp",
+                      "accounts.gni",
+                      "accounts.disposableIncome",
+                      "accounts.savings",
+                      "accounts.netLending"
                     ],
                     "orderBy": {
                       "dir": "asc",
@@ -1779,7 +1779,7 @@
                 "data": {
                   "type": "query",
                   "query": {
-                    "measure": "gross-domestic-product-at-current-prices",
+                    "measure": "gdp.current",
                     "filter": {
                       "geo": "GE",
                       "approach": "_Z",
@@ -1863,7 +1863,7 @@
                 "data": {
                   "type": "query",
                   "query": {
-                    "measure": "gdp-per-capita-usd",
+                    "measure": "gdp.perCapita",
                     "filter": {
                       "geo": "GE",
                       "approach": "_Z",
@@ -2072,7 +2072,7 @@
                 "data": {
                   "type": "query",
                   "query": {
-                    "measure": "real-gdp-growth-rates",
+                    "measure": "gdp.realGrowth",
                     "filter": {
                       "geo": "GE",
                       "approach": "_Z",
@@ -2963,7 +2963,7 @@
                         "$ctx": "time"
                       }
                     },
-                    "measure": "GVA"
+                    "measure": "regional.gva"
                   },
                   "type": "query"
                 },
@@ -3115,7 +3115,7 @@
                         "$ctx": "time"
                       }
                     },
-                    "measure": "GVA"
+                    "measure": "regional.gva"
                   },
                   "type": "query"
                 },
@@ -3233,7 +3233,7 @@
                         "$ctx": "time"
                       }
                     },
-                    "measure": "GVA"
+                    "measure": "regional.gva"
                   },
                   "type": "query"
                 },
@@ -3387,7 +3387,7 @@
                     "$ctx": "time"
                   }
                 },
-                "measure": "GVA"
+                "measure": "regional.gva"
               },
               "type": "query"
             },
@@ -3484,7 +3484,7 @@
                         "$ctx": "toYear"
                       }
                     },
-                    "measure": "GVA"
+                    "measure": "regional.gva"
                   },
                   "type": "query"
                 },
@@ -3584,7 +3584,7 @@
                         "$ctx": "sector"
                       }
                     },
-                    "measure": "GVA"
+                    "measure": "regional.gva"
                   },
                   "toDim": "toYear",
                   "type": "query"
@@ -3688,7 +3688,7 @@
                     "$ne": "_T"
                   }
                 },
-                "measure": "GVA"
+                "measure": "regional.gva"
               },
               "toDim": "toYear",
               "type": "query"
@@ -4197,6 +4197,154 @@
           ],
           "label": "რეგიონული ანალიზი",
           "path": "/regional"
+        }
+      ]
+    },
+    {
+      "key": "metrics",
+      "value": [
+        {
+          "id": "gdp.current",
+          "code": "gross-domestic-product-at-current-prices",
+          "label": {
+            "ka": "მთლიანი შიდა პროდუქტი საბაზრო ფასებში",
+            "en": "Gross Domestic Product at current prices"
+          },
+          "unit": {
+            "ka": "მლნ ლარი",
+            "en": "Million Georgian Lari"
+          },
+          "dataSource": "gdp"
+        },
+        {
+          "id": "gdp.perCapita",
+          "code": "gdp-per-capita-usd",
+          "label": {
+            "ka": "მთლიანი შიდა პროდუქტი ერთ სულ მოსახლეზე, აშშ დოლარი",
+            "en": "GDP per capita, USD"
+          },
+          "unit": {
+            "ka": "აშშ დოლარი",
+            "en": "US Dollar"
+          },
+          "dataSource": "gdp"
+        },
+        {
+          "id": "gdp.realGrowth",
+          "code": "real-gdp-growth-rates",
+          "label": {
+            "ka": "რეალური მთლიანი შიდა პროდუქტის ზრდა",
+            "en": "Real GDP growth rates"
+          },
+          "unit": {
+            "ka": "პროცენტი",
+            "en": "Percent"
+          },
+          "dataSource": "gdp"
+        },
+        {
+          "id": "accounts.output",
+          "code": "P1",
+          "label": {
+            "ka": "გამოშვება საბაზრო ფასებში",
+            "en": "Output at market prices"
+          },
+          "unit": {
+            "ka": "მლნ ლარი",
+            "en": "Million Georgian Lari"
+          },
+          "dataSource": "accounts"
+        },
+        {
+          "id": "accounts.gdp",
+          "code": "B1G",
+          "label": {
+            "ka": "მთლიანი შიდა პროდუქტი საბაზრო ფასებში",
+            "en": "Gross Domestic Product at market prices"
+          },
+          "unit": {
+            "ka": "მლნ ლარი",
+            "en": "Million Georgian Lari"
+          },
+          "dataSource": "accounts"
+        },
+        {
+          "id": "accounts.compensation",
+          "code": "D1",
+          "label": {
+            "ka": "შრომის ანაზღაურება",
+            "en": "Compensation of employees"
+          },
+          "unit": {
+            "ka": "მლნ ლარი",
+            "en": "Million Georgian Lari"
+          },
+          "dataSource": "accounts"
+        },
+        {
+          "id": "accounts.gni",
+          "code": "B5G",
+          "label": {
+            "ka": "მთლიანი ეროვნული შემოსავალი",
+            "en": "Gross National income"
+          },
+          "unit": {
+            "ka": "მლნ ლარი",
+            "en": "Million Georgian Lari"
+          },
+          "dataSource": "accounts"
+        },
+        {
+          "id": "accounts.disposableIncome",
+          "code": "B6G",
+          "label": {
+            "ka": "მთლიანი განკარგვადი შემოსავალი",
+            "en": "Gross Disposable income"
+          },
+          "unit": {
+            "ka": "მლნ ლარი",
+            "en": "Million Georgian Lari"
+          },
+          "dataSource": "accounts"
+        },
+        {
+          "id": "accounts.savings",
+          "code": "B8G",
+          "label": {
+            "ka": "მთლიანი დანაზოგი",
+            "en": "Gross Savings"
+          },
+          "unit": {
+            "ka": "მლნ ლარი",
+            "en": "Million Georgian Lari"
+          },
+          "dataSource": "accounts"
+        },
+        {
+          "id": "accounts.netLending",
+          "code": "B9",
+          "label": {
+            "ka": "წმინდა დაკრედიტება (+), წმინდა სესხება(-)",
+            "en": "Net lending (+), Net borrowing(-)"
+          },
+          "unit": {
+            "ka": "მლნ ლარი",
+            "en": "Million Georgian Lari"
+          },
+          "dataSource": "accounts"
+        },
+        {
+          "id": "regional.gva",
+          "code": "GVA",
+          "label": {
+            "ka": "მთლიანი დამატებული ღირებულება",
+            "en": "Gross Value Added"
+          },
+          "unit": {
+            "ka": "მლნ ლარი",
+            "en": "Million Georgian Lari"
+          },
+          "dataSource": "regional"
         }
       ]
     }

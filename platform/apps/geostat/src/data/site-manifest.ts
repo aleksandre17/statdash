@@ -16,8 +16,9 @@
 //  Pattern: Grafana bootData (stores manifest + nav from API on startup),
 //           Retool fetchAppManifest (resources + pages in one bootstrap call).
 //
-import type { SiteManifestContract }                          from '@statdash/contracts'
-import type { DataStore, DatasourceInstanceConfig } from '@statdash/engine'
+import type { SiteManifestContract, ManifestMetric }          from '@statdash/contracts'
+import type { DataStore, DatasourceInstanceConfig, MetricDef } from '@statdash/engine'
+import { registerMetrics }                                     from '@statdash/engine'
 import type { NavEntry, I18nConfig, ChromeConfig, ChromeEntry } from '@statdash/react'
 import type { NodePageConfig }                                 from '@statdash/react/engine'
 
@@ -50,6 +51,40 @@ export interface SiteManifest extends Omit<
   i18n:         I18nConfig
   /** Named datasource descriptors — JSON-serializable; engine.buildStoreManifest(datasources) builds stores. */
   datasources?: DatasourceInstanceConfig[]
+  /** Semantic layer — JSON-serializable; registerManifestMetrics(metrics) primes the registry. */
+  metrics?:     ManifestMetric[]
+}
+
+// ── registerManifestMetrics — the semantic-layer boot seam ────────────────────
+//
+//  The metric-delivery mirror of the datasource flow: just as the runner reads
+//  `manifest.datasources` and dispatches each to a store-builder, it reads
+//  `manifest.metrics` and registers each MetricDef into the engine's process-global
+//  registry (the `registerMetrics(catalog)` seam). This MUST run before render so a
+//  DataSpec referencing a metric-id resolves through `resolveMeasureRef` to the
+//  underlying code (FF-METRICS-DELIVERED: manifest→boot→registry).
+//
+//  The manifest carries the wire shape `ManifestMetric` (opaque blob, owned by the
+//  api projection); HERE — the consumer that owns the engine's `MetricDef` — we
+//  REFINE it: the registry key is `id`, the rest is the def. Empty/absent ⇒ a no-op
+//  (Postel — registerMetrics({}) leaves the raw-code status quo byte-identical).
+//  Idempotent + last-write-wins per id (registerMetrics contract), so a re-boot or
+//  a manifest refetch re-registers the same catalog without drift.
+
+export function registerManifestMetrics(metrics: ManifestMetric[] | undefined): void {
+  if (!metrics || metrics.length === 0) return
+  const catalog: Record<string, MetricDef> = {}
+  for (const m of metrics) {
+    catalog[m.id] = {
+      code:        m.code,
+      label:       m.label,
+      ...(m.unit        !== undefined ? { unit:        m.unit }        : {}),
+      ...(m.methodology !== undefined ? { methodology: m.methodology } : {}),
+      ...(m.dims        !== undefined ? { dims:        m.dims as MetricDef['dims'] } : {}),
+      ...(m.dataSource  !== undefined ? { dataSource:  m.dataSource }  : {}),
+    }
+  }
+  registerMetrics(catalog)
 }
 
 // ── SiteBootstrap — runtime shell data ────────────────────────────────
@@ -183,5 +218,11 @@ export async function bootstrapSite(): Promise<SiteBootstrap> {
   // Empty fallback → relative `/api/...` (same-origin). See ADR RC-2 / D1.
   const base = import.meta.env.VITE_API_STATS_URL ?? ''
   const [manifest, stores] = await Promise.all([resolveManifest(), fetchStores(base)])
+  // Semantic layer — register the manifest's MetricDefs BEFORE render (mirrors the
+  // datasource flow: manifest data → registry). A DataSpec referencing a metric-id
+  // resolves through resolveMeasureRef only once the catalog is primed; App.tsx
+  // gates render on the resolved SiteBootstrap, so this always precedes the first
+  // page render. Absent metrics ⇒ no-op (byte-identical raw-code status quo).
+  registerManifestMetrics(manifest.metrics)
   return { manifest, stores }
 }

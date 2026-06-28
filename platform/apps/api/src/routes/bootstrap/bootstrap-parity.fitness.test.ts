@@ -79,6 +79,7 @@ interface BootstrapManifest {
   chromeConfig:  unknown
   i18n:          { locales?: unknown; defaultLocale?: unknown }
   datasources:   unknown[]
+  metrics?:      unknown
 }
 
 suite('DB-served bootstrap === committed geostat manifest (ADR-0026 Phase B)', () => {
@@ -147,6 +148,9 @@ suite('DB-served bootstrap === committed geostat manifest (ADR-0026 Phase B)', (
     ['chrome_config', 'chromeConfig'],
     ['i18n',          'i18n'],
     ['nav',           'nav'],
+    // Semantic layer — the bootstrap projects site_config.metrics verbatim into
+    // manifest.metrics (the api delivery half of FF-METRICS-DELIVERED).
+    ['metrics',       'metrics'],
   ]
   for (const [siteKey, manifestField] of blobKeys) {
     it(`bootstrap.${String(manifestField)} === committed site_config.${siteKey} (verbatim)`, () => {

@@ -103,6 +103,10 @@ const SITE_KEY = {
   // (color/icon/path/section anchors) richer than the relational config.nav_item
   // tree. Stored verbatim as a site_config blob; read here, with a CTE fallback.
   nav:          'nav',
+  // Semantic layer (metric-delivery): a ManifestMetric[] blob the runner registers
+  // at boot. Stored verbatim as a site_config 'metrics' key (no new table — rides
+  // the existing key/value pattern, same as nav). Read directly (array, like nav).
+  metrics:      'metrics',
 } as const
 
 // ── Row shapes (server-internal; never leaked) ────────────────────────────────
@@ -277,6 +281,16 @@ export const bootstrapRoutes: FastifyPluginAsync = async (app) => {
       ? (navBlobRaw as JsonRecord[])
       : navRes.rows
 
+    // metrics: the semantic-layer blob (ManifestMetric[]). Verbatim pass-through —
+    // the backend does not own its inner shape (the engine's MetricDef does). An
+    // absent key is the raw-code status quo (omit ⇒ runner registers nothing),
+    // NOT a Phase-B seeding gap, so it is read directly (not via pick) and never
+    // reported in `missing` — Postel + byte-identical to the pre-semantic-layer site.
+    const metricsBlobRaw = site[SITE_KEY.metrics]
+    const metrics = Array.isArray(metricsBlobRaw)
+      ? (metricsBlobRaw as SiteManifestContract['metrics'])
+      : undefined
+
     if (missing.length > 0) {
       app.log.info(
         { missing },
@@ -307,6 +321,10 @@ export const bootstrapRoutes: FastifyPluginAsync = async (app) => {
       chromeConfig,
       i18n,
       datasources,
+      // Semantic layer — included only when the 'metrics' key is present (else
+      // omitted; a runner that registers no metrics is byte-identical to the
+      // raw-code status quo — Postel + FF-RAW-CODE-IDENTICAL).
+      ...(metrics !== undefined ? { metrics } : {}),
       // ADR SDMX-P1-C — included only when V29 yielded a tree (else the key is
       // absent and a consumer that does not know it is unaffected — Postel).
       ...(categories !== undefined ? { categories } : {}),
