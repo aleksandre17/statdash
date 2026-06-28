@@ -93,7 +93,11 @@ function renderPage(slug: string, locale: string, perspective?: string) {
 // The locales the manifest actually ships (DERIVED, never hardcoded — Law 1). The gate
 // drives EVERY shipped locale, so a bag resolved only in the default locale still fails.
 const LOCALES: string[] = (buildManifest().i18n as { locales: string[] }).locales
-const PAGES = ['gdp', 'accounts', 'regional'] as const
+// EVERY shipped page, the index/landing/PORTAL page INCLUDED. The landing page
+// (hero + stats-carousel) was originally OUTSIDE this matrix, which is exactly how a
+// raw { ka, en } unit bag (StatItem.unit) shipped to a React child below the 3 cards
+// after the 255-string bilingualization. The portal composition is now in the gate.
+const PAGES = ['landing', 'gdp', 'accounts', 'regional'] as const
 // undefined = the page default perspective; 'range' = the non-default (its own owned
 // filter/KPI/badge surfaces, a distinct set of LocaleStrings to resolve).
 const PERSPECTIVES: (string | undefined)[] = [undefined, 'range']

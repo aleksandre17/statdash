@@ -5,7 +5,7 @@ export interface StatItem {
   iconBg?:     string
   label:       LocaleString
   value:       string
-  unit:        string
+  unit:        LocaleString
   change?:     number
   changeText?: LocaleString
 }

@@ -112,7 +112,7 @@ function StatsCarouselControl({ def }: { def: StatsCarouselNode }) {
                 <span className="stats-item-label">{resolve(stat.label)}</span>
                 <div className="stats-item-value">
                   <span className="stats-value">{stat.value}</span>
-                  <span className="stats-unit">{stat.unit}</span>
+                  <span className="stats-unit">{resolve(stat.unit)}</span>
                 </div>
                 {stat.change != null && stat.change !== 0 && stat.changeText && (
                   <div
