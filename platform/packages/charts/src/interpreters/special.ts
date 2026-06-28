@@ -5,7 +5,7 @@ import { formatFieldValue, resolveFieldConfig } from '@statdash/engine'
 import type { ChartDef, ChartOutput, ChartSeries, ChartDataPoint } from '../types'
 import type { ChartInterpreter } from '../registry'
 import { buildDataPoint, buildAxes, buildLegend, buildTooltip, groupBySeries, uniqueLabels } from './shared'
-import { DEFAULT_SERIES_COLOR, DEFAULT_ACCENT_COLOR, DEFAULT_TOTAL_COLOR } from '../colors'
+import { DEFAULT_SERIES_COLOR, DEFAULT_TOTAL_COLOR } from '../colors'
 
 // ── WaterfallInterpreter ───────────────────────────────────────────────
 //
@@ -124,10 +124,12 @@ class TreemapInterpreter implements ChartInterpreter {
     const series: ChartSeries[] = [{
       name:  def.label,
       // `||` not `??`: an unmapped measure's color is '' (empty string) from the
-      // lookup pipe, which `??` would keep → a transparent treemap fill. Seed the
-      // neutral accent so the tile paints (the adapter layers the themed fallback).
+      // lookup pipe, which `??` would keep → a transparent contract value. Seed a
+      // brand-NEUTRAL grey (the treemap adapter recolors tiles from its own
+      // categorical palette + per-point thresholdColor, so this is the contract's
+      // required default, never a brand). No tenant hex belongs here.
       data:  chartRows.map((r) => buildDataPoint(r, resolveFieldConfig(fc, r.label))),
-      color: chartRows[0]?.color || DEFAULT_ACCENT_COLOR,
+      color: chartRows[0]?.color || DEFAULT_SERIES_COLOR,
     }]
     return {
       type: 'treemap', height: def.height,
@@ -265,7 +267,11 @@ class ContributionInterpreter implements ChartInterpreter {
       type:        'contribution',
       height:      def.height,
       categories,
-      series:      [{ name: def.label, data: pts, color: DEFAULT_ACCENT_COLOR }],
+      // Per-bar colors travel on each point's thresholdColor (set above from the
+      // DataRow). This series-level `color` is only the fallback for a bar with
+      // no row color — a brand-NEUTRAL grey, never a tenant accent. The themed
+      // accent is resolved at the apex render layer via cssVar('--color-accent').
+      series:      [{ name: def.label, data: pts, color: DEFAULT_SERIES_COLOR }],
       axes:        buildAxes(def),
       stacked:     false,
       horizontal:  false,
