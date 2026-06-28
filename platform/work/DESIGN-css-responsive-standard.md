@@ -91,7 +91,7 @@ The spine exists and is strong (`tokens.css`). The standard formalizes it and cl
 | **Color** | 3-tier: primitive ramp → `--color-*` semantic → component roles | semantic roles only | Shells consume roles; primitives are private to Tier-2. Tenant rebrands at `[data-tenant]`. |
 | **Radius / border / shadow / z / blur / opacity** | `--radius-*`, `--border-*`, `--shadow-*`, `--z-*`, `--blur-*`, `--opacity-*` | `var(--…)` | No literal `box-shadow: 0 4px 20px rgba(...)`, no `border-radius: 18px`. |
 | **Motion** | `--duration-*`, `--easing-*` (+ legacy `--transition-*`) | composable | Honor `prefers-reduced-motion` (already global). |
-| **Container measure** | `--size-container-{narrow,mid,wide}` + `--page-measure` seam | `max-width` | One page measure. Header, footer, hero, content all agree (see R3 history). |
+| **Container measure** | `--size-container-{narrow,mid,wide,ultra}` → **`--page-measure`** (SSOT, fluid: `clamp(--size-container-wide, 90vw, --size-container-ultra)`) | `max-width` | ONE fluid page measure. Header inner, content body, footer inner all consume `--page-measure` so they agree at every width. A data dashboard is not prose — the measure is set *above* a reading column (charts breathe on 1440/1920) and clamped (1760) so ultrawide centres, never an edge-to-edge ribbon. A tenant/layout rebinds `--page-measure` in one place (OCP). |
 
 **Why a TS SSOT for breakpoints and not a CSS var:** CSS `@media`/`@container` feature queries **cannot**
 read `var()` (the custom property is invalid in the media feature context). The only standards-compliant
@@ -110,9 +110,16 @@ Decision order (prefer the earlier, cheaper mechanism; escalate only when it can
      scales 360→3440 without a single breakpoint step (kills the "h1 jumps 27→50px at 1280" class of bug).
    - Spacing: `clamp()` gutters/padding (already used well, e.g. `app-header` padding
      `clamp(0.8rem, 2.5vw, 2rem)`).
-   - Layout: CSS Grid `repeat(auto-fit, minmax(<min>, 1fr))` for card/KPI grids — they reflow with **zero**
-     breakpoints and never strand or overflow. This is the Every-Layout/intrinsic standard and is
-     stronger than counting columns per breakpoint.
+   - Layout: CSS Grid `repeat(auto-fit, minmax(min(<floor>, 100%), 1fr))` for card/KPI grids — they reflow
+     with **zero** breakpoints, fill the row for **any** item count, collapse empty trailing tracks (no dead
+     cell), and the `min(<floor>,100%)` guard stacks to one column below the floor instead of overflowing.
+     This is the Every-Layout/intrinsic standard and is stronger than counting columns per breakpoint.
+     **Canonical implementation:** the KPI strip (`panels/kpi-strip/.../kpi.css`, one knob `--kpi-card-min`)
+     — the reference every multi-item strip/grid follows. **Flag (additive, post-demo):** the layout
+     `columns`/`grid` nodes still count fixed columns per breakpoint (`data-cols-*`); they should gain an
+     intrinsic `auto` mode (a `min` floor → this same `auto-fit` rule) so page authors get gap-free reflow
+     without enumerating counts — the platform eating its own dog food. Deferred only for YAGNI (no page
+     config consumes it yet) + blast radius (touches the `@statdash/styles` `resolveColumns` resolver).
    - Caps: `max-width: min(100%, <token>)` and aspect ceilings (`--size-panel-max-height`) to stop
      ultrawide ballooning.
 2. **Container query (`@container`)** — second choice, for *component-level* responsiveness: a node must

@@ -39,6 +39,27 @@
   --size-container-narrow: 640px;
   --size-container-mid:    960px;
   --size-container-wide:   1280px;
+  /* Ultrawide dashboard ceiling — the upper bound of the fluid page measure
+     below. A data dashboard is NOT prose: it earns nothing from a 66ch reading
+     column, so the ceiling is set well above --size-container-wide (charts need
+     room to breathe on large monitors), yet bounded so 2560/3440 never becomes
+     an edge-to-edge ribbon. 1760px ≈ a full desktop's worth of content, centred
+     on ultrawide with symmetric gutters (Stripe/Linear/Looker convention). */
+  --size-container-ultra:  1760px;
+
+  /* ── Page measure (SSOT) — the ONE width every page-level region agrees on ──
+     Header chrome, content body, and footer all consume this single token so
+     they share an identical column at every resolution (the R3 coherence law).
+     Fluid by design — three anchors:
+       floor = --size-container-wide  (1280) — never narrower than the prior cap
+       ideal = 90vw                          — tracks the viewport 1280→~1955px,
+                                               so charts gain real width on the
+                                               1440/1680/1920 statistical targets
+       ceil  = --size-container-ultra (1760) — contained past ~1955px; ultrawide
+                                               centres rather than over-stretching
+     A tenant/layout variant rebinds --page-measure to re-measure the whole page
+     in one place — the consumers never change (Open/Closed). */
+  --page-measure: clamp(var(--size-container-wide), 90vw, var(--size-container-ultra));
 
   /* Ceiling for a single aspect-ratio data panel (chart / treemap / map).
      An aspect-ratio gives height ∝ width, so a full-width panel grows

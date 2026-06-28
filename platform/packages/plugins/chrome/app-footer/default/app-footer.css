@@ -11,7 +11,11 @@
 }
 
 .app-footer__inner {
-  max-width: 1280px;
+  /* Shared page measure — the SAME token the header inner and the inner-page
+     body consume, so footer chrome agrees with the content column at every
+     resolution (R3 coherence; was a hard 1280 literal that disagreed with the
+     now-fluid body measure on wide monitors). */
+  max-width: var(--page-measure, var(--size-container-wide));
   margin: 0 auto;
   padding: 1.5rem clamp(0.8rem, 2.5vw, 2rem);
 }
