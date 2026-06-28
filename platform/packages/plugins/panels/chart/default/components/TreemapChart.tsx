@@ -11,7 +11,7 @@ import { useState }         from 'react'
 import { createPortal }     from 'react-dom'
 import type { ChartOutput } from '@statdash/charts'
 import { fmtNum } from '@statdash/engine'
-import { cssVar } from '@statdash/styles'
+import { cssVar, chartPalette } from '@statdash/styles'
 
 const GAP = 3
 
@@ -131,22 +131,43 @@ export default function TreemapChart({ output }: { output: ChartOutput }) {
 
   // `||` not `??`: an unmapped measure yields color '' from the lookup pipe
   // (an empty STRING, which `??` would keep → a transparent, invisible block).
-  // Fall back to the theme accent so every tile paints.
+  // Fall back to the theme accent so every tile paints. The total tile keeps
+  // this accent as its anchor colour; components draw from the palette below.
   const base = output.series[0]?.color || cssVar('--color-accent', '#0080BE')
+
+  // A treemap shows categorical structure, so each tile should read as its own.
+  // When the series carries no per-tile differentiation (every component resolves
+  // to the same/blank colour — a single-series treemap with no colour encoding),
+  // distribute the platform's categorical palette so tiles are distinguishable.
+  // When rows DO carry distinct colours (semantic threshold / colour encoding),
+  // respect them. Generic for any treemap, any cardinality. (WCAG: per-tile label
+  // contrast is handled by isLight() below, which adapts text to each tile's hue.)
+  const compColors = cats
+    .map((l, i) => (pts[i] && !(l ?? '').startsWith('(=) ') ? pts[i]!.thresholdColor : undefined))
+  const distinct   = new Set(compColors.filter(Boolean))
+  const distribute = distinct.size <= 1
+  const palette    = chartPalette()
+  let ci = 0
 
   const items: Item[] = cats
     .map((rawLabel, i) => {
       const label = rawLabel ?? ''
       const pt    = pts[i]
       if (!pt) return null
+      const isTotal = label.startsWith('(=) ')
+      const color   = isTotal
+        ? (pt.thresholdColor || base)
+        : distribute
+          ? palette[ci++ % palette.length]!
+          : (pt.thresholdColor || base)
       return {
         label,
         clean:     label.replace(/^\(.\) /, ''),
         op:        label.match(/^\((.)\) /)?.[1] ?? '',
         value:     pt.value,
         formatted: pt.formatted,
-        color:     pt.thresholdColor || base,
-        isTotal:   label.startsWith('(=) '),
+        color,
+        isTotal,
       }
     })
     .filter((it): it is Item => it !== null)

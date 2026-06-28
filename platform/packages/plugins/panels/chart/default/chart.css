@@ -30,3 +30,56 @@
   .chart-wrap { height: auto; }
   .chart-wrap__render { height: auto; }
 }
+
+/* ── Donut legend ────────────────────────────────────────────────────
+ *  Structural layout for the custom DonutChart legend. Data-driven values
+ *  (swatch colour, hover opacity) stay inline on the elements; only layout
+ *  lives here so it can step down responsively. A high-cardinality donut
+ *  (10+ sectors) crowds/overlaps at narrow widths — flex-wrap + per-item
+ *  ellipsis truncation (with native `title` tooltip) + tightening gaps keep
+ *  it legible without overrunning the ring. */
+.donut-legend {
+  flex-shrink:    0;
+  display:        flex;
+  flex-wrap:      wrap;
+  justify-content: center;
+  gap:            4px 14px;
+  padding:        4px 8px 6px;
+  font-family:    'BPG Arial', Roboto, sans-serif;
+}
+
+.donut-legend__item {
+  display:     flex;
+  align-items: center;
+  gap:         5px;
+  min-width:   0;          /* allow the label to shrink + ellipsis */
+  max-width:   16ch;       /* cap so one long name can't span a whole row */
+  transition:  opacity 0.15s;
+}
+
+.donut-legend__swatch {
+  width:         8px;
+  height:        8px;
+  border-radius: 50%;
+  flex-shrink:   0;
+}
+
+.donut-legend__label {
+  font-size:     10px;
+  color:         var(--color-text-secondary);
+  line-height:   1.3;
+  white-space:   nowrap;
+  overflow:      hidden;
+  text-overflow: ellipsis;
+}
+
+@media (max-width: 768px) {
+  .donut-legend       { gap: 3px 10px; padding: 3px 6px 5px; }
+  .donut-legend__item { max-width: 12ch; gap: 4px; }
+  .donut-legend__label { font-size: 9px; }
+}
+
+@media (max-width: 480px) {
+  .donut-legend       { gap: 2px 8px; }
+  .donut-legend__item { max-width: 10ch; }
+}

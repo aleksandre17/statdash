@@ -69,18 +69,23 @@ export default function DonutChart({ output }: { output: ChartOutput }) {
         {hov !== null && cur && <DonutTip s={slices[hov]!} cx={cur.x} cy={cur.y} />}
       </svg>
 
-      {/* ── Legend ── */}
-      <div style={{
-        flexShrink: 0, display: 'flex', flexWrap: 'wrap',
-        justifyContent: 'center', gap: '4px 14px',
-        padding: '4px 8px 6px', fontFamily: 'BPG Arial, Roboto, sans-serif',
-      }}>
+      {/* ── Legend ──
+          Layout (wrap / spacing / truncation) is structural CSS in chart.css so
+          it can step down responsively at narrow widths — a high-cardinality
+          donut (10+ sectors) otherwise crowds and overlaps. Long names ellipsis-
+          truncate with a native `title` tooltip (full name on hover), keeping the
+          legend legible without overrunning the ring. Data-driven bits (swatch
+          colour, hover dim) stay inline. Generic for any donut. */}
+      <div className="donut-legend">
         {slices.map((s, i) => (
-          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 5, opacity: hov !== null && hov !== i ? 0.4 : 1, transition: 'opacity .15s' }}>
-            <div style={{ width: 8, height: 8, borderRadius: '50%', background: s.color, flexShrink: 0 }} />
-            <span style={{ fontSize: 10, color: 'var(--color-text-secondary)', lineHeight: 1.3 }}>
-              {s.name}
-            </span>
+          <div
+            key={i}
+            className="donut-legend__item"
+            style={{ opacity: hov !== null && hov !== i ? 0.4 : 1 }}
+            title={s.name}
+          >
+            <span className="donut-legend__swatch" style={{ background: s.color }} />
+            <span className="donut-legend__label">{s.name}</span>
           </div>
         ))}
       </div>

@@ -5,7 +5,7 @@
 //
 
 import type { ApexOptions } from 'apexcharts'
-import type { ChartSeries } from '@statdash/charts'
+import type { ChartSeries, ChartOutput } from '@statdash/charts'
 import { fmtNum }                        from '@statdash/engine'
 import { cssVar, prefersReducedMotion }  from '@statdash/styles'
 
@@ -117,3 +117,29 @@ export function scaledPx(vw: number, min: number, max: number): string {
 export const BP_MD = 1024 // small laptop / large tablet
 export const BP_SM = 768  // tablet / large phone landscape
 export const BP_XS = 480  // phone portrait
+
+// ── Category-aware height (horizontal / categorical charts) ─────────────
+//
+//  A vertical chart's category axis runs along the (elastic) x-direction, so a
+//  fixed container height works at any cardinality. A HORIZONTAL bar stacks one
+//  row per category down the (fixed) height — so a many-category hbar squeezes
+//  bars + axis labels together until they overlap, worst at narrow widths. The
+//  fix is to make height a function of category count: reserve a minimum slot
+//  per row so every label can breathe, bounded so few-category charts don't grow
+//  gratuitously and huge ones stay within a scrollable cap. Generic for any
+//  categorical hbar, any count — vertical charts keep filling their container.
+//
+const HBAR_PX_PER_CATEGORY = 34   // min vertical slot per row (bar + gap + label)
+const HBAR_MIN_HEIGHT      = 240  // floor — keeps a 1–6 row hbar from collapsing
+const HBAR_MAX_HEIGHT      = 920  // cap — beyond this the panel scrolls
+
+/**
+ * Resolve the render height for a ChartOutput. Horizontal categorical charts get
+ * a height derived from their category count (so rows never cram); everything
+ * else fills its container ('100%'), unchanged.
+ */
+export function categoricalChartHeight(output: ChartOutput): number | '100%' {
+  const n = output.categories.length
+  if (!output.horizontal || n === 0) return '100%'
+  return Math.min(HBAR_MAX_HEIGHT, Math.max(HBAR_MIN_HEIGHT, n * HBAR_PX_PER_CATEGORY))
+}

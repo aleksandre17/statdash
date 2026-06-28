@@ -1,6 +1,7 @@
 import ReactApexChart              from 'react-apexcharts'
 import type { ChartRendererProps } from '@statdash/react/engine'
 import { toApexOptions }           from '../utils/toApexOptions'
+import { categoricalChartHeight }  from '../utils/apex/base'
 
 function apexChartType(type: string): 'bar' | 'line' | 'pie' | 'area' {
   if (type === 'hbar' || type === 'waterfall' || type === 'contribution') return 'bar'
@@ -43,7 +44,9 @@ export function ApexRenderer({ output, onDataHover, onDataLeave, onDataClick }: 
       options={options}
       series={options.series as ApexAxisChartSeries | number[]}
       type={apexChartType(output.type)}
-      height="100%"
+      // Horizontal categorical charts size to their category count so rows never
+      // cram; all other types fill the container ('100%') as before.
+      height={categoricalChartHeight(output)}
     />
   )
 }

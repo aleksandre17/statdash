@@ -3,7 +3,7 @@
 import type { ApexOptions } from 'apexcharts'
 import type { ChartOutput } from '@statdash/charts'
 import { BASE, scaledPx, BP_MD, BP_SM, BP_XS } from './base'
-import { cssVar } from '@statdash/styles'
+import { cssVar, chartPalette } from '@statdash/styles'
 
 export function buildTreemap(output: ChartOutput): ApexOptions {
   const { series, categories } = output
@@ -30,9 +30,13 @@ export function buildTreemap(output: ChartOutput): ApexOptions {
     },
     stroke: { width: 2, colors: [cssVar('--color-text-inverse', '#ffffff')] },
     plotOptions: {
+      // distributed: each tile draws the next colour from `colors` (cycled). The
+      // categorical palette below makes a single-series treemap read by category;
+      // per-point `fillColor` (set from thresholdColor above) still wins when the
+      // data carries a semantic colour, so meaning is preserved.
       treemap: { distributed: true, enableShades: false, useFillColorAsStroke: false },
     },
-    colors: [series[0]?.color ?? cssVar('--color-accent', '#0080BE')],
+    colors: chartPalette(),
     tooltip: {
       ...BASE.tooltip,
       enabled: output.tooltip.show,

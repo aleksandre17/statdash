@@ -298,7 +298,10 @@ export function buildCartesian(output: ChartOutput): ApexOptions {
       {
         breakpoint: BP_SM,
         options: {
-          chart:   { height: 280 },
+          // Horizontal charts keep their category-derived height (set on the
+          // ReactApexChart `height` prop) — a fixed short height here would
+          // re-cram the rows at narrow widths. Vertical charts shrink as before.
+          ...(horizontal ? {} : { chart: { height: 280 } }),
           plotOptions: { bar: { borderRadius: 2 } },
           markers:     { size: 3, hover: { size: 5 } },
           stroke: {
@@ -322,7 +325,7 @@ export function buildCartesian(output: ChartOutput): ApexOptions {
       {
         breakpoint: BP_XS,
         options: {
-          chart:   { height: 240 },
+          ...(horizontal ? {} : { chart: { height: 240 } }),
           plotOptions: { bar: { borderRadius: 2, columnWidth: '85%' } },
           markers:     { size: 0 },
           dataLabels: { enabled: false },
