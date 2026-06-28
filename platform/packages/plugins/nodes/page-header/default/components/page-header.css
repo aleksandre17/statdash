@@ -43,7 +43,9 @@
 
 .page-header__title {
   font-family: 'Noto Serif Georgian', 'Noto Sans Georgian', sans-serif;
-  font-size: 1.0625rem;
+  /* Fluid scale (18→24px) instead of a fixed 17px — gives the inner-page H1
+     continuous prominence across the ladder, matching the type hierarchy. */
+  font-size: var(--font-size-fluid-lg);
   font-weight: 700;
   color: var(--color-text-primary);
   line-height: 1.2;

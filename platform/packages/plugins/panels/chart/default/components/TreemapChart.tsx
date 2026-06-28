@@ -55,7 +55,7 @@ function Tooltip({ item, pct, cursor }: { item: Item; pct: string; cursor: Curso
 // ── Block ──────────────────────────────────────────────────────────────
 
 function Block({
-  item, flexGrow, hovered, onEnter, onMove, onLeave,
+  item, flexGrow, pct, hovered, onEnter, onMove, onLeave,
 }: {
   item: Item; flexGrow: number; pct: string
   hovered: Item | null
@@ -87,18 +87,33 @@ function Block({
       )}
       <div style={{
         position: 'absolute', inset: 0,
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        display: 'flex', flexDirection: 'column', gap: 2,
+        alignItems: 'center', justifyContent: 'center',
         padding: '4px 10px', pointerEvents: 'none',
         color: light ? 'var(--color-text-primary)' : 'var(--color-text-inverse)', overflow: 'hidden',
       }}>
         <span style={{
           fontSize: 12, fontFamily: 'BPG Arial, Roboto, sans-serif',
-          textAlign: 'center', lineHeight: 1.35,
+          textAlign: 'center', lineHeight: 1.3,
           overflow: 'hidden', display: '-webkit-box',
           WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
         }}>
           {item.clean}
         </span>
+        <span style={{
+          fontSize: 15, fontWeight: 700, lineHeight: 1.2,
+          fontFamily: 'BPG Arial, Roboto, sans-serif',
+        }}>
+          {item.formatted}
+        </span>
+        {pct && (
+          <span style={{
+            fontSize: 11, opacity: 0.85, lineHeight: 1.2,
+            fontFamily: 'BPG Arial, Roboto, sans-serif',
+          }}>
+            {pct}
+          </span>
+        )}
       </div>
     </div>
   )
@@ -186,12 +201,16 @@ export default function TreemapChart({ output }: { output: ChartOutput }) {
             )}
             <div style={{
               position: 'absolute', inset: 0,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              display: 'flex', flexDirection: 'column', gap: 3,
+              alignItems: 'center', justifyContent: 'center',
               padding: 12, textAlign: 'center', pointerEvents: 'none',
               color: light ? 'var(--color-text-primary)' : 'var(--color-text-inverse)',
             }}>
               <span style={{ fontSize: 12, fontFamily: 'BPG Arial, Roboto, sans-serif', lineHeight: 1.35 }}>
                 {totalItem.clean}
+              </span>
+              <span style={{ fontSize: 17, fontWeight: 700, fontFamily: 'BPG Arial, Roboto, sans-serif', lineHeight: 1.2 }}>
+                {totalItem.formatted}
               </span>
             </div>
           </div>

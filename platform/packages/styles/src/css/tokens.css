@@ -40,6 +40,16 @@
   --size-container-mid:    960px;
   --size-container-wide:   1280px;
 
+  /* Ceiling for a single aspect-ratio data panel (chart / treemap / map).
+     An aspect-ratio gives height ∝ width, so a full-width panel grows
+     unbounded as the viewport widens — on ultrawide a 16:9 panel balloons
+     into a dominating flat block. This caps that growth: viewport-height
+     aware (a panel never claims more than ~half the fold) with a hard px
+     ceiling so it can't dominate the page on any layout/measure. Floor keeps
+     it usable on short viewports. Consumed by [data-aspect] / fixed-aspect
+     [data-height] tokens in node-styles.css. */
+  --size-panel-max-height: clamp(380px, 56vh, 560px);
+
   /* ── Backdrop blur ──────────────────────────────────────────── */
   --blur-sm: blur(4px);
   --blur-md: blur(8px);

@@ -27,6 +27,12 @@
 [data-height="4:3"]  { aspect-ratio: 4 / 3;  }
 [data-height="1:1"]  { aspect-ratio: 1 / 1;  }
 [data-height="21:9"] { aspect-ratio: 21 / 9; }
+/* Aspect-ratio height ∝ width — cap the ultrawide growth so a full-width
+ * panel can't balloon into a dominating block (same ceiling as [data-aspect]). */
+[data-height="16:9"],
+[data-height="4:3"],
+[data-height="1:1"],
+[data-height="21:9"] { max-height: var(--size-panel-max-height); }
 [data-height="sm"]   { height: 280px; }
 [data-height="md"]   { height: 380px; }
 [data-height="lg"]   { height: 480px; }
@@ -75,8 +81,14 @@
  */
 
 [data-aspect] {
+  width:        100%;
   height:       auto;
   aspect-ratio: var(--ar-default);
+  /* aspect-ratio yields to max-height: with width pinned to fill, a capped panel
+   * stays full-width (ratio breaks toward shorter) instead of shrinking its width
+   * to preserve the ratio — so ultrawide can't grow it into a dominating block
+   * and the panel keeps using its horizontal space. */
+  max-height:   var(--size-panel-max-height);
 }
 
 /* Viewport (media) cascade — largest → smallest */
