@@ -1,7 +1,7 @@
 ﻿// No trailing zeros, max `max` decimals, space thousands separator
 export const fmtNum = (n: number, max = 1): string => {
   const abs = Math.abs(n), neg = n < 0 ? '-' : ''
-  const s = abs.toFixed(max).replace(/\.?0+$/, '')
+  const s = abs.toFixed(max).replace(/(\.\d*?)0+$/, '$1').replace(/\.$/, '')
   const [i, d] = s.split('.')
   return neg + i.replace(/\B(?=(\d{3})+(?!\d))/g, '\u00A0') + (d ? '.' + d : '')
 }
