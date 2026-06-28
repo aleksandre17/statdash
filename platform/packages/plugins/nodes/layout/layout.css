@@ -19,11 +19,25 @@
 .layout-grid-ctx { container-type: inline-size; container-name: grid; }
 
 /* ── Columns ─────────────────────────────────────────────────── */
+/* Equal-height is INTRINSIC to the primitive: `align-items: stretch` makes
+ * every column fill the row's tallest sibling (the Tableau / Power BI / Grafana
+ * row contract) — paired panels read as one system with zero per-panel height
+ * hacks. The renderer can override per-row via the authorable `align` prop
+ * (ColumnsNode → data-align), e.g. top-align a caption row. */
 .layout-columns {
   display:     grid;
   gap:         var(--layout-gap, var(--spacing-md, 1rem));
-  align-items: start;
+  align-items: stretch;
 }
+
+/* Authorable cross-axis alignment override (data-align) — Constructor-ready. */
+.layout-columns[data-align="start"]  { align-items: start;  }
+.layout-columns[data-align="center"] { align-items: center; }
+.layout-columns[data-align="end"]    { align-items: end;    }
+
+/* Overflow guard (WCAG 1.4.10 Reflow) — a column that holds long content
+ * (a wide table, a long label) must never push the grid past the viewport. */
+.layout-columns > * { min-width: 0; }
 
 /* Default (full-width, all breakpoints): count from data-cols */
 .layout-columns[data-cols="1"] { grid-template-columns: 1fr; }
@@ -79,12 +93,20 @@
 }
 
 /* ── Grid (12-column engineering grid) ───────────────────────── */
+/* Same equal-height contract as columns — siblings stretch to the row's
+ * tallest cell, overridable via data-align. */
 .layout-grid {
   display:               grid;
   grid-template-columns: repeat(12, 1fr);
   gap:                   var(--layout-gap, var(--spacing-md, 1rem));
-  align-items:           start;
+  align-items:           stretch;
 }
+
+.layout-grid[data-align="start"]  { align-items: start;  }
+.layout-grid[data-align="center"] { align-items: center; }
+.layout-grid[data-align="end"]    { align-items: end;    }
+
+.layout-grid > * { min-width: 0; }
 
 @container grid (max-width: 1024px) { .layout-grid { grid-template-columns: repeat(6, 1fr); } }
 @container grid (max-width: 768px)  { .layout-grid { grid-template-columns: repeat(6, 1fr); } }
