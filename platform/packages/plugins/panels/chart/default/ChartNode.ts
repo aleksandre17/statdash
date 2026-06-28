@@ -1,13 +1,34 @@
 import type { PropertyGroup, DataLinkDef, PropSchema } from '@statdash/react/engine'
-import type { ChartType }        from '@statdash/engine'
+import type { ChartType, LocaleString } from '@statdash/engine'
 import type { ChartDef }         from '@statdash/charts'
 import type { NodeBase }                   from '@statdash/react/engine'
+import type { LocaleFieldConfig, LocaleAxes } from './utils/localeChartDef'
 import { DATA_INTEGRITY_SCHEMA, DATA_INTEGRITY_FIELDS } from '../../dataIntegritySchema'
 
+// ── ChartNode — the config-facing chart shape ────────────────────────────
+//
+//  The bilingual text fields are re-typed off the engine `ChartDef` as
+//  `LocaleString` (label, centerLabel, axis units, fieldConfig text). This is the
+//  TYPE-HONESTY half of the LocaleString render-boundary fix: the provisioning
+//  authors these as `{ ka, en }`, so the compiler must SEE them as LocaleString and
+//  force a resolve (resolveChartDefLocale) before they reach the engine `ChartDef`
+//  (string units). Leaving them `string` is the scalar lie that let a raw `{ ka, en }`
+//  bag flow unflagged into ApexCharts / a JSX child. See ./utils/localeChartDef.ts.
+//
 export type ChartNode =
   Omit<NodeBase, 'type'>
   & { type: 'chart'; chartType: ChartType }
-  & Omit<ChartDef, 'type'>
+  & Omit<ChartDef, 'type' | 'label' | 'centerLabel' | 'axes' | 'fieldConfig'>
+  & {
+      /** Chart header / series-name fallback — config-bilingual. */
+      label?:       LocaleString
+      /** Donut centre caption — config-bilingual. */
+      centerLabel?: LocaleString
+      /** Axis overrides whose `unit` may be config-bilingual. */
+      axes?:        LocaleAxes
+      /** Per-field display settings whose text (unit / noValue / labels) may be config-bilingual. */
+      fieldConfig?: LocaleFieldConfig
+    }
   & { dataLinks?: DataLinkDef[] }
   /** Explicit "preliminary data" override (Law 9) — signal #1 of resolvePreliminary. */
   & { preliminary?: boolean }

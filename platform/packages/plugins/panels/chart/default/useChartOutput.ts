@@ -1,18 +1,22 @@
 import { useMemo }              from 'react'
 import { interpretChart }        from '@statdash/charts'
+import { useResolveLocale }      from '@statdash/react'
 import type { RenderContext }    from '@statdash/react/engine'
 import type { ChartOutput }      from '@statdash/charts'
 import type { ChartNode }        from './ChartNode'
+import { resolveChartDefLocale } from './utils/localeChartDef'
 
 // ── useChartOutput — resolve a ChartNode + ctx into a ChartOutput ──────────
 //
-//  Owns the two data-shaping memos ChartControl used to inline:
-//   1. fieldConfig cascade — the parent's ctx.fieldConfig is the base, the
-//      node's own def.fieldConfig overrides it (node wins per key). Either
-//      side absent ⇒ skip the merge.
-//   2. interpretChart — strip the shell-only fields (type/chartType/fieldConfig)
-//      off def, fold in the resolved fieldConfig + the parent view's
-//      legend/tooltip overrides, then interpret against the rows.
+//  Owns the data-shaping the shell used to inline:
+//   1. LocaleString render boundary + fieldConfig cascade — resolveChartDefLocale
+//      folds the parent's ctx.fieldConfig (node def wins per key) and resolves EVERY
+//      bilingual ChartNode text field (label / centerLabel / axis units / fieldConfig
+//      text) to the active locale, so the engine receives string-only ChartDef and no
+//      raw { ka, en } bag can reach ChartOutput → toApexOptions (Law 1; the engine
+//      stays locale-agnostic, resolution happens at this React boundary).
+//   2. interpretChart — fold in the parent view's legend/tooltip overrides on top of
+//      the resolved def, then interpret against the rows.
 //
 //  Pulling this out lets ChartControl read as orchestration only — it asks for
 //  the output, it does not compute it.
@@ -21,29 +25,21 @@ export function useChartOutput(ctx: RenderContext, def: ChartNode): ChartOutput 
   const { sectionCtx } = ctx
   const legend  = ctx.view?.legend
   const tooltip = ctx.view?.tooltip
-
-  // fieldConfig cascade — parent ctx.fieldConfig as base, node def as override.
-  const defFc = def.fieldConfig
-  const fieldConfig = useMemo(
-    () => (ctx.fieldConfig || defFc) ? { ...ctx.fieldConfig, ...defFc } : undefined,
-    [ctx.fieldConfig, defFc],
-  )
+  const resolve = useResolveLocale()
 
   return useMemo(() => {
     const rows = ctx.rows ?? []
-    const { type: _type, chartType, fieldConfig: _fc, ...chartDefFields } = def
+    const base = resolveChartDefLocale(def, ctx.fieldConfig, resolve)
     return interpretChart(
       {
-        type: chartType,
-        ...chartDefFields,
-        ...(fieldConfig != null ? { fieldConfig } : {}),
+        ...base,
         ...(legend  != null ? { legend:  viewLegend(legend)  } : {}),
         ...(tooltip != null ? { tooltip: { mode: tooltip }   } : {}),
       },
       rows,
       sectionCtx,
     )
-  }, [def, fieldConfig, legend, tooltip, ctx.rows, sectionCtx])
+  }, [def, ctx.fieldConfig, legend, tooltip, ctx.rows, sectionCtx, resolve])
 }
 
 function viewLegend(l: 'bottom' | 'right' | 'none') {

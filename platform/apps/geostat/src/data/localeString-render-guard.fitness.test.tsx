@@ -93,11 +93,13 @@ function renderPage(slug: string, locale: string, perspective?: string) {
 // The locales the manifest actually ships (DERIVED, never hardcoded — Law 1). The gate
 // drives EVERY shipped locale, so a bag resolved only in the default locale still fails.
 const LOCALES: string[] = (buildManifest().i18n as { locales: string[] }).locales
-// EVERY shipped page, the index/landing/PORTAL page INCLUDED. The landing page
-// (hero + stats-carousel) was originally OUTSIDE this matrix, which is exactly how a
-// raw { ka, en } unit bag (StatItem.unit) shipped to a React child below the 3 cards
-// after the 255-string bilingualization. The portal composition is now in the gate.
-const PAGES = ['landing', 'gdp', 'accounts', 'regional'] as const
+// EVERY shipped page — DERIVED from the manifest (prov.pages[].slug), never a
+// hand-listed array. A hand-list is exactly how the landing page (hero +
+// stats-carousel) sat OUTSIDE this matrix, letting a raw { ka, en } unit bag
+// (StatItem.unit) ship to a React child after the 255-string bilingualization. Deriving
+// the list means a NEW page can never silently escape the gate. The index page id is
+// asserted present so the portal/landing composition is provably covered.
+const PAGES: string[] = (prov.pages as { slug: string }[]).map((p) => p.slug)
 // undefined = the page default perspective; 'range' = the non-default (its own owned
 // filter/KPI/badge surfaces, a distinct set of LocaleStrings to resolve).
 const PERSPECTIVES: (string | undefined)[] = [undefined, 'range']
@@ -113,6 +115,10 @@ const PERSPECTIVES: (string | undefined)[] = [undefined, 'range']
 const REACT_CHILD_VIOLATION = /not valid as a React child/i
 
 describe('LocaleString render guard — every display bag resolves at its boundary', () => {
+  it('the page matrix is manifest-derived and covers the index/landing page', () => {
+    expect(PAGES.length).toBeGreaterThan(0)
+    expect(PAGES).toContain(sc.index_page_id)
+  })
   for (const slug of PAGES) {
     for (const locale of LOCALES) {
       for (const perspective of PERSPECTIVES) {
