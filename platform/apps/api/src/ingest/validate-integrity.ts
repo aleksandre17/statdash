@@ -17,6 +17,7 @@ import { makeIssue } from './util.js'
 import { resolveRules } from './rules/registry.js'
 import { runRules } from './rules/evaluator.js'
 import { classifyContractChange, type ContractChange, type DsdSnapshot } from './canonical/compat.js'
+import { accountingIdentityViolation } from '../lib/problem.js'
 
 // ── DQAF integrity rules (validation-as-data — ADR-0031 §4 improvement 3) ─────
 //
@@ -41,6 +42,49 @@ export function runFactRules(
   const rules = resolveRules(datasetCode)
   if (rules.length === 0) return []
   return runRules(rules, rows, { submissionId })
+}
+
+// ── Accounting-identity PUBLISH gate (DC-02, Law 9) ───────────────────────────
+//
+// The authoritative gold-boundary gate. The worker already evaluated the dataset's
+// declared identities (runFactRules) and PERSISTED any violation as a validation_issue;
+// an accounting identity authored severity:'error' lands as an error-severity
+// ACCOUNTING_IDENTITY row. THIS reads those persisted rows at the publish moment and,
+// if any exist, REJECTS the publish with the RFC-9457 `accounting-identity` problem
+// (422) naming the failing identity ids + discrepancies.
+//
+// SSOT / Protected Variations: the validation_issue table is the single verdict (the
+// worker computed it once over the conformed silver rows); both the curator publish
+// route and publishSubmission call THIS one helper, so the HTTP gate and the service
+// gate cannot diverge. publishSubmission is the chokepoint EVERY publish path funnels
+// through (curator route, release bundle, canonical drive) — placing the gate there
+// makes it un-bypassable (publishBundle has no error pre-check of its own).
+//
+// POSTEL / additive: a submission with no error-severity ACCOUNTING_IDENTITY issue (no
+// declared identity, or one satisfied within ε) returns silently — unaffected.
+
+/**
+ * Reject the publish of `submissionId` if its data violates a declared accounting
+ * identity beyond tolerance. Reads the persisted error-severity ACCOUNTING_IDENTITY
+ * issues (the worker's verdict) and throws the RFC-9457 `accounting-identity` problem
+ * when any exist; a no-op otherwise. Called as a precondition by the curator publish
+ * route and by publishSubmission (defense in depth across every publish path).
+ */
+export async function assertPublishableIdentities(
+  db: Queryable,
+  submissionId: string,
+): Promise<void> {
+  const { rows } = await db.query<{ detail: Record<string, unknown> }>(
+    `SELECT detail
+       FROM stats_stage.validation_issue
+      WHERE submission_id = $1
+        AND severity = 'error'
+        AND code = 'ACCOUNTING_IDENTITY'
+      ORDER BY id`,
+    [submissionId],
+  )
+  if (rows.length === 0) return // no declared identity violated → unaffected (Postel)
+  throw accountingIdentityViolation(submissionId, rows.map((r) => r.detail))
 }
 
 // ── Data-contract compatibility pre-pass (ADR-0031 §4 improvement 5) ──────────

@@ -24,6 +24,7 @@ import { upsertClassifier, bumpDatasetVersion } from './upsert.js'
 import type { AuditLogger } from '../lib/audit-log.js'
 import { errMsg } from './util.js'
 import { publishReferenceMetadata } from './publish-reference-metadata.js'
+import { assertPublishableIdentities } from './validate-integrity.js'
 
 // ── Silver row readers (the staged shapes as persisted in stats_stage.*) ──────
 
@@ -85,6 +86,11 @@ export async function publishSubmission(
   if (sub.status !== 'staged') {
     throw new Error(`submission ${submissionId} is '${sub.status}', not 'staged' — cannot publish`)
   }
+
+  // DC-02 accounting-identity gate (Law 9), BEFORE the publish txn — the gold boundary
+  // every publish path shares. An error-severity ACCOUNTING_IDENTITY violation rejects
+  // with an RFC-9457 422; the submission stays 'staged' (retryable). No-op when satisfied.
+  await assertPublishableIdentities(db, submissionId)
 
   const client = await db.connect()
   try {

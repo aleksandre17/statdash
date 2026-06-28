@@ -7,7 +7,9 @@
 export * from './types.js'
 export { conformObsRows } from './conform.js'
 export { validateObs, validateClassifiers, validateDisplays, fetchActiveLocales } from './validate.js'
-export { runFactRules, checkContractCompat, precheckContractCompat } from './validate-integrity.js'
+export {
+  runFactRules, checkContractCompat, precheckContractCompat, assertPublishableIdentities,
+} from './validate-integrity.js'
 export { recognizeReferenceMetadata } from './reference-metadata-map.js'
 export type { RecognizedReferenceMetadata } from './reference-metadata-map.js'
 export type { RuleSpec, RuleKind } from './rules/registry.js'

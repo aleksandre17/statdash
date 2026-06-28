@@ -30,7 +30,9 @@ import { ok, parseBody, parseParams, parseQuery, HttpError, notFound } from '../
 import { alreadyPublished } from '../../lib/problem.js'
 import { authPlugin } from '../../auth.js'
 import type { AuditLogger } from '../../lib/audit-log.js'
-import { publishSubmission, createSubmission, AlreadyPublishedError } from '../../ingest/index.js'
+import {
+  publishSubmission, createSubmission, AlreadyPublishedError, assertPublishableIdentities,
+} from '../../ingest/index.js'
 import type {
   SubmissionStatus,
   ValidationIssue,
@@ -217,6 +219,13 @@ export const ingestRoutes = (audit?: AuditLogger): FastifyPluginAsync => async (
     if (row.status !== 'staged') {
       throw new HttpError(409, `submission is '${row.status}', not 'staged' — cannot publish`)
     }
+
+    // DC-02 — a declared accounting-identity violation is the SPECIFIC publish rejection:
+    // 422 with an RFC-9457 `accounting-identity` problem naming the failing identity +
+    // discrepancy (read from the persisted issue detail — the worker's verdict, SSOT).
+    // Runs before the generic count so an identity error gets the precise problem, not a
+    // bare 409. publishSubmission re-asserts the same gate (defense in depth).
+    await assertPublishableIdentities(app.pg, id)
 
     const { rows: err } = await app.pg.query<{ n: string }>(
       `SELECT count(*)::text AS n

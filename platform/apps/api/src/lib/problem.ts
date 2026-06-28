@@ -69,6 +69,18 @@ export const PROBLEM_REGISTRY = {
   /** 410 — the resource existed but is permanently gone (expired embed token). */
   gone: { urn: 'gone', title: 'Gone', status: 410 },
   /**
+   * 422 — the submission is structurally valid (it staged) but its data VIOLATES a
+   * declared accounting identity beyond tolerance (DC-02, Law 9). 422 Unprocessable
+   * Content is the right status: the request is well-formed, the SEMANTICS are not.
+   * Carries `code` + `violations[]` extension members (the failing identity ids +
+   * discrepancies) so a client reads `body.violations`, never a stringified blob.
+   */
+  'accounting-identity': {
+    urn: 'accounting-identity',
+    title: 'Accounting identity violated',
+    status: 422,
+  },
+  /**
    * 429 — the client exceeded a rate budget OR a bounded resource (the ingest
    * bulkhead) is saturated and the request was load-shed. Carries a `Retry-After`
    * response header (set at the throw site) and a `code` extension that
@@ -167,6 +179,27 @@ export const alreadyPublished = (existingJobId: string): Problem =>
 /** 410 — permanently gone. */
 export const gone = (detail: string): Problem =>
   new Problem('gone', detail)
+
+/**
+ * 422 — publish rejected: the submission's data violates one or more DECLARED
+ * accounting identities beyond tolerance (DC-02, Law 9). The single SSOT factory both
+ * the curator publish route and the gold-boundary publishSubmission throw, so the two
+ * gates cannot drift on the contract. `violations` are the persisted ACCOUNTING_IDENTITY
+ * issue details (each { ruleId, group, lhs, lhsValue, rhsSum, delta, epsilon, terms }) —
+ * RFC 9457 EXTENSION MEMBERS (§3.2), a machine-readable list the client reads as
+ * `body.violations`, NOT JSON stuffed into `detail`. The failing identity is NAMED
+ * (ruleId) and the discrepancy quantified (delta vs epsilon).
+ */
+export const accountingIdentityViolation = (
+  submissionId: string,
+  violations: ReadonlyArray<Record<string, unknown>>,
+): Problem =>
+  new Problem(
+    'accounting-identity',
+    `Publish rejected: ${violations.length} declared accounting ` +
+    `identit${violations.length === 1 ? 'y' : 'ies'} violated beyond tolerance`,
+    { code: 'ACCOUNTING_IDENTITY_VIOLATION', submissionId, violations },
+  )
 
 /**
  * 429 — rate budget exceeded or a bounded resource is saturated (load-shed). The

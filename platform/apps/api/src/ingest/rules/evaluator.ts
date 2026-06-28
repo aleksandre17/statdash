@@ -72,6 +72,31 @@ function asStringArray(v: unknown): string[] {
   return Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string') : []
 }
 
+/** A signed identity term — a code with an optional coefficient (default +1). */
+interface IdentityTerm { code: string; coef: number }
+
+/**
+ * Coerce `params.terms` (pure data) into typed {code, coef} terms, tolerantly:
+ * a plain string code is coef +1; an object {code, coef?} carries an explicit
+ * coefficient (a non-finite coef falls back to +1). Malformed entries are dropped.
+ */
+function asTerms(v: unknown): IdentityTerm[] {
+  if (!Array.isArray(v)) return []
+  const out: IdentityTerm[] = []
+  for (const t of v) {
+    if (typeof t === 'string' && t.length > 0) { out.push({ code: t, coef: 1 }); continue }
+    if (t && typeof t === 'object') {
+      const code = (t as { code?: unknown }).code
+      const rawCoef = (t as { coef?: unknown }).coef
+      if (typeof code === 'string' && code.length > 0) {
+        const coef = typeof rawCoef === 'number' && Number.isFinite(rawCoef) ? rawCoef : 1
+        out.push({ code, coef })
+      }
+    }
+  }
+  return out
+}
+
 // ── The 3 rule kinds ───────────────────────────────────────────────────────────
 
 /**
@@ -202,6 +227,70 @@ function evalTotalReconcile(spec: RuleSpec, rows: StagedObsRow[], ctx: RuleConte
   return issues
 }
 
+/**
+ * LINEAR_IDENTITY — within each group, lhs ≈ Σ(coefᵢ · termᵢ), the SIGNED accounting
+ * identity (DC-02).
+ *   params: { dim, lhs:string, terms:(string|{code,coef?})[], group?:string[], epsilon? }
+ * `lhs` selects the total row(s) by `dim`; each term selects a component, with an
+ * optional signed coefficient (default +1, e.g. `{code:'M', coef:-1}` for an import
+ * deduction). The SNA value balance `GDP = C + I + X − M` / `B1G = P1 − P2`. ε is the
+ * declared rounding tolerance. One ACCOUNTING_IDENTITY issue per group that fails.
+ *
+ * POSTEL — an identity is asserted ONLY over a COMPLETE operand set: a group is checked
+ * iff the lhs AND EVERY term are present. A submission that lacks the lhs or any term in
+ * a group states nothing about the identity there (an incremental/partial load is not a
+ * violation) → the group is skipped. This is the VTL "operands must be defined" rule and
+ * the additive contract the task requires (datasets/groups with no full identity are
+ * unaffected). Cross-submission completion (pulling missing operands from gold) is the
+ * deferred seam — the seeded GDP identity carries its full operand set in one submission.
+ */
+function evalLinearIdentity(spec: RuleSpec, rows: StagedObsRow[], ctx: RuleContext): ValidationIssue[] {
+  const dim = asString(spec.params.dim)
+  const lhs = asString(spec.params.lhs)
+  const terms = asTerms(spec.params.terms)
+  if (!dim || !lhs || terms.length === 0) return []
+  const epsilon = ruleEpsilon(spec)
+  const groupDims = asStringArray(spec.params.group)
+  const code = RULE_ISSUE_CODE.linearIdentity
+
+  const groups = new Map<string, StagedObsRow[]>()
+  for (const r of rows) {
+    const k = groupKey(r, groupDims)
+    const g = groups.get(k); if (g) g.push(r); else groups.set(k, [r])
+  }
+
+  const issues: ValidationIssue[] = []
+  for (const [key, groupRows] of groups) {
+    const lhsSel = sumWhere(groupRows, dim, new Set([lhs]))
+    if (lhsSel.rowIndexes.length === 0) continue   // no total stated in this group → skip
+
+    // Resolve every term; a single MISSING term makes the identity unassertable here.
+    let complete = true
+    let rhsSum = 0
+    const termRowIndexes: number[] = []
+    const termDetail: { code: string; coef: number; value: number }[] = []
+    for (const t of terms) {
+      const sel = sumWhere(groupRows, dim, new Set([t.code]))
+      if (sel.rowIndexes.length === 0) { complete = false; break }
+      rhsSum += t.coef * sel.sum
+      termRowIndexes.push(...sel.rowIndexes)
+      termDetail.push({ code: t.code, coef: t.coef, value: sel.sum })
+    }
+    if (!complete) continue   // incomplete operand set (Postel) → nothing asserted
+
+    if (!within(lhsSel.sum, rhsSum, epsilon)) {
+      issues.push(makeIssue(ctx.submissionId, 'validate', spec.severity, code, {
+        ruleId: spec.id, group: key, dim, epsilon,
+        lhs, lhsValue: lhsSel.sum,
+        terms: termDetail, rhsSum,
+        delta: lhsSel.sum - rhsSum,
+        offendingRows: [...lhsSel.rowIndexes, ...termRowIndexes],
+      }))
+    }
+  }
+  return issues
+}
+
 // ── The port: runRules(rules, rows, ctx) ───────────────────────────────────────
 
 /** Dispatch table (Registry pattern) — kind → the built-in interpreter for it. */
@@ -210,6 +299,7 @@ const EVALUATORS: Record<RuleSpec['kind'],
   balance:        evalBalance,
   identity:       evalIdentity,
   totalReconcile: evalTotalReconcile,
+  linearIdentity: evalLinearIdentity,
 }
 
 /**

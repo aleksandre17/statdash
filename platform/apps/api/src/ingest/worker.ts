@@ -199,10 +199,15 @@ async function runFilters(client: QueryableClient, sub: ClaimedSubmission): Prom
     const conformed = await conformObsRows(client, sub.id, sub.dataset_code, raw)
     const validated = await validateObs(client, sub.id, sub.dataset_code, conformed.rows)
 
-    // DQAF integrity rules (validation-as-data, ADR-0031 §4 improvement 3) run AFTER
-    // the schema validator, over the conformed silver rows. warn-severity only: these
-    // do NOT block publish (the preview's canPublish gate keys off error-severity from
-    // validateObs); they surface a balance/identity/total gap with the offending rows.
+    // Integrity rules (validation-as-data) run AFTER the schema validator, over the
+    // conformed silver rows. Two severities (DC-02): a 'warn' rule surfaces a DQAF gap
+    // with offending rows but does not block; an 'error' rule (a declared accounting
+    // identity) persists an error-severity ACCOUNTING_IDENTITY issue. Schema errors
+    // reject at INGEST (the row cannot stage, via validateObs → canPublish); an
+    // accounting-identity error does NOT change staging (the row is structurally valid)
+    // but BLOCKS the PUBLISH gate — assertPublishableIdentities reads the persisted issue
+    // at publish and rejects with the RFC-9457 422. So a violating submission reaches
+    // 'staged' yet is un-publishable (GET /jobs/:id reports canPublish=false).
     const ruleIssues = runFactRules(sub.id, sub.dataset_code, conformed.rows)
 
     // Single write: the conformed silver rows land in stats_stage.obs_staging.

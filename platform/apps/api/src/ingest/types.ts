@@ -186,6 +186,14 @@ export type IssueCode =
   | 'BALANCE_MISMATCH'    // Σ(lhs side) ≉ Σ(rhs) within ε for a balance-rule group
   | 'IDENTITY_MISMATCH'   // two approaches to the same aggregate disagree beyond ε
   | 'TOTAL_RECONCILE'     // Σ(parts) ≉ the declared total within ε
+  // validate — accounting-identity gate (DC-02, Law 9). The SIGNED national-accounts
+  // identity lhs ≈ Σ(coefᵢ·termᵢ) (e.g. GDP = C+I_GFCF+X−M). Authored severity:'error'
+  // ⇒ a violation beyond ε is a publish-GATING issue: the curator publish route and the
+  // gold-boundary publishSubmission reject it with an RFC-9457 `accounting-identity`
+  // problem (422) naming the failing identity + the discrepancy. (warn-authored = surface
+  // only, like the DQAF kinds.) detail carries { ruleId, group, lhs, lhsValue, rhsSum,
+  // delta, epsilon, terms, offendingRows }.
+  | 'ACCOUNTING_IDENTITY' // lhs ≉ Σ(coefᵢ·termᵢ) within ε for a declared linear identity
   // validate — data-contract compatibility pre-pass (ADR-0031 §4 improvement 5).
   // Codelist is OPEN (BACKWARD-auto): extensions/deprecations warn and proceed.
   // DSD is GOVERNED (FULL-required): a structural change is an error unless versioned.
