@@ -118,7 +118,7 @@ export function registerStoreBuilders(): void {
       new Set([...(declaredClassifierDims ?? nonTimeDims), ...nonTimeDims]),
     )
 
-    const [{ fetchDimClassifiers, fromStatsObsRow, fetchDatasetMeta, fetchCubeProfile }, { buildDisplayOverlay }, { ApiStore, CachedStore, TIME_DIM }] =
+    const [{ fetchDimClassifiers, fromStatsObsRow, fetchDatasetMeta, fetchCubeProfile }, { buildDisplayOverlay }, { ApiStore, CachedStore, TIME_DIM, withMetricProvenance, listMetrics }] =
       await Promise.all([
         import('./stats-api'),
         import('./stats-display'),
@@ -187,7 +187,7 @@ export function registerStoreBuilders(): void {
     // `preliminary` flag is dataset-wide (any obs_status='P'); a future per-code
     // refinement keeps the same MetadataPort signature.
     const meta = await fetchDatasetMeta(base, datasetCode).catch(() => undefined)
-    const metadata = meta
+    const datasetPort: import('@statdash/engine').MetadataPort | undefined = meta
       ? {
           provenance: () =>
             meta.preliminary
@@ -195,6 +195,37 @@ export function registerStoreBuilders(): void {
               : undefined,
         }
       : undefined
+
+    // ── Metric provenance decorator (N26 / R1 — Law-9 badge wiring) ────────────
+    //  Compose the engine's registry-driven `withMetricProvenance` onto the
+    //  dataset MetadataPort so a metric-id-addressed cell surfaces its DELIVERED
+    //  unit + methodology to the live badge layer (resolvePreliminary / the
+    //  panel-title provenance affordance, which read store.metadata?.provenance).
+    //  This is the live consumer the just-delivered semantic layer was missing —
+    //  registered MetricDefs (primed at app boot via registerManifestMetrics) had
+    //  NO runtime install point; the decorator existed but was called nowhere.
+    //
+    //  Registry-SOURCED + GENERIC (Law 1): the decorator fills provenance by the
+    //  UNDERLYING measure code from the registered MetricDefs — there is NO
+    //  hardcoded measure or dimension here; whatever the tenant catalog delivers
+    //  is what flows. Composed onto the ApiStore's port BEFORE CachedStore wraps
+    //  it (below), so memoized cells carry the same provenance (CachedStore
+    //  forwards the MetadataPort transparently — P2-3).
+    //
+    //  Precedence: `withMetricProvenance` spreads `{ ...metricFill, ...runtime }`,
+    //  so a dataset/cube-level signal (e.g. preliminary status) WINS over the
+    //  metric-level default — the metric only FILLS unit/methodology the cube
+    //  does not already carry.
+    //
+    //  Postel / no-op: with an EMPTY registry the decorator is a transparent
+    //  pass-through (returns the base port's result, undefined when no dataset
+    //  port). So we install it only when there is something to surface — a dataset
+    //  port OR ≥1 registered metric — leaving the truly-empty case byte-identical
+    //  (metadata stays `undefined`, the raw-code status quo).
+    const metadata =
+      datasetPort || listMetrics().length > 0
+        ? withMetricProvenance(datasetPort ?? { provenance: () => undefined })
+        : undefined
 
     // Live, per-query store: fetches exactly the slice each ObsQuery needs.
     // fromStatsObsRow is the DI mapper (raw → engine Observation). CachedStore
