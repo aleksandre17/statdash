@@ -88,6 +88,13 @@
   font-size: 0.8125rem;
   color: var(--color-error-text-soft);
   margin: 0;
+  /* I1 reflow guard (WCAG 1.4.10): a problem-detail body can carry long unbroken
+     tokens (request URLs, UUID requestIds, dataset codes). Without this they set
+     a min-content width wider than the card → horizontal page overflow at 320px
+     whenever a panel errors. break the token instead of the layout. */
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
 }
 .node-error__retry {
   margin-top: 0.25rem;

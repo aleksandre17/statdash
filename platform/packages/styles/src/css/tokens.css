@@ -50,6 +50,13 @@
      [data-height] tokens in node-styles.css. */
   --size-panel-max-height: clamp(380px, 56vh, 560px);
 
+  /* Floor for a data panel whose renderer fills its parent via height:100%
+     (the custom flexbox treemap, the GeoMap). On mobile the chart wrapper is
+     height:auto (intrinsic), so a height:100% child resolves against an
+     indefinite height and collapses to 0 (blank panel). This floor guarantees
+     such renderers always have vertical room, independent of the wrapper. */
+  --size-panel-min-height: 14rem;
+
   /* ── Backdrop blur ──────────────────────────────────────────── */
   --blur-sm: blur(4px);
   --blur-md: blur(8px);

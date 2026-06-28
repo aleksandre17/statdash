@@ -43,6 +43,7 @@
 .section__head {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;            /* lets the controls drop below the title in a narrow column */
   gap: 0.75rem;
   padding: 0.9375rem 1.25rem;
   cursor: pointer;
@@ -86,6 +87,17 @@
   display: flex;
   align-items: center;
   gap: 0.375rem;
+}
+
+/* Narrow container (mobile, or a section in a multi-column grid): the chart/table
+   toggle + actions take their own row so the title keeps the full width and wraps
+   to ~2 lines instead of one word per line. `order` keeps the collapse chevron on
+   the title row (visual only — DOM/tab order is unchanged). Container-first: keyed
+   on the section's own inline-size (container-type already set on .section), so it
+   triggers for a narrow column at any viewport, not just a narrow window. */
+@container (max-width: 30rem) {        /* ≈ --bp-xs (480px), the section's stack point */
+  .section__head    { row-gap: 0.5rem; }
+  .section__actions { order: 1; flex-basis: 100%; justify-content: flex-end; }
 }
 
 .section__icon-btn {

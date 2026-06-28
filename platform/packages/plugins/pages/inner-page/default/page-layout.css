@@ -24,6 +24,17 @@
   .inner-page[data-layout="sidebar"] { flex-direction: column; }
 }
 
+/* Ultrawide balance (≥ 2xl): the page-content is capped at --page-measure, so on
+   very wide monitors the rail+content unit would otherwise pin to the left edge
+   with a large void on the right. Centre the unit instead — the rail stays
+   adjacent to its content (margin-inline:0 preserved) and the inner-page's own
+   surface still fills the viewport, so the side margins are uniform, not a
+   two-tone frame. Inert below ~1540px (content flex-grows to fill → no free
+   space to distribute), so common widths keep the edge-anchored rail. */
+@media (min-width: 1536px) {           /* = --bp-2xl */
+  .inner-page[data-layout="sidebar"] { justify-content: center; }
+}
+
 /* full-width: no sidebar, more generous gutters — still bounded by the shared
    --page-measure so ultrawide never over-stretches (was max-width:none). */
 .inner-page[data-layout="full-width"] > .page-content {

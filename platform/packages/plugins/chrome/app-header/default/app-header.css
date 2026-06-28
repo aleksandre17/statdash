@@ -11,7 +11,10 @@
 }
 
 .app-header__inner {
-  max-width: 1280px;
+  /* Shared page measure — the SAME token the inner-page body uses
+     (--page-measure → --size-container-wide, == 1280px) so header chrome and
+     content column agree on the page's width at every resolution (R3). */
+  max-width: var(--page-measure, var(--size-container-wide));
   margin: 0 auto;
   padding: 0 clamp(0.8rem, 2.5vw, 2rem);
   display: flex;
@@ -41,9 +44,11 @@
 }
 .app-header__brand:hover .app-header__logo { transform: scale(1.05); }
 
-/* Nav — the flexible middle; may compress (min-width:0) before actions give. */
+/* Nav — the flexible middle; may compress (min-width:0) before actions give.
+   Mobile-first: hidden at the base (the section tab-bar / hero cards carry the
+   same destinations below the wide-desktop measure); revealed ≥ xl (see below). */
 .app-header__nav {
-  display: flex;
+  display: none;
   align-items: center;
   gap: 0.25rem;
   min-width: 0;
@@ -70,9 +75,9 @@
   flex-shrink: 0;
 }
 
-/* Social */
+/* Social — mobile-first: hidden at the base, revealed ≥ sm (see below). */
 .app-header__social {
-  display: flex;
+  display: none;
   align-items: center;
   gap: 0.125rem;
 }
@@ -96,10 +101,23 @@
   height: 1rem;
 }
 
-/* ── Responsive ─────────────────────────────────────────────────────── */
-@media (max-width: 960px) {
-  .app-header__nav { display: none; }
+/* ── Responsive — mobile-first (base = smallest; enhance up) ───────────
+   Canonical shell pattern (DESIGN-css-responsive-standard §4.2): base targets
+   the smallest viewport (nav + social collapsed), each enhancement layers up
+   with min-width on the breakpoint scale (effects.ts BREAKPOINTS). */
+
+/* ≥ sm (640) — room for the social links beside the brand. */
+@media (min-width: 640px) {            /* = --bp-sm */
+  .app-header__social { display: flex; }
 }
-@media (max-width: 640px) {
-  .app-header__social { display: none; }
+
+/* ≥ xl (1280) — wide desktop: the full primary nav fits beside the brand and
+   the atomic actions without colliding. The previous 960px collapse let the
+   long Georgian nav labels overrun the social icons in the ~960–1100 band (the
+   1024 primary target overlapped); xl is the on-scale point where the labels
+   clear, and it aligns with the 1280 sidebar→tab-bar switch so the top nav and
+   the section tab-bar are complementary (nothing is lost below xl — the tab-bar
+   / hero cards expose the same destinations). */
+@media (min-width: 1280px) {           /* = --bp-xl */
+  .app-header__nav { display: flex; }
 }

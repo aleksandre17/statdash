@@ -172,7 +172,14 @@ export default function TreemapChart({ output }: { output: ChartOutput }) {
   }
 
   return (
-    <div style={{ display: 'flex', height: '100%', gap: GAP }}>
+    // minHeight floor: the treemap fills its parent via height:100%, but on
+    // mobile the chart wrapper is height:auto (indefinite), against which 100%
+    // collapses to 0 → a blank panel. The token floor keeps it visible at every
+    // width; on desktop the parent's definite height wins (floor is inert).
+    <div style={{
+      display: 'flex', height: '100%', gap: GAP,
+      minHeight: 'var(--size-panel-min-height, 14rem)',
+    }}>
 
       {/* ── Left: total (35%) ── */}
       {totalItem && (() => {
