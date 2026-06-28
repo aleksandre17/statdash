@@ -24,9 +24,12 @@ import { interpretSpec }        from './spec'
 import { desugar }              from './desugar'
 import { applyStep }            from './transform'
 import { ExternalStore }        from './store-impl'
+import { storeVal, storeObs }   from './store'
+import { atTime, TIME_DIM }     from '../core/context'
+import { effectiveYears, effectiveBounds, clampToBounds } from '../core/time-dimension'
 import type { EngineRow }       from './encoding'
 import type { DataSpec }        from '../config/data-spec'
-import type { DimVal }          from '../sdmx'
+import type { DimVal, Observation } from '../sdmx'
 import type { SectionContext }  from '../core/context'
 
 const ctx: SectionContext = { dims: { time: 2023, geo: 'GE' } }
@@ -147,15 +150,74 @@ describe('FF-DESUGAR-EQUIV — pivot desugars row-identically to transform+melt'
     expect(lowered.type).toBe('transform')
   })
 
-  it('desugar is identity (same reference) for every primitive spec', () => {
+  it('desugar is identity (same reference) for every NON-lowered spec', () => {
+    // timeseries now lowers to point-series (G2), so it is NO LONGER identity — its
+    // byte-identity is proven by the FF-DESUGAR-EQUIV corpus below.
     const primitives: DataSpec[] = [
       { type: 'query', query: { measure: 'B1G' }, encoding: { label: 'time', value: 'value' } },
       { type: 'transform', source: [], steps: [], encoding: { label: 'time' } },
       { type: 'row-list', rows: [{ code: 'B1G' }] },
-      { type: 'timeseries', code: 'B1G', years: 'all' },
       { type: 'growth', code: 'B1G', years: [2020, 2021] },
       { type: 'ratio-list', pairs: [{ code: 'D1', denom: 'B1G' }] },
     ]
     for (const p of primitives) expect(desugar(p)).toBe(p) // identity ⇒ untouched path
   })
+
+  it('desugar(timeseries) lowers to the point-series primitive', () => {
+    const lowered = desugar({ type: 'timeseries', code: 'B1G', years: [2020] })
+    expect(lowered.type).toBe('point-series')
+  })
+})
+
+// ── FF-DESUGAR-EQUIV — timeseries desugars row-identically (grain G2) ──────────────
+//
+//  Oracle = the EXACT pre-G2 TimeseriesResolver algorithm, frozen inline. We assert
+//  `interpretSpec(timeseriesSpec)` (now routed desugar → point-series → valAt) equals
+//  the oracle across years/'all'/clamp/timeDimension/pinned-dim shapes.
+
+type TimeseriesSpec = Extract<DataSpec, { type: 'timeseries' }>
+
+const tsObs: Observation[] = [
+  { measure: 'GDP', time: 2018, geo: 'GE', value: 80  },
+  { measure: 'GDP', time: 2018, geo: 'AM', value: 20  }, // 2018 = 100
+  { measure: 'GDP', time: 2019, geo: 'GE', value: 90  },
+  { measure: 'GDP', time: 2019, geo: 'AM', value: 25  }, // 2019 = 115
+  { measure: 'GDP', time: 2020, geo: 'GE', value: 100 },
+  { measure: 'GDP', time: 2020, geo: 'AM', value: 30  }, // 2020 = 130
+  { measure: 'GDP', time: 2021, geo: 'GE', value: 110 }, // 2021 = 110
+]
+const tsStore = new ExternalStore(tsObs)
+
+function timeseriesDirect(spec: TimeseriesSpec, c: SectionContext): EngineRow[] {
+  const code = spec.code  // raw codes in this corpus (resolveCode is identity for them)
+  const ys   = effectiveYears(spec)
+  const years0 = ys === 'all'
+    ? [...new Set(storeObs(tsStore, { measure: code }, c).map((o) => Number(o[TIME_DIM])))].sort((a, b) => a - b)
+    : [...ys]
+  const { from, to } = effectiveBounds(spec, c)
+  const years = clampToBounds(years0, from, to)
+  const vals  = years.map((y) => storeVal(tsStore, code, atTime(y, c)))
+  const max   = Math.max(...vals.map(Math.abs), 1)
+  return years.map((y, i) => ({
+    id: String(y), label: String(y), value: vals[i], pct: (Math.abs(vals[i]) / max) * 100,
+  }))
+}
+
+const tsCorpus: { name: string; spec: TimeseriesSpec; ctx: SectionContext }[] = [
+  { name: 'explicit years',            spec: { type: 'timeseries', code: 'GDP', years: [2018, 2019, 2020, 2021] }, ctx: { dims: {} } },
+  { name: "'all' (store distinct asc)", spec: { type: 'timeseries', code: 'GDP', years: 'all' },                   ctx: { dims: {} } },
+  { name: 'single year',               spec: { type: 'timeseries', code: 'GDP', years: [2020] },                  ctx: { dims: {} } },
+  { name: 'empty years',               spec: { type: 'timeseries', code: 'GDP', years: [] },                      ctx: { dims: {} } },
+  { name: 'fromDim/toDim clamp',       spec: { type: 'timeseries', code: 'GDP', years: 'all', fromDim: 'lo', toDim: 'hi' }, ctx: { dims: { lo: 2019, hi: 2020 } } },
+  { name: 'timeDimension YearsSpec',   spec: { type: 'timeseries', code: 'GDP', years: undefined as unknown as TimeseriesSpec['years'], timeDimension: { dim: 'time', range: [2019, 2020] } }, ctx: { dims: {} } },
+  { name: 'timeDimension ctx-ref clamp', spec: { type: 'timeseries', code: 'GDP', years: 'all', timeDimension: { dim: 'time', range: [{ $ctx: 'lo' }, { $ctx: 'hi' }] } }, ctx: { dims: { lo: 2019, hi: 2021 } } },
+  { name: 'pinned geo flows through ctx.dims', spec: { type: 'timeseries', code: 'GDP', years: [2019, 2020] }, ctx: { dims: { geo: 'GE' } } },
+]
+
+describe('FF-DESUGAR-EQUIV — timeseries ≡ the frozen bespoke resolver', () => {
+  for (const { name, spec, ctx: c } of tsCorpus) {
+    it(name, () => {
+      expect(interpretSpec(spec, c, tsStore)).toEqual(timeseriesDirect(spec, c))
+    })
+  }
 })

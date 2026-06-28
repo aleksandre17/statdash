@@ -220,8 +220,9 @@ export { evalCondition, evalWhen, evalValidatorPredicate, validators,
 
 // ── Repository Pattern — DataStore ────────────────────────────────────
 export type { DataStore, Requirement, StoreQuery, StoreCaps,
-              QueryResult, ResultMeta, Unsubscribe }                   from './data/store'
-export { staticStore, storeVal, storeObs, storeSchema, runBatch, asyncFromSync }    from './data/store'
+              QueryResult, ResultMeta, Unsubscribe, GrainLevel, RollupOp } from './data/store'
+export { staticStore, storeVal, storeValAt, storeObs, storeSchema, runBatch, asyncFromSync } from './data/store'
+export { rollupValues }                                                from './data/grain'
 export type { ExternalStoreOptions }                                   from './data/store-impl'
 export { ExternalStore, CachedStore }                                  from './data/store-impl'
 export type { RawObsRow }                                              from './data/store-api'

@@ -15,8 +15,9 @@ export { toFieldMeta, schemasToFieldMeta, suggestEncodings }        from './fiel
 export type { RawRow, DeriveExpr, TransformStep }                   from './transform'
 export { applyPipeline, applyStep, getFormatter, FORMATTERS }       from './transform'
 export type { DataStore, Requirement, StoreQuery, StoreCaps,
-              QueryResult, ResultMeta, Unsubscribe }               from './store'
-export { staticStore, storeVal, storeObs, storeSchema, runBatch, asyncFromSync } from './store'
+              QueryResult, ResultMeta, Unsubscribe, GrainLevel, RollupOp } from './store'
+export { staticStore, storeVal, storeValAt, storeObs, storeSchema, runBatch, asyncFromSync } from './store'
+export { rollupValues }                                            from './grain'
 export type { ExternalStoreOptions }                               from './store-impl'
 export { ExternalStore, CachedStore }                              from './store-impl'
 export type { RawObsRow }                                          from './store-api'

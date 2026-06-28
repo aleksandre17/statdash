@@ -67,7 +67,7 @@ export function interpretSpec(
     ))
     return []
   }
-  const rows = resolver.resolve(lowered as DataSpec, ctx, store)
+  const rows = resolver.resolve(lowered, ctx, store)
 
   // Notify observer (app layer wires this; engine never couples to console/Vite).
   // Tag uses the ORIGINAL spec — observability reflects authored intent, not the
@@ -116,51 +116,67 @@ export function extractRequirements(
   const time = ctx.dims[TIME_DIM] as number
 
   // R3: analyse the lowered primitive — the same path interpretSpec resolves.
-  // pivot lowers to transform (both extract []), so the result is identical.
-  spec = desugar(spec)
+  // pivot lowers to transform (both extract []); timeseries lowers to point-series
+  // (whose case below warms the SAME per-coordinate reads the old timeseries case did).
+  const lowered = desugar(spec)
 
-  switch (spec.type) {
+  switch (lowered.type) {
+
+    // ── point-series — the lowering target for timeseries (grain G2) ──
+    //  Warm one val read per ENUMERATED coordinate (the unclamped superset, exactly
+    //  as the old `timeseries` case warmed effectiveYears — the read clamps later).
+    //  'all'/absent coords resolve at runtime from the store ⇒ no static reqs.
+    case 'point-series': {
+      if (lowered.coords === undefined || lowered.coords === 'all') return []
+      const at = lowered.at
+      const over = lowered.over
+      return resolveMeasureRef(lowered.code).codes.flatMap((code) =>
+        (lowered.coords as readonly DimVal[]).map((c) => ({
+          // `at` is Partial; the matching loop skips unset dims, so the cast is sound.
+          code, dims: { ...ctx.dims, ...at, [over]: c } as Record<string, DimVal>,
+        })),
+      )
+    }
 
     case 'row-list':
       // Resolve each ref through the SSOT seam so prefetch warms the underlying
       // codes (raw codes pass through unchanged ⇒ byte-identical requirements).
-      return spec.rows.flatMap(({ code, pctOf }) => {
+      return lowered.rows.flatMap(({ code, pctOf }) => {
         const reqs: Requirement[] = resolveMeasureRef(code).codes.map((c) => ({ code: c, dims: ctx.dims }))
         if (pctOf) for (const c of resolveMeasureRef(pctOf).codes) reqs.push({ code: c, dims: ctx.dims })
         return reqs
       })
 
     case 'timeseries': {
-      // 'all' — years resolved at runtime from store; no static requirements extractable.
-      // effectiveYears folds the legacy `years` (wins) with timeDimension.range (R5):
-      // an existing spec returns its own `years` ⇒ byte-identical requirements.
-      const tsYears = effectiveYears(spec)
+      // Defensive fallback (timeseries normally lowers to point-series above). 'all' —
+      // years resolved at runtime from store; no static requirements extractable.
+      const tsYears = effectiveYears(lowered)
       if (tsYears === 'all') return []
-      return resolveMeasureRef(spec.code).codes.flatMap((code) =>
+      return resolveMeasureRef(lowered.code).codes.flatMap((code) =>
         (tsYears as readonly number[]).map((year) => ({ code, dims: { ...ctx.dims, [TIME_DIM]: year } })),
       )
     }
 
     case 'growth': {
       // 'all' — years resolved at runtime from store; no static requirements extractable.
-      const grYears = effectiveYears(spec)
+      const grYears = effectiveYears(lowered)
       if (grYears === 'all') return []
-      const codes = resolveMeasureRef(spec.code).codes
+      const codes = resolveMeasureRef(lowered.code).codes
       return codes.flatMap((code) =>
         (grYears as readonly number[]).map((year) => ({ code, dims: { ...ctx.dims, [TIME_DIM]: year } })),
       )
     }
 
     case 'ratio-list':
-      return spec.pairs.flatMap(({ code, denom }) => [
+      return lowered.pairs.flatMap(({ code, denom }) => [
         ...resolveMeasureRef(code).codes.map((c)  => ({ code: c, dims: ctx.dims })),
         ...resolveMeasureRef(denom).codes.map((c) => ({ code: c, dims: ctx.dims })),
       ])
 
     case 'query': {
-      const measures = resolveMeasureRef(spec.query.measure).codes
+      const measures = resolveMeasureRef(lowered.query.measure).codes
 
-      const filter     = spec.query.filter
+      const filter     = lowered.query.filter
       const timeFilter = filter?.[TIME_DIM]
 
       // GAP 4 — range-awareness. When the query has NO time filter AND `time` is

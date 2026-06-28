@@ -23,8 +23,10 @@
 //  editors are preserved; lowering happens at resolve time only).
 //
 
-import type { DataSpec } from '../config/data-spec'
+import type { DataSpec, PointSeriesSpec, ResolvableSpec } from '../config/data-spec'
 import type { DimVal }    from '../sdmx'
+import { TIME_DIM }       from '../core/context'
+import { effectiveYears } from '../core/time-dimension'
 
 // ── pivot → transform + melt ──────────────────────────────────────────
 //
@@ -83,6 +85,35 @@ function desugarPivot(spec: Extract<DataSpec, { type: 'pivot' }>): DataSpec {
   }
 }
 
+// ── timeseries → point-series ─────────────────────────────────────────
+//
+//  `timeseries` is "single measure × time range": the bespoke TimeseriesResolver
+//  enumerated the years, summed the OLAP cell at each pinned year, and normalized a
+//  pct. valAt makes the pinned-cell read declarative, so the spec now lowers onto the
+//  generic store-aware `point-series` primitive (over the time axis). EVERY piece maps
+//  1:1 (FF-DESUGAR-EQUIV):
+//    • coords  = effectiveYears (legacy `years` wins, else timeDimension.range, else
+//                'all') — the SAME selection resolveYears consumed. 'all' ⇒ the
+//                resolver's store-distinct enumeration (ascending), as before.
+//    • clamp   = the legacy fromDim/toDim + timeDimension, folded by the SAME
+//                effectiveBounds the resolver applied (clampYears). Omitted when none.
+//    • value   = storeValAt default-sum ≡ storeVal(atTime); pct = |v|/max(|v|,1)×100.
+//  No store/ctx access here — desugar stays a pure value→value rewrite (effectiveYears
+//  reads only the spec; the year-distinct + clamp resolve in the resolver at read time).
+//
+function desugarTimeseries(spec: Extract<DataSpec, { type: 'timeseries' }>): PointSeriesSpec {
+  const ps: PointSeriesSpec = {
+    type:   'point-series',
+    code:   spec.code,
+    over:   TIME_DIM,
+    coords: effectiveYears(spec),
+  }
+  if (spec.fromDim || spec.toDim || spec.timeDimension) {
+    ps.clamp = { fromDim: spec.fromDim, toDim: spec.toDim, timeDimension: spec.timeDimension }
+  }
+  return ps
+}
+
 // ── desugar — the single entry point ──────────────────────────────────
 //
 //  Lowers a convenience spec to its primitive equivalent. Total: any spec with
@@ -91,9 +122,10 @@ function desugarPivot(spec: Extract<DataSpec, { type: 'pivot' }>): DataSpec {
 //
 //  Called FIRST by interpretSpec + extractRequirements (one resolution path).
 //
-export function desugar(spec: DataSpec): DataSpec {
+export function desugar(spec: DataSpec): ResolvableSpec {
   switch (spec.type) {
-    case 'pivot': return desugarPivot(spec)
-    default:      return spec
+    case 'pivot':      return desugarPivot(spec)
+    case 'timeseries': return desugarTimeseries(spec)
+    default:           return spec
   }
 }

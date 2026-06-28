@@ -11,6 +11,7 @@ import type { CtxRef, DimVal, ObsQuery } from '../sdmx'
 import type { LocaleString }     from '../i18n/types'
 import type { EncodingSpec }              from '../data/encoding'
 import type { TransformStep }             from '../data/transform'
+import type { GrainLevel, RollupOp }      from '../data/store'
 import type { ValueMapping }              from './value-mapping'
 
 // ── ColumnDef — one value column in a DataTable ───────────────────────
@@ -200,6 +201,54 @@ export type DataSpec =
       steps:    TransformStep[]
       encoding: EncodingSpec
     }
+
+// ── PointSeriesSpec — INTERNAL store-aware lowering primitive (NOT public) ─────
+//
+//  The desugar TARGET for the val-cell convenience specs (timeseries → here; growth
+//  via a window/derive `pipe` tail). It is the genuinely STORE-AWARE primitive the
+//  pure `transform` pipe cannot be (transform has no store): it ENUMERATES a generic
+//  `over` dimension's coordinates and fans out a `valAt` point read per coordinate
+//  (storeValAt), emits one `{ id, label, value, pct }` row each, then runs `pipe`.
+//
+//  Mirrors how `joinByField` is the engine-internal underside of the authorable
+//  `blend` — point-series is the internal underside of timeseries/growth. It is
+//  DELIBERATELY NOT a `DataSpec` discriminant: authors use the friendly specs, so
+//  point-series is never authored and stays ABSENT from DATASPEC_DISCRIMINANTS /
+//  SPEC_CATALOG (no Constructor surface — the front-doors carry it). Resolved via the
+//  registry by its string discriminant, like every other registered resolver.
+//
+//  100% data, no functions (Law 2). Generic over `over` (Law 1 — 'time', 'geo', …).
+export interface PointSeriesSpec {
+  type:    'point-series'
+  /** Measure code read at each coordinate (a metric-id is resolved in the resolver). */
+  code:    string
+  /** The dimension whose coordinates are enumerated (Law 1 — generic; e.g. TIME_DIM). */
+  over:    string
+  /** Explicit coordinate list; absent ⇒ the store's distinct(over), ascending. */
+  coords?: readonly DimVal[] | 'all'
+  /** Fixed base coordinate merged into every read (e.g. a pinned geo). */
+  at?:     Partial<Record<string, DimVal>>
+  /** Generic per-dim grain / LOD, forwarded to valAt. */
+  grain?:  Record<string, GrainLevel>
+  /** Aggregation when one coordinate matches multiple finer cells (default 'sum'). */
+  rollup?: RollupOp
+  /**
+   * Optional numeric range clamp on the enumerated coordinate — folds the legacy
+   * fromDim/toDim + timeDimension via effectiveBounds (the SAME machinery the val-cell
+   * specs used), so a clamped timeseries lowers byte-identically. Shape mirrors
+   * LegacyTimeSpec inline (avoids a config↔core import cycle).
+   */
+  clamp?:  { fromDim?: string; toDim?: string; timeDimension?: TimeDimensionSpec }
+  /** Tail pipeline (window / derive / …) applied to the emitted rows. */
+  pipe?:   TransformStep[]
+}
+
+// ── ResolvableSpec — resolution-time union: public DataSpec + internal primitives ─
+//
+//  desugar lowers a `DataSpec` onto this; interpretSpec/extractRequirements/the
+//  registry resolve it by string discriminant. The PUBLIC, author-facing vocabulary
+//  stays exactly `DataSpec` — point-series never leaks into the Constructor surface.
+export type ResolvableSpec = DataSpec | PointSeriesSpec
 
 // ── TableConfig ───────────────────────────────────────────────────────
 export interface TableConfig {

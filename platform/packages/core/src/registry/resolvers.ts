@@ -11,6 +11,7 @@ import { atTime, TIME_DIM }                  from '../core/context'
 import { clampYears, effectiveYears, effectiveBounds } from '../core/time-dimension'
 import type { DataStore, StoreQuery }        from '../data/store'
 import { storeVal, storeObs }               from '../data/store'
+import { resolveCode }                       from './spec-helpers'
 import type { CtxRef, DimVal, FilterValue, NeCtxRef, ObsQuery }  from '../sdmx'
 import { resolveMeasureRef }                  from '../data/metric'
 import { desugar }                             from '../data/desugar'
@@ -20,6 +21,7 @@ import type { LocaleString }                  from '../i18n/types'
 import type { SpecResolver }                 from './engine'
 import { applyPipeline }                      from '../data/transform'
 import { defaultRegistry }                   from './engine'
+import { PointSeriesResolver }                from './point-series-resolver'
 
 // ── Shared utilities ───────────────────────────────────────────────────
 //
@@ -104,17 +106,6 @@ export function queryReadObs(query: ObsQuery): StoreQuery {
 }
 
 /**
- * Resolve a single measure reference used by the convenience specs
- * (timeseries/growth/ratio-list `code`). A registered metric-id expands to its
- * underlying code; a raw code passes through UNCHANGED (byte-identical).
- * Multi-code metrics resolve to their FIRST code here (the convenience specs
- * are single-measure-per-code by shape); author a `query` spec for multi-measure.
- */
-function resolveCode(code: string): string {
-  return resolveMeasureRef(code).codes[0] ?? code
-}
-
-/**
  * Resolve a FilterValue to a flat list of DimVals (used by extractRequirements).
  * The ctx-scope lookups route through the one Ref dispatcher (../ref) — the same
  * resolution path the runtime filter (store-filter.ts) uses for `$ctx`.
@@ -177,8 +168,16 @@ class RowListResolver implements SpecResolver<Extract<DataSpec, { type: 'row-lis
 }
 
 
-// ── TimeseriesResolver ────────────────────────────────────────────────
-
+// ── TimeseriesResolver — desugar delegate [ADR R3 / grain G2] ─────────
+//
+//  `timeseries` is sugar for a time-axis `point-series` (single measure × time range).
+//  Its bespoke enumerate→pin→sum→pct logic now lives as ONE desugar rule
+//  (data/desugar.ts → point-series); this resolver is the thin delegate that lowers
+//  the spec and resolves the resulting primitive — exactly as PivotResolver does. Kept
+//  registered so `timeseries` stays a KNOWN spec type (validateDataSpec + Constructor).
+//  interpretSpec also desugars up-front, so this delegate is reached only via direct
+//  registry dispatch. FF-DESUGAR-EQUIV proves the lowered output is row-identical.
+//
 class TimeseriesResolver implements SpecResolver<Extract<DataSpec, { type: 'timeseries' }>> {
   readonly type = 'timeseries' as const
 
@@ -187,16 +186,9 @@ class TimeseriesResolver implements SpecResolver<Extract<DataSpec, { type: 'time
     ctx:   SectionContext,
     store: DataStore,
   ): EngineRow[] {
-    const code  = resolveCode(spec.code)
-    const years = clampYears(resolveYears(effectiveYears(spec), code, store, ctx), spec, ctx)
-    const vals  = years.map((y) => storeVal(store, code, atTime(y, ctx)))
-    const max   = Math.max(...vals.map(Math.abs), 1)
-    return years.map((y, i) => ({
-      id:    String(y),
-      label: String(y),
-      value: vals[i],
-      pct:   (Math.abs(vals[i]) / max) * 100,
-    }))
+    const lowered  = desugar(spec)
+    const resolver = defaultRegistry.spec(lowered.type)
+    return resolver ? resolver.resolve(lowered, ctx, store) : []
   }
 }
 
@@ -353,3 +345,4 @@ defaultRegistry
   .registerSpec(new QueryResolver())
   .registerSpec(new PivotResolver())
   .registerSpec(new TransformResolver())
+  .registerSpec(new PointSeriesResolver())

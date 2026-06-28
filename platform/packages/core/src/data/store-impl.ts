@@ -17,6 +17,7 @@ import type { DataStore, QueryResult, Requirement, ResultMeta, StoreCaps, StoreQ
 import { dimKey, matchesFilter, matchesLeaves, DimResolver }           from './store-filter'
 import type { LeafFn }                                                 from './store-filter'
 import { roundAgg }                                                    from './round'
+import { rollupValues }                                               from './grain'
 import type { MetadataPort }                                           from '../core/provenance'
 
 
@@ -118,6 +119,16 @@ export class CachedStore implements DataStore {
       case 'obs':      return this._obs(q, ctx)
       case 'schema':
       case 'distinct': return this.source.querySync(q, ctx)
+      case 'valAt': {
+        // Default (sum + no grain) ≡ a `val` cell sum at ctx.dims ⊕ at — serve from the
+        // SAME valCache keyed on the merged coordinate (warm/read share one slot). An
+        // explicit rollup op / grain (LOD door) delegates to the source's `valAt` port.
+        if (!q.grain && (q.rollup === undefined || q.rollup === 'sum')) {
+          const merged = q.at ? { ...ctx, dims: { ...ctx.dims, ...q.at } as Record<string, DimVal> } : ctx
+          return [{ value: this._val(q.code, merged) }]
+        }
+        return this.source.querySync(q, ctx)
+      }
     }
   }
 
@@ -231,7 +242,7 @@ export class ExternalStore implements DataStore {
   readonly classifiers:  Record<string, Classifier>
   readonly display:      Record<string, DisplayMap>
   readonly caps: StoreCaps = {
-    queryTypes: ['val', 'obs', 'schema', 'distinct'],
+    queryTypes: ['val', 'obs', 'schema', 'distinct', 'valAt'],
     batching:   false,
     streaming:  false,
     sync:       true,
@@ -264,13 +275,16 @@ export class ExternalStore implements DataStore {
     return out as Observation
   }
 
-  private _val(code: string, ctx: SectionContext): number {
-    let sum = 0
+  // _matchedValues — the obs-value list at a coordinate (the matching loop SSOT).
+  //  Shared by `_val` (OLAP cell sum) and `_valAt` (point read at an explicit
+  //  coordinate). Coordinate = a generic dims map; no dimension is privileged.
+  private _matchedValues(code: string, dims: Record<string, DimVal>): number[] {
+    const out: number[] = []
     for (const o of this.observations) {
       if (String(o[MEASURE_DIM] ?? '') !== code) continue
       if (Number(o['isCarryForward'] ?? 0) === 1) continue
       let ok = true
-      for (const [dim, val] of Object.entries(ctx.dims)) {
+      for (const [dim, val] of Object.entries(dims)) {
         if (val === '' || val === null || val === undefined) continue
         const obsVal = o[dim]
         if (obsVal === undefined) continue
@@ -279,9 +293,22 @@ export class ExternalStore implements DataStore {
           : this.leafSet(dim, val)
         if (!matchesLeaves(leaves, obsVal)) { ok = false; break }
       }
-      if (ok) sum += Number(o['value'] ?? 0)
+      if (ok) out.push(Number(o['value'] ?? 0))
     }
-    return roundAgg(sum)
+    return out
+  }
+
+  private _val(code: string, ctx: SectionContext): number {
+    // reduce-from-0 is byte-identical to the legacy `sum += …` running total.
+    return roundAgg(this._matchedValues(code, ctx.dims).reduce((a, b) => a + b, 0))
+  }
+
+  // _valAt — point read at ctx.dims ⊕ at (generic coordinate, Law 1). `grain` is the
+  //  additive LOD door; `rollup` aggregates the matched cells (default 'sum' = OLAP cell,
+  //  byte-identical). `at` is Partial (undefined values are skipped by _matchedValues).
+  private _valAt(q: Extract<StoreQuery, { type: 'valAt' }>, ctx: SectionContext): number {
+    const dims = q.at ? { ...ctx.dims, ...q.at } as Record<string, DimVal> : ctx.dims
+    return roundAgg(rollupValues(this._matchedValues(q.code, dims), q.rollup))
   }
 
   private _observe(query: ObsQuery, ctx: SectionContext): Observation[] {
@@ -324,6 +351,9 @@ export class ExternalStore implements DataStore {
     switch (q.type) {
       case 'val':
         return [{ value: this._val(q.code, ctx) }]
+
+      case 'valAt':
+        return [{ value: this._valAt(q, ctx) }]
 
       case 'obs':
         return this._observe(

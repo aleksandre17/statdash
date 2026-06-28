@@ -12,20 +12,25 @@
 //
 
 import type { EngineRow } from '../data/encoding'
-import type { DataSpec }           from '../config/data-spec'
+import type { ResolvableSpec }     from '../config/data-spec'
 import type { SectionContext } from '../core/context'
 import type { DataStore }          from '../data/store'
 
-// ── SpecResolver — plugin interface for DataSpec → EngineRow[] ────────
+// ── SpecResolver — plugin interface for (Resolvable)Spec → EngineRow[] ─
 //
 //  Implement this to add a new DataSpec type or replace a built-in.
-//  The type discriminant must match DataSpec.type exactly.
+//  The type discriminant must match the spec's `type` exactly.
+//
+//  T extends ResolvableSpec (= public DataSpec ∪ internal lowering primitives like
+//  `point-series`) so the registry can host both author-facing discriminants AND the
+//  engine-internal desugar targets the convenience specs lower onto. The PUBLIC
+//  vocabulary stays `DataSpec`; the internal primitives never reach the Constructor.
 //
 //  Resolvers return EngineRow[] — neutral records, no renderer concepts.
 //  Encoding (field→channel mapping) happens at the renderer boundary.
 //
-export interface SpecResolver<T extends DataSpec = DataSpec> {
-  /** Matches DataSpec.type — used as the registry key. */
+export interface SpecResolver<T extends ResolvableSpec = ResolvableSpec> {
+  /** Matches the spec's `type` — used as the registry key. */
   readonly type: T['type']
   resolve(spec: T, ctx: SectionContext, store: DataStore): EngineRow[]
 }
@@ -36,7 +41,7 @@ export class EngineRegistry {
   private readonly _specs  = new Map<string, SpecResolver>()
 
   /** Register a SpecResolver. Last registration wins. Fluent. */
-  registerSpec<T extends DataSpec>(resolver: SpecResolver<T>): this {
+  registerSpec<T extends ResolvableSpec>(resolver: SpecResolver<T>): this {
     this._specs.set(resolver.type as string, resolver as SpecResolver)
     return this
   }

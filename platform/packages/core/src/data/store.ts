@@ -27,6 +27,24 @@ export type { Observation } from '../sdmx'
 
 
 // ══════════════════════════════════════════════════════════════════════
+// Grain model — GENERIC per-dim LOD (Law 1: time is one lattice, not special)
+// ══════════════════════════════════════════════════════════════════════
+//
+//  GrainLevel is a generic grain name on ANY dimension — 'year'|'quarter'|… on
+//  the time axis, 'district'|'region'|… on a geo axis. The SAME machinery orders
+//  every dim's grains; the time lattice is one registered entry, never a `'time'`
+//  literal special-case (FF-GRAIN-GENERIC). The grain LATTICE + rollup-routing
+//  (StoreCaps.grains, finer→coarser materialized-view fallback) is the additive
+//  door layered on top of this port; here the type is what the point-read addresses.
+export type GrainLevel = string
+
+//  Aggregation applied when one coordinate matches MULTIPLE finer observations
+//  (the implicit grain-rollup `_val` already performs as a sum). Default 'sum' is
+//  byte-identical to today's OLAP cell sum.
+export type RollupOp = 'sum' | 'avg' | 'min' | 'max' | 'first' | 'last'
+
+
+// ══════════════════════════════════════════════════════════════════════
 // StoreQuery — discriminated union (open for extension)
 // ══════════════════════════════════════════════════════════════════════
 //
@@ -42,6 +60,18 @@ export type StoreQuery =
   | { type: 'schema';   indicator?: string }                    // measures + metadata → Constructor palette
   | { type: 'distinct'; dim: string                              // unique dim values → filter dropdowns
                         filter?: Partial<Record<string, FilterValue>> }
+  // ── valAt — declarative point read at an explicit coordinate + grain ──
+  //  The OLAP cell sum `val` reads at `ctx.dims`; `valAt` reads at `ctx.dims ⊕ at`
+  //  WITHOUT cloning ctx (the declarative analogue of `atTime(y, ctx)`), addressed
+  //  by a GENERIC coordinate + GENERIC per-dim grain (Law 1 — never time-special).
+  //  Default `rollup:'sum'` + no `grain` ≡ the implicit `_val` grain-sum at that
+  //  coordinate (byte-identical anchor, FF-VALAT-COORD-IDENTICAL). `grain` requests
+  //  an LOD (the finer→coarser rollup lattice is the additive door layered later).
+  | { type:    'valAt'
+      code:    string
+      at?:     Partial<Record<string, DimVal>>                   // GENERIC coordinate override of ctx.dims
+      grain?:  Record<string, GrainLevel>                        // GENERIC per-dim grain (LOD door)
+      rollup?: RollupOp }                                        // finer→requested aggregation (default 'sum')
 
 
 // ══════════════════════════════════════════════════════════════════════
@@ -164,6 +194,42 @@ export interface DataStore {
 /** OLAP scalar — resolvers + kpi.ts + applyEncoding lookup callback. */
 export function storeVal(store: DataStore, code: string, ctx: SectionContext): number {
   return (store.querySync({ type: 'val', code }, ctx)[0]?.['value'] as number) ?? 0
+}
+
+/**
+ * OLAP point read at an EXPLICIT coordinate (+ optional grain) — the declarative
+ * analogue of `storeVal(code, atTime(y, ctx))`. `at` overrides `ctx.dims` for this
+ * read ONLY (no ctx cloning), so `storeValAt(store, code, { [TIME_DIM]: y }, ctx)`
+ * reproduces the pinned-year read GENERICALLY (Law 1 — any dim, e.g. `{ geo:'GE' }`,
+ * not just time). The single seam resolvers call so they never touch the port.
+ *
+ * Default (rollup 'sum', no grain) is BYTE-IDENTICAL to the implicit `_val`
+ * grain-sum at that coordinate, so it routes through the existing `val` query at the
+ * merged coordinate — keeping EVERY store (incl. the async ApiStore, which warms
+ * `val`/`obs` only) serving it unchanged. An explicit rollup op / grain (the LOD
+ * door) issues the `valAt` port query instead. FF-VALAT-COORD-IDENTICAL.
+ */
+export function storeValAt(
+  store:   DataStore,
+  code:    string,
+  at:      Partial<Record<string, DimVal>>,
+  ctx:     SectionContext,
+  grain?:  Record<string, GrainLevel>,
+  rollup?: RollupOp,
+): number {
+  if (!grain && (rollup === undefined || rollup === 'sum')) {
+    // Default point read ≡ an OLAP `val` cell sum at ctx.dims ⊕ at — route through
+    // the existing `val` query so async/raw stores stay byte-identical (warm-key safe).
+    const keys = Object.keys(at)
+    const merged: SectionContext = keys.length === 0
+      ? ctx
+      // `at` is Partial (values may be undefined); the matching loop skips unset
+      // dims, so the cast is sound — undefined keys never narrow a coordinate.
+      : { ...ctx, dims: { ...ctx.dims, ...at } as Record<string, DimVal> }
+    return storeVal(store, code, merged)
+  }
+  const q: StoreQuery = { type: 'valAt', code, at, grain, rollup }
+  return (store.querySync(q, ctx)[0]?.['value'] as number) ?? 0
 }
 
 /** Multi-dim query — resolvers that need Observation[]. */
