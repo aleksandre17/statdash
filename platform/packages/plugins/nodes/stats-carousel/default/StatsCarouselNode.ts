@@ -23,8 +23,8 @@ export interface StatsCarouselNode extends NodeBase {
 }
 
 export const StatsCarouselSchema: PropSchema = [
-  { field: 'autoplayMs', type: 'number', label: 'ავტოთამაში (ms)', default: 7000 },
-  { field: 'slides',     type: 'array',  label: 'სლაიდები',        required: true },
+  { field: 'autoplayMs', type: 'number', label: { ka: 'ავტოთამაში (ms)', en: 'Autoplay (ms)' }, default: 7000 },
+  { field: 'slides',     type: 'array',  label: { ka: 'სლაიდები',        en: 'Slides' }, required: true },
 ]
 
 export const StatsCarouselDefaults: Partial<StatsCarouselNode> = {

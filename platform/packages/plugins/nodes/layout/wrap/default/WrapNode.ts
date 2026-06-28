@@ -11,7 +11,7 @@ export interface WrapNode extends NodeBase {
 }
 
 export const WrapSchema: PropSchema = [
-  { field: 'styles', type: 'object', label: 'სტილები' },
+  { field: 'styles', type: 'object', label: { ka: 'სტილები', en: 'Styles' } },
 ]
 
 export const WrapSlots: Record<string, SlotDef> = {

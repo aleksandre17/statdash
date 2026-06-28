@@ -333,17 +333,17 @@
       "type": "object",
       "properties": {
         "title": {
-          "title": "სათაური",
+          "title": "Title",
           "description": "string field",
           "type": "string"
         },
         "label": {
-          "title": "ლეიბლი",
+          "title": "Label",
           "description": "string field",
           "type": "string"
         },
         "color": {
-          "title": "ფერი",
+          "title": "Colour",
           "description": "color field",
           "type": "string",
           "$comment": "color"
@@ -354,7 +354,7 @@
           "type": "string"
         },
         "prependLabel": {
-          "title": "Drill Label",
+          "title": "Drill label",
           "description": "string field",
           "type": "string"
         },
@@ -495,7 +495,7 @@
       "type": "object",
       "properties": {
         "title": {
-          "title": "სათაური",
+          "title": "Title",
           "description": "string field",
           "type": "string"
         },
@@ -544,7 +544,7 @@
       "type": "object",
       "properties": {
         "title": {
-          "title": "სათაური",
+          "title": "Title",
           "description": "string field",
           "type": "string"
         },
@@ -554,17 +554,17 @@
           "type": "string"
         },
         "paramKey": {
-          "title": "Param Key",
+          "title": "Param key",
           "description": "string field",
           "type": "string"
         },
         "isoField": {
-          "title": "ISO Field",
+          "title": "ISO field",
           "description": "string field",
           "type": "string"
         },
         "geoCodeMap": {
-          "title": "Geo Code Map",
+          "title": "Geo code map",
           "description": "object field",
           "type": "object"
         },
@@ -574,12 +574,12 @@
           "type": "string"
         },
         "multiSelect": {
-          "title": "Multiple Select",
+          "title": "Multiple select",
           "description": "boolean field",
           "type": "boolean"
         },
         "maxSelect": {
-          "title": "Max Select",
+          "title": "Max select",
           "description": "number field",
           "default": 2,
           "type": "number"
@@ -619,7 +619,7 @@
       "type": "object",
       "properties": {
         "items": {
-          "title": "ბმულები",
+          "title": "Links",
           "description": "array field",
           "type": "array"
         },
@@ -658,12 +658,12 @@
       "type": "object",
       "properties": {
         "as": {
-          "title": "ცვლადის სახელი",
+          "title": "Variable name",
           "description": "string field",
           "type": "string"
         },
         "each": {
-          "title": "სტატიკური სია",
+          "title": "Static list",
           "description": "array field",
           "type": "array"
         },
@@ -702,7 +702,7 @@
       "type": "object",
       "properties": {
         "title": {
-          "title": "სათაური",
+          "title": "Title",
           "description": "LocaleString field",
           "oneOf": [
             {
@@ -715,7 +715,7 @@
           "$comment": "LocaleString"
         },
         "subtitle": {
-          "title": "ქვესათაური",
+          "title": "Subtitle",
           "description": "LocaleString field",
           "oneOf": [
             {
@@ -728,7 +728,7 @@
           "$comment": "LocaleString"
         },
         "cards": {
-          "title": "ბარათები",
+          "title": "Cards",
           "description": "array field",
           "type": "array"
         },
@@ -767,13 +767,13 @@
       "type": "object",
       "properties": {
         "autoplayMs": {
-          "title": "ავტოთამაში (ms)",
+          "title": "Autoplay (ms)",
           "description": "number field",
           "default": 7000,
           "type": "number"
         },
         "slides": {
-          "title": "სლაიდები",
+          "title": "Slides",
           "description": "array field",
           "type": "array"
         },
@@ -812,7 +812,7 @@
       "type": "object",
       "properties": {
         "view.cols": {
-          "title": "სვეტების რაოდენობა",
+          "title": "Column count",
           "description": "string field",
           "type": "string"
         },
@@ -851,7 +851,7 @@
       "type": "object",
       "properties": {
         "columns": {
-          "title": "სვეტები",
+          "title": "Columns",
           "description": "number field",
           "default": 12,
           "type": "number"
@@ -897,7 +897,7 @@
       "type": "object",
       "properties": {
         "count": {
-          "title": "სვეტები",
+          "title": "Columns",
           "description": "number field",
           "default": 2,
           "type": "number"
@@ -943,7 +943,7 @@
       "type": "object",
       "properties": {
         "direction": {
-          "title": "მიმართულება",
+          "title": "Direction",
           "description": "column: Column, row: Row",
           "default": "column",
           "type": "string",
@@ -1080,7 +1080,7 @@
       "type": "object",
       "properties": {
         "size": {
-          "title": "ზომა",
+          "title": "Size",
           "description": "string field",
           "default": "var(--spacing-xl)",
           "type": "string"
@@ -1120,7 +1120,7 @@
       "type": "object",
       "properties": {
         "styles": {
-          "title": "სტილები",
+          "title": "Styles",
           "description": "object field",
           "type": "object"
         },
@@ -1159,7 +1159,7 @@
       "type": "object",
       "properties": {
         "chartType": {
-          "title": "Chart Type",
+          "title": "Chart type",
           "description": "bar: Bar, line: Line, area: Area, donut: Donut, pie: Pie, scatter: Scatter, heatmap: Heatmap",
           "type": "string",
           "enum": [
@@ -1212,7 +1212,7 @@
       "type": "object",
       "properties": {
         "items": {
-          "title": "KPI მეტრიკები",
+          "title": "KPI metrics",
           "description": "array field",
           "type": "array"
         },
@@ -1251,7 +1251,7 @@
       "type": "object",
       "properties": {
         "colLabel": {
-          "title": "სვეტის სათაური",
+          "title": "Column header",
           "description": "string field",
           "type": "string"
         },

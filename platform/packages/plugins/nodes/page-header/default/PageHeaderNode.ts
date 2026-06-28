@@ -8,9 +8,9 @@ export interface PageHeaderNode extends NodeBase {
 }
 
 export const PageHeaderSchema: PropSchema = [
-  { field: 'title',  type: 'string', label: 'სათაური',    required: true },
-  { field: 'badge',  type: 'string', label: 'Badge' },
-  { field: 'crumbs', type: 'array',  label: 'Breadcrumbs' },
+  { field: 'title',  type: 'string', label: { ka: 'სათაური', en: 'Title' }, required: true },
+  { field: 'badge',  type: 'string', label: { ka: 'ბეჯი',    en: 'Badge' } },
+  { field: 'crumbs', type: 'array',  label: { ka: 'ნავიგაციის ბილიკი', en: 'Breadcrumbs' } },
 ]
 
 export const PageHeaderGroups: PropertyGroup[] = [

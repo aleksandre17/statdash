@@ -9,8 +9,8 @@ export interface ColumnsNode extends NodeBase {
 }
 
 export const ColumnsSchema: PropSchema = [
-  { field: 'count', type: 'number', label: 'სვეტები', default: 2 },
-  { field: 'gap',   type: 'string', label: 'Gap',     default: 'var(--spacing-md)' },
+  { field: 'count', type: 'number', label: { ka: 'სვეტები',  en: 'Columns' }, default: 2 },
+  { field: 'gap',   type: 'string', label: { ka: 'დაშორება', en: 'Gap' }, default: 'var(--spacing-md)' },
 ]
 
 export const ColumnsDefaults: Partial<ColumnsNode> = { count: 2 }

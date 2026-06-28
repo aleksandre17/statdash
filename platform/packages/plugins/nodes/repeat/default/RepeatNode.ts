@@ -22,8 +22,8 @@ export interface RepeatNode extends NodeBase {
 }
 
 export const RepeatSchema: PropSchema = [
-  { field: 'as',   type: 'string', label: 'ცვლადის სახელი', required: true },
-  { field: 'each', type: 'array',  label: 'სტატიკური სია' },
+  { field: 'as',   type: 'string', label: { ka: 'ცვლადის სახელი', en: 'Variable name' }, required: true },
+  { field: 'each', type: 'array',  label: { ka: 'სტატიკური სია',  en: 'Static list' } },
 ]
 
 export const RepeatDefaults: Partial<RepeatNode> = {

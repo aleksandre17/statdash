@@ -9,8 +9,8 @@ export interface GridNode extends NodeBase {
 }
 
 export const GridSchema: PropSchema = [
-  { field: 'columns', type: 'number', label: 'სვეტები', default: 12 },
-  { field: 'gap',     type: 'string', label: 'Gap',     default: 'var(--spacing-md)' },
+  { field: 'columns', type: 'number', label: { ka: 'სვეტები',  en: 'Columns' }, default: 12 },
+  { field: 'gap',     type: 'string', label: { ka: 'დაშორება', en: 'Gap' }, default: 'var(--spacing-md)' },
 ]
 
 export const GridDefaults: Partial<GridNode> = {

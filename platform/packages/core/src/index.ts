@@ -125,6 +125,13 @@ export type {
   TimeGranularity,
   TimeDimensionSpec,
 }                                                                        from './config/data-spec'
+// ── Value mappings — declarative value → {text, token, icon} (Grafana) [EXP-06] ──
+//  Token-bound (no literal colour): the `token` is a registered semantic-token KEY
+//  resolved through the spine by the react/charts consumer (cssVar), so a mapping
+//  re-themes per tenant. `applyValueMap` is the pure first-match-wins resolver. The
+//  bilingual authoring schema lives in the panel (apps/panel), not here.
+export type { ValueMapping, ValueMappingMatch, ValueMappingResult } from './config/value-mapping'
+export { applyValueMap }                                            from './config/value-mapping'
 // ── timeDimension — first-class time normalization seam [ADR R5] ──────
 export { resolveTimeDimension, clampToBounds, effectiveBounds, effectiveYears } from './core/time-dimension'
 export type { NormalizedTime, LegacyTimeSpec }                          from './core/time-dimension'

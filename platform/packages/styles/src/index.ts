@@ -68,6 +68,7 @@ export { px, ratio, fluid, spacing } from './utils/helpers'
 
 // ── Token resolution (computed value for SVG-attr / JS-parsed fills) ──
 export { cssVar } from './utils/cssVar'
+export { tokenCssVar, tokenColorLiteral, isRegisteredColorToken } from './utils/tokenColor'
 
 // ── Reduced-motion guard (JS half of the motion baseline; CSS half = animations.css) ──
 export {

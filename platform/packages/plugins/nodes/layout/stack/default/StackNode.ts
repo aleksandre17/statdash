@@ -13,15 +13,15 @@ export const StackSchema: PropSchema = [
   {
     field:   'direction',
     type:    'string',
-    label:   'მიმართულება',
+    label:   { ka: 'მიმართულება', en: 'Direction' },
     default: 'column',
     options: [
-      { value: 'column', label: 'Column' },
-      { value: 'row',    label: 'Row' },
+      { value: 'column', label: { ka: 'სვეტი', en: 'Column' } },
+      { value: 'row',    label: { ka: 'მწკრივი', en: 'Row' } },
     ],
   },
-  { field: 'gap',  type: 'string',  label: 'Gap',  default: 'var(--spacing-md)' },
-  { field: 'wrap', type: 'boolean', label: 'Wrap', default: false },
+  { field: 'gap',  type: 'string',  label: { ka: 'დაშორება', en: 'Gap' },     default: 'var(--spacing-md)' },
+  { field: 'wrap', type: 'boolean', label: { ka: 'გადატანა',  en: 'Wrap' },    default: false },
 ]
 
 export const StackDefaults: Partial<StackNode> = { direction: 'column' }

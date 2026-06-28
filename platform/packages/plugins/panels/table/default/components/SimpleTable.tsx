@@ -5,6 +5,7 @@ import type { AggType }            from './_footer'
 import { getCellValue, colFmt }    from './_helpers'
 import { computeAggregate, defaultFooterLabel } from './_footer'
 import { StatusBadge, accentStyle } from '@statdash/react'
+import { MappedCell }               from './MappedCell'
 
 export interface SimpleTableProps {
   rows:              DataRow[]
@@ -88,7 +89,9 @@ export function SimpleTable({ rows, colLabel, columns, indent, statusFlags, capt
                   if (!col.bar) {
                     return (
                       <td key={col.key} className={`t-num${col.align === 'r' ? ' r' : ''}`}>
-                        {colFmt(col)(val)}
+                        {col.valueMappings?.length
+                          ? <MappedCell value={val} mappings={col.valueMappings} fallback={colFmt(col)(val)} />
+                          : colFmt(col)(val)}
                       </td>
                     )
                   }

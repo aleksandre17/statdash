@@ -9,12 +9,12 @@ export const DividerSchema: PropSchema = [
   {
     field:   'variant',
     type:    'string',
-    label:   'სტილი',
+    label:   { ka: 'სტილი', en: 'Style' },
     default: 'solid',
     options: [
-      { value: 'solid',     label: 'Solid' },
-      { value: 'dashed',    label: 'Dashed' },
-      { value: 'invisible', label: 'Invisible' },
+      { value: 'solid',     label: { ka: 'მთლიანი',     en: 'Solid' } },
+      { value: 'dashed',    label: { ka: 'წყვეტილი',    en: 'Dashed' } },
+      { value: 'invisible', label: { ka: 'უხილავი',     en: 'Invisible' } },
     ],
   },
 ]

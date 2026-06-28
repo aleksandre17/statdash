@@ -9,6 +9,9 @@ import { useConstructorStore } from './store/constructor.store'
 import { initFromApi } from './store/api-actions'
 import { MOCK_SOURCES, MOCK_SPECS, MOCK_SITE, MOCK_PAGE } from './store/mock-data'
 import { isAuthenticated, AuthError } from './lib/auth'
+// Boot-time control registration: surface rich FieldControls the registry can't
+// own without a cycle (value-mapping rule-list editor). Side-effect import.
+import './inspector/controls/value-mapping/register'
 
 // ── App state machine ─────────────────────────────────────────────────────────
 //  idle       — initial; checking auth

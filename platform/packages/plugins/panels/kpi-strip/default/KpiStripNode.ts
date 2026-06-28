@@ -7,7 +7,7 @@ export interface KpiStripNode extends NodeBase {
 }
 
 export const KpiStripSchema: PropSchema = [
-  { field: 'items', type: 'array', label: 'KPI მეტრიკები', required: true },
+  { field: 'items', type: 'array', label: { ka: 'KPI მეტრიკები', en: 'KPI metrics' }, required: true },
 ]
 
 export const KpiStripGroups: PropertyGroup[] = [

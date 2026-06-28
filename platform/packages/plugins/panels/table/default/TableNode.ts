@@ -11,7 +11,7 @@ export interface TableNode extends TableConfig, NodeBase {
 }
 
 export const TableSchema: PropSchema = [
-  { field: 'colLabel', type: 'string', label: 'სვეტის სათაური' },
+  { field: 'colLabel', type: 'string', label: { ka: 'სვეტის სათაური', en: 'Column header' } },
   ...DATA_INTEGRITY_SCHEMA,
 ]
 

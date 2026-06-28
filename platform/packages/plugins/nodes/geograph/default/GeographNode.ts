@@ -26,14 +26,14 @@ export interface GeographNode extends NodeBase {
 }
 
 export const GeographSchema: PropSchema = [
-  { field: 'title',       type: 'string',  label: 'სათაური',     required: true },
-  { field: 'geoJsonUrl',  type: 'string',  label: 'GeoJSON URL',  required: true },
-  { field: 'paramKey',    type: 'string',  label: 'Param Key',    required: true },
-  { field: 'isoField',    type: 'string',  label: 'ISO Field',    required: true },
-  { field: 'geoCodeMap',  type: 'object',  label: 'Geo Code Map', required: true },
-  { field: 'unit',        type: 'string',  label: { ka: 'ერთეული', en: 'Unit' } },
-  { field: 'multiSelect', type: 'boolean', label: 'Multiple Select' },
-  { field: 'maxSelect',   type: 'number',  label: 'Max Select',   default: 2 },
+  { field: 'title',       type: 'string',  label: { ka: 'სათაური',          en: 'Title' }, required: true },
+  { field: 'geoJsonUrl',  type: 'string',  label: { ka: 'GeoJSON URL',       en: 'GeoJSON URL' }, required: true },
+  { field: 'paramKey',    type: 'string',  label: { ka: 'პარამეტრის გასაღები', en: 'Param key' }, required: true },
+  { field: 'isoField',    type: 'string',  label: { ka: 'ISO ველი',          en: 'ISO field' }, required: true },
+  { field: 'geoCodeMap',  type: 'object',  label: { ka: 'გეო-კოდების რუკა',    en: 'Geo code map' }, required: true },
+  { field: 'unit',        type: 'string',  label: { ka: 'ერთეული',           en: 'Unit' } },
+  { field: 'multiSelect', type: 'boolean', label: { ka: 'მრავლობითი არჩევა',   en: 'Multiple select' } },
+  { field: 'maxSelect',   type: 'number',  label: { ka: 'მაქს. არჩევანი',      en: 'Max select' }, default: 2 },
 ]
 
 export const GeographSlots: Record<string, SlotDef> = {

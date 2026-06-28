@@ -27,6 +27,10 @@ export default defineConfig({
       { find: '@statdash/expr',    replacement: eng('expr')       },
       { find: '@statdash/styles',  replacement: eng('styles/src') },
       { find: '@statdash/plugins', replacement: dir               },
+      // i18next is an OPTIONAL peer of @statdash/react (resolved only in the app
+      // tier). Shell a11y/render tests that pull `useT` need it to resolve — alias
+      // to a passthrough stub (returns the key). See __tests__/__stubs__/i18next.ts.
+      { find: /^i18next$/,         replacement: resolve(dir, '__tests__/__stubs__/i18next.ts') },
     ],
   },
 })

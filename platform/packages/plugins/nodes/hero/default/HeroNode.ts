@@ -17,9 +17,9 @@ export interface HeroNode extends NodeBase {
 }
 
 export const HeroSchema: PropSchema = [
-  { field: 'title',    type: 'LocaleString', label: 'სათაური',    required: true },
-  { field: 'subtitle', type: 'LocaleString', label: 'ქვესათაური' },
-  { field: 'cards',    type: 'array',        label: 'ბარათები',   required: true },
+  { field: 'title',    type: 'LocaleString', label: { ka: 'სათაური',    en: 'Title' }, required: true },
+  { field: 'subtitle', type: 'LocaleString', label: { ka: 'ქვესათაური', en: 'Subtitle' } },
+  { field: 'cards',    type: 'array',        label: { ka: 'ბარათები',   en: 'Cards' }, required: true },
 ]
 
 // ── HeroDefaults — must be SAVE-GUARD-valid the instant the node is dropped ──

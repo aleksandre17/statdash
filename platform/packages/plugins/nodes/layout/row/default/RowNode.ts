@@ -7,7 +7,7 @@ export interface RowNode extends NodeBase {
 }
 
 export const RowSchema: PropSchema = [
-  { field: 'view.cols', type: 'string', label: 'სვეტების რაოდენობა' },
+  { field: 'view.cols', type: 'string', label: { ka: 'სვეტების რაოდენობა', en: 'Column count' } },
 ]
 
 export const RowDefaults: Partial<RowNode> = {}

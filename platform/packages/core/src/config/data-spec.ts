@@ -11,6 +11,7 @@ import type { CtxRef, DimVal, ObsQuery } from '../sdmx'
 import type { LocaleString }     from '../i18n/types'
 import type { EncodingSpec }              from '../data/encoding'
 import type { TransformStep }             from '../data/transform'
+import type { ValueMapping }              from './value-mapping'
 
 // ── ColumnDef — one value column in a DataTable ───────────────────────
 //
@@ -32,6 +33,14 @@ export interface ColumnDef {
    * Only one bar column per table is supported; first match wins.
    */
   bar?: boolean | { min?: number; max?: number }
+  /**
+   * Declarative value → {text, token, icon} mapping for this column's cells
+   * (Grafana value mappings, token-bound — see config/value-mapping.ts). When a
+   * cell value matches a rule, the consumer renders the mapped text + icon, coloured
+   * by the rule's semantic TOKEN (never a literal colour). Absent ⇒ raw formatted
+   * value. a11y: the mapped TEXT carries the meaning, colour is decoration only.
+   */
+  valueMappings?: ValueMapping[]
 }
 
 // ── RowSpec — one entry in a row-list DataSpec ────────────────────────

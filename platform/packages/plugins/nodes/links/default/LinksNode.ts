@@ -7,7 +7,7 @@ export interface LinksNode extends NodeBase {
 }
 
 export const LinksSchema: PropSchema = [
-  { field: 'items', type: 'array', label: 'ბმულები', required: true },
+  { field: 'items', type: 'array', label: { ka: 'ბმულები', en: 'Links' }, required: true },
 ]
 
 declare module '@statdash/react/engine' {

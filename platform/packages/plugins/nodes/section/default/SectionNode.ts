@@ -26,11 +26,11 @@ export interface SectionNode extends NodeBase {
 }
 
 export const SectionSchema: PropSchema = [
-  { field: 'title',        type: 'string', label: 'სათაური',    required: true },
-  { field: 'label',        type: 'string', label: 'ლეიბლი' },
-  { field: 'color',        type: 'color',  label: 'ფერი' },
-  { field: 'anchor',       type: 'string', label: 'Anchor ID' },
-  { field: 'prependLabel', type: 'string', label: 'Drill Label' },
+  { field: 'title',        type: 'string', label: { ka: 'სათაური', en: 'Title' }, required: true },
+  { field: 'label',        type: 'string', label: { ka: 'წარწერა', en: 'Label' } },
+  { field: 'color',        type: 'color',  label: { ka: 'ფერი',    en: 'Colour' } },
+  { field: 'anchor',       type: 'string', label: { ka: 'მიმაგრების ID',      en: 'Anchor ID' } },
+  { field: 'prependLabel', type: 'string', label: { ka: 'დეტალიზაციის წარწერა', en: 'Drill label' } },
   // ── Methodology disclosure (Law 9 — IMF/Eurostat/ONS data integrity) ──────
   //  Authors the `methodology` panel SectionShell already renders (note +
   //  source + last-updated). Plain strings (NOT LocaleString) — matching the

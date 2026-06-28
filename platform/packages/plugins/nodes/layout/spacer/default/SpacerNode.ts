@@ -6,7 +6,7 @@ export interface SpacerNode extends NodeBase {
 }
 
 export const SpacerSchema: PropSchema = [
-  { field: 'size', type: 'string', label: 'ზომა', default: 'var(--spacing-xl)' },
+  { field: 'size', type: 'string', label: { ka: 'ზომა', en: 'Size' }, default: 'var(--spacing-xl)' },
 ]
 
 export const SpacerDefaults: Partial<SpacerNode> = { size: 'var(--spacing-xl)' }
