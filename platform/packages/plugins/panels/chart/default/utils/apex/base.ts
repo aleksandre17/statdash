@@ -6,8 +6,8 @@
 
 import type { ApexOptions } from 'apexcharts'
 import type { ChartSeries } from '@statdash/charts'
-import { fmtNum }           from '@statdash/engine'
-import { cssVar }           from '@statdash/styles'
+import { fmtNum }                        from '@statdash/engine'
+import { cssVar, prefersReducedMotion }  from '@statdash/styles'
 
 // ── Shared base config ─────────────────────────────────────────────────
 //
@@ -22,8 +22,15 @@ export const BASE: ApexOptions = {
   chart: {
     toolbar:    { show: false },
     fontFamily: 'BPG Arial, Roboto, sans-serif',
-    animations: { enabled: true, easing: 'easeinout', speed: 600,
-      animateGradually: { enabled: true, delay: 40 } },
+    // Reduced-motion: a getter, not a literal — read at spread time (render), so
+    // the OS/user setting is honoured live. JS half of the motion baseline
+    // (the CSS half neutralises declarative animation; Apex draws to SVG via JS,
+    // which CSS @media cannot reach, so it must gate on prefersReducedMotion()).
+    get animations() {
+      const motion = !prefersReducedMotion()
+      return { enabled: motion, easing: 'easeinout' as const, speed: 600,
+        animateGradually: { enabled: motion, delay: 40 } }
+    },
     events: {
       mounted: liftTooltip,
       updated: liftTooltip,

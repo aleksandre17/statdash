@@ -13,15 +13,34 @@
 //  the scroll mechanics (refs, the post-navigation effect) live behind this hook.
 //
 
-import { useRef, useEffect } from 'react'
-import { stickyOffset }      from '@statdash/react/engine'
+import { useRef, useEffect }          from 'react'
+import { stickyOffset }               from '@statdash/react/engine'
+import { motionSafeScrollBehavior }   from '@statdash/styles'
 
-/** Smooth-scroll the element with `anchor` id into view below the sticky chrome. */
+/**
+ * Scroll the element with `anchor` id into view below the sticky chrome AND move
+ * keyboard focus to it (WCAG 2.4.3 Focus Order + the skip-link reference pattern):
+ * after an anchor jump a keyboard / screen-reader user must continue reading FROM
+ * the target, not from the page top. Motion-safe — smooth-scroll degrades to an
+ * instant jump under `prefers-reduced-motion` (WCAG 2.3.3).
+ */
 export function scrollToAnchor(anchor: string): void {
   const el = document.getElementById(anchor)
   if (!el) return
   const top = el.getBoundingClientRect().top + window.scrollY - stickyOffset()
-  window.scrollTo({ top, behavior: 'smooth' })
+  window.scrollTo({ top, behavior: motionSafeScrollBehavior('smooth') })
+  moveFocusTo(el)
+}
+
+/**
+ * Move focus to a section target without re-scrolling. A heading/section is not
+ * natively focusable, so we grant a programmatic-only `tabindex="-1"` (kept off
+ * the Tab order) when absent. `preventScroll` stops the browser from fighting the
+ * smooth scroll we just initiated.
+ */
+function moveFocusTo(el: HTMLElement): void {
+  if (!el.hasAttribute('tabindex')) el.setAttribute('tabindex', '-1')
+  el.focus({ preventScroll: true })
 }
 
 export interface SidebarScroll {

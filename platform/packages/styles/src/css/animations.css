@@ -26,3 +26,30 @@
   0%   { background-position: -200% 0; }
   100% { background-position:  200% 0; }
 }
+
+/* ================================================================
+   Reduced-motion baseline — WCAG 2.3.3 (Animation from Interactions)
+   + 2.2.2 (Pause/Stop/Hide). Vestibular-safety floor for the whole
+   platform: when the user/OS requests reduced motion, every CSS
+   animation and transition collapses to a near-instant change, and
+   programmatic smooth-scroll falls back to an instant jump.
+
+   This is the CSS half of the motion baseline. The JS half (Apex
+   chart animation, window.scrollTo behaviour) gates on the
+   prefersReducedMotion() guard in utils/motion.ts against the SAME
+   media query (REDUCED_MOTION_QUERY). Keep the two in lockstep.
+
+   `.01ms` (not `0`) preserves animationend/transitionend events so
+   JS that waits on them still fires — the GOV.UK / a11y-project
+   reference pattern. !important overrides per-shell declarations.
+   ================================================================ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration:        0.01ms !important;
+    animation-iteration-count: 1       !important;
+    transition-duration:       0.01ms !important;
+    scroll-behavior:           auto    !important;
+  }
+}

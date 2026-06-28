@@ -15,7 +15,7 @@ export default defineConfig({
   test: {
     globals:     true,
     environment: 'node',
-    include:     ['panels/**/*.test.{ts,tsx}', 'nodes/**/*.test.{ts,tsx}', 'datasources/**/*.test.{ts,tsx}', 'presentation/**/*.test.{ts,tsx}'],
+    include:     ['panels/**/*.test.{ts,tsx}', 'nodes/**/*.test.{ts,tsx}', 'datasources/**/*.test.{ts,tsx}', 'presentation/**/*.test.{ts,tsx}', 'chrome/**/*.test.{ts,tsx}', '__tests__/**/*.test.{ts,tsx}'],
     setupFiles:  [eng('react/vitest.setup.ts')],
   },
   resolve: {
