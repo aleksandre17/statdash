@@ -2,7 +2,10 @@
 > New session: read THIS block, then `.claude/agent-memory/orchestrator/MEMORY.md` (doctrines) + the
 > committed `platform/work/*.md` design/decision docs. Continue AS IF UNINTERRUPTED. Nothing is lost.
 
-**STATE:** branch `feat/tenant-agnostic-platform`, HEAD **927603e**, all pushed. Suite **1972 green** (74 skip).
+**STATE:** branch `feat/tenant-agnostic-platform`, HEAD **e64795a**, all pushed. Suite **1978 green** (74 skip).
+Latest: gdp y-axis raw-float fix (ApexCharts responsive-override dropped the formatter) + a found-and-fixed
+data-integrity bug — `fmtNum` ate integer trailing zeros at max=0 (120000→"12", round axis ticks mangled);
+fixed + FF-FMTNUM-NO-DIGIT-LOSS. Nothing in flight now.
 Working tree clean except this file + untracked `platform/work/audit-shots/*.png` (audit screenshots, intentionally untracked) + local-only `.claude/agent-memory/` (gitignored = persists locally, read by future sessions).
 
 **DOCTRINE (memory, binding):** maximal-adoption (create→improve→USE everywhere, no cathedral-without-congregation) · platform-grade-whole-vertical (renderer + Constructor/panel + API all platform-level, competitive w/ Tableau/PowerBI/Looker/Cube, future-proof, flawless) · guardian-of-canon (decide with conviction NOT a menu; multiple logics; refuse degradation even in owner's own under-spec'd wishes; "maximal"=orthogonality/with-consumer never speculative) · gate-render-suite-on-data-changes · green-gate MUST incl `tsc -b apps/panel` · ALL agents model:opus · parallel only DISJOINT areas, DB-migration agents never concurrent.
@@ -33,7 +36,7 @@ FOLD IN: promote `_geoMode` var-hack → 1st-class perspective axis (genuine con
 
 **RHYTHM:** disjoint parallel agents → converged gate (build:engine + geostat-tsc + `tsc -b apps/panel` + lint + check-laws + full test) → logical commits (NO backticks in -m) → push. Never commit on agent self-report alone; the converged gate is the control point.
 
-**IN FLIGHT NOW:** (owner asked to SLOW DOWN — near usage limit) one bounded agent on the gdp y-axis number-format defect. Everything else above is saved + ready.
+**IN FLIGHT NOW:** nothing (owner slowing down near usage limit). Open responsive question pending with owner: DEPLOY the branch to live :3002 (builds from main, ~49 commits behind → fixes not yet visible to stakeholders) vs a thorough responsive re-sweep first. Everything is saved + committed + ready.
 
 # ════════════════ (older log below) ════════════════
 
