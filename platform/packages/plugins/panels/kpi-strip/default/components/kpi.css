@@ -4,23 +4,65 @@
    ================================================================ */
 
 .kpi-strip {
-  /* Intrinsic responsive stat strip — Every-Layout / GOV.UK / Stripe standard.
-     auto-fit + minmax fills the row with as many equal cards as fit and reflows
-     with ZERO breakpoints, for ANY KPI count at ANY width:
-       · empty trailing tracks COLLAPSE → no dead cell (the old repeat(4,1fr)
-         left a hole beside a 3-KPI page on ultrawide);
-       · cards never balloon into 600px-wide voids with a stranded orphan (the
-         old repeat(2,1fr) put the 3rd card alone beside two 602px cards at 1280);
-       · min(floor,100%) lets a card go full-width below the floor instead of
-         forcing a horizontal scroll → a clean 1-column stack on mobile (was a
-         cramped 157px 2-column at 390).
-     One knob (--kpi-card-min) tunes the whole ladder; no column-counting. */
-  --kpi-card-min: 14rem;        /* comfortable label + value + trend width */
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(var(--kpi-card-min), 100%), 1fr));
-  gap: var(--spacing-md);
+  /* COUNT-AWARE strip (the canonical multi-item-strip pattern).
+     Why not pure auto-fit: `repeat(auto-fit, minmax(min,1fr))` packs as many
+     cards as fit and is gap-free ONLY when the KPI count divides the fitted
+     column-count. When it doesn't (4 KPIs that fit 3-across at ~1024) the last
+     row strands an orphan — the recurring "3 + 1 dead-space" miss. auto-fit
+     cannot know the count, so it cannot guarantee clean rows.
+     The strip DOES know its count (it renders N cards). So it declares the count
+     (data-kpi-count) and the grid resolves to a column count that always DIVIDES
+     N cleanly at every width: 4 → 4 / 2×2 / 1 · 3 → 3 / 1 (never 2) · 6 → 6 / 3 /
+     2 / 1. No stranded card, no dead cell, at any resolution.
+     The strip is the query CONTAINER; the inner grid responds to the strip's own
+     inline-size (container-first, Law: a node responds to its slot not the
+     viewport — a strip in a narrow column stacks earlier than the window implies). */
+  container-type: inline-size;
+  container-name: kpi;
   padding: var(--spacing-lg) var(--spacing-lg) var(--spacing-xs);
 }
+
+.kpi-strip__grid {
+  --kpi-card-min: 14rem;        /* comfortable label + value + trend width; ladder thresholds derive from it */
+  display: grid;
+  grid-template-columns: repeat(var(--kpi-cols, 1), minmax(0, 1fr));
+  gap: var(--spacing-md);
+}
+
+/* ── Base column count = the KPI count (widest viewport, every card across) ── */
+.kpi-strip__grid[data-kpi-count="1"] { --kpi-cols: 1; }
+.kpi-strip__grid[data-kpi-count="2"] { --kpi-cols: 2; }
+.kpi-strip__grid[data-kpi-count="3"] { --kpi-cols: 3; }
+.kpi-strip__grid[data-kpi-count="4"] { --kpi-cols: 4; }
+.kpi-strip__grid[data-kpi-count="5"] { --kpi-cols: 5; }
+.kpi-strip__grid[data-kpi-count="6"] { --kpi-cols: 6; }
+
+/* ── Count-clean step-down ladder (container-first; thresholds = N·14rem + gaps) ──
+   Each step drops to the next column count that STILL DIVIDES the KPI count, so a
+   row is never left with an orphan. max-width queries cascade smallest-wins, so
+   list widest threshold first. */
+
+/* 6 KPIs: 6 → 3 → 2 → 1 (all clean divisors of 6) */
+@container kpi (max-width: 89rem) { .kpi-strip__grid[data-kpi-count="6"] { --kpi-cols: 3; } }
+@container kpi (max-width: 44rem) { .kpi-strip__grid[data-kpi-count="6"] { --kpi-cols: 2; } }
+@container kpi (max-width: 29rem) { .kpi-strip__grid[data-kpi-count="6"] { --kpi-cols: 1; } }
+
+/* 5 KPIs (prime): 5 → 1 (no clean intermediate; never orphan) */
+@container kpi (max-width: 74rem) { .kpi-strip__grid[data-kpi-count="5"] { --kpi-cols: 1; } }
+
+/* 4 KPIs: 4 → 2×2 → 1 (skip 3 — 3-across would strand the 4th: the fixed miss) */
+@container kpi (max-width: 59rem) { .kpi-strip__grid[data-kpi-count="4"] { --kpi-cols: 2; } }
+@container kpi (max-width: 29rem) { .kpi-strip__grid[data-kpi-count="4"] { --kpi-cols: 1; } }
+
+/* 3 KPIs: 3 → 1 (skip 2 — 2-across would strand the 3rd) */
+@container kpi (max-width: 44rem) { .kpi-strip__grid[data-kpi-count="3"] { --kpi-cols: 1; } }
+
+/* 2 KPIs: 2 → 1 */
+@container kpi (max-width: 29rem) { .kpi-strip__grid[data-kpi-count="2"] { --kpi-cols: 1; } }
+
+/* Universal narrow floor — any count (incl. >6) collapses to a single column
+   below the 2-up threshold rather than overflowing. */
+@container kpi (max-width: 29rem) { .kpi-strip__grid { --kpi-cols: 1; } }
 
 .kpi-card {
   background: var(--color-surface);
@@ -141,5 +183,6 @@
   font-weight: 400;
 }
 
-/* No @media for the strip layout — the intrinsic auto-fit grid above adapts the
-   column count continuously from 1 (mobile) to N (ultrawide) with no breakpoint. */
+/* No @media for the strip layout — the count-aware @container ladder above resolves
+   a clean (count-dividing) column count from N (ultrawide) down to 1 (mobile),
+   responding to the strip's own width. No orphan at any resolution. */

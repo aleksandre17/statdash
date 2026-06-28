@@ -4,13 +4,10 @@
 > existing canon (co-located shell CSS, BEM-agnostic names, 3-tier token spine, the data-attribute
 > responsive engine in `node-styles.css`). Where this document chooses to be *stronger* than the
 > current code, the gap is an alignment target, not a description of today — see `AUDIT-css-adherence.md`.
->
-> Reference-grounded: Tailwind v4 (`@theme`, container queries), Builder.io (per-breakpoint override
-> inheritance — already mirrored by our `--ar-*` cascade), Grafana/shadcn (component-co-located CSS),
-> Every-Layout / intrinsic web design (fluid + Grid `auto-fit`), Open Props / GOV.UK Design System
-> (token spine), MDN cascade-layers. We match the leaders on co-location + tokens + container queries,
-> and go **stronger** on three axes (single breakpoint SSOT projected to CSS, container-first node
-> responsiveness, and fitness-function-enforced invariants).
+> Reference-grounded: Tailwind v4, Builder.io (override inheritance), Grafana/shadcn (co-located CSS),
+> Every-Layout (fluid + intrinsic grids), Open Props / GOV.UK (token spine). We match the leaders on
+> co-location + tokens + container queries, and go **stronger** on three axes: single breakpoint SSOT
+> projected to CSS, container-first node responsiveness, fitness-function-enforced invariants.
 
 ---
 
@@ -110,16 +107,25 @@ Decision order (prefer the earlier, cheaper mechanism; escalate only when it can
      scales 360→3440 without a single breakpoint step (kills the "h1 jumps 27→50px at 1280" class of bug).
    - Spacing: `clamp()` gutters/padding (already used well, e.g. `app-header` padding
      `clamp(0.8rem, 2.5vw, 2rem)`).
-   - Layout: CSS Grid `repeat(auto-fit, minmax(min(<floor>, 100%), 1fr))` for card/KPI grids — they reflow
-     with **zero** breakpoints, fill the row for **any** item count, collapse empty trailing tracks (no dead
-     cell), and the `min(<floor>,100%)` guard stacks to one column below the floor instead of overflowing.
-     This is the Every-Layout/intrinsic standard and is stronger than counting columns per breakpoint.
-     **Canonical implementation:** the KPI strip (`panels/kpi-strip/.../kpi.css`, one knob `--kpi-card-min`)
-     — the reference every multi-item strip/grid follows. **Flag (additive, post-demo):** the layout
-     `columns`/`grid` nodes still count fixed columns per breakpoint (`data-cols-*`); they should gain an
-     intrinsic `auto` mode (a `min` floor → this same `auto-fit` rule) so page authors get gap-free reflow
-     without enumerating counts — the platform eating its own dog food. Deferred only for YAGNI (no page
-     config consumes it yet) + blast radius (touches the `@statdash/styles` `resolveColumns` resolver).
+   - Layout (free-flowing grids, count-AGNOSTIC content): CSS Grid
+     `repeat(auto-fit, minmax(min(<floor>, 100%), 1fr))` reflows with zero breakpoints and collapses empty
+     trailing tracks. Correct **only when the item count is unbounded** (a tag cloud) — a "last row not
+     full" is fine there.
+   - **Count-CLEAN strips (the KPI pattern — corrected).** `auto-fit` is the WRONG tool for a *fixed,
+     known* item count (a 3- or 4-KPI strip). Proof (owner, live): 4 KPIs at a laptop width where only 3
+     cards fit renders **3 + 1 with dead space** — `auto-fit` packs as many as fit and is gap-free *only*
+     when the count divides the fitted column-count; when it doesn't, the last row strands an orphan, and
+     `auto-fit` cannot know the count so it cannot prevent it. The honest fix: the strip **knows** it
+     renders N cards, so it declares the count (`data-kpi-count`) and a **container-query ladder** resolves
+     to a column count that always **divides N** at every width — 4 → 4 / 2×2 / 1 · 3 → 3 / 1 (never 2) ·
+     6 → 6 / 3 / 2 / 1. No stranded card, no dead cell, at any resolution (verified by an exhaustive
+     240→2400px sweep: zero orphans for 3- and 4-KPI). **Canonical implementation:** `.kpi-strip`
+     (container) + `.kpi-strip__grid[data-kpi-count]` in `panels/kpi-strip/.../kpi.css` — the reference
+     every *count-known* multi-item strip follows. The card-min (`--kpi-card-min` = 14rem) only tunes the
+     ladder thresholds (`N·14rem + gaps`), it does not pick the count.
+     **Flag (additive, post-demo, platform-architect):** lift this into a config-driven layout-node mode
+     (`columns` gains `mode:"count-clean"` over a `ResponsiveVal<number>` count) so any author gets it
+     for free — the platform eating its own dog food (touches `@statdash/styles` `resolveColumns`).
    - Caps: `max-width: min(100%, <token>)` and aspect ceilings (`--size-panel-max-height`) to stop
      ultrawide ballooning.
 2. **Container query (`@container`)** — second choice, for *component-level* responsiveness: a node must
@@ -133,6 +139,41 @@ Decision order (prefer the earlier, cheaper mechanism; escalate only when it can
    scheme, reduced motion), and `print`. If a rule could be expressed as `@container`, it must be.
 
 **Heuristic:** *page chrome → `@media`; everything in the content tree → `@container` or fluid.*
+
+### 3a. Panel sizing — ONE honest constraint (the height band)
+
+**Decision (binding).** A data panel (chart · table · treemap · map) is sized by a **single fluid height
+band**, never by `aspect-ratio`. Width fills the column (`width:100%`); height is
+`--size-panel-height: clamp(--size-panel-h-floor, --size-panel-h-fluid, --size-panel-h-cap)`
+(= `clamp(380px, 56vh, 560px)`). SSOT in `tokens.css`; a tenant/layout rebinds the three stops in one place
+(OCP).
+
+**Root cause it fixes.** `aspect-ratio` + `max-height` are **two contradictory constraints**: aspect-ratio
+derives height from width, then max-height caps it — so past a crossover width the declared ratio is
+silently violated (a "16:9" panel is no longer 16:9; the owner correctly called this *a lie*). Worse, a
+ratio is meaningless under nesting: 16:9 in a 1/3 column is a useless ~200px sliver. A height band is **one
+monotonic constraint** — honest at every width: height grows with the viewport up to a cap, floors so a
+narrow/nested column still gets a readable chart, and width always fills so the panel keeps its horizontal
+space and never balloons. Verified: panel height is **width-independent** (504px at 360→2400px viewport
+width @ h=900) and floor/cap-honored across viewport heights (380→560).
+
+**Trade-off named (ISO 25010).** We trade a per-panel *shape* knob (aspect-ratio) for *consistency +
+maintainability + honesty* — every panel shares one readable height rhythm (the ONS/Eurostat/Grafana norm),
+and the contradiction class is eliminated. `aspectRatio` remains a `NodeStyle` for genuinely ratio-locked
+*media* (an image/logo), but it is **not** a panel-sizing mechanism and carries no max-height cap (so when a
+ratio IS declared it is honest).
+
+**Strangler-Fig migration.** The ratio tokens (`data-height:"16:9"`) and the responsive `data-aspect` /
+`--ar-*` path are now **deprecated aliases** that resolve to the band, so existing provisioning renders
+unchanged. The dead `--ar-*` `@media`+`@container` cascade (24 lines) and the `≤1280 → height:auto` unwind
+(22 lines) are deleted — the band is honest at every width and needs no mobile reset (the one mobile keep:
+a *table* view expands to natural height for inline reading, scoped by `:has(.data-table__wrap)`).
+*Staged (platform-architect):* (a) migrate provisioning `"height":"16:9"`/`aspectRatio` → a `size` token
+(e.g. `"panel"`), then drop the alias rules + the now-inert `--ar-*` resolver output in
+`@statdash/styles` `node.ts`/`panel.ts`; (b) **container-fluid upgrade** — swap the `56vh` term for a
+container unit (`clamp(380px, 64cqi, 560px)`) so height scales with the *column* not the viewport (a 1/3
+column gets a shorter panel than a hero) — strictly more honest, deferred only to audit every panel's
+container-context first (maps render outside a `container-type` ancestor).
 
 ---
 
@@ -152,43 +193,28 @@ in ascending order. Justification vs `max-width`-down:
 - The base layer is the **safety floor** — the smallest screen is the hardest constraint, so making it the
   default guarantees no-overflow by construction; wider screens only *add* room. Desktop-first inverts the
   risk (the default is the easy case; the hard case is an override that's easy to forget).
-- Enhancements are purely additive → smaller cascade surface, fewer resets, no `!important`-to-undo.
-- It is the GOV.UK / MDN / Tailwind / Bootstrap consensus and aligns with Core Web Vitals (mobile CLS).
+- Additive enhancements → smaller cascade surface, no `!important`-to-undo; the GOV.UK/MDN/Tailwind
+  consensus, aligned with Core Web Vitals (mobile CLS).
 
-This is the **target** (architecture-leads-code, Law 7). Today's shells are authored desktop-first
-(`max-width` down); migrating each to mobile-first is a per-node, browser-verified change (RISKY — see
-audit), done Strangler-Fig, not a big-bang inversion.
+This is the **target** (Law 7). Today's shells are desktop-first (`max-width` down); migrating each is a
+per-node, browser-verified Strangler-Fig change, not a big-bang inversion.
 
 ### 4.3 The ONE documented exception — the data-attribute override engine
 
-`node-styles.css`'s `--ar-*` / `[data-*-responsive]` cascades are **desktop-default `max-width`**, and they
-**stay that way**. They are not "desktop-first authoring" — they are *Builder.io override inheritance*: a
-node's flat (default) value is the canvas value, and each unset breakpoint **inherits from the next-larger**
-via the `var(--x-md, var(--x-lg, …))` fallback chain. That is a different axis (config-override propagation,
-not hand-authored progressive enhancement) and inverting it would be a high-risk rewrite of a working SSOT
-for zero behavioral gain. The standard: **this engine is generated and max-width-cascaded; all *other* CSS
-is mobile-first min-width.** Documenting the two axes explicitly is what prevents confusion.
+`node-styles.css`'s `[data-*-responsive]` cascades stay **desktop-default `max-width`**: they are not
+desktop-first *authoring* but *Builder.io override inheritance* (a node's flat value is the canvas value;
+each unset breakpoint inherits from the next-larger via the `var(--x-md, var(--x-lg, …))` chain). A
+different axis; inverting it is a high-risk rewrite for zero gain. Standard: **this engine is generated and
+max-width-cascaded; all *other* CSS is mobile-first min-width.**
 
 ### 4.4 SSOT → CSS projection (the stronger-than-standard move)
 
-One source (`BREAKPOINTS`) → two CSS consumers, both generated, never hand-typed:
-
-- **The engine** (`node-styles.css`): the per-property cascade is mechanical and must be emitted by a
-  generator reading `BREAKPOINTS` (the codegen seam already exists). A breakpoint change is a one-line TS
-  edit + regen, not a 600-line hand-edit.
-- **Hand-authored shells**: adopt PostCSS `@custom-media` (postcss-custom-media / preset-env), with the
-  `@custom-media --bp-xs … --bp-2xl (min-width: …)` definitions **generated from the same TS SSOT** and
-  injected globally. Authors then write the tokenized, mobile-first form:
-
-  ```css
-  /* node-local, mobile-first, tokenized — the canonical shell pattern */
-  .app-header__nav { display: none; }              /* base = smallest */
-  @media (--bp-md) { .app-header__nav { display: flex; } }   /* ≥768, enhance up */
-  ```
-
-  YAGNI check: the second consumer (numerous hand-authored shells with literal px) is **real**, so the
-  `@custom-media` seam is justified, not speculative. Until it lands, authors still write min-width with
-  the scale's exact px and a `/* = --bp-md */` comment, so the migration is a find-replace.
+One source (`BREAKPOINTS`) → two generated consumers, never hand-typed: **(a)** the engine cascade is
+emitted by a generator reading `BREAKPOINTS` (codegen seam exists) — a breakpoint change is a one-line TS
+edit; **(b)** hand-authored shells adopt `@custom-media --bp-* (min-width: …)` generated from the same
+SSOT, so authors write `@media (--bp-md)` not `768px`. The second consumer (many shells with literal px) is
+real → the seam is justified. Until it lands, authors write the scale's px + a `/* = --bp-md */` comment so
+migration is a find-replace.
 
 ---
 
@@ -270,5 +296,4 @@ Each is justified by a *real* second consumer (YAGNI honored) — none is specul
 @container (min-width: 40rem) { .block__aside { display: block; } }
 ```
 
-Rules: tokens for every value · `min-width:0` on flexible children · fluid/`auto-fit` before a breakpoint ·
-`@container` before `@media` · mobile-first ascending · BEM-agnostic names · breakpoints from the scale only.
+Rules: tokens for every value · `min-width:0` on flexible children · fluid/`auto-fit` before a breakpoint · `@container` before `@media` · mobile-first ascending · BEM-agnostic names · scale breakpoints only · count-known strips use the count-clean ladder (§3), not `auto-fit`.

@@ -23,28 +23,22 @@
 
 /* ── Height tokens ──────────────────────────────────────────────── */
 
-[data-height="16:9"] { aspect-ratio: 16 / 9; }
-[data-height="4:3"]  { aspect-ratio: 4 / 3;  }
-[data-height="1:1"]  { aspect-ratio: 1 / 1;  }
-[data-height="21:9"] { aspect-ratio: 21 / 9; }
-/* Aspect-ratio height ∝ width — cap the ultrawide growth so a full-width
- * panel can't balloon into a dominating block (same ceiling as [data-aspect]). */
+/* Ratio tokens are DEPRECATED aliases for the panel height band — the ONE honest
+ * panel-sizing constraint (tokens.css --size-panel-height). They no longer apply
+ * aspect-ratio: the panel fills its column width and takes the band height, so the
+ * former aspect-ratio-vs-max-height contradiction (height ∝ width, then capped →
+ * the declared ratio silently violated past a crossover width) cannot occur. Kept
+ * as aliases so existing provisioning ("height":"16:9") keeps rendering while the
+ * config migrates to a size token (Strangler-Fig — see DESIGN §panel-sizing). */
 [data-height="16:9"],
 [data-height="4:3"],
 [data-height="1:1"],
-[data-height="21:9"] { max-height: var(--size-panel-max-height); }
+[data-height="21:9"] { width: 100%; height: var(--size-panel-height); }
 [data-height="sm"]   { height: 280px; }
 [data-height="md"]   { height: 380px; }
 [data-height="lg"]   { height: 480px; }
 [data-height="xl"]   { height: 600px; }
 [data-height]        { overflow: hidden; }
-
-/* Grid rows: aspect-ratio cells must not stretch (default align-items:stretch
- * overrides aspect-ratio on block elements in grid context). */
-.panel-row > [data-height="16:9"],
-.panel-row > [data-height="4:3"],
-.panel-row > [data-height="1:1"],
-.panel-row > [data-height="21:9"] { align-self: start; }
 
 /* Content inside a height-constrained ancestor fills the space */
 [data-height] .chart-wrap,
@@ -80,32 +74,14 @@
  *                until then they are inert, so this is purely additive.
  */
 
-[data-aspect] {
-  width:        100%;
-  height:       auto;
-  aspect-ratio: var(--ar-default);
-  /* aspect-ratio yields to max-height: with width pinned to fill, a capped panel
-   * stays full-width (ratio breaks toward shorter) instead of shrinking its width
-   * to preserve the ratio — so ultrawide can't grow it into a dominating block
-   * and the panel keeps using its horizontal space. */
-  max-height:   var(--size-panel-max-height);
-}
-
-/* Viewport (media) cascade — largest → smallest */
-@media (max-width: 1536px) { [data-aspect] { aspect-ratio: var(--ar-2xl, var(--ar-default)); } }
-@media (max-width: 1280px) { [data-aspect] { aspect-ratio: var(--ar-xl,  var(--ar-2xl, var(--ar-default))); } }
-@media (max-width: 1024px) { [data-aspect] { aspect-ratio: var(--ar-lg,  var(--ar-xl, var(--ar-2xl, var(--ar-default)))); } }
-@media (max-width: 768px)  { [data-aspect] { aspect-ratio: var(--ar-md,  var(--ar-lg, var(--ar-xl, var(--ar-2xl, var(--ar-default))))); } }
-@media (max-width: 640px)  { [data-aspect] { aspect-ratio: var(--ar-sm,  var(--ar-md, var(--ar-lg, var(--ar-xl, var(--ar-2xl, var(--ar-default)))))); } }
-@media (max-width: 480px)  { [data-aspect] { aspect-ratio: var(--ar-xs,  var(--ar-sm, var(--ar-md, var(--ar-lg, var(--ar-xl, var(--ar-2xl, var(--ar-default))))))); } }
-
-/* Element (container) cascade — same thresholds, scoped to the nearest size container */
-@container (max-width: 1536px) { [data-aspect] { aspect-ratio: var(--ar-2xl, var(--ar-default)); } }
-@container (max-width: 1280px) { [data-aspect] { aspect-ratio: var(--ar-xl,  var(--ar-2xl, var(--ar-default))); } }
-@container (max-width: 1024px) { [data-aspect] { aspect-ratio: var(--ar-lg,  var(--ar-xl, var(--ar-2xl, var(--ar-default)))); } }
-@container (max-width: 768px)  { [data-aspect] { aspect-ratio: var(--ar-md,  var(--ar-lg, var(--ar-xl, var(--ar-2xl, var(--ar-default))))); } }
-@container (max-width: 640px)  { [data-aspect] { aspect-ratio: var(--ar-sm,  var(--ar-md, var(--ar-lg, var(--ar-xl, var(--ar-2xl, var(--ar-default)))))); } }
-@container (max-width: 480px)  { [data-aspect] { aspect-ratio: var(--ar-xs,  var(--ar-sm, var(--ar-md, var(--ar-lg, var(--ar-xl, var(--ar-2xl, var(--ar-default))))))); } }
+/* data-aspect — DEPRECATED responsive-aspect path, now an alias for the height
+ * band (the honest single-constraint model). The --ar-* per-breakpoint vars set
+ * by applyNodeStyles become inert (no aspect-ratio is applied); the panel fills
+ * its column width and takes the band height. This removes the 12-line @media +
+ * @container --ar-* cascade that drove the aspect-vs-max-height contradiction.
+ * (aspectRatio remains a NodeStyle for genuine ratio-locked media; data panels —
+ * chart / table / map — size by the band. See DESIGN §panel-sizing.) */
+[data-aspect] { width: 100%; height: var(--size-panel-height); }
 
 /* Content inside an aspect-constrained element */
 [data-aspect] .chart-wrap,
@@ -177,29 +153,27 @@
 }
 
 
-/* ── Responsive resets ──────────────────────────────────────────── */
-
-@media (max-width: 1280px) {
-  /* Height-token elements: collapse aspect-ratio, go to auto */
-  [data-height] {
-    aspect-ratio: unset;
-    height:       auto !important;
+/* ── Mobile table reflow ─────────────────────────────────────────────
+ *  No reset is needed for the panel height itself — the band (--size-panel-height)
+ *  is honest at every width (it was the aspect model that needed unwinding on
+ *  mobile). The one mobile-specific behaviour we keep: a TABLE view expands to its
+ *  natural height (page scrolls) instead of scrolling inside the band — a long
+ *  table is easier to read inline on a phone. The CHART view keeps the band (a
+ *  chart renderer needs a definite height). Scoped with :has so only a panel whose
+ *  ACTIVE view is the table opts out; the chart-only case is untouched. */
+@media (max-width: 768px) {  /* = --bp-md */
+  [data-height]:has([data-view="visible"] .data-table__wrap),
+  [data-aspect]:has([data-view="visible"] .data-table__wrap) {
+    height:     auto;
+    overflow:   visible;
   }
-
-  [data-height] [data-view="visible"] {
-    flex:     1;
-    overflow: visible;
+  [data-height] [data-view="visible"] .data-table__wrap,
+  [data-aspect] [data-view="visible"] .data-table__wrap {
+    flex:       none;
+    overflow-y: visible;
   }
-
-  [data-height] [data-view="visible"] .chart-wrap {
-    flex:   none;
-    height: var(--chart-h, auto);
-  }
-
-  [data-height] [data-view="visible"] .chart-ph         { flex: none; height: auto; }
-  [data-height] [data-view="visible"] .data-table__wrap { flex: none; overflow-y: visible; }
-  [data-height] [data-view="visible"] .data-table        { min-height: unset; }
-  [data-height] [data-view="visible"] .data-table thead th { position: static; }
+  [data-height] [data-view="visible"] .data-table thead th,
+  [data-aspect] [data-view="visible"] .data-table thead th { position: static; }
 }
 
 

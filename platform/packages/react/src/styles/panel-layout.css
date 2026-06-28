@@ -48,11 +48,12 @@
 
 /* Height chain for a .panel node (e.g. geograph) — a panel is NOT a section, so
  * the rules above don't reach it, and the node's height token lands on the OUTER
- * .panel-col (a flex column, which ignores aspect-ratio → the map collapsed to
- * height 0: blank panel + a degenerate FitBounds NaN). Re-home the aspect-ratio
- * onto the panel BODY (the real content box, mirroring section__body), and let the
- * map's .chart-wrap fill it. Width-driven aspect-ratio on the body resolves to a
- * real height the absolutely-positioned Leaflet container can fill. */
+ * .panel-col (a flex column, which ignored aspect-ratio → the map collapsed to
+ * height 0). Re-home the height onto the panel BODY (the real content box,
+ * mirroring section__body), and let the map's .chart-wrap fill it. The body takes
+ * the honest panel height band (--size-panel-height) — the same single-constraint
+ * model as section panels — so the absolutely-positioned Leaflet container fills a
+ * definite height at every width (no aspect-ratio-vs-cap contradiction). */
 .panel-col > .panel {
   flex: 1;
   display: flex;
@@ -65,14 +66,10 @@
   flex: 1;
 }
 
-.panel-col[data-height="16:9"] { aspect-ratio: auto; }   /* token moves to body */
-.panel-col[data-height="16:9"] > .panel > .panel__body { aspect-ratio: 16 / 9; }
-.panel-col[data-height="4:3"]  { aspect-ratio: auto; }
-.panel-col[data-height="4:3"]  > .panel > .panel__body { aspect-ratio: 4 / 3; }
-.panel-col[data-height="1:1"]  { aspect-ratio: auto; }
-.panel-col[data-height="1:1"]  > .panel > .panel__body { aspect-ratio: 1 / 1; }
-.panel-col[data-height="21:9"] { aspect-ratio: auto; }
-.panel-col[data-height="21:9"] > .panel > .panel__body { aspect-ratio: 21 / 9; }
+.panel-col[data-height="16:9"] > .panel > .panel__body,
+.panel-col[data-height="4:3"]  > .panel > .panel__body,
+.panel-col[data-height="1:1"]  > .panel > .panel__body,
+.panel-col[data-height="21:9"] > .panel > .panel__body { height: var(--size-panel-height); }
 
 /* ── Width modifiers — view.width in config ──────────────────────
  *  Work in any context: panel-row (grid cell) or page-content (flex column).

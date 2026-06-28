@@ -1,13 +1,13 @@
 /* ── Chart wrap ──────────────────────────────────────────────────────
  *  Structural CSS only — no data-* logic, no CSS var reads.
  *
- *  Sizing behavior is fully driven by @statdash/styles / node-styles.css:
- *    [data-height]  → fixed height token on ancestor (section body)
- *    [data-aspect]  → responsive aspect-ratio on this element
- *
- *  Desktop (>1280px):  height:100% fills height-constrained ancestor.
- *  Mobile  (≤1280px):  height:auto — chart uses intrinsic height.
- *  With [data-aspect]: height:auto overridden by node-styles.css rule. */
+ *  Sizing is fully driven by @statdash/styles / node-styles.css: the panel body
+ *  ([data-height] / [data-aspect]) takes the honest height band
+ *  (--size-panel-height) at EVERY width, and the chart fills it via height:100%.
+ *  There is no mobile height:auto fork any more — the band is definite at all
+ *  widths, so a single height:100% is correct everywhere (the former ≤1280
+ *  height:auto override collapsed Apex/treemap renderers that need a definite
+ *  box, and only existed to unwind the old aspect-ratio model). */
 
 .chart-wrap {
   height:    100%;
@@ -15,7 +15,7 @@
   padding:   0.4vw;
 }
 
-/* The visual-render wrapper (sibling of the a11y ChartDataTable). Must pass the
+/* The visual-render wrapper (sibling of the a11y ChartDataTable). Passes the
  * resolved height through to a renderer that fills its parent — the custom
  * flexbox TreemapChart root is `height:100%` and otherwise collapses to 0 inside
  * a content-sized wrapper (blank treemap). Apex renderers measure the box, so a
@@ -24,11 +24,6 @@
   height:     100%;
   min-height: 0;
   min-width:  0;
-}
-
-@media (max-width: 1280px) {
-  .chart-wrap { height: auto; }
-  .chart-wrap__render { height: auto; }
 }
 
 /* ── Donut legend ────────────────────────────────────────────────────

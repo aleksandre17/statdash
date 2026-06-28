@@ -34,7 +34,13 @@ function KpiStripControl({ def, ctx }: { def: KpiStripNode; ctx: RenderContext }
         </div>
       )}
       <div className="kpi-strip">
-        {kpis.map((kpi) => <KpiCard key={kpi.label} {...kpi} trendLabels={trendLabels} />)}
+        {/* Count-aware grid: the strip is the query container, the grid responds to
+            the strip's own inline-size and resolves to a clean column count that
+            DIVIDES the KPI count at every width (no stranded orphan). data-kpi-count
+            is pure data passthrough — the column ladder lives in kpi.css (Law 2). */}
+        <div className="kpi-strip__grid" data-kpi-count={String(kpis.length)}>
+          {kpis.map((kpi) => <KpiCard key={kpi.label} {...kpi} trendLabels={trendLabels} />)}
+        </div>
       </div>
     </>
   )

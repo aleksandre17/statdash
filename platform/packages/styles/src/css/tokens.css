@@ -61,15 +61,25 @@
      in one place — the consumers never change (Open/Closed). */
   --page-measure: clamp(var(--size-container-wide), 90vw, var(--size-container-ultra));
 
-  /* Ceiling for a single aspect-ratio data panel (chart / treemap / map).
-     An aspect-ratio gives height ∝ width, so a full-width panel grows
-     unbounded as the viewport widens — on ultrawide a 16:9 panel balloons
-     into a dominating flat block. This caps that growth: viewport-height
-     aware (a panel never claims more than ~half the fold) with a hard px
-     ceiling so it can't dominate the page on any layout/measure. Floor keeps
-     it usable on short viewports. Consumed by [data-aspect] / fixed-aspect
-     [data-height] tokens in node-styles.css. */
-  --size-panel-max-height: clamp(380px, 56vh, 560px);
+  /* ── Panel height band — the ONE honest panel-sizing constraint ──────────
+     A data panel (chart / table / treemap / map) occupies the full width of its
+     column and gets its height from a single fluid band: floor → vh-fluid → cap.
+     This REPLACES the former aspect-ratio model. aspect-ratio + max-height was a
+     contradiction: aspect-ratio derives height from width, then max-height caps
+     it, so past a crossover width the declared ratio is silently violated (a
+     "16:9" panel is no longer 16:9). A height band is one monotonic constraint —
+     honest at every width: height grows with the viewport up to a cap, floors so
+     a narrow/nested column still gets a readable chart (16:9 in a 1/3 column gave
+     a useless ~200px sliver; the band gives the floor). Width always fills the
+     column, so the panel keeps its horizontal space and never balloons.
+     One SSOT band; a tenant/layout rebinds the three stops in one place (OCP). */
+  --size-panel-h-floor: 380px;   /* readable minimum (mobile, narrow column) */
+  --size-panel-h-fluid: 56vh;    /* never claims more than ~half the fold */
+  --size-panel-h-cap:   560px;   /* hard ceiling — can't dominate on ultrawide */
+  --size-panel-height:  clamp(var(--size-panel-h-floor), var(--size-panel-h-fluid), var(--size-panel-h-cap));
+  /* Deprecated alias — kept so any out-of-tree consumer keeps resolving while the
+     ratio→band migration completes (Strangler-Fig). Points at the band. */
+  --size-panel-max-height: var(--size-panel-height);
 
   /* Floor for a data panel whose renderer fills its parent via height:100%
      (the custom flexbox treemap, the GeoMap). On mobile the chart wrapper is
