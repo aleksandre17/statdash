@@ -13,9 +13,9 @@
 //    · i18n — all visible strings come from the caller via props
 //    · Data awareness — structural container only
 //
-//  CSS: @statdash/styles/css/card.css (the .panel primitive; imported via the
-//       react styles index → @statdash/styles/css/index.css)
+//  CSS: ./PanelLayout.css (co-located — DESIGN-styles-arch §2.1)
 //
+import './PanelLayout.css'
 import React, { useState, type CSSProperties, type ReactNode, type ComponentType } from 'react'
 import { ChevronIcon } from './icons'
 import { InjectionToken } from '../engine/di/InjectionToken'

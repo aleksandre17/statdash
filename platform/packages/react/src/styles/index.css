@@ -10,5 +10,5 @@
 @import './slot.css';
 @import './panel-layout.css';
 @import './chrome-region.css';
-/* `.sc` / `.panel` card primitive moved to @statdash/styles/css/card.css
-   (No-Privileged-Node ADR P4) — imported via @statdash/styles/css/index.css above. */
+/* `.panel` card primitive is co-located at packages/react/src/components/PanelLayout.css
+   (DESIGN-styles-arch §2.1) — imported directly by PanelLayout.tsx. */
