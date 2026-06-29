@@ -78,3 +78,21 @@
   .donut-legend       { gap: 2px 8px; }
   .donut-legend__item { max-width: 10ch; }
 }
+
+/* ── ApexCharts chrome overrides ────────────────────────────────────────
+   These !important rules are intentional: Apex injects inline styles on
+   .apexcharts-tooltip / .apexcharts-menu that a normal rule cannot beat.
+   Relocated from apps/geostat/index.css — chrome of the chart plugin
+   belongs with the chart plugin (DESIGN-styles-architecture §2.2).
+   ───────────────────────────────────────────────────────────────────── */
+.apexcharts-tooltip {
+  border-radius: var(--radius-md) !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1) !important;
+  border: 1px solid var(--color-chart-frame) !important;
+}
+
+.apexcharts-menu {
+  border-radius: var(--radius-md) !important;
+  border: 1px solid var(--color-chart-frame) !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08) !important;
+}
