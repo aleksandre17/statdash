@@ -5,7 +5,7 @@ import type { ChartOutput } from '@statdash/charts'
 import { BASE, scaledPx, BP_MD, BP_SM, BP_XS } from './base'
 import { cssVar, chartPalette } from '@statdash/styles'
 
-export function buildTreemap(output: ChartOutput): ApexOptions {
+export function buildTreemap(output: ChartOutput, fontFamily?: string): ApexOptions {
   const { series, categories } = output
   const pts       = series[0]?.data ?? []
   const formatted = pts.map((pt) => pt.formatted)
@@ -13,7 +13,7 @@ export function buildTreemap(output: ChartOutput): ApexOptions {
 
   return {
     ...BASE,
-    chart: { ...BASE.chart, type: 'treemap', height: '100%' },
+    chart: { ...BASE.chart, type: 'treemap', height: '100%', fontFamily: fontFamily ?? 'system-ui, sans-serif' },
     // Treemap has no axes — zero out grid padding so tiles fill the full container.
     grid: { padding: { top: 0, right: 0, bottom: 0, left: 0 } },
     series: [{

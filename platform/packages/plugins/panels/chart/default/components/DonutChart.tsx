@@ -18,6 +18,9 @@ const SHOW_LABELS = true   // set false to hide all outer labels + leaders
 const SHOW_NAMES  = false  // set true to restore name lines alongside percentages
 
 export default function DonutChart({ output }: { output: ChartOutput }) {
+  const fontFamily = typeof window !== 'undefined'
+    ? (getComputedStyle(document.documentElement).getPropertyValue('--font-family-base').trim() || 'system-ui, sans-serif')
+    : 'system-ui, sans-serif'
   const { slices, labels } = useMemo(() => build(output, SHOW_NAMES), [output])
   const [hov, setHov] = useState<number | null>(null)
   const [act, setAct] = useState<number | null>(null)
@@ -49,20 +52,20 @@ export default function DonutChart({ output }: { output: ChartOutput }) {
               <path d={lb.ld} fill="none" stroke={lb.color} strokeWidth="1.2" opacity="0.5" strokeLinecap="round" />
               <circle cx={lb.ax} cy={lb.ay} r="2" fill={lb.color} opacity="0.35" />
               <text x={lb.tx} y={lb.ty + LH_PCT / 2} textAnchor={lb.anchor} dominantBaseline="middle"
-                    fontSize={F_PCT} fontWeight="700" fontFamily="BPG Arial, Roboto, sans-serif" fill={lb.color}>{lb.pctText}</text>
+                    fontSize={F_PCT} fontWeight="700" fontFamily={fontFamily} fill={lb.color}>{lb.pctText}</text>
               {/* name lines hidden — set SHOW_NAMES = true to restore */}
               {SHOW_NAMES && lb.lines.map((line, li) => (
                   <text key={li} x={lb.tx} y={lb.ty + LH_PCT + li * LH_NAME + LH_NAME / 2}
                         textAnchor={lb.anchor} dominantBaseline="middle" fontSize={F_NAME} fontWeight="400"
-                        fontFamily="BPG Arial, Roboto, sans-serif" fill={lb.color} opacity="0.72">{line}</text>
+                        fontFamily={fontFamily} fill={lb.color} opacity="0.72">{line}</text>
               ))}
             </g>
         ))}
 
         {hasC && (
             <g style={{ pointerEvents: 'none' }}>
-              {cLbl && <text x={CX} y={CY - 13} textAnchor="middle" dominantBaseline="middle" fontSize="10.5" fill={cssVar('--color-text-faint', '#9AABB8')} fontFamily="BPG Arial, Roboto, sans-serif">{cLbl}</text>}
-              <text x={CX} y={CY + (cLbl ? 8 : 0)} textAnchor="middle" dominantBaseline="middle" fontSize="20" fontWeight="700" fill={cssVar('--color-text-primary', '#1A2332')} fontFamily="BPG Arial, Roboto, sans-serif">{fmtC(output.total!)}</text>
+              {cLbl && <text x={CX} y={CY - 13} textAnchor="middle" dominantBaseline="middle" fontSize="10.5" fill={cssVar('--color-text-faint', '#9AABB8')} fontFamily={fontFamily}>{cLbl}</text>}
+              <text x={CX} y={CY + (cLbl ? 8 : 0)} textAnchor="middle" dominantBaseline="middle" fontSize="20" fontWeight="700" fill={cssVar('--color-text-primary', '#1A2332')} fontFamily={fontFamily}>{fmtC(output.total!)}</text>
             </g>
         )}
 

@@ -33,13 +33,16 @@ interface Cursor { x: number; y: number }
 // ── Tooltip ────────────────────────────────────────────────────────────
 
 function Tooltip({ item, pct, cursor }: { item: Item; pct: string; cursor: Cursor }) {
+  const fontFamily = typeof window !== 'undefined'
+    ? (getComputedStyle(document.documentElement).getPropertyValue('--font-family-base').trim() || 'system-ui, sans-serif')
+    : 'system-ui, sans-serif'
   return (
     <div style={{
       position: 'fixed', left: cursor.x + 16, top: cursor.y - 10,
       width: 210, background: 'var(--color-surface)', border: `1px solid ${item.color}`,
       borderRadius: 7, padding: '9px 11px', pointerEvents: 'none',
       boxShadow: '0 2px 10px rgba(0,0,0,0.12)', zIndex: 99999,
-      fontFamily: 'BPG Arial, Roboto, sans-serif',
+      fontFamily,
     }}>
       <div style={{ fontSize: 10, color: 'var(--color-text-muted)', lineHeight: 1.45, marginBottom: 5 }}>
         {item.clean}
@@ -63,6 +66,9 @@ function Block({
   onMove:  (e: React.MouseEvent) => void
   onLeave: () => void
 }) {
+  const fontFamily = typeof window !== 'undefined'
+    ? (getComputedStyle(document.documentElement).getPropertyValue('--font-family-base').trim() || 'system-ui, sans-serif')
+    : 'system-ui, sans-serif'
   const light = isLight(item.color)
   const dim   = hovered && hovered.label !== item.label
   return (
@@ -93,7 +99,7 @@ function Block({
         color: light ? 'var(--color-text-primary)' : 'var(--color-text-inverse)', overflow: 'hidden',
       }}>
         <span style={{
-          fontSize: 12, fontFamily: 'BPG Arial, Roboto, sans-serif',
+          fontSize: 12, fontFamily,
           textAlign: 'center', lineHeight: 1.3,
           overflow: 'hidden', display: '-webkit-box',
           WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
@@ -102,14 +108,14 @@ function Block({
         </span>
         <span style={{
           fontSize: 15, fontWeight: 700, lineHeight: 1.2,
-          fontFamily: 'BPG Arial, Roboto, sans-serif',
+          fontFamily,
         }}>
           {item.formatted}
         </span>
         {pct && (
           <span style={{
             fontSize: 11, opacity: 0.85, lineHeight: 1.2,
-            fontFamily: 'BPG Arial, Roboto, sans-serif',
+            fontFamily,
           }}>
             {pct}
           </span>
@@ -122,6 +128,9 @@ function Block({
 // ── Component ──────────────────────────────────────────────────────────
 
 export default function TreemapChart({ output }: { output: ChartOutput }) {
+  const fontFamily = typeof window !== 'undefined'
+    ? (getComputedStyle(document.documentElement).getPropertyValue('--font-family-base').trim() || 'system-ui, sans-serif')
+    : 'system-ui, sans-serif'
   const [hovered, setHovered] = useState<Item | null>(null)
   const [cursor,  setCursor]  = useState<Cursor | null>(null)
 
@@ -234,10 +243,10 @@ export default function TreemapChart({ output }: { output: ChartOutput }) {
               padding: 12, textAlign: 'center', pointerEvents: 'none',
               color: light ? 'var(--color-text-primary)' : 'var(--color-text-inverse)',
             }}>
-              <span style={{ fontSize: 12, fontFamily: 'BPG Arial, Roboto, sans-serif', lineHeight: 1.35 }}>
+              <span style={{ fontSize: 12, fontFamily, lineHeight: 1.35 }}>
                 {totalItem.clean}
               </span>
-              <span style={{ fontSize: 17, fontWeight: 700, fontFamily: 'BPG Arial, Roboto, sans-serif', lineHeight: 1.2 }}>
+              <span style={{ fontSize: 17, fontWeight: 700, fontFamily, lineHeight: 1.2 }}>
                 {totalItem.formatted}
               </span>
             </div>

@@ -21,7 +21,7 @@ export function liftTooltip(chartCtx: { el: Element }) {
 export const BASE: ApexOptions = {
   chart: {
     toolbar:    { show: false },
-    fontFamily: 'BPG Arial, Roboto, sans-serif',
+    fontFamily: 'system-ui, sans-serif',
     // Reduced-motion: a getter, not a literal — read at spread time (render), so
     // the OS/user setting is honoured live. JS half of the motion baseline
     // (the CSS half neutralises declarative animation; Apex draws to SVG via JS,

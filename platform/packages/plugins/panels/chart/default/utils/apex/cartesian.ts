@@ -5,7 +5,7 @@ import type { ChartOutput } from '@statdash/charts'
 import { BASE, yFormatter, responsiveYAxis, collectFormatted, scaledPx, BP_MD, BP_SM, BP_XS } from './base'
 import { cssVar } from '@statdash/styles'
 
-export function buildCartesian(output: ChartOutput): ApexOptions {
+export function buildCartesian(output: ChartOutput, fontFamily?: string): ApexOptions {
   const { type, series, categories, axes, stacked, horizontal } = output
   const formatted = collectFormatted(series)
   const FS_XS = scaledPx(0.60, 9,  11)
@@ -141,9 +141,10 @@ export function buildCartesian(output: ChartOutput): ApexOptions {
     ...BASE,
     chart: {
       ...BASE.chart,
-      type:    apexType,
-      height: '100%',
-      stacked: stacked || isWaterfall,
+      type:       apexType,
+      height:     '100%',
+      stacked:    stacked || isWaterfall,
+      fontFamily: fontFamily ?? 'system-ui, sans-serif',
     },
     grid: {
       ...BASE.grid,
@@ -235,7 +236,7 @@ export function buildCartesian(output: ChartOutput): ApexOptions {
     legend: {
       show:     output.legend.show,
       position: output.legend.position ?? 'bottom',
-      fontFamily: 'BPG Arial, Roboto, sans-serif',
+      fontFamily: fontFamily ?? 'system-ui, sans-serif',
       fontSize:   FS_MD,
       labels:     { colors: cssVar('--color-text-secondary', '#4A5568') },
       markers:    { size: 6 },

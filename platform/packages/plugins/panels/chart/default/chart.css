@@ -40,7 +40,7 @@
   justify-content: center;
   gap:            4px 14px;
   padding:        4px 8px 6px;
-  font-family:    'BPG Arial', Roboto, sans-serif;
+  font-family:    var(--font-family-base);
 }
 
 .donut-legend__item {

@@ -10,7 +10,7 @@ import type { ChartOutput } from '@statdash/charts'
 import { BASE, yFormatter, makeDataLabelFormatter, collectFormatted, scaledPx, BP_MD, BP_SM, BP_XS } from './base'
 import { cssVar } from '@statdash/styles'
 
-export function buildHBarDiverging(output: ChartOutput): ApexOptions {
+export function buildHBarDiverging(output: ChartOutput, fontFamily?: string): ApexOptions {
   const { series, axes } = output
   const FS_XS = scaledPx(0.60, 9,  11)
   const FS_SM = scaledPx(0.70, 10, 12)
@@ -30,8 +30,9 @@ export function buildHBarDiverging(output: ChartOutput): ApexOptions {
     ...BASE,
     chart: {
       ...BASE.chart,
-      type:   'bar',
-      height: '100%',
+      type:       'bar',
+      height:     '100%',
+      fontFamily: fontFamily ?? 'system-ui, sans-serif',
     },
     series:  apexSeries,
     colors,
@@ -74,7 +75,7 @@ export function buildHBarDiverging(output: ChartOutput): ApexOptions {
     legend: {
       show:       output.legend.show,
       position:   output.legend.position ?? 'bottom',
-      fontFamily: 'BPG Arial, Roboto, sans-serif',
+      fontFamily: fontFamily ?? 'system-ui, sans-serif',
       fontSize:   FS_MD,
       labels:     { colors: cssVar('--color-text-secondary', '#4A5568') },
       markers:    { size: 6 },

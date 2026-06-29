@@ -67,6 +67,9 @@ function fmtTick(v: number): string {
 // ── Component ──────────────────────────────────────────────────────────
 
 export default function HBarDivergingChart({ output }: { output: ChartOutput }) {
+  const fontFamily = typeof window !== 'undefined'
+    ? (getComputedStyle(document.documentElement).getPropertyValue('--font-family-base').trim() || 'system-ui, sans-serif')
+    : 'system-ui, sans-serif'
   const { categories, series, groups = [], compact = false } = output
   const [tip, setTip] = useState<Tip | null>(null)
 
@@ -192,7 +195,7 @@ export default function HBarDivergingChart({ output }: { output: ChartOutput }) 
     <div style={{
       width: '100%', height: '100%', overflowX: 'hidden',
       display: 'flex', flexDirection: 'column',
-      fontFamily: 'BPG Arial, Roboto, sans-serif', boxSizing: 'border-box',
+      fontFamily, boxSizing: 'border-box',
     }}>
 
       {/* Floating tooltip — portal escapes any transformed ancestor stacking context */}

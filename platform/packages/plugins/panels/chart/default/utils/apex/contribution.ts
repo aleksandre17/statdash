@@ -27,7 +27,7 @@ export function wrapLabel(text: string, maxChars = 18): string[] {
   return lines.length > 1 ? lines : [text]
 }
 
-export function buildContribution(output: ChartOutput): ApexOptions {
+export function buildContribution(output: ChartOutput, fontFamily?: string): ApexOptions {
   const { series, categories, axes } = output
   const formatted = collectFormatted(series)
   const FS_XS = scaledPx(0.60, 9,  11)
@@ -50,7 +50,7 @@ export function buildContribution(output: ChartOutput): ApexOptions {
 
   return {
     ...BASE,
-    chart: { ...BASE.chart, type: 'bar', height: '100%' },
+    chart: { ...BASE.chart, type: 'bar', height: '100%', fontFamily: fontFamily ?? 'system-ui, sans-serif' },
     grid:  { ...BASE.grid, padding: { left: 0, right: 0, top: 0 } },
     series:  apexSeries,
     colors:  barColors,
