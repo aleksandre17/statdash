@@ -26,7 +26,7 @@
 import type { DataSpec, PointSeriesSpec, ResolvableSpec } from '../config/data-spec'
 import type { DimVal }    from '../sdmx'
 import { TIME_DIM }       from '../core/context'
-import { effectiveYears } from '../core/time-dimension'
+import { effectiveYears, isDefaultGranularity } from '../core/time-dimension'
 
 // ── pivot → transform + melt ──────────────────────────────────────────
 //
@@ -110,6 +110,15 @@ function desugarTimeseries(spec: Extract<DataSpec, { type: 'timeseries' }>): Poi
   }
   if (spec.fromDim || spec.toDim || spec.timeDimension) {
     ps.clamp = { fromDim: spec.fromDim, toDim: spec.toDim, timeDimension: spec.timeDimension }
+  }
+  // GRAIN-G4: thread a NON-default (sub-annual) granularity into the point read's grain
+  // on the enumerated axis (over = TIME_DIM). A default/absent grain forwards NOTHING —
+  // storeValAt then stays on the byte-identical `val` path (annual is untouched, no
+  // valAt port query / warm-key change). A sub-annual grain requests an LOD roll-up via
+  // valAt when a grain-aware store + sub-annual data arrive (FF-GRANULARITY-ROLLS-UP).
+  const gran = spec.timeDimension?.granularity
+  if (!isDefaultGranularity(gran)) {
+    ps.grain = { [TIME_DIM]: gran! }
   }
   return ps
 }

@@ -23,9 +23,23 @@
 //
 
 import type { SectionContext }                       from './context'
-import type { TimeBound, TimeDimensionSpec, TimeRange, YearsSpec } from '../config/data-spec'
+import type { TimeBound, TimeDimensionSpec, TimeGranularity, TimeRange, YearsSpec } from '../config/data-spec'
 import type { CtxRef, DimVal }                        from '../sdmx'
 import { resolveRef }                                 from '../ref/ref'
+
+// ── DEFAULT_GRANULARITY — the implicit grain every annual dataset already reads ──
+//
+//  The current data is annual: an absent `timeDimension.granularity` (or an explicit
+//  match of THIS default) means "the grain the store already serves" — so the point
+//  read must stay on the byte-identical `val` path (no `grain` forwarded, no `valAt`
+//  port query). Only a NON-default (sub-annual) grain requests an LOD roll-up
+//  (GRAIN-G4). A constant, not a `=== 'year'` literal branch (FF-NO-MODE-LITERAL).
+export const DEFAULT_GRANULARITY: TimeGranularity = 'year'
+
+/** True when a granularity is absent or equals the implicit annual grain ⇒ no LOD roll-up (val path). */
+export function isDefaultGranularity(g: TimeGranularity | undefined): boolean {
+  return g === undefined || g === DEFAULT_GRANULARITY
+}
 
 // ── clampToBounds — the ONE numeric clamp (legacy + timeDimension share it) ──
 //
@@ -121,8 +135,12 @@ export interface NormalizedTime {
 //    YearsSpec       → { years, from: 0, to: Infinity }   (folds `years`)
 //    [from, to]      → { from, to }                        (folds fromDim/toDim)
 //    absent          → { from: 0, to: Infinity }           (no constraint)
-//  `granularity` is carried metadata (default-derived = year) and does not
-//  affect resolution in this pass — door for LOD/declared-grain.
+//  `granularity` does not affect the (years, from, to) NORMALIZATION here — it is a
+//  grain/LOD concern, not a range clamp. It IS honored downstream (GRAIN-G4): the
+//  timeseries→point-series desugar threads a NON-default granularity into the point
+//  read's grain (`grain[TIME_DIM]`), so a sub-annual grain requests an LOD roll-up via
+//  the `valAt` port. A default/absent grain forwards nothing ⇒ the byte-identical `val`
+//  path (isDefaultGranularity / DEFAULT_GRANULARITY above).
 //
 export function resolveTimeDimension(
   td:  TimeDimensionSpec,
