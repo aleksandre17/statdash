@@ -42,7 +42,6 @@ import { META as repeat }        from '../../plugins/nodes/repeat/default/meta'
 import { META as hero }          from '../../plugins/nodes/hero/default/meta'
 import { META as statsCarousel } from '../../plugins/nodes/stats-carousel/default/meta'
 
-import { META as row }     from '../../plugins/nodes/layout/row/default/meta'
 import { META as grid }    from '../../plugins/nodes/layout/grid/default/meta'
 import { META as columns } from '../../plugins/nodes/layout/columns/default/meta'
 import { META as stack }   from '../../plugins/nodes/layout/stack/default/meta'
@@ -71,7 +70,7 @@ type PlaceableMeta = NodeSliceMeta | PanelSliceMeta | PageSliceMeta
 const ALL_METAS: PlaceableMeta[] = [
   innerPage, containerPage, tabPage,
   section, perspectiveBar, filterBar, pageHeader, geograph, links, repeat, hero, statsCarousel,
-  row, grid, columns, stack, card, divider, spacer, wrap,
+  grid, columns, stack, card, divider, spacer, wrap,
   chart, kpiStrip, table, map, text, gauge,
 ]
 

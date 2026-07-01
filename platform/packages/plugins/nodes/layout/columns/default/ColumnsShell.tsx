@@ -1,4 +1,4 @@
-import { resolveColumns, applyContainerVars }        from '@statdash/styles'
+import { resolveColumns, resolveAlign, applyContainerVars } from '@statdash/styles'
 import { defineShell, LayoutItemProvider }           from '@statdash/react/engine'
 import type { NodeBase }                             from '@statdash/react/engine'
 import type { ColumnsNode }                          from './ColumnsNode'
@@ -7,6 +7,7 @@ export const ColumnsShell = defineShell<ColumnsNode>({
   render({ def, children }) {
     const cols    = resolveColumns(def.count)
     const gapVars = applyContainerVars(def.gap)
+    const align   = resolveAlign(def.align)
 
     return (
       <div className="layout-cols-ctx">
@@ -18,6 +19,7 @@ export const ColumnsShell = defineShell<ColumnsNode>({
           data-cols-md={cols.md}
           data-cols-sm={cols.sm}
           data-cols-xs={cols.xs}
+          data-align={align}
           style={gapVars}
         >
           {children.defs.map((d, i) => (

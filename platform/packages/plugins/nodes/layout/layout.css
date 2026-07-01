@@ -124,6 +124,13 @@
 .layout-stack[data-dir="column"] { flex-direction: column; }
 .layout-stack[data-dir="row"]    { flex-direction: row; }
 
+/* Authorable cross-axis alignment override (data-align) — same Constructor-ready
+ * capability as columns/grid. Flex default is `stretch`; other values map here. */
+.layout-stack[data-align="start"]   { align-items: flex-start; }
+.layout-stack[data-align="center"]  { align-items: center;     }
+.layout-stack[data-align="end"]     { align-items: flex-end;   }
+.layout-stack[data-align="stretch"] { align-items: stretch;    }
+
 /* ── Card ────────────────────────────────────────────────────── */
 .layout-card {
   background:    var(--color-surface);

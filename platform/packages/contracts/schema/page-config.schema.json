@@ -808,45 +808,6 @@
       ],
       "additionalProperties": true
     },
-    "node_row__default": {
-      "type": "object",
-      "properties": {
-        "view.cols": {
-          "title": "Column count",
-          "description": "string field",
-          "type": "string"
-        },
-        "type": {
-          "const": "row"
-        },
-        "id": {
-          "type": "string",
-          "description": "Node id"
-        },
-        "variant": {
-          "type": "string",
-          "description": "Registry variant"
-        },
-        "data": {
-          "$ref": "#/$defs/DataSpec"
-        },
-        "view": {
-          "type": "object",
-          "description": "ViewParams"
-        },
-        "children": {
-          "type": "array",
-          "description": "Child nodes",
-          "items": {
-            "$ref": "#/$defs/AnyNode"
-          }
-        }
-      },
-      "required": [
-        "type"
-      ],
-      "additionalProperties": true
-    },
     "node_grid__default": {
       "type": "object",
       "properties": {
@@ -861,6 +822,18 @@
           "description": "string field",
           "default": "var(--spacing-md)",
           "type": "string"
+        },
+        "align": {
+          "title": "Align",
+          "description": "stretch: Stretch, start: Start, center: Center, end: End",
+          "default": "stretch",
+          "type": "string",
+          "enum": [
+            "stretch",
+            "start",
+            "center",
+            "end"
+          ]
         },
         "type": {
           "const": "grid"
@@ -907,6 +880,18 @@
           "description": "string field",
           "default": "var(--spacing-md)",
           "type": "string"
+        },
+        "align": {
+          "title": "Align",
+          "description": "stretch: Stretch, start: Start, center: Center, end: End",
+          "default": "stretch",
+          "type": "string",
+          "enum": [
+            "stretch",
+            "start",
+            "center",
+            "end"
+          ]
         },
         "type": {
           "const": "columns"
@@ -963,6 +948,18 @@
           "description": "boolean field",
           "default": false,
           "type": "boolean"
+        },
+        "align": {
+          "title": "Align",
+          "description": "stretch: Stretch, start: Start, center: Center, end: End",
+          "default": "stretch",
+          "type": "string",
+          "enum": [
+            "stretch",
+            "start",
+            "center",
+            "end"
+          ]
         },
         "type": {
           "const": "stack"
@@ -1519,9 +1516,6 @@
         },
         {
           "$ref": "#/$defs/node_stats-carousel__default"
-        },
-        {
-          "$ref": "#/$defs/node_row__default"
         },
         {
           "$ref": "#/$defs/node_grid__default"

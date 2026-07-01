@@ -2,11 +2,19 @@
 //
 //  applyContainerVars — gap → CSS custom property for layout containers.
 //  resolveColumns     — ResponsiveVal<number> → breakpoint column counts.
+//  resolveAlign       — ResponsiveVal<LayoutAlign> → data-align value.
 //  resolveLayoutItem  — placement props → CSS grid/flex item styles.
 //
 
 import { resolveResponsive, BREAKPOINT_KEYS_CASCADE } from '../resolve'
 import type { NodeStyles, ResponsiveVal } from '../types'
+
+// Cross-axis alignment vocabulary for the layout container primitives
+// (columns / grid / stack). `stretch` is the default (equal-height contract)
+// and the CSS baseline, so it emits no attribute — every other value projects
+// a `data-align` the co-located layout CSS reads. Shared SSOT so the schema
+// field, the shell emit, and the fitness guard all reference one union.
+export type LayoutAlign = 'start' | 'center' | 'end' | 'stretch'
 
 // Default-first, large → small — mirrors the node.ts gap-var cascade. SSOT in resolve.ts.
 const BP_KEYS = BREAKPOINT_KEYS_CASCADE
@@ -62,6 +70,20 @@ export function resolveColumns(
     sm:      r.sm      ?? 1,
     xs:      r.xs      ?? 1,
   }
+}
+
+// Resolves a container's authorable cross-axis `align` into the concrete
+// `data-align` value the layout CSS reads. Flat (default-breakpoint) resolution:
+// container alignment has no live responsive consumer, and the CSS is flat, so
+// keeping this flat avoids emitting dead per-breakpoint attrs (open to extend
+// to the setResponsive var+flag pattern when a consumer appears).
+//   • `stretch` / unset  → undefined  (the CSS default — no attribute, clean DOM)
+//   • start|center|end    → the value  (emitted as data-align)
+export function resolveAlign(
+  val?: ResponsiveVal<LayoutAlign>,
+): LayoutAlign | undefined {
+  const a = resolveResponsive(val).default
+  return a && a !== 'stretch' ? a : undefined
 }
 
 // Translates NodeStyles placement props into a CSS grid/flex item object.

@@ -28,7 +28,7 @@ export { META as repeat }        from './nodes/repeat'
 export { META as hero }          from './nodes/hero'
 export { META as statsCarousel } from './nodes/stats-carousel'
 
-// ── Layout nodes (namespace: layout.grid.META, layout.row.META, …) ────────────
+// ── Layout nodes (namespace: layout.grid.META, layout.columns.META, …) ────────
 export * as layout from './nodes/layout'
 
 // ── Panels ────────────────────────────────────────────────────────────────────

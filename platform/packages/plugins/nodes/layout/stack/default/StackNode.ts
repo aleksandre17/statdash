@@ -1,11 +1,13 @@
 import type { NodeBase, NodeDef, SlotDef, PropertyGroup, PropSchema } from '@statdash/react/engine'
-import type { ResponsiveVal }                             from '@statdash/styles'
+import type { ResponsiveVal, LayoutAlign }                 from '@statdash/styles'
 
 export interface StackNode extends NodeBase {
   type:       'stack'
   direction?: 'row' | 'column'
   gap?:       ResponsiveVal<string>
   wrap?:      boolean
+  /** Cross-axis alignment of the stack items. `stretch` (default) = fill cross-axis. */
+  align?:     ResponsiveVal<LayoutAlign>
   children:   NodeDef[]
 }
 
@@ -22,6 +24,18 @@ export const StackSchema: PropSchema = [
   },
   { field: 'gap',  type: 'string',  label: { ka: 'დაშორება', en: 'Gap' },     default: 'var(--spacing-md)' },
   { field: 'wrap', type: 'boolean', label: { ka: 'გადატანა',  en: 'Wrap' },    default: false },
+  {
+    field:   'align',
+    type:    'string',
+    label:   { ka: 'გასწორება', en: 'Align' },
+    default: 'stretch',
+    options: [
+      { value: 'stretch', label: { ka: 'გაწელვა',   en: 'Stretch' } },
+      { value: 'start',   label: { ka: 'დასაწყისი', en: 'Start' } },
+      { value: 'center',  label: { ka: 'ცენტრი',    en: 'Center' } },
+      { value: 'end',     label: { ka: 'დასასრული', en: 'End' } },
+    ],
+  },
 ]
 
 export const StackDefaults: Partial<StackNode> = { direction: 'column' }
@@ -35,7 +49,7 @@ export const StackSlots: Record<string, SlotDef> = {
 }
 
 export const StackGroups: PropertyGroup[] = [
-  { label: { ka: 'განლაგება', en: 'Layout' }, fields: ['direction', 'gap', 'wrap'] },
+  { label: { ka: 'განლაგება', en: 'Layout' }, fields: ['direction', 'gap', 'wrap', 'align'] },
 ]
 
 declare module '@statdash/react/engine' {

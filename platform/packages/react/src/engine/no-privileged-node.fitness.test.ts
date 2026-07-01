@@ -40,7 +40,7 @@ const navUtils   = resolve(engineDir, 'navUtils.ts')
 const PLUGIN_NODE_TYPES = [
   'card', 'chart', 'columns', 'divider', 'gauge', 'geograph', 'grid', 'hero',
   'kpi-strip', 'links', 'map', 'perspective-bar', 'page-header',
-  'repeat', 'row',
+  'repeat',
   'section', 'spacer', 'stack', 'stats-carousel', 'table', 'text', 'wrap',
   'filter-bar',
 ]

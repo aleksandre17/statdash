@@ -1,6 +1,8 @@
 import './layout.css'
 
-export * as row     from './row'
+// `row` was the legacy viewport-media grid primitive (hardcoded 1280px collapse).
+// Retired in favour of the container-query `columns` family — one grid handwriting
+// (DESIGN-responsive-composition §3.2 / FF-NO-DUP-COLUMN-PRIMITIVE).
 export * as grid    from './grid'
 export * as columns from './columns'
 export * as stack   from './stack'

@@ -13,6 +13,9 @@ export const META: NodeSliceMeta = {
   slots:           StackSlots,
   groups:          StackGroups,
   canHaveChildren: true,
-  caps:            [],
+  // `nav-transparent` (descend-for-nav): the stack is the page-body composition
+  // primitive (InnerPageShell), so sections arranged in a stack must surface in
+  // the page nav — same container contract as columns/grid.
+  caps:            ['nav-transparent'],
   version:         1,
 }

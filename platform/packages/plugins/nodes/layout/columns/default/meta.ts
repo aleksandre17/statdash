@@ -13,6 +13,10 @@ export const META: NodeSliceMeta = {
   slots:           ColumnsSlots,
   groups:          ColumnsGroups,
   canHaveChildren: true,
-  caps:            [],
+  // `nav-transparent` (descend-for-nav): columns is a REAL-DOM container, but the
+  // nav extractor traverses its children so sections nested in a columns grid
+  // still appear in the page nav. Absorbed from the retired `row` primitive when
+  // the two grid families converged to one (DESIGN-responsive-composition §3.2).
+  caps:            ['nav-transparent'],
   version:         1,
 }

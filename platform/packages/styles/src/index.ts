@@ -40,8 +40,10 @@ export { applyPanelStyles } from './resolvers/panel'
 export {
   applyContainerVars,
   resolveColumns,
+  resolveAlign,
   resolveLayoutItem,
 } from './resolvers/layout'
+export type { LayoutAlign } from './resolvers/layout'
 
 export { resolveViewState }      from './resolvers/view'
 export type { ViewStateAttrs }   from './resolvers/view'

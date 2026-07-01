@@ -45,7 +45,6 @@ import { META as hero }          from '../hero/default/meta'
 import { META as statsCarousel } from '../stats-carousel/default/meta'
 
 // ── Layout node metas ───────────────────────────────────────────────────────
-import { META as row }     from '../layout/row/default/meta'
 import { META as grid }    from '../layout/grid/default/meta'
 import { META as columns } from '../layout/columns/default/meta'
 import { META as stack }   from '../layout/stack/default/meta'
@@ -85,7 +84,7 @@ function metaId(m: object): string {
 const ALL_METAS: ReadonlyArray<MetaWithDefaults & object> = [
   section, perspectiveBar, filterBar, pageHeader, geograph, links, repeat, hero,
   statsCarousel,
-  row, grid, columns, stack, card, divider, spacer, wrap,
+  grid, columns, stack, card, divider, spacer, wrap,
   chart, kpiStrip, table, map, gauge, text,
   appFooter, innerSidebar,
 ]

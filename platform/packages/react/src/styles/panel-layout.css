@@ -1,19 +1,17 @@
 /* ================================================================
-   PANEL LAYOUT
-   Generic panel grid — not tied to any specific content type.
-   Any content (sections, KPI cards, filter panels) can use panel-row/col.
+   PANEL COLUMN
+   The panel-col wrapper (applyPanelStyles → view.width modifiers) + the
+   flex FILL chain from the wrapper down to the section/panel body.
    Grafana gridPos / Builder.io colSpan equivalent.
-   ================================================================ */
 
-/*  RowRenderer sets --panel-cols inline (e.g. 'repeat(3, 1fr)', '2fr 1fr').
- *  Media query overrides grid-template-columns directly — inline CSS vars
- *  don't block stylesheet property overrides. */
-.panel-row {
-  display: grid;
-  grid-template-columns: var(--panel-cols, 1fr);
-  gap: 1rem;
-  align-items: stretch;
-}
+   The grid itself is the container-query `columns`/`grid` layout node
+   family (layout.css) — the ONE grid primitive. The legacy viewport-media
+   `.panel-row` primitive (hardcoded 1280px collapse) was retired here so
+   there is a single grid handwriting (DESIGN-responsive-composition §3.2 /
+   FF-NO-DUP-COLUMN-PRIMITIVE). Equal-height stays intrinsic to the grid
+   node (`align-items: stretch` on .layout-columns/.layout-grid) — asserted
+   once, not double-emitted.
+   ================================================================ */
 
 .panel-col {
   display: flex;
@@ -124,16 +122,10 @@
 }
 
 /* ── Width modifiers — view.width in config ──────────────────────
- *  Work in any context: panel-row (grid cell) or page-content (flex column).
+ *  Work in any context: a columns/grid cell or the page-body flex stack.
  *  half / third = explicit fractional width; full = span all grid columns. */
 .panel-col--w-half  { width: 50%;     flex-shrink: 0; }
 .panel-col--w-third { width: 33.333%; flex-shrink: 0; }
-.panel-row > .panel-col--w-full { grid-column: 1 / -1; }
-
-/* ── Responsive reset ─────────────────────────────────────────────
- *  Below breakpoint: stack columns.
- *  chart-wrap responsive rules live in plugins/panels/chart/chart.css.
- *  Height token resets ([data-height]) live in @statdash/styles/node-styles.css. */
-@media (max-width: 1280px) {
-  .panel-row { grid-template-columns: 1fr; }
-}
+/* full-width cell spans every track of the container-query grid family. */
+.layout-columns > .panel-col--w-full,
+.layout-grid    > .panel-col--w-full { grid-column: 1 / -1; }

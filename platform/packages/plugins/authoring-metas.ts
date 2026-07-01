@@ -34,7 +34,6 @@ import { META as card }    from './nodes/layout/card/default/meta'
 import { META as columns } from './nodes/layout/columns/default/meta'
 import { META as divider } from './nodes/layout/divider/default/meta'
 import { META as grid }    from './nodes/layout/grid/default/meta'
-import { META as row }     from './nodes/layout/row/default/meta'
 import { META as spacer }  from './nodes/layout/spacer/default/meta'
 import { META as stack }   from './nodes/layout/stack/default/meta'
 import { META as wrap }    from './nodes/layout/wrap/default/meta'
@@ -64,7 +63,7 @@ export const AUTHORING_METAS: SliceMeta[] = [
   // nodes
   section, perspectiveBar, filterBar, pageHeader, geograph, links, repeat, hero, statsCarousel,
   // layout
-  card, columns, divider, grid, row, spacer, stack, wrap,
+  card, columns, divider, grid, spacer, stack, wrap,
   // panels
   chart, kpiStrip, table, map, gauge, text,
   // chrome (schema-bearing default variants)

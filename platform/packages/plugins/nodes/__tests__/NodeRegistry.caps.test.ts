@@ -36,7 +36,7 @@ import { META as geographMeta }  from '../geograph/default/meta'
 import { META as repeatMeta }     from '../repeat/default/meta'
 import { META as pageHeaderMeta } from '../page-header/default/meta'
 import { META as filterBarMeta }  from '../filter-bar/default/meta'
-import { META as rowMeta }        from '../layout/row/default/meta'
+import { META as columnsMeta }    from '../layout/columns/default/meta'
 import { META as wrapMeta }       from '../layout/wrap/default/meta'
 
 // ── Registry fixture ──────────────────────────────────────────────────────────
@@ -51,7 +51,7 @@ function makeRegistry(): NodeRegistry {
   const allMetas = [
     chartMeta, tableMeta, mapMeta, kpiStripMeta, gaugeMeta,
     sectionMeta, geographMeta, repeatMeta,
-    pageHeaderMeta, filterBarMeta, rowMeta, wrapMeta,
+    pageHeaderMeta, filterBarMeta, columnsMeta, wrapMeta,
   ]
 
   for (const m of allMetas) {
@@ -118,9 +118,9 @@ describe('getByCapability("collapsible")', () => {
     expect(types).toContain('chart')
   })
 
-  it('does not return row or wrap (structural layout only)', () => {
+  it('does not return columns or wrap (structural layout only)', () => {
     const types = reg.getByCapability('collapsible').map(e => e.type)
-    expect(types).not.toContain('row')
+    expect(types).not.toContain('columns')
     expect(types).not.toContain('wrap')
   })
 })
@@ -139,11 +139,11 @@ describe('getByCapability("filterable")', () => {
     expect(types).toContain('repeat')
   })
 
-  it('does not return structural nodes (page-header, filter-bar, row)', () => {
+  it('does not return structural nodes (page-header, filter-bar, columns)', () => {
     const types = reg.getByCapability('filterable').map(e => e.type)
     expect(types).not.toContain('page-header')
     expect(types).not.toContain('filter-bar')
-    expect(types).not.toContain('row')
+    expect(types).not.toContain('columns')
   })
 })
 
@@ -180,9 +180,9 @@ describe('getByCapability("repeat")', () => {
     expect(types).toContain('repeat')
   })
 
-  it('does not return row or section', () => {
+  it('does not return columns or section', () => {
     const types = reg.getByCapability('repeat').map(e => e.type)
-    expect(types).not.toContain('row')
+    expect(types).not.toContain('columns')
     expect(types).not.toContain('section')
   })
 })
@@ -218,8 +218,10 @@ describe('Structural nodes declare empty caps', () => {
 // ── nav capabilities — No-Privileged-Node ADR ─────────────────────────────────
 
 describe('nav capabilities are declared in META, not hardcoded in navUtils', () => {
-  it('row is a nav-transparent container (descend-for-nav, distinct from render transparent)', () => {
-    expect(reg.getCaps('row')).toEqual(['nav-transparent'])
+  it('columns is a nav-transparent container (descend-for-nav, distinct from render transparent)', () => {
+    // Absorbed from the retired `row` primitive on the row→columns convergence:
+    // sections nested in a columns grid must still surface in the page nav.
+    expect(reg.getCaps('columns')).toEqual(['nav-transparent'])
   })
 
   it('section + geograph are nav contributors', () => {

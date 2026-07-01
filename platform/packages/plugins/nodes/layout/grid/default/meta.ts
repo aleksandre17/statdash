@@ -13,6 +13,8 @@ export const META: NodeSliceMeta = {
   slots:           GridSlots,
   groups:          GridGroups,
   canHaveChildren: true,
-  caps:            [],
+  // `nav-transparent` (descend-for-nav): sections nested in a 12-col grid still
+  // surface in the page nav — same container contract as columns/row.
+  caps:            ['nav-transparent'],
   version:         1,
 }
