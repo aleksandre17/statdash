@@ -184,6 +184,20 @@ if [[ -z "$TARGET" ]]; then
   check_ts "FF-NO-MODE-LITERAL: no fused {year,range} mode-literal branch in react" \
     "=== '\(range\|quarter\|month\)'\|'\(year\|range\)' in " "$REACT/src"
 
+  # ── FF-NO-PRIVILEGED-LITERAL — no privileged-dim / tenant-field literal in resolvers ─
+  #
+  #  Law 1, crown layer. The built-in SpecResolvers (the surface second-tenant.fitness
+  #  certifies) must carry NEITHER a privileged dimension-name literal ('time'/'geo'/
+  #  'sector'/'region' — quoted or a bare `{ time: … }` object key; route via the
+  #  TIME_DIM SSOT) NOR a tenant-namespaced field ('accountColor'/'regionLabel' — the
+  #  engine reads GENERIC 'color'/'label' only). The killed leak lived at the
+  #  GrowthResolver multi-code branch (`filter: { time: … }` + `meta['accountColor']`).
+  #  `{ measure: … }` is the ObsQuery field name (not a privileged-dim literal) → not
+  #  matched. Bash twin of packages/core/src/registry/no-privileged-literal.fitness.test.ts.
+  check_ts "FF-NO-PRIVILEGED-LITERAL: no privileged-dim / tenant-field literal in engine resolvers" \
+    "['\"]\(time\|geo\|sector\|region\)['\"]\|[{,][[:space:]]*\(time\|geo\|sector\|region\)[[:space:]]*:\|['\"][a-z][A-Za-z]*\(Color\|Label\)['\"]" \
+    "$ENGINE/src/registry"
+
   # ── Retired System-A island: the site-scoped `modes` perspective registry ──────
   #
   #  MED-2 deleted the write-with-no-read `SiteManifestContract.modes` channel: the

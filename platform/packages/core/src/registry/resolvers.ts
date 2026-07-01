@@ -217,9 +217,13 @@ class GrowthResolver implements SpecResolver<Extract<DataSpec, { type: 'growth' 
 
     const result: EngineRow[] = []
     for (const code of codes) {
-      const meta  = storeObs(store, { measure: code, filter: { time: years[0] } }, ctx)[0]
+      // Time pin routes through the TIME_DIM SSOT (no local 'time' literal — see
+      // header) as a QUERY FILTER, not ctx.dims: `_observe` matches on query.filter,
+      // so the pin must live there. Label/color read the GENERIC obs fields only —
+      // the engine never knows a tenant's renamed field name (Law 1, no 'accountColor').
+      const meta  = storeObs(store, { measure: code, filter: { [TIME_DIM]: years[0] } }, ctx)[0]
       const label = meta ? String(meta['label'] ?? code) : code
-      const color = meta ? String(meta['accountColor'] ?? meta['color'] ?? '') : ''
+      const color = meta ? String(meta['color'] ?? '') : ''
       for (let i = 1; i < years.length; i++) {
         const prev = storeVal(store, code, atTime(years[i - 1], ctx))
         const cur  = storeVal(store, code, atTime(years[i],     ctx))
