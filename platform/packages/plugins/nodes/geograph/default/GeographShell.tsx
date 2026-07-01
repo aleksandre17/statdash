@@ -1,3 +1,4 @@
+import './geograph.css'
 import { Fragment, type ReactNode }            from 'react'
 import { defineShell, resolvePreliminary, useNodeTemplate } from '@statdash/react/engine'
 import type { ShellProps }                     from '@statdash/react/engine'
@@ -83,7 +84,7 @@ function GeographControl({ def, ctx, vs, table }: Pick<ShellProps<GeographNode>,
         defaultViewIndex={0}
         viewToggleLabel={t('view-toggle')}
         titleBadge={titleBadge}
-        bodyProps={vs.body}
+        bodyProps={{ ...vs.body, 'data-content': 'geo' }}
       >
         <GeoMap
           rows={rows}

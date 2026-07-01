@@ -25,6 +25,15 @@
   padding:        0.4vw;
 }
 
+/* Role proportion (AR-8 §2b) — a chart reads well WIDER than square, so its band
+ * ratio baseline sits below the generic default. This is the chart plugin OWNING
+ * its own proportion (Law 1/4): keyed on the content-role token data-content="chart"
+ * (emitted by Chart onto the band-carrying leaf), never a node-type list. Sets only
+ * the role INPUT — context (@container scale) + any authored aspectRatio still
+ * compose over it (tokens.css --panel-ratio). Does NOT touch the chart-fill growable
+ * band (the flex chain / height:100% above) — only the ratio coefficient. */
+.chart-wrap[data-content="chart"] { --panel-ratio-role: 0.52; }
+
 /* The visual-render wrapper (sibling of the a11y ChartDataTable). `flex:1` fills
  * the flex-column .chart-wrap (definite, stretch-tracked); height:100% stays as the
  * fallback when .chart-wrap resolves as a plain block. A renderer that fills its

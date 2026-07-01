@@ -1,0 +1,15 @@
+/* ── geograph node — map proportion ──────────────────────────────────
+ *  Role proportion (AR-8 §2b): a choropleth wants a NEAR-SQUARE box, not a
+ *  letterbox — a wide-but-short band crops the map's latitude and wastes the
+ *  focus. The geograph plugin OWNS its own proportion (Law 1/4), keyed on the
+ *  content-role token data-content="geo" (emitted by GeographShell onto the
+ *  band-carrying .panel__body), never a node-type list.
+ *
+ *  Sets ONLY the role INPUT of the height band's ratio (tokens.css
+ *  --panel-ratio = authored ?? role, × context). Context (@container scale in
+ *  node-styles.css) still composes over it, so a SOLO map is TALLER (absolute)
+ *  than a PAIRED one while staying near-square. The map keeps its DEFINITE
+ *  Leaflet height: the band still resolves to a clamp() of concrete lengths, so
+ *  the height:100% GeoMap root never collapses (--size-panel-min-height floor
+ *  retained). This only changes the ratio COEFFICIENT — no height mechanism. */
+.panel__body[data-content="geo"] { --panel-ratio-role: 0.72; }

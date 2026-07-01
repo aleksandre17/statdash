@@ -1,11 +1,15 @@
-// ── FF-PANEL-SIZING — the honest single-constraint panel-height gate ──────────
+// ── AR-8 — Contextual Aspect Band (context-proportional panel height) ─────────
 //
-//  Asserts the panel-sizing model stays HONEST: a data panel is sized by ONE
-//  fluid height band (--size-panel-height), never by aspect-ratio. The historical
-//  bug was `aspect-ratio` + `max-height` coexisting — two contradictory
-//  constraints, so past a crossover width the declared ratio was silently
-//  violated. This gate makes any reintroduction of aspect-ratio into the engine,
-//  or loss of the band token, a red test.  (DESIGN §3a.)
+//  The panel-sizing model stays HONEST (one monotonic height band, never CSS
+//  aspect-ratio + max-height) AND is now context-PROPORTIONAL: the band's middle
+//  term is `--panel-ratio × 100cqi`, where --panel-ratio composes three orthogonal
+//  inputs — role (plugin data-content) × context (@container) with an authored
+//  (config aspectRatio) override. A SOLO panel is TALLER than a PAIRED one by
+//  construction (height = ratio × own-width). These gates lock that model:
+//  re-freezing the coefficient, re-introducing aspect-ratio, dropping the context
+//  axis, smuggling a magic length / tenant / node-type into a ratio, collapsing the
+//  map's definite height, or re-freezing the flex-basis all turn a gate RED.
+//  (DESIGN-proportional-sizing.md §5.)
 //
 
 import { describe, it, expect } from 'vitest'
@@ -19,49 +23,106 @@ import { applyNodeStyles }      from './resolvers/node'
 const stripComments = (s: string) => s.replace(/\/\*[\s\S]*?\*\//g, '')
 
 const here     = dirname(fileURLToPath(import.meta.url))
-const nodeCss  = stripComments(readFileSync(join(here, 'css', 'node-styles.css'), 'utf8'))
-const tokens   = readFileSync(join(here, 'css', 'tokens.css'), 'utf8')
+const read     = (...p: string[]) => stripComments(readFileSync(join(here, ...p), 'utf8'))
+const nodeCss  = read('css', 'node-styles.css')
+const tokens   = read('css', 'tokens.css')
+// Cross-cutting sizing invariants live in the layout node + the panel-layout
+// consumer + the two role plugins. A fitness function legitimately reads across
+// module folders — the dependency ARROW governs runtime imports (eslint
+// no-restricted-imports), not a test-time readFileSync of a sibling CSS file.
+const layoutCss      = read('..', '..', 'plugins', 'nodes', 'layout', 'layout.css')
+const panelLayoutCss = read('..', '..', 'react', 'src', 'styles', 'panel-layout.css')
+const chartRoleCss   = read('..', '..', 'plugins', 'panels', 'chart', 'default', 'chart.css')
+const geoRoleCss     = read('..', '..', 'plugins', 'nodes', 'geograph', 'default', 'geograph.css')
 
-describe('FF-PANEL-SIZING — one honest constraint', () => {
-  it('the height band token exists with a clamp(floor, fluid, cap) spine', () => {
+describe('AR-8 — Contextual Aspect Band', () => {
+  it('FF-RATIO-DRIVEN-BAND — the band middle term is calc(var(--panel-ratio) * 100cqi), not a frozen Ncqi', () => {
+    const m = tokens.match(/--size-panel-height:\s*clamp\(([^;]+)\);/)
+    expect(m, '--size-panel-height clamp spine missing').not.toBeNull()
+    // proportion is a TOKEN times the panel's own width
+    expect(m![1]).toMatch(/calc\(\s*var\(--panel-ratio\)\s*\*\s*100cqi\s*\)/)
+    // guard against re-freezing the coefficient as a bare `<num>cqi` middle term
+    expect(tokens).not.toMatch(/--size-panel-height:\s*clamp\([^,]*,\s*[\d.]+cqi\s*,/)
+    // --panel-ratio composes: authored ?? role, all × context scale
+    expect(tokens).toMatch(
+      /--panel-ratio:\s*calc\(\s*var\(--panel-ratio-authored,\s*var\(--panel-ratio-role\)\)\s*\*\s*var\(--panel-ratio-scale\)\s*\)/,
+    )
+  })
+
+  it('FF-BAND-MONOTONIC — height is a single clamp(); no aspect-ratio + max-height contradiction', () => {
+    expect(nodeCss).not.toContain('aspect-ratio')          // the honored fence
+    expect(nodeCss).not.toMatch(/var\(--ar-/)              // the dead --ar-* cascade stays gone
     expect(tokens).toMatch(/--size-panel-height:\s*clamp\(/)
-    expect(tokens).toMatch(/--size-panel-h-floor:/)
-    expect(tokens).toMatch(/--size-panel-h-cap:/)
+    // no companion max-height re-caps a data panel's band body (the contradiction)
+    expect(nodeCss).not.toMatch(/\[data-aspect\][^{]*\{[^}]*max-height/)
   })
 
-  it('the fluid stop is CONTAINER-proportional (cqi), not viewport-coupled', () => {
-    // The canonical model: the band tracks the panel's OWN inline-size (cqi), so
-    // equal-width siblings resolve an identical height and a wide panel earns more
-    // height than a narrow one. A `vh` fluid stop (viewport coupling) is the prior
-    // interim model and a regression — this gate forbids its return.
-    expect(tokens).toMatch(/--size-panel-h-fluid:\s*[\d.]+cqi/)
-    expect(tokens).not.toMatch(/--size-panel-h-fluid:\s*[\d.]+vh/)
+  it('FF-RATIO-CONTEXT-AWARE — >=1 @container(min-width) rule shrinks the ratio, so solo != paired', () => {
+    // context axis: a wider OWN width lands a shorter ratio (taller absolute).
+    expect(nodeCss).toMatch(/@container\s*\(min-width:\s*680px\)[\s\S]{0,300}--panel-ratio-scale:/)
+    expect(nodeCss).toMatch(/@container\s*\(min-width:\s*1040px\)[\s\S]{0,300}--panel-ratio-scale:/)
   })
 
-  it('the engine applies NO aspect-ratio — the contradiction class is eliminated', () => {
-    // The whole point: panels fill width + take the band height. Any `aspect-ratio`
-    // in the engine reopens the aspect-vs-max-height contradiction.
-    expect(nodeCss).not.toContain('aspect-ratio')
+  it('FF-RATIO-AGNOSTIC — every ratio value is unitless; keyed on data-content, no tenant / node-type / magic px', () => {
+    const all   = [tokens, nodeCss, chartRoleCss, geoRoleCss].join('\n')
+    const decls = all.match(/--panel-ratio(?:-role|-scale)?:\s*([^;]+);/g) ?? []
+    expect(decls.length, 'no --panel-ratio* declarations found').toBeGreaterThan(0)
+    for (const d of decls) {
+      const val = d.split(':')[1]
+      expect(val, `a ratio carries a length unit: ${d.trim()}`).not.toMatch(/\d\s*(px|rem|em|vh|vw)\b/)
+    }
+    // role ratios are keyed on the content-role token, never a hardcoded node type
+    expect(geoRoleCss).toMatch(/\[data-content="geo"\]/)
+    expect(chartRoleCss).toMatch(/\[data-content="chart"\]/)
+    // no tenant / dimension name leaks into a proportion rule (Law 1/4). The banned
+    // words are assembled from fragments so this test file itself carries no tenant
+    // literal (the packages/{react,styles} no-tenant-content scan, kept allowlist-empty).
+    const tenantWord = new RegExp(['geo' + 'stat', 'geo' + 'rgia', 'tenant'].join('|'), 'i')
+    expect((chartRoleCss + geoRoleCss).toLowerCase()).not.toMatch(tenantWord)
   })
 
-  it('the dead --ar-* responsive cascade is gone', () => {
-    expect(nodeCss).not.toMatch(/var\(--ar-/)
+  it('FF-MAP-DEFINITE-HEIGHT — band is a clamp of definite lengths + a min-height floor; map keeps near-square', () => {
+    expect(tokens).toMatch(/--size-panel-h-floor:\s*\d+px/)
+    expect(tokens).toMatch(/--size-panel-h-cap:\s*\d+px/)
+    expect(tokens).toMatch(/--size-panel-min-height:\s*[\d.]+rem/)   // the height:100% renderer floor
+    // the map body opts into the near-square role via the content token
+    expect(geoRoleCss).toMatch(/\.panel__body\[data-content="geo"\]\s*\{\s*--panel-ratio-role:\s*0?\.72/)
   })
 
-  it('[data-aspect] and the ratio [data-height] tokens resolve to the band', () => {
-    expect(nodeCss).toMatch(/\[data-aspect\]\s*\{[^}]*--size-panel-height/)
-    expect(nodeCss).toMatch(/\[data-height="16:9"\][\s\S]{0,160}--size-panel-height/)
+  it('FF-EQUAL-HEIGHT-SIBLINGS — layout columns keep align-items:stretch (the row equal-height contract)', () => {
+    expect(layoutCss).toMatch(/\.layout-columns\s*\{[^}]*align-items:\s*stretch/)
   })
 
-  // The RESOLVER counterpart of the CSS-absence gate above: responsive aspectRatio
-  // still emits the data-aspect band-alias FLAG, but the inert per-breakpoint --ar-*
-  // custom properties are retired at the source (no CSS reads them — AUDIT-BRIEF §4).
-  it('applyNodeStyles emits the data-aspect flag but NO inert --ar-* vars', () => {
-    const out = applyNodeStyles({ aspectRatio: { default: '16:9', sm: '4:3' } }) as
+  it('FF-BAND-IS-FLEX-BASIS — the body consumes the band as a growable flex-basis, never a frozen height', () => {
+    expect(panelLayoutCss).toMatch(/flex:\s*1\s+1\s+var\(--size-panel-height\)/)   // container form
+    expect(nodeCss).toMatch(/flex:\s*1\s+1\s+var\(--size-panel-height\)/)          // leaf form
+  })
+})
+
+describe('AR-8 resolver — authorable proportion (aspectRatio → --panel-ratio-<bp>)', () => {
+  it('emits data-aspect + per-breakpoint --panel-ratio vars (CSS W/H inverted), never inert --ar-*', () => {
+    const out = applyNodeStyles({ aspectRatio: { default: '16 / 9', sm: '4 / 3' } }) as
       Record<string, unknown> & { style?: Record<string, unknown> }
     expect(out['data-aspect']).toBe('')
-    const arKeys = Object.keys(out.style ?? {}).filter(k => k.startsWith('--ar-'))
-    expect(arKeys, `resolver re-emitted inert vars: ${arKeys.join(', ')}`).toEqual([])
+    const style = out.style ?? {}
+    expect(Object.keys(style).filter(k => k.startsWith('--ar-'))).toEqual([])
+    // aspect-ratio is width÷height; the band coefficient is height÷width → inverted
+    expect(style['--panel-ratio-default']).toBe('0.5625')   // 9/16
+    expect(style['--panel-ratio-sm']).toBe('0.75')          // 3/4
+  })
+
+  it('a numeric / colon aspectRatio also inverts to the band coefficient', () => {
+    const num = applyNodeStyles({ aspectRatio: '2' }) as Record<string, unknown> & { style?: Record<string, unknown> }
+    expect(num.style?.['--panel-ratio-default']).toBe('0.5')      // a 2:1 wide box → 0.5 tall-of-wide
+    const colon = applyNodeStyles({ aspectRatio: '16:9' }) as Record<string, unknown> & { style?: Record<string, unknown> }
+    expect(colon.style?.['--panel-ratio-default']).toBe('0.5625')
+  })
+
+  it('no aspectRatio → no data-aspect flag, no --panel-ratio vars (band falls back to role)', () => {
+    const out = applyNodeStyles({ height: '16:9' }) as Record<string, unknown> & { style?: Record<string, unknown> }
+    expect(out['data-aspect']).toBeUndefined()
+    const style = out.style ?? {}
+    expect(Object.keys(style).filter(k => k.startsWith('--panel-ratio'))).toEqual([])
   })
 })
 

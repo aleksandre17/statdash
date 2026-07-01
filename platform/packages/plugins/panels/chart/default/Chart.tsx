@@ -26,7 +26,7 @@ export default function Chart({ output, bodyAttrs, onDataHover, onDataLeave, onD
   // ChartDataTable is the screen-reader and keyboard-accessible representation.
   // PanelLayout view toggle provides sighted keyboard access to the table view.
   return (
-    <div {...bodyAttrs} className="chart-wrap">
+    <div {...bodyAttrs} data-content="chart" className="chart-wrap">
       {/* height:100% so a renderer that fills its parent (the custom flexbox
           TreemapChart root is `height:100%`) resolves against .chart-wrap's
           resolved height — without it this wrapper shrinks to content and the

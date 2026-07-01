@@ -5,9 +5,10 @@
 //  Data-attribute contract:
 //    data-height = '16:9' | '4:3' | ... | 'constrained'
 //      → fixed height token; node-styles.css handles children
-//    data-aspect = '' (presence flag)
-//      → DEPRECATED alias: node-styles.css maps [data-aspect] to the height band
-//        (--size-panel-height). No --ar-* vars are emitted (retired; nothing read them).
+//    data-aspect = '' (presence flag) + --panel-ratio-<bp> vars
+//      → node-styles.css maps [data-aspect] to the height band (--size-panel-height)
+//        and collapses --panel-ratio-<bp> into --panel-ratio-authored (the authorable
+//        band proportion; CSS width/height inverted to the band's height/width).
 //    data-view   = 'hidden' | 'visible'
 //      → visibility; from resolveViewState (see view.ts)
 //
@@ -46,6 +47,23 @@ function kebab(s: string): string {
 }
 
 // ── Internal helpers ──────────────────────────────────────────────────
+
+// aspectRatio (CSS width÷height) → --panel-ratio coefficient (height÷width) for the
+// height band. Inverts because the band expresses proportion as height-of-width.
+// Postel-liberal: "16 / 9", "16:9", or a bare number 1.78 all map to ≈0.5625; a
+// non-positive / unparseable value yields undefined → the band falls back to the
+// role ratio. Rounded to 4 dp so the emitted var is a clean unitless number.
+function toPanelRatio(v: string | number): string | undefined {
+  const round = (x: number) => String(Math.round(x * 1e4) / 1e4)
+  if (typeof v === 'number') return v > 0 ? round(1 / v) : undefined
+  const pair = v.trim().match(/^(\d*\.?\d+)\s*[/:]\s*(\d*\.?\d+)$/)
+  if (pair) {
+    const w = parseFloat(pair[1]), h = parseFloat(pair[2])
+    return w > 0 && h > 0 ? round(h / w) : undefined
+  }
+  const n = parseFloat(v)
+  return Number.isFinite(n) && n > 0 ? round(1 / n) : undefined
+}
 
 function heightAttrs(
   resolved: ResolvedResponsive<StyleValue>,
@@ -237,17 +255,25 @@ export function applyNodeStyles(
   if (applyPseudo('focus',  styles?.focus,  extra)) pseudoFlags['data-focus']  = ''
   if (applyPseudo('active', styles?.active, extra)) pseudoFlags['data-active'] = ''
 
-  // aspectRatio (responsive) → data-aspect presence flag ONLY. The flag is a
-  // DEPRECATED alias for the height band ([data-aspect] { height: --size-panel-height }
-  // in node-styles.css). The per-breakpoint --ar-* CSS vars are RETIRED: the band
-  // superseded the aspect cascade, so no rule reads them — emitting them was inert
-  // DOM residue (AUDIT-BRIEF §4). The flag is kept so existing responsive-aspectRatio
-  // provisioning still resolves to the band (Strangler alias); the eventual real
-  // aspect-ratio-for-media capability is a separate, additive future path.
+  // aspectRatio (responsive) → data-aspect flag + per-breakpoint --panel-ratio-<bp>
+  // vars (AR-8 §2c). The flag aliases the height band ([data-aspect] { height:
+  // --size-panel-height }); the --panel-ratio-<bp> vars are the AUTHORABLE proportion
+  // — node-styles.css collapses them (same max-width cascade as every responsive prop)
+  // into --panel-ratio-authored, which the band's ratio consumes (winning over the
+  // role baseline). This REVIVES the formerly inert --ar-* emission with a real
+  // consumer: config carries a number, the renderer does the math (Constructor-ready).
+  // A CSS aspect-ratio is width÷height; the band coefficient is height÷width, so we
+  // invert (toPanelRatio, Postel-liberal on slash / colon / bare number).
   const ar = resolveResponsive(styles?.aspectRatio)
   const dataAspect: Record<string, string> = {}
   if (BREAKPOINT_KEYS.some(k => ar[k] !== undefined)) {
     dataAspect['data-aspect'] = ''
+    for (const k of BP_KEYS) {
+      const v = ar[k]
+      if (v === undefined || v === '') continue
+      const ratio = toPanelRatio(v as string | number)
+      if (ratio !== undefined) extra[`--panel-ratio-${k}`] = ratio
+    }
   }
 
   // printHide → data-print-hide flag; node-styles.css hides it in @media print.

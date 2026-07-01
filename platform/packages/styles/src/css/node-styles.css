@@ -12,8 +12,17 @@
      Emitted by: applyNodeStyles() / applyPanelStyles()
 
    data-aspect = "" (presence flag)
-     Responsive aspect-ratio — CSS reads --ar-default/md/sm vars.
+     Authorable panel proportion — CSS reads --panel-ratio-default/2xl/…/xs vars
+     (per-breakpoint) and collapses them to --panel-ratio-authored, the config
+     front-door to the height band's ratio (view.styles.aspectRatio).
      Emitted by: applyNodeStyles() when aspectRatio is set.
+
+   data-content = role token ("geo" | "chart" | …)
+     Content-role proportion — a plugin body declares WHAT it holds; role CSS
+     (in the plugin) sets --panel-ratio-role so the band picks a content-
+     appropriate shape (map near-square, chart wider). Role/context/authored
+     compose (see the panel-ratio block below), never a node-type list (Law 1/4).
+     Emitted by: the content plugin shell (GeographShell, Chart).
 
    data-view = "hidden" | "visible"
      Visibility state — hides/shows the view slot.
@@ -52,36 +61,67 @@
 }
 
 
-/* ── Aspect ratio — responsive (data-aspect) ────────────────────── */
-/*
- * data-aspect="" presence flag + CSS vars --ar-<bp> per breakpoint
- * (--ar-default / 2xl / xl / lg / md / sm / xs). All responsive logic lives
- * here — shells and component CSS are transparent.
+/* ── Panel proportion — the CONTEXT-PROPORTIONAL height band inputs ──────────
  *
- * Breakpoint scale (desktop-default, max-width cascade):
- *   default → 2xl(1536) → xl(1280) → lg(1024) → md(768) → sm(640) → xs(480)
+ *  The band's ratio (--panel-ratio, tokens.css) is `authored ?? role, × context`.
+ *  Three orthogonal INPUTS, each written to its OWN var so they COMPOSE (fallback
+ *  + multiply) rather than fight over one property at equal specificity:
  *
- * Each step's var() falls through to the NEXT-LARGER set value, so an unset
- * breakpoint inherits from above — exactly the Builder.io override semantics.
- * Completely unset → aspect-ratio is unset (no visual effect).
+ *    · --panel-ratio-role      role/content baseline — set by a plugin body via
+ *                              [data-content] (map ≈ 0.72, chart ≈ 0.52). Lives in
+ *                              the plugin CSS (each plugin owns its proportion).
+ *    · --panel-ratio-authored  config front-door — the [data-aspect] cascade below
+ *                              collapses the per-breakpoint --panel-ratio-<bp> vars
+ *                              (emitted by applyNodeStyles from view.styles.aspect-
+ *                              Ratio) into it. WINS over role (var-fallback order).
+ *    · --panel-ratio-scale     CONTEXT — the two @container rules below SHRINK it as
+ *                              the panel's OWN width grows. Wide/solo → shorter ratio
+ *                              → TALLER absolute (height = ratio × width); narrow/
+ *                              paired → ratio stays tall. The solo≠paired axis.
  *
- * Two query families, identical cascade:
- *   @media     — responds to the VIEWPORT (default, always active)
- *   @container — responds to the nearest ELEMENT declared
- *                `container-type: inline-size` (a chart in a 1/3 column gets
- *                the narrow ratio on a wide screen). Opt-in: a shell wrapper
- *                must declare container-type for @container rules to apply;
- *                until then they are inert, so this is purely additive.
+ *  Breakpoint scale (desktop-default, max-width cascade), mirrors every other
+ *  responsive prop: default → 2xl(1536) → xl(1280) → lg(1024) → md(768) → sm(640)
+ *  → xs(480); each step falls through to the next-larger set value.
  */
 
-/* data-aspect — DEPRECATED responsive-aspect path, now an alias for the height
- * band (the honest single-constraint model). The --ar-* per-breakpoint vars set
- * by applyNodeStyles become inert (no aspect-ratio is applied); the panel fills
- * its column width and takes the band height. This removes the 12-line @media +
- * @container --ar-* cascade that drove the aspect-vs-max-height contradiction.
- * (aspectRatio remains a NodeStyle for genuine ratio-locked media; data panels —
- * chart / table / map — size by the band. See DESIGN §panel-sizing.) */
+/* data-aspect — panel proportion carrier. Aliases the height band (the honest
+ * single-constraint model): the panel fills its column width and takes the band
+ * height. `100cqi` inside the band resolves against the nearest
+ * container-type:inline-size ancestor (.section / .panel). */
 [data-aspect] { width: 100%; height: var(--size-panel-height); }
+
+/* CONTEXT axis (§2a) — the ratio responds to the panel's OWN available width via
+ * container-query breakpoints (the same signal AR-5's grid reflows on). Wider own
+ * width → smaller scale → shorter ratio → yet TALLER in absolute px, each on a
+ * content-appropriate shape. Unnamed @container binds to the nearest container-type
+ * ancestor = .section / .panel (both declare it). Set on the band-consuming carriers
+ * only; harmless on fixed data-height (sm/md/lg/xl) tokens, which don't read the band. */
+@container (min-width: 680px) {
+  .section__body[data-height],
+  .panel__body[data-height],
+  .chart-wrap[data-height],
+  [data-aspect] { --panel-ratio-scale: 0.84; }
+}
+@container (min-width: 1040px) {
+  .section__body[data-height],
+  .panel__body[data-height],
+  .chart-wrap[data-height],
+  [data-aspect] { --panel-ratio-scale: 0.68; }
+}
+
+/* AUTHORABLE axis (§2c) — collapse the per-breakpoint --panel-ratio-<bp> vars that
+ * applyNodeStyles emits from view.styles.aspectRatio into --panel-ratio-authored,
+ * honoring the same max-width cascade. When no breakpoint is authored the reference
+ * is guaranteed-invalid, so the :root calc falls back to --panel-ratio-role. This is
+ * the revived (formerly inert --ar-*) emission, now with a real consumer: proportion
+ * is authorable in config, Constructor-ready — the renderer does the math. */
+[data-aspect] { --panel-ratio-authored: var(--panel-ratio-default); }
+@media (max-width: 1536px) { [data-aspect] { --panel-ratio-authored: var(--panel-ratio-2xl, var(--panel-ratio-default)); } }
+@media (max-width: 1280px) { [data-aspect] { --panel-ratio-authored: var(--panel-ratio-xl, var(--panel-ratio-2xl, var(--panel-ratio-default))); } }
+@media (max-width: 1024px) { [data-aspect] { --panel-ratio-authored: var(--panel-ratio-lg, var(--panel-ratio-xl, var(--panel-ratio-2xl, var(--panel-ratio-default)))); } }
+@media (max-width: 768px)  { [data-aspect] { --panel-ratio-authored: var(--panel-ratio-md, var(--panel-ratio-lg, var(--panel-ratio-xl, var(--panel-ratio-2xl, var(--panel-ratio-default))))); } }
+@media (max-width: 640px)  { [data-aspect] { --panel-ratio-authored: var(--panel-ratio-sm, var(--panel-ratio-md, var(--panel-ratio-lg, var(--panel-ratio-xl, var(--panel-ratio-2xl, var(--panel-ratio-default)))))); } }
+@media (max-width: 480px)  { [data-aspect] { --panel-ratio-authored: var(--panel-ratio-xs, var(--panel-ratio-sm, var(--panel-ratio-md, var(--panel-ratio-lg, var(--panel-ratio-xl, var(--panel-ratio-2xl, var(--panel-ratio-default))))))); } }
 
 /* Content inside an aspect-constrained element */
 [data-aspect] .chart-wrap,
