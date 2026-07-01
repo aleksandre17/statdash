@@ -57,10 +57,45 @@ describe('AR-8 — Contextual Aspect Band', () => {
     expect(nodeCss).not.toMatch(/\[data-aspect\][^{]*\{[^}]*max-height/)
   })
 
-  it('FF-RATIO-CONTEXT-AWARE — >=1 @container(min-width) rule shrinks the ratio, so solo != paired', () => {
+  it('FF-RATIO-CONTEXT-AWARE — the @container ladder guarantees a PRONOUNCED solo-vs-paired differential (not just != )', () => {
     // context axis: a wider OWN width lands a shorter ratio (taller absolute).
-    expect(nodeCss).toMatch(/@container\s*\(min-width:\s*680px\)[\s\S]{0,300}--panel-ratio-scale:/)
-    expect(nodeCss).toMatch(/@container\s*\(min-width:\s*1040px\)[\s\S]{0,300}--panel-ratio-scale:/)
+    const m680  = nodeCss.match(/@container\s*\(min-width:\s*680px\)[\s\S]{0,300}--panel-ratio-scale:\s*([\d.]+)/)
+    const m1040 = nodeCss.match(/@container\s*\(min-width:\s*1040px\)[\s\S]{0,300}--panel-ratio-scale:\s*([\d.]+)/)
+    expect(m680,  'the 680px context step is missing').not.toBeNull()
+    expect(m1040, 'the 1040px context step is missing').not.toBeNull()
+    const scale680  = Number(m680![1])
+    const scale1040 = Number(m1040![1])
+
+    // Monotone context: wider own-width → smaller-or-equal scale → shorter ratio,
+    // and both steps shrink below the paired baseline (1.0). Locks the gradient.
+    expect(scale1040).toBeLessThanOrEqual(scale680)
+    expect(scale680).toBeLessThan(1)
+
+    // ── The strengthened core: a MINIMUM differential (the owner's "too subtle" —
+    // a ~30% gap — must not regress). A solo panel gets ~2× the own-width of a paired
+    // cell (two columns + gap ≈ the solo width). With the paired cell in the <680
+    // regime (scale 1.0) and the solo in the ≥1040 regime (scale = scale1040), the
+    // band differential is `height_solo / height_paired = (scale1040 × 2W)/(1 × W) =
+    // 2 × scale1040` (role and 100cqi cancel; the floor no longer props the paired
+    // cell — see FF-MAP-DEFINITE-HEIGHT's floor ≤ its natural height). REQUIRE the
+    // solo be clearly ≥1.5× the paired so the differential reads at a glance. */
+    const modelledDifferential = 2 * scale1040
+    expect(modelledDifferential, 'solo is not clearly taller than paired — the AR-8 "too subtle" regression')
+      .toBeGreaterThanOrEqual(1.5)
+
+    // …AND the solo must NOT swing the other way into a letterbox. Solo effective
+    // ratio = chart role × scale1040 must stay WIDER-than-2.9:1-tall, i.e. ratio > 0.34.
+    const chartRole = Number(chartRoleCss.match(/--panel-ratio-role:\s*([\d.]+)/)![1])
+    const soloEffectiveRatio = chartRole * scale1040
+    expect(soloEffectiveRatio, 'a wide solo has collapsed into a letterbox').toBeGreaterThan(0.34)
+
+    // Guard the two px bounds that keep the differential honest: the floor must not
+    // be re-raised to prop up a narrow paired cell (flattening the gap), and the cap
+    // must stay generous so the widest solo keeps its focus shape (not clipped wide).
+    const floor = Number(tokens.match(/--size-panel-h-floor:\s*(\d+)px/)![1])
+    const cap   = Number(tokens.match(/--size-panel-h-cap:\s*(\d+)px/)![1])
+    expect(floor, 'the floor is high enough to prop a paired cell and flatten the gap').toBeLessThanOrEqual(300)
+    expect(cap,   'the cap is low enough to clip a wide solo into a letterbox').toBeGreaterThanOrEqual(700)
   })
 
   it('FF-RATIO-AGNOSTIC — every ratio value is unitless; keyed on data-content, no tenant / node-type / magic px', () => {

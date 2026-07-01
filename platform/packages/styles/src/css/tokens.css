@@ -101,8 +101,12 @@
      specificity fight): an authored config proportion (--panel-ratio-authored, from
      view.styles.aspectRatio) wins over the role baseline; context always scales. */
   --panel-ratio: calc(var(--panel-ratio-authored, var(--panel-ratio-role)) * var(--panel-ratio-scale));
-  --size-panel-h-floor: 320px;   /* GUARD only — legible narrow/mobile minimum (not the shape) */
-  --size-panel-h-cap:   640px;   /* GUARD only — ultrawide ceiling, raised so a wide solo can breathe (not the shape) */
+  --size-panel-h-floor: 280px;   /* GUARD only — legible narrow/mobile minimum (not the shape). Lowered
+                                    from 320: a narrow PAIRED cell (~578px @1440 → 0.52×578 ≈ 301px) is no
+                                    longer PROPPED UP to the floor, so the solo-vs-paired gap reads full. */
+  --size-panel-h-cap:   720px;   /* GUARD only — ultrawide ceiling (not the shape). Raised from 640 so the
+                                    widest solo (own-width ≈1644px × 0.416 ≈ 684px) keeps its ideal 2.4:1
+                                    focus shape instead of being clipped to a wider ~2.6:1 at the old cap. */
   --size-panel-height:  clamp(var(--size-panel-h-floor), calc(var(--panel-ratio) * 100cqi), var(--size-panel-h-cap));
   /* Deprecated alias — kept so any out-of-tree consumer keeps resolving while the
      ratio→band migration completes (Strangler-Fig). Points at the band. */

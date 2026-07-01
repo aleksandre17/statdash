@@ -95,18 +95,30 @@
  * width → smaller scale → shorter ratio → yet TALLER in absolute px, each on a
  * content-appropriate shape. Unnamed @container binds to the nearest container-type
  * ancestor = .section / .panel (both declare it). Set on the band-consuming carriers
- * only; harmless on fixed data-height (sm/md/lg/xl) tokens, which don't read the band. */
+ * only; harmless on fixed data-height (sm/md/lg/xl) tokens, which don't read the band.
+ *
+ * Coefficients tuned for a PRONOUNCED solo-vs-paired differential (owner: the prior
+ * 0.84/0.68 ladder made a solo only ~30% taller than a paired — too subtle). The
+ * governing relation is `height = ratio × scale × own-width`, and a solo panel gets
+ * ~2× the own-width of a paired cell (two columns + gap ≈ the solo width). So at the
+ * solo regime (≥1040, scale 0.80) versus the paired regime (<680, scale 1.0) the band
+ * differential is `0.80 × 2 ≈ 1.6×` before the floor — a solo is CLEARLY, at-a-glance
+ * taller. The solo effective ratio lands at ~0.416 (chart role 0.52 × 0.80) = a 2.4:1
+ * focus panel — the design's stated-ideal shape, NOT a letterbox. Only TWO steps: the
+ * page measure caps a solo's own inline-size at ~1644px (tokens --page-measure ceiling
+ * 1760 − gutters), so the 0.80 plateau already spans the ENTIRE solo range at that ideal
+ * 2.4:1 — a 3rd step would be inert or non-monotonic (a wider panel would get shorter). */
 @container (min-width: 680px) {
   .section__body[data-height],
   .panel__body[data-height],
   .chart-wrap[data-height],
-  [data-aspect] { --panel-ratio-scale: 0.84; }
+  [data-aspect] { --panel-ratio-scale: 0.90; }
 }
 @container (min-width: 1040px) {
   .section__body[data-height],
   .panel__body[data-height],
   .chart-wrap[data-height],
-  [data-aspect] { --panel-ratio-scale: 0.68; }
+  [data-aspect] { --panel-ratio-scale: 0.80; }
 }
 
 /* AUTHORABLE axis (§2c) — collapse the per-breakpoint --panel-ratio-<bp> vars that
