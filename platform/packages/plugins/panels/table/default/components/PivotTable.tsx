@@ -24,6 +24,16 @@ export interface PivotTableProps {
   seriesOrder?:  string[]
 }
 
+// Pivot value cells are ALWAYS numeric figures (getCellValue → formatter → t-num),
+// so a column is RIGHT-aligned by default (IMF/Eurostat statistical-table
+// convention). This is the SINGLE SOURCE for a column's horizontal alignment —
+// the header (series/sub) th and the body td both derive from it, so a header
+// always sits directly above its digits. Root cause of the owner's misalignment:
+// the header hardcoded `r` while the body keyed on `col.align`, so a numeric
+// column with no explicit `align` rendered header=right / body=left. `align:'l'`
+// opts a column back to left for BOTH header and body, in lockstep.
+const alignClass = (col: ColumnDef): string => (col.align === 'l' ? '' : 'r')
+
 export function PivotTable({ rows, colLabel, columns, caption, footer, footerLabel, seriesFormat, seriesOrder }: PivotTableProps) {
   // Preserve source order (first appearance) — respects pipeline sort steps
   const labels    = [...new Map(rows.map((r) => [r.label, true])).keys()]
@@ -68,7 +78,7 @@ export function PivotTable({ rows, colLabel, columns, caption, footer, footerLab
               <tr>
                 {series.flatMap((s) =>
                   columns.map((col) => (
-                    <th key={`${s}-${col.key}`} scope="col" className="r t-col-sub">
+                    <th key={`${s}-${col.key}`} scope="col" className={`${alignClass(col)} t-col-sub`.trim()}>
                       {/* col.label is pre-resolved to the active locale by DataTable */}
                       {col.label as string}
                     </th>
@@ -79,8 +89,10 @@ export function PivotTable({ rows, colLabel, columns, caption, footer, footerLab
           ) : (
             <tr>
               <th scope="col" style={{ width: '30%' }}>{colLabel}</th>
+              {/* Flat pivot: one column per series, so the series header aligns to
+                  that single column — SAME source as its body cells (SSOT). */}
               {series.map((s) => (
-                <th key={s} scope="col" className="r">{s}</th>
+                <th key={s} scope="col" className={columns[0] ? alignClass(columns[0]) : 'r'}>{s}</th>
               ))}
             </tr>
           )}
@@ -114,7 +126,7 @@ export function PivotTable({ rows, colLabel, columns, caption, footer, footerLab
                   columns.map((col) => {
                     const row = cell(label, s)
                     return (
-                      <td key={`${s}-${col.key}`} className={`t-num${col.align === 'r' ? ' r' : ''}`}>
+                      <td key={`${s}-${col.key}`} className={`t-num ${alignClass(col)}`.trim()}>
                         {row !== undefined ? seriesFmt(s, col)(getCellValue(row, col.key)) : '—'}
                       </td>
                     )
@@ -134,7 +146,7 @@ export function PivotTable({ rows, colLabel, columns, caption, footer, footerLab
                     .map((lbl) => cell(lbl, s))
                     .filter((r): r is DataRow => r !== undefined)
                   return (
-                    <td key={`${s}-${col.key}`} className={`t-num${col.align === 'r' ? ' r' : ''}`}>
+                    <td key={`${s}-${col.key}`} className={`t-num ${alignClass(col)}`.trim()}>
                       {footer[col.key] ? computeAggregate(col, seriesRows, footer[col.key]) ?? '—' : '—'}
                     </td>
                   )

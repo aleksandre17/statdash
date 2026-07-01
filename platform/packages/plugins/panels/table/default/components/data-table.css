@@ -23,6 +23,25 @@
   overflow:   auto;
   min-width:  0;
   max-width:  100%;
+  /* BOUNDED scroll viewport — the missing half of the freeze.
+   *
+   *  `position:sticky` on the header (below) only FREEZES when its scroll
+   *  container has a bounded height. An UNBOUNDED table (full-page height, no
+   *  AR-8 [data-height] band around it — the live /ka/accounts SNA case) had a
+   *  wrap that grew to full content height, so the PAGE scrolled and the header
+   *  scrolled away with it (owner: "header does not freeze"). Boundedness is
+   *  intrinsic to a table whose own wrap scrolls — the table OWNS it here (SSOT),
+   *  not gated on a layout-container attribute (same principle as the sticky rule
+   *  moving out of node-styles in 607ddfb).
+   *
+   *  A viewport-relative cap (token seam, Protected Variations) gives the wrap a
+   *  definite max height in that case: a tall table now scrolls INSIDE the panel
+   *  with a frozen header + themed `.scroll-fancy` scrollbar, instead of pushing
+   *  the page. It COMPOSES with the AR-8 band: node-styles hands the wrap a
+   *  (usually smaller) definite height via `flex:1`, and `max-height` only CAPS —
+   *  it never forces height — so a short table keeps its natural height and a band
+   *  table keeps its band. Unset on mobile (below) to preserve inline reading. */
+  max-height: var(--data-table-max-h, 70vh);
 }
 .data-table {
   width: 100%;
@@ -103,6 +122,16 @@
  * matches a single-line header row (padding 2×0.5625rem + line-box + border). */
 .data-table thead tr:nth-child(2) th {
   top: var(--data-table-head-row-h, 2.25rem);
+}
+
+/* Mobile reflow (matches the node-styles band at the same breakpoint): a long
+ * table reads better inline — the page scrolls and the header goes static —
+ * than trapped in a short inner scroll box. Placed AFTER the base sticky rule
+ * so it wins by source order (equal specificity). `max-height:none` unbounds
+ * the wrap; `position:static` releases the freeze. */
+@media (max-width: 768px) {  /* = --bp-md */
+  .data-table__wrap    { max-height: none; }
+  .data-table thead th { position: static; }
 }
 
 .data-table th.r,

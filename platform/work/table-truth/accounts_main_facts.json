@@ -1,0 +1,32 @@
+{
+  "capturedAt": "2026-07-01T16:27:15.557Z",
+  "files": [
+    "C:\\Users\\Test-User\\WebstormProjects\\national-accounts\\platform\\work\\table-truth\\accounts_main_1440.png",
+    "C:\\Users\\Test-User\\WebstormProjects\\national-accounts\\platform\\work\\table-truth\\accounts_main_1440_scrolled.png",
+    "C:\\Users\\Test-User\\WebstormProjects\\national-accounts\\platform\\work\\table-truth\\accounts_main_768.png",
+    "C:\\Users\\Test-User\\WebstormProjects\\national-accounts\\platform\\work\\table-truth\\accounts_main_dark_1440.png"
+  ],
+  "facts1440": {
+    "wrapClass": "data-table__wrap scroll-fancy",
+    "scrollWidth": 1114,
+    "clientWidth": 1114,
+    "overflows": false,
+    "computedOverflowX": "auto",
+    "hasScrollFancy": true,
+    "thPosition": "static",
+    "thTopBefore": 0,
+    "theadRows": 1,
+    "thCount": 2,
+    "componentType": "SimpleTable (1 thead row)",
+    "col1HeaderLeft": 0,
+    "col1BodyLeft": 0,
+    "col1Aligned": true,
+    "widestColIdx": null,
+    "widestHeaderLeft": null,
+    "widestBodyLeft": null,
+    "widestAligned": "n/a"
+  },
+  "thTopBefore": 0,
+  "thTopAfter": 0,
+  "headerFrozen": "YES"
+}

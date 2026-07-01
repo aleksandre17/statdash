@@ -131,3 +131,49 @@ describe('FF-TABLE-HEADER-STICKY — header freezes on scroll, owned by the tabl
     expect(sub).toMatch(/top:\s*var\(--data-table-head-row-h/)
   })
 })
+
+// ── FF-TABLE-BOUNDED-SCROLL — the wrap is a BOUNDED scroll viewport so sticky ──
+//   actually freezes even when the table is UNBOUNDED (no AR-8 band).
+//
+//   Root cause → standard → fix:
+//     · root cause : the sticky header only FREEZES if its scroll container has a
+//                    bounded height. A full-page-height table with no [data-height]
+//                    band around it (the live /ka/accounts SNA pivot) had a wrap
+//                    that grew to content height, so the PAGE scrolled and the
+//                    header scrolled away — "does not freeze" (owner).
+//     · standard   : boundedness is intrinsic to a scrolling table (SSOT), owned by
+//                    the table — not gated on a layout-container attribute.
+//     · fix        : `.data-table__wrap { max-height: var(--data-table-max-h, 70vh) }`
+//                    (token seam), composing with `overflow:auto`; a mobile @media
+//                    unsets it (inline reading) + releases the freeze (static),
+//                    placed after the sticky rule so it wins by source order.
+describe('FF-TABLE-BOUNDED-SCROLL — a tall table scrolls INSIDE the panel, header frozen', () => {
+  const wrap = () => ruleBody('.data-table__wrap')
+
+  it('the wrap has a BOUNDED max-height (token seam, no hardcoded literal-only cap)', () => {
+    // Token-driven cap with a viewport-relative fallback — Protected Variations.
+    expect(wrap()).toMatch(/max-height:\s*var\(--data-table-max-h/)
+  })
+
+  it('max-height COMPOSES with the scroll: overflow:auto stays so it actually scrolls', () => {
+    expect(wrap()).toMatch(/overflow:\s*auto/)
+  })
+
+  it('mobile (≤768px) unbounds the wrap AND releases the freeze (inline reading)', () => {
+    // The @media block must reset BOTH: max-height:none (page scrolls) and
+    // thead th position:static — matching the node-styles band reflow.
+    const media = css.match(/@media\s*\(max-width:\s*768px\)\s*\{([\s\S]*?)\n\}/)
+    expect(media, 'a max-width:768px @media block must exist').not.toBeNull()
+    expect(media![1]).toMatch(/\.data-table__wrap\s*\{[^}]*max-height:\s*none/)
+    expect(media![1]).toMatch(/\.data-table thead th\s*\{[^}]*position:\s*static/)
+  })
+
+  it('the mobile reset is placed AFTER the base sticky rule (source order wins)', () => {
+    // Equal specificity → the later rule wins; the reset must come after the
+    // `.data-table thead th { position: sticky }` declaration or it is dead CSS.
+    const stickyIdx = css.indexOf('position: sticky')
+    const mediaIdx  = css.indexOf('@media (max-width: 768px)')
+    expect(stickyIdx).toBeGreaterThan(-1)
+    expect(mediaIdx).toBeGreaterThan(stickyIdx)
+  })
+})
