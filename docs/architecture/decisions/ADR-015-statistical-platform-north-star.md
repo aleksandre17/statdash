@@ -1,9 +1,43 @@
 ---
-name: adr-statistical-platform-north-star
-description: North-Star maturity-gap vision for the statistical-data + ingestion architecture — benchmarked vs Eurostat/.Stat/IMF/OECD + modern data-platform concepts (VTL, dbt, data-contracts, PROV, FAIR, RDF-cube). Maturity matrix + seam-first YAGNI-gated roadmap. Top tier: VTL · SDMX-REST serve · SIMS/ESMS+PROV. Records what's already at/above best-in-class (lossless Constructor, config-driven no-code spine, ContentConstraint, SCD-2 vintage).
-metadata:
-  type: project
+title: Statistical Platform North-Star (maturity-gap vision)
+status: Proposed (vision / direction-setting)
+date: 2026-06-26
+authors: architect (Opus)
+migrated_from: adr_statistical_platform_north_star
 ---
+
+# ADR-015 — Statistical Platform North-Star
+
+**Status:** Proposed (vision / direction-setting, NOT a build order). Sets the long-horizon target the codebase migrates toward (Law 7); each capability carries a named trigger (the seam goes in now, the build waits for the trigger — YAGNI).
+
+## Context
+
+Benchmarked against Eurostat / .Stat / IMF / OECD plus modern data-platform concepts (VTL, dbt, data-contracts, W3C PROV, FAIR, RDF-cube). The platform is NOT greenfield catching up: the SDMX Information Model is already the cube's spine (DSD, codelists with SCD-2 + code-chain LTREE, ConceptScheme V27, categorisation V29, dataset lifecycle V28, vintage-as-release V25, ContentConstraint V26, reference metadata V31). The gaps are mostly *serving the model out*, *declarative-ifying transforms*, and *capturing lineage* — not re-modelling. Genuine differentiators to NOT erode: the lossless no-code Constructor spine, the generic-dimension law (Law 1), and SCD-2 + code-chain identity.
+
+## Decision
+
+- **A 12-capability maturity matrix with a seam-first, YAGNI-gated roadmap.** Top tier (TIER1): VTL, SDMX-REST serve, SIMS/ESMS + PROV.
+- **Three ports absorb the whole roadmap:** a Serializer port (`?format=`), a silver-layer `RuleSpec` (VTL-ready validation-as-data), and a QuerySpec — plus two cheap columns (`submission.provenance`, `release.pid`).
+- **Every capability is trigger-gated**; the moat is the lossless Constructor + Law-1 generic dims, which every capability must preserve (stay declarative).
+
+## Rejected Alternatives
+
+1. **Build all 12 capabilities now (a full VTL engine, full SDMX-REST, full SIMS)** — REJECTED (YAGNI): the seams/ports go in cheaply now; the builds wait for named triggers. Over-building risks the wrong design with no consumer.
+2. **Bolt SDMX on as an export format (the benchmarked-platforms approach)** — REJECTED: here SDMX IS the domain model, not an export shim; the roadmap serves the model out rather than re-modelling to a serialization.
+3. **Erode the declarative Constructor spine to add a capability faster** — REJECTED: a function-in-config forfeits the platform's moat; every capability must stay declarative/authorable.
+
+## Consequences
+
+- Positive: a clear maturity target with three ports that absorb most of the roadmap; the moat (no-code spine, Law 1) is explicitly protected.
+- Negative / cost: the vision is not a build order — discipline is required to only build behind a triggered seam.
+- Related: [[ADR-004]] (Ingestion) supplies the Serializer/QuerySpec/RuleSpec seams; [[ADR-007]] (SDMX P1) supplies the information-model completeness.
+
+---
+
+## Detailed Record (preserved verbatim from architect memory)
+
+> Migrated from `.claude/agent-memory/architect/`.
+
 
 # North-Star — statistical-data + ingestion architecture (maturity-gap vision)
 

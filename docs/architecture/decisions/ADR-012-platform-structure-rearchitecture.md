@@ -1,9 +1,42 @@
 ---
-name: adr-platform-structure-rearchitecture
-description: ADR — critical re-architecture of platform/ structure; engine/ vs packages/ naming, @geostat→@statdash scope, missing contracts package, laws-vs-reality drift, Strangler-Fig migration
-metadata:
-  type: project
+title: Platform Structure Re-architecture
+status: Proposed
+date: 2026-06-23
+authors: architect (Opus)
+migrated_from: adr_platform_structure_rearchitecture
 ---
+
+# ADR-012 — Platform Structure Re-architecture
+
+**Status:** Proposed (Strangler-Fig migration). Note: the target names in this record are largely realized in the current tree (`platform/packages/**`, `@statdash/*`, `packages/contracts`); this ADR is the decision record for that move.
+
+## Context
+
+`platform/` is a pnpm monorepo whose libraries lived under `engine/{expr,core,charts,styles,react,plugins}` as `@geostat/*`, resolved via Vite alias + tsconfig paths to source (no per-package build). The dependency arrow (`expr ← core ← react ← plugins ← apps`) is enforced by `eslint no-restricted-imports` — a real fitness function. The mandate was to critically re-architect against best-in-class (Nx/Turborepo, Clean Architecture, DDD package-by-domain) rather than rubber-stamp: the `engine/` name, the tenant-specific `@geostat` scope, and a missing shared contracts package were the laws-vs-reality drift.
+
+## Decision
+
+- **`engine/` → `packages/`**, **`@geostat/*` → `@statdash/*`**, and add a NEW innermost **`@statdash/contracts`** zero-dep shared-types layer (importable by all, including `apps/api`, which the arrow forbids from importing `packages/react`).
+- **Keep what is good:** the enforced dependency-arrow fitness function, source-condition resolution (zero build-step DX with a publishable `dist` story), and the expr/core/react/charts DDD package-by-layer split.
+- **Migrate via Strangler-Fig**, not a big-bang rename.
+
+## Rejected Alternatives
+
+1. **Keep the `engine/` name and `@geostat` scope** — REJECTED: `engine/` under-describes a package set, and a tenant-named scope erodes the platform's tenant-agnostic goal; `packages/` + `@statdash/*` is neutral and conventional.
+2. **Introduce per-package builds (drop source-condition resolution)** — REJECTED: source-condition resolution gives zero-build DX while keeping a publishable dist; per-package builds would add a build step with no benefit for the source consumers.
+3. **Big-bang rename in one commit** — REJECTED: high blast radius; Strangler-Fig migration keeps the tree green throughout.
+
+## Consequences
+
+- Positive: neutral naming, a proper contracts layer that `apps/api` can import without breaking the arrow, DDD package-by-layer preserved.
+- Negative / cost: a repo-wide rename touching aliases, tsconfig paths, and imports; the eslint arrow must be updated in lockstep.
+
+---
+
+## Detailed Record (preserved verbatim from architect memory)
+
+> Migrated from `.claude/agent-memory/architect/`.
+
 
 # ADR — Platform Structure Re-architecture (proposed)
 

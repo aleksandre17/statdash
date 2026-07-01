@@ -1,9 +1,41 @@
 ---
-name: adr-no-privileged-element-capability-nav
-description: ADR — de-privilege plugin node types from engine/shared layers; capability-driven nav (nav-contributor + nav-transparent caps), relocate section-specific shared files into the section plugin, generalize DefaultSectionShell to a fallback, FF-NO-PRIVILEGED-NODE fitness fn
-metadata:
-  type: project
+title: No Privileged Element / Capability Nav
+status: Proposed
+date: 2026-06-24
+authors: architect (Opus)
+migrated_from: adr_no_privileged_element_capability_nav
 ---
+
+# ADR-014 — No Privileged Element / Capability Nav
+
+**Status:** Proposed (P0–P5).
+
+## Context
+
+Only `navUtils` hardcodes concrete node types (`section` / `georgraph` / `row`) to build navigation — a privileged-element violation of the engine's otherwise open, registry-driven model. `DefaultSectionShell` is a misnamed fallback, and section anchor-nav is coupled to those specific types rather than to a capability.
+
+## Decision
+
+- **Nav-contributor + nav-transparent capabilities + a registry-driven visitor.** A node declares (via capability) that it contributes a nav entry or is nav-transparent; `navUtils` walks the registry by capability instead of matching hardcoded types.
+- **Generalize the anchor model:** `SectionNavContext` becomes a generic anchor-nav context; `DefaultSectionShell` is recognized as a generic fallback, not a privileged type.
+
+## Rejected Alternatives
+
+1. **Keep hardcoded node-type checks in `navUtils` (status quo)** — REJECTED: the one remaining privileged-element violation; a new registered node cannot participate in nav without editing `navUtils` (closed to extension).
+2. **Introduce a privileged `Section` base type that owns nav** — REJECTED: re-privileges an element and couples nav to inheritance; a capability + registry visitor keeps nav open and composition-based.
+
+## Consequences
+
+- Positive: nav becomes registry-driven and open (a new node opts into nav via a capability); no hardcoded node types remain.
+- Negative / cost: a migration of `navUtils` to the capability visitor; existing section types must declare the capability.
+- Fitness function: `FF-NO-PRIVILEGED-NODE`.
+
+---
+
+## Detailed Record (preserved verbatim from architect memory)
+
+> Migrated from `.claude/agent-memory/architect/`.
+
 
 # ADR — No Privileged Element: Capability-Driven Nav + Shared-Layer De-Privileging
 

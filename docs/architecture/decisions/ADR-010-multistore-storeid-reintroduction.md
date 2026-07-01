@@ -1,9 +1,41 @@
 ---
-name: multistore-storeid-reintroduction
-description: ADR — assessment of re-introducing the storeId/multi-store datasource architecture (multi-store-platform.md vision) vs current buildStoreManifest+resolveStore. Verdict: the spine is ALREADY LIVE; re-adopt a contained slice (node-level storeKey wiring + classifier-tier resolution + Constructor source authoring), DEFER the Tier-2/3 envelope + data-blending. Three real cubes already seeded = the second consumer exists.
-metadata:
-  type: project
+title: Multi-store / storeId Re-introduction
+status: Accepted (implemented)
+date: 2026-06-25
+authors: architect (Opus)
+migrated_from: adr_multistore_storeid_reintroduction
 ---
+
+# ADR-010 — Multi-store / storeId Re-introduction
+
+**Status:** Accepted (implemented). The routing spine is LIVE: `buildStoreManifest` + `resolveStore` + node `storeKey`, with three real cubes seeded (gdp/accounts/regional). What was dropped (and stays deferred behind named doors) is the authoring + envelope half. See [[project_data_binding_shipped]].
+
+## Context
+
+Multi-store routing (a node selects which named cube it reads) appeared sidelined, but investigation found the spine already live. What was actually dropped was the AUTHORING + ENVELOPE half: `ApiResponse` Tier-2/3, `structureUrl`, the auth union, `getMetadata`/`testConnection`, and blending. The question was how much to re-adopt.
+
+## Decision
+
+- **Re-adopt a contained slice, not the whole envelope.** M0: prove routing. M1: metric → store (via R1, the semantic-layer spine of [[ADR-001]]). M2: a Constructor authoring seam for the source.
+- **Defer envelope / auth / blending behind named doors D1–D3.** Benchmarked per platform: Grafana Mixed, Cube dataSource-on-measure, Tableau blend, Superset dataset, Looker model.
+
+## Rejected Alternatives
+
+1. **A node-level `DataSpec.data` union to select the store** — REJECTED (same as [[ADR-001]] rejection B): a second "which data" mechanism beside `storeKey` = fragmentation. The discriminant stays `storeKey` → kind via the manifest.
+2. **Restore the full envelope/auth/blending now** — REJECTED: no consumer for most of it; re-adopt only the contained routing + metric→store + authoring slice, gate the rest behind D1–D3 (YAGNI).
+
+## Consequences
+
+- Positive: routing is live and proven; metric→store and source authoring are the bounded next steps; envelope/auth/blending are trigger-gated.
+- Negative / cost: the authoring half and the response envelope remain unbuilt until their doors open.
+- Fitness functions: `FF-MULTISTORE-ROUTES`, `FF-METRIC-NAMES-STORE`, `FF-SOURCE-AUTHORABLE`.
+
+---
+
+## Detailed Record (preserved verbatim from architect memory)
+
+> Migrated from `.claude/agent-memory/architect/`.
+
 
 # ADR — Multi-store / storeId Architecture: Re-introduce, Partially, or Defer?
 

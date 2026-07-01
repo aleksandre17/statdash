@@ -101,7 +101,7 @@
     "roadmap_file": "docs/roadmap.md",
     "layers_dir": "docs/layers",
     "learning_dir": "docs/learning",
-    "decisions_file": "docs/architecture/decisions.md",
+    "decisions_file": "docs/architecture/decisions/",
     "work_dir": "work"
   },
   "hygiene": {

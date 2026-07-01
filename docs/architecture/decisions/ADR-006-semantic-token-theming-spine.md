@@ -1,9 +1,44 @@
 ---
-name: adr-semantic-token-theming-spine
-description: Canonical semantic-token / theming spine — 3-tier tokens (primitive→semantic→component), brand-neutral default theme + tenant override seam via [data-tenant]/runtime-injected vars, byte-identical geostat reconciliation (#0080BE not #005a9c), Strangler-Fig tokenization of ~377 literals across ~34 shell files, token-only fitness fns. Resolves the de-tenant north-star: geostat palette lives as a tenant theme, packages/ stays brand-neutral.
-metadata:
-  type: project
+title: Semantic-Token / Theming Spine
+status: Proposed
+date: 2026-06-24
+authors: architect (Opus)
+migrated_from: adr_semantic_token_theming_spine
 ---
+
+# ADR-006 — Semantic-Token / Theming Spine
+
+**Status:** Proposed (Strangler-Fig P0–Pfinal over ~34 files).
+
+## Context
+
+Brand colors and theme values are hardcoded across ~34 files, making re-branding a code change and blocking multi-tenant / white-label theming. There is no token layer between raw values and components, and no way to override a brand per tenant without editing components.
+
+## Decision
+
+- **Three-tier semantic tokens** (primitive → semantic role → component) with a brand-neutral default set and a `[data-tenant]` attribute override layer.
+- **Byte-identical geostat**: the reconciliation maps every current role → value so the migration is visually lossless (e.g. accent `#0080BE`, not the incidental `#005a9c`).
+- **CSS attribute scoping, NOT CSS-Modules** — attribute selectors preserve byte-identity of emitted class names and the cascade; CSS-Modules would rename classes and break the identity guarantee.
+- **De-tenant resolution:** accent → tenant layer; neutrals → default layer.
+
+## Rejected Alternatives
+
+1. **CSS-Modules for theme scoping** — REJECTED: renames classes and breaks byte-identity with the current output; attribute scoping keeps the cascade and emitted names stable.
+2. **Keep hardcoded per-component colors (status quo)** — REJECTED: re-branding stays a code change; no tenant override is possible; violates SSOT for design values.
+3. **A single flat token map (no role tier)** — REJECTED: without the semantic-role tier, tenant overrides must restate every primitive; the role tier is what makes an override small and safe.
+
+## Consequences
+
+- Positive: re-branding becomes a token/attribute change, not a code change; tenant override is a thin layer; geostat remains byte-identical.
+- Negative / cost: a ~34-file Strangler migration; a role→value reconciliation table must be maintained during transition.
+- Fitness functions: `FF-TOKEN-ONLY`, `FF-THEME-COMPLETE`, `FF-TENANT-OVERRIDE`.
+
+---
+
+## Detailed Record (preserved verbatim from architect memory)
+
+> Migrated from `.claude/agent-memory/architect/`.
+
 
 # ADR — Semantic-Token / Theming Spine (visual cohesion + multi-tenant theming)
 

@@ -1,9 +1,42 @@
 ---
-name: adr-sdmx-p1-frontier
-description: ADR — SDMX-P1 domain-completeness frontier; prioritized P1 set (ConceptScheme separation, dataset lifecycle FSM, CategoryScheme) NOW vs ref-metadata/quality/REST-API deferred; V27+ roadmap, laws-aligned, rejected alternatives
-metadata:
-  type: project
+title: SDMX P1 Frontier
+status: Proposed
+date: 2026-06-23
+authors: architect (Opus)
+migrated_from: adr_sdmx_p1_frontier
 ---
+
+# ADR-007 — SDMX P1 Frontier
+
+**Status:** Proposed (prioritized P1 SDMX capability set).
+
+## Context
+
+The cube already models the SDMX Information Model as its spine. The question is *which* SDMX capabilities to build next (P1) versus defer, without over-building. Candidates: ConceptScheme separation, dataset lifecycle FSM, CategoryScheme, reference metadata, data quality, SDMX-REST serving.
+
+## Decision
+
+- **Do NOW (P1):** ConceptScheme separation (V27), dataset lifecycle FSM (V28), CategoryScheme (V29).
+- **Defer (with named doors):** reference-metadata, data-quality, SDMX-REST serving.
+- **Distinguish release ≠ dataset-lifecycle** — a publication event is not the same aggregate as the dataset's maintenance lifecycle state.
+
+## Rejected Alternatives
+
+1. **Build reference-metadata + data-quality now** — REJECTED: no consumer yet; deferred behind doors so the P1 slice ships first (YAGNI, Pareto).
+2. **Build full SDMX-REST serving now** — REJECTED: the serve surface is a large, separable capability better gated behind the North-Star Serializer port ([[ADR-015]]); P1 is the information-model completeness, not the wire protocol.
+3. **Collapse release and dataset-lifecycle into one state field** — REJECTED: they are distinct aggregates; conflating them loses the publication-event history.
+
+## Consequences
+
+- Positive: the SDMX information model reaches P1 completeness (concepts, lifecycle, categorisation) before serving concerns; deferred capabilities have explicit triggers.
+- Negative / cost: three additive migrations (V27–V29); the deferred serve surface remains a gap until the door opens.
+
+---
+
+## Detailed Record (preserved verbatim from architect memory)
+
+> Migrated from `.claude/agent-memory/architect/`.
+
 
 # ADR-00xx — SDMX-P1 Domain-Completeness Frontier (design only; impl = next)
 

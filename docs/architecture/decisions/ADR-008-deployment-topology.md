@@ -1,9 +1,44 @@
 ---
-name: adr-deployment-topology
-description: Production deployment ADR — per-app reverse-proxy single-origin (nginx serves SPA + proxies /api/ to internal api), kills CORS '*'/CSP-patch/local-build; root-causes the tsc -b peer-dep image-build failure (vite-only build stage) + the hardcoded localhost:3001 SPA fallback that defeats relative base
-metadata:
-  type: project
+title: Deployment Topology (per-app single-origin reverse proxy)
+status: Proposed
+date: 2026-06-25
+authors: architect (Opus)
+migrated_from: adr_deployment_topology
 ---
+
+# ADR-008 — Deployment Topology
+
+**Status:** Proposed (per-app single-origin reverse-proxy deployment).
+
+## Context
+
+The SPA and API are deployed as separate origins, which forced CORS `'*'`, a served-file CSP patch, local-build mounts, and three origins to coordinate. Two root causes were found: RC-1 the image `tsc -b` type-checks the whole `../../packages` tree so peer-deps (ajv/react-router-dom/i18next/apexcharts) are unresolved under a `shamefully-hoist=false` filtered install; RC-2 the SPA's `?? 'http://localhost:3001'` fallback defeats a relative base.
+
+## Decision
+
+- **Per-app reverse-proxy single-origin:** nginx serves the SPA and proxies `/api/` to the INTERNAL api; empty `VITE` base → relative `/api/`. Kills CORS `'*'`, the served-file CSP patch, local-build mounts, and the three-origin problem.
+- **RC-1 fix:** a vite-only build stage (drop `tsc -b` from the image; typecheck in CI) — NOT a global hoist and NOT a second full install band-aid.
+- **RC-2 fix:** the SPA fallback must become `''` (a frontend src change) so the relative base holds.
+- **D3:** CORS `origin:false` prod default; CSP `frame-ancestors` is header-only (a meta tag cannot loosen it — intersection/most-restrictive wins).
+
+## Rejected Alternatives
+
+1. **A2 — unified subpath (panel `basename` + external-product routing)** — REJECTED: couples the external panel product's routing to the deployment; single-origin per app is simpler and keeps the panel independently deployable.
+2. **A5 — global pnpm hoist to resolve peer-deps** — REJECTED: fixes the symptom (unresolved peers) by weakening isolation; the root cause is `tsc -b` in the image, fixed by a vite-only build stage.
+3. **Keep multi-origin + CORS `'*'` + CSP served-file patch** — REJECTED: three origins, a wildcard CORS, and patching CSP into served files are all symptom patches of the missing reverse proxy.
+
+## Consequences
+
+- Positive: one origin per app, no wildcard CORS, CSP meta unpatched, clean image build.
+- Negative / cost: requires an nginx reverse-proxy per app and a frontend fallback change; typecheck moves to CI.
+- Fitness functions: `FF-SAME-ORIGIN`, `FF-NO-WILDCARD-CORS`, `FF-IMAGE-BUILDS-CLEAN`, `FF-CSP-META-UNPATCHED`.
+
+---
+
+## Detailed Record (preserved verbatim from architect memory)
+
+> Migrated from `.claude/agent-memory/architect/`.
+
 
 # ADR — statdash-platform Production Deployment Topology
 

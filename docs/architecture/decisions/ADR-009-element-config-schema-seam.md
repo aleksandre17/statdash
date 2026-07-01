@@ -1,9 +1,42 @@
 ---
-name: adr-element-config-schema-seam
-description: ADR — element-specific config belongs on per-slice PropSchema (chrome/control/panel), NOT on shared base configs; thin ChromeConfig base + per-slice schema seam; fitness function guarding shared-base bloat (ISP/OCP)
-metadata:
-  type: project
+title: Element Config Schema Seam (per-slice, ISP-clean)
+status: Proposed
+date: 2026-06-23
+authors: architect (Opus)
+migrated_from: adr_element_config_schema_seam
 ---
+
+# ADR-009 — Element Config Schema Seam
+
+**Status:** Proposed.
+
+## Context
+
+Shared/base config types accumulate one element's props (e.g. `ChromeConfig.brandTitle`), bloating the base and forcing every element to carry fields it does not use — an ISP/OCP violation. There is no per-slice schema seam, so adding one element's concern widens a type everyone depends on.
+
+## Decision
+
+- **Kill shared-base bloat:** keep the base minimal; move element-specific fields to per-slice schemas consumed via `useSlotConfig`.
+- **Enforce with a base-minimality fitness function** so a new element's props cannot leak into the shared base.
+- Recorded verdicts for the controls slice and the KPI slice.
+
+## Rejected Alternatives
+
+1. **One shared base config carrying every element's props (status quo)** — REJECTED: violates ISP (elements depend on fields they don't use) and OCP (a new element widens the base); the base must stay thin.
+2. **A single monolithic per-page config type** — REJECTED: couples unrelated slices; per-slice schemas keep each element's contract cohesive and independently evolvable.
+
+## Consequences
+
+- Positive: thin base, cohesive per-slice schemas, ISP/OCP restored; the Constructor inspector reads per-slice schemas cleanly.
+- Negative / cost: a migration of existing base fields into slices; a fitness function must guard base minimality.
+- Fitness function: base-minimality assertion.
+
+---
+
+## Detailed Record (preserved verbatim from architect memory)
+
+> Migrated from `.claude/agent-memory/architect/`.
+
 
 # ADR — Per-Element Config Schema Seam (kill shared-base bloat)
 

@@ -1,9 +1,45 @@
 ---
-name: adr-mode-as-view-axis
-description: VISION on making `mode` a GENERIC declarative axis. FINAL = VISION #3 + v3-SYNTHESIS (capstone-of-capstones, BUILD-IT verdict). name=`perspective` (NOT `view` — collides with live node.view; OLAP-correct), one-way-door, READY (start P0 types+registry-alias + P-opt SSR-walkers, parallel) WITH 4 synthesis refinements locked at P0: (1) CUT snapshot from config→render-option; (2) page.perspectives:Record<param,PerspectiveAxis> (one container for def+state, multi-axis=future key); (3) scope=Record of REGISTRY-keyed scope-keys NOT closed interface (doors=registrations, true OCP); (4) facet on PerspectiveAxis.render NOT scope.facet (GoG). +new door D-GUARD (available?:VisibilityExpr). 7-door roadmap each =optional-field|Record-key|scope-key-registration, fitness-locked-shut. PerspectiveAxis{param,perspectives[]} (perspectives[0]=default, NO default? field) + PerspectiveDef{id,label,when?,scope:{timeBinding,metric?}}; active id in NEW generic ctx.perspectiveState:Record<string,string> (Harel orthogonal-regions, retires Law-1-violating ctx.timeMode). by-mode=DELETE everywhere (engine 8 sites + Constructor ByModeEditor + schema + tests, no shim). Expand-contract ORDER (HIGH-2): relax ContextMapping.timeMode→optional+Postel-derive FIRST → migrate 3 pages → delete. perspectiveState↔evalVisibility = single SSOT (HIGH-3): migrate evalVisibility positional mode?→ctx.perspectiveState[param]; rewire renderNode.ts:229 + BOTH SSR walkers + navUtils.getNavMode (6th site). modeOrder→perspectives[]-order SSOT (nav-sort too). INNOVATION: permalink generated from PerspectiveAxis registry (Law-9 guarantee). Lineage=OLAP perspectives NOT PowerBI bookmarks. Smells ELIMINATED not relocated (effects=orthogonality violation). PATH FIX: renderNode/navUtils/walkers/SiteRenderer all in packages/react/src/engine/** NOT plugins. Docs: platform/work/VISION-mode-as-perspective-axis.v3.md + .v3-PLAN.md
-metadata:
-  type: project
+title: Mode as a Generic `perspective` View Axis
+status: Proposed (final, ready to implement — one-way door)
+date: 2026-06-27
+authors: architect (Opus)
+migrated_from: adr_mode_as_view_axis
 ---
+
+# ADR-005 — Mode as a Generic `perspective` View Axis
+
+**Status:** Proposed — FINAL, ready to implement (a one-way-door reframe). The name `perspective` is confirmed (collision-free with live `node.view`, OLAP-correct). Detailed engine + full-stack plans exist (`.v3.md`, `.v3-PLAN.md`, `.v3-FULLSTACK.md`).
+
+## Context
+
+`mode` (year/range/both toggling) is currently a privileged, hardcoded concept threaded through the engine as `ctx.timeMode`, `ContextMapping.timeMode`, `BarDef.timeToggle`, `by-mode` DataSpec pivots, `KpiSpec.mode` (closed union), `modeOrder`, and a `mode-bar` node — a Law-1 violation (a privileged dimension) and a source of per-view duplication and special-case machinery (bar-visibility gates, `alwaysResolve`, effects). Lineage: OLAP perspectives / named-cube-query, NOT PowerBI bookmarks.
+
+## Decision
+
+- **Generalize `mode` into a generic `perspective` view axis.** `PerspectiveAxis{param, perspectives[]}` (perspectives[0] = default, one SSOT) + `PerspectiveDef{id, label, when?, scope:{timeBinding, metric?}}`. Active id lives in a NEW generic `ctx.perspectiveState: Record<string,string>` (Harel orthogonal-regions container), retiring `ctx.timeMode`.
+- **Delete `by-mode` everywhere with NO shim** (Strangler expand-contract: relax mandatory `ContextMapping.timeMode` to optional + Postel-derive first, migrate pages, then delete). Rewire all mode-reading sites to `ctx.perspectiveState[param]`.
+- **One primitive, composable to 2^N**: 7-door roadmap where each door is an optional field / Record-key / scope-key registration, fitness-locked shut. One perspective = zero machinery, structurally.
+- **Permalink GENERATED from the PerspectiveAxis registry** (param names + default-elision) — url-permalink becomes an architecture property, not a convention.
+
+## Rejected Alternatives
+
+1. **Name the axis `view`** — REJECTED: collides with the live `node.view` (HOW/WHEN params); the v2 `view`-named docs were deleted. `perspective` is collision-free and OLAP-correct.
+2. **Keep `mode` as a privileged closed concept (`timeMode`, `KpiSpec.mode` union, `by-mode` pivot) with a compatibility shim** — REJECTED: perpetuates the Law-1 violation and the per-view duplication machinery; the reframe ELIMINATES (not relocates) the bar-visibility gate, `alwaysResolve`, effects, and dup-span params.
+3. **PowerBI-bookmarks-style snapshot-from-config** — REJECTED: cut to a render-option, not a config primitive; snapshots are a view *rendering* choice, not a stored axis.
+4. **Multi-axis / `compare` / `navMode` as live axes now** — REJECTED (YAGNI): kept as deferred, shape-compatible peers (`scope.store/dims/blend/filters[]/facet`), not built until triggered.
+
+## Consequences
+
+- Positive: restores Harel orthogonality and Law-1 (no privileged dimension); one primitive yields composable multi-axis views; permalink becomes registry-derived.
+- Negative / cost: a large expand-contract migration across ~8 engine sites + Constructor + 6 mode-reading sites + 3 pages; it is a one-way door once `by-mode` is deleted.
+- Fitness functions: `FF-ONE-VIEW-NO-MACHINERY`, `FF-PERSPECTIVE-IS-PURE-FUNCTION`, `FF-NO-PER-VIEW-DUPLICATION`, `FF-VIEW-AXIS-GENERIC`, `FF-NO-BYMODE-REMNANT`, `FF-SNAPSHOT-VIEW-EQUIV`, `FF-SSR-WALKER-VIEW-AWARE`, `FF-PERMALINK-FROM-REGISTRY`.
+
+---
+
+## Detailed Record (preserved verbatim from architect memory)
+
+> Migrated from `.claude/agent-memory/architect/`. Full engine + full-stack sequencing (P0–P6, P4.5, P5.2) follows.
+
 
 # VISION — `mode` → generic `perspective` axis (perspective = f(state))
 

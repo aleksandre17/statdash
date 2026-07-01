@@ -1,9 +1,41 @@
 ---
-name: adr-time-range-readiness-seam
-description: Canonical seam for sourcing a dataset's available TIME RANGE so a year-select default {from:options,pick:last} resolves to the real latest year on the live async store WITHOUT hanging. VERDICT = A-variant (store-builder folds server time coverage into store.classifiers['time'], keeping the synchronous getOptions path; time stays a generic classifier per Law 1). Endpoint = cube profile gains timeCoverage (min/max + distinct periods) from existing cube_actual_region. Zero config migration. Plus 2 defense-in-depth guards (toObsParams omit from/to on unset; autoParse year-select no-value sentinel).
-metadata:
-  type: project
+title: Time-Range Readiness Seam
+status: Proposed
+date: 2026-06-25
+authors: architect (Opus)
+migrated_from: adr_time_range_readiness_seam
 ---
+
+# ADR-011 — Time-Range Readiness Seam
+
+**Status:** Proposed (the last data-render blocker).
+
+## Context
+
+A year-select of `{from: options, pick: last}` returns `[]` on a live `ApiStore` because `getOptions → resolveYears → store.classifiers['time']` is never populated (the store is built with nonTimeDims only). `getOptions` is fully synchronous (no async warm like `useNodeRows`), so any classifier-gate hangs forever. Two extra bugs compound it: `toObsParams` sends `from/to` even when unset, and `autoParse` treats a no-value year-select as `0` (the `Number(raw)||…||0` bug).
+
+## Decision
+
+- **A-variant: the store-builder folds server time coverage into `store.classifiers['time']` at build time**, so `{$cl:'time'}` resolves synchronously and `pick:last` picks the max — zero config migration, time stays a generic classifier (Law 1). Source = the cube profile gains `timeCoverage{min,max,periods}` from the existing V26 `cube_actual_region`. Readiness signal = the store-construction promise (already awaited by `buildStoreManifest`), `.catch`-degrades.
+- **Plus 2 guards:** `toObsParams` omits `from/to` on 0/unset (= all years); `autoParse` year-select no-value sentinel is not `0`.
+
+## Rejected Alternatives
+
+1. **B — a distinct query-type for time coverage** — REJECTED: it exists in `StoreQuery` but forces a filter-gate async rework + config migration, and opens door `D-DISTINCT` (a live-cardinality trigger). A-variant keeps time a generic classifier with no migration.
+2. **The 2 guards alone (no profile coverage)** — REJECTED as insufficient for precision: guards alone give correct all-years non-hang, but only folding server coverage gives latest-year precision (`pick:last` picks the real max).
+
+## Consequences
+
+- Positive: year-select resolves synchronously, no hang, latest-year default; time remains a generic classifier; time-coverage has one SSOT.
+- Negative / cost: the store-builder must fetch coverage at build time (fail-soft `.catch`-degrade).
+- Fitness functions: `FF-YEAR-DEFAULT-LATEST`, `FF-TIME-RANGE-LOADS`, `FF-NO-ZERO-TIME`, `FF-TIME-COVERAGE-SSOT`, `FF-NO-HANG`.
+
+---
+
+## Detailed Record (preserved verbatim from architect memory)
+
+> Migrated from `.claude/agent-memory/architect/`.
+
 
 # ADR — Time-Range Readiness Seam (year-select `pick:'last'` on the live store)
 

@@ -1,9 +1,46 @@
 ---
-name: adr-constructor-phase2
-description: ADR — Constructor (Phase 2) architecture; canvas/tree/inspector/preview model, registry editorMeta seam, capability-discovery palette, DataSpec authoring, publish/RBAC/i18n, round-trip guarantees
-metadata:
-  type: project
+title: Constructor (Phase 2 authoring core + G3 live preview)
+status: Accepted (substantially built, in progress)
+date: 2026-06-24
+authors: architect (Opus)
+consolidates: adr_constructor_phase2, adr_constructor_g3_live_preview
+supersedes: architect memory adr_constructor_phase2 + adr_constructor_g3_live_preview (now slim pointers)
 ---
+
+# ADR-003 — Constructor (authoring core + live preview)
+
+**Status:** Accepted, substantially built and green (verified on disk: Inspector, open store model, `fromNodePageConfig`, `suggestPanels`, `capabilityGate`, cube-profile, live preview, variant spine, `validateConfig`, generated JSON Schema). This ADR records the Phase-2 architecture (C0–C5) plus G3 (live-data preview) as one Constructor decision. The longer-horizon target is [[ADR-002]] (Vision).
+
+## Context
+
+The Constructor (`apps/panel`) is the visual authoring app that PRODUCES the configs the SDUI runner (`apps/geostat`) renders — "Constructor generates JSON, no code." It is far past a wizard: a live WYSIWYG canvas renders the REAL `NodePageRenderer` under a `SiteProvider` (Builder.io/Craft.js two-layer pattern), the palette is built purely from the open registry, the session is a flat Identity-Map store with undo/redo, the flat store projects to the engine tree via a lossless `to/fromNodePageConfig` adapter, and a PropSchema-driven Inspector renders the whole property panel generically via a `FieldControlRegistry`. The open questions were the remaining authoring seams (kill the closed `CanvasNodeKind` enum; open store model; PropSchema inspector coverage; cube-profile palette; round-trip fitness) and G3: showing live data in the canvas.
+
+## Decision
+
+- **Build ON the standing assets, do not replace them.** Close the seams: retire the closed `CanvasNodeKind` enum (store as open as the registry), populate the PropSchema inspector seam end-to-end, drive the palette from the cube profile, and lock round-trip with a fitness test.
+- **G3 live preview = inject a live store map into the canvas `SiteProvider stores=` prop via the SAME `buildStoreManifest` seam the runner uses.** Zero engine change (only the `stores` prop differs). Keep the empty `staticStore` as a toggle mode ("structural | live"). Fail-soft to static + badge when the profile/DataSpec/API is unavailable.
+- **Share the stats store-builder as one seam** (extract to `packages/plugins` or a shared registration both apps boot) so panel + runner use ONE builder (SSOT), rather than the panel importing another app (Law 3).
+
+## Rejected Alternatives
+
+1. **A separate, bespoke preview data pipeline for the canvas** — REJECTED: it would diverge from the runner's real render path and re-introduce the exact drift the SSOT store-manifest seam removes. Reuse the runner's `buildStoreManifest`.
+2. **Keep the closed `CanvasNodeKind` enum** for the Constructor store — REJECTED: it caps the builder below the open node registry (a new registered type would be un-authorable); the store must be as open as the registry (OCP).
+3. **Panel imports the geostat app's `stats` store-builder directly** — REJECTED: violates the dependency arrow (an app importing another app). Promote the builder to a shared package instead.
+4. **Live-data always-on in the canvas** — REJECTED as a forced default: structural (empty-store) preview stays a first-class mode; live-by-default vs opt-in is a product/UX call, not an architectural one.
+
+## Consequences
+
+- Positive: the canvas previews real data through the real render path with zero engine change; the builder is open to any registered node; round-trip is fitness-locked.
+- Negative / cost: extracting the shared store-builder is the one real architectural move; live preview must stay fail-soft to never crash the editor.
+- Fitness functions: round-trip (`fromNodePageConfig(toNodePageConfig(x)) ≡ x`), locale-coverage, undefined-drop contract.
+
+---
+
+## Detailed Records (preserved verbatim from architect memory)
+
+> Two original records follow, migrated from `.claude/agent-memory/architect/`.
+
+### A. Constructor (Phase 2): the JSON-generating authoring core
 
 # ADR — Constructor (Phase 2): the JSON-generating authoring core
 
@@ -185,3 +222,40 @@ Save-time validation pipeline (migrate-identity + serialize-roundtrip + locale-c
 - `NodeRegistry`: no API change needed for the Inspector (getSchema/getDefaults/getSlots exist). Optionally add `placeableInto(parentType): string[]` derived from `slots.accepts` to centralise drop-acceptance (currently overlay-side). (engine/react)
 - `apps/panel`: NEW `inspector/Inspector.tsx`, `inspector/FieldControlRegistry.ts`, `inspector/fields/LocaleField.tsx` etc.; REMOVE `CanvasNodeKind`, reshape store node to `{type,variant,props,childIds}`; ADD `canvasPageAdapter.fromNodePageConfig`; NEW `discovery/cubeProfile.ts` (fetch + cache) and `discovery/suggestPanels.ts` (pure). (panel agent + react-specialist)
 - `apps/api`: optional `GET /api/registry/manifest` if the panel should not import engine for the palette over the wire; enforce publisher role on POST `/:id/publish`. (api — currently mid-flight; coordinate.)
+
+
+---
+
+### B. Constructor G3: live-data preview in the canvas
+
+
+# ADR — Constructor G3: live-data preview in the canvas
+
+Status: PROPOSED (2026-06-24). Extends [[adr_constructor_phase2]] (closes its "Later/YAGNI — sampled-data preview" door). The Constructor is largely BUILT and green; G3 is the last open board gap.
+
+Board paths were STALE (`engine/`, `@geostat/*`). VERIFIED layout: `platform/apps/{api,geostat,panel}`, `platform/packages/{contracts,expr,core,charts,react,plugins}`, scope `@statdash/*`. Engine = `@statdash/engine` (packages/core), React adapter = `@statdash/react` (+ `@statdash/react/engine`).
+
+## The seam (verified)
+- Runner (`apps/geostat/src/app/App.tsx`): `<SiteProvider stores={stores} …>` where `stores` = `buildStoreManifest(manifest.datasources)`. Each descriptor routed by `registerStoreBuilder('stats', …)` (`apps/geostat/src/data/stats-registrations.ts`) → `new ApiStore(base, datasetCode, nonTimeDims, classifiers, fromStatsObsRow, metadata)` wrapped in `CachedStore`. `buildStoreManifest` lives in `packages/react/src/engine/storeManifest.ts`.
+- Panel canvas (`apps/panel/src/canvas/CanvasView.tsx`): `<SiteProvider stores={{ default: staticStore }}>` → `<NodePageRenderer page={…}>`. **Same prop, static map.**
+- Store resolution (`packages/react/src/engine/resolveNodeRows.ts` `resolveStore`): `ctx.pageStoreKey ?? 'default'` → `stores[key]` → first store → `staticStore`. So swapping the `default` entry (or adding keyed entries) is the entire injection.
+- G3 = replace the panel's static `stores` map with a LIVE one built through the SAME `buildStoreManifest` seam. Zero engine change. Law 3 holds: panel is the app shell that wires the store; renderer stays app-agnostic.
+
+## Decision
+- Build live stores in the panel via `buildStoreManifest(descriptors)` — but the `'stats'` builder currently lives in `apps/geostat` (Law 3: panel can't import another app). Promote `registerStoreBuilders` to a shared seam OR have the panel register its own builder. RECOMMENDED: extract the stats store-builder to `packages/plugins` (or a shared registration both apps boot), so panel + runner share ONE builder (SSOT, kills divergence). This is the real architectural move; the injection itself is trivial.
+- Descriptors come from the session's DataSources (`pickActiveDatasetCode` already derives the cube; `datasetCodeOf` reads `config.datasetCode`). The panel already loads the cube-profile (`discovery/cubeProfile.store.ts`, `useActiveProfile`) — same dataset, same `/api/cube/:code/profile` discovery surface.
+- Draft/unpublished edits preview fine: `ApiStore` reads OBSERVATIONS per-ObsQuery (Cache-Aside) keyed by the DataSpec the author is editing live — data is fetched against the live cube, structure comes from the in-memory draft page. No publish needed.
+
+## Invariants
+- `to/fromNodePageConfig` round-trip UNTOUCHED — G3 changes only the `stores` prop, not the page projection.
+- Empty-store preview STAYS as a mode (a "structural | live" toggle). PRODUCT decision: default mode + live-by-default-vs-opt-in is a user call (interactive editor request volume).
+- Fail-soft: profile absent / DataSpec unbound / API unreachable → fall back to `{ default: staticStore }` (the existing structural preview). The panel already has `mock-data.ts` + the cubeProfile 'error' state as graceful-degradation precedent. Never crash the editor.
+
+## Phased (Strangler-Fig)
+- G3.0: extract/share the stats store-builder so panel can call `buildStoreManifest`. Fitness: one builder, both apps register it.
+- G3.1: live store injected behind a toggle, default = structural (additive, reversible). Fitness: toggle off ≡ today's bytes-identical static preview.
+- G3.2: descriptors derived from session DataSources + debounce/cache for interactive edits. Fitness: N keystrokes ≤ M requests (CachedStore memo + specDimKey already gate this).
+
+## Rejected
+- Separate runner iframe against a published draft (already rejected in [[adr_constructor_phase2]] #4 — second runtime, needs publish, breaks draft-preview).
+- Replace static store outright (loses the intentional structural-preview mode).

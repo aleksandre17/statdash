@@ -1,9 +1,43 @@
 ---
-name: adr-shell-variant-style-spine
-description: ADR — declarative variant + scoped-style spine for the ~35-shell layer; kill hand-coded BEM modifier strings + inline variant→class logic via a VariantProjector registry that emits data-attrs (mirrors PresentationProjector + resolveViewState); meta-declared variants → PropSchema → Constructor; FF-NO-VARIANT-CLASS; CSS-attr scoping over CSS-Modules; P0–P6 Strangler-Fig
-metadata:
-  type: project
+title: Shell Variant / Style Spine
+status: Proposed
+date: 2026-06-24
+authors: architect (Opus)
+migrated_from: adr_shell_variant_style_spine
 ---
+
+# ADR-013 — Shell Variant / Style Spine
+
+**Status:** Proposed (Strangler-Fig P0–P6 over ~35 shells).
+
+## Context
+
+~35 shells hand-code BEM modifier strings and inline variant→class logic (e.g. `hero`/`compact` computed to class names in each component). This is Shotgun Surgery for any variant change and has no single declared vocabulary of variants; it also duplicates the pattern the engine already solved for presentation (`PresentationProjector`, `resolveViewState`).
+
+## Decision
+
+- **Meta-declared `VariantDef` → `resolveVariants` → data-attrs**, mirroring `PresentationProjector` and `resolveViewState`. `defineShell` wires `variantAttrs`; the shell renders data-attributes, CSS selects on them.
+- **Collapse `hero` + `compact` into one `emphasis` enum.**
+- **CSS attribute scoping, NOT CSS-Modules** — to preserve byte-identity of emitted output.
+
+## Rejected Alternatives
+
+1. **Keep hand-coded BEM modifier strings + inline variant→class logic (status quo)** — REJECTED: Shotgun Surgery across ~35 shells; no declared variant vocabulary; duplicates the engine's existing projector pattern.
+2. **CSS-Modules for variant scoping** — REJECTED: renames classes and breaks byte-identity; attribute scoping keeps emitted output stable (same reasoning as [[ADR-006]]).
+3. **A shared base with all variant flags** — REJECTED: bloats the base (ISP), same anti-pattern [[ADR-009]] rejects; variants are declared per shell meta.
+
+## Consequences
+
+- Positive: one declared variant vocabulary, data-attr driven, no inline class logic; mirrors the engine's projector pattern (consistency / least astonishment).
+- Negative / cost: a ~35-shell Strangler migration; `defineShell` must wire `variantAttrs`.
+- Fitness function: `FF-NO-VARIANT-CLASS`.
+
+---
+
+## Detailed Record (preserved verbatim from architect memory)
+
+> Migrated from `.claude/agent-memory/architect/`.
+
 
 # ADR — Declarative Variant + Scoped-Style Spine for the Shell Layer
 
