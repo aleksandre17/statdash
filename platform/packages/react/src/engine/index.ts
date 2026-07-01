@@ -98,6 +98,11 @@ export { generatePageConfigSchema, PAGE_ROOT_TYPES } from './generatePageConfigS
 export type { PageConfigSchema }                     from './generatePageConfigSchema'
 export { PropSchemaForm }                    from '../components/PropSchemaForm'
 export type { PropSchemaFormProps, FieldRenderProps } from '../components/PropSchemaForm'
+// ── Authoring config-semantics SSOT (P1) — re-exported from @statdash/engine ──
+//  The ONE dot-path reader/writer + the ONE PropField.showWhen evaluator, so the
+//  Constructor (apps/panel) consumes them via @statdash/react/engine and never
+//  forks a second copy. (DESIGN-authoring-schema-ssot §4 P1.)
+export { getAtPath, setAtPath, evalShowWhen } from '@statdash/engine'
 export { resolveNodeRows, resolveStore } from './resolveNodeRows'
 export { resolvePreliminary }      from './resolvePreliminary'
 // ── Panel title-badge seam — the reusable PANEL_TITLE_BADGE ritual ────────

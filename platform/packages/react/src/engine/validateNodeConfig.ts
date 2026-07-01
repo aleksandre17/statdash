@@ -15,25 +15,8 @@
 
 import type { PropSchema, PropField, ValidationError } from './types'
 import { nodeRegistry } from './register-all'
-
-// ── getAtPath — dot-path resolver ────────────────────────────────────────
-
-/**
- * Resolve a dot-path string into a nested object.
- * 'view.width' against { view: { width: 42 } } → 42.
- * Returns undefined for any missing segment.
- */
-function getAtPath(obj: unknown, path: string): unknown {
-  const segments = path.split('.')
-  let current: unknown = obj
-  for (const seg of segments) {
-    if (current === null || current === undefined || typeof current !== 'object') {
-      return undefined
-    }
-    current = (current as Record<string, unknown>)[seg]
-  }
-  return current
-}
+// P1: the ONE dot-path reader (config-semantics SSOT) — no local fork.
+import { getAtPath } from '@statdash/engine'
 
 // ── isPlainObject — guards the config root and object-typed fields ────────
 

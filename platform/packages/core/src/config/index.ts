@@ -10,6 +10,14 @@ export type { LinkIconKey, LinkDef }        from './links'
 export { evalVisibility }                   from './visibility'
 export { resolveTemplate }                  from './template'
 
+// ── Authoring config-semantics SSOT (prop-path grammar + showWhen) ─────────
+//  ONE dot-path reader/writer and ONE PropField.showWhen evaluator, shared by
+//  the runner (validate stored config) and the Constructor (Inspector read/write,
+//  save-guard). Re-exported through @statdash/react/engine so app import sites
+//  never fork these semantics. (DESIGN-authoring-schema-ssot §4 P1.)
+export { getAtPath, setAtPath }             from './prop-path'
+export { evalShowWhen }                     from './prop-visibility'
+
 export type {
   CascadeNode,
   Condition, WhenMap,

@@ -183,6 +183,13 @@ export { evalVisibility }                   from './config/visibility'
 export { resolveTemplate }                  from './config/template'
 export type { PerspectiveCarrier }          from './config/template'
 
+// ── Authoring config-semantics SSOT (P1) — dot-path grammar + showWhen ─────
+//  getAtPath/setAtPath: the one dot-path reader/writer (read=write parity, array
+//  segments = indices). evalShowWhen: the one PropField.showWhen evaluator.
+//  Shared by runner + Constructor; re-exported through @statdash/react/engine.
+export { getAtPath, setAtPath }             from './config/prop-path'
+export { evalShowWhen }                     from './config/prop-visibility'
+
 // ── Config Schema Versioning [N19 / P3-3] ────────────────────────────
 //  Stored page configs carry a `schemaVersion`. migratePageConfig() forward-
 //  migrates a raw JSONB blob from its stored version to CURRENT_SCHEMA_VERSION

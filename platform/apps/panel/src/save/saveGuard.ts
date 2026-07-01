@@ -26,7 +26,7 @@
 //
 import type { CanvasPage, Locale } from '../types/constructor'
 import type { PropField, PropSchema, NodePageConfig } from '@statdash/react/engine'
-import { nodeRegistry } from '@statdash/react/engine'
+import { nodeRegistry, getAtPath } from '@statdash/react/engine'
 import {
   migratePageConfig as migratePageBlob,
   isCurrentSchema,
@@ -170,7 +170,7 @@ function checkPerNodeValidity(page: CanvasPage, issues: SaveIssue[]): void {
     // same validateField the Inspector renders inline, so save and edit agree.
     const schema: PropSchema = nodeRegistry.getSchema(node.type, node.variant) ?? []
     for (const field of schema) {
-      const value = getAt(node.props, field.field)
+      const value = getAtPath(node.props, field.field)
       const error = validateField(field, value)
       if (error) {
         issues.push({ check: 'per-node-valid', message: error, nodeId, field: field.field })
@@ -202,7 +202,7 @@ function checkLocaleCompleteness(page: CanvasPage, locales: Locale[], issues: Sa
     const schema: PropSchema = nodeRegistry.getSchema(node.type, node.variant) ?? []
     for (const field of schema) {
       if (!isLocalized(field)) continue
-      const value = getAt(node.props, field.field)
+      const value = getAtPath(node.props, field.field)
       // An OPTIONAL localized field that is entirely absent is fine (the author
       // chose not to use it). Completeness is enforced only when the field is
       // REQUIRED, or when it HAS a value (a partially-filled localized value is
@@ -247,14 +247,6 @@ function missingLocales(value: unknown, locales: Locale[]): Locale[] {
 /** Every node id in the page (top-level + nested), depth-first, deduped. */
 function allNodeIds(page: CanvasPage): string[] {
   return Object.keys(page.nodes)
-}
-
-/** Read a dot-path value out of a props bag. */
-function getAt(obj: Record<string, unknown>, path: string): unknown {
-  return path.split('.').reduce<unknown>((acc, key) => {
-    if (acc != null && typeof acc === 'object') return (acc as Record<string, unknown>)[key]
-    return undefined
-  }, obj)
 }
 
 /** True if any nested value is a function (Law 2 — config must be pure data). */

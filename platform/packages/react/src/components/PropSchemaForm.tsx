@@ -1,17 +1,19 @@
-// ── PropSchemaForm — schema-driven property form (Pattern D) ───────────────
+// ── PropSchemaForm — headless schema-driven property form (reference fallback) ─
 //
-//  THE framework gap this closes:
-//    Every slice already declares a typed PropSchema (PropField[]) in its meta,
-//    and the platform already exposes it (nodeRegistry.getSchema / describeApp().
-//    propertySchemas / propSchemaToJsonSchema). But until now NOTHING rendered a
-//    FORM from a PropSchema — the Constructor (apps/panel) hand-writes a form per
-//    node type. That is the classic schema-driven-rendering miss: the schema is
-//    the Single Source of Truth, yet the UI duplicates it by hand. A new node
-//    type gets a palette tile and a slot contract for free, but NOT a form.
+//  STATUS (DESIGN-authoring-schema-ssot §3 — DEMOTED, marked for retirement).
+//    This is a headless, zero-dep, app-agnostic renderer of a PropSchema. It is
+//    NOT the authoring surface: the Constructor (apps/panel) uses its own richer
+//    Inspector stack (open FieldControlRegistry, LocaleField/EnumRefField,
+//    PropertyGroup fieldsets, inline validation) — deliberately, because dragging
+//    that app-level enum-ref/locale resolution down into packages/react would
+//    violate Law 3. PropSchemaForm is retained only as the reference fallback for
+//    a hypothetical *non-panel* headless embedder (YAGNI: retire once confirmed
+//    no such consumer exists). It shares the ONE config-semantics SSOT below
+//    (getAtPath/evalShowWhen from @statdash/engine) so it can never again drift
+//    into a second visibility/path-reader authority.
 //
-//  PropSchemaForm is the generic renderer: give it a PropSchema + a value object
-//  and it produces the whole property panel. A new node type now gets its form
-//  for free — schema-driven, JSON-Forms / RJSF / Retool-property-panel class.
+//  What it does: give it a PropSchema + a value object and it produces a property
+//  panel — schema-driven, JSON-Forms / RJSF class, semantic accessible HTML.
 //
 //  Law 3 (Clean Architecture): app-agnostic. NO react-admin, NO MUI, NO i18next.
 //    • Locale is resolved by a pure prop (`locale`, default 'en') over the
@@ -37,6 +39,9 @@
 import './PropSchemaForm.css'
 import { useCallback, type ReactNode } from 'react'
 import type { PropField, PropSchema, PropFieldType } from '../engine/types'
+// P1: consume the ONE config-semantics SSOT (dot-path read + showWhen) — this
+// component no longer forks its own copy (DESIGN-authoring-schema-ssot §3/§4 P1).
+import { getAtPath, evalShowWhen } from '@statdash/engine'
 
 // ── LocaleString resolution (pure, app-agnostic) ───────────────────────────
 
@@ -47,36 +52,6 @@ function resolveLabel(ls: AnyLocaleString, locale: string, fallback: string): st
   if (!ls) return fallback
   if (typeof ls === 'string') return ls
   return ls[locale] ?? ls['en'] ?? Object.values(ls)[0] ?? fallback
-}
-
-// ── dot-path get (read field value off the controlled value object) ────────
-
-function getAtPath(obj: unknown, path: string): unknown {
-  let cur: unknown = obj
-  for (const seg of path.split('.')) {
-    if (cur === null || cur === undefined || typeof cur !== 'object') return undefined
-    cur = (cur as Record<string, unknown>)[seg]
-  }
-  return cur
-}
-
-// ── showWhen — documented simple equality form only (NO eval) ──────────────
-//
-//  PropField.showWhen documents "chartType === 'bar'" style conditions. We
-//  support exactly that safe, declarative shape ( `field === 'value'` /
-//  `field === value` ) by parsing — never eval. Anything we can't parse is
-//  treated as "always visible" (Postel's Law: liberal, never throw on author
-//  input; richer expression support is a later, sandboxed enhancement).
-//
-function isVisible(showWhen: string | undefined, value: Record<string, unknown>): boolean {
-  if (!showWhen) return true
-  const m = /^\s*([\w.]+)\s*===\s*(.+?)\s*$/.exec(showWhen)
-  if (!m) return true
-  const [, lhs, rhsRaw] = m
-  const actual   = getAtPath(value, lhs)
-  const rhs      = rhsRaw.replace(/^['"]|['"]$/g, '')
-  // Compare as strings so 'bar' === 'bar' and 5 === '5' both behave intuitively.
-  return String(actual ?? '') === rhs
 }
 
 // ── Field renderer registry (OCP dispatch by PropFieldType) ────────────────
@@ -213,7 +188,7 @@ export function PropSchemaForm({
   idPrefix = 'psf',
 }: PropSchemaFormProps): ReactNode {
   const renderField = useCallback((field: PropField): ReactNode => {
-    if (!isVisible(field.showWhen, value)) return null
+    if (!evalShowWhen(field.showWhen, value)) return null
 
     const id       = `${idPrefix}-${field.field.replace(/\./g, '-')}`
     const renderer = field.options && field.options.length > 0
