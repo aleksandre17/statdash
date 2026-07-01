@@ -98,6 +98,8 @@ export { LINK_ICONS, InfoIcon, ChevronIcon } from './components/icons'
 // ── Layout primitives ─────────────────────────────────────────────────
 export { PanelLayout, PANEL_LAYOUT }         from './components/PanelLayout'
 export type { PanelLayoutProps }             from './components/PanelLayout'
+// ── Resilience primitives — top-level graceful-degradation boundary ────
+export { AppErrorBoundary }                  from './components/AppErrorBoundary'
 // ── Feedback primitives ───────────────────────────────────────────────
 export { EMPTY_STATE }                       from './components/feedback/EmptyState'
 export type { EmptyStateProps }              from './components/feedback/EmptyState'

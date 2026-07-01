@@ -21,12 +21,26 @@ export function AppHeaderShell({ surface = 'opaque' }: { surface?: HeaderSurface
   const slot   = useSlotConfig<AppHeaderConfig>()
   const t      = useResolveLocale()
 
+  // ── Fail-soft brand guard (ADR-0028) ──────────────────────────────────────
+  //  The runner boots to emptyManifest() when /api/bootstrap is unreachable; its
+  //  chromeConfig is then `{}` — no logo, no logoAlt. The header MUST degrade to
+  //  minimal, tenant-neutral chrome rather than dereference the absent logo
+  //  LocaleString: `t(config.logoAlt)` on `undefined` threw
+  //  "Cannot read properties of undefined (reading 'en')" and, with no error
+  //  boundary, unmounted the whole tree to a blank page. Render the brand link
+  //  ONLY when both the logo asset AND its alt text are present; absent ⇒ a
+  //  brand-free header (the nav + actions still render). No brand/locale literal
+  //  lives in this shared shell (Law 4) — the neutral state is the empty brand slot.
+  const hasBrand = Boolean(config.logoUrl && config.logoAlt)
+
   return (
     <header className={HEADER.block} {...(surface !== 'opaque' && { [HEADER.surfaceAttr]: surface })}>
       <div className={HEADER.inner}>
-        <Link to={`/${locale}`} className={HEADER.brand} aria-label={t(config.logoAlt)}>
-          <img src={config.logoUrl} alt={t(config.logoAlt)} className={HEADER.logo} />
-        </Link>
+        {hasBrand && (
+          <Link to={`/${locale}`} className={HEADER.brand} aria-label={t(config.logoAlt)}>
+            <img src={config.logoUrl} alt={t(config.logoAlt)} className={HEADER.logo} />
+          </Link>
+        )}
 
         <nav className={HEADER.nav} aria-label="Main navigation">
           {nav.map(item => (
