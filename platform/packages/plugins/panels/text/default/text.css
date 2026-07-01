@@ -1,6 +1,6 @@
 .text-panel {
-  padding:     var(--space-3);
-  line-height: 1.6;
+  padding:     var(--spacing-md);
+  line-height: var(--line-height-relaxed);
 }
 
 .text-panel[data-render="plain"] {
@@ -10,26 +10,26 @@
 .text-panel[data-render="rich"] h1,
 .text-panel[data-render="rich"] h2,
 .text-panel[data-render="rich"] h3 {
-  margin-top: var(--space-4);
+  margin-top: var(--spacing-lg);
 }
 
 .text-panel[data-render="rich"] a {
-  color: var(--color-primary);
+  color: var(--color-accent);
 }
 
 .text-panel[data-render="rich"] code {
-  background:    var(--color-surface-2);
-  border-radius: 3px;
+  background:    var(--color-surface-sunken);
+  border-radius: var(--radius-sm);
   padding:       0.1em 0.3em;
 }
 
 .text-panel[data-render="rich"] ul,
 .text-panel[data-render="rich"] ol {
-  padding-left: var(--space-4);
+  padding-left: var(--spacing-lg);
 }
 
 .text-panel[data-render="rich"] strong {
-  font-weight: 700;
+  font-weight: var(--font-weight-bold);
 }
 
 .text-panel[data-render="rich"] em {

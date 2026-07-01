@@ -142,6 +142,163 @@ describe('@statdash/styles — token parity', () => {
     expect(semanticColorRefs.length).toBeGreaterThan(0)
   })
 
+  // ── FF-DARK-COMPLETE — the dark theme covers the WHOLE semantic layer ────
+  //
+  // Root cause this guards: dark mode is a token-OVERRIDE layer. Any semantic
+  // color role the dark block does NOT redefine stays frozen at its LIGHT
+  // value — a light box / invisible text on a dark page. (The perspective
+  // switcher shipped exactly this: bg = --color-surface-frame, never flipped.)
+  //
+  // Rule: every semantic color role (--color-* / --status-* / --chart-color-*)
+  // bound by the default :root theme must be "dark-safe" — either redefined in
+  // the dark blocks, OR derived (via var()) exclusively from roles that are
+  // themselves dark-safe (transitive; a role that only references --gray-* /
+  // --color-surface / etc. inherits the flip for free). A bare hex/rgb literal
+  // that is not redefined in dark is NOT dark-safe. This makes "we forgot a
+  // dark value" a red test, not a memory note.
+  it('FF-DARK-COMPLETE: every semantic color role has a dark value (directly or transitively)', () => {
+    const src = readFileSync(cssPath, 'utf8')
+
+    function parseBlockAt(from: number): Map<string, string> {
+      const open = src.indexOf('{', from)
+      let depth = 0, end = open
+      for (let i = open; i < src.length; i++) {
+        if (src[i] === '{') depth++
+        else if (src[i] === '}') { depth--; if (depth === 0) { end = i; break } }
+      }
+      const block = src.slice(open + 1, end)
+      const map = new Map<string, string>()
+      const re = /(--[\w-]+)\s*:\s*([^;]+);/g
+      let m: RegExpExecArray | null
+      while ((m = re.exec(block)) !== null) map.set(m[1], m[2].trim())
+      return map
+    }
+
+    const defaultMap = parseBlockAt(src.indexOf(':root'))
+    const mediaMap   = parseBlockAt(src.indexOf(':root', src.indexOf('prefers-color-scheme: dark')))
+    const attrMap    = parseBlockAt(src.lastIndexOf('[data-theme="dark"]'))
+    const darkNames  = new Set<string>([...mediaMap.keys(), ...attrMap.keys()])
+
+    const varRefs = (val: string): string[] => {
+      const out: string[] = []
+      const re = /var\((--[\w-]+)/g
+      let m: RegExpExecArray | null
+      while ((m = re.exec(val)) !== null) out.push(m[1])
+      return out
+    }
+
+    const memo = new Map<string, boolean>()
+    function isDarkSafe(name: string, seen = new Set<string>()): boolean {
+      if (memo.has(name)) return memo.get(name)!
+      if (darkNames.has(name)) return true
+      if (seen.has(name)) return false           // cycle → not provably safe
+      seen.add(name)
+      const val = defaultMap.get(name)
+      if (val === undefined) return false
+      const refs = varRefs(val)
+      if (refs.length === 0) { memo.set(name, false); return false }  // bare literal, frozen
+      const safe = refs.every(r => isDarkSafe(r, seen))
+      memo.set(name, safe)
+      return safe
+    }
+
+    const semanticColor = [...defaultMap.keys()].filter(n =>
+      /^--color-/.test(n) || /^--status-/.test(n) || /^--chart-color-/.test(n),
+    )
+
+    const frozen = semanticColor.filter(n => !isDarkSafe(n))
+    if (frozen.length > 0) {
+      const list = frozen.sort().map(n => `${n}  (= ${defaultMap.get(n)})`).join('\n  ')
+      expect.fail(
+        `${frozen.length} semantic color role(s) stay FROZEN at their light value in dark mode:\n\n  ${list}\n\n` +
+          `Add a dark value to BOTH dark blocks in tokens.css (the @media prefers-color-scheme:dark ` +
+          `and [data-theme="dark"] selectors), or derive the role from one that already flips.`,
+      )
+    }
+    expect(semanticColor.length).toBeGreaterThan(30)   // guard vacuous pass
+  })
+
+  // The two dark selectors (system-preference @media + explicit attribute) MUST
+  // stay in lockstep — a value added to one and forgotten in the other is a
+  // half-dark theme. CSS has no cross-media-boundary DRY, so we assert equality.
+  it('FF-DARK-COMPLETE: the @media and [data-theme="dark"] blocks are identical', () => {
+    const src = readFileSync(cssPath, 'utf8')
+    function parseBlockAt(from: number): Map<string, string> {
+      const open = src.indexOf('{', from)
+      let depth = 0, end = open
+      for (let i = open; i < src.length; i++) {
+        if (src[i] === '{') depth++
+        else if (src[i] === '}') { depth--; if (depth === 0) { end = i; break } }
+      }
+      const block = src.slice(open + 1, end)
+      const map = new Map<string, string>()
+      const re = /(--[\w-]+)\s*:\s*([^;]+);/g
+      let m: RegExpExecArray | null
+      while ((m = re.exec(block)) !== null) map.set(m[1], m[2].replace(/\s+/g, ' ').trim())
+      return map
+    }
+    const mediaMap = parseBlockAt(src.indexOf(':root', src.indexOf('prefers-color-scheme: dark')))
+    const attrMap  = parseBlockAt(src.lastIndexOf('[data-theme="dark"]'))
+
+    const diffs: string[] = []
+    for (const [k, v] of mediaMap) {
+      if (!attrMap.has(k)) diffs.push(`${k}: in @media but missing from [data-theme="dark"]`)
+      else if (attrMap.get(k) !== v) diffs.push(`${k}: @media=${v} vs attr=${attrMap.get(k)}`)
+    }
+    for (const k of attrMap.keys()) {
+      if (!mediaMap.has(k)) diffs.push(`${k}: in [data-theme="dark"] but missing from @media`)
+    }
+    expect(diffs, `Dark blocks diverged:\n  ${diffs.join('\n  ')}`).toHaveLength(0)
+    expect(mediaMap.size).toBeGreaterThan(30)
+  })
+
+  // WCAG 2.1 AA in dark mode (Law 9): the key text/surface pairs — including
+  // the perspective switcher (secondary text on the --color-surface-frame
+  // track) that regressed — must clear 4.5:1 with their DARK values.
+  it('FF-DARK-COMPLETE: key control pairs clear WCAG AA contrast in dark mode', () => {
+    const src = readFileSync(cssPath, 'utf8')
+    const open = src.indexOf('{', src.lastIndexOf('[data-theme="dark"]'))
+    let depth = 0, end = open
+    for (let i = open; i < src.length; i++) {
+      if (src[i] === '{') depth++
+      else if (src[i] === '}') { depth--; if (depth === 0) { end = i; break } }
+    }
+    const block = src.slice(open + 1, end)
+    const val = (name: string): string => {
+      const m = new RegExp(`${name}\\s*:\\s*(#[0-9a-fA-F]{6})`).exec(block)
+      if (!m) throw new Error(`dark value for ${name} not a direct hex`)
+      return m[1]
+    }
+    const lin = (c: number): number => {
+      const s = c / 255
+      return s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4)
+    }
+    const lum = (hex: string): number => {
+      const r = parseInt(hex.slice(1, 3), 16)
+      const g = parseInt(hex.slice(3, 5), 16)
+      const b = parseInt(hex.slice(5, 7), 16)
+      return 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b)
+    }
+    const contrast = (a: string, b: string): number => {
+      const [hi, lo] = [lum(a), lum(b)].sort((x, y) => y - x)
+      return (hi + 0.05) / (lo + 0.05)
+    }
+    const pairs: [string, string, string][] = [
+      ['--color-text-secondary', '--color-surface-frame', 'switcher: unselected tab label on track'],
+      ['--color-accent',         '--color-surface',       'switcher: selected tab label'],
+      ['--color-text-primary',   '--color-surface',       'body text on page'],
+      ['--color-text-secondary', '--color-surface',       'secondary text on page'],
+      ['--color-text-primary',   '--color-surface-raised','text on raised card'],
+    ]
+    const fails = pairs
+      .map(([fg, bg, label]) => ({ label, ratio: contrast(val(fg), val(bg)) }))
+      .filter(p => p.ratio < 4.5)
+    expect(
+      fails,
+      `Dark-mode contrast < 4.5:1:\n  ${fails.map(f => `${f.label} = ${f.ratio.toFixed(2)}:1`).join('\n  ')}`,
+    ).toHaveLength(0)
+  })
+
   it('tokens.css defines at least the core token groups (smoke test)', () => {
     const required = [
       '--spacing-md',

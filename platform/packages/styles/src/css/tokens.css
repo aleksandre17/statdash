@@ -470,6 +470,73 @@
     --shadow-overlay: 0 4px 24px rgba(0, 0, 0, 0.65);
     --shadow-xl:      0 12px 40px rgba(0, 0, 0, 0.70);
     --shadow-inset:   inset 0 1px 2px rgba(0, 0, 0, 0.50);
+
+    /* ── Completing the semantic layer in dark (FF-DARK-COMPLETE) ──────────
+       Every Tier-2 role the shells consume gets an explicit dark value so no
+       role stays frozen at its light default. Prior to this the dark override
+       covered only a subset (surface/text/border/status/chart), leaving
+       ~30 roles — surface-frame, the accent extras, heading, trend, chart
+       chrome, the OBS_STATUS + error families — at their LIGHT values. That is
+       why the perspective switcher (bg = --color-surface-frame) rendered as a
+       frozen light box in dark mode. Grouped as in :root; kept byte-identical
+       to the [data-theme="dark"] block below (fitness-asserted). */
+
+    /* Text */
+    --color-text-faint:     #6a6f7c;
+
+    /* Surface — frame is the recessed segmented-control / inset track; on dark
+       it sits just BELOW the base surface so a selected tab (=--color-surface)
+       reads as raised, mirroring the light design (white tab on grey track). */
+    --color-surface-frame:  #0e0e16;
+    --color-surface-hover:  rgba(255, 255, 255, 0.06);   /* lighten on dark, not darken */
+    --color-skeleton:       #262633;
+
+    /* Border */
+    --color-border-subtle:      #232330;
+    --color-border-frame:       #2a2a38;
+    --color-border-interactive: #3a5068;
+
+    /* Accent extras (base --color-accent / -muted already flip above) */
+    --color-accent-hover:       #6bb6e8;
+    --color-accent-bg:          #17293b;
+    --color-accent-secondary:   #52b9a0;
+    --color-accent-chip-border: #26425c;
+
+    /* Display heading — bright on dark (was --blue-900, a near-black) */
+    --color-heading-display:    #f0f3fa;
+
+    /* Trend axis (always paired with a glyph — never color-only) */
+    --color-trend-positive:     #4fd0a3;
+    --color-trend-negative:     #e08e73;
+
+    /* Chart frame/grid chrome (categorical fills flip via --chart-color-*) */
+    --color-chart-frame:        #2c2c3a;
+    --color-chart-grid:         #22222e;
+
+    /* SDMX OBS_STATUS badges (dark-tuned) */
+    --status-obs-preliminary-bg:     #2a2310;
+    --status-obs-preliminary-border: #7a6320;
+    --status-obs-preliminary-fg:     #f0c969;
+    --status-obs-estimate-bg:        #122334;
+    --status-obs-estimate-fg:        #79b8ec;
+    --status-obs-revised-bg:         #25252f;
+    --status-obs-revised-fg:         #b4b8c4;
+    --status-obs-confidential-bg:    #2a1715;
+    --status-obs-confidential-fg:    #f3938b;
+    --status-total-bg:      #14251f;
+    --status-total-border:  #2f5a48;
+    --status-total-fg:      #6fd9b0;
+
+    /* Node-error surface (warm terracotta, dark-tuned) */
+    --color-error-bg:          #241715;
+    --color-error-bg-hover:    #2e1d1a;
+    --color-error-border:      #6a3a30;
+    --color-error-text:        #e0a090;
+    --color-error-text-strong: #f0b8a8;
+    --color-error-text-soft:   #c88a7a;
+
+    /* Vivid action-red — brighter for dark contrast */
+    --color-danger-fg:         #ff5c5c;
   }
 }
 
@@ -540,4 +607,63 @@
   --shadow-overlay: 0 4px 24px rgba(0, 0, 0, 0.65);
   --shadow-xl:      0 12px 40px rgba(0, 0, 0, 0.70);
   --shadow-inset:   inset 0 1px 2px rgba(0, 0, 0, 0.50);
+
+  /* ── Completing the semantic layer in dark (FF-DARK-COMPLETE) ────────────
+     Byte-identical to the @media (prefers-color-scheme: dark) additions above
+     (fitness-asserted). See that block for the rationale. */
+
+  /* Text */
+  --color-text-faint:     #6a6f7c;
+
+  /* Surface — recessed segmented-control / inset track (below base surface). */
+  --color-surface-frame:  #0e0e16;
+  --color-surface-hover:  rgba(255, 255, 255, 0.06);   /* lighten on dark, not darken */
+  --color-skeleton:       #262633;
+
+  /* Border */
+  --color-border-subtle:      #232330;
+  --color-border-frame:       #2a2a38;
+  --color-border-interactive: #3a5068;
+
+  /* Accent extras */
+  --color-accent-hover:       #6bb6e8;
+  --color-accent-bg:          #17293b;
+  --color-accent-secondary:   #52b9a0;
+  --color-accent-chip-border: #26425c;
+
+  /* Display heading */
+  --color-heading-display:    #f0f3fa;
+
+  /* Trend axis (always paired with a glyph — never color-only) */
+  --color-trend-positive:     #4fd0a3;
+  --color-trend-negative:     #e08e73;
+
+  /* Chart frame/grid chrome */
+  --color-chart-frame:        #2c2c3a;
+  --color-chart-grid:         #22222e;
+
+  /* SDMX OBS_STATUS badges (dark-tuned) */
+  --status-obs-preliminary-bg:     #2a2310;
+  --status-obs-preliminary-border: #7a6320;
+  --status-obs-preliminary-fg:     #f0c969;
+  --status-obs-estimate-bg:        #122334;
+  --status-obs-estimate-fg:        #79b8ec;
+  --status-obs-revised-bg:         #25252f;
+  --status-obs-revised-fg:         #b4b8c4;
+  --status-obs-confidential-bg:    #2a1715;
+  --status-obs-confidential-fg:    #f3938b;
+  --status-total-bg:      #14251f;
+  --status-total-border:  #2f5a48;
+  --status-total-fg:      #6fd9b0;
+
+  /* Node-error surface (warm terracotta, dark-tuned) */
+  --color-error-bg:          #241715;
+  --color-error-bg-hover:    #2e1d1a;
+  --color-error-border:      #6a3a30;
+  --color-error-text:        #e0a090;
+  --color-error-text-strong: #f0b8a8;
+  --color-error-text-soft:   #c88a7a;
+
+  /* Vivid action-red — brighter for dark contrast */
+  --color-danger-fg:         #ff5c5c;
 }
