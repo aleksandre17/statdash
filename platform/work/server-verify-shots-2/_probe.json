@@ -1,0 +1,578 @@
+{
+  "ka-gdp": {
+    "360": {
+      "status": "ok",
+      "errs": [],
+      "probe": {
+        "charts": [
+          {
+            "title": "Gross Domestic Product by expenditure appr",
+            "type": "bar",
+            "cardH": 421,
+            "chartH": 240,
+            "gapBelowPx": 17,
+            "fill": 0.57
+          }
+        ],
+        "maps": [
+          {
+            "cardH": 393,
+            "svgH": 219,
+            "svgW": 323,
+            "regionPaths": 10,
+            "distinctFillColors": 5,
+            "sampleFills": [
+              "rgb(0, 90, 156)",
+              "rgb(232, 113, 10)",
+              "rgb(27, 158, 119)",
+              "rgb(216, 27, 96)",
+              "rgb(123, 50, 148)"
+            ]
+          },
+          {
+            "cardH": 421,
+            "svgH": 240,
+            "svgW": 323,
+            "regionPaths": 5,
+            "distinctFillColors": 2,
+            "sampleFills": [
+              "rgba(0, 128, 190, 0.85)",
+              "rgba(229, 62, 62, 0.85)"
+            ]
+          }
+        ],
+        "panels": 0
+      }
+    },
+    "768": {
+      "status": "ok",
+      "errs": [],
+      "probe": {
+        "charts": [
+          {
+            "title": "Gross Domestic Product by expenditure appr",
+            "type": "bar",
+            "cardH": 285,
+            "chartH": 176,
+            "gapBelowPx": 4,
+            "fill": 0.62
+          }
+        ],
+        "maps": [
+          {
+            "cardH": 561,
+            "svgH": 458,
+            "svgW": 722,
+            "regionPaths": 10,
+            "distinctFillColors": 5,
+            "sampleFills": [
+              "rgb(0, 90, 156)",
+              "rgb(232, 113, 10)",
+              "rgb(27, 158, 119)",
+              "rgb(216, 27, 96)",
+              "rgb(123, 50, 148)"
+            ]
+          },
+          {
+            "cardH": 285,
+            "svgH": 176,
+            "svgW": 722,
+            "regionPaths": 5,
+            "distinctFillColors": 2,
+            "sampleFills": [
+              "rgba(0, 128, 190, 0.85)",
+              "rgba(229, 62, 62, 0.85)"
+            ]
+          }
+        ],
+        "panels": 0
+      }
+    },
+    "1024": {
+      "status": "ok",
+      "errs": [],
+      "probe": {
+        "charts": [
+          {
+            "title": "Gross Domestic Product by expenditure appr",
+            "type": "bar",
+            "cardH": 468,
+            "chartH": 176,
+            "gapBelowPx": 150,
+            "fill": 0.38
+          }
+        ],
+        "maps": [
+          {
+            "cardH": 468,
+            "svgH": 307,
+            "svgW": 468,
+            "regionPaths": 10,
+            "distinctFillColors": 5,
+            "sampleFills": [
+              "rgb(0, 90, 156)",
+              "rgb(232, 113, 10)",
+              "rgb(27, 158, 119)",
+              "rgb(216, 27, 96)",
+              "rgb(123, 50, 148)"
+            ]
+          },
+          {
+            "cardH": 468,
+            "svgH": 176,
+            "svgW": 468,
+            "regionPaths": 5,
+            "distinctFillColors": 2,
+            "sampleFills": [
+              "rgba(0, 128, 190, 0.85)",
+              "rgba(229, 62, 62, 0.85)"
+            ]
+          }
+        ],
+        "panels": 0
+      }
+    },
+    "1440": {
+      "status": "ok",
+      "errs": [],
+      "probe": {
+        "charts": [
+          {
+            "title": "Gross Domestic Product by expenditure appr",
+            "type": "bar",
+            "cardH": 500,
+            "chartH": 176,
+            "gapBelowPx": 193,
+            "fill": 0.35
+          }
+        ],
+        "maps": [
+          {
+            "cardH": 500,
+            "svgH": 347,
+            "svgW": 537,
+            "regionPaths": 10,
+            "distinctFillColors": 5,
+            "sampleFills": [
+              "rgb(0, 90, 156)",
+              "rgb(232, 113, 10)",
+              "rgb(27, 158, 119)",
+              "rgb(216, 27, 96)",
+              "rgb(123, 50, 148)"
+            ]
+          },
+          {
+            "cardH": 500,
+            "svgH": 176,
+            "svgW": 537,
+            "regionPaths": 5,
+            "distinctFillColors": 2,
+            "sampleFills": [
+              "rgba(0, 128, 190, 0.85)",
+              "rgba(229, 62, 62, 0.85)"
+            ]
+          }
+        ],
+        "panels": 0
+      }
+    },
+    "1920": {
+      "status": "ok",
+      "errs": [],
+      "probe": {
+        "charts": [
+          {
+            "title": "Gross Domestic Product by expenditure appr",
+            "type": "bar",
+            "cardH": 605,
+            "chartH": 176,
+            "gapBelowPx": 319,
+            "fill": 0.29
+          }
+        ],
+        "maps": [
+          {
+            "cardH": 605,
+            "svgH": 489,
+            "svgW": 773,
+            "regionPaths": 10,
+            "distinctFillColors": 5,
+            "sampleFills": [
+              "rgb(0, 90, 156)",
+              "rgb(232, 113, 10)",
+              "rgb(27, 158, 119)",
+              "rgb(216, 27, 96)",
+              "rgb(123, 50, 148)"
+            ]
+          },
+          {
+            "cardH": 605,
+            "svgH": 176,
+            "svgW": 773,
+            "regionPaths": 5,
+            "distinctFillColors": 2,
+            "sampleFills": [
+              "rgba(0, 128, 190, 0.85)",
+              "rgba(229, 62, 62, 0.85)"
+            ]
+          }
+        ],
+        "panels": 0
+      }
+    }
+  },
+  "ka-regional": {
+    "360": {
+      "status": "ok",
+      "errs": [],
+      "probe": {
+        "charts": [
+          {
+            "title": "Gross Domestic Product — regional comparis",
+            "type": "bar",
+            "cardH": 529,
+            "chartH": 374,
+            "gapBelowPx": 17,
+            "fill": 0.71
+          }
+        ],
+        "maps": [
+          {
+            "cardH": 509,
+            "svgH": 452,
+            "svgW": 388,
+            "regionPaths": 13,
+            "distinctFillColors": 6,
+            "sampleFills": [
+              "rgb(0, 113, 167)",
+              "rgb(217, 236, 245)",
+              "rgb(54, 143, 187)",
+              "rgb(108, 174, 206)",
+              "rgb(163, 205, 226)",
+              "rgb(0, 128, 190)"
+            ]
+          },
+          {
+            "cardH": 517,
+            "svgH": 330,
+            "svgW": 323,
+            "regionPaths": 18,
+            "distinctFillColors": 9,
+            "sampleFills": [
+              "rgb(0, 90, 156)",
+              "rgb(232, 113, 10)",
+              "rgb(27, 158, 119)",
+              "rgb(216, 27, 96)",
+              "rgb(123, 50, 148)",
+              "rgb(199, 154, 0)",
+              "rgb(78, 179, 211)",
+              "rgb(152, 78, 163)"
+            ]
+          },
+          {
+            "cardH": 529,
+            "svgH": 374,
+            "svgW": 323,
+            "regionPaths": 11,
+            "distinctFillColors": 1,
+            "sampleFills": [
+              "rgb(107, 123, 141)"
+            ]
+          }
+        ],
+        "panels": 1
+      }
+    },
+    "768": {
+      "status": "ok",
+      "errs": [],
+      "probe": {
+        "charts": [
+          {
+            "title": "Gross Domestic Product — regional comparis",
+            "type": "bar",
+            "cardH": 472,
+            "chartH": 374,
+            "gapBelowPx": 19,
+            "fill": 0.79
+          }
+        ],
+        "maps": [
+          {
+            "cardH": 523,
+            "svgH": 552,
+            "svgW": 866,
+            "regionPaths": 13,
+            "distinctFillColors": 6,
+            "sampleFills": [
+              "rgb(0, 113, 167)",
+              "rgb(217, 236, 245)",
+              "rgb(54, 143, 187)",
+              "rgb(108, 174, 206)",
+              "rgb(163, 205, 226)",
+              "rgb(0, 128, 190)"
+            ]
+          },
+          {
+            "cardH": 543,
+            "svgH": 425,
+            "svgW": 722,
+            "regionPaths": 18,
+            "distinctFillColors": 9,
+            "sampleFills": [
+              "rgb(0, 90, 156)",
+              "rgb(232, 113, 10)",
+              "rgb(27, 158, 119)",
+              "rgb(216, 27, 96)",
+              "rgb(123, 50, 148)",
+              "rgb(199, 154, 0)",
+              "rgb(78, 179, 211)",
+              "rgb(152, 78, 163)"
+            ]
+          },
+          {
+            "cardH": 472,
+            "svgH": 374,
+            "svgW": 722,
+            "regionPaths": 11,
+            "distinctFillColors": 1,
+            "sampleFills": [
+              "rgb(107, 123, 141)"
+            ]
+          }
+        ],
+        "panels": 1
+      }
+    },
+    "1024": {
+      "status": "ok",
+      "errs": [],
+      "probe": {
+        "charts": [
+          {
+            "title": "Gross Domestic Product — regional comparis",
+            "type": "bar",
+            "cardH": 474,
+            "chartH": 374,
+            "gapBelowPx": 20,
+            "fill": 0.79
+          }
+        ],
+        "maps": [
+          {
+            "cardH": 493,
+            "svgH": 485,
+            "svgW": 562,
+            "regionPaths": 13,
+            "distinctFillColors": 6,
+            "sampleFills": [
+              "rgb(0, 113, 167)",
+              "rgb(217, 236, 245)",
+              "rgb(54, 143, 187)",
+              "rgb(108, 174, 206)",
+              "rgb(163, 205, 226)",
+              "rgb(0, 128, 190)"
+            ]
+          },
+          {
+            "cardH": 493,
+            "svgH": 315,
+            "svgW": 468,
+            "regionPaths": 18,
+            "distinctFillColors": 9,
+            "sampleFills": [
+              "rgb(0, 90, 156)",
+              "rgb(232, 113, 10)",
+              "rgb(27, 158, 119)",
+              "rgb(216, 27, 96)",
+              "rgb(123, 50, 148)",
+              "rgb(199, 154, 0)",
+              "rgb(78, 179, 211)",
+              "rgb(152, 78, 163)"
+            ]
+          },
+          {
+            "cardH": 474,
+            "svgH": 374,
+            "svgW": 963,
+            "regionPaths": 11,
+            "distinctFillColors": 1,
+            "sampleFills": [
+              "rgb(107, 123, 141)"
+            ]
+          }
+        ],
+        "panels": 1
+      }
+    },
+    "1440": {
+      "status": "ok",
+      "errs": [],
+      "probe": {
+        "charts": [
+          {
+            "title": "Gross Domestic Product — regional comparis",
+            "type": "bar",
+            "cardH": 478,
+            "chartH": 374,
+            "gapBelowPx": 22,
+            "fill": 0.78
+          }
+        ],
+        "maps": [
+          {
+            "cardH": 457,
+            "svgH": 467,
+            "svgW": 644,
+            "regionPaths": 13,
+            "distinctFillColors": 6,
+            "sampleFills": [
+              "rgb(0, 113, 167)",
+              "rgb(217, 236, 245)",
+              "rgb(54, 143, 187)",
+              "rgb(108, 174, 206)",
+              "rgb(163, 205, 226)",
+              "rgb(0, 128, 190)"
+            ]
+          },
+          {
+            "cardH": 457,
+            "svgH": 312,
+            "svgW": 537,
+            "regionPaths": 18,
+            "distinctFillColors": 9,
+            "sampleFills": [
+              "rgb(0, 90, 156)",
+              "rgb(232, 113, 10)",
+              "rgb(27, 158, 119)",
+              "rgb(216, 27, 96)",
+              "rgb(123, 50, 148)",
+              "rgb(199, 154, 0)",
+              "rgb(78, 179, 211)",
+              "rgb(152, 78, 163)"
+            ]
+          },
+          {
+            "cardH": 478,
+            "svgH": 374,
+            "svgW": 1103,
+            "regionPaths": 11,
+            "distinctFillColors": 1,
+            "sampleFills": [
+              "rgb(107, 123, 141)"
+            ]
+          }
+        ],
+        "panels": 1
+      }
+    },
+    "1920": {
+      "status": "ok",
+      "errs": [],
+      "probe": {
+        "charts": [
+          {
+            "title": "Gross Domestic Product — regional comparis",
+            "type": "bar",
+            "cardH": 482,
+            "chartH": 374,
+            "gapBelowPx": 24,
+            "fill": 0.78
+          }
+        ],
+        "maps": [
+          {
+            "cardH": 582,
+            "svgH": 611,
+            "svgW": 928,
+            "regionPaths": 13,
+            "distinctFillColors": 6,
+            "sampleFills": [
+              "rgb(0, 113, 167)",
+              "rgb(217, 236, 245)",
+              "rgb(54, 143, 187)",
+              "rgb(108, 174, 206)",
+              "rgb(163, 205, 226)",
+              "rgb(0, 128, 190)"
+            ]
+          },
+          {
+            "cardH": 582,
+            "svgH": 449,
+            "svgW": 773,
+            "regionPaths": 18,
+            "distinctFillColors": 9,
+            "sampleFills": [
+              "rgb(0, 90, 156)",
+              "rgb(232, 113, 10)",
+              "rgb(27, 158, 119)",
+              "rgb(216, 27, 96)",
+              "rgb(123, 50, 148)",
+              "rgb(199, 154, 0)",
+              "rgb(78, 179, 211)",
+              "rgb(152, 78, 163)"
+            ]
+          },
+          {
+            "cardH": 482,
+            "svgH": 374,
+            "svgW": 1579,
+            "regionPaths": 11,
+            "distinctFillColors": 1,
+            "sampleFills": [
+              "rgb(107, 123, 141)"
+            ]
+          }
+        ],
+        "panels": 1
+      }
+    }
+  },
+  "ka-accounts": {
+    "360": {
+      "status": "ok",
+      "errs": [],
+      "probe": {
+        "charts": [],
+        "maps": [],
+        "panels": 0
+      }
+    },
+    "768": {
+      "status": "ok",
+      "errs": [],
+      "probe": {
+        "charts": [],
+        "maps": [],
+        "panels": 0
+      }
+    },
+    "1024": {
+      "status": "ok",
+      "errs": [],
+      "probe": {
+        "charts": [],
+        "maps": [],
+        "panels": 0
+      }
+    },
+    "1440": {
+      "status": "ok",
+      "errs": [],
+      "probe": {
+        "charts": [],
+        "maps": [],
+        "panels": 0
+      }
+    },
+    "1920": {
+      "status": "ok",
+      "errs": [],
+      "probe": {
+        "charts": [],
+        "maps": [],
+        "panels": 0
+      }
+    }
+  }
+}

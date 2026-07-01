@@ -1,18 +1,17 @@
 ---
 name: project-section-migration
-description: Stalled Strangler-Fig migration from legacy SectionBlock to new SectionShell — divergent twins, orphaned ExportBar, divergent geostat tsconfig
+description: Section Strangler-Fig is COMPLETE (twin retired, export+info wired); paths are packages/* not engine/*; divergent geostat tsconfig still real
 metadata:
   type: project
 ---
 
-The section node has TWO shells mid-migration (Strangler-Fig stalled): legacy `engine/plugins/nodes/section/default/components/SectionBlock.tsx` and new `engine/plugins/nodes/section/default/SectionShell.tsx`.
+**STATUS (verified 2026-06-28): the section migration COMPLETED.** Earlier "stalled twins" snapshot is retired.
+- Legacy `SectionBlock.tsx` twin is **gone**. The section folder is `packages/plugins/nodes/section/default/` with `SectionShell.tsx` + `SectionHeader.tsx` + `SectionMethodology.tsx` + `SectionSkeleton.tsx` — no `components/` subdir, no `SectionBlock`.
+- Info button is **wired** (`SectionShell.tsx:113 onToggleInfo={info.toggle}`); methodology disclosure renders (`:117-124`). The WCAG 4.1.2 dead-stub defect is **resolved**. `def.methodology` is now a real field.
+- Export is wired **per-panel, not per-section**: `PanelExportBar` (DI `ExportBar` via `createDefaultUI.ts:34`) is rendered in `ChartShell:52`, `GaugeShell:60`, `TableShell:61`. `ExportBar`/`useExport` are NOT orphaned. Section-level export is a documented YAGNI deferral (`SectionShell.tsx:126`), not a gap.
 
-**Why it matters:** functionality is split across the twins, so "is feature X built?" depends on WHICH shell you read.
-- Legacy `SectionBlock.tsx`: hardcoded Georgian strings (`ექსპორტი`, `ინფორმაცია`), but has a WIRED export button (`onClick={onExport}`, line 129).
-- New `SectionShell.tsx`: i18n via `useT`, but the info button (line ~152) is a dead stub (no onClick, WCAG 4.1.2 defect) and there is NO export wiring.
-- `ExportBar` + `useExport` (`engine/react/src/components/feedback/ExportBar.tsx`, `engine/react/src/engine/hooks/useExport.ts`) are fully functional (Blob download, CSV+SDMX-JSON registry) but have ZERO render-tree callers — N16 capability shipped but never connected to SectionShell.
-- `SectionNode.ts` has no `methodology`/`info` field — the info button is UI ahead of its data contract. `KpiCard.tsx` already has the correct conditional `methodologyUrl` pattern to copy.
+**Path naming:** real layout is `packages/{contracts,expr,core,charts,styles,react,plugins}` (npm scope `@statdash/*`). The old `engine/*` directory naming is RETIRED — any memory saying `engine/core` etc. means `packages/core`.
 
-**Divergent tsconfig:** `apps/geostat/tsconfig.app.json` is NOT on the green path. It `include`s `../../engine` and typechecks all engine source through the app resolution context → 284 errors (peer-dep TS2307, erasableSyntaxOnly TS1294, duplicate re-exports in `engine/plugins/registry.ts:18-22`). The ROOT `tsconfig.json` (project references) is the authoritative green build (0 errors). Do not trust per-app tsconfig error counts as platform health.
+**Divergent tsconfig (likely still real — re-verify before trusting):** `apps/geostat/tsconfig.app.json` historically typechecked all engine/package source through the app resolution context → hundreds of errors. The ROOT `tsconfig.json` (project references) is the authoritative green build. Do not trust per-app tsconfig error counts as platform health.
 
-**How to apply:** when auditing section/export/info features, check both shells and the root tsconfig (not tsconfig.app.json). The live render path uses SectionShell. Wiring ExportBar into SectionShell + retiring SectionBlock is the obvious next migration step. [[project-platform-maturity]]
+**How to apply:** the section node is no longer a migration site — treat it as canonical reference for shell anatomy (variants→data-attrs, useDisclosure info, per-panel export). [[project-platform-maturity]]

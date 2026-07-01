@@ -2,7 +2,8 @@
 
 ## Project
 - [Platform Maturity](project_platform_maturity.md) — what's already built vs genuinely missing; grep before claiming a gap
-- [Section Migration](project_section_migration.md) — stalled SectionBlock→SectionShell twins, orphaned ExportBar, divergent geostat tsconfig (use root tsconfig for health)
+- [Section Migration](project_section_migration.md) — section Strangler-Fig COMPLETE (twin gone, info+export wired); paths are packages/* not engine/*
+- [Color token JS-axis](project_color_token_jsaxis.md) — FF-TOKEN-ONLY guards CSS+plugins/react JS but NOT charts/core; brand #0080BE leaks there
 - [DB i18n divergence](project_db_i18n_divergence.md) — silver ingest validator hardcodes ka|en, diverges from V13/V14 gold locale contract; preview can pass what gold rejects
 - [DB schema](project_db_schema.md) — schema topology/model (V1-V15, corrected numbering); SDMX cube, medallion staging, revision logs
 - [DB schema gaps](project_db_schema_gaps.md) — genuine non-i18n weaknesses: no unit/measure model, annual time hardcode in query layer, RLS placeholder

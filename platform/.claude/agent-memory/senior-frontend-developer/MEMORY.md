@@ -1,6 +1,7 @@
 # Senior Frontend Developer — Memory Index
 
 ## Project
+- [Scrollbar utility + table overflow](scrollbar_utility_and_table_overflow.md) — AR-15: .scroll-fancy SSOT themed scrollbar (styles/css/scrollbar.css, token-derived); flex min-width:auto = table-clip root cause; apply .scroll-fancy to any new scroll pane
 - [Panel DataSpec editor contract](project_panel_dataspec_editor.md) — engine types are the contract the Constructor UI must produce; spec-text mismatches resolved toward engine
 - [Bootstrap runner Phase A (ADR-0026)](project_bootstrap_runner_phasea.md) — manifest is runtime SSOT; PageLoader resolves via usePageById; modes+formatters register post-bootstrap from manifest
 - [Constructor C3 + C5](project_panel_c3_c5.md) — cube capability-discovery (discovery/), active-dataset via DataSource.config.datasetCode, save guard (4 checks) wired into api-actions
