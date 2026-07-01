@@ -811,10 +811,25 @@
     "node_grid__default": {
       "type": "object",
       "properties": {
+        "templateColumns": {
+          "title": "Template columns",
+          "description": "string field",
+          "default": "repeat(auto-fit, minmax(min(100%, 24rem), 1fr))",
+          "type": "string"
+        },
+        "templateRows": {
+          "title": "Template rows",
+          "description": "string field",
+          "type": "string"
+        },
+        "templateAreas": {
+          "title": "Template areas",
+          "description": "string field",
+          "type": "string"
+        },
         "columns": {
-          "title": "Columns",
+          "title": "Columns (shorthand)",
           "description": "number field",
-          "default": 12,
           "type": "number"
         },
         "gap": {
@@ -823,8 +838,43 @@
           "default": "var(--spacing-md)",
           "type": "string"
         },
+        "autoFlow": {
+          "title": "Auto flow",
+          "description": "row: Row, column: Column, dense: Dense, row dense: Row dense, column dense: Column dense",
+          "default": "row",
+          "type": "string",
+          "enum": [
+            "row",
+            "column",
+            "dense",
+            "row dense",
+            "column dense"
+          ]
+        },
+        "autoColumns": {
+          "title": "Auto columns",
+          "description": "string field",
+          "type": "string"
+        },
+        "autoRows": {
+          "title": "Auto rows",
+          "description": "string field",
+          "type": "string"
+        },
         "align": {
           "title": "Align",
+          "description": "stretch: Stretch, start: Start, center: Center, end: End",
+          "default": "stretch",
+          "type": "string",
+          "enum": [
+            "stretch",
+            "start",
+            "center",
+            "end"
+          ]
+        },
+        "justify": {
+          "title": "Justify",
           "description": "stretch: Stretch, start: Start, center: Center, end: End",
           "default": "stretch",
           "type": "string",
