@@ -19,10 +19,14 @@ import { activePerspective }   from './perspective-state'
 //
 //  The carrier (step 1) is one of:
 //    • plain `string`                — passes through unchanged.
-//    • `{ year, range }` union       — PageDef.badge compatibility; the branch is
-//      chosen by the ACTIVE PERSPECTIVE id (ctx.perspectiveState, the SSOT), not the
-//      retired privileged `ctx.timeMode` field (System A, VISION #3 / P6). `year`/
-//      `range` are ENGINE vocabulary (not locales) — this is the union discriminant.
+//    • `PerspectiveCarrier`          — a `Record<perspectiveId, string>` collapsed to
+//      the ACTIVE perspective's arm (activePerspective(ctx.perspectiveState), the SSOT).
+//      GENERIC over N perspectives: the active id is looked up as a KEY — no `'year'`
+//      literal, no two-arm count (the orthogonal-axis law, DESIGN R3 / FF-NO-MODE-LITERAL;
+//      it retired the old `{year,range}` fused-mode `=== 'year'` branch). Distinguished
+//      from an i18n LocaleString by whether the active perspective id is a key of the
+//      carrier (a `{ ka, en }` bag has no perspective-id key ⇒ it falls through to locale
+//      resolution). Perspective ids are ENGINE vocabulary, not locales.
 //    • `LocaleString` `{ ka, en }`   — resolved to `ctx.locale` (generic, Law 1 — no
 //      hardcoded locale literal; first-value fallback when the active locale is
 //      absent). This is the localize-at-boundary discipline: resolveTemplate is the
@@ -37,8 +41,20 @@ import { activePerspective }   from './perspective-state'
 //  No `dangerouslySetInnerHTML` path exists in the engine.  If a future
 //  caller renders this as HTML it MUST call encodeHTML() first.
 //
+
+/**
+ * A perspective-keyed display carrier: `Record<perspectiveId, string>` collapsed to
+ * the ACTIVE perspective's arm. Generic over N perspectives (no mode literal, no arm
+ * count). Structurally a subset of the multi-locale `LocaleString`; disambiguated at
+ * resolve time by whether the active perspective id is a key (a genuine i18n bag has
+ * none). NOTE: a perspective id must not collide with a locale code (year/range vs
+ * ka/en — they never do); a collision would resolve the carrier arm, which for a
+ * matching locale is the same string anyway.
+ */
+export type PerspectiveCarrier = Record<string, string>
+
 export function resolveTemplate(
-  tpl:    LocaleString | { year: string; range: string },
+  tpl:    LocaleString | PerspectiveCarrier,
   ctx:    SectionContext,
   extras?: Record<string, unknown>,
 ): string {
@@ -61,18 +77,21 @@ export function resolveTemplate(
 
 // ── resolveCarrier — collapse the i18n / perspective carrier to one string ─────
 //
-//  string → itself; `{year,range}` perspective union → active branch; any other
-//  object → LocaleString resolved to the active locale. The union test uses the
-//  ENGINE keys (year/range), never locale literals, so a LocaleString (locale-keyed)
-//  is never mistaken for a perspective bag and vice-versa.
+//  string → itself; a perspective-keyed carrier → the ACTIVE perspective's arm; any
+//  other object → LocaleString resolved to the active locale. The perspective branch is
+//  taken ONLY when the active perspective id is a KEY of the carrier — generic over N
+//  perspectives, NO `'year'`/`'range'` literal and no arm count (FF-NO-MODE-LITERAL). A
+//  locale-keyed LocaleString (ka/en) carries no perspective-id key, so it is never
+//  mistaken for a perspective carrier and vice-versa.
 function resolveCarrier(
-  tpl:    LocaleString | { year: string; range: string },
+  tpl:    LocaleString | PerspectiveCarrier,
   ctx:    SectionContext,
   locale: string,
 ): string {
   if (typeof tpl === 'string') return tpl
-  if ('year' in tpl && 'range' in tpl) {
-    return activePerspective(ctx.perspectiveState) === 'year' ? tpl.year : tpl.range
+  const activeId = activePerspective(ctx.perspectiveState)
+  if (activeId !== undefined && Object.prototype.hasOwnProperty.call(tpl, activeId)) {
+    return String((tpl as PerspectiveCarrier)[activeId])
   }
   return resolveLocaleString(tpl, locale, locale)
 }

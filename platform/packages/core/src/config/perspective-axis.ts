@@ -20,7 +20,7 @@
 //  constant, not a branch); `metric` is a generic MetricDef ref. LAW 2: pure JSON,
 //  no functions, Constructor-authorable.
 
-import type { TimeBound, TimeDimensionSpec } from './data-spec'
+import type { TimeBound, TimeDimensionSpec, TimeGranularity } from './data-spec'
 import type { VisibilityExpr }     from './visibility'
 import type {
   PerspectiveScope as ContractPerspectiveScope,
@@ -46,10 +46,65 @@ import type {
 //  a deferred scope-key (store/dims/blend) is already a valid member (the Record
 //  half), so a future optional field is purely additive (OCP, SYNTHESIS §1.4).
 export type PerspectiveScope = ContractPerspectiveScope & {
-  /** Year-pin vs [from,to] window — the time-axis binding the active perspective applies before resolution. */
+  /**
+   * The dim binding the active perspective applies before resolution — a GENERIC
+   * `DimBinding` with an EXPLICIT `selection` discriminant (point/window/all). This
+   * is the orthogonal-axis form (DESIGN-time-mode-decision §3.1): `year`/`range` are
+   * two `selection.kind` values of ONE binding, authored once — never a shape-inferred
+   * `pin?` XOR `range?` (the illegal-state-permitting legacy form, retired).
+   */
+  binding?:     DimBinding
+  /**
+   * LEGACY — the time-period-SHAPED binding (pin XOR range), superseded by `binding`.
+   * Kept as a Postel alias so mid-migration configs still resolve; the parser lowers
+   * it to a `DimBinding` (bindingFromTimeBinding). Retired wholesale at P-final (the
+   * config authors `binding`; grep-zero `timeBinding`). Do NOT author both on one scope.
+   * @deprecated author `binding` with an explicit `selection` instead.
+   */
   timeBinding?: PerspectiveTimeBinding
   /** Perspective-wide measurement swap — a MetricDef ref (raw measure code today; metric-id when registered). */
   metric?:      string
+}
+
+// ── Selection — the EXPLICIT point/window/all discriminant (DESIGN R2) ─────────
+//
+//  The load-bearing change of the orthogonal-axis law: `year`/`range` stop differing
+//  by WHICH optional field is set (the legacy `pin?` XOR `range?` shape, a
+//  representable-but-undefined illegal state — `pin` AND `window` both set). They
+//  become two explicit values of ONE `kind` discriminant, making the illegal state
+//  UNREPRESENTABLE at the type level and unauthorable in the Constructor (one `kind`
+//  dropdown, sub-fields showWhen-gated).
+//
+//  OPEN discriminated union (OCP, Law 8): a new arm (`set`, `compare`) is a new member
+//  + a fold branch, the interpreter unchanged — never a fused-mode enum. All bounds are
+//  `TimeBound` (a literal or a `{$ctx}` ref), resolved through the SAME dispatcher the
+//  legacy pin/range read (resolveTimePin / effectiveBounds) so a migrated binding folds
+//  BYTE-IDENTICALLY to its legacy timeBinding twin (FF-BINDING-SELECTION-EQUIV).
+export type Selection =
+  /** A single-period PIN (the `year` view): resolve `at` → pin `dims[dim]`. Unset/NaN ⇒ writes nothing (all-periods). */
+  | { kind: 'point';  at: TimeBound }
+  /**
+   * A [from,to] WINDOW (the `range` view): resolve the bounds → write them under
+   * `targetKeys` (absent ⇒ the conventional `${dim}From`/`${dim}To`). Explicit
+   * from+to — never a loose tuple whose shape must be sniffed.
+   */
+  | { kind: 'window'; from: TimeBound; to: TimeBound; targetKeys?: { from?: string; to?: string } }
+  /** ALL periods — an unbounded selection: writes nothing (the every-period path). */
+  | { kind: 'all' }
+
+// ── DimBinding — the GENERIC, dim-agnostic perspective binding (DESIGN §3.1) ───
+//
+//  Supersedes `PerspectiveTimeBinding`. Carries a generic `selection` on ANY `dim`
+//  (Law 1 — no time privilege at the binding) plus an OPTIONAL open `granularity`
+//  (carried metadata, inert until D-GRAIN). Not time-shaped: a non-time dimension can
+//  carry a point/window selection with zero new types.
+export interface DimBinding {
+  /** GENERIC dimension key the binding scopes (conventionally TIME_DIM). Law 1: data, never a literal branch. */
+  dim:          string
+  /** The explicit selection-type (point/window/all) applied to `dim`. */
+  selection:    Selection
+  /** OPTIONAL open grain (registry string, D3). Carried metadata — inert until D-GRAIN. */
+  granularity?: TimeGranularity
 }
 
 // ── PerspectiveTimeBinding — the perspective-scoped REFINEMENT of TimeDimensionSpec ─

@@ -66,7 +66,8 @@ describe('A · DataSpec discriminants — no discriminant without a resolver', (
 //  exact `metric` no-op this epic closed (ENG-10). The deferred-list names any key
 //  intentionally registered ahead of its runtime — EMPTY today.
 const SCOPE_KEY_DEFERRED: Record<string, string> = {
-  // (empty) — timeBinding + metric are both applied in scopeCtxByPerspective.
+  // (empty) — binding + timeBinding + metric are all applied in scopeCtxByPerspective
+  // (binding directly; timeBinding lowered to a DimBinding via resolveDimBinding, Postel).
 }
 
 describe('B · Perspective scope-keys — no authoring affordance without runtime', () => {
@@ -83,9 +84,12 @@ describe('B · Perspective scope-keys — no authoring affordance without runtim
     expect(orphans, `scope-keys authorable but not folded at runtime:\n${orphans.join('\n')}`).toEqual([])
   })
 
-  it('both registered keys are present AND consumed (non-vacuous)', () => {
-    expect(listPerspectiveScopeKeys()).toEqual(expect.arrayContaining(['timeBinding', 'metric']))
-    expect(parserSrc).toMatch(/scope\?\.timeBinding/)
+  it('all registered keys are present AND consumed (non-vacuous)', () => {
+    // binding = the orthogonal primary; timeBinding = the legacy Postel alias (lowered
+    // to a DimBinding); metric = the measure swap. All folded in scopeCtxByPerspective.
+    expect(listPerspectiveScopeKeys()).toEqual(expect.arrayContaining(['binding', 'timeBinding', 'metric']))
+    expect(parserSrc).toMatch(/scope\.binding/)      // orthogonal binding (resolveDimBinding)
+    expect(parserSrc).toMatch(/scope\.timeBinding/)  // legacy Postel alias
     expect(parserSrc).toMatch(/scope\?\.metric/)
   })
 

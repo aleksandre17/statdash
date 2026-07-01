@@ -104,8 +104,15 @@ export type TimeBound = number | CtxRef
  */
 export type TimeRange = YearsSpec | readonly [TimeBound, TimeBound]
 
-/** SDMX/Cube grain. Carried metadata (default-derived) — foresight for LOD. */
-export type TimeGranularity = 'year' | 'quarter' | 'month' | 'week' | 'day'
+/**
+ * SDMX/Cube grain — an OPEN registry-resolved string (the `ChartType` open-string
+ * precedent), NOT a closed union. Carried metadata (default-derived = year), inert at
+ * the resolve seam until the grain axis lands (D-GRAIN). De-privileged per the
+ * orthogonal-axis law (DESIGN-time-mode-decision §3.1 / D3): a custom grain is a
+ * registration, never a core-type edit. Conventional values: 'year' | 'quarter' |
+ * 'month' | 'week' | 'day' — but any registered grain id is valid (Law 8 / OCP).
+ */
+export type TimeGranularity = string
 
 /**
  * timeDimension — the canonical, first-class time concept on a DataSpec.

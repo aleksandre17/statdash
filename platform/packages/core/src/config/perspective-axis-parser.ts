@@ -19,8 +19,52 @@ import type { DimVal }             from '../sdmx'
 import type { PerspectiveOption }  from '../perspective/types'
 import { resolveLocaleString }     from '../i18n/types'
 import { resolveMeasureRef }       from '../data/metric'
-import type { PerspectiveAxis, PerspectivesByParam, PerspectiveDef, PerspectiveTimeBinding } from './perspective-axis'
+import type { PerspectiveAxis, PerspectivesByParam, PerspectiveDef, PerspectiveScope, PerspectiveTimeBinding, DimBinding } from './perspective-axis'
 import { effectiveBounds, isYearsSpec, resolveTimePin } from '../core/time-dimension'
+
+// ── resolveDimBinding — Postel: the ONE normalized binding the fold consumes ───
+//
+//  The orthogonal-axis form is `scope.binding` (a `DimBinding` with an explicit
+//  `selection`). The legacy `scope.timeBinding` (pin XOR range) is LOWERED to the same
+//  `DimBinding` here (expand-contract / Postel), so there is ONE fold path and one
+//  ownership walk downstream — never a shape fork. Prefer `binding`; fall back to the
+//  legacy alias. Returns undefined when neither is present or the legacy binding
+//  carries no actionable selection (byte-identical to the legacy `continue`).
+function resolveDimBinding(scope: PerspectiveScope | undefined): DimBinding | undefined {
+  if (!scope) return undefined
+  if (scope.binding) return scope.binding
+  return scope.timeBinding ? bindingFromTimeBinding(scope.timeBinding) : undefined
+}
+
+// ── bindingFromTimeBinding — LOWER the legacy pin/range shape → DimBinding ──────
+//
+//  The exact legacy discriminant, made explicit (proven byte-identical by
+//  FF-BINDING-SELECTION-EQUIV):
+//    • pin set                     → point   (at = pin)
+//    • range = single-year list    → point   (at = that literal year)
+//    • range = ['all'] / multi-yr  → all     (writes nothing, as legacy did)
+//    • range = [from,to] ctx-tuple → window  (from/to = the two bounds + targetKeys)
+//    • range absent (no pin)       → undefined (no binding — the legacy skip)
+function bindingFromTimeBinding(tb: PerspectiveTimeBinding): DimBinding | undefined {
+  const dim = tb.dim || TIME_DIM
+  const grain = tb.granularity !== undefined ? { granularity: tb.granularity } : {}
+  if (tb.pin !== undefined) {
+    return { dim, selection: { kind: 'point', at: tb.pin }, ...grain }
+  }
+  const range = tb.range
+  if (range === undefined) return undefined
+  if (isYearsSpec(range)) {
+    if (range !== 'all' && range.length === 1) {
+      return { dim, selection: { kind: 'point', at: range[0]! }, ...grain }
+    }
+    return { dim, selection: { kind: 'all' }, ...grain }
+  }
+  return {
+    dim,
+    selection: { kind: 'window', from: range[0], to: range[1], ...(tb.targetKeys ? { targetKeys: tb.targetKeys } : {}) },
+    ...grain,
+  }
+}
 
 // ── ParsePerspectiveInput — the declared axes, extracted by the caller ────────
 //
@@ -129,19 +173,19 @@ export interface PerspectiveOwnership {
   all:    ReadonlySet<string>
 }
 
-function bindingOwnedKeys(tb: PerspectiveTimeBinding, into: Set<string>): void {
-  // The pin's ctx-ref source param (the user-tracked year). A literal pin owns no param.
-  if (tb.pin !== undefined && typeof tb.pin === 'object' && '$ctx' in tb.pin) {
-    into.add(tb.pin.$ctx)
+function bindingOwnedKeys(b: DimBinding, into: Set<string>): void {
+  const dim = b.dim || TIME_DIM
+  const sel = b.selection
+  if (sel.kind === 'point') {
+    // The pin's ctx-ref source param (the user-tracked year). A literal pin owns no param.
+    if (typeof sel.at === 'object' && sel.at !== null && '$ctx' in sel.at) into.add(sel.at.$ctx)
+  } else if (sel.kind === 'window') {
+    // The window's destination keys. When targetKeys are declared they ARE the owned
+    // params (geostat fromYear/toYear); else the conventional `${dim}From`/`${dim}To`.
+    into.add(sel.targetKeys?.from ?? `${dim}From`)
+    into.add(sel.targetKeys?.to   ?? `${dim}To`)
   }
-  // The window's destination keys. When targetKeys are declared they ARE the owned
-  // params (geostat fromYear/toYear); else the conventional `${dim}From`/`${dim}To`.
-  const range = tb.range
-  if (range !== undefined && !isYearsSpec(range)) {
-    const dim = tb.dim || TIME_DIM
-    into.add(tb.targetKeys?.from ?? `${dim}From`)
-    into.add(tb.targetKeys?.to   ?? `${dim}To`)
-  }
+  // 'all' owns no param.
 }
 
 export function perspectiveOwnedParamKeys(
@@ -155,10 +199,10 @@ export function perspectiveOwnedParamKeys(
   const activeSet = new Set(activeDefs(axes, perspectiveState))
   for (const axis of Object.values(axes)) {
     for (const def of axis.perspectives) {
-      const tb = def.scope?.timeBinding
-      if (!tb) continue
-      bindingOwnedKeys(tb, all)
-      if (activeSet.has(def)) bindingOwnedKeys(tb, active)
+      const b = resolveDimBinding(def.scope)
+      if (!b) continue
+      bindingOwnedKeys(b, all)
+      if (activeSet.has(def)) bindingOwnedKeys(b, active)
     }
   }
   return { active, all }
@@ -216,18 +260,22 @@ export function scopeCtxByPerspective(
       }
     }
 
-    const tb = def.scope?.timeBinding
-    if (!tb) continue
-    const dim = tb.dim || TIME_DIM
+    // The perspective's dim binding — the orthogonal `scope.binding` (a DimBinding with
+    // an explicit `selection`), or the legacy `scope.timeBinding` LOWERED to the same
+    // DimBinding (resolveDimBinding, Postel). ONE fold over the explicit `selection`
+    // discriminant — no shape sniffing, no `pin?` XOR `range?` illegal state.
+    const b = resolveDimBinding(def.scope)
+    if (!b) continue
+    const dim = b.dim || TIME_DIM
+    const sel = b.selection
 
-    // (a) EXPLICIT ctx-ref/literal single-period PIN (P4.5). `pin` resolves through
-    // the SAME Ref dispatcher the legacy `{$ctx}` read used (resolveTimePin →
-    // resolveRef). A resolved period writes `dims[dim]`; an UNSET/NaN resolution
-    // writes NOTHING (the all-years path via the isUnsetTime SSOT). This lets the
-    // `year` perspective declaratively pin `time` = the user-tracked year param,
-    // byte-identical to the legacy `pick:last` year default while both coexist.
-    if (tb.pin !== undefined) {
-      const pinned = resolveTimePin(tb.pin, ctx)
+    if (sel.kind === 'point') {
+      // A single-period PIN (the `year` view). `at` resolves through the SAME Ref
+      // dispatcher the legacy `{$ctx}` read used (resolveTimePin → resolveRef): a
+      // resolved period writes `dims[dim]`; an UNSET/NaN resolution writes NOTHING (the
+      // all-periods path via the isUnsetTime SSOT). Byte-identical to the legacy
+      // `pick:last` year default while both forms coexist.
+      const pinned = resolveTimePin(sel.at, ctx)
       if (pinned !== undefined) {
         dims ??= { ...ctx.dims }
         dims[dim] = pinned
@@ -235,41 +283,34 @@ export function scopeCtxByPerspective(
       continue
     }
 
-    const range = tb.range
-    if (range === undefined) continue
-
-    if (isYearsSpec(range)) {
-      // A single-period PIN (year perspective): a one-element year list pins that
-      // year; a longer list leaves the selection to the resolver (no single pin).
-      if (range !== 'all' && range.length === 1) {
-        dims ??= { ...ctx.dims }
-        dims[dim] = range[0] as DimVal
-      }
-    } else {
-      // A [from,to] WINDOW (range perspective): resolve the ctx-ref/literal bounds
+    if (sel.kind === 'window') {
+      // A [from,to] WINDOW (the `range` view): resolve the ctx-ref/literal bounds
       // through the SAME seam the legacy fromDim/toDim used (effectiveBounds), then
       // write them under the DECLARED target keys (geostat: fromYear/toYear) so the
-      // existing range resolvers read them — (b) configurable target-keys (P4.5).
-      // ABSENT targetKeys ⇒ the conventional `${dim}From`/`${dim}To` byte-for-byte.
-      const { from, to } = effectiveBounds({ timeDimension: { dim, range } }, ctx)
+      // existing range resolvers read them. ABSENT targetKeys ⇒ the conventional
+      // `${dim}From`/`${dim}To` byte-for-byte.
+      const { from, to } = effectiveBounds({ timeDimension: { dim, range: [sel.from, sel.to] } }, ctx)
       dims ??= { ...ctx.dims }
-      if (from) writeBound(dims, targetKey(tb, dim, 'from'), from)
-      if (to && to !== Infinity) writeBound(dims, targetKey(tb, dim, 'to'), to)
+      if (from) writeBound(dims, windowTargetKey(sel, dim, 'from'), from)
+      if (to && to !== Infinity) writeBound(dims, windowTargetKey(sel, dim, 'to'), to)
+      continue
     }
+
+    // sel.kind === 'all' → an unbounded selection writes nothing (no clone).
   }
 
   return dims ? { ...ctx, dims } : ctx
 }
 
-// ── targetKey — the window's DESTINATION dim key (configurable, P4.5 (b)) ──────
+// ── windowTargetKey — the window's DESTINATION dim key (configurable) ──────────
 //
-//  The declared `targetKeys.{from,to}` when present (geostat declares
+//  The declared `selection.targetKeys.{from,to}` when present (geostat declares
 //  `{from:'fromYear', to:'toYear'}` so the window drives the EXISTING
 //  `{$ctx:'fromYear'}`/`{$ctx:'toYear'}` resolvers via effectiveBounds's
 //  fromDim/toDim); ABSENT ⇒ the conventional `${dim}From`/`${dim}To` byte-for-byte
 //  (every existing caller — no targetKeys — is unaffected).
-function targetKey(tb: PerspectiveTimeBinding, dim: string, side: 'from' | 'to'): string {
-  const declared = tb.targetKeys?.[side]
+function windowTargetKey(sel: { targetKeys?: { from?: string; to?: string } }, dim: string, side: 'from' | 'to'): string {
+  const declared = sel.targetKeys?.[side]
   if (declared) return declared
   return side === 'from' ? `${dim}From` : `${dim}To`
 }

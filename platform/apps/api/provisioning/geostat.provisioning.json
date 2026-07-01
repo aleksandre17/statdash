@@ -1392,10 +1392,13 @@
                 },
                 "icon": "calendar",
                 "scope": {
-                  "timeBinding": {
+                  "binding": {
                     "dim": "time",
-                    "pin": {
-                      "$ctx": "year"
+                    "selection": {
+                      "kind": "point",
+                      "at": {
+                        "$ctx": "year"
+                      }
                     }
                   }
                 }
@@ -1408,19 +1411,20 @@
                 },
                 "icon": "calendar-range",
                 "scope": {
-                  "timeBinding": {
+                  "binding": {
                     "dim": "time",
-                    "range": [
-                      {
+                    "selection": {
+                      "kind": "window",
+                      "from": {
                         "$ctx": "fromYear"
                       },
-                      {
+                      "to": {
                         "$ctx": "toYear"
+                      },
+                      "targetKeys": {
+                        "from": "fromYear",
+                        "to": "toYear"
                       }
-                    ],
-                    "targetKeys": {
-                      "from": "fromYear",
-                      "to": "toYear"
                     }
                   }
                 }
@@ -2663,10 +2667,13 @@
                 },
                 "icon": "calendar",
                 "scope": {
-                  "timeBinding": {
+                  "binding": {
                     "dim": "time",
-                    "pin": {
-                      "$ctx": "year"
+                    "selection": {
+                      "kind": "point",
+                      "at": {
+                        "$ctx": "year"
+                      }
                     }
                   }
                 }
@@ -2679,19 +2686,20 @@
                 },
                 "icon": "calendar-range",
                 "scope": {
-                  "timeBinding": {
+                  "binding": {
                     "dim": "time",
-                    "range": [
-                      {
+                    "selection": {
+                      "kind": "window",
+                      "from": {
                         "$ctx": "fromYear"
                       },
-                      {
+                      "to": {
                         "$ctx": "toYear"
+                      },
+                      "targetKeys": {
+                        "from": "fromYear",
+                        "to": "toYear"
                       }
-                    ],
-                    "targetKeys": {
-                      "from": "fromYear",
-                      "to": "toYear"
                     }
                   }
                 }
@@ -4606,10 +4614,13 @@
                 },
                 "icon": "calendar",
                 "scope": {
-                  "timeBinding": {
+                  "binding": {
                     "dim": "time",
-                    "pin": {
-                      "$ctx": "year"
+                    "selection": {
+                      "kind": "point",
+                      "at": {
+                        "$ctx": "year"
+                      }
                     }
                   }
                 }
@@ -4622,19 +4633,20 @@
                 },
                 "icon": "calendar-range",
                 "scope": {
-                  "timeBinding": {
+                  "binding": {
                     "dim": "time",
-                    "range": [
-                      {
+                    "selection": {
+                      "kind": "window",
+                      "from": {
                         "$ctx": "fromYear"
                       },
-                      {
+                      "to": {
                         "$ctx": "toYear"
+                      },
+                      "targetKeys": {
+                        "from": "fromYear",
+                        "to": "toYear"
                       }
-                    ],
-                    "targetKeys": {
-                      "from": "fromYear",
-                      "to": "toYear"
                     }
                   }
                 }

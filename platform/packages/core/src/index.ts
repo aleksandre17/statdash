@@ -45,14 +45,15 @@ export { perspectiveRegistry }                                           from '.
 //  ctx-scoping step + axis parser land in P1/P4). A page with no `perspectives`
 //  declared touches none of this (byte-identical render, FF-ONE-VIEW-NO-MACHINERY).
 export type { PerspectiveScope, PerspectiveDef, PerspectiveAxis,
-              PerspectivesByParam, PerspectiveTimeBinding }              from './config/perspective-axis'
+              PerspectivesByParam, PerspectiveTimeBinding,
+              DimBinding, Selection }                                    from './config/perspective-axis'
 //  The scope-key registry — the OCP seam (SYNTHESIS §1.4): every scope door is a
 //  registration, not an interface widening. timeBinding + metric registered today;
 //  the coverage gate reads listPerspectiveScopeKeys() directly (the 5th axis).
 export type { PerspectiveScopeKey }                                      from './config/perspective-scope-registry'
 export { registerPerspectiveScopeKey, getPerspectiveScopeKeySchema,
          listPerspectiveScopeKeys }                                      from './config/perspective-scope-registry'
-import './config/perspective-scope-schemas' // side-effect: register built-in scope-key authoring schemas (timeBinding, metric)
+import './config/perspective-scope-schemas' // side-effect: register built-in scope-key authoring schemas (binding, timeBinding, metric)
 
 //  P1 — the active-id SSOT readers + the parser + the ctx-scoping step. The active
 //  perspective id flows ONLY through ctx.perspectiveState (HIGH-3); parsePerspectiveAxes
@@ -180,6 +181,7 @@ export type {
 export type { LinkIconKey, LinkDef }        from './config/links'
 export { evalVisibility }                   from './config/visibility'
 export { resolveTemplate }                  from './config/template'
+export type { PerspectiveCarrier }          from './config/template'
 
 // ── Config Schema Versioning [N19 / P3-3] ────────────────────────────
 //  Stored page configs carry a `schemaVersion`. migratePageConfig() forward-

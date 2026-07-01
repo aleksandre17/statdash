@@ -169,6 +169,21 @@ if [[ -z "$TARGET" ]]; then
   check_ts "Retired: no applyEffects / Effect[] / .effects filter-effect subsystem in react" \
     'applyEffects\|Effect\[\]\|\.effects\b' "$REACT/src"
 
+  # ── FF-NO-MODE-LITERAL — the fused-mode literal can never regress ───────────────
+  #
+  #  The orthogonal-axis law (DESIGN-time-mode-decision §0/§6, R3): `year`/`range` are
+  #  two VALUES of one axis, never two hardcoded branches. No engine/react code may
+  #  compare a perspective against `=== 'range'`/`'quarter'`/`'month'`, nor sniff a
+  #  two-arm `{ year, range }` fused carrier (`'year' in x` / `'range' in x`). This is
+  #  the bash twin of the vitest SSOT (packages/core/src/config/no-mode-literal.fitness.test.ts).
+  #  The MED finding it locks out lived at template.ts:74-75. (`format === 'year'` in
+  #  i18n/format.ts is a DATE-FORMAT kind, not a perspective id — NOT matched here.)
+  check_ts "FF-NO-MODE-LITERAL: no fused {year,range} mode-literal branch in engine" \
+    "=== '\(range\|quarter\|month\)'\|'\(year\|range\)' in " "$ENGINE/src"
+
+  check_ts "FF-NO-MODE-LITERAL: no fused {year,range} mode-literal branch in react" \
+    "=== '\(range\|quarter\|month\)'\|'\(year\|range\)' in " "$REACT/src"
+
   # ── Retired System-A island: the site-scoped `modes` perspective registry ──────
   #
   #  MED-2 deleted the write-with-no-read `SiteManifestContract.modes` channel: the
