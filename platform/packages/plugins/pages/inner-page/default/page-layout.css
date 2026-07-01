@@ -50,10 +50,13 @@
 }
 
 /* ── Content area ─────────────────────────────────────────────────────────
-   Single source of truth for the page's measure: --page-measure (defaults to
-   the existing --size-container-wide token, == the AppHeader's own 1280px cap,
-   so header and body finally agree). A tenant/layout variant rebinds
-   --page-measure to re-measure the page — interface unchanged (OCP). */
+   The page-content is the viewport CHROME box only: it owns the page MEASURE
+   (--page-measure — defaults to --size-container-wide == the AppHeader's own
+   1280px cap, so header and body agree; a tenant/layout variant rebinds it,
+   interface unchanged — OCP), the fluid side gutter, and the fill link into the
+   inner-page height. The compositional concern — section/child arrangement +
+   gap — moved OUT to the `.page-content__stack` layout-node primitive
+   (DESIGN-responsive-composition §3.3). */
 .page-content {
   flex: 1 1 0;
   min-width: 0;
@@ -64,9 +67,21 @@
      stepping at 1280, so the content breathes proportionally on every screen
      (fluid-first law §3). Vertical rhythm stays on the spacing scale. */
   padding: 1rem clamp(1rem, 2.5vw, 2rem) 2.5rem;
+  /* Fill wrapper for the single stack child (no sibling composition here). */
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+}
+
+/* ── Page body — the `stack` layout-node primitive ────────────────────────
+   Composes every page child (header, filter bar, KPI strip, sections) as a
+   1-D vertical stack — the SAME container StackShell emits. It carries the
+   arrangement gap (--layout-gap, default --spacing-md) and the FILL chain:
+   `flex:1 1 auto` fills the page-content height so section bands can resolve
+   against a definite box; `min-height:0` lets those bands govern (no
+   min-content blow-out). */
+.page-content__stack {
+  flex:       1 1 auto;
+  min-height: 0;
 }
 
 /* sidebar = full-bleed app shell (rail + content): content hugs the rail rather

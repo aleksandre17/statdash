@@ -17,7 +17,17 @@ function InnerPageControl({ def, ctx, children }: {
     <AnchorNavProvider sections={nav?.sections ?? []} perspectiveKey={nav?.perspectiveKey ?? 'mode'}>
       <div className="inner-page" data-layout={def.pageLayout ?? 'sidebar'}>
         <ChromeSlot slot="InnerSidebar" />
-        <main className="page-content">{children.rendered}</main>
+        {/* The page BODY composes through the `stack` layout-node primitive — the
+            SAME container StackShell emits (data-dir=column, --layout-gap) — not a
+            bespoke flex div. `.page-content` is now only the viewport CHROME box
+            (measure cap, side gutter, margin); section/child arrangement is the
+            stack. One handwriting at page, section, and panel
+            (DESIGN-responsive-composition §3.3 / FF-NO-BESPOKE-SECTION-DIV). */}
+        <main className="page-content">
+          <div className="layout-stack page-content__stack" data-dir="column">
+            {children.rendered}
+          </div>
+        </main>
       </div>
     </AnchorNavProvider>
   )
