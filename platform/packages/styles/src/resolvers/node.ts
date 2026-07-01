@@ -284,7 +284,7 @@ export function applyViewStyles(view?: {
   width?:  'full' | 'half' | 'third'
   styles?: NodeStyles
 }): { panel: StyleAttrs; body: BodyStyleAttrs } {
-  const panel                     = applyPanelStyles({ width: view?.width, styles: view?.styles })
+  const panel                     = applyPanelStyles({ width: view?.width })
   const { className: _c, ...body } = applyNodeStyles(view?.styles)
   return { panel, body }
 }

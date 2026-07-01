@@ -96,8 +96,10 @@
 /* ── Body ───────────────────────────────────────────────────────── */
 
 .panel__body {
-  overflow: hidden;
-  padding:  1.25rem;
+  overflow:        hidden;
+  padding:         0;             /* charts/maps fill flush; text panels set via config */
+  display:         flex;
+  flex-direction:  column;
 }
 
 /* ── View toggle (generic N-view switcher) ──────────────────────── */

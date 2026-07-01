@@ -83,6 +83,7 @@ function GeographControl({ def, ctx, vs, table }: Pick<ShellProps<GeographNode>,
         defaultViewIndex={0}
         viewToggleLabel={t('view-toggle')}
         titleBadge={titleBadge}
+        bodyProps={vs.body}
       >
         <GeoMap
           rows={rows}

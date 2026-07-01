@@ -16,6 +16,7 @@
 //  CSS: ./PanelLayout.css (co-located — DESIGN-styles-arch §2.1)
 //
 import './PanelLayout.css'
+import type { BodyStyleAttrs } from '@statdash/styles'
 import React, { useState, type CSSProperties, type ReactNode, type ComponentType } from 'react'
 import { ChevronIcon } from './icons'
 import { InjectionToken } from '../engine/di/InjectionToken'
@@ -47,6 +48,12 @@ export interface PanelLayoutProps {
   // ── Title badge slot ───────────────────────────────────────────────
   /** Optional badge(s) rendered next to the title — from extension points. */
   titleBadge?:       ReactNode
+  // ── Body attrs ─────────────────────────────────────────────────────
+  /**
+   * Style attrs spread onto .panel__body — carries data-height from applyNodeStyles.
+   * Pass vs.body from defineShell so the height token lands on the body element only.
+   */
+  bodyProps?: BodyStyleAttrs
 }
 
 export const PANEL_LAYOUT = new InjectionToken<ComponentType<PanelLayoutProps>>('panel-layout')
@@ -65,6 +72,7 @@ export function PanelLayout({
   viewToggleLabel  = 'Toggle view',
   actions,
   titleBadge,
+  bodyProps,
 }: PanelLayoutProps) {
   const [open,      setOpen]      = useState(defaultOpen)
   const [activeIdx, setActiveIdx] = useState(defaultViewIndex)
@@ -144,7 +152,7 @@ export function PanelLayout({
 
       {/* ── Body ────────────────────────────────────────────────── */}
       {(noCollapse || open) && (
-        <div className="panel__body" id={bodyId}>
+        <div className="panel__body" id={bodyId} {...bodyProps}>
           {showToggle
             ? (childArray[activeIdx] ?? childArray[0])
             : children

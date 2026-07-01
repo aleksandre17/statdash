@@ -83,8 +83,8 @@
 }
 
 /* ── Flex chain for fixed-height panels ───────────────────────
- *  When panel-col carries a height token (data-height attr via applyPanelStyles)
- *  the flex chain must reach the chart-wrap.
+ *  When section__body carries a height token (data-height attr via applyNodeStyles,
+ *  the body-only sizing model) the flex chain must reach the chart-wrap.
  *  section__body already has flex:1 via panel-layout.css;
  *  propagate it down through tabs-widget → tabs-content → tab-panel → tab-panel-body.
  */
