@@ -1,5 +1,5 @@
 ---
-description: Map current vs target architecture (C4/DDD/ADR)
+description: Current → Target → Gap → Path playbook
 argument-hint: [scope/target]
 ---
-Run the **/architecture** playbook. The canonical, full procedure lives at `.claude/kit/commands/architecture.md` — read that file now and follow it exactly for this project, under the orchestrator's doctrine (`.claude/kit/INDEX.md`). Any text after the command is the scope/target: $ARGUMENTS.
+Run the **/architecture** playbook. Canonical procedure: `.claude/kit/commands/architecture.md` — read it and follow it exactly. Args: $ARGUMENTS.

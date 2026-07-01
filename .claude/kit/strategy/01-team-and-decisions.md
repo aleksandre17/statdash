@@ -128,7 +128,7 @@ Before sending any `--b` brief, Sonnet writes a **Decision Inventory** out loud 
 
 **Pass rule:** ≥1 item must be a genuine architectural / design / DRY / smell-detection question, **not** an execution mechanic. **Empty or mechanics-only → not Opus's task** → re-triage: high execution-complexity → **Sonnet builds**; want a safety net → **Sonnet builds → Opus review** (B.3); mechanical → **Haiku**.
 
-> One-body: the template, the full "counts vs doesn't count" table, and the **binding brief-discipline case study** live in `03-opus-mandate.md §A.4` + `.claude/strategy/03-A-examples.md §A.4–A.5` — not repeated here.
+> One-body: the template, the full "counts vs doesn't count" table, and the **binding brief-discipline case study** live in `03-opus-mandate.md §A.4` + `.claude/kit/strategy/03-A-examples.md §A.4–A.5` — not repeated here.
 
 ---
 

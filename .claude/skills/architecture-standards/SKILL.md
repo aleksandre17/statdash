@@ -58,6 +58,8 @@ Functional suitability · Performance efficiency · Compatibility · Usability �
 
 - **Architecture leads, code follows** — the target architecture is the standard; when legacy code conflicts, the code is migrated to the pattern (Strangler-Fig), never the architecture bent to accommodate violations. New decisions are judged against the target, not the current state.
 
+- **Benchmark sources (where "best" is defined — consult/research these):** AWS & Google Cloud **Well-Architected** frameworks · **Google SRE** book · **Netflix** resilience (Hystrix/chaos) · **Stripe** API design · **Martin Fowler** / refactoring.com catalog · **ThoughtWorks Tech Radar** · **12-Factor** · the **canonical reference implementation** for the domain. Don't reinvent — adopt the proven best case, adapted.
+
 ## 6. Formal standards & methods
 
 ISO/IEC/IEEE **42010** (architecture descriptions) · ISO/IEC **25010** (quality) · TOGAF (ADM) · **Domain-Driven Design** (strategic: bounded contexts, context mapping, ubiquitous language; tactical: aggregates, entities, value objects, repositories, domain events) · 12-Factor App · Reactive Manifesto · Well-Architected (operational excellence, security, reliability, performance, cost, sustainability).

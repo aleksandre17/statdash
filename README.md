@@ -1,73 +1,42 @@
-# React + TypeScript + Vite
+# statdash-platform
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A JSON/config-driven statistical dashboard platform. A declarative `DataSpec` config drives a generic renderer (**Phase 1**); a no-code Constructor authors that config (**Phase 2**). Reference-grade for statistical agencies (ONS/IMF/Eurostat standards: SDMX, Grammar of Graphics, Tidy Data).
 
-Currently, two official plugins are available:
+## Repository layout
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
-
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```
+platform/            The monorepo (pnpm) — all application + engine code
+  packages/          Engine, along the dependency arrow (inner → outer):
+                     contracts ← expr ← core ← charts ← react ← plugins
+  apps/geostat       The live dashboard app (Georgia national accounts)
+  apps/panel         The Constructor / authoring app (Phase 2)
+  apps/api           Data provisioning + serving API
+  tests/  work/  docs/
+ops/                 Scripts + Docker compose (check-laws, validate, deploy)
+kits/geostat-kit     Manifest-driven ops orchestration toolkit
+docs/architecture/decisions/   Architecture Decision Records (ADRs)
+.claude/             The agent operating system (kit, agents, memory, hooks)
+CLAUDE.md            Binding project laws (also per-module CLAUDE.md files)
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## Quick start
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+All commands run from `platform/` (pnpm workspace root):
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+cd platform
+pnpm install
+pnpm dev            # run the geostat dashboard (Vite)
+pnpm build          # production build
+pnpm test           # vitest
+pnpm lint           # eslint (enforces the dependency arrow)
+pnpm typecheck      # tsc project references
+pnpm check-laws     # project-law enforcement gate
+pnpm compose:up     # local stack via Docker (see ops/compose)
 ```
+
+## Governance
+
+- **Laws:** `CLAUDE.md` (root) + `platform/packages/CLAUDE.md`, `platform/packages/plugins/CLAUDE.md`.
+- **Decisions:** `docs/architecture/decisions/` (ADRs).
+- **Enforcement:** `.claude/kit/hooks/` + `platform/eslint.config.js` (`no-restricted-imports`).

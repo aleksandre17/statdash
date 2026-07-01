@@ -104,8 +104,6 @@ def place(dst, src, todo=None):
 place([".claude","settings.json"], os.path.join(KIT,"settings.template.json"))
 place([".claude","context","opus-brief.md"], os.path.join(TPL,"opus-brief.template.md"),
       "opus-brief.md: write the first §Current State (or run /architecture then /roadmap)")
-place([".claude","strategy","03-A-examples.md"], os.path.join(TPL,"03-A-examples.template.md"),
-      "03-A-examples.md: add your domain's worked examples")
 place([".claude","commands","dev.md"], os.path.join(TPL,"dev.md.template"),
       "commands/dev.md: your build/test/run commands")
 place([".claude","commands","laws.md"], os.path.join(TPL,"laws.md.template"))
@@ -181,13 +179,18 @@ if wd:
         if not os.path.exists(gk): open(gk, "w").close()
 
 # ---------- 3e. scaffold slash-command shims (.claude/commands/ — where Claude Code discovers /commands) ----------
+# The shim is produced by the SSOT renderer (render.render_command), so a freshly-scaffolded
+# command is byte-identical to what `render.py --check` (the drift guard) expects — no divergence.
 import glob as _g
+sys.path.insert(0, os.path.join(KIT, "tools"))
+import render as _render
 for kp in _g.glob(os.path.join(KIT, "commands", "*.md")):
     nm = os.path.basename(kp)[:-3]
     dst = p(".claude", "commands", nm + ".md")
     if os.path.exists(dst): continue
     os.makedirs(os.path.dirname(dst), exist_ok=True)
-    open(dst, "w").write(f"---\ndescription: Run the {nm} playbook\nargument-hint: [scope/target]\n---\nRun the **/{nm}** playbook. Canonical procedure: `.claude/kit/commands/{nm}.md` — read it and follow it exactly. Args: $ARGUMENTS.\n")
+    kit_text = open(kp, encoding="utf-8").read()
+    open(dst, "w", encoding="utf-8", newline="").write(_render.render_command(nm, kit_text))
     report["scaffolded"].append(f".claude/commands/{nm}.md")
 
 # ---------- 4. validate + self-test ----------

@@ -1,6 +1,6 @@
 # Project Laws — statdash-platform (root, binding)
 
-> JSON/config-driven statistical dashboard platform. Phase 1: dashboard (JSON config → renderer). Phase 2: Constructor (generates JSON, no code). Per-module laws: `platform/packages/CLAUDE.md`, `platform/packages/plugins/CLAUDE.md`. Enforcement rules: `.claude/rules/`.
+> JSON/config-driven statistical dashboard platform. Phase 1: dashboard (JSON config → renderer). Phase 2: Constructor (generates JSON, no code). Per-module laws: `platform/packages/CLAUDE.md`, `platform/packages/plugins/CLAUDE.md`. Enforcement: `.claude/kit/hooks/` (`post-edit-laws.py`, `pre-edit-gate.py`) + `platform/eslint.config.js` (`no-restricted-imports`). Architecture decisions: `docs/architecture/decisions/`.
 
 1. **No privileged dimensions.** All dimensions are equal: `ctx.dims['time']`, never `ctx.year` / `ctx.regionId`. Generic `Record<K,V>`, never hardcoded dimension names.
 2. **Config is declarative, logic lives in the renderer.** `DataSpec` carries data (indicator codes, ObsQuery, `$ctx` refs) — never `getRows:(ctx)=>…`, `val()`, `fetch`, or `if/switch`. A function in config is not Constructor-ready.

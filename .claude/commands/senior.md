@@ -1,5 +1,5 @@
 ---
-description: Senior-engineer operating charter (overseer + growth)
+description: Senior AI Software & Architecture Engineer — Operating Charter
 argument-hint: [scope/target]
 ---
-Run the **/senior** playbook. The canonical, full procedure lives at `.claude/kit/commands/senior.md` — read that file now and follow it exactly for this project, under the orchestrator's doctrine (`.claude/kit/INDEX.md`). Any text after the command is the scope/target: $ARGUMENTS.
+Run the **/senior** playbook. Canonical procedure: `.claude/kit/commands/senior.md` — read it and follow it exactly. Args: $ARGUMENTS.

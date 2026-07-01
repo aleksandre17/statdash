@@ -1,5 +1,5 @@
 ---
-description: Record / triage / pay down technical debt
+description: Take and close a backlog item playbook
 argument-hint: [scope/target]
 ---
-Run the **/debt** playbook. The canonical, full procedure lives at `.claude/kit/commands/debt.md` — read that file now and follow it exactly for this project, under the orchestrator's doctrine (`.claude/kit/INDEX.md`). Any text after the command is the scope/target: $ARGUMENTS.
+Run the **/debt** playbook. Canonical procedure: `.claude/kit/commands/debt.md` — read it and follow it exactly. Args: $ARGUMENTS.

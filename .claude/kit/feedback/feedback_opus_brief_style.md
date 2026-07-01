@@ -37,7 +37,7 @@ Banned verb in sentence = you wrote a solution, not a problem. Visible as typed.
 
 ## The canonical case study (binding reference)
 
-> Full narrative (what happened · right vs wrong routing · ~11k tokens saved) → `.claude/strategy/03-A-examples.md §A.5` (one-body). The insight unique to *this* file:
+> Full narrative (what happened · right vs wrong routing · ~11k tokens saved) → `.claude/kit/strategy/03-A-examples.md §A.5` (one-body). The insight unique to *this* file:
 
 **Why the old A.4 self-test missed it:** "Could a Senior Architect find a different solution?" answers YES too easily in principle. The Decision Inventory replaced it because it forces naming *specific* unmade decisions — theirs were all execution mechanics ("which file, how to call the data store, where the threshold lives") → re-triage. This is *why* the barrier is a Decision Inventory, not a yes/no self-test.
 

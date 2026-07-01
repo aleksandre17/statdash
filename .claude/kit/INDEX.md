@@ -80,7 +80,7 @@ Brief itself                    — ground truth for the task
 Load full strategy files ONLY when brief flags a doctrine question:
   .claude/kit/strategy/03-opus-mandate.md   — doctrine question on Tier/Blocker/Work-protection
   .claude/kit/strategy/03-opus-mandate.md — doctrine question on brief format
-  .claude/strategy/03-A-examples.md     — first brief of a sprint only (case studies + canonical reference)
+  .claude/kit/strategy/03-A-examples.md     — first brief of a sprint only (case studies + canonical reference)
   .claude/kit/strategy/05-context-protocol.md — when writing shared session state
 ```
 Haiku does **not** read mandate or strategy files — templated work, no decisions.
@@ -169,7 +169,7 @@ If you find duplication, file a `project_debt.md` entry — every concept lives 
 | Sonnet decides who runs Layer N | + `01-team-and-decisions.md` |
 | Sonnet writes Opus `--f` brief | + `02-layer-flow.md` + `03-opus-mandate.md` |
 | Opus receives a brief | `B.md` + `opus-brief.md` + `context.md` (full 03+04 only on doctrine question) |
-| Opus receives a brief (first of sprint) | + `.claude/strategy/03-A-examples.md` (case studies + canonical reference) |
+| Opus receives a brief (first of sprint) | + `.claude/kit/strategy/03-A-examples.md` (case studies + canonical reference) |
 | Haiku receives a brief | `opus-brief.md` only |
 | Opus appends to shared state | + `05-context-protocol.md` |
 | Sonnet closes session | + `07-learning-system.md` (if note) |
@@ -265,6 +265,7 @@ Crystallized owner feedback — each one is a behavioral correction that must no
 | "/board" / "pick next" / "add to board" | `.claude/kit/commands/board.md` | lead (PM for restructuring) | regenerated BOARD.md + violations |
 | "collab" / "war room" / "task force" | `.claude/kit/commands/collab.md` | lead + 2–4 agents by lens + user | decision → ADR + split cards |
 | "/mode" / "switch to X mode" | `.claude/kit/commands/mode.md` | lead | session posture set (persisted) |
+| "/rotate" / "rotate the log" | `.claude/kit/commands/rotate.md` | Sonnet | context.md hot head + token-log period; cold → docs/layers/ + session/archive/ |
 | dev build/test/run · stack/laws | `.claude/commands/dev.md` · `laws.md` | Sonnet/Haiku | — (project commands) |
 
 Playbooks GUIDE (structure + routing + output paths from `project.json`); judgment stays with the agent (`03`).

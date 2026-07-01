@@ -1,5 +1,5 @@
 ---
-description: Work-board operations: regenerate, add, pick, settle (kanban)
+description: work-board operations
 argument-hint: [scope/target]
 ---
-Run the **/board** playbook. The canonical, full procedure lives at `.claude/kit/commands/board.md` — read that file now and follow it exactly for this project, under the orchestrator's doctrine (`.claude/kit/INDEX.md`). Any text after the command is the scope/target: $ARGUMENTS.
+Run the **/board** playbook. Canonical procedure: `.claude/kit/commands/board.md` — read it and follow it exactly. Args: $ARGUMENTS.

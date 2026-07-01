@@ -12,12 +12,12 @@ def ck(ok, label, detail=""): checks.append((bool(ok), label, detail))
 
 # --- presence & version ---
 ck(os.path.isdir(KIT), "kit vendored at .claude/kit/")
-ver = open(os.path.join(KIT, "VERSION")).read().strip() if os.path.exists(os.path.join(KIT, "VERSION")) else "?"
+ver = open(os.path.join(KIT, "VERSION"), encoding="utf-8").read().strip() if os.path.exists(os.path.join(KIT, "VERSION")) else "?"
 
 # --- manifest valid vs schema ---
 try:
     import jsonschema
-    mf = json.load(open(P(".claude/project.json")))
+    mf = json.load(open(P(".claude/project.json"), encoding="utf-8"))
     jsonschema.validate(mf, json.load(open(os.path.join(KIT, "project.schema.json"))))
     ck(True, "manifest valid vs schema")
 except Exception as e:
@@ -64,14 +64,14 @@ for a in ["orchestrator", "chief-engineer", "architect", "database-architect", "
 specs = [os.path.basename(x).replace(".md", "") for x in glob.glob(os.path.join(adir, "*-specialist.md"))]
 ck(len(specs) >= 1, "module-specialist present", f"specialists={len(specs)}")
 if os.path.exists(os.path.join(adir, "orchestrator.md")):
-    o = open(os.path.join(adir, "orchestrator.md")).read()
+    o = open(os.path.join(adir, "orchestrator.md"), encoding="utf-8").read()
     m = re.search(r"Agent\(([^)]*)\)", o); allow = m.group(1) if m else ""
     miss = [s for s in specs if s not in allow]
     ck(not miss, "orchestrator allowlist ⊇ specialists", f"missing {miss}")
 
 # --- settings wiring ---
 try:
-    st = json.load(open(P(".claude/settings.json"))); sttxt = json.dumps(st)
+    st = json.load(open(P(".claude/settings.json"), encoding="utf-8")); sttxt = json.dumps(st)
     ck(st.get("agent") == "orchestrator", "settings: default agent = orchestrator")
     for ev in ["session-start", "pre-edit-gate", "post-edit-laws", "stop-check", "session-end-tokenlog"]:
         ck(ev in sttxt and ".claude/kit/hooks/" in sttxt, f"settings wires hook: {ev}")
@@ -79,7 +79,7 @@ except Exception as e:
     ck(False, "settings.json", str(e)[:60])
 
 # --- slots present ---
-for slot in [".claude/context/opus-brief.md", ".claude/strategy/03-A-examples.md",
+for slot in [".claude/context/opus-brief.md", ".claude/kit/strategy/03-A-examples.md",
              ".claude/commands/dev.md", ".claude/commands/laws.md", "CLAUDE.md",
              "memory/project_vision.md", "memory/project_roadmap.md", "memory/project_debt.md", "memory/user_profile.md"]:
     ck(os.path.exists(P(slot)), f"slot: {slot}")
@@ -94,14 +94,17 @@ if wd:
     ck(os.path.isdir(P(wd, "items")), f"work board scaffolded: {wd}/items/")
     ck(os.path.exists(P(wd, "PROCESS.md")), f"work board protocol: {wd}/PROCESS.md")
 
-# --- agent mirror drift guard (kit role agents == project copies unless tuned) ---
-import hashlib as _hl
-def _md5(fp): return _hl.md5(open(fp,"rb").read()).hexdigest()
-for a in [f for f in os.listdir(os.path.join(KIT, "agents")) if f.endswith(".md")]:
-    kp, pp = os.path.join(KIT, "agents", a), P(".claude", "agents", a)
-    if not os.path.exists(pp) or _md5(kp) == _md5(pp): continue
-    ck("tuned: true" in open(pp, encoding="utf-8").read().split(chr(10)+chr(45)*3+chr(10))[0],
-       f"agent mirror: {a} diverged from kit without 'tuned: true' (refresh or mark)")
+# --- rendered-layer SSOT drift guard (agents/commands/skills == render(kit); one render fn) ---
+# kit/ is the sole source; the rendered layer is a generated projection. render.py IS the render()
+# function shared by bootstrap (scaffold), the re-render step, and this check — so drift cannot recur.
+# Project-local files with no kit source (commands/dev.md, laws.md, *-specialist.md) are not asserted.
+rr = subprocess.run([sys.executable, os.path.join(KIT, "tools", "render.py"), "--check"],
+                    capture_output=True, text=True,
+                    env={**os.environ, "CLAUDE_PROJECT_DIR": ROOT, "PYTHONIOENCODING": "utf-8"})
+ck(rr.returncode == 0, "rendered layer == render(kit) [agents/commands/skills]",
+   (rr.stdout or rr.stderr).strip().replace("\n", " ")[:90])
+# rendered strategy/ is retired — strategy loads on demand from kit/strategy/ (SSOT)
+ck(not os.path.isdir(P(".claude", "strategy")), ".claude/strategy/ absent (strategy loads from kit/strategy/)")
 
 # --- slash-command shims (so /name works in Claude Code) ---
 for kp in [f for f in os.listdir(os.path.join(KIT, "commands")) if f.endswith(".md")]:
@@ -131,7 +134,7 @@ if bl:
     ck(not fat, f"hygiene: no file over its line limit{' (over: '+', '.join(fat[:5])+')' if fat else ''}")
 
 # --- INDEX lists every playbook + strategy file ---
-idx = open(os.path.join(KIT, "INDEX.md")).read() if os.path.exists(os.path.join(KIT, "INDEX.md")) else ""
+idx = open(os.path.join(KIT, "INDEX.md"), encoding="utf-8").read() if os.path.exists(os.path.join(KIT, "INDEX.md")) else ""
 for c in glob.glob(os.path.join(KIT, "commands", "*.md")):
     ck(os.path.basename(c) in idx, f"INDEX lists: {os.path.basename(c)}")
 

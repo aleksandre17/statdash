@@ -179,7 +179,7 @@ When invoked with a **review brief** (`03-opus-mandate.md` Section B.3), Opus do
 
 > The ONE place the brief format lives. Loaded by Sonnet when writing a brief; loaded by Opus/Haiku for output format.
 > Sibling files: `03-opus-mandate.md` (tier rules + brief-quality self-report), `05-context-protocol.md` (shared writes).
-> **Case studies + worked examples → `.claude/strategy/03-A-examples.md`** (load only on first brief of a sprint).
+> **Case studies + worked examples → `.claude/kit/strategy/03-A-examples.md`** (load only on first brief of a sprint).
 
 ---
 
@@ -225,13 +225,13 @@ A.5 Confidence-check (Opus-b only):
 **Banned verbs (you wrote a solution, not a problem):**
 `remove` · `delete` · `extract` · `rename` · `move` · `add` · `replace` · `change` · `update` · `fix` · `refactor` · `migrate`
 
-If your sentence contains a banned verb → rewrite. Examples → `.claude/strategy/03-A-examples.md §A.2`.
+If your sentence contains a banned verb → rewrite. Examples → `.claude/kit/strategy/03-A-examples.md §A.2`.
 
 ### A.3 — Goal-statement form test
 
 Must start with **"After this task:"** followed by a **system-state invariant**.
 
-Forbidden in goal: class names · method names · line numbers · threshold values · library names. Those are implementation — not outcome. Examples → `.claude/strategy/03-A-examples.md §A.3`.
+Forbidden in goal: class names · method names · line numbers · threshold values · library names. Those are implementation — not outcome. Examples → `.claude/kit/strategy/03-A-examples.md §A.3`.
 
 ### A.4 — Decision Inventory (replaces old self-test — catches substance, not just form)
 
@@ -246,13 +246,13 @@ D2: <question — e.g. "Does this config belong on the properties holder or the 
 
 **Does NOT count:** which file, which line, which import, which API method. Those are execution mechanics — Sonnet handles them.
 
-**Empty or mechanics-only → re-triage.** Sonnet build (optionally with Opus-review B.3 afterward). Worked case study → `.claude/strategy/03-A-examples.md §A.5`.
+**Empty or mechanics-only → re-triage.** Sonnet build (optionally with Opus-review B.3 afterward). Worked case study → `.claude/kit/strategy/03-A-examples.md §A.5`.
 
 ### A.5 — Confidence-check (Opus-b only)
 
 > "Am I sending this because Opus's judgment is needed, or because I want a safety net?"
 - **Judgment needed** → Opus `--b`.
-- **Safety net** → Sonnet builds + Opus-review (B.3). Worked case study → `.claude/strategy/03-A-examples.md §A.5`.
+- **Safety net** → Sonnet builds + Opus-review (B.3). Worked case study → `.claude/kit/strategy/03-A-examples.md §A.5`.
 
 ---
 
@@ -276,7 +276,7 @@ User directive (verbatim): [the task-bearing part of the user's message, unchang
                             Omit ONLY for a purely Sonnet-originated task with no user content.]
 
 [If doctrine question: Read also: .claude/kit/strategy/03-opus-mandate.md]
-[If first brief of sprint: Read also: .claude/strategy/03-A-examples.md]
+[If first brief of sprint: Read also: .claude/kit/strategy/03-A-examples.md]
 ```
 
 > **No "Task:" or "Implementation plan:" field.** Problem + Goal + Constraints is the complete specification. Opus decides.

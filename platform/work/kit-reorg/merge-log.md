@@ -103,3 +103,42 @@ project_data_binding_architecture · project_platform_constructor_vision · proj
 - Aggressive-consolidation was applied per owner approval (ADR-001 merged 3, and the ingestion pair ADR-0030/0031 → ADR-004 with Excel demoted to SECONDARY). If 1:1 preservation is preferred for any family, split is trivial (sub-sections already delimited).
 - **Backend/DB ADR family is now split by size:** its ≥8KB members migrated (ADR-016/017/018), but the <8KB siblings (`project_classifier_code_path_adr` = ADR-0023, `project_vintage_release_adr` = ADR-0025, `project_bootstrap_runner_adr` = ADR-0026 Phase A) remain as memory pointers. Owner may want these three migrated too so the whole ADR-0023..0031 series lives in docs/ as one coherent set (recommended, but out of this phase's ≥8KB scope).
 - ADR internal numbering: original loose `ADR-00NN` IDs in the source content were reused/inconsistent (multiple 0026/0028); docs use a clean sequential `ADR-001..018`. Original numbers preserved in titles where meaningful (ADR-016/017/018).
+
+---
+
+## Phase 4+5 — rendered layer single-sourced + rotation + small ADR migration (architect)
+
+> Branch `chore/claude-os-reorg`. All reversible except the strategy-file relocation (git-recoverable).
+
+### Render mechanism (the SSOT `render()`)
+New `.claude/kit/tools/render.py` is the single render function; the re-render step, `bootstrap.py` (scaffold), and `doctor.py` (drift guard) all call it — so `rendered == render(kit)` holds by one definition (DRY). Per-layer rules:
+- **commands** → deterministic shim: frontmatter `description` DERIVED from the kit command's H1 title (SSOT, e.g. `# /mode — operating-mode switch` → `operating-mode switch`) + generic `argument-hint: [scope/target]` + fixed "read the canonical kit procedure" body.
+- **agents** → verbatim byte-copy of `kit/agents/<name>.md`, EXCEPT `orchestrator` (the `<module>-specialist` allowlist token is substituted with the project's present `*-specialist.md`, sorted).
+- **skills** → verbatim byte-copy of `kit/skills/<sk>/SKILL.md`.
+- Project-local files with no kit source (`commands/dev.md`, `commands/laws.md`, `*-specialist.md`) are preserved — never written, never flagged.
+`bootstrap.py` §3e refactored to call `render.render_command` (was a divergent generic shim generator) so a freshly-scaffolded command matches the drift guard.
+
+### Re-rendered (17 drifted files fixed by `render.py --apply`)
+All 15 command shims (stale/inconsistent hand-tuned bodies → deterministic shims with meaningful descriptions), `agents/orchestrator.md` (restored the missing **Disposition** paragraph + fixed a `Conway'''s Law` corruption + refreshed the specialist allowlist), and `skills/architecture-standards/SKILL.md` (restored the missing "Benchmark sources" bullet). Project-local `dev.md`/`laws.md`/3 specialists preserved.
+
+### Strategy (root-cause correction to the design's "orphan" premise)
+`.claude/strategy/` deleted, BUT audit's "pure cruft" premise was WRONG for its one file: `03-A-examples.md` is referenced as an on-demand load by `INDEX.md` (×2) + `kit/strategy/{01,03}` + `kit/feedback/...` (8 sites). Blind deletion would dangle those references. Root-cause fix: **relocated `03-A-examples.md` into the SSOT `kit/strategy/`** and repointed all 8 references `.claude/strategy/…` → `.claude/kit/strategy/…`. Net result satisfies the design end-state (`.claude/strategy/` absent; strategy loads on demand entirely from `kit/strategy/`) with zero dangling references. `bootstrap.py` strategy-scaffold line removed (canonical now committed in kit); `doctor.py` slot updated to the kit path.
+
+### Drift guard added (`doctor.py`)
+Replaced the weaker ad-hoc "agent mirror (tuned: true)" guard with a comprehensive check: `subprocess render.py --check` → `ck(rc==0, "rendered layer == render(kit) [agents/commands/skills]")`, plus `ck(not isdir(.claude/strategy), ".claude/strategy/ absent")`. Verified: both PASS. Also root-fixed 4 latent cp1252 `open()` bugs in `doctor.py` (`project.json`/orchestrator/`INDEX.md`/`VERSION` reads) that a faithful UTF-8 render surfaced — the manifest one had been silently reporting "manifest invalid" and SKIPPING every live enforcement check (false green).
+
+### Rotation (Phase 5)
+- `session/context.md` 86KB → **13.6KB** (hot "SEAMLESS HANDOFF" head, lines 1–64, ≤15KB); cold 06-27→07-01 log → `docs/layers/2026-07-01-context-cold-log.md` (71KB, tracked) + one-line pointer left in context.md.
+- `session/token-log.md` 38KB → **0.2KB** (fresh period header + pointer); closed-session 07-01 detail → `.claude/session/archive/token-log-2026-07-01.md` (37.3KB, gitignored — verified `git check-ignore`).
+- New `/rotate` kit command (canonical procedure) + rendered shim + INDEX row; size-threshold nudge added to `stop-check.py` (context.md >~15KB / token-log >~20KB → "run /rotate"). Hook-read paths untouched.
+- SessionStart auto-load re-measured = **5.98KB** (≤6KB, unchanged — opus-brief not touched). `selftest.py` 8/8; `stop-check.py`/`session-start.py` run clean.
+
+### Small ADR migration (owner-approved; original DB numbers kept)
+Migrated the 3 remaining backend/DB design docs into `docs/architecture/decisions/` in the exact Phase-2 format (Status/Context/Decision/≥2 Rejected Alternatives/Consequences + verbatim record), leaving slim `type: project` pointers + updated MEMORY.md index lines:
+- `ADR-0023-classifier-code-path.md` (classifier code-chain LTREE)
+- `ADR-0025-vintage-release.md` (vintage-as-release / real-time DB)
+- `ADR-0026-bootstrap-runner.md` (generic SDUI runner, Phase A)
+Numbers preserved (0023/0025/0026), no existing ADR renumbered; ADR-018's back-reference updated ("<8KB memory pointer" → "now ADR-0026").
+
+### Doctor status after Phase 4+5
+Drift guard ✓, strategy-absent ✓, kit-strategy slot ✓, hooks selftest 8/8 ✓. 3 PRE-EXISTING failures remain, all outside this phase's fences (surfaced — not caused — by fixing doctor's manifest-read bug): (a) pre-edit-gate live probe uses a hardcoded path that doesn't match this repo's `ops/postgres/...` migration trigger (the enforcement-path side-finding the design deferred to a separate ticket); (b) repo-top stray dirs `.pytest_cache`/`DATA`/`scriness`; (c) bloat in fenced `agent-memory/explorer/*` + two pre-existing kit strategy docs. FLAGGED for follow-up.

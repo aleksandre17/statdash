@@ -8,7 +8,7 @@ migrated_from: project_bootstrap_phase_b (orig. ADR-0026 Phase B)
 
 # ADR-018 — Bootstrap Phase B: DB extraction of geostat content [orig. ADR-0026 Phase B]
 
-**Status:** Designed (Phase A done — endpoint + client fetch with local fallback live). Extends the bootstrap-runner ADR (Phase A, kept as a <8KB memory pointer) and is extended by ADR-017 (Phase C).
+**Status:** Designed (Phase A done — endpoint + client fetch with local fallback live). Extends the bootstrap-runner ADR (Phase A, now `ADR-0026-bootstrap-runner.md`) and is extended by ADR-017 (Phase C).
 
 ## Context
 

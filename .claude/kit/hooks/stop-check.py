@@ -25,6 +25,16 @@ try:
         warn.append("token-log.md has no run entries this session — append the ledger line before closing.")
 except OSError:
     pass
+# --- rotation size nudge (load exactly what is necessary): trim, don't let the hot layer bloat ---
+ctx = os.path.join(root, ".claude", "session", "context.md")
+for path, label, limit_kb in ((ctx, "context.md", 15), (log, "token-log.md", 20)):
+    try:
+        kb = os.path.getsize(path) / 1024
+        if kb > limit_kb:
+            warn.append(f"{label} = {kb:.0f}KB > ~{limit_kb}KB. Run /rotate: hot head stays, "
+                        f"cold layers -> docs/layers/ + .claude/session/archive/ (kit 05).")
+    except OSError:
+        pass
 try:
     learning_dir = mf.get("learning_dir", "docs/learning/")
     code_globs = tuple(mf.get("code_globs", [".java", ".jsx", ".ts"]))
