@@ -22,6 +22,12 @@ export const BASE: ApexOptions = {
   chart: {
     toolbar:    { show: false },
     fontFamily: 'system-ui, sans-serif',
+    // Fill the container exactly — no extra offset band. With chart.height:'100%'
+    // Apex sizes the SVG to the parent's clientHeight; parentHeightOffset (default 15)
+    // would only be added at the px-height responsive breakpoints (mobile), so pinning
+    // it to 0 keeps a vertical bar flush to its (now growable) card body at every width
+    // and prevents a phantom offset from re-opening a fill gap. See FILL-vbar guard.
+    parentHeightOffset: 0,
     // Reduced-motion: a getter, not a literal — read at spread time (render), so
     // the OS/user setting is honoured live. JS half of the motion baseline
     // (the CSS half neutralises declarative animation; Apex draws to SVG via JS,

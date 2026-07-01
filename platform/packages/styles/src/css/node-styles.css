@@ -153,6 +153,57 @@
 }
 
 
+/* ── Band leaf fills a stretched equal-height card (chart body carrier) ──────
+ *  The blocks above handle the band on a CONTAINER (a section/panel `…__body`
+ *  that wraps a [data-view] slot). This block handles the INVERTED case: the
+ *  band is delivered to the LEAF data box itself — e.g. a `wrap` layout node
+ *  hands `aspectRatio` down via WrapStyleContext, so data-aspect / a ratio
+ *  data-height lands on `.chart-wrap` (the chart body), with a plain
+ *  [data-view="visible"] slot ABOVE it (no band ancestor to trigger the
+ *  container rules). The fixed band `height` (top of file) then pins the leaf at
+ *  the band, so it cannot grow into a card that a TALLER equal-height sibling has
+ *  stretched — and an ApexCharts renderer freezes at its intrinsic plot height,
+ *  leaving a white gap that GROWS with width (the vertical-bar fill defect).
+ *
+ *  Fix mirrors the container growable-band model (panel-layout.css): the visible
+ *  view slot becomes a fill-flex column, and the band becomes a flex-BASIS the
+ *  leaf grows past — a definite starting height (Apex measures a real box) that
+ *  equal-height stretch simply adds to. Scoped to the chart data boxes
+ *  (.chart-wrap / .chart-ph) so table (.data-table__wrap) and map reflow are
+ *  untouched; only the ratio-band tokens grow (named sm/md/lg/xl stay fixed by
+ *  intent, as in the container model). */
+[data-view="visible"]:has(> .chart-wrap[data-aspect]),
+[data-view="visible"]:has(> .chart-ph[data-aspect]),
+[data-view="visible"]:has(> .chart-wrap[data-height="16:9"]),
+[data-view="visible"]:has(> .chart-wrap[data-height="4:3"]),
+[data-view="visible"]:has(> .chart-wrap[data-height="1:1"]),
+[data-view="visible"]:has(> .chart-wrap[data-height="21:9"]),
+[data-view="visible"]:has(> .chart-ph[data-height="16:9"]),
+[data-view="visible"]:has(> .chart-ph[data-height="4:3"]),
+[data-view="visible"]:has(> .chart-ph[data-height="1:1"]),
+[data-view="visible"]:has(> .chart-ph[data-height="21:9"]) {
+  display:        flex;
+  flex-direction: column;
+  flex:           1;
+  min-height:     0;
+}
+
+[data-view="visible"] > .chart-wrap[data-aspect],
+[data-view="visible"] > .chart-ph[data-aspect],
+[data-view="visible"] > .chart-wrap[data-height="16:9"],
+[data-view="visible"] > .chart-wrap[data-height="4:3"],
+[data-view="visible"] > .chart-wrap[data-height="1:1"],
+[data-view="visible"] > .chart-wrap[data-height="21:9"],
+[data-view="visible"] > .chart-ph[data-height="16:9"],
+[data-view="visible"] > .chart-ph[data-height="4:3"],
+[data-view="visible"] > .chart-ph[data-height="1:1"],
+[data-view="visible"] > .chart-ph[data-height="21:9"] {
+  flex:       1 1 var(--size-panel-height);
+  min-height: 0;
+  height:     auto;
+}
+
+
 /* ── Mobile table reflow ─────────────────────────────────────────────
  *  No reset is needed for the panel height itself — the band (--size-panel-height)
  *  is honest at every width (it was the aspect model that needed unwinding on

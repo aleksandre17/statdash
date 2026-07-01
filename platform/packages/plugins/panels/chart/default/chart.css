@@ -9,18 +9,30 @@
  *  height:auto override collapsed Apex/treemap renderers that need a definite
  *  box, and only existed to unwind the old aspect-ratio model). */
 
+/* Fill-flex COLUMN (not a bare height:100% block). The a11y ChartDataTable is
+ * .sr-only (position:absolute — out of flow), so the single in-flow child is the
+ * render wrap: making this a column with the render wrap `flex:1` sizes the Apex
+ * mount box by flex-STRETCH — a definite used height even when an ancestor card is
+ * stretched by an equal-height sibling — instead of a percentage that silently
+ * collapses when any ancestor's height is `auto` (the vertical-bar frozen-176 bug).
+ * height:100% is retained as the fallback for a block/non-flex parent context. */
 .chart-wrap {
-  height:    100%;
-  min-width: 0;
-  padding:   0.4vw;
+  display:        flex;
+  flex-direction: column;
+  height:         100%;
+  min-height:     0;
+  min-width:      0;
+  padding:        0.4vw;
 }
 
-/* The visual-render wrapper (sibling of the a11y ChartDataTable). Passes the
- * resolved height through to a renderer that fills its parent — the custom
- * flexbox TreemapChart root is `height:100%` and otherwise collapses to 0 inside
- * a content-sized wrapper (blank treemap). Apex renderers measure the box, so a
- * definite height here only helps. */
+/* The visual-render wrapper (sibling of the a11y ChartDataTable). `flex:1` fills
+ * the flex-column .chart-wrap (definite, stretch-tracked); height:100% stays as the
+ * fallback when .chart-wrap resolves as a plain block. A renderer that fills its
+ * parent (the custom flexbox TreemapChart / DonutChart roots are `height:100%`, and
+ * ApexCharts measures this box's clientHeight for its 100% height) therefore gets a
+ * real, growable height — no collapse to 0 (blank treemap) and no frozen plot band. */
 .chart-wrap__render {
+  flex:       1 1 auto;
   height:     100%;
   min-height: 0;
   min-width:  0;
