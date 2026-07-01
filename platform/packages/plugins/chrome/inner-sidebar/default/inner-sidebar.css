@@ -21,14 +21,22 @@
   overflow-x: hidden;
   display: flex;
   flex-direction: column;
+  /* Themed pill scrollbar — same design language as the shared `.scroll-fancy`
+     utility (packages/styles/css/scrollbar.css), via its :root scrollbar-* vars.
+     Kept as the sidebar's OWN rules (not the shared class) so the mobile
+     scrollbar-hide below — same file, later source — deterministically wins. */
   scrollbar-width: thin;
-  scrollbar-color: var(--color-border) transparent;
+  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
 }
-.inner-sidebar::-webkit-scrollbar { width: 3px; }
+.inner-sidebar::-webkit-scrollbar { width: var(--scrollbar-size-thin); }
+.inner-sidebar::-webkit-scrollbar-track { background: var(--scrollbar-track); border-radius: var(--scrollbar-radius); }
 .inner-sidebar::-webkit-scrollbar-thumb {
-  background: var(--color-border);
-  border-radius: 3px;
+  background: var(--scrollbar-thumb);
+  border-radius: var(--scrollbar-radius);
+  border: var(--scrollbar-inset) solid transparent;
+  background-clip: padding-box;
 }
+.inner-sidebar::-webkit-scrollbar-thumb:hover { background: var(--scrollbar-thumb-hover); background-clip: padding-box; }
 
 /* ── Brand tag ──────────────────────────────────────────────────── */
 

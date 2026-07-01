@@ -49,7 +49,7 @@ export function PivotTable({ rows, colLabel, columns, caption, footer, footerLab
   const totalCols = 1 + series.length * columns.length
 
   return (
-    <div className="data-table__wrap">
+    <div className="data-table__wrap scroll-fancy">
       <table className="data-table" aria-label={caption}>
         {caption && <caption className="data-table__caption">{caption}</caption>}
         <thead>

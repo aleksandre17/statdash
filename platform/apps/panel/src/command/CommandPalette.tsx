@@ -79,7 +79,7 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
         className="cmdk-input"
         aria-label="Search commands"
       />
-      <Command.List className="cmdk-list">
+      <Command.List className="cmdk-list scroll-fancy">
         <Command.Empty className="cmdk-empty">ვერ მოიძებნა · No matches</Command.Empty>
         {groups.map(([heading, items]) => (
           <Command.Group key={heading} heading={heading} className="cmdk-group">

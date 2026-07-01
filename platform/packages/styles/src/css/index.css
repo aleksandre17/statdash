@@ -5,4 +5,5 @@
 
 @import './tokens.css';
 @import './node-styles.css';
+@import './scrollbar.css';
 @import './animations.css';

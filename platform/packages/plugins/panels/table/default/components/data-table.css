@@ -4,8 +4,25 @@
    inline bar, pivot grouped headers, tfoot aggregates.
    ================================================================ */
 
+/* Scroll container — the table's own bounded viewport.
+ *
+ *  overflow:auto on BOTH axes: a table wider OR taller than its card SCROLLS
+ *  instead of clipping (owner bug: content was inaccessible with no scrollbar).
+ *  The band (AR-8) hands this wrap a definite height, and node-styles.css layers
+ *  overflow-y for the band/mobile cases — we don't fight that; this is the base.
+ *
+ *  min-width:0 is the ROOT-CAUSE fix for the horizontal clip: inside the band's
+ *  `[data-view=visible] { display:flex; flex-direction:column }` chain this wrap
+ *  is a flex item, whose default `min-width:auto` refuses to shrink below the
+ *  table's min-content width — so a WIDE table pushed past the card edge with no
+ *  scrollbar. min-width:0 lets it shrink to the card, engaging overflow-x.
+ *  max-width:100% bounds the non-flex (block) case the same way.
+ *  Themed pill scrollbar comes from the shared `.scroll-fancy` utility (applied
+ *  on the element in Simple/PivotTable). */
 .data-table__wrap {
-  overflow-x: auto;
+  overflow:   auto;
+  min-width:  0;
+  max-width:  100%;
 }
 .data-table {
   width: 100%;

@@ -1,0 +1,93 @@
+/* ================================================================
+   SCROLLBAR — beautiful, reusable, themed custom scrollbars
+   ----------------------------------------------------------------
+   ONE source of truth for how a scrollbar looks across the whole
+   platform (page root + every bounded inner scroll region). Covers
+   BOTH engines:
+     · WebKit / Chromium  → ::-webkit-scrollbar* pseudo-elements
+     · Firefox            → scrollbar-width + scrollbar-color
+
+   Agnostic (Law 1/4): every colour derives from an existing Tier-2
+   semantic token (--color-border* / --color-surface*), so the
+   scrollbar re-themes automatically under [data-theme="dark"],
+   [data-tenant], and any future theme — NO hue is hardcoded and NO
+   token is added to tokens.css (that is the AR-8 lane). The only
+   locals defined here are scrollbar SHAPE + token-derived aliases.
+
+   Thumb is ALWAYS visible (not hover-only) — WCAG discoverability on
+   touch / AT devices (guardrail). Hover/active only deepen it.
+   ================================================================ */
+
+:root {
+  /* Shape (scrollbar-local — geometry, not colour) */
+  --scrollbar-size:      12px;   /* page-root gutter (WebKit) */
+  --scrollbar-size-thin:  9px;   /* .scroll-fancy inner-region gutter */
+  --scrollbar-radius:    999px;  /* full pill */
+  --scrollbar-inset:       3px;  /* transparent border → floating inset thumb */
+  --scrollbar-thumb-min:  32px;  /* min thumb length — stays grabbable */
+
+  /* Colour — DERIVED from semantic tokens (auto light+dark, no hex here).
+     Thumb rides --color-border-strong (the most legible border tone in both
+     modes); hover deepens toward the interactive border; track is a barely
+     -there groove from the frame border so the runway is discoverable but
+     never noisy. */
+  --scrollbar-thumb:       var(--color-border-strong, var(--color-border));
+  --scrollbar-thumb-hover: var(--color-border-interactive, var(--color-border-strong));
+  --scrollbar-thumb-active: color-mix(in srgb, var(--color-border-interactive, var(--color-border-strong)) 78%, var(--color-text-muted, transparent));
+  --scrollbar-track:       color-mix(in srgb, var(--color-border-frame, var(--color-border)) 32%, transparent);
+}
+
+/* ── Firefox — inherits to ALL descendants, so this themes every Firefox
+   scrollbar app-wide (page + tables + canvas + cmdk + sidebar) in one place.
+   ─────────────────────────────────────────────────────────────────────── */
+html {
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+}
+
+/* ── WebKit / Chromium — page-root scrollbar ─────────────────────────────── */
+html::-webkit-scrollbar {
+  width:  var(--scrollbar-size);
+  height: var(--scrollbar-size);
+}
+html::-webkit-scrollbar-track {
+  background: var(--scrollbar-track);
+  border-radius: var(--scrollbar-radius);
+}
+html::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: var(--scrollbar-radius);
+  border: var(--scrollbar-inset) solid transparent;   /* padding illusion */
+  background-clip: padding-box;
+  min-height: var(--scrollbar-thumb-min);
+}
+html::-webkit-scrollbar-thumb:hover  { background: var(--scrollbar-thumb-hover);  background-clip: padding-box; }
+html::-webkit-scrollbar-thumb:active { background: var(--scrollbar-thumb-active); background-clip: padding-box; }
+html::-webkit-scrollbar-corner       { background: transparent; }
+
+/* ── .scroll-fancy — reusable opt-in utility for BOUNDED inner scroll regions
+   (table wrap, canvas, command list, any overflow:auto pane). Same look as the
+   page root, one class narrower. Apply alongside the element's own layout class.
+   ─────────────────────────────────────────────────────────────────────────── */
+.scroll-fancy {
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+}
+.scroll-fancy::-webkit-scrollbar {
+  width:  var(--scrollbar-size-thin);
+  height: var(--scrollbar-size-thin);
+}
+.scroll-fancy::-webkit-scrollbar-track {
+  background: var(--scrollbar-track);
+  border-radius: var(--scrollbar-radius);
+}
+.scroll-fancy::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: var(--scrollbar-radius);
+  border: var(--scrollbar-inset) solid transparent;
+  background-clip: padding-box;
+  min-height: var(--scrollbar-thumb-min);
+}
+.scroll-fancy::-webkit-scrollbar-thumb:hover  { background: var(--scrollbar-thumb-hover);  background-clip: padding-box; }
+.scroll-fancy::-webkit-scrollbar-thumb:active { background: var(--scrollbar-thumb-active); background-clip: padding-box; }
+.scroll-fancy::-webkit-scrollbar-corner       { background: transparent; }

@@ -88,7 +88,7 @@ export function CanvasView({
   // responsive — the debounce is scoped to the data-fetch layer only.
   const renderedPage = useDebouncedLivePage(page, mode)
 
-  const rootClass = `canvas-root${dragging ? ' canvas-root--dragging' : ''}`
+  const rootClass = `canvas-root scroll-fancy${dragging ? ' canvas-root--dragging' : ''}`
 
   // Perspective PREVIEW — seed the canvas router URL with the active axis param so the
   // live renderer switches perspective. The renderer's perspectiveState SSOT derives
