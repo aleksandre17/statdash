@@ -82,6 +82,7 @@ export function AppHeaderShell({ surface = 'opaque' }: { surface?: HeaderSurface
             </div>
           )}
           <ChromeSlot slot="LocaleSwitcher" />
+          <ChromeSlot slot="ThemeSwitcher" />
         </div>
       </div>
     </header>

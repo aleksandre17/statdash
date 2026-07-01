@@ -195,6 +195,7 @@ const CHROME_EXEMPT: ReadonlySet<string> = new Set<string>([
   'InnerSidebar::hidden',     // NullChromeSlot — renders nothing
   'AppBanner::hidden',        // NullChromeSlot — renders nothing
   'LocaleSwitcher::default',  // reads site-singleton ChromeConfig.localeLabels only
+  'ThemeSwitcher::default',   // no per-element config — built-in light/dark axis + useTheme hook
 ])
 
 // Chrome variants that own per-element authored config — MUST carry a schema.
@@ -226,7 +227,7 @@ describe('Constructor C0 — chrome schema completeness (fitness #1b)', () => {
     }
     // The exempt set is the documented allow-list (ADR adr_constructor_phase2):
     // every entry is a deliberate, reasoned deferral, not a coverage hole.
-    expect(CHROME_EXEMPT.size).toBe(6)
+    expect(CHROME_EXEMPT.size).toBe(7)
   })
 
 })
