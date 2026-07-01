@@ -28,6 +28,16 @@
   width: 100%;
   border-collapse: collapse;
   font-size: 0.875rem;
+  /* CONTENT-DRIVEN column sizing (Eurostat/IMF statistical tables): each column
+   * takes the width its content needs, then the table WRAPS-then-SCROLLS. `auto`
+   * (not `fixed`) is correct here — number columns must stay at their figure width
+   * (legible, tabular-aligned) while text HEADERS give by wrapping. The old failure
+   * was NOT the layout algorithm but `white-space:nowrap` on headers (below), which
+   * pinned a header column at its full single-line min-content and squeezed the
+   * rest. With headers wrappable, `auto` distributes fairly and — for the pivot
+   * worst case (many series × columns) — degrades to wrap-then-scroll via the
+   * 57fc5dd `.data-table__wrap` overflow:auto, never squeezing figures. */
+  table-layout: auto;
 }
 .data-table th {
   padding: 0.5625rem 1.25rem;
@@ -39,7 +49,18 @@
   text-transform: uppercase;
   background: var(--color-surface-raised);
   border-bottom: 1px solid var(--color-surface-frame);
-  white-space: nowrap;
+  /* Long titles WRAP to 2–3 lines instead of forcing a min-content-wide column
+   * that steals space from the rest (owner: long headers squeezed data columns).
+   * `white-space:normal` re-enables wrapping at spaces; `overflow-wrap:anywhere`
+   * additionally lowers the cell's MIN-CONTENT (it may break inside an unbroken
+   * token — a long code/URL), which is what lets `table-layout:auto` shrink the
+   * column so no single header can balloon it. Numeric DATA cells keep `nowrap`
+   * (.t-num below) so figures stay on one line + tabular-aligned. `max-width`
+   * caps a very long header's PREFERRED width so it wraps early and stays balanced
+   * even when the table has slack — leaving every other column its room. */
+  white-space: normal;
+  overflow-wrap: anywhere;
+  max-width: var(--data-table-th-max, 22rem);
 }
 .data-table th.r,
 .data-table td.r { text-align: right; }
@@ -98,6 +119,11 @@
 .t-num {
   font-variant-numeric: tabular-nums;
   font-family: var(--font-family-display);
+  /* Figures never wrap: a number stays on one line, tabular-aligned. This also
+   * pins each numeric column's min-content at its widest figure, so `auto` layout
+   * keeps them legible and the table SCROLLS (57fc5dd) rather than squeezing a
+   * number mid-digit — the wrap-then-scroll degrade for the wide pivot case. */
+  white-space: nowrap;
 }
 
 /* Inline bar */
