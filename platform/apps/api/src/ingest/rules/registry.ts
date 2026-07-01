@@ -14,6 +14,7 @@
 // The evaluator dispatches on `kind` (the closed vocabulary), never interprets code.
 
 import type { IssueCode } from '../types.js'
+import { KEY_MEASURE } from '../../lib/cube-keys.js'
 
 // ── The closed rule vocabulary (no eval — a new kind is a new registry entry) ─
 
@@ -156,7 +157,7 @@ const BUILT_IN_RULES: RuleSpec[] = [
     // GDP ≡ C + I_GFCF + X − M, per (geo, time). lhs is the total measure; each term
     // selects a component by `dim`; coef −1 on M is the import deduction. ε declared.
     params: {
-      dim: 'measure',
+      dim: KEY_MEASURE,
       lhs: 'GDP',
       terms: [
         { code: 'C' },

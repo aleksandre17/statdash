@@ -33,8 +33,10 @@
 //      actual-region.ts (V26 stats.cube_actual_region + dim_key_in_allowed_region).
 
 import type { FastifyPluginAsync } from 'fastify'
+import type { ContractLocaleString } from '@statdash/contracts'
 import { z } from 'zod'
 import { ok, notFound, parseParams, parseBody, HttpError } from '../../lib/http.js'
+import { KEY_MEASURE } from '../../lib/cube-keys.js'
 import {
   loadActualRegion,
   loadTimeCoverage,
@@ -58,7 +60,9 @@ const ClassifyBody = z.object({
 })
 
 // ── Wire shapes (the bundle contract the Constructor consumes) ────────────────
-type LocaleString = Record<string, string>
+// LocaleString = the ONE SSOT wire type from @statdash/contracts (no local
+// Record<string,string> copy); aliased so the file keeps its readable vocabulary.
+type LocaleString = ContractLocaleString
 
 /** One member of a dimension's codelist (the live, is_current revision). */
 interface ProfileMember {
@@ -232,12 +236,12 @@ export const cubeRoutes: FastifyPluginAsync = async (app) => {
                 mur.unit_source
            FROM stats.measure_unit_resolved mur
            JOIN stats.classifier c
-             ON c.dim_code = 'measure'
+             ON c.dim_code = $2
             AND c.code = mur.measure_code
             AND c.is_current = true
           WHERE mur.dataset_code = $1
           ORDER BY c.ord, mur.measure_code`,
-        [datasetCode],
+        [datasetCode, KEY_MEASURE],
       ),
     ])
 

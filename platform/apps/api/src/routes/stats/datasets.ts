@@ -1,5 +1,5 @@
 import type { FastifyPluginAsync } from 'fastify'
-import type { ReferenceMetadataContract } from '@statdash/contracts'
+import type { ReferenceMetadataContract, ContractLocaleString } from '@statdash/contracts'
 import { z } from 'zod'
 import { ok, notFound, parseParams, parseQuery } from '../../lib/http.js'
 import { relationExists } from '../../lib/relation-exists.js'
@@ -21,7 +21,9 @@ const FormatQuery = z.object({ format: formatField })
 //  ReferenceMetadataContract only when non-empty (an omitted '{}' field becomes an
 //  ABSENT key, not an empty object — Postel: the consumer reads "field absent", and
 //  the engine ProvenanceRecord leaves the corresponding badge slot empty).
-type LocaleString = Record<string, string>
+// LocaleString = the ONE SSOT wire type from @statdash/contracts (no local
+// Record<string,string> copy); aliased so the file keeps its readable vocabulary.
+type LocaleString = ContractLocaleString
 interface ReferenceMetadataRow {
   metadataflow_code: string
   methodology:       LocaleString

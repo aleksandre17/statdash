@@ -4,6 +4,8 @@
 // depends on. Kept separate from logic so both the loader and the export route
 // share one source of truth for the manifest shape.
 
+import type { ContractLocaleString } from '@statdash/contracts'
+
 // ── Ports (Dependency Inversion) ──────────────────────────────────────────────
 
 /** Minimal query result — only what the loader reads. */
@@ -48,7 +50,11 @@ export const consoleLogger: ProvisioningLogger = {
 // — unknown extra keys are ignored — but every load that reaches the DB has been
 // narrowed to a known shape).
 
-export type LocaleString = Record<string, string>
+// The multi-locale wire projection — the ONE SSOT type from @statdash/contracts
+// (arrow-legal: apps/api may import contracts). Aliased under the provisioning-local
+// name so this bounded context keeps its vocabulary while the STRUCTURAL definition
+// lives in exactly one home (no copy-pasted Record<string,string>).
+export type LocaleString = ContractLocaleString
 
 export interface PageProvision {
   /** URL path segment + the idempotency key (config.page.slug is UNIQUE). */

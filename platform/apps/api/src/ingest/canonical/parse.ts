@@ -25,6 +25,7 @@ import type { Cell, SheetMatrices } from './read-workbook.js'
 import type {
   CanonicalDsd, CodelistRef, ParseIssue,
 } from './types.js'
+import { KEY_MEASURE } from '../../lib/cube-keys.js'
 
 /** The injected config SSOT: which locales are active (improvement 1, F-LANG). */
 export interface ParseCtx {
@@ -59,10 +60,11 @@ const CL_CODE = 'code'
 const CL_PARENT = 'parent'
 const CL_ORDER = 'order'
 
-// STRUCTURE core keys (the rest become `meta`).
+// STRUCTURE core keys (the rest become `meta`). The measure header key is the
+// reserved measure dimension code (KEY_MEASURE, the shared SSOT in lib/cube-keys) —
+// the canonical DSD-input names the measure axis by its reserved code.
 const KEY_DATASET_CODE = 'dataset_code'
 const KEY_DIMENSIONS = 'dimensions'
-const KEY_MEASURE = 'measure'
 
 // ── Cell helpers (the boundary between spreadsheet cells and clean data) ───────
 
