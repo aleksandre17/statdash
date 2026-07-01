@@ -1,0 +1,17 @@
+---
+name: project-accounting-identity-gate
+description: DC-02 declarative signed accounting-identity validation + publish gate (linearIdentity rule kind, GDP=C+I_GFCF+X−M), all in apps/api, no migration
+metadata:
+  type: project
+---
+DC-02 (2026-06-28) added a DECLARATIVE accounting-identity capability + publish gate, entirely in `platform/apps/api` (NO migration — rules are built-in data; `validation_issue.code` is plain TEXT with no CHECK, so a new code needs no DDL). Rides the existing ADR-0031 RuleSpec/`runRules` registry (`src/ingest/rules/`).
+
+**New rule kind `linearIdentity` (SIGNED):** `lhs ≈ Σ(coefᵢ·termᵢ)` per group — the SNA value-balance form the legacy unsigned kinds (`identity`/`totalReconcile`) cannot state. Params: `{ dim, lhs:string, terms:(string|{code,coef?})[], group?, epsilon? }`; coef default +1, negative = subtraction. POSTEL: a group is asserted ONLY when the lhs AND EVERY term are present (incomplete operand set → skip, never a false positive on a partial/incremental submission). Emits issue code `ACCOUNTING_IDENTITY`.
+
+**The REAL declared identity (verified against the seed, NOT fabricated):** `GDP_ANNUAL.identity.expenditure` = `GDP = C + I_GFCF + X − M` (M coef −1), dim=`measure`, group=`geo`, severity **error**, ε=0.5 (DEFAULT_EPSILON). Holds for EVERY national year 2010–2025 in both `ops/postgres/seed/R__seed_geostat_gold.sql` AND the live `ops/seed-data/geostat/facts/GDP_ANNUAL.bundle.json`, max|Δ|=0.1 mln GEL. (Production GDP=AGRI+IND+CON+SVC+NET_TAX also holds to 0.1; income holds only to 0.9 — looser.) NB: GDP_ANNUAL DSD is `{measure,geo,time}` — there is NO `approach` dim, so the legacy seeded `GDP_ANNUAL.identity.approaches` rule (codes B1GQ_P/E/I) is DECORATIVE/non-firing against real data; left as-is, harmless warn.
+
+**Two-tier gate model (decided):** schema errors reject at INGEST (row can't stage, via validateObs→canPublish→'rejected'). An accounting-identity error does NOT change staging (the row is structurally valid → reaches 'staged') but BLOCKS the PUBLISH gate. `assertPublishableIdentities(db, submissionId)` (in `validate-integrity.ts`) reads the persisted error-severity ACCOUNTING_IDENTITY issues (worker's verdict = SSOT) and throws the RFC-9457 problem `accounting-identity` (422, in `lib/problem.ts`) naming the failing identity ids + deltas. Called at BOTH the curator route (`routes/ingest/index.ts` POST /jobs/:id/publish, before the generic 409) AND inside `publishSubmission` (before the txn, so the submission stays 'staged'/retryable, never 'failed'). publishSubmission is the chokepoint ALL publish paths share (curator route, `publishBundle` release path which has NO error pre-check, canonical drive) — so the gate is un-bypassable.
+
+**Fitness:** `src/ingest/rules/accounting-identity.fitness.test.ts` (DB-independent) — FF-ACCOUNTING-IDENTITY (satisfying 2010 figures pass; perturbed → 1 error ACCOUNTING_IDENTITY with right Δ; −M genuinely subtracted; Postel skip) + reads the real facts bundle and asserts the identity reconciles every year within ε + the gate helper throws the 422 problem on a fake Queryable. The cross-submission/cross-dataset identity (pull missing operands from gold) is the deferred seam.
+
+**How to apply:** new identities = add a `linearIdentity` RuleSpec to `BUILT_IN_RULES` in `rules/registry.ts` (the curator DB rule-table is still the deferred seam). severity:'error' to gate publish; 'warn' to only surface. See [[project-content-constraint-model]] (sibling V26 constraint model), [[project-db-state]], [[project-dsd-completeness]].

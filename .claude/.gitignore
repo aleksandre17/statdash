@@ -3,5 +3,8 @@ __pycache__/
 *.pyc
 # Bootstrap draft (review-then-merge artifact, never committed)
 project.detected.json
-# Per-agent native memory (machine-local)
-agent-memory/
+# Per-agent native memory is now the CANONICAL, git-tracked SSOT home (reorg 2026-07-01);
+# it is the single physical dir the native memory tool writes to. No longer ignored.
+# Rotated/cold runtime scratch stays ignored:
+session/archive/
+worktrees/

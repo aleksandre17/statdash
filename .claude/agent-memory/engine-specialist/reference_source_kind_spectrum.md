@@ -1,0 +1,21 @@
+---
+name: source-kind-spectrum
+description: DatasourceInstanceConfig.kind = the source-mode discriminant (Vega-Lite values|url|name); static + href + stats ALL REGISTERED (spectrum complete); kind-dispatch is OCP via registerStoreBuilder
+metadata:
+  type: reference
+---
+
+The data-source-reference SPECTRUM is the Vega-Lite `data: { values | url | name }` trichotomy placed at the STORE-KIND tier (`DatasourceInstanceConfig.kind`), NOT a node-level `DataSpec.data` union. Discriminant lives on the named store; nodes reference it by `storeKey`. ADR: `.claude/agent-memory/architect/adr_data_source_reference_spectrum.md`.
+
+**Three kinds, ONE `DataStore` port** (dispatch = `registerStoreBuilder(kind, fn)` + `buildStoreManifest` in `packages/react/src/engine/storeManifest.ts`):
+- `static` — REGISTERED. `new ExternalStore(params.values, { classifiers, display })`, zero network. Builder: `packages/plugins/datasources/static-registrations.ts` → `registerStaticStoreBuilder()`, called from the shared `registerStoreBuilders()` (stats-registrations.ts) so BOTH apps get it via their existing single boot call. Descriptor: `{ id, kind:'static', params:{ values: Observation[], classifiers?, display? } }` — literal values only, NO functions/url (Law 2).
+- `href` — REGISTERED (D-HREF BUILT 2026-06-25). Builder: `packages/plugins/datasources/href-registrations.ts` → `registerHrefStoreBuilder()`, called from shared `registerStoreBuilders()`. FETCHES at build time (adapter layer, engine stays pure), parses → `new ExternalStore(rows)` so href flows through the SAME sync port. Descriptor: `{ id, kind:'href', url, params:{ format?, auth?, allowedOrigins?, classifiers?, display? } }`. Two OCP registries SHIPPED: FORMAT-PARSER (`registerHrefFormatParser`; built-ins json+csv; json unwraps bare-array / `{data}` / `{values}`; csv = hand-rolled RFC-4180-essentials tokenizer, numeric cells coerced, NO new dep) and AUTH-STRATEGY (`registerHrefAuthStrategy`; built-ins none/bearer/header; data-only descriptors, secrets never logged). SSRF: default-BLOCKED; origin must be on `params.allowedOrigins` ∪ `VITE_HREF_ALLOWED_ORIGINS` (Vite env, comma-list); non-http(s) blocked; `assertHrefAllowed` is the gate. M2: getMetadata/testConnection PROBE the url (gated by same SSRF check) + parse-preview. Wire type `sdmx-json`→`href` kind (generic remote, not only SDMX; CHECK constraint label retained, no migration).
+- `stats` — the live cube (per-query ApiStore+CachedStore). `stats-registrations.ts`.
+
+**OCP confirmed:** `buildStoreManifest` dispatch is registry-keyed, no hardcoded `kind==='stats'` anywhere. New kind = one `registerStoreBuilder` call, zero resolver edits. All `'stats'` literals are builder/descriptor construction (legit).
+
+**The 4 static surfaces (S1 unification — all KEPT, relationship documented in static-registrations.ts):** (1) `static` KIND = canonical named/reusable config-level static; (2) `transform.source`/`pivot.rows` = node-local inline literals (`Record<string,DimVal>[]`), consumed directly by TransformResolver, no store — the bounded node-level exception; (3) `staticStore` (store.ts) = empty Null Object fallback; (4) selector `StaticSource`/`InlineSource` (data/source.ts) = filter-dropdown descriptor shape, different layer.
+
+**HREF ghost CLEANED (S2):** removed dead `api` null-branch in `data/resolve.ts` (pointed at deleted FilterSchema.tsx) + `ApiSource` type from `data/source.ts`; `RemoteSource = QuerySource` now (was `QuerySource | ApiSource`). Barrels (`core/src/index.ts`, `core/src/data/index.ts`) drop `ApiSource`, add `InlineSource`. D-HREF door comment left in resolve.ts + source.ts.
+
+**Fitness:** FF-STATIC-KIND, FF-SOURCE-KIND-CLOSED, FF-NO-FETCH-IN-CONFIG in `static-registrations.test.ts`; FF-HREF-DOOR + SSRF-gate + OCP-registry + M2 in `href-registrations.test.ts` (mocked fetch, json+csv, SSRF-blocked-by-default proven). FF-CONFIG-ROUNDTRIP in `core/src/data/datasource.test.ts`. M2 panel surface (`SourceAuthoringPanel.tsx`) is kind-driven via `registeredKinds()` — href appears in the picker automatically (OCP), though its KindConfig form body is still the generic fallback (url+format/auth form not yet built; the engine seam + capabilities are complete). Full suite green: 1439 passed.
