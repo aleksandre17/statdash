@@ -6,8 +6,14 @@
         "children": [
           {
             "badge": {
-              "range": { "ka": "{fromYear}–{toYear}", "en": "{fromYear}–{toYear}" },
-              "year": { "ka": "განახლდა: {time}", "en": "Updated: {time}" }
+              "range": {
+                "ka": "{fromYear}–{toYear}",
+                "en": "{fromYear}–{toYear}"
+              },
+              "year": {
+                "ka": "განახლდა: {time}",
+                "en": "Updated: {time}"
+              }
             },
             "crumbs": [
               {
@@ -289,7 +295,10 @@
                 "trend": {
                   "dir": "flat",
                   "type": "static",
-                  "value": { "ka": "სტაბილური", "en": "Stable" }
+                  "value": {
+                    "ka": "სტაბილური",
+                    "en": "Stable"
+                  }
                 },
                 "trendSub": {
                   "ka": "{toYear}",
@@ -458,11 +467,17 @@
                           "from": {
                             "R": {
                               "color": "#4472C4",
-                              "series": { "ka": "რესურსები", "en": "Resources" }
+                              "series": {
+                                "ka": "რესურსები",
+                                "en": "Resources"
+                              }
                             },
                             "U": {
                               "color": "#E76F51",
-                              "series": { "ka": "გამოყენება", "en": "Uses" }
+                              "series": {
+                                "ka": "გამოყენება",
+                                "en": "Uses"
+                              }
                             }
                           },
                           "key": "side",
@@ -499,7 +514,10 @@
                                 },
                                 "set": {
                                   "_isGroup": 1,
-                                  "series": { "ka": "რესურსები", "en": "Resources" },
+                                  "series": {
+                                    "ka": "რესურსები",
+                                    "en": "Resources"
+                                  },
                                   "value": 0
                                 }
                               }
@@ -647,11 +665,17 @@
                           "from": {
                             "R": {
                               "color": "#4472C4",
-                              "series": { "ka": "რესურსები", "en": "Resources" }
+                              "series": {
+                                "ka": "რესურსები",
+                                "en": "Resources"
+                              }
                             },
                             "U": {
                               "color": "#E76F51",
-                              "series": { "ka": "გამოყენება", "en": "Uses" }
+                              "series": {
+                                "ka": "გამოყენება",
+                                "en": "Uses"
+                              }
                             }
                           },
                           "key": "side",
@@ -688,7 +712,10 @@
                                 },
                                 "set": {
                                   "_isGroup": 1,
-                                  "series": { "ka": "რესურსები", "en": "Resources" },
+                                  "series": {
+                                    "ka": "რესურსები",
+                                    "en": "Resources"
+                                  },
                                   "value": 0
                                 }
                               }
@@ -745,320 +772,6 @@
                     "en": "{time} · GEL mn"
                   }
                 }
-              }
-            ]
-          },
-          {
-            "type": "columns",
-            "count": {
-              "default": 1,
-              "md": 1,
-              "sm": 1
-            },
-            "view": {
-              "visibleWhen": {
-                "op": "perspective-is",
-                "perspective": "year"
-              }
-            },
-            "children": [
-              {
-                "as": "account",
-                "children": [
-                  {
-                    "children": [
-                      {
-                        "chartType": "hbar-diverging",
-                        "compact": true,
-                        "data": {
-                          "encoding": {
-                            "color": "color",
-                            "id": "_id",
-                            "isTotal": "_isTotal",
-                            "label": "label",
-                            "series": "series"
-                          },
-                          "pipe": [
-                            {
-                              "fields": [
-                                "isClosing"
-                              ],
-                              "on": "measure",
-                              "op": "join",
-                              "with": {
-                                "$cl": "aggregates"
-                              }
-                            },
-                            {
-                              "by": [
-                                {
-                                  "field": "side",
-                                  "using": [
-                                    "R",
-                                    "U"
-                                  ]
-                                },
-                                {
-                                  "dir": "asc",
-                                  "field": "seqPos",
-                                  "last": -1
-                                },
-                                {
-                                  "dir": "asc",
-                                  "field": "isClosing"
-                                }
-                              ],
-                              "op": "sort"
-                            },
-                            {
-                              "fields": [
-                                "label",
-                                "color"
-                              ],
-                              "from": {
-                                "$d": "aggregates"
-                              },
-                              "key": "measure",
-                              "op": "lookup"
-                            },
-                            {
-                              "fields": [
-                                "series",
-                                "color"
-                              ],
-                              "from": {
-                                "R": {
-                                  "color": "#4472C4",
-                                  "series": { "ka": "რესურსები", "en": "Resources" }
-                                },
-                                "U": {
-                                  "color": "#E76F51",
-                                  "series": { "ka": "გამოყენება", "en": "Uses" }
-                                }
-                              },
-                              "key": "side",
-                              "op": "lookup"
-                            },
-                            {
-                              "as": "label",
-                              "op": "template",
-                              "tpl": "{label} ({measure})"
-                            },
-                            {
-                              "as": "_id",
-                              "fields": [
-                                "measure",
-                                "side"
-                              ],
-                              "op": "concat"
-                            },
-                            {
-                              "fields": {
-                                "isClosing": "_isTotal"
-                              },
-                              "op": "rename"
-                            }
-                          ],
-                          "query": {
-                            "filter": {
-                              "account": {
-                                "$ctx": "account"
-                              },
-                              "time": {
-                                "$ctx": "time"
-                              }
-                            },
-                            "measure": "*"
-                          },
-                          "type": "query"
-                        },
-                        "fieldConfig": {
-                          "unit": {
-                            "ka": "მლნ ₾",
-                            "en": "GEL mn"
-                          }
-                        },
-                        "label": {
-                          "ka": "T-ანგარიში · მლნ ₾",
-                          "en": "T-account · GEL mn"
-                        },
-                        "type": "chart",
-                        "view": {
-                          "label": {
-                            "ka": "დიაგრამა",
-                            "en": "Chart"
-                          },
-                          "role": "chart"
-                        }
-                      },
-                      {
-                        "columns": [
-                          {
-                            "bar": true,
-                            "format": "mln_gel",
-                            "key": "value",
-                            "label": {
-                              "ka": "მლნ ₾",
-                              "en": "GEL mn"
-                            }
-                          }
-                        ],
-                        "data": {
-                          "encoding": {
-                            "color": "color",
-                            "id": "_id",
-                            "isTotal": "_isTotal",
-                            "label": "label",
-                            "series": "series"
-                          },
-                          "pipe": [
-                            {
-                              "fields": [
-                                "isClosing"
-                              ],
-                              "on": "measure",
-                              "op": "join",
-                              "with": {
-                                "$cl": "aggregates"
-                              }
-                            },
-                            {
-                              "by": [
-                                {
-                                  "field": "side",
-                                  "using": [
-                                    "R",
-                                    "U"
-                                  ]
-                                },
-                                {
-                                  "dir": "asc",
-                                  "field": "seqPos",
-                                  "last": -1
-                                },
-                                {
-                                  "dir": "asc",
-                                  "field": "isClosing"
-                                }
-                              ],
-                              "op": "sort"
-                            },
-                            {
-                              "fields": [
-                                "label",
-                                "color"
-                              ],
-                              "from": {
-                                "$d": "aggregates"
-                              },
-                              "key": "measure",
-                              "op": "lookup"
-                            },
-                            {
-                              "fields": [
-                                "series",
-                                "color"
-                              ],
-                              "from": {
-                                "R": {
-                                  "color": "#4472C4",
-                                  "series": { "ka": "რესურსები", "en": "Resources" }
-                                },
-                                "U": {
-                                  "color": "#E76F51",
-                                  "series": { "ka": "გამოყენება", "en": "Uses" }
-                                }
-                              },
-                              "key": "side",
-                              "op": "lookup"
-                            },
-                            {
-                              "as": "label",
-                              "op": "template",
-                              "tpl": "{label} ({measure})"
-                            },
-                            {
-                              "as": "_id",
-                              "fields": [
-                                "measure",
-                                "side"
-                              ],
-                              "op": "concat"
-                            },
-                            {
-                              "fields": {
-                                "isClosing": "_isTotal"
-                              },
-                              "op": "rename"
-                            }
-                          ],
-                          "query": {
-                            "filter": {
-                              "account": {
-                                "$ctx": "account"
-                              },
-                              "time": {
-                                "$ctx": "time"
-                              }
-                            },
-                            "measure": "*"
-                          },
-                          "type": "query"
-                        },
-                        "indent": true,
-                        "statusFlags": false,
-                        "type": "table",
-                        "view": {
-                          "label": {
-                            "ka": "ცხრილი",
-                            "en": "Table"
-                          },
-                          "role": "table"
-                        }
-                      }
-                    ],
-                    "id": "account-{account_code}",
-                    "title": {
-                      "ka": "{account_label}",
-                      "en": "{account_label}"
-                    },
-                    "type": "section",
-                    "view": {
-                      "subtitle": {
-                        "ka": "{time} · მლნ ₾",
-                        "en": "{time} · GEL mn"
-                      },
-                      "toggle": true
-                    }
-                  }
-                ],
-                "each": [
-                  {
-                    "code": "production-account",
-                    "color": "#0080BE",
-                    "label": {
-                      "ka": "წარმოების ანგარიში",
-                      "en": "Production account"
-                    }
-                  },
-                  {
-                    "code": "generation-of-income-account",
-                    "color": "#E76F51",
-                    "label": {
-                      "ka": "შემოსავლის ფორმირება",
-                      "en": "Generation of income"
-                    }
-                  },
-                  {
-                    "code": "capital-account",
-                    "color": "#4472C4",
-                    "label": {
-                      "ka": "კაპიტალის ანგარიში",
-                      "en": "Capital account"
-                    }
-                  }
-                ],
-                "type": "repeat"
               }
             ]
           },
@@ -1499,8 +1212,14 @@
         "children": [
           {
             "badge": {
-              "range": { "ka": "{fromYear}–{toYear} · მლნ ₾", "en": "{fromYear}–{toYear} · GEL mn" },
-              "year": { "ka": "განახლდა: {time}", "en": "Updated: {time}" }
+              "range": {
+                "ka": "{fromYear}–{toYear} · მლნ ₾",
+                "en": "{fromYear}–{toYear} · GEL mn"
+              },
+              "year": {
+                "ka": "განახლდა: {time}",
+                "en": "Updated: {time}"
+              }
             },
             "crumbs": [
               {
@@ -1593,7 +1312,10 @@
                 "trend": {
                   "type": "static",
                   "dir": "up",
-                  "value": { "ka": "რეალური", "en": "Real" }
+                  "value": {
+                    "ka": "რეალური",
+                    "en": "Real"
+                  }
                 }
               },
               {
@@ -1982,9 +1704,16 @@
                       "op": "lookup",
                       "key": "isTotal",
                       "from": {
-                        "1": { "label": { "ka": "მშპ", "en": "GDP" } }
+                        "1": {
+                          "label": {
+                            "ka": "მშპ",
+                            "en": "GDP"
+                          }
+                        }
                       },
-                      "fields": ["label"]
+                      "fields": [
+                        "label"
+                      ]
                     },
                     {
                       "op": "derive",
@@ -3028,8 +2757,14 @@
         "children": [
           {
             "badge": {
-              "range": { "ka": "{fromYear}–{toYear} · მლნ ₾", "en": "{fromYear}–{toYear} · GEL mn" },
-              "year": { "ka": "განახლდა: {time}", "en": "Updated: {time}" }
+              "range": {
+                "ka": "{fromYear}–{toYear} · მლნ ₾",
+                "en": "{fromYear}–{toYear} · GEL mn"
+              },
+              "year": {
+                "ka": "განახლდა: {time}",
+                "en": "Updated: {time}"
+              }
             },
             "crumbs": [
               {
@@ -3144,7 +2879,10 @@
                 "trend": {
                   "dir": "flat",
                   "type": "static",
-                  "value": { "ka": "თბილისი / საქართველო", "en": "Tbilisi / Georgia" }
+                  "value": {
+                    "ka": "თბილისი / საქართველო",
+                    "en": "Tbilisi / Georgia"
+                  }
                 },
                 "trendSub": {
                   "ka": "ეროვნული ჯამიდან",
@@ -3333,7 +3071,10 @@
                 "trend": {
                   "dir": "flat",
                   "type": "static",
-                  "value": { "ka": "საწყისი", "en": "Baseline" }
+                  "value": {
+                    "ka": "საწყისი",
+                    "en": "Baseline"
+                  }
                 },
                 "trendSub": {
                   "ka": "{fromYear}",
@@ -3529,8 +3270,14 @@
                   "en": "{_regionTitle}"
                 },
                 "labelOverrides": {
-                  "GE-AB": { "ka": "ოკუპირებული ტერიტორია", "en": "Occupied territory" },
-                  "GE-OS": { "ka": "ოკუპირებული ტერიტორია", "en": "Occupied territory" }
+                  "GE-AB": {
+                    "ka": "ოკუპირებული ტერიტორია",
+                    "en": "Occupied territory"
+                  },
+                  "GE-OS": {
+                    "ka": "ოკუპირებული ტერიტორია",
+                    "en": "Occupied territory"
+                  }
                 },
                 "maxSelect": 10,
                 "multiSelect": true,
@@ -3658,9 +3405,16 @@
                       "op": "lookup",
                       "key": "isTotal",
                       "from": {
-                        "1": { "label": { "ka": "სულ", "en": "Total" } }
+                        "1": {
+                          "label": {
+                            "ka": "სულ",
+                            "en": "Total"
+                          }
+                        }
                       },
-                      "fields": ["label"]
+                      "fields": [
+                        "label"
+                      ]
                     },
                     {
                       "by": [
@@ -4162,8 +3916,14 @@
                   "en": "{_regionTitle}"
                 },
                 "labelOverrides": {
-                  "GE-AB": { "ka": "ოკუპირებული ტერიტორია", "en": "Occupied territory" },
-                  "GE-OS": { "ka": "ოკუპირებული ტერიტორია", "en": "Occupied territory" }
+                  "GE-AB": {
+                    "ka": "ოკუპირებული ტერიტორია",
+                    "en": "Occupied territory"
+                  },
+                  "GE-OS": {
+                    "ka": "ოკუპირებული ტერიტორია",
+                    "en": "Occupied territory"
+                  }
                 },
                 "paramKey": "region",
                 "title": {
@@ -4928,27 +4688,6 @@
               "label": {
                 "ka": "SNA სრული სტრუქტურა",
                 "en": "SNA full structure"
-              }
-            },
-            {
-              "anchor": "production-account",
-              "label": {
-                "ka": "წარმოების ანგარიში",
-                "en": "Production account"
-              }
-            },
-            {
-              "anchor": "income-formation",
-              "label": {
-                "ka": "შემოსავლის ფორმირება",
-                "en": "Generation of income"
-              }
-            },
-            {
-              "anchor": "capital-account",
-              "label": {
-                "ka": "კაპიტალის ანგარიში",
-                "en": "Capital account"
               }
             }
           ],
