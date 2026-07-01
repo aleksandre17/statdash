@@ -1775,12 +1775,8 @@
             ]
           },
           {
-            "type": "columns",
-            "count": {
-              "default": 2,
-              "md": 1,
-              "sm": 1
-            },
+            "type": "grid",
+            "templateColumns": "repeat(auto-fit, minmax(min(100%, 24rem), 1fr))",
             "view": {
               "visibleWhen": {
                 "op": "perspective-is",
@@ -2062,12 +2058,8 @@
             ]
           },
           {
-            "type": "columns",
-            "count": {
-              "default": 2,
-              "md": 1,
-              "sm": 1
-            },
+            "type": "grid",
+            "templateColumns": "repeat(auto-fit, minmax(min(100%, 24rem), 1fr))",
             "view": {
               "visibleWhen": {
                 "op": "perspective-is",
@@ -2294,12 +2286,8 @@
             ]
           },
           {
-            "type": "columns",
-            "count": {
-              "default": 1,
-              "md": 1,
-              "sm": 1
-            },
+            "type": "grid",
+            "templateColumns": "1fr",
             "view": {
               "visibleWhen": {
                 "op": "perspective-is",
@@ -2427,12 +2415,8 @@
             ]
           },
           {
-            "type": "columns",
-            "count": {
-              "default": 1,
-              "md": 1,
-              "sm": 1
-            },
+            "type": "grid",
+            "templateColumns": "1fr",
             "view": {
               "visibleWhen": {
                 "op": "perspective-is",
@@ -3874,12 +3858,8 @@
                 }
               }
             ],
-            "count": {
-              "default": 2,
-              "md": 1,
-              "sm": 1
-            },
-            "type": "columns",
+            "templateColumns": "repeat(auto-fit, minmax(min(100%, 24rem), 1fr))",
+            "type": "grid",
             "view": {
               "visibleWhen": {
                 "op": "perspective-is",
@@ -3888,12 +3868,8 @@
             }
           },
           {
-            "type": "columns",
-            "count": {
-              "default": 1,
-              "md": 1,
-              "sm": 1
-            },
+            "type": "grid",
+            "templateColumns": "1fr",
             "view": {
               "visibleWhen": {
                 "op": "perspective-is",
@@ -4301,12 +4277,8 @@
                 }
               }
             ],
-            "count": {
-              "default": 2,
-              "md": 1,
-              "sm": 1
-            },
-            "type": "columns",
+            "templateColumns": "repeat(auto-fit, minmax(min(100%, 24rem), 1fr))",
+            "type": "grid",
             "view": {
               "visibleWhen": {
                 "op": "perspective-is",
@@ -4315,12 +4287,8 @@
             }
           },
           {
-            "type": "columns",
-            "count": {
-              "default": 1,
-              "md": 1,
-              "sm": 1
-            },
+            "type": "grid",
+            "templateColumns": "1fr",
             "view": {
               "visibleWhen": {
                 "op": "perspective-is",

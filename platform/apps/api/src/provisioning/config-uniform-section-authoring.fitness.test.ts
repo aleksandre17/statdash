@@ -9,9 +9,11 @@
 // THE CANONICAL FORM (DESIGN-responsive-composition.md §3 — a grammar of composition):
 //   Every `section` (and every section-like `geograph`, and every section-emitting
 //   `repeat`) is composed THROUGH a layout container. The layout VARIES by genuine
-//   content need — a pair uses `columns` count:2, a single uses `columns` count:1 —
-//   but the FORM is uniform: a section is NEVER a direct child of the page body, and
-//   no page special-cases section placement with a bespoke wrapper.
+//   content need — a side-by-side pair uses `grid` with an intrinsic responsive
+//   `templateColumns` (AR-5), a full-width single uses `grid` templateColumns:'1fr'
+//   (or a deliberate `columns` count:1 for stacked `repeat` fan-out) — but the FORM
+//   is uniform: a section is NEVER a direct child of the page body, and no page
+//   special-cases section placement with a bespoke wrapper.
 //
 // THE INVARIANT (the one-handwriting law, structural, no registry import needed):
 //   For every inner-page, every `section`/`geograph` node in its config tree has at
@@ -110,9 +112,9 @@ describe('FF-UNIFORM-SECTION-AUTHORING — every section composed through a layo
   })
 
   it('every layout container at the page root carries the group perspective gate (not the inner section)', () => {
-    // The canonical form hoists the section-group `visibleWhen` onto the columns
-    // wrapper; the wrapped single section must NOT also carry a perspective gate
-    // (that would be the old redundant, per-section special-casing).
+    // The canonical form hoists the section-group `visibleWhen` onto the layout
+    // wrapper (grid/columns); the wrapped single section must NOT also carry a
+    // perspective gate (that would be the old redundant, per-section special-casing).
     const redundant: string[] = []
     for (const page of innerPages()) {
       for (const child of childrenOf(asNode(page.config))) {

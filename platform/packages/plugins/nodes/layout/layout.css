@@ -92,26 +92,78 @@
   .layout-columns { grid-template-columns: 1fr; }
 }
 
-/* ── Grid (12-column engineering grid) ───────────────────────── */
-/* Same equal-height contract as columns — siblings stretch to the row's
- * tallest cell, overridable via data-align. */
+/* ── Grid — the MAXIMAL CSS-Grid grammar (JSON → grid-template) ────
+ * Full grid-template power exposed as declarative config and interpreted by
+ * the JS renderer (GridShell + resolveGrid). Reference class: Every-Layout
+ * intrinsic grids, Builder.io/Framer breakpoint overrides, the CSS Grid std.
+ *
+ *  • FLAT template props (grid-template-columns/rows/areas, auto-flow/cols/rows)
+ *    arrive as INLINE style from the shell → win directly, no rule needed. The
+ *    intrinsic `repeat(auto-fit, minmax(min(100%, 24rem), 1fr))` form reflows by
+ *    the grid's OWN width (2-up when wide, 1-up when narrow) with zero vars.
+ *  • RESPONSIVE template props arrive as per-breakpoint vars
+ *    (--grid-cols-<bp> / --grid-rows-<bp> / --grid-areas-<bp>) + a
+ *    data-grid-<axis>-responsive flag; the @container cascade below assigns the
+ *    property from the winning breakpoint var (large→small, smaller wins) —
+ *    CONTAINER-query driven, mirroring the node-styles.css responsive engine.
+ *
+ * Equal-height is intrinsic (align-items: stretch — the columns/Tableau/Grafana
+ * row contract), overridable via data-align; data-justify sets justify-items. */
 .layout-grid {
   display:               grid;
-  grid-template-columns: repeat(12, 1fr);
+  grid-template-columns: repeat(12, minmax(0, 1fr));  /* default when unset */
   gap:                   var(--layout-gap, var(--spacing-md, 1rem));
   align-items:           stretch;
 }
 
+.layout-grid > * { min-width: 0; }
+
+/* Authorable cross-axis (block) alignment — align-items (data-align). */
 .layout-grid[data-align="start"]  { align-items: start;  }
 .layout-grid[data-align="center"] { align-items: center; }
 .layout-grid[data-align="end"]    { align-items: end;    }
 
-.layout-grid > * { min-width: 0; }
+/* Authorable inline-axis item alignment — justify-items (data-justify). */
+.layout-grid[data-justify="start"]  { justify-items: start;  }
+.layout-grid[data-justify="center"] { justify-items: center; }
+.layout-grid[data-justify="end"]    { justify-items: end;    }
 
-@container grid (max-width: 1024px) { .layout-grid { grid-template-columns: repeat(6, 1fr); } }
-@container grid (max-width: 768px)  { .layout-grid { grid-template-columns: repeat(6, 1fr); } }
-@container grid (max-width: 640px)  { .layout-grid { grid-template-columns: 1fr; } }
-@media      (max-width: 480px)      { .layout-grid { grid-template-columns: 1fr; } }
+/* Responsive template — the flat-of-responsive (default) value. */
+.layout-grid[data-grid-cols-responsive]  { grid-template-columns: var(--grid-cols-default); }
+.layout-grid[data-grid-rows-responsive]  { grid-template-rows:    var(--grid-rows-default); }
+.layout-grid[data-grid-areas-responsive] { grid-template-areas:   var(--grid-areas-default); }
+
+/* Responsive template — per-breakpoint @container cascade (large→small; smaller wins). */
+@container grid (max-width: 1536px) {
+  .layout-grid[data-grid-cols-responsive]  { grid-template-columns: var(--grid-cols-2xl,  var(--grid-cols-default)); }
+  .layout-grid[data-grid-rows-responsive]  { grid-template-rows:    var(--grid-rows-2xl,  var(--grid-rows-default)); }
+  .layout-grid[data-grid-areas-responsive] { grid-template-areas:   var(--grid-areas-2xl, var(--grid-areas-default)); }
+}
+@container grid (max-width: 1280px) {
+  .layout-grid[data-grid-cols-responsive]  { grid-template-columns: var(--grid-cols-xl,  var(--grid-cols-2xl,  var(--grid-cols-default))); }
+  .layout-grid[data-grid-rows-responsive]  { grid-template-rows:    var(--grid-rows-xl,  var(--grid-rows-2xl,  var(--grid-rows-default))); }
+  .layout-grid[data-grid-areas-responsive] { grid-template-areas:   var(--grid-areas-xl, var(--grid-areas-2xl, var(--grid-areas-default))); }
+}
+@container grid (max-width: 1024px) {
+  .layout-grid[data-grid-cols-responsive]  { grid-template-columns: var(--grid-cols-lg,  var(--grid-cols-xl,  var(--grid-cols-2xl,  var(--grid-cols-default)))); }
+  .layout-grid[data-grid-rows-responsive]  { grid-template-rows:    var(--grid-rows-lg,  var(--grid-rows-xl,  var(--grid-rows-2xl,  var(--grid-rows-default)))); }
+  .layout-grid[data-grid-areas-responsive] { grid-template-areas:   var(--grid-areas-lg, var(--grid-areas-xl, var(--grid-areas-2xl, var(--grid-areas-default)))); }
+}
+@container grid (max-width: 768px) {
+  .layout-grid[data-grid-cols-responsive]  { grid-template-columns: var(--grid-cols-md,  var(--grid-cols-lg,  var(--grid-cols-xl,  var(--grid-cols-2xl,  var(--grid-cols-default))))); }
+  .layout-grid[data-grid-rows-responsive]  { grid-template-rows:    var(--grid-rows-md,  var(--grid-rows-lg,  var(--grid-rows-xl,  var(--grid-rows-2xl,  var(--grid-rows-default))))); }
+  .layout-grid[data-grid-areas-responsive] { grid-template-areas:   var(--grid-areas-md, var(--grid-areas-lg, var(--grid-areas-xl, var(--grid-areas-2xl, var(--grid-areas-default))))); }
+}
+@container grid (max-width: 640px) {
+  .layout-grid[data-grid-cols-responsive]  { grid-template-columns: var(--grid-cols-sm,  var(--grid-cols-md,  var(--grid-cols-lg,  var(--grid-cols-xl,  var(--grid-cols-2xl,  var(--grid-cols-default)))))); }
+  .layout-grid[data-grid-rows-responsive]  { grid-template-rows:    var(--grid-rows-sm,  var(--grid-rows-md,  var(--grid-rows-lg,  var(--grid-rows-xl,  var(--grid-rows-2xl,  var(--grid-rows-default)))))); }
+  .layout-grid[data-grid-areas-responsive] { grid-template-areas:   var(--grid-areas-sm, var(--grid-areas-md, var(--grid-areas-lg, var(--grid-areas-xl, var(--grid-areas-2xl, var(--grid-areas-default)))))); }
+}
+@container grid (max-width: 480px) {
+  .layout-grid[data-grid-cols-responsive]  { grid-template-columns: var(--grid-cols-xs,  var(--grid-cols-sm,  var(--grid-cols-md,  var(--grid-cols-lg,  var(--grid-cols-xl,  var(--grid-cols-2xl,  var(--grid-cols-default))))))); }
+  .layout-grid[data-grid-rows-responsive]  { grid-template-rows:    var(--grid-rows-xs,  var(--grid-rows-sm,  var(--grid-rows-md,  var(--grid-rows-lg,  var(--grid-rows-xl,  var(--grid-rows-2xl,  var(--grid-rows-default))))))); }
+  .layout-grid[data-grid-areas-responsive] { grid-template-areas:   var(--grid-areas-xs, var(--grid-areas-sm, var(--grid-areas-md, var(--grid-areas-lg, var(--grid-areas-xl, var(--grid-areas-2xl, var(--grid-areas-default))))))); }
+}
 
 /* ── Stack (flex: row | column) ──────────────────────────────── */
 .layout-stack {

@@ -41,9 +41,10 @@ export {
   applyContainerVars,
   resolveColumns,
   resolveAlign,
+  resolveGrid,
   resolveLayoutItem,
 } from './resolvers/layout'
-export type { LayoutAlign } from './resolvers/layout'
+export type { LayoutAlign, GridSpec, GridAttrs } from './resolvers/layout'
 
 export { resolveViewState }      from './resolvers/view'
 export type { ViewStateAttrs }   from './resolvers/view'
