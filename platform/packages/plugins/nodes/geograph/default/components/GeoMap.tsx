@@ -11,12 +11,12 @@
 //
 
 import 'leaflet/dist/leaflet.css'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { GeoJSON, MapContainer, useMap } from 'react-leaflet'
 import L, { type PathOptions } from 'leaflet'
 import type { DataRow } from '@statdash/engine'
 import { fmtNum } from '@statdash/engine'
-import { cssVar } from '@statdash/styles'
+import { cssVar, sequentialRamp, quantileColors } from '@statdash/styles'
 
 // ── Types ──────────────────────────────────────────────────────────────
 
@@ -50,24 +50,30 @@ interface GeoFeatureProps {
   [key: string]: string | number | boolean | null
 }
 
-const FILL_DEFAULT  = 0.45
-const FILL_SELECTED = 0.85
+// A choropleth encodes VALUE as fill COLOR (a sequential ramp), leaving opacity +
+// stroke weight free to signal SELECTION/hover — the two encodings stay
+// orthogonal (Mapbox / Vega convention). Fill opacity is high so the ramp reads.
+const FILL_DEFAULT    = 0.9
+const FILL_SELECTED   = 1
+const WEIGHT_DEFAULT  = 1
+const WEIGHT_SELECTED = 2.5
 
 // Leaflet PathOptions take a literal color string (var() is invalid as a JS-fed
-// fill value) — resolve the semantic token at call-time via cssVar(). The literal
-// fallback is byte-identical to the prior hardcoded value under the un-themed
-// render; a [data-tenant] override rebrands both fill + stroke.
+// fill value) — resolve the semantic token at call-time via cssVar(). fillColor()
+// is the fallback for regions with no datum (unjoined feature); the value-shaded
+// fills come from the sequential ramp below. A [data-tenant] override rebrands
+// both the ramp (derived from --color-accent) and the stroke.
 const fillColor   = () => cssVar('--color-accent', '#0080BE')
 const strokeColor = () => cssVar('--color-surface', '#fff')
 
 // ── Style helpers ──────────────────────────────────────────────────────
 
-function baseStyle(selected: boolean): PathOptions {
+function featureStyle(fill: string, selected: boolean): PathOptions {
   return {
-    fillColor:   fillColor(),
+    fillColor:   fill,
     fillOpacity: selected ? FILL_SELECTED : FILL_DEFAULT,
     color:       strokeColor(),
-    weight:      1,
+    weight:      selected ? WEIGHT_SELECTED : WEIGHT_DEFAULT,
   }
 }
 
@@ -106,6 +112,18 @@ export function GeoMap({
 
   useEffect(() => { selectedRef.current = selectedGeos }, [selectedGeos])
   useEffect(() => { onSelectRef.current = onSelect },     [onSelect])
+
+  // Value → color: build a sequential ramp from the theme accent and assign each
+  // region a fill by quantile rank. This is the choropleth encoding — without it
+  // every region paints the same accent and the map reads flat. Keyed by row.id
+  // (the geo dim value), which onEachFeature/style resolve from the feature ISO.
+  const colorByGeo = useMemo(() => {
+    const colors = quantileColors(rows.map(r => r.value), sequentialRamp())
+    const map = new Map<string, string>()
+    rows.forEach((r, i) => map.set(String(r.id), colors[i] ?? fillColor()))
+    return map
+  }, [rows])
+  const colorFor = (geoId: string) => colorByGeo.get(geoId) ?? fillColor()
 
   useEffect(() => {
     const worker = new Worker(
@@ -153,11 +171,11 @@ export function GeoMap({
     layer.on({
       mouseover(e) {
         if (!selectedRef.current.includes(geoId)) {
-          ;(e.target as L.Path).setStyle({ fillOpacity: FILL_SELECTED, color: strokeColor(), weight: 1 })
+          ;(e.target as L.Path).setStyle({ fillOpacity: FILL_SELECTED, color: strokeColor(), weight: WEIGHT_SELECTED })
         }
       },
       mouseout(e) {
-        ;(e.target as L.Path).setStyle(baseStyle(selectedRef.current.includes(geoId)))
+        ;(e.target as L.Path).setStyle(featureStyle(colorFor(geoId), selectedRef.current.includes(geoId)))
       },
       click() {
         if (!geoId) return
@@ -186,7 +204,7 @@ export function GeoMap({
           style={(feature) => {
             const iso   = String(feature?.properties?.[isoField] ?? '')
             const geoId = geoCodeMap[iso]
-            return baseStyle(selectedGeos.includes(geoId))
+            return featureStyle(colorFor(geoId), selectedGeos.includes(geoId))
           }}
           onEachFeature={onEachFeature}
         />

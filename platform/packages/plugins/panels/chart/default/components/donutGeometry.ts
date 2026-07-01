@@ -8,7 +8,7 @@
 
 import type { ChartOutput } from '@statdash/charts'
 import { fmtNum } from '@statdash/engine'
-import { cssVar } from '@statdash/styles'
+import { cssVar, chartPalette } from '@statdash/styles'
 
 const W = 500, H = 300, CX = 250, CY = 150
 const R = 100, RI = 65
@@ -300,13 +300,27 @@ export function build(output: ChartOutput, showNames: boolean) {
   const tot = pts.reduce((s, p) => s + p.value, 0)
   if (!tot) return { slices: [] as Slice[], labels: [] as Lbl[] }
   const isPct = (pts[0]?.formatted ?? '').includes('%')
+
+  // A donut shows categorical structure, so each slice should read as its own
+  // hue — same rule as the treemap (TreemapChart.tsx). When the series carries no
+  // per-slice color encoding (every point resolves to the same/blank threshold —
+  // a plain single-measure donut), distribute the platform's categorical palette
+  // so slices are distinguishable instead of collapsing to one muted grey. When
+  // rows DO carry distinct semantic colors (threshold encoding), respect them.
+  const distinct   = new Set(pts.map(p => p.thresholdColor).filter(Boolean))
+  const distribute = distinct.size <= 1
+  const palette    = chartPalette()
+
   let ang = -Math.PI / 2
   const slices: Slice[] = [], entries: Parameters<typeof placeAll>[0] = []
   pts.forEach((pt, i) => {
     const pct = pt.value / tot
     const sw = Math.max(pct * 2 * Math.PI - PAD, 0.001)
     const s = ang + PAD / 2, e = s + sw; ang = e + PAD / 2
-    const mid = (s + e) / 2, color = pt.thresholdColor ?? cssVar('--color-text-muted', '#6B7B8D')
+    const color = distribute
+      ? palette[i % palette.length]!
+      : (pt.thresholdColor ?? cssVar('--color-text-muted', '#6B7B8D'))
+    const mid = (s + e) / 2
     slices.push({ path: sliceArc(s, e), mid, color, pct, name: cats[i] ?? '', formatted: pt.formatted })
     if (pct > 0) entries.push({ idx: i, angle: mid, pct, color, pctText: isPct ? pt.formatted : fmtV(pt.value), name: cats[i] ?? '' })
   })
