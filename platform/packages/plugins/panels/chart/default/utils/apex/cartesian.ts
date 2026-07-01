@@ -151,9 +151,15 @@ export function buildCartesian(output: ChartOutput, fontFamily?: string): ApexOp
       // Top padding sized to keep above-bar data labels AND line-chart
       // markers strictly inside the chart bounds. A baseline 6px on all
       // non-stacked types prevents marker/stroke clipping at the top edge.
+      //
+      // Horizontal bars place their value dataLabel OUTSIDE the bar end
+      // (position:'top' + offsetX). Reserving right whitespace keeps the
+      // longest bar's end-label ("42 620.8" — the F10/F13 regional clip)
+      // inside the SVG instead of shearing at the plot edge. Vertical bars
+      // keep their smaller right pad (labels sit above bars, not at the edge).
       padding: {
         left:  4,
-        right: horizontal ? 4 : 20,
+        right: horizontal ? (showDataLabels ? 44 : 8) : 20,
         top:   isStackedArea ? 40 : (showDataLabels && !horizontal ? 24 : 6),
       },
     },
@@ -290,7 +296,7 @@ export function buildCartesian(output: ChartOutput, fontFamily?: string): ApexOp
           grid: {
             padding: {
               left:  4,
-              right: horizontal ? 4 : 14,
+              right: horizontal ? (showDataLabels ? 40 : 4) : 14,
               top:   isStackedArea ? 30 : (showDataLabels && !horizontal ? 18 : 5),
             },
           },
@@ -317,7 +323,7 @@ export function buildCartesian(output: ChartOutput, fontFamily?: string): ApexOp
           grid: {
             padding: {
               left:  2,
-              right: horizontal ? 2 : 10,
+              right: horizontal ? (showDataLabels ? 34 : 2) : 10,
               top:   isStackedArea ? 22 : (showDataLabels && !horizontal ? 14 : 4),
             },
           },

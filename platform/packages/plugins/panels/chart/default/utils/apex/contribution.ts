@@ -61,7 +61,12 @@ export function buildContribution(output: ChartOutput, fontFamily?: string): Ape
         style:                 { fontSize: FS_XS, colors: cssVar('--color-text-muted', '#6B7B8D') },
         rotate:                0,
         maxHeight:             80,
-        hideOverlappingLabels: false,
+        // Never let category labels collide: `trim` ellipsises a token too long
+        // for its slot, `hideOverlappingLabels` thins the set the moment two would
+        // touch (rather than overprinting — the F10/F13 expenditure-axis defect).
+        // Narrow widths additionally rotate (responsive overrides below).
+        trim:                  true,
+        hideOverlappingLabels: true,
       },
       axisBorder: { color: cssVar('--color-chart-frame', '#E0EBE8') },
       axisTicks:  { color: cssVar('--color-chart-frame', '#E0EBE8') },
@@ -119,7 +124,8 @@ export function buildContribution(output: ChartOutput, fontFamily?: string): Ape
         options: {
           chart:       { height: 280 },
           plotOptions: { bar: { borderRadius: 2, columnWidth: '75%' } },
-          xaxis:       { labels: { style: { fontSize: '9px' } } },
+          // Rotate as columns narrow so wrapped labels stop crowding each other.
+          xaxis:       { labels: { rotate: -35, rotateAlways: true, style: { fontSize: '9px' } } },
           yaxis:       responsiveYAxis('9px', yFmt),
           dataLabels:  { offsetY: -10, style: { fontSize: '9px' } },
           grid:        { padding: { left: 2, right: 10, top: 14 } },
@@ -132,7 +138,8 @@ export function buildContribution(output: ChartOutput, fontFamily?: string): Ape
           plotOptions: { bar: { columnWidth: '85%' } },
           dataLabels:  { enabled: false },
           grid:        { padding: { left: 0, right: 6, top: 6 } },
-          xaxis:       { labels: { style: { fontSize: '9px' }, maxHeight: 52 } },
+          // Phone portrait: steepen the rotation so even long names fit upright-ish.
+          xaxis:       { labels: { rotate: -50, rotateAlways: true, style: { fontSize: '9px' }, maxHeight: 60 } },
         },
       },
     ],

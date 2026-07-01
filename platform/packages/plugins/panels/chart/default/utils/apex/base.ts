@@ -18,10 +18,65 @@ export function liftTooltip(chartCtx: { el: Element }) {
   if (tip) tip.style.zIndex = '99999'
 }
 
+// ── Theme-aware chrome ─────────────────────────────────────────────────
+//
+//  ApexCharts draws axis/label/grid/legend/tooltip chrome straight to SVG in
+//  JS — a layer CSS `var()` cannot reach. So chart chrome must READ the token
+//  values (via cssVar, resolved from the live cascade) at build time, and the
+//  chart must be re-built when the theme flips (see useThemeVersion). foreColor
+//  is Apex's single fallback ink for anything a builder doesn't override; left
+//  unset it stays Apex's built-in dark grey (#373d3f) → dim on a dark surface.
+//
+
+/**
+ * Effective dark-mode probe — luminance of the RESOLVED surface token.
+ *
+ * Token-driven + agnostic: follows whatever `--color-surface` resolves to under
+ * the active `[data-theme]` / OS cascade — no hardcoded theme name or tenant
+ * hue. Used only to pick ApexCharts' built-in light|dark tooltip skin (its
+ * background + ink live inside the library, unreachable by our CSS). Falls back
+ * to the media query when the token isn't a parseable hex/rgb (SSR / jsdom).
+ */
+export function isDarkTheme(): boolean {
+  const lum = luminanceOf(cssVar('--color-surface', '#ffffff'))
+  if (lum !== null) return lum < 0.5
+  if (typeof window !== 'undefined' && typeof window.matchMedia === 'function')
+    return window.matchMedia('(prefers-color-scheme: dark)').matches
+  return false
+}
+
+/** Relative luminance (0–1) of a hex/rgb color string; null if unparseable. */
+function luminanceOf(color: string): number | null {
+  const rgb = parseRgb(color)
+  if (!rgb) return null
+  const [r, g, b] = rgb.map((c) => c / 255) as [number, number, number]
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b
+}
+
+function parseRgb(color: string): [number, number, number] | null {
+  const s   = color.trim()
+  const hex = s.replace('#', '')
+  if (/^[0-9a-fA-F]{6}$/.test(hex))
+    return [parseInt(hex.slice(0, 2), 16), parseInt(hex.slice(2, 4), 16), parseInt(hex.slice(4, 6), 16)]
+  if (/^[0-9a-fA-F]{3}$/.test(hex))
+    return [parseInt(hex[0]! + hex[0]!, 16), parseInt(hex[1]! + hex[1]!, 16), parseInt(hex[2]! + hex[2]!, 16)]
+  const m = s.match(/rgba?\(([^)]+)\)/)
+  if (m) {
+    const p = m[1]!.split(',').map((x) => parseFloat(x))
+    if (p.length >= 3 && p.slice(0, 3).every((n) => !Number.isNaN(n))) return [p[0]!, p[1]!, p[2]!]
+  }
+  return null
+}
+
 export const BASE: ApexOptions = {
   chart: {
     toolbar:    { show: false },
     fontFamily: 'system-ui, sans-serif',
+    // Apex's single fallback ink for every axis/tick/legend/label a builder
+    // doesn't override. A getter re-reads the token at spread (render) time, so
+    // it flips with [data-theme]; useThemeVersion forces the re-render that
+    // refreshes an already-mounted chart on a runtime theme toggle.
+    get foreColor() { return cssVar('--color-text-secondary', '#4A5568') },
     // Fill the container exactly — no extra offset band. With chart.height:'100%'
     // Apex sizes the SVG to the parent's clientHeight; parentHeightOffset (default 15)
     // would only be added at the px-height responsive breakpoints (mobile), so pinning
@@ -47,7 +102,10 @@ export const BASE: ApexOptions = {
     strokeDashArray: 4,
     padding:         { left: 4, right: 4 },
   },
-  tooltip: { theme: 'light' },
+  // Apex's tooltip skin (its own bg + ink) lives inside the library, out of CSS
+  // reach — so pick light|dark from the resolved surface token. A getter re-reads
+  // at spread time (render), flipping with the theme like the rest of the chrome.
+  get tooltip(): ApexTooltip { return { theme: isDarkTheme() ? 'dark' : 'light' } },
   states: {
     hover:  { filter: { type: 'lighten', value: 0.08 } },
     active: { filter: { type: 'darken',  value: 0.12 } },
