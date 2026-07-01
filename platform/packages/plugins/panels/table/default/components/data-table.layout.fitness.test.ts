@@ -72,3 +72,62 @@ describe('FF-TABLE-HEADER-WRAP — headers wrap, figures stay, table scrolls', (
     expect(ruleBody('.data-table__wrap')).toMatch(/overflow:\s*auto/)
   })
 })
+
+// ── FF-TABLE-HEADER-STICKY — the header FREEZES on scroll, from the TABLE's ──
+//   OWN sheet, not from a layout-container attribute.
+//
+//   Root cause → standard → fix:
+//     · root cause : the ONLY `position:sticky` header rule lived in
+//                    node-styles.css gated behind [data-height]/[data-aspect]/
+//                    [data-view=visible]; a table panel without those attributes
+//                    had a header that scrolled away (owner: "header doesn't
+//                    freeze" AND "header misaligned" — same cause, since the
+//                    header is on the SAME table/column tracks as the body).
+//     · standard   : stickiness is intrinsic to a table whose own wrap scrolls
+//                    (SSOT + SoC) — the table component owns it, unconditionally.
+//     · fix        : `.data-table thead th { position:sticky; top:0 }` in
+//                    data-table.css. Set on the `th` CELLS (works under
+//                    border-collapse; identical to the committed node-styles
+//                    mechanism, so idempotent in the band case + its <768px
+//                    `position:static` reset still wins).
+//
+//   Structural (CSS-text) assertion, not a live scroll measurement: jsdom has no
+//   layout/scroll engine, so a "does it freeze?" check would pass vacuously. The
+//   invariant is a CSS truth: the header cells are sticky-to-top with an opaque
+//   themed background + a divider so body rows can't show through. Real-browser
+//   freeze-on-scroll proof is deferred to the owner's redeploy probe.
+describe('FF-TABLE-HEADER-STICKY — header freezes on scroll, owned by the table', () => {
+  const th = () => ruleBody('.data-table thead th')
+
+  it('header cells are position:sticky (the freeze) — not dependent on node-styles', () => {
+    expect(th()).toMatch(/position:\s*sticky/)
+  })
+
+  it('header cells stick to the top of the scroll container (top:0)', () => {
+    expect(th()).toMatch(/top:\s*0/)
+  })
+
+  it('frozen header paints ABOVE scrolling body rows (z-index)', () => {
+    expect(th()).toMatch(/z-index:\s*[1-9]/)
+  })
+
+  it('has an OPAQUE themed background so body rows do not show through (token, no hex)', () => {
+    // Set on the base `.data-table th` rule (shared by every header cell).
+    const base = ruleBody('.data-table th')
+    expect(base).toMatch(/background:\s*var\(--color-surface/)
+    expect(base).not.toMatch(/#[0-9a-fA-F]{3,8}/)
+  })
+
+  it('has a divider that scrolls WITH the cell (box-shadow, token-driven, no hex)', () => {
+    // Inset shadow (not only the collapsed border-bottom) so the divider stays
+    // attached to the sticky cell during scroll. Colour from a frame token.
+    expect(th()).toMatch(/box-shadow:[^;]*var\(--color-/)
+    expect(th()).not.toMatch(/#[0-9a-fA-F]{3,8}/)
+  })
+
+  it('pivot two-row header: sub-row is offset below the group row so they do not overlap', () => {
+    // Row 2 (sub-columns) freezes beneath row 1 (series groups) via a token seam.
+    const sub = ruleBody('.data-table thead tr:nth-child(2) th')
+    expect(sub).toMatch(/top:\s*var\(--data-table-head-row-h/)
+  })
+})

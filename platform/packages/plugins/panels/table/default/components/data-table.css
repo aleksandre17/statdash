@@ -62,6 +62,49 @@
   overflow-wrap: anywhere;
   max-width: var(--data-table-th-max, 22rem);
 }
+
+/* ── FREEZE the header on vertical scroll (sticky) ─────────────────────
+ *  ROOT-CAUSE fix for two owner-reported defects that share ONE cause.
+ *
+ *  The header/body are NOT split — Simple/PivotTable already render ONE
+ *  `<table>` with `<thead>` inside the `.data-table__wrap` scroll container,
+ *  so column tracks are shared and alignment is STRUCTURAL. The real cause of
+ *  BOTH "header doesn't freeze" AND "header looks misaligned" is the same: the
+ *  ONLY `position:sticky` declaration lived in node-styles.css (AR-8), GATED
+ *  behind `[data-height]`/`[data-aspect]`/`[data-view=visible]` layout-container
+ *  attributes. Any table panel WITHOUT those attributes (the live case) had a
+ *  NON-sticky header — it scrolled up and out of view, so the body appeared
+ *  "headerless"/misaligned. Stickiness is an INTRINSIC property of a table whose
+ *  own wrap scrolls, not of a particular layout container, so the table component
+ *  OWNS it here, unconditionally (SSOT + Separation of Concerns).
+ *
+ *  Set on the `th` CELLS (not `<thead>`): this is the mechanism that works
+ *  reliably under `border-collapse: collapse`, and it is IDENTICAL to the
+ *  committed node-styles.css rules — so in the band case the two are the same
+ *  declaration (idempotent), and node-styles' more-specific `@media (<768px)`
+ *  reset to `position:static` still wins (mobile reflow preserved).
+ *
+ *  Show-through guard: the opaque themed `background:var(--color-surface-raised)`
+ *  (set on `.data-table th` above) plus an inset box-shadow divider keep body
+ *  rows from bleeding through the frozen header. The shadow (not only the
+ *  collapsed `border-bottom`) is used because an inset shadow paints WITH the
+ *  cell and scrolls correctly, whereas a collapsed border can detach from a
+ *  sticky cell during scroll. */
+.data-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  box-shadow: inset 0 -1px 0 var(--color-surface-frame);
+}
+/* Pivot two-row grouped header (Eurostat cross-classified): row 1 = series
+ * groups freeze at the top; row 2 = sub-column labels freeze directly beneath.
+ * The offset stops the two frozen rows overlapping when scrolled. Token seam
+ * (Protected Variations) — a theme may retune the header row height; fallback
+ * matches a single-line header row (padding 2×0.5625rem + line-box + border). */
+.data-table thead tr:nth-child(2) th {
+  top: var(--data-table-head-row-h, 2.25rem);
+}
+
 .data-table th.r,
 .data-table td.r { text-align: right; }
 
