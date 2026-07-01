@@ -5,8 +5,14 @@ export interface PageHeaderNode extends NodeBase {
   type:    'page-header'
   /** Page title — LocaleString (plain or { ka, en }); resolved by the shell. */
   title:   LocaleString
-  /** Badge caption — LocaleString OR the { year, range } perspective union. */
-  badge?:  LocaleString | { year: string; range: string }
+  /**
+   * Badge caption — either a LocaleString OR a perspective carrier
+   * `Record<perspectiveId, LocaleString>` (e.g. `{ year: { ka, en }, range: { ka, en } }`).
+   * PERSPECTIVE × LOCALE are orthogonal: the shell's resolver collapses the active
+   * perspective arm THEN the active locale. A plain-string arm is a degenerate
+   * LocaleString (Postel), so `{ year: 'x', range: 'y' }` still type-checks and renders.
+   */
+  badge?:  LocaleString | Record<string, LocaleString>
   crumbs?: { label: LocaleString; href?: string }[]
 }
 

@@ -1,9 +1,34 @@
 ﻿import type { CtxRef, DimVal, FilterValue }  from '../../sdmx'
 import { isDimRef }                           from '../codelist'
-import { composeLocale }                       from '../../i18n/types'
+import { composeLocale, tagLocaleString }      from '../../i18n/types'
+import type { LocaleString }                   from '../../i18n/types'
 import { resolveRef }                         from '../../ref/ref'
 import { roundAgg }                           from '../round'
 import type { RawRow, TransformStep, PipelineContext } from './types'
+
+// ── tagCell — brand an AUTHORED object-valued cell as an i18n carrier ──────────
+//
+//  A transform op that INJECTS an authored value into a row (lookup `from` map,
+//  group `inject.from`/`inject.set`, addField `value`) may inject a bilingual
+//  LocaleString bag `{ ka, en }` — e.g. a chart `series` name or a total-row label
+//  override. The engine is locale-agnostic (it holds no user locale here), so it must
+//  TAG the carrier (non-enumerable Symbol brand) exactly as the `$d` display join does
+//  (codelist.tagLocaleString), so resolveRowLocales at the React boundary resolves it
+//  to the active locale. Without the tag a `{ ka, en }` series/label leaks as
+//  "[object Object]" or a raw Georgian arm on non-Georgian locales (the F3 leak class).
+//
+//  Scalars (string/number/null) pass through untouched — tagLocaleString is a no-op —
+//  so a single-locale authored literal is byte-identical. Idempotent on already-tagged
+//  values (the $d-ref lookup path re-tag is a no-op).
+//
+//  Takes `unknown`: a RawRow cell is TYPED `DimVal` (scalar) but at RUNTIME carries
+//  LocaleString objects (the label $d-join type-lie, documented across the pipeline),
+//  so the object branch is reachable at runtime though narrowed away at compile time.
+function tagCell(v: unknown): DimVal {
+  return typeof v === 'object' && v !== null
+    ? (tagLocaleString(v as LocaleString) as unknown as DimVal)
+    : (v as DimVal)
+}
 
 // ── Individual step implementations ───────────────────────────────────
 
@@ -133,7 +158,7 @@ export function applyTemplate(rows: RawRow[], step: Extract<TransformStep, { op:
 }
 
 export function applyAddField(rows: RawRow[], step: Extract<TransformStep, { op: 'addField' }>): RawRow[] {
-  return rows.map((row) => ({ ...row, [step.name]: step.value }))
+  return rows.map((row) => ({ ...row, [step.name]: tagCell(step.value) }))
 }
 
 export function applySelect(rows: RawRow[], step: Extract<TransformStep, { op: 'select' }>): RawRow[] {
@@ -227,17 +252,20 @@ export function applyGroup(rows: RawRow[], step: Extract<TransformStep, { op: 'g
       const header: RawRow = { ...row, _isGroup: 1, _id: headerId, [LF]: lvl }
       if (lvl > 0 && parentIds[lvl - 1] !== undefined) header[PF] = parentIds[lvl - 1]!
 
-      // Field copies from first member (e.g. labelFrom, colorFrom)
+      // Field copies from first member (e.g. labelFrom, colorFrom) — a copied cell may
+      // already be a tagged LocaleString (tagCell is an idempotent no-op then).
       if (inject.from) {
         for (const [target, source] of Object.entries(inject.from)) {
           const v = row[source]
-          if (v !== undefined) header[target] = v
+          if (v !== undefined) header[target] = tagCell(v)
         }
       }
-      // Literal overrides — highest priority; booleans coerced to 1/0 (DimVal)
+      // Literal overrides — highest priority; booleans coerced to 1/0 (DimVal). An
+      // authored object override (e.g. a bilingual `series` header) is TAGGED so the
+      // React boundary resolves it to the active locale.
       if (inject.set) {
         for (const [k, v] of Object.entries(inject.set)) {
-          header[k] = typeof v === 'boolean' ? (v ? 1 : 0) : v
+          header[k] = typeof v === 'boolean' ? (v ? 1 : 0) : tagCell(v)
         }
       }
 
@@ -333,7 +361,10 @@ export function applyLookup(
     const out: RawRow = { ...row }
     for (const f of step.fields) {
       const v = entry[f]
-      if (v !== undefined) out[step.rename?.[f] ?? f] = v
+      // An authored `from` map may carry a bilingual value (e.g. side → { series } as a
+      // LocaleString) — TAG it so resolveRowLocales resolves it at the React boundary.
+      // A $d-ref lookup value is already tagged (idempotent); a scalar is untouched.
+      if (v !== undefined) out[step.rename?.[f] ?? f] = tagCell(v)
     }
     return out
   })

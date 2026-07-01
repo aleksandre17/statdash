@@ -1,11 +1,13 @@
 import type { NodeBase, NodeDef, ViewParams, PropertyGroup, SlotDef, PropSchema } from '@statdash/react/engine'
-import type { DataSpec }                                               from '@statdash/engine'
+import type { DataSpec, LocaleString }                                 from '@statdash/engine'
 
 export interface GeographNode extends NodeBase {
   type:             'geograph'
   id:               string
-  title:            string
-  label?:           string
+  /** Panel title — LocaleString (plain or { ka, en }); resolved by the shell. */
+  title:            LocaleString
+  /** Optional secondary label — LocaleString; resolved by the shell. */
+  label?:           LocaleString
   anchor?:          string
   color?:           string
   data?:            DataSpec
@@ -14,10 +16,16 @@ export interface GeographNode extends NodeBase {
   geoJsonUrl:       string
   paramKey:         string
   isoField:         string
+  /** ISO feature code → store geo dim value (a DATA binding, never user-facing prose). */
   geoCodeMap:       Record<string, string>
-  labelOverrides?:  Record<string, string>
-  /** Unit suffix for region tooltips — tenant content (the measure's unit). */
-  unit?:            string
+  /**
+   * ISO feature code → tooltip label for regions with NO data row (e.g. occupied
+   * territory). User-facing content — each override is a LocaleString, resolved to the
+   * active locale by the shell before it reaches the (locale-agnostic) GeoMap.
+   */
+  labelOverrides?:  Record<string, LocaleString>
+  /** Unit suffix for region tooltips — tenant content (the measure's unit). LocaleString. */
+  unit?:            LocaleString
   /** Initial map viewport before FitBounds reframes to the data extent. */
   initialCenter?:   [number, number]
   initialZoom?:     number

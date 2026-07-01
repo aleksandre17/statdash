@@ -31,10 +31,12 @@ import type { SectionContext, LocaleString } from '@statdash/engine'
 import type { RenderContext } from '../types/context'
 
 // The template carrier a shell may hand the resolver: a LocaleString ({ ka, en } or
-// a plain string) OR the `{ year, range }` perspective union. resolveTemplate
-// collapses whichever carrier to a single string (active locale / perspective) before
-// expanding `{key}` vars — so a shell never has to pre-resolve the i18n bag.
-type TemplateCarrier = LocaleString | { year: string; range: string }
+// a plain string) OR a perspective carrier `Record<perspectiveId, LocaleString>` (e.g.
+// the page-header `{ year, range }` badge, each arm itself bilingual). resolveTemplate
+// collapses whichever carrier to a single string — active perspective THEN active
+// locale (orthogonal axes) — before expanding `{key}` vars, so a shell never has to
+// pre-resolve either the i18n bag or the perspective arm.
+type TemplateCarrier = LocaleString | Record<string, LocaleString>
 
 // ── resolveNodeTemplate — pure, context-param-bound resolver ───────────
 //

@@ -131,6 +131,18 @@ export interface ChartOutput {
 }
 
 export interface ChartSeries {
+  /**
+   * Series legend name — a RESOLVED, single-locale string by construction, NOT a
+   * LocaleString. ChartOutput is the neutral, locale-AGNOSTIC format (Law 1/4): every
+   * i18n carrier is collapsed to the active locale UPSTREAM of interpretChart —
+   *   • a data-derived series name (`row.series`) at the React resolveRowLocales
+   *     boundary (its authored `{ ka, en }` bag is tagged by the transform ops that
+   *     inject it — see core/data/transform/steps.ts tagCell), and
+   *   • a def-derived series name (`def.label`) at resolveChartDefLocale.
+   * Widening this to LocaleString would push a raw `{ ka, en }` bag back INTO the
+   * neutral output and out through toApexOptions — the exact "[object Object]" leak
+   * localeChartDef.ts eliminated. Keep it a resolved string.
+   */
   readonly name:        string
   readonly data:        readonly ChartDataPoint[]
   readonly color:       string

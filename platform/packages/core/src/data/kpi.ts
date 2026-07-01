@@ -54,7 +54,11 @@ export type KpiValueSpec =
 export type KpiTrendSpec =
   | { type: 'yoy';    measure: string; time?: TimeRef; filter?: DimFilter }
   | { type: 'cagr';   measure: string; from: TimeRef;  to: TimeRef;       filter?: DimFilter }
-  | { type: 'static'; value: string;   dir: 'up' | 'down' | 'flat' }
+  // `value` is a USER-FACING caption (e.g. 'stable', 'real'), NOT a computed number —
+  // LocaleString (plain string legacy OR { ka, en }), resolved to the active locale AND
+  // template-expanded by resolveTrend via resolveTemplate, the SAME boundary label/unit/
+  // trendSub funnel through. A bare string is a degenerate LocaleString (Postel).
+  | { type: 'static'; value: LocaleString; dir: 'up' | 'down' | 'flat' }
 
 export interface KpiSpec {
   id:              string
@@ -195,7 +199,10 @@ function resolveTrend(
   ctx:   SectionContext,
   store: DataStore,
 ): { value: string; dir: 'up' | 'down' | 'flat' } {
-  if (spec.type === 'static') return { value: spec.value, dir: spec.dir }
+  // Static caption is an i18n carrier — collapse to the active locale (+ template-expand)
+  // at THIS boundary, exactly as interpretKpi resolves label/unit/trendSub, so a raw
+  // { ka, en } bag never reaches the KpiCard child.
+  if (spec.type === 'static') return { value: resolveTemplate(spec.value, ctx), dir: spec.dir }
   const c = withFilter(ctx, spec.filter)
   switch (spec.type) {
     case 'yoy': {

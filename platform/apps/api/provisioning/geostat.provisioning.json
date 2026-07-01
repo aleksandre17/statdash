@@ -6,8 +6,8 @@
         "children": [
           {
             "badge": {
-              "range": "{fromYear}–{toYear}",
-              "year": "განახლდა: {time}"
+              "range": { "ka": "{fromYear}–{toYear}", "en": "{fromYear}–{toYear}" },
+              "year": { "ka": "განახლდა: {time}", "en": "Updated: {time}" }
             },
             "crumbs": [
               {
@@ -289,7 +289,7 @@
                 "trend": {
                   "dir": "flat",
                   "type": "static",
-                  "value": "სტაბილური"
+                  "value": { "ka": "სტაბილური", "en": "Stable" }
                 },
                 "trendSub": {
                   "ka": "{toYear}",
@@ -458,11 +458,11 @@
                           "from": {
                             "R": {
                               "color": "#4472C4",
-                              "series": "რესურსები"
+                              "series": { "ka": "რესურსები", "en": "Resources" }
                             },
                             "U": {
                               "color": "#E76F51",
-                              "series": "გამოყენება"
+                              "series": { "ka": "გამოყენება", "en": "Uses" }
                             }
                           },
                           "key": "side",
@@ -499,7 +499,7 @@
                                 },
                                 "set": {
                                   "_isGroup": 1,
-                                  "series": "რესურსები",
+                                  "series": { "ka": "რესურსები", "en": "Resources" },
                                   "value": 0
                                 }
                               }
@@ -647,11 +647,11 @@
                           "from": {
                             "R": {
                               "color": "#4472C4",
-                              "series": "რესურსები"
+                              "series": { "ka": "რესურსები", "en": "Resources" }
                             },
                             "U": {
                               "color": "#E76F51",
-                              "series": "გამოყენება"
+                              "series": { "ka": "გამოყენება", "en": "Uses" }
                             }
                           },
                           "key": "side",
@@ -688,7 +688,7 @@
                                 },
                                 "set": {
                                   "_isGroup": 1,
-                                  "series": "რესურსები",
+                                  "series": { "ka": "რესურსები", "en": "Resources" },
                                   "value": 0
                                 }
                               }
@@ -829,11 +829,11 @@
                               "from": {
                                 "R": {
                                   "color": "#4472C4",
-                                  "series": "რესურსები"
+                                  "series": { "ka": "რესურსები", "en": "Resources" }
                                 },
                                 "U": {
                                   "color": "#E76F51",
-                                  "series": "გამოყენება"
+                                  "series": { "ka": "გამოყენება", "en": "Uses" }
                                 }
                               },
                               "key": "side",
@@ -962,11 +962,11 @@
                               "from": {
                                 "R": {
                                   "color": "#4472C4",
-                                  "series": "რესურსები"
+                                  "series": { "ka": "რესურსები", "en": "Resources" }
                                 },
                                 "U": {
                                   "color": "#E76F51",
-                                  "series": "გამოყენება"
+                                  "series": { "ka": "გამოყენება", "en": "Uses" }
                                 }
                               },
                               "key": "side",
@@ -1499,8 +1499,8 @@
         "children": [
           {
             "badge": {
-              "range": "{fromYear}–{toYear} · მლნ ₾",
-              "year": "განახლდა: {time}"
+              "range": { "ka": "{fromYear}–{toYear} · მლნ ₾", "en": "{fromYear}–{toYear} · GEL mn" },
+              "year": { "ka": "განახლდა: {time}", "en": "Updated: {time}" }
             },
             "crumbs": [
               {
@@ -1593,7 +1593,7 @@
                 "trend": {
                   "type": "static",
                   "dir": "up",
-                  "value": "რეალური"
+                  "value": { "ka": "რეალური", "en": "Real" }
                 }
               },
               {
@@ -1801,12 +1801,12 @@
                 "vars": {
                   "periodLabel": {
                     "op": "template",
-                    "tmpl": "{time} წ."
+                    "tmpl": "{time}"
                   }
                 },
                 "view": {
                   "subtitle": {
-                    "ka": "{periodLabel} · მლნ ₾",
+                    "ka": "{periodLabel} წ. · მლნ ₾",
                     "en": "{periodLabel} · GEL mn"
                   }
                 },
@@ -1979,9 +1979,12 @@
                       ]
                     },
                     {
-                      "op": "derive",
-                      "as": "label",
-                      "expr": "isTotal == 1 ? 'მშპ' : label"
+                      "op": "lookup",
+                      "key": "isTotal",
+                      "from": {
+                        "1": { "label": { "ka": "მშპ", "en": "GDP" } }
+                      },
+                      "fields": ["label"]
                     },
                     {
                       "op": "derive",
@@ -3025,8 +3028,8 @@
         "children": [
           {
             "badge": {
-              "range": "{fromYear}–{toYear} · მლნ ₾",
-              "year": "განახლდა: {time}"
+              "range": { "ka": "{fromYear}–{toYear} · მლნ ₾", "en": "{fromYear}–{toYear} · GEL mn" },
+              "year": { "ka": "განახლდა: {time}", "en": "Updated: {time}" }
             },
             "crumbs": [
               {
@@ -3141,7 +3144,7 @@
                 "trend": {
                   "dir": "flat",
                   "type": "static",
-                  "value": "თბილისი / საქართველო"
+                  "value": { "ka": "თბილისი / საქართველო", "en": "Tbilisi / Georgia" }
                 },
                 "trendSub": {
                   "ka": "ეროვნული ჯამიდან",
@@ -3330,7 +3333,7 @@
                 "trend": {
                   "dir": "flat",
                   "type": "static",
-                  "value": "საწყისი"
+                  "value": { "ka": "საწყისი", "en": "Baseline" }
                 },
                 "trendSub": {
                   "ka": "{fromYear}",
@@ -3526,8 +3529,8 @@
                   "en": "{_regionTitle}"
                 },
                 "labelOverrides": {
-                  "GE-AB": "ოკუპირებული ტერიტორია",
-                  "GE-OS": "ოკუპირებული ტერიტორია"
+                  "GE-AB": { "ka": "ოკუპირებული ტერიტორია", "en": "Occupied territory" },
+                  "GE-OS": { "ka": "ოკუპირებული ტერიტორია", "en": "Occupied territory" }
                 },
                 "maxSelect": 10,
                 "multiSelect": true,
@@ -3652,9 +3655,12 @@
                       "op": "lookup"
                     },
                     {
-                      "as": "label",
-                      "expr": "isTotal == 1 ? 'სულ' : label",
-                      "op": "derive"
+                      "op": "lookup",
+                      "key": "isTotal",
+                      "from": {
+                        "1": { "label": { "ka": "სულ", "en": "Total" } }
+                      },
+                      "fields": ["label"]
                     },
                     {
                       "by": [
@@ -4156,8 +4162,8 @@
                   "en": "{_regionTitle}"
                 },
                 "labelOverrides": {
-                  "GE-AB": "ოკუპირებული ტერიტორია",
-                  "GE-OS": "ოკუპირებული ტერიტორია"
+                  "GE-AB": { "ka": "ოკუპირებული ტერიტორია", "en": "Occupied territory" },
+                  "GE-OS": { "ka": "ოკუპირებული ტერიტორია", "en": "Occupied territory" }
                 },
                 "paramKey": "region",
                 "title": {

@@ -64,6 +64,12 @@ function GeographControl({ def, ctx, vs, table }: Pick<ShellProps<GeographNode>,
   // renders them as React children; a raw { ka, en } bag would crash).
   const title = resolve(def.title)
   const label = resolve(def.label)
+  // labelOverrides values are i18n carriers too (per-region tooltip labels for regions
+  // with no data). Resolve each at THIS boundary so the locale-agnostic GeoMap only ever
+  // receives concrete strings — no raw { ka, en } bag reaches Leaflet's tooltip HTML.
+  const labelOverrides = def.labelOverrides
+    ? Object.fromEntries(Object.entries(def.labelOverrides).map(([iso, v]) => [iso, resolve(v)]))
+    : undefined
 
   const views = table != null
     ? [
@@ -93,7 +99,7 @@ function GeographControl({ def, ctx, vs, table }: Pick<ShellProps<GeographNode>,
           geoJsonUrl={def.geoJsonUrl}
           isoField={def.isoField}
           geoCodeMap={def.geoCodeMap}
-          labelOverrides={def.labelOverrides}
+          labelOverrides={labelOverrides}
           unit={resolve(def.unit)}
           initialCenter={def.initialCenter}
           initialZoom={def.initialZoom}

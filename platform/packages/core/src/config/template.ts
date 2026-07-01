@@ -43,15 +43,21 @@ import { activePerspective }   from './perspective-state'
 //
 
 /**
- * A perspective-keyed display carrier: `Record<perspectiveId, string>` collapsed to
- * the ACTIVE perspective's arm. Generic over N perspectives (no mode literal, no arm
+ * A perspective-keyed display carrier: `Record<perspectiveId, LocaleString>` collapsed
+ * to the ACTIVE perspective's arm. Generic over N perspectives (no mode literal, no arm
  * count). Structurally a subset of the multi-locale `LocaleString`; disambiguated at
  * resolve time by whether the active perspective id is a key (a genuine i18n bag has
  * none). NOTE: a perspective id must not collide with a locale code (year/range vs
  * ka/en — they never do); a collision would resolve the carrier arm, which for a
  * matching locale is the same string anyway.
+ *
+ * PERSPECTIVE × LOCALE are ORTHOGONAL axes (Law 1/4): each perspective arm is itself a
+ * `LocaleString`, so a badge like `{ year: { ka, en }, range: { ka, en } }` first
+ * collapses by the active perspective, THEN by the active locale (resolveCarrier). A
+ * plain-string arm (single-locale legacy) is a degenerate LocaleString — passes through
+ * resolveLocaleString untouched (Postel), so existing configs are byte-identical.
  */
-export type PerspectiveCarrier = Record<string, string>
+export type PerspectiveCarrier = Record<string, LocaleString>
 
 export function resolveTemplate(
   tpl:    LocaleString | PerspectiveCarrier,
@@ -90,8 +96,22 @@ function resolveCarrier(
 ): string {
   if (typeof tpl === 'string') return tpl
   const activeId = activePerspective(ctx.perspectiveState)
-  if (activeId !== undefined && Object.prototype.hasOwnProperty.call(tpl, activeId)) {
-    return String((tpl as PerspectiveCarrier)[activeId])
-  }
-  return resolveLocaleString(tpl, locale, locale)
+  // Select the arm: the ACTIVE perspective's arm (itself a LocaleString) when the carrier
+  // is perspective-keyed, else the whole carrier as a locale bag (ka/en). Then collapse to
+  // the active locale. A plain-string arm resolves to itself; a nested arm (a perspective
+  // carrier reached with no active arm) is collapsed one more level defensively.
+  const arm: LocaleString = activeId !== undefined && Object.prototype.hasOwnProperty.call(tpl, activeId)
+    ? (tpl as PerspectiveCarrier)[activeId]
+    : (tpl as LocaleString)
+  return collapseLocale(arm, locale)
+}
+
+/**
+ * Collapse a LocaleString to the active locale, tolerating one nested level (a stray
+ * perspective carrier whose active arm was not selected). resolveLocaleString is typed
+ * to return `string`, but a nested-object arm surfaces at runtime; the guard resolves it.
+ */
+function collapseLocale(v: LocaleString, locale: string): string {
+  const r: LocaleString = resolveLocaleString(v, locale, locale)
+  return typeof r === 'string' ? r : collapseLocale(r, locale)
 }
