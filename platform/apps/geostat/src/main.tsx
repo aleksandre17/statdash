@@ -35,6 +35,23 @@ bootRegistrations()
 // this from manifest.theme at boot — same one-line seam, no shell change.
 document.documentElement.dataset.tenant = 'geostat'
 
+// Colour MODE (data-theme): apply SYNCHRONOUSLY here, before the first render —
+// not only in useTheme's post-paint useEffect. The token layer's dark values are
+// selected by [data-theme="dark"]; any component that reads a resolved token via
+// getComputedStyle DURING RENDER (the map choropleth bakes --color-surface into a
+// cached quantile ramp; charts feed cssVar() into SVG fills) would otherwise
+// capture the LIGHT value on a hard-load — the attribute wouldn't land until an
+// effect ran a frame later. That produced a hard-load-vs-soft-nav colour split
+// (soft-nav already had the attribute from the prior route) and a dark-mode
+// flash. Mirror the useTheme resolution (stored choice → OS preference) so the
+// later effect is idempotent; 'system'/unset ⇒ no attribute ⇒ @media wins.
+try {
+  const stored = localStorage.getItem('statdash-theme')
+  const theme  = stored
+    ?? (window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+  if (theme && theme !== 'system') document.documentElement.setAttribute('data-theme', theme)
+} catch { /* storage/matchMedia denied — the useTheme effect still applies it post-mount */ }
+
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
