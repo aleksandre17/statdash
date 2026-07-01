@@ -30,6 +30,7 @@
 //
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { SiteProvider }            from '@statdash/react'
+import { RouteScrollManager }      from '@statdash/react/engine'
 import { LocaleGuard }             from './LocaleGuard'
 import { setupRegistrations }      from '../setupRegistrations'
 import type { SiteManifest }       from '@/data/site-manifest'
@@ -54,6 +55,8 @@ export default function RendererSurface({ manifest, stores }: RendererSurfacePro
       chromeConfig={manifest.chromeConfig}
       i18n={manifest.i18n}
     >
+      {/* Scroll parity: soft-nav resets to top (or cross-page anchor) like a hard load. */}
+      <RouteScrollManager />
       <Routes>
         <Route path="/:locale/*" element={<LocaleGuard manifest={manifest} />} />
         <Route path="*"          element={<Navigate to={`/${manifest.i18n.defaultLocale}`} replace />} />

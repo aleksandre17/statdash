@@ -76,6 +76,11 @@ export type { ChartRendererProps }                      from './ChartRendererReg
 // ── Dispatch API ──────────────────────────────────────────────────────
 export { renderNode }              from './renderNode'
 
+// ── Router scroll parity — reset scroll to top (or a cross-page anchor) on
+//  route change, so a soft-nav renders at the same scroll position as a hard
+//  load. Mount once inside the Router. See RouteScrollManager for the why.
+export { RouteScrollManager }      from './RouteScrollManager'
+
 // ── Registry composition — look up a shell by name, render it (Option D) ──
 //  <NodeView type="chart" def={…} ctx={…} />   — high-level JSX composition
 //  nodeRegistry.getShell(type, variant?)        — low-level renderer lookup
