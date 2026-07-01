@@ -7,7 +7,7 @@
 - [LIVE deploy mechanism](project_live_deploy_mechanism.md) — REAL 192.168.1.199 path: server git clone /tmp/statdash-build + docker-compose v1 prod-file-ALONE; diverges from RUNBOOK; backup/rollback + smoke
 - [API typecheck in-flight](project_api_typecheck_inflight.md) — RESOLVED: ADR-0027 region symbols landed (region.ts); apps/api typechecks fully green now
 - [check-laws path coupling](project_checklaws_path_coupling.md) — ops scripts hardcode lib dir paths (rename false-greens them); check-laws fully GREEN; check_zero strict retirement-lock helper vs check_ts content-law helper
-- Structure migration: platform/ tree is now `packages/` (was `engine/`) + new zero-dep `@geostat/contracts`; npm scope rename to `@statdash/*` (Phase 5) is a deferred one-way door. Full log: `platform/.claude/agent-memory/senior-backend-developer/MIGRATION_PROGRESS.md`
+- [Structure migration log](project_migration_progress.md) — platform/ tree is now `packages/` (was `engine/`) + new zero-dep `@geostat/contracts`; npm scope rename to `@statdash/*` (Phase 5) is a deferred one-way door
 - [SCD-2 classifier writers](project_scd2_classifier_writers.md) — which files are SCD-2 writers vs in-place upserters, and the is_current invariants across ingest/seed
 - [api image + validate:local](project_api_image_and_validate_local.md) — Dockerfile pnpm-deploy (symlink-free) + the 8-stage live-DB one-shot; CI workflow is stale
 - [api Problem Details](project_api_problem_details.md) — RFC 9457 problem+json: registry in apps/api lib, shape in contracts; Fastify error-handler-must-register-before-routes pitfall

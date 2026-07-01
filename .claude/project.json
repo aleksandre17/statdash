@@ -12,16 +12,18 @@
     "*.tsx"
   ],
   "modules": [
-    "platform/engine/core",
-    "platform/engine/react",
-    "platform/engine/plugins",
-    "platform/engine/expr",
-    "platform/engine/styles",
+    "platform/packages/contracts",
+    "platform/packages/expr",
+    "platform/packages/core",
+    "platform/packages/charts",
+    "platform/packages/react",
+    "platform/packages/plugins",
+    "platform/packages/styles",
     "platform/apps/geostat",
     "platform/apps/panel",
     "platform/apps/api"
   ],
-  "shared_lib_root": "platform/engine",
+  "shared_lib_root": "platform/packages",
   "law_patterns": [
     {
       "id": "Law1-no-privileged-dims",
@@ -39,21 +41,21 @@
     },
     {
       "id": "Arch-engine-no-react",
-      "glob": "platform/engine/core/**",
-      "forbid": "from\\s+['\\\"][^'\\\"]*platform/engine/react",
+      "glob": "platform/packages/core/**",
+      "forbid": "from\\s+['\\\"][^'\\\"]*platform/packages/react",
       "msg": "Dependency arrow: engine/core must not import engine/react (core ← react, not the reverse).",
       "sample_violation": "import { X } from '../../react/src/x';"
     },
     {
       "id": "Arch-react-agnostic",
-      "glob": "platform/engine/react/**",
-      "forbid": "from\\s+['\\\"][^'\\\"]*(platform/engine/plugins/|platform/apps/geostat/|platform/apps/panel/)",
+      "glob": "platform/packages/react/**",
+      "forbid": "from\\s+['\\\"][^'\\\"]*(platform/packages/plugins/|platform/apps/geostat/|platform/apps/panel/)",
       "msg": "engine/react must stay app-agnostic: no imports from plugins/ or apps/ (app-specifics live downstream).",
       "sample_violation": "import { GeostatShell } from '../../../engine/plugins/geostat';"
     },
     {
       "id": "Arch-engine-react-locale-agnostic",
-      "glob": "platform/engine/react/src/**",
+      "glob": "platform/packages/react/src/**",
       "forbid": "[Ⴀ-ჿ]|['\"](ka|ka-GE)['\"]",
       "msg": "engine/react must be locale-agnostic: no Georgian codepoints and no 'ka'/'ka-GE' locale literals. Move UI strings and locale constants to plugins/ or the app i18n catalog.",
       "sample_violation": "const DEFAULT_I18N = { locales: ['ka'] };"
@@ -73,7 +75,7 @@
       "note": "Mandatory-Opus: migration runs once on live volume — review V4 dim_key invariants before write"
     },
     {
-      "match": "platform/engine/core/src/data/.*\\.tsx?$",
+      "match": "platform/packages/core/src/data/.*\\.tsx?$",
       "label": "engine data-layer change (DataStore / interpretSpec / adapter)",
       "irreversible": false,
       "note": "Mandatory-Opus: this is the contract the whole pipeline depends on"
@@ -85,15 +87,15 @@
       "note": "Only place API format → DataRow[]; verify Phase-2 compatibility"
     },
     {
-      "match": "platform/engine/(core|react)/.*(index|public|api)\\.tsx?$",
+      "match": "platform/packages/(core|react)/.*(index|public|api)\\.tsx?$",
       "label": "public package API change (cross-layer contract)",
       "irreversible": true,
       "note": "Mandatory-Opus + one-body; consumers downstream depend on it"
     }
   ],
   "module_law_docs": {
-    "engine": "platform/engine/CLAUDE.md",
-    "plugins": "platform/engine/plugins/CLAUDE.md"
+    "engine": "platform/packages/CLAUDE.md",
+    "plugins": "platform/packages/plugins/CLAUDE.md"
   },
   "paths": {
     "audit_dir": "docs/audit",

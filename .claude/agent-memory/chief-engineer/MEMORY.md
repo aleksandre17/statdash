@@ -10,6 +10,7 @@
 - [Master Board synthesis](project_master_board_synthesis.md) — 2026-06-27 merge of 6 domain boards into work/MASTER-BOARD.md: multi-tenancy P0 fork, adoption-debt pattern, ops/a11y floor, 3 verified correctness defects
 - [CLOSE-BOARD audit](project_close_board_audit.md) — 2026-06-28 finish-line audit: green baseline real (1981 tests, lint/typecheck/laws all 0), ALL prior findings resolved, SHIP-GRADE 0.88; remaining = unbuilt commitments not debt
 - [Live-product audit](project_live_product_audit.md) — 2026-07-01 exhaustive :3002 sweep (F1-F18 in work/AUDIT-live-product.md); roots: live≠HEAD staleness, bare-string i18n contracts leak Georgian into EN, missing capability nodes
+- [Kit false-green classes](project_kit_false_green_classes.md) — 2026-07-01 .claude-OS closing gate: cp1252 hook stdout crashes (truncate SessionStart) + engine-stale project.json paths; how to re-detect
 
 
 ---

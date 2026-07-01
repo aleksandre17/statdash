@@ -43,4 +43,3 @@
 
 ## C. This repo — workspace
 - [reference_national-accounts-workspace-structure.md](reference_national-accounts-workspace-structure.md) — structure of THIS repo (national-accounts)
-- [reference_reading-session-2026-06-13.md](reference_reading-session-2026-06-13.md) — dated snapshot of roadmap/architecture docs read 2026-06-13 (pre-rename `@geostat` vintage — FLAGGED stale, owner review for Phase 6)

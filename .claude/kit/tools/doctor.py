@@ -4,6 +4,13 @@ Run anytime:  python .claude/kit/tools/doctor.py        (the /verify playbook ca
 Exit 0 = HEALTHY, 1 = issues. Read-only except a throwaway temp file it cleans up.
 """
 import os, re, sys, json, glob, subprocess, tempfile
+# Force UTF-8 stdout: the report prints ✓/✗ (U+2713/U+2717) which are absent from cp1252;
+# on a Windows cp1252 console/pipe a bare print() raises UnicodeEncodeError on the first
+# check line, aborting the whole drift guard. Output must not depend on the ambient console.
+try:
+    sys.stdout.reconfigure(encoding="utf-8")
+except (AttributeError, ValueError):
+    pass
 ROOT = os.environ.get("CLAUDE_PROJECT_DIR") or os.getcwd()
 KIT = os.path.join(ROOT, ".claude", "kit")
 P = lambda *a: os.path.join(ROOT, *a)
@@ -35,7 +42,11 @@ env = {**os.environ, "CLAUDE_PROJECT_DIR": ROOT}
 probed = False
 for t in mf.get("class_m_triggers", []):
     if "migration" in t.get("label", "").lower() or "migration" in t.get("match", ""):
-        probe = "apps/_probe/db/migration/V999999__doctor.sql"  # forward slashes — platform-independent probe
+        # Derive the probe from the consumer's own migration location (resume_marker.repo_glob),
+        # so the live check is a TRUE positive for any consumer — not a hardcoded generic path that
+        # silently misses a customized trigger (e.g. this repo's ops/postgres/migrations/). Fallback = generic.
+        _rg = (mf.get("resume_marker") or {}).get("repo_glob", "")
+        probe = (_rg.rsplit("/", 1)[0] + "/V999999__doctor.sql") if "/" in _rg else "apps/_probe/db/migration/V999999__doctor.sql"
         rr = subprocess.run([sys.executable, gate], input=json.dumps({"tool_input": {"file_path": probe}}),
                             capture_output=True, text=True, env=env)
         ck("CLASS-M" in (rr.stdout + rr.stderr).upper() or "IRREVERS" in (rr.stdout + rr.stderr).upper(),

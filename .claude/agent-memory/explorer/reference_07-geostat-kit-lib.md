@@ -126,6 +126,24 @@ embedded_worker_enabled(manifest)       # Check modules.chat-api.compose.embedde
 stack_compose_module_ids(manifest)      # Which modules in full stack
 ```
 
+## Deploy Paths (deploy_paths.py)
+
+```python
+from lib.deploy_paths import resolve_module_deploy_path
+
+resolve_module_deploy_path(
+    *, base: str, container_name: str, kind: DeployKind,
+    layout: str = "structured", path_mode: str = "base",
+)   # e.g. base=/opt/{project}, kind="static"|"compose-dev"|"compose-prod",
+    # structured layout → {base}/runtime/{container}/ , {base}/config/{module}/ , {base}/storage/
+```
+
+**Structured layout** replaces bespoke `DEPLOY_BACKEND_PATH`/`DEPLOY_FRONTEND_PATH`. Server-side paths are computed (not hardcoded) from `DEPLOY_PATH` + `DEPLOY_LAYOUT` (structured|flat|legacy) + module container name + command kind. Worker modules inherit `DEPLOY_PATH` from `stack.deployBaseSecretsModule`.
+
+## Config Generation (config_gen.py)
+
+Generates Spring `application.yml` / `application-{profile}.yml` from manifest + stack catalog — **Java/Spring modules only**. Node/Vite modules get NO config generation (their configs are hand-written; `.env` comes from `ops/config/{secretsModule}/` at runtime). Three modes: `simple` (minimal vars), `postgres-profiles` (test/dev/prod DB), `env-profiles` (`SPRING_PROFILES_ACTIVE` splits).
+
 ## Project Root Discovery (project.sh / project.ps1)
 
 ```bash
@@ -158,6 +176,8 @@ lib/
 ├── modules_cli.py               # CLI + layout commands
 ├── credentials.py               # Cred profiles
 ├── compose_identity.py          # Service naming
+├── deploy_paths.py              # Structured deploy-path resolution (runtime/config/storage)
+├── config_gen.py                # Spring application.yml generation (Java only; simple|postgres-profiles|env-profiles)
 ├── manifest_defaults.py         # Scaffold defaults (single source)
 ├── manifest_migrate.py          # v1→v2 migration
 ├── manifest_compose.py          # Manifest-mode service rendering

@@ -1,4 +1,4 @@
-﻿---
+---
 name: transform-split-phase2
 description: transform.ts split into transform/ sub-module; Phase 2.1 RawRow=EngineRow alias confirmed
 metadata:

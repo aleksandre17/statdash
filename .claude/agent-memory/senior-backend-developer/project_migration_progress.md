@@ -1,6 +1,13 @@
+---
+name: migration-progress
+description: Platform structure re-architecture (Strangler-Fig) execution log — engine/→packages/ + @geostat/contracts done; Phase 5 npm-scope rename @geostat→@statdash deferred (one-way door)
+metadata:
+  type: project
+---
+
 # Platform Structure Re-architecture — Progress (Strangler-Fig)
 
-ADR: `.claude/agent-memory/architect/adr_platform_structure_rearchitecture.md`
+ADR: `docs/architecture/decisions/ADR-012-platform-structure-rearchitecture.md` (pointer: `.claude/agent-memory/architect/project_platform_structure_rearchitecture.md`)
 
 ## Phase 0 — Baseline (2026-06-23)
 - HEAD: 6139817 feat(a11y): chart→table fallback + axe-core gate [N15]

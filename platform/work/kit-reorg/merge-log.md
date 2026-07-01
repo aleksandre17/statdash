@@ -142,3 +142,37 @@ Numbers preserved (0023/0025/0026), no existing ADR renumbered; ADR-018's back-r
 
 ### Doctor status after Phase 4+5
 Drift guard ✓, strategy-absent ✓, kit-strategy slot ✓, hooks selftest 8/8 ✓. 3 PRE-EXISTING failures remain, all outside this phase's fences (surfaced — not caused — by fixing doctor's manifest-read bug): (a) pre-edit-gate live probe uses a hardcoded path that doesn't match this repo's `ops/postgres/...` migration trigger (the enforcement-path side-finding the design deferred to a separate ticket); (b) repo-top stray dirs `.pytest_cache`/`DATA`/`scriness`; (c) bloat in fenced `agent-memory/explorer/*` + two pre-existing kit strategy docs. FLAGGED for follow-up.
+
+---
+
+## Phase 6+8 — Closing quality gate (chief-engineer)
+
+> Branch `chore/claude-os-reorg`. All deletes owner-approved + recoverable via tag `pre-reorg-snapshot`. Deletes are in the working tree (unstaged) → captured by the single Phase-6 commit.
+
+### Step 1 — loose ends resolved BEFORE deleting
+- **3 quarantined explorer files verified for unique live-kit detail, folded into canonical set:** confirmed `lib/deploy_paths.py` (`resolve_module_deploy_path` signature + structured runtime/config/storage layout), `lib/config_gen.py` (Spring `application.yml` gen, Java-only, modes `simple|postgres-profiles|env-profiles`), and `tests/test_toolkit_hardcodes.py` (the no-brand fitness function) are REAL files in the live `kits/geostat-kit` and were ABSENT from `01`–`07`. Folded: deploy_paths + config_gen → `reference_07-geostat-kit-lib.md`; hardcode-test fitness function → `reference_01-geostat-kit-overview.md`. (compose_identity/module_by_role/ProjectContext.field were already covered.) Quarantine now safe → deleted.
+- **2 no-frontmatter files fixed:** `engine-specialist/project_transform_split.md` had a UTF-8 BOM before `---` (parsed as no-frontmatter) → BOM stripped; frontmatter (`type: project`, prefix-matched) now recognized. `senior-backend-developer/MIGRATION_PROGRESS.md` → renamed `project_migration_progress.md` with `type: project` frontmatter; its dead ADR back-link (`architect/adr_platform_structure_rearchitecture.md`, moved to docs in Phase 2) repointed to `docs/architecture/decisions/ADR-012-*`; MEMORY.md index line rewritten to the new name. Zero dead links / zero naming mismatches repo-wide after.
+
+### Step 2 — deletes (owner-approved, recoverable)
+- **6a** `platform/.claude/` deleted entirely (held only `agent-memory/`, fully merged into ROOT in Phase 1). 135 files removed from disk.
+- **6b** `platform/work/kit-reorg/dropped/` deleted (9 quarantined files, unique detail folded in Step 1).
+- **6c** empty `agent-memory/junior-executor/` removed. **`agent-memory/project-manager/` NOT removed — it is NOT empty** (holds 4 files merged from platform in Phase 1; the Step-2 instruction to delete it was stale). Kept.
+- `explorer/reference_reading-session-2026-06-13.md` **deleted** (+ index line): pure dated snapshot of docs that still exist (`docs/architecture/*`, roadmap), pre-rename `@geostat`, "Phase 1 complete as of 2026-06-02" — the exact `reading-session-*` DROP archetype; zero unique durable value.
+
+### Step 3 — project.json enforcement-path correction (engine → packages)
+Verified real tree: `platform/engine/**` does NOT exist; code is `platform/packages/{contracts,expr,core,charts,react,plugins,styles}` + `platform/apps/{api,geostat,panel}` (CLAUDE.md law 3). Corrected every stale path so hooks match the real tree:
+- `modules`: 5×`platform/engine/*` → `platform/packages/*`, and **added** the two real law-3 packages missing from coverage (`packages/contracts`, `packages/charts`).
+- `shared_lib_root`: `platform/engine` → `platform/packages`.
+- `law_patterns` globs+regexes (Arch-engine-no-react, Arch-react-agnostic, Arch-engine-react-locale-agnostic): `platform/engine/*` → `platform/packages/*`.
+- `class_m_triggers`: core-data + public-API matches `platform/engine/(core|react)/...` → `platform/packages/(core|react)/...`.
+- `module_law_docs`: `platform/engine/CLAUDE.md`/`plugins/CLAUDE.md` → `platform/packages/...` (both verified present).
+Validates as UTF-8 JSON. (`resume_marker` migration glob was already correct — untouched.)
+
+### Step 4 — acceptance scorecard + surfaced doctor failures
+Two latent **cp1252 stdout crashes** found + root-fixed (same class as Phase-4's cp1252 `open()` fix, but on `print`): `session-start.py` printed `→` (U+2192, absent from cp1252) and crashed MID-injection — truncating the auto-load AND skipping the stale-check (this was the real cause of the selftest "STALE" fail, not a path/regex mismatch); `doctor.py` printed `✓/✗` and crashed on its first check line. Both fixed with a guarded `sys.stdout.reconfigure(encoding="utf-8")`. The other 4 hooks only emit cp1252-safe glyphs (§, —) → not crashing; FLAGGED for uniform hardening.
+- **doctor finding (a) — pre-edit-gate live probe — FIXED (in-scope, safe):** doctor hardcoded a generic probe `apps/_probe/db/migration/...` that never matched this repo's `ops/postgres/migrations/` trigger (false-fail). Now derives the probe from the manifest's own `resume_marker.repo_glob` → true positive; enforcement really fires. doctor 70→71/73.
+- **doctor findings (b) repo-top `.pytest_cache`/`DATA`/`scriness`, (c) bloat (2 explorer inventories + 2 canonical kit-strategy docs): FLAGGED only** — (b) hard-fenced (DATA/scriness are do-not-touch; `.pytest_cache` → recommend gitignore); (c) trimming canonical doctrine / union-merged inventories is out-of-scope + content-loss risk.
+
+**Scorecard:** 1 Single-home **PASS** (platform/.claude gone; `check-ignore` empty = tracked). 2 Zero-wrong-place **PASS** (4 `geostat-kit` matches = the KEPT canonical numbered set 01/02/03/07 describing the live this-repo kit; `=0` literal was written for the retired unnumbered naming). 3 Auto-load **PASS** (5.98 KB ≤ 6 KB, rc 0, no stderr). 4 selftest **PASS** (8/8). 5 Drift guard **PASS** (`rendered == render(kit)` ✓, `.claude/strategy/` absent ✓). 6 No mem ≥8 KB **PARTIAL/FLAG** (all ADR-scale content in docs/; `reference_07` trimmed back <8 KB; 3 dense files remain >8 KB: 2 pre-existing explorer inventories + `project_migration_progress` (9.2 KB, kept-as-memory per Step-1 mandate — recommend rotate or accept as a progress-log exception; MEMORY.md indexes excluded per Phase-2's own filter). 7 Naming law **PASS** (0 prefix≠type). 8 Rotation **PASS** (context.md 13.6 KB ≤15 KB; token-log 0.25 KB).
+
+**Residual (not closed):** (i) content-coherence contradiction between `engine-specialist/project_restructure_paths.md:10` ("@statdash Phase-5 rename NOW LANDED, 2026-06-23") and `project_migration_progress.md` ("Phase 5 NOT done, deferred one-way door") — out of reorg scope, needs a source-of-truth check on package.json scopes. (ii) doctor 71/73 by design — the 2 remaining ✗ are fenced/out-of-scope (above). (iii) the platform/.claude deletion is unstaged in git (working-tree delete) pending the Phase-6 commit — filesystem single-home is real now.

@@ -46,6 +46,8 @@ Actual work (docker compose, rsync, remote exec)
 
 **Rule:** Never hardcode module IDs, paths, ports, or service names in kit code. All from manifest.
 
+**Enforced as a fitness function:** `tests/test_toolkit_hardcodes.py` scans `toolkit/drivers/lib/cli/compose/adapters/scripts` and fails on forbidden brand/path patterns (e.g. `packages/geostat`, `geostat-chat-bot`, `../secrets/`, hardcoded `ops/config/{frontend,backend}`, literal `google-credentials.json`). This is the guarantee that the kit stays consumer-agnostic — not just a convention.
+
 ## Key Files Read
 
 - `geostat.ops.json` (410 lines) — manifest that drives everything

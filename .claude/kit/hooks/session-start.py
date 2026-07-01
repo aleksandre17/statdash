@@ -2,6 +2,13 @@
 """SessionStart — inject durable §Current State, then check it's not STALE vs the repo.
 The stale-check's markers come from project.json (resume_marker); kit has no hardcoded VNN."""
 import os, sys, re, glob
+# Force UTF-8 stdout: this hook emits →/— and other non-cp1252 glyphs; on a Windows
+# cp1252 console/pipe a bare print() raises UnicodeEncodeError mid-injection, truncating
+# the auto-load AND skipping the stale-check below. Encoding must not depend on the ambient console.
+try:
+    sys.stdout.reconfigure(encoding="utf-8")
+except (AttributeError, ValueError):
+    pass
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from _manifest import load
 root = os.environ.get("CLAUDE_PROJECT_DIR", ".")
