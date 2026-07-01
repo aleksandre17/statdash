@@ -197,6 +197,54 @@ async function main() {
       } catch (e) { await c.query('ROLLBACK'); throw e } finally { c.release() }
     }
 
+    // AgencyScheme identity (V38, DB-08) — provisioning-side idempotent RE-assert of
+    // the owning GEOSTAT agency. The migration seeds it self-sufficiently (so the
+    // backfill resolves); this is the provisioning SSOT that ENRICHES the manifest
+    // (name/contact) on every run — ON CONFLICT (code) DO UPDATE converges with the
+    // migration seed, neither fights the other. Own transaction; guarded on V38 being
+    // applied so a seed run against a pre-V38 database (rolling order) skips gracefully
+    // instead of crashing. name is i18n COMPLETE (ka+en) so the V38 trg_agency_name_locale
+    // completeness trigger accepts it (an incomplete name would be rejected — the contract).
+    {
+      const c = await pool.connect()
+      try {
+        await c.query('BEGIN')
+        const { rows: probe } = await c.query<{ exists: boolean }>(
+          `SELECT to_regclass('stats.agency') IS NOT NULL AS exists`,
+        )
+        if (probe[0]?.exists === true) {
+          await c.query(
+            `INSERT INTO stats.agency (scheme_code, code, name, contact_name, contact_email, metadata)
+             VALUES ('AGENCIES', 'GEOSTAT', $1::jsonb, $2, $3,
+                     jsonb_build_object('seeded_by', 'seed.ts', 'role', 'owning/authoring agency'))
+             ON CONFLICT (code) DO UPDATE
+               SET name          = EXCLUDED.name,
+                   contact_name  = EXCLUDED.contact_name,
+                   contact_email = EXCLUDED.contact_email`,
+            [
+              JSON.stringify({
+                ka: 'საქართველოს სტატისტიკის ეროვნული სამსახური (საქსტატი)',
+                en: 'National Statistics Office of Georgia (Geostat)',
+              }),
+              'Geostat National Accounts Division',
+              'info@geostat.ge',
+            ],
+          )
+          await c.query('COMMIT')
+          console.log('[seed] AGENCY committed (GEOSTAT).')
+        } else {
+          await c.query('ROLLBACK')
+          console.log('[seed] AGENCY skipped — V38 not applied on this database.')
+        }
+      } catch (e) {
+        await c.query('ROLLBACK')
+        console.error('[seed] AGENCY FAILED (rolled back):', e)
+        throw e
+      } finally {
+        c.release()
+      }
+    }
+
     // Classifiers + displays (cross-dataset; referents for every fact set). One
     // transaction so the code_path/parent invariants converge atomically.
     {
