@@ -2,6 +2,10 @@
 """PostToolUse (Write|Edit|MultiEdit) — generic law check on the changed file. Patterns come from
 project.json (law_patterns); the kit has no hardcoded antipatterns. exit 2 = corrective feedback."""
 import sys, json, re, os, fnmatch
+try:
+    sys.stdout.reconfigure(encoding="utf-8")
+except (AttributeError, ValueError):
+    pass
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from _manifest import load
 try:

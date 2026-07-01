@@ -3,6 +3,10 @@
 Runs every hook against safe synthetic inputs in a throwaway dir. Touches NO real state.
 Usage: python .claude/kit/hooks/selftest.py   ->   prints PASS/FAIL per hook, exit 1 if any FAIL."""
 import os, sys, json, subprocess, tempfile, shutil
+try:
+    sys.stdout.reconfigure(encoding="utf-8")
+except (AttributeError, ValueError):
+    pass
 HOOKS = os.path.dirname(os.path.abspath(__file__))
 PY = sys.executable
 results = []

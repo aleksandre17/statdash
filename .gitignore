@@ -23,6 +23,9 @@ ops/config/**/google-credentials.json
 tsconfig.tsbuildinfo
 *.tsbuildinfo
 
+# Python test cache
+.pytest_cache/
+
 # Runtime logs
 ops/logs/
 

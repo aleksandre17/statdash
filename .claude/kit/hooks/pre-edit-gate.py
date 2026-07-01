@@ -2,6 +2,10 @@
 """PreToolUse (Write|Edit) — generic Class-M detector. Triggers come from project.json
 (class_m_triggers); the kit has no hardcoded paths. Injects a non-blocking gate+risk reminder."""
 import sys, json, re, os
+try:
+    sys.stdout.reconfigure(encoding="utf-8")
+except (AttributeError, ValueError):
+    pass
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from _manifest import load
 try:

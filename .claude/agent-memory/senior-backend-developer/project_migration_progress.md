@@ -1,6 +1,6 @@
 ---
 name: migration-progress
-description: Platform structure re-architecture (Strangler-Fig) execution log — engine/→packages/ + @geostat/contracts done; Phase 5 npm-scope rename @geostat→@statdash deferred (one-way door)
+description: Platform structure re-architecture (Strangler-Fig) execution log — engine/→packages/ + contracts done; Phase 5 npm-scope rename @geostat→@statdash LANDED 2026-06-23 (commit 7a47e5d)
 metadata:
   type: project
 ---
@@ -96,9 +96,14 @@ ADR: `docs/architecture/decisions/ADR-012-platform-structure-rearchitecture.md` 
         stack). It is referenced by architect memory project_i18n_db.md. Chesterton's Fence — reported, not deleted.
       GATE: tests 783/18, root+api typecheck green, 0 arrow violations, lint unchanged.
 
-- [STOP] Phase 5 (@geostat/* -> @statdash/* scope rename) NOT done — one-way door, awaits explicit go.
-      What remains for Phase 5: rename `name` in 8 package.json (contracts/expr/core/charts/styles/react/plugins/api;
-      keep apps/geostat = national-accounts), every `@geostat/*` dependency entry, all alias `find:`/tsconfig `paths`
-      keys (vite x2, vitest x2, tsconfig x3, eslint patterns), all import specifiers, .npmrc/lock via reinstall, and a
-      new fitness test asserting no `@geostat/<lib>` import survives. The dir MOVE (packages/) + contracts package are
-      done; only the npm SCOPE string changes.
+- [x] Phase 5 (@geostat/* -> @statdash/* scope rename) LANDED 2026-06-23 in commit 7a47e5d
+      ("platform: packages/ restructure, @statdash scope, Constructor MVP, tenant-agnostic runner").
+      GROUND TRUTH (verified 2026-07-01): every package `name` in platform/packages/*/package.json + apps/api + apps/panel
+      is now `@statdash/*` (charts/contracts/engine/expr/plugins/react/styles/api/panel); apps/geostat stays
+      `national-accounts`. platform/package.json scripts filter `@statdash/react`. No `@geostat/*` strings survive in
+      source/config — the only remaining `@geostat/` occurrences are inside agent-memory markdown (historical notes).
+      What Phase 5 changed: `name` in the package.json set, every `@geostat/*` dependency entry, all alias `find:`/tsconfig
+      `paths` keys (vite/vitest/tsconfig/eslint), all import specifiers, .npmrc/lock via reinstall. The dir MOVE (packages/)
+      + contracts package were already done in prior phases; Phase 5 was the npm SCOPE string change.
+      NOTE: the [ ] Phase 1/2 notes above ("kept @geostat scope this round; scope rename is Phase 5, deferred") were
+      accurate WHEN WRITTEN (pre-rename) — they describe the reversible intermediate state, since superseded by this commit.

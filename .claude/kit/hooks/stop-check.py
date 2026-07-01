@@ -2,6 +2,10 @@
 """Stop — session-close disciplines. WARN_ONLY=True (set False to hard-enforce via exit 2).
 Code/learning globs come from project.json; kit has no hardcoded paths."""
 import os, sys, subprocess
+try:
+    sys.stdout.reconfigure(encoding="utf-8")
+except (AttributeError, ValueError):
+    pass
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from _manifest import load
 WARN_ONLY = True
