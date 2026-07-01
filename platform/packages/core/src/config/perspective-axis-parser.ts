@@ -21,6 +21,7 @@ import { resolveLocaleString }     from '../i18n/types'
 import { resolveMeasureRef }       from '../data/metric'
 import type { PerspectiveAxis, PerspectivesByParam, PerspectiveDef, PerspectiveScope, PerspectiveTimeBinding, DimBinding } from './perspective-axis'
 import { effectiveBounds, isYearsSpec, resolveTimePin } from '../core/time-dimension'
+import { evalVisibility } from './visibility'
 
 // ── resolveDimBinding — Postel: the ONE normalized binding the fold consumes ───
 //
@@ -118,16 +119,31 @@ export function activeIdForAxis(
 //  `perspective` triad on RenderContext. `PerspectiveDef.label` is a LocaleString →
 //  resolved to the active locale here (the one place a locale is in scope);
 //  `PerspectiveOption.label` is a plain string. `icon` carries through.
+//
+//  D-GUARD (AD-6): each `PerspectiveDef.available` (a VisibilityExpr) is HONORED here —
+//  the switcher's offered list EXCLUDES any perspective whose guard evaluates false
+//  against the render's filter params (+ perspectiveState), using the SAME evaluator
+//  (`evalVisibility`) the node `visibleWhen` gate uses. `available` absent ⇒ always
+//  offered. The `gate` arg is OPTIONAL + ADDITIVE: omitted (or a guard-free axis) ⇒
+//  every perspective is offered, byte-identical to the pre-AD-6 map (the react caller
+//  threads its filter params to activate the guard; a guard-free page is inert).
 export function perspectiveOptions(
   axis:     PerspectiveAxis,
   locale:   string,
   fallback: string,
+  gate?:    { filterParams: Record<string, unknown>; perspectiveState?: Record<string, string> },
 ): PerspectiveOption[] {
-  return axis.perspectives.map((p) => ({
-    id:    p.id,
-    label: resolveLocaleString(p.label, locale, fallback),
-    ...(p.icon !== undefined ? { icon: p.icon } : {}),
-  }))
+  return axis.perspectives
+    .filter((p) =>
+      p.available === undefined ||
+      gate === undefined ||
+      evalVisibility(p.available, gate.filterParams, gate.perspectiveState),
+    )
+    .map((p) => ({
+      id:    p.id,
+      label: resolveLocaleString(p.label, locale, fallback),
+      ...(p.icon !== undefined ? { icon: p.icon } : {}),
+    }))
 }
 
 /**
