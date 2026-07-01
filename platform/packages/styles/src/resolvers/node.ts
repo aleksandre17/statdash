@@ -6,13 +6,10 @@
 //    data-height = '16:9' | '4:3' | ... | 'constrained'
 //      → fixed height token; node-styles.css handles children
 //    data-aspect = '' (presence flag)
-//      → responsive aspect-ratio; node-styles.css reads --ar-* CSS vars
+//      → DEPRECATED alias: node-styles.css maps [data-aspect] to the height band
+//        (--size-panel-height). No --ar-* vars are emitted (retired; nothing read them).
 //    data-view   = 'hidden' | 'visible'
 //      → visibility; from resolveViewState (see view.ts)
-//
-//  CSS custom properties emitted as inline style:
-//    --ar-default / --ar-2xl / --ar-xl / --ar-lg / --ar-md / --ar-sm / --ar-xs
-//      → read by [data-aspect] in node-styles.css (6-point breakpoint cascade)
 //
 //  Per-breakpoint responsive props (setResponsive, Option A):
 //    --<prop>-default / -2xl / -xl / -lg / -md / -sm / -xs  inline vars
@@ -240,16 +237,17 @@ export function applyNodeStyles(
   if (applyPseudo('focus',  styles?.focus,  extra)) pseudoFlags['data-focus']  = ''
   if (applyPseudo('active', styles?.active, extra)) pseudoFlags['data-active'] = ''
 
-  // aspectRatio → data-aspect presence flag + --ar-* CSS vars (per breakpoint).
-  // node-styles.css handles all responsive behavior via [data-aspect].
+  // aspectRatio (responsive) → data-aspect presence flag ONLY. The flag is a
+  // DEPRECATED alias for the height band ([data-aspect] { height: --size-panel-height }
+  // in node-styles.css). The per-breakpoint --ar-* CSS vars are RETIRED: the band
+  // superseded the aspect cascade, so no rule reads them — emitting them was inert
+  // DOM residue (AUDIT-BRIEF §4). The flag is kept so existing responsive-aspectRatio
+  // provisioning still resolves to the band (Strangler alias); the eventual real
+  // aspect-ratio-for-media capability is a separate, additive future path.
   const ar = resolveResponsive(styles?.aspectRatio)
   const dataAspect: Record<string, string> = {}
   if (BREAKPOINT_KEYS.some(k => ar[k] !== undefined)) {
     dataAspect['data-aspect'] = ''
-    for (const k of BREAKPOINT_KEYS) {
-      const v = ar[k]
-      if (v) extra[`--ar-${k}`] = v
-    }
   }
 
   // printHide → data-print-hide flag; node-styles.css hides it in @media print.

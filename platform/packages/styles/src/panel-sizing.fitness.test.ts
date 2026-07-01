@@ -12,6 +12,7 @@ import { describe, it, expect } from 'vitest'
 import { readFileSync }         from 'node:fs'
 import { fileURLToPath }        from 'node:url'
 import { dirname, join }        from 'node:path'
+import { applyNodeStyles }      from './resolvers/node'
 
 // Strip /* … */ comments — these gates assert on actual rules, not prose that
 // (correctly) mentions the banned constructs while explaining why they're banned.
@@ -50,5 +51,16 @@ describe('FF-PANEL-SIZING — one honest constraint', () => {
   it('[data-aspect] and the ratio [data-height] tokens resolve to the band', () => {
     expect(nodeCss).toMatch(/\[data-aspect\]\s*\{[^}]*--size-panel-height/)
     expect(nodeCss).toMatch(/\[data-height="16:9"\][\s\S]{0,160}--size-panel-height/)
+  })
+
+  // The RESOLVER counterpart of the CSS-absence gate above: responsive aspectRatio
+  // still emits the data-aspect band-alias FLAG, but the inert per-breakpoint --ar-*
+  // custom properties are retired at the source (no CSS reads them — AUDIT-BRIEF §4).
+  it('applyNodeStyles emits the data-aspect flag but NO inert --ar-* vars', () => {
+    const out = applyNodeStyles({ aspectRatio: { default: '16:9', sm: '4:3' } }) as
+      Record<string, unknown> & { style?: Record<string, unknown> }
+    expect(out['data-aspect']).toBe('')
+    const arKeys = Object.keys(out.style ?? {}).filter(k => k.startsWith('--ar-'))
+    expect(arKeys, `resolver re-emitted inert vars: ${arKeys.join(', ')}`).toEqual([])
   })
 })
