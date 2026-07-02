@@ -23,7 +23,7 @@
   --color-accent-hover:     #006A9E;
   --color-accent-muted:     #E6F3FA;
   --color-accent-bg:        #EEF3F4;
-  --color-accent-secondary: #00A896;
+  --color-accent-secondary: #00A896;   /* re-declared unchanged in the dark blocks below — already dark-safe */
   /* --color-accent-ring derives from --color-accent via color-mix in the
      default theme — no per-tenant override needed (resolves to a #0080BE
      ring under geostat automatically). */
@@ -31,13 +31,25 @@
   /* Accent chip — chip-bg derives from accent-muted; only the border is brand. */
   --color-accent-chip-border: #CCE8F5;
 
-  /* Display heading + breadcrumb separator (geostat chrome tones). */
-  --color-heading-display:      #0d3b66;
-  --color-breadcrumb-separator: #D8E4E8;
+  /* Display heading (geostat chrome tone) — INTENTIONALLY not flipped for dark
+     mode; see the rationale on --color-heading-display in tokens.css (its only
+     consumer, hero.css .hero__title, sits on non-adaptive per-card artwork). */
+  --color-heading-display: #0d3b66;
+  /* The breadcrumb-separator role is deliberately NOT overridden here anymore
+     — the previous hardcoded #D8E4E8 (AR: 1.30:1 on the light surface, and
+     frozen in dark mode) is dropped so it inherits the SSOT default
+     (var(--color-border-frame) in tokens.css), which already flips correctly
+     and is visually indistinguishable from the old geostat-specific tone. */
 
-  /* Trend axis — geostat's teal / coral direction pair. */
-  --color-trend-positive: #2A9D8F;
-  --color-trend-negative: #E76F51;
+  /* Trend axis — geostat's teal / coral direction pair.
+     AR (theme-contrast sweep): the ORIGINAL #2A9D8F / #E76F51 read at 3.32:1 /
+     3.09:1 on the light surface (--color-surface #FFFFFF) — both fail WCAG AA
+     4.5:1 for the 12.8px .kpi-trend-up/-down text (not "large text"). Darkened
+     for light; the original vivid tones are RESTORED as the dark-mode value
+     below (they already clear 5.45:1 / 5.86:1 against the dark surface — they
+     read as if tuned for dark all along). */
+  --color-trend-positive: #217d72;   /* AR: darkened from #2A9D8F (3.32:1 — failed AA 4.5:1; now 4.95:1) */
+  --color-trend-negative: #d3421d;   /* AR: darkened from #E76F51 (3.09:1 — failed AA 4.5:1; now 4.60:1) */
 
   /* Typography — geostat's Georgian brand families. The shared plugin layers
      reference --font-family-{display,base} roles (brand-neutral by default);
@@ -46,6 +58,51 @@
      LOADING (the Google-Fonts <link>; CSP allows fonts.gstatic.com). */
   --font-family-display: 'Noto Serif Georgian', 'Noto Sans Georgian', sans-serif;
   --font-family-base:    'Noto Sans Georgian', system-ui, sans-serif;
+}
+
+/* ========================================
+   Geostat tenant theme — DARK-MODE override (AR: theme-contrast sweep)
+
+   Root cause this closes: the block above pins the accent/trend family
+   UNCONDITIONALLY. [data-tenant="geostat"] and [data-theme="dark"] are both
+   single-attribute selectors (equal specificity); because packages/styles'
+   tokens.css loads before this tenant stylesheet in the bundle, THIS block
+   wins the cascade regardless of theme — so in dark mode --color-accent stayed
+   pinned at #0080BE, a color tuned for a WHITE app surface. Every plain-text
+   accent consumer (app-header/app-footer links, filter-bar chips, page-header
+   breadcrumb hover, kpi-info-link hover, text-panel accent) rendered at only
+   4.17:1 against the dark surface (#15151f) — failing AA — and the two
+   --color-text-inverse buttons (hero-card CTA, active stats-tab) fell to
+   3.92:1 / 2.89:1, unreadable.
+
+   Fix mirrors the SAME light→dark relationship packages/styles' own default
+   theme already establishes for --color-accent (brighter + more saturated on
+   dark surfaces) and --color-accent-muted/-bg/-chip-border (light pastel tint
+   → dark desaturated tint), just re-hued to geostat's blue instead of the
+   brand-neutral slate. Both selector forms are required (system-preference
+   default + explicit override) and MUST stay byte-identical — see the
+   fitness in tenant-theme.fitness.test.ts. */
+@media (prefers-color-scheme: dark) {
+  [data-tenant="geostat"]:not([data-theme="light"]) {
+    --color-accent:             #0cb0ff;   /* was #0080BE; 4.17:1 on dark surface (fails AA) → 7.48:1 */
+    --color-accent-hover:       #3fc0ff;   /* lighter than --color-accent on dark (hover = more prominent, mirrors default theme) */
+    --color-accent-muted:       #1c3642;   /* light pastel tint → dark desaturated tint, same hue */
+    --color-accent-bg:          #172f3b;
+    --color-accent-chip-border: #264a5c;
+    --color-accent-secondary:   #00A896;   /* unchanged — already 6.08:1 on the dark surface, needs no retuning */
+    --color-trend-positive:     #2A9D8F;   /* restore the original vivid tone — already 5.45:1 on dark */
+    --color-trend-negative:     #E76F51;   /* restore the original vivid tone — already 5.86:1 on dark */
+  }
+}
+[data-tenant="geostat"][data-theme="dark"] {
+  --color-accent:             #0cb0ff;
+  --color-accent-hover:       #3fc0ff;
+  --color-accent-muted:       #1c3642;
+  --color-accent-bg:          #172f3b;
+  --color-accent-chip-border: #264a5c;
+  --color-accent-secondary:   #00A896;
+  --color-trend-positive:     #2A9D8F;
+  --color-trend-negative:     #E76F51;
 }
 
 /* ========================================
@@ -63,7 +120,10 @@
 
   h1, h2, h3, h4, h5, h6 {
     font-family: system-ui, sans-serif;
-    color: #1A2332;
+    /* Was a raw #1A2332 literal (byte-identical to --color-text-primary's
+       LIGHT value only) — frozen in dark mode for any heading that resolves
+       through this base layer instead of a component class. */
+    color: var(--color-text-primary);
     line-height: 1.3;
   }
 }
