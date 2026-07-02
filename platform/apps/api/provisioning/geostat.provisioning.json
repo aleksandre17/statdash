@@ -50,7 +50,10 @@
                 },
                 "trend": {
                   "filter": {
-                    "account": "allocation-of-primary-income-account",
+                    "account": {
+                      "$ctx": "account",
+                      "default": "allocation-of-primary-income-account"
+                    },
                     "side": "U"
                   },
                   "measure": "B5G",
@@ -66,7 +69,10 @@
                 },
                 "value": {
                   "filter": {
-                    "account": "allocation-of-primary-income-account",
+                    "account": {
+                      "$ctx": "account",
+                      "default": "allocation-of-primary-income-account"
+                    },
                     "side": "U"
                   },
                   "format": "mln_gel",
@@ -87,7 +93,10 @@
                 },
                 "trend": {
                   "filter": {
-                    "account": "secondary-distribution-of-income-account",
+                    "account": {
+                      "$ctx": "account",
+                      "default": "secondary-distribution-of-income-account"
+                    },
                     "side": "U"
                   },
                   "measure": "B6G",
@@ -103,7 +112,10 @@
                 },
                 "value": {
                   "filter": {
-                    "account": "secondary-distribution-of-income-account",
+                    "account": {
+                      "$ctx": "account",
+                      "default": "secondary-distribution-of-income-account"
+                    },
                     "side": "U"
                   },
                   "format": "mln_gel",
@@ -124,7 +136,10 @@
                 },
                 "trend": {
                   "filter": {
-                    "account": "use-of-disposable-income-account",
+                    "account": {
+                      "$ctx": "account",
+                      "default": "use-of-disposable-income-account"
+                    },
                     "side": "U"
                   },
                   "measure": "B8G",
@@ -140,7 +155,10 @@
                 },
                 "value": {
                   "filter": {
-                    "account": "use-of-disposable-income-account",
+                    "account": {
+                      "$ctx": "account",
+                      "default": "use-of-disposable-income-account"
+                    },
                     "side": "U"
                   },
                   "format": "mln_gel",
@@ -161,7 +179,10 @@
                 },
                 "trend": {
                   "filter": {
-                    "account": "capital-account",
+                    "account": {
+                      "$ctx": "account",
+                      "default": "capital-account"
+                    },
                     "side": "U"
                   },
                   "measure": "B9",
@@ -177,7 +198,10 @@
                 },
                 "value": {
                   "filter": {
-                    "account": "capital-account",
+                    "account": {
+                      "$ctx": "account",
+                      "default": "capital-account"
+                    },
                     "side": "U"
                   },
                   "format": "mln_gel",
@@ -198,7 +222,10 @@
                 },
                 "trend": {
                   "filter": {
-                    "account": "production-account",
+                    "account": {
+                      "$ctx": "account",
+                      "default": "production-account"
+                    },
                     "side": "U"
                   },
                   "from": {
@@ -220,7 +247,10 @@
                 },
                 "value": {
                   "filter": {
-                    "account": "production-account",
+                    "account": {
+                      "$ctx": "account",
+                      "default": "production-account"
+                    },
                     "side": "U"
                   },
                   "from": {
@@ -246,7 +276,10 @@
                 },
                 "trend": {
                   "filter": {
-                    "account": "production-account",
+                    "account": {
+                      "$ctx": "account",
+                      "default": "production-account"
+                    },
                     "side": "R"
                   },
                   "from": {
@@ -268,7 +301,10 @@
                 },
                 "value": {
                   "filter": {
-                    "account": "production-account",
+                    "account": {
+                      "$ctx": "account",
+                      "default": "production-account"
+                    },
                     "side": "R"
                   },
                   "from": {
@@ -343,7 +379,10 @@
                 "value": {
                   "abs": true,
                   "filter": {
-                    "account": "capital-account",
+                    "account": {
+                      "$ctx": "account",
+                      "default": "capital-account"
+                    },
                     "side": "U"
                   },
                   "format": "mln_gel",
@@ -825,6 +864,11 @@
                         }
                       ],
                       "query": {
+                        "filter": {
+                          "account": {
+                            "$ctx": "account"
+                          }
+                        },
                         "measure": [
                           "accounts.output",
                           "accounts.gdp",
@@ -909,6 +953,11 @@
                         }
                       ],
                       "query": {
+                        "filter": {
+                          "account": {
+                            "$ctx": "account"
+                          }
+                        },
                         "measure": [
                           "accounts.output",
                           "accounts.gdp",
@@ -3403,6 +3452,14 @@
                       "en": "GDP"
                     },
                     "chartType": "donut",
+                    "on": [
+                      {
+                        "event": "point:click",
+                        "actions": [
+                          { "type": "filter", "key": "sector", "fromField": "sector", "mode": "replace" }
+                        ]
+                      }
+                    ],
                     "fieldConfig": {
                       "unit": {
                         "ka": "მლნ ₾",
@@ -3579,6 +3636,14 @@
                 "children": [
                   {
                     "chartType": "bar",
+                    "on": [
+                      {
+                        "event": "point:click",
+                        "actions": [
+                          { "type": "filter", "key": "sector", "fromField": "sector", "mode": "replace" }
+                        ]
+                      }
+                    ],
                     "fieldConfig": {
                       "unit": {
                         "ka": "მლნ ₾",
@@ -4191,6 +4256,14 @@
                 "children": [
                   {
                     "chartType": "area",
+                    "on": [
+                      {
+                        "event": "point:click",
+                        "actions": [
+                          { "type": "filter", "key": "sector", "fromField": "sector", "mode": "replace" }
+                        ]
+                      }
+                    ],
                     "fieldConfig": {
                       "unit": {
                         "ka": "მლნ ₾",
