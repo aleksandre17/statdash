@@ -78,9 +78,18 @@ export function useNodeRows(node: NodeBase, ctx: RenderContext): DataRow[] {
   //  values are used to derive the promise-cache key; for the sync path they are
   //  the actual result. No React hooks rules are violated.
   //
+  // AR-36: the resolved rows depend on ctx.vars too — a state-bound spec (the runtime
+  // pivot's `{$ctx:_byDims}` aggregate grain, `{$ctx:_xDim}` encoding) is lowered by
+  // resolveEncodingRefs/resolvePipeRefs (in resolveNodeRows) FROM ctx.vars. A selection
+  // change mutates only the derived vars (not the query dims, since the pivot aggregates
+  // client-side over a covering fetch), so the row memo/cache MUST key on the vars or it
+  // returns stale rows (by-region ⇄ sector×geo never rotates). Generic (Law 1): keys on
+  // the whole vars bag, so ANY vars-bound spec re-resolves — no dim/var-name literal.
+  const varsKey = useMemo(() => JSON.stringify(ctx.vars ?? {}), [ctx.vars])
+
   const depKey = useMemo(
-    () => (node.data ? specDimKey(node.data as DataSpec, ctx.sectionCtx) : ''),
-    [node.data, ctx.sectionCtx],
+    () => (node.data ? specDimKey(node.data as DataSpec, ctx.sectionCtx) + '' + varsKey : ''),
+    [node.data, ctx.sectionCtx, varsKey],
   )
 
   const syncRows = useMemo(
