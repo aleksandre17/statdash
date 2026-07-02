@@ -67,13 +67,14 @@ describe('FF-CHART-PRESENCE (A) — slot inventory matches the spec', () => {
 // ── (B) per-mode DOM presence ─────────────────────────────────────────────────
 //  Visible sections for a mode = sections whose enclosing container is gated to that
 //  perspective (or ungated), MINUS param-gated variants not active by default (the
-//  regional _geoMode 'multi' twin — default is 'single'). This yields the count of
-//  panels that must mount for the state.
+//  regional _regionSel 'some' twin — default, with no region selected, is 'none'). This
+//  yields the count of panels that must mount for the state.
 function visibleSectionCount(page: GoldenDomain, mode: Mode): number {
   return sectionSlots(pageConfigOf(page), page).filter((s) => {
     if (s.perspective !== 'all' && s.perspective !== mode) return false
-    // default param state: _geoMode=single ⇒ the 'multi' twin is not shown.
-    if (s.sectionGate && /=multi$/.test(s.sectionGate)) return false
+    // default param state (no region selected): _regionSel=none ⇒ the 'some' twin
+    // (the sectoral-structure comparison) is not shown.
+    if (s.sectionGate && /=some$/.test(s.sectionGate)) return false
     return true
   }).length
 }

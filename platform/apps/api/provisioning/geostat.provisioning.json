@@ -50,10 +50,7 @@
                 },
                 "trend": {
                   "filter": {
-                    "account": {
-                      "$ctx": "account",
-                      "default": "allocation-of-primary-income-account"
-                    },
+                    "account": "allocation-of-primary-income-account",
                     "side": "U"
                   },
                   "measure": "B5G",
@@ -69,10 +66,7 @@
                 },
                 "value": {
                   "filter": {
-                    "account": {
-                      "$ctx": "account",
-                      "default": "allocation-of-primary-income-account"
-                    },
+                    "account": "allocation-of-primary-income-account",
                     "side": "U"
                   },
                   "format": "mln_gel",
@@ -93,10 +87,7 @@
                 },
                 "trend": {
                   "filter": {
-                    "account": {
-                      "$ctx": "account",
-                      "default": "secondary-distribution-of-income-account"
-                    },
+                    "account": "secondary-distribution-of-income-account",
                     "side": "U"
                   },
                   "measure": "B6G",
@@ -112,10 +103,7 @@
                 },
                 "value": {
                   "filter": {
-                    "account": {
-                      "$ctx": "account",
-                      "default": "secondary-distribution-of-income-account"
-                    },
+                    "account": "secondary-distribution-of-income-account",
                     "side": "U"
                   },
                   "format": "mln_gel",
@@ -136,10 +124,7 @@
                 },
                 "trend": {
                   "filter": {
-                    "account": {
-                      "$ctx": "account",
-                      "default": "use-of-disposable-income-account"
-                    },
+                    "account": "use-of-disposable-income-account",
                     "side": "U"
                   },
                   "measure": "B8G",
@@ -155,10 +140,7 @@
                 },
                 "value": {
                   "filter": {
-                    "account": {
-                      "$ctx": "account",
-                      "default": "use-of-disposable-income-account"
-                    },
+                    "account": "use-of-disposable-income-account",
                     "side": "U"
                   },
                   "format": "mln_gel",
@@ -179,10 +161,7 @@
                 },
                 "trend": {
                   "filter": {
-                    "account": {
-                      "$ctx": "account",
-                      "default": "capital-account"
-                    },
+                    "account": "capital-account",
                     "side": "U"
                   },
                   "measure": "B9",
@@ -198,10 +177,7 @@
                 },
                 "value": {
                   "filter": {
-                    "account": {
-                      "$ctx": "account",
-                      "default": "capital-account"
-                    },
+                    "account": "capital-account",
                     "side": "U"
                   },
                   "format": "mln_gel",
@@ -222,10 +198,7 @@
                 },
                 "trend": {
                   "filter": {
-                    "account": {
-                      "$ctx": "account",
-                      "default": "production-account"
-                    },
+                    "account": "production-account",
                     "side": "U"
                   },
                   "from": {
@@ -247,10 +220,7 @@
                 },
                 "value": {
                   "filter": {
-                    "account": {
-                      "$ctx": "account",
-                      "default": "production-account"
-                    },
+                    "account": "production-account",
                     "side": "U"
                   },
                   "from": {
@@ -276,10 +246,7 @@
                 },
                 "trend": {
                   "filter": {
-                    "account": {
-                      "$ctx": "account",
-                      "default": "production-account"
-                    },
+                    "account": "production-account",
                     "side": "R"
                   },
                   "from": {
@@ -301,10 +268,7 @@
                 },
                 "value": {
                   "filter": {
-                    "account": {
-                      "$ctx": "account",
-                      "default": "production-account"
-                    },
+                    "account": "production-account",
                     "side": "R"
                   },
                   "from": {
@@ -379,10 +343,7 @@
                 "value": {
                   "abs": true,
                   "filter": {
-                    "account": {
-                      "$ctx": "account",
-                      "default": "capital-account"
-                    },
+                    "account": "capital-account",
                     "side": "U"
                   },
                   "format": "mln_gel",
@@ -2937,7 +2898,7 @@
                 },
                 "trend": {
                   "filter": {
-                    "geo": { "$ctx": "geo", "default": "_T" },
+                    "geo": { "$ctx": "geo", "default": "" },
                     "measure": "GVA",
                     "sector": { "$ctx": "sector", "default": "_T" }
                   },
@@ -2954,7 +2915,7 @@
                 },
                 "value": {
                   "filter": {
-                    "geo": { "$ctx": "geo", "default": "_T" },
+                    "geo": { "$ctx": "geo", "default": "" },
                     "measure": "GVA",
                     "sector": { "$ctx": "sector", "default": "_T" }
                   },
@@ -2976,7 +2937,7 @@
                 },
                 "trend": {
                   "filter": {
-                    "geo": { "$ctx": "geo", "default": "_T" },
+                    "geo": { "$ctx": "geo", "default": "" },
                     "measure": "GVA",
                     "sector": { "$ctx": "sector", "default": "_T" }
                   },
@@ -2993,7 +2954,7 @@
                 },
                 "value": {
                   "filter": {
-                    "geo": { "$ctx": "geo", "default": "_T" },
+                    "geo": { "$ctx": "geo", "default": "" },
                     "measure": "GVA",
                     "sector": { "$ctx": "sector", "default": "_T" }
                   },
@@ -3031,7 +2992,7 @@
                 "value": {
                   "denom": {
                     "filter": {
-                      "geo": { "$ctx": "geo", "default": "_T" },
+                      "geo": { "$ctx": "geo", "default": "" },
                       "measure": "GVA",
                       "sector": { "$ctx": "sector", "default": "_T" }
                     },
@@ -3061,7 +3022,7 @@
                 },
                 "trend": {
                   "filter": {
-                    "geo": { "$ctx": "geo", "default": "_T" },
+                    "geo": { "$ctx": "geo", "default": "" },
                     "measure": "GVA",
                     "sector": { "$ctx": "sector", "default": "_T" }
                   },
@@ -3084,7 +3045,7 @@
                 },
                 "value": {
                   "filter": {
-                    "geo": { "$ctx": "geo", "default": "_T" },
+                    "geo": { "$ctx": "geo", "default": "" },
                     "measure": "GVA",
                     "sector": { "$ctx": "sector", "default": "_T" }
                   },
@@ -3111,7 +3072,7 @@
                 },
                 "trend": {
                   "filter": {
-                    "geo": { "$ctx": "geo", "default": "_T" },
+                    "geo": { "$ctx": "geo", "default": "" },
                     "measure": "GVA",
                     "sector": { "$ctx": "sector", "default": "_T" }
                   },
@@ -3134,7 +3095,7 @@
                 },
                 "value": {
                   "filter": {
-                    "geo": { "$ctx": "geo", "default": "_T" },
+                    "geo": { "$ctx": "geo", "default": "" },
                     "measure": "GVA",
                     "sector": { "$ctx": "sector", "default": "_T" }
                   },
@@ -3161,7 +3122,7 @@
                 },
                 "trend": {
                   "filter": {
-                    "geo": { "$ctx": "geo", "default": "_T" },
+                    "geo": { "$ctx": "geo", "default": "" },
                     "measure": "GVA",
                     "sector": { "$ctx": "sector", "default": "_T" }
                   },
@@ -3181,7 +3142,7 @@
                 },
                 "value": {
                   "filter": {
-                    "geo": { "$ctx": "geo", "default": "_T" },
+                    "geo": { "$ctx": "geo", "default": "" },
                     "measure": "GVA",
                     "sector": { "$ctx": "sector", "default": "_T" }
                   },
@@ -3222,7 +3183,7 @@
                 },
                 "value": {
                   "filter": {
-                    "geo": { "$ctx": "geo", "default": "_T" },
+                    "geo": { "$ctx": "geo", "default": "" },
                     "measure": "GVA",
                     "sector": { "$ctx": "sector", "default": "_T" }
                   },
@@ -3247,7 +3208,7 @@
                 },
                 "trend": {
                   "filter": {
-                    "geo": { "$ctx": "geo", "default": "_T" },
+                    "geo": { "$ctx": "geo", "default": "" },
                     "measure": "GVA",
                     "sector": { "$ctx": "sector", "default": "_T" }
                   },
@@ -3270,7 +3231,7 @@
                 },
                 "value": {
                   "filter": {
-                    "geo": { "$ctx": "geo", "default": "_T" },
+                    "geo": { "$ctx": "geo", "default": "" },
                     "measure": "GVA",
                     "sector": { "$ctx": "sector", "default": "_T" }
                   },
@@ -3456,7 +3417,7 @@
                       {
                         "event": "point:click",
                         "actions": [
-                          { "type": "filter", "key": "sector", "fromField": "sector", "mode": "replace" }
+                          { "type": "filter", "key": "region", "fromField": "geo", "mode": "toggle", "max": 10 }
                         ]
                       }
                     ],
@@ -3467,8 +3428,8 @@
                       }
                     },
                     "label": {
-                      "ka": "სექტორული სტრუქტურა — % დამატებული ღირებულებიდან",
-                      "en": "Sectoral structure — % of value added"
+                      "ka": "მთლიანი შიდა პროდუქტი — რეგიონების მიხედვით",
+                      "en": "Gross Domestic Product — by region"
                     },
                     "type": "chart",
                     "view": {
@@ -3481,8 +3442,8 @@
                   },
                   {
                     "colLabel": {
-                      "ka": "სექტორი",
-                      "en": "Sector"
+                      "ka": "რეგიონი",
+                      "en": "Region"
                     },
                     "color": "#0080BE",
                     "columns": [
@@ -3505,6 +3466,17 @@
                         }
                       }
                     ],
+                    "footer": {
+                      "value": "sum"
+                    },
+                    "on": [
+                      {
+                        "event": "row:click",
+                        "actions": [
+                          { "type": "filter", "key": "region", "fromField": "id", "mode": "toggle", "max": 10 }
+                        ]
+                      }
+                    ],
                     "type": "table",
                     "view": {
                       "label": {
@@ -3519,7 +3491,7 @@
                 "data": {
                   "encoding": {
                     "color": "color",
-                    "isTotal": "isTotal",
+                    "id": "geo",
                     "label": "label",
                     "pct": {
                       "sumOf": "value"
@@ -3530,73 +3502,36 @@
                     {
                       "agg": "sum",
                       "by": [
-                        "sector",
-                        "time"
+                        "geo"
                       ],
                       "measure": "value",
                       "op": "aggregate"
                     },
                     {
-                      "agg": "sum",
-                      "as": "__total__",
-                      "dim": "sector",
-                      "of": "*",
-                      "op": "rollup"
-                    },
-                    {
-                      "as": "isTotal",
-                      "expr": "sector == '__total__' ? 1 : 0",
-                      "op": "derive"
-                    },
-                    {
                       "fields": [
                         "label",
-                        "color",
-                        "fullLabel"
+                        "color"
                       ],
                       "from": {
-                        "$d": "sector"
+                        "$d": "geo"
                       },
-                      "key": "sector",
+                      "key": "geo",
                       "op": "lookup"
                     },
                     {
-                      "op": "lookup",
-                      "key": "isTotal",
-                      "from": {
-                        "1": {
-                          "label": {
-                            "ka": "სულ",
-                            "en": "Total"
-                          }
-                        }
-                      },
-                      "fields": [
-                        "label"
-                      ]
-                    },
-                    {
-                      "by": [
-                        {
-                          "dir": "asc",
-                          "field": "isTotal"
-                        },
-                        {
-                          "dir": "desc",
-                          "field": "value"
-                        }
-                      ],
+                      "by": "value",
+                      "dir": "desc",
                       "op": "sort"
                     }
                   ],
                   "query": {
                     "filter": {
                       "geo": {
-                        "$ctx": "geo"
+                        "$ne": "_T"
                       },
                       "measure": "GVA",
                       "sector": {
-                        "$ne": "_T"
+                        "$ctx": "sector"
                       },
                       "time": {
                         "$ctx": "time"
@@ -3612,8 +3547,8 @@
                   "en": "{_regionTitle}"
                 },
                 "title": {
-                  "ka": "მთლიანი შიდა პროდუქტი სექტორების მიხედვით",
-                  "en": "Gross Domestic Product by sector"
+                  "ka": "მთლიანი შიდა პროდუქტი — რეგიონების მიხედვით",
+                  "en": "Gross Domestic Product — by region"
                 },
                 "type": "section",
                 "view": {
@@ -3626,9 +3561,9 @@
                     "en": "{time} · GEL mn"
                   },
                   "visibleWhen": {
-                    "is": "single",
+                    "is": "none",
                     "op": "eq",
-                    "param": "_geoMode"
+                    "param": "_regionSel"
                   }
                 }
               },
@@ -3778,9 +3713,9 @@
                     "en": "{time} · GEL mn"
                   },
                   "visibleWhen": {
-                    "is": "multi",
+                    "is": "some",
                     "op": "eq",
-                    "param": "_geoMode"
+                    "param": "_regionSel"
                   }
                 }
               }
@@ -4688,17 +4623,17 @@
         "storeKey": "regional",
         "type": "inner-page",
         "vars": {
-          "_geoMode": {
+          "_regionSel": {
             "cond": {
               "left": {
                 "$ctx": "region"
               },
-              "op": "includes",
-              "right": ","
+              "op": "ne",
+              "right": ""
             },
-            "else": "single",
+            "else": "none",
             "op": "if",
-            "then": "multi"
+            "then": "some"
           },
           "_regionTitle": {
             "by": "region",

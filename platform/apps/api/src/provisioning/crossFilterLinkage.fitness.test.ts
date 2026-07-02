@@ -82,9 +82,10 @@ describe('regional cross-filter linkage web (committed provisioning)', () => {
     regional = page!
   })
 
-  // FF-XF-REGION-TO-SECTOR — selecting a region re-scopes the sector composition panels.
-  it('FF-XF-REGION-TO-SECTOR: the sector donut + sectoral-structure panels bind {$ctx:geo}', () => {
-    expect(ctxDim(queryFilter(findById(regional.config, 'sectors')), 'geo')).toBe('geo')
+  // FF-XF-REGION-TO-SECTOR — selecting a region re-scopes the sectoral-structure panels.
+  // (`sectors` is now the State-A by-region donut — see FF-COMPOSITION-REPURPOSE — so it
+  //  intentionally does NOT bind {$ctx:geo}; the sectoral panels that DO are these.)
+  it('FF-XF-REGION-TO-SECTOR: the sectoral-structure + history panels bind {$ctx:geo}', () => {
     expect(ctxDim(queryFilter(findById(regional.config, 'sectors-multi')), 'geo')).toBe('geo')
     expect(ctxDim(queryFilter(findById(regional.config, 'sector-history')), 'geo')).toBe('geo')
   })
@@ -119,15 +120,14 @@ describe('regional cross-filter linkage web (committed provisioning)', () => {
 
   // FF-XF-SECTOR-EMIT — the newly authored links: the composition chart surfaces DRIVE a
   // sector selection (donut slice / stacked segment / area series → key=sector).
-  it('FF-XF-SECTOR-EMIT: donut + sectors-multi + sector-history charts emit key=sector on point:click', () => {
-    expect(emitterFor(findById(regional.config, 'sectors'),        'sector', 'point:click')).toBeDefined()
+  it('FF-XF-SECTOR-EMIT: sectors-multi + sector-history charts emit key=sector on point:click', () => {
     expect(emitterFor(findById(regional.config, 'sectors-multi'),  'sector', 'point:click')).toBeDefined()
     expect(emitterFor(findById(regional.config, 'sector-history'), 'sector', 'point:click')).toBeDefined()
   })
 
   // FF-XF-SECTOR-EMIT reads the sector code — fromField must be the sector field, not the default key.
   it('FF-XF-SECTOR-EMIT: sector emitters read fromField=sector (the sector code, not the label)', () => {
-    for (const id of ['sectors', 'sectors-multi', 'sector-history']) {
+    for (const id of ['sectors-multi', 'sector-history']) {
       const chart = emitterFor(findById(regional.config, id), 'sector', 'point:click')
       const action = handlers(chart).flatMap((h) => h.actions ?? []).find((a) => a.key === 'sector')
       expect(action?.fromField, `${id} emitter fromField`).toBe('sector')
@@ -150,6 +150,54 @@ describe('regional cross-filter linkage web (committed provisioning)', () => {
           if (a.mode !== undefined) expect(['replace', 'toggle', 'clear']).toContain(a.mode)
         }
       }
+    }
+  })
+
+  // ── FF-COMPOSITION-REPURPOSE ────────────────────────────────────────────────
+  //  The composition panel RE-PURPOSES by whether a region selection is active
+  //  (`_regionSel` none/some, the 0-vs-1+ boundary — distinct from `_geoMode`'s
+  //  0/1-vs-2+ comma threshold). State A (no region) = the `sectors` GDP-by-region
+  //  DONUT (regions as slices, center = national total); State B (region[s]) = the
+  //  `sectors-multi` sectoral-structure comparison. One authored swap, keyed on the
+  //  raw `region` selection via the computed var.
+  const sectionView = (id: string): Json | undefined =>
+    (findById(regional.config, id)?.view as Json | undefined)?.visibleWhen as Json | undefined
+
+  it('FF-COMPOSITION-REPURPOSE: by-region donut visibleWhen no selection; sectoral-structure visibleWhen region-selected', () => {
+    // State A — the by-region donut shows only when NO region is selected.
+    expect(sectionView('sectors')).toMatchObject({ op: 'eq', param: '_regionSel', is: 'none' })
+    // State B — the sectoral-structure comparison shows only when region(s) selected.
+    expect(sectionView('sectors-multi')).toMatchObject({ op: 'eq', param: '_regionSel', is: 'some' })
+    // The State-A panel is genuinely a by-region DONUT: a donut chart encoding geo…
+    const sectors = findById(regional.config, 'sectors')
+    const donut = find(sectors, (n) => n.type === 'chart' && n.chartType === 'donut')
+    expect(donut, 'sectors State-A panel is a donut').toBeDefined()
+    expect(((sectors?.data as Json | undefined)?.encoding as Json | undefined)?.id, 'donut slices are regions (encoding id=geo)').toBe('geo')
+    // …and clicking a slice DRIVES a region selection (the directional pin: region → sector view).
+    expect(emitterFor(sectors, 'region', 'point:click'), 'by-region donut emits key=region').toBeDefined()
+  })
+
+  // ── FF-COMPARISON-SCOPES-TO-SELECTION ───────────────────────────────────────
+  //  The bottom region-comparison bar scopes to the selected regions on region-select
+  //  (State B → only the selected regions) while remaining the all-regions ranking in
+  //  State A. ONE binding expresses both: geo:{$ctx:geo,$ne:_T} — $ctx follows the
+  //  selection (empty → wildcard = all regions), $ne drops the _T aggregate row.
+  it('FF-COMPARISON-SCOPES-TO-SELECTION: regions-bar geo binds {$ctx:geo} and excludes the _T aggregate', () => {
+    const geo = (queryFilter(findById(regional.config, 'regions-bar'))?.geo) as Json | undefined
+    expect(geo?.$ctx, 'follows the region selection').toBe('geo')
+    expect(geo?.$ne, 'excludes the _T national-aggregate row').toBe('_T')
+  })
+
+  // ── FF-REGIONAL-KPI-SECTOR-DEFAULT ──────────────────────────────────────────
+  //  A regional KPI geo filter must fall back to a WILDCARD ('' → val sums over geo =
+  //  national), never the '_T' aggregate code. With '_T' a sector-select (no region)
+  //  read the empty `geo=_T × sector=X` cell → 0; the wildcard sums all regions at
+  //  that sector = the national-for-that-sector value.
+  it('FF-REGIONAL-KPI-SECTOR-DEFAULT: every $ctx:geo ref with a default falls back to wildcard, not _T', () => {
+    const geoRefs = findAll(regional.config, (n) => n.$ctx === 'geo' && 'default' in n)
+    expect(geoRefs.length, 'the regional KPIs carry $ctx:geo defaults').toBeGreaterThan(0)
+    for (const r of geoRefs) {
+      expect(r.default, 'geo default is a wildcard aggregate, not the _T dead cell').toBe('')
     }
   })
 })

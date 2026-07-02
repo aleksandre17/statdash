@@ -101,17 +101,17 @@ describe('FF-ACCOUNTS-FILTERS — accounts page account-filter linkage (committe
     expect((fs?.context as Json)?.dims as Json).toMatchObject({ account: 'account' })
   })
 
-  // FF-ACCOUNTS-FILTERS (KPIs) — every account-bearing KPI filter FOLLOWS the selection
-  // via {$ctx:'account'}, never a bare literal (the pre-migration, non-reactive state).
-  it('every accounts KPI filter binds {$ctx:account} with a default (no pinned literal)', () => {
+  // FF-ACCOUNTS-KPI-NO-BLANK — each accounts KPI is an account-SPECIFIC headline
+  // aggregate (B5G from the primary-income account, B8G from the use-of-income
+  // account, …). A global {$ctx:'account'} filter re-points every KPI at the ONE
+  // selected account, blanking the 9/13 whose measure is absent there. So each KPI
+  // account filter is a LITERAL pin to its own account — never a selection-following
+  // $ctx ref. (The heros scope; the KPIs stay put — the two seams are opposite.)
+  it('every accounts KPI account filter is a literal pin, not a $ctx ref that blanks', () => {
     const filters = kpiFilters(accounts)
     expect(filters.length, 'the strip has account-scoped KPIs').toBeGreaterThan(0)
     for (const f of filters) {
-      const acc = f.account as Json
-      expect(typeof acc, 'account is a $ctx ref object, not a string literal').toBe('object')
-      expect(acc.$ctx, 'follows the account selection').toBe('account')
-      // A per-card default preserves the unselected view (this card's own account).
-      expect(typeof acc.default, 'has a fallback account for the empty selection').toBe('string')
+      expect(typeof f.account, 'account is pinned to its own headline aggregate, not $ctx').toBe('string')
     }
   })
 
@@ -122,13 +122,19 @@ describe('FF-ACCOUNTS-FILTERS — accounts page account-filter linkage (committe
     expect(ctxDim(heroQueryFilter(accounts.config, 'sna-hero-range'), 'account')).toBe('account')
   })
 
-  // Anti-regression — no query filter or KPI filter on the accounts page re-pins `account`
-  // to a bare string. Config = SSOT: the selection is the ONLY source of the account scope.
-  it('no account filter on the accounts page is a bare literal (selection is the sole source)', () => {
-    const bareLiteralFilters = findAll(accounts.config, (n) => {
-      const acc = (n.filter as Json | undefined)?.account
-      return typeof acc === 'string'
-    })
-    expect(bareLiteralFilters, 'no filter pins account to a literal').toEqual([])
+  // Anti-regression — {$ctx:account} is CONFINED to the two SNA heros (which SHOULD
+  // scope). No KPI account filter follows the selection (that is what blanked the 9/13),
+  // and the heros never regress to a literal (that is what made the selector inert). The
+  // two seams are deliberately opposite; config = SSOT for each.
+  it('$ctx:account is confined to the heros; no KPI account filter follows the selection', () => {
+    // KPI side — none of the KPI account filters is a $ctx ref.
+    for (const f of kpiFilters(accounts)) {
+      const acc = f.account as unknown
+      expect(acc !== null && typeof acc === 'object' && '$ctx' in (acc as object),
+        'a KPI must not follow the account selection').toBe(false)
+    }
+    // Hero side — the $ctx:account refs that DO exist are the heros' (chart + table each).
+    const ctxAccountRefs = findAll(accounts.config, (n) => n.$ctx === 'account')
+    expect(ctxAccountRefs.length, 'the SNA heros carry $ctx:account, and only they').toBeGreaterThanOrEqual(2)
   })
 })
