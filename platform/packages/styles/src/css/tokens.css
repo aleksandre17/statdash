@@ -259,8 +259,8 @@
   /* Text */
   --color-text-primary:   #1A2332;
   --color-text-secondary: #4A5568;
-  --color-text-muted:     #6B7B8D;
-  --color-text-faint:     #9AABB8;
+  --color-text-muted:     #5A6B7D;   /* AR: darkened from #6B7B8D (4.34:1 — failed AA 4.5:1 text minimum; now 5.48:1) */
+  --color-text-faint:     #66768A;   /* AR: darkened from #9AABB8 (2.36:1 — hard AA fail; widely used as real small text, not decoration; now 4.64:1) */
   --color-text-inverse:   #FFFFFF;
 
   /* Surface */
@@ -299,7 +299,7 @@
      (neutral teal / neutral terracotta); a tenant theme rebinds to its palette.
      Always paired with a glyph/arrow — never color-only (WCAG 1.4.1). */
   --color-trend-positive: var(--teal-600);
-  --color-trend-negative: #b06a52;
+  --color-trend-negative: #9c5540;   /* AR: darkened from #b06a52 (4.18:1 — failed AA 4.5:1; kpi-trend-down/stats-change render at 12-13px, not "large text"; now 5.55:1) */
 
   /* Chart frame (chrome around data-viz; the categorical palette is --chart-color-*) */
   --color-chart-frame:    #E0EBE8;
@@ -347,7 +347,7 @@
   --status-obs-preliminary-border: #FFE69C;
   --status-obs-preliminary-fg:     #856404;
   --status-obs-estimate-bg:        #E8F4F8;
-  --status-obs-estimate-fg:        #1B7A9E;
+  --status-obs-estimate-fg:        #0f6483;   /* AR: darkened from #1B7A9E (4.33:1 — failed AA 4.5:1 on the 10px status-badge text; now 5.91:1) */
   --status-obs-revised-bg:         #F0F0F0;
   --status-obs-revised-fg:         var(--color-text-secondary);
   --status-obs-confidential-bg:    #FEE2E2;
@@ -379,10 +379,10 @@
   --chart-color-3:  #1b9e77;  /* teal-green */
   --chart-color-4:  #d81b60;  /* magenta */
   --chart-color-5:  #7b3294;  /* purple */
-  --chart-color-6:  #c79a00;  /* mustard */
-  --chart-color-7:  #4eb3d3;  /* sky */
+  --chart-color-6:  #a17d00;  /* mustard — AR: darkened from #c79a00 (2.61:1 on white, failed the 3:1 WCAG 1.4.11 graphics-contrast floor; now 3.85:1) */
+  --chart-color-7:  #2b8dac;  /* sky — AR: darkened from #4eb3d3 (2.41:1 on white, failed 3:1; now 3.81:1) */
   --chart-color-8:  #984ea3;  /* violet */
-  --chart-color-9:  #66a61e;  /* olive */
+  --chart-color-9:  #5a9518;  /* olive — AR: darkened from #66a61e (2.98:1 on white, failed 3:1; now 3.65:1) */
   --chart-color-10: #8c564b;  /* brown */
 
   /* ── Z-index scale ──────────────────────────────────────────── */
@@ -502,7 +502,7 @@
        to the [data-theme="dark"] block below (fitness-asserted). */
 
     /* Text */
-    --color-text-faint:     #6a6f7c;
+    --color-text-faint:     #7c8291;   /* AR: lightened from #6a6f7c (3.60:1 — failed AA 4.5:1 text minimum; now 4.71:1) */
 
     /* Surface — frame is the recessed segmented-control / inset track; on dark
        it sits just BELOW the base surface so a selected tab (=--color-surface)
@@ -633,7 +633,7 @@
      (fitness-asserted). See that block for the rationale. */
 
   /* Text */
-  --color-text-faint:     #6a6f7c;
+  --color-text-faint:     #7c8291;   /* AR: byte-identical to the @media block above (FF-DARK-COMPLETE) */
 
   /* Surface — recessed segmented-control / inset track (below base surface). */
   --color-surface-frame:  #0e0e16;
