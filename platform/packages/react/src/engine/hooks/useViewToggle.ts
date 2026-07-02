@@ -36,6 +36,14 @@ export interface ViewToggle {
   showToggle:    boolean
   /** Per-child predicate: hide children whose role isn't the active one. */
   isHidden:      (child: NodeDef) => boolean
+  /**
+   * Role-level primitive: is this role currently hidden? The seam for views that
+   * are NOT child NodeDefs (e.g. a shell-rendered inline map — geograph's <GeoMap/>
+   * is not a child; the table is). The caller passes the role literal directly
+   * instead of a carrier. `isHidden` delegates here — ONE toggle mechanism spans
+   * both child-def views and shell-inline views.
+   */
+  isRoleHidden:  (role: string | undefined) => boolean
 }
 
 /**
@@ -72,10 +80,11 @@ export function useViewToggle(
 
   const showToggle = !!toggleOptIn && roles.length > 1
 
-  const isHidden = (child: NodeDef): boolean => {
-    const role = (child as NodeBase).view?.role
-    return !!(showToggle && role && role !== activeRole)
-  }
+  const isRoleHidden = (role: string | undefined): boolean =>
+    !!(showToggle && role && role !== activeRole)
 
-  return { roles, roleLabels, activeRole, setActiveRole, showToggle, isHidden }
+  const isHidden = (child: NodeDef): boolean =>
+    isRoleHidden((child as NodeBase).view?.role)
+
+  return { roles, roleLabels, activeRole, setActiveRole, showToggle, isHidden, isRoleHidden }
 }

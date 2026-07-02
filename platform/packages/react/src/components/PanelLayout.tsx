@@ -5,7 +5,12 @@
 //  Responsibilities:
 //    · Title + optional label + optional subtitle
 //    · Collapse/expand with WCAG 2.1 AA keyboard support
-//    · Optional index-based view toggle (N views, caller supplies label + optional icon)
+//    · Optional role-based view toggle — the ONE view-toggle mechanism
+//      (useViewToggle). PanelLayout is CONTROLLED: the caller owns the active
+//      role (persisted via useViewToggle) and toggles child visibility with
+//      resolveViewState; PanelLayout only renders the button group. It does NOT
+//      switch children by index (the retired bespoke path) — all children stay
+//      mounted so toggling is instant + a11y-safe, exactly like the section shell.
 //    · --sc CSS custom property set on root only when color prop is provided
 //    · Optional actions slot (export bar, info button, …)
 //
@@ -17,13 +22,27 @@
 //
 import './PanelLayout.css'
 import type { BodyStyleAttrs } from '@statdash/styles'
-import React, { useState, type CSSProperties, type ReactNode, type ComponentType } from 'react'
+import { useState, type CSSProperties, type ReactNode, type ComponentType } from 'react'
 import { ChevronIcon } from './icons'
 import { InjectionToken } from '../engine/di/InjectionToken'
 
-export interface PanelView {
-  label: string
-  icon?: ReactNode
+/**
+ * Controlled, role-based view-toggle descriptor. The caller (a shell) derives
+ * this from `useViewToggle` — the single view-toggle mechanism — and pre-resolves
+ * the per-role labels to concrete strings, so PanelLayout stays i18n-free (it
+ * renders whatever strings it is handed). PanelLayout owns NO toggle state.
+ */
+export interface PanelViewToggle {
+  /** Distinct, declaration-ordered roles. Toggle renders only when length >= 2. */
+  roles:      string[]
+  /** role → already-locale-resolved label. */
+  labels:     Record<string, string>
+  /** The active role (from useViewToggle). */
+  active:     string | undefined
+  /** Persist a new active role (useViewToggle.setActiveRole). */
+  onSelect:   (role: string) => void
+  /** aria-label for the toggle group — caller provides the translated string. */
+  ariaLabel?: string
 }
 
 export interface PanelLayoutProps {
@@ -36,12 +55,9 @@ export interface PanelLayoutProps {
   defaultOpen?:      boolean
   noCollapse?:       boolean
   children:          ReactNode
-  // ── View toggle ────────────────────────────────────────────────────
-  /** Toggle shown only when length >= 2. icon is optional; text-only when absent. */
-  views?:            PanelView[]
-  defaultViewIndex?: number
-  /** aria-label for the toggle group — caller provides translated string. */
-  viewToggleLabel?:  string
+  // ── View toggle (role-based, controlled — the ONE mechanism) ────────
+  /** Role-based toggle from useViewToggle. Button group shown only when >= 2 roles. */
+  viewToggle?:       PanelViewToggle
   // ── Actions slot ───────────────────────────────────────────────────
   /** Rendered inside the header actions area (export bar, info button, …). */
   actions?:          ReactNode
@@ -67,21 +83,17 @@ export function PanelLayout({
   defaultOpen   = true,
   noCollapse    = false,
   children,
-  views,
-  defaultViewIndex = 0,
-  viewToggleLabel  = 'Toggle view',
+  viewToggle,
   actions,
   titleBadge,
   bodyProps,
 }: PanelLayoutProps) {
-  const [open,      setOpen]      = useState(defaultOpen)
-  const [activeIdx, setActiveIdx] = useState(defaultViewIndex)
+  const [open, setOpen] = useState(defaultOpen)
 
   const canCollapse = !noCollapse
   const bodyId      = id ? `${id}-body` : undefined
 
-  const showToggle = (views?.length ?? 0) >= 2
-  const childArray = React.Children.toArray(children)
+  const showToggle = (viewToggle?.roles.length ?? 0) >= 2
 
   const rootStyle: CSSProperties | undefined = color
     ? ({ '--sc': color } as CSSProperties)
@@ -120,24 +132,23 @@ export function PanelLayout({
           {subtitle && <div className="panel__subtitle">{subtitle}</div>}
         </div>
 
-        {/* Actions: view toggle + caller actions slot */}
+        {/* Actions: role-based view toggle + caller actions slot */}
         <div className="panel__actions" onClick={(e) => e.stopPropagation()}>
-          {showToggle && views && (
+          {showToggle && viewToggle && (
             <div
               className="panel__view-toggle"
               role="group"
-              aria-label={viewToggleLabel}
+              aria-label={viewToggle.ariaLabel ?? 'Toggle view'}
             >
-              {views.map((view, i) => (
+              {viewToggle.roles.map((r) => (
                 <button
-                  key={i}
-                  className={`panel__view-btn${activeIdx === i ? ' active' : ''}`}
-                  onClick={() => setActiveIdx(i)}
+                  key={r}
+                  className={`panel__view-btn${viewToggle.active === r ? ' active' : ''}`}
+                  onClick={() => viewToggle.onSelect(r)}
                   type="button"
-                  aria-pressed={activeIdx === i}
+                  aria-pressed={viewToggle.active === r}
                 >
-                  {view.icon && <span aria-hidden="true">{view.icon}</span>}
-                  <span>{view.label}</span>
+                  <span>{viewToggle.labels[r] ?? r}</span>
                 </button>
               ))}
             </div>
@@ -150,13 +161,12 @@ export function PanelLayout({
         )}
       </div>
 
-      {/* ── Body ────────────────────────────────────────────────── */}
+      {/* ── Body ────────────────────────────────────────────────────
+          All children stay mounted; the caller hides inactive views via
+          resolveViewState (data-view). PanelLayout never switches by index. */}
       {(noCollapse || open) && (
         <div className="panel__body" id={bodyId} {...bodyProps}>
-          {showToggle
-            ? (childArray[activeIdx] ?? childArray[0])
-            : children
-          }
+          {children}
         </div>
       )}
     </div>

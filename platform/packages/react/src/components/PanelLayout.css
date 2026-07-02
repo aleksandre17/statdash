@@ -1,7 +1,9 @@
 /* ================================================================
    PANEL LAYOUT  (.panel)
-   Collapsible card primitive with header, body, and index-based view
-   toggle. Framework primitive — no app-specific colours or strings.
+   Collapsible card primitive with header, body, and a role-based view
+   toggle (the ONE view-toggle mechanism — useViewToggle; the panel is
+   controlled and hides inactive views via resolveViewState, never by
+   index). Framework primitive — no app-specific colours or strings.
    Grafana PanelChrome equivalent.
 
    Co-located here (packages/react/src/components/PanelLayout.css)
@@ -102,7 +104,7 @@
   flex-direction:  column;
 }
 
-/* ── View toggle (generic N-view switcher) ──────────────────────── */
+/* ── View toggle (role-based switcher — useViewToggle) ──────────── */
 
 .panel__view-toggle {
   display:       flex;

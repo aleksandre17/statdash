@@ -97,7 +97,7 @@ export { default as CascadeSelect }      from './components/filters/CascadeSelec
 export { LINK_ICONS, InfoIcon, ChevronIcon } from './components/icons'
 // ── Layout primitives ─────────────────────────────────────────────────
 export { PanelLayout, PANEL_LAYOUT }         from './components/PanelLayout'
-export type { PanelLayoutProps }             from './components/PanelLayout'
+export type { PanelLayoutProps, PanelViewToggle } from './components/PanelLayout'
 // ── Resilience primitives — top-level graceful-degradation boundary ────
 export { AppErrorBoundary }                  from './components/AppErrorBoundary'
 // ── Feedback primitives ───────────────────────────────────────────────
