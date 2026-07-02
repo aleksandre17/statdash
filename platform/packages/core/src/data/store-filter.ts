@@ -132,6 +132,45 @@ export function resolveFilter(
   return [fv as DimVal]
 }
 
+/**
+ * matchedValues — the obs-value list at a coordinate over a row set (the OLAP cell
+ * matching loop, SSOT). ONE implementation of "resolve a value from a set of rows",
+ * shared by BOTH sync stores:
+ *   • ExternalStore — over its in-memory `observations` (facts are ids; `expand` is
+ *     the classifier leaf-set so a coordinate matches its whole hierarchy subtree).
+ *   • ApiStore     — over an already-cached SUPERSET slice's rows (facts are the
+ *     server's leaf codes, already scoped by the wire filter; `expand` is identity).
+ *
+ * Generic over the coordinate (Law 1 — no dimension privileged): `code` matches the
+ * MEASURE_DIM cell, carry-forward rows are excluded (SNA T-account dedup), each
+ * coordinate dim constrains via leaf-set containment (unset '' / null / undefined
+ * values are skipped — a wildcard). Empty result ⇒ caller sums to the OLAP zero cell.
+ */
+export function matchedValues(
+  rows:       readonly Record<string, DimVal>[],
+  code:       string,
+  coordinate: Record<string, DimVal>,
+  expand?:    LeafFn,
+): number[] {
+  const out: number[] = []
+  for (const o of rows) {
+    if (String(o[MEASURE_DIM] ?? '') !== code) continue
+    if (Number(o['isCarryForward'] ?? 0) === 1) continue
+    let ok = true
+    for (const [dim, val] of Object.entries(coordinate)) {
+      if (val === '' || val === null || val === undefined) continue
+      const obsVal = o[dim]
+      if (obsVal === undefined) continue
+      const leaves = typeof val === 'string' && val.includes(',')
+        ? val.split(',').filter(Boolean).flatMap((p) => (expand ? expand(dim, p) : [p]))
+        : (expand ? expand(dim, val) : [val])
+      if (!matchesLeaves(leaves, obsVal)) { ok = false; break }
+    }
+    if (ok) out.push(Number(o['value'] ?? 0))
+  }
+  return out
+}
+
 export function matchesFilter(
   obs:     Record<string, DimVal>,
   filter:  Partial<Record<string, FilterValue>>,

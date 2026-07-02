@@ -24,6 +24,7 @@ import { isUnsetTime }                                                 from '../
 import type { EngineRow }                                              from './encoding'
 import type { DataStore, QueryResult, ResultMeta, StoreCaps, StoreQuery } from './store'
 import { matchesFilter, buildObsFilterParam } from './store-filter'
+import { resolveCachedPointRead } from './store-api-pointread'
 import type { DimVal, FilterValue } from '../sdmx'
 import type { MetadataPort }                                           from '../core/provenance'
 
@@ -71,7 +72,12 @@ export class ApiStore implements DataStore {
   // The dataset-level ETag is the correct validator for ANY slice's freshness: a
   // dataset-version bump invalidates every slice at once (server returns a new
   // ETag ⇒ 200 on the next revalidation of each slice).
-  private readonly _cache = new Map<string, { rows: EngineRow[]; expiresAt: number }>()
+  // `params` are the wire params the slice was fetched under (dataset, from/to,
+  // filter). Retained so a point read (`val`/`valAt`) that misses on its exact key
+  // can find an already-cached SUPERSET slice (a slice whose params constrain a
+  // superset of the read's rows) and resolve the value from it by filter+sum — the
+  // SAME matching ExternalStore uses (matchedValues). See resolvePointRead below.
+  private readonly _cache = new Map<string, { rows: EngineRow[]; expiresAt: number; params: Record<string, string> }>()
   private readonly _eTags = new Map<string, string>()
   private readonly ttlMs: number
 
@@ -197,7 +203,7 @@ export class ApiStore implements DataStore {
     const filtered = this.applyClientFilter(rows, q, ctx)
     const ordered = this.applyOrderBy(filtered, q)
 
-    this._cache.set(cacheKey, { rows: ordered, expiresAt: Date.now() + this.ttlMs })
+    this._cache.set(cacheKey, { rows: ordered, expiresAt: Date.now() + this.ttlMs, params })
     return {
       state: 'done',
       data:  ordered,
@@ -237,19 +243,39 @@ export class ApiStore implements DataStore {
     }
   }
 
-  // ── querySync — warm-cache fast-lane only ─────────────────────────
+  // ── querySync — warm-cache fast-lane ──────────────────────────────
+  //
+  //  A held slice resolves synchronously even when TTL-stale: querySync is the
+  //  post-resume read after queryAsync warmed the cache. Freshness re-validation is
+  //  queryAsync's job (network) — querySync must never throw on a slice we hold.
+  //
+  //  `val`/`valAt` are OLAP POINT READS, resolved by matching+summing over the
+  //  cached rows (resolveCachedPointRead) rather than returned raw — because the
+  //  read's per-coordinate key (e.g. the enumerated `time:yearᵢ` of a timeseries/
+  //  growth `'all'`) DIFFERS from the unbounded slice C2 warmed (time stripped), so
+  //  the exact key misses. We resolve it from that already-cached SUPERSET slice with
+  //  the SAME matcher ExternalStore uses, so live and in-memory stores agree.
+  //  `obs`/`schema`/`distinct` stay exact-key reads (raw rows) and cold-throw on miss.
 
   querySync(q: StoreQuery, ctx: SectionContext): EngineRow[] {
+    if (q.type === 'val' || q.type === 'valAt') {
+      const value = resolveCachedPointRead(
+        this._cache, q, ctx, this.cacheKeyFor(q, ctx), this.toObsParams(q, ctx),
+      )
+      if (value === undefined) throw new Error(this.coldError(q, ctx))
+      return [{ value }]
+    }
     const cacheKey = this.cacheKeyFor(q, ctx)
     const cached   = this._cache.get(cacheKey)
-    // A held slice resolves synchronously even when TTL-stale: querySync is the
-    // post-resume read after queryAsync warmed the cache. Freshness re-validation
-    // is queryAsync's job (network) — querySync must never throw on a slice we hold.
     if (cached) return cached.rows
-    throw new Error(
+    throw new Error(this.coldError(q, ctx))
+  }
+
+  private coldError(q: StoreQuery, ctx: SectionContext): string {
+    return (
       `ApiStore.querySync called cold (cache miss). ` +
       `This store has caps.sync=false — use queryAsync. ` +
-      `cacheKey=${cacheKey.slice(0, 80)}`,
+      `cacheKey=${this.cacheKeyFor(q, ctx).slice(0, 80)}`
     )
   }
 

@@ -16,10 +16,13 @@
 //  A negative control proves the guard has teeth: the SAME reading spec, warmed with
 //  an EMPTY set, DOES throw — so a future []-regression is caught, not masked.
 
-import { describe, it, expect }        from 'vitest'
+import { describe, it, expect, vi, afterEach } from 'vitest'
 import { interpretSpec, extractRequirements } from './spec'
 import { ExternalStore }               from './store-impl'
+import { ApiStore }                    from './store-api'
+import type { RawObsRow }              from './store-api'
 import type { DataStore, StoreQuery }  from './store'
+import type { EngineRow }              from './encoding'
 import type { DataSpec }               from '../config/data-spec'
 import type { SectionContext }         from '../core/context'
 import type { Observation }            from '../sdmx'
@@ -133,5 +136,109 @@ describe('FF-WARM-COVERS-RENDER — negative control (the guard has teeth)', () 
   ])('%s cold-crashes against an empty warm set', (_name, spec) => {
     const ctx: SectionContext = { dims: { time: 2021, geo: 'GE' } }
     expect(() => interpretSpec(spec, ctx, coldThrowStore(new Set()))).toThrow(/cold read/)
+  })
+})
+
+// ── FF-WARM-COVERS-RENDER — ApiStore superset-resolution parity (LIVE deploy) ──
+//
+//  The code-level guard above proves warm===render by CODE, but the LIVE regression
+//  is KEY-level: for timeseries/growth `'all'`, C2 warms ONE UNBOUNDED slice per code
+//  (the enumerated `time` dim stripped), while the render fans out ONE per-coordinate
+//  `val` read (time:yearᵢ) whose wire key folds in from=yearᵢ&to=yearᵢ — a DISTINCT
+//  key from the warmed unbounded slice. The old ApiStore.querySync threw cold on that
+//  exact-key miss (it returned raw rows, did NO OLAP matching), so the chart never
+//  rendered live even though every needed row was already cached.
+//
+//  This block drives a REAL ApiStore (backed by a fake server), warms ONLY the
+//  unbounded slices the useNodeRows warm walk issues (val + obs at the time-stripped
+//  ctx — NEVER the per-coordinate keys), then renders via interpretSpec (the SAME sync
+//  read the live DOM drives). It must NOT throw, and the rows must EQUAL the
+//  ExternalStore result over the same data — proving the two store paths resolve a
+//  point read identically (both through matchedValues). A negative control (nothing
+//  warmed) proves the guard has teeth: with no covering slice, the read cold-crashes.
+
+// The same three years of GDP, as the raw wire shape ApiStore's mapRow ingests.
+const RAW_OBS: RawObsRow[] = OBS.map((o) => ({
+  time_period:   String(o['time']),
+  dim_key:       { measure: String(o['measure']), geo: String(o['geo']) },
+  obs_value:     String(o['value']),
+  obs_status:    'A',
+  obs_attribute: {},
+}))
+
+const mapRow = (raw: RawObsRow): EngineRow => ({
+  ...raw.dim_key,
+  time:  Number(raw.time_period),
+  value: raw.obs_value === null ? null : Number(raw.obs_value),
+})
+
+/** A fake /api/stats/observations that scopes RAW_OBS by the wire params (server-side). */
+function fakeFetch(raw: RawObsRow[]) {
+  return vi.fn(async (url: string) => {
+    const qs     = new URL(url, 'http://api.test').searchParams
+    const from   = qs.get('from')
+    const to     = qs.get('to')
+    const filter = qs.get('filter') ? (JSON.parse(qs.get('filter')!) as Record<string, unknown>) : {}
+    const data   = raw.filter((r) => {
+      if (from && Number(r.time_period) < Number(from)) return false
+      if (to   && Number(r.time_period) > Number(to))   return false
+      for (const [dim, val] of Object.entries(filter)) {
+        const rv = r.dim_key[dim]
+        if (Array.isArray(val)) { if (!val.map(String).includes(String(rv))) return false }
+        else if (String(rv) !== String(val)) return false
+      }
+      return true
+    })
+    return {
+      ok: true, status: 200,
+      headers: { get: () => null },
+      json:    async () => ({ data }),
+      text:    async () => '',
+    } as unknown as Response
+  })
+}
+
+function makeApiStore(): ApiStore {
+  // nonTimeDims = ['geo']: geo flows into the wire filter; measure is pinned per-val.
+  return new ApiStore('http://api.test', 'GDP_DS', ['geo'], {}, mapRow)
+}
+
+/** Warm EXACTLY the slices useNodeRows warms: val + obs at each (time-stripped) req ctx. */
+async function warmLikeLive(store: ApiStore, spec: DataSpec, ctx: SectionContext): Promise<void> {
+  for (const r of extractRequirements(spec, ctx)) {
+    const reqCtx: SectionContext = { ...ctx, dims: { ...ctx.dims, ...r.dims } }
+    await store.queryAsync({ type: 'val', code: r.code }, reqCtx)
+    await store.queryAsync({ type: 'obs', measure: r.code }, reqCtx)
+  }
+}
+
+describe('FF-WARM-COVERS-RENDER — ApiStore resolves an `all` render from the warmed superset', () => {
+  afterEach(() => vi.unstubAllGlobals())
+
+  const ctx: SectionContext = { dims: { geo: 'GE' } }
+  const LIVE_CASES: Array<[string, DataSpec]> = [
+    ['timeseries (all)', { type: 'timeseries', code: 'GDP', years: 'all' } as DataSpec],
+    ['growth (all)',     { type: 'growth',     code: 'GDP', years: 'all' } as DataSpec],
+  ]
+
+  it.each(LIVE_CASES)('%s: no cold throw + rows == ExternalStore', async (_name, spec) => {
+    vi.stubGlobal('fetch', fakeFetch(RAW_OBS))
+    const api = makeApiStore()
+    await warmLikeLive(api, spec, ctx)
+
+    // The per-coordinate keys (from=yearᵢ&to=yearᵢ) were NEVER warmed — only the
+    // unbounded slice was. The sync render must resolve from that superset, not throw.
+    let apiRows!: ReturnType<typeof interpretSpec>
+    expect(() => { apiRows = interpretSpec(spec, ctx, api) }).not.toThrow()
+
+    const extRows = interpretSpec(spec, ctx, new ExternalStore(OBS))
+    expect(apiRows).toEqual(extRows)              // live path ≡ in-memory path
+    expect(apiRows.length).toBeGreaterThan(0)     // and it actually produced a series
+  })
+
+  it.each(LIVE_CASES)('%s: negative control — NOTHING warmed cold-crashes', (_name, spec) => {
+    vi.stubGlobal('fetch', fakeFetch(RAW_OBS))
+    const api = makeApiStore()                    // cache empty — no covering superset
+    expect(() => interpretSpec(spec, ctx, api)).toThrow(/cold|cache miss/)
   })
 })

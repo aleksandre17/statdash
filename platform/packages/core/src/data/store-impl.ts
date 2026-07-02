@@ -14,7 +14,7 @@ import { MEASURE_DIM }                                                  from '..
 import type { EngineRow }                                              from './encoding'
 import { storeVal, asyncFromSync }                                     from './store'
 import type { DataStore, QueryResult, Requirement, ResultMeta, StoreCaps, StoreQuery } from './store'
-import { dimKey, matchesFilter, matchesLeaves, DimResolver }           from './store-filter'
+import { dimKey, matchesFilter, matchedValues, DimResolver }           from './store-filter'
 import type { LeafFn }                                                 from './store-filter'
 import { roundAgg }                                                    from './round'
 import { rollupValues }                                               from './grain'
@@ -277,25 +277,12 @@ export class ExternalStore implements DataStore {
 
   // _matchedValues — the obs-value list at a coordinate (the matching loop SSOT).
   //  Shared by `_val` (OLAP cell sum) and `_valAt` (point read at an explicit
-  //  coordinate). Coordinate = a generic dims map; no dimension is privileged.
+  //  coordinate). Delegates to the ONE `matchedValues` helper (store-filter.ts) that
+  //  ApiStore ALSO uses to resolve a point read from a cached superset slice — so both
+  //  stores compute an OLAP cell identically. Coordinate = a generic dims map; no
+  //  dimension is privileged. `leafSet` expands each code to its hierarchy subtree.
   private _matchedValues(code: string, dims: Record<string, DimVal>): number[] {
-    const out: number[] = []
-    for (const o of this.observations) {
-      if (String(o[MEASURE_DIM] ?? '') !== code) continue
-      if (Number(o['isCarryForward'] ?? 0) === 1) continue
-      let ok = true
-      for (const [dim, val] of Object.entries(dims)) {
-        if (val === '' || val === null || val === undefined) continue
-        const obsVal = o[dim]
-        if (obsVal === undefined) continue
-        const leaves = typeof val === 'string' && val.includes(',')
-          ? val.split(',').filter(Boolean).flatMap((p) => this.leafSet(dim, p))
-          : this.leafSet(dim, val)
-        if (!matchesLeaves(leaves, obsVal)) { ok = false; break }
-      }
-      if (ok) out.push(Number(o['value'] ?? 0))
-    }
-    return out
+    return matchedValues(this.observations, code, dims, this.leafSet)
   }
 
   private _val(code: string, ctx: SectionContext): number {
