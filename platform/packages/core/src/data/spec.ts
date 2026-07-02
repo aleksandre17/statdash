@@ -125,12 +125,23 @@ export function extractRequirements(
     // ── point-series — the lowering target for timeseries (grain G2) ──
     //  Warm one val read per ENUMERATED coordinate (the unclamped superset, exactly
     //  as the old `timeseries` case warmed effectiveYears — the read clamps later).
-    //  'all'/absent coords resolve at runtime from the store ⇒ no static reqs.
     case 'point-series': {
-      if (lowered.coords === undefined || lowered.coords === 'all') return []
+      const psCodes = resolveMeasureRef(lowered.code).codes
       const at = lowered.at
       const over = lowered.over
-      return resolveMeasureRef(lowered.code).codes.flatMap((code) =>
+      // 'all'/absent coords resolve at runtime from the store (distinct(over)); the
+      // coordinate set is NOT knowable statically. Emit ONE UNBOUNDED requirement per
+      // code — the enumerated `over` dim STRIPPED from the dims (Law 1: generic, not
+      // time-special) so the warmed slice spans every coordinate the resolver reads
+      // (its obs enumerate + per-coordinate val reads). Mirrors the `query` rangeMode
+      // branch (:220): a read-issuing spec must never warm [] (FF-NO-EMPTY-REQS).
+      if (lowered.coords === undefined || lowered.coords === 'all') {
+        const { [over]: _stripOver, ...rest } = ctx.dims
+        return psCodes.map((code) => ({
+          code, dims: { ...rest, ...at } as Record<string, DimVal>,
+        }))
+      }
+      return psCodes.flatMap((code) =>
         (lowered.coords as readonly DimVal[]).map((c) => ({
           // `at` is Partial; the matching loop skips unset dims, so the cast is sound.
           code, dims: { ...ctx.dims, ...at, [over]: c } as Record<string, DimVal>,
@@ -148,20 +159,31 @@ export function extractRequirements(
       })
 
     case 'timeseries': {
-      // Defensive fallback (timeseries normally lowers to point-series above). 'all' —
-      // years resolved at runtime from store; no static requirements extractable.
+      // Defensive fallback (timeseries normally lowers to point-series above).
       const tsYears = effectiveYears(lowered)
-      if (tsYears === 'all') return []
-      return resolveMeasureRef(lowered.code).codes.flatMap((code) =>
+      const tsCodes = resolveMeasureRef(lowered.code).codes
+      // 'all' — years resolved at runtime from the store. Emit ONE UNBOUNDED req per
+      // code with the TIME pin STRIPPED, so the warmed slice spans every year the
+      // read enumerates (mirrors query rangeMode :220 — never warm [] for a reading
+      // spec, FF-NO-EMPTY-REQS).
+      if (tsYears === 'all') {
+        const { [TIME_DIM]: _stripTime, ...rest } = ctx.dims
+        return tsCodes.map((code) => ({ code, dims: rest as Record<string, DimVal> }))
+      }
+      return tsCodes.flatMap((code) =>
         (tsYears as readonly number[]).map((year) => ({ code, dims: { ...ctx.dims, [TIME_DIM]: year } })),
       )
     }
 
     case 'growth': {
-      // 'all' — years resolved at runtime from store; no static requirements extractable.
       const grYears = effectiveYears(lowered)
-      if (grYears === 'all') return []
       const codes = resolveMeasureRef(lowered.code).codes
+      // 'all' — years resolved at runtime from the store. One UNBOUNDED req per code
+      // (time pin stripped) covers every year the YoY read visits (see timeseries).
+      if (grYears === 'all') {
+        const { [TIME_DIM]: _stripTime, ...rest } = ctx.dims
+        return codes.map((code) => ({ code, dims: rest as Record<string, DimVal> }))
+      }
       return codes.flatMap((code) =>
         (grYears as readonly number[]).map((year) => ({ code, dims: { ...ctx.dims, [TIME_DIM]: year } })),
       )
@@ -227,6 +249,13 @@ export function extractRequirements(
 
     case 'pivot':
     case 'transform':
+      // PROVABLY read-free (O-2 / item 0010): both carry an INLINE data array —
+      // `pivot.rows` / `transform.source` (Record<string,DimVal>[]) — and their
+      // `steps` run through applyPipeline over classifiers/display ONLY (the pure
+      // transform pipe has no store handle; the cross-store `blend` op is desugared
+      // in the react layer BEFORE reaching core, Law 3). No branch issues a store
+      // read, so [] is CORRECT here — not a coverage gap. FF-WARM-COVERS-RENDER
+      // proves it: rendering either against a throw-on-cold store never reads.
       return []
   }
 }

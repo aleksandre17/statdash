@@ -332,7 +332,7 @@ import type { ExprScope }  from '@statdash/expr'
 import type { FilterDerive, DeriveContext } from './config/filter'
 import { evalFilterDerive } from './config/filter'
 
-type _SiteCtx = { classifiers?: DeriveContext['classifiers']; display?: DeriveContext['display']; raw?: Record<string, string> }
+type _SiteCtx = { classifiers?: DeriveContext['classifiers']; display?: DeriveContext['display']; raw?: Record<string, string>; locale?: string; fallback?: string }
 
 const _FILTER_DERIVE_OPS = ['lookup', 'find', 'tree-field', 'if-else', 'breadcrumbs', 'contains', 'join-labels'] as const
 
@@ -343,7 +343,7 @@ for (const op of _FILTER_DERIVE_OPS) {
       expr as unknown as FilterDerive,
       scope.dims,
       siteCtx?.raw ?? {},
-      { classifiers: siteCtx?.classifiers, display: siteCtx?.display },
+      { classifiers: siteCtx?.classifiers, display: siteCtx?.display, locale: siteCtx?.locale, fallback: siteCtx?.fallback },
     )
   })
 }

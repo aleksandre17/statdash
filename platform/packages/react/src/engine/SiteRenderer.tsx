@@ -178,9 +178,9 @@ const NodePageRendererInner = memo(function NodePageRendererInner({
 
   const vars = useMemo(
     () => page.vars
-      ? evalVarMap(page.vars, { filterParams: mergedFilterParams, vars: {}, stores, pageStoreKey: page.storeKey })
+      ? evalVarMap(page.vars, { filterParams: mergedFilterParams, vars: {}, stores, pageStoreKey: page.storeKey, locale, fallbackLocale })
       : {} as Record<string, unknown>,
-    [page.vars, page.storeKey, mergedFilterParams, stores],
+    [page.vars, page.storeKey, mergedFilterParams, stores, locale, fallbackLocale],
   )
 
   // ctx.filterParams — the visibility/eval surface threaded into RenderContext.
@@ -270,8 +270,8 @@ const NodePageRendererInner = memo(function NodePageRendererInner({
   //
   const evalOne = useCallback(
     (e: VarExpr): unknown =>
-      evalVarMap({ v: e }, { filterParams: mergedFilterParams, vars: {}, stores, pageStoreKey: page.storeKey }).v,
-    [mergedFilterParams, stores, page.storeKey],
+      evalVarMap({ v: e }, { filterParams: mergedFilterParams, vars: {}, stores, pageStoreKey: page.storeKey, locale, fallbackLocale }).v,
+    [mergedFilterParams, stores, page.storeKey, locale, fallbackLocale],
   )
 
   const sink = useMemo<PresentationSink>(() => {

@@ -226,10 +226,12 @@ export function renderPageToHTML(
     const isExpression = e !== null && typeof e === 'object' && !Array.isArray(e)
     return isExpression
       ? evalVarMap({ v: e }, {
-          filterParams: staticCtx.filterParams,
-          vars:         {},
-          stores:       staticCtx.stores,
-          pageStoreKey: staticCtx.pageStoreKey,
+          filterParams:   staticCtx.filterParams,
+          vars:           {},
+          stores:         staticCtx.stores,
+          pageStoreKey:   staticCtx.pageStoreKey,
+          locale:         staticCtx.locale,
+          fallbackLocale: staticCtx.fallbackLocale,
         }).v
       : e
   }

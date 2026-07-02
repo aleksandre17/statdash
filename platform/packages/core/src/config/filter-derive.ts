@@ -15,9 +15,11 @@
 import type { Classifier, DimRef, DisplayMap } from '../sdmx'
 import type { WhenMap }                        from './filter-condition'
 import type { CascadeNode }                    from './filter-params'
+import type { LocaleString }                   from '../i18n/types'
 import { isDimRef }                            from '../data/codelist'
 import { resolveRef }                          from '../ref/ref'
 import { evalWhen }                            from './filter-condition'
+import { resolveLocaleString }                 from '../i18n/types'
 import type { ExprVal }                        from '@statdash/expr'
 
 // ── Observability seam ────────────────────────────────────────────────
@@ -80,10 +82,34 @@ export type FilterDerive =
  *
  *   classifiers — structural codelists (id → { code, parent? })
  *   display     — UI overlay merged onto entries at resolution
+ *   locale      — active UI locale; derive ops that PRODUCE a display string
+ *                 (join-labels, breadcrumbs, find+field) resolve a bilingual
+ *                 LocaleString label to this locale at the boundary rather than
+ *                 String()-flattening it to "[object Object]" (BI-B1).
+ *   fallback    — locale used when `locale` is absent from a label carrier.
  */
 export interface DeriveContext {
   classifiers?: Record<string, Classifier>
   display?:     Record<string, DisplayMap>
+  locale?:      string
+  fallback?:    string
+}
+
+/**
+ * resolveLabelValue — localize a derive label at the render boundary.
+ *
+ *  A codelist/display label may be a plain `string` OR a bilingual LocaleString
+ *  object `{ ka, en }`. Derive ops that emit a DISPLAY string must never
+ *  `String()` such an object (it bakes "[object Object]"). This funnels every
+ *  label through the canonical `resolveLocaleString` so an object resolves to
+ *  the active locale (or first-value when no locale is threaded) — never a
+ *  flattened object. Scalars pass through unchanged (byte-identical old path).
+ */
+function resolveLabelValue(v: unknown, ctx?: DeriveContext): string {
+  if (v != null && typeof v === 'object') {
+    return resolveLocaleString(v as LocaleString, ctx?.locale ?? '', ctx?.fallback ?? '')
+  }
+  return v == null ? '' : String(v)
 }
 
 // A derive `source` is an inline array OR a dim-scope ref (`$cl`/`$d`). The ref
@@ -116,7 +142,13 @@ export function evalFilterDerive(
       const idKey  = expr.idField ?? 'id'
       const found  = src.find((r) => r[idKey] === id) ?? src[0] ?? null
       if (!found) return expr.fallback ?? null
-      return expr.field ? (found[expr.field] ?? expr.fallback ?? null) : found
+      if (!expr.field) return found
+      // A field extraction is a display value — a bilingual LocaleString label
+      // must localize at the boundary, not reach a raw String() downstream (BI-B1).
+      const fieldVal = found[expr.field] ?? expr.fallback ?? null
+      return (fieldVal != null && typeof fieldVal === 'object')
+        ? resolveLabelValue(fieldVal, ctx)
+        : fieldVal
     }
     case 'tree-field': {
       const ids     = values[expr.key] as number[] | undefined
@@ -144,7 +176,7 @@ export function evalFilterDerive(
       const found = src.find((r) => r[idKey] === id)
       return [
         ...expr.prefix,
-        { label: (found ? found[expr.labelField] : '') as string },
+        { label: found ? resolveLabelValue(found[expr.labelField], ctx) : '' },
       ]
     }
     case 'contains': {
@@ -160,7 +192,7 @@ export function evalFilterDerive(
       const lblKey = expr.labelField ?? 'label'
       const sep    = expr.separator  ?? ' · '
       return ids
-        .map((id) => { const r = src.find((x) => x[idKey] === id); return r ? String(r[lblKey] ?? id) : id })
+        .map((id) => { const r = src.find((x) => x[idKey] === id); return r ? resolveLabelValue(r[lblKey] ?? id, ctx) : id })
         .join(sep)
     }
   }

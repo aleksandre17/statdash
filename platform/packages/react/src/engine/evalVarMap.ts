@@ -6,8 +6,10 @@
 //  ExprScope assembly:
 //    dims    — all filter params (enables { $ctx: 'key' } references)
 //    derived — accumulates so each var can reference earlier vars
-//    ctx     — store classifiers + display for domain-specific ops
-//              (find, breadcrumbs, join-labels, …)
+//    ctx     — store classifiers + display + active locale for domain-specific
+//              ops (find, breadcrumbs, join-labels, …). The locale lets a derive
+//              op localize a bilingual LocaleString label at the boundary rather
+//              than String()-flattening it to "[object Object]" (BI-B1).
 //
 
 import { evalExpr, isDimVal }               from '@statdash/expr'
@@ -17,7 +19,8 @@ import type { RenderContext }               from './types'
 
 export function evalVarMap(
   vars:    VarMap,
-  ctx:     Pick<RenderContext, 'filterParams' | 'vars' | 'stores' | 'pageStoreKey'>,
+  ctx:     Pick<RenderContext, 'filterParams' | 'vars' | 'stores' | 'pageStoreKey'>
+           & Partial<Pick<RenderContext, 'locale' | 'fallbackLocale'>>,
 ): Record<string, unknown> {
   const pageStore = ctx.stores[ctx.pageStoreKey ?? '']
     ?? Object.values(ctx.stores)[0]
@@ -30,6 +33,8 @@ export function evalVarMap(
       classifiers: pageStore?.classifiers,
       display:     pageStore?.display,
       raw:         ctx.filterParams as Record<string, string>,
+      locale:      ctx.locale,
+      fallback:    ctx.fallbackLocale,
     },
   }
 
