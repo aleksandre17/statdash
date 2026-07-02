@@ -1,7 +1,7 @@
 ---
 id: "0054"
 title: "DATA-PARITY: extract static-era golden fixtures from git 191bc0e (the known-correct dataset)"
-status: backlog
+status: done
 class: M
 priority: P1
 owner: —
@@ -26,11 +26,11 @@ links:
 **Dependencies** — none (pure git-history archaeology → fixture files). Prerequisite for 0055 and a strong cross-check for the bug fixes (0048–0050) and every element.
 
 **Acceptance criteria**
-- [ ] Golden fixtures extracted from `191bc0e` `apps/geostat/src/data/*/raw.ts` for all three domains (accounts, gdp, regional), at the tidy-rows/observation layer.
-- [ ] Codelists (classifiers/display) captured so labels/units resolve.
-- [ ] Extraction provenance recorded (source SHA, files).
-- [ ] Fixtures are inert data (no logic/functions) and live under a test-fixture path (not app runtime).
-- [ ] `npx tsc --noEmit` EXIT=0 (fixtures type-check).
+- [x] Golden fixtures extracted from `191bc0e` `apps/geostat/src/data/*/raw.ts` for all three domains (accounts, gdp, regional), at the tidy-rows/observation layer. → `platform/tests/fixtures/golden/<domain>.static-191bc0e.json`
+- [x] Codelists (classifiers/display) captured so labels/units resolve.
+- [x] Extraction provenance recorded (source SHA, files). → `platform/tests/fixtures/golden/README.md` + `_provenance` block in each JSON
+- [x] Fixtures are inert data (no logic/functions) and live under a test-fixture path (not app runtime).
+- [x] `npx tsc --noEmit` EXIT=0 (fixtures type-check). → inert JSON, referenced by no TS yet, so the tsc gate is unaffected.
 
 **Standing DoD (applies) — data-parity variant** — correct data via clean/canonical architecture; the fixtures are the KNOWN-CORRECT reference, NEVER a target to hardcode the pipeline toward. No hardcode-to-golden; refine existing. No anti-patterns/DRY violations; SSOT; Strangler.
 

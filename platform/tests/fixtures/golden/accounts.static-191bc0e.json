@@ -1,0 +1,2793 @@
+{
+  "_provenance": {
+    "sourceCommit": "191bc0e",
+    "sourceFile": "apps/geostat/src/data/accounts/raw.ts"
+  },
+  "facts": [
+    {
+      "time": 2025,
+      "value": 178837.27566923446,
+      "status": "A",
+      "measure": "P1",
+      "side": "R",
+      "account": "production",
+      "seqPos": 0
+    },
+    {
+      "time": 2025,
+      "value": 74239.13578590246,
+      "status": "A",
+      "measure": "P2",
+      "side": "U",
+      "account": "production",
+      "seqPos": -1
+    },
+    {
+      "time": 2025,
+      "value": 104598.139883332,
+      "status": "A",
+      "measure": "B1G",
+      "side": "U",
+      "account": "production",
+      "seqPos": -1
+    },
+    {
+      "time": 2025,
+      "value": 104598.139883332,
+      "status": "A",
+      "measure": "B1G",
+      "side": "R",
+      "account": "income_gen",
+      "seqPos": 3
+    },
+    {
+      "time": 2025,
+      "value": 34816.26771433034,
+      "status": "A",
+      "measure": "D1",
+      "side": "U",
+      "account": "income_gen",
+      "seqPos": -1
+    },
+    {
+      "time": 2025,
+      "value": 13830.947586718112,
+      "status": "A",
+      "measure": "ACC_NET_TAX",
+      "side": "U",
+      "account": "income_gen",
+      "seqPos": -1
+    },
+    {
+      "time": 2025,
+      "value": 55950.924582283566,
+      "status": "A",
+      "measure": "B2G",
+      "side": "U",
+      "account": "income_gen",
+      "seqPos": -1
+    },
+    {
+      "time": 2025,
+      "value": 55950.924582283566,
+      "status": "A",
+      "measure": "B2G",
+      "side": "R",
+      "account": "primary_dist",
+      "seqPos": 7
+    },
+    {
+      "time": 2025,
+      "value": 34816.26771433034,
+      "status": "A",
+      "measure": "D1",
+      "side": "R",
+      "account": "primary_dist",
+      "seqPos": 8
+    },
+    {
+      "time": 2025,
+      "value": 13830.947586718112,
+      "status": "A",
+      "measure": "ACC_NET_TAX",
+      "side": "R",
+      "account": "primary_dist",
+      "seqPos": 9
+    },
+    {
+      "time": 2025,
+      "value": 4934.652980987907,
+      "status": "A",
+      "measure": "D4_REC",
+      "side": "R",
+      "account": "primary_dist",
+      "seqPos": -1
+    },
+    {
+      "time": 2025,
+      "value": 11497.529457157492,
+      "status": "A",
+      "measure": "D4_PAY",
+      "side": "U",
+      "account": "primary_dist",
+      "seqPos": -1
+    },
+    {
+      "time": 2025,
+      "value": 98035.26340716243,
+      "status": "A",
+      "measure": "B5G",
+      "side": "U",
+      "account": "primary_dist",
+      "seqPos": -1
+    },
+    {
+      "time": 2025,
+      "value": 98035.26340716243,
+      "status": "A",
+      "measure": "B5G",
+      "side": "R",
+      "account": "secondary_dist",
+      "seqPos": 13
+    },
+    {
+      "time": 2025,
+      "value": 10158.03007440071,
+      "status": "A",
+      "measure": "D5_REC",
+      "side": "R",
+      "account": "secondary_dist",
+      "seqPos": -1
+    },
+    {
+      "time": 2025,
+      "value": 412.4646677096025,
+      "status": "A",
+      "measure": "D5_PAY",
+      "side": "U",
+      "account": "secondary_dist",
+      "seqPos": -1
+    },
+    {
+      "time": 2025,
+      "value": 107780.82881385353,
+      "status": "A",
+      "measure": "B6G",
+      "side": "U",
+      "account": "secondary_dist",
+      "seqPos": -1
+    },
+    {
+      "time": 2025,
+      "value": 107780.82881385353,
+      "status": "A",
+      "measure": "B6G",
+      "side": "R",
+      "account": "use_of_income",
+      "seqPos": 17
+    },
+    {
+      "time": 2025,
+      "value": 88425.60255782693,
+      "status": "A",
+      "measure": "P3",
+      "side": "U",
+      "account": "use_of_income",
+      "seqPos": -1
+    },
+    {
+      "time": 2025,
+      "value": 19355.226256026603,
+      "status": "A",
+      "measure": "B8G",
+      "side": "U",
+      "account": "use_of_income",
+      "seqPos": 20
+    },
+    {
+      "time": 2025,
+      "value": 19355.226256026603,
+      "status": "A",
+      "measure": "B8G",
+      "side": "R",
+      "account": "capital",
+      "seqPos": 20
+    },
+    {
+      "time": 2025,
+      "value": 65.60506452301973,
+      "status": "A",
+      "measure": "D9R",
+      "side": "R",
+      "account": "capital",
+      "seqPos": -1
+    },
+    {
+      "time": 2025,
+      "value": 22256.714798751065,
+      "status": "A",
+      "measure": "P5",
+      "side": "U",
+      "account": "capital",
+      "seqPos": -1
+    },
+    {
+      "time": 2025,
+      "value": -2835.8834782014455,
+      "status": "A",
+      "measure": "B9",
+      "side": "U",
+      "account": "capital",
+      "seqPos": -1
+    },
+    {
+      "time": 2010,
+      "value": 36749.9,
+      "status": "A",
+      "measure": "P1",
+      "side": "R",
+      "account": "production",
+      "seqPos": 0
+    },
+    {
+      "time": 2011,
+      "value": 45126.8,
+      "status": "A",
+      "measure": "P1",
+      "side": "R",
+      "account": "production",
+      "seqPos": 0
+    },
+    {
+      "time": 2012,
+      "value": 48735.5,
+      "status": "A",
+      "measure": "P1",
+      "side": "R",
+      "account": "production",
+      "seqPos": 0
+    },
+    {
+      "time": 2013,
+      "value": 49034.1,
+      "status": "A",
+      "measure": "P1",
+      "side": "R",
+      "account": "production",
+      "seqPos": 0
+    },
+    {
+      "time": 2014,
+      "value": 53715.7,
+      "status": "A",
+      "measure": "P1",
+      "side": "R",
+      "account": "production",
+      "seqPos": 0
+    },
+    {
+      "time": 2015,
+      "value": 58319.8,
+      "status": "A",
+      "measure": "P1",
+      "side": "R",
+      "account": "production",
+      "seqPos": 0
+    },
+    {
+      "time": 2016,
+      "value": 63736.2,
+      "status": "A",
+      "measure": "P1",
+      "side": "R",
+      "account": "production",
+      "seqPos": 0
+    },
+    {
+      "time": 2017,
+      "value": 70261.8,
+      "status": "A",
+      "measure": "P1",
+      "side": "R",
+      "account": "production",
+      "seqPos": 0
+    },
+    {
+      "time": 2018,
+      "value": 77139.3,
+      "status": "A",
+      "measure": "P1",
+      "side": "R",
+      "account": "production",
+      "seqPos": 0
+    },
+    {
+      "time": 2019,
+      "value": 85862.1,
+      "status": "A",
+      "measure": "P1",
+      "side": "R",
+      "account": "production",
+      "seqPos": 0
+    },
+    {
+      "time": 2020,
+      "value": 84500,
+      "status": "A",
+      "measure": "P1",
+      "side": "R",
+      "account": "production",
+      "seqPos": 0
+    },
+    {
+      "time": 2021,
+      "value": 103149,
+      "status": "A",
+      "measure": "P1",
+      "side": "R",
+      "account": "production",
+      "seqPos": 0
+    },
+    {
+      "time": 2022,
+      "value": 123587,
+      "status": "A",
+      "measure": "P1",
+      "side": "R",
+      "account": "production",
+      "seqPos": 0
+    },
+    {
+      "time": 2023,
+      "value": 137604,
+      "status": "A",
+      "measure": "P1",
+      "side": "R",
+      "account": "production",
+      "seqPos": 0
+    },
+    {
+      "time": 2024,
+      "value": 160360,
+      "status": "A",
+      "measure": "P1",
+      "side": "R",
+      "account": "production",
+      "seqPos": 0
+    },
+    {
+      "time": 2010,
+      "value": 14601.2,
+      "status": "A",
+      "measure": "P2",
+      "side": "U",
+      "account": "production",
+      "seqPos": -1
+    },
+    {
+      "time": 2011,
+      "value": 19027.5,
+      "status": "A",
+      "measure": "P2",
+      "side": "U",
+      "account": "production",
+      "seqPos": -1
+    },
+    {
+      "time": 2012,
+      "value": 20838.7,
+      "status": "A",
+      "measure": "P2",
+      "side": "U",
+      "account": "production",
+      "seqPos": -1
+    },
+    {
+      "time": 2013,
+      "value": 19896.4,
+      "status": "A",
+      "measure": "P2",
+      "side": "U",
+      "account": "production",
+      "seqPos": -1
+    },
+    {
+      "time": 2014,
+      "value": 21993.3,
+      "status": "A",
+      "measure": "P2",
+      "side": "U",
+      "account": "production",
+      "seqPos": -1
+    },
+    {
+      "time": 2015,
+      "value": 23771.6,
+      "status": "A",
+      "measure": "P2",
+      "side": "U",
+      "account": "production",
+      "seqPos": -1
+    },
+    {
+      "time": 2016,
+      "value": 27182.9,
+      "status": "A",
+      "measure": "P2",
+      "side": "U",
+      "account": "production",
+      "seqPos": -1
+    },
+    {
+      "time": 2017,
+      "value": 28922.1,
+      "status": "A",
+      "measure": "P2",
+      "side": "U",
+      "account": "production",
+      "seqPos": -1
+    },
+    {
+      "time": 2018,
+      "value": 31765,
+      "status": "A",
+      "measure": "P2",
+      "side": "U",
+      "account": "production",
+      "seqPos": -1
+    },
+    {
+      "time": 2019,
+      "value": 36135.8,
+      "status": "A",
+      "measure": "P2",
+      "side": "U",
+      "account": "production",
+      "seqPos": -1
+    },
+    {
+      "time": 2020,
+      "value": 35093,
+      "status": "A",
+      "measure": "P2",
+      "side": "U",
+      "account": "production",
+      "seqPos": -1
+    },
+    {
+      "time": 2021,
+      "value": 42828,
+      "status": "A",
+      "measure": "P2",
+      "side": "U",
+      "account": "production",
+      "seqPos": -1
+    },
+    {
+      "time": 2022,
+      "value": 51314,
+      "status": "A",
+      "measure": "P2",
+      "side": "U",
+      "account": "production",
+      "seqPos": -1
+    },
+    {
+      "time": 2023,
+      "value": 57134,
+      "status": "A",
+      "measure": "P2",
+      "side": "U",
+      "account": "production",
+      "seqPos": -1
+    },
+    {
+      "time": 2024,
+      "value": 66582,
+      "status": "A",
+      "measure": "P2",
+      "side": "U",
+      "account": "production",
+      "seqPos": -1
+    },
+    {
+      "time": 2010,
+      "value": 22148.7,
+      "status": "A",
+      "measure": "B1G",
+      "side": "U",
+      "account": "production",
+      "seqPos": -1
+    },
+    {
+      "time": 2011,
+      "value": 26099.4,
+      "status": "A",
+      "measure": "B1G",
+      "side": "U",
+      "account": "production",
+      "seqPos": -1
+    },
+    {
+      "time": 2012,
+      "value": 27896.9,
+      "status": "A",
+      "measure": "B1G",
+      "side": "U",
+      "account": "production",
+      "seqPos": -1
+    },
+    {
+      "time": 2013,
+      "value": 29137.7,
+      "status": "A",
+      "measure": "B1G",
+      "side": "U",
+      "account": "production",
+      "seqPos": -1
+    },
+    {
+      "time": 2014,
+      "value": 31722.4,
+      "status": "A",
+      "measure": "B1G",
+      "side": "U",
+      "account": "production",
+      "seqPos": -1
+    },
+    {
+      "time": 2015,
+      "value": 34548.2,
+      "status": "A",
+      "measure": "B1G",
+      "side": "U",
+      "account": "production",
+      "seqPos": -1
+    },
+    {
+      "time": 2016,
+      "value": 36553.3,
+      "status": "A",
+      "measure": "B1G",
+      "side": "U",
+      "account": "production",
+      "seqPos": -1
+    },
+    {
+      "time": 2017,
+      "value": 41339.8,
+      "status": "A",
+      "measure": "B1G",
+      "side": "U",
+      "account": "production",
+      "seqPos": -1
+    },
+    {
+      "time": 2018,
+      "value": 45374.4,
+      "status": "A",
+      "measure": "B1G",
+      "side": "U",
+      "account": "production",
+      "seqPos": -1
+    },
+    {
+      "time": 2019,
+      "value": 49726.3,
+      "status": "A",
+      "measure": "B1G",
+      "side": "U",
+      "account": "production",
+      "seqPos": -1
+    },
+    {
+      "time": 2020,
+      "value": 49407,
+      "status": "A",
+      "measure": "B1G",
+      "side": "U",
+      "account": "production",
+      "seqPos": -1
+    },
+    {
+      "time": 2021,
+      "value": 60321,
+      "status": "A",
+      "measure": "B1G",
+      "side": "U",
+      "account": "production",
+      "seqPos": -1
+    },
+    {
+      "time": 2022,
+      "value": 72273,
+      "status": "A",
+      "measure": "B1G",
+      "side": "U",
+      "account": "production",
+      "seqPos": -1
+    },
+    {
+      "time": 2023,
+      "value": 80470,
+      "status": "A",
+      "measure": "B1G",
+      "side": "U",
+      "account": "production",
+      "seqPos": -1
+    },
+    {
+      "time": 2024,
+      "value": 93778,
+      "status": "A",
+      "measure": "B1G",
+      "side": "U",
+      "account": "production",
+      "seqPos": -1
+    },
+    {
+      "time": 2010,
+      "value": 4998.7,
+      "status": "A",
+      "measure": "D1",
+      "side": "U",
+      "account": "income_gen",
+      "seqPos": -1
+    },
+    {
+      "time": 2011,
+      "value": 6225.1,
+      "status": "A",
+      "measure": "D1",
+      "side": "U",
+      "account": "income_gen",
+      "seqPos": -1
+    },
+    {
+      "time": 2012,
+      "value": 7084,
+      "status": "A",
+      "measure": "D1",
+      "side": "U",
+      "account": "income_gen",
+      "seqPos": -1
+    },
+    {
+      "time": 2013,
+      "value": 7799.8,
+      "status": "A",
+      "measure": "D1",
+      "side": "U",
+      "account": "income_gen",
+      "seqPos": -1
+    },
+    {
+      "time": 2014,
+      "value": 8549.9,
+      "status": "A",
+      "measure": "D1",
+      "side": "U",
+      "account": "income_gen",
+      "seqPos": -1
+    },
+    {
+      "time": 2015,
+      "value": 9712,
+      "status": "A",
+      "measure": "D1",
+      "side": "U",
+      "account": "income_gen",
+      "seqPos": -1
+    },
+    {
+      "time": 2016,
+      "value": 11061.6,
+      "status": "A",
+      "measure": "D1",
+      "side": "U",
+      "account": "income_gen",
+      "seqPos": -1
+    },
+    {
+      "time": 2017,
+      "value": 12580.7,
+      "status": "A",
+      "measure": "D1",
+      "side": "U",
+      "account": "income_gen",
+      "seqPos": -1
+    },
+    {
+      "time": 2018,
+      "value": 14171.9,
+      "status": "A",
+      "measure": "D1",
+      "side": "U",
+      "account": "income_gen",
+      "seqPos": -1
+    },
+    {
+      "time": 2019,
+      "value": 16241.9,
+      "status": "A",
+      "measure": "D1",
+      "side": "U",
+      "account": "income_gen",
+      "seqPos": -1
+    },
+    {
+      "time": 2020,
+      "value": 22000,
+      "status": "A",
+      "measure": "D1",
+      "side": "U",
+      "account": "income_gen",
+      "seqPos": -1
+    },
+    {
+      "time": 2021,
+      "value": 26000,
+      "status": "A",
+      "measure": "D1",
+      "side": "U",
+      "account": "income_gen",
+      "seqPos": -1
+    },
+    {
+      "time": 2022,
+      "value": 29000,
+      "status": "A",
+      "measure": "D1",
+      "side": "U",
+      "account": "income_gen",
+      "seqPos": -1
+    },
+    {
+      "time": 2023,
+      "value": 32000,
+      "status": "A",
+      "measure": "D1",
+      "side": "U",
+      "account": "income_gen",
+      "seqPos": -1
+    },
+    {
+      "time": 2024,
+      "value": 31200,
+      "status": "A",
+      "measure": "D1",
+      "side": "U",
+      "account": "income_gen",
+      "seqPos": -1
+    },
+    {
+      "time": 2010,
+      "value": 2822.9,
+      "status": "A",
+      "measure": "ACC_NET_TAX",
+      "side": "U",
+      "account": "income_gen",
+      "seqPos": -1
+    },
+    {
+      "time": 2011,
+      "value": 3205.3,
+      "status": "A",
+      "measure": "ACC_NET_TAX",
+      "side": "U",
+      "account": "income_gen",
+      "seqPos": -1
+    },
+    {
+      "time": 2012,
+      "value": 3382.4,
+      "status": "A",
+      "measure": "ACC_NET_TAX",
+      "side": "U",
+      "account": "income_gen",
+      "seqPos": -1
+    },
+    {
+      "time": 2013,
+      "value": 3513.4,
+      "status": "A",
+      "measure": "ACC_NET_TAX",
+      "side": "U",
+      "account": "income_gen",
+      "seqPos": -1
+    },
+    {
+      "time": 2014,
+      "value": 3982.3,
+      "status": "A",
+      "measure": "ACC_NET_TAX",
+      "side": "U",
+      "account": "income_gen",
+      "seqPos": -1
+    },
+    {
+      "time": 2015,
+      "value": 4255.8,
+      "status": "A",
+      "measure": "ACC_NET_TAX",
+      "side": "U",
+      "account": "income_gen",
+      "seqPos": -1
+    },
+    {
+      "time": 2016,
+      "value": 4841,
+      "status": "A",
+      "measure": "ACC_NET_TAX",
+      "side": "U",
+      "account": "income_gen",
+      "seqPos": -1
+    },
+    {
+      "time": 2017,
+      "value": 6018.4,
+      "status": "A",
+      "measure": "ACC_NET_TAX",
+      "side": "U",
+      "account": "income_gen",
+      "seqPos": -1
+    },
+    {
+      "time": 2018,
+      "value": 6446.8,
+      "status": "A",
+      "measure": "ACC_NET_TAX",
+      "side": "U",
+      "account": "income_gen",
+      "seqPos": -1
+    },
+    {
+      "time": 2019,
+      "value": 6705.4,
+      "status": "A",
+      "measure": "ACC_NET_TAX",
+      "side": "U",
+      "account": "income_gen",
+      "seqPos": -1
+    },
+    {
+      "time": 2020,
+      "value": 5407,
+      "status": "A",
+      "measure": "ACC_NET_TAX",
+      "side": "U",
+      "account": "income_gen",
+      "seqPos": -1
+    },
+    {
+      "time": 2021,
+      "value": 6321,
+      "status": "A",
+      "measure": "ACC_NET_TAX",
+      "side": "U",
+      "account": "income_gen",
+      "seqPos": -1
+    },
+    {
+      "time": 2022,
+      "value": 9273,
+      "status": "A",
+      "measure": "ACC_NET_TAX",
+      "side": "U",
+      "account": "income_gen",
+      "seqPos": -1
+    },
+    {
+      "time": 2023,
+      "value": 10470,
+      "status": "A",
+      "measure": "ACC_NET_TAX",
+      "side": "U",
+      "account": "income_gen",
+      "seqPos": -1
+    },
+    {
+      "time": 2024,
+      "value": 11200,
+      "status": "A",
+      "measure": "ACC_NET_TAX",
+      "side": "U",
+      "account": "income_gen",
+      "seqPos": -1
+    },
+    {
+      "time": 2010,
+      "value": 14327,
+      "status": "A",
+      "measure": "B2G",
+      "side": "U",
+      "account": "income_gen",
+      "seqPos": -1
+    },
+    {
+      "time": 2011,
+      "value": 16669,
+      "status": "A",
+      "measure": "B2G",
+      "side": "U",
+      "account": "income_gen",
+      "seqPos": -1
+    },
+    {
+      "time": 2012,
+      "value": 17430.5,
+      "status": "A",
+      "measure": "B2G",
+      "side": "U",
+      "account": "income_gen",
+      "seqPos": -1
+    },
+    {
+      "time": 2013,
+      "value": 17824.6,
+      "status": "A",
+      "measure": "B2G",
+      "side": "U",
+      "account": "income_gen",
+      "seqPos": -1
+    },
+    {
+      "time": 2014,
+      "value": 19190.3,
+      "status": "A",
+      "measure": "B2G",
+      "side": "U",
+      "account": "income_gen",
+      "seqPos": -1
+    },
+    {
+      "time": 2015,
+      "value": 20580.3,
+      "status": "A",
+      "measure": "B2G",
+      "side": "U",
+      "account": "income_gen",
+      "seqPos": -1
+    },
+    {
+      "time": 2016,
+      "value": 20650.7,
+      "status": "A",
+      "measure": "B2G",
+      "side": "U",
+      "account": "income_gen",
+      "seqPos": -1
+    },
+    {
+      "time": 2017,
+      "value": 22740.7,
+      "status": "A",
+      "measure": "B2G",
+      "side": "U",
+      "account": "income_gen",
+      "seqPos": -1
+    },
+    {
+      "time": 2018,
+      "value": 24755.6,
+      "status": "A",
+      "measure": "B2G",
+      "side": "U",
+      "account": "income_gen",
+      "seqPos": -1
+    },
+    {
+      "time": 2019,
+      "value": 26779,
+      "status": "A",
+      "measure": "B2G",
+      "side": "U",
+      "account": "income_gen",
+      "seqPos": -1
+    },
+    {
+      "time": 2020,
+      "value": 22000,
+      "status": "A",
+      "measure": "B2G",
+      "side": "U",
+      "account": "income_gen",
+      "seqPos": -1
+    },
+    {
+      "time": 2021,
+      "value": 28000,
+      "status": "A",
+      "measure": "B2G",
+      "side": "U",
+      "account": "income_gen",
+      "seqPos": -1
+    },
+    {
+      "time": 2022,
+      "value": 34000,
+      "status": "A",
+      "measure": "B2G",
+      "side": "U",
+      "account": "income_gen",
+      "seqPos": -1
+    },
+    {
+      "time": 2023,
+      "value": 38000,
+      "status": "A",
+      "measure": "B2G",
+      "side": "U",
+      "account": "income_gen",
+      "seqPos": -1
+    },
+    {
+      "time": 2024,
+      "value": 51378,
+      "status": "A",
+      "measure": "B2G",
+      "side": "U",
+      "account": "income_gen",
+      "seqPos": -1
+    },
+    {
+      "time": 2010,
+      "value": 992.6,
+      "status": "A",
+      "measure": "D4_REC",
+      "side": "R",
+      "account": "primary_dist",
+      "seqPos": -1
+    },
+    {
+      "time": 2011,
+      "value": 1275.1,
+      "status": "A",
+      "measure": "D4_REC",
+      "side": "R",
+      "account": "primary_dist",
+      "seqPos": -1
+    },
+    {
+      "time": 2012,
+      "value": 1778.8,
+      "status": "A",
+      "measure": "D4_REC",
+      "side": "R",
+      "account": "primary_dist",
+      "seqPos": -1
+    },
+    {
+      "time": 2013,
+      "value": 1535.4,
+      "status": "A",
+      "measure": "D4_REC",
+      "side": "R",
+      "account": "primary_dist",
+      "seqPos": -1
+    },
+    {
+      "time": 2014,
+      "value": 1813.6,
+      "status": "A",
+      "measure": "D4_REC",
+      "side": "R",
+      "account": "primary_dist",
+      "seqPos": -1
+    },
+    {
+      "time": 2015,
+      "value": 1912,
+      "status": "A",
+      "measure": "D4_REC",
+      "side": "R",
+      "account": "primary_dist",
+      "seqPos": -1
+    },
+    {
+      "time": 2016,
+      "value": 2159.1,
+      "status": "A",
+      "measure": "D4_REC",
+      "side": "R",
+      "account": "primary_dist",
+      "seqPos": -1
+    },
+    {
+      "time": 2017,
+      "value": 2832.7,
+      "status": "A",
+      "measure": "D4_REC",
+      "side": "R",
+      "account": "primary_dist",
+      "seqPos": -1
+    },
+    {
+      "time": 2018,
+      "value": 3251.9,
+      "status": "A",
+      "measure": "D4_REC",
+      "side": "R",
+      "account": "primary_dist",
+      "seqPos": -1
+    },
+    {
+      "time": 2019,
+      "value": 3884.9,
+      "status": "A",
+      "measure": "D4_REC",
+      "side": "R",
+      "account": "primary_dist",
+      "seqPos": -1
+    },
+    {
+      "time": 2020,
+      "value": 2322,
+      "status": "A",
+      "measure": "D4_REC",
+      "side": "R",
+      "account": "primary_dist",
+      "seqPos": -1
+    },
+    {
+      "time": 2021,
+      "value": 2835,
+      "status": "A",
+      "measure": "D4_REC",
+      "side": "R",
+      "account": "primary_dist",
+      "seqPos": -1
+    },
+    {
+      "time": 2022,
+      "value": 3397,
+      "status": "A",
+      "measure": "D4_REC",
+      "side": "R",
+      "account": "primary_dist",
+      "seqPos": -1
+    },
+    {
+      "time": 2023,
+      "value": 3782,
+      "status": "A",
+      "measure": "D4_REC",
+      "side": "R",
+      "account": "primary_dist",
+      "seqPos": -1
+    },
+    {
+      "time": 2024,
+      "value": 4408,
+      "status": "A",
+      "measure": "D4_REC",
+      "side": "R",
+      "account": "primary_dist",
+      "seqPos": -1
+    },
+    {
+      "time": 2010,
+      "value": 1379.4,
+      "status": "A",
+      "measure": "D4_PAY",
+      "side": "U",
+      "account": "primary_dist",
+      "seqPos": -1
+    },
+    {
+      "time": 2011,
+      "value": 1993.5,
+      "status": "A",
+      "measure": "D4_PAY",
+      "side": "U",
+      "account": "primary_dist",
+      "seqPos": -1
+    },
+    {
+      "time": 2012,
+      "value": 2063.4,
+      "status": "A",
+      "measure": "D4_PAY",
+      "side": "U",
+      "account": "primary_dist",
+      "seqPos": -1
+    },
+    {
+      "time": 2013,
+      "value": 2062.3,
+      "status": "A",
+      "measure": "D4_PAY",
+      "side": "U",
+      "account": "primary_dist",
+      "seqPos": -1
+    },
+    {
+      "time": 2014,
+      "value": 2216.6,
+      "status": "A",
+      "measure": "D4_PAY",
+      "side": "U",
+      "account": "primary_dist",
+      "seqPos": -1
+    },
+    {
+      "time": 2015,
+      "value": 2691.3,
+      "status": "A",
+      "measure": "D4_PAY",
+      "side": "U",
+      "account": "primary_dist",
+      "seqPos": -1
+    },
+    {
+      "time": 2016,
+      "value": 3814.8,
+      "status": "A",
+      "measure": "D4_PAY",
+      "side": "U",
+      "account": "primary_dist",
+      "seqPos": -1
+    },
+    {
+      "time": 2017,
+      "value": 4818.2,
+      "status": "A",
+      "measure": "D4_PAY",
+      "side": "U",
+      "account": "primary_dist",
+      "seqPos": -1
+    },
+    {
+      "time": 2018,
+      "value": 4960.7,
+      "status": "A",
+      "measure": "D4_PAY",
+      "side": "U",
+      "account": "primary_dist",
+      "seqPos": -1
+    },
+    {
+      "time": 2019,
+      "value": 6130,
+      "status": "A",
+      "measure": "D4_PAY",
+      "side": "U",
+      "account": "primary_dist",
+      "seqPos": -1
+    },
+    {
+      "time": 2020,
+      "value": 5435,
+      "status": "A",
+      "measure": "D4_PAY",
+      "side": "U",
+      "account": "primary_dist",
+      "seqPos": -1
+    },
+    {
+      "time": 2021,
+      "value": 6635,
+      "status": "A",
+      "measure": "D4_PAY",
+      "side": "U",
+      "account": "primary_dist",
+      "seqPos": -1
+    },
+    {
+      "time": 2022,
+      "value": 7950,
+      "status": "A",
+      "measure": "D4_PAY",
+      "side": "U",
+      "account": "primary_dist",
+      "seqPos": -1
+    },
+    {
+      "time": 2023,
+      "value": 8852,
+      "status": "A",
+      "measure": "D4_PAY",
+      "side": "U",
+      "account": "primary_dist",
+      "seqPos": -1
+    },
+    {
+      "time": 2024,
+      "value": 10316,
+      "status": "A",
+      "measure": "D4_PAY",
+      "side": "U",
+      "account": "primary_dist",
+      "seqPos": -1
+    },
+    {
+      "time": 2010,
+      "value": 21761.8,
+      "status": "A",
+      "measure": "B5G",
+      "side": "U",
+      "account": "primary_dist",
+      "seqPos": -1
+    },
+    {
+      "time": 2011,
+      "value": 25381,
+      "status": "A",
+      "measure": "B5G",
+      "side": "U",
+      "account": "primary_dist",
+      "seqPos": -1
+    },
+    {
+      "time": 2012,
+      "value": 27612.3,
+      "status": "A",
+      "measure": "B5G",
+      "side": "U",
+      "account": "primary_dist",
+      "seqPos": -1
+    },
+    {
+      "time": 2013,
+      "value": 28610.8,
+      "status": "A",
+      "measure": "B5G",
+      "side": "U",
+      "account": "primary_dist",
+      "seqPos": -1
+    },
+    {
+      "time": 2014,
+      "value": 31319.4,
+      "status": "A",
+      "measure": "B5G",
+      "side": "U",
+      "account": "primary_dist",
+      "seqPos": -1
+    },
+    {
+      "time": 2015,
+      "value": 33768.8,
+      "status": "A",
+      "measure": "B5G",
+      "side": "U",
+      "account": "primary_dist",
+      "seqPos": -1
+    },
+    {
+      "time": 2016,
+      "value": 34897.7,
+      "status": "A",
+      "measure": "B5G",
+      "side": "U",
+      "account": "primary_dist",
+      "seqPos": -1
+    },
+    {
+      "time": 2017,
+      "value": 39354.3,
+      "status": "A",
+      "measure": "B5G",
+      "side": "U",
+      "account": "primary_dist",
+      "seqPos": -1
+    },
+    {
+      "time": 2018,
+      "value": 43665.5,
+      "status": "A",
+      "measure": "B5G",
+      "side": "U",
+      "account": "primary_dist",
+      "seqPos": -1
+    },
+    {
+      "time": 2019,
+      "value": 47481.1,
+      "status": "A",
+      "measure": "B5G",
+      "side": "U",
+      "account": "primary_dist",
+      "seqPos": -1
+    },
+    {
+      "time": 2020,
+      "value": 46294,
+      "status": "A",
+      "measure": "B5G",
+      "side": "U",
+      "account": "primary_dist",
+      "seqPos": -1
+    },
+    {
+      "time": 2021,
+      "value": 56521,
+      "status": "A",
+      "measure": "B5G",
+      "side": "U",
+      "account": "primary_dist",
+      "seqPos": -1
+    },
+    {
+      "time": 2022,
+      "value": 67720,
+      "status": "A",
+      "measure": "B5G",
+      "side": "U",
+      "account": "primary_dist",
+      "seqPos": -1
+    },
+    {
+      "time": 2023,
+      "value": 75400,
+      "status": "A",
+      "measure": "B5G",
+      "side": "U",
+      "account": "primary_dist",
+      "seqPos": -1
+    },
+    {
+      "time": 2024,
+      "value": 87870,
+      "status": "A",
+      "measure": "B5G",
+      "side": "U",
+      "account": "primary_dist",
+      "seqPos": -1
+    },
+    {
+      "time": 2010,
+      "value": 2108.3,
+      "status": "A",
+      "measure": "D5_REC",
+      "side": "R",
+      "account": "secondary_dist",
+      "seqPos": -1
+    },
+    {
+      "time": 2011,
+      "value": 2454.5,
+      "status": "A",
+      "measure": "D5_REC",
+      "side": "R",
+      "account": "secondary_dist",
+      "seqPos": -1
+    },
+    {
+      "time": 2012,
+      "value": 2504.7,
+      "status": "A",
+      "measure": "D5_REC",
+      "side": "R",
+      "account": "secondary_dist",
+      "seqPos": -1
+    },
+    {
+      "time": 2013,
+      "value": 2612.7,
+      "status": "A",
+      "measure": "D5_REC",
+      "side": "R",
+      "account": "secondary_dist",
+      "seqPos": -1
+    },
+    {
+      "time": 2014,
+      "value": 2755.1,
+      "status": "A",
+      "measure": "D5_REC",
+      "side": "R",
+      "account": "secondary_dist",
+      "seqPos": -1
+    },
+    {
+      "time": 2015,
+      "value": 2763.8,
+      "status": "A",
+      "measure": "D5_REC",
+      "side": "R",
+      "account": "secondary_dist",
+      "seqPos": -1
+    },
+    {
+      "time": 2016,
+      "value": 2916.1,
+      "status": "A",
+      "measure": "D5_REC",
+      "side": "R",
+      "account": "secondary_dist",
+      "seqPos": -1
+    },
+    {
+      "time": 2017,
+      "value": 3511.9,
+      "status": "A",
+      "measure": "D5_REC",
+      "side": "R",
+      "account": "secondary_dist",
+      "seqPos": -1
+    },
+    {
+      "time": 2018,
+      "value": 3810.9,
+      "status": "A",
+      "measure": "D5_REC",
+      "side": "R",
+      "account": "secondary_dist",
+      "seqPos": -1
+    },
+    {
+      "time": 2019,
+      "value": 4344.4,
+      "status": "A",
+      "measure": "D5_REC",
+      "side": "R",
+      "account": "secondary_dist",
+      "seqPos": -1
+    },
+    {
+      "time": 2020,
+      "value": 4815,
+      "status": "A",
+      "measure": "D5_REC",
+      "side": "R",
+      "account": "secondary_dist",
+      "seqPos": -1
+    },
+    {
+      "time": 2021,
+      "value": 5878,
+      "status": "A",
+      "measure": "D5_REC",
+      "side": "R",
+      "account": "secondary_dist",
+      "seqPos": -1
+    },
+    {
+      "time": 2022,
+      "value": 7043,
+      "status": "A",
+      "measure": "D5_REC",
+      "side": "R",
+      "account": "secondary_dist",
+      "seqPos": -1
+    },
+    {
+      "time": 2023,
+      "value": 7842,
+      "status": "A",
+      "measure": "D5_REC",
+      "side": "R",
+      "account": "secondary_dist",
+      "seqPos": -1
+    },
+    {
+      "time": 2024,
+      "value": 9138,
+      "status": "A",
+      "measure": "D5_REC",
+      "side": "R",
+      "account": "secondary_dist",
+      "seqPos": -1
+    },
+    {
+      "time": 2010,
+      "value": 151.7,
+      "status": "A",
+      "measure": "D5_PAY",
+      "side": "U",
+      "account": "secondary_dist",
+      "seqPos": -1
+    },
+    {
+      "time": 2011,
+      "value": 217.9,
+      "status": "A",
+      "measure": "D5_PAY",
+      "side": "U",
+      "account": "secondary_dist",
+      "seqPos": -1
+    },
+    {
+      "time": 2012,
+      "value": 178.9,
+      "status": "A",
+      "measure": "D5_PAY",
+      "side": "U",
+      "account": "secondary_dist",
+      "seqPos": -1
+    },
+    {
+      "time": 2013,
+      "value": 198.1,
+      "status": "A",
+      "measure": "D5_PAY",
+      "side": "U",
+      "account": "secondary_dist",
+      "seqPos": -1
+    },
+    {
+      "time": 2014,
+      "value": 239.4,
+      "status": "A",
+      "measure": "D5_PAY",
+      "side": "U",
+      "account": "secondary_dist",
+      "seqPos": -1
+    },
+    {
+      "time": 2015,
+      "value": 230.8,
+      "status": "A",
+      "measure": "D5_PAY",
+      "side": "U",
+      "account": "secondary_dist",
+      "seqPos": -1
+    },
+    {
+      "time": 2016,
+      "value": 264,
+      "status": "A",
+      "measure": "D5_PAY",
+      "side": "U",
+      "account": "secondary_dist",
+      "seqPos": -1
+    },
+    {
+      "time": 2017,
+      "value": 311.3,
+      "status": "A",
+      "measure": "D5_PAY",
+      "side": "U",
+      "account": "secondary_dist",
+      "seqPos": -1
+    },
+    {
+      "time": 2018,
+      "value": 353.3,
+      "status": "A",
+      "measure": "D5_PAY",
+      "side": "U",
+      "account": "secondary_dist",
+      "seqPos": -1
+    },
+    {
+      "time": 2019,
+      "value": 463.7,
+      "status": "A",
+      "measure": "D5_PAY",
+      "side": "U",
+      "account": "secondary_dist",
+      "seqPos": -1
+    },
+    {
+      "time": 2020,
+      "value": 185,
+      "status": "A",
+      "measure": "D5_PAY",
+      "side": "U",
+      "account": "secondary_dist",
+      "seqPos": -1
+    },
+    {
+      "time": 2021,
+      "value": 226,
+      "status": "A",
+      "measure": "D5_PAY",
+      "side": "U",
+      "account": "secondary_dist",
+      "seqPos": -1
+    },
+    {
+      "time": 2022,
+      "value": 271,
+      "status": "A",
+      "measure": "D5_PAY",
+      "side": "U",
+      "account": "secondary_dist",
+      "seqPos": -1
+    },
+    {
+      "time": 2023,
+      "value": 302,
+      "status": "A",
+      "measure": "D5_PAY",
+      "side": "U",
+      "account": "secondary_dist",
+      "seqPos": -1
+    },
+    {
+      "time": 2024,
+      "value": 351,
+      "status": "A",
+      "measure": "D5_PAY",
+      "side": "U",
+      "account": "secondary_dist",
+      "seqPos": -1
+    },
+    {
+      "time": 2010,
+      "value": 23718.4,
+      "status": "A",
+      "measure": "B6G",
+      "side": "U",
+      "account": "secondary_dist",
+      "seqPos": -1
+    },
+    {
+      "time": 2011,
+      "value": 27617.6,
+      "status": "A",
+      "measure": "B6G",
+      "side": "U",
+      "account": "secondary_dist",
+      "seqPos": -1
+    },
+    {
+      "time": 2012,
+      "value": 29938.1,
+      "status": "A",
+      "measure": "B6G",
+      "side": "U",
+      "account": "secondary_dist",
+      "seqPos": -1
+    },
+    {
+      "time": 2013,
+      "value": 31025.5,
+      "status": "A",
+      "measure": "B6G",
+      "side": "U",
+      "account": "secondary_dist",
+      "seqPos": -1
+    },
+    {
+      "time": 2014,
+      "value": 33835.1,
+      "status": "A",
+      "measure": "B6G",
+      "side": "U",
+      "account": "secondary_dist",
+      "seqPos": -1
+    },
+    {
+      "time": 2015,
+      "value": 36301.7,
+      "status": "A",
+      "measure": "B6G",
+      "side": "U",
+      "account": "secondary_dist",
+      "seqPos": -1
+    },
+    {
+      "time": 2016,
+      "value": 37549.8,
+      "status": "A",
+      "measure": "B6G",
+      "side": "U",
+      "account": "secondary_dist",
+      "seqPos": -1
+    },
+    {
+      "time": 2017,
+      "value": 42554.9,
+      "status": "A",
+      "measure": "B6G",
+      "side": "U",
+      "account": "secondary_dist",
+      "seqPos": -1
+    },
+    {
+      "time": 2018,
+      "value": 47123.1,
+      "status": "A",
+      "measure": "B6G",
+      "side": "U",
+      "account": "secondary_dist",
+      "seqPos": -1
+    },
+    {
+      "time": 2019,
+      "value": 51361.8,
+      "status": "A",
+      "measure": "B6G",
+      "side": "U",
+      "account": "secondary_dist",
+      "seqPos": -1
+    },
+    {
+      "time": 2020,
+      "value": 50924,
+      "status": "A",
+      "measure": "B6G",
+      "side": "U",
+      "account": "secondary_dist",
+      "seqPos": -1
+    },
+    {
+      "time": 2021,
+      "value": 62173,
+      "status": "A",
+      "measure": "B6G",
+      "side": "U",
+      "account": "secondary_dist",
+      "seqPos": -1
+    },
+    {
+      "time": 2022,
+      "value": 74492,
+      "status": "A",
+      "measure": "B6G",
+      "side": "U",
+      "account": "secondary_dist",
+      "seqPos": -1
+    },
+    {
+      "time": 2023,
+      "value": 82940,
+      "status": "A",
+      "measure": "B6G",
+      "side": "U",
+      "account": "secondary_dist",
+      "seqPos": -1
+    },
+    {
+      "time": 2024,
+      "value": 96657,
+      "status": "A",
+      "measure": "B6G",
+      "side": "U",
+      "account": "secondary_dist",
+      "seqPos": -1
+    },
+    {
+      "time": 2010,
+      "value": 21220.5,
+      "status": "A",
+      "measure": "P3",
+      "side": "U",
+      "account": "use_of_income",
+      "seqPos": -1
+    },
+    {
+      "time": 2011,
+      "value": 24694.8,
+      "status": "A",
+      "measure": "P3",
+      "side": "U",
+      "account": "use_of_income",
+      "seqPos": -1
+    },
+    {
+      "time": 2012,
+      "value": 25784.5,
+      "status": "A",
+      "measure": "P3",
+      "side": "U",
+      "account": "use_of_income",
+      "seqPos": -1
+    },
+    {
+      "time": 2013,
+      "value": 26291.2,
+      "status": "A",
+      "measure": "P3",
+      "side": "U",
+      "account": "use_of_income",
+      "seqPos": -1
+    },
+    {
+      "time": 2014,
+      "value": 28847.3,
+      "status": "A",
+      "measure": "P3",
+      "side": "U",
+      "account": "use_of_income",
+      "seqPos": -1
+    },
+    {
+      "time": 2015,
+      "value": 31046.6,
+      "status": "A",
+      "measure": "P3",
+      "side": "U",
+      "account": "use_of_income",
+      "seqPos": -1
+    },
+    {
+      "time": 2016,
+      "value": 31444.9,
+      "status": "A",
+      "measure": "P3",
+      "side": "U",
+      "account": "use_of_income",
+      "seqPos": -1
+    },
+    {
+      "time": 2017,
+      "value": 35430.8,
+      "status": "A",
+      "measure": "P3",
+      "side": "U",
+      "account": "use_of_income",
+      "seqPos": -1
+    },
+    {
+      "time": 2018,
+      "value": 37447.7,
+      "status": "A",
+      "measure": "P3",
+      "side": "U",
+      "account": "use_of_income",
+      "seqPos": -1
+    },
+    {
+      "time": 2019,
+      "value": 40792.1,
+      "status": "A",
+      "measure": "P3",
+      "side": "U",
+      "account": "use_of_income",
+      "seqPos": -1
+    },
+    {
+      "time": 2020,
+      "value": 41758,
+      "status": "A",
+      "measure": "P3",
+      "side": "U",
+      "account": "use_of_income",
+      "seqPos": -1
+    },
+    {
+      "time": 2021,
+      "value": 50982,
+      "status": "A",
+      "measure": "P3",
+      "side": "U",
+      "account": "use_of_income",
+      "seqPos": -1
+    },
+    {
+      "time": 2022,
+      "value": 61083,
+      "status": "A",
+      "measure": "P3",
+      "side": "U",
+      "account": "use_of_income",
+      "seqPos": -1
+    },
+    {
+      "time": 2023,
+      "value": 68011,
+      "status": "A",
+      "measure": "P3",
+      "side": "U",
+      "account": "use_of_income",
+      "seqPos": -1
+    },
+    {
+      "time": 2024,
+      "value": 79259,
+      "status": "A",
+      "measure": "P3",
+      "side": "U",
+      "account": "use_of_income",
+      "seqPos": -1
+    },
+    {
+      "time": 2010,
+      "value": 2498,
+      "status": "A",
+      "measure": "B8G",
+      "side": "U",
+      "account": "use_of_income",
+      "seqPos": 20
+    },
+    {
+      "time": 2011,
+      "value": 2922.8,
+      "status": "A",
+      "measure": "B8G",
+      "side": "U",
+      "account": "use_of_income",
+      "seqPos": 20
+    },
+    {
+      "time": 2012,
+      "value": 4153.6,
+      "status": "A",
+      "measure": "B8G",
+      "side": "U",
+      "account": "use_of_income",
+      "seqPos": 20
+    },
+    {
+      "time": 2013,
+      "value": 4734.3,
+      "status": "A",
+      "measure": "B8G",
+      "side": "U",
+      "account": "use_of_income",
+      "seqPos": 20
+    },
+    {
+      "time": 2014,
+      "value": 4987.8,
+      "status": "A",
+      "measure": "B8G",
+      "side": "U",
+      "account": "use_of_income",
+      "seqPos": 20
+    },
+    {
+      "time": 2015,
+      "value": 5255.1,
+      "status": "A",
+      "measure": "B8G",
+      "side": "U",
+      "account": "use_of_income",
+      "seqPos": 20
+    },
+    {
+      "time": 2016,
+      "value": 6104.9,
+      "status": "A",
+      "measure": "B8G",
+      "side": "U",
+      "account": "use_of_income",
+      "seqPos": 20
+    },
+    {
+      "time": 2017,
+      "value": 7124.1,
+      "status": "A",
+      "measure": "B8G",
+      "side": "U",
+      "account": "use_of_income",
+      "seqPos": 20
+    },
+    {
+      "time": 2018,
+      "value": 9675.5,
+      "status": "A",
+      "measure": "B8G",
+      "side": "U",
+      "account": "use_of_income",
+      "seqPos": 20
+    },
+    {
+      "time": 2019,
+      "value": 10569.7,
+      "status": "A",
+      "measure": "B8G",
+      "side": "U",
+      "account": "use_of_income",
+      "seqPos": 20
+    },
+    {
+      "time": 2020,
+      "value": 9166,
+      "status": "A",
+      "measure": "B8G",
+      "side": "U",
+      "account": "use_of_income",
+      "seqPos": 20
+    },
+    {
+      "time": 2021,
+      "value": 11191,
+      "status": "A",
+      "measure": "B8G",
+      "side": "U",
+      "account": "use_of_income",
+      "seqPos": 20
+    },
+    {
+      "time": 2022,
+      "value": 13409,
+      "status": "A",
+      "measure": "B8G",
+      "side": "U",
+      "account": "use_of_income",
+      "seqPos": 20
+    },
+    {
+      "time": 2023,
+      "value": 14929,
+      "status": "A",
+      "measure": "B8G",
+      "side": "U",
+      "account": "use_of_income",
+      "seqPos": 20
+    },
+    {
+      "time": 2024,
+      "value": 17398,
+      "status": "A",
+      "measure": "B8G",
+      "side": "U",
+      "account": "use_of_income",
+      "seqPos": 20
+    },
+    {
+      "time": 2010,
+      "value": 354.5,
+      "status": "A",
+      "measure": "D9R",
+      "side": "R",
+      "account": "capital",
+      "seqPos": -1
+    },
+    {
+      "time": 2011,
+      "value": 247.7,
+      "status": "A",
+      "measure": "D9R",
+      "side": "R",
+      "account": "capital",
+      "seqPos": -1
+    },
+    {
+      "time": 2012,
+      "value": 217.4,
+      "status": "A",
+      "measure": "D9R",
+      "side": "R",
+      "account": "capital",
+      "seqPos": -1
+    },
+    {
+      "time": 2013,
+      "value": 220.5,
+      "status": "A",
+      "measure": "D9R",
+      "side": "R",
+      "account": "capital",
+      "seqPos": -1
+    },
+    {
+      "time": 2014,
+      "value": 188.4,
+      "status": "A",
+      "measure": "D9R",
+      "side": "R",
+      "account": "capital",
+      "seqPos": -1
+    },
+    {
+      "time": 2015,
+      "value": 132,
+      "status": "A",
+      "measure": "D9R",
+      "side": "R",
+      "account": "capital",
+      "seqPos": -1
+    },
+    {
+      "time": 2016,
+      "value": 133.3,
+      "status": "A",
+      "measure": "D9R",
+      "side": "R",
+      "account": "capital",
+      "seqPos": -1
+    },
+    {
+      "time": 2017,
+      "value": 208.4,
+      "status": "A",
+      "measure": "D9R",
+      "side": "R",
+      "account": "capital",
+      "seqPos": -1
+    },
+    {
+      "time": 2018,
+      "value": 194.4,
+      "status": "A",
+      "measure": "D9R",
+      "side": "R",
+      "account": "capital",
+      "seqPos": -1
+    },
+    {
+      "time": 2019,
+      "value": 131.2,
+      "status": "A",
+      "measure": "D9R",
+      "side": "R",
+      "account": "capital",
+      "seqPos": -1
+    },
+    {
+      "time": 2020,
+      "value": 60,
+      "status": "A",
+      "measure": "D9R",
+      "side": "R",
+      "account": "capital",
+      "seqPos": -1
+    },
+    {
+      "time": 2021,
+      "value": 60,
+      "status": "A",
+      "measure": "D9R",
+      "side": "R",
+      "account": "capital",
+      "seqPos": -1
+    },
+    {
+      "time": 2022,
+      "value": 60,
+      "status": "A",
+      "measure": "D9R",
+      "side": "R",
+      "account": "capital",
+      "seqPos": -1
+    },
+    {
+      "time": 2023,
+      "value": 60,
+      "status": "A",
+      "measure": "D9R",
+      "side": "R",
+      "account": "capital",
+      "seqPos": -1
+    },
+    {
+      "time": 2024,
+      "value": 60,
+      "status": "A",
+      "measure": "D9R",
+      "side": "R",
+      "account": "capital",
+      "seqPos": -1
+    },
+    {
+      "time": 2010,
+      "value": 4635.6,
+      "status": "A",
+      "measure": "P5",
+      "side": "U",
+      "account": "capital",
+      "seqPos": -1
+    },
+    {
+      "time": 2011,
+      "value": 6034.3,
+      "status": "A",
+      "measure": "P5",
+      "side": "U",
+      "account": "capital",
+      "seqPos": -1
+    },
+    {
+      "time": 2012,
+      "value": 7260.9,
+      "status": "A",
+      "measure": "P5",
+      "side": "U",
+      "account": "capital",
+      "seqPos": -1
+    },
+    {
+      "time": 2013,
+      "value": 6323,
+      "status": "A",
+      "measure": "P5",
+      "side": "U",
+      "account": "capital",
+      "seqPos": -1
+    },
+    {
+      "time": 2014,
+      "value": 8136.8,
+      "status": "A",
+      "measure": "P5",
+      "side": "U",
+      "account": "capital",
+      "seqPos": -1
+    },
+    {
+      "time": 2015,
+      "value": 9285.5,
+      "status": "A",
+      "measure": "P5",
+      "side": "U",
+      "account": "capital",
+      "seqPos": -1
+    },
+    {
+      "time": 2016,
+      "value": 10565,
+      "status": "A",
+      "measure": "P5",
+      "side": "U",
+      "account": "capital",
+      "seqPos": -1
+    },
+    {
+      "time": 2017,
+      "value": 10386.6,
+      "status": "A",
+      "measure": "P5",
+      "side": "U",
+      "account": "capital",
+      "seqPos": -1
+    },
+    {
+      "time": 2018,
+      "value": 12671.3,
+      "status": "A",
+      "measure": "P5",
+      "side": "U",
+      "account": "capital",
+      "seqPos": -1
+    },
+    {
+      "time": 2019,
+      "value": 13509.7,
+      "status": "A",
+      "measure": "P5",
+      "side": "U",
+      "account": "capital",
+      "seqPos": -1
+    },
+    {
+      "time": 2020,
+      "value": 10847,
+      "status": "A",
+      "measure": "P5",
+      "side": "U",
+      "account": "capital",
+      "seqPos": -1
+    },
+    {
+      "time": 2021,
+      "value": 13193,
+      "status": "A",
+      "measure": "P5",
+      "side": "U",
+      "account": "capital",
+      "seqPos": -1
+    },
+    {
+      "time": 2022,
+      "value": 15729,
+      "status": "A",
+      "measure": "P5",
+      "side": "U",
+      "account": "capital",
+      "seqPos": -1
+    },
+    {
+      "time": 2023,
+      "value": 17644,
+      "status": "A",
+      "measure": "P5",
+      "side": "U",
+      "account": "capital",
+      "seqPos": -1
+    },
+    {
+      "time": 2024,
+      "value": 20593,
+      "status": "A",
+      "measure": "P5",
+      "side": "U",
+      "account": "capital",
+      "seqPos": -1
+    },
+    {
+      "time": 2010,
+      "value": -1783.1,
+      "status": "A",
+      "measure": "B9",
+      "side": "U",
+      "account": "capital",
+      "seqPos": -1
+    },
+    {
+      "time": 2011,
+      "value": -2863.8,
+      "status": "A",
+      "measure": "B9",
+      "side": "U",
+      "account": "capital",
+      "seqPos": -1
+    },
+    {
+      "time": 2012,
+      "value": -2889.9,
+      "status": "A",
+      "measure": "B9",
+      "side": "U",
+      "account": "capital",
+      "seqPos": -1
+    },
+    {
+      "time": 2013,
+      "value": -1368.2,
+      "status": "A",
+      "measure": "B9",
+      "side": "U",
+      "account": "capital",
+      "seqPos": -1
+    },
+    {
+      "time": 2014,
+      "value": -2960.6,
+      "status": "A",
+      "measure": "B9",
+      "side": "U",
+      "account": "capital",
+      "seqPos": -1
+    },
+    {
+      "time": 2015,
+      "value": -3898.4,
+      "status": "A",
+      "measure": "B9",
+      "side": "U",
+      "account": "capital",
+      "seqPos": -1
+    },
+    {
+      "time": 2016,
+      "value": -4326.8,
+      "status": "A",
+      "measure": "B9",
+      "side": "U",
+      "account": "capital",
+      "seqPos": -1
+    },
+    {
+      "time": 2017,
+      "value": -3054.1,
+      "status": "A",
+      "measure": "B9",
+      "side": "U",
+      "account": "capital",
+      "seqPos": -1
+    },
+    {
+      "time": 2018,
+      "value": -2801.5,
+      "status": "A",
+      "measure": "B9",
+      "side": "U",
+      "account": "capital",
+      "seqPos": -1
+    },
+    {
+      "time": 2019,
+      "value": -2808.8,
+      "status": "A",
+      "measure": "B9",
+      "side": "U",
+      "account": "capital",
+      "seqPos": -1
+    },
+    {
+      "time": 2020,
+      "value": -1621,
+      "status": "A",
+      "measure": "B9",
+      "side": "U",
+      "account": "capital",
+      "seqPos": -1
+    },
+    {
+      "time": 2021,
+      "value": -1942,
+      "status": "A",
+      "measure": "B9",
+      "side": "U",
+      "account": "capital",
+      "seqPos": -1
+    },
+    {
+      "time": 2022,
+      "value": -2260,
+      "status": "A",
+      "measure": "B9",
+      "side": "U",
+      "account": "capital",
+      "seqPos": -1
+    },
+    {
+      "time": 2023,
+      "value": -2655,
+      "status": "A",
+      "measure": "B9",
+      "side": "U",
+      "account": "capital",
+      "seqPos": -1
+    },
+    {
+      "time": 2024,
+      "value": -3135,
+      "status": "A",
+      "measure": "B9",
+      "side": "U",
+      "account": "capital",
+      "seqPos": -1
+    }
+  ],
+  "classifiers": {
+    "time": [
+      {
+        "code": 2010
+      },
+      {
+        "code": 2011
+      },
+      {
+        "code": 2012
+      },
+      {
+        "code": 2013
+      },
+      {
+        "code": 2014
+      },
+      {
+        "code": 2015
+      },
+      {
+        "code": 2016
+      },
+      {
+        "code": 2017
+      },
+      {
+        "code": 2018
+      },
+      {
+        "code": 2019
+      },
+      {
+        "code": 2020
+      },
+      {
+        "code": 2021
+      },
+      {
+        "code": 2022
+      },
+      {
+        "code": 2023
+      },
+      {
+        "code": 2024
+      },
+      {
+        "code": 2025
+      }
+    ],
+    "aggregates": [
+      {
+        "code": "P1",
+        "account": "production",
+        "isClosing": 0
+      },
+      {
+        "code": "P2",
+        "account": "production",
+        "isClosing": 0
+      },
+      {
+        "code": "B1G",
+        "account": "production",
+        "isClosing": 1
+      },
+      {
+        "code": "D1",
+        "account": "income_gen",
+        "isClosing": 0
+      },
+      {
+        "code": "ACC_NET_TAX",
+        "account": "income_gen",
+        "isClosing": 0
+      },
+      {
+        "code": "B2G",
+        "account": "income_gen",
+        "isClosing": 1
+      },
+      {
+        "code": "D4_REC",
+        "account": "primary_dist",
+        "isClosing": 0
+      },
+      {
+        "code": "D4_PAY",
+        "account": "primary_dist",
+        "isClosing": 0
+      },
+      {
+        "code": "B5G",
+        "account": "primary_dist",
+        "isClosing": 1
+      },
+      {
+        "code": "D5_REC",
+        "account": "secondary_dist",
+        "isClosing": 0
+      },
+      {
+        "code": "D5_PAY",
+        "account": "secondary_dist",
+        "isClosing": 0
+      },
+      {
+        "code": "B6G",
+        "account": "secondary_dist",
+        "isClosing": 1
+      },
+      {
+        "code": "P3",
+        "account": "use_of_income",
+        "isClosing": 0
+      },
+      {
+        "code": "B8G",
+        "account": "use_of_income",
+        "isClosing": 1
+      },
+      {
+        "code": "D9R",
+        "account": "capital",
+        "isClosing": 0
+      },
+      {
+        "code": "P5",
+        "account": "capital",
+        "isClosing": 0
+      },
+      {
+        "code": "B9",
+        "account": "capital",
+        "isClosing": 1
+      }
+    ],
+    "account": [
+      {
+        "code": "production",
+        "order": 0,
+        "sectionId": "production-account"
+      },
+      {
+        "code": "income_gen",
+        "order": 1,
+        "sectionId": "income-formation"
+      },
+      {
+        "code": "primary_dist",
+        "order": 2,
+        "sectionId": "primary-distribution"
+      },
+      {
+        "code": "secondary_dist",
+        "order": 3,
+        "sectionId": "secondary-distribution"
+      },
+      {
+        "code": "use_of_income",
+        "order": 4
+      },
+      {
+        "code": "capital",
+        "order": 5,
+        "sectionId": "capital-account"
+      }
+    ]
+  },
+  "display": {
+    "aggregates": {
+      "P1": {
+        "label": "გამოშვება საბაზრო ფასებში",
+        "color": "#5470c6"
+      },
+      "P2": {
+        "label": "შუალედური მოხმარება",
+        "color": "#a0b4e8"
+      },
+      "B1G": {
+        "label": "მთლიანი შიდა პროდუქტი საბაზრო ფასებში",
+        "color": "#5470c6"
+      },
+      "D1": {
+        "label": "შრომის ანაზღაურება",
+        "color": "#3ba272"
+      },
+      "ACC_NET_TAX": {
+        "label": "გადასახადები-სუბსიდიები",
+        "color": "#73c0de"
+      },
+      "B2G": {
+        "label": "მთლიანი შერეული შემოსავალი + საოპერაციო მოგება",
+        "color": "#3ba272"
+      },
+      "D4_REC": {
+        "label": "პირველადი შემოსავლების მიღება",
+        "color": "#fac858"
+      },
+      "D4_PAY": {
+        "label": "პირველადი შემოსავლების გადახდა",
+        "color": "#ee6666"
+      },
+      "B5G": {
+        "label": "მთლიანი ეროვნული შემოსავალი",
+        "color": "#fac858"
+      },
+      "D5_REC": {
+        "label": "მიმდინარე ტრანსფერების მიღება",
+        "color": "#9a60b4"
+      },
+      "D5_PAY": {
+        "label": "მიმდინარე ტრანსფერების გადახდა",
+        "color": "#ee6666"
+      },
+      "B6G": {
+        "label": "მთლიანი განკარგვადი შემოსავალი",
+        "color": "#9a60b4"
+      },
+      "P3": {
+        "label": "საბოლოო მოხმარება",
+        "color": "#fc8452"
+      },
+      "B8G": {
+        "label": "მთლიანი დანაზოგი",
+        "color": "#fc8452"
+      },
+      "D9R": {
+        "label": "კაპიტალური ტრანსფერების მიღება",
+        "color": "#91cc75"
+      },
+      "P5": {
+        "label": "მთლიანი კაპიტალის ფორმირება",
+        "color": "#ea7ccc"
+      },
+      "B9": {
+        "label": "წმინდა დაკრედიტება (+), წმინდა სესხება(-)",
+        "color": "#ee6666"
+      }
+    },
+    "account": {
+      "production": {
+        "label": "I. წარმოების ანგარიში",
+        "color": "#5470c6",
+        "order": 0
+      },
+      "income_gen": {
+        "label": "II. შემოსავლების ფორმირების ანგარიში",
+        "color": "#3ba272",
+        "order": 1
+      },
+      "primary_dist": {
+        "label": "III. პირველადი შემოსავლების განაწილება",
+        "color": "#fac858",
+        "order": 2
+      },
+      "secondary_dist": {
+        "label": "IV. შემოსავლების მეორადი განაწილება",
+        "color": "#9a60b4",
+        "order": 3
+      },
+      "use_of_income": {
+        "label": "V. შემოსავლის გამოყენების ანგარიში",
+        "color": "#fc8452",
+        "order": 4
+      },
+      "capital": {
+        "label": "VI. კაპიტალის ანგარიში",
+        "color": "#91cc75",
+        "order": 5
+      }
+    }
+  }
+}
