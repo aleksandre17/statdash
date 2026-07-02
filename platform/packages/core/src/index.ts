@@ -46,7 +46,10 @@ export { perspectiveRegistry }                                           from '.
 //  declared touches none of this (byte-identical render, FF-ONE-VIEW-NO-MACHINERY).
 export type { PerspectiveScope, PerspectiveDef, PerspectiveAxis,
               PerspectivesByParam, PerspectiveTimeBinding,
-              DimBinding, Selection }                                    from './config/perspective-axis'
+              DimBinding, Selection, PerspectiveEffect }                 from './config/perspective-axis'
+// Reactive param mutation on a perspective transition (C3 — forward recovery of the
+// retired reactive effects, re-homed on onEnter/onExit; pure, reuses perspective-is + ExprVal).
+export { applyPerspectiveEffects }                                       from './config/perspective-effects'
 //  The scope-key registry — the OCP seam (SYNTHESIS §1.4): every scope door is a
 //  registration, not an interface widening. timeBinding + metric registered today;
 //  the coverage gate reads listPerspectiveScopeKeys() directly (the 5th axis).

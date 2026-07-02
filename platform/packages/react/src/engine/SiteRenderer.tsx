@@ -142,10 +142,20 @@ const NodePageRendererInner = memo(function NodePageRendererInner({
     [activeAxis, locale, fallbackLocale],
   )
 
+  // The reactive-effects bundle (C3): the active axis (which carries each perspective's
+  // onEnter/onExit `set` maps) + the current filter params (the ExprVal scope). Threaded
+  // into the toggle so a switch applies the leaving/entering effects atomically. Omitted
+  // when there is no axis ⇒ the toggle is purely presentational (byte-identical pre-C3).
+  const perspectiveEffects = useMemo(
+    () => activeAxis ? { axis: activeAxis, params: state } : undefined,
+    [activeAxis, state],
+  )
+
   // The active-perspective triad: `current` (URL-param read) + `set` (URL write) +
   // `available` (axis-owned options). The URL param IS the active id (Harel
-  // orthogonal-regions SSOT); switching it mutates no other filter key.
-  const perspective = usePerspectiveContext(perspectiveKey, available)
+  // orthogonal-regions SSOT); switching it applies this axis's reactive effects (C3)
+  // and writes the id — no other key changes when a perspective declares no effect.
+  const perspective = usePerspectiveContext(perspectiveKey, available, perspectiveEffects)
 
   // The active perspective id flows through the ctx.perspectiveState SSOT (HIGH-3):
   // the ONE source the visibility gate + the SSR walkers + the kpi-strip read.

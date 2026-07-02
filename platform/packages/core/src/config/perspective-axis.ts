@@ -20,12 +20,14 @@
 //  constant, not a branch); `metric` is a generic MetricDef ref. LAW 2: pure JSON,
 //  no functions, Constructor-authorable.
 
+import type { ExprVal }            from '@statdash/expr'
 import type { TimeBound, TimeDimensionSpec, TimeGranularity } from './data-spec'
 import type { VisibilityExpr }     from './visibility'
 import type {
-  PerspectiveScope as ContractPerspectiveScope,
-  PerspectiveDef   as ContractPerspectiveDef,
-  PerspectiveAxis  as ContractPerspectiveAxis,
+  PerspectiveScope  as ContractPerspectiveScope,
+  PerspectiveDef    as ContractPerspectiveDef,
+  PerspectiveAxis   as ContractPerspectiveAxis,
+  PerspectiveEffect as ContractPerspectiveEffect,
 } from '@statdash/contracts'
 
 // ── PerspectiveScope (core) — the two REGISTERED scope-keys today ─────────────
@@ -136,18 +138,36 @@ export type PerspectiveTimeBinding = TimeDimensionSpec & {
   targetKeys?: { from?: string; to?: string }
 }
 
+// ── PerspectiveEffect (core) — `set` values refined to ExprVal (C3) ────────────
+//
+//  The contract carries `set` values opaquely as `JsonValue`; core REFINES them to the
+//  sandboxed evaluator's input type `ExprVal | null` — a literal / `{$ctx}` ref / `Expr`
+//  tree (evaluated against the current filter params), or `null` to CLEAR the param.
+//  Stays ASSIGNABLE to the contract (ExprVal is structurally JSON — DimVal literals and
+//  Expr/ExprRef objects are all JsonValue). Reactive-effect fold lives in
+//  perspective-effects.ts (applyPerspectiveEffects), the C3 recovery of the retired
+//  reactive subsystem, re-homed on the perspective transition (onEnter/onExit).
+export interface PerspectiveEffect extends Omit<ContractPerspectiveEffect, 'set'> {
+  set: Record<string, ExprVal | null>
+}
+
 // ── PerspectiveDef (core) — `when`/`available` refined to VisibilityExpr ───────
 //
-//  Re-declares the contract def with the two opaque blobs refined: `when`/`available`
+//  Re-declares the contract def with the opaque blobs refined: `when`/`available`
 //  → VisibilityExpr (the EXISTING evaluator, reused — no new machinery), `scope` →
-//  the core PerspectiveScope. `id`/`label` carry through structurally.
-export interface PerspectiveDef extends Omit<ContractPerspectiveDef, 'when' | 'scope' | 'available'> {
+//  the core PerspectiveScope, `onEnter`/`onExit` → the core PerspectiveEffect (ExprVal
+//  `set`). `id`/`label`/`icon` carry through structurally.
+export interface PerspectiveDef extends Omit<ContractPerspectiveDef, 'when' | 'scope' | 'available' | 'onEnter' | 'onExit'> {
   /** OPTIONAL visibility override; default = perspective-is(id). Omitted on the common path (FF-WHEN-IS-ESCAPE-ONLY). */
   when?:      VisibilityExpr
   /** The per-perspective effect bag — the two registered scope-keys (timeBinding, metric). */
   scope?:     PerspectiveScope
   /** OPTIONAL availability guard (D-GUARD). Absent ⇒ always available. Read by the switcher/nav (P1/P3+). */
   available?: VisibilityExpr
+  /** OPTIONAL reactive effect on ENTER — `set` params mutate at the toggle (C3). Absent ⇒ no effect. */
+  onEnter?:   PerspectiveEffect
+  /** OPTIONAL reactive effect on EXIT — `set` params mutate at the toggle (C3). Absent ⇒ no effect. */
+  onExit?:    PerspectiveEffect
 }
 
 // ── PerspectiveAxis (core) — refined perspectives[] ───────────────────────────
@@ -172,7 +192,9 @@ export type PerspectivesByParam = Record<string, PerspectiveAxis>
 //  and the engine type interoperate without a cast (the refine ⇄ widen invariant).
 //  These `satisfies`-style checks fail the BUILD if a refinement ever
 //  diverges structurally from the envelope.
-const _scopeWidens:  (s: PerspectiveScope) => ContractPerspectiveScope = (s) => s
-const _axisWidens:   (a: PerspectiveAxis)  => ContractPerspectiveAxis  = (a) => a
+const _scopeWidens:  (s: PerspectiveScope)  => ContractPerspectiveScope  = (s) => s
+const _axisWidens:   (a: PerspectiveAxis)   => ContractPerspectiveAxis   = (a) => a
+const _effectWidens: (e: PerspectiveEffect) => ContractPerspectiveEffect = (e) => e
 void _scopeWidens
 void _axisWidens
+void _effectWidens

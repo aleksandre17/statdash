@@ -30,8 +30,28 @@
 //  URL `param` (the Record key, see below), a `scope.timeBinding.dim` — the engine
 //  never branches on a literal. LAW 2 (declarative): pure JSON, no functions.
 
-import type { JsonRecord } from './json'
+import type { JsonRecord, JsonValue } from './json'
 import type { ContractLocaleString } from './reference-metadata'
+
+// ── PerspectiveEffect — a perspective's REACTIVE param mutation (C3) ───────────
+//
+//  The forward recovery of the retired reactive `effects` subsystem, re-homed on the
+//  perspective seam as a FIRST-CLASS transition capability. When a perspective is
+//  ENTERED or EXITED, its `set` map is evaluated and the named URL/filter params are
+//  mutated — "toggle a mode → the dashboard reconfigures its params" (Grafana chained
+//  template variables; Retool/AppSmith onChange handlers). This is the ONE-SHOT write
+//  at the moment of a user toggle — the URL stays the SSOT, so `perspective = f(state)`
+//  still governs RENDER; only the transition rewrites the affected params.
+//
+//  `set`: a param key → declarative value map. Each value is a JSON-serializable
+//  `ExprVal` (a literal, a `{$ctx}` ref, or an `Expr` tree — refined in core) evaluated
+//  against the current filter params; `null` CLEARS the param (the stale-value case).
+//  Pure/declarative, no functions — Constructor-authorable (Law 2). The core layer
+//  REFINES `set`'s value type to `ExprVal | null` (the sandboxed evaluator's input);
+//  this envelope carries it opaquely as `JsonValue` (which already includes `null`).
+export interface PerspectiveEffect {
+  set: Record<string, JsonValue>
+}
 
 // ── PerspectiveScope — registry-keyed scope-key Record (the OCP move) ─────────
 //
@@ -86,6 +106,19 @@ export interface PerspectiveDef {
    * Read by the switcher/nav when building the OFFERED list (not yet wired — P1/P3+).
    */
   available?: JsonRecord
+  /**
+   * OPTIONAL reactive effect applied when this perspective is ENTERED (a statechart
+   * onEntry action). Its `set` mutations rewrite the named filter params at the moment
+   * of the toggle — e.g. entering `range` clears the stale single `year`. Absent ⇒ no
+   * enter effect (byte-identical to the pre-C3 presentational toggle).
+   */
+  onEnter?:   PerspectiveEffect
+  /**
+   * OPTIONAL reactive effect applied when this perspective is EXITED (a statechart
+   * onExit action) — e.g. leaving `range` clears the `from`/`to` span. Absent ⇒ no
+   * exit effect.
+   */
+  onExit?:    PerspectiveEffect
 }
 
 // ── PerspectiveAxis — one orthogonal axis (a Harel region) ────────────────────

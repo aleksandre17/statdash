@@ -1174,6 +1174,17 @@
                       }
                     }
                   }
+                },
+                "onEnter": {
+                  "set": {
+                    "year": null
+                  }
+                },
+                "onExit": {
+                  "set": {
+                    "fromYear": null,
+                    "toYear": null
+                  }
                 }
               }
             ]
@@ -2516,6 +2527,17 @@
                         "to": "toYear"
                       }
                     }
+                  }
+                },
+                "onEnter": {
+                  "set": {
+                    "year": null
+                  }
+                },
+                "onExit": {
+                  "set": {
+                    "fromYear": null,
+                    "toYear": null
                   }
                 }
               }
@@ -4502,6 +4524,17 @@
                         "to": "toYear"
                       }
                     }
+                  }
+                },
+                "onEnter": {
+                  "set": {
+                    "year": null
+                  }
+                },
+                "onExit": {
+                  "set": {
+                    "fromYear": null,
+                    "toYear": null
                   }
                 }
               }

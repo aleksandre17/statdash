@@ -18,8 +18,21 @@ import {
   createContext, useContext, useMemo, useCallback,
   type ReactNode,
 }                                          from 'react'
-import type { PerspectiveContext, PerspectiveOption, PerspectiveId } from '@statdash/engine'
+import type { PerspectiveContext, PerspectiveOption, PerspectiveId, PerspectiveAxis } from '@statdash/engine'
+import { applyPerspectiveEffects }         from '@statdash/engine'
 import { useFilter }                       from './FilterContext'
+
+// ── Reactive-effects bundle (C3) ──────────────────────────────────────
+//
+//  The data usePerspectiveContext.set needs to compute a perspective's onEnter/onExit
+//  param mutations on a toggle: the full axis (which carries the effect `set` maps) plus
+//  the current filter params (the ExprVal evaluation scope). OPTIONAL + ADDITIVE — omitted
+//  (or an axis with no onEnter/onExit) ⇒ the toggle is purely presentational, byte-identical
+//  to the pre-C3 set (only the perspective-id param is written).
+export interface PerspectiveEffectsInput {
+  axis:   PerspectiveAxis
+  params: Record<string, string>
+}
 
 // ── usePerspectiveContext ─────────────────────────────────────────────
 //
@@ -41,8 +54,9 @@ import { useFilter }                       from './FilterContext'
 export function usePerspectiveContext(
   param:     string,
   available: PerspectiveOption[],
+  effects?:  PerspectiveEffectsInput,
 ): PerspectiveContext {
-  const { state, set: filterSet } = useFilter()
+  const { state, set: filterSet, setMany } = useFilter()
 
   // The axis default = the first declared perspective (perspectives[0], LOW-1). The
   // registry/axis OWNS this — never hardcoded. Elision + the active-id fallback both
@@ -58,8 +72,23 @@ export function usePerspectiveContext(
   const set = useCallback((id: PerspectiveId): void => {
     // Default-elision: writing the default clears the param (FilterContext.set deletes
     // on an empty value) → a clean permalink. Any non-default id is written verbatim.
-    filterSet(param, id === defaultId ? '' : id)
-  }, [param, filterSet, defaultId])
+    const idWrite = id === defaultId ? '' : id
+
+    // Reactive effects (C3): on a real transition, fold the leaving perspective's onExit
+    // + the entering perspective's onEnter into the SAME atomic write as the id (setMany),
+    // so a toggle reconfigures the dashboard's params (e.g. entering `range` clears the
+    // stale `year`; leaving clears the span). `current` is the resolved prev id (default
+    // already un-elided), so a transition is never masked. No axis / no effects ⇒ the
+    // plain single-key write, byte-identical to the pre-C3 toggle.
+    if (effects) {
+      const mutations = applyPerspectiveEffects(effects.axis, param, current, id, effects.params)
+      if (Object.keys(mutations).length > 0) {
+        setMany({ ...mutations, [param]: idWrite })
+        return
+      }
+    }
+    filterSet(param, idWrite)
+  }, [param, filterSet, setMany, defaultId, current, effects])
 
   return useMemo(() => ({ current, available, set }), [current, available, set])
 }
