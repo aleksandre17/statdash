@@ -1,11 +1,12 @@
 # BOARD — Render-Pipeline TARGET epic (single source for this epic)
 
 _Last updated: 2026-07-02._
-> This is the ONE board for the render-pipeline epic (items 0009–0042). `work/BOARD.md` points here.
+> This is the ONE board for the render-pipeline epic (items 0009–0055). `work/BOARD.md` points here.
 > SSOT specs: **`platform/work/SPEC-render-pipeline-target.md`** (E1–E8, C1–C6, O-1…O-7, FF suite)
-> **+ `platform/work/SPEC-render-pipeline-target.DELTA-6-14.md`** (img_6…14: C7, E9, O-8…O-12, LV-1…LV-5, added FFs, per-image table).
+> **+ `platform/work/SPEC-render-pipeline-target.DELTA-6-14.md`** (img_6…14: C7, E9, O-8…O-12, LV-1…LV-5, added FFs)
+> **+ `platform/work/SPEC-render-pipeline-target.DELTA-new12.md`** (new-12 interaction-state shots: bugs BI-B1…B3, axes AX5–7, O-13…O-16, LV-6, added FFs).
 > Diagnosis: `render-drift-audit.md`, `effect-variable-architecture-drift.md`, `static-era-regression.md`. Item files live in `work/items/`.
-> **START HERE:** resolve the 12 DECISION cards (0009–0015 + 0031–0035, ~2 min each), then build the capabilities, then wire the elements, then lock the FF suite. Run the LV live-verify checks (0038–0042) against the live app before their dependent elements CLOSE.
+> **START HERE:** resolve the 16 DECISION cards (0009–0015 + 0031–0035 + 0043–0046, ~2 min each), then land the 3 cheap bug fixes (0048→0049→0050), then build the capabilities, then wire the elements, then lock the FF suite + data-parity gates. Run the LV live-verify checks (0038–0042, 0047) against the live app before their dependent elements CLOSE.
 
 > **STANDING DoD** (attached verbatim to every item 0009–0042): rendered result must match `scriness/` achieved ONLY through highest-concept architecture — no hardcoding, no anti-patterns, no DRY violations; declarative/config-driven; conditional logics (visibleWhen/perspective/effects) covered; SSOT; refine/elevate EXISTING code (Strangler) — never rewrite-from-scratch or hardcode-to-match the screenshot. "Look like the screens" must NEVER be met by dropping quality.
 
@@ -33,8 +34,28 @@ _Last updated: 2026-07-02._
 | [0034](../items/0034-decision-o11-income-treemap-total-signs.md) | O-11 income treemap `=GDP` tile + data-driven signs | Sign + total are **data-driven** (`isTotal` field); treemap must NOT double-count the `=GDP` tile | E6,E9 |
 | [0035](../items/0035-decision-o12-regional-sector-selector.md) | O-12 regional sector-selector semantics | KPI re-bases to the selected sector; `_T` = total; comparison-bar scope per O-8/**LV-1 (0038)** | E10-family |
 
+**O-13…O-16 (from the DELTA-new12 §4 — interaction-state shots):**
+| Item | Decision | DEFAULT (build unless told) | Blocks |
+|------|----------|-----------------------------|--------|
+| [0043](../items/0043-decision-o13-range-byregion-semantics.md) | O-13 range-mode "by region" ranking semantics | **Terminal-year snapshot** (`by:["geo"]`, pin `time=toYear`); alt = windowed sum | 0050 (BI-B2) |
+| [0044](../items/0044-decision-o14-gapl-seed-vs-render.md) | O-14 GAP-L: EN data-category labels stay Georgian | **Diagnose codelist for `en`**: present → render-fix (BI-B1); absent → database-architect seed | 0049 (BI-B1) |
+| [0045](../items/0045-decision-o15-theme-persistence.md) | O-15 theme persistence | **localStorage + `prefers-color-scheme`**, NOT URL-encoded | 0051 (AX5) |
+| [0046](../items/0046-decision-o16-unify-map-viewrole.md) | O-16 unify map toggle into C7 `view.role:'map'` | **Unify now** (else `D-MAP-VIEWROLE` defer) | 0052 (AX6) |
+
 > ⚠️ O-6 (0014) + O-7 (0015) may need data/DB input before dependents (0020/0027/0028) CLOSE — flag database-architect early.
 > ⚠️ O-10 (0033) is confirmed by the LV-3 live capture; O-12 (0035) by LV-1. Decisions can proceed on DEFAULT; LV closes the residual unknown.
+> ⚠️ O-14 (0044) is a diagnosis-gated fork: if the codelist lacks `en`, GAP-L is a database-architect seed item (outside this epic's code fences).
+
+---
+
+## 🐛 BUG FIXES — root-caused in DELTA-new12 (land EARLY · cheap, high-visibility wins)
+
+> These 3 gate trustworthy verification of every new interaction state. Land order: **BI-B3 → BI-B1 → BI-B2** (B3 trivial/visible first; B1 establishes the locale-at-boundary SSOT; B2 the ranking rollup). Each is a root-cause fix with an exact seam + FF.
+| Item | Bug | Seam | FF | Depends on |
+|------|-----|------|-----|-----------|
+| [0048](../items/0048-bib3-sign-pct-signed-formatter.md) | **BI-B3** dropped negative sign (`6.3%`→ must be `-6.3%`) | `formatters.ts:9` drop `Math.abs` | FF-SIGN-PRESERVED | 0016 |
+| [0049](../items/0049-bib1-derive-localestring-resolution.md) | **BI-B1** `[object Object]` map subtitle | `filter-derive.ts:163` + thread `locale` into `DeriveContext` (`evalVarMap.ts`) | FF-DERIVE-LOCALIZES-LABELS · FF-NO-LOCALESTRING-TO-STRING | 0044 |
+| [0050](../items/0050-bib2-ranking-group-key-normalization.md) | **BI-B2** duplicated/collapsed region labels | `geostat.provisioning.json:3857` group key = `["geo"]`, roll up `time` | FF-RANKING-ONE-ROW-PER-CATEGORY | 0043·0016 |
 
 ---
 
@@ -52,6 +73,19 @@ Class **M** = architect/migration mandatory · **G** = general · all P0–P2 ·
 | [0020](../items/0020-c6-component-rollup-pinning.md) | C6 Component rollup/pinning + per-capita — Drift 4&5 | M | P1 | 0014·0015·0016·0017 |
 | [0021](../items/0021-c3-effects-recovery.md) | C3 Effects recovery (`onEnter`/`onExit`) | M | P2 | 0011·0017 |
 | [0036](../items/0036-c7-section-dual-view.md) | **C7 Section dual-view (chart↔table); invariant I-6 — both views re-encode the SAME warmed rows, no re-query** | M | P1 | 0032·0016·0017 |
+
+**New axes / capabilities (DELTA-new12 §3 — build after the bug fixes):**
+| Item | Work | Cls | Prio | Depends on |
+|------|------|-----|------|-----------|
+| [0051](../items/0051-ax5-theme-token-ssot.md) | **AX5 Dark/light theme axis — `data-theme` token SSOT + chart/map re-theme** | M | P1 | 0045·0016 |
+| [0052](../items/0052-ax6-unify-map-into-c7-viewrole.md) | **AX6 Unify geograph map↔table into C7 `view.role:'map'` (one toggle mechanism)** | M | P1 | 0046·0036·0018 |
+| [0053](../items/0053-ax7-sector-select-requery-warm.md) | **AX7 Regional sector-select re-query interaction + warm contract** | G | P1 | 0017·0035·0047 |
+
+**DATA-PARITY sweep (owner requirement — "data must come out as it was"; extract-then-gate):**
+| Item | Work | Cls | Prio | Depends on |
+|------|------|-----|------|-----------|
+| [0054](../items/0054-golden-fixtures-static-era-extract.md) | **Extract static-era golden fixtures from git `191bc0e` (the known-correct dataset) — EXPLICIT prerequisite** | M | P1 | — |
+| [0055](../items/0055-data-parity-sweep-gates.md) | **DATA-PARITY build gates: FF-DATA-PARITY · FF-CHART-EQ-TABLE · FF-CHART-PRESENCE (locks the epic)** | M | P1 | 0054·0016·0036·0048·0049·0050·0022–0029·0037 |
 
 **Elements (config `kit` wiring once C1–C7 land):**
 | Item | Work | Cls | Prio | Depends on |
@@ -83,12 +117,21 @@ Class **M** = architect/migration mandatory · **G** = general · all P0–P2 ·
 | [0040](../items/0040-lv3-accounts-dynamics-panelset.md) | LV-3 `/accounts` in **dynamics** mode — capture the panel set (unseen) | O-10 (0033) → E9 (0037) |
 | [0041](../items/0041-lv4-choropleth-region-click-rescope.md) | LV-4 Choropleth region-click re-scopes sector donut + comparison + area; agrees with KPI base | E5 (0026); regional elements; O-12 (0035) |
 | [0042](../items/0042-lv5-duplicate-tick-live.md) | LV-5 C1 duplicate-tick bug fires on GDP-dynamics `combo` y-axis (img_7) + regional-comparison x-axis (img_12/13) — both fixed by the single C1 seam | C1 (0016) |
+| [0047](../items/0047-lv6-donut-vs-sectoral-structure-slot.md) | LV-6 Regional right-column slot: sector donut (img_5) vs sectoral-structure bar (img_6) — distinct section slots vs state swap | AX7 (0053); E10-family panel inventory |
 
 ---
 
-## Build order
+## Build order (FINAL — full epic sequence)
 
-`O-1…O-12 decisions → C1(0016) → C2(0017) → (C4·C5·C6·C7 = 0018·0019·0020·0036 parallel) → C3(0021) → E1…E9 wiring (with LV-1…LV-5 live-checks before each dependent CLOSES) → FF(0030) lock.`
-C1 + C2 are prerequisites for trustworthy verification of everything else.
+`O-1…O-16 decisions (16 cards)`
+`→ 0054 extract golden fixtures (start early — the correctness reference; parallel, no deps)`
+`→ C1(0016) → BI-B3(0048) [trivial, extends C1] → C2(0017)`
+`→ BI-B1(0049) [after O-14/0044] → BI-B2(0050) [after O-13/0043, needs C1]   ← the 3 cheap bug wins, land early`
+`→ (C4·C5·C6·C7 = 0018·0019·0020·0036 parallel) → C3(0021)`
+`→ AX5(0051) · AX6(0052 · after C7+C4) · AX7(0053 · after C2, LV-6/0047)   ← new axes`
+`→ E1…E9 wiring 0022–0029·0037 (with LV-1…LV-6 live-checks before each dependent CLOSES)`
+`→ FF(0030) lock + DATA-PARITY gates(0055) lock   ← epic locks LAST, fails loudly on any divergence from "as it was".`
+
+C1 + C2 + the 3 bug fixes (BI-B1/B2/B3) are prerequisites for trustworthy verification of everything else. The data-parity sweep (0054 extract → 0055 gate) proves the pipeline outputs the static-era-correct data THROUGH the clean architecture — no rollback, no hardcode-to-golden.
 
 > WIP limit (PROCESS.md): in-progress ≤ 2. backlog→ready is the owner's call.
