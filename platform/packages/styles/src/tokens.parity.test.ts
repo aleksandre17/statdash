@@ -83,7 +83,9 @@ const cssDefs  = extractRootDefinitions(cssPath)
 // arrive in later phases once shells stop carrying literals.)
 
 function extractDefaultRootDefinitions(cssPath: string): Set<string> {
-  const src = readFileSync(cssPath, 'utf8')
+  // Comments stripped to spaces first — a rationale comment naming a token
+  // immediately followed by a colon reads as a real declaration otherwise.
+  const src = readFileSync(cssPath, 'utf8').replace(/\/\*[\s\S]*?\*\//g, m => m.replace(/[^\n]/g, ' '))
   // The first top-level `:root {` block is the default theme. We slice from
   // its opening brace to the matching close (brace-depth walk — robust to the
   // nested-free flat token block) and collect --prop names from that slice.
@@ -156,8 +158,26 @@ describe('@statdash/styles — token parity', () => {
   // --color-surface / etc. inherits the flip for free). A bare hex/rgb literal
   // that is not redefined in dark is NOT dark-safe. This makes "we forgot a
   // dark value" a red test, not a memory note.
-  it('FF-DARK-COMPLETE: every semantic color role has a dark value (directly or transitively)', () => {
-    const src = readFileSync(cssPath, 'utf8')
+  //
+  // PINNED_NO_FLIP (theme-contrast sweep, 2026-07): a documented, narrow
+  // exception for roles whose ONLY consumer sits on non-adaptive, config-
+  // authored artwork (HeroCardDef.pageBg — a per-card gradient/image), never
+  // on --color-surface. Flipping THESE to their dark tone produced the "white
+  // heading on a light card" bug — the correct dark value for text painted on
+  // an image that never changes is the SAME value, not a lighter one. Any
+  // future role added here must carry the same justification in tokens.css.
+  const PINNED_NO_FLIP = new Set<string>([
+    '--color-heading-display',
+    '--color-heading-display-muted',
+  ])
+
+  it('FF-DARK-COMPLETE: every semantic color role has a dark value (directly or transitively), except the documented PINNED_NO_FLIP set', () => {
+    // Comments stripped to spaces BEFORE scanning — a rationale comment that
+    // names a token followed by a colon (e.g. "/* --color-foo: pinned … */")
+    // is shaped like a real declaration, and the value-consuming regex below
+    // would otherwise run past it hunting for the next semicolon and splice a
+    // bogus entry into the parsed map (caught live while adding PINNED_NO_FLIP).
+    const src = readFileSync(cssPath, 'utf8').replace(/\/\*[\s\S]*?\*\//g, m => m.replace(/[^\n]/g, ' '))
 
     function parseBlockAt(from: number): Map<string, string> {
       const open = src.indexOf('{', from)
@@ -206,23 +226,33 @@ describe('@statdash/styles — token parity', () => {
       /^--color-/.test(n) || /^--status-/.test(n) || /^--chart-color-/.test(n),
     )
 
-    const frozen = semanticColor.filter(n => !isDarkSafe(n))
+    const frozen = semanticColor.filter(n => !isDarkSafe(n) && !PINNED_NO_FLIP.has(n))
     if (frozen.length > 0) {
       const list = frozen.sort().map(n => `${n}  (= ${defaultMap.get(n)})`).join('\n  ')
       expect.fail(
         `${frozen.length} semantic color role(s) stay FROZEN at their light value in dark mode:\n\n  ${list}\n\n` +
           `Add a dark value to BOTH dark blocks in tokens.css (the @media prefers-color-scheme:dark ` +
-          `and [data-theme="dark"] selectors), or derive the role from one that already flips.`,
+          `and [data-theme="dark"] selectors), or derive the role from one that already flips — or, if the ` +
+          `role's only consumer sits on non-adaptive artwork, add it to PINNED_NO_FLIP with a documented reason.`,
       )
     }
     expect(semanticColor.length).toBeGreaterThan(30)   // guard vacuous pass
+
+    // The allowlist must not go stale — every entry must genuinely be a
+    // semantic color role that is NOT dark-safe (i.e. it is doing real
+    // exemption work, not sitting there as dead documentation).
+    const staleAllowlist = [...PINNED_NO_FLIP].filter(n => isDarkSafe(n))
+    expect(
+      staleAllowlist,
+      `PINNED_NO_FLIP entries that are ALREADY dark-safe (remove them, the exemption is no longer needed): ${staleAllowlist.join(', ')}`,
+    ).toHaveLength(0)
   })
 
   // The two dark selectors (system-preference @media + explicit attribute) MUST
   // stay in lockstep — a value added to one and forgotten in the other is a
   // half-dark theme. CSS has no cross-media-boundary DRY, so we assert equality.
   it('FF-DARK-COMPLETE: the @media and [data-theme="dark"] blocks are identical', () => {
-    const src = readFileSync(cssPath, 'utf8')
+    const src = readFileSync(cssPath, 'utf8').replace(/\/\*[\s\S]*?\*\//g, m => m.replace(/[^\n]/g, ' '))
     function parseBlockAt(from: number): Map<string, string> {
       const open = src.indexOf('{', from)
       let depth = 0, end = open
@@ -256,7 +286,7 @@ describe('@statdash/styles — token parity', () => {
   // the perspective switcher (secondary text on the --color-surface-frame
   // track) that regressed — must clear 4.5:1 with their DARK values.
   it('FF-DARK-COMPLETE: key control pairs clear WCAG AA contrast in dark mode', () => {
-    const src = readFileSync(cssPath, 'utf8')
+    const src = readFileSync(cssPath, 'utf8').replace(/\/\*[\s\S]*?\*\//g, m => m.replace(/[^\n]/g, ' '))
     const open = src.indexOf('{', src.lastIndexOf('[data-theme="dark"]'))
     let depth = 0, end = open
     for (let i = open; i < src.length; i++) {

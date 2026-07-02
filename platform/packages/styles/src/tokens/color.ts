@@ -59,8 +59,11 @@ export const COLOR = {
   accentRing:      'var(--color-accent-ring)',
   accentChipBg:     'var(--color-accent-chip-bg)',
   accentChipBorder: 'var(--color-accent-chip-border)',
-  // Display heading (deep hero title)
-  headingDisplay: 'var(--color-heading-display)',
+  // Display heading (deep hero title) — and its muted/subtitle companion.
+  // Both PINNED (no dark-mode flip): their only consumer sits on hero.css's
+  // non-adaptive per-card artwork, not --color-surface. See tokens.css.
+  headingDisplay:      'var(--color-heading-display)',
+  headingDisplayMuted: 'var(--color-heading-display-muted)',
   // Trend axis (data-direction signal; pair with a glyph, never color-only)
   trendPositive: 'var(--color-trend-positive)',
   trendNegative: 'var(--color-trend-negative)',

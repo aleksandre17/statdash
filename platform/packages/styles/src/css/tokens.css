@@ -291,8 +291,22 @@
   --color-accent-chip-border: var(--blue-100);
 
   /* Display heading — the largest hero title; a deeper, richer tone than
-     --color-text-primary. Brand-neutral default; a tenant theme rebinds. */
+     --color-text-primary. Brand-neutral default; a tenant theme rebinds.
+     INTENTIONALLY PINNED — no dark-mode override (contrast with every other
+     role in this file). Its only consumer (hero.css .hero__title) sits on
+     the hero's OWN per-card authored artwork (HeroCardDef.pageBg — a
+     config-authored gradient/image), never on --color-surface. That backdrop
+     does not participate in the app theme, so the heading color must not
+     either — flipping it to a near-white dark-mode tone produced the reported
+     "white heading on a light card" bug. Exempted in tokens.parity.test.ts
+     FF-DARK-COMPLETE via the documented PINNED_NO_FLIP allowlist. */
   --color-heading-display: var(--blue-900);
+  /* Companion muted/subtitle tone for that SAME non-adaptive artwork
+     (hero.css .hero__subtitle previously borrowed --color-text-muted, which
+     correctly flips for the app surface but went near-illegible once its
+     dark-mode tone landed on the pinned light card background). Also
+     pinned — see --color-heading-display above. */
+  --color-heading-display-muted: var(--blue-700);
 
   /* Trend axis (data direction signal: up vs down). NOT the generic status
      family — this is the KPI/sparkline direction pair. Brand-neutral default
@@ -522,8 +536,8 @@
     --color-accent-secondary:   #52b9a0;
     --color-accent-chip-border: #26425c;
 
-    /* Display heading — bright on dark (was --blue-900, a near-black) */
-    --color-heading-display:    #f0f3fa;
+    /* --color-heading-display / -muted: DELIBERATELY absent here — pinned,
+       see the :root definition above. */
 
     /* Trend axis (always paired with a glyph — never color-only) */
     --color-trend-positive:     #4fd0a3;
@@ -651,8 +665,8 @@
   --color-accent-secondary:   #52b9a0;
   --color-accent-chip-border: #26425c;
 
-  /* Display heading */
-  --color-heading-display:    #f0f3fa;
+  /* --color-heading-display / -muted: DELIBERATELY absent here — pinned,
+     see the :root definition (rationale in the @media block above). */
 
   /* Trend axis (always paired with a glyph — never color-only) */
   --color-trend-positive:     #4fd0a3;

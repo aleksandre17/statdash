@@ -41,7 +41,13 @@
 
 .hero__subtitle {
   font-size: 1rem;
-  color: var(--color-text-muted);
+  /* Pinned (not --color-text-muted): sits on the SAME non-adaptive per-card
+     pageBg artwork as .hero__title / --color-heading-display — that backdrop
+     never flips with the app theme, so this text must not either (see the
+     token comment in tokens.css). --color-text-muted's own dark-mode tone
+     (a light gray, tuned for the ADAPTIVE app surface) went near-invisible
+     once resolved against the pinned light hero background. */
+  color: var(--color-heading-display-muted);
   max-width: 32rem;
   line-height: 1.6;
   margin-bottom: clamp(1.25rem, 3.25vw, 2.5rem);
