@@ -19,6 +19,34 @@ import { resolveRef }                                                   from '..
 import type { StoreQuery }                                             from './store'
 
 
+// ── splitMultiValue — the SSOT for "one string value carrying an OR-set" ──
+//
+//  A multi-select resolves to a single comma-joined string in ctx.dims (e.g.
+//  `geo:'R2,R3'`). This is the ONE place that decodes that convention into its
+//  member codes, so the WIRE serializer (buildObsFilterParam) and the CLIENT
+//  resolver (resolveFilter) agree on what a comma-joined value means — the class
+//  of bug where the wire emitted a literal "R2,R3" (an unmatchable code → 0 rows)
+//  while resolveFilter split it client-side. Whitespace-trimmed; empties dropped.
+export function splitMultiValue(val: string): string[] {
+  return val.split(',').map((p) => p.trim()).filter(Boolean)
+}
+
+// ── toWireValue — a resolved ctx/baseline scalar → its wire filter shape ──
+//
+//  Mirrors resolveFilter's comma-split so a multi-value ctx pin serializes as the
+//  route's OR-within-dim ARRAY, never a literal "R2,R3". A comma string → its
+//  members (single → scalar for back-compat, ≥2 → array); a plain value → itself;
+//  an empty result → undefined (the caller drops the pin, scoping nothing).
+function toWireValue(val: DimVal): string | string[] | undefined {
+  if (typeof val === 'string' && val.includes(',')) {
+    const parts = splitMultiValue(val)
+    return parts.length === 0 ? undefined : parts.length === 1 ? parts[0] : parts
+  }
+  const s = String(val)
+  return s === '' ? undefined : s
+}
+
+
 // ── buildObsFilterParam — StoreQuery → wire `filter` JSON (or undefined) ──
 //
 //  Assembles the non-time dim filter for the observations wire param. Sources,
@@ -44,7 +72,8 @@ export function buildObsFilterParam(
   for (const dim of nonTimeDims) {
     const ctxVal = ctx.dims[dim]
     if (ctxVal !== undefined && ctxVal !== '' && ctxVal !== null) {
-      filterRecord[dim] = String(ctxVal)
+      const wire = toWireValue(ctxVal)
+      if (wire !== undefined) filterRecord[dim] = wire
     }
   }
 
@@ -62,7 +91,10 @@ export function buildObsFilterParam(
         const ne = fv as { $ne: unknown; $ctx?: string }
         if (ne.$ctx !== undefined) {
           const val = ctx.dims[ne.$ctx]
-          if (val !== undefined && val !== '' && val !== null) filterRecord[dim] = String(val)
+          if (val !== undefined && val !== '' && val !== null) {
+            const wire = toWireValue(val)
+            if (wire !== undefined) filterRecord[dim] = wire
+          }
         } else {
           // Pure `{$ne}`: fetch the broader set, exclude client-side. Drop any
           // stale ctx-baseline pin so it does not scope the fetch to the excluded
@@ -72,7 +104,10 @@ export function buildObsFilterParam(
       } else if (isObj && '$ctx' in (fv as object)) {
         const ref = (fv as { $ctx: string }).$ctx
         const val = ctx.dims[ref]
-        if (val !== undefined && val !== '' && val !== null) filterRecord[dim] = String(val)
+        if (val !== undefined && val !== '' && val !== null) {
+          const wire = toWireValue(val)
+          if (wire !== undefined) filterRecord[dim] = wire
+        }
       } else if (Array.isArray(fv)) {
         // Multi-value OR-set (kept as an array; empty → dropped, scopes nothing).
         const vals = (fv as Array<string | number>).map((v) => String(v))
@@ -124,7 +159,7 @@ export function resolveFilter(
     const val = resolveRef(fv as CtxRef, { dims: ctx.dims }) as DimVal | undefined
     if (val === '' || val === null || val === undefined) return null         // wildcard
     if (typeof val === 'string' && val.includes(',')) {
-      const parts = val.split(',').filter(Boolean) as DimVal[]
+      const parts = splitMultiValue(val) as DimVal[]           // SSOT with the wire serializer
       return expand && dim ? parts.flatMap((p) => expand(dim, p)) : parts
     }
     return expand && dim ? expand(dim, val) : [val as DimVal]
