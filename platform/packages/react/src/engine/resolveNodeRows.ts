@@ -12,7 +12,7 @@
 //  Canonical target lives in migration/03-pipeline.md.
 //
 
-import { interpretSpec, staticStore, CachedStore, applyEncoding, storeVal, applyPipeline, specDataSource, resolveLocaleString, isTaggedLocaleString } from '@statdash/engine'
+import { interpretSpec, staticStore, CachedStore, applyEncoding, resolveEncodingRefs, storeVal, applyPipeline, specDataSource, resolveLocaleString, isTaggedLocaleString } from '@statdash/engine'
 import type { DataRow, DataStore, EncodingSpec, EngineRow, PipelineContext, RawRow, DataSpec, TransformStep, DimVal } from '@statdash/engine'
 import type { NodeBase, RenderContext }                                                     from './types'
 
@@ -139,7 +139,11 @@ export function resolveBlends(
       ctx.sectionCtx,
       secondaryStore,
     )
+    // AR-36 P0: lower state-bound `{$ctx}` channels before applyEncoding (see
+    // resolveNodeRows). Byte-identical for the bare-string secondary encodings.
     const enc = from.encoding
+      ? resolveEncodingRefs(from.encoding, { dims: ctx.sectionCtx.dims, vars: ctx.vars })
+      : from.encoding
     const resolved = enc
       ? applyEncoding(rawSecondary, enc, (code) => storeVal(secondaryStore, code, ctx.sectionCtx))
       : rawSecondary
@@ -188,7 +192,12 @@ export function resolveNodeRows(node: NodeBase, ctx: RenderContext): DataRow[] {
       interpretSpec(node.data, ctx.sectionCtx, store) as unknown as DataRow[],
       ctx.locale,
     )
-    const enc     = (node.data as { encoding?: EncodingSpec }).encoding
+    const enc0    = (node.data as { encoding?: EncodingSpec }).encoding
+    // AR-36 P0: lower any state-bound `{$ctx}` channel to a concrete field NAME
+    // BEFORE applyEncoding. dims = OLAP coordinate; vars = derived page vars
+    // (both threaded here — the only layer holding them). Bare-string encodings
+    // pass through by reference (byte-identical, FF-ENCODING-POSTEL).
+    const enc     = enc0 ? resolveEncodingRefs(enc0, { dims: ctx.sectionCtx.dims, vars: ctx.vars }) : enc0
     rows = enc
       ? applyEncoding(rawRows as unknown as EngineRow[], enc, (code) => storeVal(store, code, ctx.sectionCtx)) as DataRow[]
       : rawRows

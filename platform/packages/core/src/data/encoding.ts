@@ -17,6 +17,8 @@
 
 import type { DimVal }           from '../sdmx'
 import type { ProvenanceRecord } from '../core/provenance'
+import type { CtxScopeRef, RefServices } from '../ref/ref'
+import { resolveRef }            from '../ref/ref'
 
 // ── EngineRow — neutral output type of interpretSpec ─────────────────
 //
@@ -67,25 +69,43 @@ export interface ChannelDef {
 }
 
 /**
- * A field-bearing encoding channel: a bare field name (today's form) OR an
- * enriched { field, type?, key? } object. Postel: liberal in what we accept.
+ * A field-bearing encoding channel. Three forms, Postel-ordered (liberal accept):
+ *   • a bare field NAME (today's form)                    — byte-identical default
+ *   • an enriched { field, type?, key? } object           — Vega-Lite metadata (R2)
+ *   • a `{ $ctx: key }` STATE ref (CtxScopeRef, AR-36 P0)  — resolves to a field
+ *     NAME at render time from the section context / page vars, so which dim sits
+ *     on a channel can rotate with state (the OLAP pivot). A CtxRef MUST be lowered
+ *     by `resolveEncodingRefs` BEFORE `applyEncoding` — the accessors below treat an
+ *     un-lowered ref as "no field" so a mis-ordered call degrades, never crashes.
+ *
+ * The `$ctx` ref REUSES the one ref taxonomy (ref/ref.ts, R4) — no second vocabulary.
  */
-export type EncodingChannel = string | ChannelDef
+export type EncodingChannel = string | ChannelDef | CtxScopeRef
 
-/** Extract the field name from a channel (bare string OR ChannelDef). */
+/** True when a channel is an un-resolved `{ $ctx: key }` state ref (AR-36 P0). */
+export function isCtxRef(c: EncodingChannel | undefined): c is CtxScopeRef {
+  return typeof c === 'object' && c !== null && '$ctx' in c
+}
+
+/**
+ * Extract the field name from a channel (bare string OR ChannelDef). An un-lowered
+ * `{ $ctx }` ref is NOT a field name → undefined (it must be resolved first via
+ * `resolveEncodingRefs`); a bare string / ChannelDef is byte-identical with pre-P0.
+ */
 export function channelField(c: EncodingChannel | undefined): string | undefined {
   if (c === undefined) return undefined
-  return typeof c === 'string' ? c : c.field
+  if (typeof c === 'string') return c
+  return isCtxRef(c) ? undefined : c.field
 }
 
-/** Extract the explicit measurement type, if the channel declares one. */
+/** Extract the explicit measurement type, if the channel declares one (ChannelDef only). */
 export function channelType(c: EncodingChannel | undefined): MeasurementType | undefined {
-  return typeof c === 'object' && c ? c.type : undefined
+  return typeof c === 'object' && c && !isCtxRef(c) ? c.type : undefined
 }
 
-/** Extract the explicit data-join key field, if the channel declares one. */
+/** Extract the explicit data-join key field, if the channel declares one (ChannelDef only). */
 export function channelKey(c: EncodingChannel | undefined): string | undefined {
-  return typeof c === 'object' && c ? c.key : undefined
+  return typeof c === 'object' && c && !isCtxRef(c) ? c.key : undefined
 }
 
 /**
@@ -253,6 +273,45 @@ export interface DataRow {
   provenance?:  ProvenanceRecord
 }
 
+
+// ── resolveEncodingRefs — state-bound channel pre-pass (AR-36 P0) ─────
+//
+//  The one new seam of the runtime-pivot capability. Lowers any state-bound
+//  `{ $ctx: key }` encoding channel to the CONCRETE field NAME it names, read
+//  from the render context (dims) / page vars — BEFORE `applyEncoding` runs.
+//  After this pass no channel is a CtxRef, so `applyEncoding` is untouched.
+//
+//  Resolution REUSES the one ref dispatcher (`resolveRef`, ref/ref.ts R4) — the
+//  SAME mechanism that resolves `_regionSel`: `$ctx` binds `services.dims`, with
+//  a `$ref` (var-scope) fallback to `services.vars` so a derived page var (e.g.
+//  `_xDim`) resolves too. No second resolver, no dim-name literal here (Law 1:
+//  the pass is dimension-blind — it substitutes whatever field the config named).
+//
+//  Byte-identical (FF-ENCODING-POSTEL): an encoding with NO CtxRef channel is
+//  returned by the SAME reference (fast path, zero allocation) — so every stored
+//  config produces an identical EncodingSpec, hence identical DataRow[].
+//
+//  Only the four FIELD-BEARING channels can be state-bound; the structural /
+//  computed slots (pct, tooltip, id, level, …) are not EncodingChannel.
+const CTX_BINDABLE_CHANNELS = ['label', 'value', 'color', 'series'] as const
+
+export function resolveEncodingRefs(
+  enc:      EncodingSpec,
+  services: RefServices,
+): EncodingSpec {
+  let out: EncodingSpec | undefined
+  for (const k of CTX_BINDABLE_CHANNELS) {
+    const ch = enc[k]
+    if (!isCtxRef(ch)) continue
+    // $ctx → dims (the OLAP coordinate), else $ref → vars (derived page var).
+    // Both routes go through the ONE dispatcher — never a bespoke read.
+    const resolved =
+      resolveRef(ch, services) ?? resolveRef({ $ref: ch.$ctx }, services)
+    out ??= { ...enc }
+    ;(out as unknown as Record<string, EncodingChannel>)[k] = resolved == null ? '' : String(resolved)
+  }
+  return out ?? enc
+}
 
 // ── applyEncoding — Grammar of Graphics field→channel mapping ─────────
 //

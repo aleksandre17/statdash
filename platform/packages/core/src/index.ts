@@ -96,7 +96,8 @@ export { resolveYears, resolveOptions, resolveChips }                    from '.
 export type { EngineRow, EncodingSpec, DataRow,
               MeasurementType, ChannelDef, EncodingChannel }            from './data/encoding'
 export { applyEncoding, channelField, channelType, channelKey,
-         deriveMeasurementType, resolveMeasurementType }               from './data/encoding'
+         deriveMeasurementType, resolveMeasurementType,
+         isCtxRef, resolveEncodingRefs }                               from './data/encoding'
 export type { FieldMeta, FieldType, FieldRole, FieldSchema }            from './data/fieldSchema'
 export { deriveFieldSchema, toFieldMeta, schemasToFieldMeta,
          suggestEncodings }                                            from './data/fieldSchema'
