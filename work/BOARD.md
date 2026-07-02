@@ -8,51 +8,10 @@ _Last updated: 2026-06-24._
 
 ---
 
-## 🎯 RENDER-PIPELINE TARGET BOARD (items 0009–0030) — NEW, build-ready
+## 🎯 RENDER-PIPELINE TARGET epic (items 0009–0042) → **`work/board/render-pipeline.md`**
 
-> SSOT: **`platform/work/SPEC-render-pipeline-target.md`** (+ diagnosis: `render-drift-audit.md`,
-> `effect-variable-architecture-drift.md`, `static-era-regression.md`). All items `backlog` (owner promotes to `ready`).
-> **START HERE:** resolve the 7 DECISION cards (0009–0015, ~2 min each), then build:
-> **C1(0016) → C2(0017) → C4·C5·C6(0018·0019·0020 parallel) → C3(0021) → E1–E8(0022–0029) → FF(0030).**
-> C1+C2 are prerequisites for trustworthy verification of all else.
-> **STANDING DoD** (attached verbatim to every item 0009–0030): result must match `scriness/` but ONLY via
-> highest-concept architecture — no hardcoding/anti-patterns/DRY-violations; declarative/config-driven; conditional
-> logics (visibleWhen/perspective/effects) covered; SSOT; Strangler-refine EXISTING code — never rewrite-from-scratch
-> or hardcode-to-match the screenshot. "Look like the screens" must NEVER be met by dropping quality.
+> This epic now has its OWN board (one-concern-per-file): **[`work/board/render-pipeline.md`](board/render-pipeline.md)** is the single source for the render-pipeline target (decisions O-1…O-12, capabilities C1–C7, elements E1–E9, FF suite, LV live-verify checks). SSOT specs: `platform/work/SPEC-render-pipeline-target.md` + `platform/work/SPEC-render-pipeline-target.DELTA-6-14.md`.
 
-**⚑ DECISIONS FIRST — [OWNER-CONFIRM] O-1…O-7 (P0 · resolve at morning):**
-| Item | Decision | DEFAULT (build unless told) | Blocks |
-|------|----------|-----------------------------|--------|
-| [0009](items/0009-decision-o1-axis-tick-style.md) | O-1 axis-tick style | **Compact** `88.4K`; confirm `ka` glyph | C1 |
-| [0010](items/0010-decision-o2-warm-pivot-transform.md) | O-2 pivot/transform warm | **Nested-query reqs**; name store-hitting pipe ops | C2,E8 |
-| [0011](items/0011-decision-o3-effects-build-vs-defer.md) | O-3 effects now/defer | **Build now** (else `D-EFFECTS`, free later) | C3,E1 |
-| [0012](items/0012-decision-o4-map-ramp-plus-selection.md) | O-4 map ramp | **Always ramp + selection overlay** | C4,E5 |
-| [0013](items/0013-decision-o5-mean-base-year.md) | O-5 mean base year | **Include all N** (alt: N−1) | C5,E1 |
-| [0014](items/0014-decision-o6-component-dimension.md) | O-6 component dim ⚠️**HIGHEST-MATERIAL** | Iterate `measure` by `approach`; **needs code set → database-architect** | C6,E6 |
-| [0015](items/0015-decision-o7-percapita-2014-pipeline-vs-seed.md) | O-7 per-capita 2014=483 | **Pipeline** (C6-d); if gold=483 → **database-architect** | C6,E7 |
-
-> ⚠️ O-6 (0014) + O-7 (0015) may need data/DB input before dependents (0020/0027/0028) CLOSE — flag database-architect early.
-
-**CAPABILITIES then ELEMENTS then LOCK** (Class M=architect/migration mandatory · G=general · all P0–P2 · status `backlog`):
-| Item | Work | Cls | Prio | Depends on |
-|------|------|-----|------|-----------|
-| [0016](items/0016-c1-formatting-ssot.md) | C1 Formatting SSOT (compact + yFormatter) — Drift 1 | M | P0 | 0009 |
-| [0017](items/0017-c2-warm-contract-guard.md) | C2 Warm-contract guard + FF-WARM-COVERS-RENDER | M | P0 | 0010 |
-| [0018](items/0018-c4-choropleth-consolidation.md) | C4 Choropleth consolidation — retire `panels/map` node (Drift 2) | M | P1 | 0012·0016·0017 |
-| [0019](items/0019-c5-mean-kpi-reduction.md) | C5 `mean` KPI + fail-loud CAGR — Drift 3 | M | P1 | 0013·0016·0017 |
-| [0020](items/0020-c6-component-rollup-pinning.md) | C6 Component rollup/pinning + per-capita — Drift 4&5 | M | P1 | 0014·0015·0016·0017 |
-| [0021](items/0021-c3-effects-recovery.md) | C3 Effects recovery (`onEnter`/`onExit`) | M | P2 | 0011·0017 |
-| [0022](items/0022-e1-kpi-strip.md) | E1 KPI strip (per-perspective 4-card) | G | P2 | 0016·0017·0019·0021 |
-| [0023](items/0023-e2-region-table.md) | E2 Region table + bars (C6 reference) | G | P2 | 0016·0017 |
-| [0024](items/0024-e3-gdp-bar-chart.md) | E3 GDP bar chart (compact axis) | G | P2 | 0016·0017 |
-| [0025](items/0025-e4-sectoral-stacked-area.md) | E4 Sectoral stacked-area (verify warmed) | G | P2 | 0016·0017 |
-| [0026](items/0026-e5-choropleth-map.md) | E5 Choropleth map | G | P2 | 0016·0017·0018 |
-| [0027](items/0027-e6-gdp-component-charts.md) | E6 GDP component charts (blocked on O-6) | G | P2 | 0016·0017·0020·0014 |
-| [0028](items/0028-e7-growth-contribution-percapita.md) | E7 Growth + contribution + per-capita | G | P2 | 0016·0017·0020 |
-| [0029](items/0029-e8-sna-pivot-table.md) | E8 SNA pivot (warm-coverage verify) | G | P2 | 0016·0017·0010 |
-| [0030](items/0030-ff-suite-lock.md) | FF suite — CI lock (each FF ships WITH its capability) | M | P1 | 0016–0021 |
-
-> WIP limit (PROCESS.md): in-progress ≤ 2. backlog→ready is the owner's call.
 ---
 
 ## ✅ Completed (P1–P3)
