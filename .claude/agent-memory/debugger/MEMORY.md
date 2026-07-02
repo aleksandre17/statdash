@@ -8,6 +8,8 @@
 - [CAGR span + treemap render](project_cagr_span_and_treemap_render.md) — regional current CAGR 0.0% (range-only fromYear/toYear cleared in year mode → new span-derived hidden-param pattern) · GDP income treemap blank (render-wrapper had no height + empty-string color kept by `??` not `||`)
 - [LocaleString compose boundary](project_localestring_compose_boundary.md) — "[object Object]" leaks: String(LocaleString) OUTSIDE row-cell resolve (template/concat ops, resolveOptions, hardcoded-en table headers) → composeLocale-and-tag in core + useResolveLocaleSafe in React shells
 - [Choropleth flat + donut monochrome](project_choropleth_flat_and_donut_monochrome.md) — geograph GeoMap painted --color-accent on every region (no value→color scale ever existed; buildColorScale lives only in legacy panels/map stub) + donut grey (thresholdColor??muted, treemap already distributed chartPalette) → new token-derived sequentialRamp+quantileColors in styles
+- [GDP dropped sections vs regional intact](project_gdp_dropped_sections_vs_regional_intact.md) — owner's "missing regional top chart" is really GDP structural+noe-share dropped in 52738a3 (dangling "structural" nav anchor); regional fully intact
+- [Multi-region comma-geo wire](project_multiregion_comma_geo_wire.md) — live regional multi-select broken: buildObsFilterParam sends geo:"R2,R3" as one literal → 0 rows (API wants array); sectors-multi collapses to region-total bar. Bundle NEW, KPI year-reactivity OK.
 
 
 ---

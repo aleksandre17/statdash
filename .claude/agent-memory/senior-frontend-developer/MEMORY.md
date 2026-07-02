@@ -67,3 +67,8 @@
 - [Panel live canvas](project_panel_live_canvas.md) — N35 mounts real NodePageRenderer as Constructor canvas; react/plugins undeclared host deps panel must provide
 - [Theming seam](project_theming_seam.md) — data-theme attribute + semantic-token override seam in @statdash/styles; ctx.theme threading
 - [No registerSlice in engine tests](feedback_engine_react_no_registerslice_in_tests.md) — register node types via nodeRegistry.register directly; registerSlice pulls i18next (app-tier)
+
+## Auto-relocated (memory-home-guard — reconcile into a topic section)
+- [Geostat tenant dark-mode cascade gap](project_geostat_tenant_dark_cascade_gap.md) — a tenant [data-tenant] block can pin a Tier-2 role UNCONDITIONALLY and beat [data-theme=dark] via source order (equal specificity); root-caused the hero white-text bug (PINNED_NO_FLIP) + a broader geostat accent/trend AA failure (FF-TENANT-DARK-COMPLETE)
+- [CSS fitness comment-stripping gotcha](css_fitness_comment_stripping_gotcha.md) — parseBlockAt()-style regexes in tokens.parity.test.ts/tenant-theme.fitness.test.ts MUST strip CSS comments first or a rationale comment naming a token+colon produces a false-positive parsed entry
+- [Windows long-path vitest worktree block](windows_longpath_vitest_worktree_block.md) — vitest CLI cannot start at all in deep `.claude/worktrees/agent-<id>/platform` paths (Node ESM >260-char MAX_PATH bug); universal/pre-existing; verify fitness logic via a plain-node replica script instead

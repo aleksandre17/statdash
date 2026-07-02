@@ -1,16 +1,18 @@
 ---
 name: parity-render-regressions
-description: Two app-layer regressions on the API arch (geostat front) that block old-vs-new render parity — kpi-strip querySync-cold crash + observations filter not applied
+description: RESOLVED — the two render-parity regressions (kpi-strip querySync-cold crash + observations filter) are fixed on main; incl. the CORRECT observations wire contract
 metadata:
   type: project
 ---
 
-The geostat front on the API arch (single-origin, ApiStore-backed) has two regressions that BLOCK old-vs-new render parity. Observed 2026-06-26 deploying parity fix `69cdef8` to live demo (:3002 new vs :5171 old static reference). `69cdef8` (ACL boundary fix) did NOT resolve either.
+BOTH render-parity regressions are RESOLVED as of the `feat/render-pipeline-parity` build (merged to main `2cdf190`, deployed live 2026-07-02, verified in a real browser + against the live API). Kept because it corrects a common mis-test.
 
-**(A) kpi-strip / dynamics render-path crash — sync read on async-only store.**
-Console: `ApiStore.querySync called cold (cache miss). This store has caps.sync=false — use queryAsync. cacheKey={dataset:GDP_ANNUAL,from:2010,to:2010,filter:{approach:_Z}}` → `[renderNode] shell crashed {type: kpi-strip}`. Visual: GDP/Accounts dynamics mode shows a red "Failed to load component" box where the KPI strip is, and the dynamics charts render "No data". The renderer calls the SYNC query path against a store whose `caps.sync=false`; on a cold cache it throws instead of awaiting. Fix = route kpi-strip + dynamics through `queryAsync` (prime cache before sync read, or make the shell await). Data is NOT the problem — the rows exist.
+**Why:** the earlier "blocker" description tested the WRONG wire form and mis-attributed a fix. The renderer's ApiStore does NOT send `?approach=_Z` / repeated `?geo=` — it sends a SINGLE `filter=<JSON>` param.
 
-**(B) /api/stats/observations ignores `approach=` and repeated `geo=` filters.**
-`?dataset=GDP_ANNUAL&approach=_Z` returns rows still keyed approach=PROD/INC (filter not applied). `?dataset=REGIONAL_GVA&geo=R2&geo=R6` returns 1000 rows across ALL geos (R2..R12,_T), not the R2+R6 OR subset — i.e. the multi-region OR query does NOT work; it returns the unfiltered, 1000-row-capped set. The `_Z` aggregate data DOES exist in the cube (distinct GDP approach set = EXP/INC/PROD/_Z), so this is a query-builder defect in the observations route, not missing data.
+**How to apply / the truths that matter:**
 
-**How to apply:** when verifying render parity, do NOT trust svg-count/obsTotal metrics alone — visually confirm both modes (current + "დინამიკა" dynamics). A green-ish svg count can coexist with a crashed kpi-strip and No-data dynamics panels. The probe `/tmp/compare-probe.js` (geostat-deploy) captures both modes; run via mcr.microsoft.com/playwright:v1.46.1-jammy with NODE_PATH=/pwlib (playwright npm pkg installed at /tmp/pw-lib, browsers in image). Related: [[canonical-e2e-pipeline]], [[seed-dsd-divergence]].
+**(A) kpi-strip / dynamics querySync-cold crash — FIXED.** Fix = the "superset point-read" design (`packages/core/src/data/store-api.ts` + `store-api-pointread.ts`, commit d705222). `querySync` for `val`/`valAt` now resolves from an already-cached SUPERSET slice via `resolveCachedPointRead` (matching+summing) instead of cold-throwing; the warm set (`kpi.ts`) is primed as the EXACT superset the sync render reads. Live proof: GDP/accounts dynamics render KPI values with zero pageerrors, no "Failed to load component", no "No data".
+
+**(B) observations filter — WORKS; the earlier test used a non-existent param form.** The route reads ONE `filter=<JSON>` param (scalar → containment `@>`, JSON array → `= ANY` OR-membership), NOT `?approach=`/`?geo=`. Verified live: `filter={"approach":"_Z"}` → only `_Z`; `filter={"geo":["R2","R6"]}` → only R2,R6. `$ne` EXCLUSION is wire-inexpressible → resolved CLIENT-side in `ApiStore.applyClientFilter` (SSOT `matchesFilter`), and folded into the cache key (`cacheKeyFor`) so two slices with different `$ne` don't collide. So a raw `GET .../observations?approach=_Z` returning all approaches is CORRECT (the route never sees that param) — do NOT re-test the query-string form; test the `filter=` JSON form.
+
+**How to verify render parity (updated):** metrics alone still lie — but the server has a faithful render path now: `mcr.microsoft.com/playwright:v1.46.1-jammy` + playwright pkg at `/tmp/pw-lib` (set `NODE_PATH=/pwlib/node_modules`, run `--network host` to reach `127.0.0.1:3002`). A probe that extracts rendered body text asserts the real "as it was" signals (`[object Object]` count, "Failed to load component", "No data", choropleth `svg path[fill]` distinct-color count, negative-sign, GDP/percap tokens). This DOES render the Vite SPA faithfully (svg 22-24, real text) — unlike the zenika/alpine-chrome container in [[live-deploy-mechanism]]. Golden anchors: GDP 2024=93022.3, per-capita 2014=4829.9, real-growth 2020=-6.291, REGIONAL_GVA choropleth spans ~2336..42621 (16 distinct fills), 12 regions, GDP approaches EXP/INC/PROD/_Z. Related: [[canonical-e2e-pipeline]].
