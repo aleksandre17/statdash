@@ -31,6 +31,7 @@
 - [converge maximal target first](feedback_converge_maximal_target_first.md) — anti-rework: converge the COMPLETE maximal best-concept target (one spec, one owning architect, owner sign-off) BEFORE building; briefing for the immediate/partial fix causes the rework loop
 - [lead methodology mastery](feedback_lead_methodology_mastery.md) — STANDING duty: proactively study communication + research best methodologies + always lead with the best, DYNAMICALLY (toolkit, not rigid protocol); elicit complete intent upfront; self-source what's needed
 - [reference is result not impl](feedback_reference_result_not_impl.md) — a screenshot/reference = the RESULT to match, never the implementation; reach the look via clean canonical architecture (DRY/SSOT, no hardcode/anti-pattern), refine-existing not rewrite; "look like the screens" never lowers quality
+- [proactive innovation mandate](feedback_proactive_innovation_mandate.md) — STANDING: be initiator/leader/innovator; unprompted propose forward-looking improvements + best-in-class from reference platforms; see the final result steps ahead; ambitious changes OK — architecture adapts to the vision; register visions, don't derail the build
 
 ## Project — operational
 - [server deploy build context](project_server_deploy_build_context.md) — server builds from a git clone tracking only `main`; push + fetch-by-name before expecting a rebuild to include a local fix; live-cutover runbook
