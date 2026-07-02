@@ -50,7 +50,7 @@ function loadFixture(code: string): SheetMatrices {
 // The verified-on-disk obs counts (ADR §2, probed). The regression anchor.
 const EXPECTED = [
   { code: 'ACCOUNTS_SEQUENCE', obs: 415, dims: ['time', 'account', 'side', 'measure'] },
-  { code: 'GDP_ANNUAL',        obs: 288, dims: ['time', 'approach', 'measure', 'geo'] },
+  { code: 'GDP_ANNUAL',        obs: 384, dims: ['time', 'approach', 'measure', 'geo'] },
   { code: 'REGIONAL_GVA',      obs: 1554, dims: ['time', 'geo', 'sector', 'measure'] },
 ] as const
 

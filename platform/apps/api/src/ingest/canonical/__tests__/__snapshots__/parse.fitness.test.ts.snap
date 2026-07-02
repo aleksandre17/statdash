@@ -49,7 +49,7 @@ exports[`canonical parser — real fixtures (F-1 purity, F-5 Law-1) > ACCOUNTS_S
 
 exports[`canonical parser — real fixtures (F-1 purity, F-5 Law-1) > GDP_ANNUAL > F-1: bronze contract is stable (snapshot of the first/last obs + counts) 1`] = `
 {
-  "classifierCount": 21,
+  "classifierCount": 28,
   "firstClassifier": {
     "code": "PROD",
     "dimCode": "approach",
@@ -76,19 +76,17 @@ exports[`canonical parser — real fixtures (F-1 purity, F-5 Law-1) > GDP_ANNUAL
   },
   "lastObs": {
     "dimKey": {
-      "approach": "PROD",
+      "approach": "_Z",
       "geo": "GE",
-      "measure": "services",
+      "measure": "non-observed-economy-share",
     },
-    "obsAttribute": {
-      "contribution_role": "add",
-    },
+    "obsAttribute": {},
     "obsStatus": "P",
-    "obsValue": 66877.29711546733,
-    "rowIndex": 288,
+    "obsValue": 12.4,
+    "rowIndex": 384,
     "timePeriod": "2025",
   },
-  "obsCount": 288,
+  "obsCount": 384,
 }
 `;
 
