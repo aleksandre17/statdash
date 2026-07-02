@@ -111,6 +111,7 @@ function GeographControl({ def, ctx, vs, children }: Pick<ShellProps<GeographNod
             isoField={def.isoField}
             geoCodeMap={def.geoCodeMap}
             labelOverrides={labelOverrides}
+            occupiedIso={def.occupiedIso}
             unit={resolve(def.unit)}
             initialCenter={def.initialCenter}
             initialZoom={def.initialZoom}

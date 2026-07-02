@@ -284,6 +284,13 @@
   --color-accent-secondary: var(--teal-600);
   --color-accent-ring:      color-mix(in srgb, var(--color-accent) 15%, transparent);
 
+  /* Geo-map status fills — orthogonal to the choropleth VALUE ramp: SELECTION paints a
+     distinct highlight hue (stands out from the blue ramp AND the occupied red, so a
+     selected region is unmistakable), OCCUPIED territories paint a semantic red. Both
+     theme-flip; consumed by the geograph featureStyle (occupied > selected > ramp). */
+  --color-geo-selected: #e8a33d;
+  --color-geo-occupied: var(--color-danger-fg);
+
   /* Accent chip (pill: tinted bg + slightly stronger tinted border, accent text).
      bg reuses --color-accent-muted; the chip border is a distinct, slightly more
      saturated tint of the accent family — a tenant theme rebinds it. */
@@ -534,6 +541,8 @@
     --color-accent-hover:       #6bb6e8;
     --color-accent-bg:          #17293b;
     --color-accent-secondary:   #52b9a0;
+    --color-geo-selected:       #f0b64f;
+    --color-geo-occupied:       var(--color-danger-fg);
     --color-accent-chip-border: #26425c;
 
     /* --color-heading-display / -muted: DELIBERATELY absent here — pinned,
@@ -663,6 +672,8 @@
   --color-accent-hover:       #6bb6e8;
   --color-accent-bg:          #17293b;
   --color-accent-secondary:   #52b9a0;
+  --color-geo-selected:       #f0b64f;
+  --color-geo-occupied:       var(--color-danger-fg);
   --color-accent-chip-border: #26425c;
 
   /* --color-heading-display / -muted: DELIBERATELY absent here — pinned,

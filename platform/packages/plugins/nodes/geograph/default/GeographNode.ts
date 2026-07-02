@@ -24,6 +24,9 @@ export interface GeographNode extends NodeBase {
    * active locale by the shell before it reaches the (locale-agnostic) GeoMap.
    */
   labelOverrides?:  Record<string, LocaleString>
+  /** ISO codes of occupied territories — painted the semantic occupied red (config-declared,
+   *  agnostic: the engine never hardcodes which regions are occupied). */
+  occupiedIso?:     string[]
   /** Unit suffix for region tooltips — tenant content (the measure's unit). LocaleString. */
   unit?:            LocaleString
   /** Initial map viewport before FitBounds reframes to the data extent. */

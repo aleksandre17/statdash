@@ -3635,6 +3635,7 @@
                     "en": "Occupied territory"
                   }
                 },
+                "occupiedIso": [ "GE-AB", "GE-OS" ],
                 "maxSelect": 10,
                 "multiSelect": true,
                 "on": [

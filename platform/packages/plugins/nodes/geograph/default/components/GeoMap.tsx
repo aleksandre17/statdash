@@ -30,6 +30,12 @@ export interface GeoMapProps {
   geoCodeMap:      Record<string, string>
   labelOverrides?: Record<string, string>
   /**
+   * ISO codes of OCCUPIED territories — painted the semantic occupied red (config-
+   * declared, agnostic: the engine never hardcodes which regions are occupied). Keyed
+   * by the feature ISO (pre geoCodeMap), so it matches even regions with no data row.
+   */
+  occupiedIso?:    string[]
+  /**
    * Unit suffix appended to the value in the region tooltip (e.g. the measure's
    * resolved unit). Tenant content — supplied by config/data, never hardcoded.
    * Absent → the value renders bare. The pct suffix '%' is a generic format token.
@@ -56,6 +62,7 @@ interface GeoFeatureProps {
 // orthogonal (Mapbox / Vega convention). Fill opacity is high so the ramp reads.
 const FILL_DEFAULT    = 0.9
 const FILL_SELECTED   = 1
+const FILL_OCCUPIED   = 0.85
 const WEIGHT_DEFAULT  = 1
 const WEIGHT_SELECTED = 2.5
 
@@ -68,10 +75,20 @@ const strokeColor = () => cssVar('--color-surface', '#fff')
 
 // ── Style helpers ──────────────────────────────────────────────────────
 
-function featureStyle(fill: string, selected: boolean): PathOptions {
+// SELECTION + OCCUPIED are distinct FILL hues (token-derived, theme-flipping), kept
+// orthogonal to the choropleth value ramp: an OCCUPIED territory always reads red
+// (precedence over selection — it's a permanent status, not a transient pick), a
+// SELECTED region reads the distinct highlight hue so the pick is unmistakable, and
+// everything else keeps its value-ramp shade. Leaflet needs a literal color → cssVar().
+function featureStyle(fill: string, selected: boolean, occupied: boolean): PathOptions {
+  const fillColor = occupied
+    ? cssVar('--color-geo-occupied', '#dc2626')
+    : selected
+      ? cssVar('--color-geo-selected', '#e8a33d')
+      : fill
   return {
-    fillColor:   fill,
-    fillOpacity: selected ? FILL_SELECTED : FILL_DEFAULT,
+    fillColor,
+    fillOpacity: occupied ? FILL_OCCUPIED : selected ? FILL_SELECTED : FILL_DEFAULT,
     color:       strokeColor(),
     weight:      selected ? WEIGHT_SELECTED : WEIGHT_DEFAULT,
   }
@@ -101,6 +118,7 @@ export function GeoMap({
   isoField,
   geoCodeMap,
   labelOverrides,
+  occupiedIso,
   unit,
   initialCenter = WORLD_CENTER,
   initialZoom = WORLD_ZOOM,
@@ -119,6 +137,9 @@ export function GeoMap({
   // onEachFeature/style resolve from the feature ISO. See ./choropleth (SSOT).
   const colorByGeo = useMemo(() => choroplethColors(rows), [rows])
   const colorFor = (geoId: string) => colorByGeo.get(geoId) ?? accentFill()
+  // OCCUPIED is keyed by the feature ISO (pre geoCodeMap) so it flags territories with
+  // no data row too. Config-declared set — the engine stays agnostic (Law 1).
+  const occupiedSet = useMemo(() => new Set(occupiedIso ?? []), [occupiedIso])
 
   useEffect(() => {
     const worker = new Worker(
@@ -170,7 +191,7 @@ export function GeoMap({
         }
       },
       mouseout(e) {
-        ;(e.target as L.Path).setStyle(featureStyle(colorFor(geoId), selectedRef.current.includes(geoId)))
+        ;(e.target as L.Path).setStyle(featureStyle(colorFor(geoId), selectedRef.current.includes(geoId), occupiedSet.has(iso)))
       },
       click() {
         if (!geoId) return
@@ -199,7 +220,7 @@ export function GeoMap({
           style={(feature) => {
             const iso   = String(feature?.properties?.[isoField] ?? '')
             const geoId = geoCodeMap[iso]
-            return featureStyle(colorFor(geoId), selectedGeos.includes(geoId))
+            return featureStyle(colorFor(geoId), selectedGeos.includes(geoId), occupiedSet.has(iso))
           }}
           onEachFeature={onEachFeature}
         />
