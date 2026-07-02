@@ -50,6 +50,16 @@ export interface Indicator {
 //
 export interface SectionContext {
   dims:     Record<string, DimVal>
+  /**
+   * Per-dim value EXCLUSIONS ($ne), applied at val/obs MATCH time — never in the
+   * wire fetch, which stays a covering superset (so warm↔read cache identity is
+   * unaffected: the requirement is still keyed on `dims` alone). Generic over dims
+   * (Law 1 — no privileged dimension). Populated by withFilter (kpi.ts) from a KPI
+   * filter's `$ne`, honored by the val matcher (matchedValues); an absent slot is the
+   * no-exclusion default. Lets a wildcard coordinate sum a dimension MINUS an
+   * aggregate row (e.g. sum leaf regions, drop the `_T` national-total row).
+   */
+  exclude?: Record<string, DimVal[]>
   /** Active UI locale — ExternalStore passes as ?lang= query param (Phase 2). Engine never reads. */
   locale?:  string
   /**

@@ -49,11 +49,16 @@ function resolveTime(ref: TimeRef | undefined, ctx: SectionContext): number {
 // the read-side twin of the store's resolveFilter `$ctx` handling — a KPI filter
 // dim can now scope to the selection instead of pinning a literal.
 function resolveFilterVal(v: DimFilter[string], ctx: SectionContext): DimVal | '' {
-  if (v !== null && typeof v === 'object' && '$ctx' in v) {
-    const ref = v as DimFilterRef
-    const sel = ctx.dims[ref.$ctx]
-    if (sel !== '' && sel !== null && sel !== undefined) return sel as DimVal
-    return ref.default ?? ''
+  if (v !== null && typeof v === 'object') {
+    if ('$ctx' in v) {
+      const ref = v as DimFilterRef
+      const sel = ctx.dims[ref.$ctx]
+      if (sel !== '' && sel !== null && sel !== undefined) return sel as DimVal
+      return ref.default ?? ''
+    }
+    // A bare `{$ne}` (no positive $ctx) is a pure exclusion → wildcard POSITIVE; the
+    // exclusion itself is collected by withFilter and applied at match time.
+    if ('$ne' in v) return ''
   }
   return v as DimVal
 }
@@ -61,13 +66,22 @@ function resolveFilterVal(v: DimFilter[string], ctx: SectionContext): DimVal | '
 function withFilter(ctx: SectionContext, filter?: DimFilter): SectionContext {
   if (!filter) return ctx
   const dims = { ...ctx.dims }
+  let exclude: Record<string, DimVal[]> | undefined
   for (const [k, v] of Object.entries(filter)) {
     const rv = resolveFilterVal(v, ctx)
     // '' / null / undefined — wildcard: drop the dim from ctx so val() sums over it.
     if (rv === '' || rv === null || rv === undefined) delete dims[k]
     else                                              dims[k] = rv
+    // `$ne` — a CLIENT-SIDE exclusion applied at val match time, kept SEPARATE from
+    // the positive coordinate so a wildcard fallback still sums the whole dim MINUS the
+    // excluded aggregate row (e.g. sum leaf regions, drop `_T`). When the $ctx pin IS
+    // populated (State B), the positive coordinate already excludes `_T`, so this is a
+    // harmless no-op. The wire fetch is unchanged (covering superset) — warm↔read safe.
+    if (v !== null && typeof v === 'object' && '$ne' in v && (v as DimFilterRef).$ne !== undefined) {
+      (exclude ??= {})[k] = [(v as DimFilterRef).$ne as DimVal]
+    }
   }
-  return { ...ctx, dims }
+  return exclude ? { ...ctx, dims, exclude } : { ...ctx, dims }
 }
 
 const fmtKpiPct = (n: number): string => n.toFixed(1)

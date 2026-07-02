@@ -30,8 +30,16 @@ export type TimeRef = number | CtxRef
  * national total when nothing is selected — `{ $ctx:'geo', default:'_T' }`.
  * Resolved by withFilter (kpi.ts) through the SAME path the warm extractor uses,
  * so warm === read holds.
+ *
+ * `$ne` — an optional client-side EXCLUSION (the same operator the obs/query path
+ * carries) applied at val match time, never in the wire fetch (which stays a
+ * covering superset). It lets a wildcard fallback sum a dimension MINUS an
+ * aggregate row — `{ $ctx:'geo', $ne:'_T' }` sums the leaf regions but drops the
+ * `_T` national-total row, so State A (no selection) yields the national total ONCE
+ * instead of double-counting `_T + Σleaves`, AND still resolves per-sector (where no
+ * `_T` row exists) by summing leaves. Mirrors the regions-bar/sectors-multi binding.
  */
-export type DimFilterRef = { $ctx: string; default?: DimVal }
+export type DimFilterRef = { $ctx: string; default?: DimVal; $ne?: DimVal }
 
 export type DimFilter = Record<string, DimVal | DimFilterRef>
 

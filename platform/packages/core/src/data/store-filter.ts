@@ -186,11 +186,22 @@ export function matchedValues(
   code:       string,
   coordinate: Record<string, DimVal>,
   expand?:    LeafFn,
+  exclude?:   Record<string, DimVal[]>,
 ): number[] {
   const out: number[] = []
   for (const o of rows) {
     if (String(o[MEASURE_DIM] ?? '') !== code) continue
     if (Number(o['isCarryForward'] ?? 0) === 1) continue
+    // `$ne` exclusions — a row whose value at an excluded dim is in the reject set is
+    // dropped (e.g. drop the `_T` aggregate so a wildcard geo sums only leaf regions).
+    if (exclude !== undefined) {
+      let excluded = false
+      for (const dim in exclude) {
+        const ov = o[dim]
+        if (ov !== undefined && matchesLeaves(exclude[dim], ov)) { excluded = true; break }
+      }
+      if (excluded) continue
+    }
     let ok = true
     for (const [dim, val] of Object.entries(coordinate)) {
       if (val === '' || val === null || val === undefined) continue
