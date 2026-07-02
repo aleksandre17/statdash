@@ -188,16 +188,25 @@ describe('regional cross-filter linkage web (committed provisioning)', () => {
     expect(geo?.$ne, 'excludes the _T national-aggregate row').toBe('_T')
   })
 
-  // ── FF-REGIONAL-KPI-SECTOR-DEFAULT ──────────────────────────────────────────
-  //  A regional KPI geo filter must fall back to a WILDCARD ('' → val sums over geo =
-  //  national), never the '_T' aggregate code. With '_T' a sector-select (no region)
-  //  read the empty `geo=_T × sector=X` cell → 0; the wildcard sums all regions at
-  //  that sector = the national-for-that-sector value.
-  it('FF-REGIONAL-KPI-SECTOR-DEFAULT: every $ctx:geo ref with a default falls back to wildcard, not _T', () => {
-    const geoRefs = findAll(regional.config, (n) => n.$ctx === 'geo' && 'default' in n)
-    expect(geoRefs.length, 'the regional KPIs carry $ctx:geo defaults').toBeGreaterThan(0)
+  // ── FF-REGIONAL-KPI-GEO-BINDING ─────────────────────────────────────────────
+  //  A regional KPI geo filter must resolve to the CONSTITUENT leaf regions, never
+  //  the '_T' aggregate row and never a bare wildcard default. Binding
+  //  {$ctx:geo, $ne:'_T'} achieves the correct value in EVERY state with ONE
+  //  expression (mirrors FF-COMPARISON-SCOPES-TO-SELECTION on regions-bar):
+  //   • no selection   → Σ of the 11 leaf regions = national, ONCE. A bare wildcard
+  //     default ('') sums _T + leaves in the live data → the 2× double-count (161766);
+  //     a '_T' default reads only the aggregate row (correct here but wrong below).
+  //   • sector-select  → Σ of all leaf regions AT that sector = national-for-sector;
+  //     a '_T' default would read the empty `geo=_T × sector=X` cell → 0.
+  //   • region-select  → the selected regions ($ctx:geo overrides).
+  it('FF-REGIONAL-KPI-GEO-BINDING: regional $ctx:geo refs bind $ne:_T (constituent regions), never a wildcard/_T default', () => {
+    const geoRefs = findAll(regional.config, (n) => n.$ctx === 'geo')
+    expect(geoRefs.length, 'the regional config carries $ctx:geo refs').toBeGreaterThan(0)
     for (const r of geoRefs) {
-      expect(r.default, 'geo default is a wildcard aggregate, not the _T dead cell').toBe('')
+      // the wildcard/'_T' defaults were superseded by the $ne:'_T' constituent-regions binding
+      expect('default' in r, `$ctx:geo ref must bind $ne:'_T', not default:'${r.default}'`).toBe(false)
     }
+    const neRefs = geoRefs.filter((r) => r.$ne === '_T')
+    expect(neRefs.length, 'regional geo refs use the $ne:_T constituent-regions binding').toBeGreaterThan(0)
   })
 })
