@@ -41,7 +41,8 @@ const PAGES: GoldenDomain[] = ['gdp', 'accounts', 'regional']
 const EXPECTED_SLOTS: Record<GoldenDomain, string[]> = {
   gdp: [
     'production:donut', 'expenditure:contribution', 'gdp-dynamics:combo',
-    'per-capita-dynamics:line', 'income:treemap', 'growth-dynamics:bar',
+    'per-capita-dynamics:line', 'income:treemap', 'structural:donut',
+    'growth-dynamics:bar', 'noe-share:bar',
   ],
   accounts: ['sna-hero:hbar-diverging', 'sna-hero-range:bar'],
   regional: [

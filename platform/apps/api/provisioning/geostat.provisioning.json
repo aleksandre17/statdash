@@ -2238,6 +2238,157 @@
             "view": {
               "visibleWhen": {
                 "op": "perspective-is",
+                "perspective": "year"
+              }
+            },
+            "children": [
+              {
+                "type": "section",
+                "id": "structural",
+                "color": "#F4A261",
+                "title": {
+                  "ka": "მთლიანი ძირითადი კაპიტალის ფორმირება აქტივების ტიპების მიხედვით",
+                  "en": "Gross fixed capital formation by asset type"
+                },
+                "fieldConfig": {
+                  "unit": {
+                    "ka": "მლნ ₾",
+                    "en": "GEL mn"
+                  }
+                },
+                "view": {
+                  "subtitle": {
+                    "ka": "{time} · წილი, %",
+                    "en": "{time} · share, %"
+                  }
+                },
+                "data": {
+                  "type": "query",
+                  "query": {
+                    "measure": "*",
+                    "filter": {
+                      "geo": "GE",
+                      "approach": "GFCF",
+                      "time": {
+                        "$ctx": "time"
+                      }
+                    }
+                  },
+                  "pipe": [
+                    {
+                      "op": "aggregate",
+                      "by": [
+                        "measure",
+                        "time"
+                      ],
+                      "measure": "value",
+                      "agg": "sum"
+                    },
+                    {
+                      "op": "lookup",
+                      "key": "measure",
+                      "from": {
+                        "$d": "measure"
+                      },
+                      "fields": [
+                        "label",
+                        "color"
+                      ]
+                    },
+                    {
+                      "op": "sort",
+                      "by": "value",
+                      "dir": "desc"
+                    }
+                  ],
+                  "encoding": {
+                    "label": "label",
+                    "value": "value",
+                    "color": "color",
+                    "pct": {
+                      "sumOf": "value"
+                    }
+                  }
+                },
+                "children": [
+                  {
+                    "type": "wrap",
+                    "styles": {
+                      "aspectRatio": {
+                        "default": "16 / 9",
+                        "sm": "4 / 3"
+                      }
+                    },
+                    "children": [
+                      {
+                        "type": "chart",
+                        "chartType": "donut",
+                        "centerLabel": {
+                          "ka": "ჯამი",
+                          "en": "Total"
+                        },
+                        "label": {
+                          "ka": "ძირითადი კაპიტალის სტრუქტურა — % ჯამიდან",
+                          "en": "Fixed capital structure — % of total"
+                        },
+                        "view": {
+                          "role": "chart",
+                          "label": {
+                            "ka": "დიაგრამა",
+                            "en": "Chart"
+                          }
+                        }
+                      },
+                      {
+                        "type": "table",
+                        "color": "#F4A261",
+                        "columns": [
+                          {
+                            "key": "value",
+                            "label": {
+                              "ka": "მლნ ₾",
+                              "en": "GEL mn"
+                            }
+                          },
+                          {
+                            "key": "pct",
+                            "label": {
+                              "ka": "წილი",
+                              "en": "Share"
+                            },
+                            "format": "pct",
+                            "bar": {
+                              "max": 100
+                            }
+                          }
+                        ],
+                        "transforms": [
+                          {
+                            "op": "sort",
+                            "by": "value",
+                            "dir": "desc"
+                          }
+                        ],
+                        "view": {
+                          "role": "table",
+                          "label": {
+                            "ka": "ცხრილი",
+                            "en": "Table"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "grid",
+            "templateColumns": "repeat(auto-fit, minmax(min(100%, 26rem), 1fr))",
+            "view": {
+              "visibleWhen": {
+                "op": "perspective-is",
                 "perspective": "range"
               }
             },
@@ -2334,6 +2485,119 @@
                               "en": "%"
                             },
                             "format": "sign_pct"
+                          }
+                        ],
+                        "transforms": [
+                          {
+                            "op": "sort",
+                            "by": "label",
+                            "dir": "asc"
+                          }
+                        ],
+                        "view": {
+                          "role": "table",
+                          "label": {
+                            "ka": "ცხრილი",
+                            "en": "Table"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "section",
+                "id": "noe-share",
+                "color": "#6B7B8D",
+                "title": {
+                  "ka": "დაუკვირვებადი ეკონომიკის წილი მთლიან დამატებულ ღირებულებაში",
+                  "en": "Non-observed economy share in total gross value added"
+                },
+                "view": {
+                  "subtitle": {
+                    "ka": "{fromYear}–{toYear} · % · მიმდინარე ფასებში",
+                    "en": "{fromYear}–{toYear} · % · current prices"
+                  },
+                  "styles": {
+                    "height": "16:9"
+                  }
+                },
+                "data": {
+                  "type": "query",
+                  "query": {
+                    "measure": "*",
+                    "filter": {
+                      "geo": "GE",
+                      "approach": "_Z",
+                      "measure": "non-observed-economy-share"
+                    }
+                  },
+                  "fromDim": "fromYear",
+                  "toDim": "toYear",
+                  "pipe": [
+                    {
+                      "op": "sort",
+                      "by": "time",
+                      "dir": "asc"
+                    }
+                  ],
+                  "encoding": {
+                    "label": "time",
+                    "value": "value"
+                  }
+                },
+                "children": [
+                  {
+                    "type": "wrap",
+                    "styles": {
+                      "aspectRatio": {
+                        "default": "16 / 9",
+                        "sm": "4 / 3"
+                      }
+                    },
+                    "children": [
+                      {
+                        "type": "chart",
+                        "chartType": "bar",
+                        "fieldConfig": {
+                          "unit": {
+                            "ka": "%",
+                            "en": "%"
+                          }
+                        },
+                        "label": {
+                          "ka": "დაუკვირვებადი ეკონომიკის წილი, %",
+                          "en": "Non-observed economy share, %"
+                        },
+                        "axes": {
+                          "y": {
+                            "decimals": 1
+                          }
+                        },
+                        "view": {
+                          "role": "chart",
+                          "label": {
+                            "ka": "დიაგრამა",
+                            "en": "Chart"
+                          }
+                        }
+                      },
+                      {
+                        "type": "table",
+                        "colLabel": {
+                          "ka": "წელი",
+                          "en": "Year"
+                        },
+                        "color": "#6B7B8D",
+                        "columns": [
+                          {
+                            "key": "value",
+                            "label": {
+                              "ka": "%",
+                              "en": "%"
+                            },
+                            "format": "pct"
                           }
                         ],
                         "transforms": [
@@ -2898,7 +3162,7 @@
                 },
                 "trend": {
                   "filter": {
-                    "geo": { "$ctx": "geo", "default": "" },
+                    "geo": { "$ctx": "geo", "$ne": "_T" },
                     "measure": "GVA",
                     "sector": { "$ctx": "sector", "default": "_T" }
                   },
@@ -2915,7 +3179,7 @@
                 },
                 "value": {
                   "filter": {
-                    "geo": { "$ctx": "geo", "default": "" },
+                    "geo": { "$ctx": "geo", "$ne": "_T" },
                     "measure": "GVA",
                     "sector": { "$ctx": "sector", "default": "_T" }
                   },
@@ -2937,7 +3201,7 @@
                 },
                 "trend": {
                   "filter": {
-                    "geo": { "$ctx": "geo", "default": "" },
+                    "geo": { "$ctx": "geo", "$ne": "_T" },
                     "measure": "GVA",
                     "sector": { "$ctx": "sector", "default": "_T" }
                   },
@@ -2954,7 +3218,7 @@
                 },
                 "value": {
                   "filter": {
-                    "geo": { "$ctx": "geo", "default": "" },
+                    "geo": { "$ctx": "geo", "$ne": "_T" },
                     "measure": "GVA",
                     "sector": { "$ctx": "sector", "default": "_T" }
                   },
@@ -2992,7 +3256,7 @@
                 "value": {
                   "denom": {
                     "filter": {
-                      "geo": { "$ctx": "geo", "default": "" },
+                      "geo": { "$ctx": "geo", "$ne": "_T" },
                       "measure": "GVA",
                       "sector": { "$ctx": "sector", "default": "_T" }
                     },
@@ -3022,7 +3286,7 @@
                 },
                 "trend": {
                   "filter": {
-                    "geo": { "$ctx": "geo", "default": "" },
+                    "geo": { "$ctx": "geo", "$ne": "_T" },
                     "measure": "GVA",
                     "sector": { "$ctx": "sector", "default": "_T" }
                   },
@@ -3045,7 +3309,7 @@
                 },
                 "value": {
                   "filter": {
-                    "geo": { "$ctx": "geo", "default": "" },
+                    "geo": { "$ctx": "geo", "$ne": "_T" },
                     "measure": "GVA",
                     "sector": { "$ctx": "sector", "default": "_T" }
                   },
@@ -3072,7 +3336,7 @@
                 },
                 "trend": {
                   "filter": {
-                    "geo": { "$ctx": "geo", "default": "" },
+                    "geo": { "$ctx": "geo", "$ne": "_T" },
                     "measure": "GVA",
                     "sector": { "$ctx": "sector", "default": "_T" }
                   },
@@ -3095,7 +3359,7 @@
                 },
                 "value": {
                   "filter": {
-                    "geo": { "$ctx": "geo", "default": "" },
+                    "geo": { "$ctx": "geo", "$ne": "_T" },
                     "measure": "GVA",
                     "sector": { "$ctx": "sector", "default": "_T" }
                   },
@@ -3122,7 +3386,7 @@
                 },
                 "trend": {
                   "filter": {
-                    "geo": { "$ctx": "geo", "default": "" },
+                    "geo": { "$ctx": "geo", "$ne": "_T" },
                     "measure": "GVA",
                     "sector": { "$ctx": "sector", "default": "_T" }
                   },
@@ -3142,7 +3406,7 @@
                 },
                 "value": {
                   "filter": {
-                    "geo": { "$ctx": "geo", "default": "" },
+                    "geo": { "$ctx": "geo", "$ne": "_T" },
                     "measure": "GVA",
                     "sector": { "$ctx": "sector", "default": "_T" }
                   },
@@ -3183,7 +3447,7 @@
                 },
                 "value": {
                   "filter": {
-                    "geo": { "$ctx": "geo", "default": "" },
+                    "geo": { "$ctx": "geo", "$ne": "_T" },
                     "measure": "GVA",
                     "sector": { "$ctx": "sector", "default": "_T" }
                   },
@@ -3208,7 +3472,7 @@
                 },
                 "trend": {
                   "filter": {
-                    "geo": { "$ctx": "geo", "default": "" },
+                    "geo": { "$ctx": "geo", "$ne": "_T" },
                     "measure": "GVA",
                     "sector": { "$ctx": "sector", "default": "_T" }
                   },
@@ -3231,7 +3495,7 @@
                 },
                 "value": {
                   "filter": {
-                    "geo": { "$ctx": "geo", "default": "" },
+                    "geo": { "$ctx": "geo", "$ne": "_T" },
                     "measure": "GVA",
                     "sector": { "$ctx": "sector", "default": "_T" }
                   },
@@ -4779,7 +5043,6 @@
           "color": "#0080BE",
           "icon": "bar-chart",
           "id": "gdp",
-          "_comment": "Re-add a 'structural' nav item (Structural indicators) here once the GFCF-structure + NOE-share source data lands in canonical (section removed in 52738a3).",
           "items": [
             {
               "anchor": "production",
@@ -4803,10 +5066,24 @@
               }
             },
             {
+              "anchor": "structural",
+              "label": {
+                "ka": "კაპიტალის სტრუქტურა",
+                "en": "Capital structure"
+              }
+            },
+            {
               "anchor": "growth-dynamics",
               "label": {
                 "ka": "ზრდის ტემპები",
                 "en": "Growth rates"
+              }
+            },
+            {
+              "anchor": "noe-share",
+              "label": {
+                "ka": "დაუკვირვებადი ეკონომიკა",
+                "en": "Non-observed economy"
               }
             }
           ],
