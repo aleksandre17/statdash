@@ -306,7 +306,7 @@ describe('FF-SNAPSHOT-VIEW-EQUIV (P5) — geostat perspective migration is byte-
       for (const v of Object.values(o)) collect(v)
     }
     for (const p of artifact.pages) collect(p.config?.children)
-    expect(gates.length).toBe(11)   // 3 accounts + 4 gdp + 4 regional
+    expect(gates.length).toBe(10)   // 2 accounts + 4 gdp + 4 regional (d172eae removed a redundant per-account chart section: was 3 accounts = 11)
 
     for (const g of gates) {
       const expr = { op: 'perspective-is', perspective: g.perspective } as never
