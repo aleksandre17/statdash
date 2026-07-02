@@ -221,7 +221,11 @@ export function matchesFilter(
         // The NeCtxRef's optional ctx-scope narrowing resolves via the one dispatcher.
         const ctxVal = resolveRef({ $ctx: (ne as NeCtxRef).$ctx }, { dims: ctx.dims }) as DimVal | undefined
         if (ctxVal !== '' && ctxVal !== null && ctxVal !== undefined) {
-          const leaves = expand ? expand(dim, ctxVal) : [ctxVal]
+          // A multi-value selection ('R3,R4') restricts to the leaf SET, not one
+          // literal — split via the SSOT wire serializer exactly as resolveFilter does.
+          const leaves = typeof ctxVal === 'string' && ctxVal.includes(',')
+            ? (splitMultiValue(ctxVal) as DimVal[]).flatMap((p) => (expand ? expand(dim, p) : [p]))
+            : (expand ? expand(dim, ctxVal) : [ctxVal])
           if (!matchesLeaves(leaves, obs[dim])) return false
         }
       }
