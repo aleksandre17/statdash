@@ -1,10 +1,10 @@
 ---
 id: "0015"
 title: "DECISION O-7: Per-capita 2014=483 — pipeline row-selection vs seed-data error"
-status: backlog
+status: resolved
 class: DECISION
 priority: P0
-owner: —
+owner: database-architect
 implements: SPEC §5 O-7, §1 C6 (C6-d)
 blocks: ["0020", "0028"]
 needs_data_input: true
@@ -27,3 +27,10 @@ links:
 **Owner action (~2 min)** — Run/authorize the gold-layer check, then confirm pipeline (default) or route the value to database-architect.
 
 **Standing DoD (applies to the dependent build items):** rendered result must match `scriness/` achieved ONLY through highest-concept architecture — no hardcoding, no anti-patterns, no DRY violations; declarative/config-driven; conditional logics covered; SSOT; refine/elevate EXISTING code (Strangler) — never rewrite-from-scratch or hardcode-to-match the screenshot. "Look like the screens" must NEVER be met by dropping quality.
+
+---
+**RESOLVED (database-architect, 2026-07-02) — SEED IS CORRECT → RENDER/PIPELINE FAULT.**
+
+Gold-layer check against the LIVE SSOT `DATA/canonical/GDP_ANNUAL.xlsx`: `measure=gdp-per-capita-usd`, `geo=GE`, `approach=_Z`, `time=2014` → **`obs_value = 4829.88`** (≈4 830). The full series is monotone-plausible (2013=4711.77, 2014=**4829.88**, 2015=4085.14). There is exactly **ONE** row for (per-capita, GE, 2014) — no duplicate/ambiguity (per-capita lives solely under `approach=_Z`).
+
+**Therefore the gold value is NOT 483 — the seed is correct.** "483" is a **render/pipeline fault**, not a data-ingest error. Note 483 ≈ 4829.88 / 10 and the per-capita measure's unit is **USD** (all sibling GDP measures are GEL_MN) — this smells like a unit/decimals or digit-drop FORMATTING fault at the render boundary, NOT row-ambiguity (there is no ambiguous row to disambiguate). **Route to render (0020 C6-d row-selection hardening still safe/desirable, and 0028 E7 per-capita line): ensure the correct single row is selected AND formatted with the per-capita measure's own unit/decimals.** No database-architect data change.

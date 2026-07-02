@@ -5,7 +5,7 @@
 //  thin re-export in transform.ts points here.
 //
 export type { RawRow, DeriveExpr, TransformStep, PipelineContext } from './types'
-export { fmtNum, FORMATTERS, getFormatter }                        from './formatters'
+export { fmtNum, compact, FORMATTERS, getFormatter }               from './formatters'
 export { applyStep, applyPipeline }                                from './pipeline'
 
 // ── Registry initialization — register all built-in transform ops ──────

@@ -13,7 +13,7 @@ export { channelField, channelType, channelKey,
 export type { FieldMeta, FieldSchema, FieldType, FieldRole }         from './fieldSchema'
 export { toFieldMeta, schemasToFieldMeta, suggestEncodings }        from './fieldSchema'
 export type { RawRow, DeriveExpr, TransformStep }                   from './transform'
-export { applyPipeline, applyStep, getFormatter, FORMATTERS }       from './transform'
+export { applyPipeline, applyStep, getFormatter, FORMATTERS, fmtNum, compact } from './transform'
 export type { DataStore, Requirement, StoreQuery, StoreCaps,
               QueryResult, ResultMeta, Unsubscribe, GrainLevel, RollupOp } from './store'
 export { staticStore, storeVal, storeValAt, storeObs, storeSchema, runBatch, asyncFromSync } from './store'

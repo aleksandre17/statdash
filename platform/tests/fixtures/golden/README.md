@@ -38,7 +38,7 @@ scraping) is required because the tidy layer is derived at runtime:
 - `GDP_DISPLAY` is built via `Object.fromEntries(...)`.
 
 Modules import only TypeScript types (`import type ...`), which `tsx`/esbuild strips, so no
-`@geostat/engine` runtime resolution was needed.
+engine-package runtime resolution was needed.
 
 ## File shape
 

@@ -5,7 +5,7 @@ import type { ChartOutput } from '@statdash/charts'
 import { BASE, yFormatter, responsiveYAxis, collectFormatted, scaledPx, BP_MD, BP_SM, BP_XS } from './base'
 import { cssVar } from '@statdash/styles'
 
-export function buildCartesian(output: ChartOutput, fontFamily?: string): ApexOptions {
+export function buildCartesian(output: ChartOutput, fontFamily?: string, locale?: string): ApexOptions {
   const { type, series, categories, axes, stacked, horizontal } = output
   const formatted = collectFormatted(series)
   const FS_XS = scaledPx(0.60, 9,  11)
@@ -19,8 +19,8 @@ export function buildCartesian(output: ChartOutput, fontFamily?: string): ApexOp
   // Value-axis formatters — hoisted so the responsive overrides below can
   // re-carry them (ApexCharts rebuilds yaxis from defaults on responsive
   // merge, dropping any formatter not re-supplied — see responsiveYAxis).
-  const yFmt  = yFormatter(axes.y.unit,  axes.y.decimals)
-  const y2Fmt = yFormatter(axes.y2?.unit, axes.y2?.decimals)
+  const yFmt  = yFormatter(axes.y.unit,  axes.y.decimals,  locale)
+  const y2Fmt = yFormatter(axes.y2?.unit, axes.y2?.decimals, locale)
 
   // Responsive numeric-y-axis font override that keeps the formatter alive.
   // hbar's left axis is categorical (no numeric formatter), so it keeps the

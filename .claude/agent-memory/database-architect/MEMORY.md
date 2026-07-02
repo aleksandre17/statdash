@@ -31,6 +31,8 @@
 - [Vintage / Release (ADR-0025)](project_vintage_release.md) — V25 adds stats.release publication-event aggregate; release_id stamps on observation + revision via app.release_id GUC; as-of vintage reconstruction
 - [obs.* vs stats.*](project_obs_vs_stats.md) — TWO cube schemas: applied stats.* (real) vs paper obs.* design doc (never built); extend stats.* additively, harvest obs.* ideas only
 - [Demo classifier data (V33)](project_demo_classifier_data.md) — aggregates virtual classifier (isClosing in metadata) + geo SCD-2 de-dup; ON CONFLICT must target the partial unique (V18 dropped the blanket)
+- [Canonical GDP_ANNUAL shape](project_canonical_gdp_annual_shape.md) — approach is a real 4th fact dim (PROD/EXP/INC/_Z); contribution_role (add/subtract/total) classifies components (SSOT — render must read it, never hardcode)
+- [Live SSOT: canonical vs retired bundle](project_live_ssot_canonical_vs_retired_bundle.md) — LIVE data = DATA/canonical/*.xlsx (genuine en); ops/seed-data bundle is RETIRED (en=ka) — diagnosis trap
 
 ## [platform] Feedback
 - [Seed ETL decoupling](feedback_seed_etl_decoupling.md) — api seed imports geostat bundles via ACL + ambient @geostat/engine shim + cleared paths; never couple API to engine type graph

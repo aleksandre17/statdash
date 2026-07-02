@@ -144,6 +144,20 @@ if bl:
                     if n > bl[ext]: fat.append(f"{os.path.relpath(os.path.join(dp,f), ROOT)}({n})")
     ck(not fat, f"hygiene: no file over its line limit{' (over: '+', '.join(fat[:5])+')' if fat else ''}")
 
+# --- single memory home (SSOT): exactly ONE .claude/agent-memory, at repo root ---
+# The reorg made repo-root .claude/agent-memory/ the sole canonical home. A sub-agent can silently
+# re-create platform/.claude/agent-memory/ (or any nested one) and re-diverge the SSOT. Detect it:
+# walk the tree (pruning node_modules/.git) for any .claude/agent-memory that is NOT the root one.
+canonical = os.path.normpath(P(".claude", "agent-memory"))
+strays = []
+for dp, dns, _ in os.walk(ROOT):
+    dns[:] = [d for d in dns if d not in ("node_modules", ".git")]
+    if os.path.basename(dp) == "agent-memory" and os.path.basename(os.path.dirname(dp)) == ".claude":
+        if os.path.normpath(dp) != canonical:
+            strays.append(os.path.relpath(dp, ROOT))
+ck(not strays, "single memory home: only root .claude/agent-memory (SSOT)",
+   "second memory home — relocate to root .claude/agent-memory and delete (SSOT): " + ", ".join(strays) if strays else "")
+
 # --- INDEX lists every playbook + strategy file ---
 idx = open(os.path.join(KIT, "INDEX.md"), encoding="utf-8").read() if os.path.exists(os.path.join(KIT, "INDEX.md")) else ""
 for c in glob.glob(os.path.join(KIT, "commands", "*.md")):

@@ -27,7 +27,7 @@ export function wrapLabel(text: string, maxChars = 18): string[] {
   return lines.length > 1 ? lines : [text]
 }
 
-export function buildContribution(output: ChartOutput, fontFamily?: string): ApexOptions {
+export function buildContribution(output: ChartOutput, fontFamily?: string, locale?: string): ApexOptions {
   const { series, categories, axes } = output
   const formatted = collectFormatted(series)
   const FS_XS = scaledPx(0.60, 9,  11)
@@ -36,7 +36,7 @@ export function buildContribution(output: ChartOutput, fontFamily?: string): Ape
   // Hoisted so the responsive overrides can re-carry it — ApexCharts drops
   // any formatter a responsive yaxis override doesn't re-supply (see
   // responsiveYAxis): without this the value axis falls back to raw floats.
-  const yFmt = yFormatter(axes.y.unit, axes.y.decimals)
+  const yFmt = yFormatter(axes.y.unit, axes.y.decimals, locale)
 
   // Per-bar colors via distributed — avoids {x,y,fillColor} extended format which
   // conflicts with xaxis.categories and breaks y-axis rendering.

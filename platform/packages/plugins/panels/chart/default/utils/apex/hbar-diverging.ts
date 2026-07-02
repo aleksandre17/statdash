@@ -10,7 +10,7 @@ import type { ChartOutput } from '@statdash/charts'
 import { BASE, yFormatter, makeDataLabelFormatter, collectFormatted, scaledPx, BP_MD, BP_SM, BP_XS } from './base'
 import { cssVar } from '@statdash/styles'
 
-export function buildHBarDiverging(output: ChartOutput, fontFamily?: string): ApexOptions {
+export function buildHBarDiverging(output: ChartOutput, fontFamily?: string, locale?: string): ApexOptions {
   const { series, axes } = output
   const FS_XS = scaledPx(0.60, 9,  11)
   const FS_SM = scaledPx(0.70, 10, 12)
@@ -50,7 +50,7 @@ export function buildHBarDiverging(output: ChartOutput, fontFamily?: string): Ap
       max:        axes.y.max,
       labels: {
         style:     { fontSize: FS_XS, colors: cssVar('--color-text-muted', '#6B7B8D') },
-        formatter: (val: string) => yFormatter(axes.y.unit, axes.y.decimals)(Number(val)),
+        formatter: (val: string) => yFormatter(axes.y.unit, axes.y.decimals, locale)(Number(val)),
         hideOverlappingLabels: true,
       },
       axisBorder: { color: cssVar('--color-chart-frame', '#E0EBE8') },

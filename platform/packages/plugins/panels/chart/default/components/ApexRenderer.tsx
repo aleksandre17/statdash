@@ -1,5 +1,6 @@
 import ReactApexChart              from 'react-apexcharts'
 import type { ChartRendererProps } from '@statdash/react/engine'
+import { useLocale }               from '@statdash/react'
 import { toApexOptions }           from '../utils/toApexOptions'
 import { categoricalChartHeight }  from '../utils/apex/base'
 
@@ -10,11 +11,14 @@ function apexChartType(type: string): 'bar' | 'line' | 'pie' | 'area' {
 }
 
 export function ApexRenderer({ output, onDataHover, onDataLeave, onDataClick }: ChartRendererProps) {
+  // Active locale drives the compact axis-tick glyph (en → 88.4K · ka → 88,4 ათ.);
+  // hooks must run before any early return.
+  const locale = useLocale()
   if (output.series.length === 0) return null
   const fontFamily = typeof window !== 'undefined'
     ? (getComputedStyle(document.documentElement).getPropertyValue('--font-family-base').trim() || 'system-ui, sans-serif')
     : 'system-ui, sans-serif'
-  const base     = toApexOptions(output, fontFamily)
+  const base     = toApexOptions(output, fontFamily, locale)
   const chartKey = output.series.map(s => s.data.map(d => d.value).join(',')).join(';')
 
   // Merge event handlers into options.chart.events without mutating base object

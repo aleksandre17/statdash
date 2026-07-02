@@ -6,7 +6,7 @@
 
 import type { ApexOptions } from 'apexcharts'
 import type { ChartSeries, ChartOutput } from '@statdash/charts'
-import { fmtNum }                        from '@statdash/engine'
+import { fmtNum, compact }               from '@statdash/engine'
 import { cssVar, prefersReducedMotion }  from '@statdash/styles'
 
 // ── Shared base config ─────────────────────────────────────────────────
@@ -114,15 +114,18 @@ export const BASE: ApexOptions = {
 
 // ── Helpers ────────────────────────────────────────────────────────────
 
-/** Build a Y-axis label formatter that appends a unit string. */
-export function yFormatter(unit?: string, decimals?: number): (val: number) => string {
+/**
+ * Build a Y-axis label formatter that appends a unit string.
+ *
+ * `decimals` fixed → `fmtNum(val, decimals)` (a rate axis wants `10, 5, 0, -5`).
+ * `decimals` undefined → the core `compact` SSOT (`88.4K` / `88,4 ათ.`), locale-aware
+ * and monotonic. This replaces the old lossy `fmtNum(val/1000,0)+' 000'` hack that
+ * fabricated "88 000" from 88 425.6 and collapsed adjacent ticks (C1 / FF-FORMAT-SSOT).
+ */
+export function yFormatter(unit?: string, decimals?: number, locale?: string): (val: number) => string {
   return (val: number) => {
     if (val === undefined || val === null) return ''
-    const n = typeof decimals === 'number'
-      ? fmtNum(val, decimals)
-      : Math.abs(val) >= 1000
-        ? fmtNum(val / 1000, 0) + ' 000'
-        : fmtNum(val, 0)
+    const n = typeof decimals === 'number' ? fmtNum(val, decimals) : compact(val, locale)
     return unit ? `${n} ${unit}` : n
   }
 }

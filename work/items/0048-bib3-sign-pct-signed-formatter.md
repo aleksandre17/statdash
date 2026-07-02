@@ -1,10 +1,10 @@
 ---
 id: "0048"
 title: "BI-B3: `sign_pct` dropped negative sign — signed-formatter SSOT (drop `Math.abs`)"
-status: backlog
+status: done
 class: G
 priority: P0
-owner: —
+owner: engine-specialist
 implements: SPEC.DELTA-new12 §2 Bug 3, §5 FF-SIGN-PRESERVED; extends SPEC §C1 FF-FORMAT-SSOT
 depends_on: ["0016"]
 links:
@@ -27,11 +27,11 @@ const fmtSign = (n) => `${n > 0 ? '+' : ''}${fmtNum(Math.abs(n), 1)}%`   // sign
 **Dependencies** — 0016 (C1): this extends the C1 formatter SSOT and FF-FORMAT-SSOT with the signed case. Trivial; no data/DB input.
 
 **Acceptance criteria (incl. fitness functions)**
-- [ ] `getFormatter('sign_pct')(-6.3) === '-6.3%'`; `(7.9) === '+7.9%'`; `(0) === '0%'`.
-- [ ] No `Math.abs` inside `sign_pct`.
-- [ ] Chart and table format the SAME signed datum identically (both read the C1 registry).
-- [ ] **FF-SIGN-PRESERVED**: `getFormatter('sign_pct')(−x)` renders a leading `-`; extends FF-FORMAT-SSOT with a signed round-trip case.
-- [ ] `npx tsc --noEmit` EXIT=0.
+- [x] `getFormatter('sign_pct')(-6.3) === '-6.3%'`; `(7.9) === '+7.9%'`; `(0) === '0%'`.
+- [x] No `Math.abs` inside `sign_pct`.
+- [x] Chart and table format the SAME signed datum identically (both read the C1 registry).
+- [x] **FF-SIGN-PRESERVED**: `getFormatter('sign_pct')(−x)` renders a leading `-`; extends FF-FORMAT-SSOT with a signed round-trip case (`formatters.fitness.test.ts`).
+- [x] `pnpm -s typecheck` EXIT=0.
 
 **Standing DoD (applies)** — rendered result must match `scriness/` achieved ONLY through highest-concept architecture: no hardcoding, no anti-patterns, no DRY violations; declarative/config-driven; conditional logics covered; SSOT; refine/elevate EXISTING code (Strangler) — never rewrite-from-scratch or hardcode-to-match the screenshot. "Look like the screens" must NEVER be met by dropping quality.
 
