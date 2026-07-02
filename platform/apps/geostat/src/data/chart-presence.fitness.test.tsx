@@ -45,8 +45,12 @@ const EXPECTED_SLOTS: Record<GoldenDomain, string[]> = {
     'growth-dynamics:bar', 'noe-share:bar',
   ],
   accounts: ['sna-hero:hbar-diverging', 'sna-hero-range:bar'],
+  // AR-36: the two visibleWhen composition panels (sectors donut + sectors-multi bar)
+  // are folded into ONE `sectors` PIVOT panel whose MARK binds to state ($ctx:_mark →
+  // donut when no region selected, bar when region[s] selected). The inventory pins the
+  // binding, not a frozen type.
   regional: [
-    'sectors:donut', 'sectors-multi:bar', 'regions-bar:hbar',
+    'sectors:$ctx:_mark', 'regions-bar:hbar',
     'sectors-range:bar', 'sector-history:area',
   ],
 }

@@ -12,7 +12,7 @@
 //  Canonical target lives in migration/03-pipeline.md.
 //
 
-import { interpretSpec, staticStore, CachedStore, applyEncoding, resolveEncodingRefs, storeVal, applyPipeline, specDataSource, resolveLocaleString, isTaggedLocaleString } from '@statdash/engine'
+import { interpretSpec, staticStore, CachedStore, applyEncoding, resolveEncodingRefs, resolvePipeRefs, storeVal, applyPipeline, specDataSource, resolveLocaleString, isTaggedLocaleString } from '@statdash/engine'
 import type { DataRow, DataStore, EncodingSpec, EngineRow, PipelineContext, RawRow, DataSpec, TransformStep, DimVal } from '@statdash/engine'
 import type { NodeBase, RenderContext }                                                     from './types'
 
@@ -212,10 +212,16 @@ export function resolveNodeRows(node: NodeBase, ctx: RenderContext): DataRow[] {
       display:     store.display,
       section:     ctx.sectionCtx,
     }
+    // AR-36: lower any state-bound `{$ctx}` step param (aggregate `by` roll-up level,
+    // sort `by`/`dir`) → concrete values BEFORE the pipeline runs, threading dims+vars
+    // (react holds both — Law 3). Byte-identical for ref-free pipelines. This is the
+    // pipeline sibling of the P0 encoding-ref pass; it makes the OLAP grain rotate with
+    // the selection (by-region ⇄ sector×geo) so the fold is one panel, not two.
+    const refResolved = resolvePipeRefs(node.transforms, { dims: ctx.sectionCtx.dims, vars: ctx.vars })
     // B1: lower any declarative `blend` step → joinByField HERE (react holds the
     // store manifest, so the second-store fetch lives in the binding layer — core
     // stays single-store, Law 3). A pipeline with no blend returns untouched.
-    const lowered = resolveBlends(node.transforms, ctx)
+    const lowered = resolveBlends(refResolved, ctx)
     rows = applyPipeline(rows as unknown as RawRow[], lowered, pipeCtx) as unknown as DataRow[]
   }
 

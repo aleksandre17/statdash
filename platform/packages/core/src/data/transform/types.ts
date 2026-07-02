@@ -1,5 +1,6 @@
 import type { DimVal, FilterValue, ObsQuery }  from '../../sdmx'
 import type { EngineRow, EncodingSpec }         from '../encoding'
+import type { CtxScopeRef }                     from '../../ref/ref'
 
 // ── RawRow — typed data row (Phase 2.1: alias to EngineRow) ──────────
 export type RawRow = EngineRow
@@ -80,14 +81,18 @@ export type TransformStep =
    *          Useful for sentinel values like -1, 'other', 'total'.
    */
   | { op:     'sort'
-      by:     string | ReadonlyArray<{
+      // A `{ $ctx: key }` STATE ref (AR-36) on `by`/`dir` binds the sort to state
+      // (e.g. donut → value desc, stacked bar → sectorOrder asc), resolving to a
+      // concrete field name / direction. Lowered by `resolvePipeRefs` BEFORE
+      // `applyPipeline`; `applySort` narrows defensively.
+      by:     string | CtxScopeRef | ReadonlyArray<{
         field:  string
         dir?:   'asc' | 'desc'
         using?: readonly DimVal[]
         last?:  DimVal | readonly DimVal[]
       }>
-      dir?:   'asc' | 'desc'    // single-field form only
-      using?: readonly DimVal[] // single-field form only
+      dir?:   'asc' | 'desc' | CtxScopeRef   // single-field form only
+      using?: readonly DimVal[]              // single-field form only
     }
   /**
    * concat — Join multiple field values into a new string field.
@@ -132,7 +137,14 @@ export type TransformStep =
    * unlisted dims are aggregated over (collapsed). Vega-Lite analogue.
    */
   | { op: 'aggregate'
-      by:      string[]
+      /**
+       * Group-by dims. A `{ $ctx: key }` STATE ref (AR-36) binds the OLAP roll-up
+       * LEVEL to state — it resolves to a COMMA-STRING field list ("sector,geo,time"),
+       * split into the array, so which grain the pivot aggregates to rotates with the
+       * selection (the drill-up/down verb). MUST be lowered by `resolvePipeRefs` BEFORE
+       * `applyPipeline` (react binding layer) — `normalizeAggregate` narrows defensively.
+       */
+      by:      string[] | CtxScopeRef
       measure: string
       agg:     'sum' | 'avg' | 'min' | 'max' | 'count'
       as?:     string

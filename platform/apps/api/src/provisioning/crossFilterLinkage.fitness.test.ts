@@ -83,10 +83,10 @@ describe('regional cross-filter linkage web (committed provisioning)', () => {
   })
 
   // FF-XF-REGION-TO-SECTOR — selecting a region re-scopes the sectoral-structure panels.
-  // (`sectors` is now the State-A by-region donut — see FF-COMPOSITION-REPURPOSE — so it
-  //  intentionally does NOT bind {$ctx:geo}; the sectoral panels that DO are these.)
-  it('FF-XF-REGION-TO-SECTOR: the sectoral-structure + history panels bind {$ctx:geo}', () => {
-    expect(ctxDim(queryFilter(findById(regional.config, 'sectors-multi')), 'geo')).toBe('geo')
+  // (`sectors` is now the ONE composition PIVOT panel — see FF-COMPOSITION-PIVOT — whose
+  //  geo filter follows the selection; the sector-history panel binds {$ctx:geo} too.)
+  it('FF-XF-REGION-TO-SECTOR: the composition pivot + history panels bind {$ctx:geo}', () => {
+    expect(ctxDim(queryFilter(findById(regional.config, 'sectors')), 'geo')).toBe('geo')
     expect(ctxDim(queryFilter(findById(regional.config, 'sector-history')), 'geo')).toBe('geo')
   })
 
@@ -118,20 +118,19 @@ describe('regional cross-filter linkage web (committed provisioning)', () => {
     expect(tableEmitter, 'a region-emitting table exists').toBeDefined()
   })
 
-  // FF-XF-SECTOR-EMIT — the newly authored links: the composition chart surfaces DRIVE a
-  // sector selection (donut slice / stacked segment / area series → key=sector).
-  it('FF-XF-SECTOR-EMIT: sectors-multi + sector-history charts emit key=sector on point:click', () => {
-    expect(emitterFor(findById(regional.config, 'sectors-multi'),  'sector', 'point:click')).toBeDefined()
+  // FF-XF-SECTOR-EMIT — the sector-history chart DRIVES a sector selection (area series →
+  // key=sector). The composition PIVOT panel now drives the region axis (region-select is
+  // the primary directional flow region → sectoral view); sector-directional lives on the
+  // sector-history surface + the sector filter dropdown.
+  it('FF-XF-SECTOR-EMIT: sector-history chart emits key=sector on point:click', () => {
     expect(emitterFor(findById(regional.config, 'sector-history'), 'sector', 'point:click')).toBeDefined()
   })
 
   // FF-XF-SECTOR-EMIT reads the sector code — fromField must be the sector field, not the default key.
-  it('FF-XF-SECTOR-EMIT: sector emitters read fromField=sector (the sector code, not the label)', () => {
-    for (const id of ['sectors-multi', 'sector-history']) {
-      const chart = emitterFor(findById(regional.config, id), 'sector', 'point:click')
-      const action = handlers(chart).flatMap((h) => h.actions ?? []).find((a) => a.key === 'sector')
-      expect(action?.fromField, `${id} emitter fromField`).toBe('sector')
-    }
+  it('FF-XF-SECTOR-EMIT: sector emitter reads fromField=sector (the sector code, not the label)', () => {
+    const chart = emitterFor(findById(regional.config, 'sector-history'), 'sector', 'point:click')
+    const action = handlers(chart).flatMap((h) => h.actions ?? []).find((a) => a.key === 'sector')
+    expect(action?.fromField, 'sector-history emitter fromField').toBe('sector')
   })
 
   // FF-XF-DECLARATIVE — every authored handler is pure JSON: a known trigger + filter actions
@@ -153,28 +152,37 @@ describe('regional cross-filter linkage web (committed provisioning)', () => {
     }
   })
 
-  // ── FF-COMPOSITION-REPURPOSE ────────────────────────────────────────────────
-  //  The composition panel RE-PURPOSES by whether a region selection is active
-  //  (`_regionSel` none/some, the 0-vs-1+ boundary — distinct from `_geoMode`'s
-  //  0/1-vs-2+ comma threshold). State A (no region) = the `sectors` GDP-by-region
-  //  DONUT (regions as slices, center = national total); State B (region[s]) = the
-  //  `sectors-multi` sectoral-structure comparison. One authored swap, keyed on the
-  //  raw `region` selection via the computed var.
+  // ── FF-COMPOSITION-PIVOT (AR-36) ────────────────────────────────────────────
+  //  The two visibleWhen A/B composition panels (by-region donut + sectoral-structure
+  //  bar) are FOLDED into ONE `sectors` PIVOT panel: the OLAP mark + encoding channels
+  //  + roll-up LEVEL bind to state (`{$ctx:…}`), so the panel rotates donut⇄bar and
+  //  by-region⇄sector×geo with the selection — no visibleWhen fork, no sectors-multi.
+  //  State A (no region): donut, x=geoLabel, no series, by:[geo]. State B (region[s]):
+  //  stacked bar, x=sectorLabel, series=geoLabel, by:[sector,geo,time]. All from ONE
+  //  query whose geo filter follows the selection.
   const sectionView = (id: string): Json | undefined =>
     (findById(regional.config, id)?.view as Json | undefined)?.visibleWhen as Json | undefined
 
-  it('FF-COMPOSITION-REPURPOSE: by-region donut visibleWhen no selection; sectoral-structure visibleWhen region-selected', () => {
-    // State A — the by-region donut shows only when NO region is selected.
-    expect(sectionView('sectors')).toMatchObject({ op: 'eq', param: '_regionSel', is: 'none' })
-    // State B — the sectoral-structure comparison shows only when region(s) selected.
-    expect(sectionView('sectors-multi')).toMatchObject({ op: 'eq', param: '_regionSel', is: 'some' })
-    // The State-A panel is genuinely a by-region DONUT: a donut chart encoding geo…
+  it('FF-COMPOSITION-PIVOT: ONE panel binds mark + encoding + roll-up to state (no visibleWhen fork)', () => {
     const sectors = findById(regional.config, 'sectors')
-    const donut = find(sectors, (n) => n.type === 'chart' && n.chartType === 'donut')
-    expect(donut, 'sectors State-A panel is a donut').toBeDefined()
-    expect(((sectors?.data as Json | undefined)?.encoding as Json | undefined)?.id, 'donut slices are regions (encoding id=geo)').toBe('geo')
-    // …and clicking a slice DRIVES a region selection (the directional pin: region → sector view).
-    expect(emitterFor(sectors, 'region', 'point:click'), 'by-region donut emits key=region').toBeDefined()
+    expect(sectors, 'the composition pivot panel exists').toBeDefined()
+    // The fold retires the second panel + the visibleWhen A/B fork entirely.
+    expect(findById(regional.config, 'sectors-multi'), 'sectors-multi is retired').toBeUndefined()
+    expect(sectionView('sectors'), 'the pivot panel is always visible (no visibleWhen fork)').toBeUndefined()
+    // MARK binds to state (P3): donut ⇄ bar via {$ctx:_mark}.
+    const chart = find(sectors, (n) => n.type === 'chart')
+    expect((chart?.chartType as Json | undefined)?.$ctx, 'chartType (mark) binds to state').toBe('_mark')
+    // ENCODING channels bind to state (P2): x/series rotate via {$ctx}; slices carry the region code.
+    const enc = (sectors?.data as Json | undefined)?.encoding as Json | undefined
+    expect((enc?.label as Json | undefined)?.$ctx, 'x channel binds to state').toBe('_xDim')
+    expect((enc?.series as Json | undefined)?.$ctx, 'series channel binds to state').toBe('_seriesDim')
+    expect(enc?.id, 'slices/segments carry the region code (encoding id=geo)').toBe('geo')
+    // ROLL-UP LEVEL binds to state (the grain — P2 data model): aggregate by {$ctx:_byDims}.
+    const pipe = (sectors?.data as Json | undefined)?.pipe as Json[] | undefined
+    const agg  = pipe?.find((s) => s.op === 'aggregate')
+    expect((agg?.by as Json | undefined)?.$ctx, 'roll-up grain binds to state').toBe('_byDims')
+    // Clicking DRIVES a region selection (directional pin: region → sectoral view).
+    expect(emitterFor(sectors, 'region', 'point:click'), 'composition pivot emits key=region').toBeDefined()
   })
 
   // ── FF-COMPARISON-SCOPES-TO-SELECTION ───────────────────────────────────────

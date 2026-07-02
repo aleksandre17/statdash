@@ -207,6 +207,11 @@ export interface SectionSlot { page: string; section: string; perspective: Mode 
 function deepChartType(node: any): string | undefined {
   if (node && typeof node === 'object') {
     if (typeof node.chartType === 'string') return node.chartType
+    // AR-36: a state-bound MARK ({$ctx:key}) rotates donut⇄bar with the selection —
+    // pin it as its state ref so the inventory records the BINDING, not a frozen type.
+    if (node.chartType && typeof node.chartType === 'object' && typeof node.chartType.$ctx === 'string') {
+      return `$ctx:${node.chartType.$ctx}`
+    }
     for (const v of Object.values(node)) {
       const r = deepChartType(v)
       if (r) return r

@@ -1,5 +1,5 @@
 import type { PropertyGroup, DataLinkDef, PropSchema } from '@statdash/react/engine'
-import type { ChartType, LocaleString } from '@statdash/engine'
+import type { ChartType, LocaleString, CtxScopeRef } from '@statdash/engine'
 import type { ChartDef }         from '@statdash/charts'
 import type { NodeBase }                   from '@statdash/react/engine'
 import type { LocaleFieldConfig, LocaleAxes } from './utils/localeChartDef'
@@ -17,7 +17,10 @@ import { DATA_INTEGRITY_SCHEMA, DATA_INTEGRITY_FIELDS } from '../../dataIntegrit
 //
 export type ChartNode =
   Omit<NodeBase, 'type'>
-  & { type: 'chart'; chartType: ChartType }
+  // `chartType` may be a `{ $ctx: key }` STATE ref (AR-36) — the MARK binds to state,
+  // so a panel rotates donut ⇄ bar with the selection (resolved in useChartOutput
+  // before interpretChart, the plugin sibling of the P0 encoding-ref pass).
+  & { type: 'chart'; chartType: ChartType | CtxScopeRef }
   & Omit<ChartDef, 'type' | 'label' | 'centerLabel' | 'axes' | 'fieldConfig'>
   & {
       /** Chart header / series-name fallback — config-bilingual. */

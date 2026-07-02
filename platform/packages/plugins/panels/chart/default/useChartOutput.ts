@@ -1,10 +1,27 @@
 import { useMemo }              from 'react'
 import { interpretChart }        from '@statdash/charts'
 import { useResolveLocale }      from '@statdash/react'
+import { resolveRef }            from '@statdash/engine'
+import type { ChartType, RefServices } from '@statdash/engine'
 import type { RenderContext }    from '@statdash/react/engine'
 import type { ChartOutput }      from '@statdash/charts'
 import type { ChartNode }        from './ChartNode'
 import { resolveChartDefLocale } from './utils/localeChartDef'
+
+// AR-36 P3 — resolve a state-bound MARK. `chartType` may be a `{ $ctx: key }` ref
+// (donut ⇄ bar rotating with the selection); lower it to the concrete ChartType via
+// the ONE dispatcher ($ctx → dims, $ref → vars fallback — the SAME two-step resolution
+// the encoding-ref pass uses). A plain string chartType passes through untouched
+// (byte-identical). Dimension-blind (Law 1): substitutes whatever mark the config named.
+function resolveChartType(
+  chartType: ChartNode['chartType'],
+  services:  RefServices,
+): ChartType {
+  if (typeof chartType === 'string') return chartType
+  const key = chartType.$ctx
+  const v   = resolveRef({ $ctx: key }, services) ?? resolveRef({ $ref: key }, services)
+  return (v == null ? 'bar' : String(v)) as ChartType
+}
 
 // ── useChartOutput — resolve a ChartNode + ctx into a ChartOutput ──────────
 //
@@ -29,7 +46,12 @@ export function useChartOutput(ctx: RenderContext, def: ChartNode): ChartOutput 
 
   return useMemo(() => {
     const rows = ctx.rows ?? []
-    const base = resolveChartDefLocale(def, ctx.fieldConfig, resolve)
+    // P3: lower a state-bound MARK to a concrete ChartType BEFORE the def reaches the
+    // interpreter. Bare-string chartType → same def (byte-identical).
+    const markedDef = typeof def.chartType === 'string'
+      ? def
+      : { ...def, chartType: resolveChartType(def.chartType, { dims: sectionCtx.dims, vars: ctx.vars ?? {} }) }
+    const base = resolveChartDefLocale(markedDef, ctx.fieldConfig, resolve)
     return interpretChart(
       {
         ...base,
@@ -39,7 +61,7 @@ export function useChartOutput(ctx: RenderContext, def: ChartNode): ChartOutput 
       rows,
       sectionCtx,
     )
-  }, [def, ctx.fieldConfig, legend, tooltip, ctx.rows, sectionCtx, resolve])
+  }, [def, ctx.fieldConfig, ctx.vars, legend, tooltip, ctx.rows, sectionCtx, resolve])
 }
 
 function viewLegend(l: 'bottom' | 'right' | 'none') {

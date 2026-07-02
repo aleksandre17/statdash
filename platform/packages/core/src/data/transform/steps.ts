@@ -90,9 +90,14 @@ export function applyFilter(
 type SortKey = { field: string; dir?: 'asc' | 'desc'; using?: readonly DimVal[]; last?: DimVal | readonly DimVal[] }
 
 export function applySort(rows: RawRow[], step: Extract<TransformStep, { op: 'sort' }>): RawRow[] {
+  // `by`/`dir` may be `{ $ctx }` STATE refs (AR-36) — lowered to concrete values by
+  // `resolvePipeRefs` (react) BEFORE this runs. Narrow defensively: a string `by` is
+  // the single-field form; an array is multi-key; an un-lowered ref object degrades
+  // to no sort key (stable no-op), never a crash. Bare forms are byte-identical.
+  const dir  = typeof step.dir === 'string' ? step.dir : undefined
   const keys: SortKey[] = typeof step.by === 'string'
-    ? [{ field: step.by, dir: step.dir, using: step.using }]
-    : step.by as SortKey[]
+    ? [{ field: step.by, dir, using: step.using }]
+    : Array.isArray(step.by) ? step.by as SortKey[] : []
 
   return [...rows].sort((a, b) => {
     for (const key of keys) {
@@ -183,8 +188,12 @@ type AggSpec = { field: string; op: 'sum' | 'avg' | 'min' | 'max' | 'count'; as?
 
 function normalizeAggregate(step: Extract<TransformStep, { op: 'aggregate' }>): { groupBy: string[]; aggregations: AggSpec[] } {
   if ('by' in step) {
+    // `by` may be a `{ $ctx }` STATE ref (AR-36) — but `resolvePipeRefs` (react
+    // binding layer) lowers it to a concrete `string[]` BEFORE this runs. Narrow
+    // defensively: an un-lowered ref degrades to whole-set (empty groupBy), never
+    // a crash. A bare `string[]` is byte-identical.
     return {
-      groupBy:      step.by,
+      groupBy:      Array.isArray(step.by) ? step.by : [],
       aggregations: [{ field: step.measure, op: step.agg, as: step.as }],
     }
   }

@@ -7,6 +7,7 @@
 export type { RawRow, DeriveExpr, TransformStep, PipelineContext } from './types'
 export { fmtNum, compact, FORMATTERS, getFormatter }               from './formatters'
 export { applyStep, applyPipeline }                                from './pipeline'
+export { resolvePipeRefs }                                         from './resolve-refs'
 
 // ── Registry initialization — register all built-in transform ops ──────
 //

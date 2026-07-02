@@ -117,7 +117,10 @@ export function resolveChartDefLocale(
 
   return {
     ...rest,
-    type:  chartType,
+    // `chartType` may be a `{ $ctx }` MARK ref (AR-36) — but useChartOutput lowers it
+    // to a concrete ChartType BEFORE calling here, so the cast is safe (an un-lowered
+    // ref would degrade in the interpreter, never crash the resolve).
+    type:  chartType as ChartDef['type'],
     label: resolve(label ?? ''),
     ...(centerLabel != null ? { centerLabel: resolve(centerLabel) } : {}),
     ...(axes        != null ? { axes: resolveLocaleAxes(axes, resolve) } : {}),

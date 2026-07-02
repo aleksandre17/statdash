@@ -105,7 +105,7 @@ export type { NodeDataFrame }                                           from './
 
 // ── Standard 1: Tidy Data + Transform Pipeline ────────────────────────
 export type { RawRow, DeriveExpr, TransformStep, PipelineContext }      from './data/transform'
-export { applyPipeline, applyStep, getFormatter, FORMATTERS, fmtNum, compact } from './data/transform'
+export { applyPipeline, applyStep, resolvePipeRefs, getFormatter, FORMATTERS, fmtNum, compact } from './data/transform'
 // Transform-step registry — the Constructor's transform-op catalog (listTransformOps)
 // + the plugin extension seam (registerTransformStep). Built-in ops registered via
 // the './data/transform' side-effect above.

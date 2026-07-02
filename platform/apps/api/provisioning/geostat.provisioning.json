@@ -3664,12 +3664,13 @@
                       "ka": "მშპ",
                       "en": "GDP"
                     },
-                    "chartType": "donut",
+                    "chartType": { "$ctx": "_mark" },
+                    "stacked": true,
                     "on": [
                       {
                         "event": "point:click",
                         "actions": [
-                          { "type": "filter", "key": "region", "fromField": "geo", "mode": "toggle", "max": 10 }
+                          { "type": "filter", "key": "region", "fromField": "id", "mode": "toggle", "max": 10 }
                         ]
                       }
                     ],
@@ -3744,7 +3745,8 @@
                   "encoding": {
                     "color": "color",
                     "id": "geo",
-                    "label": "label",
+                    "label": { "$ctx": "_xDim" },
+                    "series": { "$ctx": "_seriesDim" },
                     "pct": {
                       "sumOf": "value"
                     },
@@ -3753,145 +3755,7 @@
                   "pipe": [
                     {
                       "agg": "sum",
-                      "by": [
-                        "geo"
-                      ],
-                      "measure": "value",
-                      "op": "aggregate"
-                    },
-                    {
-                      "fields": [
-                        "label",
-                        "color"
-                      ],
-                      "from": {
-                        "$d": "geo"
-                      },
-                      "key": "geo",
-                      "op": "lookup"
-                    },
-                    {
-                      "by": "value",
-                      "dir": "desc",
-                      "op": "sort"
-                    }
-                  ],
-                  "query": {
-                    "filter": {
-                      "geo": {
-                        "$ne": "_T"
-                      },
-                      "measure": "GVA",
-                      "sector": {
-                        "$ctx": "sector"
-                      },
-                      "time": {
-                        "$ctx": "time"
-                      }
-                    },
-                    "measure": "regional.gva"
-                  },
-                  "type": "query"
-                },
-                "id": "sectors",
-                "label": {
-                  "ka": "{_regionTitle}",
-                  "en": "{_regionTitle}"
-                },
-                "title": {
-                  "ka": "მთლიანი შიდა პროდუქტი — რეგიონების მიხედვით",
-                  "en": "Gross Domestic Product — by region"
-                },
-                "type": "section",
-                "view": {
-                  "legend": "none",
-                  "styles": {
-                    "height": "16:9"
-                  },
-                  "subtitle": {
-                    "ka": "{time} · მლნ ₾",
-                    "en": "{time} · GEL mn"
-                  },
-                  "visibleWhen": {
-                    "is": "none",
-                    "op": "eq",
-                    "param": "_regionSel"
-                  }
-                }
-              },
-              {
-                "children": [
-                  {
-                    "chartType": "bar",
-                    "on": [
-                      {
-                        "event": "point:click",
-                        "actions": [
-                          { "type": "filter", "key": "sector", "fromField": "sector", "mode": "replace" }
-                        ]
-                      }
-                    ],
-                    "fieldConfig": {
-                      "unit": {
-                        "ka": "მლნ ₾",
-                        "en": "GEL mn"
-                      }
-                    },
-                    "label": {
-                      "ka": "სექტორული სტრუქტურა — რეგიონული შედარება",
-                      "en": "Sectoral structure — regional comparison"
-                    },
-                    "stacked": true,
-                    "type": "chart",
-                    "view": {
-                      "label": {
-                        "ka": "დიაგრამა",
-                        "en": "Chart"
-                      },
-                      "role": "chart"
-                    }
-                  },
-                  {
-                    "colLabel": {
-                      "ka": "სექტორი",
-                      "en": "Sector"
-                    },
-                    "color": "#0080BE",
-                    "columns": [
-                      {
-                        "key": "value",
-                        "label": {
-                          "ka": "მლნ ₾",
-                          "en": "GEL mn"
-                        }
-                      }
-                    ],
-                    "type": "table",
-                    "view": {
-                      "label": {
-                        "ka": "ცხრილი",
-                        "en": "Table"
-                      },
-                      "role": "table"
-                    }
-                  }
-                ],
-                "color": "#0080BE",
-                "data": {
-                  "encoding": {
-                    "color": "color",
-                    "label": "sectorLabel",
-                    "series": "label",
-                    "value": "value"
-                  },
-                  "pipe": [
-                    {
-                      "agg": "sum",
-                      "by": [
-                        "sector",
-                        "geo",
-                        "time"
-                      ],
+                      "by": { "$ctx": "_byDims" },
                       "measure": "value",
                       "op": "aggregate"
                     },
@@ -3923,8 +3787,13 @@
                       "op": "lookup"
                     },
                     {
-                      "by": "sectorOrder",
-                      "dir": "asc",
+                      "as": "geoLabel",
+                      "expr": "label",
+                      "op": "derive"
+                    },
+                    {
+                      "by": { "$ctx": "_sortBy" },
+                      "dir": { "$ctx": "_sortDir" },
                       "op": "sort"
                     }
                   ],
@@ -3946,14 +3815,14 @@
                   },
                   "type": "query"
                 },
-                "id": "sectors-multi",
+                "id": "sectors",
                 "label": {
                   "ka": "{_regionTitle}",
                   "en": "{_regionTitle}"
                 },
                 "title": {
-                  "ka": "სექტორული სტრუქტურა — რეგიონული შედარება",
-                  "en": "Sectoral structure — regional comparison"
+                  "ka": "მთლიანი შიდა პროდუქტი — რეგიონების მიხედვით",
+                  "en": "Gross Domestic Product — by region"
                 },
                 "type": "section",
                 "view": {
@@ -3963,11 +3832,6 @@
                   "subtitle": {
                     "ka": "{time} · მლნ ₾",
                     "en": "{time} · GEL mn"
-                  },
-                  "visibleWhen": {
-                    "is": "some",
-                    "op": "eq",
-                    "param": "_regionSel"
                   }
                 }
               }
@@ -4886,6 +4750,42 @@
             "else": "none",
             "op": "if",
             "then": "some"
+          },
+          "_xDim": {
+            "cond": { "left": { "$ctx": "region" }, "op": "ne", "right": "" },
+            "else": "geoLabel",
+            "op": "if",
+            "then": "sectorLabel"
+          },
+          "_seriesDim": {
+            "cond": { "left": { "$ctx": "region" }, "op": "ne", "right": "" },
+            "else": "",
+            "op": "if",
+            "then": "geoLabel"
+          },
+          "_mark": {
+            "cond": { "left": { "$ctx": "region" }, "op": "ne", "right": "" },
+            "else": "donut",
+            "op": "if",
+            "then": "bar"
+          },
+          "_byDims": {
+            "cond": { "left": { "$ctx": "region" }, "op": "ne", "right": "" },
+            "else": "geo",
+            "op": "if",
+            "then": "sector,geo,time"
+          },
+          "_sortBy": {
+            "cond": { "left": { "$ctx": "region" }, "op": "ne", "right": "" },
+            "else": "value",
+            "op": "if",
+            "then": "sectorOrder"
+          },
+          "_sortDir": {
+            "cond": { "left": { "$ctx": "region" }, "op": "ne", "right": "" },
+            "else": "desc",
+            "op": "if",
+            "then": "asc"
           },
           "_regionTitle": {
             "by": "region",

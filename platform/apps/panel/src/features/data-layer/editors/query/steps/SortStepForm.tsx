@@ -21,8 +21,14 @@ export interface SortStepFormProps {
 }
 
 function readKeys(step: SortStep): SortKey[] {
+  // `by`/`dir` may be a `{ $ctx }` STATE ref (AR-36 state-bound sort) — not editable via this
+  // simple field/dir form, so degrade to an empty single key rather than crash the editor.
+  const dir: 'asc' | 'desc' = typeof step.dir === 'string' ? step.dir : 'asc'
   if (typeof step.by === 'string') {
-    return [{ field: step.by, dir: step.dir ?? 'asc' }]
+    return [{ field: step.by, dir }]
+  }
+  if (!Array.isArray(step.by)) {
+    return [{ field: '', dir }]
   }
   return step.by.map((k) => ({ field: k.field, dir: k.dir ?? 'asc' }))
 }
