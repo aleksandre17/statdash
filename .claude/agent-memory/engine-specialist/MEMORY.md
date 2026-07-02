@@ -1,5 +1,8 @@
 # Engine Specialist — Memory Index
 
+## Feedback — corrections & validated approaches
+- [Class-M hook protocol](feedback_class_m_hook.md) — when the PreToolUse:Edit hook flags a public `@statdash/engine` API change, run the 09B degradation-risk assessment as a named section before editing; repeating an Opus-blessed seam needs no re-escalation
+
 ## Project
 - [CLUSTER② Law-1 leaks + inert seams](project_cluster2_law1_seams.md) — GrowthResolver privileged-dim+DEAD accountColor leak KILLED (filter:{[TIME_DIM]:}+generic color; atTime WRONG for obs-meta=filter-key) + FF-NO-PRIVILEGED-LITERAL twin; AD-6 perspectiveOptions honors available (react-lane must thread gate to activate); GRAIN-G4 granularity→grain (annual no-op via DEFAULT_GRANULARITY, data-gated). 3 commits, all green
 - [Adoption epic (X-2)](project_adoption_epic.md) — Acts 2(scope.metric wired→MEASURE_DIM)/3(FF-NO-CAPABILITY-WITHOUT-CONSUMER)/4(custom deleted) LANDED in core; Act 1 metric DELIVERY escalated (cross-workstream); registerMetrics seam added

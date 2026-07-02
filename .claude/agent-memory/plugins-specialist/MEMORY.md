@@ -1,6 +1,7 @@
 # Plugins-Specialist Memory Index
 
 ## Project / Architecture
+- [Plugin catalog isolation](project_catalog_isolation.md) — meta.ts extraction: each plugin's META in a Shell-free pure-TS file so apps/panel imports the catalog without pulling React/apexcharts/leaflet (done 2026-06-14)
 - [DI inject-render lint gate](project_di_inject_render_lint_gate.md) — `react-hooks/static-components` off-override is scoped to `packages/plugins/**`; promoting useInject-render into `packages/react` needs a per-file scoped override
 - [green gate stale buildinfo](project_green_gate_stale_buildinfo.md) — typecheck/build:engine show PHANTOM errors from stale `.tmp` buildinfo + stale core d.ts; clear/rebuild before trusting red; site-manifest test is flaky-by-timeout
 - [chrome shells clean state](project_chrome_shells_clean_state.md) — chrome/** is low-yield for primitive churn (no RenderContext/placement); only accentStyle applies; node shells are the real adoption surface

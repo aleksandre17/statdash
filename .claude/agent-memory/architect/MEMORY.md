@@ -3,6 +3,7 @@
 > Giant ADRs were migrated to first-class artifacts in `docs/architecture/decisions/ADR-NNN-*.md` (Phase-2 SSOT reorg). Memory now holds only slim pointers; the ADR doc is the SSOT for each decision.
 
 ## Project
+- [Memory-home resolution + SSOT enforcement](project_memory_home_resolution.md) — memory: project resolves CWD-relative (not CLAUDE_PROJECT_DIR, not ancestor-walk); strays self-heal via memory-home-guard.py hook (SessionStart/SubagentStop/Stop) + doctor backstop
 - [Multi-tenancy decision fork (P0 one-way door)](project_multitenancy_decision_fork.md) — branch is tenant-AGNOSTIC (rebrandable single-tenant), NOT multi-tenant-isolated; decide SaaS-vs-per-deploy before stacking features
 - [apps/ monorepo migration](project_apps_monorepo.md) — workspaces restructure; why a @plugins alias seam was added moving src → apps/geostat
 - [@geostat/* alias resolution](project_geostat_alias_resolution.md) — packages resolve via path aliases only, NOT npm workspaces; workspace:* is a latent install-breaker
