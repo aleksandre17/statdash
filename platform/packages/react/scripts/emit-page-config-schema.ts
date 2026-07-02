@@ -53,7 +53,6 @@ import { META as wrap }    from '../../plugins/nodes/layout/wrap/default/meta'
 import { META as chart }    from '../../plugins/panels/chart/default/meta'
 import { META as kpiStrip } from '../../plugins/panels/kpi-strip/default/meta'
 import { META as table }    from '../../plugins/panels/table/default/meta'
-import { META as map }      from '../../plugins/panels/map/default/meta'
 import { META as text }     from '../../plugins/panels/text/default/meta'
 import { META as gauge }    from '../../plugins/panels/gauge/default/meta'
 
@@ -71,7 +70,7 @@ const ALL_METAS: PlaceableMeta[] = [
   innerPage, containerPage, tabPage,
   section, perspectiveBar, filterBar, pageHeader, geograph, links, repeat, hero, statsCarousel,
   grid, columns, stack, card, divider, spacer, wrap,
-  chart, kpiStrip, table, map, text, gauge,
+  chart, kpiStrip, table, text, gauge,
 ]
 
 // ── setupRegistrations() — populate the registry the generator reads ─────────

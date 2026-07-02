@@ -1,6 +1,5 @@
 export * as chart    from './chart'
 export * as table    from './table'
 export * as kpiStrip from './kpi-strip'
-export * as map      from './map'
 export * as text     from './text'
 export * as gauge    from './gauge'

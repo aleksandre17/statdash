@@ -62,7 +62,6 @@ import { META as wrap }    from '../layout/wrap/default/meta'
 import { META as chart }    from '../../panels/chart/default/meta'
 import { META as kpiStrip } from '../../panels/kpi-strip/default/meta'
 import { META as table }    from '../../panels/table/default/meta'
-import { META as map }      from '../../panels/map/default/meta'
 import { META as gauge }    from '../../panels/gauge/default/meta'
 import { META as text }     from '../../panels/text/default/meta'
 
@@ -96,7 +95,7 @@ const ALL_METAS: PlaceableMeta[] = [
   section, perspectiveBar, filterBar, pageHeader, geograph, links, repeat, hero,
   statsCarousel,
   grid, columns, stack, card, divider, spacer, wrap,
-  chart, kpiStrip, table, map, gauge, text,
+  chart, kpiStrip, table, gauge, text,
 ]
 
 function hasNonEmptySchema(m: PlaceableMeta): boolean {

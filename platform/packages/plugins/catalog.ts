@@ -35,7 +35,6 @@ export * as layout from './nodes/layout'
 export { META as chart }    from './panels/chart'
 export { META as kpiStrip } from './panels/kpi-strip'
 export { META as table }    from './panels/table'
-export { META as map }      from './panels/map'
 export { META as text }     from './panels/text'
 export { META as gauge }    from './panels/gauge'
 
@@ -58,7 +57,6 @@ import { META as statsCarouselMeta } from './nodes/stats-carousel/default/meta'
 import { META as chartMeta }         from './panels/chart/default/meta'
 import { META as kpiStripMeta }      from './panels/kpi-strip/default/meta'
 import { META as tableMeta }         from './panels/table/default/meta'
-import { META as mapMeta }           from './panels/map/default/meta'
 import { META as textMeta }          from './panels/text/default/meta'
 import { META as gaugeMeta }         from './panels/gauge/default/meta'
 import * as pagesMeta                from './pages/meta'
@@ -127,7 +125,7 @@ const PALETTE_META: SliceMeta[] = [
   sectionMeta, perspectiveBarMeta, filterBarMeta, pageHeaderMeta,
   geographMeta, linksMeta, repeatMeta, heroMeta, statsCarouselMeta,
   // data panels
-  chartMeta, kpiStripMeta, tableMeta, mapMeta, gaugeMeta,
+  chartMeta, kpiStripMeta, tableMeta, gaugeMeta,
   // content panels
   textMeta,
 ]

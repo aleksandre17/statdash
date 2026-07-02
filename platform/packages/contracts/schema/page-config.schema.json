@@ -1338,71 +1338,6 @@
       ],
       "additionalProperties": true
     },
-    "node_map__default": {
-      "type": "object",
-      "properties": {
-        "view.geoDim": {
-          "title": "Geo dimension field",
-          "description": "string field",
-          "type": "string"
-        },
-        "view.valueField": {
-          "title": "Value field",
-          "description": "string field",
-          "type": "string"
-        },
-        "view.scale": {
-          "title": "Color scale",
-          "description": "quantile: Quantile, linear: Linear, threshold: Threshold",
-          "default": "quantile",
-          "type": "string",
-          "enum": [
-            "quantile",
-            "linear",
-            "threshold"
-          ]
-        },
-        "view.topology": {
-          "title": "Topology ID",
-          "description": "string field",
-          "type": "string"
-        },
-        "view.palette": {
-          "title": "Color palette",
-          "description": "array field",
-          "type": "array"
-        },
-        "type": {
-          "const": "map"
-        },
-        "id": {
-          "type": "string",
-          "description": "Node id"
-        },
-        "variant": {
-          "type": "string",
-          "description": "Registry variant"
-        },
-        "data": {
-          "$ref": "#/$defs/DataSpec"
-        },
-        "view": {
-          "type": "object",
-          "description": "ViewParams"
-        },
-        "children": {
-          "type": "array",
-          "description": "Child nodes",
-          "items": {
-            "$ref": "#/$defs/AnyNode"
-          }
-        }
-      },
-      "required": [
-        "type"
-      ],
-      "additionalProperties": true
-    },
     "node_text__default": {
       "type": "object",
       "properties": {
@@ -1596,9 +1531,6 @@
         },
         {
           "$ref": "#/$defs/node_table__default"
-        },
-        {
-          "$ref": "#/$defs/node_map__default"
         },
         {
           "$ref": "#/$defs/node_text__default"

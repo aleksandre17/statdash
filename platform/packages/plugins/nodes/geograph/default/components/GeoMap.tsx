@@ -16,7 +16,8 @@ import { GeoJSON, MapContainer, useMap } from 'react-leaflet'
 import L, { type PathOptions } from 'leaflet'
 import type { DataRow } from '@statdash/engine'
 import { fmtNum } from '@statdash/engine'
-import { cssVar, sequentialRamp, quantileColors } from '@statdash/styles'
+import { cssVar } from '@statdash/styles'
+import { accentFill, choroplethColors, choroplethLayerKey } from './choropleth'
 
 // ── Types ──────────────────────────────────────────────────────────────
 
@@ -59,11 +60,10 @@ const WEIGHT_DEFAULT  = 1
 const WEIGHT_SELECTED = 2.5
 
 // Leaflet PathOptions take a literal color string (var() is invalid as a JS-fed
-// fill value) — resolve the semantic token at call-time via cssVar(). fillColor()
-// is the fallback for regions with no datum (unjoined feature); the value-shaded
-// fills come from the sequential ramp below. A [data-tenant] override rebrands
-// both the ramp (derived from --color-accent) and the stroke.
-const fillColor   = () => cssVar('--color-accent', '#0080BE')
+// fill value) — resolve the semantic token at call-time via cssVar(). accentFill()
+// (from ./choropleth) is the fallback for regions with no datum (unjoined feature);
+// the value-shaded fills come from the sequential ramp in choroplethColors(). A
+// [data-tenant] override rebrands both the ramp (from --color-accent) and the stroke.
 const strokeColor = () => cssVar('--color-surface', '#fff')
 
 // ── Style helpers ──────────────────────────────────────────────────────
@@ -113,17 +113,12 @@ export function GeoMap({
   useEffect(() => { selectedRef.current = selectedGeos }, [selectedGeos])
   useEffect(() => { onSelectRef.current = onSelect },     [onSelect])
 
-  // Value → color: build a sequential ramp from the theme accent and assign each
-  // region a fill by quantile rank. This is the choropleth encoding — without it
-  // every region paints the same accent and the map reads flat. Keyed by row.id
-  // (the geo dim value), which onEachFeature/style resolve from the feature ISO.
-  const colorByGeo = useMemo(() => {
-    const colors = quantileColors(rows.map(r => r.value), sequentialRamp())
-    const map = new Map<string, string>()
-    rows.forEach((r, i) => map.set(String(r.id), colors[i] ?? fillColor()))
-    return map
-  }, [rows])
-  const colorFor = (geoId: string) => colorByGeo.get(geoId) ?? fillColor()
+  // Value → color: assign each region a fill by quantile rank against the theme
+  // ramp. This is the choropleth encoding — without it every region paints the
+  // same accent and the map reads flat. Keyed by row.id (the geo dim value), which
+  // onEachFeature/style resolve from the feature ISO. See ./choropleth (SSOT).
+  const colorByGeo = useMemo(() => choroplethColors(rows), [rows])
+  const colorFor = (geoId: string) => colorByGeo.get(geoId) ?? accentFill()
 
   useEffect(() => {
     const worker = new Worker(
@@ -199,7 +194,7 @@ export function GeoMap({
         attributionControl={false}
       >
         <GeoJSON
-          key={selectedGeos.join(',')}
+          key={choroplethLayerKey(selectedGeos, colorByGeo)}
           data={geoJson}
           style={(feature) => {
             const iso   = String(feature?.properties?.[isoField] ?? '')

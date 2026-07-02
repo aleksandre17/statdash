@@ -40,7 +40,6 @@ export * from './nodes/layout'
 export * as chart    from './panels/chart'
 export * as kpiStrip from './panels/kpi-strip'
 export * as table    from './panels/table'
-export * as map      from './panels/map'
 export * as text     from './panels/text'
 export * as gauge    from './panels/gauge'
 

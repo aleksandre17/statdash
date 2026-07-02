@@ -7,7 +7,7 @@ import { defineConfig } from 'tsup'
 // are not enumerated in those deps' `exports` maps, e.g.
 //   @statdash/react/context/AnchorNavContext
 //   @statdash/react/engine/{NodeRegistry,registerSlice,slice-meta,types}
-//   @statdash/plugins/panels/map/default            (self deep-import)
+//   @statdash/react/context/AnchorNavContext        (deep subpath)
 // rollup-plugin-dts (tsup's dts pass) resolves an externalized workspace
 // specifier through that package's `exports` first and only falls back to
 // tsconfig `paths` if not external — so these deep subpaths fail with TS2307

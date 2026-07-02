@@ -6,7 +6,7 @@
 //
 //  The engine a11y gate (RX-24, packages/react) is excellent but, by the dependency
 //  arrow (Law 3), the engine cannot import plugin shells — so it walks its OWN
-//  stand-in slices, NOT the chart/kpi/table/filter-bar/perspective-bar/map/gauge/hero
+//  stand-in slices, NOT the chart/kpi/table/filter-bar/perspective-bar/gauge/hero
 //  shells users actually see. This gate closes that gap: it lives in `packages/plugins`
 //  (where importing the real shells IS allowed), registers every real slice, and runs
 //  axe-core over the rendered output of EACH shell in the mandated set.
@@ -18,8 +18,8 @@
 //  crash a TEST crash, and lets us inject representative props/rows so the shell renders
 //  its real content, not an error card.
 //
-//  jsdom reality (honest scope): chart · gauge · map render an ApexCharts/Leaflet
-//  canvas that cannot mount in jsdom (no layout engine) — the whole codebase tests
+//  jsdom reality (honest scope): chart · gauge render an ApexCharts canvas that
+//  cannot mount in jsdom (no layout engine) — the whole codebase tests
 //  Apex via its option builders, never a real mount. Those shells are exercised on
 //  their EMPTY-STATE path (rows=[] → the shell's own EmptyState), which IS the shell's
 //  real output and is the surface a screen-reader hits before data resolves. The
@@ -48,22 +48,14 @@ import type { DataStore, SectionContext, PerspectiveContext, DataRow, BarNode } 
 import * as Panels   from '../panels'
 import * as Nodes    from '../nodes'
 import * as Controls from '../controls'
-import { registerTopology }                           from '../panels/map/default/topologyRegistry'
 
-// ── Register every real slice + a representative topology, once ────────────────
+// ── Register every real slice, once ────────────────────────────────────────────
 beforeAll(() => {
   ;[
     ...Object.values(Panels),
     ...Object.values(Nodes),
     ...Object.values(Controls),
   ].forEach((s) => registerSlice(s as Parameters<typeof registerSlice>[0]))
-
-  registerTopology({
-    id:      'axe-fixture',
-    label:   'Axe Fixture',
-    data:    { type: 'FeatureCollection', features: [] },
-    dimProp: 'iso',
-  })
 })
 
 afterEach(() => cleanup())
@@ -191,7 +183,6 @@ const CASES: ShellCase[] = [
   { type: 'chart', def: { type: 'chart', id: 'c', chartType: 'bar', label: { ka: 'დიაგრამა', en: 'Chart' } } as unknown as NodeBase },
   { type: 'kpi-strip', def: { type: 'kpi-strip', id: 'k', items: [] } as unknown as NodeBase },
   { type: 'gauge', def: { type: 'gauge', id: 'g' } as NodeBase },
-  { type: 'map', def: { type: 'map', id: 'm', topologyId: 'axe-fixture', dimProp: 'iso' } as unknown as NodeBase },
 ]
 
 const MANDATED = CASES.map((c) => c.type)

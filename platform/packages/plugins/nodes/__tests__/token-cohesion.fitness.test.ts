@@ -59,12 +59,6 @@ type AllowEntry = { tail: string; why: string; literals?: string[] }
 
 const ALLOWED: AllowEntry[] = [
   {
-    tail: join('panels', 'map', 'default', 'mapColorUtils.ts'),
-    why:  'DEFAULT_PALETTE: sequential ColorBrewer-Blues choropleth scale fed to ' +
-          'Leaflet path fillColor (var() invalid) AND parsed/interpolated in JS ' +
-          '(hexToRgb/lerp) — a data-encoding palette, not themeable chrome.',
-  },
-  {
     tail: join('components', 'PropSchemaForm.tsx'),
     why:  "`<input type=color>` default VALUE ('#000000') — a form data default, " +
           'not a styling color (the swatch the picker shows before a pick).',

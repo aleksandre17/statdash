@@ -42,7 +42,6 @@ import { META as wrap }    from './nodes/layout/wrap/default/meta'
 import { META as chart }    from './panels/chart/default/meta'
 import { META as kpiStrip } from './panels/kpi-strip/default/meta'
 import { META as table }    from './panels/table/default/meta'
-import { META as map }      from './panels/map/default/meta'
 import { META as gauge }    from './panels/gauge/default/meta'
 import { META as text }     from './panels/text/default/meta'
 
@@ -65,7 +64,7 @@ export const AUTHORING_METAS: SliceMeta[] = [
   // layout
   card, columns, divider, grid, spacer, stack, wrap,
   // panels
-  chart, kpiStrip, table, map, gauge, text,
+  chart, kpiStrip, table, gauge, text,
   // chrome (schema-bearing default variants)
   appHeaderDefault, appFooterDefault, innerSidebarDefault,
 ]

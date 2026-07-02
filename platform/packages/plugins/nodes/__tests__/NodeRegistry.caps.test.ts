@@ -28,7 +28,6 @@ const stubShell = (_def: NodeBase, _ctx: RenderContext, _children: ChildrenArg) 
 // Paths are relative to nodes/__tests__/ (two levels up to plugins root)
 import { META as chartMeta }      from '../../panels/chart/default/meta'
 import { META as tableMeta }      from '../../panels/table/default/meta'
-import { META as mapMeta }        from '../../panels/map/default/meta'
 import { META as kpiStripMeta }   from '../../panels/kpi-strip/default/meta'
 import { META as gaugeMeta }      from '../../panels/gauge/default/meta'
 import { META as sectionMeta }    from '../section/default/meta'
@@ -49,7 +48,7 @@ function makeRegistry(): NodeRegistry {
   const reg = new NodeRegistry()
 
   const allMetas = [
-    chartMeta, tableMeta, mapMeta, kpiStripMeta, gaugeMeta,
+    chartMeta, tableMeta, kpiStripMeta, gaugeMeta,
     sectionMeta, geographMeta, repeatMeta,
     pageHeaderMeta, filterBarMeta, columnsMeta, wrapMeta,
   ]
@@ -99,9 +98,9 @@ describe('getByCapability("export")', () => {
     expect(types).toContain('table')
   })
 
-  it('does not return map (map has no export cap)', () => {
+  it('does not return geograph (geograph has no export cap)', () => {
     const types = reg.getByCapability('export').map(e => e.type)
-    expect(types).not.toContain('map')
+    expect(types).not.toContain('geograph')
   })
 })
 
@@ -128,13 +127,12 @@ describe('getByCapability("collapsible")', () => {
 // ── filterable cap ────────────────────────────────────────────────────────────
 
 describe('getByCapability("filterable")', () => {
-  it('returns chart, table, kpi-strip, gauge, map, geograph, repeat', () => {
+  it('returns chart, table, kpi-strip, gauge, geograph, repeat', () => {
     const types = reg.getByCapability('filterable').map(e => e.type)
     expect(types).toContain('chart')
     expect(types).toContain('table')
     expect(types).toContain('kpi-strip')
     expect(types).toContain('gauge')
-    expect(types).toContain('map')
     expect(types).toContain('geograph')
     expect(types).toContain('repeat')
   })
@@ -150,10 +148,9 @@ describe('getByCapability("filterable")', () => {
 // ── view-toggle cap ───────────────────────────────────────────────────────────
 
 describe('getByCapability("view-toggle")', () => {
-  it('returns chart, map, and geograph', () => {
+  it('returns chart and geograph', () => {
     const types = reg.getByCapability('view-toggle').map(e => e.type)
     expect(types).toContain('chart')
-    expect(types).toContain('map')
     expect(types).toContain('geograph')
   })
 
