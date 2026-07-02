@@ -1,5 +1,6 @@
 // ── Mode A: SimpleTable ───────────────────────────────────────────────
 
+import type { KeyboardEvent }      from 'react'
 import type { DataRow, ColumnDef } from '@statdash/engine'
 import type { AggType }            from './_footer'
 import { getCellValue, colFmt }    from './_helpers'
@@ -17,9 +18,13 @@ export interface SimpleTableProps {
   footer?:           Record<string, AggType>
   footerLabel?:      string
   highlightedLabel?: string
+  /** Cross-filter row-select — present only when the node declares `on`. */
+  onRowSelect?:      (row: DataRow) => void
+  /** Currently-selected row ids (row.id) for aria-selected. */
+  selectedIds?:      string[]
 }
 
-export function SimpleTable({ rows, colLabel, columns, indent, statusFlags, caption, footer, footerLabel, highlightedLabel }: SimpleTableProps) {
+export function SimpleTable({ rows, colLabel, columns, indent, statusFlags, caption, footer, footerLabel, highlightedLabel, onRowSelect, selectedIds }: SimpleTableProps) {
   const dataRows = rows.filter((r) => !r.isTotal && !r.isSeparator)
   const totalCols = 1 + columns.length
   const hasTfoot  = !!footer && Object.keys(footer).length > 0
@@ -73,8 +78,35 @@ export function SimpleTable({ rows, colLabel, columns, indent, statusFlags, capt
               : undefined
 
             const isHighlighted = !row.isTotal && highlightedLabel != null && row.label === highlightedLabel
+            // Cross-filter row-select — a data row becomes a keyboard-operable
+            // selection control ONLY when onRowSelect is supplied (node declares
+            // `on`). WCAG 2.1 AA: focusable (tabIndex 0), Enter/Space activate,
+            // aria-selected reflects the current selection. Totals are never
+            // selectable. Absent onRowSelect ⇒ a plain, inert row (no regression).
+            const isSelectable = !!onRowSelect && !row.isTotal
+            const isSelected   = isSelectable && selectedIds != null && row.id != null && selectedIds.includes(String(row.id))
+            const selectProps  = isSelectable
+              ? {
+                  onClick:    () => onRowSelect!(row),
+                  onKeyDown:  (e: KeyboardEvent<HTMLTableRowElement>) => {
+                    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onRowSelect!(row) }
+                  },
+                  tabIndex:      0,
+                  role:          'button',
+                  'aria-pressed': isSelected,
+                }
+              : {}
             return (
-              <tr key={row.id} className={[row.isTotal ? 'total' : '', isHighlighted ? 'data-table__row--highlighted' : ''].filter(Boolean).join(' ')}>
+              <tr
+                key={row.id}
+                {...selectProps}
+                className={[
+                  row.isTotal ? 'total' : '',
+                  isHighlighted ? 'data-table__row--highlighted' : '',
+                  isSelectable ? 'data-table__row--selectable' : '',
+                  isSelected ? 'data-table__row--selected' : '',
+                ].filter(Boolean).join(' ')}
+              >
                 <th scope="row" style={labelStyle}>
                   {!row.isTotal && (
                     <span className="t-dot" aria-hidden="true" style={row.color ? { background: row.color } : undefined} />

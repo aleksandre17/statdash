@@ -18,12 +18,13 @@ import { getFormatter }         from './transform'
 import { resolveTemplate }      from '../config/template'
 import { evalVisibility }       from '../config/visibility'
 import type {
-  TimeRef, DimFilter, ObsRef, KpiValueSpec, KpiTrendSpec, KpiSpec,
+  TimeRef, DimFilter, DimFilterRef, ObsRef, KpiValueSpec, KpiTrendSpec, KpiSpec,
 } from './kpi-spec'
+import type { DimVal }           from '../sdmx'
 
 // Re-export the vocabulary so existing `from './kpi'` / `from '../data/kpi'`
 // import paths (index.ts, data/index.ts, tests) stay byte-identical after the split.
-export type { FormatKey, ObsRef, KpiValueSpec, KpiTrendSpec, KpiSpec } from './kpi-spec'
+export type { FormatKey, ObsRef, KpiValueSpec, KpiTrendSpec, KpiSpec, DimFilter, DimFilterRef } from './kpi-spec'
 
 // ── Internal helpers ──────────────────────────────────────────────────
 
@@ -42,13 +43,29 @@ function resolveTime(ref: TimeRef | undefined, ctx: SectionContext): number {
   return ref as number
 }
 
+// Resolve ONE KPI filter dim value against the live ctx.dims. A `$ctx` ref FOLLOWS
+// the current selection (cross-filter); an empty selection falls back to the ref's
+// `default` (e.g. '_T' national total). A literal passes through unchanged. This is
+// the read-side twin of the store's resolveFilter `$ctx` handling — a KPI filter
+// dim can now scope to the selection instead of pinning a literal.
+function resolveFilterVal(v: DimFilter[string], ctx: SectionContext): DimVal | '' {
+  if (v !== null && typeof v === 'object' && '$ctx' in v) {
+    const ref = v as DimFilterRef
+    const sel = ctx.dims[ref.$ctx]
+    if (sel !== '' && sel !== null && sel !== undefined) return sel as DimVal
+    return ref.default ?? ''
+  }
+  return v as DimVal
+}
+
 function withFilter(ctx: SectionContext, filter?: DimFilter): SectionContext {
   if (!filter) return ctx
   const dims = { ...ctx.dims }
   for (const [k, v] of Object.entries(filter)) {
+    const rv = resolveFilterVal(v, ctx)
     // '' / null / undefined — wildcard: drop the dim from ctx so val() sums over it.
-    if (v === '' || v === null || v === undefined) delete dims[k]
-    else                                            dims[k] = v
+    if (rv === '' || rv === null || rv === undefined) delete dims[k]
+    else                                              dims[k] = rv
   }
   return { ...ctx, dims }
 }

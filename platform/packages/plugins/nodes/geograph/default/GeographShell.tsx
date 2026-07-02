@@ -1,7 +1,7 @@
 import './geograph.css'
 import { Fragment }                            from 'react'
 import { resolveViewState }                    from '@statdash/styles'
-import { defineShell, resolvePreliminary, useNodeTemplate, useViewToggle } from '@statdash/react/engine'
+import { defineShell, resolvePreliminary, useNodeTemplate, useViewToggle, useNodeInteractions } from '@statdash/react/engine'
 import type { ShellProps, NodeDef }            from '@statdash/react/engine'
 import { useT, useInject, useResolveLocale, PANEL_LAYOUT, useExtensions, PANEL_TITLE_BADGE } from '@statdash/react'
 import type { PanelViewToggle }                from '@statdash/react'
@@ -34,38 +34,19 @@ function GeographControl({ def, ctx, vs, children }: Pick<ShellProps<GeographNod
     ? <>{titleBadges.map((b, i) => <Fragment key={i}>{b}</Fragment>)}</>
     : undefined
 
-  const maxSelect = def.maxSelect ?? 2
-  const rawParam  = (ctx.filterParams[def.paramKey] as string) ?? ''
+  const rawParam = (ctx.filterParams[def.paramKey] as string) ?? ''
 
-  const selectedGeos: string[] = def.multiSelect
-    ? rawParam.split(',').filter(Boolean)
-    : rawParam ? [rawParam] : []
+  // The selected set is ALWAYS the param's CSV OR-set (a single value is a
+  // one-element set) — no privileged single/multi branch here; the mode lives
+  // in the declarative on[] (toggle/replace), resolved by applySelection.
+  const selectedGeos: string[] = rawParam.split(',').filter(Boolean)
 
-  const handleSelect = (geo: string) => {
-    if (def.multiSelect) {
-      const current = rawParam.split(',').filter(Boolean)
-      const idx     = current.indexOf(geo)
-      let updated: string[]
-      if (idx >= 0) {
-        updated = current.filter(g => g !== geo)
-      } else if (current.length < maxSelect) {
-        updated = [...current, geo]
-      } else {
-        updated = [...current.slice(1), geo]
-      }
-      if (updated.length > 0) {
-        ctx.bus.dispatch({ type: 'filter:set', key: def.paramKey, value: updated.join(',') })
-      } else {
-        ctx.bus.dispatch({ type: 'filter:clear', key: def.paramKey })
-      }
-    } else {
-      if (rawParam === geo) {
-        ctx.bus.dispatch({ type: 'filter:clear', key: def.paramKey })
-      } else {
-        ctx.bus.dispatch({ type: 'filter:set', key: def.paramKey, value: geo })
-      }
-    }
-  }
+  // The map is now the FIRST CONSUMER of the shared interaction seam, not a
+  // one-off. A click emits a 'selection:change' carrying the clicked geo under
+  // the node's paramKey; the accumulate/cap logic lives ONCE in applySelection
+  // (driven by the node's declarative on[] mode/max). No bespoke bus writes.
+  const { emit } = useNodeInteractions(def, ctx)
+  const handleSelect = (geo: string) => emit('selection:change', { [def.paramKey]: geo })
 
   const rows    = ctx.rows ?? []
   const resolve = useNodeTemplate(ctx)

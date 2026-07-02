@@ -1,5 +1,6 @@
 import { useCallback }          from 'react'
 import type { DimVal }           from '@statdash/engine'
+import { useNodeInteractions }   from '@statdash/react/engine'
 import type { RenderContext }    from '@statdash/react/engine'
 import type { ChartOutput }      from '@statdash/charts'
 import type { ChartNode }        from './ChartNode'
@@ -41,27 +42,36 @@ export function useChartInteractions(
     ctx.eventBus.publish('row:leave', { nodeType: 'chart' })
   }, [ctx.eventBus])
 
-  // DataLinks — navigate on chart click via the CommandBus (nav:drill).
+  // Cross-filter — a chart point:click is a selection gesture. It routes through
+  // the ONE shared adapter (def.on[] + dataLinks filter branch → CommandBus), the
+  // SAME seam the table and map use. This finally honours the filter branch that
+  // was previously dropped here (navigate-only). NAVIGATION (dataLinks 'navigate')
+  // is a distinct cross-page concern and stays local (nav:drill).
+  const { emit } = useNodeInteractions(def, ctx)
+
   const onDataClick = useCallback((dataIndex: number) => {
-    if (!def.dataLinks?.length) return
     const row = ctx.rows?.[dataIndex]
     if (!row) return
-    const links = ctx.resolveLinks(def.dataLinks, row as unknown as Record<string, DimVal>)
-    if (links.length > 0) {
-      const link = links[0]
-      if (link.action === 'navigate') {
-        ctx.bus.dispatch({ type: 'nav:drill', href: link.href, target: link.target ?? 'page' })
+    // Selection (on[] + dataLinks:filter) — one write point via the adapter.
+    emit('point:click', row as unknown as Record<string, unknown>)
+    // Navigation (dataLinks:navigate) — cross-page drill, not a selection write.
+    if (def.dataLinks?.length) {
+      const nav = ctx.resolveLinks(def.dataLinks, row as unknown as Record<string, DimVal>)
+        .find((l) => l.action === 'navigate')
+      if (nav && nav.action === 'navigate') {
+        ctx.bus.dispatch({ type: 'nav:drill', href: nav.href, target: nav.target ?? 'page' })
       }
     }
-    // The granular ctx.* deps below are intentionally precise (ctx.rows changes on
-    // data load; depending on the whole `ctx` object would over-invalidate). The
-    // rule's demand for the parent `ctx` is over-conservative here.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [def.dataLinks, ctx.rows, ctx.resolveLinks, ctx.bus])
+  }, [emit, def.dataLinks, ctx.rows, ctx.resolveLinks, ctx.bus])
+
+  // Present the handler only when the node declares an interaction (on[] or
+  // dataLinks) — otherwise the chart stays inert (no affordance, no regression).
+  const interactive = !!(def.on?.length || def.dataLinks?.length)
 
   return {
     onDataHover,
     onDataLeave,
-    onDataClick: def.dataLinks?.length ? onDataClick : undefined,
+    onDataClick: interactive ? onDataClick : undefined,
   }
 }

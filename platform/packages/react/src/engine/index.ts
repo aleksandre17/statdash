@@ -123,6 +123,21 @@ export { useNodeStream }           from './useNodeStream'
 //  interpretKpis' querySync is never cold against an async store.
 export { useKpiRows }              from './useKpiRows'
 
+// ── Cross-filter interaction seam — the ONE gesture→selection adapter ─────
+//  useNodeInteractions(def, ctx).emit(trigger, row) routes EVERY surface's
+//  selection gesture (chart point:click, table row:click, map selection:change)
+//  through the single CommandBus write point via the pure applySelection reducer.
+//  No shell wires selection itself (FF-XF-ONE-WRITE-POINT).
+export { useNodeInteractions }     from './useNodeInteractions'
+export type { NodeInteractions }   from './useNodeInteractions'
+export type {
+  NodeEventTrigger,
+  NodeEventHandler,
+  NodeAction,
+  FilterAction,
+  SelectionMode,
+}                                  from './node-events'
+
 // ── Shell UI hooks — app-agnostic, reusable by ANY shell ──────────────────
 //  useCollapsible — disclosure state + header a11y/keyboard contract (accordion,
 //    panel, drawer, section). useViewToggle — role-tagged sibling-children view

@@ -9,16 +9,34 @@
 //    Builder.io — component.actions[]
 //
 
-/** The triggering interaction on a data node. */
-export type NodeEventTrigger = 'row:click' | 'row:hover' | 'selection:change'
+import type { SelectionMode } from '@statdash/engine'
 
-/** Action: set a filter param from a row field value. */
+/** The triggering interaction on a data node. */
+export type NodeEventTrigger = 'point:click' | 'row:click' | 'row:hover' | 'selection:change'
+
+/** Re-export the pure reducer's mode enum as the grammar's SSOT (no drift). */
+export type { SelectionMode }
+
+/** Action: set a filter param from a row field value (cross-filter selection). */
 export interface FilterAction {
   type:      'filter'
-  /** The filter param key to write (e.g. 'regionId', 'time'). */
+  /** The filter param key to write (e.g. 'region', 'sector'). */
   key:       string
-  /** Row field whose value is written to the filter param. */
-  fromField: string
+  /**
+   * Row field whose value is written to the filter param.
+   * Optional — defaults to `key` (reads row[key]).
+   */
+  fromField?: string
+  /**
+   * Selection semantics — how the value folds into the current param:
+   *   'replace' (default) — single-select; re-click clears.
+   *   'toggle'            — accumulate a CSV OR-set (multi-select).
+   *   'clear'             — clear the param.
+   * Resolved by the pure `applySelection` reducer (one SSOT for every surface).
+   */
+  mode?:     SelectionMode
+  /** Cap for `toggle` accumulation — evict-oldest past `max` (multi-select cap). */
+  max?:      number
 }
 
 /** Extensible union of all declarative action types. */

@@ -46,7 +46,16 @@ export default function DataTable({
   seriesFormat,
   seriesOrder,
   highlightedLabel,
-}: TableConfig & { rows: DataRow[]; highlightedLabel?: string }) {
+  onRowSelect,
+  selectedIds,
+}: TableConfig & {
+  rows: DataRow[]
+  highlightedLabel?: string
+  /** Cross-filter row-select — present only when the node declares `on`. */
+  onRowSelect?: (row: DataRow) => void
+  /** Currently-selected row ids (row.id) for aria-selected + highlight. */
+  selectedIds?: string[]
+}) {
   // i18n boundary: column-header labels are tenant CONTENT from TableConfig and may
   // be LocaleStrings ({en,ka}). THIS React layer holds the active locale, so resolve
   // them here (no-op on plain strings) — the agnostic table components then receive
@@ -78,5 +87,7 @@ export default function DataTable({
         footer={footer}
         footerLabel={footerLabel}
         highlightedLabel={highlightedLabel}
+        onRowSelect={onRowSelect}
+        selectedIds={selectedIds}
       />
 }

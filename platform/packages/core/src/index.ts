@@ -290,8 +290,11 @@ export { interpretSpec, extractRequirements, setSpecResolveObserver }  from './d
 // (useNodeRows) fetches under this IDENTICAL query so warm-key ≡ read-key.
 export { queryReadObs }                                                 from './registry/resolvers'
 export { desugar }                                                      from './data/desugar'
+export { applySelection }                                               from './data/applySelection'
+export type { SelectionMode }                                           from './data/applySelection'
+export { splitMultiValue }                                              from './data/store-filter'
 export { interpretKpis, extractKpiRequirements }                        from './data/kpi'
-export type { KpiSpec, KpiValueSpec, KpiTrendSpec }                     from './data/kpi'
+export type { KpiSpec, KpiValueSpec, KpiTrendSpec, DimFilter, DimFilterRef } from './data/kpi'
 
 // ── Metric registry [N26] — Constructor metric vocabulary + extension seam ──
 export type { MetricDef, ResolvedMeasure, MetricInput, MetricCalc }    from './data/metric'

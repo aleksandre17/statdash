@@ -2888,9 +2888,9 @@
                 },
                 "trend": {
                   "filter": {
-                    "geo": "_T",
+                    "geo": { "$ctx": "geo", "default": "_T" },
                     "measure": "GVA",
-                    "sector": "_T"
+                    "sector": { "$ctx": "sector", "default": "_T" }
                   },
                   "measure": "GVA",
                   "type": "yoy"
@@ -2905,9 +2905,9 @@
                 },
                 "value": {
                   "filter": {
-                    "geo": "_T",
+                    "geo": { "$ctx": "geo", "default": "_T" },
                     "measure": "GVA",
-                    "sector": "_T"
+                    "sector": { "$ctx": "sector", "default": "_T" }
                   },
                   "format": "mln_gel",
                   "measure": "GVA",
@@ -2927,9 +2927,9 @@
                 },
                 "trend": {
                   "filter": {
-                    "geo": "_T",
+                    "geo": { "$ctx": "geo", "default": "_T" },
                     "measure": "GVA",
-                    "sector": "_T"
+                    "sector": { "$ctx": "sector", "default": "_T" }
                   },
                   "measure": "GVA",
                   "type": "yoy"
@@ -2944,9 +2944,9 @@
                 },
                 "value": {
                   "filter": {
-                    "geo": "_T",
+                    "geo": { "$ctx": "geo", "default": "_T" },
                     "measure": "GVA",
-                    "sector": "_T"
+                    "sector": { "$ctx": "sector", "default": "_T" }
                   },
                   "measure": "GVA",
                   "type": "yoy"
@@ -2982,9 +2982,9 @@
                 "value": {
                   "denom": {
                     "filter": {
-                      "geo": "_T",
+                      "geo": { "$ctx": "geo", "default": "_T" },
                       "measure": "GVA",
-                      "sector": "_T"
+                      "sector": { "$ctx": "sector", "default": "_T" }
                     },
                     "measure": "GVA"
                   },
@@ -2992,7 +2992,7 @@
                     "filter": {
                       "geo": "R2",
                       "measure": "GVA",
-                      "sector": "_T"
+                      "sector": { "$ctx": "sector", "default": "_T" }
                     },
                     "measure": "GVA"
                   },
@@ -3012,9 +3012,9 @@
                 },
                 "trend": {
                   "filter": {
-                    "geo": "_T",
+                    "geo": { "$ctx": "geo", "default": "_T" },
                     "measure": "GVA",
-                    "sector": "_T"
+                    "sector": { "$ctx": "sector", "default": "_T" }
                   },
                   "from": {
                     "$ctx": "spanFrom"
@@ -3035,9 +3035,9 @@
                 },
                 "value": {
                   "filter": {
-                    "geo": "_T",
+                    "geo": { "$ctx": "geo", "default": "_T" },
                     "measure": "GVA",
-                    "sector": "_T"
+                    "sector": { "$ctx": "sector", "default": "_T" }
                   },
                   "from": {
                     "$ctx": "spanFrom"
@@ -3062,9 +3062,9 @@
                 },
                 "trend": {
                   "filter": {
-                    "geo": "_T",
+                    "geo": { "$ctx": "geo", "default": "_T" },
                     "measure": "GVA",
-                    "sector": "_T"
+                    "sector": { "$ctx": "sector", "default": "_T" }
                   },
                   "from": {
                     "$ctx": "fromYear"
@@ -3085,9 +3085,9 @@
                 },
                 "value": {
                   "filter": {
-                    "geo": "_T",
+                    "geo": { "$ctx": "geo", "default": "_T" },
                     "measure": "GVA",
-                    "sector": "_T"
+                    "sector": { "$ctx": "sector", "default": "_T" }
                   },
                   "from": {
                     "$ctx": "fromYear"
@@ -3112,9 +3112,9 @@
                 },
                 "trend": {
                   "filter": {
-                    "geo": "_T",
+                    "geo": { "$ctx": "geo", "default": "_T" },
                     "measure": "GVA",
-                    "sector": "_T"
+                    "sector": { "$ctx": "sector", "default": "_T" }
                   },
                   "measure": "GVA",
                   "time": {
@@ -3132,9 +3132,9 @@
                 },
                 "value": {
                   "filter": {
-                    "geo": "_T",
+                    "geo": { "$ctx": "geo", "default": "_T" },
                     "measure": "GVA",
-                    "sector": "_T"
+                    "sector": { "$ctx": "sector", "default": "_T" }
                   },
                   "format": "mln_gel",
                   "measure": "GVA",
@@ -3173,9 +3173,9 @@
                 },
                 "value": {
                   "filter": {
-                    "geo": "_T",
+                    "geo": { "$ctx": "geo", "default": "_T" },
                     "measure": "GVA",
-                    "sector": "_T"
+                    "sector": { "$ctx": "sector", "default": "_T" }
                   },
                   "format": "mln_gel",
                   "measure": "GVA",
@@ -3198,9 +3198,9 @@
                 },
                 "trend": {
                   "filter": {
-                    "geo": "_T",
+                    "geo": { "$ctx": "geo", "default": "_T" },
                     "measure": "GVA",
-                    "sector": "_T"
+                    "sector": { "$ctx": "sector", "default": "_T" }
                   },
                   "from": {
                     "$ctx": "fromYear"
@@ -3221,9 +3221,9 @@
                 },
                 "value": {
                   "filter": {
-                    "geo": "_T",
+                    "geo": { "$ctx": "geo", "default": "_T" },
                     "measure": "GVA",
-                    "sector": "_T"
+                    "sector": { "$ctx": "sector", "default": "_T" }
                   },
                   "from": {
                     "$ctx": "fromYear"
@@ -3271,6 +3271,14 @@
                     "footer": {
                       "value": "sum"
                     },
+                    "on": [
+                      {
+                        "event": "row:click",
+                        "actions": [
+                          { "type": "filter", "key": "region", "fromField": "id", "mode": "toggle", "max": 10 }
+                        ]
+                      }
+                    ],
                     "type": "table",
                     "view": {
                       "label": {
@@ -3367,6 +3375,14 @@
                 },
                 "maxSelect": 10,
                 "multiSelect": true,
+                "on": [
+                  {
+                    "event": "selection:change",
+                    "actions": [
+                      { "type": "filter", "key": "region", "mode": "toggle", "max": 10 }
+                    ]
+                  }
+                ],
                 "paramKey": "region",
                 "title": {
                   "ka": "მთლიანი შიდა პროდუქტი — რეგიონების მიხედვით",
@@ -3796,6 +3812,14 @@
                     "footer": {
                       "value": "sum"
                     },
+                    "on": [
+                      {
+                        "event": "row:click",
+                        "actions": [
+                          { "type": "filter", "key": "region", "fromField": "id", "mode": "toggle", "max": 10 }
+                        ]
+                      }
+                    ],
                     "type": "table",
                     "view": {
                       "label": {
@@ -3915,6 +3939,14 @@
                     "footer": {
                       "value": "sum"
                     },
+                    "on": [
+                      {
+                        "event": "row:click",
+                        "actions": [
+                          { "type": "filter", "key": "region", "fromField": "id", "mode": "toggle", "max": 10 }
+                        ]
+                      }
+                    ],
                     "type": "table",
                     "view": {
                       "label": {
@@ -3995,6 +4027,14 @@
                 "geoJsonUrl": "/data/georgia-regions.geojson",
                 "id": "geo-map-range",
                 "isoField": "shapeISO",
+                "on": [
+                  {
+                    "event": "selection:change",
+                    "actions": [
+                      { "type": "filter", "key": "region", "mode": "replace" }
+                    ]
+                  }
+                ],
                 "label": {
                   "ka": "{_regionTitle}",
                   "en": "{_regionTitle}"

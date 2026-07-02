@@ -22,7 +22,18 @@ export type FormatKey = 'mln_gel' | 'sign_pct' | 'pct' | 'decimal1' | 'decimal2'
 
 export type TimeRef = number | CtxRef
 
-export type DimFilter = Record<string, DimVal>
+/**
+ * A KPI filter dim value: a literal code (national pin, e.g. '_T') OR a
+ * cross-filter `$ctx` ref that FOLLOWS the current selection (ctx.dims[$ctx]),
+ * with an optional `default` used when that dim is unselected (empty). This is
+ * what lets a regional KPI scope to the selected region(s) yet fall back to the
+ * national total when nothing is selected — `{ $ctx:'geo', default:'_T' }`.
+ * Resolved by withFilter (kpi.ts) through the SAME path the warm extractor uses,
+ * so warm === read holds.
+ */
+export type DimFilterRef = { $ctx: string; default?: DimVal }
+
+export type DimFilter = Record<string, DimVal | DimFilterRef>
 
 /** Self-contained observation reference: measure + optional dim overrides + optional time pin. */
 export type ObsRef = { measure: string; filter?: DimFilter; time?: TimeRef }

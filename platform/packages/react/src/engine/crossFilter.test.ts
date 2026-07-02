@@ -164,7 +164,7 @@ describe('cross-filter link dispatch logic', () => {
       if (handler.event === 'row:click') {
         for (const action of handler.actions) {
           if (action.type === 'filter') {
-            mockSet(action.key, row[action.fromField])
+            mockSet(action.key, row[action.fromField ?? action.key])
           }
         }
       }

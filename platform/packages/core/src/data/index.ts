@@ -24,6 +24,11 @@ export type { RawObsRow }                                          from './store
 export { ApiStore }                                                from './store-api'
 export { interpretSpec, extractRequirements }                       from './spec'
 export { desugar }                                                  from './desugar'
+export { applySelection }                                          from './applySelection'
+export type { SelectionMode }                                      from './applySelection'
+// splitMultiValue — the SSOT decode for a CSV OR-set param (multi-select). The
+// encode peer is applySelection; both sides share this ',' contract (no drift).
+export { splitMultiValue }                                         from './store-filter'
 export { interpretKpis }                                            from './kpi'
-export type { KpiSpec, KpiValueSpec, KpiTrendSpec }                 from './kpi'
+export type { KpiSpec, KpiValueSpec, KpiTrendSpec, DimFilter, DimFilterRef } from './kpi'
 export { resolveMetricValue, calcMetricRequirements, isCalculatedMetric } from './metric-calc'
