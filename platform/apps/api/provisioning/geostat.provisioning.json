@@ -2095,7 +2095,7 @@
           },
           {
             "type": "grid",
-            "templateColumns": "1fr",
+            "templateColumns": "repeat(auto-fit, minmax(min(100%, 24rem), 1fr))",
             "view": {
               "visibleWhen": {
                 "op": "perspective-is",
@@ -2229,26 +2229,14 @@
                     ]
                   }
                 ]
-              }
-            ]
-          },
-          {
-            "type": "grid",
-            "templateColumns": "1fr",
-            "view": {
-              "visibleWhen": {
-                "op": "perspective-is",
-                "perspective": "year"
-              }
-            },
-            "children": [
+              },
               {
                 "type": "section",
                 "id": "structural",
                 "color": "#F4A261",
                 "title": {
-                  "ka": "მთლიანი ძირითადი კაპიტალის ფორმირება აქტივების ტიპების მიხედვით",
-                  "en": "Gross fixed capital formation by asset type"
+                  "ka": "მთლიანი კაპიტალის ფორმირების სტრუქტურა, %",
+                  "en": "Gross capital formation structure, %"
                 },
                 "fieldConfig": {
                   "unit": {

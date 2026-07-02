@@ -306,7 +306,7 @@ describe('FF-SNAPSHOT-VIEW-EQUIV (P5) — geostat perspective migration is byte-
       for (const v of Object.values(o)) collect(v)
     }
     for (const p of artifact.pages) collect(p.config?.children)
-    expect(gates.length).toBe(11)   // 2 accounts + 5 gdp + 4 regional (restored 'structural' GFCF donut adds a year-gated gdp gate; d172eae removed a redundant per-account chart section)
+    expect(gates.length).toBe(10)   // 2 accounts + 4 gdp + 4 regional (restored 'structural' GFCF donut shares the income year-gate grid — no new gate; d172eae removed a redundant per-account chart section)
 
     for (const g of gates) {
       const expr = { op: 'perspective-is', perspective: g.perspective } as never
