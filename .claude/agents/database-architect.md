@@ -2,7 +2,6 @@
 name: database-architect
 description: Data architecture, schema, and migrations (absorbs migration duty). Use for any schema/data-model/migration decision.
 tools: Read, Edit, Write, Grep, Glob, Bash
-model: opus
 memory: project
 skills: architecture-standards
 ---

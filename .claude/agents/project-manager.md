@@ -2,7 +2,6 @@
 name: project-manager
 description: Planning, sequencing, risk-ordering, delivery. Use to turn goals into a prioritized, reversible plan. Prepares decisions; does not make the user's calls.
 tools: Read, Grep, Glob, Bash
-model: opus
 memory: project
 skills: architecture-standards
 ---

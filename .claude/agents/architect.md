@@ -2,7 +2,6 @@
 name: architect
 description: System & software architecture — design, decompose, decide. Use for any architectural judgment, new pattern, or structural decision.
 tools: Read, Grep, Glob, Bash
-model: opus
 memory: project
 skills: architecture-standards
 ---

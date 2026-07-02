@@ -2,7 +2,6 @@
 name: senior-frontend-developer
 description: Senior frontend & markup engineering — UI architecture, state, accessibility, CSS architecture (absorbs markup duty). Use for frontend design-level work.
 tools: Read, Edit, Write, Grep, Glob, Bash
-model: opus
 memory: project
 skills: architecture-standards
 ---

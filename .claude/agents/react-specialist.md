@@ -2,7 +2,6 @@
 name: react-specialist
 description: Expert on packages/react — the app-agnostic React rendering layer. Use proactively when a change touches packages/react.
 tools: Read, Edit, Write, Bash, Grep, Glob
-model: sonnet
 memory: project
 tuned: true
 ---

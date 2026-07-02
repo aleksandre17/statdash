@@ -2,7 +2,6 @@
 name: debugger
 description: Root-cause diagnosis. Use when something is broken or behaving unexpectedly — before any fix.
 tools: Read, Edit, Write, Grep, Glob, Bash
-model: opus
 memory: project
 skills: architecture-standards
 ---

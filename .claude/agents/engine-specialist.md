@@ -2,7 +2,6 @@
 name: engine-specialist
 description: Expert on packages/engine — the framework-agnostic data/interpret core. Use proactively when a change touches packages/engine.
 tools: Read, Edit, Write, Bash, Grep, Glob
-model: sonnet
 memory: project
 tuned: true
 ---

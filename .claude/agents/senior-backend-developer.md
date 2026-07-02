@@ -2,7 +2,6 @@
 name: senior-backend-developer
 description: Senior backend/service engineering — APIs, services, resilience, concurrency. Use for backend design-level work.
 tools: Read, Edit, Write, Grep, Glob, Bash
-model: opus
 memory: project
 skills: architecture-standards
 ---

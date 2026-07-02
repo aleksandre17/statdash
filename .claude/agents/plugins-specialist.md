@@ -2,7 +2,6 @@
 name: plugins-specialist
 description: Expert on plugins/ (+ src) — the app shells that compose engine+react into dashboards. Use proactively when a change touches plugins/ or src/.
 tools: Read, Edit, Write, Bash, Grep, Glob
-model: sonnet
 memory: project
 tuned: true
 ---

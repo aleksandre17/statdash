@@ -2,7 +2,6 @@
 name: chief-engineer
 description: All-seeing quality overseer. Read-only. Use for system-wide coherence, quality gates, and final review.
 tools: Read, Grep, Glob, Bash
-model: opus
 memory: project
 skills: architecture-standards
 ---
