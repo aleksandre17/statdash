@@ -17,12 +17,12 @@ links:
 
 **FF-DATA-PARITY** — for every page × mode × filter, the rendered value (chart AND table) == the static-era golden fixture (0054) == source. The pipeline reproduces the known-correct dataset through DataSpec/ApiStore + pipe, not by hardcoding to the golden.
 
-**FF-CHART-EQ-TABLE** — chart value == table value for every dual-view panel (structural via invariant I-6 — both views re-encode ONE section `data`; here asserted numerically). Reinforces C1 (0016) formatting SSOT and C7 (0036).
+**FF-CHART-EQ-TABLE** — chart value == table value **only for a dual-view panel** (structural via invariant I-6 — both views re-encode ONE section `data`; here asserted numerically). NOTE (owner clarification): a chart and a table are NOT required to share data — they may have **different data pipes**. Equality is asserted ONLY when they are two `view.role` views of the SAME section spec; independent chart and table panels are each verified against their OWN source by FF-DATA-PARITY, never against each other. Reinforces C1 (0016) formatting SSOT and C7 (0036).
 
 **FF-CHART-PRESENCE** — every expected chart/panel is present per state (none silently missing), and the per-slot chart type matches the spec (catches donut↔bar slot swaps and dropped panels). Uses the DELTA per-image slot inventory + LV-6 (0047) right-column resolution.
 
 **Files / modules touched (WRITE ONLY under test/fitness locations)**
-- Fitness/test harness reading the 0054 golden fixtures + the DELTA per-image slot inventory; asserts value parity, chart==table, and presence/type per page×mode×filter.
+- Fitness/test harness reading the 0054 golden fixtures + the DELTA per-image slot inventory; asserts per-panel value parity (each panel vs its OWN source/golden), dual-view-only chart==table, and presence/type per page×mode×filter.
 - Register the three gates in the CI fitness-function suite (with 0030).
 
 **Dependencies** — 0054 (golden fixtures — the reference); 0016 (C1 formatting SSOT so parity compares clean magnitudes); 0036 (C7 dual-view so chart==table is structural); 0048/0049/0050 (bug fixes — parity would fail on the dropped sign, `[object Object]`, and duplicated rows until fixed); all element items 0022–0029, 0037 (the panels whose presence/type/value are asserted). Locks LAST.
