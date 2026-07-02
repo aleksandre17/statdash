@@ -3,7 +3,7 @@
 import type { ApexOptions } from 'apexcharts'
 import type { ChartOutput } from '@statdash/charts'
 import { BASE, yFormatter, responsiveYAxis, collectFormatted, scaledPx, BP_MD, BP_SM, BP_XS } from './base'
-import { cssVar } from '@statdash/styles'
+import { cssVar, chartPalette } from '@statdash/styles'
 
 export function buildCartesian(output: ChartOutput, fontFamily?: string, locale?: string): ApexOptions {
   const { type, series, categories, axes, stacked, horizontal } = output
@@ -76,7 +76,15 @@ export function buildCartesian(output: ChartOutput, fontFamily?: string, locale?
   // ── Colors ──────────────────────────────────────────────────────────
   //  series.map(s => s.color) gives one color per series.
   //  ApexCharts respects fillColor on individual data points over this.
-  const colors = series.map((s) => s.name === '__spacer__' ? 'transparent' : s.color)
+  //
+  //  distributed (single-series categorical) mirrors the treemap seam: bars
+  //  cycle the categorical palette SSOT (chartPalette) so each category reads
+  //  by its own hue; per-point `fillColor` (from a semantic DataRow.color) still
+  //  wins where present, so meaning is preserved.
+  const distributed = output.distributed === true
+  const colors = distributed
+      ? chartPalette()
+      : series.map((s) => s.name === '__spacer__' ? 'transparent' : s.color)
 
   // ── Y-axis ──────────────────────────────────────────────────────────
   //
@@ -194,6 +202,7 @@ export function buildCartesian(output: ChartOutput, fontFamily?: string, locale?
     yaxis,
     plotOptions: {
       bar: {
+        distributed:  distributed,
         horizontal:   horizontal,
         borderRadius: horizontal ? 3 : 4,
         ...(horizontal

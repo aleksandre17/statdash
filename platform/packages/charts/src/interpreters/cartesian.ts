@@ -41,6 +41,9 @@ class BarInterpreter implements ChartInterpreter {
       tooltip: buildTooltip(def, this.type !== 'hbar'),
       annotations: [],
       ...(def.dataLabels !== undefined ? { dataLabels: def.dataLabels } : {}),
+      // Categorical color-by-category only applies to a lone series — a multi-series
+      // chart already distinguishes bars by series colour, so the flag is inert there.
+      ...(def.distributed && series.length === 1 ? { distributed: true } : {}),
     }
   }
 }

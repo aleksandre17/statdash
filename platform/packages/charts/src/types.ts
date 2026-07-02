@@ -54,6 +54,14 @@ export interface ChartDef {
   compact?: boolean
   /** Stack multiple series on top of each other (bar charts only). */
   stacked?: boolean
+  /**
+   * Categorical color-by-category for a SINGLE-series bar/hbar: each bar draws
+   * the next hue from the platform categorical palette (--chart-color-N SSOT),
+   * so a region/sector comparison reads by category without inventing a colour
+   * list. Per-point semantic colour (DataRow.color) still wins when present.
+   * No-op for multi-series charts (series already carry their own colours).
+   */
+  distributed?: boolean
   /** Show value labels on top of bars. Default: true for bar/hbar. */
   dataLabels?: boolean
   /** Text shown below the center value in donut charts (e.g. 'მშპ'). */
@@ -128,6 +136,8 @@ export interface ChartOutput {
   readonly compact?: boolean
   /** Override for data-label visibility. Undefined = default (true for bar/hbar, false otherwise). */
   readonly dataLabels?: boolean
+  /** Single-series bar/hbar: paint each category from the categorical palette SSOT. */
+  readonly distributed?: boolean
 }
 
 export interface ChartSeries {

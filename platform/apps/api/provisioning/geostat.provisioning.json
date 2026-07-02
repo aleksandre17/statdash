@@ -3743,6 +3743,7 @@
                 "children": [
                   {
                     "chartType": "hbar",
+                    "distributed": true,
                     "dataLinks": [
                       {
                         "page": "/regional",
@@ -4770,6 +4771,7 @@
           "color": "#0080BE",
           "icon": "bar-chart",
           "id": "gdp",
+          "_comment": "Re-add a 'structural' nav item (Structural indicators) here once the GFCF-structure + NOE-share source data lands in canonical (section removed in 52738a3).",
           "items": [
             {
               "anchor": "production",
@@ -4790,13 +4792,6 @@
               "label": {
                 "ka": "შემოსავლების ფორმირება",
                 "en": "Generation of income"
-              }
-            },
-            {
-              "anchor": "structural",
-              "label": {
-                "ka": "სტრუქტურული ინდიკატორები",
-                "en": "Structural indicators"
               }
             },
             {
