@@ -16,11 +16,15 @@ Goal: every chart/table/KPI renders "data as it was" (correct pre-regression val
 
 **DATA-PARITY LOCK — DONE, GREEN, COMMITTED.** `platform/apps/geostat/src/data/{parity-harness.tsx, golden-canonical-alias.ts, data-parity/chart-eq-table/chart-presence.fitness.test.tsx}`. 3 gates, 26 tests, 0 fail: FF-DATA-PARITY 13/13 anchors == golden with **Δ0.000 through the real pipeline** (GDP 2024=93022.3, per-capita 2014=4829.9, all 6 KPIs), FF-CHART-EQ-TABLE (dual-view scoped), FF-CHART-PRESENCE. golden-canonical-alias = static→canonical code ACL (values preserved) + explicit `_T` totals. ⇒ "data as it was" DETERMINISTICALLY PROVEN. **The render-parity build is functionally COMPLETE on the branch.**
 
-## NEXT STEPS (resume here)
-1. (optional) run full suite from `platform/` (`pnpm test`, parse LOG) to confirm the whole branch green with parity added.
-2. **deploy-verify (ONLY on owner OK — real-server side-effect):** via `ops/` + `kits/geostat-kit` (real Docker build + headless-browser render vs golden + `scriness/` screenshots — the LIVE "as it was" proof, since parity is deterministic/jsdom). FIRST fix the kit blocker: `kits/geostat-kit` `gen_server_compose.py:56` hardcodes `build.context:"."` → must be `"./context"` (else `geostat api deploy` fails).
-3. After deploy-verified → **merge `feat/render-pipeline-parity` → `main`** (owner authorizes merge; server tracks main → push triggers rebuild). This is when the fixes go LIVE (until then the site shows old `main` build — expected).
-4. THEN the parked innovation initiatives (interaction-grammar / semantic-layer / lineage) — register + architect-design + owner sign-off.
+## STATUS — render-parity epic DONE + LIVE (2026-07-02)
+- `feat/render-pipeline-parity` MERGED to `main` (FF 491eab1→2cdf190), pushed; full suite 2250 tests 0-fail.
+- **DEPLOYED to prod** (SSH `geostat-deploy` 192.168.1.199, `docker-compose.prod.yml`, project `statdash-prod`): flyway V38 ok, ingest converged, containers healthy, smoke 200.
+- **LIVE render-verify (Playwright vs :3002) ALL ✓:** GDP 2024=93022.275, per-capita 2014=4829.877, growth 2020=−6.291 (sign), choropleth 16 fills, 0 `[object Object]`, 11 distinct regions, component charts populated, axis==table, no kpi/dynamics crash, mode-toggle clears stale params. ⇒ "data as it was" is LIVE.
+- Rollback armed: tags `pre-parity-deploy`=b5bf242 + `pre-parity-origin-main`=57a34e5, DB backup `/tmp/statdash-prod-backup-20260702-094036.dump`, `:rollback` images.
+- Deploy note: live stack builds from `ops/compose/docker-compose.prod.yml` (NOT the kit); the kit `gen_server_compose.py` seam was already correct (line 56 is a comment; `BUILD_LAYOUTS` emits `context:"./context"`). Regression-B (observations filter) was never broken (renderer sends one `filter=<JSON>` param).
+
+## NEXT (resume here)
+The render-parity epic is COMPLETE + LIVE. Next = the parked **innovation initiatives** ([[proactive-innovation-mandate]]): (1) Grammar of Interaction / cross-filter, (2) formal semantic/metrics layer (Cube/Malloy/LookML class), (3) data lineage/provenance surface — register in `platform/work/ARCHITECTURE-REGISTRY.md`, architect-design the owner's pick, sign-off, build.
 
 ## STANDING rules (this session, binding)
 - **green-gate: PARSE THE LOG (`Tests N failed`), NOT exit code** — `pnpm test` returns 0 even when vitest fails.
