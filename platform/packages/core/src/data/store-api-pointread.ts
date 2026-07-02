@@ -65,7 +65,10 @@ export function resolveCachedPointRead(
   // it client-side is redundant AND unsafe (the server returns LEAF codes for a
   // hierarchical parent filter — an identity re-match would drop them).
   const matchDims = clientMatchDims(coordinate, slice.params)
-  return roundAgg(rollupValues(matchedValues(slice.rows, q.code, matchDims), rollup))
+  // ctx.exclude ($ne) — the pure-$ne dim was fetched as a covering superset (the wire
+  // dropped its baseline pin), so drop the excluded aggregate row (e.g. `_T`) here so a
+  // wildcard coordinate sums leaves only. Same exclusion the val matcher applies.
+  return roundAgg(rollupValues(matchedValues(slice.rows, q.code, matchDims, undefined, ctx.exclude), rollup))
 }
 
 /** The exact-key slice, else the first cached SUPERSET slice (undefined = none). */

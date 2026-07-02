@@ -188,8 +188,18 @@ export function resolveNodeRows(node: NodeBase, ctx: RenderContext): DataRow[] {
     // via the spec's `$d` lookup join (runs inside interpretSpec). Resolving up
     // front means the engine's locale-agnostic encoding/charts only ever see
     // concrete strings. A plain scalar cell is untouched (no-op single-locale).
+    // AR-36: the DataSpec's OWN pipe (aggregate `by` roll-up grain, sort `by`/`dir`)
+    // may carry state-bound `{$ctx}` refs — resolve them with dims+vars BEFORE
+    // interpretSpec, exactly as node.transforms are lowered below (line ~220).
+    // Without this the raw `{$ctx:_byDims}` ref reaches the aggregate step and the OLAP
+    // grain never rotates with the selection (the pivot stays by-region in State B).
+    // Byte-identical for ref-free pipes: resolvePipeRefs returns the same reference.
+    const dataPipe0 = (node.data as { pipe?: TransformStep[] }).pipe
+    const dataSpec  = dataPipe0?.length
+      ? { ...node.data, pipe: resolvePipeRefs(dataPipe0, { dims: ctx.sectionCtx.dims, vars: ctx.vars }) }
+      : node.data
     const rawRows = resolveRowLocales(
-      interpretSpec(node.data, ctx.sectionCtx, store) as unknown as DataRow[],
+      interpretSpec(dataSpec, ctx.sectionCtx, store) as unknown as DataRow[],
       ctx.locale,
     )
     const enc0    = (node.data as { encoding?: EncodingSpec }).encoding

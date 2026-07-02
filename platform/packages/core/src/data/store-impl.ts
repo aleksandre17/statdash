@@ -281,13 +281,14 @@ export class ExternalStore implements DataStore {
   //  ApiStore ALSO uses to resolve a point read from a cached superset slice — so both
   //  stores compute an OLAP cell identically. Coordinate = a generic dims map; no
   //  dimension is privileged. `leafSet` expands each code to its hierarchy subtree.
-  private _matchedValues(code: string, dims: Record<string, DimVal>): number[] {
-    return matchedValues(this.observations, code, dims, this.leafSet)
+  private _matchedValues(code: string, dims: Record<string, DimVal>, exclude?: Record<string, DimVal[]>): number[] {
+    return matchedValues(this.observations, code, dims, this.leafSet, exclude)
   }
 
   private _val(code: string, ctx: SectionContext): number {
     // reduce-from-0 is byte-identical to the legacy `sum += …` running total.
-    return roundAgg(this._matchedValues(code, ctx.dims).reduce((a, b) => a + b, 0))
+    // ctx.exclude ($ne) drops an aggregate row so a wildcard coordinate sums leaves only.
+    return roundAgg(this._matchedValues(code, ctx.dims, ctx.exclude).reduce((a, b) => a + b, 0))
   }
 
   // _valAt — point read at ctx.dims ⊕ at (generic coordinate, Law 1). `grain` is the
@@ -295,7 +296,7 @@ export class ExternalStore implements DataStore {
   //  byte-identical). `at` is Partial (undefined values are skipped by _matchedValues).
   private _valAt(q: Extract<StoreQuery, { type: 'valAt' }>, ctx: SectionContext): number {
     const dims = q.at ? { ...ctx.dims, ...q.at } as Record<string, DimVal> : ctx.dims
-    return roundAgg(rollupValues(this._matchedValues(q.code, dims), q.rollup))
+    return roundAgg(rollupValues(this._matchedValues(q.code, dims, ctx.exclude), q.rollup))
   }
 
   private _observe(query: ObsQuery, ctx: SectionContext): Observation[] {
