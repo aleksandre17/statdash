@@ -52,7 +52,7 @@ POLL_INTERVAL=2
 POLL_TIMEOUT=180
 
 DATASETS=(GDP_ANNUAL ACCOUNTS_SEQUENCE REGIONAL_GVA)
-declare -A EXPECTED_OBS=( [GDP_ANNUAL]=288 [ACCOUNTS_SEQUENCE]=415 [REGIONAL_GVA]=1554 )
+declare -A EXPECTED_OBS=( [GDP_ANNUAL]=384 [ACCOUNTS_SEQUENCE]=415 [REGIONAL_GVA]=1554 )
 
 command -v jq >/dev/null   || { echo "FATAL: jq is required"; exit 1; }
 command -v curl >/dev/null || { echo "FATAL: curl is required"; exit 1; }
