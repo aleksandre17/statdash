@@ -6,6 +6,12 @@
 
 ---
 
+## DELTA — img_6…14 (added 2026-07-02)
+
+> Per-image breakdown + C7 spec + E9 + O-8…O-12 / LV-1…LV-5 ledgers → companion **`SPEC-render-pipeline-target.DELTA-6-14.md`** (split for the one-concern ceiling). Corrections landed IN THIS file: **(1)** E6 expenditure = `contribution`/waterfall **bridge**, not a bar (prov. 1758, `C+I+X−M=მშპ`, `isTotal` red `=GDP`). **(2)** New conditional axis **C7** — per-section chart↔table toggle (`view.role` sibling children; section owns `data`, both views re-encode the same warmed rows). **(3)** New page + element **E9** — SNA `/accounts` T-account sequence as `hbar-diverging` (prov. 377, `perspective-is year`); E8 pivot is its table view.
+
+---
+
 ## 0. Canonical target pipeline (the SSOT flow)
 
 ```
@@ -207,12 +213,11 @@ Lossy by construction: `88 425.6 → "88 000"`, `4 830 → "5 000"`, ticks `1500
 | **Warm** | geograph `data.query` walked by `collectRequirements` (C2-b). Must warm before paint (C4-c) or the map paints flat cold. |
 | **Empty** | No rows → all features `fillColor()` neutral (documented empty state), tooltip absent; NOT a silent flat "success". |
 
-### E6 — GDP component charts: expenditure bar · production donut · income-formation treemap · capital-formation donut (`img_2`)
+### E6 — GDP component quartet: expenditure `contribution`/waterfall bridge · production donut · income treemap · capital donut-% (`img_6`/`img_9`)
 
 | Aspect | Target |
 |---|---|
-| **What** | Decompose GDP across a component dimension at a single year. Expenditure = horizontal/vertical bar per component; Production = donut per sector/component with center total; Income formation = treemap; Capital formation = donut %. |
-| **Encoding** | category = component (measure-subcode / sector) · value = level or % · color = categorical palette · donut center = total (`centerLabel`). |
+| **What / Encoding** | Decompose GDP across a component dim at a single year (`img_6`/`img_9`). **Expenditure = `contribution`/waterfall BRIDGE** (prov. 1758; `C+I+X−M=მშპ`; import as a down-bar −55 669.6; `isTotal` red `=GDP` closing bar) — NOT a plain bar. Production = **donut** (center total). Income formation = **treemap** (prov. 2109). Capital formation = **donut %**. category = component (measure-subcode / sector) · color = categorical palette · donut center = total (`centerLabel`). |
 | **DataSpec (C6)** | `query { measure: <component set>, filter:{ geo:'GE', approach:'EXP'|'PROD', time: single year } }` → pipe `aggregate by [<componentDim>, time]` → `rollup` total (where a Total wedge shows) → `lookup (label,color)` → `sort`. **MUST pin approach + geo + single time and iterate the component dim** (fixes the 2-bar / 1-slice degeneracy). |
 | **Format** | value → `mln_gel` or `pct`; data-labels → `fmtNum`. |
 | **Filter reactions** | **year change** → re-reads at the new single year; all components re-resolve. **locale** → component labels (localized codelist). **mode** → annual-only elements. |
@@ -285,15 +290,10 @@ Lossy by construction: `88 425.6 → "88 000"`, `4 830 → "5 000"`, ticks `1500
 
 ## 6. BOARD-ITEM MAP (each row = one work-board item)
 
-- **BI-C1** Formatting SSOT (compact formatter + `yFormatter` fix) — unblocks E1/E3/E4/E5/E6/E7 axes.
-- **BI-C2** Warm-contract guard (`extractRequirements` pivot/transform coverage + `FF-WARM-COVERS-RENDER`) — protects every element.
-- **BI-C3** Effects recovery (`onEnter`/`onExit` on `PerspectiveDef` + evaluator + Constructor pane).
-- **BI-C4** Choropleth consolidation (delete `panels/map`; fix join + cold-paint re-style + diagnostic).
-- **BI-C5** `mean` KPI reduction + fail-loud CAGR baseline; bind avg-real-growth.
-- **BI-C6** Component rollup + dimension pinning (GDP expenditure/production/income/capital) + per-capita row-selection.
-- **BI-E1…E8** Per-element wiring/verification against the matrix (mostly config `kit` edits once C1–C6 land).
-- **BI-FF** The fitness-function suite (§4) — land alongside its capability, not after.
+- **BI-C1** Formatting SSOT · **BI-C2** Warm-contract guard + `FF-WARM-COVERS-RENDER` · **BI-C3** Effects recovery (`onEnter`/`onExit`) · **BI-C4** Choropleth consolidation · **BI-C5** `mean` KPI + fail-loud CAGR · **BI-C6** Component rollup + pinning + per-capita row-selection. Details = §1.
+- **BI-C7** Section chart↔table dual-view (assert data warmed once at section, both `view.role` children read it) · **BI-E9** SNA `/accounts` `hbar-diverging` sequence + pivot table view (companion DELTA file).
+- **BI-E1…E10** Per-element wiring against the matrix (config `kit` edits once C1–C7 land) · **BI-FF** the §4 suite, landed alongside its capability.
 
-**Build order (dependency-correct):** C1 → C2 → (C4 · C5 · C6 in parallel) → C3 → E# verification → FF lock. C1 and C2 are prerequisites for trustworthy verification of everything else.
+**Build order:** C1 → C2 → (C4 · C5 · C6 · C7 in parallel) → C3 → E# verification → FF lock. C1/C2 are prerequisites for trustworthy verification.
 </content>
 </invoke>
