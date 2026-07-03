@@ -265,11 +265,14 @@ describe('FF-SNAPSHOT-VIEW-EQUIV (P5) — geostat perspective migration is byte-
     }
   })
 
-  it('regional preserves the sector "_T" default + the always-resolved span window in BOTH perspectives', () => {
+  it('regional defaults sector to "" (AR-38 sentinel harmony) + the always-resolved span window in BOTH perspectives', () => {
     const cfg = migrated['regional']
     for (const perspective of PERSPECTIVES) {
       const ctx = deriveCtx(cfg.filterSchema as FilterSchema, cfg.perspectives, perspective)
-      expect(ctx.dims.sector).toBe('_T')        // sector default, both perspectives
+      // AR-38: the sector unselected sentinel is harmonized _T→'' so sector is a true peer
+      // of region (both unselect to ''). Panels that want the _T aggregate when unselected
+      // now carry it explicitly ($ne:_T query-path / default:_T KPI-path), not via the param.
+      expect(ctx.dims.sector).toBe('')          // harmonized unselected sentinel, both perspectives
       expect(ctx.dims.spanFrom).toBeDefined()   // alwaysResolve span — page-level, both perspectives
       expect(ctx.dims.spanTo).toBeDefined()
     }

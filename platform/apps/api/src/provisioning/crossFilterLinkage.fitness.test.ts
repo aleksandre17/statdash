@@ -246,4 +246,133 @@ describe('regional cross-filter linkage web (committed provisioning)', () => {
     const neRefs = geoRefs.filter((r) => r.$ne === '_T')
     expect(neRefs.length, 'regional geo refs use the $ne:_T constituent-regions binding').toBeGreaterThan(0)
   })
+
+  // ══ AR-38 — directional SECTOR arm of the cross-filter ═══════════════════════
+  //
+  //  select sector → pin sector, DISPLAY geo (that sector across regions); compound
+  //  region∧sector = intersection. The six composition derives now key on BOTH
+  //  {$ctx:region} AND {$ctx:sector} with a SECTOR-PRIORITY tiebreaker. See
+  //  work/DESIGN-directional-sector-crossfilter.md.
+
+  // Minimal faithful mirror of @statdash/expr (packages/expr/src/ops) for the ops the
+  // composition derives use. Inlined (not imported) to keep this node-env structural
+  // suite engine-free; OP_WHITELIST below fails if a derive introduces an unmodelled op.
+  const OP_WHITELIST = new Set(['if', 'nin', 'in', 'ne', 'eq', 'or', 'and', 'not'])
+  function evalDerive(e: unknown, dims: Record<string, string>): unknown {
+    if (e === null || typeof e !== 'object') return e            // DimVal literal
+    const o = e as Json
+    if ('$ctx' in o)     return dims[o.$ctx as string] ?? null   // ExprRef ($ctx)
+    if ('$literal' in o) return o.$literal
+    const ev = (x: unknown) => evalDerive(x, dims)
+    switch (o.op) {
+      case 'ne':  return ev(o.left) !== ev(o.right)
+      case 'eq':  return ev(o.left) === ev(o.right)
+      case 'nin': return (o.right as unknown[]).every((r) => ev(r) !== ev(o.left))
+      case 'in':  return (o.right as unknown[]).some((r) => ev(r) === ev(o.left))
+      case 'or':  return (o.exprs as unknown[]).some((x) => Boolean(ev(x)))
+      case 'and': return (o.exprs as unknown[]).every((x) => Boolean(ev(x)))
+      case 'not': return !ev(o.expr)
+      case 'if':  return ev(o.cond) ? ev(o.then) : (o.else !== undefined ? ev(o.else) : null)
+      default: throw new Error(`derive uses op '${String(o.op)}' not modelled by this fitness mirror`)
+    }
+  }
+  // Collect every op used anywhere in a derive expr (whitelist guard).
+  function opsIn(e: unknown, acc: Set<string>): Set<string> {
+    if (e && typeof e === 'object') {
+      const o = e as Json
+      if (typeof o.op === 'string') acc.add(o.op)
+      for (const v of Object.values(o)) opsIn(v, acc)
+    }
+    return acc
+  }
+
+  const DERIVES = ['_xDim', '_seriesDim', '_mark', '_byDims', '_sortBy', '_sortDir'] as const
+  // The acceptance spine (DESIGN §2). A/B = shipped region arm; C/D = the sector arm.
+  const STATES: Record<string, Record<string, string>> = {
+    A: { region: '',   sector: ''   },   // none      → donut of regions
+    B: { region: 'R2', sector: ''   },   // region    → x=sector, series=geo
+    C: { region: '',   sector: 'S1' },   // sector    → x=geo,    series=sector (across all regions)
+    D: { region: 'R2', sector: 'S1' },   // compound  → x=geo,    series=sector (intersection)
+  }
+  const EXPECT: Record<string, Record<string, string>> = {
+    A: { _xDim: 'geoLabel',    _seriesDim: '',           _mark: 'donut', _byDims: 'geo',             _sortBy: 'value',       _sortDir: 'desc' },
+    B: { _xDim: 'sectorLabel', _seriesDim: 'geoLabel',   _mark: 'bar',   _byDims: 'sector,geo,time', _sortBy: 'sectorOrder', _sortDir: 'asc'  },
+    C: { _xDim: 'geoLabel',    _seriesDim: 'sectorLabel', _mark: 'bar',  _byDims: 'sector,geo,time', _sortBy: 'value',       _sortDir: 'desc' },
+    D: { _xDim: 'geoLabel',    _seriesDim: 'sectorLabel', _mark: 'bar',  _byDims: 'sector,geo,time', _sortBy: 'value',       _sortDir: 'desc' },
+  }
+
+  // FF-DIRECTIONAL-TRUTH-TABLE — the 4-state derive matrix is asserted end-to-end;
+  // a change to any derive that breaks a cell fails here.
+  it('FF-DIRECTIONAL-TRUTH-TABLE: the six derives resolve the A/B/C/D acceptance spine', () => {
+    for (const d of DERIVES) {
+      const expr = pageVar(regional.config, d)
+      expect(expr, `derive ${d} exists`).toBeDefined()
+      // whitelist guard: keeps the inlined mirror honest as the derive grammar evolves
+      for (const op of opsIn(expr, new Set())) expect(OP_WHITELIST.has(op), `derive ${d} op '${op}' modelled`).toBe(true)
+      for (const [s, dims] of Object.entries(STATES)) {
+        expect(evalDerive(expr, dims), `state ${s} · ${d}`).toBe(EXPECT[s][d])
+      }
+    }
+  })
+
+  // FF-DIRECTIONAL-TRUTH-TABLE (robustness) — a leftover/stray sector='_T' must count as
+  // UNSELECTED (the nin ['','_T'] guard), never as an active sector selection.
+  it('FF-DIRECTIONAL-TRUTH-TABLE: sector="_T" is treated as unselected (sentinel-robust)', () => {
+    for (const d of DERIVES) {
+      const expr = pageVar(regional.config, d)
+      expect(evalDerive(expr, { region: '', sector: '_T' }), `_T≡none · ${d}`).toBe(EXPECT.A[d])
+    }
+  })
+
+  // FF-SECTOR-COMPOUND-FILTER — the composition query narrows to the selected sector while
+  // still excluding the _T aggregate: {$ne:_T, $ctx:sector}. Replicates the store wire rule
+  // (buildObsFilterParam $ne+$ctx branch): sector='' → NO positive pin (fetch broad, exclude
+  // _T client-side = all real sectors, State B); sector=X → positive pin X (States C/D).
+  it('FF-SECTOR-COMPOUND-FILTER: composition sector clause is {$ne:_T,$ctx:sector} on both stores', () => {
+    const sec = queryFilter(findById(regional.config, 'sectors'))?.sector as Json | undefined
+    expect(sec?.$ne, 'excludes the _T total row').toBe('_T')
+    expect(sec?.$ctx, 'narrows to the selected sector').toBe('sector')
+    const wirePin = (dims: Record<string, string>) => {
+      const v = dims[sec!.$ctx as string]
+      return v !== undefined && v !== '' && v !== null ? v : undefined
+    }
+    expect(wirePin({ sector: '' }), 'State B: no positive pin → all real sectors').toBeUndefined()
+    expect(wirePin({ sector: 'S1' }), 'State C/D: positive pin S1').toBe('S1')
+  })
+
+  // FF-DIM-SENTINEL-SYMMETRY — region and sector share the '' unselected sentinel; every
+  // FILTER-position {$ctx:sector} ref is guarded — $ne:'_T' (query-path, the geo mirror) OR
+  // default:'_T' (KPI-path aggregate pin) — never bare (which would wildcard+double-count the
+  // _T total against its leaves), and the sector PARAM no longer defaults to '_T'.
+  it('FF-DIM-SENTINEL-SYMMETRY: sector param defaults to "" and every filter sector ref is guarded', () => {
+    // the sector select param defaults to '' (peer with region), not '_T'
+    const sectorParam = find(regional.config, (n) =>
+      n.type === 'select' && typeof n.label === 'object' && JSON.stringify(n.label).includes('სექტორ'))
+    expect(sectorParam?.default, 'sector param default flipped _T→""').toBe('')
+    // filter-position sector refs only (value of a `sector:` slot) — excludes derive expr leaves
+    const sectorRefs = findAll(regional.config, (n) =>
+      typeof n.sector === 'object' && n.sector !== null && (n.sector as Json).$ctx === 'sector')
+      .map((n) => n.sector as Json)
+    expect(sectorRefs.length, 'filter-position $ctx:sector refs exist').toBeGreaterThan(0)
+    for (const r of sectorRefs) {
+      expect(r.$ne === '_T' || r.default === '_T',
+        `sector ref guarded ($ne:_T | default:_T): ${JSON.stringify(r)}`).toBe(true)
+    }
+    // partition: query-path panels use the $ne:_T geo-mirror; KPIs keep the default:_T aggregate pin
+    expect(sectorRefs.filter((r) => r.$ne === '_T').length,
+      'query-path sector refs use $ne:_T (4 companions + composition)').toBeGreaterThanOrEqual(5)
+    expect(sectorRefs.filter((r) => r.default === '_T').length,
+      'KPI-path sector refs keep default:_T').toBeGreaterThanOrEqual(10)
+  })
+
+  // FF-SECTOR-DERIVE-AGNOSTIC — extends FF-PIVOT-AGNOSTIC: the derives express the rotation
+  // as pure declarative exprs over {$ctx:region}/{$ctx:sector} (no function, no getRows/fn
+  // escape hatch), so the resolver path stays dimension-blind (Law 1/2).
+  it('FF-SECTOR-DERIVE-AGNOSTIC: the sector derives are pure declarative exprs (no code)', () => {
+    for (const d of DERIVES) {
+      const json = JSON.stringify(pageVar(regional.config, d))
+      expect(json, `${d} references sector via $ctx`).toContain('"$ctx":"sector"')
+      expect(/getRows|=>|"fn"|function/.test(json), `${d} carries no function/fn escape`).toBe(false)
+    }
+  })
 })
