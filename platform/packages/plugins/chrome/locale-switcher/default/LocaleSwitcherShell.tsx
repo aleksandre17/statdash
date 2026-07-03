@@ -1,6 +1,6 @@
 import type { ReactNode }                       from 'react'
 import { useLocation, useNavigate }              from 'react-router-dom'
-import { useLocale, useI18n, useChromeConfig }   from '@statdash/react'
+import { useLocale, useI18n, useChromeConfig, useT } from '@statdash/react'
 import './locale-switcher.css'
 
 export function LocaleSwitcherShell(): ReactNode {
@@ -9,6 +9,7 @@ export function LocaleSwitcherShell(): ReactNode {
   const config   = useChromeConfig()
   const location = useLocation()
   const navigate = useNavigate()
+  const t        = useT('LocaleSwitcher')
 
   if (i18n.locales.length <= 1) return null
 
@@ -21,7 +22,7 @@ export function LocaleSwitcherShell(): ReactNode {
   const label = (l: string) => config.localeLabels?.[l] ?? l.toUpperCase()
 
   return (
-    <div className="locale-switcher" role="navigation" aria-label="Language">
+    <div className="locale-switcher" role="navigation" aria-label={t('nav-label')}>
       {i18n.locales.map(l => (
         <button
           key={l}

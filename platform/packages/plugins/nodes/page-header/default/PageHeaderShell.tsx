@@ -24,6 +24,7 @@ export const PageHeaderShell = defineShell<PageHeaderNode>({
         crumbs={crumbs}
         homeLabel={t('home')}
         exportLabel={t('export')}
+        breadcrumbLabel={t('breadcrumb')}
       />
     )
   },

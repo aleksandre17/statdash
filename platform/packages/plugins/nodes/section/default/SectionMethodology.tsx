@@ -1,14 +1,21 @@
-// ── SectionMethodology — methodology disclosure panel ─────────────────
+// ── SectionMethodology — section data-integrity disclosure panel ──────────
 //
-//  Data-integrity panel (Law 9): note + source + last-updated, with a close
-//  control. Shown only when authored AND the info toggle is open (the caller
-//  gates rendering). The note supports template vars; source/lastUpdated are
-//  literal display strings.
+//  Law 9 data-integrity home. Consolidates (AR-39) the section's provenance in
+//  ONE reachable place: preliminary status + note + source + last-updated + a
+//  close control. Shown when the info toggle is open AND the section has
+//  something to disclose (authored methodology OR a preliminary aggregate).
+//
+//  Every value flips with the URL locale (AR-37 P1): note/source/lastUpdated are
+//  `LocaleString`s resolved through the canonical template resolver (collapses
+//  locale THEN expands `{vars}`), so no field renders one frozen language.
 //
 
+import type { LocaleString } from '@statdash/engine'
 import type { SectionMethodology as SectionMethodologyDef } from './SectionNode'
 
 type T = (key: string) => string
+/** The section's template resolver (useNodeTemplate) — accepts a LocaleString carrier. */
+type Resolve = (tpl?: LocaleString) => string | undefined
 
 /** One label/value meta row (source, last-updated). */
 function MetaRow({ label, value }: { label: string; value: string }) {
@@ -21,9 +28,17 @@ function MetaRow({ label, value }: { label: string; value: string }) {
 }
 
 export interface SectionMethodologyProps {
-  methodology:    SectionMethodologyDef
+  /** Authored methodology block (may be absent when the panel opens only to explain preliminary status). */
+  methodology?:   SectionMethodologyDef
+  /**
+   * The consolidated preliminary flag for this section (AR-39): the OR-fold of
+   * child-panel reports and the author override. Renders a labelled, non-color-only
+   * status line at the top of the disclosure so the ONE section indicator is fully
+   * explained here (Law 9 reachability).
+   */
+  preliminary:    boolean
   /** Canonical template resolver bound to the section's RenderContext. */
-  resolve:        (tpl?: string) => string | undefined
+  resolve:        Resolve
   /** Close the panel (parent owns the open state). */
   onClose:        () => void
   t:              T
@@ -31,19 +46,26 @@ export interface SectionMethodologyProps {
 
 export function SectionMethodology({
   methodology,
+  preliminary,
   resolve,
   onClose,
   t,
 }: SectionMethodologyProps) {
+  const note        = resolve(methodology?.note)
+  const source      = resolve(methodology?.source)
+  const lastUpdated = resolve(methodology?.lastUpdated)
+
   return (
     <div className="section__methodology" role="region" aria-label={t('methodology')}>
-      {methodology.note && (
-        <p className="section__methodology-note">
-          {resolve(methodology.note)}
+      {preliminary && (
+        <p className="section__integrity-note">
+          <span className="section__integrity-dot" aria-hidden="true" />
+          <span className="section__methodology-label">{t('preliminary')}</span>
         </p>
       )}
-      {methodology.source      && <MetaRow label={t('source')}       value={methodology.source} />}
-      {methodology.lastUpdated && <MetaRow label={t('last-updated')} value={methodology.lastUpdated} />}
+      {note        && <p className="section__methodology-note">{note}</p>}
+      {source      && <MetaRow label={t('source')}       value={source} />}
+      {lastUpdated && <MetaRow label={t('last-updated')} value={lastUpdated} />}
       <button
         className="section__methodology-close"
         type="button"

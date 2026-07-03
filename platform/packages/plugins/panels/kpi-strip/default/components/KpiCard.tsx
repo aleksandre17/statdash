@@ -18,15 +18,24 @@ interface KpiCardProps {
    * neutral English tokens so the sr-only text is never empty (WCAG).
    */
   trendLabels?:    { up: string; down: string; flat: string }
+  /**
+   * Localized per-item data-integrity labels (preliminary badge title +
+   * methodology link aria), supplied by the shell via useT — same pattern as
+   * trendLabels. Never hardcoded here (AR-37 P1); neutral-English fallback keeps
+   * the a11y name non-empty outside a provider.
+   */
+  metaLabels?:     { preliminary: string; methodology: string }
 }
 
 const ARROWS        = { up: '↗', down: '↘', flat: '→' }
 const TREND_FALLBACK = { up: 'Up:', down: 'Down:', flat: 'Flat:' }
+const META_FALLBACK  = { preliminary: 'Preliminary data', methodology: 'Methodology' }
 
 export default function KpiCard({
   label, value, unit, trend, trendValue, trendSub,
   color = 'var(--color-accent)', preliminary, note, methodologyUrl,
   trendLabels = TREND_FALLBACK,
+  metaLabels = META_FALLBACK,
 }: KpiCardProps) {
   const hasMeta = preliminary || methodologyUrl
 
@@ -36,14 +45,14 @@ export default function KpiCard({
         <div className="kpi-label">{label}</div>
         {hasMeta && (
           <div className="kpi-header-actions">
-            {preliminary    && <span className="kpi-badge--p" title="Preliminary data">P</span>}
+            {preliminary    && <span className="kpi-badge--p" title={metaLabels.preliminary} aria-label={metaLabels.preliminary}>P</span>}
             {methodologyUrl && (
               <a
                 href={methodologyUrl}
                 target="_blank"
                 rel="noreferrer"
                 className="kpi-info-link"
-                aria-label="Methodology"
+                aria-label={metaLabels.methodology}
               >ℹ</a>
             )}
           </div>

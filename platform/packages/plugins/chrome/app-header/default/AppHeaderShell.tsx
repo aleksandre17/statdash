@@ -1,5 +1,5 @@
 import { Link }                                              from 'react-router-dom'
-import { useSiteNav, useLocale, useChromeConfig, useResolveLocale, useSlotConfig } from '@statdash/react'
+import { useSiteNav, useLocale, useChromeConfig, useResolveLocale, useSlotConfig, useT } from '@statdash/react'
 import { ChromeSlot }                                        from '@statdash/react/engine'
 import type { AppHeaderConfig }                              from './meta'
 import { HEADER, type HeaderSurface }                        from './styleKeys'
@@ -20,6 +20,7 @@ export function AppHeaderShell({ surface = 'opaque' }: { surface?: HeaderSurface
   const config = useChromeConfig()
   const slot   = useSlotConfig<AppHeaderConfig>()
   const t      = useResolveLocale()
+  const tc     = useT('AppHeader')   // fixed chrome strings (aria) for the active locale
 
   // ── Fail-soft brand guard (ADR-0028) ──────────────────────────────────────
   //  The runner boots to emptyManifest() when /api/bootstrap is unreachable; its
@@ -42,7 +43,7 @@ export function AppHeaderShell({ surface = 'opaque' }: { surface?: HeaderSurface
           </Link>
         )}
 
-        <nav className={HEADER.nav} aria-label="Main navigation">
+        <nav className={HEADER.nav} aria-label={tc('nav-label')}>
           {nav.map(item => (
             <Link
               key={item.path}

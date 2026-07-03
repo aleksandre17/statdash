@@ -14,7 +14,17 @@ export const META: PanelSliceMeta = {
   caps:            ['filterable'],
   version:         1,
   i18n: {
-    ka: { 'trend-up': 'მზარდი:', 'trend-down': 'კლებადი:', 'trend-flat': 'სტაბილური:' },
-    en: { 'trend-up': 'Up:',     'trend-down': 'Down:',    'trend-flat': 'Flat:' },
+    ka: {
+      'trend-up': 'მზარდი:', 'trend-down': 'კლებადი:', 'trend-flat': 'სტაბილური:',
+      'status-indicators': 'მონაცემთა სტატუსის ინდიკატორები',
+      'preliminary': 'წინასწარი მონაცემები',
+      'methodology': 'მეთოდოლოგია',
+    },
+    en: {
+      'trend-up': 'Up:', 'trend-down': 'Down:', 'trend-flat': 'Flat:',
+      'status-indicators': 'Data status indicators',
+      'preliminary': 'Preliminary data',
+      'methodology': 'Methodology',
+    },
   },
 }
