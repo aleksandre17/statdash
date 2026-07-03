@@ -58,7 +58,7 @@ function ctxDim(filter: unknown, slot: string): string | undefined {
 function queryFilter(node: Json | undefined): Json | undefined {
   return ((node?.data as Json | undefined)?.query as Json | undefined)?.filter as Json | undefined
 }
-interface FilterAction { type?: string; key?: string; fromField?: string; mode?: string; max?: number }
+interface FilterAction { type?: string; key?: string | Json; fromField?: string; mode?: string; max?: number }
 interface Handler { event?: string; actions?: FilterAction[] }
 function handlers(node: Json | undefined): Handler[] {
   return Array.isArray(node?.on) ? (node!.on as Handler[]) : []
@@ -71,6 +71,24 @@ function emitterFor(node: Json | undefined, key: string, event: string): Json | 
 }
 
 const REGIONAL_DIMS = new Set(['region', 'sector', 'geo'])
+
+// Extract the candidate dim string(s) a page-var value can resolve to. A constant
+// string resolves to itself; an op:if derive (the AR-36/AR-38 state-bound seam) can
+// resolve to either branch, so BOTH then/else must be known dims. Nested if supported.
+function varDimValues(v: unknown): string[] {
+  if (typeof v === 'string') return [v]
+  if (v && typeof v === 'object') {
+    const o = v as Json
+    if (o.op === 'if') return [...varDimValues(o.then), ...varDimValues(o.else)]
+  }
+  return []
+}
+// Resolve a page var by name from any node's `vars` bag in the tree.
+function pageVar(root: unknown, name: string): unknown {
+  const holder = find(root, (n) =>
+    n.vars !== undefined && typeof n.vars === 'object' && name in (n.vars as Json))
+  return (holder?.vars as Json | undefined)?.[name]
+}
 
 describe('regional cross-filter linkage web (committed provisioning)', () => {
   let regional: Page
@@ -144,8 +162,19 @@ describe('regional cross-filter linkage web (committed provisioning)', () => {
         expect(triggers.has(h.event ?? '')).toBe(true)
         for (const a of h.actions ?? []) {
           expect(a.type).toBe('filter')
-          expect(typeof a.key).toBe('string')
-          expect(REGIONAL_DIMS.has(a.key ?? '')).toBe(true)
+          // The action key is either a plain string dim OR a state-bound {$ctx:_var}
+          // ref (the AR-38 rotation seam) — in EITHER case it must resolve to a KNOWN
+          // regional dim, never a function/unknown shape (config = SSOT, Law 1/2).
+          const key = a.key
+          if (typeof key === 'string') {
+            expect(REGIONAL_DIMS.has(key)).toBe(true)
+          } else if (key && typeof key === 'object' && typeof (key as Json).$ctx === 'string') {
+            const dims = varDimValues(pageVar(regional.config, (key as Json).$ctx as string))
+            expect(dims.length, `on[] key {$ctx:${(key as Json).$ctx}} must resolve to a page var`).toBeGreaterThan(0)
+            for (const d of dims) expect(REGIONAL_DIMS.has(d), `{$ctx} key resolves to '${d}'`).toBe(true)
+          } else {
+            throw new Error(`on[] filter key must be a string dim or a {$ctx} ref, got ${JSON.stringify(key)}`)
+          }
           if (a.mode !== undefined) expect(['replace', 'toggle', 'clear']).toContain(a.mode)
         }
       }
