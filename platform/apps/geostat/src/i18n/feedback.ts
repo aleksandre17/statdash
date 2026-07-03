@@ -1,7 +1,7 @@
 // ── feedback i18n catalog — GENERIC UI CHROME fallback (ADR-0028) ──────────
 //
 //  The 'feedback' namespace backs engine/react's shared feedback COMPONENTS
-//  (EmptyState, ExportBar, PreliminaryBadge, SharePermalinkButton). These are
+//  (EmptyState, ExportBar, SharePermalinkButton). These are
 //  framework UI chrome labels ("No data", "Export data", "Copy permalink") — NOT
 //  tenant editorial content. engine/react is locale-agnostic: it consumes
 //  useT('feedback') but must not carry locale literals, so the runner ships a
@@ -24,8 +24,6 @@ const FEEDBACK_I18N: Record<string, Record<string, string>> = {
     'empty.desc':         '',
     'export.toolbar':     'Export data',
     'export.download':    'Download {{fmt}}',
-    'preliminary.label':  'Prelim.',
-    'preliminary.title':  'Preliminary data',
     'share.permalink':    'Copy permalink',
   },
 }

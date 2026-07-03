@@ -13,9 +13,25 @@ interface PageHeaderProps {
   exportLabel?: string
   /** Localized aria-label for the breadcrumb nav landmark (AR-37 P1). */
   breadcrumbLabel?: string
+  /**
+   * The ONE consolidated page-level data-integrity signal (AR-40): true when any
+   * panel on the page reported preliminary data (OR-fold via the page scope).
+   * Renders a single compact indicator in the header instead of N per-section
+   * pills — the page summary; per-cell 'p' + footer legend keep the detail.
+   */
+  preliminary?: boolean
+  /** Localized short label (e.g. "წინასწ." / "Prelim.") — visible, not color-only. */
+  integrityLabel?: string
+  /** Localized full caption (e.g. "Preliminary data") — the indicator's title tooltip. */
+  integrityTitle?: string
+  /** Localized aria-label for the indicator (e.g. "Data integrity"). */
+  integrityAriaLabel?: string
 }
 
-export default function PageHeader({ title, crumbs = [], badge, onExport, homeLabel, exportLabel, breadcrumbLabel = 'Breadcrumb' }: PageHeaderProps) {
+export default function PageHeader({
+  title, crumbs = [], badge, onExport, homeLabel, exportLabel, breadcrumbLabel = 'Breadcrumb',
+  preliminary, integrityLabel, integrityTitle, integrityAriaLabel,
+}: PageHeaderProps) {
   return (
     <div className="page-header">
       <div className="page-header__left">
@@ -34,6 +50,16 @@ export default function PageHeader({ title, crumbs = [], badge, onExport, homeLa
       </div>
 
       <div className="page-header__right">
+        {/* ONE consolidated data-integrity indicator (AR-40, Law 9 / WCAG 2.1 AA):
+            not color-only — a dot AND a visible text label, plus a title/aria caption.
+            The detail (per-cell 'p' flags, footer legend, section methodology) stays
+            reachable below; this is the page-level summary. */}
+        {preliminary && (
+          <span className="page-header__integrity" title={integrityTitle} aria-label={integrityAriaLabel}>
+            <span className="page-header__integrity-dot" aria-hidden="true" />
+            <span className="page-header__integrity-label">{integrityLabel}</span>
+          </span>
+        )}
         {badge && (
           <span className="freshness-badge">
             <span className="freshness-dot" />

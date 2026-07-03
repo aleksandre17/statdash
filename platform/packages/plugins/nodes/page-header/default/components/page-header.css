@@ -61,6 +61,34 @@
   flex-shrink: 0;
 }
 
+/* ── ONE page-level data-integrity indicator (AR-40, Law 9 / WCAG 2.1 AA) ──────
+ *  The consolidated preliminary signal for the whole page, replacing the former
+ *  per-section indicators + per-strip freshness badge. NOT color-only: a dot AND
+ *  a visible text label (plus a title/aria caption). Token-bound
+ *  (--status-preliminary-*), so it flips with [data-theme] and any [data-tenant].
+ *  Distinct from .freshness-badge (the accent-toned perspective caption). */
+.page-header__integrity {
+  display:       inline-flex;
+  align-items:   center;
+  gap:           0.3rem;
+  padding:       0.15rem 0.5rem;
+  border-radius: 6px;
+  border:        1px solid var(--status-preliminary-border);
+  background:    var(--status-preliminary-bg);
+  color:         var(--status-preliminary-fg);
+  font-size:     0.6875rem;
+  font-weight:   600;
+  white-space:   nowrap;
+}
+.page-header__integrity-dot {
+  width:         0.5rem;
+  height:        0.5rem;
+  border-radius: 50%;
+  background:    var(--status-preliminary-fg);
+  flex-shrink:   0;
+}
+.page-header__integrity-label { line-height: 1; }
+
 .freshness-badge {
   display: inline-flex;
   align-items: center;

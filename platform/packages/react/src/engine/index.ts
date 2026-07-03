@@ -210,8 +210,8 @@ export { LayoutItemProvider, useLayoutItem, mergePlacement } from './layoutItemC
 // ── Wrap style context — distribute NodeStyles from WrapNode to children ──
 export { WrapStyleContext, useWrapStyle } from './wrapStyleContext'
 
-// ── Node status — section-scoped data-integrity publish/subscribe (AR-39) ──
-export { NodeStatusProvider, useNodeStatusScope, useReportNodeStatus } from './NodeStatusContext'
+// ── Node status — page-scoped data-integrity publish/subscribe (AR-39/AR-40) ──
+export { NodeStatusProvider, useNodeStatusScope, useReportNodeStatus, useNodeStatusAggregate } from './NodeStatusContext'
 export type { IntegrityStatus, NodeStatusAggregate } from './NodeStatusContext'
 
 // ── Shell factory — abstract base for all NodeRenderer implementations ──

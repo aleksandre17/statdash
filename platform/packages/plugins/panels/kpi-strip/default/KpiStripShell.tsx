@@ -14,10 +14,9 @@ function KpiStripControl({ def, ctx }: { def: KpiStripNode; ctx: RenderContext }
   const EmptyState = useInject(ctx.ui, EMPTY_STATE)
   const t          = useT('kpi-strip')
   const trendLabels = { up: t('trend-up'), down: t('trend-down'), flat: t('trend-flat') }
-  // Per-item data-integrity label (localized) handed to each KpiCard — only the
-  // methodology-link aria remains card-local now that the preliminary signal is
-  // consolidated into the strip-level freshness badge (AR-39). The leaf stays
-  // pure/presentational, never hardcoding a language (AR-37 P1).
+  // Per-item methodology-link aria (localized) handed to each KpiCard. The
+  // preliminary signal is now consolidated to ONE page-level indicator (AR-40);
+  // the leaf stays pure/presentational, never hardcoding a language (AR-37 P1).
   const metaLabels = { methodology: t('methodology') }
 
   // useKpiRows = the async-store-safe KPI read seam (engine). For sync stores it
@@ -27,32 +26,24 @@ function KpiStripControl({ def, ctx }: { def: KpiStripNode; ctx: RenderContext }
   // (renderNode) catches a rejected warm.
   const kpis = useKpiRows(def.items, ctx)
 
-  const titleBadge = usePanelTitleBadge(ctx, def, 'kpi-strip')
+  // ── AR-40 — publish the strip's TRUE preliminary truth to the page scope ───
+  //  A kpi-strip's integrity is a FOLD over its per-item flags (kpi.preliminary =
+  //  spec.preliminary || provenance 'p'), which the generic resolvePreliminary(def)
+  //  can't see (the strip has no single measure / ctx.rows). So the strip passes
+  //  its own fold as the override — the page header then folds it into the ONE
+  //  consolidated indicator. `|| undefined` defers to the generic resolver when the
+  //  strip itself sees nothing preliminary.
+  const anyPreliminary = kpis.some(kpi => kpi.preliminary === true)
+  const titleBadge = usePanelTitleBadge(ctx, def, 'kpi-strip', anyPreliminary || undefined)
 
   if (kpis.length === 0) return <EmptyState />
 
-  // ── Consolidated freshness/integrity signal (AR-39 principle) ─────────────
-  //  The strip OR-folds its items' preliminary flags into ONE data-freshness
-  //  badge instead of scattering a per-title "P" pill on every card. Same
-  //  consolidation as the section's single integrity indicator: one clear
-  //  data-freshness signal for the whole strip, not N repeated pills.
-  const anyPreliminary = kpis.some(kpi => kpi.preliminary === true)
-
   return (
     <div className="kpi-strip">
-      {(anyPreliminary || titleBadge) && (
-        <div className="kpi-strip__meta" aria-live="polite" aria-label={t('status-indicators')}>
-          {/* ONE freshness badge (WCAG 2.1 AA / Law 9): not color-only — a dot AND a
-              visible localized label. Replaces the former per-card preliminary pills. */}
-          {anyPreliminary && (
-            <span className="kpi-strip__freshness" title={t('preliminary')}>
-              <span className="kpi-strip__freshness-dot" aria-hidden="true" />
-              <span className="kpi-strip__freshness-label">{t('preliminary')}</span>
-            </span>
-          )}
-          {titleBadge}
-        </div>
-      )}
+      {/* Any PANEL_TITLE_BADGE contribution (extension seam) renders here; the
+          preliminary signal itself is published UP to the page-level indicator,
+          not shown as a per-strip badge (AR-40). */}
+      {titleBadge && <div className="kpi-strip__meta">{titleBadge}</div>}
       {/* Count-aware grid: the strip is the query container, the grid responds to
           the strip's own inline-size and resolves to a clean column count that
           DIVIDES the KPI count at every width (no stranded orphan). data-kpi-count

@@ -49,13 +49,19 @@ import type { NodeBase, RenderContext } from './types'
  * @param def      the panel node (read for `id` + the preliminary signal)
  * @param nodeType the panel's node type — the host discriminator contributors
  *                 match on (e.g. 'chart', 'table', 'gauge', 'kpi-strip')
+ * @param preliminaryOverride
+ *                 an explicit preliminary truth a panel knows better than the
+ *                 generic resolver — e.g. a kpi-strip FOLDS its per-item flags,
+ *                 which resolvePreliminary(def) can't see (no single measure /
+ *                 ctx.rows). When provided it wins; otherwise the resolver is used.
  */
 export function usePanelTitleBadge(
   ctx:      RenderContext,
   def:      NodeBase & { preliminary?: boolean },
   nodeType: string,
+  preliminaryOverride?: boolean,
 ): ReactNode | undefined {
-  const preliminary = resolvePreliminary(def, ctx)
+  const preliminary = preliminaryOverride ?? resolvePreliminary(def, ctx)
 
   // Publish upward. `published` is true iff a section scope is present — then this
   // panel defers its pill to the section's single consolidated indicator.

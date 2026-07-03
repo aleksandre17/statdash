@@ -2,7 +2,7 @@ import './section.css'
 
 import { resolveViewState }                                  from '@statdash/styles'
 import { useT, useExtensions, SECTION_HEADER_ACTIONS }       from '@statdash/react'
-import { defineShell, useViewToggle, useCollapsible, useDisclosure, accentStyle, useNodeTemplate, mergePlacement, useNodeStatusScope, NodeStatusProvider } from '@statdash/react/engine'
+import { defineShell, useViewToggle, useCollapsible, useDisclosure, accentStyle, useNodeTemplate, mergePlacement } from '@statdash/react/engine'
 import type { ShellProps, NodeDef }                          from '@statdash/react/engine'
 import type { SectionNode }                                  from './SectionNode'
 import { META }                                              from './meta'
@@ -33,14 +33,12 @@ import { SectionMethodology }                                from './SectionMeth
 //  That guard (below) inspects children.defs — never panel rows — so the
 //  data/structure boundary stays intact.
 //
-//  PROTECTED VARIATIONS seam — NOW ACTIVATED (AR-39): the reserved
-//  NodeStatusContext is introduced for its intended reason — a real aggregate-
-//  status consumer appeared (data-integrity consolidation). Child data panels
-//  PUBLISH their preliminary NodeStatus; the section SUBSCRIBES and folds them
-//  into ONE header indicator. The empty-state boundary is untouched — the section
-//  receives a *reported status*, never reads child ctx.rows, so Option D's
-//  data/structure separation stands. (A rows-aggregation consumer, e.g.
-//  section-level export, remains deferred — YAGNI.)
+//  DATA-INTEGRITY SCOPE — the section is NO LONGER the subscriber (AR-40): the
+//  page-wide preliminary fold moved UP to the page root (inner-page owns the
+//  scope; the page header renders the ONE indicator). Child panels still publish
+//  their status upward via useReportNodeStatus — with no section-level provider
+//  they now report straight to the page scope. The section stays a pure
+//  structural container: no scope, no aggregate read, no per-section indicator.
 //
 export const SectionShell = defineShell<SectionNode>({
   // The slice's DECLARED variants (meta.ts). defineShell resolves them against
@@ -82,14 +80,6 @@ function SectionControl({
 
   const info = useDisclosure()
 
-  // ── AR-39 — section-scoped data-integrity aggregation ──────────────────────
-  //  The section is the information expert for its panels' aggregate provenance:
-  //  child data panels PUBLISH their resolved preliminary status via the scope
-  //  collector (they hold ctx.rows — the section never reads child rows), and the
-  //  section OR-folds them (plus an explicit author override) into ONE indicator.
-  const { collector, aggregate } = useNodeStatusScope()
-  const preliminary = aggregate.preliminary || def.methodology?.preliminary === true
-
   const sectionActions = useExtensions(ctx.extensions, SECTION_HEADER_ACTIONS, {
     sectionId:      resolvedId,
     hasMethodology: !!def.methodology,
@@ -120,16 +110,14 @@ function SectionControl({
           viewToggle={viewToggle}
           actions={sectionActions}
           hasMethodology={!!def.methodology}
-          preliminary={preliminary}
           infoOpen={info.open}
           onToggleInfo={info.toggle}
           t={t}
         />
 
-        {(def.methodology || preliminary) && info.open && (
+        {def.methodology && info.open && (
           <SectionMethodology
             methodology={def.methodology}
-            preliminary={preliminary}
             resolve={resolve}
             onClose={info.close}
             t={t}
@@ -139,24 +127,21 @@ function SectionControl({
         {/* TODO(export): wire ExportBar here when a section-aggregate-ROWS mechanism exists.
             Decision: Option C (defer). A section is a structural container; it has no
             ctx.rows of its own, and per-panel export belongs in each panel's shell
-            (TableShell / ChartShell). The NodeStatusContext seam now DOES exist (AR-39,
-            below) but publishes derived STATUS, not rows — a rows-aggregation channel is a
-            separate, still-unneeded consumer (YAGNI). */}
+            (TableShell / ChartShell). The data-integrity STATUS channel exists at the
+            PAGE scope (AR-40); a rows-aggregation channel is a separate, still-unneeded
+            consumer (YAGNI). */}
 
         {(merged.noCollapse || collapsible.open) && (
-          // NodeStatusProvider makes this section the publish scope for its child
-          // panels (AR-39): each data panel reports its preliminary status here
-          // instead of rendering its own pill. Wraps the body only — the header
-          // reads the folded aggregate directly (same component), no context round-trip.
-          <NodeStatusProvider collector={collector}>
-            <div className={SECTION.body} {...vs.body}>
-              {children.defs.map((d: NodeDef, i: number) => (
-                <div key={i} className={SECTION.view} {...resolveViewState(viewToggle.isHidden(d))}>
-                  {children.rendered[i]}
-                </div>
-              ))}
-            </div>
-          </NodeStatusProvider>
+          // No section-level status provider (AR-40): child panels publish straight
+          // to the PAGE scope, so the section renders its body as a pure structural
+          // container.
+          <div className={SECTION.body} {...vs.body}>
+            {children.defs.map((d: NodeDef, i: number) => (
+              <div key={i} className={SECTION.view} {...resolveViewState(viewToggle.isHidden(d))}>
+                {children.rendered[i]}
+              </div>
+            ))}
+          </div>
         )}
       </section>
     </div>
