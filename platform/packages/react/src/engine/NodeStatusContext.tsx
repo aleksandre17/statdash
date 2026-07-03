@@ -33,7 +33,7 @@ import type { ReactNode } from 'react'
 //  first (and today only) integrity facet, but vintage / OBS_STATUS aggregation
 //  are the natural next facets (Law 8 — a new facet = a new optional field, the
 //  publish/subscribe interface unchanged).
-export interface NodeStatus {
+export interface IntegrityStatus {
   /** True when this node's DISPLAYED data is preliminary (SDMX 'p' or author override). */
   preliminary?: boolean
 }
@@ -47,7 +47,7 @@ export interface NodeStatusAggregate {
 }
 
 interface NodeStatusCollector {
-  report(nodeId: string, status: NodeStatus): void
+  report(nodeId: string, status: IntegrityStatus): void
   clear(nodeId: string): void
 }
 
@@ -74,7 +74,7 @@ export function NodeStatusProvider({
 //  post-mount report triggers is one bounded pass (deps are primitive-stable, so
 //  no report loop).
 export function useNodeStatusScope(): { collector: NodeStatusCollector; aggregate: NodeStatusAggregate } {
-  const [byId, setById] = useState<Record<string, NodeStatus>>({})
+  const [byId, setById] = useState<Record<string, IntegrityStatus>>({})
 
   const collector = useMemo<NodeStatusCollector>(
     () => ({
@@ -114,7 +114,7 @@ export function useNodeStatusScope(): { collector: NodeStatusCollector; aggregat
 //  an id-less panel still reports exactly once. The report runs in an effect
 //  (post-commit) with primitive-stable deps, so it fires on mount / when the
 //  status flips, and cleans up on unmount — never in a loop.
-export function useReportNodeStatus(nodeId: string | undefined, status: NodeStatus): boolean {
+export function useReportNodeStatus(nodeId: string | undefined, status: IntegrityStatus): boolean {
   const collector = useContext(NodeStatusContext)
   const fallbackId = useId()
   const id = nodeId ?? fallbackId
