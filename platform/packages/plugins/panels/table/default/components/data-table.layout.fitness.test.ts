@@ -177,3 +177,68 @@ describe('FF-TABLE-BOUNDED-SCROLL — a tall table scrolls INSIDE the panel, hea
     expect(mediaIdx).toBeGreaterThan(stickyIdx)
   })
 })
+
+// ── FF-TABLE-BAND-FILL-CHAIN — a BANDED table scrolls; the band reaches the wrap ──
+//   The other half of the bounded-scroll story, for the panel that IS in a band.
+//
+//   Root cause → standard → fix (verified live on /ka/regional, 1440px):
+//     · root cause : node-styles gives the band box a definite height and flags this
+//                    wrap `flex:1`, but the shell renders ONE intermediate block —
+//                    `<div {…bodyAttrs}>` (badges + table + export bar) — between the
+//                    band box and the wrap. A plain block, it neither passes the band
+//                    height down (the wrap's `flex:1` is inert against a non-flex
+//                    parent) nor stays within the band (it grows to full table height
+//                    and the band's overflow:hidden CLIPS the bottom rows). LIVE: the
+//                    "GDP — by region" composition table rendered a 603px table inside
+//                    a 362px band → bottom rows unreachable, wrap NOT scrollable.
+//                    (The chart shell avoids this by spreading bodyAttrs ONTO
+//                    .chart-wrap, so ITS content box is the band box's direct child —
+//                    the table needs a wrapper for its sibling badges/export bar.)
+//     · standard   : the wrap must be the panel's bounded scroll viewport in a band
+//                    too (SSOT); the shell body between must be a fill-flex LINK.
+//     · fix        : target exactly the wrap's direct parent via
+//                    `:has(> .data-table__wrap)` under the band's own
+//                    [data-view]/[data-height]/[data-aspect] contract, and make it
+//                    `display:flex; flex-direction:column; flex:1; min-height:0`.
+//
+//   Structural (CSS-text) assertion, not a live scroll measurement: jsdom has no
+//   layout engine (clientHeight/scrollHeight are 0), so a "does the banded wrap
+//   scroll?" check passes vacuously. The invariant is a CSS truth: the wrap's parent
+//   is a fill-flex link under a band. Real-browser before/after proof (scrollable
+//   false→true, header frozen, band height honoured) captured via the Playwright probe.
+describe('FF-TABLE-BAND-FILL-CHAIN — the band reaches the scroll viewport through the shell body', () => {
+  /** The band-fill-chain rule group: selector list up to the opening brace + body. */
+  const rule = () => {
+    const m = css.match(/((?:\[data-[^\]]+\][^{]*:has\(> \.data-table__wrap\)[^{]*,?\s*)+)\{([^}]*)\}/)
+    expect(m, 'the band-fill-chain rule (…:has(> .data-table__wrap) { … }) must exist').not.toBeNull()
+    return { selectors: m![1], body: m![2] }
+  }
+
+  it('scopes to EXACTLY the wrap\'s direct parent (SSOT) — :has(> .data-table__wrap), no global reach', () => {
+    // Must select the element that directly parents the wrap, never a broad layout box.
+    expect(rule().selectors).toMatch(/:has\(>\s*\.data-table__wrap\)/)
+  })
+
+  it('reads the band CONTRACT (does not redefine it): keys off [data-view] + [data-height]/[data-aspect]', () => {
+    const sel = rule().selectors
+    expect(sel).toMatch(/\[data-view="visible"\]/)
+    expect(sel).toMatch(/\[data-height\]/)
+    expect(sel).toMatch(/\[data-aspect\]/)
+  })
+
+  it('covers BOTH band-delivery shapes: band on an ANCESTOR slot AND band on the shell body itself', () => {
+    const sel = rule().selectors
+    // ancestor-slot shape: [data-height|aspect] <descendant> [data-view=visible] > <wrap-parent>
+    expect(sel).toMatch(/\[data-(?:height|aspect)\]\s+\[data-view="visible"\]\s*>\s*:has\(>\s*\.data-table__wrap\)/)
+    // on-body shape: [data-view=visible] > [data-aspect|height]:has(> wrap)
+    expect(sel).toMatch(/\[data-view="visible"\]\s*>\s*\[data-(?:aspect|height)\]:has\(>\s*\.data-table__wrap\)/)
+  })
+
+  it('makes the shell body a FILL-FLEX column so the band height reaches the wrap', () => {
+    const body = rule().body
+    expect(body).toMatch(/display:\s*flex/)
+    expect(body).toMatch(/flex-direction:\s*column/)
+    expect(body).toMatch(/flex:\s*1\b/)     // fills the definite-height band box
+    expect(body).toMatch(/min-height:\s*0/) // lets the flex child (wrap) shrink + scroll
+  })
+})
