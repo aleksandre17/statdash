@@ -7,7 +7,7 @@
 
 import type { ApexOptions } from 'apexcharts'
 import type { ChartOutput } from '@statdash/charts'
-import { BASE, yFormatter, makeDataLabelFormatter, collectFormatted, scaledPx, autoBarFillPct, BP_MD, BP_SM, BP_XS } from './base'
+import { BASE, yFormatter, makeDataLabelFormatter, collectFormatted, scaledPx, horizontalBarFillPct, BP_MD, BP_SM, BP_XS } from './base'
 import { cssVar } from '@statdash/styles'
 
 export function buildHBarDiverging(output: ChartOutput, fontFamily?: string, locale?: string): ApexOptions {
@@ -63,8 +63,10 @@ export function buildHBarDiverging(output: ChartOutput, fontFamily?: string, loc
       bar: {
         horizontal:   true,
         borderRadius: 3,
-        // Same bounded low-cardinality fill rule as the cartesian builder.
-        columnWidth:  `${autoBarFillPct(categories.length)}%`,
+        // Same absolute-thickness cap as the cartesian builder. This is a
+        // HORIZONTAL bar, so thickness is barHeight — NOT columnWidth (ApexCharts
+        // ignores columnWidth on horizontal bars; the prior value was dead config).
+        barHeight:    `${horizontalBarFillPct(output)}%`,
         dataLabels:   { position: 'center' },
       },
     },
@@ -112,7 +114,8 @@ export function buildHBarDiverging(output: ChartOutput, fontFamily?: string, loc
         breakpoint: BP_XS,
         options: {
           chart:       { height: 260 },
-          plotOptions: { bar: { borderRadius: 2, columnWidth: '85%' } },
+          // columnWidth is ignored on horizontal bars — keep only the radius tweak.
+          plotOptions: { bar: { borderRadius: 2 } },
           legend:      { itemMargin: { horizontal: 4 } },
         },
       },

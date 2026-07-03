@@ -213,37 +213,6 @@ const HBAR_PX_PER_CATEGORY = 34   // min vertical slot per row (bar + gap + labe
 const HBAR_MIN_HEIGHT      = 560  // floor — a solo/few-bar hbar reads as a real focus chart
 const HBAR_MAX_HEIGHT      = 920  // cap — beyond this the panel scrolls
 
-// ── Auto bar thickness (low-cardinality fill) ──────────────────────────
-//
-//  ApexCharts sizes a bar as a PERCENTAGE of its per-category slot
-//  (columnWidth for vertical, barHeight for horizontal). A fixed low percent
-//  leaves few-category charts looking thin with gaping whitespace between
-//  bars (2–3 regions); a fixed high percent turns a many-category chart into a
-//  solid wall. The market standard (ECharts barMaxWidth / Highcharts pointWidth,
-//  Datawrapper) is a bounded rule: WIDE bars when few categories (fill the plot,
-//  read as a deliberate comparison), TAPERING toward a legible floor as the
-//  category count climbs — never absurd at either extreme.
-//
-//  Category-count-driven + orientation-neutral (Law 1): the same fraction feeds
-//  columnWidth and barHeight. Grammar-of-Graphics "bar mark" sizing, not a
-//  per-panel magic number. Bounds are the single tunable; exported for the gate.
-//
-export const BAR_FILL_MAX_PCT = 64  // few categories → wide, plot-filling bars
-export const BAR_FILL_MIN_PCT = 34  // many categories → slim but legible floor
-const BAR_FILL_TAPER          = 4   // percent shed per category beyond the 2-cat baseline
-
-/**
- * Bounded bar-fill percentage for `columnWidth` / `barHeight`, driven by category
- * count. n≤2 → BAR_FILL_MAX_PCT (thick), easing by BAR_FILL_TAPER per extra
- * category down to BAR_FILL_MIN_PCT. Returns a bare integer percent (no `%`).
- */
-export function autoBarFillPct(categoryCount: number): number {
-  const n = Math.max(1, categoryCount)
-  return Math.round(
-    Math.min(BAR_FILL_MAX_PCT, Math.max(BAR_FILL_MIN_PCT, BAR_FILL_MAX_PCT - (n - 2) * BAR_FILL_TAPER)),
-  )
-}
-
 /**
  * Resolve the render height for a ChartOutput. Horizontal categorical charts get
  * a height derived from their category count (so rows never cram); everything
@@ -253,4 +222,81 @@ export function categoricalChartHeight(output: ChartOutput): number | '100%' {
   const n = output.categories.length
   if (!output.horizontal || n === 0) return '100%'
   return Math.min(HBAR_MAX_HEIGHT, Math.max(HBAR_MIN_HEIGHT, n * HBAR_PX_PER_CATEGORY))
+}
+
+// ── Bar thickness — absolute px CAP at low cardinality ─────────────────
+//
+//  THE PROBLEM ApexCharts hands us: it sizes a bar as a PERCENT of its
+//  per-category slot (columnWidth for vertical, barHeight for horizontal), where
+//  slot = plotDimension / categoryCount. It has NO native absolute ceiling — no
+//  `barMaxWidth` (ECharts) / `maxPointWidth` (Highcharts). So a FIXED percent is
+//  the wrong lever at low cardinality: at n=1 the slot is the WHOLE plot, so any
+//  generous percent (the old 64%) paints one bar as a full-width/height BLOCK —
+//  the "terribly thick fat stripe" a solo region produces on the State-B
+//  composition bar and the regional-comparison hbar.
+//
+//  THE MODEL (market standard — Datawrapper / Observable Plot / ECharts
+//  barMaxWidth): cap the bar's ABSOLUTE thickness. A solo/2-bar chart reads as a
+//  deliberate FOCUS bar of sane thickness with intentional whitespace around it,
+//  never a block; a many-bar chart still fills its (now narrow) slots up to a
+//  gap-preserving ceiling. We translate the px cap into the percent ApexCharts
+//  wants: to cap thickness at `capPx`, and since slot = plotDim / n,
+//      pct = capPx / slot * 100 = capPx * n * 100 / plotDim
+//  clamped to [BAR_FILL_MIN_PCT, BAR_FILL_MAX_PCT] (a legible floor; a ceiling
+//  that always leaves a gap so many bars never fuse into a wall). `floor` makes
+//  "thickness ≤ capPx" a hard guarantee (never rounds a solo bar back over the
+//  cap). Orientation-neutral (Law 1): the SAME function feeds columnWidth and
+//  barHeight; only the plot dimension + cap differ per axis.
+//
+//  Where `plotDim` comes from:
+//   • HORIZONTAL — the bar's thickness is the row height, and we OWN the chart
+//     height (categoricalChartHeight). So the cap is EXACT — no estimate.
+//   • VERTICAL — the bar's thickness is its width, a % of the plot WIDTH, which
+//     ApexCharts only knows at render (container-query / solo-vs-paired). We
+//     estimate it from the viewport (estimatedPlotWidth), biased to the FULL-WIDTH
+//     solo case (the State-B / comparison panels that actually hit the pathology).
+//     A wider real plot yields a proportionally wider bar, still gap-bounded by
+//     BAR_FILL_MAX_PCT — so the worst case (a full-width BLOCK) is eliminated even
+//     though the px cap is exact only at the reference width. A true all-width px
+//     cap would require reading gridWidth in a mounted/updated event + updateOptions
+//     (ECharts/Highcharts do it at layout) — deferred as a larger change.
+//
+export const BAR_CAP_PX_VERTICAL   = 88   // solo/few vertical column: max absolute WIDTH  (owner: 64–96px)
+export const BAR_CAP_PX_HORIZONTAL  = 128  // solo/few horizontal bar:  max absolute THICKNESS (a sane focus band)
+export const BAR_FILL_MAX_PCT      = 82   // ceiling — many bars fill their slot but keep a gap (never a wall)
+export const BAR_FILL_MIN_PCT      = 6    // floor — keeps the percent a valid, painted positive
+const REFERENCE_PLOT_WIDTH         = 900  // assumed plot width when no viewport (SSR / jsdom)
+const PLOT_WIDTH_FRACTION          = 0.82 // plot width ≈ this share of a full-width panel's viewport
+
+/**
+ * Bar-fill PERCENT (bare integer, no `%`) that caps a bar's absolute thickness at
+ * `capPx` for `categoryCount` bars sharing a `plotDimPx`-wide/tall plot. Rises with
+ * n (bars fill their shrinking slots) up to BAR_FILL_MAX_PCT; floored at
+ * BAR_FILL_MIN_PCT. `floor` guarantees the resulting thickness never exceeds capPx.
+ */
+export function barFillPctForCap(categoryCount: number, plotDimPx: number, capPx: number): number {
+  const n    = Math.max(1, categoryCount)
+  const slot = plotDimPx / n
+  const pct  = (capPx / slot) * 100
+  return Math.floor(Math.min(BAR_FILL_MAX_PCT, Math.max(BAR_FILL_MIN_PCT, pct)))
+}
+
+/** Estimated plot WIDTH (px) for a vertical bar — viewport-derived, biased to the
+ *  full-width solo panel; REFERENCE_PLOT_WIDTH when there's no window (SSR/jsdom). */
+export function estimatedPlotWidth(): number {
+  const vw = typeof window !== 'undefined' ? window.innerWidth : 0
+  return vw > 0 ? Math.max(320, vw * PLOT_WIDTH_FRACTION) : REFERENCE_PLOT_WIDTH
+}
+
+/** columnWidth fill-percent for a VERTICAL bar — caps absolute WIDTH at BAR_CAP_PX_VERTICAL. */
+export function verticalBarFillPct(categoryCount: number): number {
+  return barFillPctForCap(categoryCount, estimatedPlotWidth(), BAR_CAP_PX_VERTICAL)
+}
+
+/** barHeight fill-percent for a HORIZONTAL bar — caps absolute THICKNESS at
+ *  BAR_CAP_PX_HORIZONTAL against the EXACT owned chart height (no estimate). */
+export function horizontalBarFillPct(output: ChartOutput): number {
+  const h           = categoricalChartHeight(output)
+  const totalHeight = typeof h === 'number' ? h : HBAR_MIN_HEIGHT
+  return barFillPctForCap(output.categories.length, totalHeight, BAR_CAP_PX_HORIZONTAL)
 }

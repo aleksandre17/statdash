@@ -9,12 +9,14 @@
 //   #1 Distinct categorical colour PER SERIES — a multi-series bar whose series carry
 //      no explicit semantic colour must resolve one distinct hue per series index
 //      (Grammar-of-Graphics colour encoding), not collapse to a single grey.
-//   #4 Bars scale UP for few categories (autoBarFillPct), bounded, tapering as the
-//      count climbs — the same rule for columnWidth (vertical) and barHeight
-//      (horizontal) and the diverging hbar.
+//   #4 Bar thickness is CAPPED in absolute px at low cardinality — a solo / 2-bar
+//      chart reads as a focus bar with whitespace, NEVER a fat stripe/block; the
+//      fill % rises as the count climbs so many bars still fill their (narrow)
+//      slots up to a gap-preserving ceiling. Same rule for columnWidth (vertical),
+//      barHeight (horizontal) and the diverging hbar.
 //
-//  Agnostic: colours keyed on series INDEX, thickness on category COUNT — never a
-//  region/sector name or a per-config number.
+//  Agnostic: colours keyed on series INDEX, thickness on category COUNT + a px cap
+//  — never a region/sector name or a per-config number.
 //
 
 import { describe, it, expect } from 'vitest'
@@ -22,7 +24,13 @@ import type { ChartOutput, AxisOutput, ChartSeries } from '@statdash/charts'
 import { chartColorAt } from '@statdash/styles'
 import { buildCartesian }        from './cartesian'
 import { buildHBarDiverging }    from './hbar-diverging'
-import { autoBarFillPct, BAR_FILL_MAX_PCT, BAR_FILL_MIN_PCT } from './base'
+import {
+  barFillPctForCap, verticalBarFillPct, horizontalBarFillPct, categoricalChartHeight,
+  BAR_FILL_MAX_PCT, BAR_FILL_MIN_PCT, BAR_CAP_PX_VERTICAL, BAR_CAP_PX_HORIZONTAL,
+} from './base'
+
+/** Absolute px thickness a fill percent yields for n bars in a plotDim-wide/tall plot. */
+const thicknessPx = (pct: number, plotDim: number, n: number) => (pct / 100) * (plotDim / n)
 
 const y: AxisOutput = { unit: undefined, decimals: undefined }
 
@@ -72,48 +80,73 @@ describe('DEFECT#1 — distinct categorical colour per series', () => {
   })
 })
 
-// ── #4 bar thickness ───────────────────────────────────────────────────────────
-describe('DEFECT#4 — bar thickness scales with cardinality (bounded)', () => {
-  it('autoBarFillPct: few categories → MAX, tapering monotonically to the floor', () => {
-    expect(autoBarFillPct(1)).toBe(BAR_FILL_MAX_PCT)
-    expect(autoBarFillPct(2)).toBe(BAR_FILL_MAX_PCT)
-    // strictly non-increasing as the count grows
-    let prev = autoBarFillPct(2)
-    for (let n = 3; n <= 40; n++) {
-      const cur = autoBarFillPct(n)
-      expect(cur).toBeLessThanOrEqual(prev)
-      prev = cur
+// ── #4 bar thickness — absolute px cap ──────────────────────────────────────────
+describe('DEFECT#4 — bar thickness capped in px at low cardinality (no fat stripe)', () => {
+  const PLOT = 900   // reference plot dimension for the pure-math assertions
+
+  it('caps absolute thickness at the px ceiling for a solo / few-bar chart', () => {
+    // The pathology: a solo bar as a full-plot BLOCK. Assert the resolved thickness
+    // never exceeds the cap for the low-cardinality range (floor() guarantees ≤ cap).
+    for (const n of [1, 2, 3, 4, 5, 6]) {
+      const pct = barFillPctForCap(n, PLOT, BAR_CAP_PX_VERTICAL)
+      expect(thicknessPx(pct, PLOT, n)).toBeLessThanOrEqual(BAR_CAP_PX_VERTICAL)
     }
-    // bounded at both ends — never absurd
-    expect(autoBarFillPct(2)).toBeLessThanOrEqual(BAR_FILL_MAX_PCT)
-    expect(autoBarFillPct(999)).toBe(BAR_FILL_MIN_PCT)
   })
 
-  it('a 2-category chart is markedly THICKER than a 12-category one', () => {
-    expect(autoBarFillPct(2)).toBeGreaterThan(autoBarFillPct(12))
+  it('fill percent RISES monotonically with cardinality, bounded both ways', () => {
+    let prev = 0
+    for (let n = 1; n <= 40; n++) {
+      const pct = barFillPctForCap(n, PLOT, BAR_CAP_PX_VERTICAL)
+      expect(pct).toBeGreaterThanOrEqual(prev)               // non-decreasing (bars fill shrinking slots)
+      expect(pct).toBeLessThanOrEqual(BAR_FILL_MAX_PCT)       // ceiling — never a solid wall
+      expect(pct).toBeGreaterThanOrEqual(BAR_FILL_MIN_PCT)    // floor — always a painted positive
+      prev = pct
+    }
+    // many bars reach the gap-preserving ceiling and fill their slots
+    expect(barFillPctForCap(40, PLOT, BAR_CAP_PX_VERTICAL)).toBe(BAR_FILL_MAX_PCT)
   })
 
-  it('vertical bar uses the fill rule for columnWidth', () => {
+  it('a 2-bar chart is markedly THICKER (px) than a 12-bar one — but neither a stripe', () => {
+    const t2  = thicknessPx(barFillPctForCap(2,  PLOT, BAR_CAP_PX_VERTICAL), PLOT, 2)
+    const t12 = thicknessPx(barFillPctForCap(12, PLOT, BAR_CAP_PX_VERTICAL), PLOT, 12)
+    expect(t2).toBeGreaterThan(t12)
+    expect(t2).toBeLessThanOrEqual(BAR_CAP_PX_VERTICAL)       // …still capped, not a block
+  })
+
+  it('horizontal thickness is capped against the EXACT owned chart height', () => {
+    // Horizontal owns its height (categoricalChartHeight), so the cap is exact — no estimate.
+    for (const n of [1, 2, 3]) {
+      const o = out({ type: 'hbar', horizontal: true, categories: Array.from({ length: n }, (_, i) => `c${i}`) })
+      const h = categoricalChartHeight(o) as number
+      expect(thicknessPx(horizontalBarFillPct(o), h, n)).toBeLessThanOrEqual(BAR_CAP_PX_HORIZONTAL)
+    }
+  })
+
+  it('vertical bar uses the capped fill rule for columnWidth', () => {
     const opts = buildCartesian(out({ categories: ['A', 'B'], horizontal: false }))
     expect((opts.plotOptions?.bar as { columnWidth?: string }).columnWidth)
-      .toBe(`${autoBarFillPct(2)}%`)
+      .toBe(`${verticalBarFillPct(2)}%`)
   })
 
-  it('horizontal bar uses the fill rule for barHeight', () => {
-    const opts = buildCartesian(out({ type: 'hbar', horizontal: true, categories: ['A', 'B'] }))
+  it('horizontal bar uses the capped fill rule for barHeight', () => {
+    const o = out({ type: 'hbar', horizontal: true, categories: ['A', 'B'] })
+    const opts = buildCartesian(o)
     expect((opts.plotOptions?.bar as { barHeight?: string }).barHeight)
-      .toBe(`${autoBarFillPct(2)}%`)
+      .toBe(`${horizontalBarFillPct(o)}%`)
   })
 
-  it('diverging hbar uses the same fill rule', () => {
-    const opts = buildHBarDiverging({
+  it('diverging hbar caps via barHeight (not the dead columnWidth)', () => {
+    const o: ChartOutput = {
       type: 'hbar-diverging', categories: ['A', 'B', 'C'],
       series: [series('Resources', '#005a9c', [1, 2, 3])],
       axes: { x: {}, y, y2: undefined },
       stacked: false, horizontal: true,
       legend: { show: true }, tooltip: { show: true }, annotations: [], groups: [],
-    })
-    expect((opts.plotOptions?.bar as { columnWidth?: string }).columnWidth)
-      .toBe(`${autoBarFillPct(3)}%`)
+    }
+    const opts = buildHBarDiverging(o)
+    expect((opts.plotOptions?.bar as { barHeight?: string }).barHeight)
+      .toBe(`${horizontalBarFillPct(o)}%`)
+    // the old dead config must be gone (ApexCharts ignores columnWidth on horizontal)
+    expect((opts.plotOptions?.bar as { columnWidth?: string }).columnWidth).toBeUndefined()
   })
 })

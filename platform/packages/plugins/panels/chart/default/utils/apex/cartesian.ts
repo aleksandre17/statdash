@@ -2,7 +2,7 @@
 
 import type { ApexOptions } from 'apexcharts'
 import type { ChartOutput } from '@statdash/charts'
-import { BASE, yFormatter, responsiveYAxis, collectFormatted, scaledPx, autoBarFillPct, BP_MD, BP_SM, BP_XS } from './base'
+import { BASE, yFormatter, responsiveYAxis, collectFormatted, scaledPx, verticalBarFillPct, horizontalBarFillPct, BP_MD, BP_SM, BP_XS } from './base'
 import { cssVar, chartPalette, chartColorAt } from '@statdash/styles'
 
 export function buildCartesian(output: ChartOutput, fontFamily?: string, locale?: string): ApexOptions {
@@ -136,11 +136,12 @@ export function buildCartesian(output: ChartOutput, fontFamily?: string, locale?
 
   // ── Bar sizing ───────────────────────────────────────────────────────
   //  ApexCharts sizes a bar as a % of its per-category slot (barHeight for
-  //  horizontal, columnWidth for vertical). autoBarFillPct is the ONE bounded
-  //  rule: WIDE bars when few categories (fill the plot — the low-cardinality
-  //  fix), tapering to a legible floor as the count climbs. Category-count
-  //  driven, orientation-neutral (Law 1/4) — no per-panel magic number.
-  const barFill = `${autoBarFillPct(categories.length)}%`
+  //  horizontal, columnWidth for vertical). The fill % is derived from an
+  //  ABSOLUTE thickness cap (see base.ts): a solo/2-bar chart reads as a focus
+  //  bar of sane thickness with whitespace, never a fat stripe; many bars still
+  //  fill their slots up to a gap-preserving ceiling. Horizontal caps against the
+  //  exact owned height; vertical against the estimated plot width (Law 1/4).
+  const barFill = `${horizontal ? horizontalBarFillPct(output) : verticalBarFillPct(categories.length)}%`
 
   // ── Chart type ───────────────────────────────────────────────────────
   //  combo → 'line' as the "host" type (ApexCharts mixes via per-series type)
@@ -353,7 +354,9 @@ export function buildCartesian(output: ChartOutput, fontFamily?: string, locale?
         breakpoint: BP_XS,
         options: {
           ...(horizontal ? {} : { chart: { height: 240 } }),
-          plotOptions: { bar: { borderRadius: 2, columnWidth: '85%' } },
+          // Keep the low-cardinality thickness cap on mobile — inherit the base
+          // columnWidth (a flat '85%' here would re-fatten a solo bar to a stripe).
+          plotOptions: { bar: { borderRadius: 2 } },
           markers:     { size: 0 },
           dataLabels: { enabled: false },
           legend:     { itemMargin: { horizontal: 4 } },
