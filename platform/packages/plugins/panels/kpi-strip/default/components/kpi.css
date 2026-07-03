@@ -119,19 +119,41 @@
   letter-spacing: 0.04em;
 }
 
-/* "P" — preliminary data badge (IMF/Eurostat convention) */
-.kpi-badge--p {
-  font-size: 0.5625rem;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  color: var(--status-obs-preliminary-fg);
-  background: var(--status-obs-preliminary-bg);
-  border: 1px solid var(--status-obs-preliminary-border);
-  border-radius: 3px;
-  padding: 0.125rem 0.3125rem;
-  line-height: 1.4;
-  cursor: default;
+/* ── Strip-level meta row — consolidated freshness + panel-title badges ──────
+ *  Replaces the former per-card "P" pills (AR-39): the strip OR-folds every
+ *  item's preliminary flag into ONE data-freshness badge here, above the grid. */
+.kpi-strip__meta {
+  display:     flex;
+  align-items: center;
+  gap:         var(--spacing-sm, 0.5rem);
+  margin-bottom: var(--spacing-sm, 0.5rem);
 }
+
+/* ONE consolidated data-freshness / integrity badge (IMF/Eurostat "preliminary"
+   convention). NOT color-only (WCAG 2.1 AA / Law 9): a dot AND a visible text
+   label. Token-bound — flips with [data-theme] / [data-tenant]. Mirrors the
+   section's single integrity indicator so the signal reads the same everywhere. */
+.kpi-strip__freshness {
+  display:       inline-flex;
+  align-items:   center;
+  gap:           0.3rem;
+  padding:       0.15rem 0.5rem;
+  border-radius: 6px;
+  border:        1px solid var(--status-preliminary-border);
+  background:    var(--status-preliminary-bg);
+  color:         var(--status-preliminary-fg);
+  font-size:     0.6875rem;
+  font-weight:   600;
+  white-space:   nowrap;
+}
+.kpi-strip__freshness-dot {
+  width:         0.5rem;
+  height:        0.5rem;
+  border-radius: 50%;
+  background:    var(--status-preliminary-fg);
+  flex-shrink:   0;
+}
+.kpi-strip__freshness-label { line-height: 1; }
 
 /* "ℹ" — methodology / metadata link */
 .kpi-info-link {

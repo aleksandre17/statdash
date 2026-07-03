@@ -19,42 +19,42 @@ interface KpiCardProps {
    */
   trendLabels?:    { up: string; down: string; flat: string }
   /**
-   * Localized per-item data-integrity labels (preliminary badge title +
-   * methodology link aria), supplied by the shell via useT — same pattern as
-   * trendLabels. Never hardcoded here (AR-37 P1); neutral-English fallback keeps
-   * the a11y name non-empty outside a provider.
+   * Localized per-item data-integrity labels (methodology link aria), supplied by
+   * the shell via useT — same pattern as trendLabels. Never hardcoded here
+   * (AR-37 P1); neutral-English fallback keeps the a11y name non-empty outside a
+   * provider. The preliminary signal is NOT a per-card pill anymore — the strip
+   * consolidates it into ONE freshness badge (AR-39); only `methodology` (the
+   * per-indicator link aria) remains a card-level label.
    */
-  metaLabels?:     { preliminary: string; methodology: string }
+  metaLabels?:     { methodology: string }
 }
 
 const ARROWS        = { up: '↗', down: '↘', flat: '→' }
 const TREND_FALLBACK = { up: 'Up:', down: 'Down:', flat: 'Flat:' }
-const META_FALLBACK  = { preliminary: 'Preliminary data', methodology: 'Methodology' }
+const META_FALLBACK  = { methodology: 'Methodology' }
 
 export default function KpiCard({
   label, value, unit, trend, trendValue, trendSub,
-  color = 'var(--color-accent)', preliminary, note, methodologyUrl,
+  color = 'var(--color-accent)', note, methodologyUrl,
   trendLabels = TREND_FALLBACK,
   metaLabels = META_FALLBACK,
 }: KpiCardProps) {
-  const hasMeta = preliminary || methodologyUrl
-
   return (
     <div className="kpi-card" style={{ '--kc': color } as CSSProperties}>
       <div className="kpi-header">
         <div className="kpi-label">{label}</div>
-        {hasMeta && (
+        {/* Preliminary status is consolidated into the strip-level freshness badge
+            (AR-39) — the card no longer renders a per-title "P" pill. Only the
+            per-indicator methodology link (if authored) stays card-local. */}
+        {methodologyUrl && (
           <div className="kpi-header-actions">
-            {preliminary    && <span className="kpi-badge--p" title={metaLabels.preliminary} aria-label={metaLabels.preliminary}>P</span>}
-            {methodologyUrl && (
-              <a
-                href={methodologyUrl}
-                target="_blank"
-                rel="noreferrer"
-                className="kpi-info-link"
-                aria-label={metaLabels.methodology}
-              >ℹ</a>
-            )}
+            <a
+              href={methodologyUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="kpi-info-link"
+              aria-label={metaLabels.methodology}
+            >ℹ</a>
           </div>
         )}
       </div>

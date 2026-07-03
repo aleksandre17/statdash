@@ -120,6 +120,48 @@
   font-weight: 600;
 }
 
+/* ── Range (dynamics) from→to control ─────────────────────────────────────
+   Renders as "[from] დან [to] მდე" (en: "from [x] to [y]") — two numeric
+   selectors joined by localized connector words (RangeShell). Inputs mirror
+   .filter-select styling; the words read like inline labels. All token-bound. */
+.filter-control__range {
+  display:     inline-flex;
+  align-items: center;
+  gap:         0.375rem;
+  flex-wrap:   wrap;
+  min-width:   0;
+}
+.filter-range-word {
+  font-size:   0.75rem;
+  color:       var(--color-text-faint);
+  font-weight: 500;
+  white-space: nowrap;
+}
+.filter-range-input {
+  width:         4.5rem;
+  height:        1.875rem;
+  padding:       0 0.5rem;
+  border-radius: 7px;
+  border:        1px solid var(--color-border);
+  font-size:     0.8125rem;
+  color:         var(--color-text-secondary);
+  background:    var(--color-surface);
+  font-family:   var(--font-family-base);
+  /* Lined, equal-width digits so the year selectors align (statistical product). */
+  font-variant-numeric: tabular-nums;
+  outline:       none;
+  transition:    border-color 0.15s, box-shadow 0.15s;
+}
+.filter-range-input:focus {
+  border-color: var(--color-accent);
+  box-shadow:   0 0 0 2px color-mix(in srgb, var(--color-accent) 12%, transparent);
+}
+.filter-range-unit {
+  font-size:   0.75rem;
+  color:       var(--color-text-faint);
+  white-space: nowrap;
+}
+
 
 @media (max-width: 1280px) {
   .filter-bar { padding: 0 1rem; }

@@ -311,6 +311,16 @@ export interface FilterControlMeta {
   category?:   SliceCategory
   /** Which data dimension this control targets (e.g. 'geo', 'time', 'indicator'). */
   dimension?:  string
+  /**
+   * Filter-control UI-string catalog, registered into i18next under the
+   * `controlType` namespace (AR-37 P1). Symmetric with node/panel/chrome
+   * `META.i18n` — a control shell resolves its fixed connector words / aria via
+   * `useT(controlType)` instead of a hardcoded JSX literal, so filter chrome
+   * flips with the URL locale. Control was the last slice kind still lacking
+   * this seam (registerSlice notes the same gap chrome once had). Bilingual,
+   * tenant-agnostic framework strings (Law 4).
+   */
+  i18n?:       Record<string, Record<string, string>>
 }
 
 export type SliceMeta = NodeSliceMeta | PageSliceMeta | PanelSliceMeta | ChromeSliceMeta | FilterControlMeta
