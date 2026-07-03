@@ -197,13 +197,20 @@ export const BP_XS = 480  // phone portrait
 //  categorical hbar, any count — vertical charts keep filling their container.
 //
 const HBAR_PX_PER_CATEGORY = 34   // min vertical slot per row (bar + gap + label)
-// Floor raised 240 → 380 (b5ae777 follow-up, defect C): 240px read as a cramped
-// sliver for a solo/few-bar comparison hbar in a wide panel — a deliberate single-
-// or double-bar focus chart should read as an intentional visualisation, not an
-// accident of too little content. 380px is panel-proportional (comfortably above
-// the ~150–200px a 1–2 row plot would otherwise occupy at HBAR_PX_PER_CATEGORY)
-// without approaching the many-category HBAR_MAX_HEIGHT cap.
-const HBAR_MIN_HEIGHT      = 380  // floor — keeps a 1–6 row hbar from reading as a sliver
+// Floor raised 240 → 380 (b5ae777 follow-up, defect C), then 380 → 560 (owner
+// follow-up: still read as a cramped strip on the live "regional comparison"
+// panel — a FULL-WIDTH solo hbar, per provisioning `templateColumns:"1fr"`, the
+// only current non-diverging `hbar` instance). 240/380 were both sized off
+// HBAR_PX_PER_CATEGORY (a per-row content estimate) — the wrong axis for a
+// solo/few-bar FOCUS chart, whose honest size is "a deliberate visualisation
+// filling a real section", not "N rows stacked". 560 is instead anchored on
+// HBAR_MAX_HEIGHT (≈61%): a substantial majority of the many-category scroll
+// cap, while preserving real headroom (560→920) so a genuinely tall many-row
+// chart still reads as taller — floor and cap stay proportionally related, not
+// two independent magic numbers. Many-category hbars are UNCHANGED: they still
+// grow past the floor via HBAR_PX_PER_CATEGORY and cap/scroll at 920 (the
+// b5ae777 fix B guard).
+const HBAR_MIN_HEIGHT      = 560  // floor — a solo/few-bar hbar reads as a real focus chart
 const HBAR_MAX_HEIGHT      = 920  // cap — beyond this the panel scrolls
 
 // ── Auto bar thickness (low-cardinality fill) ──────────────────────────
