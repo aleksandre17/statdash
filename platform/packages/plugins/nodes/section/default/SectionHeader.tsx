@@ -25,6 +25,13 @@ export interface SectionHeaderProps {
   actions:      ReactNode[]
   /** Truthy when the section authored a methodology block (toggle renders). */
   hasMethodology: boolean
+  /**
+   * The ONE consolidated data-integrity signal (AR-39): true when the section's
+   * data is preliminary (OR-fold of child-panel reports + author override).
+   * Renders a single compact indicator here instead of N per-panel pills, and
+   * makes the info disclosure reachable even without an authored methodology.
+   */
+  preliminary:  boolean
   infoOpen:     boolean
   onToggleInfo: () => void
   t:            T
@@ -40,10 +47,15 @@ export function SectionHeader({
   viewToggle,
   actions,
   hasMethodology,
+  preliminary,
   infoOpen,
   onToggleInfo,
   t,
 }: SectionHeaderProps) {
+  // The info disclosure is the canonical data-integrity home: it opens whenever
+  // there is something to disclose — an authored methodology OR a preliminary
+  // aggregate to explain (Law 9 reachability).
+  const hasDisclosure = hasMethodology || preliminary
   const { showToggle, roles, roleLabels, activeRole, setActiveRole } = viewToggle
   // role labels are i18n carriers (authored view.label may be bilingual) — resolve
   // each to the active locale at this render boundary.
@@ -76,12 +88,22 @@ export function SectionHeader({
         {actions.map((action, i) => (
           <Fragment key={i}>{action}</Fragment>
         ))}
-        {hasMethodology && (
+        {/* ONE consolidated data-integrity indicator (AR-39). Not color-only
+            (WCAG 2.1 AA / Law 9): a dot AND a visible text label. The full detail
+            (source, last-updated, methodology, what "preliminary" means) is
+            reachable through the adjacent info disclosure. */}
+        {preliminary && (
+          <span className="section__integrity" title={t('preliminary')}>
+            <span className="section__integrity-dot" aria-hidden="true" />
+            <span className="section__integrity-label">{t('preliminary-short')}</span>
+          </span>
+        )}
+        {hasDisclosure && (
           <button
             className={`section__icon-btn${infoOpen ? ' active' : ''}`}
             title={t('info')}
             type="button"
-            aria-label={t('info')}
+            aria-label={preliminary ? t('data-integrity') : t('info')}
             aria-expanded={infoOpen}
             onClick={onToggleInfo}
           >

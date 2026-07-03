@@ -11,14 +11,16 @@ interface PageHeaderProps {
   /** Localized labels — tenant/i18n content, supplied by the shell. */
   homeLabel?: string
   exportLabel?: string
+  /** Localized aria-label for the breadcrumb nav landmark (AR-37 P1). */
+  breadcrumbLabel?: string
 }
 
-export default function PageHeader({ title, crumbs = [], badge, onExport, homeLabel, exportLabel }: PageHeaderProps) {
+export default function PageHeader({ title, crumbs = [], badge, onExport, homeLabel, exportLabel, breadcrumbLabel = 'Breadcrumb' }: PageHeaderProps) {
   return (
     <div className="page-header">
       <div className="page-header__left">
         {crumbs.length > 0 && homeLabel && (
-          <nav className="page-header__breadcrumb" aria-label="breadcrumb">
+          <nav className="page-header__breadcrumb" aria-label={breadcrumbLabel}>
             <Link to="/">{homeLabel}</Link>
             {crumbs.map((c, i) => (
               <span key={i} style={{ display: 'contents' }}>

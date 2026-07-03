@@ -32,6 +32,20 @@ import type {
 /** Union of all node-tier META shapes — node, page, and panel slices. */
 type AnyNodeSliceMeta = NodeSliceMeta | PageSliceMeta | PanelSliceMeta
 
+/**
+ * Register a slice's UI-string catalog into i18next under `namespace` (AR-37).
+ * ONE seam for every slice kind — node/panel/page key on `META.type`, chrome on
+ * `META.slot` — so `useT(namespace)` resolves shell chrome for the active locale
+ * instead of a hardcoded literal. addResources is idempotent (safe to re-run).
+ */
+function registerSliceI18n(namespace: string, i18n: Record<string, Record<string, string>>): void {
+  const i18nInstance: I18nInstance =
+      ((i18next as unknown) as { default?: I18nInstance }).default ?? (i18next as I18nInstance)
+  Object.entries(i18n).forEach(([locale, translations]) =>
+      i18nInstance.addResources(locale, namespace, translations),
+  )
+}
+
 export interface NodeSliceExport {
   Shell:          NodeRenderer
   Skeleton?:      SkeletonFn
@@ -93,21 +107,14 @@ export function registerSlice(mod: RegistrableSlice): void {
     if (s.Skeleton) {
       skeletonRegistry.register(m.type, m.variant ?? 'default', s.Skeleton)
     }
-    if (m.i18n) {
-      const i18nInstance: I18nInstance =
-          ((i18next as unknown) as { default?: I18nInstance }).default ?? (i18next as I18nInstance)
-
-      Object.entries(m.i18n).forEach(([locale, translations]) =>
-          i18nInstance.addResources(
-              locale,
-              m.type,
-              translations as Record<string, string>,
-          ),
-      )
-    }
+    if (m.i18n) registerSliceI18n(m.type, m.i18n)
   } else if (sliceType === 'chrome') {
     const m = mod.META as ChromeSliceMeta
     chromeRegistry.register(m.slot, m.key, (mod as ChromeSliceExport).Shell, m)
+    // Chrome i18n was previously dropped (only node/panel registered it) — a real
+    // ISP/symmetry gap that forced chrome shells to hardcode aria/labels. Register
+    // under the slot namespace so `useT(slot)` works (AR-37 P1).
+    if (m.i18n) registerSliceI18n(m.slot, m.i18n)
   } else if (sliceType === 'control') {
     filterControlRegistry.register(mod as unknown as FilterControlSlice)
   }

@@ -10,4 +10,8 @@ export const META: ChromeSliceMeta = {
   version:       1,
   defaultRegion: 'inline',
   defaultOrder:  0,
+  i18n: {
+    ka: { 'nav-label': 'ენა' },
+    en: { 'nav-label': 'Language' },
+  },
 }

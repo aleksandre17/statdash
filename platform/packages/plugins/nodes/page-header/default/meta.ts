@@ -14,7 +14,7 @@ export const META: NodeSliceMeta = {
   caps:            [],
   version:         1,
   i18n: {
-    ka: { home: 'მთავარი', export: 'ექსპორტი' },
-    en: { home: 'Home',    export: 'Export' },
+    ka: { home: 'მთავარი', export: 'ექსპორტი', breadcrumb: 'ნავიგაციის ბილიკი' },
+    en: { home: 'Home',    export: 'Export',   breadcrumb: 'Breadcrumb' },
   },
 }

@@ -239,3 +239,40 @@
   color:        var(--sc, var(--color-accent));
   border-color: var(--color-border-interactive);
 }
+
+/* ── Consolidated data-integrity indicator (AR-39, Law 9 / WCAG 2.1 AA) ──────
+ *  ONE per section, in the header actions cluster, replacing the repeated
+ *  per-panel "Prelim." pills. NOT color-only: a dot AND a visible text label.
+ *  Full detail is reachable through the adjacent info disclosure. Token-bound
+ *  (--status-preliminary-*), so it flips with [data-theme] and any [data-tenant]. */
+.section__integrity {
+  display:       inline-flex;
+  align-items:   center;
+  gap:           0.3rem;
+  padding:       0.15rem 0.45rem;
+  border-radius: 6px;
+  border:        1px solid var(--status-preliminary-border);
+  background:    var(--status-preliminary-bg);
+  color:         var(--status-preliminary-fg);
+  font-size:     0.6875rem;
+  font-weight:   600;
+  white-space:   nowrap;
+}
+.section__integrity-dot {
+  width:         0.5rem;
+  height:        0.5rem;
+  border-radius: 50%;
+  background:    var(--status-preliminary-fg);
+  flex-shrink:   0;
+}
+.section__integrity-label { line-height: 1; }
+
+/* The preliminary status line inside the methodology disclosure (Law 9 reachability). */
+.section__integrity-note {
+  display:     flex;
+  align-items: center;
+  gap:         0.4rem;
+  margin:      0;
+  font-size:   0.75rem;
+  color:       var(--status-preliminary-fg);
+}

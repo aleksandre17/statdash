@@ -293,6 +293,14 @@ export interface ChromeSliceMeta {
   defaultRegion: string
   /** Default sort order within the region. Lower = earlier. */
   defaultOrder:  number
+  /**
+   * Chrome-slot UI-string catalog, registered into i18next under the `slot`
+   * namespace (AR-37 P1). Symmetric with node/panel `META.i18n` — a chrome shell
+   * resolves its fixed labels/aria via `useT(slot)` instead of a hardcoded JSX
+   * literal, so nav/switcher chrome flips with the URL locale. Bilingual, tenant-
+   * agnostic framework strings (Law 4) — the same in-repo home section/kpi-strip use.
+   */
+  i18n?:         Record<string, Record<string, string>>
 }
 
 /** META for a filter control slice (year-select, cascade, select…) */

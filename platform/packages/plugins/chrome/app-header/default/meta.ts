@@ -45,4 +45,8 @@ export const META: ChromeSliceMeta = {
   version:       1,
   defaultRegion: 'top',
   defaultOrder:  10,
+  i18n: {
+    ka: { 'nav-label': 'მთავარი ნავიგაცია' },
+    en: { 'nav-label': 'Main navigation' },
+  },
 }
