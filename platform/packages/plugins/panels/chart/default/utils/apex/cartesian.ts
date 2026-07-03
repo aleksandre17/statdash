@@ -2,8 +2,8 @@
 
 import type { ApexOptions } from 'apexcharts'
 import type { ChartOutput } from '@statdash/charts'
-import { BASE, yFormatter, responsiveYAxis, collectFormatted, scaledPx, BP_MD, BP_SM, BP_XS } from './base'
-import { cssVar, chartPalette } from '@statdash/styles'
+import { BASE, yFormatter, responsiveYAxis, collectFormatted, scaledPx, autoBarFillPct, BP_MD, BP_SM, BP_XS } from './base'
+import { cssVar, chartPalette, chartColorAt } from '@statdash/styles'
 
 export function buildCartesian(output: ChartOutput, fontFamily?: string, locale?: string): ApexOptions {
   const { type, series, categories, axes, stacked, horizontal } = output
@@ -81,10 +81,19 @@ export function buildCartesian(output: ChartOutput, fontFamily?: string, locale?
   //  cycle the categorical palette SSOT (chartPalette) so each category reads
   //  by its own hue; per-point `fillColor` (from a semantic DataRow.color) still
   //  wins where present, so meaning is preserved.
-  const distributed = output.distributed === true
+  //
+  //  seriesColorByIndex (multi-series, no explicit colour) is the color-BY-SERIES
+  //  analogue: each series takes chartColorAt(i) from the SAME SSOT, resolved
+  //  theme-aware here (the neutral format cannot hold a var() — Law 1/4). The
+  //  interpreter set the flag only when NO series carried semantic colour, so
+  //  painting every series by index here never clobbers a meaningful hue.
+  const distributed      = output.distributed === true
+  const colorBySeriesIdx = output.seriesColorByIndex === true
   const colors = distributed
       ? chartPalette()
-      : series.map((s) => s.name === '__spacer__' ? 'transparent' : s.color)
+      : colorBySeriesIdx
+          ? series.map((s, i) => s.name === '__spacer__' ? 'transparent' : chartColorAt(i))
+          : series.map((s) => s.name === '__spacer__' ? 'transparent' : s.color)
 
   // ── Y-axis ──────────────────────────────────────────────────────────
   //
@@ -126,10 +135,12 @@ export function buildCartesian(output: ChartOutput, fontFamily?: string, locale?
       : yAxisBase
 
   // ── Bar sizing ───────────────────────────────────────────────────────
-  //  hbar: ApexCharts uses barHeight (% of row height per category).
-  //  Scale with category count so bars stay slim when few items are shown.
-  const barCount = horizontal ? (categories.length || 1) : 0
-  const barHeight = `${Math.min(72, Math.max(15, barCount * 7))}%`
+  //  ApexCharts sizes a bar as a % of its per-category slot (barHeight for
+  //  horizontal, columnWidth for vertical). autoBarFillPct is the ONE bounded
+  //  rule: WIDE bars when few categories (fill the plot — the low-cardinality
+  //  fix), tapering to a legible floor as the count climbs. Category-count
+  //  driven, orientation-neutral (Law 1/4) — no per-panel magic number.
+  const barFill = `${autoBarFillPct(categories.length)}%`
 
   // ── Chart type ───────────────────────────────────────────────────────
   //  combo → 'line' as the "host" type (ApexCharts mixes via per-series type)
@@ -206,8 +217,8 @@ export function buildCartesian(output: ChartOutput, fontFamily?: string, locale?
         horizontal:   horizontal,
         borderRadius: horizontal ? 3 : 4,
         ...(horizontal
-            ? { barHeight: barHeight }
-            : { columnWidth: stacked ? '45%' : series.length > 1 ? '70%' : '55%' }),
+            ? { barHeight: barFill }
+            : { columnWidth: barFill }),
         dataLabels:   { position: 'top' },
       },
     },

@@ -34,6 +34,14 @@ class BarInterpreter implements ChartInterpreter {
       }
     })
 
+    // Color-by-series (Grammar-of-Graphics): >1 series and NONE carries an explicit
+    // semantic colour → the render layer paints each series a distinct categorical hue
+    // by index (theme-aware). Detected here (information expert) so the render layer
+    // stays a pure applier and never has to guess "is this the grey no-colour seed?".
+    // A single explicit series colour (side/threshold encoding) opts the chart out —
+    // those colours are meaning and must win.
+    const anyExplicitSeriesColor = seriesKeys.some((name) => !!grouped.get(name)![0]?.color)
+
     return {
       type: this.type, height: def.height, categories, series,
       axes: buildAxes(def), stacked: def.stacked ?? false, horizontal: this.type === 'hbar',
@@ -44,6 +52,7 @@ class BarInterpreter implements ChartInterpreter {
       // Categorical color-by-category only applies to a lone series — a multi-series
       // chart already distinguishes bars by series colour, so the flag is inert there.
       ...(def.distributed && series.length === 1 ? { distributed: true } : {}),
+      ...(series.length > 1 && !anyExplicitSeriesColor ? { seriesColorByIndex: true } : {}),
     }
   }
 }

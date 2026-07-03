@@ -7,7 +7,7 @@
 
 import type { ApexOptions } from 'apexcharts'
 import type { ChartOutput } from '@statdash/charts'
-import { BASE, yFormatter, makeDataLabelFormatter, collectFormatted, scaledPx, BP_MD, BP_SM, BP_XS } from './base'
+import { BASE, yFormatter, makeDataLabelFormatter, collectFormatted, scaledPx, autoBarFillPct, BP_MD, BP_SM, BP_XS } from './base'
 import { cssVar } from '@statdash/styles'
 
 export function buildHBarDiverging(output: ChartOutput, fontFamily?: string, locale?: string): ApexOptions {
@@ -63,7 +63,8 @@ export function buildHBarDiverging(output: ChartOutput, fontFamily?: string, loc
       bar: {
         horizontal:   true,
         borderRadius: 3,
-        columnWidth:  series.length > 1 ? '70%' : '55%',
+        // Same bounded low-cardinality fill rule as the cartesian builder.
+        columnWidth:  `${autoBarFillPct(categories.length)}%`,
         dataLabels:   { position: 'center' },
       },
     },

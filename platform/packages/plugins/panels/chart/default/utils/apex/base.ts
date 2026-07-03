@@ -200,6 +200,37 @@ const HBAR_PX_PER_CATEGORY = 34   // min vertical slot per row (bar + gap + labe
 const HBAR_MIN_HEIGHT      = 240  // floor — keeps a 1–6 row hbar from collapsing
 const HBAR_MAX_HEIGHT      = 920  // cap — beyond this the panel scrolls
 
+// ── Auto bar thickness (low-cardinality fill) ──────────────────────────
+//
+//  ApexCharts sizes a bar as a PERCENTAGE of its per-category slot
+//  (columnWidth for vertical, barHeight for horizontal). A fixed low percent
+//  leaves few-category charts looking thin with gaping whitespace between
+//  bars (2–3 regions); a fixed high percent turns a many-category chart into a
+//  solid wall. The market standard (ECharts barMaxWidth / Highcharts pointWidth,
+//  Datawrapper) is a bounded rule: WIDE bars when few categories (fill the plot,
+//  read as a deliberate comparison), TAPERING toward a legible floor as the
+//  category count climbs — never absurd at either extreme.
+//
+//  Category-count-driven + orientation-neutral (Law 1): the same fraction feeds
+//  columnWidth and barHeight. Grammar-of-Graphics "bar mark" sizing, not a
+//  per-panel magic number. Bounds are the single tunable; exported for the gate.
+//
+export const BAR_FILL_MAX_PCT = 64  // few categories → wide, plot-filling bars
+export const BAR_FILL_MIN_PCT = 34  // many categories → slim but legible floor
+const BAR_FILL_TAPER          = 4   // percent shed per category beyond the 2-cat baseline
+
+/**
+ * Bounded bar-fill percentage for `columnWidth` / `barHeight`, driven by category
+ * count. n≤2 → BAR_FILL_MAX_PCT (thick), easing by BAR_FILL_TAPER per extra
+ * category down to BAR_FILL_MIN_PCT. Returns a bare integer percent (no `%`).
+ */
+export function autoBarFillPct(categoryCount: number): number {
+  const n = Math.max(1, categoryCount)
+  return Math.round(
+    Math.min(BAR_FILL_MAX_PCT, Math.max(BAR_FILL_MIN_PCT, BAR_FILL_MAX_PCT - (n - 2) * BAR_FILL_TAPER)),
+  )
+}
+
 /**
  * Resolve the render height for a ChartOutput. Horizontal categorical charts get
  * a height derived from their category count (so rows never cram); everything
