@@ -76,6 +76,8 @@ export default function DataTable({
         footerLabel={footerLabel}
         seriesFormat={seriesFormat}
         seriesOrder={seriesOrder}
+        onRowSelect={onRowSelect}
+        selectedIds={selectedIds}
       />
     : <SimpleTable
         rows={rows}

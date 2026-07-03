@@ -341,3 +341,16 @@
   background: color-mix(in srgb, var(--color-accent) 14%, transparent);
   font-weight: 600;
 }
+
+/* Cross-filter SERIES/column-select (pivot mode) — the selectable axis member in a
+   rotated composition is the region COLUMN, not the sector row. Same WCAG affordance
+   as the row select above, applied to the series header th. */
+.data-table thead th.data-table__col--selectable { cursor: pointer; }
+.data-table thead th.data-table__col--selectable:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: -2px;
+}
+.data-table thead th.data-table__col--selected {
+  background: color-mix(in srgb, var(--color-accent) 18%, transparent);
+  text-decoration: underline;
+}

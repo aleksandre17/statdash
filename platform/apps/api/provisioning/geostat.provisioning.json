@@ -3727,7 +3727,7 @@
                       {
                         "event": "row:click",
                         "actions": [
-                          { "type": "filter", "key": "region", "fromField": "id", "mode": "toggle", "max": 10 }
+                          { "type": "filter", "key": { "$ctx": "_selKey" }, "fromField": "id", "mode": "toggle", "max": 10 }
                         ]
                       }
                     ],
@@ -4529,7 +4529,11 @@
                     "type": "inline",
                     "valueField": "code"
                   },
-                  "type": "select"
+                  "type": "select",
+                  "visibleWhen": {
+                    "op": "perspective-not",
+                    "perspective": "range"
+                  }
                 },
                 "spanFrom": {
                   "alwaysResolve": true,
@@ -4694,7 +4698,8 @@
                 },
                 "onEnter": {
                   "set": {
-                    "year": null
+                    "year": null,
+                    "sector": null
                   }
                 },
                 "onExit": {
@@ -4764,6 +4769,7 @@
             "op": "if",
             "then": "geoLabel"
           },
+          "_selKey": "region",
           "_mark": {
             "cond": { "left": { "$ctx": "region" }, "op": "ne", "right": "" },
             "else": "donut",

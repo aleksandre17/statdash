@@ -1,5 +1,5 @@
 import { useState, useEffect }          from 'react'
-import { defineShell, useNodeTemplate, useNodeInteractions } from '@statdash/react/engine'
+import { defineShell, useNodeTemplate, useNodeInteractions, resolveActionField } from '@statdash/react/engine'
 import { usePanelTitleBadge }             from '@statdash/react/engine'
 import type { RenderContext }             from '@statdash/react/engine'
 import type { BodyStyleAttrs, ViewParams } from '@statdash/react/engine'
@@ -35,9 +35,15 @@ function TableControl({
     ? (row: DataRow) => emit('row:click', row as unknown as Record<string, unknown>)
     : undefined
   // The currently-selected id set (for aria-selected + highlight) is the OR-set
-  // of the action's target param — the SAME param the click writes (SSOT).
-  const selectedIds = selectAction
-    ? splitMultiValue(String(ctx.filterParams[selectAction.key] ?? ''))
+  // of the action's target param — the SAME param the click writes (SSOT). The
+  // action key may be a state-bound `{$ctx:_selKey}` ref (AR-38 §4.1); lower it
+  // through the SAME one dispatcher the write point uses, so the read never drifts
+  // from the write (a bare string resolves to itself — byte-identical).
+  const selKey = selectAction
+    ? resolveActionField(selectAction.key, { dims: ctx.sectionCtx.dims, vars: ctx.vars })
+    : undefined
+  const selectedIds = selKey
+    ? splitMultiValue(String(ctx.filterParams[selKey] ?? ''))
     : undefined
 
   // EventBus — subscribe to row:hover / row:leave so this table highlights the

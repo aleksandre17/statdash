@@ -22,11 +22,34 @@
 //
 
 import { useCallback }        from 'react'
-import { applySelection }     from '@statdash/engine'
-import type { DimVal }        from '@statdash/engine'
+import { applySelection, resolveRef } from '@statdash/engine'
+import type { DimVal, RefServices } from '@statdash/engine'
 import type { RenderContext } from './types'
 import type { NodeBase }      from './types'
-import type { NodeEventTrigger, FilterAction } from './node-events'
+import type { NodeEventTrigger, FilterAction, ActionField } from './node-events'
+
+// ── resolveActionField — lower a state-bindable action field (AR-36/AR-38 §4.1) ──
+//
+//  A FilterAction `key`/`fromField` may be a bare literal (byte-identical) OR a
+//  `{ $ctx: key }` ref that rotates with render state. This is the SINGLE lowering
+//  point for both — it REUSES the one ref dispatcher (`resolveRef`): `$ctx` binds
+//  `services.dims` (the OLAP coordinate) with a `$ref` fallback to `services.vars`
+//  (a derived page var, e.g. `_selKey`), exactly mirroring `resolveEncodingRefs`.
+//  A bare string resolves to itself → zero behaviour change for every stored config.
+//
+//  Exported so the read side (TableShell's selectedIds, which must resolve the SAME
+//  target param the click writes — SSOT) lowers the key through this ONE path, never
+//  a bespoke re-implementation.
+export function resolveActionField(
+  v:        ActionField | undefined,
+  services: RefServices,
+): string | undefined {
+  if (v == null) return undefined
+  if (typeof v === 'string') return v
+  // $ctx → dims, else $ref → vars — the one dispatcher, no second read path.
+  const resolved = resolveRef(v, services) ?? resolveRef({ $ref: v.$ctx }, services)
+  return resolved == null ? undefined : String(resolved)
+}
 
 export interface NodeInteractions {
   /**
@@ -40,28 +63,35 @@ export interface NodeInteractions {
 
 export function useNodeInteractions(def: NodeBase, ctx: RenderContext): NodeInteractions {
   const { on, dataLinks } = def
-  const { filterParams, resolveLinks, bus } = ctx
+  const { filterParams, resolveLinks, bus, sectionCtx, vars } = ctx
 
   const emit = useCallback(
     (trigger: NodeEventTrigger, row: Record<string, unknown>) => {
       // Accumulate all param writes for THIS gesture, then dispatch once
       // (atomic — a multi-action gesture is one URL mutation).
       const writes: Record<string, string> = {}
+      // Ref lowering services — dims (OLAP coordinate) + vars (derived page vars).
+      // The SAME (dims, vars) pair resolveEncodingRefs/resolvePipeRefs thread, so a
+      // state-bound `{$ctx:_selKey}` action field rotates in lockstep with the pivot.
+      const services: RefServices = { dims: sectionCtx.dims, vars }
 
       const fold = (key: string, value: string, mode: FilterAction['mode'], max?: number) => {
         const current = writes[key] ?? (filterParams[key] == null ? '' : String(filterParams[key]))
         writes[key] = applySelection(mode ?? 'replace', current, value, max)
       }
 
-      // 1. Declarative on[] handlers (the promoted port).
+      // 1. Declarative on[] handlers (the promoted port). `key`/`fromField` may be
+      //    state-bound refs — lowered here through the one dispatcher (AR-36/AR-38).
       for (const handler of on ?? []) {
         if (handler.event !== trigger) continue
         for (const action of handler.actions) {
           if (action.type !== 'filter') continue
-          const field = action.fromField ?? action.key
+          const key = resolveActionField(action.key, services)
+          if (!key) continue                                        // unresolved param → no write
+          const field = resolveActionField(action.fromField, services) ?? key
           const raw   = row[field]
           if (raw === undefined || raw === null) continue           // no value → no write
-          fold(action.key, String(raw), action.mode, action.max)
+          fold(key, String(raw), action.mode, action.max)
         }
       }
 
@@ -83,7 +113,7 @@ export function useNodeInteractions(def: NodeBase, ctx: RenderContext): NodeInte
         bus.dispatch({ type: 'filter:setMany', values: writes })
       }
     },
-    [on, dataLinks, filterParams, resolveLinks, bus],
+    [on, dataLinks, filterParams, resolveLinks, bus, sectionCtx, vars],
   )
 
   return { emit }

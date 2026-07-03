@@ -7,6 +7,7 @@
 //    row 2: column labels repeated per series
 //
 
+import type { KeyboardEvent }      from 'react'
 import type { DataRow, ColumnDef } from '@statdash/engine'
 import { getFormatter }            from '@statdash/engine'
 import type { AggType }            from './_footer'
@@ -22,6 +23,18 @@ export interface PivotTableProps {
   footerLabel?:  string
   seriesFormat?: Record<string, string>
   seriesOrder?:  string[]
+  /**
+   * Cross-filter select — present only when the node declares `on`. In a pivot the
+   * SERIES/column (not the row) is the selectable axis member: in the rotated (State B)
+   * composition the ROWS are the co-dimension (sectors) and the SERIES are the focus
+   * dimension (regions), so a click on a region COLUMN adds/removes that region. The
+   * emitted datum is a representative row of that series, whose `id` carries the
+   * series member's identity (e.g. the region code) — the SAME shape SimpleTable emits,
+   * so the shared `on[]` handler (`fromField:id`) resolves identically in both states.
+   */
+  onRowSelect?:  (row: DataRow) => void
+  /** Currently-selected ids (representative row.id) for aria-pressed + highlight. */
+  selectedIds?:  string[]
 }
 
 // Pivot value cells are ALWAYS numeric figures (getCellValue → formatter → t-num),
@@ -34,7 +47,7 @@ export interface PivotTableProps {
 // opts a column back to left for BOTH header and body, in lockstep.
 const alignClass = (col: ColumnDef): string => (col.align === 'l' ? '' : 'r')
 
-export function PivotTable({ rows, colLabel, columns, caption, footer, footerLabel, seriesFormat, seriesOrder }: PivotTableProps) {
+export function PivotTable({ rows, colLabel, columns, caption, footer, footerLabel, seriesFormat, seriesOrder, onRowSelect, selectedIds }: PivotTableProps) {
   // Preserve source order (first appearance) — respects pipeline sort steps
   const labels    = [...new Map(rows.map((r) => [r.label, true])).keys()]
   const allSeries = [...new Map(rows.map((r) => [r.series ?? '', true])).keys()]
@@ -44,6 +57,39 @@ export function PivotTable({ rows, colLabel, columns, caption, footer, footerLab
 
   const cellMap   = new Map(rows.map((r) => [`${r.label}::${r.series ?? ''}`, r]))
   const cell      = (label: string, s: string) => cellMap.get(`${label}::${s}`)
+
+  // ── Cross-filter on the SERIES axis (the pivot's selectable member) ──────────
+  //  A column header becomes a keyboard-operable selection control ONLY when
+  //  onRowSelect is supplied (node declares `on`) — WCAG 2.1 AA, mirroring
+  //  SimpleTable's row affordance. The emitted datum is a representative row of the
+  //  series (first non-total cell), whose `id` identifies the series member; the
+  //  shared handler reads it exactly as it reads a SimpleTable row's id (SSOT).
+  //  Absent onRowSelect ⇒ a plain, inert header (no regression for read-only pivots).
+  const seriesRep = (s: string): DataRow | undefined =>
+    rows.find((r) => (r.series ?? '') === s && !r.isTotal && !r.isSeparator)
+  const seriesSelected = (s: string): boolean => {
+    const rep = seriesRep(s)
+    return rep?.id != null && selectedIds != null && selectedIds.includes(String(rep.id))
+  }
+  const seriesSelectProps = (s: string): Record<string, unknown> => {
+    if (!onRowSelect) return {}
+    const rep = seriesRep(s)
+    if (!rep) return {}
+    return {
+      onClick:        () => onRowSelect(rep),
+      onKeyDown:      (e: KeyboardEvent<HTMLTableCellElement>) => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onRowSelect(rep) }
+      },
+      tabIndex:       0,
+      role:           'button',
+      'aria-pressed': seriesSelected(s),
+    }
+  }
+  const seriesSelectClass = (s: string): string =>
+    !onRowSelect ? '' : [
+      'data-table__col--selectable',
+      seriesSelected(s) ? 'data-table__col--selected' : '',
+    ].filter(Boolean).join(' ')
   const dataLabels = labels.filter((lbl) => {
     const r = cell(lbl, series[0] ?? '')
     return !r?.isTotal && !r?.isSeparator
@@ -69,7 +115,13 @@ export function PivotTable({ rows, colLabel, columns, caption, footer, footerLab
               <tr>
                 <th scope="col" rowSpan={2} style={{ width: '30%' }}>{colLabel}</th>
                 {series.map((s) => (
-                  <th key={s} scope="colgroup" colSpan={columns.length} className="r t-col-group">
+                  <th
+                    key={s}
+                    scope="colgroup"
+                    colSpan={columns.length}
+                    className={`r t-col-group ${seriesSelectClass(s)}`.trim()}
+                    {...seriesSelectProps(s)}
+                  >
                     {s}
                   </th>
                 ))}
@@ -92,7 +144,14 @@ export function PivotTable({ rows, colLabel, columns, caption, footer, footerLab
               {/* Flat pivot: one column per series, so the series header aligns to
                   that single column — SAME source as its body cells (SSOT). */}
               {series.map((s) => (
-                <th key={s} scope="col" className={columns[0] ? alignClass(columns[0]) : 'r'}>{s}</th>
+                <th
+                  key={s}
+                  scope="col"
+                  className={`${columns[0] ? alignClass(columns[0]) : 'r'} ${seriesSelectClass(s)}`.trim()}
+                  {...seriesSelectProps(s)}
+                >
+                  {s}
+                </th>
               ))}
             </tr>
           )}
