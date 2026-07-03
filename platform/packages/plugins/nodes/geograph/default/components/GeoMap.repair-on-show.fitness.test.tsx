@@ -23,7 +23,12 @@ import { render, cleanup } from '@testing-library/react'
 
 const invalidateSize = vi.fn()
 const fitBounds      = vi.fn()
-const mapStub        = { invalidateSize, fitBounds }
+// A real laid-out container: the hardened RepairOnShow refuses to project against a
+// 0×0 box (the very thing that corrupts the projection to NaN), so the happy path
+// requires a container with non-zero size.
+let containerSize    = { clientWidth: 800, clientHeight: 600 }
+const getContainer   = vi.fn(() => containerSize)
+const mapStub        = { invalidateSize, fitBounds, getContainer }
 
 vi.mock('react-leaflet', () => ({
   useMap:      () => mapStub,
@@ -31,7 +36,14 @@ vi.mock('react-leaflet', () => ({
   MapContainer: () => null,
 }))
 
-const getBounds = vi.fn((): { isValid: () => boolean } => ({ isValid: () => true }))
+// Finite, valid bounds by default (Georgia-ish extent). Individual tests override
+// getBounds to simulate invalid / NaN corners.
+const finiteBounds = {
+  isValid:      () => true,
+  getNorthEast: () => ({ lat: 43.6, lng: 46.7 }),
+  getSouthWest: () => ({ lat: 41.0, lng: 40.0 }),
+}
+const getBounds = vi.fn((): typeof finiteBounds => finiteBounds)
 vi.mock('leaflet', () => ({
   default: { geoJSON: () => ({ getBounds }) },
 }))
@@ -43,6 +55,8 @@ afterEach(() => {
   invalidateSize.mockClear()
   fitBounds.mockClear()
   getBounds.mockClear()
+  getContainer.mockClear()
+  containerSize = { clientWidth: 800, clientHeight: 600 }
 })
 
 const geoJson = {} as GeoJSON.FeatureCollection
@@ -80,10 +94,43 @@ describe('RepairOnShow — hidden→shown re-projection (defect A)', () => {
   })
 
   it('skips fitBounds (but still measures) when the geoJson bounds are not valid', () => {
-    getBounds.mockReturnValueOnce({ isValid: () => false })
+    getBounds.mockReturnValueOnce({
+      isValid:      () => false,
+      getNorthEast: () => ({ lat: 0, lng: 0 }),
+      getSouthWest: () => ({ lat: 0, lng: 0 }),
+    })
     const { rerender } = render(<RepairOnShow geoJson={geoJson} visible={false} />)
     rerender(<RepairOnShow geoJson={geoJson} visible={true} />)
     expect(invalidateSize).toHaveBeenCalledTimes(1)
     expect(fitBounds).not.toHaveBeenCalled()
+  })
+
+  // ── hardening — RepairOnShow must NEVER throw to the error boundary ───────────
+
+  it('does not measure or fit against a 0×0 (still-hidden-layout) container', () => {
+    // display:none flips `visible` true, but the box has not laid out yet: projecting
+    // here is exactly what produced NaN. Guard must bail before invalidateSize.
+    containerSize = { clientWidth: 0, clientHeight: 0 }
+    const { rerender } = render(<RepairOnShow geoJson={geoJson} visible={false} />)
+    rerender(<RepairOnShow geoJson={geoJson} visible={true} />)
+    expect(invalidateSize).not.toHaveBeenCalled()
+    expect(fitBounds).not.toHaveBeenCalled()
+  })
+
+  it('skips fitBounds when bounds report valid but have NaN corners (no crash)', () => {
+    getBounds.mockReturnValueOnce({
+      isValid:      () => true,
+      getNorthEast: () => ({ lat: NaN, lng: NaN }),
+      getSouthWest: () => ({ lat: 0, lng: 0 }),
+    })
+    const { rerender } = render(<RepairOnShow geoJson={geoJson} visible={false} />)
+    expect(() => rerender(<RepairOnShow geoJson={geoJson} visible={true} />)).not.toThrow()
+    expect(fitBounds).not.toHaveBeenCalled()
+  })
+
+  it('swallows a thrown projection error instead of escaping to the boundary', () => {
+    getBounds.mockImplementationOnce(() => { throw new Error('Invalid LatLng object: (NaN, NaN)') })
+    const { rerender } = render(<RepairOnShow geoJson={geoJson} visible={false} />)
+    expect(() => rerender(<RepairOnShow geoJson={geoJson} visible={true} />)).not.toThrow()
   })
 })

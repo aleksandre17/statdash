@@ -13,12 +13,18 @@
 import 'leaflet/dist/leaflet.css'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { GeoJSON, MapContainer, useMap } from 'react-leaflet'
-import L, { type PathOptions } from 'leaflet'
+import L from 'leaflet'
 import type { DataRow } from '@statdash/engine'
 import { fmtNum } from '@statdash/engine'
-import { cssVar } from '@statdash/styles'
 import { useContainerVisible } from '@statdash/react/engine'
-import { accentFill, choroplethColors, choroplethLayerKey } from './choropleth'
+import {
+  accentFill,
+  choroplethColors,
+  choroplethLayerKey,
+  featureStyle,
+  hoverStyle,
+  resolveFeatureStyle,
+} from './choropleth'
 
 // ── Types ──────────────────────────────────────────────────────────────
 
@@ -58,42 +64,9 @@ interface GeoFeatureProps {
   [key: string]: string | number | boolean | null
 }
 
-// A choropleth encodes VALUE as fill COLOR (a sequential ramp), leaving opacity +
-// stroke weight free to signal SELECTION/hover — the two encodings stay
-// orthogonal (Mapbox / Vega convention). Fill opacity is high so the ramp reads.
-const FILL_DEFAULT    = 0.9
-const FILL_SELECTED   = 1
-const FILL_OCCUPIED   = 0.85
-const WEIGHT_DEFAULT  = 1
-const WEIGHT_SELECTED = 2.5
-
-// Leaflet PathOptions take a literal color string (var() is invalid as a JS-fed
-// fill value) — resolve the semantic token at call-time via cssVar(). accentFill()
-// (from ./choropleth) is the fallback for regions with no datum (unjoined feature);
-// the value-shaded fills come from the sequential ramp in choroplethColors(). A
-// [data-tenant] override rebrands both the ramp (from --color-accent) and the stroke.
-const strokeColor = () => cssVar('--color-surface', '#fff')
-
-// ── Style helpers ──────────────────────────────────────────────────────
-
-// SELECTION + OCCUPIED are distinct FILL hues (token-derived, theme-flipping), kept
-// orthogonal to the choropleth value ramp: an OCCUPIED territory always reads red
-// (precedence over selection — it's a permanent status, not a transient pick), a
-// SELECTED region reads the distinct highlight hue so the pick is unmistakable, and
-// everything else keeps its value-ramp shade. Leaflet needs a literal color → cssVar().
-function featureStyle(fill: string, selected: boolean, occupied: boolean): PathOptions {
-  const fillColor = occupied
-    ? cssVar('--color-geo-occupied', '#dc2626')
-    : selected
-      ? cssVar('--color-geo-selected', '#e8a33d')
-      : fill
-  return {
-    fillColor,
-    fillOpacity: occupied ? FILL_OCCUPIED : selected ? FILL_SELECTED : FILL_DEFAULT,
-    color:       strokeColor(),
-    weight:      selected ? WEIGHT_SELECTED : WEIGHT_DEFAULT,
-  }
-}
+// The per-feature choropleth style function is the SSOT `featureStyle` /
+// `resolveFeatureStyle` in ./choropleth — shared by the <GeoJSON> mount `style`
+// prop and the imperative selection `setStyle` effect so the two never drift.
 
 // ── FitBounds — adjusts map viewport to data extent ──────────────────
 
@@ -127,21 +100,45 @@ function FitBounds({ geoJson }: { geoJson: GeoJSON.FeatureCollection }) {
 //  DOM, no touch to the choropleth colour/selection model (occupied-red +
 //  selected-amber stay byte-identical; only the projection is repaired).
 //
-//  Deeper root-fix (tracked follow-up, deliberately NOT done here): stop keying
-//  <GeoJSON> on selection at all — drive the selection highlight via
-//  `layer.setStyle(...)` on the existing layer instead of a full remount. That
-//  removes the hidden-remount window entirely instead of repairing after the
-//  fact. Left alone in this pass per the batch's explicit "safer approach" call
-//  (a remount-model change risks the occupied/selected recolouring just fixed).
+//  Deeper root-fix (NOW DONE — see the `layerRef` + selection `setStyle` effect in
+//  GeoMap below): the <GeoJSON> layer is no longer keyed on selection, so a
+//  row-pick while hidden restyles the existing paths in place instead of remounting
+//  and re-projecting against a 0×0 box. The remount window that produced
+//  `LatLng(NaN, NaN)` is gone. RepairOnShow stays as DEFENSE-IN-DEPTH: it re-fits
+//  on a hidden→shown transition, and is now hardened to NEVER throw — every guard
+//  below must hold before fitBounds runs, and the whole body is wrapped so a future
+//  regression can degrade to a stale viewport rather than crash the panel shell.
 //
+function boundsAreFinite(bounds: L.LatLngBounds): boolean {
+  if (!bounds.isValid()) return false
+  const ne = bounds.getNorthEast()
+  const sw = bounds.getSouthWest()
+  return [ne.lat, ne.lng, sw.lat, sw.lng].every(Number.isFinite)
+}
+
 export function RepairOnShow({ geoJson, visible }: { geoJson: GeoJSON.FeatureCollection; visible: boolean }) {
   const map = useMap()
   const wasVisible = useRef(visible)
   useEffect(() => {
     if (visible && !wasVisible.current) {
-      map.invalidateSize()
-      const bounds = L.geoJSON(geoJson).getBounds()
-      if (bounds.isValid()) map.fitBounds(bounds, { padding: [12, 12], animate: false })
+      try {
+        // Only project against a REAL laid-out box: a 0×0 container is exactly
+        // what corrupts the projection to NaN, so measuring/fitting against it is
+        // the very thing to avoid.
+        const el = map.getContainer()
+        if (el && el.clientWidth > 0 && el.clientHeight > 0) {
+          map.invalidateSize()
+          const bounds = L.geoJSON(geoJson).getBounds()
+          // isValid() alone is not enough — a NaN corner can still report "valid";
+          // require finite LatLngs before fitBounds (which throws on NaN input).
+          if (boundsAreFinite(bounds)) {
+            map.fitBounds(bounds, { padding: [12, 12], animate: false })
+          }
+        }
+      } catch {
+        // Defense-in-depth: a re-projection failure must never escape to the
+        // error boundary (the crash this fix removes). Worst case = stale viewport.
+      }
     }
     wasVisible.current = visible
   }, [visible, map, geoJson])
@@ -172,6 +169,10 @@ export function GeoMap({
 
   const selectedRef = useRef(selectedGeos)
   const onSelectRef = useRef(onSelect)
+  // Ref to the underlying Leaflet GeoJSON layer (react-leaflet exposes the L.GeoJSON
+  // instance via ref). Selection is repainted through this imperatively — see the
+  // setStyle effect below — so a row-pick NEVER remounts/re-projects the layer.
+  const layerRef = useRef<L.GeoJSON | null>(null)
 
   useEffect(() => { selectedRef.current = selectedGeos }, [selectedGeos])
   useEffect(() => { onSelectRef.current = onSelect },     [onSelect])
@@ -185,6 +186,31 @@ export function GeoMap({
   // OCCUPIED is keyed by the feature ISO (pre geoCodeMap) so it flags territories with
   // no data row too. Config-declared set — the engine stays agnostic (Law 1).
   const occupiedSet = useMemo(() => new Set(occupiedIso ?? []), [occupiedIso])
+
+  // Selection highlight = a STYLE-only change, applied IN PLACE on the mounted
+  // layer — the map's own documented root-fix. Because the <GeoJSON> is no longer
+  // keyed on selection, this restyle is the entire selection-repaint path: it runs
+  // whether the map is visible or `display:none`, and setStyle only rewrites path
+  // attributes (fill/opacity/weight) — it does NOT re-project geometry, so it is
+  // safe against a 0×0 hidden container (no NaN). Resolves through the SAME
+  // resolveFeatureStyle SSOT as the mount `style` prop, so occupied→red /
+  // selected→amber / base-ramp stay byte-identical between mount and restyle.
+  useEffect(() => {
+    const layer = layerRef.current
+    if (!layer) return
+    layer.setStyle((feature) =>
+      resolveFeatureStyle(feature as GeoJSON.Feature | undefined, {
+        isoField,
+        geoCodeMap,
+        colorFor,
+        selectedGeos,
+        occupiedSet,
+      }),
+    )
+    // colorFor is derived from colorByGeo (its only closure dep); listing colorByGeo
+    // keeps the restyle correct when warm rows change the ramp without an extra dep.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedGeos, occupiedSet, colorByGeo, isoField, geoCodeMap])
 
   useEffect(() => {
     const worker = new Worker(
@@ -236,7 +262,7 @@ export function GeoMap({
     layer.on({
       mouseover(e) {
         if (!selectedRef.current.includes(geoId)) {
-          ;(e.target as L.Path).setStyle({ fillOpacity: FILL_SELECTED, color: strokeColor(), weight: WEIGHT_SELECTED })
+          ;(e.target as L.Path).setStyle(hoverStyle())
         }
       },
       mouseout(e) {
@@ -264,13 +290,23 @@ export function GeoMap({
         attributionControl={false}
       >
         <GeoJSON
-          key={choroplethLayerKey(selectedGeos, colorByGeo)}
+          // Key ONLY on the choropleth SCALE (structural) — NOT selection. A
+          // selection change repaints via the setStyle effect above, so it can no
+          // longer remount the layer while hidden and collapse the projection to
+          // NaN. Warm-row colour changes still change the key → remount+repaint,
+          // preserving the async flat-map fix.
+          key={choroplethLayerKey(colorByGeo)}
+          ref={layerRef}
           data={geoJson}
-          style={(feature) => {
-            const iso   = String(feature?.properties?.[isoField] ?? '')
-            const geoId = geoCodeMap[iso]
-            return featureStyle(colorFor(geoId), selectedGeos.includes(geoId), occupiedSet.has(iso))
-          }}
+          style={(feature) =>
+            resolveFeatureStyle(feature as GeoJSON.Feature | undefined, {
+              isoField,
+              geoCodeMap,
+              colorFor,
+              selectedGeos,
+              occupiedSet,
+            })
+          }
           onEachFeature={onEachFeature}
         />
         <FitBounds geoJson={geoJson} />

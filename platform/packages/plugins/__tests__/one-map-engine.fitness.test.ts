@@ -93,8 +93,8 @@ describe('FF-ONE-MAP-ENGINE — choropleth is not flat once rows are warm', () =
   it('late-arriving rows change the GeoJSON layer key (forces re-style, not flat)', () => {
     // Async store: geometry mounts on empty rows, warm rows arrive after. The layer
     // key MUST differ between the two so react-leaflet re-mounts and repaints.
-    const emptyKey = choroplethLayerKey([], choroplethColors([]))
-    const warmKey  = choroplethLayerKey([], choroplethColors(WARM_ROWS))
+    const emptyKey = choroplethLayerKey(choroplethColors([]))
+    const warmKey  = choroplethLayerKey(choroplethColors(WARM_ROWS))
     expect(warmKey).not.toBe(emptyKey)
   })
 })
