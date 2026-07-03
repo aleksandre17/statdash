@@ -17,6 +17,7 @@ import L, { type PathOptions } from 'leaflet'
 import type { DataRow } from '@statdash/engine'
 import { fmtNum } from '@statdash/engine'
 import { cssVar } from '@statdash/styles'
+import { useContainerVisible } from '@statdash/react/engine'
 import { accentFill, choroplethColors, choroplethLayerKey } from './choropleth'
 
 // ── Types ──────────────────────────────────────────────────────────────
@@ -108,6 +109,45 @@ function FitBounds({ geoJson }: { geoJson: GeoJSON.FeatureCollection }) {
   return null
 }
 
+// ── RepairOnShow — re-project after a hidden→shown transition (defect A) ──────
+//
+//  Root cause (pre-existing, independent of any recent chart-height regression):
+//  a chart↔table view toggle keeps the inactive map view MOUNTED but
+//  `display:none`. A cross-filter row-select changes `selectedGeos` WHILE the map
+//  is hidden → `<GeoJSON key={choroplethLayerKey(...)}>` (below) remounts the
+//  layer, and react-leaflet/Leaflet projects every path against the container's
+//  CURRENT box — 0×0 while hidden — so every path degenerates to `d="M0 0"`
+//  (blank map, unrecoverable on toggle-back; FitBounds above only re-fits on
+//  `[map, geoJson]`, neither of which changes on a re-show).
+//
+//  Fix: re-project whenever the container transitions NOT-laid-out → laid-out,
+//  regardless of WHY it was hidden or what changed while it was. Reuses the
+//  app-agnostic `useContainerVisible` gate (its docstring already names a map as
+//  an intended consumer) attached to the SAME chart-wrap box CSS sizes — no new
+//  DOM, no touch to the choropleth colour/selection model (occupied-red +
+//  selected-amber stay byte-identical; only the projection is repaired).
+//
+//  Deeper root-fix (tracked follow-up, deliberately NOT done here): stop keying
+//  <GeoJSON> on selection at all — drive the selection highlight via
+//  `layer.setStyle(...)` on the existing layer instead of a full remount. That
+//  removes the hidden-remount window entirely instead of repairing after the
+//  fact. Left alone in this pass per the batch's explicit "safer approach" call
+//  (a remount-model change risks the occupied/selected recolouring just fixed).
+//
+export function RepairOnShow({ geoJson, visible }: { geoJson: GeoJSON.FeatureCollection; visible: boolean }) {
+  const map = useMap()
+  const wasVisible = useRef(visible)
+  useEffect(() => {
+    if (visible && !wasVisible.current) {
+      map.invalidateSize()
+      const bounds = L.geoJSON(geoJson).getBounds()
+      if (bounds.isValid()) map.fitBounds(bounds, { padding: [12, 12], animate: false })
+    }
+    wasVisible.current = visible
+  }, [visible, map, geoJson])
+  return null
+}
+
 // ── GeoMap ─────────────────────────────────────────────────────────────
 
 export function GeoMap({
@@ -124,6 +164,11 @@ export function GeoMap({
   initialZoom = WORLD_ZOOM,
 }: GeoMapProps) {
   const [geoJson, setGeoJson] = useState<GeoJSON.FeatureCollection | null>(null)
+
+  // Hidden→shown re-projection gate (defect A — see RepairOnShow below). Attached
+  // to the SAME chart-wrap box the view-toggle CSS shows/hides; must be called
+  // unconditionally (before the `!geoJson` early return) — hook order.
+  const { ref: wrapRef, visible: mapVisible } = useContainerVisible<HTMLDivElement>()
 
   const selectedRef = useRef(selectedGeos)
   const onSelectRef = useRef(onSelect)
@@ -161,7 +206,11 @@ export function GeoMap({
     };
   }, [geoJsonUrl]);
 
-  if (!geoJson) return <div className="chart-wrap geo-map-loading" />
+  // wrapRef attaches on BOTH branches (loading + loaded): useContainerVisible's
+  // observer is set up once on first mount ([] deps) — if the ref only attached
+  // after geoJson resolved, the loading-phase mount would leave ref.current null
+  // forever and the observer would never be established.
+  if (!geoJson) return <div ref={wrapRef} className="chart-wrap geo-map-loading" />
 
   const onEachFeature = (
     feature: GeoJSON.Feature<GeoJSON.Geometry, GeoFeatureProps>,
@@ -201,7 +250,7 @@ export function GeoMap({
   }
 
   return (
-    <div className="chart-wrap" style={{ position: 'relative' }}>
+    <div ref={wrapRef} className="chart-wrap" style={{ position: 'relative' }}>
       <MapContainer
         center={initialCenter}
         zoom={initialZoom}
@@ -225,6 +274,7 @@ export function GeoMap({
           onEachFeature={onEachFeature}
         />
         <FitBounds geoJson={geoJson} />
+        <RepairOnShow geoJson={geoJson} visible={mapVisible} />
       </MapContainer>
     </div>
   )

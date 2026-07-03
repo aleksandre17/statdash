@@ -197,7 +197,13 @@ export const BP_XS = 480  // phone portrait
 //  categorical hbar, any count — vertical charts keep filling their container.
 //
 const HBAR_PX_PER_CATEGORY = 34   // min vertical slot per row (bar + gap + label)
-const HBAR_MIN_HEIGHT      = 240  // floor — keeps a 1–6 row hbar from collapsing
+// Floor raised 240 → 380 (b5ae777 follow-up, defect C): 240px read as a cramped
+// sliver for a solo/few-bar comparison hbar in a wide panel — a deliberate single-
+// or double-bar focus chart should read as an intentional visualisation, not an
+// accident of too little content. 380px is panel-proportional (comfortably above
+// the ~150–200px a 1–2 row plot would otherwise occupy at HBAR_PX_PER_CATEGORY)
+// without approaching the many-category HBAR_MAX_HEIGHT cap.
+const HBAR_MIN_HEIGHT      = 380  // floor — keeps a 1–6 row hbar from reading as a sliver
 const HBAR_MAX_HEIGHT      = 920  // cap — beyond this the panel scrolls
 
 // ── Auto bar thickness (low-cardinality fill) ──────────────────────────

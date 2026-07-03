@@ -33,16 +33,35 @@ export default function Chart({ output, bodyAttrs, onDataHover, onDataLeave, onD
   // category count (ApexRenderer → categoricalChartHeight, a definite px), NOT the
   // width-ratio aspect band. When a config authors `aspectRatio` on a chart, that
   // band lands on .chart-wrap ([data-aspect] → --size-panel-height) and a 2-row hbar
-  // renders its ~240px plot inside a ~728px band → dead whitespace below the bars.
-  // A horizontal chart therefore opts OUT of the band and sizes to content. Inline
-  // style is deliberate: it must beat BOTH `[data-aspect]{height:band}` and the
-  // equal-height-stretch rule `… > .chart-wrap[data-aspect]{flex:1 1 band}` without
-  // a shared-stylesheet specificity fight (project panel-sizing model). Harmless in
-  // a non-flex/no-band context (height:auto is the default; the flex shorthand is
-  // ignored off a flex item). Vertical charts keep filling their band, unchanged.
+  // renders its short few-row plot inside a taller band → dead whitespace below the bars.
+  // A horizontal chart therefore sizes to CONTENT (height:auto) rather than
+  // stretching to fill the band — but it must not grow UNBOUNDED either: a
+  // many-category horizontal renderer (e.g. a custom non-Apex table-like chart with
+  // its OWN internal `overflow-y:auto` scroll area) needs a BOUNDED parent to hand
+  // that scroll area a real clipping box. `maxHeight` caps the wrap at the same band
+  // token the OTHER axis uses (`--size-panel-height`); beyond that the wrap itself
+  // scrolls, so a tall renderer's internal scroll region regains a bound and the
+  // section band is never blown out (regression b5ae777: unbound height broke a
+  // 1953px chart out of the fixed 646px section band with no scrollbar at all).
+  // `flex:'0 1 auto'` (not the old `'0 0 auto'`) lets the item SHRINK if the flex
+  // container is narrower than content demands, while still not growing to fill —
+  // `minHeight:0` is required for the child's overflow to clip inside a flex item
+  // (a flex item's default min-height is 'auto', i.e. its content size, which
+  // defeats both `maxHeight` and child scrolling). A short hbar is unaffected: its
+  // content height (few rows) never reaches the cap, so it keeps the no-whitespace
+  // win; a tall one now caps at the band and scrolls internally, restoring the
+  // pre-b5ae777 accounts-table behaviour. Vertical charts keep filling their band,
+  // unchanged.
   const { style: bodyStyle, ...bodyRest } = bodyAttrs
   const fillStyle: CSSProperties | undefined = output.horizontal
-    ? { ...(bodyStyle as CSSProperties), height: 'auto', flex: '0 0 auto' }
+    ? {
+        ...(bodyStyle as CSSProperties),
+        height:    'auto',
+        maxHeight: 'var(--size-panel-height)',
+        overflowY: 'auto',
+        flex:      '0 1 auto',
+        minHeight: 0,
+      }
     : (bodyStyle as CSSProperties | undefined)
 
   // A11y contract [N15]: visual chart is aria-hidden (SVG is not AT-navigable);
