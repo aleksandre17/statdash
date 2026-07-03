@@ -14,12 +14,59 @@
 //
 //  Law 1: features are agnostic GeoJSON; the caller supplies the iso→geo join.
 
-import { geoMercator, geoPath } from 'd3-geo'
+import { geoArea, geoMercator, geoPath } from 'd3-geo'
 
 /** A projected region: its source feature + the SVG `<path d>` attribute string. */
 export interface ProjectedFeature {
   feature: GeoJSON.Feature
   d:       string
+}
+
+// ── Winding normalization (Postel's Law at the geometry boundary) ─────────────
+//
+//  d3-geo uses SPHERICAL geometry: a polygon's ring winding order decides which
+//  side is "inside". The GeoJSON spec says exterior rings are counter-clockwise,
+//  but many real datasets (this one included) ship clockwise exterior rings.
+//  d3-geo then reads each region as "the whole sphere MINUS the region" — its
+//  geoArea comes out ≈ 4π and every feature projects to fill the entire frame
+//  (the map renders as one solid block instead of distinct regions). Leaflet
+//  tolerated this because it is PLANAR (winding-agnostic); d3-geo does not.
+//
+//  Fix: accept the geojson as authored, but normalize winding here. A feature
+//  whose spherical area exceeds a hemisphere (2π) is inverted → reverse every
+//  linear ring (exterior + holes together) to flip it back to its true interior.
+//  Only geometry.coordinates change; properties (the iso join) are preserved.
+
+const HEMISPHERE = 2 * Math.PI
+
+// Reverse the point order of every linear ring, at any nesting depth
+// (LineString ring · Polygon · MultiPolygon). Recurses until it reaches an
+// array of [lng, lat] positions, which it reverses in place of the ring.
+function reverseRings(coords: unknown): unknown {
+  const arr = coords as unknown[]
+  return typeof (arr[0] as number[])[0] === 'number'
+    ? arr.slice().reverse()
+    : arr.map(reverseRings)
+}
+
+/** Rewind any inverted (clockwise-exterior) feature to the d3-geo convention. */
+function normalizeWinding(fc: GeoJSON.FeatureCollection): GeoJSON.FeatureCollection {
+  return {
+    ...fc,
+    features: fc.features.map((feature) =>
+      geoArea(feature) > HEMISPHERE
+        ? {
+            ...feature,
+            geometry: {
+              ...feature.geometry,
+              coordinates: reverseRings(
+                (feature.geometry as GeoJSON.Polygon | GeoJSON.MultiPolygon).coordinates,
+              ),
+            } as GeoJSON.Geometry,
+          }
+        : feature,
+    ),
+  }
 }
 
 export interface ProjectedChoropleth {
@@ -51,15 +98,18 @@ export function projectChoropleth(
   geoJson: GeoJSON.FeatureCollection,
   size = RENDER_SIZE,
 ): ProjectedChoropleth {
-  const projection = geoMercator().fitSize([size, size], geoJson)
+  // Normalize ring winding BEFORE fitting: an inverted feature reports a whole-
+  // sphere extent, which would blow up fitSize and collapse every region to a dot.
+  const oriented = normalizeWinding(geoJson)
+  const projection = geoMercator().fitSize([size, size], oriented)
   const path = geoPath(projection)
 
-  const features: ProjectedFeature[] = geoJson.features.map((feature) => ({
+  const features: ProjectedFeature[] = oriented.features.map((feature) => ({
     feature,
     d: path(feature) ?? '',
   }))
 
-  const [[x0, y0], [x1, y1]] = path.bounds(geoJson)
+  const [[x0, y0], [x1, y1]] = path.bounds(oriented)
   const w = x1 - x0
   const h = y1 - y0
   const m = Math.max(w, h) * MARGIN_FRACTION

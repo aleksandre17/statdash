@@ -83,6 +83,43 @@ describe('projectChoropleth — every region projects to real geometry (no M0 0 
     expect(a.features.map(f => f.d)).toEqual(b.features.map(f => f.d))
   })
 
+  // ── the winding-order fix: real datasets ship clockwise exterior rings ────────
+  //
+  //  d3-geo is SPHERICAL — ring winding decides interior/exterior. The live
+  //  georgia-regions.geojson (like many real sources) uses clockwise exterior
+  //  rings, which d3-geo reads as "the whole sphere minus the region": geoArea ≈ 4π
+  //  and every region projects to fill the ENTIRE frame (a solid block, no distinct
+  //  regions). The fixture above is correctly wound, so it never caught this — this
+  //  case feeds the INVERTED winding and pins that projectChoropleth normalizes it.
+  it('is winding-agnostic — inverted (clockwise) exterior rings project identically to CCW', () => {
+    const invert = (f: GeoJSON.Feature): GeoJSON.Feature => ({
+      ...f,
+      geometry: {
+        ...(f.geometry as GeoJSON.Polygon),
+        coordinates: (f.geometry as GeoJSON.Polygon).coordinates.map(r => [...r].reverse()),
+      },
+    })
+    const inverted: GeoJSON.FeatureCollection = { ...FIXTURE, features: FIXTURE.features.map(invert) }
+    const ccw = projectChoropleth(FIXTURE).features.map(f => f.d)
+    const cw  = projectChoropleth(inverted).features.map(f => f.d)
+    // Postel's Law: accept either winding, emit the same correct geometry.
+    expect(cw).toEqual(ccw)
+    // And crucially none of them is a whole-frame block: a region's path must not span
+    // the full fitted box in BOTH axes (that is the inverted-winding solid-block defect).
+    const { viewBox, features } = projectChoropleth(inverted)
+    const [minX, minY, w, h] = viewBox.split(' ').map(Number)
+    for (const { feature, d } of features) {
+      const nums = d.match(/-?\d+(?:\.\d+)?/g)!.map(Number)
+      const xs = nums.filter((_, i) => i % 2 === 0)
+      const ys = nums.filter((_, i) => i % 2 === 1)
+      const spanX = Math.max(...xs) - Math.min(...xs)
+      const spanY = Math.max(...ys) - Math.min(...ys)
+      const iso = feature.properties?.shapeISO
+      expect(spanX < w * 0.98 || spanY < h * 0.98, `region ${iso} fills the whole frame (inverted winding not normalized)`).toBe(true)
+      void minX; void minY
+    }
+  })
+
   it('projects the same geometry regardless of surrounding render state (no hidden-box coupling)', () => {
     // Simulate the exact defect scenario: the component re-renders while "hidden"
     // (no layout) and again while "shown". Because geometry comes only from the data,
