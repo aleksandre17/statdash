@@ -92,6 +92,46 @@ export function useNodeRows(node: NodeBase, ctx: RenderContext): DataRow[] {
     [node.data, ctx.sectionCtx, varsKey],
   )
 
+  // ── Async promise-cache key — NODE-UNIQUE, not just data-dependency (N34c fix) ──
+  //
+  //  depKey fingerprints the DATA DEPENDENCIES (the covering fetch's code×dims via
+  //  specDimKey, plus the derived vars). That is the correct trigger for WHEN to
+  //  re-resolve — but it is NOT a unique identity for WHAT rows a node produces.
+  //  extractRequirements collapses two nodes that issue the SAME covering fetch to
+  //  the SAME fingerprint even when their client-side RECIPE differs (a by-`geo`
+  //  map vs a `sector`-pivot both fetch `measure=GVA, geo=…`). The _promiseCache is
+  //  MODULE-LEVEL and shared across every node instance, so those two siblings
+  //  COLLIDE: the first to render populates the entry with ITS resolution and the
+  //  second reads the same key and is served the FIRST node's rows (the regional
+  //  cross-filter State-B bug — the sector pivot rendered the map's 11 by-region rows).
+  //
+  //  Fix: fold the node's ROW RECIPE into the cache key. node.data (spec: pipe +
+  //  encoding + type) and node.transforms fully determine the output rows GIVEN the
+  //  fetch — and being declarative config (Law 2), they are JSON-serialisable and
+  //  reference-stable, so a memoised structural fingerprint is a stable, correct,
+  //  dimension-AGNOSTIC (Law 1 — no dim/var-name literal) discriminator.
+  //
+  //  The key spans THREE axes, joined by a NUL-class control separator ('\x01') that
+  //  JSON.stringify escapes and so can NEVER appear inside a stringified part:
+  //    • recipeKey        — per-NODE axis (client-side recipe: pipe/encoding/transforms)
+  //    • depKey           — per-STATE axis (covering fetch code×dims ⊕ derived vars)
+  //    • ctx.pageStoreKey — per-STORE axis (C1). The SAME (recipe, data-state) resolved
+  //      against DIFFERENT stores yields DIFFERENT rows, and renderNode overrides
+  //      ctx.pageStoreKey per node subtree (effectiveStoreKey: explicit node.storeKey >
+  //      metric dataSource > page cascade) — one value encoding all three store tiers.
+  //      The sync memo (below) already lists node.storeKey/ctx.pageStoreKey in its
+  //      identity; omitting the store here left the async key node-unique in name only —
+  //      the same defect class this fix exists to close. We hash the store VALUE, never a
+  //      hardcoded store name (Law 1).
+  //
+  //  Two nodes with a genuinely identical recipe AND identical data-state AND the same
+  //  store still share one entry (correct in-flight dedup — the cache's purpose is kept).
+  const recipeKey = useMemo(
+    () => nodeRecipeKey(node.data, node.transforms),
+    [node.data, node.transforms],
+  )
+  const cacheKey = recipeKey + '' + depKey + '' + (ctx.pageStoreKey ?? 'default')
+
   const syncRows = useMemo(
     () => (isSync ? resolveNodeRows(node, ctx) : null),
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -126,15 +166,17 @@ export function useNodeRows(node: NodeBase, ctx: RenderContext): DataRow[] {
   //       resolveNodeRows and not a hand-built StoreQuery: only interpretSpec
   //       applies encoding/pipeline/multi-measure resolution.
   //
-  //  The whole warm-then-read is wrapped in one Promise, cached by depKey, and
-  //  consumed via React.use() — Suspense shows the skeleton while it settles;
-  //  NodeErrorBoundary catches a rejected warm.
+  //  The whole warm-then-read is wrapped in one Promise, cached by cacheKey
+  //  (recipeKey ⊕ depKey ⊕ pageStoreKey — node-unique across recipe/state/store, see
+  //  above), and consumed via React.use() —
+  //  Suspense shows the skeleton while it settles; NodeErrorBoundary catches a
+  //  rejected warm.
   //
   if (!node.data) {
     return ctx.rows ?? []
   }
 
-  if (!_promiseCache.has(depKey)) {
+  if (!_promiseCache.has(cacheKey)) {
     const spec = node.data as DataSpec
 
     // Static analysis → the exact (code, dims) slices this spec reads. For a
@@ -189,11 +231,37 @@ export function useNodeRows(node: NodeBase, ctx: RenderContext): DataRow[] {
       const firstKey = _promiseCache.keys().next().value
       if (firstKey !== undefined) _promiseCache.delete(firstKey)
     }
-    _promiseCache.set(depKey, promise)
+    _promiseCache.set(cacheKey, promise)
   }
 
   // React.use() with a Promise suspends until the promise settles.
   // Per React 19 docs, use() with a Resource CAN be called conditionally
   // (unlike hooks, it is not subject to the "no conditional hooks" rule).
-  return use(_promiseCache.get(depKey)!)
+  return use(_promiseCache.get(cacheKey)!)
+}
+
+// ── nodeRecipeKey — stable structural fingerprint of a node's ROW recipe ──────
+//
+//  The part of a node's identity that the data-dependency depKey (specDimKey ⊕
+//  vars) does NOT capture: the CLIENT-SIDE recipe that shapes the fetched rows —
+//  the DataSpec's type + pipe + encoding, plus node.transforms. Two nodes with the
+//  same covering fetch but different recipes (a by-geo map vs a sector pivot) must
+//  NOT share a promise-cache entry; this key is what tells them apart.
+//
+//  Declarative config (Law 2) ⇒ JSON-serialisable. Deterministic key ordering makes
+//  the fingerprint stable regardless of how the spec object was built (hand-authored
+//  JSON preserves order; a Constructor may not). Pure + dimension-agnostic (Law 1):
+//  it hashes STRUCTURE, never a dim/var name. Memoised on the (stable) node.data /
+//  node.transforms references by the caller, so it serialises once per node.
+function nodeRecipeKey(data: unknown, transforms: unknown): string {
+  return stableStringify({ data: data ?? null, transforms: transforms ?? null })
+}
+
+function stableStringify(value: unknown): string {
+  if (value === null || typeof value !== 'object') return JSON.stringify(value) ?? 'null'
+  if (Array.isArray(value)) return '[' + value.map(stableStringify).join(',') + ']'
+  const obj = value as Record<string, unknown>
+  return '{' + Object.keys(obj).sort()
+    .map(k => JSON.stringify(k) + ':' + stableStringify(obj[k]))
+    .join(',') + '}'
 }
