@@ -34,6 +34,9 @@ export const META: NodeSliceMeta = {
   caps:            ['collapsible', 'methodology', 'nav-contributor'],
   version:         1,
   i18n: {
+    // Data-integrity labels moved to the page-header namespace (AR-40): the ONE
+    // preliminary indicator is now page-level, so the section no longer renders
+    // (or localizes) 'preliminary' / 'preliminary-short' / 'data-integrity'.
     ka: {
       'view-toggle':       'ხედის გადართვა',
       'info':              'ინფორმაცია',
@@ -41,9 +44,6 @@ export const META: NodeSliceMeta = {
       'source':            'წყარო',
       'last-updated':      'ბოლო განახლება',
       'close':             'დახურვა',
-      'preliminary':       'წინასწარი მონაცემები',
-      'preliminary-short': 'წინასწ.',
-      'data-integrity':    'მონაცემთა სანდოობა',
     },
     en: {
       'view-toggle':       'Toggle view',
@@ -52,9 +52,6 @@ export const META: NodeSliceMeta = {
       'source':            'Source',
       'last-updated':      'Last updated',
       'close':             'Close',
-      'preliminary':       'Preliminary data',
-      'preliminary-short': 'Prelim.',
-      'data-integrity':    'Data integrity',
     },
   },
 }

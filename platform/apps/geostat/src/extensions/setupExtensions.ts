@@ -7,19 +7,19 @@
 //
 import { createElement }                 from 'react'
 import {
-  PANEL_TITLE_BADGE, SECTION_HEADER_ACTIONS,
-  type PanelTitleHost, type SectionActionHost,
+  SECTION_HEADER_ACTIONS,
+  type SectionActionHost,
 } from '@statdash/react'
 import { extensionRegistry }             from './registry'
-import { PreliminaryBadge }              from './PreliminaryBadge'
 import { SharePermalinkButton }          from './SharePermalinkButton'
 
 export function setupExtensions(): void {
-  // ── PANEL_TITLE_BADGE: preliminary data badge (Law 9 — data integrity) ──
-  extensionRegistry.contribute<React.ReactNode, PanelTitleHost>(PANEL_TITLE_BADGE, {
-    when:   (host: PanelTitleHost) => host.preliminary === true,
-    render: (host: PanelTitleHost) => createElement(PreliminaryBadge, { key: host.nodeId }),
-  })
+  // Data-integrity (preliminary) is consolidated to ONE page-level indicator
+  // (AR-40, page header) — panels PUBLISH their status up the NodeStatusContext
+  // scope rather than each rendering a PANEL_TITLE_BADGE pill. The former
+  // PreliminaryBadge contributor (an unstyled per-panel "Prelim." badge) is
+  // therefore removed. The PANEL_TITLE_BADGE point itself stays open for future
+  // contributors.
 
   // ── SECTION_HEADER_ACTIONS: share permalink button (Law 9 — URL = permalink) ─
   extensionRegistry.contribute<React.ReactNode, SectionActionHost>(SECTION_HEADER_ACTIONS, {

@@ -11,6 +11,11 @@
   border:         1px solid var(--color-border);
   box-shadow:     0 1px 3px rgba(0,0,0,0.04);
   overflow:       hidden;
+  /* Title's comfortable floor in the header row. Below this the actions cluster
+     wraps to its own line (flex-wrap on .section__head) rather than squeezing the
+     title — so a LONG title keeps its space at intermediate widths. Local rem var
+     (the --kpi-card-min precedent), tunable in one place. */
+  --section-title-min: 16rem;
 }
 
 /* ── Emphasis variant — the declared `emphasis` enum (meta.ts) → data-attr ──
@@ -63,7 +68,14 @@
   flex-shrink: 0;
 }
 
-.section__title-wrap { flex: 1; min-width: 0; }
+/* flex-grow to fill, but do NOT shrink below the title floor: when title + actions
+   can't share the row, .section__head (flex-wrap: wrap) drops the actions to line 2
+   instead of cramping the title. `min()` still lets a lone title collapse to the
+   container on very narrow widths (no overflow). */
+.section__title-wrap {
+  flex: 1 1 var(--section-title-min);
+  min-width: min(100%, var(--section-title-min));
+}
 .section__title {
   font-family: var(--font-family-display);
   font-size: 0.9375rem;
@@ -244,39 +256,7 @@
   border-color: var(--color-border-interactive);
 }
 
-/* ── Consolidated data-integrity indicator (AR-39, Law 9 / WCAG 2.1 AA) ──────
- *  ONE per section, in the header actions cluster, replacing the repeated
- *  per-panel "Prelim." pills. NOT color-only: a dot AND a visible text label.
- *  Full detail is reachable through the adjacent info disclosure. Token-bound
- *  (--status-preliminary-*), so it flips with [data-theme] and any [data-tenant]. */
-.section__integrity {
-  display:       inline-flex;
-  align-items:   center;
-  gap:           0.3rem;
-  padding:       0.15rem 0.45rem;
-  border-radius: 6px;
-  border:        1px solid var(--status-preliminary-border);
-  background:    var(--status-preliminary-bg);
-  color:         var(--status-preliminary-fg);
-  font-size:     0.6875rem;
-  font-weight:   600;
-  white-space:   nowrap;
-}
-.section__integrity-dot {
-  width:         0.5rem;
-  height:        0.5rem;
-  border-radius: 50%;
-  background:    var(--status-preliminary-fg);
-  flex-shrink:   0;
-}
-.section__integrity-label { line-height: 1; }
-
-/* The preliminary status line inside the methodology disclosure (Law 9 reachability). */
-.section__integrity-note {
-  display:     flex;
-  align-items: center;
-  gap:         0.4rem;
-  margin:      0;
-  font-size:   0.75rem;
-  color:       var(--status-preliminary-fg);
-}
+/* Data-integrity status is consolidated to ONE page-level indicator (AR-40, in
+   the page header) — the former per-section .section__integrity* indicator +
+   its methodology status line were removed. Per-cell OBS_STATUS 'p' flags and
+   the footer legend retain the locality detail. */

@@ -1,9 +1,9 @@
-// ── SectionMethodology — section data-integrity disclosure panel ──────────
+// ── SectionMethodology — section methodology disclosure panel ─────────────
 //
-//  Law 9 data-integrity home. Consolidates (AR-39) the section's provenance in
-//  ONE reachable place: preliminary status + note + source + last-updated + a
-//  close control. Shown when the info toggle is open AND the section has
-//  something to disclose (authored methodology OR a preliminary aggregate).
+//  Law 9 methodology home: the section's authored provenance in ONE reachable
+//  place — note + source + last-updated + a close control. Shown when the info
+//  toggle is open AND the section authored a methodology block. (Data-integrity
+//  status is a PAGE-level summary now, AR-40 — not surfaced per section here.)
 //
 //  Every value flips with the URL locale (AR-37 P1): note/source/lastUpdated are
 //  `LocaleString`s resolved through the canonical template resolver (collapses
@@ -28,15 +28,8 @@ function MetaRow({ label, value }: { label: string; value: string }) {
 }
 
 export interface SectionMethodologyProps {
-  /** Authored methodology block (may be absent when the panel opens only to explain preliminary status). */
+  /** Authored methodology block. */
   methodology?:   SectionMethodologyDef
-  /**
-   * The consolidated preliminary flag for this section (AR-39): the OR-fold of
-   * child-panel reports and the author override. Renders a labelled, non-color-only
-   * status line at the top of the disclosure so the ONE section indicator is fully
-   * explained here (Law 9 reachability).
-   */
-  preliminary:    boolean
   /** Canonical template resolver bound to the section's RenderContext. */
   resolve:        Resolve
   /** Close the panel (parent owns the open state). */
@@ -46,7 +39,6 @@ export interface SectionMethodologyProps {
 
 export function SectionMethodology({
   methodology,
-  preliminary,
   resolve,
   onClose,
   t,
@@ -57,12 +49,6 @@ export function SectionMethodology({
 
   return (
     <div className="section__methodology" role="region" aria-label={t('methodology')}>
-      {preliminary && (
-        <p className="section__integrity-note">
-          <span className="section__integrity-dot" aria-hidden="true" />
-          <span className="section__methodology-label">{t('preliminary')}</span>
-        </p>
-      )}
       {note        && <p className="section__methodology-note">{note}</p>}
       {source      && <MetaRow label={t('source')}       value={source} />}
       {lastUpdated && <MetaRow label={t('last-updated')} value={lastUpdated} />}
