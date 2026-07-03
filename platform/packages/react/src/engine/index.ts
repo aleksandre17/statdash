@@ -151,6 +151,12 @@ export { useViewToggle }           from './hooks/useViewToggle'
 export type { ViewToggle }         from './hooks/useViewToggle'
 export { viewStateKey }            from './hooks/viewStateKey'
 export { accentStyle }             from './hooks/accentStyle'
+// useContainerVisible — laid-out-container gate. Any renderer that measures its
+// own DOM box at mount (ApexCharts' SVG sizing is the motivating case — a
+// 0×0/detached box produces NaN transforms) gates its mount on `visible`
+// instead of re-deriving the clientWidth/offsetParent check inline.
+export { useContainerVisible }      from './hooks/useContainerVisible'
+export type { ContainerVisible }    from './hooks/useContainerVisible'
 // ── Node template resolution — the ONE canonical shell seam ───────────────
 //  resolveNodeTemplate(tpl, sectionCtx, params) — pure, reusable in non-hook spots.
 //  useNodeTemplate(ctx) → resolve(tpl?) binds the canonical { ...filterParams, ...vars }
