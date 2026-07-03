@@ -1,4 +1,5 @@
 import { RangeShell }                             from './RangeShell'
+import { rangeI18n }                              from './meta'
 import type { FilterControlSlice }                from '@statdash/react/engine'
 import type { ParamRangeNode }                   from '@statdash/engine'
 
@@ -12,15 +13,8 @@ export const rangeSlice: FilterControlSlice<ParamRangeNode, RangeValue> = {
     label:       'Range',
     category:    'filter',
     dimension:   'time',
-    // From→to template connector words (AR-37). Three positional slots wrap the
-    // two selectors so ONE template renders both reading conventions:
-    //   ka (postposition):  [from] დან [to] მდე   → lead='', mid='დან', trail='მდე'
-    //   en (preposition):   from [x] to [y]        → lead='from', mid='to', trail=''
-    // Empty slots render nothing (the shell guards on a non-empty string).
-    i18n: {
-      ka: { 'range-lead': '',     'range-mid': 'დან', 'range-trail': 'მდე' },
-      en: { 'range-lead': 'from', 'range-mid': 'to',  'range-trail': ''    },
-    },
+    // From→to template connector words (AR-37) — catalog lives in ./meta.ts.
+    i18n: rangeI18n,
   },
   defaultValue: (config) => [config.min ?? 2000, config.max ?? new Date().getFullYear()],
   codec: {
