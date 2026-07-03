@@ -35,8 +35,8 @@
   font-size: clamp(2rem, 4vw, 3.125rem);
   color: var(--color-heading-display);
   line-height: 1.15;
-  margin-bottom: 12px;
-  max-width: 700px;
+  margin-bottom: clamp(1.5rem, 3vw, 2.75rem);
+  white-space: nowrap;
 }
 
 .hero__subtitle {
