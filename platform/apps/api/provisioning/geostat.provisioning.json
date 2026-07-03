@@ -3595,6 +3595,7 @@
                       },
                       "measure": "GVA",
                       "sector": {
+                        "$ne": "_T",
                         "$ctx": "sector"
                       },
                       "time": {
@@ -3806,7 +3807,8 @@
                       },
                       "measure": "GVA",
                       "sector": {
-                        "$ne": "_T"
+                        "$ne": "_T",
+                        "$ctx": "sector"
                       },
                       "time": {
                         "$ctx": "time"
@@ -3999,6 +4001,7 @@
                       },
                       "measure": "GVA",
                       "sector": {
+                        "$ne": "_T",
                         "$ctx": "sector"
                       },
                       "time": {
@@ -4119,6 +4122,7 @@
                       },
                       "measure": "GVA",
                       "sector": {
+                        "$ne": "_T",
                         "$ctx": "sector"
                       },
                       "time": {
@@ -4260,6 +4264,7 @@
                       },
                       "measure": "GVA",
                       "sector": {
+                        "$ne": "_T",
                         "$ctx": "sector"
                       }
                     },
@@ -4497,7 +4502,7 @@
                   "type": "hidden"
                 },
                 "sector": {
-                  "default": "_T",
+                  "default": "",
                   "emptyLabel": {
                     "ka": "ყველა",
                     "en": "All"
@@ -4758,41 +4763,67 @@
             "then": "some"
           },
           "_xDim": {
-            "cond": { "left": { "$ctx": "region" }, "op": "ne", "right": "" },
-            "else": "geoLabel",
             "op": "if",
-            "then": "sectorLabel"
+            "cond": { "op": "nin", "left": { "$ctx": "sector" }, "right": ["", "_T"] },
+            "then": "geoLabel",
+            "else": {
+              "op": "if",
+              "cond": { "op": "ne", "left": { "$ctx": "region" }, "right": "" },
+              "then": "sectorLabel",
+              "else": "geoLabel"
+            }
           },
           "_seriesDim": {
-            "cond": { "left": { "$ctx": "region" }, "op": "ne", "right": "" },
-            "else": "",
             "op": "if",
-            "then": "geoLabel"
+            "cond": { "op": "nin", "left": { "$ctx": "sector" }, "right": ["", "_T"] },
+            "then": "sectorLabel",
+            "else": {
+              "op": "if",
+              "cond": { "op": "ne", "left": { "$ctx": "region" }, "right": "" },
+              "then": "geoLabel",
+              "else": ""
+            }
           },
           "_selKey": "region",
           "_mark": {
-            "cond": { "left": { "$ctx": "region" }, "op": "ne", "right": "" },
-            "else": "donut",
             "op": "if",
-            "then": "bar"
+            "cond": { "op": "or", "exprs": [
+              { "op": "nin", "left": { "$ctx": "sector" }, "right": ["", "_T"] },
+              { "op": "ne", "left": { "$ctx": "region" }, "right": "" }
+            ] },
+            "then": "bar",
+            "else": "donut"
           },
           "_byDims": {
-            "cond": { "left": { "$ctx": "region" }, "op": "ne", "right": "" },
-            "else": "geo",
             "op": "if",
-            "then": "sector,geo,time"
+            "cond": { "op": "or", "exprs": [
+              { "op": "nin", "left": { "$ctx": "sector" }, "right": ["", "_T"] },
+              { "op": "ne", "left": { "$ctx": "region" }, "right": "" }
+            ] },
+            "then": "sector,geo,time",
+            "else": "geo"
           },
           "_sortBy": {
-            "cond": { "left": { "$ctx": "region" }, "op": "ne", "right": "" },
-            "else": "value",
             "op": "if",
-            "then": "sectorOrder"
+            "cond": { "op": "nin", "left": { "$ctx": "sector" }, "right": ["", "_T"] },
+            "then": "value",
+            "else": {
+              "op": "if",
+              "cond": { "op": "ne", "left": { "$ctx": "region" }, "right": "" },
+              "then": "sectorOrder",
+              "else": "value"
+            }
           },
           "_sortDir": {
-            "cond": { "left": { "$ctx": "region" }, "op": "ne", "right": "" },
-            "else": "desc",
             "op": "if",
-            "then": "asc"
+            "cond": { "op": "nin", "left": { "$ctx": "sector" }, "right": ["", "_T"] },
+            "then": "desc",
+            "else": {
+              "op": "if",
+              "cond": { "op": "ne", "left": { "$ctx": "region" }, "right": "" },
+              "then": "asc",
+              "else": "desc"
+            }
           },
           "_regionTitle": {
             "by": "region",
