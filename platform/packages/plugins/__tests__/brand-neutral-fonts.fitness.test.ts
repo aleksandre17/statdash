@@ -11,6 +11,13 @@
 //  In packages/ use var(--font-family-base) / var(--font-family-display) in CSS,
 //  or read the CSS var via getComputedStyle at render time in JS/TS.
 //
+//  The platform's own DEFAULT typeface is a self-hosted, brand-NEUTRAL family
+//  (FiraGO — libre OFL-1.1, Latin + Georgian, @font-face in styles/css/fonts.css).
+//  That is NOT a tenant brand, so packages/ may name it; this file additionally
+//  LOCKS it as the default value of both --font-family roles so no one silently
+//  regresses the platform back to a Georgian-less `system-ui` default or swaps
+//  in a tenant brand at the token layer.
+//
 //  Scope: packages/plugins/** + packages/react/src/** + packages/styles/src/** +
 //  packages/charts/src/** + packages/core/src/** (*.css, *.ts, *.tsx)
 //
@@ -115,5 +122,47 @@ describe('FF-BRAND-NEUTRAL-FONTS — no tenant brand font family name in platfor
 
   it('the scan reaches the chart component layer (regression anchor)', () => {
     expect(targets.some(f => f.endsWith('DonutChart.tsx'))).toBe(true)
+  })
+})
+
+// ── Positive lock: the canonical platform typeface ──────────────────────────
+//
+//  The neutrality gate above is a NEGATIVE guard (no brand names). This is the
+//  POSITIVE half: the platform default MUST be the self-hosted FiraGO super-
+//  family, wired at the SSOT (tokens.css) into BOTH font-family roles and
+//  actually served via @font-face. Locking the family here means a future edit
+//  that drops FiraGO back to a bare `system-ui` (which has no guaranteed
+//  Georgian coverage — the very gap this typeface closes) fails as a red test.
+//
+describe('FF-PLATFORM-TYPEFACE — the canonical brand-neutral family is FiraGO', () => {
+  const PLATFORM_FAMILY = 'FiraGO'
+  const tokensCss = join(stylesSrcRoot, 'css', 'tokens.css')
+  const fontsCss  = join(stylesSrcRoot, 'css', 'fonts.css')
+
+  it('tokens.css leads both --font-family roles with the platform family', () => {
+    const css = readFileSync(tokensCss, 'utf8')
+    for (const role of ['--font-family-base', '--font-family-display']) {
+      const m = css.match(new RegExp(`${role}:\\s*'([^']+)'`))
+      expect(m, `${role} must be defined with a quoted leading family`).toBeTruthy()
+      expect(m![1]).toBe(PLATFORM_FAMILY)
+    }
+  })
+
+  it('fonts.css serves the platform family via @font-face with font-display:swap', () => {
+    expect(existsSync(fontsCss)).toBe(true)
+    const css = readFileSync(fontsCss, 'utf8')
+    expect(css).toContain(`font-family: '${PLATFORM_FAMILY}'`)
+    expect(css).toContain('font-display: swap')
+    // Every weight on the --font-weight-* scale must be present as a face.
+    for (const w of ['400', '500', '600', '700']) {
+      expect(css, `@font-face weight ${w} missing`).toContain(`font-weight: ${w}`)
+    }
+  })
+
+  it('the four subset woff2 weights are actually vendored (self-hosted, not CDN)', () => {
+    for (const w of ['400', '500', '600', '700']) {
+      const file = join(stylesSrcRoot, 'css', 'fonts', `firago-${w}-normal.woff2`)
+      expect(existsSync(file), `${file} must be self-hosted in the package`).toBe(true)
+    }
   })
 })

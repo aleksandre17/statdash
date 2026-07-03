@@ -3,6 +3,7 @@
    Import order matters: tokens first (vars defined before use).
    ================================================================ */
 
+@import './fonts.css';
 @import './tokens.css';
 @import './node-styles.css';
 @import './scrollbar.css';

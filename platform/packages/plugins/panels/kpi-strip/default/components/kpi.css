@@ -165,6 +165,10 @@
   color: var(--color-text-primary);
   line-height: 1;
   letter-spacing: -0.025em;
+  /* Tabular figures — the platform face (FiraGO) carries OpenType 'tnum', so
+     stacked KPI values align by digit (a statistical product wants lined,
+     equal-width numerals). Matches the data-table numeric cells. */
+  font-variant-numeric: tabular-nums;
 }
 .kpi-unit {
   font-size: 0.8125rem;
