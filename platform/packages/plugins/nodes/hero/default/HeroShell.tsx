@@ -6,6 +6,9 @@ import type { NodeRenderer }                 from '@statdash/react/engine'
 import type { HeroNode }                     from './HeroNode'
 import { HeroGraphic }                       from './HeroGraphic'
 
+// Owner: hero subtitle + card subs hidden at this stage; content preserved in config. Flip to re-enable.
+const SHOW_HERO_SUBTITLES = false
+
 export const HeroShell: NodeRenderer<HeroNode> = (def, _ctx, _children) =>
   <HeroControl def={def} />
 
@@ -29,7 +32,7 @@ function HeroControl({ def }: { def: HeroNode }) {
               : <span key={i}><br />{line}</span>
           ))}
         </h1>
-        {def.subtitle && (
+        {SHOW_HERO_SUBTITLES && def.subtitle && (
           <p className="hero__subtitle">{resolve(def.subtitle)}</p>
         )}
 
@@ -49,7 +52,7 @@ function HeroControl({ def }: { def: HeroNode }) {
               />
               <div className="hero-card__body">
                 <div className="hero-card__title">{resolve(card.title)}</div>
-                {card.sub && (
+                {SHOW_HERO_SUBTITLES && card.sub && (
                   <div className="hero-card__sub">{resolve(card.sub)}</div>
                 )}
                 <Link to={`/${locale}/${card.id}`} className="hero-card__button">
