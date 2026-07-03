@@ -6,8 +6,8 @@
 //  value. A prior defect painted every region the same accent (no value→color
 //  scale reached the fills), so the map read flat despite a ~150× value spread.
 //  This pins the invariant at the data level — the scale that GeoMap feeds into
-//  Leaflet PathOptions.fillColor must yield DISTINCT fills across the real spread
-//  (Tbilisi darkest, Racha lightest), so a flat map can no longer regress green.
+//  the SVG <path> fill must yield DISTINCT fills across the real spread (Tbilisi
+//  darkest, Racha lightest), so a flat map can no longer regress green.
 //
 //  node env → cssVar returns the un-themed fallback → the ramp is deterministic.
 
@@ -16,7 +16,6 @@ import { sequentialRamp, quantileColors } from '@statdash/styles'
 import type { DataRow } from '@statdash/engine'
 import {
   choroplethColors,
-  choroplethLayerKey,
   featureStyle,
   resolveFeatureStyle,
   type FeatureStyleContext,
@@ -65,40 +64,38 @@ describe('geograph choropleth — value→color scale', () => {
   })
 })
 
-// ── Selection is NOT a remount trigger (the NaN-crash root fix) ────────────────
+// ── Warm rows change the fills (async-store repaint preserved) ─────────────────
 //
-//  The live crash: selecting a region while the map was `display:none` (table view)
-//  remounted the <GeoJSON> layer against a 0×0 box → LatLng(NaN, NaN). The layer key
-//  MUST therefore be a pure function of the choropleth SCALE only — never of the
-//  selection — so a row-pick can never remount the layer. Selection is repainted in
-//  place via layer.setStyle (proven by resolveFeatureStyle below).
+//  Async store: geometry renders on empty rows, warm rows arrive after. In the SVG
+//  choropleth a row change re-runs choroplethColors and React re-renders every
+//  <path fill> — no layer-remount key needed (that was Leaflet machinery, retired).
+//  This pins the behavioural guarantee the old layer-key protected: warm rows yield
+//  a DIFFERENT, multi-bucket fill map than the empty state, so the map cannot read
+//  flat once data arrives.
 
 const WARM_ROWS: DataRow[] = ([
   ['GE-TB', 42620.8], ['GE-AJ', 5686.3], ['GE-IM', 5347.1], ['GE-RL', 278.8],
 ] as const).map(([id, value]) => ({ id, value } as unknown as DataRow))
 
-describe('choroplethLayerKey — selection never changes the layer identity', () => {
-  it('is a pure function of the colour scale — same scale, same key', () => {
-    const colors = choroplethColors(WARM_ROWS)
-    // Two DIFFERENT selections over the SAME warm rows: the key is identical, so
-    // react-leaflet never remounts (and never re-projects) on a selection change.
-    // (Selection is not even a parameter — it structurally cannot influence the key.)
-    expect(choroplethLayerKey(colors)).toBe(choroplethLayerKey(colors))
-  })
-
-  it('still changes when the colour scale changes (warm-row repaint preserved)', () => {
-    expect(choroplethLayerKey(choroplethColors(WARM_ROWS)))
-      .not.toBe(choroplethLayerKey(choroplethColors([])))
+describe('choroplethColors — warm rows repaint (no flat map once data arrives)', () => {
+  it('warm rows produce a different fill map than the empty state', () => {
+    const empty = choroplethColors([])
+    const warm  = choroplethColors(WARM_ROWS)
+    expect(warm.size).toBe(WARM_ROWS.length)
+    expect(empty.size).toBe(0)
+    // A React re-render with these fills repaints every path — the old defect
+    // (fills never reaching the mounted layer) cannot recur without a remount key.
+    expect(new Set(warm.values()).size).toBeGreaterThan(1)
   })
 })
 
-// ── Choropleth colours preserved BYTE-FOR-BYTE through the setStyle path ───────
+// ── Choropleth colours preserved BYTE-FOR-BYTE through the SVG path ────────────
 //
-//  The selection highlight now flows through resolveFeatureStyle (the SSOT shared
-//  by the mount `style` prop AND the imperative setStyle effect). This pins that the
-//  occupied→red / selected→amber / base-ramp encoding is unchanged, so moving
-//  selection off the remount path did not alter a single fill. node env → cssVar
-//  returns the documented literal fallbacks (occupied #dc2626, selected #e8a33d).
+//  Every rendered region — base, hover, selection — resolves through
+//  resolveFeatureStyle (the SSOT feeding the SVG <path> fill/stroke). This pins that
+//  the occupied→red / selected→amber / base-ramp encoding is unchanged from the
+//  Leaflet era, so swapping the renderer did not alter a single fill. node env →
+//  cssVar returns the documented literal fallbacks (occupied #dc2626, selected #e8a33d).
 
 const RAMP_FILL = '#123456' // a stand-in value-ramp fill for an unselected region
 const ctx = (selectedGeos: string[], occupiedIso: string[]): FeatureStyleContext => ({

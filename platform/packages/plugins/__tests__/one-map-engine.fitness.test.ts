@@ -4,14 +4,19 @@
 //
 //  Two rival choropleth engines once coexisted: the registered `panels/map` node
 //  (mapColorUtils.buildColorScale → a placeholder table) and the live `geograph`
-//  node (real Leaflet + styles/choropleth). AR-12/RX-16 retired `panels/map`
+//  node (styles/choropleth + a map renderer). AR-12/RX-16 retired `panels/map`
 //  entirely; `geograph` is the sole map engine (C4-a).
 //
 //  This fitness fails the build if the `panels/map` namespace resurfaces — no
-//  directory, no importer, no second value→fill implementation, exactly one
-//  Leaflet renderer — and pins the flat-map invariant (C4-c): N warm regions
-//  produce a multi-bucket ramp, and late-arriving rows change the layer key so
-//  the choropleth re-styles instead of reading flat.
+//  directory, no importer, no second value→fill implementation, exactly one map
+//  renderer — and pins the flat-map invariant (C4-c): N warm regions produce a
+//  multi-bucket ramp, and warm rows change the fill map so the choropleth repaints
+//  instead of reading flat.
+//
+//  The renderer is now a DECLARATIVE d3-geo SVG choropleth (the Leaflet map was
+//  retired — imperative DOM measurement blanked the map when a selection changed
+//  while the container was display:none; five patches failed). This guard also
+//  pins that no react-leaflet renderer has crept back in.
 //
 //  node env → cssVar returns the un-themed fallback → the ramp is deterministic.
 
@@ -19,7 +24,7 @@ import { describe, it, expect } from 'vitest'
 import { readdirSync, readFileSync, existsSync, statSync } from 'node:fs'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { choroplethColors, choroplethLayerKey } from '../nodes/geograph/default/components/choropleth'
+import { choroplethColors } from '../nodes/geograph/default/components/choropleth'
 import type { DataRow } from '@statdash/engine'
 
 const PLUGINS_ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
@@ -53,13 +58,28 @@ describe('FF-ONE-MAP-ENGINE — panels/map namespace retired', () => {
   })
 })
 
-// ── (b) exactly one map engine ────────────────────────────────────────────────
+// ── (b) exactly one map engine — the declarative SVG choropleth ───────────────
 
 describe('FF-ONE-MAP-ENGINE — geograph is the sole choropleth', () => {
-  it('exactly one source file renders a Leaflet map (react-leaflet MapContainer)', () => {
-    const leaflet = FILES.filter(f => /from ['"]react-leaflet['"]/.test(readFileSync(f, 'utf8')))
-    expect(leaflet.map(f => f.replace(PLUGINS_ROOT, ''))).toHaveLength(1)
-    expect(leaflet[0]).toMatch(/geograph/)
+  it('no source file imports react-leaflet (the Leaflet renderer is fully retired)', () => {
+    const leaflet = FILES.filter(f => /from ['"]react-leaflet['"]|from ['"]leaflet['"]/.test(readFileSync(f, 'utf8')))
+    expect(leaflet.map(f => f.replace(PLUGINS_ROOT, ''))).toEqual([])
+  })
+
+  it('exactly one source file renders the SVG choropleth (geograph — the only <svg> map)', () => {
+    // `<svg` + a projected `<path` is the renderer's unique signature: the projection
+    // module and the fitness tests reference projectChoropleth by name but emit no SVG.
+    const svg = FILES.filter(f => {
+      const src = readFileSync(f, 'utf8')
+      return /<svg/.test(src) && /projectChoropleth/.test(src)
+    })
+    expect(svg.map(f => f.replace(PLUGINS_ROOT, ''))).toHaveLength(1)
+    expect(svg[0]).toMatch(/geograph/)
+  })
+
+  it('the projection is a single pure d3-geo implementation (one projectChoropleth def)', () => {
+    const defs = FILES.filter(f => /export function projectChoropleth/.test(readFileSync(f, 'utf8')))
+    expect(defs).toHaveLength(1)
   })
 
   it('exactly one value→fill implementation exists (styles/choropleth via ./choropleth)', () => {
@@ -90,11 +110,13 @@ describe('FF-ONE-MAP-ENGINE — choropleth is not flat once rows are warm', () =
     expect(new Set(colors.values()).size).toBeGreaterThanOrEqual(3)
   })
 
-  it('late-arriving rows change the GeoJSON layer key (forces re-style, not flat)', () => {
-    // Async store: geometry mounts on empty rows, warm rows arrive after. The layer
-    // key MUST differ between the two so react-leaflet re-mounts and repaints.
-    const emptyKey = choroplethLayerKey(choroplethColors([]))
-    const warmKey  = choroplethLayerKey(choroplethColors(WARM_ROWS))
-    expect(warmKey).not.toBe(emptyKey)
+  it('late-arriving rows change the fill map (React repaints every path, not flat)', () => {
+    // Async store: geometry renders on empty rows, warm rows arrive after. The fill
+    // map MUST differ between the two so a React re-render repaints every <path fill>
+    // (the SVG choropleth needs no layer-remount key — that was Leaflet machinery).
+    const empty = choroplethColors([])
+    const warm  = choroplethColors(WARM_ROWS)
+    expect(warm.size).not.toBe(empty.size)
+    expect(new Set(warm.values()).size).toBeGreaterThan(1)
   })
 })

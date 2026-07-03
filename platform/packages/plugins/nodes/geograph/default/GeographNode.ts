@@ -29,7 +29,11 @@ export interface GeographNode extends NodeBase {
   occupiedIso?:     string[]
   /** Unit suffix for region tooltips — tenant content (the measure's unit). LocaleString. */
   unit?:            LocaleString
-  /** Initial map viewport before FitBounds reframes to the data extent. */
+  /**
+   * Vestigial map-viewport hints (Leaflet era). The declarative SVG choropleth fits
+   * its viewBox from the geojson data, so these are accepted for config-contract
+   * stability but no longer affect the render.
+   */
   initialCenter?:   [number, number]
   initialZoom?:     number
   multiSelect?:     boolean

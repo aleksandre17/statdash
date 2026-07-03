@@ -113,6 +113,7 @@ function GeographControl({ def, ctx, vs, children }: Pick<ShellProps<GeographNod
             labelOverrides={labelOverrides}
             occupiedIso={def.occupiedIso}
             unit={resolve(def.unit)}
+            ariaLabel={title}
             initialCenter={def.initialCenter}
             initialZoom={def.initialZoom}
           />
