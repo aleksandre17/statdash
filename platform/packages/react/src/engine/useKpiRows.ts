@@ -102,7 +102,14 @@ export function useKpiRows(specs: KpiSpec[], ctx: RenderContext): KpiDef[] {
   if (isSync) return syncKpis as KpiDef[]
 
   // ── Async path: caps.sync === false (live network stores) ─────────────────
-  const depKey = kpiDepKey(reqs, specs, sectionCtx.dims)
+  // Fold the active locale into the promise-cache key. interpretKpi localizes each KPI's
+  // label/unit/subtext (LocaleString → string) to SectionContext.locale AFTER the store read,
+  // and the val cache is locale-agnostic. Without locale in the key a client-side locale toggle
+  // re-reads the SAME warm slice but is served the PRE-TOGGLE promise → stale card labels. The
+  // sync fast-lane already re-fires (SiteRenderer memoizes sectionCtx with locale in its dep, so
+  // its ref changes on toggle → syncKpis re-runs); this makes the async path agree. Keys on the
+  // locale VALUE, never a literal (Law 1). Route-load path unchanged (locale steady ⇒ same key).
+  const depKey = kpiDepKey(reqs, specs, sectionCtx.dims) + '' + (ctx.locale ?? '')
 
   if (!_promiseCache.has(depKey)) {
     // Bind queryAsync — it reads `this` (CachedStore.queryAsync → this.source); a

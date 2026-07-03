@@ -87,9 +87,20 @@ export function useNodeRows(node: NodeBase, ctx: RenderContext): DataRow[] {
   // the whole vars bag, so ANY vars-bound spec re-resolves — no dim/var-name literal.
   const varsKey = useMemo(() => JSON.stringify(ctx.vars ?? {}), [ctx.vars])
 
+  // The active LOCALE is part of the identity of LABEL-BEARING resolution — not of the
+  // covering FETCH. resolveNodeRows localizes every TAGGED LocaleString row cell (the `$d`
+  // display-join labels the map/table/chart render) to ctx.locale via resolveRowLocales,
+  // AFTER the store read. The val cache is locale-agnostic (raw numbers/codes), so a client-
+  // side locale toggle re-reads the SAME warm slice but must RE-LOCALIZE — which only happens
+  // if the memo/promise-cache identity changes. Folding locale into depKey makes BOTH consumers
+  // re-resolve on toggle: the sync memo (syncRows lists depKey) AND the async promise-cache key
+  // (cacheKey = recipeKey ⊕ depKey ⊕ store, below). The route-load path was already correct — the
+  // first promise was built at the loaded locale; this only makes the client-toggle path
+  // reactive, keeping the load path byte-identical (locale steady ⇒ same key ⇒ same entry).
+  // Generic (Law 1): keys on the locale VALUE, never a locale literal.
   const depKey = useMemo(
-    () => (node.data ? specDimKey(node.data as DataSpec, ctx.sectionCtx) + '' + varsKey : ''),
-    [node.data, ctx.sectionCtx, varsKey],
+    () => (node.data ? specDimKey(node.data as DataSpec, ctx.sectionCtx) + '' + varsKey + '' + (ctx.locale ?? '') : ''),
+    [node.data, ctx.sectionCtx, varsKey, ctx.locale],
   )
 
   // ── Async promise-cache key — NODE-UNIQUE, not just data-dependency (N34c fix) ──
