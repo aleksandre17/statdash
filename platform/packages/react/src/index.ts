@@ -73,6 +73,10 @@ export type {
 }                                                                  from './context/SiteContext'
 export type { ChromeEntry, ChromeSlotConfig }                      from './engine/types'
 
+// ── Locale direction registry — ltr/rtl per locale (AR-37 P0) ─────────
+export { localeDirection }        from './context/localeDirection'
+export type { Direction }         from './context/localeDirection'
+
 // ── Page store context ────────────────────────────────────────────────
 export { PageStoreProvider, useCurrentStore } from './context/PageStoreContext'
 
