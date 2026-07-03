@@ -212,7 +212,7 @@ export { WrapStyleContext, useWrapStyle } from './wrapStyleContext'
 
 // ── Node status — section-scoped data-integrity publish/subscribe (AR-39) ──
 export { NodeStatusProvider, useNodeStatusScope, useReportNodeStatus } from './NodeStatusContext'
-export type { NodeStatus, NodeStatusAggregate } from './NodeStatusContext'
+export type { IntegrityStatus, NodeStatusAggregate } from './NodeStatusContext'
 
 // ── Shell factory — abstract base for all NodeRenderer implementations ──
 export { defineShell }        from './defineShell'
