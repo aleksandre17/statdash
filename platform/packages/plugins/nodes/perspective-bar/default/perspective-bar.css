@@ -1,16 +1,16 @@
-/* Perspective axis toggle — placed at the LEADING (left) edge.
+/* Perspective axis toggle — flush to the LEADING (left) edge, directly aligned
+   with the content start.
    The perspective-bar is its OWN page-node row (a sibling of the filter-bar in the
    page stack, NOT sharing the filter row), so leading placement re-anchors a
    PRIMARY view control to where LTR reading starts WITHOUT fragmenting the filters.
    `align-self:flex-start` does two jobs in the column page-stack: it left-anchors
    the group (cross-axis) AND lets the track hug its tabs (a proper segmented
    control) instead of stretching full width with the tabs shoved right.
-   `margin-inline-start` matches the filter-bar's control padding (--spacing-lg) so
-   the toggle lines up directly under the filters — one coherent, left-anchored
-   control zone. */
+   NO inline-start inset: the group sits flush against the page-content start edge
+   (the page gutter already supplies the side margin), so the segmented control
+   lines up with the content column's leading edge rather than floating inward. */
 .perspective-tab-group {
   align-self: flex-start;
-  margin-inline-start: var(--spacing-lg);
   display: flex;
   gap: 2px;
   padding: 3px;
@@ -52,10 +52,4 @@
   background: var(--color-skeleton);
   border-radius: var(--radius-sm, 4px);
   animation: skeleton-pulse 1.4s ease-in-out infinite;
-}
-
-/* Narrow: match the filter-bar's reduced control padding so the toggle stays
-   aligned under the filters at every width. */
-@media (max-width: 1280px) {
-  .perspective-tab-group { margin-inline-start: var(--spacing-md); }
 }

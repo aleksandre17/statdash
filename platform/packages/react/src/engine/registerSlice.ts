@@ -116,6 +116,12 @@ export function registerSlice(mod: RegistrableSlice): void {
     // under the slot namespace so `useT(slot)` works (AR-37 P1).
     if (m.i18n) registerSliceI18n(m.slot, m.i18n)
   } else if (sliceType === 'control') {
+    const m = mod.META as FilterControlSlice['META']
     filterControlRegistry.register(mod as unknown as FilterControlSlice)
+    // Control i18n completes the slice-kind symmetry (node/panel/page + chrome
+    // already register their catalogs). Registered under the controlType namespace
+    // so a filter control resolves its connector words / aria via useT(controlType)
+    // instead of a hardcoded literal (AR-37 P1).
+    if (m.i18n) registerSliceI18n(m.controlType, m.i18n)
   }
 }

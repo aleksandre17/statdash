@@ -164,7 +164,11 @@
   border-radius: 8px;
   overflow: hidden;
   background: var(--color-surface-sunken);
-  margin-right: 0.25rem;
+  /* The view toggle now sits LAST in the actions row (SectionHeader control order:
+     link · info · status · toggle). A leading inline margin separates the
+     interactive "how to view it" control from the passive metadata group before
+     it — logical property so the separation follows the writing direction. */
+  margin-inline-start: 0.5rem;
 }
 
 .section__view-btn {
