@@ -30,6 +30,27 @@ interface Item {
 }
 interface Cursor { x: number; y: number }
 
+// ── Marker ───────────────────────────────────────────────────────────────
+//
+//  Contribution-role glyph in a tile's top-left corner: `=` on the total,
+//  `+`/`-` on additive/subtractive components (interpreter-supplied prefix).
+//  The GLYPH itself carries the meaning (not colour), so it stays readable
+//  text — no aria-hidden — satisfying WCAG "no colour-only information".
+//
+function Marker({ op, light }: { op: string; light: boolean }) {
+  if (!op) return null
+  return (
+    <span style={{
+      position: 'absolute', top: 8, left: 11, pointerEvents: 'none',
+      fontSize: 16, fontWeight: 700, lineHeight: 1,
+      color: light ? 'var(--color-text-primary)' : 'var(--color-text-inverse)',
+      opacity: 0.85,
+    }}>
+      {op}
+    </span>
+  )
+}
+
 // ── Tooltip ────────────────────────────────────────────────────────────
 
 function Tooltip({ item, pct, cursor }: { item: Item; pct: string; cursor: Cursor }) {
@@ -82,15 +103,7 @@ function Block({
       onMouseMove={onMove}
       onMouseLeave={onLeave}
     >
-      {item.op && (
-        <div style={{
-          position: 'absolute', top: 5, left: 7, pointerEvents: 'none',
-          fontSize: 10, fontWeight: 700, fontFamily: 'monospace',
-          color: light ? 'var(--color-text-primary)' : 'var(--color-text-inverse)', opacity: 0.55,
-        }}>
-          {item.op}
-        </div>
-      )}
+      <Marker op={item.op} light={light} />
       <div style={{
         position: 'absolute', inset: 0,
         display: 'flex', flexDirection: 'column', gap: 2,
@@ -142,19 +155,22 @@ export default function TreemapChart({ output }: { output: ChartOutput }) {
   // (an empty STRING, which `??` would keep → a transparent, invisible block).
   // Fall back to the theme accent so every tile paints. The total tile keeps
   // this accent as its anchor colour; components draw from the palette below.
-  const base = output.series[0]?.color || cssVar('--color-accent', '#0080BE')
+  const accent = cssVar('--color-accent', '#0080BE')
+  const base   = output.series[0]?.color || accent
 
-  // A treemap shows categorical structure, so each tile should read as its own.
-  // When the series carries no per-tile differentiation (every component resolves
-  // to the same/blank colour — a single-series treemap with no colour encoding),
-  // distribute the platform's categorical palette so tiles are distinguishable.
-  // When rows DO carry distinct colours (semantic threshold / colour encoding),
-  // respect them. Generic for any treemap, any cardinality. (WCAG: per-tile label
-  // contrast is handled by isLight() below, which adapts text to each tile's hue.)
+  // A treemap carrying contribution-role markers is an additive DECOMPOSITION
+  // (total = Σ parts of ONE measure family): every tile reads as a single hue —
+  // the themed accent — and the +/= glyph (not colour) carries the structure.
+  // A FLAT categorical treemap instead distributes the palette so distinct
+  // categories stay distinguishable (or respects per-row semantic colours when
+  // present). Agnostic: keyed on marker PRESENCE, not on any measure name (Law 1);
+  // token-driven + theme-aware (dark parity via cssVar), never a hardcoded hex.
+  // (WCAG: per-tile label/marker contrast is handled by isLight() below.)
+  const hasMarkers = cats.some((l) => /^\([=+\-]\) /.test(l ?? ''))
   const compColors = cats
     .map((l, i) => (pts[i] && !(l ?? '').startsWith('(=) ') ? pts[i]!.thresholdColor : undefined))
   const distinct   = new Set(compColors.filter(Boolean))
-  const distribute = distinct.size <= 1
+  const distribute = !hasMarkers && distinct.size <= 1
   const palette    = chartPalette()
   let ci = 0
 
@@ -164,11 +180,13 @@ export default function TreemapChart({ output }: { output: ChartOutput }) {
       const pt    = pts[i]
       if (!pt) return null
       const isTotal = label.startsWith('(=) ')
-      const color   = isTotal
-        ? (pt.thresholdColor || base)
-        : distribute
-          ? palette[ci++ % palette.length]!
-          : (pt.thresholdColor || base)
+      const color   = hasMarkers
+        ? accent
+        : isTotal
+          ? (pt.thresholdColor || base)
+          : distribute
+            ? palette[ci++ % palette.length]!
+            : (pt.thresholdColor || base)
       return {
         label,
         clean:     label.replace(/^\(.\) /, ''),
@@ -227,15 +245,7 @@ export default function TreemapChart({ output }: { output: ChartOutput }) {
             onMouseMove={h.onMove}
             onMouseLeave={h.onLeave}
           >
-            {totalItem.op && (
-              <div style={{
-                position: 'absolute', top: 5, left: 7, pointerEvents: 'none',
-                fontSize: 10, fontWeight: 700, fontFamily: 'monospace',
-                color: light ? 'var(--color-text-primary)' : 'var(--color-text-inverse)', opacity: 0.55,
-              }}>
-                {totalItem.op}
-              </div>
-            )}
+            <Marker op={totalItem.op} light={light} />
             <div style={{
               position: 'absolute', inset: 0,
               display: 'flex', flexDirection: 'column', gap: 3,
