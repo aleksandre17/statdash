@@ -60,7 +60,7 @@
 
 .sidebar-section-label {
   font-size: 0.625rem;
-  font-weight: 700;
+  font-weight: var(--font-weight-bold);
   text-transform: uppercase;
   letter-spacing: 0.1em;
   color: var(--color-text-faint);
@@ -83,17 +83,30 @@
   transition: background 0.15s;
   border-radius: 0;
 }
-.sidebar-nav-item:hover { background: var(--color-surface-raised); }
+/* Hover (non-active): a subtle overlay tint that reads in BOTH themes
+   (--color-surface-hover flips; the former --color-surface-raised was a near-white
+   that was invisible on the white sidebar). Excludes the active row so hover never
+   fights the active tint. */
+.sidebar-nav-item:hover:not(.is-active) { background: var(--color-surface-hover); }
+/* Keyboard focus — the row is a <button>; previously it had NO visible focus
+   indicator (WCAG 2.4.7 gap). Inset accent ring (uses the entry's own --sc colour)
+   so it never clips against the sidebar's overflow-x:hidden edge. */
+.sidebar-nav-item:focus-visible {
+  outline: var(--border-width-base) solid var(--sc, var(--color-accent));
+  outline-offset: calc(-1 * var(--border-width-base));
+}
 .sidebar-nav-item.is-active {
   background: color-mix(in srgb, var(--sc, var(--color-accent)) 8%, transparent);
 }
+/* Leading accent indicator — the not-color-only active signal (WCAG 1.4.1),
+   paired with the heavier label weight below. */
 .sidebar-nav-item.is-active::before {
   content: '';
   position: absolute;
   left: 0; top: 4px; bottom: 4px;
-  width: 3px;
+  width: var(--border-width-thick);
   background: var(--sc, var(--color-accent));
-  border-radius: 0 2px 2px 0;
+  border-radius: 0 var(--radius-xs) var(--radius-xs) 0;
 }
 
 .sidebar-icon {
@@ -112,26 +125,39 @@
   background: color-mix(in srgb, var(--sc, var(--color-accent)) 16%, transparent);
 }
 
+/* The label is a router <Link> (an <a>). Its colour is driven by the state
+   system on THIS base rule (underline stripped here too), never by a
+   `color:inherit` override. Root cause of the prior "raw black" inactive: the
+   old `a.sidebar-nav-label { color:inherit }` out-specified this token and made
+   the link fall back to the inherited near-black body colour — the muted token
+   below never took effect. Inactive is now a deliberate MUTED foreground that
+   recedes; active/hover lift it (below). */
 .sidebar-nav-label {
   flex: 1;
   font-size: 0.8125rem;
-  font-weight: 500;
-  color: var(--color-text-secondary);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-muted);
+  text-decoration: none;
   line-height: 1.3;
 }
+/* Hover (non-active): foreground lifts toward primary — a change beyond the row
+   background alone, so the affordance reads even at low contrast sensitivity. */
+.sidebar-nav-item:hover:not(.is-active) .sidebar-nav-label {
+  color: var(--color-text-primary);
+}
+/* Active: accent foreground + heavier weight. With the leading indicator bar and
+   tinted row above, the active state is signalled by weight + indicator + colour
+   — never colour alone (WCAG 1.4.1). */
 .sidebar-nav-item.is-active .sidebar-nav-label {
   color: var(--sc, var(--color-accent));
-  font-weight: 600;
+  font-weight: var(--font-weight-semibold);
 }
-/* The label is a router <Link> (an <a>): strip the anchor underline and let it
-   inherit the row's text colour. Replaces the former inline
-   `style={{ textDecoration:'none', color:'inherit' }}`; the `.is-active` color
-   above is intentionally NOT applied to the link text (matching prior behaviour
-   where the inline `color:inherit` won) — the active accent shows via the row
-   bar + icon. Tie with the is-active rule on specificity → later source wins. */
-.sidebar-nav-section a.sidebar-nav-label {
-  text-decoration: none;
-  color: inherit;
+/* The link is independently focusable (inside the button) — give it its own
+   visible ring around the text. */
+.sidebar-nav-label:focus-visible {
+  outline: var(--border-width-base) solid var(--sc, var(--color-accent));
+  outline-offset: var(--spacing-xs);
+  border-radius: var(--radius-xs);
 }
 
 .sidebar-chevron {
@@ -164,12 +190,16 @@
   transition: color 0.15s, background 0.15s;
 }
 .sidebar-sub-item:hover {
-  background: var(--color-surface-raised);
+  background: var(--color-surface-hover);
   color: var(--color-text-primary);
+}
+.sidebar-sub-item:focus-visible {
+  outline: var(--border-width-base) solid var(--sc, var(--color-accent));
+  outline-offset: calc(-1 * var(--border-width-base));
 }
 .sidebar-sub-item.is-active {
   color: var(--sc, var(--color-accent));
-  font-weight: 500;
+  font-weight: var(--font-weight-medium);
 }
 .sidebar-sub-item.is-active .sidebar-sub-dot {
   background: var(--sc, var(--color-accent));
