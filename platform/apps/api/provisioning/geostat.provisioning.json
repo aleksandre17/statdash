@@ -2108,8 +2108,8 @@
                 "id": "income",
                 "color": "#7B6CF6",
                 "title": {
-                  "ka": "მთლიანი შიდა პროდუქტი შემოსავლების მეთოდით",
-                  "en": "Gross Domestic Product by income approach"
+                  "ka": "შემოსავლების ფორმირების ანგარიში",
+                  "en": "Generation of income account"
                 },
                 "fieldConfig": {
                   "unit": {
@@ -2147,12 +2147,14 @@
                       "agg": "sum"
                     },
                     {
-                      "op": "filter",
-                      "where": {
-                        "contributionRole": {
-                          "$ne": "total"
-                        }
-                      }
+                      "op": "derive",
+                      "as": "isTotal",
+                      "expr": "contributionRole == 'total' ? 1 : 0"
+                    },
+                    {
+                      "op": "derive",
+                      "as": "pctBase",
+                      "expr": "isTotal == 1 ? 0 : value"
                     },
                     {
                       "op": "lookup",
@@ -2175,8 +2177,9 @@
                     "label": "label",
                     "value": "value",
                     "color": "color",
+                    "isTotal": "isTotal",
                     "pct": {
-                      "sumOf": "value"
+                      "sumOf": "pctBase"
                     }
                   }
                 },

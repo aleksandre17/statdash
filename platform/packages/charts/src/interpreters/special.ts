@@ -131,9 +131,20 @@ class TreemapInterpreter implements ChartInterpreter {
       data:  chartRows.map((r) => buildDataPoint(r, resolveFieldConfig(fc, r.label))),
       color: chartRows[0]?.color || DEFAULT_SERIES_COLOR,
     }]
+    // Contribution-role markers (Law-1 agnostic). When the decomposition carries a
+    // total row (isTotal), tag each category with its role glyph — `(=)` on the
+    // total, `(-)` on a negative (subtract) component, `(+)` on an additive one —
+    // exactly the prefix convention ContributionInterpreter uses. The treemap
+    // adapter parses this prefix into a per-tile corner marker (total = Σ parts),
+    // stripping it for the tile label. A FLAT categorical treemap (no total) keeps
+    // plain labels, so no spurious markers appear. Driven purely by the row's role,
+    // never by a hardcoded measure/tile identity.
+    const categories = hasTotal
+      ? chartRows.map((r) => (r.isTotal ? '(=) ' : r.value < 0 ? '(-) ' : '(+) ') + r.label)
+      : chartRows.map((r) => r.label)
     return {
       type: 'treemap', height: def.height,
-      categories: chartRows.map((r) => r.label), series,
+      categories, series,
       axes: { x: {}, y: {} }, stacked: false, horizontal: false,
       legend: { show: false },
       tooltip: buildTooltip(def, false),
