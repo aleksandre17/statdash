@@ -41,8 +41,7 @@
     "@statdash/engine": "workspace:*",
     "@statdash/react":  "workspace:*",
     "@statdash/charts": "workspace:*",
-    "@statdash/styles": "workspace:*",
-    "d3-geo": "^3.1.1"
+    "@statdash/styles": "workspace:*"
   },
   "devDependencies": {
     "@types/d3-geo": "^3.1.0",
@@ -52,9 +51,11 @@
     "react": ">=18",
     "react-dom": ">=18",
     "react-router-dom": ">=6",
-    "react-apexcharts": ">=1.4.0"
+    "react-apexcharts": ">=1.4.0",
+    "d3-geo": ">=3"
   },
   "peerDependenciesMeta": {
-    "react-apexcharts": { "optional": true }
+    "react-apexcharts": { "optional": true },
+    "d3-geo": { "optional": true }
   }
 }

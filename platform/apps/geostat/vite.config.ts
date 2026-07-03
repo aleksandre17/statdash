@@ -196,7 +196,7 @@ export default defineConfig({
             // eager-load the ~540 kB charting lib just to reach jsx-runtime.
             { name: 'react-vendor', test: /[\\/]node_modules[\\/](react|react-dom|react-router|react-router-dom|scheduler)[\\/]/, priority: 40 },
             { name: 'apexcharts',   test: /[\\/]node_modules[\\/](apexcharts|react-apexcharts)[\\/]/, priority: 30 },
-            { name: 'leaflet',      test: /[\\/]node_modules[\\/](leaflet|react-leaflet|@react-leaflet)[\\/]/, priority: 30 },
+            { name: 'geo',          test: /[\\/]node_modules[\\/](d3-geo|d3-array|d3-geo-projection)[\\/]/, priority: 30 },
             { name: 'i18n',         test: /[\\/]node_modules[\\/](i18next|react-i18next)[\\/]/, priority: 25 },
           ],
         },
