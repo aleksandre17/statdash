@@ -2,6 +2,7 @@ import React from 'react'
 import ReactDOM from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
 import i18next from 'i18next'
+import { localeDirection } from '@statdash/react'
 import App from './app/App'
 import { bootRegistrations } from './bootRegistrations'
 import './shared/styles/index.css'
@@ -51,6 +52,20 @@ try {
     ?? (window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
   if (theme && theme !== 'system') document.documentElement.setAttribute('data-theme', theme)
 } catch { /* storage/matchMedia denied — the useTheme effect still applies it post-mount */ }
+
+// Locale document binding (AR-37 P0, R1) — set SYNCHRONOUSLY here too, from the
+// URL's `/:locale/*` segment, before the first paint. LocaleGuard's layout effect
+// re-asserts (and corrects, if the segment isn't a real manifest locale) this once
+// the bootstrap manifest resolves — this pre-hydration pass only prevents a one-
+// frame `lang="en"`/ltr flash on a hard load under e.g. `/ka`, mirroring the
+// data-theme pass above (same class of hard-load-vs-soft-nav flash).
+try {
+  const seg = window.location.pathname.split('/').filter(Boolean)[0]
+  if (seg) {
+    document.documentElement.lang = seg
+    document.documentElement.dir  = localeDirection(seg)
+  }
+} catch { /* location parsing failure — LocaleGuard's layout effect still applies it post-mount */ }
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
