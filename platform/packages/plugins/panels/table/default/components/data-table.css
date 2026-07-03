@@ -43,6 +43,43 @@
    *  table keeps its band. Unset on mobile (below) to preserve inline reading. */
   max-height: var(--data-table-max-h, 70vh);
 }
+
+/* ── Band fill-chain repair — carry the panel band down to THIS scroll viewport ──
+ *
+ *  When the panel sits in a height band (AR-8), the wrap must be the panel's BOUNDED
+ *  scroll viewport. node-styles.css already hands a DEFINITE height to the band box
+ *  and flags this wrap `flex:1` — BUT the platform shell renders ONE intermediate
+ *  block between that band box and this wrap: `<div {…bodyAttrs}>` (title badges +
+ *  table + export bar). Being a plain block it (a) does NOT propagate the band height
+ *  — the wrap's `flex:1` is INERT against a non-flex parent — and (b) grows to full
+ *  table height and overflows the band, whose `overflow:hidden` then CLIPS the bottom
+ *  rows (owner: rows unreachable, no scrollbar, "does not scroll"). The band must
+ *  reach the wrap, so that shell body has to be a fill-flex LINK. We target exactly
+ *  the element that directly parents this wrap (`:has(> .data-table__wrap)` — SSOT),
+ *  reading — never redefining — the band's own [data-view]/[data-height]/[data-aspect]
+ *  contract (same :has() band idiom node-styles uses for the chart leaf).
+ *
+ *  Both band-delivery shapes are covered:
+ *   · band on an ANCESTOR [data-view] slot (height/aspect authored on the section
+ *     body) — the slot is a definite-height flex column, so the shell body fills it
+ *     (flex:1) and the wrap flexes + scrolls inside.
+ *   · band on the shell body ITSELF (aspect authored on the table view) — node-styles
+ *     already sizes that body to the band; making it a flex column lets the wrap fill
+ *     that height instead of overflowing it (flex:1 is inert here, harmlessly).
+ *  An UNBANDED table (no band attribute anywhere — the /ka/accounts case) matches
+ *  none of these and keeps the `max-height` viewport above, so there is no regression.
+ *  This also un-clips the per-section export bar (Law 9), previously lost off the
+ *  bottom of a banded table. */
+[data-height] [data-view="visible"] > :has(> .data-table__wrap),
+[data-aspect] [data-view="visible"] > :has(> .data-table__wrap),
+[data-view="visible"] > [data-aspect]:has(> .data-table__wrap),
+[data-view="visible"] > [data-height]:has(> .data-table__wrap) {
+  display:        flex;
+  flex-direction: column;
+  flex:           1;
+  min-height:     0;
+}
+
 .data-table {
   width: 100%;
   border-collapse: collapse;
