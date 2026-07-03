@@ -1,0 +1,71 @@
+{
+ "regionAfter1": "R9",
+ "toggled": true,
+ "tables": [
+  {
+   "i": 0,
+   "container": "#geo-map",
+   "visible": true,
+   "rowsBody": 11,
+   "headTxts": [
+    "რეგიონი",
+    "მლნ ₾",
+    "წილი"
+   ],
+   "selectableCols": []
+  },
+  {
+   "i": 1,
+   "container": "other",
+   "visible": true,
+   "rowsBody": 9,
+   "headTxts": [
+    "სამეგრელო-ზემო ს"
+   ],
+   "selectableCols": []
+  },
+  {
+   "i": 2,
+   "container": "other",
+   "visible": false,
+   "rowsBody": 9,
+   "headTxts": [
+    "რეგიონი",
+    "სამეგრელო-ზემო ს",
+    "მლნ ₾",
+    "წილი"
+   ],
+   "selectableCols": [
+    {
+     "txt": "სამეგრელო-ზემო ს",
+     "cls": "r t-col-group data-table__col--selectable data-table__col--selected",
+     "pressed": "true"
+    }
+   ]
+  },
+  {
+   "i": 3,
+   "container": "other",
+   "visible": true,
+   "rowsBody": 1,
+   "headTxts": [
+    "მთლიანი დამატებუ"
+   ],
+   "selectableCols": []
+  },
+  {
+   "i": 4,
+   "container": "other",
+   "visible": false,
+   "rowsBody": 1,
+   "headTxts": [
+    "რეგიონი",
+    "მლნ ₾",
+    "წილი"
+   ],
+   "selectableCols": []
+  }
+ ],
+ "selectableClassCount": 1,
+ "errs": []
+}

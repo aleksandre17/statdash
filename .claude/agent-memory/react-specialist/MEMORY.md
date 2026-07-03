@@ -36,3 +36,6 @@
 ## Auto-relocated (memory-home-guard — reconcile into a topic section)
 - [AR-37 P0 locale binding](project_ar37_p0_locale_binding.md) — <html lang>/dir + i18next global bound at LocaleGuard; localeDirection registry in packages/react; FF-HTML-LANG-BOUND
 - [worktree vitest MAX_PATH block](project_worktree_vitest_maxpath_block.md) — vitest CLI startup-blocked in deep .claude/worktrees paths on Windows (env, not code); tsc/eslint/check-laws unaffected; hand-replicate logic in .mjs for signal
+
+## Auto-relocated (memory-home-guard — reconcile into a topic section)
+- [declarative choropleth](project_declarative_choropleth.md) — geograph map is now a declarative d3-geo SVG choropleth (Leaflet retired); DOM-free projection kills the hidden-container blank-map bug class

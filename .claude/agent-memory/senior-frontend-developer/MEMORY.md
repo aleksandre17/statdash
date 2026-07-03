@@ -77,3 +77,6 @@
 
 ## Auto-relocated (memory-home-guard — reconcile into a topic section)
 - [DataTable band fill-chain](project_datatable_band_fill_chain.md) — banded table won't scroll: TableShell `<div {...bodyAttrs}>` wrapper breaks the band flex-chain (chart merges bodyAttrs onto .chart-wrap, table doesn't → asymmetry); NOT the NaN-crash root; `:has(> .data-table__wrap)` fill-flex fix in data-table.css; FF-TABLE-BAND-FILL-CHAIN
+
+## Auto-relocated (memory-home-guard — reconcile into a topic section)
+- [Chart low-cardinality render rule](project_chart_low_cardinality_render_rule.md) — few-series/few-bar canonical rule: seriesColorByIndex (interpreter flag → chartColorAt render) + autoBarFillPct bounded 64→34% + hbar content-height (bounded/scroll model, HBAR_MIN_HEIGHT retuned 240→380→560); branch feat/chart-lowcardinality-render un-merged

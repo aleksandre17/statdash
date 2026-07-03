@@ -4704,7 +4704,7 @@
                 "onEnter": {
                   "set": {
                     "year": null,
-                    "sector": null
+                    "sector": ""
                   }
                 },
                 "onExit": {

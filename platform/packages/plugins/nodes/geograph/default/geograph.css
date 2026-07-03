@@ -44,7 +44,7 @@
  * (WCAG 1.4.1). :focus-visible keeps it keyboard-only (no ring on mouse click). */
 .geo-map__region:focus { outline: none; }
 .geo-map__region:focus-visible {
-  outline: 2px solid var(--color-accent, #0080BE);
+  outline: 2px solid var(--color-accent);
   outline-offset: 1px;
 }
 

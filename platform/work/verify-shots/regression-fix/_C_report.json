@@ -1,0 +1,41 @@
+{
+ "regionParam": "R9",
+ "apex": [
+  {
+   "title": "",
+   "canvasHeight": 306,
+   "canvasWidth": 537,
+   "horizontal": false,
+   "barShape": {
+    "w": 19,
+    "h": 86
+   },
+   "wrapStyle": {
+    "maxHeight": "none",
+    "overflowY": "visible",
+    "height": 318
+   },
+   "seriesFillsDistinct": [
+    "rgba(107,123,141,1)"
+   ]
+  },
+  {
+   "title": "",
+   "canvasHeight": 380,
+   "canvasWidth": 1103,
+   "horizontal": true,
+   "barShape": {
+    "w": 888,
+    "h": 198
+   },
+   "wrapStyle": {
+    "maxHeight": "646.12px",
+    "overflowY": "auto",
+    "height": 392
+   },
+   "seriesFillsDistinct": [
+    "rgba(0,90,156,1)"
+   ]
+  }
+ ]
+}

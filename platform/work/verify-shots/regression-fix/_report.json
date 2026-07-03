@@ -1,0 +1,252 @@
+BASE http://192.168.1.199:3002
+{
+ "landing": {
+  "fonts": {
+   "bodyFontFamily": "FiraGO, system-ui, -apple-system, \"Segoe UI\", \"Helvetica Neue\", Arial, sans-serif",
+   "firaGoLoaded": true,
+   "firaGoEntries": [
+    "FiraGO 400 loaded",
+    "FiraGO 500 loaded",
+    "FiraGO 600 loaded",
+    "FiraGO 700 loaded"
+   ],
+   "geoSample": "მთლიანი შიდა პროდუქტი",
+   "geoFontFamily": "FiraGO, system-ui, -apple-system, \"Segoe UI\", \"Helvetica Neue\", Arial, sans-serif"
+  },
+  "doc": {
+   "lang": "ka",
+   "dir": "ltr"
+  },
+  "scan": {
+   "objObj": 0,
+   "react31": false,
+   "nanText": false
+  },
+  "errors": []
+ },
+ "localeFlip": {
+  "toggledVia": "ENG",
+  "docEn": {
+   "lang": "en",
+   "dir": "ltr"
+  },
+  "url": "http://192.168.1.199:3002/en"
+ },
+ "accountsScroll": {
+  "probe": {
+   "candidates": [
+    {
+     "origin": "child",
+     "cls": "",
+     "scrollH": 824,
+     "clientH": 574,
+     "overflowY": "auto",
+     "maxHeight": "none",
+     "canScroll": true
+    },
+    {
+     "origin": "child",
+     "cls": "sr-only",
+     "scrollH": 690,
+     "clientH": 1,
+     "overflowY": "hidden",
+     "maxHeight": "none",
+     "canScroll": false
+    }
+   ],
+   "rawTallCount": 2
+  },
+  "scrolled": {
+   "found": true,
+   "cls": "",
+   "scrollH": 824,
+   "clientH": 574,
+   "maxHeight": "none",
+   "before": 0,
+   "after": 250,
+   "moved": true
+  },
+  "errors": []
+ },
+ "mapPanel": {
+  "tagged": true,
+  "tag": "DIV.panel__body",
+  "title": ""
+ },
+ "mapBaseline": {
+  "present": true,
+  "containerRect": {
+   "w": 537,
+   "h": 327
+  },
+  "pathCount": 13,
+  "realCount": 13,
+  "degenerateCount": 0,
+  "overlayBBox": {
+   "w": 513,
+   "h": 261
+  },
+  "sampleReal": [
+   "M201 218L193 214L187 218L184 217L180 220L178 216L175 217L173 215L170 2",
+   "M181 185L174 186L173 183L169 183L170 181L159 180L154 183L145 183L141 1"
+  ],
+  "sampleDegenerate": []
+ },
+ "mapRecoveryStorm": [
+  {
+   "iter": 1,
+   "toTable": {
+    "clicked": false,
+    "controls": []
+   },
+   "beforeSel": "",
+   "rowClick": {
+    "found": true,
+    "rows": 11,
+    "clickedRowIdx": 1,
+    "rowLabel": "აჭარის ა.რ.7 686.39.5%"
+   },
+   "afterSel": "R3",
+   "selectionChanged": true,
+   "toMap": {
+    "found": false
+   },
+   "mapAfter": {
+    "present": true,
+    "containerRect": {
+     "w": 537,
+     "h": 327
+    },
+    "pathCount": 13,
+    "realCount": 13,
+    "degenerateCount": 0,
+    "overlayBBox": {
+     "w": 513,
+     "h": 261
+    },
+    "sampleReal": [
+     "M201 218L193 214L187 218L184 217L180 220L178 216L175 217L173 215L170 2",
+     "M181 185L174 186L173 183L169 183L170 181L159 180L154 183L145 183L141 1"
+    ],
+    "sampleDegenerate": []
+   },
+   "errors": []
+  },
+  {
+   "iter": 2,
+   "toTable": {
+    "found": false
+   },
+   "beforeSel": "R3",
+   "rowClick": {
+    "found": false
+   },
+   "afterSel": "R3",
+   "selectionChanged": false,
+   "toMap": {
+    "found": false
+   },
+   "mapAfter": {
+    "present": true,
+    "containerRect": {
+     "w": 537,
+     "h": 327
+    },
+    "pathCount": 13,
+    "realCount": 13,
+    "degenerateCount": 0,
+    "overlayBBox": {
+     "w": 513,
+     "h": 261
+    },
+    "sampleReal": [
+     "M201 218L193 214L187 218L184 217L180 220L178 216L175 217L173 215L170 2",
+     "M181 185L174 186L173 183L169 183L170 181L159 180L154 183L145 183L141 1"
+    ],
+    "sampleDegenerate": []
+   },
+   "errors": [
+    "CONSOLE Error: <svg> attribute width: Expected length, \"NaN\".",
+    "CONSOLE Error: <foreignObject> attribute width: Expected length, \"NaN\".",
+    "CONSOLE Error: <g> attribute transform: Expected number, \"translate(NaN, 0) scale(1)\".",
+    "CONSOLE Error: <g> attribute transform: Expected number, \"translate(NaN, 0) scale(1)\".",
+    "PAGEERROR Failed to execute 'getComputedStyle' on 'Window': parameter 1 is not of type 'Element'.",
+    "CONSOLE Error: <svg> attribute width: Expected length, \"NaN\".",
+    "CONSOLE Error: <foreignObject> attribute width: Expected length, \"NaN\".",
+    "CONSOLE Error: <g> attribute transform: Expected number, \"translate(NaN, 0) scale(1)\".",
+    "CONSOLE Error: <g> attribute transform: Expected number, \"translate(NaN, 0) scale(1)\".",
+    "PAGEERROR Failed to execute 'getComputedStyle' on 'Window': parameter 1 is not of type 'Element'."
+   ]
+  },
+  {
+   "iter": 3,
+   "toTable": {
+    "found": false
+   },
+   "beforeSel": "R3",
+   "rowClick": {
+    "found": false
+   },
+   "afterSel": "R3",
+   "selectionChanged": false,
+   "toMap": {
+    "found": false
+   },
+   "mapAfter": {
+    "present": true,
+    "containerRect": {
+     "w": 537,
+     "h": 327
+    },
+    "pathCount": 13,
+    "realCount": 13,
+    "degenerateCount": 0,
+    "overlayBBox": {
+     "w": 513,
+     "h": 261
+    },
+    "sampleReal": [
+     "M201 218L193 214L187 218L184 217L180 220L178 216L175 217L173 215L170 2",
+     "M181 185L174 186L173 183L169 183L170 181L159 180L154 183L145 183L141 1"
+    ],
+    "sampleDegenerate": []
+   },
+   "errors": [
+    "CONSOLE Error: <svg> attribute width: Expected length, \"NaN\".",
+    "CONSOLE Error: <foreignObject> attribute width: Expected length, \"NaN\".",
+    "CONSOLE Error: <g> attribute transform: Expected number, \"translate(NaN, 0) scale(1)\".",
+    "CONSOLE Error: <g> attribute transform: Expected number, \"translate(NaN, 0) scale(1)\"."
+   ]
+  }
+ ],
+ "hbarHeight": {
+  "currentRegionParam": "R3",
+  "apexHeights": [
+   {
+    "title": "",
+    "height": 306,
+    "width": 537,
+    "barShape": {
+     "w": 19,
+     "h": 17
+    }
+   },
+   {
+    "title": "",
+    "height": 380,
+    "width": 1103,
+    "barShape": {
+     "w": 945,
+     "h": 198
+    }
+   }
+  ],
+  "compColours": {
+   "found": true,
+   "apex": false
+  },
+  "errors": [
+   "PAGEERROR Failed to execute 'getComputedStyle' on 'Window': parameter 1 is not of type 'Element'."
+  ]
+ }
+}

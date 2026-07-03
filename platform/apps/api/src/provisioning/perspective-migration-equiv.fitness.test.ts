@@ -272,7 +272,12 @@ describe('FF-SNAPSHOT-VIEW-EQUIV (P5) — geostat perspective migration is byte-
       // AR-38: the sector unselected sentinel is harmonized _T→'' so sector is a true peer
       // of region (both unselect to ''). Panels that want the _T aggregate when unselected
       // now carry it explicitly ($ne:_T query-path / default:_T KPI-path), not via the param.
-      expect(ctx.dims.sector).toBe('')          // harmonized unselected sentinel, both perspectives
+      // AR-38 sentinel harmony: sector unselects to '' (peer of region). The context
+      // projection (regularDims) DROPS empties, so the harmonized '' manifests as ABSENCE
+      // from ctx.dims (like region) — NOT a literal ''. A regression back to a '_T' pin
+      // would make this a defined '_T' and fail. The query supplies the "all real sectors"
+      // wildcard via {$ne:_T,$ctx:sector}.
+      expect(ctx.dims.sector).toBeUndefined()
       expect(ctx.dims.spanFrom).toBeDefined()   // alwaysResolve span — page-level, both perspectives
       expect(ctx.dims.spanTo).toBeDefined()
     }

@@ -1,0 +1,73 @@
+{
+ "item1_baseline": {
+  "present": true,
+  "crashCard": false,
+  "pathCount": 13,
+  "real": 13,
+  "degen": 0,
+  "occupiedRed": 2,
+  "selectedAmber": 0,
+  "distinctFills": [
+   "#0071a7",
+   "#d9ecf5",
+   "#368fbb",
+   "#6caece",
+   "#a3cde2",
+   "#dc2626"
+  ]
+ },
+ "item1_afterStorm": {
+  "present": true,
+  "crashCard": false,
+  "pathCount": 13,
+  "real": 0,
+  "degen": 13,
+  "occupiedRed": 2,
+  "selectedAmber": 3,
+  "distinctFills": [
+   "#e8a33d",
+   "#d9ecf5",
+   "#6caece",
+   "#a3cde2",
+   "#0071a7",
+   "#dc2626"
+  ]
+ },
+ "item1_regionAfter": "R3,R5,R11",
+ "item2_regionAfter1": "R9",
+ "item2_regionAfter2": "R9,R7",
+ "item2_pivotCols": {
+  "visible": true,
+  "bodyRows": 9,
+  "selectable": [
+   {
+    "txt": "მცხეთა-მთიანეთი",
+    "role": "button",
+    "pressed": "true"
+   },
+   {
+    "txt": "სამეგრელო-ზემო ს",
+    "role": "button",
+    "pressed": "true"
+   }
+  ]
+ },
+ "item2_click": {
+  "before": "R9,R7",
+  "clickedCol": "მცხეთა-მთიანეთი",
+  "colCount": 2
+ },
+ "item2_regionAfterColClick": "R9",
+ "item2_hasUnselectedCol": false,
+ "item2_regionBeforeRowAdd": "R9",
+ "item2_regionAfterRowAdd": "R9,R4",
+ "item3_regionBefore": "",
+ "item3_regionAfter": "R5",
+ "errors": [
+  "CONSOLE Error: <svg> attribute width: Expected length, \"NaN\".",
+  "CONSOLE Error: <foreignObject> attribute width: Expected length, \"NaN\".",
+  "CONSOLE Error: <g> attribute transform: Expected number, \"translate(NaN, 0) scale(1)\".",
+  "CONSOLE Error: <g> attribute transform: Expected number, \"translate(NaN, 0) scale(1)\".",
+  "PAGEERROR Failed to execute 'getComputedStyle' on 'Window': parameter 1 is not of type 'Element'."
+ ]
+}

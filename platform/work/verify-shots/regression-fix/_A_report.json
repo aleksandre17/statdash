@@ -1,0 +1,139 @@
+BASE http://192.168.1.199:3002
+{
+ "storm": [
+  {
+   "iter": 1,
+   "toTable": {
+    "clicked": true,
+    "label": "ცხრილი",
+    "wasActive": false
+   },
+   "tableVisibleAfterToggle": {
+    "hasTable": true,
+    "tableVisible": true,
+    "rows": 11
+   },
+   "mapHiddenState": {
+    "mapVisible": false,
+    "rect": {
+     "w": 0,
+     "h": 0
+    }
+   },
+   "selBefore": "",
+   "rowClicked": {
+    "rows": 11,
+    "idx": 1,
+    "label": "აჭარის ა.რ.7 686.39.5%"
+   },
+   "selAfter": "R3",
+   "selectionChangedWhileHidden": true,
+   "toMap": {
+    "clicked": true,
+    "label": "რუქა",
+    "wasActive": false
+   },
+   "recoveredMap": {
+    "present": false,
+    "mapVisible": false
+   },
+   "errors": [
+    "CONSOLE Error: Invalid LatLng object: (NaN, NaN)\n    at new O (http://192.168.1.199:3002/assets/leaflet-BPOtG3yf.js:1:13199)\n    at Object.unproject (http://192.168.1.1",
+    "CONSOLE [renderNode] shell crashed {type: geograph, variant: undefined, error: Error: Invalid LatLng object: (NaN, NaN)\n    at new O (http://192.168.1.199:3002/assets/l",
+    "CONSOLE Error: <svg> attribute width: Expected length, \"NaN\".",
+    "CONSOLE Error: <foreignObject> attribute width: Expected length, \"NaN\".",
+    "CONSOLE Error: <g> attribute transform: Expected number, \"translate(NaN, 0) scale(1)\".",
+    "CONSOLE Error: <g> attribute transform: Expected number, \"translate(NaN, 0) scale(1)\".",
+    "PAGEERROR Failed to execute 'getComputedStyle' on 'Window': parameter 1 is not of type 'Element'."
+   ]
+  },
+  {
+   "iter": 2,
+   "toTable": {
+    "clicked": false,
+    "seen": []
+   },
+   "tableVisibleAfterToggle": {
+    "hasTable": false
+   },
+   "mapHiddenState": {
+    "mapVisible": false
+   },
+   "selBefore": "R3",
+   "rowClicked": {
+    "rows": 0
+   },
+   "selAfter": "R3",
+   "selectionChangedWhileHidden": false,
+   "toMap": {
+    "clicked": false,
+    "seen": []
+   },
+   "recoveredMap": {
+    "present": false,
+    "mapVisible": false
+   },
+   "errors": [
+    "CONSOLE Error: <svg> attribute width: Expected length, \"NaN\".",
+    "CONSOLE Error: <foreignObject> attribute width: Expected length, \"NaN\".",
+    "CONSOLE Error: <g> attribute transform: Expected number, \"translate(NaN, 0) scale(1)\".",
+    "CONSOLE Error: <g> attribute transform: Expected number, \"translate(NaN, 0) scale(1)\".",
+    "PAGEERROR Failed to execute 'getComputedStyle' on 'Window': parameter 1 is not of type 'Element'."
+   ]
+  },
+  {
+   "iter": 3,
+   "toTable": {
+    "clicked": false,
+    "seen": []
+   },
+   "tableVisibleAfterToggle": {
+    "hasTable": false
+   },
+   "mapHiddenState": {
+    "mapVisible": false
+   },
+   "selBefore": "R3",
+   "rowClicked": {
+    "rows": 0
+   },
+   "selAfter": "R3",
+   "selectionChangedWhileHidden": false,
+   "toMap": {
+    "clicked": false,
+    "seen": []
+   },
+   "recoveredMap": {
+    "present": false,
+    "mapVisible": false
+   },
+   "errors": [
+    "CONSOLE Error: <svg> attribute width: Expected length, \"NaN\".",
+    "CONSOLE Error: <foreignObject> attribute width: Expected length, \"NaN\".",
+    "CONSOLE Error: <g> attribute transform: Expected number, \"translate(NaN, 0) scale(1)\".",
+    "CONSOLE Error: <g> attribute transform: Expected number, \"translate(NaN, 0) scale(1)\".",
+    "PAGEERROR Failed to execute 'getComputedStyle' on 'Window': parameter 1 is not of type 'Element'."
+   ]
+  }
+ ],
+ "baseline": {
+  "present": true,
+  "mapVisible": true,
+  "containerRect": {
+   "w": 537,
+   "h": 327
+  },
+  "pathCount": 13,
+  "realCount": 13,
+  "degenerateCount": 0,
+  "overlayBBox": {
+   "w": 513,
+   "h": 261
+  },
+  "sampleReal": [
+   "M201 218L193 214L187 218L184 217L180 220L178 216L175 217L173 215",
+   "M181 185L174 186L173 183L169 183L170 181L159 180L154 183L145 183"
+  ],
+  "sampleDegenerate": []
+ }
+}

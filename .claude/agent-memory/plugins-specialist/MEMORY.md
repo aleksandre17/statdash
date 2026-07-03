@@ -8,6 +8,7 @@
 - [perspective render validation](project_perspective_render_validation.md) — jsdom harness renders real geostat pages from provisioning manifest, URL-driven `?mode=`, empty store OK for structural axis surfaces; canvas previewPerspectiveId seam landed
 - [store decorator install point](project_store_decorator_install_point.md) — registry-driven MetadataPort decorators (withMetricProvenance) install in stats store builder, onto ApiStore BEFORE CachedStore; gate on datasetPort||listMetrics()>0
 - [responsive fix wave](project_responsive_fix_wave.md) — AUDIT-responsive shots are from `main` (re-render branch first; R3 page-measure already applied); aspect-panel height cap = `[data-aspect]` max-height `--size-panel-max-height` + `width:100%`
+- [action-field ref seam](project_action_field_ref_seam.md) — FilterAction.key/fromField accept {$ctx} refs (resolveActionField); composition `_selKey` is CONSTANT "region" today — AR-38 sector arm flips it, don't delete it
 
 ## Feedback — corrections & validated approaches
 - [variant spine vs runtime state](feedback_variant_spine_vs_runtime_state.md) — authored-variant spine is only for def.variants; runtime selection/toggle state → data-* state attrs or aria-selected, not the spine
@@ -42,3 +43,6 @@
 - [FieldConfig shape](project_fieldconfig_shape.md) — FieldConfig.thresholds shape + resolveThresholdColor usage in plugins
 - [Plugin structure](project_plugin_structure.md) — actual plugin directory structure + registration wiring
 - [Plugin tests](project_plugin_tests.md) — Vitest setup for plugins panel tests
+
+## Auto-relocated (memory-home-guard — reconcile into a topic section)
+- [filter `default` is KPI-only](project_filter_default_kpi_only.md) — `{$ctx:dim,default:X}` honored only by kpi.ts; on type:"query" it's a silent no-op — use `{$ne:_T,$ctx:dim}` (AR-38 companion fix)

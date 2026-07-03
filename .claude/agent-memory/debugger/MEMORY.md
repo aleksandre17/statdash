@@ -11,6 +11,8 @@
 - [GDP dropped sections vs regional intact](project_gdp_dropped_sections_vs_regional_intact.md) — owner's "missing regional top chart" is really GDP structural+noe-share dropped in 52738a3 (dangling "structural" nav anchor); regional fully intact
 - [Multi-region comma-geo wire](project_multiregion_comma_geo_wire.md) — live regional multi-select broken: buildObsFilterParam sends geo:"R2,R3" as one literal → 0 rows (API wants array); sectors-multi collapses to region-total bar. Bundle NEW, KPI year-reactivity OK.
 - [PromiseCache node collision](project_promisecache_node_collision.md) — State-B pivot root: async _promiseCache keyed on non-node-unique depKey; geo-map + sectors share fetch fingerprint → collide (async only; sync masks). Fix = fold recipeKey into cacheKey.
+- [Composition table State-A-only select](project_composition_table_stateA_only_select.md) — owner's "multi-region no sector breakdown": map-click WORKS live (wire-array+cache fixes deployed); real root = DataTable routes State-B rows to PivotTable which is never passed onRowSelect → composition table inert after first pick (not AR-38)
+- [Horizontal height + map hidden-remount](project_horizontal_height_and_map_hidden_remount.md) — Chart.tsx output.horizontal inline height override = shared root for tall-clip (accounts scroll lost) + short-cramp (regional hbar 240px); GeoMap M0 0 collapse on hidden GeoJSON key-remount is pre-existing Leaflet, not the batch
 
 
 ---

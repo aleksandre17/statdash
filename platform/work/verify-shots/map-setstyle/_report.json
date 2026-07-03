@@ -1,0 +1,398 @@
+{
+ "base": "http://192.168.1.199:3002",
+ "storm": [
+  {
+   "iter": 1,
+   "toTable": {
+    "clicked": true,
+    "label": "ცხრილი",
+    "wasActive": false
+   },
+   "tableVisibleAfterToggle": {
+    "hasTable": true,
+    "tableVisible": true,
+    "rows": 11
+   },
+   "mapHiddenState": {
+    "mapVisible": false,
+    "rect": {
+     "w": 0,
+     "h": 0
+    },
+    "crashCard": false
+   },
+   "selBefore": "",
+   "rowClicked": {
+    "rows": 11,
+    "idx": 1,
+    "label": "აჭარის ა.რ.7 686.39.5%"
+   },
+   "selAfter": "R3",
+   "selectionChangedWhileHidden": true,
+   "toMap": {
+    "clicked": true,
+    "label": "რუქა",
+    "wasActive": false
+   },
+   "recoveredMap": {
+    "present": true,
+    "crashCard": false,
+    "mapVisible": true,
+    "containerRect": {
+     "w": 537,
+     "h": 327
+    },
+    "pathCount": 13,
+    "realCount": 0,
+    "degenerateCount": 13,
+    "overlayBBox": {
+     "w": 0,
+     "h": 0
+    },
+    "fillTally": {
+     "amber": 1,
+     "ramp": 10,
+     "red": 2
+    },
+    "distinctFills": [
+     "#e8a33d",
+     "#d9ecf5",
+     "#368fbb",
+     "#6caece",
+     "#a3cde2",
+     "#0071a7",
+     "#dc2626"
+    ],
+    "sampleReal": [],
+    "sampleDegenerate": [
+     "M0 0",
+     "M0 0",
+     "M0 0",
+     "M0 0",
+     "M0 0"
+    ]
+   },
+   "invalidLatLngErrors": [],
+   "errors": []
+  },
+  {
+   "iter": 2,
+   "toTable": {
+    "clicked": true,
+    "label": "ცხრილი",
+    "wasActive": false
+   },
+   "tableVisibleAfterToggle": {
+    "hasTable": true,
+    "tableVisible": true,
+    "rows": 11
+   },
+   "mapHiddenState": {
+    "mapVisible": false,
+    "rect": {
+     "w": 0,
+     "h": 0
+    },
+    "crashCard": false
+   },
+   "selBefore": "R3",
+   "rowClicked": {
+    "rows": 11,
+    "idx": 3,
+    "label": "ქვემო ქართლი6 072.47.5%"
+   },
+   "selAfter": "R3,R11",
+   "selectionChangedWhileHidden": true,
+   "toMap": {
+    "clicked": true,
+    "label": "რუქა",
+    "wasActive": false
+   },
+   "recoveredMap": {
+    "present": true,
+    "crashCard": false,
+    "mapVisible": true,
+    "containerRect": {
+     "w": 537,
+     "h": 327
+    },
+    "pathCount": 13,
+    "realCount": 0,
+    "degenerateCount": 13,
+    "overlayBBox": {
+     "w": 0,
+     "h": 0
+    },
+    "fillTally": {
+     "amber": 2,
+     "ramp": 9,
+     "red": 2
+    },
+    "distinctFills": [
+     "#e8a33d",
+     "#d9ecf5",
+     "#368fbb",
+     "#6caece",
+     "#a3cde2",
+     "#0071a7",
+     "#dc2626"
+    ],
+    "sampleReal": [],
+    "sampleDegenerate": [
+     "M0 0",
+     "M0 0",
+     "M0 0",
+     "M0 0",
+     "M0 0"
+    ]
+   },
+   "invalidLatLngErrors": [],
+   "errors": []
+  },
+  {
+   "iter": 3,
+   "toTable": {
+    "clicked": true,
+    "label": "ცხრილი",
+    "wasActive": false
+   },
+   "tableVisibleAfterToggle": {
+    "hasTable": true,
+    "tableVisible": true,
+    "rows": 11
+   },
+   "mapHiddenState": {
+    "mapVisible": false,
+    "rect": {
+     "w": 0,
+     "h": 0
+    },
+    "crashCard": false
+   },
+   "selBefore": "R3,R11",
+   "rowClicked": {
+    "rows": 11,
+    "idx": 5,
+    "label": "კახეთი4 068.95%"
+   },
+   "selAfter": "R3,R11,R6",
+   "selectionChangedWhileHidden": true,
+   "toMap": {
+    "clicked": true,
+    "label": "რუქა",
+    "wasActive": false
+   },
+   "recoveredMap": {
+    "present": true,
+    "crashCard": false,
+    "mapVisible": true,
+    "containerRect": {
+     "w": 537,
+     "h": 327
+    },
+    "pathCount": 13,
+    "realCount": 0,
+    "degenerateCount": 13,
+    "overlayBBox": {
+     "w": 0,
+     "h": 0
+    },
+    "fillTally": {
+     "amber": 3,
+     "ramp": 8,
+     "red": 2
+    },
+    "distinctFills": [
+     "#e8a33d",
+     "#d9ecf5",
+     "#368fbb",
+     "#6caece",
+     "#a3cde2",
+     "#0071a7",
+     "#dc2626"
+    ],
+    "sampleReal": [],
+    "sampleDegenerate": [
+     "M0 0",
+     "M0 0",
+     "M0 0",
+     "M0 0",
+     "M0 0"
+    ]
+   },
+   "invalidLatLngErrors": [],
+   "errors": []
+  },
+  {
+   "iter": 4,
+   "toTable": {
+    "clicked": true,
+    "label": "ცხრილი",
+    "wasActive": false
+   },
+   "tableVisibleAfterToggle": {
+    "hasTable": true,
+    "tableVisible": true,
+    "rows": 11
+   },
+   "mapHiddenState": {
+    "mapVisible": false,
+    "rect": {
+     "w": 0,
+     "h": 0
+    },
+    "crashCard": false
+   },
+   "selBefore": "R3,R11,R6",
+   "rowClicked": {
+    "rows": 11,
+    "idx": 7,
+    "label": "სამცხე-ჯავახეთი2 335.72.9%"
+   },
+   "selAfter": "R3,R11,R6,R10",
+   "selectionChangedWhileHidden": true,
+   "toMap": {
+    "clicked": true,
+    "label": "რუქა",
+    "wasActive": false
+   },
+   "recoveredMap": {
+    "present": true,
+    "crashCard": false,
+    "mapVisible": true,
+    "containerRect": {
+     "w": 537,
+     "h": 327
+    },
+    "pathCount": 13,
+    "realCount": 0,
+    "degenerateCount": 13,
+    "overlayBBox": {
+     "w": 0,
+     "h": 0
+    },
+    "fillTally": {
+     "amber": 4,
+     "ramp": 7,
+     "red": 2
+    },
+    "distinctFills": [
+     "#e8a33d",
+     "#d9ecf5",
+     "#368fbb",
+     "#6caece",
+     "#a3cde2",
+     "#0071a7",
+     "#dc2626"
+    ],
+    "sampleReal": [],
+    "sampleDegenerate": [
+     "M0 0",
+     "M0 0",
+     "M0 0",
+     "M0 0",
+     "M0 0"
+    ]
+   },
+   "invalidLatLngErrors": [],
+   "errors": []
+  }
+ ],
+ "cssTokens": {
+  "occupied": "#dc2626",
+  "selected": "#e8a33d"
+ },
+ "baseline": {
+  "present": true,
+  "crashCard": false,
+  "mapVisible": true,
+  "containerRect": {
+   "w": 537,
+   "h": 327
+  },
+  "pathCount": 13,
+  "realCount": 13,
+  "degenerateCount": 0,
+  "overlayBBox": {
+   "w": 513,
+   "h": 261
+  },
+  "fillTally": {
+   "ramp": 11,
+   "red": 2
+  },
+  "distinctFills": [
+   "#0071a7",
+   "#d9ecf5",
+   "#368fbb",
+   "#6caece",
+   "#a3cde2",
+   "#dc2626"
+  ],
+  "sampleReal": [
+   "M201 218L193 214L187 218L184 217L180 220L178 216L175 217",
+   "M181 185L174 186L173 183L169 183L170 181L159 180L154 183"
+  ],
+  "sampleDegenerate": []
+ },
+ "mapClickPath": {
+  "polyClicked": {
+   "ok": false,
+   "paths": 0
+  },
+  "selBefore": "R3,R11,R6,R10",
+  "selAfter": "R3,R11,R6,R10",
+  "selectionChanged": false,
+  "kpiBefore": "Gross Value Added20 163GEL mn↗მზარდი: +5.7%compared to previous yearAnnual growth+5.7%%↗მზარდი: +5.7%compared to previou",
+  "kpiAfter": "Gross Value Added20 163GEL mn↗მზარდი: +5.7%compared to previous yearAnnual growth+5.7%%↗მზარდი: +5.7%compared to previou",
+  "kpiChanged": false,
+  "mapState": {
+   "present": true,
+   "crashCard": false,
+   "mapVisible": true,
+   "containerRect": {
+    "w": 537,
+    "h": 327
+   },
+   "pathCount": 13,
+   "realCount": 0,
+   "degenerateCount": 13,
+   "overlayBBox": {
+    "w": 0,
+    "h": 0
+   },
+   "fillTally": {
+    "amber": 4,
+    "ramp": 7,
+    "red": 2
+   },
+   "distinctFills": [
+    "#e8a33d",
+    "#d9ecf5",
+    "#368fbb",
+    "#6caece",
+    "#a3cde2",
+    "#0071a7",
+    "#dc2626"
+   ],
+   "sampleReal": [],
+   "sampleDegenerate": [
+    "M0 0",
+    "M0 0",
+    "M0 0",
+    "M0 0",
+    "M0 0"
+   ]
+  },
+  "errors": []
+ },
+ "nonRegression": {
+  "accounts": {
+   "hasScroller": true,
+   "scrollH": 824,
+   "clientH": 574,
+   "apexCanvasH": 0
+  },
+  "errors": []
+ }
+}
