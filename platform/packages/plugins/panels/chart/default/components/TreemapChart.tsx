@@ -166,7 +166,7 @@ export default function TreemapChart({ output }: { output: ChartOutput }) {
   // present). Agnostic: keyed on marker PRESENCE, not on any measure name (Law 1);
   // token-driven + theme-aware (dark parity via cssVar), never a hardcoded hex.
   // (WCAG: per-tile label/marker contrast is handled by isLight() below.)
-  const hasMarkers = cats.some((l) => /^\([=+\-]\) /.test(l ?? ''))
+  const hasMarkers = cats.some((l) => /^\([=+-]\) /.test(l ?? ''))
   const compColors = cats
     .map((l, i) => (pts[i] && !(l ?? '').startsWith('(=) ') ? pts[i]!.thresholdColor : undefined))
   const distinct   = new Set(compColors.filter(Boolean))

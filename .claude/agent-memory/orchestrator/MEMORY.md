@@ -38,6 +38,7 @@
 - [model agnostic agents](feedback_model_agnostic_agents.md) — agents are model-agnostic; lead picks model per-call (sonnet=mechanical/cheap, opus=judgment/design/QC), same quality bar on any model, escalate on real judgment. SUPERSEDES opus-only. Economy by default.
 
 ## Project — operational
+- [landing slider = featured (yellow)](project_landing_slider_featured.md) — landing slider is BUILT FROM yellow-highlighted source cells (authoring-only signal, never a UI color) via semantic layer + config pipeline; GDP deflator belongs to GDP_ANNUAL, not a separate dataset
 - [server deploy build context](project_server_deploy_build_context.md) — server builds from a git clone tracking only `main`; push + fetch-by-name before expecting a rebuild to include a local fix; live-cutover runbook
 - [MT decision deferred](project_mt_deferred.md) — owner deferred multi-tenancy SaaS; perfect single-tenant to reference-grade first, migrate to multi-site later via preserved seam; DON'T build MT-1…MT-7 or degrade the tenant_id seam
 

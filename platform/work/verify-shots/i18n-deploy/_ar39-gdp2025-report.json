@@ -1,0 +1,159 @@
+{
+ "ka": {
+  "yearSet": {
+   "ok": true,
+   "chosen": "2025"
+  },
+  "sections": [
+   {
+    "title": "მთლიანი შიდა პროდუქტი წარმოების მეთოდით",
+    "consolidatedCount": 1,
+    "consolidatedLabel": "წინასწ.",
+    "scatteredPrelimPills": 0,
+    "infoBtnAriaLabels": [
+     "Copy permalink",
+     "მონაცემთა სანდოობა"
+    ]
+   },
+   {
+    "title": "მთლიანი შიდა პროდუქტი დანახარჯების მეთოდით",
+    "consolidatedCount": 1,
+    "consolidatedLabel": "წინასწ.",
+    "scatteredPrelimPills": 0,
+    "infoBtnAriaLabels": [
+     "Copy permalink",
+     "მონაცემთა სანდოობა"
+    ]
+   },
+   {
+    "title": "მთლიანი შიდა პროდუქტი შემოსავლების მეთოდით",
+    "consolidatedCount": 1,
+    "consolidatedLabel": "წინასწ.",
+    "scatteredPrelimPills": 0,
+    "infoBtnAriaLabels": [
+     "Copy permalink",
+     "მონაცემთა სანდოობა"
+    ]
+   },
+   {
+    "title": "მთლიანი კაპიტალის ფორმირების სტრუქტურა, %",
+    "consolidatedCount": 1,
+    "consolidatedLabel": "წინასწ.",
+    "scatteredPrelimPills": 0,
+    "infoBtnAriaLabels": [
+     "Copy permalink",
+     "მონაცემთა სანდოობა"
+    ]
+   }
+  ],
+  "opened": {
+   "found": true,
+   "clickedAria": "მონაცემთა სანდოობა",
+   "title": "მთლიანი შიდა პროდუქტი წარმოების მეთოდით"
+  },
+  "disclosure": {
+   "open": true,
+   "hasIntegrityNote": true,
+   "integrityNoteText": "წინასწარი მონაცემები"
+  }
+ },
+ "en": {
+  "yearSet": {
+   "ok": true,
+   "chosen": "2025"
+  },
+  "sections": [
+   {
+    "title": "Gross Domestic Product by production approac",
+    "consolidatedCount": 1,
+    "consolidatedLabel": "Prelim.",
+    "scatteredPrelimPills": 0,
+    "infoBtnAriaLabels": [
+     "Copy permalink",
+     "Data integrity"
+    ]
+   },
+   {
+    "title": "Gross Domestic Product by expenditure approa",
+    "consolidatedCount": 1,
+    "consolidatedLabel": "Prelim.",
+    "scatteredPrelimPills": 0,
+    "infoBtnAriaLabels": [
+     "Copy permalink",
+     "Data integrity"
+    ]
+   },
+   {
+    "title": "Gross Domestic Product by income approach",
+    "consolidatedCount": 1,
+    "consolidatedLabel": "Prelim.",
+    "scatteredPrelimPills": 0,
+    "infoBtnAriaLabels": [
+     "Copy permalink",
+     "Data integrity"
+    ]
+   },
+   {
+    "title": "Gross capital formation structure, %",
+    "consolidatedCount": 1,
+    "consolidatedLabel": "Prelim.",
+    "scatteredPrelimPills": 0,
+    "infoBtnAriaLabels": [
+     "Copy permalink",
+     "Data integrity"
+    ]
+   }
+  ],
+  "opened": {
+   "found": true,
+   "clickedAria": "Data integrity",
+   "title": "Gross Domestic Product by production approac"
+  },
+  "disclosure": {
+   "open": true,
+   "hasIntegrityNote": true,
+   "integrityNoteText": "Preliminary data"
+  }
+ },
+ "toggle": {
+  "before": {
+   "htmlLang": "ka",
+   "kpi": [
+    "მთლიანი დამატებული ღირებულება",
+    "წლიური ზრდა",
+    "თბილისის წილი ეროვნულ მაჩვენებელში",
+    "საშუალო წლიური ზრდა (2010–2023)"
+   ],
+   "active": "ქარ"
+  },
+  "clickEng": {
+   "ok": true
+  },
+  "afterEng": {
+   "htmlLang": "en",
+   "kpi": [
+    "მთლიანი დამატებული ღირებულება",
+    "წლიური ზრდა",
+    "თბილისის წილი ეროვნულ მაჩვენებელში",
+    "საშუალო წლიური ზრდა (2010–2023)"
+   ],
+   "active": "ENG",
+   "url": "http://192.168.1.199:3002/en/regional",
+   "kpiHasGeorgian": true
+  },
+  "clickKa": {
+   "ok": true
+  },
+  "afterKa": {
+   "htmlLang": "ka",
+   "kpi": [
+    "მთლიანი დამატებული ღირებულება",
+    "წლიური ზრდა",
+    "თბილისის წილი ეროვნულ მაჩვენებელში",
+    "საშუალო წლიური ზრდა (2010–2023)"
+   ],
+   "active": "ქარ",
+   "kpiHasGeorgian": true
+  }
+ }
+}

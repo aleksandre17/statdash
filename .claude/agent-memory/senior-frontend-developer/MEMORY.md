@@ -5,6 +5,7 @@
 - [Section authoring uniformity](project_section_authoring_uniformity.md) — owner #1 fix: every geostat.provisioning section composed via `columns` (pairs count:2/singles count:1), gate on wrapper; gdp already canonical (untouched); repeat-wrap is nav-safe; FF-UNIFORM-SECTION-AUTHORING
 - [Plugins shell test harness](project_plugins_shell_test_harness.md) — render REAL shells in plugins vitest: i18next optional-peer stub alias, jsdom Apex/Leaflet→EmptyState, full provider stack, direct-call vs renderNode (vacuous-pass) for FF-PLUGIN-SHELLS-AXE-CLEAN
 - [i18n content-contract (AR-26)](project_i18n_content_contract_ar26.md) — where each user-facing field localizes (badge=PerspectiveCarrier, KpiTrend static, geograph, series via transform tagCell); ChartSeries.name deliberately NOT LocaleString (neutral output); config-no-locale-leak fitness
+- [i18n leak-proof + integrity (AR-37/AR-39)](project_i18n_integrity_ar37_ar39.md) — self-maintaining authoring gate (bag-completeness + pure-display-vocab, polymorphic value/year auto-excluded) + render gate + chrome-literal gate; chrome META.i18n mechanism (was dropped); NodeStatusContext consolidation via ONE usePanelTitleBadge publish point; feedback.ts en-only /ka leak FLAGGED (ADR anti-erosion)
 - [i18n label gate + Law-4 placement](project_i18n_label_and_law4_placement.md) — labelCompleteness fitness + authoring-metas.ts pure SSOT; where bilingual authoring schemas may live (core ALLOW vs meta/Node auto-exempt vs apps unscanned); gen:schema drift on label edits
 - [Value mappings architecture](project_value_mappings_architecture.md) — EXP-06 value→{text,token,icon}: core resolver / styles tokenColor / table MappedCell / panel FieldControl; token-bound (no hex), schema in panel not core
 - [Peer vite resolution (data-driven)](project_optional_peer_vite_resolution.md) — geostat+panel vite.config alias UNIONs all source-bundled @statdash/* peerDeps (react-router-dom/i18next + optional leaflet/apexcharts) past clean-Docker resolve failures; entry-file alias (browser-IIFE trap) + nested-export-condition gotcha + guard
@@ -80,3 +81,10 @@
 
 ## Auto-relocated (memory-home-guard — reconcile into a topic section)
 - [Chart low-cardinality render rule](project_chart_low_cardinality_render_rule.md) — few-series/few-bar canonical rule: seriesColorByIndex (interpreter flag → chartColorAt render) + autoBarFillPct bounded 64→34% + hbar content-height (bounded/scroll model, HBAR_MIN_HEIGHT retuned 240→380→560); branch feat/chart-lowcardinality-render un-merged
+
+## Auto-relocated (memory-home-guard — reconcile into a topic section)
+- [line-ending discipline](feedback_line_endings.md) — Edit tool can flip an LF file to CRLF on this Windows repo; verify EOL and normalize before committing
+
+## Auto-relocated (memory-home-guard — reconcile into a topic section)
+- [Chart low-cardinality render rule](project_chart_low_cardinality_render_rule.md) — few-series/few-bar canonical rule: seriesColorByIndex + bar thickness now an ABSOLUTE px CAP (barFillPctForCap: vbar 88px viewport-est, hbar 128px exact-height; supersedes autoBarFillPct 64→34%) + hbar content-height; branches feat/chart-lowcardinality-render + feat/bar-lowcardinality-proportion un-merged
+- [Chart low-cardinality render rule](project_chart_low_cardinality_render_rule.md) — few-series/few-bar canonical rule: seriesColorByIndex + bar thickness now an ABSOLUTE px CAP (barFillPctForCap; supersedes autoBarFillPct 64→34%) + hbar content-height (HBAR_MIN_HEIGHT 560); branches feat/chart-lowcardinality-render + feat/bar-lowcardinality-proportion un-merged

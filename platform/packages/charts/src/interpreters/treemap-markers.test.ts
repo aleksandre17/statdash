@@ -60,7 +60,7 @@ describe('treemap contribution-role markers', () => {
   it('leaves a flat categorical treemap (no total) unmarked — no spurious glyphs', () => {
     const rows = [row('Agriculture', 10), row('Industry', 20), row('Services', 30)]
     const out = interpretChart(def(), rows, CTX)
-    for (const c of out.categories) expect(c).not.toMatch(/^\([=+\-]\) /)
+    for (const c of out.categories) expect(c).not.toMatch(/^\([=+-]\) /)
     expect(out.categories).toEqual(['Agriculture', 'Industry', 'Services'])
   })
 })

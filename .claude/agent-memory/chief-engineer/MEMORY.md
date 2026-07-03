@@ -12,6 +12,7 @@
 - [Live-product audit](project_live_product_audit.md) — 2026-07-01 exhaustive :3002 sweep (F1-F18 in work/AUDIT-live-product.md); roots: live≠HEAD staleness, bare-string i18n contracts leak Georgian into EN, missing capability nodes
 - [Kit false-green classes](project_kit_false_green_classes.md) — 2026-07-01 .claude-OS closing gate: cp1252 hook stdout crashes (truncate SessionStart) + engine-stale project.json paths; how to re-detect
 - [State-B fix review](project_statebfix_review.md) — 2026-07-03 merge gate on useNodeRows async cache key: APPROVE-WITH-CONDITIONS; store-axis still not node-unique; useKpiRows debugger-rationale wrong
+- [AR-38 default asymmetry](project_ar38_default_asymmetry.md) — verified invariant: DimFilterRef `default` honored on KPI path ONLY (query path ignores it → needs `$ne:_T`); page vars resolve $ctx vs filterParams (literal '') not ctx.dims
 
 
 ---

@@ -46,3 +46,6 @@
 
 ## Auto-relocated (memory-home-guard — reconcile into a topic section)
 - [filter `default` is KPI-only](project_filter_default_kpi_only.md) — `{$ctx:dim,default:X}` honored only by kpi.ts; on type:"query" it's a silent no-op — use `{$ne:_T,$ctx:dim}` (AR-38 companion fix)
+
+## Auto-relocated (memory-home-guard — reconcile into a topic section)
+- [from→to connector words](project_from_to_connector_words.md) — range-picker "დან/მდე" words can't go in provisioning suffix (INV1 locale-completeness blocks empty en trailing slot); belongs in slice-meta catalog — new pattern, escalate

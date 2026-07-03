@@ -4,7 +4,8 @@
 - [CI DB gating](project_ci_db_gating.md) — how DB-gated suites un-skip; migrate vs seed vs self-provision preconditions
 - [Toolchain facts](project_toolchain_facts.md) — pnpm root is platform/, build:engine first, no node pin
 - [Deploy model](project_geostat_deploy_model.md) — jar vs context-dir server build layouts; node-vite remote tar-scope gap NOW FIXED; pre-existing test baseline
-- [LIVE deploy mechanism](project_live_deploy_mechanism.md) — REAL 192.168.1.199 path: server git clone /tmp/statdash-build + docker-compose v1 prod-file-ALONE; diverges from RUNBOOK; backup/rollback + smoke
+- [LIVE deploy mechanism](project_live_deploy_mechanism.md) — REAL 192.168.1.199 path: server git clone /tmp/statdash-build + docker-compose v1 prod-file-ALONE; 🔴 postgres data is EPHEMERAL (misconfigured volume) — NEVER `up --force-recreate` whole stack; backup/rollback + smoke
+- [geograph d3-geo](project_geograph_d3geo.md) — SVG choropleth: app peer-alias build contract (external lib = peerDep of pkg + direct dep of apps) + geojson CW-winding projection bug; READ THE MAP SCREENSHOT, DOM metrics lie
 - [API typecheck in-flight](project_api_typecheck_inflight.md) — RESOLVED: ADR-0027 region symbols landed (region.ts); apps/api typechecks fully green now
 - [check-laws path coupling](project_checklaws_path_coupling.md) — ops scripts hardcode lib dir paths (rename false-greens them); check-laws fully GREEN; check_zero strict retirement-lock helper vs check_ts content-law helper
 - [Structure migration log](project_migration_progress.md) — platform/ tree is now `packages/` (was `engine/`) + new zero-dep `@geostat/contracts`; npm scope rename to `@statdash/*` (Phase 5) is a deferred one-way door
@@ -48,3 +49,6 @@
 - [canonical partial-failure retry — RESOLVED](project_canonical_partial_failure_retry.md) — submitToGold (now in canonical-fsm-drive.ts) converges an identical already-published reference payload to a no-op (KindJob.converged) instead of 409; facts retry lands. Scoped to reference + AlreadyPublishedError
 - [observations multi-value filter](project_observations_multivalue_filter.md) — SDMX OR-within-dim: filter dim value may be scalar (AND containment) or JSON array (= ANY); buildDimFilter seam; scalar-only variant for the revision-triangle
 - [codelist label revision path](project_codelist_label_revision_path.md) — display-label-only fix (codes unchanged): re-ingest canonical → changed label changes hash → SCD-2 upsertClassifier updates gold; facts 409 EXPECTED; converter *_MEASURE_CORRECTIONS map
+
+## Auto-relocated (memory-home-guard — reconcile into a topic section)
+- [LIVE deploy mechanism](project_live_deploy_mechanism.md) — REAL 192.168.1.199 path: server git clone /tmp/statdash-build + docker-compose v1 prod-file-ALONE; diverges from RUNBOOK; backup/rollback + smoke

@@ -36,3 +36,7 @@
 
 ## [platform] Feedback
 - [Seed ETL decoupling](feedback_seed_etl_decoupling.md) — api seed imports geostat bundles via ACL + ambient @geostat/engine shim + cleared paths; never couple API to engine type graph
+
+## Auto-relocated (memory-home-guard — reconcile into a topic section)
+- [REGIONAL_GVA 2010-2015 revision (deferred)](project_regional_gva_2010_2015_revision.md) — 2026-07-03 source revises 2010-2015; only +2024 applied (0-drift); re-vintage pending
+- [FEATURED manifest](project_featured_manifest.md) — DATA/canonical/FEATURED.json governed featured-metrics (AR-40); yellow-fill authoring signal, coordinate→1 obs

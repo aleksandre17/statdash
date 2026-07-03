@@ -49,7 +49,7 @@ exports[`canonical parser — real fixtures (F-1 purity, F-5 Law-1) > ACCOUNTS_S
 
 exports[`canonical parser — real fixtures (F-1 purity, F-5 Law-1) > GDP_ANNUAL > F-1: bronze contract is stable (snapshot of the first/last obs + counts) 1`] = `
 {
-  "classifierCount": 28,
+  "classifierCount": 29,
   "firstClassifier": {
     "code": "PROD",
     "dimCode": "approach",
@@ -78,15 +78,15 @@ exports[`canonical parser — real fixtures (F-1 purity, F-5 Law-1) > GDP_ANNUAL
     "dimKey": {
       "approach": "_Z",
       "geo": "GE",
-      "measure": "non-observed-economy-share",
+      "measure": "gdp-deflator",
     },
     "obsAttribute": {},
     "obsStatus": "P",
-    "obsValue": 12.4,
-    "rowIndex": 384,
+    "obsValue": 4.636605038644404,
+    "rowIndex": 399,
     "timePeriod": "2025",
   },
-  "obsCount": 384,
+  "obsCount": 399,
 }
 `;
 
@@ -113,7 +113,7 @@ exports[`canonical parser — real fixtures (F-1 purity, F-5 Law-1) > REGIONAL_G
     },
     "obsAttribute": {},
     "obsStatus": "A",
-    "obsValue": 21821.56922225763,
+    "obsValue": 22148.65220205562,
     "rowIndex": 1,
     "timePeriod": "2010",
   },
@@ -125,10 +125,10 @@ exports[`canonical parser — real fixtures (F-1 purity, F-5 Law-1) > REGIONAL_G
     },
     "obsAttribute": {},
     "obsStatus": "A",
-    "obsValue": 950.2325177828116,
-    "rowIndex": 1554,
-    "timePeriod": "2023",
+    "obsValue": 1087.5792173616437,
+    "rowIndex": 1665,
+    "timePeriod": "2024",
   },
-  "obsCount": 1554,
+  "obsCount": 1665,
 }
 `;
