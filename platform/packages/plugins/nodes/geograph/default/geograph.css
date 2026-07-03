@@ -13,3 +13,55 @@
  *  the height:100% GeoMap root never collapses (--size-panel-min-height floor
  *  retained). This only changes the ratio COEFFICIENT — no height mechanism. */
 .panel__body[data-content="geo"] { --panel-ratio-role: 0.72; }
+
+/* ── geograph — declarative SVG choropleth ───────────────────────────────
+ *  The map is an inline <svg> whose region <path>s are projected from the
+ *  geojson DATA (see components/projection.ts), never from a measured DOM box —
+ *  so it renders identically whether the wrapper is visible or display:none.
+ *  Height is owned by .chart-wrap; the SVG fills it and scales via viewBox.
+ *  All colors are token-derived (agnostic, theme-flipping): a [data-tenant] /
+ *  dark-theme override rebrands with zero edits here. */
+.geo-map { position: relative; }
+.geo-map--loading { /* placeholder box while the geojson worker parses */ }
+
+.geo-map__svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* A region is a filled polygon; interactive regions (those with a geo dim value)
+ * get the pointer + a smooth hover/selection transition. Stroke width is driven in
+ * JS (non-scaling, screen-px) from the choropleth SSOT — CSS only handles motion +
+ * focus affordance so the two never fight over the same attribute. */
+.geo-map__region {
+  transition: fill-opacity 0.12s ease, stroke-width 0.12s ease;
+}
+.geo-map__region[role="button"] { cursor: pointer; }
+
+/* Keyboard focus: a visible ring IN ADDITION to the JS stroke-width bump, so the
+ * focused region is signalled by shape (ring + heavier stroke), never color alone
+ * (WCAG 1.4.1). :focus-visible keeps it keyboard-only (no ring on mouse click). */
+.geo-map__region:focus { outline: none; }
+.geo-map__region:focus-visible {
+  outline: 2px solid var(--color-accent, #0080BE);
+  outline-offset: 1px;
+}
+
+/* Hover/focus tooltip — a lightweight overlay positioned in wrapper-local coords.
+ * pointer-events:none so it never steals the hover from the region beneath it. */
+.geo-map__tooltip {
+  position: absolute;
+  z-index: 5;
+  pointer-events: none;
+  transform: translate(12px, 12px);
+  max-width: 16rem;
+  padding: 0.35rem 0.5rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  color: var(--color-text-primary);
+  box-shadow: var(--shadow-sm);
+  font-size: 0.8rem;
+  line-height: 1.35;
+}

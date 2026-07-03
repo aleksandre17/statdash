@@ -1,30 +1,38 @@
-// ── GeoMap — agnostic Leaflet choropleth component ────────────────────
+// ── GeoMap — agnostic DECLARATIVE d3-geo SVG choropleth ───────────────────────
 //
-//  Retool Map / Grafana Geomap panel equivalent — fully agnostic.
-//  Reads DataRow[] for tooltip values.
-//  geoCodeMap bridges ISO feature codes to store geo dim values.
-//  Calls onSelect(geoId) on region click; selectedGeos drives highlight.
-//  Multi-select: selected region names shown as text overlay (top-right).
+//  A static thematic choropleth of the configured regions, rendered as an inline
+//  SVG: every region is a <path> whose geometry is PROJECTED FROM THE GEOJSON DATA
+//  with a fixed Mercator projection fitted to a nominal box (see ./projection) —
+//  never from a measured DOM container. Fully agnostic (Retool Map / Grafana
+//  Geomap equivalent): reads DataRow[] for tooltip values; geoCodeMap bridges ISO
+//  feature codes to store geo dim values; onSelect(geoId) fires on region click;
+//  selectedGeos drives the highlight.
 //
-//  Height is owned by CSS (chart-wrap class — same pattern as charts).
-//  No height prop — parent CSS chain determines the size.
+//  Why declarative SVG (not Leaflet): Leaflet computes pixel geometry by MEASURING
+//  its DOM container. This map lives inside a chart↔table toggle (display:none when
+//  the table is active); a selection change while hidden re-projected against a 0×0
+//  box → every path degenerated to d="M0 0" → blank map. Five imperative Leaflet
+//  patches (invalidateSize / fitBounds / visibility-gate / setStyle / one-frame
+//  defer) failed on real prod. Deriving geometry from DATA + a fixed projection
+//  removes ALL DOM measurement, so `display:none` is irrelevant and the entire bug
+//  class is structurally impossible: the same paths render whether the wrapper is
+//  visible or hidden, because nothing here reads the box.
 //
+//  Height is owned by CSS (chart-wrap class — same pattern as charts). The SVG is
+//  width:100% + a data-fitted viewBox with preserveAspectRatio, so it scales
+//  responsively; strokes are non-scaling (screen-px) so selection weights read at
+//  every size. Choropleth fill/stroke resolve through the ./choropleth SSOT.
 
-import 'leaflet/dist/leaflet.css'
-import { useEffect, useMemo, useRef, useState } from 'react'
-import { GeoJSON, MapContainer, useMap } from 'react-leaflet'
-import L from 'leaflet'
+import { useEffect, useMemo, useState } from 'react'
 import type { DataRow } from '@statdash/engine'
 import { fmtNum } from '@statdash/engine'
-import { useContainerVisible } from '@statdash/react/engine'
 import {
   accentFill,
   choroplethColors,
-  choroplethLayerKey,
-  featureStyle,
   hoverStyle,
   resolveFeatureStyle,
 } from './choropleth'
+import { projectChoropleth } from './projection'
 
 // ── Types ──────────────────────────────────────────────────────────────
 
@@ -49,104 +57,69 @@ export interface GeoMapProps {
    */
   unit?:           string
   /**
-   * Initial map viewport before FitBounds adjusts to the geoJson extent.
-   * Optional — defaults to a neutral world view; FitBounds immediately
-   * reframes to the actual data, so this only affects the first paint frame.
+   * Accessible name for the whole map region (the SVG `role="group"`). The shell
+   * passes the already-resolved panel title, so no locale literal reaches this
+   * agnostic component. Optional — omitted → the group is unnamed but each region
+   * still carries its own aria-label.
+   */
+  ariaLabel?:      string
+  /**
+   * Vestigial map-viewport hints from the Leaflet era. The declarative projection
+   * fits the viewBox from the geojson data, so these are ACCEPTED (drop-in node
+   * contract) but ignored — no DOM viewport exists to seed.
    */
   initialCenter?:  [number, number]
   initialZoom?:    number
 }
 
-const WORLD_CENTER: [number, number] = [0, 0]
-const WORLD_ZOOM = 1
+// ── tooltip / a11y content — pure, agnostic (values + config labels only) ─────
 
-interface GeoFeatureProps {
-  [key: string]: string | number | boolean | null
+interface RegionText {
+  /** Primary label (region name, or the override for a no-data territory). */
+  name:    string
+  /** Secondary line (formatted value · pct), when the region has a data row. */
+  detail?: string
 }
 
-// The per-feature choropleth style function is the SSOT `featureStyle` /
-// `resolveFeatureStyle` in ./choropleth — shared by the <GeoJSON> mount `style`
-// prop and the imperative selection `setStyle` effect so the two never drift.
-
-// ── FitBounds — adjusts map viewport to data extent ──────────────────
-
-function FitBounds({ geoJson }: { geoJson: GeoJSON.FeatureCollection }) {
-  const map = useMap()
-  useEffect(() => {
-    const bounds = L.geoJSON(geoJson).getBounds()
-    if (bounds.isValid()) {
-      map.invalidateSize()
-      map.fitBounds(bounds, { padding: [12, 12], animate: false })
+function regionText(
+  row:            DataRow | undefined,
+  labelOverrides: Record<string, string> | undefined,
+  iso:            string,
+  unit:           string | undefined,
+): RegionText {
+  if (row) {
+    const unitSuffix = unit ? ` ${unit}` : ''
+    return {
+      name:   String(row.label),
+      detail: `${fmtNum(row.value, 0)}${unitSuffix} · ${fmtNum(row.pct ?? 0, 1)}%`,
     }
-  }, [map, geoJson])
-  return null
+  }
+  return { name: labelOverrides?.[iso] ?? iso }
 }
 
-// ── RepairOnShow — re-project after a hidden→shown transition (defect A) ──────
-//
-//  Root cause (pre-existing, independent of any recent chart-height regression):
-//  a chart↔table view toggle keeps the inactive map view MOUNTED but
-//  `display:none`. A cross-filter row-select changes `selectedGeos` WHILE the map
-//  is hidden → `<GeoJSON key={choroplethLayerKey(...)}>` (below) remounts the
-//  layer, and react-leaflet/Leaflet projects every path against the container's
-//  CURRENT box — 0×0 while hidden — so every path degenerates to `d="M0 0"`
-//  (blank map, unrecoverable on toggle-back; FitBounds above only re-fits on
-//  `[map, geoJson]`, neither of which changes on a re-show).
-//
-//  Fix: re-project whenever the container transitions NOT-laid-out → laid-out,
-//  regardless of WHY it was hidden or what changed while it was. Reuses the
-//  app-agnostic `useContainerVisible` gate (its docstring already names a map as
-//  an intended consumer) attached to the SAME chart-wrap box CSS sizes — no new
-//  DOM, no touch to the choropleth colour/selection model (occupied-red +
-//  selected-amber stay byte-identical; only the projection is repaired).
-//
-//  Deeper root-fix (NOW DONE — the VISIBILITY GATE on the <GeoJSON> in GeoMap
-//  below): the vector layer is mounted ONLY while `mapVisible` is true, so it is
-//  NEVER projected while the container is `display:none` (0×0). A selection or
-//  scale mutation while hidden therefore has no mounted layer to corrupt — the
-//  geometry can only ever project against a real, laid-out box (identical to
-//  ApexRenderer gating ReactApexChart on `visible`). This supersedes the earlier
-//  half-fixes (layer-key de-selection + in-place setStyle), both of which are KEPT
-//  for the VISIBLE path (a map-click restyles in place, no remount). RepairOnShow
-//  stays for TWO reasons: (1) it invalidateSize's the base map viewport on the
-//  hidden→shown transition so the re-shown container's size is correct, and (2)
-//  DEFENSE-IN-DEPTH re-fit — hardened to NEVER throw so any future regression
-//  degrades to a stale viewport rather than crashing the panel shell.
-//
-function boundsAreFinite(bounds: L.LatLngBounds): boolean {
-  if (!bounds.isValid()) return false
-  const ne = bounds.getNorthEast()
-  const sw = bounds.getSouthWest()
-  return [ne.lat, ne.lng, sw.lat, sw.lng].every(Number.isFinite)
-}
+/** Flatten RegionText into a single accessible-name / <title> string. */
+const ariaText = (t: RegionText): string => (t.detail ? `${t.name}, ${t.detail}` : t.name)
 
-export function RepairOnShow({ geoJson, visible }: { geoJson: GeoJSON.FeatureCollection; visible: boolean }) {
-  const map = useMap()
-  const wasVisible = useRef(visible)
+interface HoverState { iso: string; x: number; y: number }
+
+// ── worker load (one-shot per URL) ────────────────────────────────────────────
+//
+//  The worker fetches + parses the geojson off the main thread (heavy parse). The
+//  parsed FeatureCollection is the ONLY input to the projection, so nothing about
+//  the container box ever reaches the geometry. Same source the map has always used.
+
+function useGeoJsonLoad(
+  geoJsonUrl: string,
+  setGeoJson: (fc: GeoJSON.FeatureCollection) => void,
+) {
   useEffect(() => {
-    if (visible && !wasVisible.current) {
-      try {
-        // Only project against a REAL laid-out box: a 0×0 container is exactly
-        // what corrupts the projection to NaN, so measuring/fitting against it is
-        // the very thing to avoid.
-        const el = map.getContainer()
-        if (el && el.clientWidth > 0 && el.clientHeight > 0) {
-          map.invalidateSize()
-          const bounds = L.geoJSON(geoJson).getBounds()
-          // isValid() alone is not enough — a NaN corner can still report "valid";
-          // require finite LatLngs before fitBounds (which throws on NaN input).
-          if (boundsAreFinite(bounds)) {
-            map.fitBounds(bounds, { padding: [12, 12], animate: false })
-          }
-        }
-      } catch {
-        // Defense-in-depth: a re-projection failure must never escape to the
-        // error boundary (the crash this fix removes). Worst case = stale viewport.
-      }
+    const worker = new Worker(new URL('./worker.js', import.meta.url))
+    worker.postMessage({ url: geoJsonUrl })
+    worker.onmessage = (e) => {
+      if (e.data.success) setGeoJson(e.data.data)
     }
-    wasVisible.current = visible
-  }, [visible, map, geoJson])
-  return null
+    return () => { worker.terminate() }
+  }, [geoJsonUrl, setGeoJson])
 }
 
 // ── GeoMap ─────────────────────────────────────────────────────────────
@@ -161,175 +134,108 @@ export function GeoMap({
   labelOverrides,
   occupiedIso,
   unit,
-  initialCenter = WORLD_CENTER,
-  initialZoom = WORLD_ZOOM,
+  ariaLabel,
 }: GeoMapProps) {
   const [geoJson, setGeoJson] = useState<GeoJSON.FeatureCollection | null>(null)
+  const [hovered, setHovered] = useState<HoverState | null>(null)
 
-  // Hidden→shown re-projection gate (defect A — see RepairOnShow below). Attached
-  // to the SAME chart-wrap box the view-toggle CSS shows/hides; must be called
-  // unconditionally (before the `!geoJson` early return) — hook order.
-  const { ref: wrapRef, visible: mapVisible } = useContainerVisible<HTMLDivElement>()
-
-  const selectedRef = useRef(selectedGeos)
-  const onSelectRef = useRef(onSelect)
-  // Ref to the underlying Leaflet GeoJSON layer (react-leaflet exposes the L.GeoJSON
-  // instance via ref). Selection is repainted through this imperatively — see the
-  // setStyle effect below — so a row-pick NEVER remounts/re-projects the layer.
-  const layerRef = useRef<L.GeoJSON | null>(null)
-
-  useEffect(() => { selectedRef.current = selectedGeos }, [selectedGeos])
-  useEffect(() => { onSelectRef.current = onSelect },     [onSelect])
+  useGeoJsonLoad(geoJsonUrl, setGeoJson)
 
   // Value → color: assign each region a fill by quantile rank against the theme
-  // ramp. This is the choropleth encoding — without it every region paints the
-  // same accent and the map reads flat. Keyed by row.id (the geo dim value), which
-  // onEachFeature/style resolve from the feature ISO. See ./choropleth (SSOT).
+  // ramp (the choropleth encoding; without it every region paints one flat accent).
+  // Keyed by row.id (the geo dim value) which resolveFeatureStyle looks up from the
+  // feature ISO via geoCodeMap. See ./choropleth (SSOT).
   const colorByGeo = useMemo(() => choroplethColors(rows), [rows])
-  const colorFor = (geoId: string) => colorByGeo.get(geoId) ?? accentFill()
+  const colorFor   = (geoId: string) => colorByGeo.get(geoId) ?? accentFill()
   // OCCUPIED is keyed by the feature ISO (pre geoCodeMap) so it flags territories with
   // no data row too. Config-declared set — the engine stays agnostic (Law 1).
   const occupiedSet = useMemo(() => new Set(occupiedIso ?? []), [occupiedIso])
+  const rowById     = useMemo(() => new Map(rows.map(r => [String(r.id), r])), [rows])
 
-  // Selection highlight = a STYLE-only change, applied IN PLACE on the mounted
-  // layer — the map's own documented root-fix. Because the <GeoJSON> is no longer
-  // keyed on selection, this restyle is the entire selection-repaint path: it runs
-  // whether the map is visible or `display:none`, and setStyle only rewrites path
-  // attributes (fill/opacity/weight) — it does NOT re-project geometry, so it is
-  // safe against a 0×0 hidden container (no NaN). Resolves through the SAME
-  // resolveFeatureStyle SSOT as the mount `style` prop, so occupied→red /
-  // selected→amber / base-ramp stay byte-identical between mount and restyle.
-  useEffect(() => {
-    const layer = layerRef.current
-    if (!layer) return
-    layer.setStyle((feature) =>
-      resolveFeatureStyle(feature as GeoJSON.Feature | undefined, {
-        isoField,
-        geoCodeMap,
-        colorFor,
-        selectedGeos,
-        occupiedSet,
-      }),
-    )
-    // colorFor is derived from colorByGeo (its only closure dep); listing colorByGeo
-    // keeps the restyle correct when warm rows change the ramp without an extra dep.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedGeos, occupiedSet, colorByGeo, isoField, geoCodeMap])
+  // Project ALL regions from the data — pure, deterministic, DOM-free. Recomputed
+  // only when the geometry itself changes (not on selection/hover/visibility).
+  const projected = useMemo(() => (geoJson ? projectChoropleth(geoJson) : null), [geoJson])
 
-  useEffect(() => {
-    const worker = new Worker(
-        new URL('./worker.js', import.meta.url)
-    );
+  if (!geoJson || !projected) return <div className="chart-wrap geo-map geo-map--loading" />
 
-    worker.postMessage({
-      url: geoJsonUrl
-    });
-
-    worker.onmessage = (e) => {
-      if (e.data.success) {
-        setGeoJson(e.data.data);
-      }
-    };
-
-    return () => {
-      worker.terminate();
-    };
-  }, [geoJsonUrl]);
-
-  // wrapRef attaches on BOTH branches (loading + loaded): useContainerVisible's
-  // observer is set up once on first mount ([] deps) — if the ref only attached
-  // after geoJson resolved, the loading-phase mount would leave ref.current null
-  // forever and the observer would never be established.
-  if (!geoJson) return <div ref={wrapRef} className="chart-wrap geo-map-loading" />
-
-  const onEachFeature = (
-    feature: GeoJSON.Feature<GeoJSON.Geometry, GeoFeatureProps>,
-    layer:   L.Layer,
-  ) => {
-    const iso   = String(feature.properties?.[isoField] ?? '')
-    const geoId = geoCodeMap[iso]
-    const row   = rows.find(r => r.id === geoId)
-
-    if (row) {
-      const unitSuffix = unit ? ` ${unit}` : ''
-      layer.bindTooltip(
-        `<strong>${row.label}</strong><br/>${fmtNum(row.value, 0)}${unitSuffix} · ${fmtNum(row.pct ?? 0, 1)}%`,
-        { sticky: true },
-      )
-    } else {
-      const override = labelOverrides?.[iso]
-      if (override) {
-        layer.bindTooltip(`<strong>${override}</strong>`, { sticky: true })
-      }
-    }
-
-    layer.on({
-      mouseover(e) {
-        if (!selectedRef.current.includes(geoId)) {
-          ;(e.target as L.Path).setStyle(hoverStyle())
-        }
-      },
-      mouseout(e) {
-        ;(e.target as L.Path).setStyle(featureStyle(colorFor(geoId), selectedRef.current.includes(geoId), occupiedSet.has(iso)))
-      },
-      click() {
-        if (!geoId) return
-        onSelectRef.current(geoId)
-      },
-    })
+  // Tooltip anchoring: convert a viewport point to wrapper-local coords. Reading the
+  // wrapper rect positions the OVERLAY only — the map geometry never depends on it,
+  // so this cannot reintroduce the hidden-container defect.
+  const moveTooltip = (iso: string, clientX: number, clientY: number, target: Element) => {
+    const box = target.closest('.geo-map')?.getBoundingClientRect()
+    if (!box) return
+    setHovered({ iso, x: clientX - box.left, y: clientY - box.top })
   }
 
+  const tip = hovered
+    ? regionText(rowById.get(geoCodeMap[hovered.iso]), labelOverrides, hovered.iso, unit)
+    : null
+
   return (
-    <div ref={wrapRef} className="chart-wrap" style={{ position: 'relative' }}>
-      <MapContainer
-        center={initialCenter}
-        zoom={initialZoom}
-        zoomSnap={0}
-        zoomDelta={0.25}
-        style={{ height: '100%', width: '100%', background: 'transparent' }}
-        scrollWheelZoom={false}
-        doubleClickZoom={false}
-        dragging={false}
-        zoomControl={false}
-        attributionControl={false}
+    <div className="chart-wrap geo-map">
+      <svg
+        className="geo-map__svg"
+        viewBox={projected.viewBox}
+        preserveAspectRatio="xMidYMid meet"
+        role="group"
+        aria-label={ariaLabel}
       >
-        {/* VISIBILITY GATE — the proven ApexRenderer pattern (useContainerVisible).
-            The vector layer is mounted ONLY while its container is actually laid out
-            (`mapVisible`). While the map sits behind `display:none` (table view
-            active) the <GeoJSON> is UNMOUNTED — so a selection/scale mutation while
-            hidden has NO Leaflet layer to project against a 0×0 box, and therefore
-            cannot corrupt every path to `d="M0 0"` (the permanent-blank defect). When
-            the view toggles back, `mapVisible` flips true and the layer mounts FRESH,
-            projecting the geometry against the now-valid container → real paths. This
-            is byte-identical in spirit to ApexRenderer gating ReactApexChart on
-            `visible`: if a box-measuring library never mounts against a 0×0 box, it
-            can never be corrupted by one. RepairOnShow below still invalidateSize's on
-            the same transition so the base viewport is correct. */}
-        {mapVisible && (
-          <GeoJSON
-            // Key ONLY on the choropleth SCALE (structural) — NOT selection. A
-            // selection change repaints via the setStyle effect above (in place, no
-            // remount) while visible; while hidden the layer is unmounted so there is
-            // nothing to remount. Warm-row colour changes still change the key →
-            // remount+repaint on the (visible) layer, preserving the async flat-map fix.
-            key={choroplethLayerKey(colorByGeo)}
-            ref={layerRef}
-            data={geoJson}
-            style={(feature) =>
-              resolveFeatureStyle(feature as GeoJSON.Feature | undefined, {
-                isoField,
-                geoCodeMap,
-                colorFor,
-                selectedGeos,
-                occupiedSet,
-              })
-            }
-            onEachFeature={onEachFeature}
-          />
-        )}
-        <FitBounds geoJson={geoJson} />
-        <RepairOnShow geoJson={geoJson} visible={mapVisible} />
-      </MapContainer>
+        {projected.features.map(({ feature, d }) => {
+          const iso      = String(feature.properties?.[isoField] ?? '')
+          const geoId    = geoCodeMap[iso]
+          const selected = selectedGeos.includes(geoId)
+          const occupied = occupiedSet.has(iso)
+          const base     = resolveFeatureStyle(feature, { isoField, geoCodeMap, colorFor, selectedGeos, occupiedSet })
+          // Hover/focus bump reuses the SSOT hoverStyle (opacity + weight only), and
+          // only for a non-selected region (a selected region already reads its
+          // distinct highlight — matching the old mouseover-skip-if-selected).
+          const active   = hovered?.iso === iso && !selected
+          const hv       = active ? hoverStyle() : null
+          const text     = regionText(rowById.get(geoId), labelOverrides, iso, unit)
+          const label    = ariaText(text)
+          const interactive = Boolean(geoId)
+
+          return (
+            <path
+              key={iso}
+              d={d}
+              className="geo-map__region"
+              vectorEffect="non-scaling-stroke"
+              fill={base.fillColor}
+              fillOpacity={hv?.fillOpacity ?? base.fillOpacity}
+              stroke={base.color}
+              strokeWidth={hv?.weight ?? base.weight}
+              data-selected={selected || undefined}
+              data-occupied={occupied || undefined}
+              tabIndex={interactive ? 0 : undefined}
+              role={interactive ? 'button' : 'img'}
+              aria-pressed={interactive ? selected : undefined}
+              aria-label={label}
+              onClick={interactive ? () => onSelect(geoId) : undefined}
+              onKeyDown={interactive ? (e) => {
+                if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelect(geoId) }
+              } : undefined}
+              onMouseEnter={(e) => moveTooltip(iso, e.clientX, e.clientY, e.currentTarget)}
+              onMouseMove={(e) => moveTooltip(iso, e.clientX, e.clientY, e.currentTarget)}
+              onMouseLeave={() => setHovered(null)}
+              onFocus={(e) => {
+                const r = e.currentTarget.getBoundingClientRect()
+                moveTooltip(iso, r.left + r.width / 2, r.top + r.height / 2, e.currentTarget)
+              }}
+              onBlur={() => setHovered(null)}
+            >
+              <title>{label}</title>
+            </path>
+          )
+        })}
+      </svg>
+
+      {hovered && tip && (
+        <div className="geo-map__tooltip" role="tooltip" style={{ left: hovered.x, top: hovered.y }}>
+          <strong>{tip.name}</strong>
+          {tip.detail && <><br />{tip.detail}</>}
+        </div>
+      )}
     </div>
   )
 }
