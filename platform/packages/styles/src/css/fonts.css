@@ -1,0 +1,67 @@
+/* ================================================================
+   @statdash/styles — Self-hosted platform typeface (FiraGO)
+
+   The platform's canonical, brand-NEUTRAL body/UI/display family. Wired
+   through the --font-family-{base,display} roles in tokens.css; every
+   consumer reads the role, never this family name (Law 1 / SSOT). A tenant
+   theme may still rebind those roles to its own brand face — this file only
+   provides the platform DEFAULT.
+
+   Why FiraGO (design-system rationale):
+     · ONE harmonious super-family covering Latin + Latin-ext + full modern
+       GEORGIAN (Mkhedruli, 48 glyphs) with MATCHING weights, so the bilingual
+       ka/en UI reads as one intentional voice — not a mismatched pairing.
+       FiraGO is the libre extension of Fira Sans (Mozilla's UI face) adding
+       Georgian/Arabic/etc.; Fira's humanist-grotesque forms are tuned for
+       screen UI + dense data, exactly this product's need.
+     · Tabular figures (OpenType 'tnum'/'lnum', preserved in the subset) — the
+       data tables / KPIs request them via `font-variant-numeric: tabular-nums`
+       and FiraGO honours it, so columns of statistics align by digit. A
+       statistical product needs this; system-ui does not guarantee it.
+     · Includes ₾ (U+20BE, Georgian Lari) — required for this economy's figures.
+     · SIL Open Font License 1.1 (see ./fonts/OFL.txt) — free to self-host and
+       redistribute. SELF-HOSTED (no third-party CDN): offline-capable, no
+       fonts.gstatic.com privacy leak, deterministic performance.
+
+   Subset: Latin (Basic + Latin-1 + Latin-ext-A/B + combining), Georgian
+   (U+10A0–10FF), General Punctuation, Currency (incl. ₾), Letterlike & a few
+   symbol ranges. Produced with fonttools `subset --layout-features='*'`
+   (kern/tnum/liga retained) → woff2. ~72 KB / weight × 4 weights ≈ 290 KB.
+
+   Weights map 1:1 onto the --font-weight-* token scale:
+     400 regular · 500 medium · 600 semibold · 700 bold.
+   `font-display: swap` — text paints immediately in the fallback, then swaps
+   to FiraGO (no invisible-text FOIT; a data page must be readable at once).
+   ================================================================ */
+
+@font-face {
+  font-family: 'FiraGO';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('./fonts/firago-400-normal.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'FiraGO';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url('./fonts/firago-500-normal.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'FiraGO';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url('./fonts/firago-600-normal.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'FiraGO';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('./fonts/firago-700-normal.woff2') format('woff2');
+}

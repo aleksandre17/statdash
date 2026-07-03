@@ -190,17 +190,27 @@
   --letter-spacing-normal: 0;
   --letter-spacing-wide:   0.04em;
 
-  /* ── Typography: font families (generic; app maps brand) ──────
-     Brand-NEUTRAL defaults — packages/ ships NO tenant font name. A tenant
-     theme ([data-tenant] / manifest.theme) rebinds these role VALUES, exactly
-     as it rebinds the accent role; the shells reference the role, never a
-     family. Three roles:
+  /* ── Typography: font families (canonical platform typeface) ──────
+     The platform DEFAULT is a self-hosted, brand-NEUTRAL super-family: FiraGO
+     (@font-face in ./fonts.css) — libre (OFL-1.1), covering Latin + full
+     modern Georgian (Mkhedruli) with matching weights, plus tabular figures
+     for the data tables/KPIs. This is NOT a tenant brand: it is the platform's
+     canonical face, so packages/ may name it (the FF-BRAND-NEUTRAL-FONTS gate
+     bans only tenant BRAND fonts — 'Noto …', 'BPG …' — never the neutral
+     platform family). A tenant theme ([data-tenant] / manifest.theme) may
+     still rebind these role VALUES to its own brand face, exactly as it
+     rebinds the accent role; the shells reference the ROLE, never a family.
+     Three roles:
        base    — body / UI text
        display — hero titles, section/panel headings, KPI values (the heading
                  axis that previously leaked tenant fonts into 8 plugin CSS files)
-       mono    — code / tabular figures */
-  --font-family-base:    system-ui, -apple-system, sans-serif;
-  --font-family-display: system-ui, -apple-system, sans-serif;
+       mono    — code / tabular figures
+     Fallback stack is deliberately brand-NEUTRAL (no Georgian brand-font name,
+     which the gate would reject): during the swap window or on a load failure,
+     the OS UI face renders — Segoe UI / San Francisco / etc. carry Georgian on
+     their platforms. */
+  --font-family-base:    'FiraGO', system-ui, -apple-system, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+  --font-family-display: 'FiraGO', system-ui, -apple-system, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
   --font-family-mono:    ui-monospace, 'Courier New', monospace;
 
   /* ── TIER 1 · PRIMITIVE — Neutral gray scale (dark mode inverts) ─── */

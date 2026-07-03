@@ -44,8 +44,9 @@ export const LETTER_SPACING = {
 } as const satisfies Record<string, string>
 
 export const FONT_FAMILY = {
-  base: 'var(--font-family-base)',
-  mono: 'var(--font-family-mono)',
+  base:    'var(--font-family-base)',
+  display: 'var(--font-family-display)',
+  mono:    'var(--font-family-mono)',
 } as const satisfies Record<string, string>
 
 export type FontSizeToken      = typeof FONT_SIZE[keyof typeof FONT_SIZE]
