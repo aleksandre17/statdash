@@ -1,0 +1,284 @@
+{
+  "schemaVersion": 1,
+  "kind": "featured-metrics",
+  "description": "Governed collection of featured headline statistics for the landing-page slider (AR-40, first consumer). Authoring signal = yellow cell fill (FFFFFF00) in the GeoStat source workbooks; each coordinate resolves to exactly one published observation in DATA/canonical/*.xlsx (verified diff=0).",
+  "generatedAt": "2026-07-03",
+  "source": {
+    "signal": "cell fill FFFFFF00 (yellow)",
+    "workbooks": [
+      "1.National Accounts_Data.xlsx",
+      "2 GDP მონაცემები.xlsx",
+      "3.რეგიონული მშპ.xlsx"
+    ]
+  },
+  "featured": [
+    {
+      "id": "acc-gni-2025",
+      "dataset": "ACCOUNTS_SEQUENCE",
+      "coordinate": {
+        "account": "allocation-of-primary-income-account",
+        "side": "U",
+        "measure": "B5G",
+        "time": "2025"
+      },
+      "value": 98035.26340716243,
+      "unit": "GEL_MN",
+      "obsStatus": "A",
+      "label": {
+        "ka": "მთლიანი ეროვნული შემოსავალი",
+        "en": "Gross National income"
+      },
+      "provenance": {
+        "workbook": "1.National Accounts_Data.xlsx",
+        "sheet": "GEO",
+        "valueCell": "F406",
+        "labelCell": "E406",
+        "fill": "FFFFFF00"
+      },
+      "order": 1
+    },
+    {
+      "id": "acc-gdi-2025",
+      "dataset": "ACCOUNTS_SEQUENCE",
+      "coordinate": {
+        "account": "secondary-distribution-of-income-account",
+        "side": "U",
+        "measure": "B6G",
+        "time": "2025"
+      },
+      "value": 107780.82881385353,
+      "unit": "GEL_MN",
+      "obsStatus": "A",
+      "label": {
+        "ka": "მთლიანი განკარგვადი შემოსავალი",
+        "en": "Gross Disposable income"
+      },
+      "provenance": {
+        "workbook": "1.National Accounts_Data.xlsx",
+        "sheet": "GEO",
+        "valueCell": "F410",
+        "labelCell": "E410",
+        "fill": "FFFFFF00"
+      },
+      "order": 2
+    },
+    {
+      "id": "acc-gross-saving-2025",
+      "dataset": "ACCOUNTS_SEQUENCE",
+      "coordinate": {
+        "account": "use-of-disposable-income-account",
+        "side": "U",
+        "measure": "B8G",
+        "time": "2025"
+      },
+      "value": 19355.226256026603,
+      "unit": "GEL_MN",
+      "obsStatus": "A",
+      "label": {
+        "ka": "მთლიანი დანაზოგი",
+        "en": "Gross Savings"
+      },
+      "provenance": {
+        "workbook": "1.National Accounts_Data.xlsx",
+        "sheet": "GEO",
+        "valueCell": "F413",
+        "labelCell": "E413",
+        "fill": "FFFFFF00"
+      },
+      "order": 3
+    },
+    {
+      "id": "acc-net-lending-borrowing-2025",
+      "dataset": "ACCOUNTS_SEQUENCE",
+      "coordinate": {
+        "account": "capital-account",
+        "side": "U",
+        "measure": "B9",
+        "time": "2025"
+      },
+      "value": -2835.8834782014455,
+      "unit": "GEL_MN",
+      "obsStatus": "A",
+      "label": {
+        "ka": "წმინდა დაკრედიტება (+), წმინდა სესხება(-)",
+        "en": "Net lending (+), Net borrowing(-)"
+      },
+      "provenance": {
+        "workbook": "1.National Accounts_Data.xlsx",
+        "sheet": "GEO",
+        "valueCell": "F419",
+        "labelCell": "E419",
+        "fill": "FFFFFF00"
+      },
+      "order": 4
+    },
+    {
+      "id": "gdp-real-growth-2025",
+      "dataset": "GDP_ANNUAL",
+      "coordinate": {
+        "approach": "_Z",
+        "measure": "real-gdp-growth-rates",
+        "geo": "GE",
+        "time": "2025"
+      },
+      "value": 7.461614924163996,
+      "unit": "PCT",
+      "obsStatus": "P",
+      "label": {
+        "ka": "რეალური მთლიანი შიდა პროდუქტის ზრდა",
+        "en": "Real GDP growth rates"
+      },
+      "provenance": {
+        "workbook": "2 GDP მონაცემები.xlsx",
+        "sheet": "მონაცემები geo",
+        "valueCell": "S17",
+        "fill": "FFFFFF00"
+      },
+      "order": 5
+    },
+    {
+      "id": "gdp-per-capita-usd-2025",
+      "dataset": "GDP_ANNUAL",
+      "coordinate": {
+        "approach": "_Z",
+        "measure": "gdp-per-capita-usd",
+        "geo": "GE",
+        "time": "2025"
+      },
+      "value": 10296.544362994053,
+      "unit": "USD",
+      "obsStatus": "P",
+      "label": {
+        "ka": "მთლიანი შიდა პროდუქტი ერთ სულ მოსახლეზე, აშშ დოლარი",
+        "en": "GDP per capita, USD"
+      },
+      "provenance": {
+        "workbook": "2 GDP მონაცემები.xlsx",
+        "sheet": "მონაცემები geo",
+        "valueCell": "S18",
+        "fill": "FFFFFF00"
+      },
+      "order": 6
+    },
+    {
+      "id": "gdp-gdp-current-prices-2025",
+      "dataset": "GDP_ANNUAL",
+      "coordinate": {
+        "approach": "_Z",
+        "measure": "gross-domestic-product-at-current-prices",
+        "geo": "GE",
+        "time": "2025"
+      },
+      "value": 104598.139883332,
+      "unit": "GEL_MN",
+      "obsStatus": "P",
+      "label": {
+        "ka": "მთლიანი შიდა პროდუქტი საბაზრო ფასებში",
+        "en": "Gross Domestic Product at current prices"
+      },
+      "provenance": {
+        "workbook": "2 GDP მონაცემები.xlsx",
+        "sheet": "მონაცემები geo",
+        "valueCell": "S19",
+        "fill": "FFFFFF00"
+      },
+      "order": 7
+    },
+    {
+      "id": "reg-r2-2024",
+      "dataset": "REGIONAL_GVA",
+      "coordinate": {
+        "geo": "R2",
+        "sector": "_T",
+        "measure": "GVA",
+        "time": "2024"
+      },
+      "value": 49374.72070890671,
+      "unit": "GEL_MN",
+      "obsStatus": "A",
+      "label": {
+        "ka": "თბილისი",
+        "en": "Tbilisi"
+      },
+      "provenance": {
+        "workbook": "3.რეგიონული მშპ.xlsx",
+        "sheet": "მონაცემები",
+        "valueCell": "Q3",
+        "fill": "FFFFFF00"
+      },
+      "order": 8
+    },
+    {
+      "id": "reg-r3-2024",
+      "dataset": "REGIONAL_GVA",
+      "coordinate": {
+        "geo": "R3",
+        "sector": "_T",
+        "measure": "GVA",
+        "time": "2024"
+      },
+      "value": 8634.02452689686,
+      "unit": "GEL_MN",
+      "obsStatus": "A",
+      "label": {
+        "ka": "აჭარის ა.რ.",
+        "en": "Adjara A.R."
+      },
+      "provenance": {
+        "workbook": "3.რეგიონული მშპ.xlsx",
+        "sheet": "მონაცემები",
+        "valueCell": "Q4",
+        "fill": "FFFFFF00"
+      },
+      "order": 9
+    },
+    {
+      "id": "reg-r5-2024",
+      "dataset": "REGIONAL_GVA",
+      "coordinate": {
+        "geo": "R5",
+        "sector": "_T",
+        "measure": "GVA",
+        "time": "2024"
+      },
+      "value": 7203.151022643833,
+      "unit": "GEL_MN",
+      "obsStatus": "A",
+      "label": {
+        "ka": "იმერეთი",
+        "en": "Imereti"
+      },
+      "provenance": {
+        "workbook": "3.რეგიონული მშპ.xlsx",
+        "sheet": "მონაცემები",
+        "valueCell": "Q6",
+        "fill": "FFFFFF00"
+      },
+      "order": 10
+    },
+    {
+      "id": "reg-r11-2024",
+      "dataset": "REGIONAL_GVA",
+      "coordinate": {
+        "geo": "R11",
+        "sector": "_T",
+        "measure": "GVA",
+        "time": "2024"
+      },
+      "value": 6638.03769475541,
+      "unit": "GEL_MN",
+      "obsStatus": "A",
+      "label": {
+        "ka": "ქვემო ქართლი",
+        "en": "Kvemo Kartli"
+      },
+      "provenance": {
+        "workbook": "3.რეგიონული მშპ.xlsx",
+        "sheet": "მონაცემები",
+        "valueCell": "Q12",
+        "fill": "FFFFFF00"
+      },
+      "order": 11
+    }
+  ]
+}
