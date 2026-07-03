@@ -161,12 +161,12 @@ export function renderPage(slug: string, locale: string, mode?: Mode) {
 //  is the first number-like run in a cell, spaces stripped. Non-numeric cells
 //  ("Total", "—", labels) yield nothing. This is layout-agnostic: it collects the
 //  POOL of values the page rendered, so an anchor is matched wherever it surfaces.
-const NUM_RE = /-?\d{1,3}(?:[  ]\d{3})*(?:\.\d+)?|-?\d+(?:\.\d+)?/
+const NUM_RE = /-?\d{1,3}(?:[ \u00A0]\d{3})*(?:\.\d+)?|-?\d+(?:\.\d+)?/
 
 function parseCellNumber(text: string): number | null {
   const m = NUM_RE.exec(text.trim())
   if (!m) return null
-  const n = Number(m[0].replace(/[  ]/g, ''))
+  const n = Number(m[0].replace(/[ \u00A0]/g, ''))
   return Number.isFinite(n) ? n : null
 }
 
