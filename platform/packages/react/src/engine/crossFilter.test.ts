@@ -160,11 +160,18 @@ describe('cross-filter link dispatch logic', () => {
       },
     ]
 
+    // `key`/`fromField` are now ActionField (string | { $ctx }) — Postel-widened
+    // for state-bound refs (AR-38 §4.1). This contract test uses bare-string
+    // literals, so a local narrow (byte-identical to the runtime bare-string path)
+    // keeps it node-pure without importing the React-bound resolver.
+    const fieldName = (v: FilterAction['key'] | undefined): string | undefined =>
+      v == null ? undefined : typeof v === 'string' ? v : v.$ctx
     for (const handler of handlers) {
       if (handler.event === 'row:click') {
         for (const action of handler.actions) {
           if (action.type === 'filter') {
-            mockSet(action.key, row[action.fromField ?? action.key])
+            const k = fieldName(action.key)!
+            mockSet(k, row[fieldName(action.fromField) ?? k])
           }
         }
       }

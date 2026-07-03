@@ -20,6 +20,9 @@ function mockCtx(overrides: Partial<RenderContext> = {}): { ctx: RenderContext; 
     filterParams: {},
     resolveLinks: () => [],
     bus:          { dispatch },
+    // Ref-lowering services for state-bound `{$ctx}` action fields (AR-38 §4.1).
+    sectionCtx:   { dims: {} },
+    vars:         {},
     ...overrides,
   } as unknown as RenderContext
   return { ctx, dispatch }
@@ -80,6 +83,50 @@ describe('useNodeInteractions — FF-XF-SELECT-WRITES', () => {
 
     result.current.emit('point:click', { region: 'R5' })
     expect(dispatch).toHaveBeenCalledWith({ type: 'filter:set', key: 'region', value: 'R5' })
+  })
+
+  // ── AR-38 §4.1 — state-bound `{$ctx:_selKey}` action key (the composition pivot) ──
+  //  The composition table's row:click writes `key:{$ctx:_selKey}`. `_selKey` is a page
+  //  var resolving to `region` — so the SAME handler targets the `region` param whether
+  //  the table is a SimpleTable (State A: rows=region) or a PivotTable (State B: region
+  //  on the series/column axis, click emits a representative row whose id is the region
+  //  code). The rotation targets `region` in BOTH states — this is the fix's spine.
+  describe('FF-ACTION-KEY-POSTEL — state-bound {$ctx} key rotates via the one write point', () => {
+    const def = {
+      type: 'table',
+      on: [{ event: 'row:click', actions: [
+        { type: 'filter', key: { $ctx: '_selKey' }, fromField: 'id', mode: 'toggle', max: 10 },
+      ] }],
+    } as unknown as NodeBase
+
+    it('State A (SimpleTable row) → writes the region param (key resolved from vars)', () => {
+      const { ctx, dispatch } = mockCtx({
+        vars: { _selKey: 'region' }, sectionCtx: { dims: {} } as never, filterParams: {},
+      })
+      const { result } = renderHook(() => useNodeInteractions(def, ctx))
+      result.current.emit('row:click', { id: 'R2' })
+      expect(dispatch).toHaveBeenCalledWith({ type: 'filter:set', key: 'region', value: 'R2' })
+    })
+
+    it('State B (pivot series-representative row) → adds a 2nd region to the SAME param', () => {
+      const { ctx, dispatch } = mockCtx({
+        vars: { _selKey: 'region' }, sectionCtx: { dims: {} } as never,
+        filterParams: { region: 'R2' },
+      })
+      const { result } = renderHook(() => useNodeInteractions(def, ctx))
+      // The pivot emits a representative row of the clicked region series (id = code).
+      result.current.emit('row:click', { id: 'R5', series: 'Imereti', label: 'Agriculture' })
+      expect(dispatch).toHaveBeenCalledWith({ type: 'filter:set', key: 'region', value: 'R2,R5' })
+    })
+
+    it('a `$ctx` key preferring dims over vars still resolves (one dispatcher, dims→vars)', () => {
+      const { ctx, dispatch } = mockCtx({
+        vars: {}, sectionCtx: { dims: { _selKey: 'region' } } as never,
+      })
+      const { result } = renderHook(() => useNodeInteractions(def, ctx))
+      result.current.emit('row:click', { id: 'R9' })
+      expect(dispatch).toHaveBeenCalledWith({ type: 'filter:set', key: 'region', value: 'R9' })
+    })
   })
 
   it('is inert when no handler matches the trigger (no write)', () => {

@@ -128,13 +128,14 @@ export { useKpiRows }              from './useKpiRows'
 //  selection gesture (chart point:click, table row:click, map selection:change)
 //  through the single CommandBus write point via the pure applySelection reducer.
 //  No shell wires selection itself (FF-XF-ONE-WRITE-POINT).
-export { useNodeInteractions }     from './useNodeInteractions'
+export { useNodeInteractions, resolveActionField } from './useNodeInteractions'
 export type { NodeInteractions }   from './useNodeInteractions'
 export type {
   NodeEventTrigger,
   NodeEventHandler,
   NodeAction,
   FilterAction,
+  ActionField,
   SelectionMode,
 }                                  from './node-events'
 
