@@ -100,14 +100,18 @@ function FitBounds({ geoJson }: { geoJson: GeoJSON.FeatureCollection }) {
 //  DOM, no touch to the choropleth colour/selection model (occupied-red +
 //  selected-amber stay byte-identical; only the projection is repaired).
 //
-//  Deeper root-fix (NOW DONE — see the `layerRef` + selection `setStyle` effect in
-//  GeoMap below): the <GeoJSON> layer is no longer keyed on selection, so a
-//  row-pick while hidden restyles the existing paths in place instead of remounting
-//  and re-projecting against a 0×0 box. The remount window that produced
-//  `LatLng(NaN, NaN)` is gone. RepairOnShow stays as DEFENSE-IN-DEPTH: it re-fits
-//  on a hidden→shown transition, and is now hardened to NEVER throw — every guard
-//  below must hold before fitBounds runs, and the whole body is wrapped so a future
-//  regression can degrade to a stale viewport rather than crash the panel shell.
+//  Deeper root-fix (NOW DONE — the VISIBILITY GATE on the <GeoJSON> in GeoMap
+//  below): the vector layer is mounted ONLY while `mapVisible` is true, so it is
+//  NEVER projected while the container is `display:none` (0×0). A selection or
+//  scale mutation while hidden therefore has no mounted layer to corrupt — the
+//  geometry can only ever project against a real, laid-out box (identical to
+//  ApexRenderer gating ReactApexChart on `visible`). This supersedes the earlier
+//  half-fixes (layer-key de-selection + in-place setStyle), both of which are KEPT
+//  for the VISIBLE path (a map-click restyles in place, no remount). RepairOnShow
+//  stays for TWO reasons: (1) it invalidateSize's the base map viewport on the
+//  hidden→shown transition so the re-shown container's size is correct, and (2)
+//  DEFENSE-IN-DEPTH re-fit — hardened to NEVER throw so any future regression
+//  degrades to a stale viewport rather than crashing the panel shell.
 //
 function boundsAreFinite(bounds: L.LatLngBounds): boolean {
   if (!bounds.isValid()) return false
@@ -289,26 +293,40 @@ export function GeoMap({
         zoomControl={false}
         attributionControl={false}
       >
-        <GeoJSON
-          // Key ONLY on the choropleth SCALE (structural) — NOT selection. A
-          // selection change repaints via the setStyle effect above, so it can no
-          // longer remount the layer while hidden and collapse the projection to
-          // NaN. Warm-row colour changes still change the key → remount+repaint,
-          // preserving the async flat-map fix.
-          key={choroplethLayerKey(colorByGeo)}
-          ref={layerRef}
-          data={geoJson}
-          style={(feature) =>
-            resolveFeatureStyle(feature as GeoJSON.Feature | undefined, {
-              isoField,
-              geoCodeMap,
-              colorFor,
-              selectedGeos,
-              occupiedSet,
-            })
-          }
-          onEachFeature={onEachFeature}
-        />
+        {/* VISIBILITY GATE — the proven ApexRenderer pattern (useContainerVisible).
+            The vector layer is mounted ONLY while its container is actually laid out
+            (`mapVisible`). While the map sits behind `display:none` (table view
+            active) the <GeoJSON> is UNMOUNTED — so a selection/scale mutation while
+            hidden has NO Leaflet layer to project against a 0×0 box, and therefore
+            cannot corrupt every path to `d="M0 0"` (the permanent-blank defect). When
+            the view toggles back, `mapVisible` flips true and the layer mounts FRESH,
+            projecting the geometry against the now-valid container → real paths. This
+            is byte-identical in spirit to ApexRenderer gating ReactApexChart on
+            `visible`: if a box-measuring library never mounts against a 0×0 box, it
+            can never be corrupted by one. RepairOnShow below still invalidateSize's on
+            the same transition so the base viewport is correct. */}
+        {mapVisible && (
+          <GeoJSON
+            // Key ONLY on the choropleth SCALE (structural) — NOT selection. A
+            // selection change repaints via the setStyle effect above (in place, no
+            // remount) while visible; while hidden the layer is unmounted so there is
+            // nothing to remount. Warm-row colour changes still change the key →
+            // remount+repaint on the (visible) layer, preserving the async flat-map fix.
+            key={choroplethLayerKey(colorByGeo)}
+            ref={layerRef}
+            data={geoJson}
+            style={(feature) =>
+              resolveFeatureStyle(feature as GeoJSON.Feature | undefined, {
+                isoField,
+                geoCodeMap,
+                colorFor,
+                selectedGeos,
+                occupiedSet,
+              })
+            }
+            onEachFeature={onEachFeature}
+          />
+        )}
         <FitBounds geoJson={geoJson} />
         <RepairOnShow geoJson={geoJson} visible={mapVisible} />
       </MapContainer>
