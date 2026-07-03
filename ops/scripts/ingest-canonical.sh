@@ -52,7 +52,7 @@ POLL_INTERVAL=2
 POLL_TIMEOUT=180
 
 DATASETS=(GDP_ANNUAL ACCOUNTS_SEQUENCE REGIONAL_GVA)
-declare -A EXPECTED_OBS=( [GDP_ANNUAL]=384 [ACCOUNTS_SEQUENCE]=415 [REGIONAL_GVA]=1554 )
+declare -A EXPECTED_OBS=( [GDP_ANNUAL]=399 [ACCOUNTS_SEQUENCE]=415 [REGIONAL_GVA]=1665 )
 
 command -v jq >/dev/null   || { echo "FATAL: jq is required"; exit 1; }
 command -v curl >/dev/null || { echo "FATAL: curl is required"; exit 1; }
@@ -160,8 +160,8 @@ anchor_assert() {
 
   v="$(curl -fsS "$API_BASE_URL/api/stats/observations?dataset=REGIONAL_GVA&from=2010&to=2010&filter=$(jq -rn --arg x '{"geo":"_T","sector":"_T","measure":"GVA"}' '$x|@uri')" \
     | jq -r '.data[0].obs_value // empty')"
-  echo "    REGIONAL_GVA _T/_T 2010 GVA = $v  (≈ 21821.57)"
-  awk -v v="$v" 'BEGIN{ if (v=="" || (v-21821.57)^2 > 1) exit 1 }' || { echo "    ✗ REGIONAL anchor"; FAIL=1; }
+  echo "    REGIONAL_GVA _T/_T 2010 GVA = $v  (≈ 22148.65, post-2026-07-03 revision)"
+  awk -v v="$v" 'BEGIN{ if (v=="" || (v-22148.65)^2 > 1) exit 1 }' || { echo "    ✗ REGIONAL anchor"; FAIL=1; }
 
   v="$(curl -fsS "$API_BASE_URL/api/stats/observations?dataset=ACCOUNTS_SEQUENCE&from=2010&to=2010&filter=$(jq -rn --arg x '{"account":"allocation-of-primary-income-account"}' '$x|@uri')" \
     | jq -r '.data | length')"
