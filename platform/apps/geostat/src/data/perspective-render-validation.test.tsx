@@ -87,26 +87,47 @@ function renderPage(slug: string, locale: string, perspective?: string) {
 }
 
 // ── The perspective-axis yardstick (extracted from the provisioning configs) ──
-//  KPI labels are bare Georgian (locale-invariant); the perspective-bar labels AND
-//  the range filter-select label are {ka,en} bags resolved by the active locale (the
-//  locale-variant surfaces — the engine localizes every display LocaleString at its
-//  boundary, so the en render reads the en values, the ka render the ka values).
+//  EVERY display surface here is a {ka,en} bag resolved by the ACTIVE locale — the
+//  perspective-bar tab labels, the range filter-select label, AND the KPI labels. The
+//  engine localizes every display LocaleString at its boundary (resolveTemplate →
+//  ctx.locale, wired from the URL), so the /en render reads the en values and the /ka
+//  render the ka values. The yardstick is therefore locale-keyed on every surface;
+//  asserting a KPI's ka label on the en render (or vice-versa) would be a leak, exactly
+//  what FF-RENDER-NO-LOCALE-LEAK guards.
 const TAB_LABELS = { ka: { year: 'წლიური', range: 'დინამიკა' }, en: { year: 'Annual', range: 'Dynamics' } } as const
 //  The range from-select's aria-label (a bilingual filter label) per active locale.
 const RANGE_LABEL = { ka: 'შუალედი:', en: 'Interval:' } as const
 
 const SPEC = {
   gdp: {
-    yearKpis: ['მშპ მიმდინარე ფასებში', 'რეალური ზრდა', 'მშპ ერთ სულზე'],
-    rangeKpis: ['მშპ — საშ. წლიური ზრდა', 'ერთ სულზე — საშ. ზრდა', 'მშპ — საბოლოო წელი'],
+    yearKpis: {
+      ka: ['მშპ მიმდინარე ფასებში', 'რეალური ზრდა', 'მშპ ერთ სულზე'],
+      en: ['GDP at current prices', 'Real growth', 'GDP per capita'],
+    },
+    rangeKpis: {
+      ka: ['მშპ — საშ. წლიური ზრდა', 'ერთ სულზე — საშ. ზრდა', 'მშპ — საბოლოო წელი'],
+      en: ['GDP — avg. annual growth', 'Per capita — avg. growth', 'GDP — final year'],
+    },
   },
   accounts: {
-    yearKpis: ['მთლიანი ეროვნული შემოსავალი (B5G)', 'მთლიანი განკარგვადი შემოსავალი (B6G)', 'მთლიანი დანაზოგი (B8G)'],
-    rangeKpis: ['შრომის წილი დამატებულ ღირებულებაში', 'გამოშვება — საშუალო წლიური ზრდა'],
+    yearKpis: {
+      ka: ['მთლიანი ეროვნული შემოსავალი (B5G)', 'მთლიანი განკარგვადი შემოსავალი (B6G)', 'მთლიანი დანაზოგი (B8G)'],
+      en: ['Gross National Income (B5G)', 'Gross Disposable Income (B6G)', 'Gross Saving (B8G)'],
+    },
+    rangeKpis: {
+      ka: ['შრომის წილი დამატებულ ღირებულებაში', 'გამოშვება — საშუალო წლიური ზრდა'],
+      en: ['Labour share in value added', 'Output — average annual growth'],
+    },
   },
   regional: {
-    yearKpis: ['მთლიანი დამატებული ღირებულება', 'თბილისის წილი ეროვნულ მაჩვენებელში'],
-    rangeKpis: ['დამატებული ღირებულება — საშუალო წლიური ზრდა'],
+    yearKpis: {
+      ka: ['მთლიანი დამატებული ღირებულება', 'თბილისის წილი ეროვნულ მაჩვენებელში'],
+      en: ['Gross Value Added', "Tbilisi's share of the national total"],
+    },
+    rangeKpis: {
+      ka: ['დამატებული ღირებულება — საშუალო წლიური ზრდა'],
+      en: ['Value added — average annual growth'],
+    },
   },
 } as const
 
@@ -139,16 +160,18 @@ for (const slug of ['gdp', 'accounts', 'regional'] as const) {
 
       // ── 2. KPI visibility partition (KpiSpec.when → perspective-is) ───────────
       it('shows EXACTLY the active perspective KPIs; the other perspective KPIs do not leak', () => {
+        const yearKpis  = SPEC[slug].yearKpis[locale]
+        const rangeKpis = SPEC[slug].rangeKpis[locale]
         const { container: cy } = renderPage(slug, locale)
         const yText = kpiText(cy)
-        for (const k of SPEC[slug].yearKpis) expect(yText, `year KPI "${k}" present`).toContain(k)
-        for (const k of SPEC[slug].rangeKpis) expect(yText, `range KPI "${k}" hidden in year`).not.toContain(k)
+        for (const k of yearKpis)  expect(yText, `year KPI "${k}" present`).toContain(k)
+        for (const k of rangeKpis) expect(yText, `range KPI "${k}" hidden in year`).not.toContain(k)
         cleanup()
 
         const { container: cr } = renderPage(slug, locale, 'range')
         const rText = kpiText(cr)
-        for (const k of SPEC[slug].rangeKpis) expect(rText, `range KPI "${k}" present`).toContain(k)
-        for (const k of SPEC[slug].yearKpis) expect(rText, `year KPI "${k}" hidden in range`).not.toContain(k)
+        for (const k of rangeKpis) expect(rText, `range KPI "${k}" present`).toContain(k)
+        for (const k of yearKpis)  expect(rText, `year KPI "${k}" hidden in range`).not.toContain(k)
       })
 
       // ── 3. filter-item visibility partition (ParamMeta.visibleWhen) ──────────

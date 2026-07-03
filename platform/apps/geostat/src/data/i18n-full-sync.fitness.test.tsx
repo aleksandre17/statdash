@@ -61,6 +61,14 @@ beforeAll(() => {
 })
 afterEach(() => cleanup())
 
+// The locale switcher is the ONE control whose job is to present EVERY locale so a
+// reader can find their language — it renders each locale's ENDONYM (ქარ / ENG) in its
+// own script, on every page in every locale (config.localeLabels, WCAG: a Georgian
+// reader must recognise "ქარ" even on an /en page). Its Georgian text is therefore NOT
+// a content leak; excluding this one control from the tenant-script scan keeps the
+// guarantee honest ("/en content is fully English") without falsely flagging the
+// language-switch affordance. Scoped by the stable `.locale-switcher` class — the app
+// CONTENT (titles, KPI labels, badges, nav) is still fully guarded.
 function renderPageText(slug: string, locale: string): string {
   const manifest = buildManifest()
   const url = `/${locale}/${slug}`
@@ -81,6 +89,7 @@ function renderPageText(slug: string, locale: string): string {
       </SiteProvider>
     </MemoryRouter>,
   )
+  container.querySelectorAll('.locale-switcher').forEach((el) => el.remove())
   return container.textContent ?? ''
 }
 

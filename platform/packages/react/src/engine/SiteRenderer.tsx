@@ -167,13 +167,23 @@ const NodePageRendererInner = memo(function NodePageRendererInner({
       const withState: typeof rawSectionCtx = {
         ...rawSectionCtx,
         perspectiveState,
+        // Wire the active URL locale into the ENGINE render context. resolveTemplate
+        // (the localize-at-boundary primitive every engine-side display field funnels
+        // through — KPI label/unit/trendSub, section title/subtitle, badge) reads
+        // `ctx.locale`; without it, resolveLocaleString falls through to the first bag
+        // key (e.g. ka), leaking the tenant locale onto every non-default-locale render
+        // (FF-RENDER-NO-LOCALE-LEAK). The React hooks (useLocale) already carry it for
+        // JSX-side chrome; this is the SAME SSOT threaded into the engine ctx so the two
+        // resolution paths agree. fallbackLocale mirrors the manifest fallback.
+        locale,
+        fallbackLocale,
       }
       // Scope ctx.dims by the active perspective's timeBinding BEFORE resolution —
       // the declarative replacement for the retired imperative time-mode. Identity
       // when no axis / no scope.timeBinding.
       return scopeCtxByPerspective(withState, axes, perspectiveState)
     },
-    [rawSectionCtx, currentPerspective, perspectiveKey, axes],
+    [rawSectionCtx, currentPerspective, perspectiveKey, axes, locale, fallbackLocale],
   )
 
   const set = useCallback(

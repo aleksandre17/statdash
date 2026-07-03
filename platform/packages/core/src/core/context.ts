@@ -60,8 +60,22 @@ export interface SectionContext {
    * aggregate row (e.g. sum leaf regions, drop the `_T` national-total row).
    */
   exclude?: Record<string, DimVal[]>
-  /** Active UI locale — ExternalStore passes as ?lang= query param (Phase 2). Engine never reads. */
+  /**
+   * Active UI locale, threaded from the URL by the React renderer (SiteRenderer).
+   * resolveTemplate — the localize-at-boundary primitive every engine-side display
+   * field funnels through (KPI label/unit/trendSub, section title/subtitle, badge) —
+   * resolves LocaleString carriers against this. An absent locale falls through to the
+   * first bag key, which leaks the tenant locale on a non-default render, so the
+   * renderer MUST populate it (FF-RENDER-NO-LOCALE-LEAK). ExternalStore also passes it
+   * as the ?lang= query param (Phase 2).
+   */
   locale?:  string
+  /**
+   * Manifest fallback locale — used by resolveTemplate when a LocaleString bag lacks
+   * the active `locale` key, so engine-side resolution matches the React-side
+   * useResolveLocale (locale → fallbackLocale → first value). Threaded by SiteRenderer.
+   */
+  fallbackLocale?: string
   /**
    * Active perspective id per axis param — the Harel orthogonal-regions container
    * (VISION #3). `perspectiveState['perspective'] = 'range'` means the `perspective`

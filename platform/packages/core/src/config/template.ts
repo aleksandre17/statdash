@@ -64,8 +64,12 @@ export function resolveTemplate(
   ctx:    SectionContext,
   extras?: Record<string, unknown>,
 ): string {
-  const locale = ctx.locale ?? ''
-  const str = resolveCarrier(tpl, ctx, locale)
+  const locale   = ctx.locale ?? ''
+  // Fallback locale (manifest default) — used when a bag lacks the active locale key,
+  // mirroring the React-side useResolveLocale (locale → fallbackLocale → first value).
+  // Defaults to `locale` so a caller that never set fallbackLocale is byte-identical.
+  const fallback = ctx.fallbackLocale ?? locale
+  const str = resolveCarrier(tpl, ctx, locale, fallback)
   return str.replace(/\{(\w+)\}/g, (_, key) => {
     const raw = extras && key in extras ? extras[key] : ctx.dims[key]
     if (raw === undefined || raw === null) return `{${key}}`
@@ -75,7 +79,7 @@ export function resolveTemplate(
     // LocaleString falls through resolveLocaleString's first-value path (no worse than
     // the old String()); scalars stringify byte-identically.
     if (typeof raw === 'object' && !Array.isArray(raw)) {
-      return resolveLocaleString(raw as LocaleString, locale, locale)
+      return resolveLocaleString(raw as LocaleString, locale, fallback)
     }
     return String(raw)
   })
@@ -90,9 +94,10 @@ export function resolveTemplate(
 //  locale-keyed LocaleString (ka/en) carries no perspective-id key, so it is never
 //  mistaken for a perspective carrier and vice-versa.
 function resolveCarrier(
-  tpl:    LocaleString | PerspectiveCarrier,
-  ctx:    SectionContext,
-  locale: string,
+  tpl:      LocaleString | PerspectiveCarrier,
+  ctx:      SectionContext,
+  locale:   string,
+  fallback: string,
 ): string {
   if (typeof tpl === 'string') return tpl
   const activeId = activePerspective(ctx.perspectiveState)
@@ -103,7 +108,7 @@ function resolveCarrier(
   const arm: LocaleString = activeId !== undefined && Object.prototype.hasOwnProperty.call(tpl, activeId)
     ? (tpl as PerspectiveCarrier)[activeId]
     : (tpl as LocaleString)
-  return collapseLocale(arm, locale)
+  return collapseLocale(arm, locale, fallback)
 }
 
 /**
@@ -111,7 +116,7 @@ function resolveCarrier(
  * perspective carrier whose active arm was not selected). resolveLocaleString is typed
  * to return `string`, but a nested-object arm surfaces at runtime; the guard resolves it.
  */
-function collapseLocale(v: LocaleString, locale: string): string {
-  const r: LocaleString = resolveLocaleString(v, locale, locale)
-  return typeof r === 'string' ? r : collapseLocale(r, locale)
+function collapseLocale(v: LocaleString, locale: string, fallback: string): string {
+  const r: LocaleString = resolveLocaleString(v, locale, fallback)
+  return typeof r === 'string' ? r : collapseLocale(r, locale, fallback)
 }
