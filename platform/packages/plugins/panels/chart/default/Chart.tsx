@@ -1,6 +1,7 @@
 import './chart.css'
 
 import { createElement }          from 'react'
+import type { CSSProperties }     from 'react'
 import { chartRendererRegistry }  from '@statdash/react/engine'
 import type { BodyStyleAttrs }    from '@statdash/react/engine'
 import { ChartDataTable }         from '@statdash/react'
@@ -28,11 +29,27 @@ export default function Chart({ output, bodyAttrs, onDataHover, onDataLeave, onD
 
   const ariaLabel = output.series.map(s => s.name).filter(Boolean).join(', ') || output.type
 
+  // Low-cardinality fill (defect #2): a HORIZONTAL bar's honest height is its
+  // category count (ApexRenderer → categoricalChartHeight, a definite px), NOT the
+  // width-ratio aspect band. When a config authors `aspectRatio` on a chart, that
+  // band lands on .chart-wrap ([data-aspect] → --size-panel-height) and a 2-row hbar
+  // renders its ~240px plot inside a ~728px band → dead whitespace below the bars.
+  // A horizontal chart therefore opts OUT of the band and sizes to content. Inline
+  // style is deliberate: it must beat BOTH `[data-aspect]{height:band}` and the
+  // equal-height-stretch rule `… > .chart-wrap[data-aspect]{flex:1 1 band}` without
+  // a shared-stylesheet specificity fight (project panel-sizing model). Harmless in
+  // a non-flex/no-band context (height:auto is the default; the flex shorthand is
+  // ignored off a flex item). Vertical charts keep filling their band, unchanged.
+  const { style: bodyStyle, ...bodyRest } = bodyAttrs
+  const fillStyle: CSSProperties | undefined = output.horizontal
+    ? { ...(bodyStyle as CSSProperties), height: 'auto', flex: '0 0 auto' }
+    : (bodyStyle as CSSProperties | undefined)
+
   // A11y contract [N15]: visual chart is aria-hidden (SVG is not AT-navigable);
   // ChartDataTable is the screen-reader and keyboard-accessible representation.
   // PanelLayout view toggle provides sighted keyboard access to the table view.
   return (
-    <div {...bodyAttrs} data-content="chart" className="chart-wrap">
+    <div {...bodyRest} style={fillStyle} data-content="chart" className="chart-wrap">
       {/* height:100% so a renderer that fills its parent (the custom flexbox
           TreemapChart root is `height:100%`) resolves against .chart-wrap's
           resolved height — without it this wrapper shrinks to content and the

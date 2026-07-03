@@ -138,6 +138,17 @@ export interface ChartOutput {
   readonly dataLabels?: boolean
   /** Single-series bar/hbar: paint each category from the categorical palette SSOT. */
   readonly distributed?: boolean
+  /**
+   * Multi-series bar/hbar/line/area whose series carry NO explicit semantic colour:
+   * paint each SERIES from the categorical palette SSOT keyed on its series index
+   * (Grammar-of-Graphics colour encoding — Law 1/4). Set by the interpreter, resolved
+   * theme-aware at the render layer (cssVar → --chart-color-N, so it flips in dark
+   * mode), exactly like `distributed`. Inert when any series already carries an
+   * explicit colour (map-driven side/threshold encoding wins). Agnostic: keyed on
+   * index, never on a series name — so a region/sector comparison reads by category
+   * without an authored colour list.
+   */
+  readonly seriesColorByIndex?: boolean
 }
 
 export interface ChartSeries {
