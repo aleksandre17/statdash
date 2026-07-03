@@ -35,6 +35,7 @@
   font-size: clamp(2rem, 4vw, 3.125rem);
   color: var(--color-heading-display);
   line-height: 1.15;
+  margin-top: clamp(0.75rem, 1.75vw, 1.5rem);
   margin-bottom: clamp(1.5rem, 3vw, 2.75rem);
   white-space: nowrap;
 }
@@ -172,6 +173,7 @@
 @media (max-height: 860px) {
   .hero__title {
     font-size: clamp(1.6rem, 3.2vh, 2.25rem);
+    margin-top: clamp(0.35rem, 0.8vh, 0.75rem);
     margin-bottom: clamp(0.35rem, 0.8vh, 0.75rem);
   }
 

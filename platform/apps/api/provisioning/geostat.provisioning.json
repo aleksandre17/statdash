@@ -4174,6 +4174,7 @@
                     "en": "Occupied territory"
                   }
                 },
+                "occupiedIso": [ "GE-AB", "GE-OS" ],
                 "paramKey": "region",
                 "title": {
                   "ka": "მთლიანი შიდა პროდუქტი — რეგიონების მიხედვით",
