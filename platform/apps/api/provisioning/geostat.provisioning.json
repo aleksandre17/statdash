@@ -2830,10 +2830,7 @@
                 "id": "gdp",
                 "img": "https://sna.geostat.ge/img/home/mtliani.png",
                 "pageBg": "linear-gradient(160deg, #faf0e8 0%, #e4f0e8 40%, #d8ece8 70%, #d0e8ec 100%)",
-                "sub": {
-                  "en": "National output and growth metrics",
-                  "ka": "მოსახლეობის ხელფასი და ეკონომიკური წარმოება"
-                },
+                "sub": "",
                 "title": {
                   "en": "Gross Domestic Product",
                   "ka": "მთლიანი შიდა პროდუქტი"
@@ -2844,10 +2841,7 @@
                 "id": "accounts",
                 "img": "https://sna.geostat.ge/img/home/erovnuli.png",
                 "pageBg": "linear-gradient(160deg, #eef4e8 0%, #e0ece8 40%, #d4ecec 70%, #c8e8f0 100%)",
-                "sub": {
-                  "en": "Income distribution and expenditure structure",
-                  "ka": "შემოსავლის განაწილება და ხარჯების სტრუქტურა"
-                },
+                "sub": "",
                 "title": {
                   "en": "National Accounts",
                   "ka": "ეროვნული ანგარიშები"
@@ -2858,10 +2852,7 @@
                 "id": "regional",
                 "img": "https://sna.geostat.ge/img/home/regionul.png",
                 "pageBg": "linear-gradient(160deg, #e8f4f0 0%, #dcf0ec 40%, #d0ece8 70%, #c4e8f0 100%)",
-                "sub": {
-                  "en": "Regional economic development and comparison",
-                  "ka": "რეგიონების ეკონომიკური განვითარება და შედარება"
-                },
+                "sub": "",
                 "title": {
                   "en": "Regional Analysis",
                   "ka": "რეგიონული ანალიზი"
@@ -2869,10 +2860,7 @@
               }
             ],
             "id": "landing-hero",
-            "subtitle": {
-              "en": "Complete economic statistics of Georgia",
-              "ka": "საქართველოს ეკონომიკური მხედელობის სრული მონაცემები"
-            },
+            "subtitle": "",
             "title": {
               "en": "National Accounts Portal",
               "ka": "ეროვნული ანგარიშების პორტალი"
