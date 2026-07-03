@@ -1,0 +1,282 @@
+{
+ "base": "http://192.168.1.199:3002",
+ "ts": "2026-07-03T07:20:02.668Z",
+ "stateA": {
+  "kpis": {
+   "values": [
+    "80 883GEL mn",
+    "80 883",
+    "+11%%",
+    "+11%",
+    "52.7%",
+    "52.7",
+    "10.6%",
+    "10.6"
+   ],
+   "labels": [
+    "Gross Value Added",
+    "Annual growth",
+    "Tbilisi's share of the national total",
+    "Average annual growth (2010–2023)"
+   ],
+   "count": 8
+  },
+  "composition": {
+   "id": "sectors",
+   "found": true,
+   "title": "Gross Domestic Product — by region",
+   "kind": "svg-donut",
+   "tables": 2,
+   "rows": 22,
+   "sliceLegend": [
+    "თბილისი",
+    "აჭარის ა.რ.",
+    "იმერეთი",
+    "ქვემო ქართლი",
+    "სამეგრელო-ზემო სვანეთი",
+    "კახეთი",
+    "შიდა ქართლი",
+    "სამცხე-ჯავახეთი",
+    "მცხეთა-მთიანეთი",
+    "გურია",
+    "რაჭა-ლეჩხუმი და ქვემო სვანეთი"
+   ],
+   "svgTexts": [
+    "37 059.5",
+    "6 683.4",
+    "5 518.9",
+    "5 280.1",
+    "3 828.7",
+    "3 538",
+    "2 850.7",
+    "2 031",
+    "1 909.6",
+    "1 212.8",
+    "416.3"
+   ],
+   "sliceCount": 11
+  },
+  "regionsBar": {
+   "id": "regions-bar",
+   "found": true,
+   "title": "Gross Domestic Product — regional comparison",
+   "kind": "apex-bar",
+   "tables": 2,
+   "rows": 22,
+   "series": [
+    "მთლიანიxდამატებულიxღირებულებაx—xრეგიონებისxმიხედვით"
+   ],
+   "legend": [],
+   "barCount": 11,
+   "pieSlices": 0,
+   "xLabels": [
+    "45K45K",
+    "40K40K",
+    "35K35K",
+    "30K30K",
+    "25K25K",
+    "20K20K",
+    "15K15K",
+    "10K10K",
+    "5K5K",
+    "00"
+   ],
+   "yLabels": [
+    "თბილისითბილისი",
+    "აჭარის ა.რ.აჭარის ა.რ.",
+    "იმერეთიიმერეთი",
+    "ქვემო ქართლიქვემო ქართლი",
+    "სამეგრელო-ზემო სვანეთისამეგრელო-ზემო სვანეთი",
+    "კახეთიკახეთი",
+    "შიდა ქართლიშიდა ქართლი",
+    "სამცხე-ჯავახეთისამცხე-ჯავახეთი",
+    "მცხეთა-მთიანეთიმცხეთა-მთიანეთი",
+    "გურიაგურია",
+    "რაჭა-ლეჩხუმი და ქვემო სვანეთირაჭა-ლეჩხუმი და ქვემო სვანეთი"
+   ],
+   "dataLabels": [
+    "42 620.8",
+    "7 686.3",
+    "6 347.1",
+    "6 072.4",
+    "4 403.2",
+    "4 068.9",
+    "3 278.5",
+    "2 335.7",
+    "2 196.1",
+    "1 394.8",
+    "478.8"
+   ],
+   "seriesCount": 1
+  },
+  "scan": {
+   "objObj": 0,
+   "failLoad": false,
+   "react31": false,
+   "emptyStates": 0,
+   "htmlLang": "en"
+  },
+  "errors": []
+ },
+ "stateB": {
+  "mapPaths": 13,
+  "regionParam": "R3,R4",
+  "selectedRegions": [
+   "R3",
+   "R4"
+  ],
+  "selectedNames": [],
+  "registeredClicks": [
+   {
+    "i": 0,
+    "name": null,
+    "before": "",
+    "after": "R3",
+    "changed": true
+   },
+   {
+    "i": 1,
+    "name": null,
+    "before": "R3",
+    "after": "R3,R4",
+    "changed": true
+   }
+  ],
+  "kpis": {
+   "values": [
+    "9 081GEL mn",
+    "9 081",
+    "+11.9%%",
+    "+11.9%",
+    "469.3%",
+    "469.3",
+    "12.5%",
+    "12.5"
+   ],
+   "labels": [
+    "Gross Value Added",
+    "Annual growth",
+    "Tbilisi's share of the national total",
+    "Average annual growth (2010–2023)"
+   ],
+   "count": 8
+  },
+  "composition": {
+   "id": "sectors",
+   "found": true,
+   "title": "Gross Domestic Product — by region",
+   "kind": "apex-bar",
+   "tables": 2,
+   "rows": 18,
+   "series": [
+    "აჭარისxაxრx",
+    "გურია"
+   ],
+   "legend": [
+    "აჭარის ა.რ.",
+    "გურია"
+   ],
+   "barCount": 18,
+   "pieSlices": 0,
+   "xLabels": [
+    "სოფლის, სა...სოფლის, სატყეო და თევზის მეურნეობა",
+    "უძრავ ქონე...უძრავ ქონებასთან დაკავშირებული საქმიანობები",
+    "სახელმწიფ...სახელმწიფო მმართველობა და თავდაცვა; სავალდებულო სოციალური უსაფრთხოება",
+    "დამამუშავე...დამამუშავებელი მრეწველობა",
+    "მშენებლობამშენებლობა",
+    "საბითუმო და...საბითუმო და საცალო ვაჭრობა; ავტომობილების და მოტოციკლების რემონტი",
+    "სხვა დანარჩ...სხვა დანარჩენი"
+   ],
+   "yLabels": [
+    "3K3K",
+    "2.5K2.5K",
+    "2K2K",
+    "1.5K1.5K",
+    "1K1K",
+    "500500",
+    "00"
+   ],
+   "dataLabels": [],
+   "seriesCount": 2
+  },
+  "regionsBar": {
+   "id": "regions-bar",
+   "found": true,
+   "title": "Gross Domestic Product — regional comparison",
+   "kind": "apex-bar",
+   "tables": 2,
+   "rows": 4,
+   "series": [
+    "მთლიანიxდამატებულიxღირებულებაx—xრეგიონებისxმიხედვით"
+   ],
+   "legend": [],
+   "barCount": 2,
+   "pieSlices": 0,
+   "xLabels": [
+    "8K8K",
+    "7K7K",
+    "6K6K",
+    "5K5K",
+    "4K4K",
+    "3K3K",
+    "2K2K",
+    "1K1K",
+    "00"
+   ],
+   "yLabels": [
+    "აჭარის ა.რ.აჭარის ა.რ.",
+    "გურიაგურია"
+   ],
+   "dataLabels": [
+    "7 686.3",
+    "1 394.8"
+   ],
+   "seriesCount": 1
+  },
+  "mapHighlight": {
+   "total": 13,
+   "maxStroke": 2.5,
+   "thickStroke": 2
+  },
+  "scan": {
+   "objObj": 0,
+   "failLoad": false,
+   "react31": false,
+   "emptyStates": 0,
+   "htmlLang": "en"
+  },
+  "errors": []
+ },
+ "assertions": {
+  "stateA_composition_kind": "svg-donut",
+  "stateA_kpi_count": 8,
+  "stateB_selected_count": 2,
+  "stateB_selected_names": [],
+  "stateB_composition_kind": "apex-bar",
+  "stateB_xAxis_labels": [
+   "სოფლის, სა...სოფლის, სატყეო და თევზის მეურნეობა",
+   "უძრავ ქონე...უძრავ ქონებასთან დაკავშირებული საქმიანობები",
+   "სახელმწიფ...სახელმწიფო მმართველობა და თავდაცვა; სავალდებულო სოციალური უსაფრთხოება",
+   "დამამუშავე...დამამუშავებელი მრეწველობა",
+   "მშენებლობამშენებლობა",
+   "საბითუმო და...საბითუმო და საცალო ვაჭრობა; ავტომობილების და მოტოციკლების რემონტი",
+   "სხვა დანარჩ...სხვა დანარჩენი"
+  ],
+  "stateB_distinct_bar_categories": 7,
+  "stateB_series": [
+   "აჭარისxაxრx",
+   "გურია"
+  ],
+  "stateB_series_count": 2,
+  "PASS_xAxis_is_sectors_not_regions": true,
+  "FAIL_xAxis_still_regions": false,
+  "PASS_series_are_2_selected_regions": false,
+  "PASS_no_objectObject": true,
+  "PASS_no_duplicated_region_labels": true,
+  "duplicated_labels": [],
+  "PASS_map_highlights_2": true,
+  "errorsA": [],
+  "errorsB": [],
+  "OVERALL_PASS": false
+ }
+}

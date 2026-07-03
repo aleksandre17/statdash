@@ -10,6 +10,7 @@
 - [Choropleth flat + donut monochrome](project_choropleth_flat_and_donut_monochrome.md) — geograph GeoMap painted --color-accent on every region (no value→color scale ever existed; buildColorScale lives only in legacy panels/map stub) + donut grey (thresholdColor??muted, treemap already distributed chartPalette) → new token-derived sequentialRamp+quantileColors in styles
 - [GDP dropped sections vs regional intact](project_gdp_dropped_sections_vs_regional_intact.md) — owner's "missing regional top chart" is really GDP structural+noe-share dropped in 52738a3 (dangling "structural" nav anchor); regional fully intact
 - [Multi-region comma-geo wire](project_multiregion_comma_geo_wire.md) — live regional multi-select broken: buildObsFilterParam sends geo:"R2,R3" as one literal → 0 rows (API wants array); sectors-multi collapses to region-total bar. Bundle NEW, KPI year-reactivity OK.
+- [PromiseCache node collision](project_promisecache_node_collision.md) — State-B pivot root: async _promiseCache keyed on non-node-unique depKey; geo-map + sectors share fetch fingerprint → collide (async only; sync masks). Fix = fold recipeKey into cacheKey.
 
 
 ---

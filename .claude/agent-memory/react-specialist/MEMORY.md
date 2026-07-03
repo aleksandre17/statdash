@@ -21,6 +21,7 @@
 - [async render warm-read](project_async_render_warm_read.md) — capability-transparent CachedStore + useNodeRows warm-then-sync-read Cache-Aside binds async-store rows through renderNode; bind queryAsync to store
 - [kpi warm surface](project_kpi_warm_surface.md) — kpi-strip is a 2nd async-warm surface (interpretKpis, not useNodeRows); useKpiRows + extractKpiRequirements warm it incl. yoy year-1; CachedStore.queryAsync in-flight dedup
 - [time classifier never loaded](project_time_classifier_never_loaded.md) — time dim has NO classifier members on live stats path; {$cl:'time'} year defaults resolve [] forever; latest-year only from observations
+- [container visible gate](project_container_visible_gate.md) — useContainerVisible (react engine/hooks) gates DOM-measuring renderers on real layout; ApexRenderer first consumer, fixes hidden-view NaN crash
 
 
 ---
@@ -31,3 +32,7 @@
 ## [platform] Project
 - [expr-dist-missing](project_expr_dist_missing.md) — @geostat/expr has no dist/ build; resolveNodeRows.test.ts pre-existing failure
 - [extension-points](project_extension_points.md) — Architecture 3 typed extension registry (VS Code pattern) complete; 3 pre-existing i18next test failures unrelated
+
+## Auto-relocated (memory-home-guard — reconcile into a topic section)
+- [AR-37 P0 locale binding](project_ar37_p0_locale_binding.md) — <html lang>/dir + i18next global bound at LocaleGuard; localeDirection registry in packages/react; FF-HTML-LANG-BOUND
+- [worktree vitest MAX_PATH block](project_worktree_vitest_maxpath_block.md) — vitest CLI startup-blocked in deep .claude/worktrees paths on Windows (env, not code); tsc/eslint/check-laws unaffected; hand-replicate logic in .mjs for signal

@@ -1,3 +1,5 @@
+> **SUPERSEDED 2026-07-03 → see `DESIGN-i18n-full-sync-and-integrity-badges.md` (AR-37) + `DESIGN-integrity-badge-consolidation.md` (AR-38).** This PLAN is the origin-of-record (symptom + hypotheses); the DESIGN docs are the buildable target. Key correction the design makes: the SSOT is NOT fragmented (hypothesis #1) — it is one reactive source; the real roots are R1 unbound `<html lang>`, R2 coverage/monolingual-authoring holes, R3 unsynced i18next global.
+
 # PLAN — Full i18n synchronization (every layer switches language, seamlessly)
 
 > Owner ask (2026-07-02): "When I switch the language on the site, NOT everything switches. Every plugin's i18n, every chart, every table, every config must switch language SYNCHRONOUSLY, seamlessly, with the best concepts + architecture."

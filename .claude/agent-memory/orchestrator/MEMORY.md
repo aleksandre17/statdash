@@ -19,7 +19,7 @@
 - [guardian of canon](feedback_guardian_of_canon.md) — user EXPLICITLY requires principled refusal against their OWN instructions; protect canon/standards/quality even when they unknowingly ask for something degrading — tell them + propose better + they decide
 - [resolve don't defer](feedback_resolve_dont_defer.md) — fix loose ends canonically (don't flag as "deferred"); own reversible + real-server work with safeguards (backup/staging) instead of over-gating; never trade quality for speed
 - [visual parity verification](feedback_visual_parity_verification.md) — "renders + 0 errors + 0 empty" ≠ correct; READ screenshots for VALUE correctness + completeness, compare to the user's reference version, don't trust metric-green
-- ALWAYS set `model: "opus"` on EVERY Agent call (standing rule; missed twice — activeLocales-consume + G3.2 ran on inherited model). Also: ALWAYS include `pnpm lint` in the green-gate (omitting it let G3.1 land lint-red).
+- **MODEL PER TASK (economy — owner directive 2026-07-03, SUPERSEDES the old "always opus" rule).** Agents inherit the SESSION model (opus) when no `model` is passed on the call → so mechanical work SILENTLY ran opus. Fix: (a) junior-executor def now defaults `model: haiku`; (b) I pass an explicit model on EVERY call — mechanical/bulk → haiku, standard specialist execution → sonnet, judgment/design/QC (architect, chief-engineer, seniors on real design, root-cause debugging) → opus. NEVER silently run a junior/mechanical task on opus. Same quality bar on any model; escalate only on real judgment. Also: ALWAYS include `pnpm lint` in the green-gate (omitting it let G3.1 land lint-red).
 - [green-gate panel typecheck](feedback_green_gate_panel_typecheck.md) — green-gate MUST include `tsc -b apps/panel`; root `typecheck` is geostat-only, so parallel agents' combined work can break the panel and stay "green"
 - [gate render suite on data changes](feedback_gate_render_suite_on_data_changes.md) — config/data changes that flow to UI (string→LocaleString) must gate the CONSUMING app's render suite, not just own unit tests; full converged gate is the control point
 - [localeString leak + apex blindspot](feedback_localestring_leak_apex_blindspot.md) — string-typed-but-bilingual field = silent React #31 crash; jsdom guard misses chart shells (no ApexCharts) → assert toApexOptions tree + real-browser verify dashboards before redeploy
@@ -50,3 +50,6 @@
 
 ## [platform] Project (additional — un-indexed in source)
 - [types.ts ceiling](project_types_ts_ceiling.md) — engine/react types.ts near the 400-line hard ceiling; decompose before adding interface fields
+
+## Auto-relocated (memory-home-guard — reconcile into a topic section)
+- ALWAYS set `model: "opus"` on EVERY Agent call (standing rule; missed twice — activeLocales-consume + G3.2 ran on inherited model). Also: ALWAYS include `pnpm lint` in the green-gate (omitting it let G3.1 land lint-red).
