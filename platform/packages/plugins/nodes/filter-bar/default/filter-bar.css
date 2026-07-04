@@ -138,14 +138,28 @@
   white-space: nowrap;
 }
 
+/* from→to span GROUP — the whole window ("[from-sel] დან [to-sel] მდე") is ONE
+   non-wrapping, non-shrinking unit, so the four pieces ALWAYS sit side-by-side on
+   a single row — even inside a wrapping (`--strip`) bar where the two endpoints
+   would otherwise break across lines. */
+.filter-span-group {
+  display:     inline-flex;
+  align-items: center;
+  gap:         0.375rem;
+  flex-wrap:   nowrap;
+  flex-shrink: 0;
+}
+
 /* from→to span endpoint — a select composed with its connector words
    ("from [x]" / "[x] დან"). Two adjacent endpoints read as one window:
-   "from [x] to [y]" (en) / "[from-sel] დან [to-sel] მდე" (ka). */
+   "from [x] to [y]" (en) / "[from-sel] დან [to-sel] მდე" (ka). Never shrinks or
+   breaks internally: the select stays glued to its connector word. */
 .filter-span-endpoint {
   display:     inline-flex;
   align-items: center;
   gap:         0.375rem;
-  min-width:   0;
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 .filter-range-input {
   width:         4.5rem;

@@ -114,6 +114,20 @@ describe('filter-bar from→to span composition', () => {
     expect(from.compareDocumentPosition(to) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
   })
 
+  it('both endpoints live in ONE .filter-span-group — the window never splits across rows', () => {
+    const { container } = renderBar('ka', 'range')
+    const groups = container.querySelectorAll('.filter-span-group')
+    // Exactly one group, and BOTH endpoints are inside it (so CSS nowrap keeps the
+    // four-part "[from] დან [to] მდე" unit side-by-side even in a wrapping bar). A
+    // hidden carrier sitting between them must NOT break the group.
+    expect(groups.length).toBe(1)
+    const group = groups[0]!
+    expect(group.querySelector('[data-span-role="from"]')).toBeTruthy()
+    expect(group.querySelector('[data-span-role="to"]')).toBeTruthy()
+    expect(group.querySelector('[data-testid="sel-fromYear"]')).toBeTruthy()
+    expect(group.querySelector('[data-testid="sel-toYear"]')).toBeTruthy()
+  })
+
   it('no raw i18n key leaks (span-from-lead / span-to-trail never render literally)', () => {
     const { container } = renderBar('ka', 'range')
     expect(container.textContent).not.toMatch(/span-(from|to)-(lead|trail)/)
