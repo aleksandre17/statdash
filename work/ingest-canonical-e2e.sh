@@ -97,17 +97,62 @@ poll_status() {
   done
 }
 
-# ── Drive one job: wait(staged) → publish → wait(published) ───────────────────
+# ── job_status <job_id> — echo one job's current FSM status (used to classify a publish) ──
+job_status() {
+  curl -fsS "${AUTH[@]}" "$API_BASE_URL/api/ingest/jobs/$1" | jq -r '.data.job.status'
+}
+
+# ── classify_publish_result <http_code> <job_status_after> → outcome (PURE) ──────
+#   ok         2xx — the publish transitioned the job.
+#   converged  409 AND the job IS 'published' — the target state is ALREADY reached: an
+#              idempotent no-op (reference data the route drove to gold, or a re-run that
+#              converged). SUCCESS, not a conflict.
+#   conflict   any other non-2xx — a GENUINE failure to propagate: a 409 while still
+#              'staged' (error issues), 'rejected'/'failed', or any unexpected status.
+# We never blindly swallow all 409s — only the one that provably converged to 'published'.
+classify_publish_result() {
+  local http="$1" status_after="$2"
+  if [[ "$http" =~ ^2[0-9][0-9]$ ]]; then echo "ok"; return 0; fi
+  if [[ "$http" == "409" && "$status_after" == "published" ]]; then echo "converged"; return 0; fi
+  echo "conflict"
+}
+
+# ── Drive one job to gold: skip-if-published → wait(staged) → publish → wait(published) ─
+# $2 is the job's status AS REPORTED by the 202 upload response (the contract SSOT). The
+# canonical route drives REFERENCE data (codelists/displays) to gold itself and returns
+# them status='published'; only FACTS come back 'staged'. Publishing an already-published
+# job 409s — so skip those, and treat a converged-409 as idempotent SUCCESS.
 publish_job() {
-  local job_id="$1"
+  local job_id="$1" reported="${2:-}" http status_after outcome
+  if [[ "$reported" == "published" ]]; then
+    echo "      already published by the route (reference/converged) — skip publish."
+    return 0
+  fi
   poll_status "$job_id" staged
-  curl -fsS -X POST "${AUTH[@]}" "$API_BASE_URL/api/ingest/jobs/$job_id/publish" >/dev/null
-  poll_status "$job_id" published
+  http="$(curl -sS -o /tmp/publish_resp.json -w '%{http_code}' -X POST \
+    "${AUTH[@]}" "$API_BASE_URL/api/ingest/jobs/$job_id/publish")"
+  status_after="$(job_status "$job_id")"
+  outcome="$(classify_publish_result "$http" "$status_after")"
+  case "$outcome" in
+    ok)
+      poll_status "$job_id" published
+      ;;
+    converged)
+      echo "      publish → HTTP $http but job is 'published' — converged no-op (idempotent), treated as SUCCESS."
+      return 0
+      ;;
+    conflict)
+      echo "FATAL: publish $job_id → HTTP $http, job status '$status_after' (genuine conflict, not converged):"
+      cat /tmp/publish_resp.json; echo
+      return 1
+      ;;
+  esac
 }
 
 # ── Upload one workbook → publish every job it produced (in order) ────────────
 ingest_dataset() {
-  local code="$1" file="$CANONICAL_DIR/$code.xlsx" http resp
+  local code="$1" http resp
+  local file="$CANONICAL_DIR/$code.xlsx"
   [[ -f "$file" ]] || { echo "FATAL: missing fixture $file"; exit 1; }
   echo "→ POST /api/ingest/canonical  ($code)"
 
@@ -126,16 +171,17 @@ ingest_dataset() {
     echo "FATAL: upload $code → HTTP $http"; cat /tmp/canon_resp.json; echo; exit 1
   fi
 
-  # Publish each job IN ORDER (codelists → [displays] → facts).
+  # Publish each STAGED job IN ORDER; thread the reported status so already-published
+  # reference jobs (codelists → [displays]) are skipped, publishing only 'staged' facts.
   local jobs
-  jobs="$(jq -r '.data.jobIds[] | "\(.kind):\(.jobId)"' /tmp/canon_resp.json)"
+  jobs="$(jq -r '.data.jobIds[] | "\(.kind):\(.jobId):\(.status)"' /tmp/canon_resp.json)"
   echo "  202 jobs: $(echo "$jobs" | tr '\n' ' ')"
-  while IFS=: read -r kind job_id; do
+  while IFS=: read -r kind job_id status; do
     [[ -z "$job_id" ]] && continue
-    echo "    publishing $kind ($job_id)…"
-    publish_job "$job_id"
+    echo "    $kind ($job_id) reported status=$status"
+    publish_job "$job_id" "$status"
   done <<< "$jobs"
-  echo "  $code published."
+  echo "  $code done."
 }
 
 # ── Serve assertions: counts, the 3 anchors, timeCoverage ─────────────────────
