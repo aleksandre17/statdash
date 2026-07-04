@@ -6,27 +6,29 @@
 //  this helper, so the rule lives in one place (DRY) rather than drifting across
 //  shells.
 //
-//  The flag is the OR of three complementary signals, cheapest-first:
+//  The flag is the OR of two year-aware signals, cheapest-first:
 //
 //    1. Node config — `def.preliminary === true`. An explicit author override;
 //       always honoured.
 //    2. Rendered rows — any row this panel actually shows carries a preliminary
-//       SDMX OBS_STATUS. This is the most precise signal: the badge fires only
-//       when the displayed slice contains preliminary data, never because some
-//       unrelated slice of the dataset happens to be preliminary. We read both
-//       the raw `obsStatus` field (survives the `query` spec path) and the typed
-//       `provenance.status` / `status` fields (the encoded DataRow path).
-//    3. Dataset-wide MetadataPort — `store.metadata?.provenance(...)` returns
-//       `status: 'p'`. The fallback when rows don't carry status (e.g. an
-//       aggregated/derived spec) but the dataset is known preliminary.
+//       SDMX OBS_STATUS. This is the precise, year-aware signal: the badge fires
+//       ONLY when the DISPLAYED slice contains preliminary data, never because some
+//       unrelated slice of the dataset happens to be preliminary. We read both the
+//       raw `obsStatus` field (surfaced by the `query` spec path AND, since the
+//       applyEncoding OBS_STATUS passthrough, the ENCODED chart/table path) and the
+//       typed `provenance.status` / `status` fields.
 //
-//  Pure + synchronous: safe to call in render. No fetch, no store I/O beyond the
-//  already-resolved MetadataPort (populated once at store-build time).
+//  A dataset-wide MetadataPort fallback was REMOVED (it lit the badge on a FINAL
+//  year merely because the dataset ALSO contained a preliminary obs — the year-blind
+//  leak that contradicted signal 2's own contract). If a genuinely-preliminary
+//  derived panel ever shows rows lacking obsStatus, the fix is at the SOURCE (carry
+//  obsStatus onto those rows so signal 2 catches it), never a dataset-wide fallback.
+//
+//  Pure + synchronous: safe to call in render. No fetch, no store I/O.
 //
 
 import type { DataRow }                  from '@statdash/engine'
 import type { NodeBase, RenderContext }  from './types'
-import { resolveStore }                  from './resolveNodeRows'
 
 /** True when a single SDMX OBS_STATUS code denotes preliminary data ('p', any case). */
 function isPreliminaryStatus(status: unknown): boolean {
@@ -45,8 +47,8 @@ function rowIsPreliminary(row: DataRow): boolean {
 
 /**
  * Resolve the panel-title `preliminary` flag for a node. See module header for
- * the three OR-ed signals. Returns `undefined` (not `false`) when no signal
- * fires, matching `PanelTitleHost.preliminary?` so the badge simply stays absent.
+ * the two year-aware OR-ed signals. Returns `undefined` (not `false`) when no
+ * signal fires, matching `PanelTitleHost.preliminary?` so the badge stays absent.
  */
 export function resolvePreliminary(
   def: NodeBase & { preliminary?: boolean },
@@ -55,15 +57,9 @@ export function resolvePreliminary(
   // 1 — explicit node config
   if (def.preliminary === true) return true
 
-  // 2 — rendered rows actually shown by this panel
+  // 2 — rendered rows actually shown by this panel (the DISPLAYED slice)
   const rows = ctx.rows
   if (rows && rows.some(rowIsPreliminary)) return true
-
-  // 3 — dataset-wide provenance via the MetadataPort seam
-  const store = resolveStore(ctx)
-  const measure = String((def as { measure?: unknown }).measure ?? '')
-  const prov = store.metadata?.provenance(measure, ctx.sectionCtx)
-  if (prov && isPreliminaryStatus(prov.status)) return true
 
   return undefined
 }
