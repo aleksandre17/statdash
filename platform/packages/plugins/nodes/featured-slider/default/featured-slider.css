@@ -95,6 +95,12 @@
   border-top: 3px solid var(--fc-accent);
   background: var(--color-surface);
   min-width: 0;
+  /* Uniform card height across ALL slides — a card's natural height varies with
+     its content (1- vs 2-line label, presence of a trend row / preliminary badge),
+     which made the Regional slide (short 1-line labels, no trend) render shorter
+     than the GDP slide. Reserve a stable card height so every slide is the same
+     length; `actions { margin-top:auto }` bottom-aligns the drill in the reserve. */
+  min-height: 11.5rem;
 }
 
 .featured-card__head {
@@ -110,6 +116,9 @@
   font-weight: 500;
   color: var(--fc-accent);
   margin: 0;
+  /* Reserve 2 lines so a 1-line label (e.g. "თბილისი") occupies the same height
+     as a wrapped 2-line one — keeps card heads aligned across slides. */
+  min-height: 2.5em;
 }
 
 .featured-card__prelim {
