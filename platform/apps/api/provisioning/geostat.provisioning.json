@@ -1090,6 +1090,10 @@
                     "type": "inline",
                     "valueField": "code"
                   },
+                  "label": {
+                    "ka": "საბოლოო წელი",
+                    "en": "End year"
+                  },
                   "spanRole": "to",
                   "type": "select",
                   "visibleWhen": {
@@ -2694,6 +2698,10 @@
                     ],
                     "type": "inline",
                     "valueField": "code"
+                  },
+                  "label": {
+                    "ka": "საბოლოო წელი",
+                    "en": "End year"
                   },
                   "spanRole": "to",
                   "type": "select",
@@ -4594,6 +4602,10 @@
                     ],
                     "type": "inline",
                     "valueField": "code"
+                  },
+                  "label": {
+                    "ka": "საბოლოო წელი",
+                    "en": "End year"
                   },
                   "spanRole": "to",
                   "type": "select",
