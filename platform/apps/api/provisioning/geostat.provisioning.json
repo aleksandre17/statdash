@@ -1287,7 +1287,7 @@
                 "value": {
                   "type": "point",
                   "format": "mln_gel",
-                  "measure": "gross-domestic-product-at-current-prices",
+                  "measure": "gdp.current",
                   "filter": {
                     "geo": "GE",
                     "approach": "_Z"
@@ -1295,7 +1295,7 @@
                 },
                 "trend": {
                   "type": "yoy",
-                  "measure": "gross-domestic-product-at-current-prices",
+                  "measure": "gdp.current",
                   "filter": {
                     "geo": "GE",
                     "approach": "_Z"

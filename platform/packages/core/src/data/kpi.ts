@@ -39,6 +39,26 @@ function trendDir(pct: number): 'up' | 'down' | 'flat' {
   return pct > 0.05 ? 'up' : pct < -0.05 ? 'down' : 'flat'
 }
 
+// ── readMeasure — the metric-aware point read (U1) ─────────────────────────────
+//
+//  Route EVERY render-side measure read through the SAME resolveMeasureRef seam the
+//  WARM path (extractKpiRequirements.push) already uses, so render and warm resolve a
+//  measure ref IDENTICALLY. This closes a latent split: the warm path resolved a
+//  metric-id to its underlying code(s), but the render path passed the raw ref
+//  straight to storeVal — so a KPI referencing a metric-id warmed one code yet
+//  rendered a different key (cache-miss → 0 value + a dead preliminary badge).
+//
+//  Postel / FF-RAW-CODE-IDENTICAL: a raw code is NOT a registered metric-id, so
+//  resolveMeasureRef('X').codes === ['X'] → storeVal(store, 'X', ctx), BYTE-IDENTICAL
+//  to the legacy direct read. A metric-id expands to its underlying code(s); when a
+//  metric declares MULTIPLE codes they SUM (the OLAP additive-measure reading),
+//  mirroring the warm path which enumerates one requirement per code (warm === render).
+function readMeasure(store: DataStore, measure: string, ctx: SectionContext): number {
+  let sum = 0
+  for (const code of resolveMeasureRef(measure).codes) sum += storeVal(store, code, ctx)
+  return sum
+}
+
 /** Greppable diagnostic code for a CAGR whose baseline is 0/falsy (PL-4). */
 export const KPI_CAGR_ZERO_BASELINE = 'KPI_CAGR_ZERO_BASELINE'
 
@@ -64,14 +84,14 @@ function resolveValue(spec: KpiValueSpec, ctx: SectionContext, store: DataStore)
     case 'point': {
       const c = withFilter(ctx, spec.filter)
       const t = resolveTime(spec.time, c)
-      const n = storeVal(store, spec.measure, atTime(t, c))
+      const n = readMeasure(store, spec.measure, atTime(t, c))
       return getFormatter(spec.format)(spec.abs ? Math.abs(n) : n)
     }
     case 'yoy': {
       const c    = withFilter(ctx, spec.filter)
       const t    = resolveTime(spec.time, c)
-      const cur  = storeVal(store, spec.measure, atTime(t, c))
-      const prev = storeVal(store, spec.measure, atTime(t - 1, c))
+      const cur  = readMeasure(store, spec.measure, atTime(t, c))
+      const prev = readMeasure(store, spec.measure, atTime(t - 1, c))
       const pct  = prev ? (cur / prev - 1) * 100 : 0
       return getFormatter('sign_pct')(pct)
     }
@@ -79,8 +99,8 @@ function resolveValue(spec: KpiValueSpec, ctx: SectionContext, store: DataStore)
       const c     = withFilter(ctx, spec.filter)
       const from  = resolveTime(spec.from, c)
       const to    = resolveTime(spec.to, c)
-      const vFrom = storeVal(store, spec.measure, atTime(from, c))
-      const vTo   = storeVal(store, spec.measure, atTime(to, c))
+      const vFrom = readMeasure(store, spec.measure, atTime(from, c))
+      const vTo   = readMeasure(store, spec.measure, atTime(to, c))
       if (to > from && !vFrom) cagrZeroBaseline(spec.measure, from, to)   // PL-4 — fail loud, not silent 0
       const n     = vFrom && to > from ? ((vTo / vFrom) ** (1 / (to - from)) - 1) * 100 : 0
       return fmtKpiPct(n)
@@ -95,14 +115,14 @@ function resolveValue(spec: KpiValueSpec, ctx: SectionContext, store: DataStore)
       const hi  = Math.max(resolveTime(spec.from, c), resolveTime(spec.to, c))
       let sum = 0
       let n   = 0
-      for (let t = lo; t <= hi; t++) { sum += storeVal(store, spec.measure, atTime(t, c)); n++ }
+      for (let t = lo; t <= hi; t++) { sum += readMeasure(store, spec.measure, atTime(t, c)); n++ }
       const avg = n ? sum / n : 0
       return (spec.format ? getFormatter(spec.format) : fmtKpiPct)(avg)
     }
     case 'share': {
       const getRef = (ref: ObsRef): number => {
         const rc = withFilter(ctx, ref.filter)
-        return storeVal(store, ref.measure, atTime(resolveTime(ref.time, rc), rc))
+        return readMeasure(store, ref.measure, atTime(resolveTime(ref.time, rc), rc))
       }
       const n = getRef(spec.num)
       const d = getRef(spec.denom)
@@ -111,7 +131,7 @@ function resolveValue(spec: KpiValueSpec, ctx: SectionContext, store: DataStore)
     case 'expr': {
       const c    = withFilter(ctx, spec.filter)
       const t    = resolveTime(spec.time, c)
-      const vals = spec.codes.map((code) => storeVal(store, code, atTime(t, c)))
+      const vals = spec.codes.map((code) => readMeasure(store, code, atTime(t, c)))
       const n    = spec.op === 'subtract'
         ? vals[0] - vals.slice(1).reduce((a, b) => a + b, 0)
         : vals.reduce((a, b) => a + b, 0)
@@ -143,16 +163,16 @@ function resolveTrend(
   switch (spec.type) {
     case 'yoy': {
       const t    = resolveTime(spec.time, c)
-      const cur  = storeVal(store, spec.measure, atTime(t, c))
-      const prev = storeVal(store, spec.measure, atTime(t - 1, c))
+      const cur  = readMeasure(store, spec.measure, atTime(t, c))
+      const prev = readMeasure(store, spec.measure, atTime(t - 1, c))
       const pct  = prev ? (cur / prev - 1) * 100 : 0
       return { value: getFormatter('sign_pct')(pct), dir: trendDir(pct) }
     }
     case 'cagr': {
       const from  = resolveTime(spec.from, c)
       const to    = resolveTime(spec.to, c)
-      const vFrom = storeVal(store, spec.measure, atTime(from, c))
-      const vTo   = storeVal(store, spec.measure, atTime(to, c))
+      const vFrom = readMeasure(store, spec.measure, atTime(from, c))
+      const vTo   = readMeasure(store, spec.measure, atTime(to, c))
       if (to > from && !vFrom) cagrZeroBaseline(spec.measure, from, to)   // PL-4 — same fail-loud guard as the value site
       const pct   = vFrom && to > from ? ((vTo / vFrom) ** (1 / (to - from)) - 1) * 100 : 0
       return { value: getFormatter('sign_pct')(pct), dir: trendDir(pct) }

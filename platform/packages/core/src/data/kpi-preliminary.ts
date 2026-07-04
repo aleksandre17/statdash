@@ -67,56 +67,70 @@ function coordIsPreliminary(store: DataStore, measure: string, c: SectionContext
 }
 
 /**
+ * Status-aware read through the SAME resolveMeasureRef seam the VALUE read uses
+ * (kpi.ts readMeasure) and the WARM path uses (extractKpiRequirements) — so a KPI
+ * referencing a metric-id derives its preliminary badge from the metric's underlying
+ * store code(s), NOT from the (unregistered-as-an-obs) metric-id, which would match
+ * no observation → a dead badge (the render/warm split this closes, U1). A raw code
+ * resolves to itself (`resolveMeasureRef('X').codes === ['X']`) so this is
+ * BYTE-IDENTICAL to the legacy `coordIsPreliminary(store, 'X', c)` for every
+ * existing config (FF-RAW-CODE-IDENTICAL, preliminary half).
+ */
+function refIsPreliminary(store: DataStore, measure: string, c: SectionContext): boolean {
+  return resolveMeasureRef(measure).codes.some((code) => coordIsPreliminary(store, code, c))
+}
+
+/**
  * Does the KPI's VALUE read any preliminary observation? Walks every value
  * discriminant's coordinate(s) — the SAME reads `resolveValue` issues — and reports
  * whether ANY displayed observation carries OBS_STATUS 'p'. Covers each endpoint a
  * discriminant reads: `point` (its coord), `yoy`/`cagr` (both periods), `mean` (every
  * year in the window), `share` (num AND denom), `expr` (every code), `metric` (each
- * component at the pinned period).
+ * component at the pinned period). Every measure ref resolves through refIsPreliminary
+ * (resolveMeasureRef) so a metric-id badge reads its underlying code(s), matching the
+ * metric-aware value + warm paths.
  */
 export function valueIsPreliminary(spec: KpiValueSpec, ctx: SectionContext, store: DataStore): boolean {
   switch (spec.type) {
     case 'point': {
       const c = withFilter(ctx, spec.filter)
-      return coordIsPreliminary(store, spec.measure, atTime(resolveTime(spec.time, c), c))
+      return refIsPreliminary(store, spec.measure, atTime(resolveTime(spec.time, c), c))
     }
     case 'yoy': {
       const c = withFilter(ctx, spec.filter)
       const t = resolveTime(spec.time, c)
-      return coordIsPreliminary(store, spec.measure, atTime(t, c))
-          || coordIsPreliminary(store, spec.measure, atTime(t - 1, c))
+      return refIsPreliminary(store, spec.measure, atTime(t, c))
+          || refIsPreliminary(store, spec.measure, atTime(t - 1, c))
     }
     case 'cagr': {
       const c = withFilter(ctx, spec.filter)
       // `to` (the latest endpoint) first — the most likely preliminary period.
-      return coordIsPreliminary(store, spec.measure, atTime(resolveTime(spec.to, c), c))
-          || coordIsPreliminary(store, spec.measure, atTime(resolveTime(spec.from, c), c))
+      return refIsPreliminary(store, spec.measure, atTime(resolveTime(spec.to, c), c))
+          || refIsPreliminary(store, spec.measure, atTime(resolveTime(spec.from, c), c))
     }
     case 'mean': {
       const c  = withFilter(ctx, spec.filter)
       const lo = Math.min(resolveTime(spec.from, c), resolveTime(spec.to, c))
       const hi = Math.max(resolveTime(spec.from, c), resolveTime(spec.to, c))
       for (let t = lo; t <= hi; t++) {
-        if (coordIsPreliminary(store, spec.measure, atTime(t, c))) return true
+        if (refIsPreliminary(store, spec.measure, atTime(t, c))) return true
       }
       return false
     }
     case 'share': {
       const cn = withFilter(ctx, spec.num.filter)
       const cd = withFilter(ctx, spec.denom.filter)
-      return coordIsPreliminary(store, spec.num.measure,   atTime(resolveTime(spec.num.time, cn), cn))
-          || coordIsPreliminary(store, spec.denom.measure, atTime(resolveTime(spec.denom.time, cd), cd))
+      return refIsPreliminary(store, spec.num.measure,   atTime(resolveTime(spec.num.time, cn), cn))
+          || refIsPreliminary(store, spec.denom.measure, atTime(resolveTime(spec.denom.time, cd), cd))
     }
     case 'expr': {
       const c = withFilter(ctx, spec.filter)
       const t = resolveTime(spec.time, c)
-      return spec.codes.some((code) => coordIsPreliminary(store, code, atTime(t, c)))
+      return spec.codes.some((code) => refIsPreliminary(store, code, atTime(t, c)))
     }
     case 'metric': {
       const t = resolveTime(spec.time, ctx)
-      return resolveMeasureRef(spec.metric).codes.some(
-        (code) => coordIsPreliminary(store, code, atTime(t, ctx)),
-      )
+      return refIsPreliminary(store, spec.metric, atTime(t, ctx))
     }
   }
 }
