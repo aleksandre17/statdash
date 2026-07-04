@@ -1,6 +1,5 @@
 import './featured-slider.css'
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
-import type { KeyboardEvent as ReactKeyboardEvent }          from 'react'
 import { useT }                                  from '@statdash/react'
 import { defineShell, useFeaturedRows }          from '@statdash/react/engine'
 import type { RenderContext }                    from '@statdash/react/engine'
@@ -8,17 +7,26 @@ import type { FeaturedSlideDef }                 from '@statdash/engine'
 import type { FeaturedSliderNode }               from './FeaturedSliderNode'
 import FeaturedCard, { type FeaturedCardLabels } from './FeaturedCard'
 
+// ── Carousel timing (named; the only two magic numbers the shell carries) ──
+//
+//  DEFAULT_AUTOPLAY_MS — slide dwell before auto-advancing to the next group,
+//  used when the node omits `autoplayMs`.
+//  FADE_OUT_MS — the cross-fade hold: how long the current group stays faded out
+//  (`data-visible` off) before the next group's cards swap in. MUST match the
+//  `.featured-slider__slide` opacity/transform transition in featured-slider.css
+//  (mirrors the old stats-carousel cross-fade the owner references as "before").
 const DEFAULT_AUTOPLAY_MS = 7000
+const FADE_OUT_MS         = 200
 
-/** One tabbed slide: an editorial group + its ordered cards. */
+/** One carousel slide: an editorial group + its ordered cards. */
 interface SlideGroup {
   group: string
   items: FeaturedSlideDef[]
 }
 
 /**
- * Fold the flat FeaturedSlideDef[] into tabbed groups (first-seen group order;
- * cards sorted by `order` within a group). Pure — presentation shaping only.
+ * Fold the flat FeaturedSlideDef[] into groups (first-seen group order; cards
+ * sorted by `order` within a group). Pure — presentation shaping only.
  */
 function groupSlides(slides: FeaturedSlideDef[]): SlideGroup[] {
   const groups: SlideGroup[] = []
@@ -48,6 +56,16 @@ export const FeaturedSliderShell = defineShell<FeaturedSliderNode>({
   },
 })
 
+/**
+ * A CAROUSEL (not tabs): a uniform fixed-height frame that shows ONE group's cards
+ * at a time and auto-advances via a cross-fade (fade-out → swap → fade-in). The
+ * frame never changes height between groups (the varying card counts fill a
+ * reserved band, not a growing panel), and there is NO top group-title row —
+ * position is signalled by indicator dots + a progress bar, navigation by prev/next
+ * arrows. Auto-rotation pauses on hover/focus and is OFF under prefers-reduced-motion
+ * (WCAG 2.2.2). The live FeaturedCard content (governed values, trend, preliminary
+ * badge, drill links) and the useFeaturedRows data path are untouched.
+ */
 function FeaturedSliderControl({ def, ctx }: { def: FeaturedSliderNode; ctx: RenderContext }) {
   const t      = useT('featured-slider')
   const slides = useFeaturedRows(def.items, ctx)
@@ -62,13 +80,13 @@ function FeaturedSliderControl({ def, ctx }: { def: FeaturedSliderNode; ctx: Ren
 
   const count = groups.length
   const [active, setActive] = useState(0)
+  const [fade,   setFade]   = useState(true)
   const [paused, setPaused] = useState(false)
-  const tabRefs = useRef<(HTMLButtonElement | null)[]>([])
 
   // Clamp at READ time (never an effect that setStates — that cascades renders):
   // if the group set shrinks on a data reload, the stale-high index resolves to a
-  // valid slide instead of an out-of-range blank. All render + keyboard reads use
-  // activeIndex; setActive always writes a valid index, so the two converge.
+  // valid slide instead of an out-of-range blank. setActive always writes a valid
+  // index, so the two converge.
   const activeIndex = count > 0 ? Math.min(active, count - 1) : 0
 
   const autoplay = def.autoplayMs ?? DEFAULT_AUTOPLAY_MS
@@ -77,35 +95,38 @@ function FeaturedSliderControl({ def, ctx }: { def: FeaturedSliderNode; ctx: Ren
     [],
   )
 
-  // Auto-advance — paused on hover/focus (setPaused) and OFF when the author sets
-  // autoplayMs:0, there is <2 slides, or the user prefers reduced motion (WCAG 2.2.2).
+  // Refs let the autoplay interval read the latest index and clear the fade timer
+  // without being re-armed on every advance (mirrors the old stats-carousel).
+  const activeRef    = useRef(activeIndex)
+  const fadeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  useEffect(() => { activeRef.current = activeIndex }, [activeIndex])
+
+  // Cross-fade to group `i`: fade the current group out, swap content, fade the new
+  // group in — the "slide like before" transition. Under prefers-reduced-motion the
+  // swap is instant (no fade), honouring WCAG 2.3.3 / user preference.
+  const goTo = useCallback((i: number) => {
+    if (fadeTimerRef.current) clearTimeout(fadeTimerRef.current)
+    if (reducedMotion) { setActive(i); setFade(true); return }
+    setFade(false)
+    fadeTimerRef.current = setTimeout(() => { setActive(i); setFade(true) }, FADE_OUT_MS)
+  }, [reducedMotion])
+
+  // Auto-advance — OFF when paused (hover/focus), the user prefers reduced motion,
+  // the author sets autoplayMs:0, or there is <2 groups (WCAG 2.2.2 Pause/Stop).
+  const autoRotating = !paused && !reducedMotion && autoplay > 0 && count >= 2
   useEffect(() => {
-    if (paused || reducedMotion || autoplay <= 0 || count < 2) return
-    const timer = setInterval(() => setActive(i => (i + 1) % count), autoplay)
-    return () => clearInterval(timer)
-  }, [paused, reducedMotion, autoplay, count])
-
-  // Roving-tabindex keyboard nav (WAI-ARIA tabs; automatic activation — selection
-  // follows focus, valid since every panel is preloaded).
-  const focusTab = useCallback((i: number) => {
-    setActive(i)
-    tabRefs.current[i]?.focus()
-  }, [])
-
-  const onTabKeyDown = useCallback((e: ReactKeyboardEvent) => {
-    if (count < 2) return
-    switch (e.key) {
-      case 'ArrowRight': e.preventDefault(); focusTab((activeIndex + 1) % count); break
-      case 'ArrowLeft':  e.preventDefault(); focusTab((activeIndex - 1 + count) % count); break
-      case 'Home':       e.preventDefault(); focusTab(0); break
-      case 'End':        e.preventDefault(); focusTab(count - 1); break
+    if (!autoRotating) return
+    const timer = setInterval(() => goTo((activeRef.current + 1) % count), autoplay)
+    return () => {
+      clearInterval(timer)
+      if (fadeTimerRef.current) clearTimeout(fadeTimerRef.current)
     }
-  }, [activeIndex, count, focusTab])
+  }, [autoRotating, goTo, count, autoplay])
 
   if (count === 0) return null
 
   const activeGroup = groups[activeIndex]
-  const grouped     = count > 1 || activeGroup.group !== ''
+  const multi       = count > 1
 
   return (
     <section
@@ -117,56 +138,69 @@ function FeaturedSliderControl({ def, ctx }: { def: FeaturedSliderNode; ctx: Ren
       onFocusCapture={() => setPaused(true)}
       onBlurCapture={() => setPaused(false)}
     >
-      {grouped && (
-        <div className="featured-slider__tabs" role="tablist" aria-label={t('region')} onKeyDown={onTabKeyDown}>
-          {groups.map((g, i) => (
-            <button
-              key={g.group || i}
-              ref={el => { tabRefs.current[i] = el }}
-              type="button"
-              role="tab"
-              id={`featured-tab-${i}`}
-              aria-selected={i === activeIndex}
-              aria-controls={`featured-panel-${i}`}
-              tabIndex={i === activeIndex ? 0 : -1}
-              className="featured-slider__tab"
-              data-current={i === activeIndex ? '' : undefined}
-              onClick={() => setActive(i)}
-            >
-              {g.group || `${t('slide')} ${i + 1}`}
-            </button>
-          ))}
-        </div>
-      )}
-
-      {groups.map((g, i) => (
-        <div
-          key={g.group || i}
-          role={grouped ? 'tabpanel' : undefined}
-          id={`featured-panel-${i}`}
-          aria-labelledby={grouped ? `featured-tab-${i}` : undefined}
-          hidden={i !== activeIndex}
-          aria-live={i === activeIndex ? 'polite' : undefined}
-          className="featured-slider__panel"
-        >
-          <div className="featured-slider__grid" data-count={String(g.items.length)}>
-            {g.items.map((slide, j) => (
-              <FeaturedCard
-                key={`${slide.card.label}-${j}`}
-                slide={slide}
-                href={resolveHref(slide.href, ctx.locale)}
-                labels={cardLabels}
+      {multi && (
+        <div className="featured-slider__controls">
+          {/* Position indicators — decorative (position is also carried by the
+              slide's aria-label + progress bar); prev/next give keyboard control. */}
+          <div className="featured-slider__dots" aria-hidden="true">
+            {groups.map((g, i) => (
+              <span
+                key={g.group || i}
+                className="featured-slider__dot"
+                data-current={i === activeIndex ? '' : undefined}
               />
             ))}
           </div>
+          <div className="featured-slider__nav">
+            <button
+              type="button"
+              className="featured-slider__nav-button"
+              aria-label={t('prev')}
+              onClick={() => goTo((activeIndex - 1 + count) % count)}
+            >
+              <span aria-hidden="true">←</span>
+            </button>
+            <button
+              type="button"
+              className="featured-slider__nav-button"
+              aria-label={t('next')}
+              onClick={() => goTo((activeIndex + 1) % count)}
+            >
+              <span aria-hidden="true">→</span>
+            </button>
+          </div>
         </div>
-      ))}
+      )}
 
-      {count > 1 && (
-        <div className="featured-slider__dots" aria-hidden="true">
-          {groups.map((g, i) => (
-            <span key={g.group || i} className="featured-slider__dot" data-current={i === activeIndex ? '' : undefined} />
+      {/* ONE slide at a time, cross-fading in place inside the fixed-height frame.
+          aria-live is 'off' while auto-rotating (APG: don't announce every 7s) and
+          'polite' when rotation is stopped/paused, so a stopped carousel is spoken. */}
+      <div
+        className="featured-slider__slide"
+        role="group"
+        aria-roledescription="slide"
+        aria-label={`${t('slide')} ${activeIndex + 1} / ${count}`}
+        aria-live={autoRotating ? 'off' : 'polite'}
+        data-visible={fade ? '' : undefined}
+      >
+        <div className="featured-slider__grid" data-count={String(activeGroup.items.length)}>
+          {activeGroup.items.map((slide, j) => (
+            <FeaturedCard
+              key={`${slide.card.label}-${j}`}
+              slide={slide}
+              href={resolveHref(slide.href, ctx.locale)}
+              labels={cardLabels}
+            />
           ))}
+        </div>
+      </div>
+
+      {multi && (
+        <div className="featured-slider__progress" aria-hidden="true">
+          <div
+            className="featured-slider__progress-bar"
+            style={{ width: `${((activeIndex + 1) / count) * 100}%` }}
+          />
         </div>
       )}
     </section>

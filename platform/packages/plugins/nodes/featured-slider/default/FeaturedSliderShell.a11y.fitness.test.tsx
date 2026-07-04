@@ -2,10 +2,15 @@
 //
 // ── FF-FEATURED-A11Y — the featured slider's WCAG behavioural contract ────────
 //
-//  axe cannot see roving-tabindex, arrow-key handlers, or colour-only trend — they
-//  are behavioural, so this gate exercises the real shell with fireEvent and asserts:
-//    • carousel/tablist/tabpanel roles (WAI-ARIA),
-//    • roving tabindex + Left/Right/Home/End keyboard nav,
+//  The slider is a CAROUSEL, not a tab set (AR-40 presentation rework): a uniform
+//  fixed-height frame that shows ONE group's cards at a time and cross-fades between
+//  them. axe cannot see the carousel semantics, auto-rotation, or colour-only trend —
+//  they are behavioural — so this gate exercises the real shell with fireEvent + fake
+//  timers and asserts:
+//    • carousel/slide roles (WAI-ARIA APG carousel), and NO tab/tablist/tabpanel,
+//    • a UNIFORM fixed frame — exactly ONE group is in the DOM at a time (no stacking),
+//    • auto-advance cross-fades to the next group AND pauses on hover / prefers-reduced-motion,
+//    • real prev/next <button>s with i18n labels (no hardcoded chrome strings → no leak),
 //    • NO colour-only trend (glyph + sr-only text + visible value),
 //    • a real crawlable drill <a href> (locale-prefixed) + preliminary badge (Law 9),
 //    • the value is the LIVE resolved figure (from useFeaturedRows), never hardcoded.
@@ -30,44 +35,113 @@ vi.mock('@statdash/react/engine', async (importActual) => {
   return { ...actual, useFeaturedRows: () => FIXTURE }
 })
 
-import { render, screen, cleanup, fireEvent, within } from '@testing-library/react'
+import { render, screen, cleanup, fireEvent, within, act } from '@testing-library/react'
 import type { ReactElement } from 'react'
 import { FeaturedSliderShell } from './FeaturedSliderShell'
 import type { RenderContext } from '@statdash/react/engine'
 import type { FeaturedSliderNode } from './FeaturedSliderNode'
 
-function renderSlider(locale = 'en') {
-  const def = { type: 'featured-slider', id: 'fs', items: [], autoplayMs: 0 } as FeaturedSliderNode
+// The shell's cross-fade hold (private const in the shell). Advancing timers by at
+// least this + the autoplay dwell lands on the swapped-in group.
+const FADE_OUT_MS = 200
+
+function renderSlider(locale = 'en', autoplayMs = 0) {
+  const def = { type: 'featured-slider', id: 'fs', items: [], autoplayMs } as FeaturedSliderNode
   const ctx = { locale } as unknown as RenderContext
   return render(FeaturedSliderShell(def, ctx, { rendered: [], byName: {} } as never) as ReactElement)
 }
 
-afterEach(() => cleanup())
+afterEach(() => {
+  cleanup()
+  vi.useRealTimers()
+  // Reset any matchMedia stub a test installed (reduced-motion case).
+  delete (globalThis as { matchMedia?: unknown }).matchMedia
+})
 
-describe('FF-FEATURED-A11Y — carousel + tabs roles', () => {
-  it('exposes a carousel region and one tab per group', () => {
+describe('FF-FEATURED-A11Y — carousel roles (NOT tabs)', () => {
+  it('exposes a carousel region and a single slide group — and NO tab semantics', () => {
     const { container } = renderSlider()
     expect(container.querySelector('[aria-roledescription="carousel"]')).not.toBeNull()
-    expect(screen.getByRole('tablist')).toBeTruthy()
-    expect(screen.getAllByRole('tab')).toHaveLength(2)   // National Accounts + Regional
+
+    const slides = container.querySelectorAll('[aria-roledescription="slide"]')
+    expect(slides).toHaveLength(1)                    // one slide visible at a time
+
+    // The tab pattern must be GONE.
+    expect(screen.queryByRole('tablist')).toBeNull()
+    expect(screen.queryAllByRole('tab')).toHaveLength(0)
+    expect(screen.queryAllByRole('tabpanel', { hidden: true })).toHaveLength(0)
   })
 
-  it('roving tabindex — only the active tab is tabbable; the panels are tabpanels', () => {
-    renderSlider()
-    const [t0, t1] = screen.getAllByRole('tab')
-    expect(t0).toHaveAttribute('tabindex', '0')
-    expect(t1).toHaveAttribute('tabindex', '-1')
-    expect(t0).toHaveAttribute('aria-selected', 'true')
-    expect(screen.getAllByRole('tabpanel', { hidden: true }).length).toBeGreaterThan(0)
+  it('the active slide is a live region, position-labelled from i18n (no hardcoded chrome)', () => {
+    const { container } = renderSlider()
+    const slide = container.querySelector('[aria-roledescription="slide"]')!
+    expect(slide.getAttribute('aria-label')).toBe('slide 1 / 2')  // t('slide') key + N / M
+    // autoplayMs:0 ⇒ not rotating ⇒ region is announced (polite), per APG.
+    expect(slide.getAttribute('aria-live')).toBe('polite')
   })
 
-  it('ArrowRight/Home/End move selection (APG Tabs keyboard model)', () => {
+  it('prev/next are real <button>s with i18n-sourced labels (no leak)', () => {
     renderSlider()
-    const tablist = screen.getByRole('tablist')
-    fireEvent.keyDown(tablist, { key: 'ArrowRight' })
-    expect(screen.getAllByRole('tab')[1]).toHaveAttribute('aria-selected', 'true')
-    fireEvent.keyDown(tablist, { key: 'Home' })
-    expect(screen.getAllByRole('tab')[0]).toHaveAttribute('aria-selected', 'true')
+    // Accessible names equal the i18n KEYS (useT mocked) ⇒ text flows through t(),
+    // never a hardcoded ka/en string in the markup.
+    expect(screen.getByRole('button', { name: 'prev' }).tagName).toBe('BUTTON')
+    expect(screen.getByRole('button', { name: 'next' }).tagName).toBe('BUTTON')
+  })
+})
+
+describe('FF-FEATURED-A11Y — uniform fixed frame (one group at a time)', () => {
+  it('renders ONLY the active group — the other group is not stacked in the DOM', () => {
+    renderSlider()
+    // Group 0 (National Accounts) is visible…
+    expect(screen.getByText('98 035')).toBeTruthy()   // GNI
+    expect(screen.getByText('-2 836')).toBeTruthy()    // Net lending
+    // …Group 1 (Regional) is NOT in the DOM at all (fixed frame, no height stacking).
+    expect(screen.queryByText('49 374')).toBeNull()    // Tbilisi
+    expect(screen.queryByText('104 598')).toBeNull()   // GDP
+  })
+
+  it('prev/next cross-fade to the next group (advances after the fade hold)', () => {
+    vi.useFakeTimers()
+    renderSlider('en', 0)                              // manual only, no autoplay
+    fireEvent.click(screen.getByRole('button', { name: 'next' }))
+    act(() => { vi.advanceTimersByTime(FADE_OUT_MS + 50) })
+
+    // Now the Regional group is shown, National Accounts is gone.
+    expect(screen.getByText('49 374')).toBeTruthy()    // Tbilisi
+    expect(screen.getByText('104 598')).toBeTruthy()   // GDP
+    expect(screen.queryByText('98 035')).toBeNull()    // GNI gone
+  })
+})
+
+describe('FF-FEATURED-A11Y — auto-advance + pause (WCAG 2.2.2)', () => {
+  it('auto-advances to the next group after the dwell + fade', () => {
+    vi.useFakeTimers()
+    renderSlider('en', 500)                            // autoplay on
+    expect(screen.getByText('98 035')).toBeTruthy()    // start on group 0
+    act(() => { vi.advanceTimersByTime(500 + FADE_OUT_MS + 50) })
+    expect(screen.getByText('49 374')).toBeTruthy()    // advanced to group 1
+  })
+
+  it('pauses auto-advance on hover (mouseEnter) — Pause/Stop', () => {
+    vi.useFakeTimers()
+    const { container } = renderSlider('en', 500)
+    fireEvent.mouseEnter(container.querySelector('.featured-slider')!)
+    act(() => { vi.advanceTimersByTime(500 + FADE_OUT_MS + 50) })
+    expect(screen.getByText('98 035')).toBeTruthy()    // still on group 0 — paused
+    expect(screen.queryByText('49 374')).toBeNull()
+  })
+
+  it('does NOT auto-advance under prefers-reduced-motion', () => {
+    ;(globalThis as { matchMedia?: unknown }).matchMedia = (q: string) => ({
+      matches: q.includes('reduce'), media: q,
+      addEventListener: () => {}, removeEventListener: () => {},
+      addListener: () => {}, removeListener: () => {}, onchange: null, dispatchEvent: () => false,
+    })
+    vi.useFakeTimers()
+    renderSlider('en', 500)
+    act(() => { vi.advanceTimersByTime(500 + FADE_OUT_MS + 50) })
+    expect(screen.getByText('98 035')).toBeTruthy()    // no motion ⇒ no rotation
+    expect(screen.queryByText('49 374')).toBeNull()
   })
 })
 
@@ -80,7 +154,6 @@ describe('FF-FEATURED-A11Y — no colour-only info + live values + drill', () =>
 
   it('trend carries a text value + sr-only direction (not colour alone)', () => {
     renderSlider()
-    // The "down" trend card: visible signed value + an sr-only "trend-down" label.
     expect(screen.getByText('-3.2%')).toBeTruthy()
     expect(screen.getByText('trend-down')).toBeTruthy()   // sr-only text (mocked useT → key)
   })
@@ -93,10 +166,12 @@ describe('FF-FEATURED-A11Y — no colour-only info + live values + drill', () =>
   })
 
   it('a preliminary card renders the P badge with an sr-only label (Law 9)', () => {
-    renderSlider()
-    // Move to the Regional group where the preliminary GDP card lives.
-    fireEvent.keyDown(screen.getByRole('tablist'), { key: 'End' })
-    const regional = screen.getAllByRole('tabpanel', { hidden: true }).find(p => !p.hidden)!
-    expect(within(regional).getByText('preliminary')).toBeTruthy()   // sr-only preliminary label
+    vi.useFakeTimers()
+    renderSlider('en', 0)
+    // Advance to the Regional group where the preliminary GDP card lives.
+    fireEvent.click(screen.getByRole('button', { name: 'next' }))
+    act(() => { vi.advanceTimersByTime(FADE_OUT_MS + 50) })
+    const slide = document.querySelector('[aria-roledescription="slide"]') as HTMLElement
+    expect(within(slide).getByText('preliminary')).toBeTruthy()   // sr-only preliminary label
   })
 })
