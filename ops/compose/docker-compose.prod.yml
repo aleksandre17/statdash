@@ -40,7 +40,14 @@ services:
     env_file:
       - ../config/db/.env
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      # CRITICAL: this image is TimescaleDB-HA (Spilo), whose real data dir is
+      # PGDATA=/home/postgres/pgdata/data — NOT the vanilla /var/lib/postgresql/data.
+      # The volume MUST mount the Spilo PGROOT (/home/postgres/pgdata) or the DB lives
+      # in the container writable layer and is DESTROYED on any recreate (data-loss
+      # landmine, 2026-07-03). Volume renamed *-v2 so the recreate seeds a fresh, empty,
+      # image-owned (postgres:postgres) volume; the old empty *-pgdata volume is left
+      # untouched. See ADR adr-postgres-persistent-volume.
+      - postgres_data:/home/postgres/pgdata
     networks:
       - statdash-net
     healthcheck:
@@ -219,4 +226,8 @@ networks:
 
 volumes:
   postgres_data:
-    name: statdash-prod-pgdata
+    # Renamed from statdash-prod-pgdata: the old volume was mis-mounted at
+    # /var/lib/postgresql/data (unused by Spilo) so it held no data. A fresh name
+    # forces Docker to create an empty, image-seeded volume for the corrected
+    # /home/postgres/pgdata mount, giving clean initdb + correct ownership.
+    name: statdash-prod-pgdata-v2

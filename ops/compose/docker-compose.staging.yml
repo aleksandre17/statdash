@@ -46,7 +46,10 @@ services:
     ports:
       - "5457:5432"
     volumes:
-      - stg_pgdata:/var/lib/postgresql/data
+      # Spilo (timescaledb-ha) real data dir = PGDATA=/home/postgres/pgdata/data.
+      # Must mount the PGROOT or data lives in the writable layer (recreate = wipe).
+      # Mirrors the prod fix (ADR adr-postgres-persistent-volume).
+      - stg_pgdata:/home/postgres/pgdata
     networks:
       - statdash-stg-net
     healthcheck:
@@ -154,4 +157,6 @@ networks:
 
 volumes:
   stg_pgdata:
-    name: statdash-stg-pgdata
+    # Renamed -v2 alongside the corrected /home/postgres/pgdata mount so a fresh,
+    # image-seeded volume is used (matches the prod fix).
+    name: statdash-stg-pgdata-v2
