@@ -53,6 +53,20 @@ type ParamMeta = {
   /** Short text shown after the control (e.g. suffix annotation). */
   suffix?:      LocaleString
   /**
+   * Render order within the bar — lower numbers appear first. Default: 0.
+   *
+   * Mirrors `BarDef.order` (bar-level) at the param level. The bar builds its
+   * render items from `Record<string, ParamDef>`, whose KEY order is NOT stable
+   * once a published config round-trips through Postgres jsonb (jsonb reorders
+   * object keys by length, then bytewise — so authored `fromYear` before `toYear`
+   * can serve as `toYear` first). `order` makes render order authored-intent,
+   * jsonb-immune, and Constructor-ready; params with equal/absent `order` keep
+   * their relative position (stable sort), so existing bars are unaffected.
+   * Generic — never a privileged dimension name (Law 1); pure data (Law 2, the
+   * sort itself lives in the renderer).
+   */
+  order?:       number
+  /**
    * URL-serialised default value.
    *
    * Tier 1 (DimVal): literal string/number/boolean — backward-compatible.

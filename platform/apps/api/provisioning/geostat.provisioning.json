@@ -1055,6 +1055,7 @@
                     "type": "inline",
                     "valueField": "code"
                   },
+                  "order": 10,
                   "spanRole": "from",
                   "type": "select",
                   "visibleWhen": {
@@ -1094,6 +1095,7 @@
                     "ka": "საბოლოო წელი",
                     "en": "End year"
                   },
+                  "order": 20,
                   "spanRole": "to",
                   "type": "select",
                   "visibleWhen": {
@@ -2668,6 +2670,7 @@
                     "type": "inline",
                     "valueField": "code"
                   },
+                  "order": 10,
                   "spanRole": "from",
                   "type": "select",
                   "visibleWhen": {
@@ -2703,6 +2706,7 @@
                     "ka": "საბოლოო წელი",
                     "en": "End year"
                   },
+                  "order": 20,
                   "spanRole": "to",
                   "type": "select",
                   "visibleWhen": {
@@ -4483,6 +4487,7 @@
                     "type": "inline",
                     "valueField": "code"
                   },
+                  "order": 10,
                   "spanRole": "from",
                   "type": "select",
                   "visibleWhen": {
@@ -4607,6 +4612,7 @@
                     "ka": "საბოლოო წელი",
                     "en": "End year"
                   },
+                  "order": 20,
                   "spanRole": "to",
                   "type": "select",
                   "visibleWhen": {
