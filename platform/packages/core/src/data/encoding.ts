@@ -251,24 +251,20 @@ export interface DataRow {
   /** Parent DataRow.id — enables tree rendering and roll-up aggregation. */
   parentId?:    string
   /**
-   * SDMX OBS_STATUS — data quality / revision flag (IMF / Eurostat standard).
-   * A = normal (default, not displayed)
-   * p = preliminary   → badge 'P'
-   * e = estimate       → badge 'E'
-   * r = revised        → badge 'R'
-   * c = confidential   → badge 'C'
-   *
-   * @deprecated Prefer `provenance.status` for new code.
-   *   Kept for backward compatibility; `applyEncoding` continues to populate it.
+   * SDMX OBS_STATUS — data quality / revision flag (IMF/Eurostat: A/p/e/r/c).
+   * @deprecated Prefer `obsStatus` (raw passthrough) or `provenance.status`.
    */
   status?:      'A' | 'p' | 'e' | 'r' | 'c'
   /**
-   * Typed provenance record — superset of the `status` field.
-   * Populated by the store layer (MetadataPort) or by `applyEncoding` when
-   * the encoding includes a status field.  Absent when no provenance data
-   * is available — renderers degrade gracefully.
-   *
-   * Reference: roadmap Layer 9.2 [N14].
+   * SDMX OBS_STATUS carried VERBATIM from the source obs. applyEncoding propagates it
+   * onto ENCODED rows so a panel is YEAR-AWARE — the preliminary badge fires from the
+   * DISPLAYED slice (resolvePreliminary step 2). Only set when the obs has a status ⇒
+   * byte-identical for status-free data (Law 9 additive; case-insensitive consumers).
+   */
+  obsStatus?:   string
+  /**
+   * Typed provenance record — superset of `status`. Populated by the store layer
+   * (MetadataPort) or applyEncoding; absent when no provenance data [N14].
    */
   provenance?:  ProvenanceRecord
 }
@@ -374,9 +370,7 @@ export function applyEncoding(
     const label  = String(obs[labelField] ?? '')
     const series = seriesField ? String(obs[seriesField] ?? '') : undefined
     const autoId = series ? `${label}::${series}` : label
-    // Identity precedence: explicit `enc.id` field > channel `key` field >
-    // positional auto-id. The `key` branch only fires when a channel declared
-    // a key (no existing config does) → byte-identical default.
+    // Identity precedence: explicit `enc.id` > channel `key` > positional auto-id.
     const joinId =
       enc.id   && obs[enc.id]   !== undefined ? String(obs[enc.id])
     : keyField && obs[keyField] !== undefined ? String(obs[keyField])
@@ -390,6 +384,10 @@ export function applyEncoding(
     if (enc.isTotal     && obs[enc.isTotal])              row.isTotal     = true
     if (enc.level       && obs[enc.level] !== undefined)  row.level       = Number(obs[enc.level])
     if (enc.parentId    && obs[enc.parentId])             row.parentId    = String(obs[enc.parentId])
+    // SDMX OBS_STATUS passthrough → year-aware preliminary badge (resolvePreliminary
+    // step 2). Only set when present ⇒ byte-identical for status-free data.
+    const st = obs['obsStatus'] ?? obs['status']
+    if (st !== undefined && st !== null) row.obsStatus = String(st)
     return row
   })
 }
