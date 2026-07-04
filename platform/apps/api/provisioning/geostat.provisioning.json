@@ -4932,7 +4932,10 @@
           "en": "GeoStat — National Statistics Office of Georgia",
           "ka": "საქსტატი — საქართველოს სტატისტიკის ეროვნული სამსახური"
         },
-        "logoUrl": "https://www.geostat.ge/img/logo.svg"
+        "logoUrl": {
+          "ka": "https://www.geostat.ge/img/logo.svg",
+          "en": "https://www.geostat.ge/img/logo_eng.svg"
+        }
       }
     },
     {

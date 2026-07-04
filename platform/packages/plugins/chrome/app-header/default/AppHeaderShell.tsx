@@ -39,7 +39,7 @@ export function AppHeaderShell({ surface = 'opaque' }: { surface?: HeaderSurface
       <div className={HEADER.inner}>
         {hasBrand && (
           <Link to={`/${locale}`} className={HEADER.brand} aria-label={t(config.logoAlt)}>
-            <img src={config.logoUrl} alt={t(config.logoAlt)} className={HEADER.logo} />
+            <img src={t(config.logoUrl)} alt={t(config.logoAlt)} className={HEADER.logo} />
           </Link>
         )}
 

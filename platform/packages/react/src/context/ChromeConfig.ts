@@ -28,7 +28,7 @@ import type { LocaleString } from '@statdash/engine'
 //
 export interface ChromeConfig {
   // ── Brand identity — site singleton (the one logo).
-  logoUrl:       string
+  logoUrl:       LocaleString
   logoAlt:       LocaleString
 
   // ── Locale display labels — site singleton; replaces hardcoded locale codes.
