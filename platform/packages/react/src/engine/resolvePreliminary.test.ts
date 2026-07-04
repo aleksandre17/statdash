@@ -2,9 +2,11 @@
 //
 // ── resolvePreliminary characterization tests (P2-3) ────────────────────────
 //
-//  Pins the three OR-ed signals that drive the PreliminaryBadge so a refactor
-//  can never silently regress the "preliminary data" affordance (Law 9: data
-//  integrity, IMF/Eurostat standard).
+//  Pins the two YEAR-AWARE OR-ed signals that drive the PreliminaryBadge so a
+//  refactor can never silently regress the "preliminary data" affordance (Law 9:
+//  data integrity, IMF/Eurostat standard). The former dataset-wide MetadataPort
+//  fallback was REMOVED (year-blind leak): the badge now fires ONLY from the
+//  DISPLAYED slice, never because the dataset ALSO contains a preliminary obs.
 //
 
 import { describe, it, expect }   from 'vitest'
@@ -26,7 +28,7 @@ function makeCtx(over: Partial<RenderContext>): RenderContext {
 const node = (over: Partial<NodeBase & { preliminary?: boolean; measure?: string }> = {}) =>
   ({ type: 'chart', id: 'n1', ...over }) as NodeBase & { preliminary?: boolean }
 
-describe('resolvePreliminary — three OR-ed signals', () => {
+describe('resolvePreliminary — two year-aware OR-ed signals', () => {
   it('signal 1: explicit node config def.preliminary === true', () => {
     expect(resolvePreliminary(node({ preliminary: true }), makeCtx({}))).toBe(true)
   })
@@ -46,24 +48,27 @@ describe('resolvePreliminary — three OR-ed signals', () => {
     expect(resolvePreliminary(node(), ctx)).toBe(true)
   })
 
-  it('signal 3: dataset-wide MetadataPort reports status p', () => {
+  // The year-blind leak, now closed: a dataset-wide MetadataPort reporting `p`
+  // must NOT fire the badge when the DISPLAYED rows are final — the badge is a
+  // property of the shown slice, never of the dataset as a whole (Law 1: no
+  // dataset-wide signal). This is the exact contradiction the removed step 3
+  // created against signal 2's own contract.
+  it('dataset-wide MetadataPort status p does NOT fire when displayed rows are final', () => {
     const store: DataStore = {
       ...staticStore,
       metadata: { provenance: () => ({ status: 'p' }) },
     }
-    const ctx = makeCtx({ stores: { default: store }, pageStoreKey: 'default' })
-    expect(resolvePreliminary(node({ measure: 'gdp' }), ctx)).toBe(true)
-  })
-
-  it('returns undefined when no signal fires (final/normal data)', () => {
-    const store: DataStore = {
-      ...staticStore,
-      metadata: { provenance: () => undefined },
-    }
     const ctx = makeCtx({
       stores:       { default: store },
       pageStoreKey: 'default',
-      rows:         [{ id: 'a', label: 'A', value: 1, status: 'A' }],
+      rows:         [{ id: 'a', label: 'A', value: 1, status: 'A' }],   // displayed slice is final
+    })
+    expect(resolvePreliminary(node({ measure: 'gdp' }), ctx)).toBeUndefined()
+  })
+
+  it('returns undefined when no signal fires (final/normal data)', () => {
+    const ctx = makeCtx({
+      rows: [{ id: 'a', label: 'A', value: 1, status: 'A' }],
     })
     expect(resolvePreliminary(node(), ctx)).toBeUndefined()
   })

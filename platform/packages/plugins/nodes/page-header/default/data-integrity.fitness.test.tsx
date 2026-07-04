@@ -29,7 +29,11 @@ import {
   useNodeStatusScope,
   useReportNodeStatus,
   useNodeStatusAggregate,
+  resolvePreliminary,
 } from '@statdash/react/engine'
+import type { RenderContext, NodeBase } from '@statdash/react/engine'
+import { applyEncoding }                from '@statdash/engine'
+import type { EngineRow, EncodingSpec } from '@statdash/engine'
 import PageHeader from './components/PageHeader'
 
 afterEach(cleanup)
@@ -173,6 +177,50 @@ describe('FF-INTEGRITY-VISIBLE-FOLD — a hidden (mounted, display:none) panel d
       </MemoryRouter>,
     )
     expect(container.querySelectorAll('.page-header__integrity').length).toBe(1)
+  })
+})
+
+// ── FF-INTEGRITY-DISPLAYED-SLICE — the badge reflects the SHOWN obs, year-aware ──
+//
+//  resolvePreliminary fires from the DISPLAYED slice ONLY (its ctx.rows), never
+//  dataset-wide. A panel whose rows are all final (obsStatus 'A') → no badge; a panel
+//  whose rows contain a preliminary obs (obsStatus 'p') → badge. Year-agnostic:
+//  asserted via a synthetic P-marked obs, never a literal-year branch. The encoded
+//  path is covered too — applyEncoding propagates obsStatus onto chart/table rows, so
+//  a chart panel showing a preliminary period is equally year-aware.
+
+describe('FF-INTEGRITY-DISPLAYED-SLICE — resolvePreliminary reads the shown slice', () => {
+  const ctxWithRows = (rows: unknown[]): RenderContext =>
+    ({ sectionCtx: { dims: {} }, stores: {}, rows } as unknown as RenderContext)
+  const node = { type: 'chart', id: 'n1' } as NodeBase & { preliminary?: boolean }
+
+  it('a panel showing only FINAL rows (obsStatus A) → not preliminary', () => {
+    expect(resolvePreliminary(node, ctxWithRows([{ id: 'a', label: 'A', value: 1, obsStatus: 'A' }]))).toBeUndefined()
+  })
+
+  it('a panel showing a slice containing obsStatus P → preliminary', () => {
+    expect(resolvePreliminary(node, ctxWithRows([
+      { id: 'a', label: 'A', value: 1, obsStatus: 'A' },
+      { id: 'b', label: 'B', value: 2, obsStatus: 'p' },   // the shown P obs
+    ]))).toBe(true)
+  })
+
+  it('an ENCODED chart panel carries obsStatus (applyEncoding passthrough) → year-aware', () => {
+    const enc: EncodingSpec = { label: 'label', value: 'value' }
+    const finalRows: EngineRow[] = [{ measure: 'gdp', label: 'GDP', value: 100, obsStatus: 'A' }]
+    const prelimRows: EngineRow[] = [{ measure: 'gdp', label: 'GDP', value: 110, obsStatus: 'p' }]
+    // applyEncoding propagates the SDMX status onto the DataRow (the fix at the source)
+    expect(applyEncoding(finalRows, enc)[0]!.obsStatus).toBe('A')
+    expect(applyEncoding(prelimRows, enc)[0]!.obsStatus).toBe('p')
+    // …so resolvePreliminary fires from the encoded slice exactly as from a raw one
+    expect(resolvePreliminary(node, ctxWithRows(applyEncoding(finalRows, enc)))).toBeUndefined()
+    expect(resolvePreliminary(node, ctxWithRows(applyEncoding(prelimRows, enc)))).toBe(true)
+  })
+
+  it('status-free rows are byte-identical (no obsStatus field added)', () => {
+    const enc: EncodingSpec = { label: 'label', value: 'value' }
+    const out = applyEncoding([{ measure: 'gdp', label: 'GDP', value: 100 }], enc)
+    expect('obsStatus' in out[0]!).toBe(false)
   })
 })
 

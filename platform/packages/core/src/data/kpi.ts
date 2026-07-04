@@ -8,81 +8,30 @@
 //
 
 import type { DataStore, Requirement } from './store'
-import { storeVal }            from './store'
-import { resolveMeasureRef }    from './metric'
+import { storeVal }              from './store'
+import { resolveMeasureRef }     from './metric'
 import { resolveMetricValue, calcMetricRequirements } from './metric-calc'
-import type { SectionContext }  from '../core/context'
-import { atTime, TIME_DIM }      from '../core/context'
-import type { KpiDef }          from '../config/kpi'
-import { getFormatter }         from './transform'
-import { resolveTemplate }      from '../config/template'
-import { evalVisibility }       from '../config/visibility'
+import type { SectionContext }   from '../core/context'
+import { atTime }                from '../core/context'
+import type { KpiDef }           from '../config/kpi'
+import { getFormatter }          from './transform'
+import { resolveTemplate }       from '../config/template'
+import { evalVisibility }        from '../config/visibility'
 import type {
-  TimeRef, DimFilter, DimFilterRef, ObsRef, KpiValueSpec, KpiTrendSpec, KpiSpec,
+  ObsRef, KpiValueSpec, KpiTrendSpec, KpiSpec,
 } from './kpi-spec'
-import type { DimVal }           from '../sdmx'
+import { resolveTime, withFilter } from './kpi-coord'
+import { valueIsPreliminary }      from './kpi-preliminary'
 
 // Re-export the vocabulary so existing `from './kpi'` / `from '../data/kpi'`
 // import paths (index.ts, data/index.ts, tests) stay byte-identical after the split.
 export type { FormatKey, ObsRef, KpiValueSpec, KpiTrendSpec, KpiSpec, DimFilter, DimFilterRef } from './kpi-spec'
 
 // ── Internal helpers ──────────────────────────────────────────────────
-
-/** Extract the primary measure code from a KpiValueSpec for provenance lookup. */
-function primaryMeasure(spec: KpiValueSpec): string | undefined {
-  if ('measure' in spec) return spec.measure          // point | yoy | cagr
-  if ('num'     in spec) return spec.num.measure      // share
-  if ('codes'   in spec) return spec.codes[0]         // expr — first operand
-  if ('metric'  in spec) return resolveMeasureRef(spec.metric).codes[0]  // calc — first component code
-  return undefined
-}
-
-function resolveTime(ref: TimeRef | undefined, ctx: SectionContext): number {
-  if (ref === undefined)                        return ctx.dims[TIME_DIM] as number
-  if (typeof ref === 'object' && '$ctx' in ref) return ctx.dims[ref.$ctx] as number
-  return ref as number
-}
-
-// Resolve ONE KPI filter dim value against the live ctx.dims. A `$ctx` ref FOLLOWS
-// the current selection (cross-filter); an empty selection falls back to the ref's
-// `default` (e.g. '_T' national total). A literal passes through unchanged. This is
-// the read-side twin of the store's resolveFilter `$ctx` handling — a KPI filter
-// dim can now scope to the selection instead of pinning a literal.
-function resolveFilterVal(v: DimFilter[string], ctx: SectionContext): DimVal | '' {
-  if (v !== null && typeof v === 'object') {
-    if ('$ctx' in v) {
-      const ref = v as DimFilterRef
-      const sel = ctx.dims[ref.$ctx]
-      if (sel !== '' && sel !== null && sel !== undefined) return sel as DimVal
-      return ref.default ?? ''
-    }
-    // A bare `{$ne}` (no positive $ctx) is a pure exclusion → wildcard POSITIVE; the
-    // exclusion itself is collected by withFilter and applied at match time.
-    if ('$ne' in v) return ''
-  }
-  return v as DimVal
-}
-
-function withFilter(ctx: SectionContext, filter?: DimFilter): SectionContext {
-  if (!filter) return ctx
-  const dims = { ...ctx.dims }
-  let exclude: Record<string, DimVal[]> | undefined
-  for (const [k, v] of Object.entries(filter)) {
-    const rv = resolveFilterVal(v, ctx)
-    // '' / null / undefined — wildcard: drop the dim from ctx so val() sums over it.
-    if (rv === '' || rv === null || rv === undefined) delete dims[k]
-    else                                              dims[k] = rv
-    // `$ne` — a CLIENT-SIDE exclusion applied at val match time, kept SEPARATE from
-    // the positive coordinate so a wildcard fallback still sums the whole dim MINUS the
-    // excluded aggregate row (e.g. sum leaf regions, drop `_T`). When the $ctx pin IS
-    // populated (State B), the positive coordinate already excludes `_T`, so this is a
-    // harmless no-op. The wire fetch is unchanged (covering superset) — warm↔read safe.
-    if (v !== null && typeof v === 'object' && '$ne' in v && (v as DimFilterRef).$ne !== undefined) {
-      (exclude ??= {})[k] = [(v as DimFilterRef).$ne as DimVal]
-    }
-  }
-  return exclude ? { ...ctx, dims, exclude } : { ...ctx, dims }
-}
+//
+//  The read-coordinate primitives (resolveTime / withFilter) live in ./kpi-coord,
+//  shared with the displayed-slice preliminary derivation (./kpi-preliminary) so a
+//  KPI's value and its OBS_STATUS resolve at the IDENTICAL coordinate (DRY).
 
 const fmtKpiPct = (n: number): string => n.toFixed(1)
 
@@ -247,10 +196,6 @@ export function interpretKpi(
   const formattedValue = resolveValue(spec.value, ctx, store)
   const trend          = spec.trend ? resolveTrend(spec.trend, ctx, store) : null
 
-  // Provenance: static flag OR dynamic store.metadata port [N14].
-  const code = primaryMeasure(spec.value)
-  const prov = code ? store.metadata?.provenance(code, ctx) : undefined
-
   // Every display field funnels through resolveTemplate — which collapses the
   // LocaleString carrier to the active locale (ctx.locale, generic) THEN template-
   // expands against ctx.dims. label/unit/trendSub are all i18n carriers; resolving
@@ -263,7 +208,10 @@ export function interpretKpi(
     trend:           trend?.dir ?? 'flat',
     trendValue:      trend?.value ?? '',
     trendSub:        spec.trendSub ? resolveTemplate(spec.trendSub, ctx) : '',
-    preliminary:     spec.preliminary || prov?.status === 'p',
+    // Displayed-slice preliminary (Law 9, year-aware): an explicit author override
+    // always wins; otherwise derive from the SDMX OBS_STATUS of the observation(s)
+    // this KPI actually reads at its pinned coordinate(s) — never dataset-wide.
+    preliminary:     spec.preliminary === true || valueIsPreliminary(spec.value, ctx, store),
     note:            spec.note,
     methodologyUrl:  spec.methodologyUrl,
   }
