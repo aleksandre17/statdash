@@ -4954,6 +4954,24 @@
     {
       "key": "i18n",
       "value": {
+        "catalog": {
+          "en": {
+            "feedback": {
+              "empty.title": "No data",
+              "export.toolbar": "Export data",
+              "export.download": "Download {{fmt}}",
+              "share.permalink": "Copy permalink"
+            }
+          },
+          "ka": {
+            "feedback": {
+              "empty.title": "მონაცემები არ არის",
+              "export.toolbar": "მონაცემების ექსპორტი",
+              "export.download": "ჩამოტვირთვა {{fmt}}",
+              "share.permalink": "ბმულის კოპირება"
+            }
+          }
+        },
         "defaultLocale": "ka",
         "fallbackLocale": "ka",
         "locales": [

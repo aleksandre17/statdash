@@ -33,10 +33,27 @@ export type { ChromeConfig } from './ChromeConfig'
 
 // ── I18nConfig — locale configuration from SiteManifest ───────────────
 
+/**
+ * I18nCatalog — tenant-authored UI-chrome translations, in i18next's native
+ * `Resource` shape (locale → namespace → key → string). It carries the tenant
+ * locales for GENERIC framework-chrome namespaces (e.g. `feedback`) that are NOT
+ * registered through a `registerSlice` meta and therefore have no other path to a
+ * tenant locale. Locale-OUTER (not a `{ ka, en }` LocaleString bag): the runner
+ * loads it verbatim into i18next via `addResourceBundle` at boot. ADDITIVE +
+ * backward-compatible — absent ⇒ the runner's en-only baseline applies (ADR-019).
+ */
+export type I18nCatalog = Record<string, Record<string, Record<string, string>>>
+
 export interface I18nConfig {
   locales:        string[]
   defaultLocale:  string
   fallbackLocale: string
+  /**
+   * Optional tenant UI-chrome catalog (ADR-019). i18next resource shape; loaded
+   * at boot by the runner (`registerManifestI18n`). Omitted for single-locale /
+   * en-only tenants, where the framework's en baseline already covers chrome.
+   */
+  catalog?:       I18nCatalog
 }
 
 // ── NavEntry — runtime nav item (config fields + route metadata) ───────

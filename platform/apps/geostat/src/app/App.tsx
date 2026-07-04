@@ -3,6 +3,7 @@ import { AppErrorBoundary }         from '@statdash/react'
 import { bootstrapSite }            from '@/data/site-manifest'
 import type { SiteBootstrap }       from '@/data/site-manifest'
 import { registerFormatters }       from '@/i18n/formatters'
+import { registerManifestI18n }     from '@/i18n/manifest-catalog'
 import { SuspenseFallback }         from './SuspenseFallback'
 
 // ── Code-split renderer boundary ──────────────────────────────────────────────
@@ -75,6 +76,13 @@ export default function App() {
       // perspective-bar derives its options from each page's authored
       // `page.perspectives` axis (PerspectiveContext), not from a site registry.
       registerFormatters(boot.manifest.i18n.locales)
+      // Tenant UI-chrome translations (ADR-019): pour manifest.i18n.catalog into
+      // i18next before the first render, so generic framework chrome (the
+      // `feedback` namespace — EmptyState / ExportBar / permalink) resolves in the
+      // active locale instead of falling through to the en baseline. Runs here
+      // (before the runner's own registerFeedbackI18n, which is non-clobbering) so
+      // the tenant catalog is authoritative regardless of the lazy-chunk order.
+      registerManifestI18n(boot.manifest.i18n)
       setBootstrap(boot)
     })
   }, [])

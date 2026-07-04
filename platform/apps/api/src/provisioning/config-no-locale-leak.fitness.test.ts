@@ -69,17 +69,32 @@ function deriveLocaleKeys(node: unknown, acc: Set<string>): void {
 
 interface Leak { path: string; key: string; value: string }
 
-/** Collect every tenant-script string whose immediate parent key is NOT a locale key. */
-function collectLeaks(node: unknown, path: string, key: string | undefined, localeKeys: Set<string>, out: Leak[]): void {
+/**
+ * Collect every tenant-script string that does NOT live under a locale-arm key.
+ *
+ * "Under a locale arm" is checked over the whole ANCESTOR path, not just the
+ * immediate parent — so it covers BOTH shapes of localized content:
+ *   • locale-INNER LocaleString bags: `{ ka: '…', en: '…' }` (parent key = ka).
+ *   • locale-OUTER i18next catalogs (ADR-019): `i18n.catalog.ka.feedback.<key>`
+ *     — the tenant script sits under a `ka` GRANDPARENT arm, with a non-locale
+ *     namespace/key in between. Checking only the immediate parent would false-
+ *     flag every catalog value; the ancestor check keeps the guard correct for
+ *     both. A bare Georgian string under NO locale ancestor is still a leak.
+ */
+function collectLeaks(
+  node: unknown, path: string, key: string | undefined,
+  localeKeys: Set<string>, out: Leak[], underLocale = false,
+): void {
+  const nowUnderLocale = underLocale || (key !== undefined && localeKeys.has(key))
   if (typeof node === 'string') {
-    if (TENANT_SCRIPT.test(node) && !(key !== undefined && localeKeys.has(key))) {
+    if (TENANT_SCRIPT.test(node) && !nowUnderLocale) {
       out.push({ path, key: key ?? '(root)', value: node })
     }
     return
   }
-  if (Array.isArray(node)) { node.forEach((n, i) => collectLeaks(n, `${path}[${i}]`, undefined, localeKeys, out)); return }
+  if (Array.isArray(node)) { node.forEach((n, i) => collectLeaks(n, `${path}[${i}]`, undefined, localeKeys, out, nowUnderLocale)); return }
   if (!isPlainObject(node)) return
-  for (const [k, v] of Object.entries(node)) collectLeaks(v, `${path}.${k}`, k, localeKeys, out)
+  for (const [k, v] of Object.entries(node)) collectLeaks(v, `${path}.${k}`, k, localeKeys, out, nowUnderLocale)
 }
 
 describe('config-tier locale-leak guard — tenant-script content only inside LocaleString arms (F3)', () => {
