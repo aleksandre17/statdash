@@ -61,6 +61,9 @@ describe('FF-AUTHORING-LOCALE-COMPLETE — no monolingual user-facing field can 
   let partialBags: { path: string; missing: string[]; value: unknown }[]
   let pureDisplayKeys: Set<string>
   let monolingualLeaks: { path: string; key: string; value: string }[]
+  // INV3 (ADR-019) — the locale-OUTER UI-chrome catalog (i18n.catalog).
+  let catalogPairs: string[]                                  // union "ns.key", sorted
+  let catalogMissing: { locale: string; pair: string }[]
 
   beforeAll(() => {
     const artifact = JSON.parse(readFileSync(ARTIFACT_PATH, 'utf8'))
@@ -128,6 +131,35 @@ describe('FF-AUTHORING-LOCALE-COMPLETE — no monolingual user-facing field can 
       for (const [k, v] of Object.entries(node)) walk2(v, `${path}.${k}`, k, [...anc, k], k)
     }
     walk2(artifact, '$', undefined, [], undefined)
+
+    // ── INV3: UI-chrome catalog completeness (i18n.catalog, ADR-019) ──────────
+    //  The catalog is locale-OUTER (locale → namespace → key → string, the i18next
+    //  resource shape) — INV1/INV2 (which walk locale-INNER `{ka,en}` bags) are
+    //  structurally BLIND to it: an entirely-absent `ka.feedback` namespace is not
+    //  a partial bag and not a monolingual display key, so it would ship English on
+    //  /ka silently. This invariant closes that hole: every (namespace, key) pair
+    //  present in ANY locale must be present in EVERY active locale, non-empty.
+    //  Self-maintaining — a new framework-chrome namespace/key is auto-required in
+    //  all locales. Locale-agnostic: iterates the declared active-locale SSOT.
+    const catalog =
+      ((siteConfig.i18n as { catalog?: Record<string, Record<string, Record<string, unknown>>> })
+        .catalog) ?? {}
+    const pairSet = new Set<string>()
+    for (const namespaces of Object.values(catalog))
+      for (const [ns, keys] of Object.entries(namespaces ?? {}))
+        for (const k of Object.keys(keys ?? {})) pairSet.add(`${ns}.${k}`)
+    catalogPairs = [...pairSet].sort()
+    catalogMissing = []
+    for (const locale of activeLocales) {
+      const nsMap = catalog[locale] ?? {}
+      for (const pair of catalogPairs) {
+        const dot = pair.indexOf('.')                         // ns = up to first dot; key may contain dots
+        const ns = pair.slice(0, dot)
+        const key = pair.slice(dot + 1)
+        const val = (nsMap[ns] ?? {})[key]
+        if (typeof val !== 'string' || val.trim() === '') catalogMissing.push({ locale, pair })
+      }
+    }
   })
 
   it('declares a plural active-locale set (Law 4 bilingual floor — not vacuous)', () => {
@@ -159,6 +191,32 @@ describe('FF-AUTHORING-LOCALE-COMPLETE — no monolingual user-facing field can 
       monolingualLeaks.length,
       `\n${monolingualLeaks.length} monolingual display value(s) — author each as a ` +
         `{ <locale>: … } LocaleString so it localizes:\n${report}\n`,
+    ).toBe(0)
+  })
+
+  it('INV3 — the UI-chrome catalog localizes generic framework chrome (non-vacuous floor)', () => {
+    // The runner ships an en-ONLY baseline for generic framework-chrome namespaces
+    // (the `feedback` namespace — EmptyState / ExportBar / permalink). With a plural
+    // active-locale set, those must be localized somewhere — and i18n.catalog is the
+    // only carrier (ADR-019). An empty union ⇒ the catalog is absent/empty ⇒ chrome
+    // renders English on every non-en locale. This floor makes INV3's coverage check
+    // non-vacuous (a gate that checks nothing is a false green).
+    expect(
+      catalogPairs.length,
+      '\ni18n.catalog localizes no chrome — generic framework chrome (the `feedback` ' +
+        'namespace) would render the en baseline on every tenant locale (ADR-019).\n',
+    ).toBeGreaterThan(0)
+  })
+
+  it('INV3 — every catalog (namespace, key) is covered, non-empty, in every active locale', () => {
+    const report = catalogMissing
+      .map((m) => `  · locale "${m.locale}" missing catalog pair "${m.pair}"`)
+      .join('\n')
+    expect(
+      catalogMissing.length,
+      `\n${catalogMissing.length} incomplete UI-chrome catalog entr(ies) over ` +
+        `[${activeLocales.join(', ')}] — every namespace/key present in one locale must be ` +
+        `authored, non-empty, in all (ADR-019):\n${report}\n`,
     ).toBe(0)
   })
 })
