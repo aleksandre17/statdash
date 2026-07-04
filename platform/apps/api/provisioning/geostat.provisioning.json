@@ -1055,10 +1055,7 @@
                     "type": "inline",
                     "valueField": "code"
                   },
-                  "suffix": {
-                    "ka": "-დან",
-                    "en": "from"
-                  },
+                  "spanRole": "from",
                   "type": "select",
                   "visibleWhen": {
                     "op": "perspective-is",
@@ -1093,10 +1090,7 @@
                     "type": "inline",
                     "valueField": "code"
                   },
-                  "suffix": {
-                    "ka": "-მდე",
-                    "en": "to"
-                  },
+                  "spanRole": "to",
                   "type": "select",
                   "visibleWhen": {
                     "op": "perspective-is",
@@ -2670,10 +2664,7 @@
                     "type": "inline",
                     "valueField": "code"
                   },
-                  "suffix": {
-                    "ka": "-დან",
-                    "en": "from"
-                  },
+                  "spanRole": "from",
                   "type": "select",
                   "visibleWhen": {
                     "op": "perspective-is",
@@ -2704,10 +2695,7 @@
                     "type": "inline",
                     "valueField": "code"
                   },
-                  "suffix": {
-                    "ka": "-მდე",
-                    "en": "to"
-                  },
+                  "spanRole": "to",
                   "type": "select",
                   "visibleWhen": {
                     "op": "perspective-is",
@@ -4487,10 +4475,7 @@
                     "type": "inline",
                     "valueField": "code"
                   },
-                  "suffix": {
-                    "ka": "-დან",
-                    "en": "from"
-                  },
+                  "spanRole": "from",
                   "type": "select",
                   "visibleWhen": {
                     "op": "perspective-is",
@@ -4610,10 +4595,7 @@
                     "type": "inline",
                     "valueField": "code"
                   },
-                  "suffix": {
-                    "ka": "-მდე",
-                    "en": "to"
-                  },
+                  "spanRole": "to",
                   "type": "select",
                   "visibleWhen": {
                     "op": "perspective-is",
