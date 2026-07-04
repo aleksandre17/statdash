@@ -40,3 +40,6 @@
 ## Auto-relocated (memory-home-guard — reconcile into a topic section)
 - [REGIONAL_GVA 2010-2015 revision (deferred)](project_regional_gva_2010_2015_revision.md) — 2026-07-03 source revises 2010-2015; only +2024 applied (0-drift); re-vintage pending
 - [FEATURED manifest](project_featured_manifest.md) — DATA/canonical/FEATURED.json governed featured-metrics (AR-40); yellow-fill authoring signal, coordinate→1 obs
+
+## Auto-relocated (memory-home-guard — reconcile into a topic section)
+- [PG Persistent Volume CLOSED](project_pg_persistent_volume_closed.md) — ephemeral-postgres landmine fixed 2026-07-04; DB on statdash-prod-pgdata-v2 at Spilo PGDATA; ADR-019

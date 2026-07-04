@@ -1,9 +1,13 @@
 ---
 name: model-agnostic-agents
-description: Agents are model-agnostic — the lead picks the model per-call (sonnet=mechanical/cheap, opus=judgment/design/QC); same quality/standards regardless of model. SUPERSEDES the old opus-only rule.
+description: Agents are model-agnostic; lead sets model per-call. DEFAULT to OPUS for substantive work (owner override 2026-07-04); sonnet/haiku ONLY for genuinely trivial mechanical, and when unsure → opus.
 metadata:
   type: feedback
 ---
+
+**★ OWNER OVERRIDE 2026-07-04 — DEFAULT to OPUS for all substantive agent work.** The owner directed "run all on opus" after I under-tiered two REAL engineering tasks (an ApexCharts race-condition fix + an ingest idempotency fix) to sonnet. Their standard: a race-condition / idempotency / any real engineering or judgment task is NOT sonnet-tier — it gets opus. **Reserve sonnet/haiku ONLY for genuinely trivial, mechanical, low-judgment work (bulk find-replace, config sweeps, pure extraction); when in doubt, opus.** This does NOT revive the "literally everything opus incl. trivial" rule — it raises the bar for what counts as "mechanical." Bias strongly toward opus; economy is secondary to quality for this owner. (I relaunched the two mis-tiered agents on opus, superseding the sonnet runs.)
+
+**Model routing itself WORKS:** the lead passes an explicit `model` on every `Agent()` call, so "sonnet" genuinely launches sonnet and "opus" launches opus — the old inherited-session-model bug (mechanical tasks silently running opus, or vice-versa) is fixed by always passing model explicitly. The failure mode the owner reacted to was my TIERING judgment (calling real work "sonnet-tier"), not the routing.
 
 **Agents carry the same role / quality / standards regardless of which model runs them. The lead chooses the model PER-CALL, dynamically, by task type.**
 

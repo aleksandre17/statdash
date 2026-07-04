@@ -49,3 +49,6 @@
 
 ## Auto-relocated (memory-home-guard — reconcile into a topic section)
 - [from→to connector words](project_from_to_connector_words.md) — range-picker "დან/მდე" words can't go in provisioning suffix (INV1 locale-completeness blocks empty en trailing slot); belongs in slice-meta catalog — new pattern, escalate
+
+## Auto-relocated (memory-home-guard — reconcile into a topic section)
+- [Worktree MAX_PATH vitest](project_worktree_maxpath_vitest.md) — vitest `#module-evaluator` startup fail in deep `.claude/worktrees` paths = Windows MAX_PATH; run gates from a short-path throwaway worktree (build packages first)

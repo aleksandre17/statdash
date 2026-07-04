@@ -11,6 +11,7 @@
 - [catalog.ts React purity](project_catalog_react_purity.md) — plugins/catalog.ts pulls Shell modules; blocks apps/panel palette; fix = per-slice *.meta.ts extraction
 - [Charts split (Phase 8.1)](project_charts_split_8_1.md) — @geostat/charts out of engine; cycle resolved by TWO registries split by package
 - [Semantic Layer (Phase 10.1 N26)](project_semantic_layer_n26.md) — MetricRegistry as 2nd registry axis; by→encoding.series; provenance via MetadataPort decorator
+- [AR-40 Semantic Layer + Featured-Slider (DESIGNED)](project_ar40_semantic_layer_featured_slider.md) — COMPLETE the existing MetricDef registry: U1 makes interpretKpi's point-read metric-aware (last non-unified path) +format governed once; first consumer = landing featured-slider (reuses interpretKpi) replacing hard-coded stats-carousel; SSOT=SPEC-AR40 doc
 - [Unit attachment decision](project_unit_attachment_level.md) — UNIT_MEASURE attaches at the MEASURE-classifier level, not dataset, not series
 - [Seed units codelist mismatch](project_seed_units_codelist_mismatch.md) — seed-units.ts emits PCT but V16 seeds PERCENT; breaks once unit_code becomes an FK
 - [Data-binding SHIPPED](project_data_binding_shipped.md) — VERIFIED 2026-06-26: the data-source ADRs are now CODE (3 store KINDS behind one DataStore port; href D-HREF opened; metric→store + declarative blend wired); ADR-001's PROPOSED/DEFER-href status now partly STALE; open work = ADOPTION not architecture; still defer D3-PLANNER

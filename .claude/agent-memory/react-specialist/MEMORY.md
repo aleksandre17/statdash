@@ -39,3 +39,6 @@
 
 ## Auto-relocated (memory-home-guard — reconcile into a topic section)
 - [declarative choropleth](project_declarative_choropleth.md) — geograph map is now a declarative d3-geo SVG choropleth (Leaflet retired); DOM-free projection kills the hidden-container blank-map bug class
+
+## Auto-relocated (memory-home-guard — reconcile into a topic section)
+- [integrity visible fold](project_integrity_visible_fold.md) — page data-integrity fold gates on NodeVisibilityContext; mounted-but-hidden view-toggle panels clear their report (visibleWhen already unmounts)
