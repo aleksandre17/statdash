@@ -52,3 +52,6 @@
 
 ## Auto-relocated (memory-home-guard — reconcile into a topic section)
 - [Worktree MAX_PATH vitest](project_worktree_maxpath_vitest.md) — vitest `#module-evaluator` startup fail in deep `.claude/worktrees` paths = Windows MAX_PATH; run gates from a short-path throwaway worktree (build packages first)
+
+## Auto-relocated (memory-home-guard — reconcile into a topic section)
+- [Windows worktree MAX_PATH + pnpm fix](project_windows_worktree_maxpath_pnpm_fix.md) — vitest/tsc `#module-evaluator` false-negative in deep `.claude/worktrees/agent-*` paths; fix via short `--config.virtual-store-dir`, NOT subst/junction
