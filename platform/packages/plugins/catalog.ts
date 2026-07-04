@@ -27,6 +27,7 @@ export { META as links }         from './nodes/links'
 export { META as repeat }        from './nodes/repeat'
 export { META as hero }          from './nodes/hero'
 export { META as statsCarousel } from './nodes/stats-carousel'
+export { META as featuredSlider } from './nodes/featured-slider'
 
 // ── Layout nodes (namespace: layout.grid.META, layout.columns.META, …) ────────
 export * as layout from './nodes/layout'
@@ -54,6 +55,7 @@ import { META as linksMeta }         from './nodes/links/default/meta'
 import { META as repeatMeta }        from './nodes/repeat/default/meta'
 import { META as heroMeta }          from './nodes/hero/default/meta'
 import { META as statsCarouselMeta } from './nodes/stats-carousel/default/meta'
+import { META as featuredSliderMeta } from './nodes/featured-slider/default/meta'
 import { META as chartMeta }         from './panels/chart/default/meta'
 import { META as kpiStripMeta }      from './panels/kpi-strip/default/meta'
 import { META as tableMeta }         from './panels/table/default/meta'
@@ -123,7 +125,7 @@ const PALETTE_META: SliceMeta[] = [
     .filter((m): m is SliceMeta => m != null),
   // structural + content nodes
   sectionMeta, perspectiveBarMeta, filterBarMeta, pageHeaderMeta,
-  geographMeta, linksMeta, repeatMeta, heroMeta, statsCarouselMeta,
+  geographMeta, linksMeta, repeatMeta, heroMeta, statsCarouselMeta, featuredSliderMeta,
   // data panels
   chartMeta, kpiStripMeta, tableMeta, gaugeMeta,
   // content panels
