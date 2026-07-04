@@ -212,6 +212,7 @@ export { WrapStyleContext, useWrapStyle } from './wrapStyleContext'
 
 // ── Node status — page-scoped data-integrity publish/subscribe (AR-39/AR-40) ──
 export { NodeStatusProvider, useNodeStatusScope, useReportNodeStatus, useNodeStatusAggregate } from './NodeStatusContext'
+export { NodeVisibilityProvider, useNodeVisible } from './NodeStatusContext'
 export type { IntegrityStatus, NodeStatusAggregate } from './NodeStatusContext'
 
 // ── Shell factory — abstract base for all NodeRenderer implementations ──

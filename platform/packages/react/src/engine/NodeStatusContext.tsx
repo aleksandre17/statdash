@@ -59,6 +59,28 @@ interface NodeStatusCollector {
 
 // Publish channel — panels report UP to the nearest scope collector.
 const NodeStatusContext = createContext<NodeStatusCollector | null>(null)
+
+// ── NodeVisibilityContext — the "is this subtree actually shown" gate ────────
+//
+//  The page fold must reflect only the VISIBLE data slice (AR-39 owner rule): a
+//  panel the user cannot see must not contribute preliminary=true upward.
+//
+//  Two hiding mechanisms exist, and this context covers the one renderNode can't:
+//    • visibleWhen / perspective-hidden — renderNode UNMOUNTS the node (returns
+//      null); an unmounted panel never runs useReportNodeStatus, so its report is
+//      cleaned up on unmount. Already correct, no context needed.
+//    • view-toggle hidden — the section/geograph shells keep the INACTIVE view
+//      MOUNTED and merely `display:none` it (resolveViewState → data-view=hidden)
+//      so toggling is instant + a11y-safe. That panel stays mounted and KEEPS
+//      publishing. THIS is the leak: a hidden chart/table timeseries folding its
+//      preliminary=true into the page indicator while off-screen.
+//
+//  The owning container (the information-expert that decides a view is hidden)
+//  wraps each hidden view-slot in <NodeVisibilityProvider visible={false}>; every
+//  descendant publisher reads this and CLEARS its report instead of publishing.
+//  Default `true` — a panel with no visibility scope above it is shown (Postel;
+//  byte-identical to the pre-gate behaviour for every non-toggled panel).
+const NodeVisibilityContext = createContext<boolean>(true)
 // Read channel — the folded aggregate flows DOWN to any subscriber (the page
 // header) that renders the ONE indicator. Separate from the collector so a
 // subscriber re-renders when the fold changes, while panels (collector-only,
@@ -86,6 +108,32 @@ export function NodeStatusProvider({
       </NodeStatusAggregateContext.Provider>
     </NodeStatusContext.Provider>
   )
+}
+
+// ── NodeVisibilityProvider — mark a view-slot subtree shown / hidden ─────────
+//
+//  ANDs with the parent gate so nested hidden wrappers compose: a "visible" slot
+//  nested inside a hidden section is still hidden (the parent wins). The owning
+//  container passes `visible={!hidden}` for each view-slot it renders.
+export function NodeVisibilityProvider({
+  visible,
+  children,
+}: {
+  visible:  boolean
+  children: ReactNode
+}) {
+  const parentVisible = useContext(NodeVisibilityContext)
+  return (
+    <NodeVisibilityContext.Provider value={parentVisible && visible}>
+      {children}
+    </NodeVisibilityContext.Provider>
+  )
+}
+
+// ── useNodeVisible — read the effective visibility of the current subtree ─────
+//  True unless an ancestor NodeVisibilityProvider marked this slot hidden.
+export function useNodeVisible(): boolean {
+  return useContext(NodeVisibilityContext)
 }
 
 // ── useNodeStatusScope — the page root creates ONE scope; reads the aggregate ─
@@ -138,17 +186,27 @@ export function useNodeStatusScope(): { collector: NodeStatusCollector; aggregat
 //  an id-less panel still reports exactly once. The report runs in an effect
 //  (post-commit) with primitive-stable deps, so it fires on mount / when the
 //  status flips, and cleans up on unmount — never in a loop.
+//
+//  VISIBILITY GATE (AR-39): a panel MOUNTED-but-hidden by a view-toggle
+//  (display:none via an ancestor NodeVisibilityProvider) must NOT pollute the
+//  page fold — it CLEARS its report and publishes nothing until it is shown
+//  again. `visible` is a dep, so a toggle re-runs the effect: shown → report,
+//  hidden → clear. (visibleWhen/perspective hiding unmounts upstream, so it never
+//  reaches here; this covers the residual mounted-hidden case.)
 export function useReportNodeStatus(nodeId: string | undefined, status: IntegrityStatus): boolean {
   const collector = useContext(NodeStatusContext)
+  const visible    = useContext(NodeVisibilityContext)
   const fallbackId = useId()
   const id = nodeId ?? fallbackId
   const preliminary = status.preliminary
 
   useEffect(() => {
     if (!collector) return
+    // Hidden (mounted, display:none) → contribute nothing; drop any prior report.
+    if (!visible) { collector.clear(id); return }
     collector.report(id, { preliminary })
     return () => collector.clear(id)
-  }, [collector, id, preliminary])
+  }, [collector, id, preliminary, visible])
 
   return collector !== null
 }
