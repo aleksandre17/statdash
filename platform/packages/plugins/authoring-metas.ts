@@ -28,6 +28,7 @@ import { META as links }          from './nodes/links/default/meta'
 import { META as repeat }         from './nodes/repeat/default/meta'
 import { META as hero }           from './nodes/hero/default/meta'
 import { META as statsCarousel }  from './nodes/stats-carousel/default/meta'
+import { META as featuredSlider } from './nodes/featured-slider/default/meta'
 
 // ── Layout nodes ──────────────────────────────────────────────────────────────
 import { META as card }    from './nodes/layout/card/default/meta'
@@ -60,7 +61,7 @@ export const AUTHORING_METAS: SliceMeta[] = [
     .map((ns) => ns.META)
     .filter((m): m is SliceMeta => m != null),
   // nodes
-  section, perspectiveBar, filterBar, pageHeader, geograph, links, repeat, hero, statsCarousel,
+  section, perspectiveBar, filterBar, pageHeader, geograph, links, repeat, hero, statsCarousel, featuredSlider,
   // layout
   card, columns, divider, grid, spacer, stack, wrap,
   // panels

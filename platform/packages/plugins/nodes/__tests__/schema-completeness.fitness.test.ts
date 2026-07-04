@@ -48,6 +48,7 @@ import { META as links }         from '../links/default/meta'
 import { META as repeat }        from '../repeat/default/meta'
 import { META as hero }          from '../hero/default/meta'
 import { META as statsCarousel } from '../stats-carousel/default/meta'
+import { META as featuredSlider } from '../featured-slider/default/meta'
 
 // ── Layout node metas ───────────────────────────────────────────────────────
 import { META as grid }    from '../layout/grid/default/meta'
@@ -93,7 +94,7 @@ const PURE_CONTAINERS: ReadonlySet<string> = new Set<string>([])
 // ── Catalog of every page-canvas META (node + panel) ─────────────────────────
 const ALL_METAS: PlaceableMeta[] = [
   section, perspectiveBar, filterBar, pageHeader, geograph, links, repeat, hero,
-  statsCarousel,
+  statsCarousel, featuredSlider,
   grid, columns, stack, card, divider, spacer, wrap,
   chart, kpiStrip, table, gauge, text,
 ]

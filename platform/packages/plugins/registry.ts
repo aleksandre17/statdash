@@ -30,6 +30,7 @@ export * as links          from './nodes/links'
 export * as repeat         from './nodes/repeat'
 export * as hero           from './nodes/hero'
 export * as statsCarousel  from './nodes/stats-carousel'
+export * as featuredSlider from './nodes/featured-slider'
 
 // ── Layout nodes — sub-nodes already namespaced (row, grid, columns, …) ──────
 // nodes/layout/index.ts uses `export * as row from './row'` etc., so spreading

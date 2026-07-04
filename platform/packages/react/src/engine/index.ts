@@ -122,6 +122,10 @@ export { useNodeStream }           from './useNodeStream'
 //  year-1 comparison period a 'yoy' KPI reads (extractKpiRequirements, core) so
 //  interpretKpis' querySync is never cold against an async store.
 export { useKpiRows }              from './useKpiRows'
+// useFeaturedRows(items, ctx) — the featured-slider read surface (AR-40). Same
+// Cache-Aside warm-then-read as useKpiRows, plus cross-dataset routing: each card
+// reads from the store its metric's `dataSource` names (interpretFeatured/core).
+export { useFeaturedRows }         from './useFeaturedRows'
 
 // ── Cross-filter interaction seam — the ONE gesture→selection adapter ─────
 //  useNodeInteractions(def, ctx).emit(trigger, row) routes EVERY surface's

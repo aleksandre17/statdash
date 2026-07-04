@@ -58,6 +58,7 @@ import { META as kpiStrip } from '../../panels/kpi-strip/default/meta'
 import { META as table }    from '../../panels/table/default/meta'
 import { META as text }     from '../../panels/text/default/meta'
 import { META as gauge }    from '../../panels/gauge/default/meta'
+import { META as featuredSlider } from '../featured-slider/default/meta'
 import { META as innerPage }     from '../../pages/inner-page/default/meta'
 import { META as containerPage } from '../../pages/container-page/default/meta'
 import { META as tabPage }       from '../../pages/tab-page/default/meta'
@@ -68,7 +69,7 @@ type PlaceableMeta = NodeSliceMeta | PanelSliceMeta | PageSliceMeta
 
 const ALL_METAS: PlaceableMeta[] = [
   innerPage, containerPage, tabPage,
-  section, perspectiveBar, filterBar, pageHeader, geograph, links, repeat, hero, statsCarousel,
+  section, perspectiveBar, filterBar, pageHeader, geograph, links, repeat, hero, statsCarousel, featuredSlider,
   grid, columns, stack, card, divider, spacer, wrap,
   chart, kpiStrip, table, text, gauge,
 ]

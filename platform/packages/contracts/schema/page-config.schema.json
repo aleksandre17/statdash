@@ -808,6 +808,51 @@
       ],
       "additionalProperties": true
     },
+    "node_featured-slider__default": {
+      "type": "object",
+      "properties": {
+        "autoplayMs": {
+          "title": "Autoplay (ms)",
+          "description": "number field",
+          "default": 7000,
+          "type": "number"
+        },
+        "items": {
+          "title": "Featured items",
+          "description": "array field",
+          "type": "array"
+        },
+        "type": {
+          "const": "featured-slider"
+        },
+        "id": {
+          "type": "string",
+          "description": "Node id"
+        },
+        "variant": {
+          "type": "string",
+          "description": "Registry variant"
+        },
+        "data": {
+          "$ref": "#/$defs/DataSpec"
+        },
+        "view": {
+          "type": "object",
+          "description": "ViewParams"
+        },
+        "children": {
+          "type": "array",
+          "description": "Child nodes",
+          "items": {
+            "$ref": "#/$defs/AnyNode"
+          }
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "additionalProperties": true
+    },
     "node_grid__default": {
       "type": "object",
       "properties": {
@@ -1501,6 +1546,9 @@
         },
         {
           "$ref": "#/$defs/node_stats-carousel__default"
+        },
+        {
+          "$ref": "#/$defs/node_featured-slider__default"
         },
         {
           "$ref": "#/$defs/node_grid__default"

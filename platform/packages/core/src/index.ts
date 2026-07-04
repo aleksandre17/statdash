@@ -296,6 +296,11 @@ export type { SelectionMode }                                           from './
 export { splitMultiValue }                                              from './data/store-filter'
 export { interpretKpis, extractKpiRequirements }                        from './data/kpi'
 export type { KpiSpec, KpiValueSpec, KpiTrendSpec, DimFilter, DimFilterRef } from './data/kpi'
+// Featured collection (AR-40) — curated headline items lowered to point KpiSpecs
+// + interpreted by interpretKpi (reuse, not a parallel resolver). The react hook
+// (useFeaturedRows) supplies the per-item FeaturedStoreResolver.
+export { interpretFeatured, extractFeaturedRequirements, featuredToKpiSpec }  from './data/featured'
+export type { FeaturedItemSpec, FeaturedSlideDef, FeaturedStoreResolver, FeaturedRequirement } from './data/featured'
 
 // ── Metric registry [N26] — Constructor metric vocabulary + extension seam ──
 export type { MetricDef, ResolvedMeasure, MetricInput, MetricCalc }    from './data/metric'
