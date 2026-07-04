@@ -135,6 +135,23 @@ describe('DEFECT#4 — bar thickness capped in px at low cardinality (no fat str
       .toBe(`${horizontalBarFillPct(o)}%`)
   })
 
+  it('NEVER returns NaN — a non-finite/≤0 plotDim falls back to the gap-preserving ceiling', () => {
+    // Latent guard (Law 6): an unmounted/detached box hands a NaN or 0 plot
+    // dimension. Without the finite-check, slot→NaN, pct→NaN, floor(NaN)→NaN would
+    // reach columnWidth/barHeight. Every degenerate input must yield a valid,
+    // painted, finite percent — and specifically the ceiling when uncomputable.
+    for (const bad of [NaN, 0, -100, Infinity, -Infinity]) {
+      const pct = barFillPctForCap(2, bad, BAR_CAP_PX_VERTICAL)
+      expect(Number.isNaN(pct)).toBe(false)
+      expect(pct).toBe(BAR_FILL_MAX_PCT)
+    }
+    // A NaN categoryCount must not poison a finite plotDim either.
+    const pct = barFillPctForCap(NaN, 900, BAR_CAP_PX_VERTICAL)
+    expect(Number.isFinite(pct)).toBe(true)
+    expect(pct).toBeGreaterThanOrEqual(BAR_FILL_MIN_PCT)
+    expect(pct).toBeLessThanOrEqual(BAR_FILL_MAX_PCT)
+  })
+
   it('diverging hbar caps via barHeight (not the dead columnWidth)', () => {
     const o: ChartOutput = {
       type: 'hbar-diverging', categories: ['A', 'B', 'C'],

@@ -31,6 +31,10 @@ vi.mock('react-apexcharts', () => ({
 vi.mock('@statdash/react', () => ({ useLocale: () => 'en' }))
 
 import { ApexRenderer } from './ApexRenderer'
+// The declarative visibility gate is the SAME provider the section/geograph shells
+// wrap each hidden view-slot in — imported real from the engine barrel (already
+// loaded above via ApexRenderer's own import; a pure React context, no ApexCharts).
+import { NodeVisibilityProvider } from '@statdash/react/engine'
 
 afterEach(() => { cleanup(); mounts.length = 0 })
 
@@ -114,6 +118,81 @@ describe('ApexRenderer — visibility gate', () => {
 
     setLaidOut(host, false)
     act(() => FakeResizeObserver.instances.at(-1)?.trigger())
+    expect(queryByTestId('apex-mounted')).toBeNull()
+
+    vi.unstubAllGlobals()
+  })
+})
+
+// ── Declarative synchronous gate (view-toggle race killer) ─────────────────────
+//
+//  The DOM-box gate above is ResizeObserver-driven (async — one layout pass late).
+//  The view-toggle case additionally carries the shell's DECLARATIVE decision via
+//  <NodeVisibilityProvider visible={!hidden}>: when the slot is hidden, the chart
+//  must NOT mount even if the host box still reports laid-out, because the unmount
+//  has to happen SYNCHRONOUSLY (same commit as display:none) so ApexCharts tears
+//  down before its own redrawOnParentResize can fire against the 0-size parent.
+describe('ApexRenderer — declarative visibility gate (NodeVisibilityProvider)', () => {
+  it('does NOT mount while wrapped in a hidden provider, even when the box is laid out', () => {
+    vi.stubGlobal('ResizeObserver', FakeResizeObserver)
+    FakeResizeObserver.instances = []
+
+    const { container, queryByTestId } = render(
+      <NodeVisibilityProvider visible={false}>
+        <ApexRenderer output={makeOutput()} />
+      </NodeVisibilityProvider>,
+    )
+    // Force the DOM-box signal true — the declarative gate must still win.
+    const host = container.querySelector('div > div') as HTMLElement ?? container.firstElementChild as HTMLElement
+    setLaidOut(host, true)
+    act(() => FakeResizeObserver.instances.at(-1)?.trigger())
+
+    expect(queryByTestId('apex-mounted')).toBeNull()
+    expect(mounts).toHaveLength(0)
+
+    vi.unstubAllGlobals()
+  })
+
+  it('mounts when the provider is visible AND the box is laid out', () => {
+    vi.stubGlobal('ResizeObserver', FakeResizeObserver)
+    FakeResizeObserver.instances = []
+
+    const { container, queryByTestId } = render(
+      <NodeVisibilityProvider visible={true}>
+        <ApexRenderer output={makeOutput()} />
+      </NodeVisibilityProvider>,
+    )
+    const host = container.querySelector('div > div') as HTMLElement ?? container.firstElementChild as HTMLElement
+    setLaidOut(host, true)
+    act(() => FakeResizeObserver.instances.at(-1)?.trigger())
+
+    expect(queryByTestId('apex-mounted')).not.toBeNull()
+    expect(mounts).toHaveLength(1)
+
+    vi.unstubAllGlobals()
+  })
+
+  it('unmounts synchronously when the provider flips to hidden — no async ResizeObserver needed', () => {
+    vi.stubGlobal('ResizeObserver', FakeResizeObserver)
+    FakeResizeObserver.instances = []
+
+    const { container, queryByTestId, rerender } = render(
+      <NodeVisibilityProvider visible={true}>
+        <ApexRenderer output={makeOutput()} />
+      </NodeVisibilityProvider>,
+    )
+    const host = container.querySelector('div > div') as HTMLElement ?? container.firstElementChild as HTMLElement
+    setLaidOut(host, true)
+    act(() => FakeResizeObserver.instances.at(-1)?.trigger())
+    expect(queryByTestId('apex-mounted')).not.toBeNull()
+
+    // Flip to hidden. The box is STILL reporting laid-out (no ResizeObserver fired):
+    // the chart must unmount on the render alone — the synchronous race killer.
+    rerender(
+      <NodeVisibilityProvider visible={false}>
+        <ApexRenderer output={makeOutput()} />
+      </NodeVisibilityProvider>,
+    )
     expect(queryByTestId('apex-mounted')).toBeNull()
 
     vi.unstubAllGlobals()

@@ -275,7 +275,16 @@ const PLOT_WIDTH_FRACTION          = 0.82 // plot width ≈ this share of a full
  * BAR_FILL_MIN_PCT. `floor` guarantees the resulting thickness never exceeds capPx.
  */
 export function barFillPctForCap(categoryCount: number, plotDimPx: number, capPx: number): number {
-  const n    = Math.max(1, categoryCount)
+  // Finite guard (Law 6 — root cause, not a downstream suppression): a NaN/≤0
+  // plotDimPx (an unmounted/detached box hands ApexCharts a 0-size or NaN plot
+  // dimension) would make slot → NaN, pct → NaN, and Math.min/max/floor all
+  // propagate NaN straight into columnWidth/barHeight — a NaN reaching apex
+  // options. When no finite plot dimension exists we cannot compute an absolute
+  // cap, so fall back to the gap-preserving ceiling: bars fill their slot but
+  // never fuse into a wall (identical to the pre-cap default), and it is always a
+  // valid painted positive. capPx is a module constant (finite by construction).
+  if (!Number.isFinite(plotDimPx) || plotDimPx <= 0) return BAR_FILL_MAX_PCT
+  const n    = Math.max(1, Number.isFinite(categoryCount) ? categoryCount : 1)
   const slot = plotDimPx / n
   const pct  = (capPx / slot) * 100
   return Math.floor(Math.min(BAR_FILL_MAX_PCT, Math.max(BAR_FILL_MIN_PCT, pct)))

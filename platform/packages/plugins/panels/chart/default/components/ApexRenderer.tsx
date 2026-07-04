@@ -1,5 +1,5 @@
 import ReactApexChart              from 'react-apexcharts'
-import { useContainerVisible }     from '@statdash/react/engine'
+import { useContainerVisible, useNodeVisible } from '@statdash/react/engine'
 import type { ChartRendererProps } from '@statdash/react/engine'
 import { useLocale }               from '@statdash/react'
 import { toApexOptions }           from '../utils/toApexOptions'
@@ -15,18 +15,38 @@ export function ApexRenderer({ output, onDataHover, onDataLeave, onDataClick }: 
   // Active locale drives the compact axis-tick glyph (en → 88.4K · ka → 88,4 ათ.);
   // hooks must run before any early return.
   const locale = useLocale()
-  // Visibility gate (NaN-transform guard): a chart↔table toggle keeps the inactive
-  // view MOUNTED but `display:none` ([data-view="hidden"], node-styles.css) so
-  // toggling stays instant/a11y-safe. `key={chartKey}` below remounts ReactApexChart
-  // on every series change — including while hidden. ApexCharts measures its host
-  // box at mount to size its SVG; a 0×0/detached box (display:none) produces NaN
-  // width/height/transform (console SVG errors, a broken chart on toggle-back).
-  // Gating the ReactApexChart mount on `visible` (only flips true once the host is
-  // actually laid out — ResizeObserver-driven) means nothing measures a 0×0 box;
-  // on show, `visible` flips and the chart mounts fresh against a real box with the
-  // latest data. The host div keeps its footprint whether or not the chart is
-  // mounted, so the visibility measurement itself is never circular.
-  const { ref: hostRef, visible } = useContainerVisible<HTMLDivElement>()
+  // ── Visibility gate — TWO composed signals (NaN-transform + redraw-race guard) ──
+  //
+  //  A chart↔table toggle keeps the INACTIVE view MOUNTED but `display:none`
+  //  ([data-view="hidden"], node-styles.css) so toggling stays instant/a11y-safe.
+  //  ApexCharts measures its host box at mount to size its SVG AND owns its own
+  //  `redrawOnParentResize` observer, so a 0×0/detached box (display:none) yields
+  //  NaN width/height/transform — console SVG errors + a broken chart on toggle-back.
+  //
+  //  (1) DECLARATIVE, SYNCHRONOUS — `useNodeVisible()` reads the view-toggle's own
+  //      decision: the owning shell wraps each hidden view-slot in
+  //      <NodeVisibilityProvider visible={false}> (SectionShell / GeographShell,
+  //      the same signal the data-integrity fold uses). This is the ROOT fix for
+  //      the redraw RACE: on HIDE, `nodeVisible` flips false in the SAME commit that
+  //      sets display:none, so ReactApexChart unmounts SYNCHRONOUSLY — ApexCharts'
+  //      destroy() tears down its resize observers BEFORE the browser lays out the
+  //      hidden box, so its `redrawOnParentResize` never fires against a 0-size
+  //      parent. No `if/switch` on a dimension name — a generic visibility boolean
+  //      threaded declaratively from the shell (Laws 1-2).
+  //  (2) DOM-BOX GUARD — `useContainerVisible` flips true only once the host is
+  //      actually laid out (non-zero box + rendered ancestor chain, ResizeObserver-
+  //      driven). Covers any OTHER display:none source that carries no visibility
+  //      provider (responsive CSS, a future container), so nothing ever measures a
+  //      0×0 box regardless of what hid it (Law 8 — open for extension).
+  //
+  //  Mount requires BOTH (`shown`): the declarative gate kills the race for the
+  //  toggle case; the DOM-box gate is the general laid-out guarantee. The host div
+  //  keeps its footprint whether or not the chart mounts, so the box measurement is
+  //  never circular. On show, both flip true and the chart mounts fresh against a
+  //  real box with the latest data (`key={chartKey}`).
+  const { ref: hostRef, visible: boxVisible } = useContainerVisible<HTMLDivElement>()
+  const nodeVisible = useNodeVisible()
+  const shown = nodeVisible && boxVisible
   if (output.series.length === 0) return null
   const fontFamily = typeof window !== 'undefined'
     ? (getComputedStyle(document.documentElement).getPropertyValue('--font-family-base').trim() || 'system-ui, sans-serif')
@@ -60,7 +80,7 @@ export function ApexRenderer({ output, onDataHover, onDataLeave, onDataClick }: 
 
   return (
     <div ref={hostRef} style={{ width: '100%', height: '100%' }}>
-      {visible && (
+      {shown && (
         <ReactApexChart
           key={chartKey}
           options={options}
