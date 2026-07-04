@@ -42,10 +42,20 @@ function schemaToBarNodes(schema: FilterSchemaInput | null | undefined): BarNode
     order:      barDef.order,
     layout:     barDef.layout,
     showWhen:   barDef.showWhen,
-    items:      Object.entries(barDef.filters).map(([key, paramDef]) => ({
-      key,
-      ...paramDef,
-    } as ParamNode)),
+    // Render order is authored `order` (default 0), NOT the config object's key
+    // order — a published config round-trips through Postgres jsonb, which reorders
+    // object keys (by length, then bytewise), so `Object.entries` cannot be trusted
+    // for display order (e.g. the from→to span pair would render reversed). Sort is
+    // stable (ES2019+ Array.prototype.sort): params with equal/absent `order` keep
+    // their incoming relative position ⇒ zero regression for bars without `order`.
+    // This is RENDER order only; the separate defaults-resolution path (flatParams /
+    // resolveDefaults topoSort below) is untouched.
+    items:      Object.entries(barDef.filters)
+      .map(([key, paramDef]) => ({
+        key,
+        ...paramDef,
+      } as ParamNode))
+      .sort((a, b) => (a.order ?? 0) - (b.order ?? 0)),
   }))
 }
 
