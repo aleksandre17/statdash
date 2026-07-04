@@ -25,6 +25,7 @@ import { MemoryRouter }                     from 'react-router-dom'
 import type { ReactNode }                   from 'react'
 import {
   NodeStatusProvider,
+  NodeVisibilityProvider,
   useNodeStatusScope,
   useReportNodeStatus,
   useNodeStatusAggregate,
@@ -101,6 +102,77 @@ describe('FF-ONE-INTEGRITY-INDICATOR — the PAGE consolidates per-panel prelimi
   it('a page header with NO scope above it renders NO indicator (Postel)', () => {
     const { container } = render(<MemoryRouter><PageIndicator /></MemoryRouter>)
     expect(container.querySelector('.page-header__integrity')).toBeNull()
+  })
+})
+
+describe('FF-INTEGRITY-VISIBLE-FOLD — a hidden (mounted, display:none) panel does NOT fold', () => {
+  // Mirrors what SectionShell/GeographShell now do: each view-slot wraps its
+  // (still-mounted) subtree in NodeVisibilityProvider visible={!hidden}. A hidden
+  // preliminary panel must contribute NOTHING to the page fold; a visible one must.
+  it('a hidden preliminary panel does not raise the page indicator', () => {
+    const { container } = renderPage(
+      <NodeVisibilityProvider visible={false}>
+        <Panel id="hidden-prelim" preliminary />
+      </NodeVisibilityProvider>,
+    )
+    // The only preliminary panel is hidden → the page shows NO integrity indicator.
+    expect(container.querySelector('.page-header__integrity')).toBeNull()
+  })
+
+  it('a VISIBLE preliminary panel raises the indicator even beside a hidden one', () => {
+    const { container } = renderPage(
+      <>
+        <NodeVisibilityProvider visible={false}>
+          <Panel id="hidden-prelim" preliminary />
+        </NodeVisibilityProvider>
+        <NodeVisibilityProvider visible={true}>
+          <Panel id="shown-prelim" preliminary />
+        </NodeVisibilityProvider>
+      </>,
+    )
+    // The visible preliminary panel folds → exactly ONE page indicator.
+    expect(container.querySelectorAll('.page-header__integrity').length).toBe(1)
+  })
+
+  it('nested visibility composes — a visible slot inside a hidden one stays hidden', () => {
+    const { container } = renderPage(
+      <NodeVisibilityProvider visible={false}>
+        <NodeVisibilityProvider visible={true}>
+          <Panel id="nested-prelim" preliminary />
+        </NodeVisibilityProvider>
+      </NodeVisibilityProvider>,
+    )
+    // Parent gate wins (AND-composition) → hidden → no fold, no indicator.
+    expect(container.querySelector('.page-header__integrity')).toBeNull()
+  })
+
+  it('toggling a slot from hidden→visible re-folds the panel into the indicator', () => {
+    function Toggling({ visible }: { visible: boolean }) {
+      return (
+        <NodeVisibilityProvider visible={visible}>
+          <Panel id="toggle-prelim" preliminary />
+        </NodeVisibilityProvider>
+      )
+    }
+    const { container, rerender } = render(
+      <MemoryRouter>
+        <Page>
+          <PageIndicator />
+          <Toggling visible={false} />
+        </Page>
+      </MemoryRouter>,
+    )
+    expect(container.querySelector('.page-header__integrity')).toBeNull()
+
+    rerender(
+      <MemoryRouter>
+        <Page>
+          <PageIndicator />
+          <Toggling visible={true} />
+        </Page>
+      </MemoryRouter>,
+    )
+    expect(container.querySelectorAll('.page-header__integrity').length).toBe(1)
   })
 })
 

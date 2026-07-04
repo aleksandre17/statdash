@@ -2,7 +2,7 @@ import './section.css'
 
 import { resolveViewState }                                  from '@statdash/styles'
 import { useT, useExtensions, SECTION_HEADER_ACTIONS }       from '@statdash/react'
-import { defineShell, useViewToggle, useCollapsible, useDisclosure, accentStyle, useNodeTemplate, mergePlacement } from '@statdash/react/engine'
+import { defineShell, useViewToggle, useCollapsible, useDisclosure, accentStyle, useNodeTemplate, mergePlacement, NodeVisibilityProvider } from '@statdash/react/engine'
 import type { ShellProps, NodeDef }                          from '@statdash/react/engine'
 import type { SectionNode }                                  from './SectionNode'
 import { META }                                              from './meta'
@@ -136,11 +136,20 @@ function SectionControl({
           // to the PAGE scope, so the section renders its body as a pure structural
           // container.
           <div className={SECTION.body} {...vs.body}>
-            {children.defs.map((d: NodeDef, i: number) => (
-              <div key={i} className={SECTION.view} {...resolveViewState(viewToggle.isHidden(d))}>
-                {children.rendered[i]}
-              </div>
-            ))}
+            {children.defs.map((d: NodeDef, i: number) => {
+              const hidden = viewToggle.isHidden(d)
+              return (
+                // The inactive view stays MOUNTED (display:none) for instant, a11y-safe
+                // toggling — but a hidden panel must not fold its preliminary into the
+                // page data-integrity indicator. NodeVisibilityProvider tells every
+                // descendant publisher to clear its report while off-screen (AR-39).
+                <div key={i} className={SECTION.view} {...resolveViewState(hidden)}>
+                  <NodeVisibilityProvider visible={!hidden}>
+                    {children.rendered[i]}
+                  </NodeVisibilityProvider>
+                </div>
+              )
+            })}
           </div>
         )}
       </section>

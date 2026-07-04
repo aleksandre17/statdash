@@ -1,7 +1,7 @@
 import './geograph.css'
 import { Fragment }                            from 'react'
 import { resolveViewState }                    from '@statdash/styles'
-import { defineShell, resolvePreliminary, useNodeTemplate, useViewToggle, useNodeInteractions } from '@statdash/react/engine'
+import { defineShell, resolvePreliminary, useNodeTemplate, useViewToggle, useNodeInteractions, NodeVisibilityProvider } from '@statdash/react/engine'
 import type { ShellProps, NodeDef }            from '@statdash/react/engine'
 import { useT, useInject, useResolveLocale, PANEL_LAYOUT, useExtensions, PANEL_TITLE_BADGE } from '@statdash/react'
 import type { PanelViewToggle }                from '@statdash/react'
@@ -118,12 +118,19 @@ function GeographControl({ def, ctx, vs, children }: Pick<ShellProps<GeographNod
             initialZoom={def.initialZoom}
           />
         </div>
-        {/* Table view(s) — the section-owned rows re-encoded; hidden per role. */}
-        {children.defs.map((d: NodeDef, i: number) => (
-          <div key={i} {...resolveViewState(viewToggle.isHidden(d))}>
-            {children.rendered[i]}
-          </div>
-        ))}
+        {/* Table view(s) — the section-owned rows re-encoded; hidden per role.
+            A hidden (mounted, display:none) table must not fold its preliminary
+            into the page indicator, so gate its publishers on visibility (AR-39). */}
+        {children.defs.map((d: NodeDef, i: number) => {
+          const hidden = viewToggle.isHidden(d)
+          return (
+            <div key={i} {...resolveViewState(hidden)}>
+              <NodeVisibilityProvider visible={!hidden}>
+                {children.rendered[i]}
+              </NodeVisibilityProvider>
+            </div>
+          )
+        })}
       </PanelLayout>
     </div>
   )
