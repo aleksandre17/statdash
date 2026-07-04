@@ -9,6 +9,7 @@ import type { DimVal, FilterValue }              from '../sdmx'
 import type { Expr }                             from '@statdash/expr'
 import type { MetadataPort, ProvenanceRecord }   from '../core/provenance'
 import type { SectionContext }                   from '../core/context'
+import type { FormatKey }                         from './kpi-spec'
 
 /**
  * One named component of a CALCULATED metric: a measure read at a generic
@@ -66,6 +67,18 @@ export interface MetricDef {
   label:         LocaleString
   /** Unit of measurement (e.g. 'million GEL', '% change'). */
   unit?:         LocaleString
+  /**
+   * Default DISPLAY format for this metric's scalar value — a `FormatKey` the
+   * downstream getFormatter registry understands ('mln_gel' | 'sign_pct' | …). Pure
+   * data (a registry key string, never a function — Law 2). Governance declared ONCE
+   * on the metric (the semantic-layer point): a display surface that reads a metric-id
+   * with no explicit format of its own falls back to this. THIN — a format key, not a
+   * formatter. Absent ⇒ current behavior (the consuming surface's own default);
+   * explicit consumer-side format always wins (explicit config > metric default).
+   * Reachable through the one resolveMeasureRef seam (ResolvedMeasure.format); its
+   * display consumer (the featured slider / metric-driven panels) lands in AR-40 P1.
+   */
+  format?:       FormatKey
   /** Default aggregation across time. */
   agg?:          'sum' | 'avg' | 'last'
   /** Parent metric id (for hierarchical navigation / drill-down). */
@@ -153,6 +166,8 @@ export interface ResolvedMeasure {
   codes:        string[]
   /** Metric-default unit, if the ref was a metric-id with a unit. */
   unit?:        LocaleString
+  /** Metric-default DISPLAY format key, if declared on the metric (consumer-side format wins). */
+  format?:      FormatKey
   /** Metric-default methodology URL, if declared on the metric. */
   methodology?: string
   /** Metric-default cross-time aggregation, if declared. */
@@ -209,6 +224,7 @@ export function resolveMeasureRef(ref: string | string[]): ResolvedMeasure {
     }
     // First-metric-wins for scalar governance (order-stable, deterministic).
     if (out.unit        === undefined && metric.unit        !== undefined) out.unit        = metric.unit
+    if (out.format      === undefined && metric.format      !== undefined) out.format      = metric.format
     if (out.methodology === undefined && metric.methodology !== undefined) out.methodology = metric.methodology
     if (out.agg         === undefined && metric.agg         !== undefined) out.agg         = metric.agg
     if (out.dataSource  === undefined && metric.dataSource  !== undefined) out.dataSource  = metric.dataSource

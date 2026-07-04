@@ -86,6 +86,10 @@ export function registerManifestMetrics(metrics: ManifestMetric[] | undefined): 
       ...(m.code        !== undefined ? { code:        m.code }        : {}),
       ...(m.calc        !== undefined ? { calc:        m.calc as unknown as MetricDef['calc'] } : {}),
       ...(m.unit        !== undefined ? { unit:        m.unit }        : {}),
+      // `format` is a FormatKey on the wire (typed `string` because contracts cannot
+      // import engine's FormatKey across the arrow); refined back to MetricDef['format']
+      // HERE, the layer that owns the engine type — exactly like `calc`/`dims`.
+      ...(m.format      !== undefined ? { format:      m.format as MetricDef['format'] } : {}),
       ...(m.methodology !== undefined ? { methodology: m.methodology } : {}),
       ...(m.dims        !== undefined ? { dims:        m.dims as MetricDef['dims'] } : {}),
       ...(m.dataSource  !== undefined ? { dataSource:  m.dataSource }  : {}),

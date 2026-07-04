@@ -99,6 +99,15 @@ export interface ManifestMetric {
   label:        Record<string, string>
   /** Bilingual unit of measure (LocaleString). Flows to provenance badges + panels. */
   unit?:        Record<string, string>
+  /**
+   * Default DISPLAY format key for the metric's scalar value — the wire mirror of
+   * engine `MetricDef.format` (a `FormatKey`: 'mln_gel' | 'sign_pct' | 'pct' | …).
+   * Typed as a plain string here because contracts is the innermost zero-dep layer
+   * and cannot import engine's `FormatKey` across the arrow; the runner refines it
+   * back into the union at the registerManifestMetrics boot seam. Additive /
+   * backward-compatible — absent ⇒ current behavior. Pure config data (Law 2).
+   */
+  format?:      string
   /** External methodology page URL — flows into ProvenanceRecord.methodology. */
   methodology?: string
   /** Default dimension filters merged as query DEFAULTS (explicit query filters win). */
