@@ -2883,213 +2883,197 @@
             "type": "hero"
           },
           {
+            "type": "featured-slider",
+            "id": "landing-featured",
             "autoplayMs": 7000,
-            "id": "landing-stats",
-            "slides": [
+            "items": [
               {
-                "stats": [
-                  {
-                    "icon": "📊",
-                    "iconBg": "#E6F3FA",
-                    "label": {
-                      "en": "GDP at market prices",
-                      "ka": "მშპ საბაზრო ფასებში"
-                    },
-                    "unit": {
-                      "ka": "მლნ ₾",
-                      "en": "GEL mn"
-                    },
-                    "value": "104 598"
-                  },
-                  {
-                    "change": 9.7,
-                    "changeText": {
-                      "en": "compared to previous year",
-                      "ka": "წინა წელთან შედარებით"
-                    },
-                    "icon": "💰",
-                    "iconBg": "#E8F5F2",
-                    "label": {
-                      "en": "Per capita",
-                      "ka": "ერთ სულ მოსახლეზე"
-                    },
-                    "unit": {
-                      "ka": "$",
-                      "en": "$"
-                    },
-                    "value": "10 200"
-                  },
-                  {
-                    "change": 7.5,
-                    "changeText": {
-                      "en": "compared to previous year",
-                      "ka": "წინა წელთან შედარებით"
-                    },
-                    "icon": "📈",
-                    "iconBg": "#FEF0EC",
-                    "label": {
-                      "en": "Real growth",
-                      "ka": "რეალური ზრდა"
-                    },
-                    "unit": {
-                      "ka": "%",
-                      "en": "%"
-                    },
-                    "value": "7.5"
-                  },
-                  {
-                    "icon": "📉",
-                    "iconBg": "#FFF8EC",
-                    "label": {
-                      "en": "GDP deflator",
-                      "ka": "მშპ-ს დეფლატორი"
-                    },
-                    "unit": {
-                      "ka": "%",
-                      "en": "%"
-                    },
-                    "value": "4.6"
-                  }
-                ],
-                "tab": {
-                  "en": "GDP Indicators",
-                  "ka": "მშპ მაჩვენებლები"
+                "metric": "accounts.gni",
+                "at": {
+                  "account": "allocation-of-primary-income-account",
+                  "side": "U"
                 },
-                "title": {
-                  "en": "Gross Domestic Product – 2025",
-                  "ka": "მთლიანი შიდა პროდუქტი - 2025"
+                "time": 2025,
+                "group": {
+                  "ka": "ეროვნული ანგარიშები",
+                  "en": "National Accounts"
+                },
+                "href": "accounts",
+                "order": 1
+              },
+              {
+                "metric": "accounts.disposableIncome",
+                "at": {
+                  "account": "secondary-distribution-of-income-account",
+                  "side": "U"
+                },
+                "time": 2025,
+                "group": {
+                  "ka": "ეროვნული ანგარიშები",
+                  "en": "National Accounts"
+                },
+                "href": "accounts",
+                "order": 2
+              },
+              {
+                "metric": "accounts.savings",
+                "at": {
+                  "account": "use-of-disposable-income-account",
+                  "side": "U"
+                },
+                "time": 2025,
+                "group": {
+                  "ka": "ეროვნული ანგარიშები",
+                  "en": "National Accounts"
+                },
+                "href": "accounts",
+                "order": 3
+              },
+              {
+                "metric": "accounts.netLending",
+                "at": {
+                  "account": "capital-account",
+                  "side": "U"
+                },
+                "time": 2025,
+                "group": {
+                  "ka": "ეროვნული ანგარიშები",
+                  "en": "National Accounts"
+                },
+                "href": "accounts",
+                "order": 4
+              },
+              {
+                "metric": "gdp.realGrowth",
+                "at": {
+                  "geo": "GE",
+                  "approach": "_Z"
+                },
+                "time": 2025,
+                "group": {
+                  "ka": "მშპ მაჩვენებლები",
+                  "en": "GDP indicators"
+                },
+                "href": "gdp",
+                "order": 5
+              },
+              {
+                "metric": "gdp.perCapita",
+                "at": {
+                  "geo": "GE",
+                  "approach": "_Z"
+                },
+                "time": 2025,
+                "group": {
+                  "ka": "მშპ მაჩვენებლები",
+                  "en": "GDP indicators"
+                },
+                "href": "gdp",
+                "order": 6,
+                "trend": {
+                  "type": "yoy",
+                  "measure": "gdp.perCapita",
+                  "filter": {
+                    "geo": "GE",
+                    "approach": "_Z"
+                  }
                 }
               },
               {
-                "stats": [
-                  {
-                    "icon": "🏗️",
-                    "iconBg": "#E6F3FA",
-                    "label": {
-                      "en": "Output at market prices",
-                      "ka": "გამოშვება საბაზრო ფასებში"
-                    },
-                    "unit": {
-                      "ka": "მლნ ₾",
-                      "en": "GEL mn"
-                    },
-                    "value": "204 000"
-                  },
-                  {
-                    "icon": "🛒",
-                    "iconBg": "#E8F5F2",
-                    "label": {
-                      "en": "Intermediate consumption",
-                      "ka": "შუალედური მოხმარება"
-                    },
-                    "unit": {
-                      "ka": "მლნ ₾",
-                      "en": "GEL mn"
-                    },
-                    "value": "99 400"
-                  },
-                  {
-                    "icon": "💼",
-                    "iconBg": "#FEF0EC",
-                    "label": {
-                      "en": "National income",
-                      "ka": "ეროვნული შემოსავალი"
-                    },
-                    "unit": {
-                      "ka": "მლნ ₾",
-                      "en": "GEL mn"
-                    },
-                    "value": "108 200"
-                  },
-                  {
-                    "icon": "📋",
-                    "iconBg": "#FFF8EC",
-                    "label": {
-                      "en": "Net lending/borrowing",
-                      "ka": "წმინდა დაკრედიტება/სესხება"
-                    },
-                    "unit": {
-                      "ka": "მლნ ₾",
-                      "en": "GEL mn"
-                    },
-                    "value": "6 400"
-                  }
-                ],
-                "tab": {
-                  "en": "National Accounts",
-                  "ka": "ეროვნული ანგარიშები"
+                "metric": "gdp.current",
+                "at": {
+                  "geo": "GE",
+                  "approach": "_Z"
                 },
-                "title": {
-                  "en": "National Accounts – 2025",
-                  "ka": "ეროვნული ანგარიშები - 2025"
+                "time": 2025,
+                "group": {
+                  "ka": "მშპ მაჩვენებლები",
+                  "en": "GDP indicators"
+                },
+                "href": "gdp",
+                "order": 7,
+                "trend": {
+                  "type": "yoy",
+                  "measure": "gdp.current",
+                  "filter": {
+                    "geo": "GE",
+                    "approach": "_Z"
+                  }
                 }
               },
               {
-                "stats": [
-                  {
-                    "icon": "🏛️",
-                    "iconBg": "#E6F3FA",
-                    "label": {
-                      "en": "Tbilisi — GDP",
-                      "ka": "თბილისი — მშპ"
-                    },
-                    "unit": {
-                      "ka": "მლნ ₾",
-                      "en": "GEL mn"
-                    },
-                    "value": "54 100"
-                  },
-                  {
-                    "icon": "🌍",
-                    "iconBg": "#E8F5F2",
-                    "label": {
-                      "en": "Kvemo Kartli — GDP",
-                      "ka": "ქვემო ქართლი — მშპ"
-                    },
-                    "unit": {
-                      "ka": "მლნ ₾",
-                      "en": "GEL mn"
-                    },
-                    "value": "9 500"
-                  },
-                  {
-                    "icon": "⚙️",
-                    "iconBg": "#FEF0EC",
-                    "label": {
-                      "en": "Imereti — GDP",
-                      "ka": "იმერეთი — მშპ"
-                    },
-                    "unit": {
-                      "ka": "მლნ ₾",
-                      "en": "GEL mn"
-                    },
-                    "value": "9 000"
-                  },
-                  {
-                    "icon": "🏖️",
-                    "iconBg": "#FFF8EC",
-                    "label": {
-                      "en": "Adjara — GDP",
-                      "ka": "აჭარა — მშპ"
-                    },
-                    "unit": {
-                      "ka": "მლნ ₾",
-                      "en": "GEL mn"
-                    },
-                    "value": "8 500"
-                  }
-                ],
-                "tab": {
-                  "en": "Regional Statistics",
-                  "ka": "რეგიონული სტატისტიკა"
+                "metric": "regional.gva",
+                "at": {
+                  "geo": "R2",
+                  "sector": "_T"
                 },
-                "title": {
-                  "en": "Regional Analysis – 2024",
-                  "ka": "რეგიონული ანალიზი - 2024"
+                "time": 2024,
+                "group": {
+                  "ka": "რეგიონული სტატისტიკა",
+                  "en": "Regional statistics"
+                },
+                "href": "regional",
+                "order": 8,
+                "label": {
+                  "ka": "თბილისი",
+                  "en": "Tbilisi"
+                }
+              },
+              {
+                "metric": "regional.gva",
+                "at": {
+                  "geo": "R3",
+                  "sector": "_T"
+                },
+                "time": 2024,
+                "group": {
+                  "ka": "რეგიონული სტატისტიკა",
+                  "en": "Regional statistics"
+                },
+                "href": "regional",
+                "order": 9,
+                "label": {
+                  "ka": "აჭარის ა.რ.",
+                  "en": "Adjara A.R."
+                }
+              },
+              {
+                "metric": "regional.gva",
+                "at": {
+                  "geo": "R5",
+                  "sector": "_T"
+                },
+                "time": 2024,
+                "group": {
+                  "ka": "რეგიონული სტატისტიკა",
+                  "en": "Regional statistics"
+                },
+                "href": "regional",
+                "order": 10,
+                "label": {
+                  "ka": "იმერეთი",
+                  "en": "Imereti"
+                }
+              },
+              {
+                "metric": "regional.gva",
+                "at": {
+                  "geo": "R11",
+                  "sector": "_T"
+                },
+                "time": 2024,
+                "group": {
+                  "ka": "რეგიონული სტატისტიკა",
+                  "en": "Regional statistics"
+                },
+                "href": "regional",
+                "order": 11,
+                "label": {
+                  "ka": "ქვემო ქართლი",
+                  "en": "Kvemo Kartli"
                 }
               }
-            ],
-            "type": "stats-carousel"
+            ]
           }
         ],
         "id": "landing",
@@ -5106,9 +5090,10 @@
             "en": "Gross Domestic Product at current prices"
           },
           "unit": {
-            "ka": "მლნ ლარი",
-            "en": "Million Georgian Lari"
+            "ka": "მლნ ₾",
+            "en": "GEL mn"
           },
+          "format": "mln_gel",
           "dataSource": "gdp"
         },
         {
@@ -5119,9 +5104,10 @@
             "en": "GDP per capita, USD"
           },
           "unit": {
-            "ka": "აშშ დოლარი",
-            "en": "US Dollar"
+            "ka": "$",
+            "en": "$"
           },
+          "format": "decimal1",
           "dataSource": "gdp"
         },
         {
@@ -5132,9 +5118,10 @@
             "en": "Real GDP growth rates"
           },
           "unit": {
-            "ka": "პროცენტი",
-            "en": "Percent"
+            "ka": "%",
+            "en": "%"
           },
+          "format": "sign_pct",
           "dataSource": "gdp"
         },
         {
@@ -5184,9 +5171,10 @@
             "en": "Gross National income"
           },
           "unit": {
-            "ka": "მლნ ლარი",
-            "en": "Million Georgian Lari"
+            "ka": "მლნ ₾",
+            "en": "GEL mn"
           },
+          "format": "mln_gel",
           "dataSource": "accounts"
         },
         {
@@ -5197,9 +5185,10 @@
             "en": "Gross Disposable income"
           },
           "unit": {
-            "ka": "მლნ ლარი",
-            "en": "Million Georgian Lari"
+            "ka": "მლნ ₾",
+            "en": "GEL mn"
           },
+          "format": "mln_gel",
           "dataSource": "accounts"
         },
         {
@@ -5210,9 +5199,10 @@
             "en": "Gross Savings"
           },
           "unit": {
-            "ka": "მლნ ლარი",
-            "en": "Million Georgian Lari"
+            "ka": "მლნ ₾",
+            "en": "GEL mn"
           },
+          "format": "mln_gel",
           "dataSource": "accounts"
         },
         {
@@ -5223,9 +5213,10 @@
             "en": "Net lending (+), Net borrowing(-)"
           },
           "unit": {
-            "ka": "მლნ ლარი",
-            "en": "Million Georgian Lari"
+            "ka": "მლნ ₾",
+            "en": "GEL mn"
           },
+          "format": "mln_gel",
           "dataSource": "accounts"
         },
         {
@@ -5236,9 +5227,10 @@
             "en": "Gross Value Added"
           },
           "unit": {
-            "ka": "მლნ ლარი",
-            "en": "Million Georgian Lari"
+            "ka": "მლნ ₾",
+            "en": "GEL mn"
           },
+          "format": "mln_gel",
           "dataSource": "regional"
         },
         {
