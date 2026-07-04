@@ -31,4 +31,6 @@ export type { SelectionMode }                                      from './apply
 export { splitMultiValue }                                         from './store-filter'
 export { interpretKpis }                                            from './kpi'
 export type { KpiSpec, KpiValueSpec, KpiTrendSpec, DimFilter, DimFilterRef } from './kpi'
+export { interpretFeatured, extractFeaturedRequirements, featuredToKpiSpec } from './featured'
+export type { FeaturedItemSpec, FeaturedSlideDef, FeaturedStoreResolver, FeaturedRequirement } from './featured'
 export { resolveMetricValue, calcMetricRequirements, isCalculatedMetric } from './metric-calc'
