@@ -23,7 +23,7 @@ Annotated screenshots: `platform/work/admin-notes/image1..7.png`.
 
 **B3 — Chart subtitle unit label (image5, donut "წარმოების მეთოდით").** The subtitle shows a truncated `„წ" / "ნ.. მლნ ₾"`; the admin wants a full, consistent subtitle: **"2025 წელი, მლნ ლარი"** (year + unit), unified across charts.
 
-**B4 — Numbers off the graph, hover-only (image4 treemap + image5 donut).** "ციფრები გრაფიკზე წაიშალოს და ციფრები დარჩეს კურსორის მიტანის დროს მხოლოდ" — remove the numeric value labels drawn ON the treemap tiles / donut segments; show the numbers ONLY in the hover tooltip. (Keep category labels; only the numeric values go hover-only.)
+**B4 — Numbers off the graph, hover-only — TREEMAP ONLY (image4).** "ციფრები გრაფიკზე წაიშალოს და ციფრები დარჩეს კურსორის მიტანის დროს მხოლოდ" — remove the numeric value labels drawn ON the **treemap** tiles; show the numbers ONLY in the hover tooltip. Keep the tile category labels + the contribution markers (=/+/-). **⚠️ CORRECTION (owner, 2026-07-06): this applies to the TREEMAP ONLY — the DONUT (image5) KEEPS its numbers.** image5's note was about the subtitle (B3), NOT numbers-removal. Do NOT touch the donut/pie value labels.
 
 ## C. Regional page — top KPI panel (image6, "რეგიონული ანგარიშები")
 
