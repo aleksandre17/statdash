@@ -200,7 +200,10 @@
 .section__view-btn:hover { color: var(--color-text-muted); }
 .section__view-btn.active {
   background: var(--color-surface);
-  color: var(--sc, var(--color-accent));
+  /* Always the accent blue — the chart/table toggle is a global UI control, not a
+     per-section datum, so it does NOT take the section's `--sc` accent tint (which
+     would make each section's active toggle a different colour). Token-driven. */
+  color: var(--color-accent);
   box-shadow: 0 1px 3px rgba(0,0,0,0.08);
   font-weight: 600;
 }

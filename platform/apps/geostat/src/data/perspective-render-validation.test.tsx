@@ -101,8 +101,8 @@ const RANGE_LABEL = { ka: 'შუალედი:', en: 'Interval:' } as const
 const SPEC = {
   gdp: {
     yearKpis: {
-      ka: ['მშპ მიმდინარე ფასებში', 'რეალური ზრდა', 'მშპ ერთ სულზე'],
-      en: ['GDP at current prices', 'Real growth', 'GDP per capita'],
+      ka: ['მშპ მიმდინარე ფასებში', 'რეალური ზრდა', 'მშპ ერთ სულზე', 'მშპ-ის დეფლატორი'],
+      en: ['GDP at current prices', 'Real growth', 'GDP per capita', 'GDP deflator'],
     },
     rangeKpis: {
       ka: ['მშპ — საშ. წლიური ზრდა', 'ერთ სულზე — საშ. ზრდა', 'მშპ — საბოლოო წელი'],
