@@ -159,6 +159,19 @@ function resolveTrend(
   // at THIS boundary, exactly as interpretKpi resolves label/unit/trendSub, so a raw
   // { ka, en } bag never reaches the KpiCard child.
   if (spec.type === 'static') return { value: resolveTemplate(spec.value, ctx), dir: spec.dir }
+  // 'share' — num / denom × 100 as the trend line. Reads each ObsRef at ITS OWN
+  // filter/time (the SAME getRef seam the `share` VALUE uses — DRY), so a trend
+  // share and a value share resolve byte-identically. 'flat' dir (a share is a
+  // proportion, not a rise/fall); magnitude percent ('pct') so it reads "53.1%".
+  if (spec.type === 'share') {
+    const getRef = (ref: ObsRef): number => {
+      const rc = withFilter(ctx, ref.filter)
+      return readMeasure(store, ref.measure, atTime(resolveTime(ref.time, rc), rc))
+    }
+    const n = getRef(spec.num)
+    const d = getRef(spec.denom)
+    return { value: getFormatter('pct')(d ? (n / d) * 100 : 0), dir: 'flat' }
+  }
   const c = withFilter(ctx, spec.filter)
   switch (spec.type) {
     case 'yoy': {
@@ -339,6 +352,15 @@ export function extractKpiRequirements(
 
   const fromTrend = (spec: KpiTrendSpec, base: SectionContext): void => {
     if (spec.type === 'static') return
+    // 'share' trend — warm num AND denom at their own pinned coordinates (mirrors
+    // the `share` VALUE warm in fromValue, so warm === render for a trend share).
+    if (spec.type === 'share') {
+      const cn = withFilter(base, spec.num.filter)
+      const cd = withFilter(base, spec.denom.filter)
+      push(spec.num.measure,   cn, resolveTime(spec.num.time, cn))
+      push(spec.denom.measure, cd, resolveTime(spec.denom.time, cd))
+      return
+    }
     const c = withFilter(base, spec.filter)
     if (spec.type === 'yoy') {
       const t = resolveTime(spec.time, c)

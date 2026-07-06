@@ -30,7 +30,7 @@ export function resolveTime(ref: TimeRef | undefined, ctx: SectionContext): numb
 export function resolveFilterVal(v: DimFilter[string], ctx: SectionContext): DimVal | '' {
   if (v !== null && typeof v === 'object') {
     if ('$ctx' in v) {
-      const ref = v as DimFilterRef
+      const ref = v as Extract<DimFilterRef, { $ctx: string }>
       const sel = ctx.dims[ref.$ctx]
       if (sel !== '' && sel !== null && sel !== undefined) return sel as DimVal
       return ref.default ?? ''

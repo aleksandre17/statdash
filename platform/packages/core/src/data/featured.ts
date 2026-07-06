@@ -65,8 +65,14 @@ export interface FeaturedItemSpec {
   at?:     DimFilter
   /** Time pin (literal year or {$ctx}) — the published year for this headline. */
   time?:   TimeRef
-  /** Optional prior-period context (yoy/cagr/static) — reuses KpiTrendSpec. */
+  /** Optional prior-period context (yoy/cagr/static/share) — reuses KpiTrendSpec. */
   trend?:  KpiTrendSpec
+  /**
+   * Caption under the trend line (e.g. "of national total" beneath a `share`
+   * trend). LocaleString, resolved + template-expanded at interpretKpi's leak-proof
+   * boundary — same field a KpiSpec carries; only surfaces when `trend` is present.
+   */
+  trendSub?: LocaleString
   /** Per-card accent (token or CSS custom-prop expr). Defaults to --color-accent. */
   color?:  string
   /**
@@ -141,6 +147,7 @@ export function featuredToKpiSpec(item: FeaturedItemSpec): KpiSpec {
     color:          item.color ?? FEATURED_DEFAULT_COLOR,
     value:          { type: 'point', measure: item.metric, time: item.time, filter: item.at, format },
     trend:          item.trend,
+    trendSub:       item.trendSub,
     // methodology surfaces the metric's governed methodology (Law 9) when known;
     // NEVER fabricated — absent on the metric ⇒ no info-affordance on the card.
     methodologyUrl: metric?.methodology,

@@ -2888,60 +2888,26 @@
             "autoplayMs": 7000,
             "items": [
               {
-                "metric": "accounts.gni",
+                "metric": "gdp.current",
                 "at": {
-                  "account": "allocation-of-primary-income-account",
-                  "side": "U"
+                  "geo": "GE",
+                  "approach": "_Z"
                 },
                 "time": 2025,
                 "group": {
-                  "ka": "ეროვნული ანგარიშები",
-                  "en": "National Accounts"
+                  "ka": "მშპ მაჩვენებლები",
+                  "en": "GDP indicators"
                 },
-                "href": "accounts",
-                "order": 1
-              },
-              {
-                "metric": "accounts.disposableIncome",
-                "at": {
-                  "account": "secondary-distribution-of-income-account",
-                  "side": "U"
-                },
-                "time": 2025,
-                "group": {
-                  "ka": "ეროვნული ანგარიშები",
-                  "en": "National Accounts"
-                },
-                "href": "accounts",
-                "order": 2
-              },
-              {
-                "metric": "accounts.savings",
-                "at": {
-                  "account": "use-of-disposable-income-account",
-                  "side": "U"
-                },
-                "time": 2025,
-                "group": {
-                  "ka": "ეროვნული ანგარიშები",
-                  "en": "National Accounts"
-                },
-                "href": "accounts",
-                "order": 3
-              },
-              {
-                "metric": "accounts.netLending",
-                "at": {
-                  "account": "capital-account",
-                  "side": "U"
-                },
-                "time": 2025,
-                "group": {
-                  "ka": "ეროვნული ანგარიშები",
-                  "en": "National Accounts"
-                },
-                "href": "accounts",
-                "order": 4
+                "href": "gdp",
+                "order": 1,
+                "trend": {
+                  "type": "yoy",
+                  "measure": "gdp.current",
+                  "filter": {
+                    "geo": "GE",
+                    "approach": "_Z"
+                  }
+                }
               },
               {
                 "metric": "gdp.realGrowth",
@@ -2955,7 +2921,7 @@
                   "en": "GDP indicators"
                 },
                 "href": "gdp",
-                "order": 5
+                "order": 2
               },
               {
                 "metric": "gdp.perCapita",
@@ -2969,7 +2935,7 @@
                   "en": "GDP indicators"
                 },
                 "href": "gdp",
-                "order": 6,
+                "order": 3,
                 "trend": {
                   "type": "yoy",
                   "measure": "gdp.perCapita",
@@ -2980,7 +2946,7 @@
                 }
               },
               {
-                "metric": "gdp.current",
+                "metric": "gdp.deflator",
                 "at": {
                   "geo": "GE",
                   "approach": "_Z"
@@ -2991,15 +2957,63 @@
                   "en": "GDP indicators"
                 },
                 "href": "gdp",
-                "order": 7,
-                "trend": {
-                  "type": "yoy",
-                  "measure": "gdp.current",
-                  "filter": {
-                    "geo": "GE",
-                    "approach": "_Z"
-                  }
-                }
+                "order": 4
+              },
+              {
+                "metric": "accounts.gni",
+                "at": {
+                  "account": "allocation-of-primary-income-account",
+                  "side": "U"
+                },
+                "time": 2025,
+                "group": {
+                  "ka": "ეროვნული ანგარიშები",
+                  "en": "National Accounts"
+                },
+                "href": "accounts",
+                "order": 5
+              },
+              {
+                "metric": "accounts.disposableIncome",
+                "at": {
+                  "account": "secondary-distribution-of-income-account",
+                  "side": "U"
+                },
+                "time": 2025,
+                "group": {
+                  "ka": "ეროვნული ანგარიშები",
+                  "en": "National Accounts"
+                },
+                "href": "accounts",
+                "order": 6
+              },
+              {
+                "metric": "accounts.savings",
+                "at": {
+                  "account": "use-of-disposable-income-account",
+                  "side": "U"
+                },
+                "time": 2025,
+                "group": {
+                  "ka": "ეროვნული ანგარიშები",
+                  "en": "National Accounts"
+                },
+                "href": "accounts",
+                "order": 7
+              },
+              {
+                "metric": "accounts.netLending",
+                "at": {
+                  "account": "capital-account",
+                  "side": "U"
+                },
+                "time": 2025,
+                "group": {
+                  "ka": "ეროვნული ანგარიშები",
+                  "en": "National Accounts"
+                },
+                "href": "accounts",
+                "order": 8
               },
               {
                 "metric": "regional.gva",
@@ -3013,10 +3027,27 @@
                   "en": "Regional statistics"
                 },
                 "href": "regional",
-                "order": 8,
+                "order": 9,
                 "label": {
                   "ka": "თბილისი",
                   "en": "Tbilisi"
+                },
+                "trend": {
+                  "type": "share",
+                  "num": {
+                    "measure": "regional.gva",
+                    "filter": { "geo": "R2", "sector": "_T" },
+                    "time": 2024
+                  },
+                  "denom": {
+                    "measure": "regional.gva",
+                    "filter": { "geo": { "$ne": "_T" }, "sector": "_T" },
+                    "time": 2024
+                  }
+                },
+                "trendSub": {
+                  "ka": "ეროვნული ჯამის წილი",
+                  "en": "of the national total"
                 }
               },
               {
@@ -3031,10 +3062,27 @@
                   "en": "Regional statistics"
                 },
                 "href": "regional",
-                "order": 9,
+                "order": 10,
                 "label": {
                   "ka": "აჭარის ა.რ.",
                   "en": "Adjara A.R."
+                },
+                "trend": {
+                  "type": "share",
+                  "num": {
+                    "measure": "regional.gva",
+                    "filter": { "geo": "R3", "sector": "_T" },
+                    "time": 2024
+                  },
+                  "denom": {
+                    "measure": "regional.gva",
+                    "filter": { "geo": { "$ne": "_T" }, "sector": "_T" },
+                    "time": 2024
+                  }
+                },
+                "trendSub": {
+                  "ka": "ეროვნული ჯამის წილი",
+                  "en": "of the national total"
                 }
               },
               {
@@ -3049,10 +3097,27 @@
                   "en": "Regional statistics"
                 },
                 "href": "regional",
-                "order": 10,
+                "order": 11,
                 "label": {
                   "ka": "იმერეთი",
                   "en": "Imereti"
+                },
+                "trend": {
+                  "type": "share",
+                  "num": {
+                    "measure": "regional.gva",
+                    "filter": { "geo": "R5", "sector": "_T" },
+                    "time": 2024
+                  },
+                  "denom": {
+                    "measure": "regional.gva",
+                    "filter": { "geo": { "$ne": "_T" }, "sector": "_T" },
+                    "time": 2024
+                  }
+                },
+                "trendSub": {
+                  "ka": "ეროვნული ჯამის წილი",
+                  "en": "of the national total"
                 }
               },
               {
@@ -3067,10 +3132,27 @@
                   "en": "Regional statistics"
                 },
                 "href": "regional",
-                "order": 11,
+                "order": 12,
                 "label": {
                   "ka": "ქვემო ქართლი",
                   "en": "Kvemo Kartli"
+                },
+                "trend": {
+                  "type": "share",
+                  "num": {
+                    "measure": "regional.gva",
+                    "filter": { "geo": "R11", "sector": "_T" },
+                    "time": 2024
+                  },
+                  "denom": {
+                    "measure": "regional.gva",
+                    "filter": { "geo": { "$ne": "_T" }, "sector": "_T" },
+                    "time": 2024
+                  }
+                },
+                "trendSub": {
+                  "ka": "ეროვნული ჯამის წილი",
+                  "en": "of the national total"
                 }
               }
             ]
@@ -3167,25 +3249,12 @@
                 "color": "#00A896",
                 "id": "reg-growth",
                 "label": {
-                  "ka": "წლიური ზრდა",
-                  "en": "Annual growth"
+                  "ka": "წლიური ზრდა (წინა წელთან)",
+                  "en": "Annual growth (year on year)"
                 },
                 "when": {
                   "op": "perspective-is",
                   "perspective": "year"
-                },
-                "trend": {
-                  "filter": {
-                    "geo": { "$ctx": "geo", "$ne": "_T" },
-                    "measure": "GVA",
-                    "sector": { "$ctx": "sector", "default": "_T" }
-                  },
-                  "measure": "GVA",
-                  "type": "yoy"
-                },
-                "trendSub": {
-                  "ka": "წინა წელთან შედარებით",
-                  "en": "compared to previous year"
                 },
                 "unit": {
                   "ka": "%",
@@ -3205,24 +3274,12 @@
                 "color": "#4ECDC4",
                 "id": "reg-share",
                 "label": {
-                  "ka": "თბილისის წილი ეროვნულ მაჩვენებელში",
-                  "en": "Tbilisi's share of the national total"
+                  "ka": "მშპ-ში წილი",
+                  "en": "Share in GDP"
                 },
                 "when": {
                   "op": "perspective-is",
                   "perspective": "year"
-                },
-                "trend": {
-                  "dir": "flat",
-                  "type": "static",
-                  "value": {
-                    "ka": "თბილისი / საქართველო",
-                    "en": "Tbilisi / Georgia"
-                  }
-                },
-                "trendSub": {
-                  "ka": "ეროვნული ჯამიდან",
-                  "en": "Of the national total"
                 },
                 "unit": {
                   "ka": "%",
@@ -3231,7 +3288,7 @@
                 "value": {
                   "denom": {
                     "filter": {
-                      "geo": { "$ctx": "geo", "$ne": "_T" },
+                      "geo": { "$ne": "_T" },
                       "measure": "GVA",
                       "sector": { "$ctx": "sector", "default": "_T" }
                     },
@@ -3239,7 +3296,7 @@
                   },
                   "num": {
                     "filter": {
-                      "geo": "R2",
+                      "geo": { "$ctx": "geo", "$ne": "_T" },
                       "measure": "GVA",
                       "sector": { "$ctx": "sector", "default": "_T" }
                     },
@@ -3258,25 +3315,6 @@
                 "when": {
                   "op": "perspective-is",
                   "perspective": "year"
-                },
-                "trend": {
-                  "filter": {
-                    "geo": { "$ctx": "geo", "$ne": "_T" },
-                    "measure": "GVA",
-                    "sector": { "$ctx": "sector", "default": "_T" }
-                  },
-                  "from": {
-                    "$ctx": "spanFrom"
-                  },
-                  "measure": "GVA",
-                  "to": {
-                    "$ctx": "spanTo"
-                  },
-                  "type": "cagr"
-                },
-                "trendSub": {
-                  "ka": "{spanFrom}–{spanTo}",
-                  "en": "{spanFrom}–{spanTo}"
                 },
                 "unit": {
                   "ka": "%",
@@ -3302,31 +3340,12 @@
                 "color": "#0080BE",
                 "id": "reg-cagr",
                 "label": {
-                  "ka": "დამატებული ღირებულება — საშუალო წლიური ზრდა",
-                  "en": "Value added — average annual growth"
+                  "ka": "დამატებული ღირებულება — საშუალო წლიური ზრდა ({fromYear}–{toYear})",
+                  "en": "Value added — average annual growth ({fromYear}–{toYear})"
                 },
                 "when": {
                   "op": "perspective-is",
                   "perspective": "range"
-                },
-                "trend": {
-                  "filter": {
-                    "geo": { "$ctx": "geo", "$ne": "_T" },
-                    "measure": "GVA",
-                    "sector": { "$ctx": "sector", "default": "_T" }
-                  },
-                  "from": {
-                    "$ctx": "fromYear"
-                  },
-                  "measure": "GVA",
-                  "to": {
-                    "$ctx": "toYear"
-                  },
-                  "type": "cagr"
-                },
-                "trendSub": {
-                  "ka": "{fromYear}–{toYear}",
-                  "en": "{fromYear}–{toYear}"
                 },
                 "unit": {
                   "ka": "%",
@@ -3438,31 +3457,12 @@
                 "color": "#7B6CF6",
                 "id": "reg-avg-growth",
                 "label": {
-                  "ka": "საშუალო წლიური ზრდა",
-                  "en": "Average annual growth"
+                  "ka": "საშუალო წლიური ზრდა ({fromYear}–{toYear})",
+                  "en": "Average annual growth ({fromYear}–{toYear})"
                 },
                 "when": {
                   "op": "perspective-is",
                   "perspective": "range"
-                },
-                "trend": {
-                  "filter": {
-                    "geo": { "$ctx": "geo", "$ne": "_T" },
-                    "measure": "GVA",
-                    "sector": { "$ctx": "sector", "default": "_T" }
-                  },
-                  "from": {
-                    "$ctx": "fromYear"
-                  },
-                  "measure": "GVA",
-                  "to": {
-                    "$ctx": "toYear"
-                  },
-                  "type": "cagr"
-                },
-                "trendSub": {
-                  "ka": "{fromYear}–{toYear} · საშუალო წლიური ზრდა",
-                  "en": "{fromYear}–{toYear} · average annual growth"
                 },
                 "unit": {
                   "ka": "%",
@@ -5119,6 +5119,20 @@
           "label": {
             "ka": "რეალური მთლიანი შიდა პროდუქტის ზრდა",
             "en": "Real GDP growth rates"
+          },
+          "unit": {
+            "ka": "%",
+            "en": "%"
+          },
+          "format": "sign_pct",
+          "dataSource": "gdp"
+        },
+        {
+          "id": "gdp.deflator",
+          "code": "gdp-deflator",
+          "label": {
+            "ka": "მშპ-ის დეფლატორი",
+            "en": "GDP deflator"
           },
           "unit": {
             "ka": "%",
