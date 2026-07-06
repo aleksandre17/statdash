@@ -38,8 +38,17 @@ export type TimeRef = number | CtxRef
  * `_T` national-total row, so State A (no selection) yields the national total ONCE
  * instead of double-counting `_T + Σleaves`, AND still resolves per-sector (where no
  * `_T` row exists) by summing leaves. Mirrors the regions-bar/sectors-multi binding.
+ *
+ * Two shapes (a discriminated union on `$ctx`):
+ *   • `{ $ctx, default?, $ne? }` — a selection-FOLLOWING pin (may also exclude a code).
+ *   • `{ $ne }`                  — a PURE exclusion with NO positive pin: the dim stays
+ *     wildcard-open and `_val` SUMS it minus the excluded aggregate (the INVARIANT
+ *     denominator of a `share`, e.g. a national leaf-sum `{ $ne:'_T' }`). Both shapes
+ *     are handled by resolveFilterVal's structural `'$ctx' in v` / `'$ne' in v` dispatch.
  */
-export type DimFilterRef = { $ctx: string; default?: DimVal; $ne?: DimVal }
+export type DimFilterRef =
+  | { $ctx: string;      default?: DimVal; $ne?: DimVal }
+  | { $ctx?: undefined;  default?: DimVal; $ne:  DimVal }
 
 export type DimFilter = Record<string, DimVal | DimFilterRef>
 
@@ -69,6 +78,12 @@ export type KpiValueSpec =
 export type KpiTrendSpec =
   | { type: 'yoy';    measure: string; time?: TimeRef; filter?: DimFilter }
   | { type: 'cagr';   measure: string; from: TimeRef;  to: TimeRef;       filter?: DimFilter }
+  // 'share' — a computed ratio × 100 rendered as the trend LINE (num / denom, the
+  // SAME ObsRef vocabulary the `share` VALUE uses). Lets a card whose primary value
+  // is an absolute level ALSO surface its % of a base (e.g. a region's headline GEL
+  // value + its share of the national total) without a second card. `dir` is always
+  // 'flat' (a share has no up/down direction); formatted as a magnitude percent.
+  | { type: 'share';  num: ObsRef;     denom: ObsRef }
   // `value` is a USER-FACING caption (e.g. 'stable', 'real'), NOT a computed number —
   // LocaleString (plain string legacy OR { ka, en }), resolved to the active locale AND
   // template-expanded by resolveTrend via resolveTemplate, the SAME boundary label/unit/
