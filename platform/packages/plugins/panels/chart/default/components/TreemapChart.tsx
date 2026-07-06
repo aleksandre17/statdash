@@ -79,9 +79,9 @@ function Tooltip({ item, pct, cursor }: { item: Item; pct: string; cursor: Curso
 // ── Block ──────────────────────────────────────────────────────────────
 
 function Block({
-  item, flexGrow, pct, hovered, onEnter, onMove, onLeave,
+  item, flexGrow, pct, showValues, hovered, onEnter, onMove, onLeave,
 }: {
-  item: Item; flexGrow: number; pct: string
+  item: Item; flexGrow: number; pct: string; showValues: boolean
   hovered: Item | null
   onEnter: (e: React.MouseEvent) => void
   onMove:  (e: React.MouseEvent) => void
@@ -119,13 +119,15 @@ function Block({
         }}>
           {item.clean}
         </span>
-        <span style={{
-          fontSize: 15, fontWeight: 700, lineHeight: 1.2,
-          fontFamily,
-        }}>
-          {item.formatted}
-        </span>
-        {pct && (
+        {showValues && (
+          <span style={{
+            fontSize: 15, fontWeight: 700, lineHeight: 1.2,
+            fontFamily,
+          }}>
+            {item.formatted}
+          </span>
+        )}
+        {showValues && pct && (
           <span style={{
             fontSize: 11, opacity: 0.85, lineHeight: 1.2,
             fontFamily,
@@ -150,6 +152,13 @@ export default function TreemapChart({ output }: { output: ChartOutput }) {
   const pts  = output.series[0]?.data ?? []
   const cats = output.categories
   if (!pts.length) return null
+
+  // Numeric tile values + % are gated on the declarative `output.dataLabels` flag
+  // (default OFF for treemap per the ChartOutput contract — admin B4: numbers off the
+  // graph, hover-only). When off, the value + share show only in the hover tooltip; the
+  // tile keeps its category name and its contribution marker (=/+/-), which are structure,
+  // not the numeric value. `dataLabels: true` on the chart node restores on-tile values.
+  const showValues = output.dataLabels ?? false
 
   // `||` not `??`: an unmapped measure yields color '' from the lookup pipe
   // (an empty STRING, which `??` would keep → a transparent, invisible block).
@@ -256,9 +265,11 @@ export default function TreemapChart({ output }: { output: ChartOutput }) {
               <span style={{ fontSize: 12, fontFamily, lineHeight: 1.35 }}>
                 {totalItem.clean}
               </span>
-              <span style={{ fontSize: 17, fontWeight: 700, fontFamily, lineHeight: 1.2 }}>
-                {totalItem.formatted}
-              </span>
+              {showValues && (
+                <span style={{ fontSize: 17, fontWeight: 700, fontFamily, lineHeight: 1.2 }}>
+                  {totalItem.formatted}
+                </span>
+              )}
             </div>
           </div>
         )
@@ -275,7 +286,7 @@ export default function TreemapChart({ output }: { output: ChartOutput }) {
               return (
                 <Block
                   key={it.label || i}
-                  item={it} flexGrow={it.value} pct={pctOf(it)}
+                  item={it} flexGrow={it.value} pct={pctOf(it)} showValues={showValues}
                   hovered={hovered}
                   onEnter={h.onEnter} onMove={h.onMove} onLeave={h.onLeave}
                 />
@@ -292,7 +303,7 @@ export default function TreemapChart({ output }: { output: ChartOutput }) {
               return (
                 <Block
                   key={it.label || i}
-                  item={it} flexGrow={it.value} pct={pctOf(it)}
+                  item={it} flexGrow={it.value} pct={pctOf(it)} showValues={showValues}
                   hovered={hovered}
                   onEnter={h.onEnter} onMove={h.onMove} onLeave={h.onLeave}
                 />

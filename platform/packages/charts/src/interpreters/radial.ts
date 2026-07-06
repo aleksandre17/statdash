@@ -31,6 +31,11 @@ class PieInterpreter implements ChartInterpreter {
       legend: buildLegend(def, sliceRows.length),
       tooltip: buildTooltip(def, false),
       annotations: [],
+      // Data-label visibility passes through so the renderer can honor it (donut/pie
+      // default OFF per the ChartOutput contract — numeric slice values are hover-only,
+      // category names stay in the legend). `dataLabels: true` opts a slice-value donut
+      // back in. Declarative + Constructor-controllable; no per-chart hardcode.
+      ...(def.dataLabels !== undefined ? { dataLabels: def.dataLabels } : {}),
       ...(totalRow !== undefined ? { total: totalRow.value } : {}),
       ...(def.centerLabel ? { centerLabel: def.centerLabel } : {}),
     }

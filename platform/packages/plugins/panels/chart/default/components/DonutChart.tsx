@@ -12,12 +12,16 @@ import { DonutTip } from './DonutTip'
 
 const { W, H, CX, CY, EXPLODE_D, F_PCT, F_NAME, LH_PCT, LH_NAME } = DONUT_VIEW
 
-// SHOW_LABELS = false  → outer labels + leaders hidden; legend shown instead.
-// SHOW_LABELS = true   → restores full label placement (placeAll kept intact).
-const SHOW_LABELS = true   // set false to hide all outer labels + leaders
+// Outer numeric slice labels + leaders are gated on the declarative `output.dataLabels`
+// flag (default OFF for donut per the ChartOutput contract — admin B4: numbers off the
+// graph, hover-only). When off, the slice values live only in the hover tooltip; the
+// legend still carries every category name and the centre keeps the rollup total. A
+// config author sets `dataLabels: true` on the chart node to restore the leader labels.
+// SHOW_NAMES = true additionally restores the name lines alongside the values.
 const SHOW_NAMES  = false  // set true to restore name lines alongside percentages
 
 export default function DonutChart({ output }: { output: ChartOutput }) {
+  const showLabels = output.dataLabels ?? false
   const fontFamily = typeof window !== 'undefined'
     ? (getComputedStyle(document.documentElement).getPropertyValue('--font-family-base').trim() || 'system-ui, sans-serif')
     : 'system-ui, sans-serif'
@@ -47,7 +51,7 @@ export default function DonutChart({ output }: { output: ChartOutput }) {
                        onClick={() => setAct(p => p === i ? null : i)} />
         })}
 
-        {SHOW_LABELS && labels.map(lb => (
+        {showLabels && labels.map(lb => (
             <g key={lb.idx} opacity={hov !== null && hov !== lb.idx && act !== lb.idx ? 0.3 : 1} style={{ transition: 'opacity .15s' }}>
               <path d={lb.ld} fill="none" stroke={lb.color} strokeWidth="1.2" opacity="0.5" strokeLinecap="round" />
               <circle cx={lb.ax} cy={lb.ay} r="2" fill={lb.color} opacity="0.35" />
