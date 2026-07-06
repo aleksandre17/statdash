@@ -120,13 +120,21 @@ const SPEC = {
     },
   },
   regional: {
+    // YEAR strip (image6, admin C): 4 KPIs — GVA · nominal yoy growth · Share in GDP
+    // (C2, renamed) · full-period average nominal growth (reg-cagr-year, spanFrom→spanTo).
+    // The last is asserted by its token-free prefix "საშუალო ნომინალური ზრდა" /
+    // "Average nominal growth" — distinct from the RANGE window KPI "საშუალო წლიური ზრდა" /
+    // "Average annual growth" (reg-avg-growth), so the two never cross-leak. (The
+    // ({spanFrom}–{spanTo}) year span renders empty here — empty staticStore has no time
+    // dims — and resolves live to e.g. (2010–2024); the prefix is the stable yardstick.)
     yearKpis: {
-      ka: ['მთლიანი დამატებული ღირებულება', 'თბილისის წილი ეროვნულ მაჩვენებელში'],
-      en: ['Gross Value Added', "Tbilisi's share of the national total"],
+      ka: ['მთლიანი დამატებული ღირებულება', 'წლიური ზრდა (წინა წელთან)', 'მშპ-ში წილი', 'საშუალო ნომინალური ზრდა'],
+      en: ['Gross Value Added', 'Annual growth (year on year)', 'Share in GDP', 'Average nominal growth'],
     },
+    // RANGE strip: 4 window KPIs bound to the user-selected fromYear/toYear span.
     rangeKpis: {
-      ka: ['დამატებული ღირებულება — საშუალო წლიური ზრდა'],
-      en: ['Value added — average annual growth'],
+      ka: ['დამატებული ღირებულება — საშუალო წლიური ზრდა', 'დამატებული ღირებულება — {toYear}', 'დამატებული ღირებულება — {fromYear}', 'საშუალო წლიური ზრდა ({fromYear}–{toYear})'],
+      en: ['Value added — average annual growth', 'Value added — {toYear}', 'Value added — {fromYear}', 'Average annual growth ({fromYear}–{toYear})'],
     },
   },
 } as const
