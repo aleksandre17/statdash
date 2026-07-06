@@ -52,24 +52,23 @@ function treemapOutput(dataLabels?: boolean): ChartOutput {
   }
 }
 
-describe('DonutChart — numeric slice labels hover-only (default)', () => {
-  it('default (no dataLabels): category names + centre stay, numeric slice values are hidden', () => {
+describe('DonutChart — keeps its on-graph numbers by default (admin B4 = treemap-only)', () => {
+  it('default (no dataLabels): the donut SHOWS its numeric slice values on-graph', () => {
     const { container } = render(<DonutChart output={donutOutput()} />)
     const text = container.textContent ?? ''
     expect(text).toContain('ალფა')   // legend category kept
-    expect(text).toContain('ბეტა')
     expect(text).toContain('მშპ')    // centre label kept
     expect(text).toContain('400')    // centre rollup total kept
-    expect(text).not.toContain('137')  // per-slice numeric value → hover-only
-    expect(text).not.toContain('263')
+    // Numbers stay ON the donut (owner: numbers-hover-only is TREEMAP ONLY).
+    expect(text.includes('137') || text.includes('263')).toBe(true)
   })
 
-  it('dataLabels:true restores the on-graph slice values', () => {
-    const { container } = render(<DonutChart output={donutOutput(true)} />)
+  it('dataLabels:false opts the donut numbers OUT to hover-only (Constructor-controllable)', () => {
+    const { container } = render(<DonutChart output={donutOutput(false)} />)
     const text = container.textContent ?? ''
-    expect(text).toContain('ალფა')
-    // At least one leader label carries the numeric value back on-graph.
-    expect(text.includes('137') || text.includes('263')).toBe(true)
+    expect(text).toContain('ალფა')       // legend category still kept
+    expect(text).not.toContain('137')    // per-slice numeric value → hover-only
+    expect(text).not.toContain('263')
   })
 })
 

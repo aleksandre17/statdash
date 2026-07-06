@@ -1549,8 +1549,8 @@
                 },
                 "view": {
                   "subtitle": {
-                    "ka": "{periodLabel} წ. · მლნ ₾",
-                    "en": "{periodLabel} · GEL mn"
+                    "ka": "{periodLabel} წელი, მლნ ლარი",
+                    "en": "{periodLabel}, GEL mn"
                   }
                 },
                 "data": {

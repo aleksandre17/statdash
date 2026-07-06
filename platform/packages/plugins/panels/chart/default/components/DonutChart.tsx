@@ -21,7 +21,9 @@ const { W, H, CX, CY, EXPLODE_D, F_PCT, F_NAME, LH_PCT, LH_NAME } = DONUT_VIEW
 const SHOW_NAMES  = false  // set true to restore name lines alongside percentages
 
 export default function DonutChart({ output }: { output: ChartOutput }) {
-  const showLabels = output.dataLabels ?? false
+  // Donut DEFAULTS TO SHOWING numbers (owner: admin B4 numbers-hover-only is TREEMAP
+  // ONLY; the donut keeps its on-graph numbers). `dataLabels:false` can still opt out.
+  const showLabels = output.dataLabels ?? true
   const fontFamily = typeof window !== 'undefined'
     ? (getComputedStyle(document.documentElement).getPropertyValue('--font-family-base').trim() || 'system-ui, sans-serif')
     : 'system-ui, sans-serif'
