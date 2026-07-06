@@ -204,13 +204,23 @@ function collectObsSites(node: unknown, path: string, out: ObsSite[]): void {
       const value = item.value
       if (isPlainObject(value)) {
         if (value.type === 'share') {
-          // share → two ObsRef operands (num, denom), each pins independently.
-          for (const k of ['num', 'denom'] as const) {
-            const ref = value[k]
-            if (isPlainObject(ref)) {
-              const o = obsFromSpec(ref, `kpi '${id}'.value.${k}`)
-              if (o) out.push(o)
-            }
+          // share → two ObsRef operands. The NUMERATOR is the single pinned part
+          // (must pin every dim → 'single'); the DENOMINATOR is the normalizing
+          // BASE — a total that legitimately AGGREGATES over a dim (e.g. geo
+          // `{$ne:'_T'}` sums the leaf regions = the national total). A wildcard/`$ne`
+          // there is a deterministic `_val` SUM, NOT an arbitrary-row read, so the
+          // denom belongs to the fan-out tier ('query'), exactly like a breakdown
+          // DataSpec — its PINNED codes are still existence-checked (CHECK 2).
+          const num = value.num
+          if (isPlainObject(num)) {
+            const o = obsFromSpec(num, `kpi '${id}'.value.num`)
+            if (o) out.push(o)
+          }
+          const denom = value.denom
+          if (isPlainObject(denom) && typeof denom.measure === 'string') {
+            const filterRaw = isPlainObject(denom.filter) ? { ...denom.filter } : {}
+            if (filterRaw.measure === undefined) filterRaw.measure = denom.measure
+            out.push({ kind: 'query', where: `kpi '${id}'.value.denom`, ...classifyFilter(filterRaw) })
           }
         } else {
           const o = obsFromSpec(value, `kpi '${id}'.value`)
