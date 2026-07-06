@@ -1,8 +1,8 @@
 import { useMemo }              from 'react'
 import { interpretChart }        from '@statdash/charts'
-import { useResolveLocale }      from '@statdash/react'
 import { resolveRef }            from '@statdash/engine'
-import type { ChartType, RefServices } from '@statdash/engine'
+import { resolveNodeTemplate }   from '@statdash/react/engine'
+import type { ChartType, RefServices, LocaleString } from '@statdash/engine'
 import type { RenderContext }    from '@statdash/react/engine'
 import type { ChartOutput }      from '@statdash/charts'
 import type { ChartNode }        from './ChartNode'
@@ -26,12 +26,18 @@ function resolveChartType(
 // ── useChartOutput — resolve a ChartNode + ctx into a ChartOutput ──────────
 //
 //  Owns the data-shaping the shell used to inline:
-//   1. LocaleString render boundary + fieldConfig cascade — resolveChartDefLocale
-//      folds the parent's ctx.fieldConfig (node def wins per key) and resolves EVERY
-//      bilingual ChartNode text field (label / centerLabel / axis units / fieldConfig
-//      text) to the active locale, so the engine receives string-only ChartDef and no
-//      raw { ka, en } bag can reach ChartOutput → toApexOptions (Law 1; the engine
-//      stays locale-agnostic, resolution happens at this React boundary).
+//   1. Display-text render boundary + fieldConfig cascade — resolveChartDefLocale folds
+//      the parent's ctx.fieldConfig (node def wins per key) and resolves EVERY bilingual
+//      ChartNode text field (label / centerLabel / axis units / fieldConfig text) via the
+//      CANONICAL template resolver (resolveNodeTemplate → resolveTemplate): it BOTH
+//      collapses the i18n / perspective carrier to the active locale AND expands `{key}`
+//      tokens against the ctx (`{ ...filterParams, ...vars }` over dims) — the SAME
+//      primitive the section subtitle / page-header badge / KPI trendSub funnel through.
+//      A locale-only resolve (the old useResolveLocale) left a template like
+//      "…დინამიკა, {fromYear}–{toYear}" un-expanded on the series-name/tooltip path (the
+//      admin-reported Latin `{fromYear}` leak); routing it through resolveTemplate here
+//      resolves the real years per locale, and no raw { ka, en } bag reaches ChartOutput →
+//      toApexOptions (Law 1; the engine stays locale-agnostic, resolution at this boundary).
 //   2. interpretChart — fold in the parent view's legend/tooltip overrides on top of
 //      the resolved def, then interpret against the rows.
 //
@@ -42,10 +48,15 @@ export function useChartOutput(ctx: RenderContext, def: ChartNode): ChartOutput 
   const { sectionCtx } = ctx
   const legend  = ctx.view?.legend
   const tooltip = ctx.view?.tooltip
-  const resolve = useResolveLocale()
 
   return useMemo(() => {
     const rows = ctx.rows ?? []
+    // Canonical display-text resolver — the ONE primitive every template funnels through
+    // (useNodeTemplate's param contract: node/repeat vars + filter params over ctx.dims).
+    // resolveNodeTemplate is pure, so it lives inside the memo (deps stay on its inputs,
+    // not on an unstable closure identity).
+    const params  = { ...ctx.filterParams, ...ctx.vars }
+    const resolve = (tpl: LocaleString): string => resolveNodeTemplate(tpl, sectionCtx, params)
     // P3: lower a state-bound MARK to a concrete ChartType BEFORE the def reaches the
     // interpreter. Bare-string chartType → same def (byte-identical).
     const markedDef = typeof def.chartType === 'string'
@@ -61,7 +72,7 @@ export function useChartOutput(ctx: RenderContext, def: ChartNode): ChartOutput 
       rows,
       sectionCtx,
     )
-  }, [def, ctx.fieldConfig, ctx.vars, legend, tooltip, ctx.rows, sectionCtx, resolve])
+  }, [def, ctx.fieldConfig, ctx.vars, ctx.filterParams, legend, tooltip, ctx.rows, sectionCtx])
 }
 
 function viewLegend(l: 'bottom' | 'right' | 'none') {
