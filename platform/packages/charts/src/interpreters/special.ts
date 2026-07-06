@@ -149,6 +149,11 @@ class TreemapInterpreter implements ChartInterpreter {
       legend: { show: false },
       tooltip: buildTooltip(def, false),
       annotations: [],
+      // Data-label visibility passes through so the renderer can honor it (treemap
+      // defaults OFF per the ChartOutput contract — numeric tile values + % are
+      // hover-only, the tile category name + contribution marker stay). `dataLabels:
+      // true` opts the on-tile values back in. Declarative + Constructor-controllable.
+      ...(def.dataLabels !== undefined ? { dataLabels: def.dataLabels } : {}),
     }
   }
 }
