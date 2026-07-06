@@ -1377,6 +1377,43 @@
                 }
               },
               {
+                "color": "#E76F51",
+                "id": "gdp-deflator",
+                "label": {
+                  "ka": "მშპ-ის დეფლატორი",
+                  "en": "GDP deflator"
+                },
+                "when": {
+                  "op": "perspective-is",
+                  "perspective": "year"
+                },
+                "unit": {
+                  "ka": "%",
+                  "en": "%"
+                },
+                "trendSub": {
+                  "ka": "წინა წელთან შედარებით",
+                  "en": "compared to previous year"
+                },
+                "value": {
+                  "type": "point",
+                  "format": "sign_pct",
+                  "measure": "gdp.deflator",
+                  "filter": {
+                    "geo": "GE",
+                    "approach": "_Z"
+                  }
+                },
+                "trend": {
+                  "type": "yoy",
+                  "measure": "gdp.deflator",
+                  "filter": {
+                    "geo": "GE",
+                    "approach": "_Z"
+                  }
+                }
+              },
+              {
                 "color": "#0080BE",
                 "id": "gdp-cagr",
                 "label": {
@@ -5089,8 +5126,8 @@
           "id": "gdp.current",
           "code": "gross-domestic-product-at-current-prices",
           "label": {
-            "ka": "მთლიანი შიდა პროდუქტი საბაზრო ფასებში",
-            "en": "Gross Domestic Product at current prices"
+            "ka": "მშპ მიმდინარე ფასებში",
+            "en": "GDP at current prices"
           },
           "unit": {
             "ka": "მლნ ₾",
@@ -5103,8 +5140,8 @@
           "id": "gdp.perCapita",
           "code": "gdp-per-capita-usd",
           "label": {
-            "ka": "მთლიანი შიდა პროდუქტი ერთ სულ მოსახლეზე, აშშ დოლარი",
-            "en": "GDP per capita, USD"
+            "ka": "მშპ ერთ სულზე",
+            "en": "GDP per capita"
           },
           "unit": {
             "ka": "$",
@@ -5117,8 +5154,8 @@
           "id": "gdp.realGrowth",
           "code": "real-gdp-growth-rates",
           "label": {
-            "ka": "რეალური მთლიანი შიდა პროდუქტის ზრდა",
-            "en": "Real GDP growth rates"
+            "ka": "რეალური ზრდა",
+            "en": "Real growth"
           },
           "unit": {
             "ka": "%",
@@ -5184,8 +5221,8 @@
           "id": "accounts.gni",
           "code": "B5G",
           "label": {
-            "ka": "მთლიანი ეროვნული შემოსავალი",
-            "en": "Gross National income"
+            "ka": "მთლიანი ეროვნული შემოსავალი (B5G)",
+            "en": "Gross National Income (B5G)"
           },
           "unit": {
             "ka": "მლნ ₾",
@@ -5198,8 +5235,8 @@
           "id": "accounts.disposableIncome",
           "code": "B6G",
           "label": {
-            "ka": "მთლიანი განკარგვადი შემოსავალი",
-            "en": "Gross Disposable income"
+            "ka": "მთლიანი განკარგვადი შემოსავალი (B6G)",
+            "en": "Gross Disposable Income (B6G)"
           },
           "unit": {
             "ka": "მლნ ₾",
@@ -5212,8 +5249,8 @@
           "id": "accounts.savings",
           "code": "B8G",
           "label": {
-            "ka": "მთლიანი დანაზოგი",
-            "en": "Gross Savings"
+            "ka": "მთლიანი დანაზოგი (B8G)",
+            "en": "Gross Saving (B8G)"
           },
           "unit": {
             "ka": "მლნ ₾",
@@ -5226,8 +5263,8 @@
           "id": "accounts.netLending",
           "code": "B9",
           "label": {
-            "ka": "წმინდა დაკრედიტება (+), წმინდა სესხება(-)",
-            "en": "Net lending (+), Net borrowing(-)"
+            "ka": "წმინდა დაკრედიტება/სესხება (B9)",
+            "en": "Net lending/borrowing (B9)"
           },
           "unit": {
             "ka": "მლნ ₾",
