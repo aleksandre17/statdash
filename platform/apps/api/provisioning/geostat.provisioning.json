@@ -3309,8 +3309,8 @@
                 "color": "#7B6CF6",
                 "id": "reg-cagr-year",
                 "label": {
-                  "ka": "საშუალო წლიური ზრდა ({spanFrom}–{spanTo})",
-                  "en": "Average annual growth ({spanFrom}–{spanTo})"
+                  "ka": "საშუალო ნომინალური ზრდა ({spanFrom}–{spanTo})",
+                  "en": "Average nominal growth ({spanFrom}–{spanTo})"
                 },
                 "when": {
                   "op": "perspective-is",
