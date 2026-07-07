@@ -317,3 +317,33 @@ export function horizontalBarFillPct(output: ChartOutput): number {
   const totalHeight = typeof h === 'number' ? h : HBAR_MIN_HEIGHT
   return barFillPctForCap(output.categories.length, totalHeight, BAR_CAP_PX_HORIZONTAL)
 }
+
+// ── Horizontal value-axis headroom (out-of-bar end-labels) ─────────────
+//
+//  Root cause: an hbar prints each bar's value label OUTSIDE the bar end
+//  (dataLabels position:'top' + offsetX). While the value SCALE is visible,
+//  ApexCharts' nice-scale rounds the max UP, leaving room for that label. Once
+//  the scale is HIDDEN (axes.y.hidden — R6 hid the x axis on the regional
+//  comparison hbar), Apex instead auto-fits the range flush to the data max, so
+//  the longest bar reaches the plot's right edge and its label ("42 982.6")
+//  shears to "982.6" + forces a horizontal overflow/scroll. Pixel padding can't
+//  cover a label whose width scales with the value — reserve the room in the
+//  SCALE itself so the bar ends before the edge.
+//
+//  Applied ONLY when: horizontal + value axis hidden + labels shown + no explicit
+//  max authored (an authored max is deliberate → respected untouched). Returns the
+//  authored max otherwise (undefined ⇒ Apex auto-scale, unchanged behaviour).
+//
+const HBAR_VALUE_HEADROOM = 1.18   // ~18% scale headroom past the data max
+
+export function hbarValueAxisMax(
+  horizontal:      boolean,
+  valueAxisHidden: boolean,
+  showDataLabels:  boolean,
+  authoredMax:     number | undefined,
+  series:          readonly ChartSeries[],
+): number | undefined {
+  if (!horizontal || !valueAxisHidden || !showDataLabels || authoredMax != null) return authoredMax
+  const dataMax = Math.max(0, ...series.flatMap((s) => s.data.map((pt) => pt.value ?? 0)))
+  return dataMax > 0 ? dataMax * HBAR_VALUE_HEADROOM : authoredMax
+}

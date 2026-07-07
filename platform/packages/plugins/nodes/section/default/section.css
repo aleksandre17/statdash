@@ -42,7 +42,6 @@
 }
 .section[data-emphasis="hero"] .section__head {
   padding: 1.125rem 1.375rem;
-  cursor: default;
 }
 
 .section__head {
@@ -51,11 +50,7 @@
   flex-wrap: wrap;            /* lets the controls drop below the title in a narrow column */
   gap: 0.75rem;
   padding: 0.9375rem 1.25rem;
-  cursor: pointer;
-  user-select: none;
-  transition: background 0.15s;
 }
-.section__head:hover { background: var(--color-surface-raised); }
 .section__head.open {
   border-bottom: 1px solid var(--color-border-subtle);
 }
@@ -131,14 +126,31 @@
   border-color: var(--color-border-strong);
 }
 
+/* Chevron toggle — the SOLE collapse trigger (a real button). */
+.section__chevron-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.25rem;
+  border: none;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--color-border-strong);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.15s, color 0.15s;
+}
+.section__chevron-btn:hover {
+  background: var(--color-surface-raised);
+  color: var(--color-text-muted);
+}
+
 .section__chevron {
   width: 1.125rem;
   height: 1.125rem;
-  color: var(--color-border-strong);
   transition: transform 0.25s ease;
-  flex-shrink: 0;
 }
-.section__chevron.open { transform: rotate(180deg); }
+.section__chevron-btn.open .section__chevron { transform: rotate(180deg); }
 
 .section__body {
   overflow: hidden;

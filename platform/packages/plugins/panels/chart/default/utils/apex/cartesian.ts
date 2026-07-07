@@ -2,7 +2,7 @@
 
 import type { ApexOptions } from 'apexcharts'
 import type { ChartOutput } from '@statdash/charts'
-import { BASE, yFormatter, responsiveYAxis, collectFormatted, scaledPx, verticalBarFillPct, horizontalBarFillPct, BP_MD, BP_SM, BP_XS } from './base'
+import { BASE, yFormatter, responsiveYAxis, collectFormatted, scaledPx, verticalBarFillPct, horizontalBarFillPct, hbarValueAxisMax, BP_MD, BP_SM, BP_XS } from './base'
 import { cssVar, chartPalette, chartColorAt } from '@statdash/styles'
 
 export function buildCartesian(output: ChartOutput, fontFamily?: string, locale?: string): ApexOptions {
@@ -171,6 +171,10 @@ export function buildCartesian(output: ChartOutput, fontFamily?: string, locale?
     ? output.dataLabels
     : (type === 'bar' || type === 'hbar' || type === 'waterfall') && !stacked
 
+  // hbar value-axis headroom for out-of-bar end-labels when the value SCALE is
+  // hidden (R6) — root cause + rule live in hbarValueAxisMax (base.ts).
+  const hbarValueMax = hbarValueAxisMax(horizontal, apexXHidden, showDataLabels, axes.y.max, series)
+
   return {
     ...BASE,
     chart: {
@@ -187,15 +191,10 @@ export function buildCartesian(output: ChartOutput, fontFamily?: string, locale?
       // chart's horizontal grid, or an hbar's vertical grid, is untouched).
       ...(apexXHidden ? { xaxis: { lines: { show: false } } } : {}),
       ...(apexYHidden ? { yaxis: { lines: { show: false } } } : {}),
-      // Top padding sized to keep above-bar data labels AND line-chart
-      // markers strictly inside the chart bounds. A baseline 6px on all
-      // non-stacked types prevents marker/stroke clipping at the top edge.
-      //
-      // Horizontal bars place their value dataLabel OUTSIDE the bar end
-      // (position:'top' + offsetX). Reserving right whitespace keeps the
-      // longest bar's end-label ("42 620.8" — the F10/F13 regional clip)
-      // inside the SVG instead of shearing at the plot edge. Vertical bars
-      // keep their smaller right pad (labels sit above bars, not at the edge).
+      // Top padding keeps above-bar data labels + line markers inside the chart
+      // bounds (baseline 6px). Horizontal bars place their value label OUTSIDE the
+      // bar end (position:'top' + offsetX) — right whitespace + the hbarValueMax
+      // scale headroom keep the longest end-label inside the SVG (F10/F13 clip).
       padding: {
         left:  4,
         right: horizontal ? (showDataLabels ? 44 : 8) : 20,
@@ -208,7 +207,7 @@ export function buildCartesian(output: ChartOutput, fontFamily?: string, locale?
       // hbar: xaxis is the value axis (bottom) — numeric formatter + no categories.
       // vbar: xaxis is the category axis (bottom) — string categories + no formatter.
       ...(horizontal ? {} : { categories: [...categories] }),
-      ...(horizontal ? { min: axes.y.min, max: axes.y.max } : {}),
+      ...(horizontal ? { min: axes.y.min, max: hbarValueMax } : {}),
       labels: apexXHidden
           ? { show: false }
           : horizontal

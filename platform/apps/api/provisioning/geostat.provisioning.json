@@ -5037,7 +5037,10 @@
               "empty.title": "No data",
               "export.toolbar": "Export data",
               "export.download": "Download {{fmt}}",
-              "share.permalink": "Copy permalink"
+              "share.permalink": "Copy permalink",
+              "share.copied": "Copied",
+              "collapse": "Collapse",
+              "expand": "Expand"
             }
           },
           "ka": {
@@ -5045,7 +5048,10 @@
               "empty.title": "მონაცემები არ არის",
               "export.toolbar": "მონაცემების ექსპორტი",
               "export.download": "ჩამოტვირთვა {{fmt}}",
-              "share.permalink": "ბმულის კოპირება"
+              "share.permalink": "ბმულის კოპირება",
+              "share.copied": "დაკოპირდა",
+              "collapse": "ჩაკეცვა",
+              "expand": "გაშლა"
             }
           }
         },

@@ -105,49 +105,43 @@ describe('useViewToggle', () => {
   })
 })
 
-// ── useCollapsible — open state + keyboard/ARIA contract ─────────────────────
+// ── useCollapsible — open state + chevron-button ARIA contract ───────────────
+//
+//  The toggle is a real chevron <button> (toggleProps), NOT a clickable header —
+//  a whole-header target swallowed clicks meant for the title/actions and
+//  collapsed by accident. A native button also carries Enter/Space + focus for
+//  free, so the hook no longer hand-rolls role/tabIndex/onKeyDown on a div.
 
 describe('useCollapsible', () => {
-  it('defaults open and exposes a button-role head with aria-expanded', () => {
+  it('defaults open and exposes a chevron-button toggle with aria-expanded', () => {
     const { result } = renderHook(() => useCollapsible(undefined, undefined))
     expect(result.current.open).toBe(true)
     expect(result.current.canCollapse).toBe(true)
-    expect(result.current.headProps.role).toBe('button')
-    expect(result.current.headProps.tabIndex).toBe(0)
-    expect(result.current.headProps['aria-expanded']).toBe(true)
-    expect(result.current.headProps.style).toEqual({ cursor: 'pointer' })
+    expect(result.current.toggleProps?.type).toBe('button')
+    expect(result.current.toggleProps?.['aria-expanded']).toBe(true)
+    // a native <button> needs no role/tabIndex/onKeyDown — they are not emitted.
+    expect(result.current.toggleProps).not.toHaveProperty('role')
+    expect(result.current.toggleProps).not.toHaveProperty('onKeyDown')
   })
 
   it('respects defaultOpen=false', () => {
     const { result } = renderHook(() => useCollapsible(false, undefined))
     expect(result.current.open).toBe(false)
-    expect(result.current.headProps['aria-expanded']).toBe(false)
+    expect(result.current.toggleProps?.['aria-expanded']).toBe(false)
   })
 
-  it('toggles on click', () => {
+  it('toggles on the button click', () => {
     const { result } = renderHook(() => useCollapsible(true, undefined))
-    act(() => result.current.headProps.onClick())
+    act(() => result.current.toggleProps!.onClick())
     expect(result.current.open).toBe(false)
+    act(() => result.current.toggleProps!.onClick())
+    expect(result.current.open).toBe(true)
   })
 
-  it('toggles on Enter and Space, ignores other keys', () => {
-    const { result } = renderHook(() => useCollapsible(true, undefined))
-    const press = (key: string) =>
-      act(() => result.current.headProps.onKeyDown({ key, preventDefault: () => {} }))
-
-    press('Enter'); expect(result.current.open).toBe(false)
-    press(' ');     expect(result.current.open).toBe(true)
-    press('a');     expect(result.current.open).toBe(true)
-  })
-
-  it('is inert when collapse is disabled (noCollapse)', () => {
+  it('is inert when collapse is disabled (noCollapse) — no toggle rendered', () => {
     const { result } = renderHook(() => useCollapsible(true, true))
     expect(result.current.canCollapse).toBe(false)
-    expect(result.current.headProps.role).toBeUndefined()
-    expect(result.current.headProps.tabIndex).toBeUndefined()
-    expect(result.current.headProps['aria-expanded']).toBeUndefined()
-    expect(result.current.headProps.style).toEqual({ cursor: 'default' })
-    act(() => result.current.headProps.onClick())
+    expect(result.current.toggleProps).toBeUndefined()
     expect(result.current.open).toBe(true) // unchanged
   })
 })

@@ -22,9 +22,10 @@
 //
 import './PanelLayout.css'
 import type { BodyStyleAttrs } from '@statdash/styles'
-import { useState, type CSSProperties, type ReactNode, type ComponentType } from 'react'
+import { type CSSProperties, type ReactNode, type ComponentType } from 'react'
 import { ChevronIcon } from './icons'
 import { InjectionToken } from '../engine/di/InjectionToken'
+import { useCollapsible } from '../engine/hooks/useCollapsible'
 
 /**
  * Controlled, role-based view-toggle descriptor. The caller (a shell) derives
@@ -64,6 +65,14 @@ export interface PanelLayoutProps {
   // ── Title badge slot ───────────────────────────────────────────────
   /** Optional badge(s) rendered next to the title — from extension points. */
   titleBadge?:       ReactNode
+  // ── Collapse-toggle labels (i18n carriers) ─────────────────────────
+  /**
+   * aria-label for the chevron toggle button per state. PanelLayout is i18n-free,
+   * so the caller (a shell) supplies already-locale-resolved strings. When absent
+   * a neutral framework fallback is used (parity with viewToggle.ariaLabel).
+   */
+  collapseLabel?:    string
+  expandLabel?:      string
   // ── Body attrs ─────────────────────────────────────────────────────
   /**
    * Style attrs spread onto .panel__body — carries data-height from applyNodeStyles.
@@ -86,12 +95,16 @@ export function PanelLayout({
   viewToggle,
   actions,
   titleBadge,
+  collapseLabel,
+  expandLabel,
   bodyProps,
 }: PanelLayoutProps) {
-  const [open, setOpen] = useState(defaultOpen)
+  // The ONE collapse mechanism (shared with the section shell): open state +
+  // the chevron-button a11y contract. The header itself is inert — only the
+  // chevron toggles (no whole-header false click target).
+  const { open, canCollapse, toggleProps } = useCollapsible(defaultOpen, noCollapse)
 
-  const canCollapse = !noCollapse
-  const bodyId      = id ? `${id}-body` : undefined
+  const bodyId = id ? `${id}-body` : undefined
 
   const showToggle = (viewToggle?.roles.length ?? 0) >= 2
 
@@ -105,22 +118,11 @@ export function PanelLayout({
       id={id}
       style={rootStyle}
     >
-      {/* ── Header ──────────────────────────────────────────────── */}
-      <div
-        className={`panel__head${open ? ' open' : ''}`}
-        onClick={() => canCollapse && setOpen(o => !o)}
-        onKeyDown={(e) => {
-          if (canCollapse && (e.key === 'Enter' || e.key === ' ')) {
-            e.preventDefault()
-            setOpen(o => !o)
-          }
-        }}
-        role={canCollapse ? 'button' : undefined}
-        tabIndex={canCollapse ? 0 : undefined}
-        aria-expanded={canCollapse ? open : undefined}
-        aria-controls={canCollapse && bodyId ? bodyId : undefined}
-        style={{ cursor: canCollapse ? 'pointer' : 'default' }}
-      >
+      {/* ── Header ────────────────────────────────────────────────
+          Inert container: the header no longer toggles on click (that stole
+          clicks meant for the title/actions and collapsed by accident). The
+          sole collapse trigger is the chevron button below. */}
+      <div className={`panel__head${open ? ' open' : ''}`}>
         <span className="panel__accent" aria-hidden="true" />
 
         <div className="panel__title-wrap">
@@ -132,8 +134,9 @@ export function PanelLayout({
           {subtitle && <div className="panel__subtitle">{subtitle}</div>}
         </div>
 
-        {/* Actions: role-based view toggle + caller actions slot */}
-        <div className="panel__actions" onClick={(e) => e.stopPropagation()}>
+        {/* Actions: role-based view toggle + caller actions slot. No
+            stopPropagation needed — the header is inert (only the chevron toggles). */}
+        <div className="panel__actions">
           {showToggle && viewToggle && (
             <div
               className="panel__view-toggle"
@@ -156,8 +159,17 @@ export function PanelLayout({
           {actions}
         </div>
 
-        {canCollapse && (
-          <ChevronIcon className={`panel__chevron${open ? ' open' : ''}`} />
+        {/* Sole collapse trigger — a real, labelled button (native Enter/Space +
+            focus). aria-expanded reflects state; aria-controls points at the body. */}
+        {canCollapse && toggleProps && (
+          <button
+            className={`panel__chevron-btn${open ? ' open' : ''}`}
+            aria-label={(open ? collapseLabel : expandLabel) ?? 'Toggle panel'}
+            aria-controls={bodyId}
+            {...toggleProps}
+          >
+            <ChevronIcon className="panel__chevron" />
+          </button>
         )}
       </div>
 

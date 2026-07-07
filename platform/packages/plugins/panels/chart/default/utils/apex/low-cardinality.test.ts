@@ -26,6 +26,7 @@ import { buildCartesian }        from './cartesian'
 import { buildHBarDiverging }    from './hbar-diverging'
 import {
   barFillPctForCap, verticalBarFillPct, horizontalBarFillPct, categoricalChartHeight,
+  hbarValueAxisMax,
   BAR_FILL_MAX_PCT, BAR_FILL_MIN_PCT, BAR_CAP_PX_VERTICAL, BAR_CAP_PX_HORIZONTAL,
 } from './base'
 
@@ -165,5 +166,57 @@ describe('DEFECT#4 — bar thickness capped in px at low cardinality (no fat str
       .toBe(`${horizontalBarFillPct(o)}%`)
     // the old dead config must be gone (ApexCharts ignores columnWidth on horizontal)
     expect((opts.plotOptions?.bar as { columnWidth?: string }).columnWidth).toBeUndefined()
+  })
+})
+
+// ── hbar value-label headroom + no residual axis (R6 follow-up) ─────────────────
+//
+//  When the value SCALE is hidden on a horizontal bar (axes.y.hidden — R6), the
+//  per-bar value labels sit OUTSIDE the bar end. Without headroom the longest bar
+//  runs flush to the plot edge and its label ("42 982.6") shears + overflows. The
+//  fix reserves headroom in the SCALE (hbarValueAxisMax) so the label fits, and the
+//  hidden axis leaves NO residual scale/border/ticks/labels behind.
+//
+describe('hbar value-label headroom when the value axis is hidden', () => {
+  const hiddenY: AxisOutput = { hidden: true }
+  const bigSeries: ChartSeries = series('GDP', '#005a9c', [42982.6, 12000, 8000, 5000])
+
+  it('reserves scale headroom past the data max (label cannot shear at the edge)', () => {
+    const max = hbarValueAxisMax(true, true, true, undefined, [bigSeries])
+    expect(max).toBeDefined()
+    expect(max!).toBeGreaterThan(42982.6)   // the longest bar ends BEFORE the plot edge
+  })
+
+  it('respects an explicitly authored max (author intent wins)', () => {
+    expect(hbarValueAxisMax(true, true, true, 50000, [bigSeries])).toBe(50000)
+  })
+
+  it('is inert unless horizontal + value-axis-hidden + data-labels', () => {
+    expect(hbarValueAxisMax(false, true,  true,  undefined, [bigSeries])).toBeUndefined() // vertical
+    expect(hbarValueAxisMax(true,  false, true,  undefined, [bigSeries])).toBeUndefined() // axis visible
+    expect(hbarValueAxisMax(true,  true,  false, undefined, [bigSeries])).toBeUndefined() // no labels
+  })
+
+  it('buildCartesian: hidden-value hbar gets a headroom max AND no residual axis', () => {
+    const opts = buildCartesian(out({
+      type: 'hbar', horizontal: true,
+      categories: ['Tbilisi', 'Adjara', 'Imereti', 'Kakheti'],
+      series: [bigSeries],
+      axes: { x: {}, y: hiddenY, y2: undefined },
+      dataLabels: true,
+    }))
+    const xaxis = opts.xaxis as { max?: number; labels?: { show?: boolean }
+      axisBorder?: { show?: boolean }; axisTicks?: { show?: boolean } }
+
+    // headroom reserved — the longest bar (42 982.6) ends before the plot edge
+    expect(xaxis.max).toBeGreaterThan(42982.6)
+    // no residual axis chrome where the scale used to be
+    expect(xaxis.labels?.show).toBe(false)
+    expect(xaxis.axisBorder?.show).toBe(false)
+    expect(xaxis.axisTicks?.show).toBe(false)
+    // gridlines for the hidden axis are dropped too (no leftover vertical rules)
+    expect((opts.grid as { xaxis?: { lines?: { show?: boolean } } }).xaxis?.lines?.show).toBe(false)
+    // per-bar value labels stay ON (R6 hides the scale, keeps the labels)
+    expect(opts.dataLabels?.enabled).toBe(true)
   })
 })
