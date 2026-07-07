@@ -10,7 +10,12 @@ export interface KpiDef {
   label:           string
   value:           string
   unit?:           string
-  trend:           'up' | 'down' | 'flat'
+  /**
+   * Trend DIRECTION — 'up'/'down'/'flat' are true rises/falls (glyph + coloured);
+   * 'none' is a DIRECTIONLESS figure (a `share` is a proportion, not a rise/fall):
+   * the card renders its value + subtext with NO arrow and NO up/down/flat label.
+   */
+  trend:           'up' | 'down' | 'flat' | 'none'
   trendValue?:     string
   trendSub?:       string
   color:           string
