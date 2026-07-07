@@ -1,7 +1,7 @@
 import { defineShell, useNodeTemplate }             from '@statdash/react/engine'
 import { usePanelTitleBadge }                       from '@statdash/react/engine'
 import type { BodyStyleAttrs, RenderContext, ViewParams } from '@statdash/react/engine'
-import { useInject, EMPTY_STATE, PanelExportBar }   from '@statdash/react'
+import { useInject, EMPTY_STATE, PanelExport }       from '@statdash/react'
 import type { ExportMeta }                          from '@statdash/engine'
 import type { ChartNode }                           from './ChartNode'
 import Chart                                        from './Chart'
@@ -49,7 +49,7 @@ function ChartControl({
         onDataLeave={interactions.onDataLeave}
         onDataClick={interactions.onDataClick}
       />
-      <PanelExportBar ctx={ctx} rows={rows} meta={exportMeta} />
+      <PanelExport ctx={ctx} rows={rows} meta={exportMeta} nodeId={def.id} />
     </>
   )
 }

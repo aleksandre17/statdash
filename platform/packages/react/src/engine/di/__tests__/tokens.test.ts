@@ -1,7 +1,7 @@
 // @vitest-environment node
 //
 // i18next is an optional peer installed only at the app tier — not in the
-// platform root or engine/react. EmptyState + ExportBar import useT from
+// platform root or engine/react. EmptyState + ExportMenu import useT from
 // SiteContext which imports i18next; we mock the module here to avoid the
 // "Could not resolve i18next" error that hits any test importing those files.
 // The mock is declared before all imports so Vite's static hoisting works.
@@ -14,10 +14,10 @@ vi.mock('i18next', () => ({
 
 import { PANEL_LAYOUT } from '../../../components/PanelLayout'
 import { EMPTY_STATE }  from '../../../components/feedback/EmptyState'
-import { EXPORT_BAR }   from '../../../components/feedback/ExportBar'
+import { EXPORT_MENU }  from '../../../components/feedback/ExportMenu'
 
 describe('InjectionToken fitness', () => {
-  const tokens = [PANEL_LAYOUT, EMPTY_STATE, EXPORT_BAR]
+  const tokens = [PANEL_LAYOUT, EMPTY_STATE, EXPORT_MENU]
 
   it('all descriptions are unique (no silent Map collision)', () => {
     const descriptions = tokens.map(t => t.description)

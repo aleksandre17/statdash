@@ -107,11 +107,12 @@ export { AppErrorBoundary }                  from './components/AppErrorBoundary
 // ── Feedback primitives ───────────────────────────────────────────────
 export { EMPTY_STATE }                       from './components/feedback/EmptyState'
 export type { EmptyStateProps }              from './components/feedback/EmptyState'
-export { EXPORT_BAR }                        from './components/feedback/ExportBar'
-export type { ExportBarProps }               from './components/feedback/ExportBar'
-// ── Panel export seam — DI ExportBar + data:export bus dispatch, wrapped ──
-export { PanelExportBar }                    from './components/feedback/PanelExportBar'
-export type { PanelExportBarProps }          from './components/feedback/PanelExportBar'
+export { ExportMenu, EXPORT_MENU }           from './components/feedback/ExportMenu'
+export type { ExportMenuProps }              from './components/feedback/ExportMenu'
+// ── Panel export seam — publishes rows to the section scope; DI ExportMenu +
+//    data:export bus dispatch as the standalone fallback ──
+export { PanelExport }                       from './components/feedback/PanelExport'
+export type { PanelExportProps }             from './components/feedback/PanelExport'
 // ── UI component DI container (InjectionToken<T> pattern) ────────────
 //  InjectionToken: typed DI key — token IS the type, no correlated-union cast.
 //  Container: runtime DI container interface. MapContainer: concrete impl.

@@ -218,6 +218,10 @@ export { WrapStyleContext, useWrapStyle } from './wrapStyleContext'
 export { NodeStatusProvider, useNodeStatusScope, useReportNodeStatus, useNodeStatusAggregate } from './NodeStatusContext'
 export { NodeVisibilityProvider, useNodeVisible } from './NodeStatusContext'
 export type { IntegrityStatus, NodeStatusAggregate } from './NodeStatusContext'
+// ── Section export scope — panels publish rows UP, the section renders ONE
+//    header export menu for the active view (Law 9: export per section) ──
+export { NodeExportProvider, useExportScope, useReportPanelExport } from './NodeExportContext'
+export type { PanelExportData, ExportScope } from './NodeExportContext'
 
 // ── Shell factory — abstract base for all NodeRenderer implementations ──
 export { defineShell }        from './defineShell'

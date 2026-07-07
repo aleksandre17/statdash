@@ -3,7 +3,7 @@ import { defineShell, useNodeTemplate, useNodeInteractions, resolveActionField }
 import { usePanelTitleBadge }             from '@statdash/react/engine'
 import type { RenderContext }             from '@statdash/react/engine'
 import type { BodyStyleAttrs, ViewParams } from '@statdash/react/engine'
-import { useInject, EMPTY_STATE, PanelExportBar } from '@statdash/react'
+import { useInject, EMPTY_STATE, PanelExport }    from '@statdash/react'
 import { splitMultiValue }                from '@statdash/engine'
 import type { DataRow, ExportMeta }       from '@statdash/engine'
 import type { TableNode }                 from './TableNode'
@@ -81,7 +81,7 @@ function TableControl({
         ? <EmptyState />
         : <>
             <DataTable rows={rows} highlightedLabel={highlightedLabel} onRowSelect={onRowSelect} selectedIds={selectedIds} {...tableConfig} />
-            <PanelExportBar ctx={ctx} rows={rows} meta={exportMeta} />
+            <PanelExport ctx={ctx} rows={rows} meta={exportMeta} nodeId={def.id} />
           </>
       }
     </div>

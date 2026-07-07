@@ -1,7 +1,7 @@
 // ── feedback i18n — GENERIC UI CHROME en baseline (ADR-017 / ADR-019) ──────
 //
 //  The 'feedback' namespace backs engine/react's shared feedback COMPONENTS
-//  (EmptyState, ExportBar, SharePermalinkButton). These are
+//  (EmptyState, ExportMenu, SharePermalinkButton). These are
 //  framework UI chrome labels ("No data", "Export data", "Copy permalink") — NOT
 //  tenant editorial content. engine/react is locale-agnostic: it consumes
 //  useT('feedback') but must not carry locale literals, so the runner ships a

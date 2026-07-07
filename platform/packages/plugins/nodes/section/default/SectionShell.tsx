@@ -2,12 +2,13 @@ import './section.css'
 
 import { resolveViewState }                                  from '@statdash/styles'
 import { useT, useExtensions, SECTION_HEADER_ACTIONS }       from '@statdash/react'
-import { defineShell, useViewToggle, useCollapsible, useDisclosure, accentStyle, useNodeTemplate, mergePlacement, NodeVisibilityProvider } from '@statdash/react/engine'
+import { defineShell, useViewToggle, useCollapsible, useDisclosure, accentStyle, useNodeTemplate, mergePlacement, NodeVisibilityProvider, NodeExportProvider, useExportScope } from '@statdash/react/engine'
 import type { ShellProps, NodeDef }                          from '@statdash/react/engine'
 import type { SectionNode }                                  from './SectionNode'
 import { META }                                              from './meta'
 import { SECTION }                                           from './styleKeys'
 import { SectionHeader }                                     from './SectionHeader'
+import { SectionExportMenu }                                 from './SectionExportMenu'
 import { SectionMethodology }                                from './SectionMethodology'
 
 // ── Empty-state policy (ADR, inline) ──────────────────────────────────
@@ -80,6 +81,12 @@ function SectionControl({
 
   const info = useDisclosure()
 
+  // Section EXPORT scope (Law 9 — export per section): child panels PUBLISH their
+  // rows up here; the header renders ONE compact download menu for the active
+  // (visible) view. The visibility gate means only the SHOWN view reports, so the
+  // menu always exports the slice on screen. See NodeExportContext.
+  const exportScope = useExportScope()
+
   const sectionActions = useExtensions(ctx.extensions, SECTION_HEADER_ACTIONS, {
     sectionId:      resolvedId,
     hasMethodology: !!def.methodology,
@@ -109,6 +116,11 @@ function SectionControl({
           subtitle={subtitle}
           viewToggle={viewToggle}
           actions={sectionActions}
+          exportMenu={
+            exportScope.hasExport
+              ? <SectionExportMenu ctx={ctx} readActive={exportScope.readActive} />
+              : null
+          }
           hasMethodology={!!def.methodology}
           infoOpen={info.open}
           onToggleInfo={info.toggle}
@@ -124,33 +136,34 @@ function SectionControl({
           />
         )}
 
-        {/* TODO(export): wire ExportBar here when a section-aggregate-ROWS mechanism exists.
-            Decision: Option C (defer). A section is a structural container; it has no
-            ctx.rows of its own, and per-panel export belongs in each panel's shell
-            (TableShell / ChartShell). The data-integrity STATUS channel exists at the
-            PAGE scope (AR-40); a rows-aggregation channel is a separate, still-unneeded
-            consumer (YAGNI). */}
+        {/* EXPORT scope (Law 9 — export per section): the section owns the rows
+            publish/subscribe scope its Option-D ADR reserved. Child panels report
+            their { rows, meta } up via useReportPanelExport; the header menu above
+            renders the active view's rows. Unlike the data-integrity STATUS channel
+            (page scope, AR-40), export is a per-section affordance, so the section
+            is the correct scope owner. */}
 
         {(merged.noCollapse || collapsible.open) && (
-          // No section-level status provider (AR-40): child panels publish straight
-          // to the PAGE scope, so the section renders its body as a pure structural
-          // container.
-          <div className={SECTION.body} {...vs.body}>
-            {children.defs.map((d: NodeDef, i: number) => {
-              const hidden = viewToggle.isHidden(d)
-              return (
-                // The inactive view stays MOUNTED (display:none) for instant, a11y-safe
-                // toggling — but a hidden panel must not fold its preliminary into the
-                // page data-integrity indicator. NodeVisibilityProvider tells every
-                // descendant publisher to clear its report while off-screen (AR-39).
-                <div key={i} className={SECTION.view} {...resolveViewState(hidden)}>
-                  <NodeVisibilityProvider visible={!hidden}>
-                    {children.rendered[i]}
-                  </NodeVisibilityProvider>
-                </div>
-              )
-            })}
-          </div>
+          <NodeExportProvider collector={exportScope.collector}>
+            <div className={SECTION.body} {...vs.body}>
+              {children.defs.map((d: NodeDef, i: number) => {
+                const hidden = viewToggle.isHidden(d)
+                return (
+                  // The inactive view stays MOUNTED (display:none) for instant,
+                  // a11y-safe toggling — but a hidden panel must not fold its
+                  // preliminary into the page data-integrity indicator, NOR export
+                  // its off-screen rows. NodeVisibilityProvider tells every
+                  // descendant publisher (status AND export) to clear its report
+                  // while off-screen (AR-39).
+                  <div key={i} className={SECTION.view} {...resolveViewState(hidden)}>
+                    <NodeVisibilityProvider visible={!hidden}>
+                      {children.rendered[i]}
+                    </NodeVisibilityProvider>
+                  </div>
+                )
+              })}
+            </div>
+          </NodeExportProvider>
         )}
       </section>
     </div>

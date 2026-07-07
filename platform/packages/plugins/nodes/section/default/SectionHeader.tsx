@@ -23,6 +23,10 @@ export interface SectionHeaderProps {
   subtitle?:    string
   viewToggle:   ViewToggle
   actions:      ReactNode[]
+  /** The compact download menu (section-scoped export), rendered as a sibling of
+   *  the extension actions (copy-link). Null when the section has nothing to
+   *  export. */
+  exportMenu?:  ReactNode
   /** Truthy when the section authored a methodology block (toggle renders). */
   hasMethodology: boolean
   infoOpen:     boolean
@@ -39,6 +43,7 @@ export function SectionHeader({
   subtitle,
   viewToggle,
   actions,
+  exportMenu,
   hasMethodology,
   infoOpen,
   onToggleInfo,
@@ -69,10 +74,13 @@ export function SectionHeader({
           that same left-to-right grouping. (Data-integrity status is now a
           page-level summary, AR-40 — no per-section indicator here.) */}
       <div className="section__actions" onClick={(e) => e.stopPropagation()}>
-        {/* (1) link — extension actions (permalink, export, …) */}
+        {/* (1) link — extension actions (copy-link permalink, …) */}
         {actions.map((action, i) => (
           <Fragment key={i}>{action}</Fragment>
         ))}
+        {/* (1b) download — the section-scoped export menu, a sibling of copy-link
+            (same compact icon style). Null when there is nothing to export. */}
+        {exportMenu}
         {/* (2) info — the passive "about this data" (methodology) disclosure */}
         {hasDisclosure && (
           <button
