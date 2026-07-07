@@ -8,15 +8,16 @@ import { deriveContext } from './context'
 import { isSpacer } from './families'
 import { buildSeries } from './series'
 import { buildColors } from './colors'
+import { buildValueAxis, buildCategoryAxis } from './axes'
 
 export function buildCartesian(output: ChartOutput, fontFamily?: string, locale?: string): ApexOptions {
-  const { type, series, categories, axes, stacked, horizontal } = output
+  const { type, series, axes, stacked, horizontal } = output
   const ctx = deriveContext(output, locale)
   const {
-    formatted, FS_XS, FS_SM, FS_MD,
+    formatted, FS_XS, FS_MD,
     isWaterfall, isCombo, hasY2, isStackedArea,
     apexXHidden, apexYHidden,
-    yFmt, y2Fmt, yMax, barFill, apexType, showDataLabels, hbarValueMax,
+    yFmt, y2Fmt, yMax, barFill, apexType, showDataLabels,
     forcesStacked,
   } = ctx
   const distributed = output.distributed === true
@@ -37,47 +38,7 @@ export function buildCartesian(output: ChartOutput, fontFamily?: string, locale?
 
   const apexSeries = buildSeries(output, ctx)
   const colors     = buildColors(output)
-
-  // ── Y-axis ──────────────────────────────────────────────────────────
-  //
-  //  hbar swaps axes visually:
-  //    yaxis (left)   = category axis — strings, no numeric formatter
-  //    xaxis (bottom) = value axis    — numeric formatter goes there instead
-  //
-  //  vbar / line / waterfall / combo:
-  //    yaxis (left)   = value axis    — numeric formatter here
-  //    xaxis (bottom) = category axis
-  //
-  const yAxisBase: ApexYAxis = apexYHidden
-      ? { show: false }
-      : horizontal
-      ? {
-        labels: { style: { fontSize: FS_SM, colors: cssVar('--color-text-muted', '#6B7B8D') }, maxWidth: 220 },
-      }
-      : {
-        labels: {
-          style:     { fontSize: FS_SM, colors: cssVar('--color-text-muted', '#6B7B8D') },
-          formatter: yFmt,
-        },
-        min:            type === 'area' || type === 'line' ? 0 : axes.y.min,
-        max:            isStackedArea ? yMax : axes.y.max,
-        forceNiceScale: isStackedArea ? false : (type === 'area' || type === 'line' ? true : undefined),
-      }
-
-  const yaxis: ApexYAxis | ApexYAxis[] = hasY2
-      ? [
-        yAxisBase,
-        {
-          opposite: true,
-          labels: {
-            style:     { fontSize: FS_SM, colors: cssVar('--color-text-muted', '#6B7B8D') },
-            formatter: y2Fmt,
-          },
-          min: axes.y2?.min,
-          max: axes.y2?.max,
-        },
-      ]
-      : yAxisBase
+  const yaxis      = buildValueAxis(output, ctx)
 
   return {
     ...BASE,
@@ -107,34 +68,7 @@ export function buildCartesian(output: ChartOutput, fontFamily?: string, locale?
     },
     series:  apexSeries,
     colors,
-    xaxis: {
-      // hbar: xaxis is the value axis (bottom) — numeric formatter + no categories.
-      // vbar: xaxis is the category axis (bottom) — string categories + no formatter.
-      ...(horizontal ? {} : { categories: [...categories] }),
-      ...(horizontal ? { min: axes.y.min, max: hbarValueMax } : {}),
-      labels: apexXHidden
-          ? { show: false }
-          : horizontal
-          ? {
-            style:     { fontSize: FS_SM, colors: cssVar('--color-text-muted', '#6B7B8D') },
-            // xaxis.labels.formatter receives a string — parse back to number first
-            formatter: (val: string) => yFmt(Number(val)),
-            hideOverlappingLabels: true,
-          }
-          : {
-            style:        { fontSize: FS_SM, colors: cssVar('--color-text-muted', '#6B7B8D') },
-            rotate:       -45,
-            rotateAlways: false,
-            trim:         true,
-            // Hard cap on the vertical space reserved for rotated labels —
-            // combined with trim:true, overflowing labels get ellipsised
-            // rather than pushing the plot area out of the container.
-            maxHeight: 100,
-            hideOverlappingLabels: true,
-          },
-      axisBorder: apexXHidden ? { show: false } : { color: cssVar('--color-chart-frame', '#E0EBE8') },
-      axisTicks:  apexXHidden ? { show: false } : { color: cssVar('--color-chart-frame', '#E0EBE8') },
-    },
+    xaxis: buildCategoryAxis(output, ctx),
     yaxis,
     plotOptions: {
       bar: {

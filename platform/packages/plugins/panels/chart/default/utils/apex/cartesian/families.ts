@@ -49,15 +49,17 @@ export interface FamilyTraits {
   /** Stroke baseline BEFORE the runtime stacked-area upgrade (context resolves). */
   readonly baseStroke:          StrokeMode
   readonly marks:               MarksRule
+  /** Continuous value axis pinned to a zero baseline + nice-scale (line/area). */
+  readonly zeroBaselineAxis:    boolean
 }
 
 export const FAMILY_TRAITS: Record<CartesianFamily, FamilyTraits> = {
-  bar:       { apexType: 'bar',  seriesMode: 'plain',     forcesStacked: false, dataLabelsByDefault: true,  baseFill: 'solid',     baseStroke: 'none',  marks: 'never' },
-  hbar:      { apexType: 'bar',  seriesMode: 'plain',     forcesStacked: false, dataLabelsByDefault: true,  baseFill: 'solid',     baseStroke: 'none',  marks: 'never' },
-  line:      { apexType: 'line', seriesMode: 'plain',     forcesStacked: false, dataLabelsByDefault: false, baseFill: 'solid',     baseStroke: 'line',  marks: 'always' },
-  area:      { apexType: 'area', seriesMode: 'plain',     forcesStacked: false, dataLabelsByDefault: false, baseFill: 'area',      baseStroke: 'line',  marks: 'unstacked' },
-  waterfall: { apexType: 'bar',  seriesMode: 'waterfall', forcesStacked: true,  dataLabelsByDefault: true,  baseFill: 'waterfall', baseStroke: 'none',  marks: 'never' },
-  combo:     { apexType: 'line', seriesMode: 'combo',     forcesStacked: false, dataLabelsByDefault: false, baseFill: 'solid',     baseStroke: 'combo', marks: 'never' },
+  bar:       { apexType: 'bar',  seriesMode: 'plain',     forcesStacked: false, dataLabelsByDefault: true,  baseFill: 'solid',     baseStroke: 'none',  marks: 'never',     zeroBaselineAxis: false },
+  hbar:      { apexType: 'bar',  seriesMode: 'plain',     forcesStacked: false, dataLabelsByDefault: true,  baseFill: 'solid',     baseStroke: 'none',  marks: 'never',     zeroBaselineAxis: false },
+  line:      { apexType: 'line', seriesMode: 'plain',     forcesStacked: false, dataLabelsByDefault: false, baseFill: 'solid',     baseStroke: 'line',  marks: 'always',    zeroBaselineAxis: true  },
+  area:      { apexType: 'area', seriesMode: 'plain',     forcesStacked: false, dataLabelsByDefault: false, baseFill: 'area',      baseStroke: 'line',  marks: 'unstacked', zeroBaselineAxis: true  },
+  waterfall: { apexType: 'bar',  seriesMode: 'waterfall', forcesStacked: true,  dataLabelsByDefault: true,  baseFill: 'waterfall', baseStroke: 'none',  marks: 'never',     zeroBaselineAxis: false },
+  combo:     { apexType: 'line', seriesMode: 'combo',     forcesStacked: false, dataLabelsByDefault: false, baseFill: 'solid',     baseStroke: 'combo', marks: 'never',     zeroBaselineAxis: false },
 }
 
 const FAMILIES = Object.keys(FAMILY_TRAITS) as CartesianFamily[]

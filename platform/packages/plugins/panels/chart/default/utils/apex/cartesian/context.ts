@@ -53,6 +53,8 @@ export interface CartesianContext {
   readonly showMarkers:   boolean
   /** Family that is always stacked regardless of authored `stacked` (waterfall). */
   readonly forcesStacked: boolean
+  /** Continuous value axis pinned to a zero baseline + nice-scale (line/area). */
+  readonly zeroBaselineAxis: boolean
 }
 
 /**
@@ -129,5 +131,6 @@ export function deriveContext(output: ChartOutput, locale?: string): CartesianCo
     yMax, barFill, apexType, showDataLabels, hbarValueMax,
     seriesMode: traits.seriesMode, fillMode, strokeMode, showMarkers,
     forcesStacked: traits.forcesStacked,
+    zeroBaselineAxis: traits.zeroBaselineAxis,
   }
 }
