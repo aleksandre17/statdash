@@ -1,4 +1,4 @@
-// ── NodeExportContext — section-scoped panel-rows publish/subscribe (Law 9) ──
+// ── NodeExportContext — section-scoped export rows publish/subscribe (Law 9) ──
 //
 //  The EXPORT twin of NodeStatusContext (data-integrity). This is exactly the
 //  Option-D seam SectionShell reserved: "if a real aggregate-ROWS consumer
