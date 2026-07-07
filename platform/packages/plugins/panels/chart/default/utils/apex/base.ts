@@ -347,3 +347,24 @@ export function hbarValueAxisMax(
   const dataMax = Math.max(0, ...series.flatMap((s) => s.data.map((pt) => pt.value ?? 0)))
   return dataMax > 0 ? dataMax * HBAR_VALUE_HEADROOM : authoredMax
 }
+
+// ── Clean labeled-bar grid (no reference lines) ────────────────────────
+//
+//  Same triad as hbarValueAxisMax — the two together DEFINE the "clean labeled
+//  bar" presentation (like prices.geostat.ge): a horizontal bar whose value SCALE
+//  is hidden with each bar's value printed ON the bar. Here the printed numbers
+//  ARE the scale, so the grid's faint dashed reference lines are pure visual noise
+//  — the owner reads the residual CATEGORY-axis (horizontal) lines as "the axis
+//  still showing". The value-axis (vertical) lines already drop with the hidden
+//  axis (grid.xaxis.lines, via apexXHidden); this predicate additionally suppresses
+//  the category-axis horizontal lines so the plot is just bars + labels. It gates
+//  ONLY grid LINES — the region-name labels (a visible category axis) stay. Any
+//  OTHER chart (vertical, or value axis shown) keeps the shared BASE grid untouched.
+//
+export function hbarCleanGrid(
+  horizontal:      boolean,
+  valueAxisHidden: boolean,
+  showDataLabels:  boolean,
+): boolean {
+  return horizontal && valueAxisHidden && showDataLabels
+}

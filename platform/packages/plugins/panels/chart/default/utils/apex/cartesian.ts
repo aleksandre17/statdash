@@ -2,7 +2,7 @@
 
 import type { ApexOptions } from 'apexcharts'
 import type { ChartOutput } from '@statdash/charts'
-import { BASE, yFormatter, responsiveYAxis, collectFormatted, scaledPx, verticalBarFillPct, horizontalBarFillPct, hbarValueAxisMax, BP_MD, BP_SM, BP_XS } from './base'
+import { BASE, yFormatter, responsiveYAxis, collectFormatted, scaledPx, verticalBarFillPct, horizontalBarFillPct, hbarValueAxisMax, hbarCleanGrid, BP_MD, BP_SM, BP_XS } from './base'
 import { cssVar, chartPalette, chartColorAt } from '@statdash/styles'
 
 export function buildCartesian(output: ChartOutput, fontFamily?: string, locale?: string): ApexOptions {
@@ -174,6 +174,8 @@ export function buildCartesian(output: ChartOutput, fontFamily?: string, locale?
   // hbar value-axis headroom for out-of-bar end-labels when the value SCALE is
   // hidden (R6) — root cause + rule live in hbarValueAxisMax (base.ts).
   const hbarValueMax = hbarValueAxisMax(horizontal, apexXHidden, showDataLabels, axes.y.max, series)
+  // Clean labeled-bar → clear residual CATEGORY-axis gridlines too (rule: hbarCleanGrid, base.ts).
+  const cleanBarGrid = hbarCleanGrid(horizontal, apexXHidden, showDataLabels)
 
   return {
     ...BASE,
@@ -190,7 +192,7 @@ export function buildCartesian(output: ChartOutput, fontFamily?: string, locale?
       // overridden — the visible axis keeps its ApexCharts default so a vertical
       // chart's horizontal grid, or an hbar's vertical grid, is untouched).
       ...(apexXHidden ? { xaxis: { lines: { show: false } } } : {}),
-      ...(apexYHidden ? { yaxis: { lines: { show: false } } } : {}),
+      ...(apexYHidden || cleanBarGrid ? { yaxis: { lines: { show: false } } } : {}),
       // Top padding keeps above-bar data labels + line markers inside the chart
       // bounds (baseline 6px). Horizontal bars place their value label OUTSIDE the
       // bar end (position:'top' + offsetX) — right whitespace + the hbarValueMax
