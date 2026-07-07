@@ -16,22 +16,31 @@ export interface FeaturedSliderNode extends NodeBase {
   items:       FeaturedItemSpec[]
   /** Auto-advance dwell (ms). Omitted ⇒ engine default; 0 ⇒ no autoplay. */
   autoplayMs?: number
+  /**
+   * Show the preliminary "P" badge on a card whose datum is preliminary (Law 9
+   * data-integrity). DEFAULT true — omitting it preserves the badge for every
+   * tenant. Set false only to suppress the badge on SUMMARY featured cards where
+   * the authoritative page-level preliminary indicator carries the integrity note.
+   */
+  preliminaryBadge?: boolean
 }
 
 export const FeaturedSliderSchema: PropSchema = [
-  { field: 'autoplayMs', type: 'number', label: { ka: 'ავტოთამაში (ms)', en: 'Autoplay (ms)' }, default: 7000 },
-  { field: 'items',      type: 'array',  label: { ka: 'ფიჩერ-ელემენტები', en: 'Featured items' }, required: true },
+  { field: 'autoplayMs',       type: 'number',  label: { ka: 'ავტოთამაში (ms)', en: 'Autoplay (ms)' }, default: 7000 },
+  { field: 'preliminaryBadge', type: 'boolean', label: { ka: 'წინასწარი ნიშანი', en: 'Preliminary badge' }, default: true },
+  { field: 'items',            type: 'array',   label: { ka: 'ფიჩერ-ელემენტები', en: 'Featured items' }, required: true },
 ]
 
 export const FeaturedSliderDefaults: Partial<FeaturedSliderNode> = {
-  autoplayMs: 7000,
-  items:      [],
+  autoplayMs:       7000,
+  preliminaryBadge: true,
+  items:            [],
 }
 
 export const FeaturedSliderSlots: Record<string, SlotDef> = {}
 
 export const FeaturedSliderGroups: PropertyGroup[] = [
-  { label: { ka: 'ქცევა',    en: 'Behaviour' }, fields: ['autoplayMs'] },
+  { label: { ka: 'ქცევა',    en: 'Behaviour' }, fields: ['autoplayMs', 'preliminaryBadge'] },
   { label: { ka: 'შიგთავსი', en: 'Content'   }, fields: ['items']      },
 ]
 

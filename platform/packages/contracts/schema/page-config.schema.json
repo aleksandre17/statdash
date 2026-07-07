@@ -817,6 +817,12 @@
           "default": 7000,
           "type": "number"
         },
+        "preliminaryBadge": {
+          "title": "Preliminary badge",
+          "description": "boolean field",
+          "default": true,
+          "type": "boolean"
+        },
         "items": {
           "title": "Featured items",
           "description": "array field",

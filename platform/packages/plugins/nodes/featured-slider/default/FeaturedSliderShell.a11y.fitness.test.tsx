@@ -49,10 +49,16 @@ import type { FeaturedSliderNode } from './FeaturedSliderNode'
 // least this + the autoplay dwell lands on the swapped-in group.
 const FADE_OUT_MS = 200
 
-function renderSlider(locale = 'en', autoplayMs = 0) {
-  const def = { type: 'featured-slider', id: 'fs', items: [], autoplayMs } as FeaturedSliderNode
+function renderSlider(locale = 'en', autoplayMs = 0, preliminaryBadge?: boolean) {
+  const def = { type: 'featured-slider', id: 'fs', items: [], autoplayMs, preliminaryBadge } as FeaturedSliderNode
   const ctx = { locale } as unknown as RenderContext
   return render(FeaturedSliderShell(def, ctx, { rendered: [], byName: {} } as never) as ReactElement)
+}
+
+// Advance to the Regional group (index 1) where the preliminary GDP card lives.
+function gotoRegionalGroup() {
+  fireEvent.click(screen.getByRole('button', { name: 'next' }))
+  act(() => { vi.advanceTimersByTime(FADE_OUT_MS + 50) })
 }
 
 afterEach(() => {
@@ -195,10 +201,39 @@ describe('FF-FEATURED-A11Y — no colour-only info + live values + drill', () =>
   it('a preliminary card renders the P badge with an sr-only label (Law 9)', () => {
     vi.useFakeTimers()
     renderSlider('en', 0)
-    // Advance to the Regional group where the preliminary GDP card lives.
-    fireEvent.click(screen.getByRole('button', { name: 'next' }))
-    act(() => { vi.advanceTimersByTime(FADE_OUT_MS + 50) })
+    gotoRegionalGroup()
     const slide = document.querySelector('[aria-roledescription="slide"]') as HTMLElement
     expect(within(slide).getByText('preliminary')).toBeTruthy()   // sr-only preliminary label
+  })
+})
+
+describe('FF-FEATURED-A11Y — config-gated preliminary badge (Law 9 default-on)', () => {
+  it('shows the P badge when preliminaryBadge is ABSENT (default true — every tenant)', () => {
+    vi.useFakeTimers()
+    renderSlider('en', 0)                                   // preliminaryBadge omitted
+    gotoRegionalGroup()
+    const slide = document.querySelector('[aria-roledescription="slide"]') as HTMLElement
+    expect(slide.querySelector('.featured-card__prelim')).not.toBeNull()
+    expect(within(slide).getByText('preliminary')).toBeTruthy()
+  })
+
+  it('shows the P badge when preliminaryBadge is explicitly true', () => {
+    vi.useFakeTimers()
+    renderSlider('en', 0, true)
+    gotoRegionalGroup()
+    const slide = document.querySelector('[aria-roledescription="slide"]') as HTMLElement
+    expect(slide.querySelector('.featured-card__prelim')).not.toBeNull()
+    expect(within(slide).getByText('preliminary')).toBeTruthy()
+  })
+
+  it('HIDES the P badge (and its sr-only label) when preliminaryBadge is false', () => {
+    vi.useFakeTimers()
+    renderSlider('en', 0, false)
+    gotoRegionalGroup()
+    const slide = document.querySelector('[aria-roledescription="slide"]') as HTMLElement
+    // The GDP card is still shown (data intact) — only the badge is suppressed.
+    expect(within(slide).getByText('104 598')).toBeTruthy()
+    expect(slide.querySelector('.featured-card__prelim')).toBeNull()
+    expect(within(slide).queryByText('preliminary')).toBeNull()   // sr-only gone too
   })
 })

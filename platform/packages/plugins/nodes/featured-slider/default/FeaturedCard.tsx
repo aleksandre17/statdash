@@ -17,6 +17,12 @@ interface FeaturedCardProps {
   /** Fully-resolved drill URL (locale prefix already applied by the shell). */
   href:   string
   labels: FeaturedCardLabels
+  /**
+   * Whether a preliminary datum shows the "P" badge (Law 9). The shell resolves
+   * the node's `preliminaryBadge` config (default true) — false suppresses the
+   * badge on SUMMARY cards where a page-level indicator carries the integrity note.
+   */
+  showPreliminaryBadge: boolean
 }
 
 /**
@@ -27,7 +33,7 @@ interface FeaturedCardProps {
  * crawlable drill `<a href>` (SEO + WCAG). The drill link and the methodology link
  * are SIBLINGS (no nested interactive elements — valid, keyboard-clean HTML).
  */
-export default function FeaturedCard({ slide, href, labels }: FeaturedCardProps) {
+export default function FeaturedCard({ slide, href, labels, showPreliminaryBadge }: FeaturedCardProps) {
   const { card, icon } = slide
   const trend = card.trend
   return (
@@ -38,7 +44,7 @@ export default function FeaturedCard({ slide, href, labels }: FeaturedCardProps)
       <div className="featured-card__head">
         {icon && <span className="featured-card__icon" aria-hidden="true">{icon}</span>}
         <h3 className="featured-card__label">{card.label}</h3>
-        {card.preliminary && (
+        {card.preliminary && showPreliminaryBadge && (
           <span className="featured-card__prelim" title={labels.preliminary}>
             <span aria-hidden="true">P</span>
             <span className="sr-only">{labels.preliminary}</span>

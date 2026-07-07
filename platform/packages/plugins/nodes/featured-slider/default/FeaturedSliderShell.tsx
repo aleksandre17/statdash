@@ -78,6 +78,11 @@ function FeaturedSliderControl({ def, ctx }: { def: FeaturedSliderNode; ctx: Ren
     drill:       t('drill'),
   }
 
+  // Law 9: the preliminary badge is ON by default — a tenant opts OUT explicitly
+  // (`preliminaryBadge:false`) only where the authoritative page-level indicator
+  // already carries the integrity note (e.g. the landing summary cards).
+  const showPreliminaryBadge = def.preliminaryBadge ?? true
+
   const count = groups.length
   const [active, setActive] = useState(0)
   const [fade,   setFade]   = useState(true)
@@ -190,6 +195,7 @@ function FeaturedSliderControl({ def, ctx }: { def: FeaturedSliderNode; ctx: Ren
               slide={slide}
               href={resolveHref(slide.href, ctx.locale)}
               labels={cardLabels}
+              showPreliminaryBadge={showPreliminaryBadge}
             />
           ))}
         </div>

@@ -2918,6 +2918,7 @@
             "type": "featured-slider",
             "id": "landing-featured",
             "autoplayMs": 7000,
+            "preliminaryBadge": false,
             "items": [
               {
                 "metric": "gdp.current",
@@ -3936,7 +3937,7 @@
                     "distributed": true,
                     "axes": {
                       "y": {
-                        "hidden": true
+                        "hidden": false
                       }
                     },
                     "dataLinks": [
