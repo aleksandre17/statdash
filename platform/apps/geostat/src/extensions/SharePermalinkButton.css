@@ -1,0 +1,15 @@
+/* ================================================================
+   SharePermalinkButton — transient "copied" success state.
+
+   The base `.section__icon-btn` chrome is owned by the section plugin
+   (packages/plugins/nodes/section/default/section.css). This app-tier
+   extension only adds the copy-success override, token-driven (positive
+   status tone) — no hardcoded colours.
+   ================================================================ */
+
+.section__icon-btn.is-copied,
+.section__icon-btn.is-copied:hover {
+  color:        var(--status-positive-fg);
+  border-color: var(--status-positive-border);
+  background:   var(--status-positive-bg);
+}

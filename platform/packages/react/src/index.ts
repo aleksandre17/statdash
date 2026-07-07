@@ -141,7 +141,7 @@ export { usePanelTitleBadge }                        from './engine/usePanelTitl
 //  Disclosure (useCollapsible / useDisclosure), role-tagged view toggle
 //  (useViewToggle + viewStateKey), per-node `--sc` accent (accentStyle).
 export { useCollapsible }                            from './engine/hooks/useCollapsible'
-export type { Collapsible, CollapsibleHeadProps }    from './engine/hooks/useCollapsible'
+export type { Collapsible, CollapsibleToggleProps }  from './engine/hooks/useCollapsible'
 export { useDisclosure }                             from './engine/hooks/useDisclosure'
 export type { Disclosure }                           from './engine/hooks/useDisclosure'
 export { useViewToggle }                             from './engine/hooks/useViewToggle'

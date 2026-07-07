@@ -23,6 +23,9 @@ export const GeographShell = defineShell<GeographNode>({
 function GeographControl({ def, ctx, vs, children }: Pick<ShellProps<GeographNode>, 'def' | 'ctx' | 'vs' | 'children'>) {
   const PanelLayout   = useInject(ctx.ui, PANEL_LAYOUT)
   const t             = useT('geograph')
+  // Collapse-toggle labels are generic framework chrome (like copy-link / export)
+  // → the 'feedback' catalog, the one namespace localized in every tenant locale.
+  const tf            = useT('feedback')
   const resolveLocale = useResolveLocale()
 
   const titleBadges = useExtensions(ctx.extensions, PANEL_TITLE_BADGE, {
@@ -99,6 +102,8 @@ function GeographControl({ def, ctx, vs, children }: Pick<ShellProps<GeographNod
         defaultOpen
         viewToggle={panelToggle}
         titleBadge={titleBadge}
+        collapseLabel={tf('collapse')}
+        expandLabel={tf('expand')}
         bodyProps={{ ...vs.body, 'data-content': 'geo' }}
       >
         {/* Map view — hidden (not unmounted) when the table role is active. */}

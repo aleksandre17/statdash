@@ -77,9 +77,13 @@ describe('SectionShell render', () => {
     expect(section.style.getPropertyValue('--sc')).toBe('#0080BE')
     expect(container.querySelector('.section__title')!.textContent).toBe('Title')
 
+    // The header is INERT — the sole collapse trigger is the chevron button.
     const head = container.querySelector('.section__head')!
-    expect(head.getAttribute('role')).toBe('button')
-    expect(head.getAttribute('aria-expanded')).toBe('true')
+    expect(head.getAttribute('role')).toBeNull()
+    const chevron = container.querySelector('.section__chevron-btn') as HTMLButtonElement
+    expect(chevron.tagName).toBe('BUTTON')
+    expect(chevron.getAttribute('aria-expanded')).toBe('true')
+    expect(chevron.getAttribute('aria-controls')).toBe('s1-body')
 
     // both child bodies are mounted; the inactive one is hidden via data-view
     const views = container.querySelectorAll('.section__view')
@@ -127,11 +131,23 @@ describe('SectionShell render', () => {
     expect(container.querySelector('.section__methodology')).toBeNull()
   })
 
-  it('collapses the body on header click', () => {
+  it('collapses ONLY via the chevron button — a header click does not collapse', () => {
     const { container } = renderShell({})
     expect(container.querySelector('.section__body')).toBeTruthy()
+
+    // Clicking the header itself must NOT collapse (no false whole-header target).
     fireEvent.click(container.querySelector('.section__head')!)
+    expect(container.querySelector('.section__body')).toBeTruthy()
+
+    // The chevron button is the sole trigger.
+    const chevron = container.querySelector('.section__chevron-btn')!
+    fireEvent.click(chevron)
     expect(container.querySelector('.section__body')).toBeNull()
+    expect(chevron.getAttribute('aria-expanded')).toBe('false')
+
+    // …and toggles back open.
+    fireEvent.click(chevron)
+    expect(container.querySelector('.section__body')).toBeTruthy()
   })
 
   it('renders a hero section as non-collapsible (no chevron / no button role)', () => {

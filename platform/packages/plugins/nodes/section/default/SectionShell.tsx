@@ -61,6 +61,9 @@ function SectionControl({
   variantAttrs,
 }: ShellProps<SectionNode>) {
   const t = useT('section')
+  // Collapse-toggle labels are generic framework chrome (like copy-link / export)
+  // → the 'feedback' catalog, the one namespace localized in every tenant locale.
+  const tf = useT('feedback')
 
   // Canonical template resolver — binds resolveTemplate to this ctx with the
   // standard { ...filterParams, ...vars } merge so node.vars-derived variables
@@ -78,6 +81,8 @@ function SectionControl({
 
   const viewToggle  = useViewToggle(children.defs, 'section', resolvedId, merged.toggle)
   const collapsible = useCollapsible(merged.defaultOpen, merged.noCollapse)
+  // Body id — the chevron toggle's aria-controls target (WCAG disclosure pattern).
+  const bodyId      = `${resolvedId}-body`
 
   const info = useDisclosure()
 
@@ -108,9 +113,12 @@ function SectionControl({
         style={accentStyle(def.color)}
       >
         <SectionHeader
-          headProps={collapsible.headProps}
+          toggleProps={collapsible.toggleProps}
           open={collapsible.open}
           canCollapse={collapsible.canCollapse}
+          bodyId={bodyId}
+          collapseLabel={tf('collapse')}
+          expandLabel={tf('expand')}
           title={title}
           label={label}
           subtitle={subtitle}
@@ -145,7 +153,7 @@ function SectionControl({
 
         {(merged.noCollapse || collapsible.open) && (
           <NodeExportProvider collector={exportScope.collector}>
-            <div className={SECTION.body} {...vs.body}>
+            <div className={SECTION.body} id={bodyId} {...vs.body}>
               {children.defs.map((d: NodeDef, i: number) => {
                 const hidden = viewToggle.isHidden(d)
                 return (

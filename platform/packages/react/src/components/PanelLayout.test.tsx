@@ -99,3 +99,40 @@ describe('PanelLayout — role-based controlled toggle', () => {
     expect(container.querySelector('.panel__view-toggle')).toBeNull()
   })
 })
+
+// ── Collapse — chevron BUTTON is the sole trigger (not the whole header) ──────
+describe('PanelLayout — chevron-only collapse', () => {
+  it('collapses ONLY via the chevron button; a header click does not collapse', () => {
+    const { container } = render(
+      <PanelLayout id="p1" title="Regions" collapseLabel="Collapse" expandLabel="Expand">
+        <div data-testid="body">body</div>
+      </PanelLayout>,
+    )
+    expect(container.querySelector('[data-testid="body"]')).toBeTruthy()
+
+    // Header itself is inert — clicking it must not collapse.
+    fireEvent.click(container.querySelector('.panel__head')!)
+    expect(container.querySelector('[data-testid="body"]')).toBeTruthy()
+
+    // The chevron is a real, labelled button wired to aria-expanded + aria-controls.
+    const chevron = container.querySelector('.panel__chevron-btn') as HTMLButtonElement
+    expect(chevron.tagName).toBe('BUTTON')
+    expect(chevron.getAttribute('aria-label')).toBe('Collapse')
+    expect(chevron.getAttribute('aria-expanded')).toBe('true')
+    expect(chevron.getAttribute('aria-controls')).toBe('p1-body')
+
+    fireEvent.click(chevron)
+    expect(container.querySelector('[data-testid="body"]')).toBeNull()
+    expect(chevron.getAttribute('aria-expanded')).toBe('false')
+    expect(chevron.getAttribute('aria-label')).toBe('Expand')
+  })
+
+  it('renders no chevron button when collapse is disabled (noCollapse)', () => {
+    const { container } = render(
+      <PanelLayout title="Regions" noCollapse>
+        <div>body</div>
+      </PanelLayout>,
+    )
+    expect(container.querySelector('.panel__chevron-btn')).toBeNull()
+  })
+})

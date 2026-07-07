@@ -2,22 +2,29 @@
 //
 //  Thin presentational header: accent bar, title/label/subtitle stack, and
 //  the actions cluster (view toggle · extension actions · methodology
-//  toggle) plus the collapse chevron. All collapse a11y/keyboard behavior
-//  arrives pre-bundled via `headProps` (useCollapsible); the actions cluster
-//  stops click propagation so action clicks never toggle the section.
+//  toggle) plus the collapse chevron. The header itself is INERT — the sole
+//  collapse trigger is the chevron <button> (toggleProps from useCollapsible),
+//  so a click on the title/actions never collapses the section (Principle of
+//  Least Astonishment). The actions cluster still stops propagation defensively.
 //
 
 import { Fragment }       from 'react'
 import type { ReactNode } from 'react'
 import { InfoIcon, ChevronIcon, useResolveLocale } from '@statdash/react'
-import type { CollapsibleHeadProps, ViewToggle } from '@statdash/react/engine'
+import type { CollapsibleToggleProps, ViewToggle } from '@statdash/react/engine'
 
 type T = (key: string) => string
 
 export interface SectionHeaderProps {
-  headProps:    CollapsibleHeadProps
+  /** Chevron-button a11y contract from useCollapsible. Undefined ⇒ no toggle. */
+  toggleProps:  CollapsibleToggleProps | undefined
   open:         boolean
   canCollapse:  boolean
+  /** id of the section body the chevron controls (aria-controls). */
+  bodyId?:      string
+  /** aria-label for the chevron toggle per state (feedback catalog, localized). */
+  collapseLabel: string
+  expandLabel:   string
   title:        string
   label?:       string
   subtitle?:    string
@@ -35,9 +42,12 @@ export interface SectionHeaderProps {
 }
 
 export function SectionHeader({
-  headProps,
+  toggleProps,
   open,
   canCollapse,
+  bodyId,
+  collapseLabel,
+  expandLabel,
   title,
   label,
   subtitle,
@@ -59,7 +69,7 @@ export function SectionHeader({
   const resolveLocale = useResolveLocale()
 
   return (
-    <div className={`section__head${open ? ' open' : ''}`} {...headProps}>
+    <div className={`section__head${open ? ' open' : ''}`}>
       <span className="section__accent" />
       <div className="section__title-wrap">
         <div className="section__title">{title}</div>
@@ -112,8 +122,18 @@ export function SectionHeader({
           </div>
         )}
       </div>
-      {canCollapse && (
-        <ChevronIcon className={`section__chevron${open ? ' open' : ''}`} />
+      {/* Sole collapse trigger — a real, labelled button (native Enter/Space +
+          focus). Sits LAST in DOM/tab order, after the metadata + view-toggle
+          cluster, preserving the 🔗 → ⤓ → ⓘ → toggle → chevron order. */}
+      {canCollapse && toggleProps && (
+        <button
+          className={`section__chevron-btn${open ? ' open' : ''}`}
+          aria-label={open ? collapseLabel : expandLabel}
+          aria-controls={bodyId}
+          {...toggleProps}
+        >
+          <ChevronIcon className="section__chevron" />
+        </button>
       )}
     </div>
   )

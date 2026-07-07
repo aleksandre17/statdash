@@ -149,7 +149,7 @@ export type {
 //    switch (chart/table), persisted in GlobalState under viewStateKey(ns, id).
 //    accentStyle — per-node `color → { '--sc' }` override of the page cascade.
 export { useCollapsible }          from './hooks/useCollapsible'
-export type { Collapsible, CollapsibleHeadProps } from './hooks/useCollapsible'
+export type { Collapsible, CollapsibleToggleProps } from './hooks/useCollapsible'
 export { useDisclosure }           from './hooks/useDisclosure'
 export type { Disclosure }         from './hooks/useDisclosure'
 export { useViewToggle }           from './hooks/useViewToggle'

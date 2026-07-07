@@ -34,6 +34,9 @@ const FEEDBACK_I18N: Record<string, Record<string, string>> = {
     'export.toolbar':     'Export data',
     'export.download':    'Download {{fmt}}',
     'share.permalink':    'Copy permalink',
+    'share.copied':       'Copied',
+    'collapse':           'Collapse',
+    'expand':             'Expand',
   },
 }
 
