@@ -93,6 +93,24 @@ describe('AR-40 — interpretFeatured lowers to interpretKpi (SSOT, no hardcode)
     expect(slide.card.preliminary).toBe(true)
   })
 
+  it('FF-FEATURED-TREND-TIME-PINNED — a yoy trend with no time inherits the item time (R2)', () => {
+    // The AR-2 R2 root cause: a featured yoy trend omitting `time` fell back to the
+    // (unpinned) ctx time on the landing slider → cur/prev both 0 → a stuck "→ 0%".
+    // featuredToKpiSpec now threads item.time onto the yoy trend so it reads the
+    // pinned period, exactly like the value.
+    const kpi = featuredToKpiSpec({
+      metric: 'feat:gdp', at: { geo: 'GE' }, time: 2025, href: 'gdp',
+      trend: { type: 'yoy', measure: 'feat:gdp', filter: { geo: 'GE' } },
+    })
+    expect(kpi.trend).toMatchObject({ type: 'yoy', time: 2025 })
+    // An explicit trend time is NOT overwritten (author wins).
+    const explicit = featuredToKpiSpec({
+      metric: 'feat:gdp', at: { geo: 'GE' }, time: 2025, href: 'gdp',
+      trend: { type: 'yoy', measure: 'feat:gdp', time: 2023, filter: { geo: 'GE' } },
+    })
+    expect(explicit.trend).toMatchObject({ time: 2023 })
+  })
+
   it('FF-FEATURED-WARM-ROUTED — each requirement is tagged with the metric dataSource', () => {
     const items: FeaturedItemSpec[] = [
       { metric: 'feat:gva', at: { geo: 'R2', sector: '_T' }, time: 2024, href: 'regional' },

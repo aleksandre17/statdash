@@ -16,6 +16,14 @@ export function buildCartesian(output: ChartOutput, fontFamily?: string, locale?
   const hasY2         = !!axes.y2
   const isStackedArea = type === 'area' && stacked
 
+  // Axis hiding (declarative axes.{x,y}.hidden). ChartOutput axes are SEMANTIC:
+  // axes.y = VALUE axis, axes.x = CATEGORY axis. ApexCharts swaps them visually for
+  // a horizontal bar, so map each semantic-hidden flag to the right APEX axis by
+  // orientation. A hidden axis drops scale/ticks/border/labels + gridlines; per-bar
+  // data labels are independent (AR-2 R6: hide the value scale, keep the labels).
+  const apexXHidden = horizontal ? axes.y.hidden === true : axes.x.hidden === true
+  const apexYHidden = horizontal ? axes.x.hidden === true : axes.y.hidden === true
+
   // Value-axis formatters — hoisted so the responsive overrides below can
   // re-carry them (ApexCharts rebuilds yaxis from defaults on responsive
   // merge, dropping any formatter not re-supplied — see responsiveYAxis).
@@ -26,7 +34,11 @@ export function buildCartesian(output: ChartOutput, fontFamily?: string, locale?
   // hbar's left axis is categorical (no numeric formatter), so it keeps the
   // bare style override; vbar/combo carry the value formatter (and y2's).
   const yaxisFont = (fontSize: string): ApexYAxis | ApexYAxis[] =>
-      horizontal
+      // ApexCharts' responsive merge REBUILDS yaxis from defaults (extendYAxis),
+      // which would re-show a hidden axis — re-assert the hide at every breakpoint.
+      apexYHidden
+          ? { show: false }
+          : horizontal
           ? { labels: { style: { fontSize }, maxWidth: 220 } }
           : hasY2
               ? [responsiveYAxis(fontSize, yFmt), responsiveYAxis(fontSize, y2Fmt)]
@@ -105,7 +117,9 @@ export function buildCartesian(output: ChartOutput, fontFamily?: string, locale?
   //    yaxis (left)   = value axis    — numeric formatter here
   //    xaxis (bottom) = category axis
   //
-  const yAxisBase: ApexYAxis = horizontal
+  const yAxisBase: ApexYAxis = apexYHidden
+      ? { show: false }
+      : horizontal
       ? {
         labels: { style: { fontSize: FS_SM, colors: cssVar('--color-text-muted', '#6B7B8D') }, maxWidth: 220 },
       }
@@ -168,6 +182,11 @@ export function buildCartesian(output: ChartOutput, fontFamily?: string, locale?
     },
     grid: {
       ...BASE.grid,
+      // A hidden axis takes its gridlines with it (only that axis's lines are
+      // overridden — the visible axis keeps its ApexCharts default so a vertical
+      // chart's horizontal grid, or an hbar's vertical grid, is untouched).
+      ...(apexXHidden ? { xaxis: { lines: { show: false } } } : {}),
+      ...(apexYHidden ? { yaxis: { lines: { show: false } } } : {}),
       // Top padding sized to keep above-bar data labels AND line-chart
       // markers strictly inside the chart bounds. A baseline 6px on all
       // non-stacked types prevents marker/stroke clipping at the top edge.
@@ -190,7 +209,9 @@ export function buildCartesian(output: ChartOutput, fontFamily?: string, locale?
       // vbar: xaxis is the category axis (bottom) — string categories + no formatter.
       ...(horizontal ? {} : { categories: [...categories] }),
       ...(horizontal ? { min: axes.y.min, max: axes.y.max } : {}),
-      labels: horizontal
+      labels: apexXHidden
+          ? { show: false }
+          : horizontal
           ? {
             style:     { fontSize: FS_SM, colors: cssVar('--color-text-muted', '#6B7B8D') },
             // xaxis.labels.formatter receives a string — parse back to number first
@@ -208,8 +229,8 @@ export function buildCartesian(output: ChartOutput, fontFamily?: string, locale?
             maxHeight: 100,
             hideOverlappingLabels: true,
           },
-      axisBorder: { color: cssVar('--color-chart-frame', '#E0EBE8') },
-      axisTicks:  { color: cssVar('--color-chart-frame', '#E0EBE8') },
+      axisBorder: apexXHidden ? { show: false } : { color: cssVar('--color-chart-frame', '#E0EBE8') },
+      axisTicks:  apexXHidden ? { show: false } : { color: cssVar('--color-chart-frame', '#E0EBE8') },
     },
     yaxis,
     plotOptions: {
