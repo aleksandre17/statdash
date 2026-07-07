@@ -183,6 +183,8 @@
 .kpi-trend-up   { color: var(--color-trend-positive); }
 .kpi-trend-down { color: var(--color-trend-negative); }
 .kpi-trend-flat { color: var(--color-text-faint); }
+/* Directionless figure (a share) — a neutral annotation, never a trend colour. */
+.kpi-trend-none { color: var(--color-text-muted); }
 
 .kpi-trend-sub {
   font-size: 0.6875rem;
