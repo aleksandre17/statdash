@@ -2,117 +2,47 @@
 
 import type { ApexOptions } from 'apexcharts'
 import type { ChartOutput } from '@statdash/charts'
-import { BASE, responsiveYAxis, BP_MD, BP_SM, BP_XS } from '../base'
+import { BASE } from '../base'
 import { deriveContext } from './context'
 import { buildSeries } from './series'
 import { buildColors } from './colors'
 import { buildValueAxis, buildCategoryAxis } from './axes'
-import { buildBarPlotOptions, buildMarks, strokeWidth } from './marks'
+import { buildBarPlotOptions, buildMarks } from './marks'
 import { buildDataLabels } from './data-labels'
-import { buildGrid, gridPadding } from './grid'
+import { buildGrid } from './grid'
 import { buildLegend, buildTooltip, buildAnnotations } from './chrome'
+import { buildResponsive } from './responsive'
 
+/**
+ * Assemble ApexOptions for the six cartesian families (bar · hbar · line · area
+ * · waterfall · combo). Derives the cross-cutting context once, then composes
+ * the pure slice-builders into the options literal — no family conditional lives
+ * here; each slice switches on a resolved discriminant off `ctx`.
+ */
 export function buildCartesian(output: ChartOutput, fontFamily?: string, locale?: string): ApexOptions {
-  const { stacked, horizontal } = output
+  const { stacked } = output
   const ctx = deriveContext(output, locale)
-  const {
-    hasY2, apexYHidden,
-    yFmt, y2Fmt, apexType, showDataLabels,
-    forcesStacked,
-  } = ctx
-
-  // Responsive numeric-y-axis font override that keeps the formatter alive.
-  // hbar's left axis is categorical (no numeric formatter), so it keeps the
-  // bare style override; vbar/combo carry the value formatter (and y2's).
-  const yaxisFont = (fontSize: string): ApexYAxis | ApexYAxis[] =>
-      // ApexCharts' responsive merge REBUILDS yaxis from defaults (extendYAxis),
-      // which would re-show a hidden axis — re-assert the hide at every breakpoint.
-      apexYHidden
-          ? { show: false }
-          : horizontal
-          ? { labels: { style: { fontSize }, maxWidth: 220 } }
-          : hasY2
-              ? [responsiveYAxis(fontSize, yFmt), responsiveYAxis(fontSize, y2Fmt)]
-              : responsiveYAxis(fontSize, yFmt)
-
-  const apexSeries = buildSeries(output, ctx)
-  const colors     = buildColors(output)
-  const yaxis      = buildValueAxis(output, ctx)
 
   return {
     ...BASE,
     chart: {
       ...BASE.chart,
-      type:       apexType,
+      type:       ctx.apexType,
       height:     '100%',
-      stacked:    stacked || forcesStacked,
+      stacked:    stacked || ctx.forcesStacked,
       fontFamily: fontFamily ?? 'system-ui, sans-serif',
     },
-    grid:    buildGrid(output, ctx),
-    series:  apexSeries,
-    colors,
-    xaxis: buildCategoryAxis(output, ctx),
-    yaxis,
+    grid:        buildGrid(output, ctx),
+    series:      buildSeries(output, ctx),
+    colors:      buildColors(output),
+    xaxis:       buildCategoryAxis(output, ctx),
+    yaxis:       buildValueAxis(output, ctx),
     plotOptions: buildBarPlotOptions(output, ctx),
     dataLabels:  buildDataLabels(output, ctx),
     ...buildMarks(output, ctx),
     legend:      buildLegend(output, ctx, fontFamily),
     tooltip:     buildTooltip(output, ctx),
     annotations: buildAnnotations(ctx),
-    // ── Responsive overrides ─────────────────────────────────────────
-    //
-    //  Pixel-valued options that can't use clamp() shrink in lockstep
-    //  with the font clamps as the container narrows. Each breakpoint
-    //  tightens the bounding box and reduces inner padding/offsets so
-    //  the chart keeps strictly inside its frame at every width.
-    //
-    responsive: [
-      {
-        breakpoint: BP_MD,
-        options: {
-          plotOptions: { bar: { borderRadius: horizontal ? 2 : 3 } },
-          markers:     { size: 4, hover: { size: 6 } },
-          stroke:      { width: strokeWidth(output, ctx, 'md') },
-          ...(showDataLabels && !horizontal ? { dataLabels: { offsetY: -14 } } : {}),
-          xaxis:  { labels: { style: { fontSize: '10px' } } },
-          yaxis:  yaxisFont('10px'),
-          legend: { fontSize: '10px', itemMargin: { horizontal: 8 } },
-          grid:   { padding: gridPadding(output, ctx, 'md') },
-        },
-      },
-      {
-        breakpoint: BP_SM,
-        options: {
-          // Horizontal charts keep their category-derived height (set on the
-          // ReactApexChart `height` prop) — a fixed short height here would
-          // re-cram the rows at narrow widths. Vertical charts shrink as before.
-          ...(horizontal ? {} : { chart: { height: 280 } }),
-          plotOptions: { bar: { borderRadius: 2 } },
-          markers:     { size: 3, hover: { size: 5 } },
-          stroke:      { width: strokeWidth(output, ctx, 'sm') },
-          ...(showDataLabels && !horizontal ? { dataLabels: { offsetY: -10 } } : {}),
-          xaxis:  horizontal ? {} : { labels: { maxHeight: 70, style: { fontSize: '9px' } } },
-          yaxis:  yaxisFont('9px'),
-          legend: { fontSize: '10px', itemMargin: { horizontal: 6 } },
-          grid:   { padding: gridPadding(output, ctx, 'sm') },
-        },
-      },
-      {
-        breakpoint: BP_XS,
-        options: {
-          ...(horizontal ? {} : { chart: { height: 240 } }),
-          // Keep the low-cardinality thickness cap on mobile — inherit the base
-          // columnWidth (a flat '85%' here would re-fatten a solo bar to a stripe).
-          plotOptions: { bar: { borderRadius: 2 } },
-          markers:     { size: 0 },
-          dataLabels: { enabled: false },
-          legend:     { itemMargin: { horizontal: 4 } },
-          grid:       { padding: gridPadding(output, ctx, 'xs') },
-          xaxis: horizontal
-              ? {}
-              : { labels: { rotate: -90, maxHeight: 60 } },
-        },
-      },
-    ],
+    responsive:  buildResponsive(output, ctx),
   }
 }
