@@ -2281,8 +2281,8 @@
                 },
                 "view": {
                   "subtitle": {
-                    "ka": "{time} · წილი, %",
-                    "en": "{time} · share, %"
+                    "ka": "{time} წელი, %",
+                    "en": "{time}, %"
                   }
                 },
                 "data": {
