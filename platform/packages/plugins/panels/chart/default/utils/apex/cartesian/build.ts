@@ -2,25 +2,25 @@
 
 import type { ApexOptions } from 'apexcharts'
 import type { ChartOutput } from '@statdash/charts'
-import { BASE, yFormatter, responsiveYAxis, BP_MD, BP_SM, BP_XS } from '../base'
+import { BASE, responsiveYAxis, BP_MD, BP_SM, BP_XS } from '../base'
 import { cssVar } from '@statdash/styles'
 import { deriveContext } from './context'
-import { isSpacer } from './families'
 import { buildSeries } from './series'
 import { buildColors } from './colors'
 import { buildValueAxis, buildCategoryAxis } from './axes'
+import { buildBarPlotOptions, buildMarks, strokeWidth } from './marks'
+import { buildDataLabels } from './data-labels'
 
 export function buildCartesian(output: ChartOutput, fontFamily?: string, locale?: string): ApexOptions {
-  const { type, series, axes, stacked, horizontal } = output
+  const { stacked, horizontal } = output
   const ctx = deriveContext(output, locale)
   const {
-    formatted, FS_XS, FS_MD,
-    isWaterfall, isCombo, hasY2, isStackedArea,
+    formatted, FS_MD,
+    isWaterfall, hasY2, isStackedArea,
     apexXHidden, apexYHidden,
-    yFmt, y2Fmt, yMax, barFill, apexType, showDataLabels,
+    yFmt, y2Fmt, yMax, apexType, showDataLabels,
     forcesStacked,
   } = ctx
-  const distributed = output.distributed === true
 
   // Responsive numeric-y-axis font override that keeps the formatter alive.
   // hbar's left axis is categorical (no numeric formatter), so it keeps the
@@ -70,54 +70,9 @@ export function buildCartesian(output: ChartOutput, fontFamily?: string, locale?
     colors,
     xaxis: buildCategoryAxis(output, ctx),
     yaxis,
-    plotOptions: {
-      bar: {
-        distributed:  distributed,
-        horizontal:   horizontal,
-        borderRadius: horizontal ? 3 : 4,
-        ...(horizontal
-            ? { barHeight: barFill }
-            : { columnWidth: barFill }),
-        dataLabels:   { position: 'top' },
-      },
-    },
-    dataLabels: {
-      enabled:   showDataLabels,
-      formatter: (val: number) => yFormatter(undefined, axes.y.decimals ?? 1)(val),
-      offsetY:   horizontal ? 0 : -20,
-      offsetX:   horizontal ? 6 : 0,
-      style: {
-        fontSize:  FS_XS,
-        fontWeight: 600,
-        colors:    isWaterfall
-            // waterfall: only label the visible series
-            ? series.map((s) => isSpacer(s.name) ? 'transparent' : cssVar('--color-text-secondary', '#2D3748'))
-            : horizontal ? [cssVar('--color-text-secondary', '#2D3748')] : [cssVar('--color-text-muted', '#6B7B8D')],
-      },
-      dropShadow: { enabled: false },
-    },
-    fill: isWaterfall
-        ? { opacity: series.map((s) => isSpacer(s.name) ? 0 : 1) }
-        : type === 'area' && stacked
-            ? { opacity: 0.88 }
-            : type === 'area'
-                ? { type: 'gradient', gradient: { shadeIntensity: 1, opacityFrom: 0.65, opacityTo: 0.1, stops: [0, 90] } }
-                : { opacity: 1 },
-    stroke: {
-      // Line series in combo need a stroke; bar series don't
-      width: isCombo
-          ? series.map((s) => (s.seriesType ?? 'bar') === 'line' ? 2.5 : 0)
-          : isStackedArea ? 2 : (type === 'line' || type === 'area') ? 3 : 0,
-      // stacked area: white stroke separates areas and makes the top line visible
-      colors: isStackedArea ? series.map(() => cssVar('--color-surface', '#ffffff')) : undefined,
-      curve: 'smooth',
-    },
-    markers: type === 'area' && !stacked || type === 'line' ? {
-      size:         5,
-      strokeWidth:  2,
-      strokeColors: cssVar('--color-surface', '#fff'),
-      hover:        { size: 7 },
-    } : {},
+    plotOptions: buildBarPlotOptions(output, ctx),
+    dataLabels:  buildDataLabels(output, ctx),
+    ...buildMarks(output, ctx),
     legend: {
       show:     output.legend.show,
       position: output.legend.position ?? 'bottom',
@@ -163,11 +118,7 @@ export function buildCartesian(output: ChartOutput, fontFamily?: string, locale?
         options: {
           plotOptions: { bar: { borderRadius: horizontal ? 2 : 3 } },
           markers:     { size: 4, hover: { size: 6 } },
-          stroke: {
-            width: isCombo
-                ? series.map((s) => (s.seriesType ?? 'bar') === 'line' ? 2 : 0)
-                : isStackedArea ? 1.5 : (type === 'line' || type === 'area') ? 2.5 : 0,
-          },
+          stroke:      { width: strokeWidth(output, ctx, 'md') },
           ...(showDataLabels && !horizontal ? { dataLabels: { offsetY: -14 } } : {}),
           xaxis:  { labels: { style: { fontSize: '10px' } } },
           yaxis:  yaxisFont('10px'),
@@ -190,11 +141,7 @@ export function buildCartesian(output: ChartOutput, fontFamily?: string, locale?
           ...(horizontal ? {} : { chart: { height: 280 } }),
           plotOptions: { bar: { borderRadius: 2 } },
           markers:     { size: 3, hover: { size: 5 } },
-          stroke: {
-            width: isCombo
-                ? series.map((s) => (s.seriesType ?? 'bar') === 'line' ? 2 : 0)
-                : isStackedArea ? 1 : (type === 'line' || type === 'area') ? 2 : 0,
-          },
+          stroke:      { width: strokeWidth(output, ctx, 'sm') },
           ...(showDataLabels && !horizontal ? { dataLabels: { offsetY: -10 } } : {}),
           xaxis:  horizontal ? {} : { labels: { maxHeight: 70, style: { fontSize: '9px' } } },
           yaxis:  yaxisFont('9px'),
