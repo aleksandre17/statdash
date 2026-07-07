@@ -3937,7 +3937,8 @@
                     "distributed": true,
                     "axes": {
                       "y": {
-                        "hidden": false
+                        "hidden": false,
+                        "decimals": 0
                       }
                     },
                     "dataLinks": [
