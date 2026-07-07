@@ -49,5 +49,13 @@ export interface ExportFormat {
   ext:       string
   /** Human-readable label for the Constructor's export-format catalog. */
   label:     string
+  /**
+   * Emit a UTF-8 byte-order mark ahead of the payload. Applies only to text
+   * (`string`) serializers — the download layer prepends `﻿` so Excel
+   * detects UTF-8 and renders non-Latin scripts (e.g. Georgian) correctly.
+   * The format declares its own need (SSOT); the download layer never guesses
+   * per-format from a mime literal. Binary serializers (Uint8Array) ignore it.
+   */
+  bom?:      boolean
   serialize: SerializeFn
 }

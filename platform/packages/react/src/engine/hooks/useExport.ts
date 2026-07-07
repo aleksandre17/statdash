@@ -9,9 +9,10 @@
 //  all DimVal values, which is exactly what EngineRow expects.
 //
 
-import { useCallback }                            from 'react'
-import { getExportFormat, listExportFormats }     from '@statdash/engine'
-import type { DataRow, ExportMeta, EngineRow }    from '@statdash/engine'
+import { useCallback }                from 'react'
+import { listExportFormats }          from '@statdash/engine'
+import type { DataRow, ExportMeta }   from '@statdash/engine'
+import { downloadExport }             from '../downloadExport'
 
 export interface UseExportResult {
   /** Sorted list of registered export format ids (e.g. ['csv', 'sdmx-json']). */
@@ -24,31 +25,19 @@ export interface UseExportResult {
  * Hook: wraps the export registry + browser download trigger.
  * rows must be DataRow[] from ctx.rows — cast to EngineRow[] is safe because
  * DataRow fields are all DimVal values.
+ *
+ * The download trigger itself is the shared `downloadExport` seam (serialize
+ * via the registry, then Blob → object URL → transient <a download> click).
+ * The SAME seam backs SiteRenderer's `data:export` command handler, so the
+ * ExportBar's own path and the bus-dispatched path are byte-identical.
  */
 export function useExport(rows: DataRow[], meta: ExportMeta): UseExportResult {
   // listExportFormats() is stable across renders (registry doesn't change at runtime)
   const formats = listExportFormats()
 
   const exportAs = useCallback((format: string) => {
-    const fmt = getExportFormat(format)
-    if (!fmt || rows.length === 0) return
-
-    // SerializeFn returns string (csv/sdmx-json) OR Uint8Array (xlsx/binary).
-    // A Uint8Array is wrapped as a raw BlobPart so its bytes are not UTF-8
-    // re-encoded (which would corrupt the OOXML zip container).
-    const content = fmt.serialize(rows as unknown as EngineRow[], meta)
-    const part: BlobPart = typeof content === 'string'
-      ? content
-      : new Uint8Array(content)
-    const blob    = new Blob([part], { type: fmt.mime })
-    const url     = URL.createObjectURL(blob)
-    const a       = document.createElement('a')
-    a.href        = url
-    a.download    = `${meta.filename ?? meta.title ?? 'export'}.${fmt.ext}`
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
-    URL.revokeObjectURL(url)
+    if (rows.length === 0) return
+    downloadExport(format, rows, meta)
   }, [rows, meta])
 
   return { formats, exportAs }

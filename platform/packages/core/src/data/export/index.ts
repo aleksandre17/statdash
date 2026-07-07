@@ -17,6 +17,8 @@ registerExport('csv', {
   mime:      'text/csv',
   ext:       'csv',
   label:     'CSV',
+  // BOM so Excel opens UTF-8 CSV (Georgian, etc.) without mojibake.
+  bom:       true,
   serialize: serializeCsv,
 })
 
