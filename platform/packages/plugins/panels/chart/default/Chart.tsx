@@ -59,6 +59,14 @@ export default function Chart({ output, bodyAttrs, onDataHover, onDataLeave, onD
         height:    'auto',
         maxHeight: 'var(--size-panel-height)',
         overflowY: 'auto',
+        // overflowX MUST be pinned to 'hidden', not left default. CSS §overflow:
+        // when one axis is a scroll value (auto) and the other is `visible`, the
+        // `visible` axis COMPUTES to `auto`. So `overflowY:'auto'` alone silently
+        // turns overflow-x into auto too → a sub-pixel-wide SVG/label bleed raises a
+        // phantom horizontal scrollbar on a bar that already fits its width (owner
+        // report). A horizontal chart is sized to fit width by design and never
+        // needs x-scroll; pin it hidden (same idiom as HBarDivergingChart).
+        overflowX: 'hidden',
         flex:      '0 1 auto',
         minHeight: 0,
       }

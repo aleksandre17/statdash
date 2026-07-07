@@ -77,6 +77,19 @@ describe('Chart.tsx horizontal height model (FF-HBAR-HEIGHT-BOUNDED)', () => {
     expect(wrapStyleOf(container).overflowY).toBe('auto')
   })
 
+  it('a horizontal chart wrap pins overflow-x:hidden (kills the CSS auto/visible phantom x-scroll)', () => {
+    // overflowY:'auto' + a default (visible) overflow-x makes the CSS engine COMPUTE
+    // overflow-x to auto, so a sub-pixel-wide bleed raises a phantom horizontal
+    // scrollbar on a bar that already fits (owner report). Pin it hidden explicitly.
+    const { container } = render(<Chart output={makeOutput({ horizontal: true })} bodyAttrs={bodyAttrs} />)
+    expect(wrapStyleOf(container).overflowX).toBe('hidden')
+  })
+
+  it('a VERTICAL chart wrap does NOT pin overflow-x (no scroll model applied)', () => {
+    const { container } = render(<Chart output={makeOutput({ horizontal: false })} bodyAttrs={bodyAttrs} />)
+    expect(wrapStyleOf(container).overflowX).toBe('')
+  })
+
   it('a horizontal chart wrap may SHRINK but never grow to fill (flex:0 1 auto, minHeight:0)', () => {
     const { container } = render(<Chart output={makeOutput({ horizontal: true })} bodyAttrs={bodyAttrs} />)
     const style = wrapStyleOf(container)
