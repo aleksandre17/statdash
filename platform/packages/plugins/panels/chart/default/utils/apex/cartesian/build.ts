@@ -3,19 +3,23 @@
 import type { ApexOptions } from 'apexcharts'
 import type { ChartOutput } from '@statdash/charts'
 import { BASE, yFormatter, responsiveYAxis, BP_MD, BP_SM, BP_XS } from '../base'
-import { cssVar, chartPalette, chartColorAt } from '@statdash/styles'
+import { cssVar } from '@statdash/styles'
 import { deriveContext } from './context'
-import { isSpacer, SPACER } from './families'
+import { isSpacer } from './families'
+import { buildSeries } from './series'
+import { buildColors } from './colors'
 
 export function buildCartesian(output: ChartOutput, fontFamily?: string, locale?: string): ApexOptions {
   const { type, series, categories, axes, stacked, horizontal } = output
+  const ctx = deriveContext(output, locale)
   const {
     formatted, FS_XS, FS_SM, FS_MD,
     isWaterfall, isCombo, hasY2, isStackedArea,
     apexXHidden, apexYHidden,
     yFmt, y2Fmt, yMax, barFill, apexType, showDataLabels, hbarValueMax,
     forcesStacked,
-  } = deriveContext(output, locale)
+  } = ctx
+  const distributed = output.distributed === true
 
   // Responsive numeric-y-axis font override that keeps the formatter alive.
   // hbar's left axis is categorical (no numeric formatter), so it keeps the
@@ -31,61 +35,8 @@ export function buildCartesian(output: ChartOutput, fontFamily?: string, locale?
               ? [responsiveYAxis(fontSize, yFmt), responsiveYAxis(fontSize, y2Fmt)]
               : responsiveYAxis(fontSize, yFmt)
 
-  // ── Series ──────────────────────────────────────────────────────────
-  //
-  //  Extended data point format: { x, y, fillColor? }
-  //  fillColor is used for:
-  //    - Threshold colors (engine resolved per-point)
-  //    - Waterfall spacer (transparent)
-  //    - Growth bars (green/red per sign)
-  //
-  const apexSeries = series.map((s) => {
-    const data = s.data.map((pt, di) => ({
-      x:         categories[di] ?? di,
-      y:         pt.value,
-      // Only set fillColor when there's a specific override — otherwise
-      // ApexCharts uses the series color from `colors[]`.
-      ...(pt.thresholdColor ? { fillColor: pt.thresholdColor } : {}),
-    }))
-
-    if (isCombo) {
-      return {
-        name:       s.name,
-        type:       s.seriesType ?? 'bar',
-        data,
-        // ApexCharts yAxisIndex: 0 = primary, 1 = secondary
-        ...(hasY2 ? { yAxisIndex: s.yAxis === 'y2' ? 1 : 0 } : {}),
-      }
-    }
-
-    if (isWaterfall && isSpacer(s.name)) {
-      return { name: SPACER, data }
-    }
-
-    return { name: s.name, data }
-  })
-
-  // ── Colors ──────────────────────────────────────────────────────────
-  //  series.map(s => s.color) gives one color per series.
-  //  ApexCharts respects fillColor on individual data points over this.
-  //
-  //  distributed (single-series categorical) mirrors the treemap seam: bars
-  //  cycle the categorical palette SSOT (chartPalette) so each category reads
-  //  by its own hue; per-point `fillColor` (from a semantic DataRow.color) still
-  //  wins where present, so meaning is preserved.
-  //
-  //  seriesColorByIndex (multi-series, no explicit colour) is the color-BY-SERIES
-  //  analogue: each series takes chartColorAt(i) from the SAME SSOT, resolved
-  //  theme-aware here (the neutral format cannot hold a var() — Law 1/4). The
-  //  interpreter set the flag only when NO series carried semantic colour, so
-  //  painting every series by index here never clobbers a meaningful hue.
-  const distributed      = output.distributed === true
-  const colorBySeriesIdx = output.seriesColorByIndex === true
-  const colors = distributed
-      ? chartPalette()
-      : colorBySeriesIdx
-          ? series.map((s, i) => isSpacer(s.name) ? 'transparent' : chartColorAt(i))
-          : series.map((s) => isSpacer(s.name) ? 'transparent' : s.color)
+  const apexSeries = buildSeries(output, ctx)
+  const colors     = buildColors(output)
 
   // ── Y-axis ──────────────────────────────────────────────────────────
   //
