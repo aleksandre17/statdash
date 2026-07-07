@@ -100,7 +100,9 @@ describe('FF-SHARE-NATIONAL-BASE · share TREND type', () => {
     }
     const card = interpretKpi(spec, { dims: { time: 2024 } }, store)
     expect(pct(card.value)).toBeCloseTo(REGION_GVA_2024.R2, 0)          // absolute GEL value
-    expect(card.trend).toBe('flat')                                     // a share has no up/down
+    // A share is a PROPORTION, not a rise/fall — its direction is 'none', so the card
+    // renders NO arrow and NO up/down/flat ("stable") label (the false-trend defect).
+    expect(card.trend).toBe('none')
     expect(pct(card.trendValue ?? '')).toBeCloseTo(53.1, 1)             // its national share
   })
 })

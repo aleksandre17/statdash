@@ -54,9 +54,17 @@ export default function FeaturedCard({ slide, href, labels }: FeaturedCardProps)
       {trend && card.trendValue && (
         <div className="featured-card__trend" data-trend={trend}>
           <span className={`featured-card__trend-badge featured-card__trend-badge--${trend}`}>
-            <span aria-hidden="true">{ARROWS[trend]}</span>
-            <span className="sr-only">{labels.trend[trend]}</span>
-            &nbsp;{card.trendValue}
+            {/* A directionless figure (a share) carries NO glyph and NO up/down/flat
+                label — rendering one would read as a false trend. Directional trends
+                keep the glyph + sr-only direction (WCAG 1.4.1: never colour-only). */}
+            {trend !== 'none' && (
+              <>
+                <span aria-hidden="true">{ARROWS[trend]}</span>
+                <span className="sr-only">{labels.trend[trend]}</span>
+                &nbsp;
+              </>
+            )}
+            {card.trendValue}
           </span>
           {card.trendSub && <span className="featured-card__trend-sub">{card.trendSub}</span>}
         </div>

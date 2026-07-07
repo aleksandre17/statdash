@@ -5,7 +5,8 @@ interface KpiCardProps {
   label:           string
   value:           string
   unit?:           string
-  trend?:          'up' | 'down' | 'flat'
+  /** 'none' = a directionless figure (a share) — rendered with no arrow / no label. */
+  trend?:          'up' | 'down' | 'flat' | 'none'
   trendValue?:     string
   trendSub?:       string
   color?:          string
@@ -67,9 +68,17 @@ export default function KpiCard({
       {trend && trendValue && (
         <div>
           <span className={`kpi-trend kpi-trend-${trend}`}>
-            <span aria-hidden="true">{ARROWS[trend]}</span>
-            <span className="sr-only">{trendLabels[trend]}</span>
-            &nbsp;{trendValue}
+            {/* A directionless figure (a share) carries NO glyph and NO up/down/flat
+                label — rendering one would read as a false trend. Directional trends
+                keep the glyph + sr-only direction (WCAG 1.4.1: never colour-only). */}
+            {trend !== 'none' && (
+              <>
+                <span aria-hidden="true">{ARROWS[trend]}</span>
+                <span className="sr-only">{trendLabels[trend]}</span>
+                {' '}
+              </>
+            )}
+            {trendValue}
           </span>
           {trendSub && <div className="kpi-trend-sub">{trendSub}</div>}
         </div>

@@ -81,14 +81,16 @@ export type KpiTrendSpec =
   // 'share' — a computed ratio × 100 rendered as the trend LINE (num / denom, the
   // SAME ObsRef vocabulary the `share` VALUE uses). Lets a card whose primary value
   // is an absolute level ALSO surface its % of a base (e.g. a region's headline GEL
-  // value + its share of the national total) without a second card. `dir` is always
-  // 'flat' (a share has no up/down direction); formatted as a magnitude percent.
+  // value + its share of the national total) without a second card. Resolves to
+  // dir 'none' — a share is a PROPORTION, not a rise/fall, so the card renders it
+  // with NO direction glyph or up/down/flat label; formatted as a magnitude percent.
   | { type: 'share';  num: ObsRef;     denom: ObsRef }
   // `value` is a USER-FACING caption (e.g. 'stable', 'real'), NOT a computed number —
   // LocaleString (plain string legacy OR { ka, en }), resolved to the active locale AND
   // template-expanded by resolveTrend via resolveTemplate, the SAME boundary label/unit/
-  // trendSub funnel through. A bare string is a degenerate LocaleString (Postel).
-  | { type: 'static'; value: LocaleString; dir: 'up' | 'down' | 'flat' }
+  // trendSub funnel through. A bare string is a degenerate LocaleString (Postel). `dir`
+  // 'none' renders the caption WITHOUT a glyph/direction label (a neutral annotation).
+  | { type: 'static'; value: LocaleString; dir: 'up' | 'down' | 'flat' | 'none' }
 
 export interface KpiSpec {
   id:              string
@@ -101,11 +103,14 @@ export interface KpiSpec {
    */
   label:           LocaleString
   /**
-   * Unit suffix (e.g. 'მლნ ₾', '%'). LocaleString — plain string (legacy) OR
+   * OPTIONAL unit suffix (e.g. 'მლნ ₾', '$'). LocaleString — plain string (legacy) OR
    * { ka, en } bilingual, resolved to the active locale by interpretKpi (the same
    * boundary that resolves `label`), so a raw bag never reaches the KpiCard child.
+   * ABSENT for a self-describing value: a percent-formatted value (`sign_pct`/`pct`,
+   * or a `yoy` value) already carries its own "%", so a unit "%" would double-render
+   * ("+15%%"). Absent ⇒ the card renders VALUE only (KpiCard guards `{unit && …}`).
    */
-  unit:            LocaleString
+  unit?:           LocaleString
   color:           string
   /**
    * OPTIONAL perspective-scoped visibility — the declarative replacement for the

@@ -154,15 +154,17 @@ function resolveTrend(
   spec:  KpiTrendSpec,
   ctx:   SectionContext,
   store: DataStore,
-): { value: string; dir: 'up' | 'down' | 'flat' } {
+): { value: string; dir: 'up' | 'down' | 'flat' | 'none' } {
   // Static caption is an i18n carrier — collapse to the active locale (+ template-expand)
   // at THIS boundary, exactly as interpretKpi resolves label/unit/trendSub, so a raw
   // { ka, en } bag never reaches the KpiCard child.
   if (spec.type === 'static') return { value: resolveTemplate(spec.value, ctx), dir: spec.dir }
   // 'share' — num / denom × 100 as the trend line. Reads each ObsRef at ITS OWN
   // filter/time (the SAME getRef seam the `share` VALUE uses — DRY), so a trend
-  // share and a value share resolve byte-identically. 'flat' dir (a share is a
-  // proportion, not a rise/fall); magnitude percent ('pct') so it reads "53.1%".
+  // share and a value share resolve byte-identically. 'none' dir — a share is a
+  // PROPORTION, not a rise/fall, so the card must render it WITHOUT a direction glyph
+  // or an up/down/flat ("stable") label (that reads as a false trend); magnitude
+  // percent ('pct') so it reads "53.1%".
   if (spec.type === 'share') {
     const getRef = (ref: ObsRef): number => {
       const rc = withFilter(ctx, ref.filter)
@@ -170,7 +172,7 @@ function resolveTrend(
     }
     const n = getRef(spec.num)
     const d = getRef(spec.denom)
-    return { value: getFormatter('pct')(d ? (n / d) * 100 : 0), dir: 'flat' }
+    return { value: getFormatter('pct')(d ? (n / d) * 100 : 0), dir: 'none' }
   }
   const c = withFilter(ctx, spec.filter)
   switch (spec.type) {
@@ -236,7 +238,10 @@ export function interpretKpi(
   return {
     label:           resolveTemplate(spec.label, ctx),
     value:           formattedValue,
-    unit:            resolveTemplate(spec.unit, ctx),
+    // Unit is OPTIONAL — absent for a self-describing (percent) value. Resolve only
+    // when authored; else undefined (KpiCard guards `{unit && …}`), NEVER pass
+    // undefined into resolveTemplate (its carrier collapse would throw).
+    unit:            spec.unit ? resolveTemplate(spec.unit, ctx) : undefined,
     color:           spec.color,
     trend:           trend?.dir ?? 'flat',
     trendValue:      trend?.value ?? '',

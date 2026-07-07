@@ -27,6 +27,10 @@ const FIXTURE: FeaturedSlideDef[] = [
   { card: { label: 'Net lending', value: '-2 836',  unit: 'GEL mn', trend: 'down', trendValue: '-3.2%', trendSub: 'YoY', color: 'var(--color-accent)', methodologyUrl: 'https://ex.org/m' }, href: 'accounts', group: 'National Accounts', order: 2 },
   { card: { label: 'Tbilisi',     value: '49 374',  unit: 'GEL mn', trend: 'flat', trendValue: '', color: 'var(--color-accent)' }, href: 'regional', group: 'Regional', order: 1 },
   { card: { label: 'GDP',         value: '104 598', unit: 'GEL mn', trend: 'flat', trendValue: '', color: 'var(--color-accent)', preliminary: true }, href: 'gdp', group: 'Regional', order: 2 },
+  // A SHARE card — a DIRECTIONLESS figure (dir:'none'): the % of national total as a
+  // neutral annotation. It must render its value + subtext with NO arrow glyph and NO
+  // up/down/flat ("stable") label (the "→ სტაბილური:" false-trend defect).
+  { card: { label: 'Imereti',     value: '7 203',   unit: 'GEL mn', trend: 'none', trendValue: '53.1%', trendSub: 'of the national total', color: 'var(--color-accent)' }, href: 'regional', group: 'Regional', order: 3 },
 ]
 
 vi.mock('@statdash/react', () => ({ useT: () => (k: string) => k }))
@@ -156,6 +160,29 @@ describe('FF-FEATURED-A11Y — no colour-only info + live values + drill', () =>
     renderSlider()
     expect(screen.getByText('-3.2%')).toBeTruthy()
     expect(screen.getByText('trend-down')).toBeTruthy()   // sr-only text (mocked useT → key)
+  })
+
+  it('a SHARE (dir:none) renders its value + subtext with NO glyph and NO direction label', () => {
+    vi.useFakeTimers()
+    renderSlider('en', 0)
+    // Advance to the Regional group where the share (Imereti) card lives.
+    fireEvent.click(screen.getByRole('button', { name: 'next' }))
+    act(() => { vi.advanceTimersByTime(FADE_OUT_MS + 50) })
+    const slide = document.querySelector('[aria-roledescription="slide"]') as HTMLElement
+
+    // The share value + its "of the national total" subtext ARE present…
+    expect(within(slide).getByText('53.1%')).toBeTruthy()
+    expect(within(slide).getByText('of the national total')).toBeTruthy()
+
+    // …but NO up/down/flat direction label is emitted for it (would read as a false
+    // trend — the "→ სტაბილური:" defect). No 'trend-none' key, no 'trend-flat' either.
+    expect(within(slide).queryByText('trend-none')).toBeNull()
+    expect(within(slide).queryByText('trend-flat')).toBeNull()
+
+    // The share badge exists but carries NO arrow glyph (↗ ↘ →).
+    const badge = slide.querySelector('.featured-card__trend-badge--none') as HTMLElement
+    expect(badge).not.toBeNull()
+    expect(badge.textContent ?? '').not.toMatch(/[↗↘→]/)
   })
 
   it('the drill target is a real, locale-prefixed <a href> (crawlable, SEO)', () => {

@@ -167,6 +167,8 @@
 .featured-card__trend-badge--up   { color: var(--color-trend-positive); }
 .featured-card__trend-badge--down { color: var(--color-trend-negative); }
 .featured-card__trend-badge--flat { color: var(--color-text-muted); }
+/* Directionless figure (a share) — a neutral annotation, never a trend colour. */
+.featured-card__trend-badge--none { color: var(--color-text-muted); }
 .featured-card__trend-sub { color: var(--color-text-muted); }
 
 .featured-card__actions {

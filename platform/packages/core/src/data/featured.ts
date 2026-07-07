@@ -143,7 +143,9 @@ export function featuredToKpiSpec(item: FeaturedItemSpec): KpiSpec {
   return {
     id:             `featured:${item.metric}@${JSON.stringify(item.at ?? {})}`,
     label:          item.label ?? metric?.label ?? item.metric,
-    unit:           item.unit  ?? metric?.unit  ?? '',
+    // Unit is OPTIONAL (a percent metric is self-describing) — undefined when neither
+    // the item nor the metric declares one, so no empty "" unit reaches the card.
+    unit:           item.unit  ?? metric?.unit,
     color:          item.color ?? FEATURED_DEFAULT_COLOR,
     value:          { type: 'point', measure: item.metric, time: item.time, filter: item.at, format },
     trend:          item.trend,
