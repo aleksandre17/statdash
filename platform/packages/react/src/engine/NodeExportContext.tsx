@@ -127,12 +127,24 @@ export function useReportPanelExport(
   const id         = nodeId ?? fallbackId
   const empty      = rows.length === 0
 
+  // ── Data refresh — runs EVERY commit (no deps) to keep the published rows/meta
+  //  current. `report` writes the ref (no state) + an IDEMPOTENT presence setIds
+  //  (bails when the id is already present → no re-render). Crucially it carries NO
+  //  cleanup, so an unstable `meta`/`rows` object identity CANNOT churn presence — the
+  //  prior single-effect (with rows/meta in deps + a clearing cleanup) re-ran every
+  //  render and its cleanup toggled `ids`, causing an infinite re-render loop/hang.
+  useEffect(() => {
+    if (collector && visible && !empty) collector.report(id, { rows, meta })
+  })
+
+  // ── Presence teardown — keyed ONLY on presence transitions (not data identity):
+  //  a hidden (view-toggle) / empty panel clears its report, and unmount clears too,
+  //  so the header exports exactly the on-screen, non-empty slice.
   useEffect(() => {
     if (!collector) return
-    if (!visible || empty) { collector.clear(id); return }
-    collector.report(id, { rows, meta })
+    if (!visible || empty) collector.clear(id)
     return () => collector.clear(id)
-  }, [collector, id, visible, empty, rows, meta])
+  }, [collector, id, visible, empty])
 
   return collector !== null
 }
