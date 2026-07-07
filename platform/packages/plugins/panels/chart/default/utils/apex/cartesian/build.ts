@@ -2,33 +2,18 @@
 
 import type { ApexOptions } from 'apexcharts'
 import type { ChartOutput } from '@statdash/charts'
-import { BASE, yFormatter, responsiveYAxis, collectFormatted, scaledPx, verticalBarFillPct, horizontalBarFillPct, hbarValueAxisMax, BP_MD, BP_SM, BP_XS } from '../base'
+import { BASE, yFormatter, responsiveYAxis, BP_MD, BP_SM, BP_XS } from '../base'
 import { cssVar, chartPalette, chartColorAt } from '@statdash/styles'
+import { deriveContext } from './context'
 
 export function buildCartesian(output: ChartOutput, fontFamily?: string, locale?: string): ApexOptions {
   const { type, series, categories, axes, stacked, horizontal } = output
-  const formatted = collectFormatted(series)
-  const FS_XS = scaledPx(0.60, 9,  11)
-  const FS_SM = scaledPx(0.70, 10, 12)
-  const FS_MD = scaledPx(0.80, 11, 12)
-  const isWaterfall   = type === 'waterfall'
-  const isCombo       = type === 'combo'
-  const hasY2         = !!axes.y2
-  const isStackedArea = type === 'area' && stacked
-
-  // Axis hiding (declarative axes.{x,y}.hidden). ChartOutput axes are SEMANTIC:
-  // axes.y = VALUE axis, axes.x = CATEGORY axis. ApexCharts swaps them visually for
-  // a horizontal bar, so map each semantic-hidden flag to the right APEX axis by
-  // orientation. A hidden axis drops scale/ticks/border/labels + gridlines; per-bar
-  // data labels are independent (AR-2 R6: hide the value scale, keep the labels).
-  const apexXHidden = horizontal ? axes.y.hidden === true : axes.x.hidden === true
-  const apexYHidden = horizontal ? axes.x.hidden === true : axes.y.hidden === true
-
-  // Value-axis formatters — hoisted so the responsive overrides below can
-  // re-carry them (ApexCharts rebuilds yaxis from defaults on responsive
-  // merge, dropping any formatter not re-supplied — see responsiveYAxis).
-  const yFmt  = yFormatter(axes.y.unit,  axes.y.decimals,  locale)
-  const y2Fmt = yFormatter(axes.y2?.unit, axes.y2?.decimals, locale)
+  const {
+    formatted, FS_XS, FS_SM, FS_MD,
+    isWaterfall, isCombo, hasY2, isStackedArea,
+    apexXHidden, apexYHidden,
+    yFmt, y2Fmt, yMax, barFill, apexType, showDataLabels, hbarValueMax,
+  } = deriveContext(output, locale)
 
   // Responsive numeric-y-axis font override that keeps the formatter alive.
   // hbar's left axis is categorical (no numeric formatter), so it keeps the
@@ -43,13 +28,6 @@ export function buildCartesian(output: ChartOutput, fontFamily?: string, locale?
           : hasY2
               ? [responsiveYAxis(fontSize, yFmt), responsiveYAxis(fontSize, y2Fmt)]
               : responsiveYAxis(fontSize, yFmt)
-
-  const stackedMax = isStackedArea && categories.length > 0
-      ? Math.max(...categories.map((_, i) =>
-          series.reduce((sum, s) => sum + (s.data[i]?.value ?? 0), 0)
-      ))
-      : null
-  const yMax = stackedMax ?? undefined
 
   // ── Series ──────────────────────────────────────────────────────────
   //
@@ -147,33 +125,6 @@ export function buildCartesian(output: ChartOutput, fontFamily?: string, locale?
         },
       ]
       : yAxisBase
-
-  // ── Bar sizing ───────────────────────────────────────────────────────
-  //  ApexCharts sizes a bar as a % of its per-category slot (barHeight for
-  //  horizontal, columnWidth for vertical). The fill % is derived from an
-  //  ABSOLUTE thickness cap (see base.ts): a solo/2-bar chart reads as a focus
-  //  bar of sane thickness with whitespace, never a fat stripe; many bars still
-  //  fill their slots up to a gap-preserving ceiling. Horizontal caps against the
-  //  exact owned height; vertical against the estimated plot width (Law 1/4).
-  const barFill = `${horizontal ? horizontalBarFillPct(output) : verticalBarFillPct(categories.length)}%`
-
-  // ── Chart type ───────────────────────────────────────────────────────
-  //  combo → 'line' as the "host" type (ApexCharts mixes via per-series type)
-  //  waterfall → 'bar' + stacked
-  //  hbar-diverging → 'bar' + horizontal (no data labels — too crowded)
-  const apexType = isCombo
-      ? 'line'
-      : (type === 'bar' || type === 'hbar' || type === 'hbar-diverging' || type === 'waterfall') ? 'bar' : type as ApexChart['type']
-
-  // ── Data labels ──────────────────────────────────────────────────────
-  //  Enabled for bar/hbar/waterfall. Disabled for line/combo and hbar-diverging.
-  const showDataLabels = output.dataLabels !== undefined
-    ? output.dataLabels
-    : (type === 'bar' || type === 'hbar' || type === 'waterfall') && !stacked
-
-  // hbar value-axis headroom for out-of-bar end-labels when the value SCALE is
-  // hidden (R6) — root cause + rule live in hbarValueAxisMax (base.ts).
-  const hbarValueMax = hbarValueAxisMax(horizontal, apexXHidden, showDataLabels, axes.y.max, series)
 
   return {
     ...BASE,
