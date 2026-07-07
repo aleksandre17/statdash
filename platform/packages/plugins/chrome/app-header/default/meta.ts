@@ -22,8 +22,17 @@ export interface SocialLinkDef {
 //
 //  Injected by ChromeRegion for slot="AppHeader" from the manifest's
 //  chrome["AppHeader"].config. Absent ⇒ the shell omits the social row.
+//
+//  `showNav` gates the primary top-nav row (the same useSiteNav() SSOT the
+//  inner sidebar also consumes). It defaults to `true` (expand/contract —
+//  existing configs keep their nav); a tenant that surfaces the site nav
+//  ONLY in the sidebar / hero cards sets `showNav: false` to suppress the
+//  redundant header duplicate WITHOUT emptying the shared nav SSOT (which
+//  would also strip the sidebar). Declarative per-tenant, no render-code
+//  deletion — other tenants keep the header nav.
 export interface AppHeaderConfig {
   socialLinks?: SocialLinkDef[]
+  showNav?:     boolean
 }
 
 // ── AppHeaderSchema — Constructor/Inspector property descriptors ────────
@@ -32,6 +41,11 @@ export const AppHeaderSchema: PropSchema = [
     field: 'socialLinks',
     type:  'array',
     label: { ka: 'სოციალური ბმულები', en: 'Social Links' },
+  },
+  {
+    field: 'showNav',
+    type:  'boolean',
+    label: { ka: 'ზედა ნავიგაციის ჩვენება', en: 'Show top navigation' },
   },
 ]
 

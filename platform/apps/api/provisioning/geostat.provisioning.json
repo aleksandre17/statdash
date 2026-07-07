@@ -4875,6 +4875,7 @@
         "AppHeader": {
           "variant": "default",
           "config": {
+            "showNav": false,
             "socialLinks": [
               {
                 "fill": false,

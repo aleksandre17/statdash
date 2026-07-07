@@ -34,6 +34,14 @@ export function AppHeaderShell({ surface = 'opaque' }: { surface?: HeaderSurface
   //  lives in this shared shell (Law 4) — the neutral state is the empty brand slot.
   const hasBrand = Boolean(config.logoUrl && config.logoAlt)
 
+  // ── Primary top-nav gate ───────────────────────────────────────────────
+  //  Render the nav ONLY when the tenant opts in (default) AND the shared site
+  //  nav is non-empty. `showNav === false` suppresses the header's duplicate of
+  //  the useSiteNav() SSOT (still surfaced by the inner sidebar + hero cards)
+  //  WITHOUT emptying that SSOT. The <nav> element is omitted entirely — with
+  //  `space-between`, brand → left / actions → right, leaving no empty flex gap.
+  const showNav = slot.showNav !== false && nav.length > 0
+
   return (
     <header className={HEADER.block} {...(surface !== 'opaque' && { [HEADER.surfaceAttr]: surface })}>
       <div className={HEADER.inner}>
@@ -43,17 +51,19 @@ export function AppHeaderShell({ surface = 'opaque' }: { surface?: HeaderSurface
           </Link>
         )}
 
-        <nav className={HEADER.nav} aria-label={tc('nav-label')}>
-          {nav.map(item => (
-            <Link
-              key={item.path}
-              to={`/${locale}${item.path}`}
-              className={HEADER.navLink}
-            >
-              {t(item.label)}
-            </Link>
-          ))}
-        </nav>
+        {showNav && (
+          <nav className={HEADER.nav} aria-label={tc('nav-label')}>
+            {nav.map(item => (
+              <Link
+                key={item.path}
+                to={`/${locale}${item.path}`}
+                className={HEADER.navLink}
+              >
+                {t(item.label)}
+              </Link>
+            ))}
+          </nav>
+        )}
 
         <div className={HEADER.actions}>
           {slot.socialLinks && slot.socialLinks.length > 0 && (
