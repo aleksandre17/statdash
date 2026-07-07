@@ -14,6 +14,20 @@ import { describe, it, expect, vi } from 'vitest'
 import { render, screen, fireEvent, within } from '@testing-library/react'
 import { ExportMenu }        from './ExportMenu'
 import { SiteProvider }      from '../../context/SiteContext'
+
+// The feedback catalog (export.toolbar / export.download) is loaded at runtime via
+// the manifest i18n catalog, not by SiteProvider — so in this unit `useT('feedback')`
+// would return empty and the trigger would have no accessible name. Mock useT to
+// echo the key (+ fmt) so the aria-label + menuitem labels are non-empty, exactly
+// as the loaded catalog guarantees in prod. (SiteProvider itself is kept.)
+vi.mock('../../context/SiteContext', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../context/SiteContext')>()
+  return {
+    ...actual,
+    useT: () => (key: string, vars?: Record<string, unknown>) =>
+      vars && 'fmt' in vars ? `${key} ${String(vars.fmt)}` : key,
+  }
+})
 import { listExportFormats } from '@statdash/engine'
 import type { DataRow }      from '@statdash/engine'
 // Side-effect: ensure built-in formats (csv, xlsx, sdmx-json) are registered.
