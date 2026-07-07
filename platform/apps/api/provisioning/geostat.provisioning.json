@@ -2647,7 +2647,10 @@
           {
             "items": [
               {
-                "href": "https://www.geostat.ge/media/29303/Mtliani-shida-produqtis-metodologia.pdf",
+                "href": {
+                  "ka": "https://www.geostat.ge/ka/modules/categories/119/methodologia-erovnuli-angarishebi",
+                  "en": "https://www.geostat.ge/en/modules/categories/119/national-accounts"
+                },
                 "icon": "doc",
                 "label": {
                   "ka": "მეთოდოლოგიური განმარტებები",
