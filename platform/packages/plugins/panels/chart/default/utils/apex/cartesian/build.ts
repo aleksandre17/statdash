@@ -3,22 +3,21 @@
 import type { ApexOptions } from 'apexcharts'
 import type { ChartOutput } from '@statdash/charts'
 import { BASE, responsiveYAxis, BP_MD, BP_SM, BP_XS } from '../base'
-import { cssVar } from '@statdash/styles'
 import { deriveContext } from './context'
 import { buildSeries } from './series'
 import { buildColors } from './colors'
 import { buildValueAxis, buildCategoryAxis } from './axes'
 import { buildBarPlotOptions, buildMarks, strokeWidth } from './marks'
 import { buildDataLabels } from './data-labels'
+import { buildGrid, gridPadding } from './grid'
+import { buildLegend, buildTooltip, buildAnnotations } from './chrome'
 
 export function buildCartesian(output: ChartOutput, fontFamily?: string, locale?: string): ApexOptions {
   const { stacked, horizontal } = output
   const ctx = deriveContext(output, locale)
   const {
-    formatted, FS_MD,
-    isWaterfall, hasY2, isStackedArea,
-    apexXHidden, apexYHidden,
-    yFmt, y2Fmt, yMax, apexType, showDataLabels,
+    hasY2, apexYHidden,
+    yFmt, y2Fmt, apexType, showDataLabels,
     forcesStacked,
   } = ctx
 
@@ -49,23 +48,7 @@ export function buildCartesian(output: ChartOutput, fontFamily?: string, locale?
       stacked:    stacked || forcesStacked,
       fontFamily: fontFamily ?? 'system-ui, sans-serif',
     },
-    grid: {
-      ...BASE.grid,
-      // A hidden axis takes its gridlines with it (only that axis's lines are
-      // overridden — the visible axis keeps its ApexCharts default so a vertical
-      // chart's horizontal grid, or an hbar's vertical grid, is untouched).
-      ...(apexXHidden ? { xaxis: { lines: { show: false } } } : {}),
-      ...(apexYHidden ? { yaxis: { lines: { show: false } } } : {}),
-      // Top padding keeps above-bar data labels + line markers inside the chart
-      // bounds (baseline 6px). Horizontal bars place their value label OUTSIDE the
-      // bar end (position:'top' + offsetX) — right whitespace + the hbarValueMax
-      // scale headroom keep the longest end-label inside the SVG (F10/F13 clip).
-      padding: {
-        left:  4,
-        right: horizontal ? (showDataLabels ? 44 : 8) : 20,
-        top:   isStackedArea ? 40 : (showDataLabels && !horizontal ? 24 : 6),
-      },
-    },
+    grid:    buildGrid(output, ctx),
     series:  apexSeries,
     colors,
     xaxis: buildCategoryAxis(output, ctx),
@@ -73,38 +56,9 @@ export function buildCartesian(output: ChartOutput, fontFamily?: string, locale?
     plotOptions: buildBarPlotOptions(output, ctx),
     dataLabels:  buildDataLabels(output, ctx),
     ...buildMarks(output, ctx),
-    legend: {
-      show:     output.legend.show,
-      position: output.legend.position ?? 'bottom',
-      fontFamily: fontFamily ?? 'system-ui, sans-serif',
-      fontSize:   FS_MD,
-      labels:     { colors: cssVar('--color-text-secondary', '#4A5568') },
-      markers:    { size: 6 },
-      itemMargin: { horizontal: 12 },
-    },
-    tooltip: {
-      ...BASE.tooltip,
-      enabled:   output.tooltip.show,
-      // hbar: shared=true groups by x-position (value axis) → all bars show same name.
-      // Use shared=false + intersect=true so each bar shows its own category label.
-      // waterfall: shared=false too (spacer series would appear in grouped tooltip).
-      // output.tooltip.shared overrides the type-default when explicitly set.
-      shared:    output.tooltip.shared ?? (!horizontal && !isWaterfall),
-      intersect: horizontal,
-      y: {
-        formatter: (_val, opts) =>
-            formatted[opts.seriesIndex]?.[opts.dataPointIndex] ?? String(_val),
-      },
-    },
-    annotations: yMax != null ? {
-      yaxis: [{
-        y:               yMax,
-        strokeDashArray: 4,
-        borderColor:     cssVar('--color-text-faint', '#94A3B8'),
-        borderWidth:     1.5,
-        label:           { text: '' },
-      }],
-    } : {},
+    legend:      buildLegend(output, ctx, fontFamily),
+    tooltip:     buildTooltip(output, ctx),
+    annotations: buildAnnotations(ctx),
     // ── Responsive overrides ─────────────────────────────────────────
     //
     //  Pixel-valued options that can't use clamp() shrink in lockstep
@@ -123,13 +77,7 @@ export function buildCartesian(output: ChartOutput, fontFamily?: string, locale?
           xaxis:  { labels: { style: { fontSize: '10px' } } },
           yaxis:  yaxisFont('10px'),
           legend: { fontSize: '10px', itemMargin: { horizontal: 8 } },
-          grid: {
-            padding: {
-              left:  4,
-              right: horizontal ? (showDataLabels ? 40 : 4) : 14,
-              top:   isStackedArea ? 30 : (showDataLabels && !horizontal ? 18 : 5),
-            },
-          },
+          grid:   { padding: gridPadding(output, ctx, 'md') },
         },
       },
       {
@@ -146,13 +94,7 @@ export function buildCartesian(output: ChartOutput, fontFamily?: string, locale?
           xaxis:  horizontal ? {} : { labels: { maxHeight: 70, style: { fontSize: '9px' } } },
           yaxis:  yaxisFont('9px'),
           legend: { fontSize: '10px', itemMargin: { horizontal: 6 } },
-          grid: {
-            padding: {
-              left:  2,
-              right: horizontal ? (showDataLabels ? 34 : 2) : 10,
-              top:   isStackedArea ? 22 : (showDataLabels && !horizontal ? 14 : 4),
-            },
-          },
+          grid:   { padding: gridPadding(output, ctx, 'sm') },
         },
       },
       {
@@ -165,13 +107,7 @@ export function buildCartesian(output: ChartOutput, fontFamily?: string, locale?
           markers:     { size: 0 },
           dataLabels: { enabled: false },
           legend:     { itemMargin: { horizontal: 4 } },
-          grid: {
-            padding: {
-              left:  0,
-              right: horizontal ? 0 : 6,
-              top:   isStackedArea ? 16 : 4,
-            },
-          },
+          grid:       { padding: gridPadding(output, ctx, 'xs') },
           xaxis: horizontal
               ? {}
               : { labels: { rotate: -90, maxHeight: 60 } },
