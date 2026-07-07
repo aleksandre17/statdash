@@ -12,7 +12,14 @@ export type LinkIconKey = 'doc' | 'info' | 'ext'
 
 /** One methodology / reference link. */
 export interface LinkDef {
-  href:  string
+  /**
+   * Target URL. LocaleString — a plain string (single-locale, the common case) OR
+   * a `{ ka, en }` bilingual map when the RESOURCE itself is locale-specific (e.g. a
+   * methodology page served at a different path per language). Resolved to the active
+   * locale by the LinksShell via resolveLocaleString (a plain string passes through
+   * untouched — Postel), the same boundary that resolves `label`.
+   */
+  href:  LocaleString
   label: LocaleString
   icon:  LinkIconKey
 }

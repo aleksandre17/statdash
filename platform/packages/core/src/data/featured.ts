@@ -136,6 +136,27 @@ const FEATURED_DEFAULT_COLOR = 'var(--color-accent)'
  * resolveMeasureRef expands it to the underlying code(s) at render time (U1); the
  * coordinate (`filter: item.at`, `time: item.time`) pins the headline slice.
  */
+/**
+ * Pin a featured item's TREND to the item's `time` when the trend omits its own.
+ *
+ * A featured item is a headline pinned at `item.time`; its VALUE and its TREND
+ * should both read at that period unless the trend overrides it. featuredToKpiSpec
+ * threads `item.time` into the value spec — but the trend was passed through raw,
+ * so a `yoy` trend with NO explicit `time` fell back to `ctx.dims[TIME_DIM]`, which
+ * on the landing slider is unpinned ⇒ cur/prev both read the empty coordinate ⇒ a
+ * stuck "→ 0%" (the AR-2 R2 bug). Only the single-period `yoy` carries one `time`;
+ * `cagr`/`share`/`static` pin their own coordinates (from/to, num/denom, none), so
+ * they pass through UNCHANGED — the interface stays stable (Law 8, OCP).
+ */
+function pinTrendTime(
+  trend: KpiTrendSpec | undefined,
+  time:  TimeRef | undefined,
+): KpiTrendSpec | undefined {
+  if (!trend || time === undefined)                     return trend
+  if (trend.type === 'yoy' && trend.time === undefined) return { ...trend, time }
+  return trend
+}
+
 export function featuredToKpiSpec(item: FeaturedItemSpec): KpiSpec {
   const metric = getMetric(item.metric)
   const rm     = resolveMeasureRef(item.metric)
@@ -148,7 +169,7 @@ export function featuredToKpiSpec(item: FeaturedItemSpec): KpiSpec {
     unit:           item.unit  ?? metric?.unit,
     color:          item.color ?? FEATURED_DEFAULT_COLOR,
     value:          { type: 'point', measure: item.metric, time: item.time, filter: item.at, format },
-    trend:          item.trend,
+    trend:          pinTrendTime(item.trend, item.time),
     trendSub:       item.trendSub,
     // methodology surfaces the metric's governed methodology (Law 9) when known;
     // NEVER fabricated — absent on the metric ⇒ no info-affordance on the card.

@@ -35,6 +35,7 @@ export function buildAxes(def: ChartDef): ChartOutput['axes'] {
     decimals: def.axes?.y?.decimals ?? fc?.decimals,
     min:      def.axes?.y?.min      ?? fc?.min,
     max:      def.axes?.y?.max      ?? fc?.max,
+    hidden:   def.axes?.y?.hidden,
   }
   const y2 = def.axes?.y2 ? { ...def.axes.y2 } : undefined
   return { x, y, y2 }

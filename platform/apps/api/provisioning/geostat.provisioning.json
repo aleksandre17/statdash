@@ -549,8 +549,8 @@
                       }
                     },
                     "label": {
-                      "ka": "ანგარიშების სრული ჯაჭვი · მლნ ₾",
-                      "en": "Full sequence of accounts · GEL mn"
+                      "ka": "ანგარიშების სრული ჯაჭვი, მლნ ლარი",
+                      "en": "Full sequence of accounts, GEL mn"
                     },
                     "type": "chart",
                     "view": {
@@ -768,8 +768,8 @@
                     "height": "16:9"
                   },
                   "subtitle": {
-                    "ka": "{time} · მლნ ₾",
-                    "en": "{time} · GEL mn"
+                    "ka": "{time} წელი, მლნ ლარი",
+                    "en": "{time}, GEL mn"
                   }
                 }
               }
@@ -963,8 +963,8 @@
                     "height": "16:9"
                   },
                   "subtitle": {
-                    "ka": "2020–2025 · მლნ ₾",
-                    "en": "2020–2025 · GEL mn"
+                    "ka": "2020–2025 წლები, მლნ ლარი",
+                    "en": "2020–2025, GEL mn"
                   }
                 }
               }
@@ -973,7 +973,10 @@
           {
             "items": [
               {
-                "href": "https://www.geostat.ge/media/48809/metodologiuri-ganmartebebi.pdf",
+                "href": {
+                  "ka": "https://www.geostat.ge/ka/modules/categories/119/methodologia-erovnuli-angarishebi",
+                  "en": "https://www.geostat.ge/en/modules/categories/119/national-accounts"
+                },
                 "icon": "doc",
                 "label": {
                   "ka": "მეთოდოლოგიური განმარტებები",
@@ -1234,8 +1237,8 @@
           {
             "badge": {
               "range": {
-                "ka": "{fromYear}–{toYear} · მლნ ₾",
-                "en": "{fromYear}–{toYear} · GEL mn"
+                "ka": "{fromYear}–{toYear} წლები, მლნ ლარი",
+                "en": "{fromYear}–{toYear}, GEL mn"
               },
               "year": {
                 "ka": "განახლდა: {time}",
@@ -1757,8 +1760,8 @@
                 },
                 "view": {
                   "subtitle": {
-                    "ka": "{time} · მლნ ₾",
-                    "en": "{time} · GEL mn"
+                    "ka": "{time} წელი, მლნ ლარი",
+                    "en": "{time}, GEL mn"
                   }
                 },
                 "data": {
@@ -1914,8 +1917,8 @@
                 },
                 "view": {
                   "subtitle": {
-                    "ka": "{fromYear}–{toYear} · მლნ ₾",
-                    "en": "{fromYear}–{toYear} · GEL mn"
+                    "ka": "{fromYear}–{toYear} წლები, მლნ ლარი",
+                    "en": "{fromYear}–{toYear}, GEL mn"
                   },
                   "styles": {
                     "height": "16:9"
@@ -2148,8 +2151,8 @@
                 },
                 "view": {
                   "subtitle": {
-                    "ka": "{time} · მლნ ₾",
-                    "en": "{time} · GEL mn"
+                    "ka": "{time} წელი, მლნ ლარი",
+                    "en": "{time}, GEL mn"
                   }
                 },
                 "data": {
@@ -2936,6 +2939,10 @@
                     "geo": "GE",
                     "approach": "_Z"
                   }
+                },
+                "trendSub": {
+                  "ka": "წინა წელთან",
+                  "en": "vs previous year"
                 }
               },
               {
@@ -2972,6 +2979,10 @@
                     "geo": "GE",
                     "approach": "_Z"
                   }
+                },
+                "trendSub": {
+                  "ka": "წინა წელთან",
+                  "en": "vs previous year"
                 }
               },
               {
@@ -3000,7 +3011,19 @@
                   "en": "National Accounts"
                 },
                 "href": "accounts",
-                "order": 5
+                "order": 5,
+                "trend": {
+                  "type": "yoy",
+                  "measure": "accounts.gni",
+                  "filter": {
+                    "account": "allocation-of-primary-income-account",
+                    "side": "U"
+                  }
+                },
+                "trendSub": {
+                  "ka": "წინა წელთან",
+                  "en": "vs previous year"
+                }
               },
               {
                 "metric": "accounts.disposableIncome",
@@ -3014,7 +3037,19 @@
                   "en": "National Accounts"
                 },
                 "href": "accounts",
-                "order": 6
+                "order": 6,
+                "trend": {
+                  "type": "yoy",
+                  "measure": "accounts.disposableIncome",
+                  "filter": {
+                    "account": "secondary-distribution-of-income-account",
+                    "side": "U"
+                  }
+                },
+                "trendSub": {
+                  "ka": "წინა წელთან",
+                  "en": "vs previous year"
+                }
               },
               {
                 "metric": "accounts.savings",
@@ -3028,7 +3063,19 @@
                   "en": "National Accounts"
                 },
                 "href": "accounts",
-                "order": 7
+                "order": 7,
+                "trend": {
+                  "type": "yoy",
+                  "measure": "accounts.savings",
+                  "filter": {
+                    "account": "use-of-disposable-income-account",
+                    "side": "U"
+                  }
+                },
+                "trendSub": {
+                  "ka": "წინა წელთან",
+                  "en": "vs previous year"
+                }
               },
               {
                 "metric": "accounts.netLending",
@@ -3042,7 +3089,19 @@
                   "en": "National Accounts"
                 },
                 "href": "accounts",
-                "order": 8
+                "order": 8,
+                "trend": {
+                  "type": "yoy",
+                  "measure": "accounts.netLending",
+                  "filter": {
+                    "account": "capital-account",
+                    "side": "U"
+                  }
+                },
+                "trendSub": {
+                  "ka": "წინა წელთან",
+                  "en": "vs previous year"
+                }
               },
               {
                 "metric": "regional.gva",
@@ -3075,8 +3134,8 @@
                   }
                 },
                 "trendSub": {
-                  "ka": "ეროვნული ჯამის წილი",
-                  "en": "of the national total"
+                  "ka": "წილი მთლიან მშპ-ში",
+                  "en": "Share in total GDP"
                 }
               },
               {
@@ -3110,8 +3169,8 @@
                   }
                 },
                 "trendSub": {
-                  "ka": "ეროვნული ჯამის წილი",
-                  "en": "of the national total"
+                  "ka": "წილი მთლიან მშპ-ში",
+                  "en": "Share in total GDP"
                 }
               },
               {
@@ -3145,8 +3204,8 @@
                   }
                 },
                 "trendSub": {
-                  "ka": "ეროვნული ჯამის წილი",
-                  "en": "of the national total"
+                  "ka": "წილი მთლიან მშპ-ში",
+                  "en": "Share in total GDP"
                 }
               },
               {
@@ -3180,8 +3239,8 @@
                   }
                 },
                 "trendSub": {
-                  "ka": "ეროვნული ჯამის წილი",
-                  "en": "of the national total"
+                  "ka": "წილი მთლიან მშპ-ში",
+                  "en": "Share in total GDP"
                 }
               }
             ]
@@ -3205,8 +3264,8 @@
           {
             "badge": {
               "range": {
-                "ka": "{fromYear}–{toYear} · მლნ ₾",
-                "en": "{fromYear}–{toYear} · GEL mn"
+                "ka": "{fromYear}–{toYear} წლები, მლნ ლარი",
+                "en": "{fromYear}–{toYear}, GEL mn"
               },
               "year": {
                 "ka": "განახლდა: {time}",
@@ -3845,8 +3904,8 @@
                     "height": "16:9"
                   },
                   "subtitle": {
-                    "ka": "{time} · მლნ ₾",
-                    "en": "{time} · GEL mn"
+                    "ka": "{time} წელი, მლნ ლარი",
+                    "en": "{time}, GEL mn"
                   }
                 }
               }
@@ -3875,6 +3934,11 @@
                   {
                     "chartType": "hbar",
                     "distributed": true,
+                    "axes": {
+                      "y": {
+                        "hidden": true
+                      }
+                    },
                     "dataLinks": [
                       {
                         "page": "/regional",
@@ -4032,8 +4096,8 @@
                 "type": "section",
                 "view": {
                   "subtitle": {
-                    "ka": "{time} · მლნ ₾",
-                    "en": "{time} · GEL mn"
+                    "ka": "{time} წელი, მლნ ლარი",
+                    "en": "{time}, GEL mn"
                   }
                 }
               }
@@ -4297,8 +4361,8 @@
                     "height": "16:9"
                   },
                   "subtitle": {
-                    "ka": "{fromYear}–{toYear} · მლნ ₾",
-                    "en": "{fromYear}–{toYear} · GEL mn"
+                    "ka": "{fromYear}–{toYear} წლები, მლნ ლარი",
+                    "en": "{fromYear}–{toYear}, GEL mn"
                   }
                 }
               }
@@ -4439,8 +4503,8 @@
                     "height": "16:9"
                   },
                   "subtitle": {
-                    "ka": "{fromYear}–{toYear} · მლნ ₾",
-                    "en": "{fromYear}–{toYear} · GEL mn"
+                    "ka": "{fromYear}–{toYear} წლები, მლნ ლარი",
+                    "en": "{fromYear}–{toYear}, GEL mn"
                   }
                 }
               }

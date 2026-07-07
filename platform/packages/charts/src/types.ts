@@ -183,6 +183,8 @@ export interface AxisOutput {
   readonly decimals?:    number
   readonly min?:         number
   readonly max?:         number
+  /** Hide this axis (scale/ticks/labels/gridlines) in the render layer. */
+  readonly hidden?:      boolean
 }
 
 export interface LegendOutput {
