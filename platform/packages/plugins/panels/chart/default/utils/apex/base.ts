@@ -71,6 +71,14 @@ function parseRgb(color: string): [number, number, number] | null {
 export const BASE: ApexOptions = {
   chart: {
     toolbar:    { show: false },
+    // Apex ships its OWN internal ResizeObserver-driven "redraw on parent resize"
+    // (default true), debounced via a bare setTimeout its destroy() never clears —
+    // so a hide-then-unmount within that window fires a redraw into a torn-down
+    // chart (the getComputedStyle-on-teardown pageerror; complements the synchronous
+    // unmount gate in ApexRenderer). We drive our own resize (HBarDiverging owns its
+    // React-state redraw), so disable Apex's internal one outright — one source of
+    // truth. redrawOnWindowResize (genuine browser resize) is untouched. [AR: apex-2root]
+    redrawOnParentResize: false,
     fontFamily: 'system-ui, sans-serif',
     // Apex's single fallback ink for every axis/tick/legend/label a builder
     // doesn't override. A getter re-reads the token at spread (render) time, so
