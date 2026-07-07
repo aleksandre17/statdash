@@ -5,6 +5,7 @@ import type { ChartOutput } from '@statdash/charts'
 import { BASE, yFormatter, responsiveYAxis, BP_MD, BP_SM, BP_XS } from '../base'
 import { cssVar, chartPalette, chartColorAt } from '@statdash/styles'
 import { deriveContext } from './context'
+import { isSpacer, SPACER } from './families'
 
 export function buildCartesian(output: ChartOutput, fontFamily?: string, locale?: string): ApexOptions {
   const { type, series, categories, axes, stacked, horizontal } = output
@@ -13,6 +14,7 @@ export function buildCartesian(output: ChartOutput, fontFamily?: string, locale?
     isWaterfall, isCombo, hasY2, isStackedArea,
     apexXHidden, apexYHidden,
     yFmt, y2Fmt, yMax, barFill, apexType, showDataLabels, hbarValueMax,
+    forcesStacked,
   } = deriveContext(output, locale)
 
   // Responsive numeric-y-axis font override that keeps the formatter alive.
@@ -56,8 +58,8 @@ export function buildCartesian(output: ChartOutput, fontFamily?: string, locale?
       }
     }
 
-    if (isWaterfall && s.name === '__spacer__') {
-      return { name: '__spacer__', data }
+    if (isWaterfall && isSpacer(s.name)) {
+      return { name: SPACER, data }
     }
 
     return { name: s.name, data }
@@ -82,8 +84,8 @@ export function buildCartesian(output: ChartOutput, fontFamily?: string, locale?
   const colors = distributed
       ? chartPalette()
       : colorBySeriesIdx
-          ? series.map((s, i) => s.name === '__spacer__' ? 'transparent' : chartColorAt(i))
-          : series.map((s) => s.name === '__spacer__' ? 'transparent' : s.color)
+          ? series.map((s, i) => isSpacer(s.name) ? 'transparent' : chartColorAt(i))
+          : series.map((s) => isSpacer(s.name) ? 'transparent' : s.color)
 
   // ── Y-axis ──────────────────────────────────────────────────────────
   //
@@ -132,7 +134,7 @@ export function buildCartesian(output: ChartOutput, fontFamily?: string, locale?
       ...BASE.chart,
       type:       apexType,
       height:     '100%',
-      stacked:    stacked || isWaterfall,
+      stacked:    stacked || forcesStacked,
       fontFamily: fontFamily ?? 'system-ui, sans-serif',
     },
     grid: {
@@ -204,13 +206,13 @@ export function buildCartesian(output: ChartOutput, fontFamily?: string, locale?
         fontWeight: 600,
         colors:    isWaterfall
             // waterfall: only label the visible series
-            ? series.map((s) => s.name === '__spacer__' ? 'transparent' : cssVar('--color-text-secondary', '#2D3748'))
+            ? series.map((s) => isSpacer(s.name) ? 'transparent' : cssVar('--color-text-secondary', '#2D3748'))
             : horizontal ? [cssVar('--color-text-secondary', '#2D3748')] : [cssVar('--color-text-muted', '#6B7B8D')],
       },
       dropShadow: { enabled: false },
     },
     fill: isWaterfall
-        ? { opacity: series.map((s) => s.name === '__spacer__' ? 0 : 1) }
+        ? { opacity: series.map((s) => isSpacer(s.name) ? 0 : 1) }
         : type === 'area' && stacked
             ? { opacity: 0.88 }
             : type === 'area'

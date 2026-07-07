@@ -12,8 +12,12 @@
 
 import type { ChartOutput } from '@statdash/charts'
 import { yFormatter, collectFormatted, scaledPx, verticalBarFillPct, horizontalBarFillPct, hbarValueAxisMax } from '../base'
+import { FAMILY_TRAITS, familyOf } from './families'
+import type { CartesianFamily, FillMode, StrokeMode, SeriesMode } from './families'
 
 export interface CartesianContext {
+  /** Resolved cartesian family (bar/hbar/line/area/waterfall/combo). */
+  readonly family:        CartesianFamily
   /** Per-series pre-formatted label strings, keyed [seriesIndex][pointIndex]. */
   readonly formatted:     string[][]
   /** Responsive font-size clamps (px strings) for the XS / SM / MD tiers. */
@@ -40,6 +44,15 @@ export interface CartesianContext {
   readonly showDataLabels: boolean
   /** hbar value-axis headroom max for out-of-bar end-labels (undefined ⇒ auto). */
   readonly hbarValueMax:  number | undefined
+  // ── Resolved render discriminants (trait × runtime `stacked`) ──────────
+  //  Slices switch on THESE, never on `type === 'waterfall'`.
+  readonly seriesMode:    SeriesMode
+  readonly fillMode:      FillMode
+  readonly strokeMode:    StrokeMode
+  /** Whether point markers draw (line always; area only while unstacked). */
+  readonly showMarkers:   boolean
+  /** Family that is always stacked regardless of authored `stacked` (waterfall). */
+  readonly forcesStacked: boolean
 }
 
 /**
@@ -51,6 +64,9 @@ export interface CartesianContext {
  */
 export function deriveContext(output: ChartOutput, locale?: string): CartesianContext {
   const { type, series, categories, axes, stacked, horizontal } = output
+
+  const family = familyOf(type)
+  const traits = FAMILY_TRAITS[family]
 
   const isWaterfall   = type === 'waterfall'
   const isCombo       = type === 'combo'
@@ -83,23 +99,26 @@ export function deriveContext(output: ChartOutput, locale?: string): CartesianCo
   // the estimated plot width (Law 1/4).
   const barFill = `${horizontal ? horizontalBarFillPct(output) : verticalBarFillPct(categories.length)}%`
 
-  // Chart type: combo → 'line' host (Apex mixes via per-series type); waterfall /
-  // bar / hbar / hbar-diverging → 'bar'; else passthrough.
-  const apexType = isCombo
-      ? 'line'
-      : (type === 'bar' || type === 'hbar' || type === 'hbar-diverging' || type === 'waterfall') ? 'bar' : type as ApexChart['type']
+  // Chart type is a pure family trait (combo→line host, bar-family→bar, else passthrough).
+  const apexType = traits.apexType
 
-  // Data labels: enabled for bar/hbar/waterfall (non-stacked). Disabled for
-  // line/combo and hbar-diverging. Explicit override wins.
+  // Data labels: family default (bar/hbar/waterfall) AND not stacked. Override wins.
   const showDataLabels = output.dataLabels !== undefined
     ? output.dataLabels
-    : (type === 'bar' || type === 'hbar' || type === 'waterfall') && !stacked
+    : traits.dataLabelsByDefault && !stacked
 
   // hbar value-axis headroom for out-of-bar end-labels when the value SCALE is
   // hidden (R6) — root cause + rule live in hbarValueAxisMax (base.ts).
   const hbarValueMax = hbarValueAxisMax(horizontal, apexXHidden, showDataLabels, axes.y.max, series)
 
+  // Resolve the render discriminants: fill/stroke baselines upgrade to their
+  // stacked-area variant at runtime; markers gate on the `unstacked` rule.
+  const fillMode: FillMode     = isStackedArea ? 'stacked-area' : traits.baseFill
+  const strokeMode: StrokeMode = isStackedArea ? 'stacked-area' : traits.baseStroke
+  const showMarkers = traits.marks === 'always' || (traits.marks === 'unstacked' && !stacked)
+
   return {
+    family,
     formatted: collectFormatted(series),
     FS_XS: scaledPx(0.60, 9,  11),
     FS_SM: scaledPx(0.70, 10, 12),
@@ -108,5 +127,7 @@ export function deriveContext(output: ChartOutput, locale?: string): CartesianCo
     apexXHidden, apexYHidden,
     yFmt, y2Fmt,
     yMax, barFill, apexType, showDataLabels, hbarValueMax,
+    seriesMode: traits.seriesMode, fillMode, strokeMode, showMarkers,
+    forcesStacked: traits.forcesStacked,
   }
 }
