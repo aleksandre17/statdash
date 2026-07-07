@@ -242,8 +242,8 @@ const NodePageRendererInner = memo(function NodePageRendererInner({
   // Recreated when handler deps change (filterSet, setMany, perspectiveKey).
   // nav:drill delegates to the caller-supplied onNavigate (app layer provides router).
   // data:export serializes the dispatched rows via the export registry and triggers
-  // a browser download through the shared downloadExport seam (the same one ExportBar
-  // uses) — the panel shells dispatch it via PanelExportBar.
+  // a browser download through the shared downloadExport seam (the same one the
+  // export menu uses) — panels dispatch it via PanelExport, the section via its header menu.
   const bus = useMemo((): CommandBus => {
     const b = new DefaultCommandBus()
     b.handle('filter:set',      ({ key, value }) => filterSet(key, value))
@@ -265,7 +265,7 @@ const NodePageRendererInner = memo(function NodePageRendererInner({
     b.handle('data:export', ({ format, rows, meta }) => {
       // Serialize the dispatched rows via the registry format (core owns CSV/xlsx)
       // and trigger a real browser download through the shared react-layer seam —
-      // the SAME `downloadExport` the ExportBar's own click path uses. Empty rows
+      // the SAME `downloadExport` the ExportMenu's own click path uses. Empty rows
       // and unregistered formats are handled gracefully inside the seam (no-op).
       downloadExport(format, rows, meta)
     })

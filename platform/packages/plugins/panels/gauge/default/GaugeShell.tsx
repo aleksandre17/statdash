@@ -5,7 +5,7 @@ import { defineShell, useNodeTemplate } from '@statdash/react/engine'
 import { usePanelTitleBadge }      from '@statdash/react/engine'
 import { resolveThresholdColor }   from '@statdash/engine'
 import type { RenderContext, ViewParams } from '@statdash/react/engine'
-import { useInject, EMPTY_STATE, PanelExportBar } from '@statdash/react'
+import { useInject, EMPTY_STATE, PanelExport }    from '@statdash/react'
 import type { ExportMeta }         from '@statdash/engine'
 import type { GaugeNode }          from './GaugeNode'
 import { toGaugePct, gaugeApexOptions, GAUGE_HEIGHT } from './gaugeUtils'
@@ -57,7 +57,7 @@ function GaugeControl({ def, ctx, merged }: { def: GaugeNode; ctx: RenderContext
           height={GAUGE_HEIGHT}
         />
       </div>
-      <PanelExportBar ctx={ctx} rows={rows} meta={exportMeta} />
+      <PanelExport ctx={ctx} rows={rows} meta={exportMeta} nodeId={def.id} />
     </>
   )
 }

@@ -15,7 +15,7 @@ import { MapContainer }             from './di/Container'
 import type { Container }           from './di/Container'
 import { PanelLayout, PANEL_LAYOUT } from '../components/PanelLayout'
 import { EmptyState,  EMPTY_STATE  } from '../components/feedback/EmptyState'
-import { ExportBar,   EXPORT_BAR   } from '../components/feedback/ExportBar'
+import { ExportMenu,  EXPORT_MENU  } from '../components/feedback/ExportMenu'
 
 /**
  * Returns a populated Container — the three built-in components provided by
@@ -31,6 +31,6 @@ export function createDefaultUI(): Container {
   const c = new MapContainer()
   c.provide(PANEL_LAYOUT, PanelLayout)
   c.provide(EMPTY_STATE,  EmptyState)
-  c.provide(EXPORT_BAR,   ExportBar)
+  c.provide(EXPORT_MENU,  ExportMenu)
   return c
 }

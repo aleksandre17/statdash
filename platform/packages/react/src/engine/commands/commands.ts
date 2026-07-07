@@ -27,7 +27,7 @@ export interface PlatformCommandMap {
    */
   'nav:drill':      { href: string; target: 'page' | 'url' | 'external'; params?: Record<string, string> }
   /**
-   * Export rows programmatically. ExportBar's own handlers are unaffected.
+   * Export rows programmatically. ExportMenu's own handlers are unaffected.
    * `format` is a registry id (ExportFormatId) — the export registry is the
    * SSOT for available formats, not a hand-maintained literal union.
    */

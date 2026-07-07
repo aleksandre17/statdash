@@ -6,9 +6,9 @@
 //  the dependency arrow stays clean (engine never touches the DOM).
 //
 //  Two callers share this single implementation:
-//    • useExport()  — the ExportBar's own click path (no bus).
+//    • useExport()  — the ExportMenu's own click path (no bus).
 //    • SiteRenderer's `data:export` command handler — the bus-dispatched path
-//      the panel shells use via PanelExportBar.
+//      the panel shells + section header use via PanelExport / the export menu.
 //
 //  Neither reimplements CSV/xlsx: both serialize through the registry format's
 //  SerializeFn. A new format (registerExport) downloads with zero edits here.

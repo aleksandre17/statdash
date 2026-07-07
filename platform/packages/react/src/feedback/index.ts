@@ -1,2 +1,2 @@
 export { EmptyState } from '../components/feedback/EmptyState'
-export { ExportBar } from '../components/feedback/ExportBar'
+export { ExportMenu } from '../components/feedback/ExportMenu'

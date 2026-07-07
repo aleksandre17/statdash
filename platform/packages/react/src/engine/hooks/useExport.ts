@@ -29,7 +29,7 @@ export interface UseExportResult {
  * The download trigger itself is the shared `downloadExport` seam (serialize
  * via the registry, then Blob → object URL → transient <a download> click).
  * The SAME seam backs SiteRenderer's `data:export` command handler, so the
- * ExportBar's own path and the bus-dispatched path are byte-identical.
+ * ExportMenu's own path and the bus-dispatched path are byte-identical.
  */
 export function useExport(rows: DataRow[], meta: ExportMeta): UseExportResult {
   // listExportFormats() is stable across renders (registry doesn't change at runtime)
