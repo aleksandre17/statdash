@@ -19,6 +19,7 @@
 - [Chrome/Panel/Section unification](project_chrome_panel_section_unification.md) — SHIPPED 2026-07-01: body-only height model; map-collapse resolved; SectionShell-as-PanelLayout-adapter still aspirational
 - [Multi-tenancy — RESOLVED (SaaS)](project_multitenancy_decision_fork.md) — owner chose multi-tenant SaaS 2026-06-28; TIERED HYBRID pool-default+silo-escape, RLS spine, agency=tenant; 5 verified-in-code corrections + FF gates; ADR at platform/work/
 - [Memory-home resolution + SSOT enforcement](project_memory_home_resolution.md) — memory resolves CWD-relative (not CLAUDE_PROJECT_DIR); strays self-heal via memory-home-guard.py + doctor backstop
+- [AR-48 delivery port (export/embed/snapshot) DESIGNED](project_ar48_delivery_port.md) — backend ~80% BUILT (reference-grade), "stub" docs are STALE; real work = wire the dark client seam + image/provenance/card-scope facets; SSOT=DESIGN-delivery-port doc
 
 ## Project — DB / data-platform view (architect-level rationale)
 - [DB layer](project_db_layer.md) — Phase-2 DB (PG+Timescale+LTREE+JSONB) structural SSOT; two-schema physical isolation (stats.* / config.*); async-ready engine contract

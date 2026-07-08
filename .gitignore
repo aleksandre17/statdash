@@ -51,3 +51,13 @@ work/sweep/
 work/gdp-sections-probe.js
 work/kpi-probe.js
 work/treemap-probe.js
+img.png
+
+# --- work-dir hygiene (canon: work/ = board only; docs/ = docs; no tracked scratch) ---
+# Ephemera never belongs in git — screenshots, probes, capture manifests are regenerable.
+work/**/*-shots/
+work/**/*probe*.js
+work/live-shots/
+work/sweep/
+# platform/work/ is dissolved — a rogue second work dir must not return
+platform/work/

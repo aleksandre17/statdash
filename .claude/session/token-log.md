@@ -31,3 +31,10 @@
 [2026-07-08 15:57] RUN run=agent-aae40d82b4997e9bf model-actual=claude-sonnet-5 msgs=110 out-tokens=80964
 [2026-07-08 15:57] RUN run=agent-ad3e1a24a5506f946 model-actual=claude-opus-4-8 msgs=91 out-tokens=60350
 [2026-07-08 15:57] RUN run=agent-afd111eff0daf4f0e model-actual=claude-sonnet-5 msgs=1 out-tokens=32
+[2026-07-08] LAUNCH agent=architect model-requested=(def-pin opus) task=design AR-48 export/embed/snapshot port
+[2026-07-08 16:17] RUN run=agent-a3dc8e8ae6a9f6cd8 model-actual=claude-opus-4-8 msgs=29 out-tokens=3611
+[2026-07-08] LAUNCH agent=junior-executor model-requested=haiku task=split ARCHITECTURE-REGISTRY into index + per-section detail
+[2026-07-08 16:36] RUN run=agent-ab4aa8556160f1716 model-actual=claude-haiku-4-5-20251001 msgs=16 out-tokens=807
+[2026-07-08] NOTE: registry-split (agent-ab4aa8556160f1716, haiku — VERIFIED) user-interrupted mid phase-1; partial registry/ discarded, source intact, no loss. Split deferred.
+[2026-07-08] LAUNCH agent=explorer model-requested=sonnet task=classify work/ + platform/work/ against canon → migration manifest
+[2026-07-08 16:56] RUN run=agent-afb036e0874897e31 model-actual=claude-sonnet-5 msgs=83 out-tokens=23983
