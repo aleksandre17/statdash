@@ -52,3 +52,34 @@ describe('serializeCsv', () => {
     expect(serializeCsv([], {})).toBe('')
   })
 })
+
+// ── AR-48 P1 — provenance footer ────────────────────────────────────────────
+
+describe('serializeCsv — provenance footer (AR-48 P1)', () => {
+  it('is byte-identical to the pre-P1 output when meta.provenance is absent', () => {
+    expect(serializeCsv(ROWS, {})).toBe(
+      'year,region,value\r\n2021,Tbilisi,12.3\r\n2022,Kutaisi,14.5\r\n2023,Batumi,16',
+    )
+  })
+
+  it('appends a blank-line-separated footer block when provenance is present', () => {
+    const out = serializeCsv(ROWS, {
+      provenance: { source: 'National Stats Office', lastUpdated: '2024-09-15', methodologyUrl: 'https://example.org/methodology/gdp' },
+    })
+    const [table, blank, ...footer] = out.split('\r\n').slice(4) // after the 4 data lines
+    expect(table).toBe('')       // the blank separator line
+    expect(blank).toBe('Source: National Stats Office')
+    expect(footer).toEqual(['Last updated: 2024-09-15', 'Methodology: https://example.org/methodology/gdp'])
+  })
+
+  it('omits absent provenance fields (Postel — no fabricated lines)', () => {
+    const out = serializeCsv(ROWS, { provenance: { source: 'National Stats Office' } })
+    expect(out).toContain('Source: National Stats Office')
+    expect(out).not.toContain('Last updated')
+    expect(out).not.toContain('Methodology')
+  })
+
+  it('adds no footer for an all-empty provenance object', () => {
+    expect(serializeCsv(ROWS, { provenance: {} })).toBe(serializeCsv(ROWS, {}))
+  })
+})

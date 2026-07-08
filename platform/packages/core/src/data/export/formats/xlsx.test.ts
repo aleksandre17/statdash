@@ -137,3 +137,45 @@ describe('serializeXlsx', () => {
     expect(parts.get('xl/worksheets/sheet1.xml')!).toContain('<sheetData>')
   })
 })
+
+// ── AR-48 P1 — Metadata sheet ────────────────────────────────────────────────
+
+describe('serializeXlsx — Metadata sheet (AR-48 P1)', () => {
+  it('is a single-sheet workbook (byte-identical part set) when meta.provenance is absent', () => {
+    const parts = readZip(serializeXlsx(ROWS, {}))
+    expect([...parts.keys()]).not.toContain('xl/worksheets/sheet2.xml')
+    const wb = parts.get('xl/workbook.xml')!
+    expect(wb).not.toContain('sheetId="2"')
+  })
+
+  it('appends a second "Metadata" sheet when provenance is present', () => {
+    const parts = readZip(
+      serializeXlsx(ROWS, {
+        provenance: { source: 'National Stats Office', lastUpdated: '2024-09-15', methodologyUrl: 'https://example.org/methodology/gdp' },
+      }),
+    )
+    expect([...parts.keys()]).toEqual(
+      expect.arrayContaining(['xl/worksheets/sheet1.xml', 'xl/worksheets/sheet2.xml']),
+    )
+    const wb = parts.get('xl/workbook.xml')!
+    expect(wb).toContain('name="Metadata"')
+    expect(wb).toContain('sheetId="2"')
+
+    const ct = parts.get('[Content_Types].xml')!
+    expect(ct).toContain('/xl/worksheets/sheet2.xml')
+
+    const rels = parts.get('xl/_rels/workbook.xml.rels')!
+    expect(rels).toContain('worksheets/sheet2.xml')
+
+    const metaSheet = parts.get('xl/worksheets/sheet2.xml')!
+    expect(metaSheet).toContain('<t xml:space="preserve">Source</t>')
+    expect(metaSheet).toContain('<t xml:space="preserve">National Stats Office</t>')
+    expect(metaSheet).toContain('<t xml:space="preserve">Last updated</t>')
+    expect(metaSheet).toContain('<t xml:space="preserve">2024-09-15</t>')
+  })
+
+  it('adds no Metadata sheet for an all-empty provenance object', () => {
+    const parts = readZip(serializeXlsx(ROWS, { provenance: {} }))
+    expect([...parts.keys()]).not.toContain('xl/worksheets/sheet2.xml')
+  })
+})

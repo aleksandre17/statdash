@@ -17,6 +17,7 @@
 import type { EngineRow } from '../../encoding'
 import type { ExportMeta } from '../types'
 import { zipSync, utf8, type ZipEntry } from './zip'
+import { provenanceLines } from '../provenanceFooter'
 
 /** XML-escape text content / attribute values. */
 function xmlEscape(s: string): string {
@@ -53,14 +54,25 @@ function row(rowIndex: number, values: unknown[]): string {
   return `<row r="${rowIndex}">${cells}</row>`
 }
 
-const CONTENT_TYPES =
-  `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>` +
-  `<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">` +
-  `<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>` +
-  `<Default Extension="xml" ContentType="application/xml"/>` +
-  `<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>` +
-  `<Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>` +
-  `</Types>`
+/**
+ * `[Content_Types].xml` — declares the worksheet parts present. `hasMetadata`
+ * adds sheet2's Override (AR-48 P1); byte-identical to the pre-P1 single-sheet
+ * declaration when false.
+ */
+function contentTypesXml(hasMetadata: boolean): string {
+  return (
+    `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>` +
+    `<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">` +
+    `<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>` +
+    `<Default Extension="xml" ContentType="application/xml"/>` +
+    `<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>` +
+    `<Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>` +
+    (hasMetadata
+      ? `<Override PartName="/xl/worksheets/sheet2.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>`
+      : '') +
+    `</Types>`
+  )
+}
 
 const ROOT_RELS =
   `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>` +
@@ -68,18 +80,33 @@ const ROOT_RELS =
   `<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/>` +
   `</Relationships>`
 
-const WORKBOOK_RELS =
-  `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>` +
-  `<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">` +
-  `<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/>` +
-  `</Relationships>`
+/** Workbook-level relationships — one per worksheet part. */
+function workbookRelsXml(hasMetadata: boolean): string {
+  return (
+    `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>` +
+    `<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">` +
+    `<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/>` +
+    (hasMetadata
+      ? `<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet2.xml"/>`
+      : '') +
+    `</Relationships>`
+  )
+}
 
-function workbookXml(sheetName: string): string {
+/**
+ * Sheet list — `metadataName`, when given, appends a second tab ("Metadata" by
+ * default; AR-48 P1's citation sheet). Absent ⇒ byte-identical single-sheet
+ * workbook.xml (regression-safe).
+ */
+function workbookXml(sheetName: string, metadataName?: string): string {
+  const sheets =
+    `<sheet name="${xmlEscape(sheetName)}" sheetId="1" r:id="rId1"/>` +
+    (metadataName ? `<sheet name="${xmlEscape(metadataName)}" sheetId="2" r:id="rId2"/>` : '')
   return (
     `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>` +
     `<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" ` +
     `xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">` +
-    `<sheets><sheet name="${xmlEscape(sheetName)}" sheetId="1" r:id="rId1"/></sheets>` +
+    `<sheets>${sheets}</sheets>` +
     `</workbook>`
   )
 }
@@ -99,9 +126,17 @@ function sheetTabName(meta: ExportMeta): string {
   return raw.slice(0, 31)
 }
 
+/** The Metadata sheet's fixed tab name (AR-48 P1). */
+const METADATA_SHEET_NAME = 'Metadata'
+
 /**
  * Serialize rows → .xlsx bytes (OOXML SpreadsheetML).
  * Mirrors serializeCsv's meta contract: fields ordering + labels header.
+ *
+ * AR-48 P1: when `meta.provenance` yields ≥1 line, a second "Metadata" sheet
+ * (Label | Value) is appended — the xlsx twin of csv's footer block. Absent
+ * provenance ⇒ byte-identical single-sheet workbook (regression-safe, proven
+ * by xlsx.test.ts's pre-existing part-structure assertions).
  */
 export function serializeXlsx(rows: EngineRow[], meta: ExportMeta): Uint8Array {
   const fields = meta.fields ?? (rows.length > 0 ? Object.keys(rows[0]) : [])
@@ -113,13 +148,23 @@ export function serializeXlsx(rows: EngineRow[], meta: ExportMeta): Uint8Array {
     ...rows.map((r, i) => row(i + 2, fields.map(f => r[f]))),
   ].join('')
 
+  const lines       = provenanceLines(meta.provenance)
+  const hasMetadata = lines.length > 0
+
   const entries: ZipEntry[] = [
-    { name: '[Content_Types].xml',        data: utf8(CONTENT_TYPES) },
+    { name: '[Content_Types].xml',        data: utf8(contentTypesXml(hasMetadata)) },
     { name: '_rels/.rels',                data: utf8(ROOT_RELS) },
-    { name: 'xl/workbook.xml',            data: utf8(workbookXml(sheetTabName(meta))) },
-    { name: 'xl/_rels/workbook.xml.rels', data: utf8(WORKBOOK_RELS) },
+    { name: 'xl/workbook.xml',            data: utf8(workbookXml(sheetTabName(meta), hasMetadata ? METADATA_SHEET_NAME : undefined)) },
+    { name: 'xl/_rels/workbook.xml.rels', data: utf8(workbookRelsXml(hasMetadata)) },
     { name: 'xl/worksheets/sheet1.xml',   data: utf8(worksheetXml(rowsXml)) },
   ]
+
+  if (hasMetadata) {
+    const metadataRowsXml = lines
+      .map((l, i) => row(i + 1, [l.label, l.value]))
+      .join('')
+    entries.push({ name: 'xl/worksheets/sheet2.xml', data: utf8(worksheetXml(metadataRowsXml)) })
+  }
 
   return zipSync(entries)
 }

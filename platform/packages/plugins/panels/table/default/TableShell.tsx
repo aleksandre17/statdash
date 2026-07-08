@@ -81,7 +81,7 @@ function TableControl({
         ? <EmptyState />
         : <>
             <DataTable rows={rows} highlightedLabel={highlightedLabel} onRowSelect={onRowSelect} selectedIds={selectedIds} {...tableConfig} />
-            <PanelExport ctx={ctx} rows={rows} meta={exportMeta} nodeId={def.id} />
+            <PanelExport ctx={ctx} rows={rows} meta={exportMeta} nodeId={def.id} spec={def.data} />
           </>
       }
     </div>

@@ -315,8 +315,10 @@ export { specDataSource, specMeasureRefs }                             from './d
 // ── Export formats [N16] — registry + built-ins (csv, sdmx-json) ──────
 //  Re-exporting the barrel also runs its side-effect: the csv / sdmx-json
 //  formats register themselves on import, so listExportFormats() is non-empty.
-export type { ExportMeta, SerializeFn, ExportFormat, ExportFormatId }   from './data/export'
+export type { ExportMeta, ExportProvenance, SerializeFn, ExportFormat, ExportFormatId } from './data/export'
+export type { ProvenanceLine }                                         from './data/export'
 export { registerExport, getExportFormat, listExportFormats }          from './data/export'
+export { provenanceLines, deriveExportProvenance }                     from './data/export'
 
 // ── DataLinks — declarative drill-down / navigation ───────────────────
 export type { DataLinkDef, DataLinkParam, ResolvedLink }                from './links'

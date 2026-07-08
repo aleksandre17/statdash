@@ -57,7 +57,7 @@ function GaugeControl({ def, ctx, merged }: { def: GaugeNode; ctx: RenderContext
           height={GAUGE_HEIGHT}
         />
       </div>
-      <PanelExport ctx={ctx} rows={rows} meta={exportMeta} nodeId={def.id} />
+      <PanelExport ctx={ctx} rows={rows} meta={exportMeta} nodeId={def.id} spec={def.data} />
     </>
   )
 }

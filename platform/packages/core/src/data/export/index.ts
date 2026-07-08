@@ -37,5 +37,8 @@ registerExport('sdmx-json', {
 })
 
 // ── Public exports ─────────────────────────────────────────────────────
-export type { ExportMeta, SerializeFn, ExportFormat, ExportFormatId } from './types'
+export type { ExportMeta, ExportProvenance, SerializeFn, ExportFormat, ExportFormatId } from './types'
 export { registerExport, getExportFormat, listExportFormats } from './registry'
+export { provenanceLines } from './provenanceFooter'
+export type { ProvenanceLine } from './provenanceFooter'
+export { deriveExportProvenance } from './deriveProvenance'

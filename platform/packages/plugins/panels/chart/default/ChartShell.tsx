@@ -49,7 +49,7 @@ function ChartControl({
         onDataLeave={interactions.onDataLeave}
         onDataClick={interactions.onDataClick}
       />
-      <PanelExport ctx={ctx} rows={rows} meta={exportMeta} nodeId={def.id} />
+      <PanelExport ctx={ctx} rows={rows} meta={exportMeta} nodeId={def.id} spec={def.data} />
     </>
   )
 }

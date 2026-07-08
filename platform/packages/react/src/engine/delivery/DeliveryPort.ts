@@ -1,4 +1,4 @@
-// ── DeliveryPort — the ViewSnapshot facade [AR-48 P0] ─────────────────────────
+// ── DeliveryPort — the ViewSnapshot facade [AR-48 P0/P1] ──────────────────────
 //
 //  Names the ONE substrate (`ViewSnapshot`, @statdash/contracts) the delivery
 //  facets — extract · embed · permalink — compose over
@@ -29,11 +29,18 @@
 //
 //  See delivery.fitness.test.ts (FF-DELIVERY-ONE-SSOT) for the grep-guard +
 //  unit proof that neither constructor performs a second data read.
+//
+//  AR-48 P1: `ViewSnapshot.provenance` is folded from whichever facet already
+//  derived it — `viewSnapshotFromRows` carries `meta.provenance` (set by
+//  PanelExport's `deriveExportProvenance` join); `viewSnapshotFromPageSnapshot`
+//  surfaces the first provenance-bearing `NodeDataEntry` in the page tree (a
+//  page may reference several datasets — the full per-node vintage stays on
+//  `data`, this is only the artifact-level summary, D6 "minimal payload").
 
 import type { ViewSnapshot } from '@statdash/contracts'
 import { getExportFormat }   from '@statdash/engine'
-import type { DataRow, ExportMeta, EngineRow, ExportFormatId } from '@statdash/engine'
-import type { PageDataSnapshot } from '../targets/api'
+import type { DataRow, ExportMeta, EngineRow, ExportFormatId, ExportProvenance } from '@statdash/engine'
+import type { PageDataSnapshot, NodeDataEntry } from '../targets/api'
 
 // ── EXTRACT facet — wrap an already-resolved rows read ────────────────────────
 
@@ -56,6 +63,7 @@ export function viewSnapshotFromRows(
     configRef:   { pageId: meta.filename ?? meta.title },
     viewState:   {},
     data:        rows as unknown as ViewSnapshot['data'],
+    provenance:  meta.provenance,
     generatedAt: new Date().toISOString(),
   }
 }
@@ -106,9 +114,26 @@ export function extractFromSnapshot(
 // ── SNAPSHOT/EMBED facet — project renderPageToJSON's output ──────────────────
 
 /**
+ * Find the first node in the snapshot's tree that carries `provenance`
+ * (depth-first). A page can reference several datasets; P1's minimal
+ * artifact-level summary surfaces the FIRST one found — the full per-dataset
+ * vintage is retained on each `NodeDataEntry.provenance` in `data`, never
+ * lost. Returns `undefined` when no node carries provenance (Postel).
+ */
+function firstProvenance(entries: NodeDataEntry[]): ExportProvenance | undefined {
+  for (const e of entries) {
+    if (e.provenance) return e.provenance
+    const nested = firstProvenance(e.children)
+    if (nested) return nested
+  }
+  return undefined
+}
+
+/**
  * Project a `renderPageToJSON` result into the `ViewSnapshot` SSOT — the
  * snapshot/embed facet's constructor. Performs NO re-resolution: every field
- * is read off the already-produced `PageDataSnapshot`.
+ * is read off the already-produced `PageDataSnapshot` (provenance included —
+ * `api.ts`'s `walkNode` already derived it per node during the ONE walk).
  */
 export function viewSnapshotFromPageSnapshot(pageSnapshot: PageDataSnapshot): ViewSnapshot {
   return {
@@ -123,6 +148,7 @@ export function viewSnapshotFromPageSnapshot(pageSnapshot: PageDataSnapshot): Vi
       fallbackLocale: pageSnapshot.fallbackLocale,
     },
     data:        pageSnapshot.nodes as unknown as ViewSnapshot['data'],
+    provenance:  firstProvenance(pageSnapshot.nodes),
     generatedAt: pageSnapshot.generatedAt,
   }
 }

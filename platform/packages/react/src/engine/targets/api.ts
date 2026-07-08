@@ -19,6 +19,8 @@ import { interpretSpec }                  from '@statdash/engine'
 import type { NodeDataFrame }             from '@statdash/engine'
 import { deriveFieldSchema }              from '@statdash/engine'
 import { listExportFormats, getExportFormat } from '@statdash/engine'
+import { deriveExportProvenance }         from '@statdash/engine'
+import type { ExportProvenance }          from '@statdash/engine'
 import type { NodePageConfig }            from '../types'
 import type { StaticRenderContext }       from './html'
 import { resolveStore }                   from '../resolveNodeRows'
@@ -71,6 +73,15 @@ export interface NodeDataEntry {
   frame?:   NodeDataFrame
   /** Export formats available for this node's data. Present when frame is populated. */
   exportFormats?: ExportFormatInfo[]
+  /**
+   * Citation provenance for this node's frame (AR-48 P1) — derived via the SAME
+   * `deriveExportProvenance` join the EXTRACT facet uses (react/components/
+   * feedback/PanelExport.tsx), so a snapshot's per-node vintage and a live
+   * panel's exported footer/sheet agree by construction. Present only when the
+   * store's MetadataPort carries a report for one of the node's underlying
+   * codes (Postel — absence is not an error).
+   */
+  provenance?: ExportProvenance
   /** Recursive — mirrors the node tree structure. */
   children: NodeDataEntry[]
 }
@@ -211,6 +222,13 @@ function walkNode(
               : { id }
           })
         }
+        // ── AR-48 P1: per-node citation provenance ────────────────────────
+        // The SAME join `PanelExport` uses for the live extract facet (§
+        // deriveExportProvenance) — symmetric derivation so a snapshot's
+        // vintage and a live panel's exported footer never drift. `store` was
+        // already resolved above for interpretSpec; no second resolution.
+        const provenance = deriveExportProvenance(node['data'] as DataSpec, ctx.sectionCtx, store)
+        if (provenance) entry.provenance = provenance
       }
     } catch (e) {
       entry.status = 'error'

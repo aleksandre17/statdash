@@ -9,6 +9,30 @@
 
 import type { EngineRow } from '../encoding'
 
+/**
+ * Minimal citation provenance carried on a delivered export artifact (AR-48 P1,
+ * Law 9 — an NSO number without its vintage is a reproducibility half-measure).
+ * Every field optional: absence degrades gracefully (Postel) — a citation
+ * without provenance is still a valid citation, it simply carries no footer.
+ *
+ * D6 "minimal payload" (DESIGN-delivery-port-export-embed-snapshot.md §7):
+ * source + lastUpdated + a methodology LINK + permalink; the full ESMS report
+ * stays one click away via `methodologyUrl`. Structurally mirrors
+ * `@statdash/contracts`' `ViewSnapshotProvenance` (the wire/snapshot twin) —
+ * each owns its own boundary shape rather than importing across the arrow
+ * (core cannot depend on contracts' react-facing wire shape; see that type's
+ * own doc comment for the symmetric rationale).
+ */
+export interface ExportProvenance {
+  source?:         string
+  lastUpdated?:    string
+  methodologyUrl?: string
+  /** The citation URL for this exact view (the permalink leg of the same port). */
+  permalink?:      string
+  /** ISO timestamp the artifact was generated — the reproducibility stamp. */
+  accessedAt?:     string
+}
+
 /** Per-export metadata — drives filename generation and column selection. */
 export interface ExportMeta {
   /** Section or page title — used as filename stem when filename is not set. */
@@ -19,6 +43,12 @@ export interface ExportMeta {
   fields?:   string[]
   /** Human-readable column labels keyed by field name. Falls back to field name. */
   labels?:   Record<string, string>
+  /**
+   * Citation provenance for this artifact (AR-48 P1). When present, csv appends
+   * a footer block and xlsx adds a "Metadata" sheet (see provenanceFooter.ts).
+   * Absent ⇒ byte-identical to the pre-P1 output (regression-safe).
+   */
+  provenance?: ExportProvenance
 }
 
 /**
