@@ -19,7 +19,7 @@
 
 ## STANDING rules (binding)
 - **green-gate: PARSE THE LOG (`Tests N failed`), NOT exit code** — `pnpm test` returns 0 even when vitest fails. Include `pnpm lint` + `tsc -b apps/panel` in the converged gate.
-- **MODEL PER TASK (economy default)** — model-agnostic agents; lead picks per decision-density (mechanical→haiku, specialist→sonnet, judgment/design/QC→opus). Judgment agent defs pin an `opus` floor (overridable per call). SUPERSEDES the old "always Opus" rule.
+- **MODEL ROUTING** — agent defs stay model-agnostic EXCEPT the invariant-tier extremes: apex design/QC (`chief-engineer`, `architect`, `platform-architect`) pin an `opus` floor + `junior-executor` pins `haiku`. Middle tiers carry NO pin — the orchestrator routes per-call by decision-density and must NEVER mis-route. Bias to Opus for substantive/real-engineering/judgment work; Sonnet/Haiku only for genuinely trivial mechanical; when unsure → Opus (owner: economy secondary to quality). SUPERSEDES the old "always Opus" rule.
 - **Proactive-innovation mandate** ([[proactive-innovation-mandate]]) — be initiator; register visions in `ARCHITECTURE-REGISTRY.md`; design via architect + owner sign-off before building.
 - **Owner granted autonomy** for en-route improvements (within DoD, no degradation); principled refusal even against the owner when a directive would degrade the project.
 - chart==table asserted ONLY for same-section dual-view; different panels may have different data pipes.

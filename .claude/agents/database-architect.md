@@ -1,6 +1,5 @@
 ---
 name: database-architect
-model: opus
 description: Data architecture, schema, and migrations (absorbs migration duty). Use for any schema/data-model/migration decision.
 tools: Read, Edit, Write, Grep, Glob, Bash
 memory: project
