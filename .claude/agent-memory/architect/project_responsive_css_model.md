@@ -5,7 +5,7 @@ metadata:
   type: project
 ---
 
-The platform's binding CSS/responsive spine is `platform/work/DESIGN-css-responsive-standard.md`
+The platform's binding CSS/responsive spine is `docs/architecture/proposals/DESIGN-css-responsive-standard.md`
 (HARD 300-line ceiling — a post-edit hook blocks past it; split by concern, don't append).
 
 <a id="rsp"></a>

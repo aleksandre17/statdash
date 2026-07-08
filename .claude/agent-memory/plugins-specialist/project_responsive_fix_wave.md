@@ -5,7 +5,7 @@ metadata:
   type: project
 ---
 
-The responsive fix wave (driven by `platform/work/AUDIT-responsive.md`, authored against the **live :3002 server which builds from `main`**) is being applied incrementally on `feat/tenant-agnostic-platform`.
+The responsive fix wave (driven by `docs/audit/AUDIT-responsive.md`, authored against the **live :3002 server which builds from `main`**) is being applied incrementally on `feat/tenant-agnostic-platform`.
 
 **Why the audit overstates some findings:** the audit shots are from `main`. The branch already applied **R3** — `.page-content` now caps at `--page-measure` (defaults to `--size-container-wide`=1280px) in `pages/inner-page/default/page-layout.css`. So the audit's "giant ~1766px ultrawide treemap" (F7) is a main-only artifact; on-branch the page-content (hence every section) is already width-bounded to 1280. **Always re-render the current branch before trusting an audit finding — don't act on the main-rendered shots.**
 

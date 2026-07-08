@@ -46,5 +46,5 @@ Georgian string under NO locale ancestor is still a leak. More-correct, not weak
 
 **ADR-numbering remap gotcha:** code comments reference LEGACY 4-digit `ADR-0027`/`ADR-0028`; the
 kit-reorg renumbered them (`0027`→`ADR-016-content-constraint`, `0028`→`ADR-017-geostat-detenant-
-phase-c`; see `platform/work/kit-reorg/merge-log.md`). Dir mixes 3-digit (001–018) + stray 4-digit
+phase-c`; see `docs/archive/kit-reorg/merge-log.md`). Dir mixes 3-digit (001–018) + stray 4-digit
 (0023/0025/0026). NEW ADRs take the next 3-digit → ADR-019. Do NOT create an "ADR-0028" file.

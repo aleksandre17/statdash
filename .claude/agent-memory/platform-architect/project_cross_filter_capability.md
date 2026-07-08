@@ -1,11 +1,11 @@
 ---
 name: project-cross-filter-capability
-description: Cross-filter / "Grammar of Interaction" — the declarative selection→ctx→all-panel seam; port exists but adapter is unwired; design at platform/work/DESIGN-cross-filter-interaction.md
+description: Cross-filter / "Grammar of Interaction" — the declarative selection→ctx→all-panel seam; port exists but adapter is unwired; design at docs/architecture/proposals/DESIGN-cross-filter-interaction.md
 metadata:
   type: project
 ---
 
-Owner-core capability (NOT future): select N regions / a sector → ALL panels + KPIs rescope; "logical binding everywhere". Design spec: `platform/work/DESIGN-cross-filter-interaction.md`.
+Owner-core capability (NOT future): select N regions / a sector → ALL panels + KPIs rescope; "logical binding everywhere". Design spec: `docs/architecture/proposals/DESIGN-cross-filter-interaction.md`.
 
 **Diagnosis (non-obvious): the READ side already works; only the general WRITE side is missing.**
 - Panels binding `{$ctx:"<dim>"}` re-query on `ctx.dims` change; store-filter (`resolveFilter` / `matchedValues` in `core/src/data/store-filter.ts`) splits a CSV `$ctx` value into an OR-set, so 2-region multi-select `= ANY` ALREADY works end-to-end at the data layer. No store change needed.

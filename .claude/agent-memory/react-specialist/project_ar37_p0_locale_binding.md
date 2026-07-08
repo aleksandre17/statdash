@@ -5,7 +5,7 @@ metadata:
   type: project
 ---
 
-AR-37 P0 (`platform/work/DESIGN-i18n-full-sync-and-integrity-badges.md`) shipped on
+AR-37 P0 (`docs/architecture/proposals/DESIGN-i18n-full-sync-and-integrity-badges.md`) shipped on
 `feat/i18n-p0-locale-binding`: `document.documentElement.lang`/`dir` were frozen at
 `index.html`'s `lang="en"` forever (R1), and the i18next global `language` never left
 `'en'` (R3) — `useT` masked it per-call but any global reader leaked.

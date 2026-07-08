@@ -29,4 +29,4 @@ only the token `/geostat/i`, not brand VALUES (#0080BE, brand font names). Pair 
 **How to apply:** when auditing brand-neutrality or color SSOT, scan charts+core too, not just the
 FF-TOKEN-ONLY surface. The fix is to extend FF-TOKEN-ONLY's roots to charts/src+core/src with a narrow,
 documented allowlist for true neutral seeds — then the brand-accent default fails until fixed. Full inventory:
-`platform/work/HUNT-violations-inventory.md` §2/§3. [[project-platform-maturity]]
+`docs/audit/HUNT-violations-inventory.md` §2/§3. [[project-platform-maturity]]

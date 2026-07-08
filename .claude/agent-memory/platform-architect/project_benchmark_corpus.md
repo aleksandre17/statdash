@@ -5,7 +5,7 @@ metadata:
   type: project
 ---
 
-`platform/work/BENCHMARK-REFERENCE-PLATFORMS.md` is the capability-comparison SSOT (statdash vs Form.io/Builder.io/Grafana/Superset·Metabase/Retool·Appsmith). I (platform-architect) OWN it.
+`docs/architecture/BENCHMARK-REFERENCE-PLATFORMS.md` is the capability-comparison SSOT (statdash vs Form.io/Builder.io/Grafana/Superset·Metabase/Retool·Appsmith). I (platform-architect) OWN it.
 
 **Why:** owner mandated the lead operate as a principal innovator — continuously benchmarking against the reference class, spotting functional LAGs, completing half-formed concepts. That needs a maintained corpus; I created it 2026-07-08 (first Leader's Scan).
 

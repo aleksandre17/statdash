@@ -5,7 +5,7 @@ metadata:
   type: project
 ---
 
-Owner's vision ("elevate style-extension to framework level; bind style to ANY plugin element's inner tags; adopt best concepts from a known framework maybe Tailwind; make it Constructor-authorable") resolved in `platform/work/DESIGN-framework-grade-style-system.md` (design-only, my authorship). **This EXTENDS Z's `DESIGN-responsive-composition.md`, not competes** — Z owns the cascade (`resolveStyle` tiers + `@layer`); this owns the vocabulary+reach flowing through tier ③.
+Owner's vision ("elevate style-extension to framework level; bind style to ANY plugin element's inner tags; adopt best concepts from a known framework maybe Tailwind; make it Constructor-authorable") resolved in `docs/architecture/proposals/DESIGN-framework-grade-style-system.md` (design-only, my authorship). **This EXTENDS Z's `DESIGN-responsive-composition.md`, not competes** — Z owns the cascade (`resolveStyle` tiers + `@layer`); this owns the vocabulary+reach flowing through tier ③.
 
 **Core finding:** `NodeStyles` (`styles/src/types.ts:111`, `ResponsiveVal<T>`) is ALREADY the winning primitive — a Chakra/Theme-UI `sx` responsive style-prop object (Builder.io/Plasmic lineage). Missing 3 framework-grade properties: (1) NOT token-constrained at the authoring boundary (`ColorValue=string`, off-scale hex/px legal); (2) can't reach inner PARTS (header `<img>`, chart title — `PageHeaderShell` renders internal React, config has no handle); (3) not Inspector-authorable (style=raw JSON blob only today, the AD-1/AD-3 authoring-lag). Add exactly those 3 → framework-grade with NO new runtime CSS engine.
 

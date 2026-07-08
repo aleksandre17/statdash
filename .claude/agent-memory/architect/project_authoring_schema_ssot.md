@@ -7,7 +7,7 @@ metadata:
 
 Epic: the Constructor (`apps/panel`) must CONSUME the engine's declared schema +
 capability manifest, never fork/hand-sync it. Design doc (the plan SSOT):
-`platform/work/DESIGN-authoring-schema-ssot.md`. Strangler-Fig, each phase green + FF-locked.
+`docs/architecture/proposals/DESIGN-authoring-schema-ssot.md`. Strangler-Fig, each phase green + FF-locked.
 
 **P1 SHIPPED (2026-07-01, commit `c1a635e`).** The config-semantics SSOT is extracted and
 all forks retired:

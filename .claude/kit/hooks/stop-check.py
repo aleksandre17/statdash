@@ -57,6 +57,17 @@ try:
         warn.append(rep)
 except Exception:
     pass
+# canonical work-dir guard — the rogue 2nd work dir must not return; scratch must not get tracked.
+# Canon: ONE work/ (board only) + docs/ for docs; ephemera (png/probe/*-shots) never tracked.
+try:
+    if os.path.isdir(os.path.join(root, "platform", "work")):
+        warn.append("platform/work/ exists again — the rogue 2nd work dir (canon: ONE work/ = board only, docs/ for docs). Relocate its artifacts + remove it.")
+    wt = subprocess.run(["git", "-C", root, "ls-files", "work/"], capture_output=True, text=True, timeout=10).stdout.split()
+    scratch = [f for f in wt if f.endswith(".png") or "-shots/" in f or "probe" in os.path.basename(f)]
+    if scratch:
+        warn.append(f"{len(scratch)} scratch file(s) tracked under work/ (png/probe/shots) — regenerable ephemera must not be committed. git rm --cached + .gitignore.")
+except Exception:
+    pass
 if warn:
     for w in warn: sys.stderr.write("[stop-check] " + w + "\n")
     sys.stderr.write("[stop-check] session-close disciplines incomplete (WARN_ONLY=%s).\n" % WARN_ONLY)

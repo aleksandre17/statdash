@@ -15,7 +15,7 @@ metadata:
 
 **Re-point (EXPAND):** nullable `agency_id UUID` FK→`stats.agency(id)` on the **3** carriers only. **V29 category_scheme has NO agency column** (verified) → omitted. Old TEXT columns KEPT in parallel. Backfill: `UPPER(TRIM(text))=UPPER(agency.code)` then GEOSTAT fallback; DO-block asserts 0 rows NULL after backfill.
 
-**Deferred (do NOT build without owner greenlight):** CONTRACT = drop TEXT columns / `agency_id NOT NULL` — a later door after a 2nd agency proves the model. Multi-tenancy (RLS FORCE, tenant GUC, tenant_id) — DEFERRED by owner. The **V6 `stats.dataset.tenant_id` + `USING(true)` RLS placeholder is UNTOUCHED** (agency_id=identity vs tenant_id=isolation-scope; a future MT migration MAY point tenant_id at `stats.agency(id)` since id is UUID). See `platform/work/ADR-multi-tenancy.md` §3 Plane-1.
+**Deferred (do NOT build without owner greenlight):** CONTRACT = drop TEXT columns / `agency_id NOT NULL` — a later door after a 2nd agency proves the model. Multi-tenancy (RLS FORCE, tenant GUC, tenant_id) — DEFERRED by owner. The **V6 `stats.dataset.tenant_id` + `USING(true)` RLS placeholder is UNTOUCHED** (agency_id=identity vs tenant_id=isolation-scope; a future MT migration MAY point tenant_id at `stats.agency(id)` since id is UUID). See `docs/architecture/decisions/ADR-multi-tenancy.md` §3 Plane-1.
 
 **Provisioning:** `apps/api/scripts/seed.ts` idempotent GEOSTAT re-assert (guarded on V38 via `to_regclass`, `ON CONFLICT(code) DO UPDATE` name/contact).
 

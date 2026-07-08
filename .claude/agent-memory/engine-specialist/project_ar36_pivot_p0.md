@@ -7,7 +7,7 @@ metadata:
 
 # AR-36 runtime-pivot — P0 landed (state-bound encoding channels)
 
-Design SSOT: `platform/work/DESIGN-grammar-of-interaction.md` (architect, AR-36). Goal: chart encoding `x=sector,series=geo` ⇄ `x=geo,series=sector` runtime-swappable via state/events (OLAP pivot as a declarative capability), NOT two `visibleWhen` A/B panels.
+Design SSOT: `docs/architecture/proposals/DESIGN-grammar-of-interaction.md` (architect, AR-36). Goal: chart encoding `x=sector,series=geo` ⇄ `x=geo,series=sector` runtime-swappable via state/events (OLAP pivot as a declarative capability), NOT two `visibleWhen` A/B panels.
 
 **P0 (committed, branch `feat/ar36-p0-encoding-refs`, NOT pushed/merged):**
 - `EncodingChannel` widened `string | ChannelDef` → `+ CtxScopeRef` (reused the R4 ref-taxonomy `{$ctx}` type from `ref/ref.ts` — did NOT declare a parallel `CtxRef` despite the design naming it, to keep one `{$ctx}` SSOT).

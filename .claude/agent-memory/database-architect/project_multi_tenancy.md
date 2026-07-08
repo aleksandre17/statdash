@@ -5,7 +5,7 @@ metadata:
   type: project
 ---
 
-Multi-tenancy fork for the platform (becoming a multi-AGENCY hosted SaaS). Decision docs: `platform/work/DESIGN-multi-tenancy-decision.md` (decided design) + `platform/work/DESIGN-multi-tenancy-final.md` (my red-team + ratification, the signed artifact) + `platform/work/ADR-multi-tenancy.md` (to be upgraded to match the final once signed).
+Multi-tenancy fork for the platform (becoming a multi-AGENCY hosted SaaS). Decision docs: `docs/architecture/proposals/DESIGN-multi-tenancy-decision.md` (decided design) + `docs/architecture/proposals/DESIGN-multi-tenancy-final.md` (my red-team + ratification, the signed artifact) + `docs/architecture/decisions/ADR-multi-tenancy.md` (to be upgraded to match the final once signed).
 
 **Ratified call:** tiered hybrid — POOL (shared-schema + FORCE RLS, non-owner app role) default + SILO-per-deploy escape; one `TenantContext` resolved at the request boundary into a `SET LOCAL app.current_tenant` GUC. `tenant_id UUID FK → stats.agency`. Agency = tenant (SDMX agencyID). GUC precedent already in prod: `publish.ts:101` `set_config('app.revised_by',$1,true)`.
 

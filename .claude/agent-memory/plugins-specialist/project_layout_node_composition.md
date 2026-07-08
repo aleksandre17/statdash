@@ -10,7 +10,7 @@ The platform composes page/section STRUCTURE through layout-node primitives
 Landed the owner's #1 ask (uniform layout-node composition) in commits adcc0de + 367e7e9.
 
 **Why:** the recurring owner complaint was bespoke `<div>`s with inconsistent
-handwriting + two competing grid primitives. Canonical design = `platform/work/DESIGN-responsive-composition.md`.
+handwriting + two competing grid primitives. Canonical design = `docs/architecture/proposals/DESIGN-responsive-composition.md`.
 
 **How to apply — the load-bearing, non-obvious facts:**
 

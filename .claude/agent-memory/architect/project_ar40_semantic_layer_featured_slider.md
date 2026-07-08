@@ -6,7 +6,7 @@ metadata:
 ---
 
 **AR-40 Semantic/Metrics Layer + landing Featured-Slider — DESIGNED 2026-07-04.**
-SSOT = `platform/work/SPEC-AR40-semantic-layer-and-featured-slider.md`; registry card = ARCHITECTURE-REGISTRY.md AR-40 (section F). Builds on [[semantic-layer-n26]] + [[metric-delivery-pipeline]] + [[project-featured-manifest]].
+SSOT = `docs/architecture/proposals/SPEC-AR40-semantic-layer-and-featured-slider.md`; registry card = ARCHITECTURE-REGISTRY.md AR-40 (section F). Builds on [[semantic-layer-n26]] + [[metric-delivery-pipeline]] + [[project-featured-manifest]].
 
 **The non-obvious load-bearing decisions (so future work doesn't re-litigate):**
 - The semantic layer ALREADY EXISTS (`core/data/metric.ts` MetricDef registry, manifest→boot delivery). AR-40 is COMPLETION, not greenfield. Do not propose re-architecting it.

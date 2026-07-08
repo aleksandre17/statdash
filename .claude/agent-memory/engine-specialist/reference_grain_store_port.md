@@ -9,7 +9,7 @@ metadata:
 
 The declarative **coordinate-addressed point read** that makes the implicit `_val`
 grain-sum explicit + generic (Law 1) + declarative (Law 2). Design at
-`platform/work/DESIGN-grain-store-port.md`. Phases G0-G2 LANDED, G3 escalated.
+`docs/architecture/proposals/DESIGN-grain-store-port.md`. Phases G0-G2 LANDED, G3 escalated.
 
 ## What landed (all packages/core only)
 - **G0 — `valAt` port primitive.** New `StoreQuery` discriminant `valAt {code, at?, grain?, rollup?}` in `data/store.ts`. `at` = GENERIC coordinate override of `ctx.dims` (no ctx clone). `GrainLevel = string` + `RollupOp` types added. **`storeValAt()` helper is the resolver-facing seam** — its default (rollup sum + no grain) routes through the EXISTING `val` query at the merged coordinate, so async ApiStore (warms `val`/`obs` only) stays byte-identical and never sees `valAt`. Reducer = `rollupValues()` in NEW `data/grain.ts` (the grain concern's own module; G4 grows it). `ExternalStore._val` refactored to share `_matchedValues()` loop; `_valAt` added. CachedStore default-`valAt` → `_val(merged)` (shares valCache slot, byte-identical to atTime read). FF-VALAT-COORD-IDENTICAL + FF-GRAIN-GENERIC in `data/store-valAt.fitness.test.ts`.

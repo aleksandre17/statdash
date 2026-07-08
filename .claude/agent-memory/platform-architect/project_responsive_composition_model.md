@@ -5,7 +5,7 @@ metadata:
   type: project
 ---
 
-Owner's core architectural vision, elevated in `platform/work/DESIGN-responsive-composition.md` (design-only, my authorship). The owner's A (3-tier style cascade) and B (layout-node composition SSOT) are ONE model: **a grammar of composition** where *structure* (layout nodes) and *style* (NodeStyles) are the two orthogonal axes of one node, resolved by ONE cascade. Ties to the orthogonality law ([[feedback-maximal-orthogonality]]).
+Owner's core architectural vision, elevated in `docs/architecture/proposals/DESIGN-responsive-composition.md` (design-only, my authorship). The owner's A (3-tier style cascade) and B (layout-node composition SSOT) are ONE model: **a grammar of composition** where *structure* (layout nodes) and *style* (NodeStyles) are the two orthogonal axes of one node, resolved by ONE cascade. Ties to the orthogonality law ([[feedback-maximal-orthogonality]]).
 
 **The canonical cascade (SSOT precedence, lowest→highest):** `resolveStyle(node,ctx) = mergeResponsive(① registryDefault(type) ② ctx.distributed ③ node.view.styles ④ ctx.placement)`, a deep per-breakpoint later-wins merge, output through the EXISTING `applyNodeStyles` var+flag engine (no new runtime CSS). Precedence GUARANTEED by a scoped CSS `@layer engine.reset, tier1-default, tier2-config, tier3-override;` — NOT a full-sheet reorder (YAGNI).
 

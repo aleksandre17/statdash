@@ -5,7 +5,7 @@ metadata:
   type: project
 ---
 
-Foundational, owner-delegated architecture call (DESIGN doc: `platform/work/DESIGN-time-mode-decision.md`, successor to `DESIGN-time-mode-decoupling.md`). Decision: **Option C** — a data view is the PRODUCT of orthogonal axes `dimension ⊥ selection-type ⊥ granularity`, authored once each; the flat fused-mode enum (`year, range, quarterly…`) is REFUSED at every tier. `year`/`range` become two values of ONE `selection-type` axis (`point`/`window`/`all`), not two views.
+Foundational, owner-delegated architecture call (DESIGN doc: `docs/architecture/proposals/DESIGN-time-mode-decision.md`, successor to `DESIGN-time-mode-decoupling.md`). Decision: **Option C** — a data view is the PRODUCT of orthogonal axes `dimension ⊥ selection-type ⊥ granularity`, authored once each; the flat fused-mode enum (`year, range, quarterly…`) is REFUSED at every tier. `year`/`range` become two values of ONE `selection-type` axis (`point`/`window`/`all`), not two views.
 
 Build NOW (real consumers exist): generalize `scope.timeBinding` → dim-generic `binding` with an explicit `selection` discriminant (kills the illegal `pin & window` state); open the closed `TimeGranularity` union → registry string; retire the surviving `=== 'year'` fused literal in `template.ts:75` (resolveCarrier `{year,range}` → perspective-keyed Record).
 

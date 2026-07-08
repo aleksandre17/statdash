@@ -5,7 +5,7 @@ metadata:
   type: project
 ---
 
-AR-48 (headless export/embed/snapshot delivery port) is DESIGNED — SSOT `platform/work/DESIGN-delivery-port-export-embed-snapshot.md` + the AR-48 registry card.
+AR-48 (headless export/embed/snapshot delivery port) is DESIGNED — SSOT `docs/architecture/proposals/DESIGN-delivery-port-export-embed-snapshot.md` + the AR-48 registry card.
 
 **The load-bearing correction:** `plugins/CLAUDE.md` ("Excel+CSV per section — now: stub") and `BENCHMARK-REFERENCE-PLATFORMS.md` row #14 ("export = STUB, no embed/snapshot") are BOTH STALE. Verified in code, the delivery backend is ~80% built to reference grade:
 - Data export CSV(BOM)/XLSX(OOXML)/SDMX-JSON: `platform/packages/core/src/data/export/` (OCP registry + serializers), `react/…/downloadExport.ts`, `EXPORT_MENU` DI, `data:export` command, `NodeExportContext` per-section publish/subscribe, WAI-ARIA menu. LIVE in the section header.

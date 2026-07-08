@@ -5,7 +5,7 @@ metadata:
   type: project
 ---
 
-Full-ladder responsive audit (live `:3002`, 54 screenshots) → report at `platform/work/AUDIT-responsive.md`.
+Full-ladder responsive audit (live `:3002`, 54 screenshots) → report at `docs/audit/AUDIT-responsive.md`.
 **FIXED 2026-06-28** (R1/R2/R3 + F5) — all in-system (tokens/clamp/min()/flex guards), zero magic numbers. Gates green (react 444, plugins 269 vitest; typecheck; tsc -b panel; lint 0-err; check-laws). `packages/core` build:engine was RED from a concurrent core/api workstream (DimVal index-sig in data/) — NOT my scope.
 
 **Why:** owner asked where the responsive design is imperfect across the whole site + a design-system fix plan (no magic numbers), then to EXECUTE the fixes.

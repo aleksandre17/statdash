@@ -2,7 +2,7 @@
 
 ## Current State (2026-07-08)
 
-**Render-parity epic — DONE, LIVE, MERGED (2026-07-02).** Every chart/table/KPI renders "data as it was" (correct pre-regression values) via clean architecture, proven Δ0.000 through the real pipeline and verified live on prod (Playwright vs :3002). Detail archived in `platform/work/SPEC-render-pipeline-target*.md` + the parity harness under `platform/apps/geostat/src/data/`.
+**Render-parity epic — DONE, LIVE, MERGED (2026-07-02).** Every chart/table/KPI renders "data as it was" (correct pre-regression values) via clean architecture, proven Δ0.000 through the real pipeline and verified live on prod (Playwright vs :3002). Detail archived in `docs/architecture/proposals/SPEC-render-pipeline-target*.md` + the parity harness under `platform/apps/geostat/src/data/`.
 
 **Post-parity work landed on `main`:**
 - AR-45 chart decomposition — `cartesian` build.ts is a thin assembler; responsive/grid/chrome/axes/marks/data-labels extracted; seam locked by `cartesian-decomposition.fitness`.
@@ -15,7 +15,7 @@
 
 ## NEXT (resume here)
 - Open/merge the `chore/hook-suite-hardening` PR when the owner approves.
-- Then the parked **innovation initiatives** ([[proactive-innovation-mandate]]): (1) Grammar of Interaction / cross-filter, (2) formal semantic/metrics layer (Cube/Malloy/LookML class), (3) data lineage/provenance surface — register in `platform/work/ARCHITECTURE-REGISTRY.md`, architect-design the owner's pick, sign-off, build.
+- Then the parked **innovation initiatives** ([[proactive-innovation-mandate]]): (1) Grammar of Interaction / cross-filter, (2) formal semantic/metrics layer (Cube/Malloy/LookML class), (3) data lineage/provenance surface — register in `docs/architecture/ARCHITECTURE-REGISTRY.md`, architect-design the owner's pick, sign-off, build.
 
 ## STANDING rules (binding)
 - **green-gate: PARSE THE LOG (`Tests N failed`), NOT exit code** — `pnpm test` returns 0 even when vitest fails. Include `pnpm lint` + `tsc -b apps/panel` in the converged gate.

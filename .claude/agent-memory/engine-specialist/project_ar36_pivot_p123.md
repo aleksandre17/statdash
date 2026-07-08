@@ -7,7 +7,7 @@ metadata:
 
 # AR-36 runtime-pivot — P1/P2/P3 (regional pivot fold)
 
-Follows [[ar36-pivot-p0]]. Branch `feat/ar36-pivot-regional` (main + P0 `ba52404`). Design SSOT: `platform/work/DESIGN-grammar-of-interaction.md`.
+Follows [[ar36-pivot-p0]]. Branch `feat/ar36-pivot-regional` (main + P0 `ba52404`). Design SSOT: `docs/architecture/proposals/DESIGN-grammar-of-interaction.md`.
 
 **The grain judgment call (task-flagged "data-fetch-both-dims shape"):** State A (no region sel) = by-region DONUT (one slice/region, GVA); State B (regions sel) = sector×geo STACKED BAR. The design claimed "aggregate by BOTH dims once, only encoding rotates" — but that is FALSE for State A: the chart interpreters (PieInterpreter/BarInterpreter, packages/charts) do NOT aggregate rows sharing a label, so feeding (sector,geo)-grain rows to a donut → N_sector slices per region (wrong). State A genuinely needs a different GRAIN (roll-up over sector). And it can't be driven by the sector filter (State A eq `_T` vs State B `$ne _T` = operator switch, not expressible in one clause) nor by an array var (`ExprVal` is scalar-only `DimVal` — no arrays; `$ne` can't switch by state).
 

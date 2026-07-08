@@ -39,7 +39,7 @@ siteConfig.metrics, maps to that exact code). Proven byte-identical by FF-RAW-CO
 **Gates:** core 668, react+plugins+provisioning 1024, tsc geostat+panel clean, eslint clean, check-laws clean.
 
 **P1-P3 sequencing note for the slider build:** the SSOT spec file the task cited
-(`platform/work/SPEC-AR40-semantic-layer-and-featured-slider.md`) does NOT exist in-repo — AR-40 is
+(`docs/architecture/proposals/SPEC-AR40-semantic-layer-and-featured-slider.md`) does NOT exist in-repo — AR-40 is
 only "PROPOSED" in ARCHITECTURE-REGISTRY.md. P0 was implemented from the task brief directly. The
 slider (P1) is the first real consumer of `ResolvedMeasure.format` — read it via resolveMeasureRef,
 apply consumer-side-format-wins precedence. See [[measure-ref-seam]], [[calc-metric-seam]].

@@ -18,7 +18,7 @@ Playwright `:3002` display-verified: integrity chip YEAR-AWARE (2024→hidden, 2
 ## (prior push log)
 Lead OWNS all calls now (no owner sign-off bounces). Model policy corrected: DEFAULT opus for substantive work (see [[model-agnostic-agents]]).
 **Active agents (all opus):** DB persistent-volume+cron (ae6b99a) · runner-chrome i18n+ADR (a00b019) · ingest-409 (ab93cf9) · apex-NaN sync-unmount (af471e0) · **AR-40 P0 spine (af607bb)**. ⚠️ DISCARD zombie sonnet runs adfc274(ingest)+af44b6a(apex) — superseded, do NOT merge.
-**AR-40 DESIGNED + APPROVED (spec `platform/work/SPEC-AR40-semantic-layer-and-featured-slider.md`).** Lead approved all 6 decisions: (1) `format` on MetricDef+wire ✅ (2) 11 featured units/labels from FEATURED.json+seed, never fabricate methodology ✅ (3) hand-author FEATURED→provisioning first, generator later ✅ (4) NEW `featured-slider` node (not evolve stats-carousel) ✅ (5) Strangler-retire landing stats-carousel ✅ (6) page-level drill now, deep-link later(AR-42) ✅.
+**AR-40 DESIGNED + APPROVED (spec `docs/architecture/proposals/SPEC-AR40-semantic-layer-and-featured-slider.md`).** Lead approved all 6 decisions: (1) `format` on MetricDef+wire ✅ (2) 11 featured units/labels from FEATURED.json+seed, never fabricate methodology ✅ (3) hand-author FEATURED→provisioning first, generator later ✅ (4) NEW `featured-slider` node (not evolve stats-carousel) ✅ (5) Strangler-retire landing stats-carousel ✅ (6) page-level drill now, deep-link later(AR-42) ✅.
 **SHARP FINDING:** KPI RENDER path not metric-aware while WARM path is → live latent cache-miss/dead-badge for any metric-id KPI; landing stats-carousel is HARD-CODED + already stale (Tbilisi 54100 vs live 49374). P0/U1 fixes render/warm asymmetry at root (byte-identical for raw codes, FF-RAW-CODE-IDENTICAL).
 **PHASES:** P0 spine (building) → P1 populate 11 metrics in provisioning → P2 featured-slider node (core featured.ts→react useFeaturedRows→plugin) → P3 Strangler-replace landing carousel → P4(gated) provenance drift. **Serialize provisioning.json edits** (P1 + runner-chrome may both touch it → sequence to avoid conflict).
 **Merge/deploy plan:** as opus agents land → converged gate (tsc+lint+laws+full vitest, PARSE `Tests N failed`) → landmine-safe deploy(s) → live-verify by display. Build P2/P3 AFTER P0 lands.
@@ -45,7 +45,7 @@ Owner law: preliminary = obsStatus=P of the VISIBLE slice, year-agnostic. Adds F
 - getComputedStyle-teardown pageerror (minor). Constructor i18n P4 + runner-chrome catalog (feedback.ts EN-only /ka — needs ADR-0028 catalog wire, one-way-door → owner).
 - **featured-slider NOT built yet** — FEATURED.json ready; build the landing slider from featured-metrics via semantic layer (AR-40 first consumer). See orchestrator memory `project_landing_slider_featured.md`.
 
-## REGISTRY / VISIONS (`platform/work/ARCHITECTURE-REGISTRY.md`)
+## REGISTRY / VISIONS (`docs/architecture/ARCHITECTURE-REGISTRY.md`)
 AR-40 semantic/metrics layer (spine; kills number-consistency bug-class + powers slider) · AR-41 reactive dataflow core · AR-42 grammar-of-interaction→Constructor · AR-43 lineage · AR-44 explorable · (declarative choropleth = DONE). AR-37 i18n (P0-P2 live) · AR-38 directional (live) · AR-39 integrity (moving to page-header).
 
 ## DOCTRINE reinforced this session (owner)
