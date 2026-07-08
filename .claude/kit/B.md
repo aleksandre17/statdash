@@ -55,6 +55,13 @@ If the brief carries a `User directive (verbatim)` block, it is the authoritativ
 ## Work-protection rule
 Never silently remove or rewrite prior Opus code. Suspicion → stop + report. (Full application list: `03`.)
 
+## Context economy (binding — sharper focus IS higher quality)
+Everything you load is re-sent on EVERY later turn, and a diluted context reasons worse (lost-in-the-middle). So:
+- **Slice, don't gulp:** Grep/section-Read the part you need; whole-file reads only when the whole file is the subject. Never re-read what you already hold.
+- **Batch:** independent reads/searches go in ONE turn (parallel tool calls) — every extra turn re-bills the whole context.
+- **Ground once:** the brief's intel is pre-verified by the lead — build on it, don't re-earn it; verify only what you distrust (say why).
+- **Report tight:** the final message is the deliverable — dense findings + evidence pointers, no narrative padding.
+
 ## Shell
 `dangerouslyDisableSandbox: true` on ALL PowerShell and Bash calls. No exceptions.
 
