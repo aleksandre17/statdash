@@ -17,3 +17,17 @@
 [2026-07-08] LAUNCH agent=architect model-requested=(def-pin opus) task=curate 5 senior memory dirs
 [2026-07-08] LAUNCH agent=junior-executor model-requested=sonnet task=graduate agnostic doctrine to kit
 [2026-07-08] LAUNCH agent=senior-backend-developer model-requested=opus task=memory hygiene guard hooks
+[2026-07-08 15:57] RUN run=agent-a082c294ab13517d4 model-actual=claude-opus-4-8 msgs=30 out-tokens=34293
+[2026-07-08 15:57] RUN run=agent-a109ad3b2004b1ff3 model-actual=claude-sonnet-5 msgs=241 out-tokens=196804
+[2026-07-08 15:57] RUN run=agent-a10b56c7935c7b0fd model-actual=claude-opus-4-8 msgs=96 out-tokens=139889
+[2026-07-08 15:57] RUN run=agent-a19767d185c5c2c54 model-actual=claude-opus-4-8 msgs=58 out-tokens=52168
+[2026-07-08 15:57] RUN run=agent-a24a0d26148fd2bac model-actual=claude-sonnet-5 msgs=123 out-tokens=93554
+[2026-07-08 15:57] RUN run=agent-a2ea69669a302bee4 model-actual=claude-opus-4-8 msgs=26 out-tokens=45047
+[2026-07-08 15:57] RUN run=agent-a3fe92ba394c85ffe model-actual=claude-opus-4-8 msgs=40 out-tokens=38065
+[2026-07-08 15:57] RUN run=agent-a40edadbe96c2261a model-actual=claude-opus-4-8 msgs=51 out-tokens=47953
+[2026-07-08 15:57] RUN run=agent-a73a3ccee43bf74a0 model-actual=claude-opus-4-8 msgs=123 out-tokens=152112
+[2026-07-08 15:57] RUN run=agent-a9b59cd0eb9f05b4d model-actual=claude-sonnet-5 msgs=136 out-tokens=132057
+[2026-07-08 15:57] RUN run=agent-aad9d3303fc03a730 model-actual=claude-sonnet-5 msgs=59 out-tokens=29705
+[2026-07-08 15:57] RUN run=agent-aae40d82b4997e9bf model-actual=claude-sonnet-5 msgs=110 out-tokens=80964
+[2026-07-08 15:57] RUN run=agent-ad3e1a24a5506f946 model-actual=claude-opus-4-8 msgs=91 out-tokens=60350
+[2026-07-08 15:57] RUN run=agent-afd111eff0daf4f0e model-actual=claude-sonnet-5 msgs=1 out-tokens=32

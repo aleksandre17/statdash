@@ -197,6 +197,40 @@ try:
                      stdin=json.dumps({"tool_input": {"command": "ls -la"}}))
     check("pre-bash-guard SILENT on ordinary command (P2 Tier B)", so.strip() == "" and rc == 0)
 
+    # ---- P10: subagent-ledger (requested vs verified model + per-run tokens) ---------------
+    import time as _t
+    tmp4 = tempfile.mkdtemp(prefix="selftest-ledger-")
+    try:
+        os.makedirs(os.path.join(tmp4, ".claude", "session"), exist_ok=True)
+        _led = os.path.join(tmp4, ".claude", "session", "token-log.md")
+        _today = _t.strftime("%Y-%m-%d")
+        open(_led, "w", encoding="utf-8").write(
+            f"[{_today}] LAUNCH agent=x model-requested=sonnet task=fixture\n")
+        _tr = os.path.join(tmp4, "agent-test1.jsonl")
+        open(_tr, "w", encoding="utf-8").write(
+            '{"message":{"model":"claude-sonnet-5","usage":{"output_tokens":10}}}\n'
+            '{"message":{"model":"claude-sonnet-5","usage":{"output_tokens":7}}}\n')
+        rc, so, se = run("subagent-ledger.py", env_root=tmp4,
+                         stdin=json.dumps({"transcript_path": _tr}))
+        _log = open(_led, encoding="utf-8").read()
+        check("subagent-ledger records actual model + tokens (P10)",
+              rc == 0 and "run=agent-test1" in _log and "model-actual=claude-sonnet-5" in _log
+              and "out-tokens=17" in _log)
+        rc, so, se = run("subagent-ledger.py", env_root=tmp4,
+                         stdin=json.dumps({"transcript_path": _tr}))
+        _log = open(_led, encoding="utf-8").read()
+        check("subagent-ledger dedupes on second stop (P10)", _log.count("run=agent-test1") == 1)
+        _tr2 = os.path.join(tmp4, "agent-test2.jsonl")
+        open(_tr2, "w", encoding="utf-8").write(
+            '{"message":{"model":"claude-opus-4-8","usage":{"output_tokens":5}}}\n')
+        rc, so, se = run("subagent-ledger.py", env_root=tmp4,
+                         stdin=json.dumps({"transcript_path": _tr2}))
+        _log = open(_led, encoding="utf-8").read()
+        check("subagent-ledger flags unrequested model family (P10)",
+              "run=agent-test2" in _log and "MODEL-VERIFY" in _log)
+    finally:
+        shutil.rmtree(tmp4, ignore_errors=True)
+
     # ---- existing close-out disciplines still healthy --------------------------------------
     rc, so, se = run("stop-check.py", env_root=tmp)
     check("stop-check runs without crashing (WARN posture)", rc == 0)
