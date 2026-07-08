@@ -1,5 +1,6 @@
 ---
 name: explorer
+model: sonnet
 description: Read-only reconnaissance. Use to map an area of the codebase before any change.
 tools: Read, Grep, Glob, Bash
 memory: project

@@ -1,5 +1,6 @@
 ---
 name: chief-engineer
+model: opus
 description: All-seeing quality overseer. Read-only. Use for system-wide coherence, quality gates, and final review.
 tools: Read, Grep, Glob, Bash
 memory: project

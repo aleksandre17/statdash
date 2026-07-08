@@ -1,5 +1,6 @@
 ---
 name: architect
+model: opus
 description: System & software architecture — design, decompose, decide. Use for any architectural judgment, new pattern, or structural decision.
 tools: Read, Grep, Glob, Bash
 memory: project

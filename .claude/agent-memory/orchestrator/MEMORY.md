@@ -19,7 +19,7 @@
 - [guardian of canon](feedback_guardian_of_canon.md) — user EXPLICITLY requires principled refusal against their OWN instructions; protect canon/standards/quality even when they unknowingly ask for something degrading — tell them + propose better + they decide
 - [resolve don't defer](feedback_resolve_dont_defer.md) — fix loose ends canonically (don't flag as "deferred"); own reversible + real-server work with safeguards (backup/staging) instead of over-gating; never trade quality for speed
 - [visual parity verification](feedback_visual_parity_verification.md) — "renders + 0 errors + 0 empty" ≠ correct; READ screenshots for VALUE correctness + completeness, compare to the user's reference version, don't trust metric-green
-- **MODEL PER TASK (economy — owner directive 2026-07-03, SUPERSEDES the old "always opus" rule).** Agents inherit the SESSION model (opus) when no `model` is passed on the call → so mechanical work SILENTLY ran opus. Fix: (a) junior-executor def now defaults `model: haiku`; (b) I pass an explicit model on EVERY call — mechanical/bulk → haiku, standard specialist execution → sonnet, judgment/design/QC (architect, chief-engineer, seniors on real design, root-cause debugging) → opus. NEVER silently run a junior/mechanical task on opus. Same quality bar on any model; escalate only on real judgment. Also: ALWAYS include `pnpm lint` in the green-gate (omitting it let G3.1 land lint-red).
+- **Green-gate rule:** the converged green-gate MUST include `pnpm lint` (omitting it let G3.1 land lint-red) + `tsc -b apps/panel` (see [green-gate panel typecheck](feedback_green_gate_panel_typecheck.md)). Model-routing is NOT here — canonical home is [model agnostic agents](feedback_model_agnostic_agents.md).
 - [dynamic delegation](feedback_dynamic_delegation.md) — match mechanism to problem: do trivial/fast edits MYSELF (Edit), delegate only when it earns its cost (parallelism/volume/judgment/work-protection); toolkit not ritual
 - [anticipate + trust engineering](feedback_anticipate_trust_engineering.md) — reason/predict outcomes from the gates I built; trust REAL-mechanism fitness tests; live-display is SELECTIVE (genuine proxy-divergence: real-wire/novel-visual), NOT a blanket screenshot ritual
 - [green-gate panel typecheck](feedback_green_gate_panel_typecheck.md) — green-gate MUST include `tsc -b apps/panel`; root `typecheck` is geostat-only, so parallel agents' combined work can break the panel and stay "green"
@@ -35,6 +35,7 @@
 - [reference is result not impl](feedback_reference_result_not_impl.md) — a screenshot/reference = the RESULT to match, never the implementation; reach the look via clean canonical architecture (DRY/SSOT, no hardcode/anti-pattern), refine-existing not rewrite; "look like the screens" never lowers quality
 - [proactive innovation mandate](feedback_proactive_innovation_mandate.md) — STANDING: be initiator/leader/innovator; unprompted propose forward-looking improvements + best-in-class from reference platforms; see the final result steps ahead; ambitious changes OK — architecture adapts to the vision; register visions, don't derail the build
 - [verify the purpose not the proxy](feedback_verify_the_purpose_not_the_proxy.md) — NEVER declare done on a proxy (green tests/golden/agent-✓); "done" = the LIVE experience works as the user would use it (real store/wire path, real gesture). A harness using a different mechanism than prod (ExternalStore vs live ApiStore) MASKS real bugs. See the essence (what it's FOR) + the behavior/interaction, not just values.
+- [measure the reported axis](feedback_measure_the_reported_axis.md) — owner insists + my metric says "fine" ⇒ I'm measuring the WRONG thing; broaden it (both axes, real rendered pixels, re-read their exact word — `სიგრძე`=width≠`სიმაღლე`=height); get their screenshot early. Cost 5 deploys.
 - [model agnostic agents](feedback_model_agnostic_agents.md) — agents are model-agnostic; lead picks model per-call (sonnet=mechanical/cheap, opus=judgment/design/QC), same quality bar on any model, escalate on real judgment. SUPERSEDES opus-only. Economy by default.
 
 ## Project — operational
@@ -53,6 +54,3 @@
 
 ## [platform] Project (additional — un-indexed in source)
 - [types.ts ceiling](project_types_ts_ceiling.md) — engine/react types.ts near the 400-line hard ceiling; decompose before adding interface fields
-
-## Auto-relocated (memory-home-guard — reconcile into a topic section)
-- ALWAYS set `model: "opus"` on EVERY Agent call (standing rule; missed twice — activeLocales-consume + G3.2 ran on inherited model). Also: ALWAYS include `pnpm lint` in the green-gate (omitting it let G3.1 land lint-red).

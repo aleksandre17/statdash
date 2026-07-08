@@ -1,5 +1,6 @@
 ---
 name: debugger
+model: opus
 description: Root-cause diagnosis. Use when something is broken or behaving unexpectedly — before any fix.
 tools: Read, Edit, Write, Grep, Glob, Bash
 memory: project

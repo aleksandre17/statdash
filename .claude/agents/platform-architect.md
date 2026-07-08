@@ -1,5 +1,6 @@
 ---
 name: platform-architect
+model: opus
 description: Senior architect for declarative, config-driven, visual-builder platforms (Builder.io / Form.io / JSON-Forms / dashboard-constructor class). Use for designing config schemas, renderers, registries, the authoring/Constructor layer, and capability models.
 tools: Read, Edit, Write, Grep, Glob, Bash
 memory: project
