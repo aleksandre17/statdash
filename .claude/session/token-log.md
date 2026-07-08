@@ -39,3 +39,4 @@
 [2026-07-08] LAUNCH agent=explorer model-requested=sonnet task=classify work/ + platform/work/ against canon → migration manifest
 [2026-07-08 16:56] RUN run=agent-afb036e0874897e31 model-actual=claude-sonnet-5 msgs=83 out-tokens=23983
 [2026-07-08] LAUNCH agent=senior-backend-developer model-requested=sonnet task=AR-48 build P0-P1 (name port + correct stale docs + provenance-on-artifact)
+[2026-07-08] LAUNCH agent=senior-backend-developer model-requested=sonnet task=AR-48 P0-P1 RETRY (prior run killed by usage limit pre-work)
