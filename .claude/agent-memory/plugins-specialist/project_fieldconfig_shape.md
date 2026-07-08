@@ -15,8 +15,8 @@ interface Threshold {
 }
 ```
 
-`resolveThresholdColor(value: number, thresholds: Threshold[]): string | undefined` is already exported from `@geostat/engine` — do NOT re-implement it.
+`resolveThresholdColor(value: number, thresholds: Threshold[]): string | undefined` is already exported from `@statdash/engine` — do NOT re-implement it.
 
-**Why:** The brief for the gauge panel described a non-existent `{ steps: [] }` shape. The real type is in `engine/core/src/field/config.ts`.
+**Why:** The brief for the gauge panel described a non-existent `{ steps: [] }` shape. The real type is in `packages/core/src/field/config.ts`.
 
-**How to apply:** When a panel needs threshold coloring, import `resolveThresholdColor` from `@geostat/engine` and pass `def.thresholds ?? []` directly.
+**How to apply:** When a panel needs threshold coloring, import `resolveThresholdColor` from `@statdash/engine` and pass `def.thresholds ?? []` directly.

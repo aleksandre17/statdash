@@ -1,0 +1,22 @@
+---
+name: windows-longpath-vitest-worktree-block
+description: vitest CLI startup fails in deep .claude/worktrees/agent-<id>/platform paths on Windows (Node ESM >260-char MAX_PATH) — but it IS workable via node_modules junctions + a copied expr/dist; tsc/eslint/check-laws are unaffected
+metadata:
+  type: project
+---
+
+**Root cause (confirmed):** in a `.claude/worktrees/agent-<40-hex-id>/platform/` checkout, `vitest run` (any invocation — pnpm/pnpm --filter/pnpm exec/npx) fails at STARTUP, before any test file loads, with `TypeError [ERR_PACKAGE_IMPORT_NOT_DEFINED]: Package import specifier "#module-evaluator" is not defined` from deep inside `vitest/dist/chunks/`. The resolved path is >260 chars — Windows' classic `MAX_PATH` — and Node's own ESM package-imports resolver fails to find `#module-evaluator` past that length, even though the package.json genuinely has a correct `imports` map. Reproduced with plain `node` doing `import()` on that exact file path directly — confirms it's a Node/Windows limit, not a vitest or install bug. Ruled out as ineffective: `pnpm install --force`, `NODE_OPTIONS=--preserve-symlinks`, `subst` a drive letter (Node's resolver reports the original long path regardless).
+
+**It IS workable — earlier belief that it's a dead end was INCOMPLETE.** Agent worktrees ship SOURCE only (no `node_modules`, no built `dist`); deps live solely in the MAIN repo checkout. A worktree missing `node_modules` entirely will ALSO throw `Cannot find module 'i18next'` etc. — don't mistake that for the MAX_PATH block; run `pnpm install` at the worktree's `platform/` root first (~35s) if `node_modules` is absent, and reproduce against an UNMODIFIED pre-existing test file to confirm which failure you're actually looking at before concluding anything about your own change.
+
+**One-time worktree bootstrap that gets real vitest signal despite the MAX_PATH block:**
+1. Junction the MAIN repo's `node_modules` into the worktree (PowerShell `New-Item -ItemType Junction` errored `PathNotFound`; `cmd /c mklink /J` via a temp `.cmd` file worked reliably). Junction ALL of: `platform/node_modules`, `platform/packages/{contracts,core,charts,styles,react,plugins}/node_modules` (pnpm links `react/jsx-dev-runtime` into EACH package's own node_modules — miss one and every `.tsx` test fails to resolve it), `platform/apps/{geostat,panel,api}/node_modules` (their vitest.config.ts `require.resolve('i18next')` at config-load time).
+2. `cp -r` the main checkout's `platform/packages/expr/dist` into the worktree (`@statdash/expr` aliases to `packages/expr` → `dist/index.js`; unbuilt in the worktree → ~52 `Cannot find module` failures across every core-dependent suite).
+3. Run `node node_modules/vitest/vitest.mjs run <path-or--project name>` directly (bypasses whatever wrapper hits the MAX_PATH boundary). Project names come from each package.json `name` (`@statdash/plugins`, `@statdash/react`; geostat's vitest project name is literally `national-accounts`, the workspace package name). Filtering by a test-file substring also works and loads all projects. `--reporter=basic` does not exist in vitest 4 — use the default reporter.
+4. `tsc`/`eslint` likewise via `node node_modules/typescript/bin/tsc -b <tsconfig>` / `node node_modules/eslint/bin/eslint.js <files>` (panel has only `tsconfig.json`, geostat has `tsconfig.app.json`); check-laws via `bash ../ops/scripts/check-laws.sh`. None of these three hit the vitest self-import path — they are UNAFFECTED by the block even without any of the above bootstrap.
+
+All junctions + the copied `dist` are gitignored — they never pollute `git status`/commits, and never copy files INTO the main checkout (it may be on a concurrent agent's branch).
+
+**When bootstrap isn't worth it (quick one-off check):** hand-replicate the exact parsing/assertion logic of the fitness test in a plain throwaway `.mjs` script (no `#foo`-style self-referencing imports, so unaffected at any path length) and run it directly for real pass/fail signal on the LOGIC — state explicitly in the report that the vitest CLI gate itself was environmentally blocked/bypassed. This is how the false-positive in [[project_css_fitness_comment_stripping_gotcha]] was actually caught.
+
+See `../../kit/feedback/feedback_windows_worktree_pitfalls.md` for the plugins-specialist's parallel writeup of this environment issue, and `../react-specialist/project_worktree_vitest_maxpath_block.md` for the sibling confirmation there.

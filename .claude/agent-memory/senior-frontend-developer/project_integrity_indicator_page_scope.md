@@ -56,7 +56,7 @@ PUBLISH side (their title-badge return is currently inert).
 (`packages/plugins/nodes/page-header/default/data-integrity.fitness.test.tsx` —
 real PageHeader + real engine publish/subscribe seam; the section-folder test was
 deleted). `FF-INTEGRITY-REACHABLE` asserts not-color-only (dot + label + caption).
-Verified green via [[windows-longpath-vitest-worktree-block]] junction technique.
+Verified green via [[project_windows_longpath_vitest_worktree_block]] junction technique.
 
 **Section responsive fix (shipped same commit):** `.section__title-wrap` given a
 `--section-title-min: 16rem` floor (`flex: 1 1 var; min-width: min(100%, var)`) so

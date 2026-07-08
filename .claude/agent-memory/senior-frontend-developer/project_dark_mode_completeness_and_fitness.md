@@ -5,7 +5,7 @@ metadata:
   type: project
 ---
 
-Dark mode on this platform is a **token-override layer** (`@media prefers-color-scheme:dark` + `[data-theme="dark"]`, both in `packages/styles/src/css/tokens.css`) — it redefines Tier-2 semantic color roles; spacing/radii/type/motion stay theme-neutral. See [[semantic-token-theming-spine-p0]] + [[semantic-token-spine-complete]] for the token-spine mechanism.
+Dark mode on this platform is a **token-override layer** (`@media prefers-color-scheme:dark` + `[data-theme="dark"]`, both in `packages/styles/src/css/tokens.css`) — it redefines Tier-2 semantic color roles; spacing/radii/type/motion stay theme-neutral. See [[semantic-token-spine]] for the token-spine mechanism.
 
 **The failure class (owner-found defect, 2026-07):** the dark blocks originally covered only a SUBSET of roles (surface/text/border/status/chart). ~30 roles stayed frozen at their LIGHT values — `--color-surface-frame`, the accent extras (`-hover/-bg/-secondary/-chip-border`), `--color-heading-display`, `--color-trend-*`, `--color-chart-frame/-grid`, the SDMX `--status-obs-*` + `--status-total-*` families, the `--color-error-*` family, `--color-skeleton`, `--color-surface-hover` (was a black-darken; on dark must lighten). The perspective/time switcher rendered as a frozen light box because its track bg = `--color-surface-frame` never flipped while its label text (`--color-text-secondary`) did. Root fix: give EVERY semantic role an explicit dark value (or derive it from one that flips via `var()`).
 

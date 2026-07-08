@@ -13,4 +13,4 @@ AR-15 (owner, 2026-07-01): tables clipped with no scrollbar + wanted beautiful t
 
 **Table-clip root cause (reusable lesson):** `.data-table__wrap` is a flex item inside the AR-8 band's `[data-view=visible]{flex-direction:column}` chain; default `min-width:auto` refuses to shrink below the table's min-content width → a WIDE table pushes past the card with no scrollbar. Fix = `overflow:auto; min-width:0; max-width:100%` in the plugin's own `data-table.css`. `min-width:0` is the load-bearing bit. This does NOT fight `node-styles.css` (the AR-8 lane) which layers band/mobile `overflow-y` + the sticky header — that file stays untouched.
 
-Fitness: `packages/styles/src/scrollbar.fitness.test.ts`. See [[semantic_token_theming_spine_p0]] for the token spine the colours ride, and [[panel_sizing_cqi_model]] for the AR-8 band this scroll container lives inside.
+Fitness: `packages/styles/src/scrollbar.fitness.test.ts`. See [[semantic-token-spine]] for the token spine the colours ride, and [[panel_sizing_cqi_model]] for the AR-8 band this scroll container lives inside.

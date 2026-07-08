@@ -136,7 +136,7 @@ Rotate: .claude/session/context.md + token-log.md (if stale or layer transition)
 | `.claude/kit/strategy/09-risk.md` | When a change could affect structure, or hardening invariants | Sonnet/Opus |
 | `.claude/kit/strategy/11-work-board.md` | Planning, picking, or closing work items (the kanban protocol) | lead/all |
 | `.claude/kit/strategy/11-work-board.md` | Starting any non-trivial effort (the situation→workflow map + folder standard) | lead/all |
-| `.claude/kit/`.claude/kit/INDEX.md` | Back-compat index → points to 8 files above | Sonnet |
+| `.claude/kit/INDEX.md` | Back-compat index → points to 8 files above | lead |
 
 ### Operational state (changes frequently — read every relevant task)
 
@@ -191,6 +191,7 @@ No agent ever reads all 7 strategy files. The selective map prevents that.
 | Strategy/process content in a memory file | Strategy lives in `.claude/kit/strategy/01–07` | Add to the correct numbered file |
 | Duplicate of existing content | Causes drift — two sources of truth diverge | Grep first. Extend the existing file. |
 | `MEMORY.md` growing past ~50 lines | Growth = scope creep or duplicates | Delete or merge entries before adding new ones |
+| Agnostic lesson stored as project memory | Portable wisdom trapped in a project-local layer — lost to the next project | Graduate it: a lesson true on ANY codebase → `.claude/kit/feedback/` (kit travels); only THIS-repo facts stay in `agent-memory` |
 
 **Before creating any new memory file:** grep the concept. If it already lives somewhere → update that file. If it belongs to a category (feedback/user/project/reference) but no file exists → create ONE canonical file, add one line to MEMORY.md.
 
@@ -222,7 +223,7 @@ No agent ever reads all 7 strategy files. The selective map prevents that.
 ```
 ## Agent layer (the routing mechanism)
 
-`.claude/agents/*.md` — subagent definitions Claude Code uses to delegate (lead=orchestrator, model-agnostic · oversight=chief-engineer(opus) · senior(opus)=architect·database-architect(+migrations)·senior-backend-developer·senior-frontend-developer(+markup)·project-manager·debugger·platform-architect · middle=module-specialist(sonnet) · junior(haiku)=explorer·junior-executor). Frontmatter `description` drives delegation; `memory: project` persists per-agent. Talk to one directly: `@agent-<name>` (one task) or `claude --agent <name>` (run the session as that agent) — protocol + trade-off in `01`. Doctrine: `01` Agent layer. Scaffolded by `/bootstrap`.
+`.claude/agents/*.md` — subagent definitions Claude Code uses to delegate. Model topology: ONLY the invariant-tier extremes carry a `model:` pin — apex design/QC (chief-engineer, architect, platform-architect = opus floor) and junior-executor (haiku); every other agent is model-agnostic and the lead routes it per-call by decision-density (misrouting is the lead's failure mode). Frontmatter `description` drives delegation; `memory: project` persists per-agent. Talk to one directly: `@agent-<name>` (one task) or `claude --agent <name>` (run the session as that agent) — protocol + trade-off in `01`. Doctrine: `01` Agent layer. Scaffolded by `/bootstrap`.
 
 ## Kit meta
 
@@ -245,6 +246,10 @@ Crystallized owner feedback — each one is a behavioral correction that must no
 | `.claude/kit/feedback/feedback_opus_work_protection.md` | Reviewing/merging Opus output (don't silently discard senior work) |
 | `.claude/kit/feedback/feedback_commit_attribution.md` | Writing a commit message (attribution rules) |
 | `.claude/kit/feedback/feedback_powershell_sandbox.md` | Running shell commands on the owner's Windows machine |
+| `.claude/kit/feedback/feedback_verification_doctrine.md` | Before declaring anything done/verified; when a metric disagrees with the owner; designing any validation |
+| `.claude/kit/feedback/feedback_leadership_doctrine.md` | Leading a session: intake, briefing, delegation/routing, proposing initiatives |
+| `.claude/kit/feedback/feedback_architecture_craft.md` | Any design/refactor/UI-elevation decision; adopting a new concept |
+| `.claude/kit/feedback/feedback_windows_worktree_pitfalls.md` | Working in a git worktree / running vitest-pnpm on this Windows machine |
 
 ## Command playbooks (load only when invoked)
 

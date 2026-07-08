@@ -1,109 +1,20 @@
 ---
 name: migration-progress
-description: Platform structure re-architecture (Strangler-Fig) execution log — engine/→packages/ + contracts done; Phase 5 npm-scope rename @geostat→@statdash LANDED 2026-06-23 (commit 7a47e5d)
+description: Platform structure re-architecture (engine/→packages/ + @geostat→@statdash scope rename) — COMPLETE; surviving constraints only
 metadata:
   type: project
 ---
 
-# Platform Structure Re-architecture — Progress (Strangler-Fig)
+Platform structure re-architecture (Strangler-Fig, ADR-012) is **COMPLETE**. This file keeps only the durable outcomes + surviving constraints; the phase-by-phase execution log lived here and is now in git history.
 
-ADR: `docs/architecture/decisions/ADR-012-platform-structure-rearchitecture.md` (pointer: `.claude/agent-memory/architect/project_platform_structure_rearchitecture.md`)
+**Outcome (landed 2026-06-23, commit `7a47e5d`):**
+- `engine/` → `platform/packages/` (filesystem move); the pure engine dir is `packages/core` (was `engine/`).
+- New zero-dep innermost shared-types package `@statdash/contracts` (json / manifest / snapshot / problem / site).
+- npm scope rename `@geostat/*` → `@statdash/*` across every package `name`, dependency entry, alias/tsconfig-path key, and import specifier. The rename is guarded by `platform/tests/no-geostat-scope.fitness.test.ts` — no `@geostat/*` may return to source/config.
+- The dependency arrow now lives in root `CLAUDE.md` Law 3 (SSOT), enforced by `eslint no-restricted-imports`. Don't restate it from memory — read the law.
 
-## Phase 0 — Baseline (2026-06-23)
-- HEAD: 6139817 feat(a11y): chart→table fallback + axe-core gate [N15]
-- Tests: **781 passed | 18 skipped (799 total)**, 79 test files. GREEN.
-- Typecheck: GREEN.
-- Lint: RED at baseline — 109 problems (70 errors, 39 warnings), but **0 `no-restricted-imports` (arrow) violations**.
-  - The 70 errors are pre-existing code-quality issues (no-unused-vars, react-hooks/refs), OUTSIDE my scope.
-  - GATE DEFINITION (best-judgment, consistent with ADR — the arrow gate is the named safety net):
-    - tests >= 781 passed, 18 skipped
-    - typecheck green
-    - arrow gate: 0 no-restricted-imports violations (NEVER regress)
-    - lint total errors must NOT exceed baseline 70 (no NEW lint errors introduced)
+**Surviving constraints (non-obvious, still true):**
+- **`apps/geostat` package `name` is `national-accounts`, NOT `@statdash/*`** — the tenant app is deliberately un-scoped; only the reusable packages + `apps/api`/`apps/panel` carry the `@statdash` scope.
+- **`ops/docker-compose.yml` is a DISTINCT standalone postgres+pgadmin DB stack, NOT a duplicate of `ops/compose/docker-compose.yml`** (the app stack). Chesterton's Fence — do not "de-dup"/delete it; it's referenced by the architect's i18n-db notes.
 
-## Key reality-check vs ADR
-- ADR P0-1 says `@geostat/*` not in node_modules. FALSE as of Jun 22 install — full workspace symlinks exist
-  (apps/*/node_modules/@geostat/* -> engine/*). `workspace:*` resolution works. The remaining P0-1 issue is the
-  two-stories drift: front apps still use Vite source-aliases instead of leaning on the `source` export condition.
-
-## Phase status
-- [x] Phase 1 — @geostat/contracts (kept @geostat scope this round; scope rename is Phase 5, deferred).
-      Created engine/contracts (zero-dep): json.ts, manifest.ts (SiteManifestContract + ManifestMode/Datasource),
-      snapshot.ts (SnapshotEnvelope), purity fitness test. Wired: pnpm (auto via engine/* glob), tsconfig paths
-      (root + geostat app + panel), both vite aliases, vitest projects, eslint (RESTRICT_CONTRACTS + own block +
-      arrow comment). Consumers: api snapshot-store (PageDataSnapshot=SnapshotEnvelope), api bootstrap
-      (SiteManifest=SiteManifestContract), geostat site-manifest (SiteManifest refines contract via Omit).
-      GATE: tests 783 pass/18 skip, root+api typecheck green, 0 arrow violations, lint unchanged (70 err baseline).
-      NOTE: package named @geostat/contracts (not @statdash) to stay reversible — Phase 5 renames the whole scope.
-- [x] Phase 2 — Dockerfiles + nginx.conf moved to app root for geostat + panel (api already correct).
-      Updated COPY nginx path + header comments in both Dockerfiles; dockerfile: path in both platform
-      per-app docker-compose.yml. CROSS-SCOPE (reported): also updated ops/compose/docker-compose.yml:17
-      and ops/compose/catalog.json app_base template (both hardcoded apps/geostat/src/Dockerfile) — leaving
-      them stale = broken deploy. Kit fixture test (test_frontend_contracts.py) reads the kit's OWN fixture,
-      not platform compose — unaffected. geostat.ops.json references the apps DIR (unchanged) — still valid.
-      GATE: tests 783/18, typecheck green, 0 arrow violations, lint unchanged. (compose verified by inspection.)
-- [~] Phase 3 — workspace:* vs alias SSOT — PARTIAL (safe part done; ADR's alias-DROP NOT done, justified).
-      FINDING: ADR P0-1 premise stale. workspace:* IS real (.npmrc link-workspace-packages=true; all
-      @geostat/* symlinked into node_modules). The drift was two AGREEING stories (workspace + source-aliases).
-      ADR Phase 3 wanted to DROP the front aliases and rely on source-condition resolution. BLOCKED + UNSAFE:
-      `pnpm build` (geostat) is RED AT BASELINE — Rolldown can't resolve react-dom from
-      engine/plugins/.../HBarDivergingChart.tsx (createPortal). Root cause: engine/plugins uses react-dom but
-      declares only `react` as a peer (missing react-dom peer). That is the SAME in-graph source-resolution path
-      dropping aliases would force everything onto — removing aliases would worsen it, and build-green is
-      unverifiable. Build is NOT in my gate (test+lint+typecheck+check-laws) and is pre-existing
-      (HBar last touched commit 292bc72, predates my tag) + plugins-specialist scope.
-      DONE (safe SSOT): rewrote both vite configs' stale "aliases can be dropped" TODO into the true story —
-      workspace:* is authoritative; aliases are the deliberate, verified bundler source-resolution layer that
-      agrees with it; documented WHY they can't drop yet. No competing silent stories anymore.
-      HANDOFF: to fully close P0-1, plugins-specialist must add `react-dom` (and audit react-apexcharts/leaflet)
-      to engine/plugins peerDependencies, fix the build, THEN the alias drop can be done + verified.
-- [x] Phase 4 — engine/ -> packages/ (filesystem mv whole dir; preserves tracked+untracked agent work).
-      REFERENCE-UPDATE INVENTORY (exhaustive):
-        ROOT: pnpm-workspace.yaml (engine/* -> packages/*), tsconfig.json (all paths), vitest.config.ts (7 projects),
-              package.json (build:engine filter), eslint.config.js (arrow comment + layer table + PLUGINS_ALL +
-              RESTRICT_ENGINE + RESTRICT_CONTRACTS + 6 files: globs + panel relative-reach group), pnpm-lock.yaml
-              (regenerated by install: 0 engine links, 10 packages links).
-        GEOSTAT: tsconfig.app.json (paths + include + comments), vite.config.ts (aliases + comments),
-              vitest.config.ts (aliases + comments + ADDED missing @geostat/contracts alias), tailwind.config.js,
-              Dockerfile (COPY engine/ -> packages/ + comments), docker-compose.yml (comments).
-        PANEL: tsconfig.json (paths + comment), vite.config.ts, vitest.config.ts (+ contracts alias), Dockerfile,
-              docker-compose.yml.
-        CROSS-SCOPE ops/ (reported, path-break fix): check-laws.sh (ENGINE/REACT/PLUGINS vars + doc comments +
-              Scanning echo — was a FALSE-GREEN: vars pointed at gone dirs so it scanned nothing), build-verify.sh
-              (engine/react package paths).
-      ARROW PROOF: injected `import from '@geostat/react'` probe into packages/core/src -> lint flagged
-              no-restricted-imports (error), removed probe. The arrow gate enforces on the NEW packages/ paths.
-      GATE: tests 783/18, root+api typecheck green, 0 arrow violations, lint unchanged (109/70/39).
-      FINDING (check-laws): now scans real packages/core -> reports Law 4 (Georgian text in spec-catalog.ts /
-              provenance.ts). PRE-EXISTING + invariant across the move (verbatim content, same files, only path var
-              changed). These are bilingual {ka,en} catalog label data (engine-specialist scope), not my regression.
-              Same pre-existing-red category as lint's 70 errors.
-      NOTE (pre-existing, out of scope): api Dockerfile deps stage doesn't COPY packages/ but does
-              `pnpm install --filter @geostat/api...` (needs workspace manifests) — latent, predates my work
-              (api already depended on @geostat/engine; Dockerfile never copied engine/). Not a rename ref. Flagged.
-- [x] Phase 6 — law reconciliation DONE; convergence mostly SKIPPED (justified).
-      LAW RECONCILIATION (Law 7 — docs follow architecture):
-        root CLAUDE.md Law 3: phantom `packages/engine <- packages/react <- plugins <- src` REPLACED with true
-          `packages/contracts <- expr <- core <- charts <- react <- plugins <- apps/*` (+ contracts <- apps/api),
-          noted eslint enforces it. Header per-module pointers fixed (platform/packages/CLAUDE.md +
-          platform/packages/plugins/CLAUDE.md).
-        platform/packages/CLAUDE.md (was engine/CLAUDE.md, moved by Phase 4): arrow block rewritten to true arrow;
-          data.md pointer packages/engine/src/data -> packages/core/src/data; clarified dir=core, scope still @geostat.
-      CONVERGENCE: P2-1 (index.ts) + P2-2 (test colocation) SKIPPED — high churn in package entry points/tests that
-        other agents are actively editing; collision risk > value (ADR said skip churny-for-its-own-sake).
-        P2-3 (delete stray ops/docker-compose.yml): NOT DONE — investigated, the ADR premise is WRONG. That file is a
-        DISTINCT standalone DB stack (postgres+pgadmin), NOT a duplicate of ops/compose/docker-compose.yml (the app
-        stack). It is referenced by architect memory project_i18n_db.md. Chesterton's Fence — reported, not deleted.
-      GATE: tests 783/18, root+api typecheck green, 0 arrow violations, lint unchanged.
-
-- [x] Phase 5 (@geostat/* -> @statdash/* scope rename) LANDED 2026-06-23 in commit 7a47e5d
-      ("platform: packages/ restructure, @statdash scope, Constructor MVP, tenant-agnostic runner").
-      GROUND TRUTH (verified 2026-07-01): every package `name` in platform/packages/*/package.json + apps/api + apps/panel
-      is now `@statdash/*` (charts/contracts/engine/expr/plugins/react/styles/api/panel); apps/geostat stays
-      `national-accounts`. platform/package.json scripts filter `@statdash/react`. No `@geostat/*` strings survive in
-      source/config — the only remaining `@geostat/` occurrences are inside agent-memory markdown (historical notes).
-      What Phase 5 changed: `name` in the package.json set, every `@geostat/*` dependency entry, all alias `find:`/tsconfig
-      `paths` keys (vite/vitest/tsconfig/eslint), all import specifiers, .npmrc/lock via reinstall. The dir MOVE (packages/)
-      + contracts package were already done in prior phases; Phase 5 was the npm SCOPE string change.
-      NOTE: the [ ] Phase 1/2 notes above ("kept @geostat scope this round; scope rename is Phase 5, deferred") were
-      accurate WHEN WRITTEN (pre-rename) — they describe the reversible intermediate state, since superseded by this commit.
+**Resolved (do not re-flag):** the Phase-3 alias-drop blocker (`packages/plugins` used `react-dom` while declaring only a `react` peer → Rolldown `pnpm build` red on `createPortal`) is FIXED — `packages/plugins/package.json` now declares the `react-dom` peer.

@@ -1,6 +1,6 @@
 ---
 name: config-api-contract
-description: Shape & quirks of the @geostat/api /api/config endpoints the panel Constructor talks to
+description: Shape & quirks of the @statdash/api /api/config endpoints the panel Constructor talks to
 metadata:
   type: reference
 ---

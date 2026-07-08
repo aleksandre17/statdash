@@ -13,4 +13,4 @@ The `text` and `gauge` panels exist on disk under `packages/plugins/panels/{text
 - Do NOT use `text` or `gauge` as renderable nodes in geostat fixtures/configs/tests until they're added to the barrel — they won't render.
 - Renderable content panels today: `chart`, `table`, `kpi-strip`, `map`. Renderable structural nodes: `section`, `page-header`, `filter-bar`, layout nodes, etc. A `section`'s own `title` IS rendered tenant content (data-free render target — good for DB-independent render tests).
 - The emptyManifest() offline page in `apps/geostat/src/data/site-manifest.ts` builds an `inner-page` whose only child is a `text` node — by the same gap that fallback page likely renders an EMPTY body (worth verifying / flagging; offline copy may not show). Out of frontend lane to fix the barrel (packages/**), but flag to the architect: either export text/gauge or change the offline page to a registered node.
-- Fixing the barrel is a one-line add in packages/plugins/panels/index.ts but that package is owned by the engine/plugins lane.
+- Fixing the barrel is a one-line add in packages/plugins/panels/index.ts but that package is owned by the packages/plugins lane.

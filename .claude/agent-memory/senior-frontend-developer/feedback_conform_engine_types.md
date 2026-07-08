@@ -1,11 +1,11 @@
 ---
 name: feedback-conform-engine-types
-description: When a panel/UI task spec contradicts a published @geostat/engine type, the engine type wins — emit type-valid config, not the literal spec field
+description: When a panel/UI task spec contradicts a published @statdash/engine type, the engine type wins — emit type-valid config, not the literal spec field
 metadata:
   type: feedback
 ---
 
-When a UI task spec describes a field/shape that contradicts the actual `@geostat/engine` type, conform to the engine type, not the prose.
+When a UI task spec describes a field/shape that contradicts the actual `@statdash/engine` type, conform to the engine type, not the prose.
 
 **Why:** Engine types are the published contract between Constructor and renderer (root Laws 2/3). A field the type doesn't have would never typecheck and never run — emitting it is a fake solution. The panel's whole purpose is to generate engine-valid `DataSpec`.
 

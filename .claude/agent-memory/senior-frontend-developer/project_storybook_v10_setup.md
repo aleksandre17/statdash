@@ -1,11 +1,11 @@
 ---
 name: storybook-v10-setup
-description: Storybook in @geostat/react resolves to v10 — addon-essentials & @storybook/test are deprecated v8-only packages; use core + addon-docs instead
+description: Storybook in @statdash/react resolves to v10 — addon-essentials & @storybook/test are deprecated v8-only packages; use core + addon-docs instead
 metadata:
   type: project
 ---
 
-Storybook lives in `platform/engine/react` (config at `engine/react/.storybook/`, script run via `pnpm --filter @geostat/react storybook` so cwd finds the config). Core deps are hoisted to the workspace root `platform/package.json`.
+Storybook lives in `platform/packages/react` (config at `packages/react/.storybook/`, script run via `pnpm --filter @statdash/react storybook` so cwd finds the config). Core deps are hoisted to the workspace root `platform/package.json`.
 
 **The version-alignment trap:** installing `storybook` + `@storybook/react-vite` resolves to **v10** (10.4.5 as of 2026-06). The old standalone addons named in older docs/specs are deprecated and DO NOT exist for v10:
 - `@storybook/addon-essentials` — frozen at 8.6.14; its addons (controls, actions, viewport, backgrounds, toolbars, measure, outline, highlight) are built into v10 core. Do NOT list it in `main.ts`.

@@ -16,3 +16,11 @@ A panel dir `packages/plugins/panels/<name>/` (with `default/meta.ts` + `default
 **Real incident (2026-06-23, 2nd-tenant capstone):** `text` + `gauge` existed on disk, were absent from all three barrels → never registered → `apps/geostat/src/data/site-manifest.ts` `emptyManifest()`/`offlinePage()` (which builds the offline "site unavailable" page from a `type:'text'` node) rendered EMPTY. Fix = add to all 3 barrels.
 
 **Guard (added same incident):** `packages/plugins/nodes/__tests__/panel-registration.fitness.test.ts` — structural fitness reading barrel SOURCE as text + disk layout; asserts every `panels/*` dir with `default/meta.ts` is exported from all three barrels. Plus `panel-resolution.test.ts` proves `nodeRegistry.get('text'|'gauge')` resolves. Both are `@vitest-environment node` and import META from pure `meta.ts` (NOT the barrel — barrel pulls Shell/apexcharts/leaflet/i18next, unresolvable in node env). See sibling C0 fitness `schema-completeness.fitness.test.ts` which already imports every panel meta and requires panels to carry a non-empty schema.
+
+**Same rule applies to node-type integration tests, not just registration:** a test exercising
+plugin META (e.g. asserting `NodeCap`/capability tokens across every registered slice) MUST live
+in `packages/plugins/**` — the dependency arrow (`packages/react ← packages/plugins`) forbids a
+`packages/react`-tier test from importing plugin META. Also import registries like `NodeRegistry`
+DIRECTLY from their file (e.g. `@statdash/react/engine/NodeRegistry`), not via the top barrel —
+the barrel drags in `registerSlice.ts` → `i18next`, an unresolvable transitive dep inside a pure
+`@vitest-environment node` test.

@@ -1,79 +1,51 @@
 # Engine Specialist — Memory Index
 
 ## Feedback — corrections & validated approaches
-- [Class-M hook protocol](feedback_class_m_hook.md) — when the PreToolUse:Edit hook flags a public `@statdash/engine` API change, run the 09B degradation-risk assessment as a named section before editing; repeating an Opus-blessed seam needs no re-escalation
+- [Class-M hook protocol](feedback_class_m_hook.md) — public `@statdash/engine` API edit → run 09B degradation-risk assessment as a named section; repeating an Opus-blessed seam needs no re-escalation
+- [Shared-tree concurrency](feedback_shared_tree_concurrency.md) — tree is shared with concurrent agents; never `git stash -u`; diagnose typecheck/test failures via `git status`/`git diff <file>` first
+- [Worktree vitest hoisted](feedback_worktree_vitest_hoisted.md) — pointer to plugins-specialist's consolidated worktree/Windows pitfalls file
+- [Write tool byte-fidelity](feedback_write_tool_byte_fidelity.md) — Write silently normalizes exotic whitespace (e.g. NBSP) when retyping from memory; use Edit or verify byte-identity
 
-## Project
-- [CLUSTER② Law-1 leaks + inert seams](project_cluster2_law1_seams.md) — GrowthResolver privileged-dim+DEAD accountColor leak KILLED (filter:{[TIME_DIM]:}+generic color; atTime WRONG for obs-meta=filter-key) + FF-NO-PRIVILEGED-LITERAL twin; AD-6 perspectiveOptions honors available (react-lane must thread gate to activate); GRAIN-G4 granularity→grain (annual no-op via DEFAULT_GRANULARITY, data-gated). 3 commits, all green
-- [Adoption epic (X-2)](project_adoption_epic.md) — Acts 2(scope.metric wired→MEASURE_DIM)/3(FF-NO-CAPABILITY-WITHOUT-CONSUMER)/4(custom deleted) LANDED in core; Act 1 metric DELIVERY escalated (cross-workstream); registerMetrics seam added
-- [Platform restructure paths](project_restructure_paths.md) — engine/* moved to platform/packages/*; npm scope @statdash/* (landed; was @geostat/*)
-- [perspective-axis P1](project_perspective_axis_p1.md) — expand-contract relax + parser + perspectiveState SSOT (6 sites) + scopeCtxByPerspective; byte-identical (geostat=eq-gates, no mode-*); renderNode split (lazyRendered.ts) for bloat gate
-- [perspective-axis P2](project_perspective_axis_p2.md) — canonical perspective-is/-in/-not ops (+optional param via activeForExpr) + mode-* byte-identical aliases + Constructor authoring (mirrors mode-*) + alias-equiv fitness; suite 1719
-- [perspective-axis P3](project_perspective_axis_p3.md) — DELETED dead by-mode DataSpec wholesale (engine+schema+Constructor+tests); grep-zero packages/apps; schema is GENERATED (gen:schema from SPEC_CATALOG); suite 1711 (−8 = deleted cases)
-- [perspective-axis P4 BLOCKER](project_perspective_axis_p4_blocker.md) — geostat config migration: bar-collapse + effects-removal CANNOT be byte-identical while System A bar-gated default-resolution stays live (task constraint conflict); scope.timeBinding can't yet carry binding (ctx-ref pin unsupported, window writes unread keys); ESCALATED, no edits made
-- [perspective-axis P4.5](project_perspective_axis_p45.md) — RESOLVES the blocker: engine OWNS time-binding (pin ctx-ref + targetKeys + perspectiveOwnedParamKeys gate). PerspectiveTimeBinding type (NOT TimeDimensionSpec widening). Additive/inert; suite 1724; 4 new FFs
-- [perspective-axis P5](project_perspective_axis_p5.md) — geostat 3-page config migration onto P4.5 seam BYTE-IDENTICALLY (page.perspectives keyed by mode + two-bar collapse + effects/timeMode removal + 11 perspective-is gates). One engine fix: writeBound echo-preserves window dim representation. FF-SNAPSHOT-VIEW-EQUIV (pure ctx-equiv vs frozen legacy); suite 1742; NOT committed
-- [perspective-axis P6 BLOCKER](project_perspective_axis_p6_blocker.md) — retire System A BLOCKED: items #4(modeOrder/mode-bar)+#8(useModeContext)+full KpiSpec.mode hit LIVE geostat deps P5 deferred (mode-bar=live toggle, no perspective replacement node). SAFE-NOW set (1,2,3,5,6) enumerated. ESCALATED, no edits
-- [perspective-axis P5.1](project_perspective_axis_p51.md) — perspective-scoped filter-ITEM visibility: ParamMeta.visibleWhen (render-only, distinct from showWhen) + FilterBarShell gate (ctx.sectionCtx.perspectiveState) + 9 config gates (year→year, from/to→range × 3 pages). Default-resolution untouched (P4.5 ownership). NEW fitness file (avoid 400-line ceiling); suite 1746; NOT committed
-- [perspective-axis P5.2 BLOCKER](project_perspective_axis_p52_blocker.md) — migrate 3 surviving System-A surfaces: KPI-when (2) + nav-order (3) CLEAN, but perspective-bar TOGGLE (1) byte-identity CONFLICTS — live mode-bar renders manifest.modes labels+icons ("წლიური"/"დინამიკა"+calendar) NOT authored PerspectiveDef.label ("წელი"/"შუალედი",no icon). Spec's "label from PerspectiveDef" contradicted by ground truth. STOPPED, no edits, ESCALATED (options A/B/C)
-- [perspective-axis P5.2](project_perspective_axis_p52.md) — RESOLVED via decision (B): axis OWNS toggle (PerspectiveDef.icon + perspectiveModeDefs→ModeDef triad). NEW perspective-bar node (mirror mode-bar, reuse css, 7-site register) + KpiSpec.mode→when:perspective-is (shared kpiVisible SSOT, warm===render, removed union) + modeOrder→perspectives[].id (nav + wire schema). geostat labels=manifest.modes (ka byte-identical, en locale-correct). suite 1759; NOT committed
-- [perspective-axis P7 FINAL](project_perspective_axis_p7.md) — final polish 100%: (1) CanvasView live perspective preview via MemoryRouter URL-seed (zero engine edit; previewPerspectiveId lifted to PageStep like dragging; gated-node visibility test) + (2) permalink default-elision in usePerspectiveContext.set (Law-9 URL=permalink; deep-link+derived-param HELD, elision ADDED; 6-case fitness). suite 1779; NOT committed
-- [perspective-axis P6](project_perspective_axis_p6.md) — System A FULLY RETIRED grep-clean: Mode*→Perspective* rename (ModeContext→PerspectiveContext, modeRegistry deleted, timeModeKey→perspectiveKey, mode→perspective triad) + ALL legacy deleted (mode-bar node, modeOrder+desugar, timeMode field, mode-is/-in/-not, ScopeOverride.compare/timeMode+resolveCompareRows, rangeKey/timeToggle/timeModes, barShowWhen gate→ownership-only). alwaysResolve KEPT-justified. getNavMode kept eq-only (byte-identical nav). suite 1753; load-bearing-grep ZERO; NOT committed
+## Project — epics, seams still evolving, escalation history
+- [Perspective-axis refactor](project_perspective_axis.md) — timeMode/mode → generic perspective axis (SHIPPED, grep-clean); recurring hazard classes (ownership-vs-visibility gates, migrate-before-delete sequencing, alias-then-retire); superseded further by TM-STRANGLER
+- [TM-STRANGLER time-binding](project_tm_strangler.md) — DimBinding+Selection discriminant (point/window/all) replaces shape-inferred timeBinding; generic TimeGranularity; FF-NO-MODE-LITERAL twin; supersedes PerspectiveTimeBinding
+- [CLUSTER② Law-1 + inert seams](project_cluster2_law1_seams.md) — GrowthResolver privileged-literal leak fix (`atTime` wrong for obs-meta reads, use filter-key TIME_DIM); AD-6 `available` gate STILL not threaded in SiteRenderer (flagged); GRAIN-G4 granularity→grain default-gated
+- [Adoption epic (X-2)](project_adoption_epic.md) — all 4 Acts done; Act 1's cross-workstream metric-delivery gap resolved later by AR-40 P0
+- [AR-40 P0 semantic-layer spine](project_ar40_p0_spine.md) — KPI render+preliminary made metric-aware; the 3-paths-read-a-measure-ref bug (only warm resolved through resolveMeasureRef); gdp-total KPI migrated to metric-id
+- [Preliminary-badge year-aware fix](project_preliminary_displayed_slice.md) — badge must derive from the DISPLAYED obs slice, not dataset-wide; applyEncoding now carries obsStatus
+- [AR-36 pivot P0](project_ar36_pivot_p0.md) — state-bound encoding channels (CtxScopeRef + resolveEncodingRefs pre-pass, called in react before applyEncoding)
+- [AR-36 pivot P1/P2/P3](project_ar36_pivot_p123.md) — regional 2-panel fold to ONE pivot; grain must bind to state (chart interpreters don't aggregate same-label rows); resolvePipeRefs seam for aggregate.by/sort
+- [Async store ACL parity](project_async_store_acl_parity.md) — stats adapter contract: LocaleString classifier labels, obs Number coercion, display overlay, warm-key≡read-key seam
+- [Canonical workbook parser](project_canonical_parser.md) — ADR-0031 xlsx→bronze deserializer; DSD SSOT = STRUCTURE.dimensions; xlsx ACL-confined to apps/api
+- [Restructure paths](project_restructure_paths.md) — engine/* → platform/packages/*; @statdash/* scope (landed, @geostat/* fully retired)
 
-- [TM-STRANGLER time-mode axis](project_tm_strangler.md) — LANDED green/uncommitted: DimBinding+Selection discriminant (point/window/all) replaces shape-inferred timeBinding (Postel via resolveDimBinding, ONE fold); template.ts `=== 'year'` literal KILLED (generic PerspectiveCarrier key-lookup); TimeGranularity→open string; live config→scope.binding (6 sites); FF-NO-MODE-LITERAL (vitest+bash twin). P-final(delete timeBinding + panel) deferred. Shared gate RED from concurrent app-header (not mine). suite 2045
-
-## Reference
-- [no-privileged-literal guard](reference_no_privileged_literal_guard.md) — FF-NO-PRIVILEGED-LITERAL vitest scan registry/** + check-laws.sh twin; forbids time/geo/sector/region + <x>Color/<x>Label; `measure`=ObsQuery field EXEMPT
-- [time-mode weave](reference_time_mode_weave.md) — where timeMode lives (System A); ZERO by-mode DataSpecs in geostat (KpiSpec.mode + visibleWhen:param=mode instead); live path lazy, SSR/warm eager
-- [tenant-content gates](reference_tenant_content_gates.md) — TWO gates (vitest SSOT ALLOW + bash check-laws LAW4_CATALOG_ALLOW twin); authoring-label catalog allowlist must stay synced; panel not scanned by design
-- [source-kind spectrum](reference_source_kind_spectrum.md) — DatasourceInstanceConfig.kind = Vega-Lite values|url|name; static REGISTERED, href deferred D-HREF; OCP kind-dispatch; ghost cleaned
-- [Export registry seam](reference_export_registry_seam.md) — registry is format SSOT; SerializeFn string|Uint8Array; dep-free STORED-zip xlsx; ExportFormatId closes Q-4 union
-- [validateConfig seam](reference_validate_config_seam.md) — engine-tier structural floor shared by api+react; nodeTypes registry fail-open + injection-fed; shared corpus is SSOT
-- [Slice-meta type re-export chain](reference_slicemeta_export_chain.md) — adding a PropField* type touches 3 barrels + exhaustive consumer
-- [Panel registration barrels](reference_panel_registration_barrels.md) — a new panel must touch 3 barrels (panels/index, registry, catalog) or it silently drops
-- [Plugin i18n + layout](reference_plugin_i18n_layout.md) — plugins have NO src/ dir; meta.ts/Node.ts/index.ts carry bilingual catalog content; tenant-content fitness boundary
-- [Defaults-vs-saveGuard contract](reference_defaults_guard_contract.md) — getDefaults must omit optional localized fields / seed required ones complete; locked by defaults-guard fitness
-- [config vocab modules](reference_config_vocab_modules.md) — section.ts split into data-spec/visibility/links/template; barrel preserved; sibling-smell inventory
-- [time-dim SSOT](reference_time_dim_ssot.md) — TIME_DIM + atTime() in core/context.ts is SSOT for conventional time-axis key; consumers import, never raw 'time'
-- [transform dispatch registry](reference_transform_dispatch_registry.md) — applyStep dispatches ONLY via step-registry (no switch); add op = 1 register line in transform/index.ts
-- [measure-ref seam](reference_measure_ref_seam.md) — resolveMeasureRef (metric.ts) is SSOT wiring MetricRegistry into binding (ADR R1); raw codes byte-identical; resolveQueryMeasures + resolveCode are wire points
-- [metric-store binding](reference_metric_store_binding.md) — M1 middle tier: MetricDef.dataSource (Cube pattern) → specDataSource (metric-store.ts) → react effectiveStoreKey; precedence node>metric>page>default
-- [ref-dispatch SSOT](reference_ref_dispatch_ssot.md) — resolveRef (ref/ref.ts) is ONE dispatcher for all $-refs (ADR R4); ctx/param/row/var/dim scopes; $ctx collision fixed via v5 migrator; expr ExprRef stays separate (arrow)
-- [desugar seam](reference_desugar_seam.md) — data/desugar.ts SSOT lowers convenience DataSpecs to primitives (ADR R3); pivot→transform + timeseries→point-series (G2); growth/ratio-list still bespoke (see [[grain-store-port]]); FF-DESUGAR-EQUIV
-- [grain / store-port](reference_grain_store_port.md) — valAt port primitive (storeValAt seam, default-sum byte-identical via val) + INTERNAL point-series lowering primitive (NOT a public DataSpec discriminant) + grain.ts reducer; G0-G2 landed, G3 escalated
-- [encoding channel enrichment](reference_encoding_channel_enrichment.md) — EncodingChannel=string|ChannelDef{field,type?,key?} (ADR R2); bare string byte-identical; type=carried metadata (default-derived), key refines DataRow.id; FF-ENCODING-ADDITIVE
-- [time-dimension seam](reference_time_dimension_seam.md) — timeDimension{dim,range,granularity} first-class time (ADR R5); core/time-dimension.ts fold SSOT; fromDim/toDim fold byte-identically via ctx-ref bounds; years kept-required; FF-TIMEDIMENSION
-- [blend seam](reference_blend_seam.md) — blend op = declarative cross-store front-door for joinByField (D3); B0 type+schema+no-op handler in core, B1 resolveBlends desugar in react (manifest is react-only, Law 3); B2 grain DEFERRED
-- [time-range readiness seam](reference_time_range_readiness_seam.md) — year-select pick:last on live ApiStore; store-builder folds server timeCoverage→classifiers[<timeDim>] (isTime key, Law1) + 2 core guards (toObsParams omit-unset/0, autoParse '' sentinel); no hang, no migration
-- [ApiStore freshness gate](reference_apistore_freshness_gate.md) — 304/ETag conditional-GET restored; TTL-aware _cache {rows,expiresAt}; fresh→serve / stale-held→conditional reuse-or-replace / miss→unconditional; tests → apiStore.revalidation.test.ts
-- [LocaleString brand](reference_localestring_brand.md) — Symbol-brand positive ID of i18n row cells (tagLocaleString/isTaggedLocaleString); tagged at $d join (resolveDisplayRef.buildEntry), resolved at react resolveRowLocales; replaces denylist; provenance survives
-- [LocaleString display boundary](reference_localestring_display_boundary.md) — resolveTemplate = central funnel resolving display LocaleString (carrier {year,range}/locale + template VARS, no [object Object]) at every render boundary; widened ~7 boundaries+types; localeString-render-guard fitness (no raw bag in React child/text)
-- [alwaysResolve seam](reference_alwaysresolve_seam.md) — ParamHidden.alwaysResolve hoists a hidden param's default OUT of bar-visibility gate (useFilterState); collapses per-bar spanFrom/spanTo dup to ONE declaration; OCP flag
-- [effects retirement](reference_effects_retirement.md) — Effect/applyEffects/schema.effects DELETED wholesale (orphaned no-op); locked by check-laws.sh grep guard; BRE `\?` pitfall noted
-- [kpi visibility surface](reference_kpi_visibility_surface.md) — kpiVisible evals `when` against filterParams (NOT dims) = same fr renderNode uses; optional param on interpretKpis/extractKpiRequirements; SiteRenderer memoizes ctx.filterParams
-- [calc-metric seam](reference_calc_metric_seam.md) — DC-01 MetricDef.calc declarative measure-algebra (expr reuse, code now optional); resolveMetricValue/calcMetricRequirements (data/metric-calc.ts) via valAt; KpiValueSpec 'metric' variant consumer; labour-share byte-identical twin; PROD delivery escalated (contracts+geostat)
-
-## Feedback
-- [shared-tree concurrency](feedback_shared_tree_concurrency.md) — tree is shared with concurrent agents; NEVER `git stash -u` to A/B test (hides their edits); check `git status` before blaming your own changes; stay in task scope
-
-
----
-
-> Entries below merged from platform (current @statdash content) during .claude SSOT reorg Phase 1.
-
-
-## [platform] Project
-- [transform/ split + Phase 2.1](project_transform_split.md) — transform.ts decomposed into 5-file sub-module; RawRow = EngineRow alias; critical byte-fidelity lesson for Write tool
-- [N34d streaming + useNodeStream](project_n34d_streaming.md) — subscribe? already present pre-session; useNodeStream hook + polling/streaming; streaming stores bypass CachedStore
-- [caps data pass [N29]](project_caps_pass.md) — CAPS const + NodeCap extension in slice-meta.ts; all 22 plugin META files wired; integration test in engine/plugins/nodes/__tests__/
-- [schema versioning N19/P3-3](project_schema_versioning.md) — canonical runner = engine/core/config/migration.ts; react duplicate is node-tree; api decoupling blocks provisioning wiring (escalate)
-- [canonical parser ADR-0031](project_canonical_parser.md) — apps/api/src/ingest/canonical/* PURE workbook→bronze deserializer; xlsx ACL-confined (F-3); DSD SSOT=STRUCTURE.dimensions; obs 415/288/1554
-- [async store ACL parity](project_async_store_acl_parity.md) — stats adapter contract: label{en,ka}+parent_code, obs Number coercion+seqPos lift, display overlay (stats-display.ts), queryReadObs warm/read SSOT, AttrVal widening, resolveNodeRows i18n seam
-- [perspective-axis residuals](project_perspective_axis_residuals.md) — scopeOverride.compare is dead (write-only) → delete in P6; zero MetricDefs registered in prod; scope.metric is a measure-SWAP, NOT the point↔cagr carrier (that's value.type)
-- [perspective-axis P0](project_perspective_axis_p0.md) — ADR + landed P0: contract envelope (contracts) + core refinement (intersection-not-interface) + scope-key registry/catalog split + perspectiveRegistry alias + 2 FFs; additive/byte-identical, 1696 green; catalog allowlist twins (no-tenant + check-laws)
-
-## Auto-relocated (memory-home-guard — reconcile into a topic section)
-- [worktree vitest hoisted](feedback_worktree_vitest_hoisted.md) — isolated worktree: pnpm install first; vitest 4 breaks (#module-evaluator) under symlinks, `node-linker=hoisted` fixes it but dup-Reacts rendering suites; verify those in main checkout; revert .npmrc before commit
-- [AR-36 pivot P0](project_ar36_pivot_p0.md) — runtime-pivot state-bound encoding channels LANDED (branch, uncommitted-to-main): EncodingChannel+=CtxScopeRef (reused R4 type) + resolveEncodingRefs pre-pass (resolveRef $ctx→dims/$ref→vars, byte-identical by-ref fast path) called in react resolveNodeRows before applyEncoding; FF-ENCODING-POSTEL; P1=_xDim/_seriesDim derive next
-- [AR-36 pivot P1/P2/P3](project_ar36_pivot_p123.md) — regional 2-panel fold → ONE pivot COMMITTED (51dfa5d, branch feat/ar36-pivot-regional). Grain judgment call: chart interpreters don't aggregate same-label rows → State A needs real roll-up → NEW seam `resolvePipeRefs` binds aggregate.by/sort to state (comma-string var, sibling of resolveEncodingRefs). chartType:{$ctx:_mark} in plugins useChartOutput. State-bound bilingual TITLE blocked (locale-leak guard + scalar-only ExprVal) → static+flagged
-- [encoding channel enrichment](reference_encoding_channel_enrichment.md) — EncodingChannel=string|ChannelDef{field,type?,key?} (ADR R2)+CtxScopeRef (AR-36 P0); bare string byte-identical; type=carried metadata (default-derived), key refines DataRow.id; resolveEncodingRefs lowers $ctx; FF-ENCODING-ADDITIVE/POSTEL
+## Reference — durable seam contracts (spot-checked against current code)
+- [No-privileged-literal guard](reference_no_privileged_literal_guard.md) — FF-NO-PRIVILEGED-LITERAL scans registry/**; forbids privileged-dim + `<x>Color/<x>Label`; `measure` field exempt
+- [Always-resolve seam](reference_alwaysresolve_seam.md) — ParamHidden.alwaysResolve hoists a default out of the perspective-ownership gate (post-P6; not bar-visibility anymore)
+- [Time-dim SSOT](reference_time_dim_ssot.md) — TIME_DIM + atTime() in core/context.ts; never a raw 'time' literal
+- [Time-dimension seam](reference_time_dimension_seam.md) — TimeDimensionSpec (ADR R5); fromDim/toDim fold byte-identically via ctx-ref bounds
+- [Time-range readiness seam](reference_time_range_readiness_seam.md) — year-select pick:last on live ApiStore; store-builder folds server timeCoverage; 2 core defense guards
+- [ApiStore freshness gate](reference_apistore_freshness_gate.md) — 304/ETag conditional-GET; TTL-aware `_cache{rows,expiresAt}`; fresh/stale/miss dispatch
+- [Apps/api engine dist consumption](reference_apps_api_engine_dist.md) — apps/api resolves @statdash/engine via DIST not source; rebuild after any core export change
+- [Desugar seam](reference_desugar_seam.md) — data/desugar.ts SSOT lowers convenience DataSpecs (ADR R3); only `pivot` desugars today; the R3 gap (val vs obs semantics)
+- [Grain / store-port](reference_grain_store_port.md) — valAt port primitive + internal point-series lowering + grain.ts reducer; point-series is deliberately NOT a public discriminant
+- [Transform dispatch registry](reference_transform_dispatch_registry.md) — applyStep dispatches only via step-registry; add op = one registerTransformStep line
+- [Blend seam](reference_blend_seam.md) — `blend` op = declarative cross-store join front-door for joinByField; B0 core no-op, B1 react resolveBlends (manifest is react-only)
+- [Encoding channel enrichment](reference_encoding_channel_enrichment.md) — EncodingChannel = string|ChannelDef{field,type?,key?} (ADR R2)+CtxScopeRef (AR-36); bare string byte-identical
+- [Measure-ref seam](reference_measure_ref_seam.md) — resolveMeasureRef (ADR R1) is the SSOT distinguishing raw code vs registered metric-id; never call getMetric directly
+- [Metric-store binding](reference_metric_store_binding.md) — MetricDef.dataSource (Cube pattern) → specDataSource → react effectiveStoreKey precedence
+- [Calc-metric seam](reference_calc_metric_seam.md) — MetricDef.calc declarative measure-algebra via expr; resolveMetricValue/calcMetricRequirements; KpiValueSpec 'metric' variant
+- [KPI visibility surface](reference_kpi_visibility_surface.md) — kpiVisible evaluates `when` against filterParams (not ctx.dims), same surface renderNode uses
+- [Ref-dispatch SSOT](reference_ref_dispatch_ssot.md) — resolveRef (ADR R4) is the ONE dispatcher for every $-ref; ctx/param/row/var/dim scopes; expr's ExprRef is a separate lower-layer concern
+- [LocaleString brand](reference_localestring_brand.md) — Symbol-brand positive ID of i18n row cells, tagged at the $d join, resolved at the react boundary
+- [LocaleString display boundary](reference_localestring_display_boundary.md) — resolveTemplate is the funnel resolving display LocaleString at every render boundary; render-guard fitness
+- [Source-kind spectrum](reference_source_kind_spectrum.md) — DatasourceInstanceConfig.kind = values|url|name trichotomy; static+href+stats all registered; OCP kind-dispatch
+- [Export registry seam](reference_export_registry_seam.md) — registry is the format SSOT; SerializeFn string|Uint8Array; dep-free STORED-zip xlsx
+- [Validate-config seam](reference_validate_config_seam.md) — engine-tier structural floor shared by api+react; node-type registry fail-open + injection-fed
+- [Config vocab modules](reference_config_vocab_modules.md) — section.ts split into data-spec/visibility/links/template; barrel preserved
+- [Slice-meta export chain](reference_slicemeta_export_chain.md) — a new PropField* type touches 3 barrels + PropSchemaForm's exhaustive FIELD_RENDERERS
+- [Panel registration barrels](reference_panel_registration_barrels.md) — a new panel must touch 3 barrels or it silently drops; plugin-META tests must live in packages/plugins (arrow)
+- [Plugin i18n + layout](reference_plugin_i18n_layout.md) — plugins have no src/ dir; meta.ts/Node.ts carry bilingual catalog content; tenant-content boundary
+- [Defaults-vs-saveGuard contract](reference_defaults_guard_contract.md) — getDefaults must omit optional localized fields / seed required ones complete
+- [Tenant-content gates](reference_tenant_content_gates.md) — two gates (vitest ALLOW + bash LAW4_CATALOG_ALLOW twin) must stay in sync for authoring-label catalogs
+- [Effects retirement](reference_effects_retirement.md) — Effect/applyEffects/schema.effects deleted wholesale, locked by check-laws grep guard; BRE `\?` pitfall

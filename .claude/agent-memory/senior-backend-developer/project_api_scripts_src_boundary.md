@@ -5,7 +5,7 @@ metadata:
   type: project
 ---
 
-`apps/api/scripts/` and `apps/api/src/` are compiled by DIFFERENT tsconfigs: `tsconfig.json` (rootDir:"src", emits to dist) vs `tsconfig.scripts.json` (include:["scripts"], noEmit, runs under tsx with an ambient @geostat/engine shim).
+`apps/api/scripts/` and `apps/api/src/` are compiled by DIFFERENT tsconfigs: `tsconfig.json` (rootDir:"src", emits to dist) vs `tsconfig.scripts.json` (include:["scripts"], noEmit, runs under tsx with an ambient @statdash/engine shim).
 
 **Why:** the ETL scripts (seed.ts/seed-helpers.ts) are build-time tools that import geostat bundle DATA via an ACL; they are deliberately NOT part of the API build. Importing a scripts/ file from src/ pulls a file outside rootDir into the src build (tsc rootDir violation) AND couples runtime to a build-time script (against the dependency arrow, Law 3).
 
