@@ -1,0 +1,2 @@
+# 9. Security standards (secure by design)
+OWASP Top 10 + **ASVS** (leveled verification requirements) · threat modeling — **STRIDE** (spoofing, tampering, repudiation, info disclosure, DoS, elevation) · **OAuth 2.0/OIDC** + RBAC/ABAC · **Zero Trust** (never trust, always verify; least privilege; assume breach) · defense in depth · secrets in vaults — never in source or logs, rotated · data: TLS in transit + encryption at rest, minimize PII · **supply chain**: dependency scanning, SBOM, pinned versions · validate input / encode output / parameterize queries.

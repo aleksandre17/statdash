@@ -1,0 +1,2 @@
+# 6. Formal standards & methods
+ISO/IEC/IEEE **42010** (architecture descriptions) · ISO/IEC **25010** (quality) · TOGAF (ADM) · **Domain-Driven Design** (strategic: bounded contexts, context mapping, ubiquitous language; tactical: aggregates, entities, value objects, repositories, domain events) · 12-Factor App · Reactive Manifesto · Well-Architected (operational excellence, security, reliability, performance, cost, sustainability).
