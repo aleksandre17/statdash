@@ -179,6 +179,37 @@
       "type": "object",
       "description": "Prevention protocol: bloat_limits (lines per extension; warn at limit, BLOCK at limit×hard_factor), hard_factor, claude_sanctioned_dirs (structure guard)."
     },
+    "memory_guard": {
+      "type": "object",
+      "description": "Memory-hygiene thresholds enforcing 'memory is a distillate, not a log'. Write-time ceiling (post-edit-laws.py) blocks oversized agent-memory/**/*.md; session-boundary hygiene pass (memory-home-guard.py) WARNs on relocation twins, dir quotas, and slipped-in oversize files. All limits are WARN-first except the single file_block_kb hard ceiling.",
+      "properties": {
+        "file_warn_kb": {
+          "type": "number",
+          "default": 6,
+          "description": "Write-time: an agent-memory/**/*.md file above this size (KB) triggers a non-blocking WARN — distill or split before it accretes."
+        },
+        "file_block_kb": {
+          "type": "number",
+          "default": 12,
+          "description": "Write-time HARD CEILING (the only block): an agent-memory/**/*.md file above this size (KB) is BLOCKED (exit 2). This is what stops the 131KB append-log class from re-forming."
+        },
+        "index_max_lines": {
+          "type": "integer",
+          "default": 60,
+          "description": "Write-time: a MEMORY.md index above this line count triggers a WARN (never a block — an index edit must not be lost). MEMORY.md is pointer-only; content belongs in topic files."
+        },
+        "dir_max_files": {
+          "type": "integer",
+          "default": 40,
+          "description": "Session-boundary: an agent memory dir with more than this many files is flagged (curation due — event-driven, not calendar)."
+        },
+        "dir_max_kb": {
+          "type": "number",
+          "default": 150,
+          "description": "Session-boundary: an agent memory dir whose total size (KB) exceeds this is flagged (curation due)."
+        }
+      }
+    },
     "modules": {
       "type": "array",
       "description": "Project module paths (e.g. 'apps/backend'); bootstrap generates a per-module specialist for each.",

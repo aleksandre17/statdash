@@ -19,6 +19,12 @@ WHY THIS HOOK EXISTS (the real mechanism, evidence-based):
   a second home can appear for at most one agent turn, then self-heals — divergence is impossible.
 
 Read/relocate only; never edits source. Always exits 0 (a backstop must never block a turn).
+
+HYGIENE PASS (memory_guard): piggybacked on the same boundary visit, a stat-level-only sweep of the
+canonical home (no content reads — milliseconds over ~hundreds of files). WARN-only, emits nothing
+when clean: unreconciled `*.relocated.md` twins (reconcile now), agent dirs over dir_max_files /
+dir_max_kb (curation due — event-driven, not calendar), and any file over file_block_kb that slipped
+in outside Write/Edit (e.g. a bash append). Complements the write-time ceiling in post-edit-laws.py.
 """
 import os, sys, shutil
 
@@ -124,20 +130,76 @@ def relocate(stray):
     return moved
 
 
+def hygiene_report(canon, mf):
+    """Stat-level-only hygiene sweep of the canonical home (NO content reads). Returns a list of
+    WARN lines (empty when clean). Cheap by construction: one scandir per agent dir + st_size only."""
+    mg = (mf.get("memory_guard", {}) or {})
+    dir_max_files = int(mg.get("dir_max_files", 40))
+    dir_max_kb = float(mg.get("dir_max_kb", 150))
+    block_kb = float(mg.get("file_block_kb", 12))
+    warnings, relocated = [], []
+    try:
+        agent_dirs = [e for e in os.scandir(canon) if e.is_dir()]
+    except OSError:
+        return warnings
+    for ad in agent_dirs:
+        count, total_kb = 0, 0.0
+        try:
+            entries = [e for e in os.scandir(ad.path) if e.is_file()]
+        except OSError:
+            continue
+        for e in entries:
+            count += 1
+            try:
+                kb = e.stat().st_size / 1024.0
+            except OSError:
+                kb = 0.0
+            total_kb += kb
+            # relpath (the costly call) is deferred to the rare warn cases only — hot loop stays stat-only
+            if e.name.endswith(".relocated.md"):
+                relocated.append(os.path.relpath(e.path, ROOT).replace("\\", "/"))
+            if kb > block_kb:
+                rel = os.path.relpath(e.path, ROOT).replace("\\", "/")
+                warnings.append(
+                    f"OVERSIZE: {rel} is {kb:.1f}KB > block ceiling {block_kb:.0f}KB — slipped in "
+                    f"outside Write/Edit (e.g. a bash append); distill or split.")
+        if count > dir_max_files or total_kb > dir_max_kb:
+            breach = []
+            if count > dir_max_files:
+                breach.append(f"{count} files > {dir_max_files}")
+            if total_kb > dir_max_kb:
+                breach.append(f"{total_kb:.0f}KB > {dir_max_kb:.0f}KB")
+            warnings.append(
+                f"CURATION DUE: {ad.name}/ ({'; '.join(breach)}) — curation is event-driven, not calendar.")
+    if relocated:
+        warnings.append(
+            "UNRECONCILED RELOCATION TWIN(S): " + ", ".join(sorted(relocated)) +
+            " — reconcile into the canonical file now.")
+    return warnings
+
+
 def main():
     if not os.path.isdir(CANON):
         os.makedirs(CANON, exist_ok=True)
     strays = find_strays(ROOT)
-    if not strays:
-        sys.exit(0)
-    print("=== memory-home-guard: relocating stray memory home(s) into root SSOT ===")
-    for stray in strays:
-        rel = os.path.relpath(stray, ROOT)
-        moved = relocate(stray)
-        print(f"  relocated {rel} -> .claude/agent-memory ({len(moved)} file(s))")
-        for m in moved:
-            print(f"    - {m}")
-    print("  SSOT restored. If any '.relocated.md' or 'Auto-relocated' index block was written, reconcile it.")
+    if strays:
+        print("=== memory-home-guard: relocating stray memory home(s) into root SSOT ===")
+        for stray in strays:
+            rel = os.path.relpath(stray, ROOT)
+            moved = relocate(stray)
+            print(f"  relocated {rel} -> .claude/agent-memory ({len(moved)} file(s))")
+            for m in moved:
+                print(f"    - {m}")
+        print("  SSOT restored. If any '.relocated.md' or 'Auto-relocated' index block was written, reconcile it.")
+    # hygiene pass — runs every boundary regardless of strays; silent when clean
+    try:
+        warnings = hygiene_report(CANON, load(ROOT))
+    except Exception:
+        warnings = []
+    if warnings:
+        print("=== memory-home-guard: hygiene (WARN — memory is a distillate, not a log) ===")
+        for w in warnings:
+            print("  " + w)
     sys.exit(0)
 
 

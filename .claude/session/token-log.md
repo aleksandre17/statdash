@@ -16,3 +16,4 @@
 [2026-07-08] LAUNCH agent=plugins-specialist model-requested=sonnet task=curate plugins memory + worktree canon
 [2026-07-08] LAUNCH agent=architect model-requested=(def-pin opus) task=curate 5 senior memory dirs
 [2026-07-08] LAUNCH agent=junior-executor model-requested=sonnet task=graduate agnostic doctrine to kit
+[2026-07-08] LAUNCH agent=senior-backend-developer model-requested=opus task=memory hygiene guard hooks

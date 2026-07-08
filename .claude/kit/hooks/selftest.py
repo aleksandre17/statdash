@@ -113,6 +113,19 @@ try:
     rc, so, se = run("post-edit-laws.py", env_root=tmp, stdin=json.dumps({"tool_input": {"file_path": big}}))
     check("post-edit-laws BLOAT BLOCK over hard ceiling (exit 2, P8)", rc == 2 and "BLOAT BLOCK" in se)
 
+    # ---- P9: memory-hygiene write-time ceiling on agent-memory/**/*.md (self-adjusting) -----
+    _mg = (live.get("memory_guard") or {})
+    _wkb = float(_mg.get("file_warn_kb", 6)); _bkb = float(_mg.get("file_block_kb", 12))
+    mem_dir = os.path.join(tmp, ".claude", "agent-memory", "agentX"); os.makedirs(mem_dir, exist_ok=True)
+    mem_block = os.path.join(mem_dir, "oversized.md")  # single line, big bytes: trips size, not line-bloat
+    open(mem_block, "w", encoding="utf-8").write("x" * int((_bkb + 2) * 1024))
+    rc, so, se = run("post-edit-laws.py", env_root=tmp, stdin=json.dumps({"tool_input": {"file_path": mem_block}}))
+    check("post-edit-laws MEMORY BLOCK over block ceiling (exit 2, P9)", rc == 2 and "MEMORY BLOCK" in se)
+    mem_warn = os.path.join(mem_dir, "warnband.md")
+    open(mem_warn, "w", encoding="utf-8").write("x" * int((_wkb + 1) * 1024))
+    rc, so, se = run("post-edit-laws.py", env_root=tmp, stdin=json.dumps({"tool_input": {"file_path": mem_warn}}))
+    check("post-edit-laws MEMORY WARN in warn band (exit 0 + stderr WARN, P9)", rc == 0 and "WARN" in se)
+
     # ---- P3: manifest PRESENT but unparseable -> stderr warning, still exit 0 ---------------
     os.makedirs(os.path.join(tmp2, ".claude"))
     open(os.path.join(tmp2, ".claude", "project.json"), "w", encoding="utf-8").write("{ broken json,,, ")
@@ -134,6 +147,19 @@ try:
     check("memory-home-guard name-clash keeps BOTH copies (P8)",
           os.path.exists(os.path.join(root_home, "foo.md")) and
           os.path.exists(os.path.join(root_home, "foo.relocated.md")))
+
+    # ---- P9: memory-home-guard hygiene pass (relocation twin + dir-quota breach) ------------
+    twin_dir = os.path.join(tmp3, ".claude", "agent-memory", "agentQ"); os.makedirs(twin_dir)
+    open(os.path.join(twin_dir, "topic.relocated.md"), "w", encoding="utf-8").write("unreconciled twin")
+    bloat_dir = os.path.join(tmp3, ".claude", "agent-memory", "agentBloat"); os.makedirs(bloat_dir)
+    _dmf = int((live.get("memory_guard") or {}).get("dir_max_files", 40))
+    for i in range(_dmf + 2):
+        open(os.path.join(bloat_dir, f"m{i}.md"), "w", encoding="utf-8").write("x")
+    rc, so, se = run("memory-home-guard.py", env_root=tmp3)
+    check("memory-home-guard WARNs on unreconciled .relocated twin (P9)",
+          "relocation twin" in so.lower() and "reconcile" in so.lower())
+    check("memory-home-guard WARNs on dir-quota breach naming the dir (P9)",
+          "agentBloat" in so and "curation" in so.lower())
 
     # ---- Part C / P2 Tier A: phantom working-tree wipe in a tmp git repo -------------------
     modules = live.get("modules", [])

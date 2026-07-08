@@ -166,5 +166,12 @@
       "dist",
       ".git"
     ]
+  },
+  "memory_guard": {
+    "file_warn_kb": 6,
+    "file_block_kb": 12,
+    "index_max_lines": 60,
+    "dir_max_files": 55,
+    "dir_max_kb": 250
   }
 }

@@ -7,7 +7,13 @@ the single source of truth for the dependency arrow and all import-shaped bounda
 purity, xlsx ACL, panel reach-in). `post-edit-laws.py` owns only what the import graph cannot
 express — content/purity invariants (privileged-dims, declarative-DataSpec, locale-agnostic string
 literals) — plus an explicitly non-authoritative fast pre-lint tripwire on the two highest-blast
-arrow edges. New arrow edges are added to eslint, never mirrored into the manifest."""
+arrow edges. New arrow edges are added to eslint, never mirrored into the manifest.
+
+MEMORY HYGIENE (memory_guard): on Write/Edit to `.claude/agent-memory/**/*.md`, a write-time size
+ceiling enforces "memory is a distillate, not a log" — WARN above file_warn_kb, BLOCK (exit 2) above
+file_block_kb (the 131KB append-log class is exactly what the block stops), and a WARN-only line
+ceiling on MEMORY.md indexes (index_max_lines; never blocked — an index edit must not be lost).
+Skips silently for any path outside agent-memory. Session-boundary hygiene lives in memory-home-guard.py."""
 import sys, json, re, os, fnmatch
 try:
     sys.stdout.reconfigure(encoding="utf-8")
@@ -41,6 +47,34 @@ except ValueError:
 def _match(glob): return fnmatch.fnmatch(rel, glob) or fnmatch.fnmatch(base, glob)
 mf = load()  # O2: load the manifest ONCE per run, reuse below (was loaded twice)
 hy = mf.get("hygiene", {}) or {}
+# --- memory hygiene: agent-memory/**/*.md write-time size ceiling (distillate, not a log) -----
+# Runs before the generic bloat check so the doctrine message wins for memory files. Silent
+# when the path is not under agent-memory or not a .md file.
+if base.endswith(".md") and "/.claude/agent-memory/" in ("/" + fp):
+    mg = mf.get("memory_guard", {}) or {}
+    warn_kb = float(mg.get("file_warn_kb", 6))
+    block_kb = float(mg.get("file_block_kb", 12))
+    try:
+        size_kb = os.path.getsize(fp) / 1024.0
+    except OSError:
+        size_kb = 0.0
+    if size_kb > block_kb:
+        sys.stderr.write(
+            f"[post-edit-laws] MEMORY BLOCK: {rel} is {size_kb:.1f}KB (hard ceiling {block_kb:.0f}KB). "
+            f"Memory is a distillate, not a log — distill or split into topic files. "
+            f"The 131KB append-log class is exactly what this blocks.\n")
+        sys.exit(2)
+    if base == "MEMORY.md":  # WARN-only: an index edit must never be lost
+        max_lines = int(mg.get("index_max_lines", 60))
+        n_idx = text.count("\n") + 1
+        if n_idx > max_lines:
+            sys.stderr.write(
+                f"[post-edit-laws] MEMORY INDEX WARN: {rel} is {n_idx} lines (soft limit {max_lines}). "
+                f"MEMORY.md is a pointer-only index — move content into topic files, keep one-line entries.\n")
+    if warn_kb < size_kb <= block_kb:
+        sys.stderr.write(
+            f"[post-edit-laws] MEMORY WARN: {rel} is {size_kb:.1f}KB (soft limit {warn_kb:.0f}KB). "
+            f"Distill toward a tight memory; split if it is accreting.\n")
 lim = (hy.get("bloat_limits", {}) or {}).get(fp.rsplit(".",1)[-1].lower())
 if lim:
     n = text.count("\n") + 1
