@@ -1,7 +1,7 @@
 # plugins/ — Shell Layer Orientation
 
 > ავტოლოადი plugins/-ის ნებისმიერ ფაილზე მუშაობისას.
-> **Layer orientation only** — shell anatomy / Chrome zero-props / ISP / OCP field-level rules → `.claude/rules/plugins.md`.
+> **Layer orientation only** — shell anatomy / Chrome zero-props / ISP / OCP field-level rules live with the panel fitness tests + `docs/patterns/`.
 
 ---
 
@@ -26,4 +26,4 @@ Progressive disclosure: KPI → chart → table → methodology. Secondary secti
 
 ---
 
-Full shell spec → `.claude/individual/migration/06-shells.md`
+Full shell spec → `docs/architecture/proposals/` (design docs) + each panel's own tests.
