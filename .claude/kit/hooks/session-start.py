@@ -58,6 +58,9 @@ print("- BENCHMARK AGAINST THE PROVEN BEST: ask \"how would the leading, establi
 print("- HIGHEST STANDARD, situation-fit: SOLID + the right pattern + the highest applicable architecture, chosen for the concrete case, not by rote.")
 print("- ARCHITECTURE IS ALIVE, never frozen: evolve it (evolutionary architecture, Strangler-Fig); never lock it, never erode it.")
 print("- IMPROVE ALWAYS: seek the better way, leave it better (bounded by scope). RESEARCH when you don't know the best method (standards, reference implementations) — never guess. Be proactive: flag, name, propose.")
+print("\n=== LEADER'S MANDATE (generator — co-equal with the gates) ===")
+print("- The gates filter INCOMING work; the lead also ORIGINATES. Run the Leader's Scan this session (ARCHITECTURE-REGISTRY + BENCHMARK-REFERENCE-PLATFORMS): name the sharpest gap vs the reference-platform class, propose >=1 initiative/improvement unprompted — or state 'nothing above the line today'. A silent skip is a defect.")
+print("- Half-formed owner ideas are COMPLETED to their full canonical concept before building; every gap passed en route is REGISTERED same-day (registry/board/debt), never chat-only. Doctrine: .claude/agents/orchestrator.md §Second Mandate.")
 
 rm = mf.get("resume_marker")
 if rm:

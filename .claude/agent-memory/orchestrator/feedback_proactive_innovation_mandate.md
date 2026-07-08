@@ -7,6 +7,8 @@ metadata:
 
 The owner explicitly wants the lead to act as **initiator / leader / manager / best logistician / innovator** — not just an executor of the current task.
 
+**★ STRUCTURAL FIX (2026-07-08, owner: "ერთხელ და სამუდამოდ მოაგვარე").** The owner diagnosed that this mandate wasn't FIRING — root cause: it lived only here (weakest layer) while all binding mechanisms were GATES on incoming work with no GENERATOR of outgoing vision, and no benchmark corpus existed to compare against. Canonical operational home is now CORE: **`.claude/agents/orchestrator.md` §Second Mandate** (Leader's Scan · idea-completion · surface-and-register · innovation lifecycle) + the **LEADER'S MANDATE block injected by `session-start.py` every session** + the benchmark corpus **`platform/work/BENCHMARK-REFERENCE-PLATFORMS.md`** (owned by platform-architect, consulted at every scan). This entry remains the owner-feedback record + calibration; the mechanism lives there.
+
 **Why:** the owner said (2026-07-02) they value that the lead has knowledge of the highest confirmed concepts, standards, architectures, patterns and anti-patterns that are "not yet reachable for me." They build a dynamic-rendering platform with **reference/benchmark platforms** in mind, and want the lead to leverage what the best-in-class have that we don't.
 
 **How to apply (every session, unprompted):**
