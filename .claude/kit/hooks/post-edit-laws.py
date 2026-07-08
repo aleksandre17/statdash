@@ -1,6 +1,13 @@
 #!/usr/bin/env python3
 """PostToolUse (Write|Edit|MultiEdit) — generic law check on the changed file. Patterns come from
-project.json (law_patterns); the kit has no hardcoded antipatterns. exit 2 = corrective feedback."""
+project.json (law_patterns); the kit has no hardcoded antipatterns. exit 2 = corrective feedback.
+
+OWNERSHIP (dependency arrow, P4): eslint `no-restricted-imports` (`platform/eslint.config.js`) is
+the single source of truth for the dependency arrow and all import-shaped boundaries (contracts
+purity, xlsx ACL, panel reach-in). `post-edit-laws.py` owns only what the import graph cannot
+express — content/purity invariants (privileged-dims, declarative-DataSpec, locale-agnostic string
+literals) — plus an explicitly non-authoritative fast pre-lint tripwire on the two highest-blast
+arrow edges. New arrow edges are added to eslint, never mirrored into the manifest."""
 import sys, json, re, os, fnmatch
 try:
     sys.stdout.reconfigure(encoding="utf-8")
@@ -21,19 +28,27 @@ except OSError:
     sys.exit(0)
 base = os.path.basename(fp)
 root = os.environ.get("CLAUDE_PROJECT_DIR", ".")
+# The manifest itself deliberately holds `sample_violation` strings — fixtures that, BY
+# CONSTRUCTION, match a forbid pattern (they exist to prove each law blocks). Scanning the
+# manifest with its own laws is a category error and self-trips (e.g. the secret-scan sample).
+_manifest_fp = os.path.join(root, ".claude", "project.json").replace("\\", "/")
+if fp == _manifest_fp or fp.endswith("/.claude/project.json"):
+    sys.exit(0)
 try:
     rel = os.path.relpath(fp, root).replace(os.sep, "/")
 except ValueError:
     rel = base
 def _match(glob): return fnmatch.fnmatch(rel, glob) or fnmatch.fnmatch(base, glob)
-hy = load().get("hygiene", {}) or {}
+mf = load()  # O2: load the manifest ONCE per run, reuse below (was loaded twice)
+hy = mf.get("hygiene", {}) or {}
 lim = (hy.get("bloat_limits", {}) or {}).get(fp.rsplit(".",1)[-1].lower())
 if lim:
     n = text.count("\n") + 1
-    if n > lim * int(hy.get("hard_factor", 2)):
-        sys.stderr.write(f"[post-edit-laws] BLOAT BLOCK: {rel} is {n} lines (hard ceiling {lim*int(hy.get('hard_factor',2))}). Split it — one concern per file (one-body, `05`/`09` hygiene). Do not keep appending.\n")
+    ceiling = int(lim * float(hy.get("hard_factor", 2)))  # float: hard_factor 1.5 must NOT truncate to 1
+    if n > ceiling:
+        sys.stderr.write(f"[post-edit-laws] BLOAT BLOCK: {rel} is {n} lines (hard ceiling {ceiling}). Split it — one concern per file (one-body, `05`/`09` hygiene). Do not keep appending.\n")
         sys.exit(2)
-violations = [p["msg"] for p in load().get("law_patterns", [])
+violations = [p["msg"] for p in mf.get("law_patterns", [])
              if _match(p.get("glob", "*")) and re.search(p["forbid"], text, re.I)]
 if violations:
     sys.stderr.write("[post-edit-laws] forbidden pattern(s) in %s — fix before continuing:\n" % fp)

@@ -35,23 +35,23 @@
     {
       "id": "Law2-dataspec-declarative",
       "glob": "*.ts*",
-      "forbid": "getRows\\s*:\\s*\\(",
-      "msg": "DataSpec must be declarative (Constructor-ready): no getRows:(ctx)=>... function in config; use a DataSpec discriminant.",
+      "forbid": "\\b(getRows|val|fetch)\\s*:\\s*(async\\s*)?(function\\b|\\()",
+      "msg": "DataSpec must be declarative (Constructor-ready): no function-valued config key (getRows/val/fetch: (ctx)=>… or : function…). Behavior lives in the renderer; config carries a DataSpec discriminant. (Bare val()/fetch()/if/switch calls are NOT scanned here — a whole-file regex cannot tell a DataSpec literal from renderer code; that boundary belongs in an AST/eslint DataSpec-scoped rule.)",
       "sample_violation": "const def = { getRows: (ctx) => store.q() };"
     },
     {
       "id": "Arch-engine-no-react",
       "glob": "platform/packages/core/**",
       "forbid": "from\\s+['\\\"][^'\\\"]*platform/packages/react",
-      "msg": "Dependency arrow: engine/core must not import engine/react (core ← react, not the reverse).",
-      "sample_violation": "import { X } from '../../react/src/x';"
+      "msg": "Dependency arrow: engine/core must not import engine/react (core ← react, not the reverse). [non-authoritative fast pre-lint tripwire; SSOT = eslint no-restricted-imports in platform/eslint.config.js].",
+      "sample_violation": "import { X } from 'platform/packages/react/src/x';"
     },
     {
       "id": "Arch-react-agnostic",
       "glob": "platform/packages/react/**",
       "forbid": "from\\s+['\\\"][^'\\\"]*(platform/packages/plugins/|platform/apps/geostat/|platform/apps/panel/)",
-      "msg": "engine/react must stay app-agnostic: no imports from plugins/ or apps/ (app-specifics live downstream).",
-      "sample_violation": "import { GeostatShell } from '../../../engine/plugins/geostat';"
+      "msg": "engine/react must stay app-agnostic: no imports from plugins/ or apps/ (app-specifics live downstream). [non-authoritative fast pre-lint tripwire; SSOT = eslint no-restricted-imports in platform/eslint.config.js].",
+      "sample_violation": "import { GeostatShell } from 'platform/packages/plugins/geostat';"
     },
     {
       "id": "Arch-engine-react-locale-agnostic",
@@ -59,8 +59,28 @@
       "forbid": "[Ⴀ-ჿ]|['\"](ka|ka-GE)['\"]",
       "msg": "engine/react must be locale-agnostic: no Georgian codepoints and no 'ka'/'ka-GE' locale literals. Move UI strings and locale constants to plugins/ or the app i18n catalog.",
       "sample_violation": "const DEFAULT_I18N = { locales: ['ka'] };"
+    },
+    {
+      "id": "Sec-no-committed-secret",
+      "glob": "*",
+      "forbid": "(AKIA[0-9A-Z]{16}|-----BEGIN[ A-Z]*PRIVATE KEY-----|Bearer\\s+[A-Za-z0-9._\\-]{20,}|\\b(?:api[_-]?key|secret|token)\\b\\s*[:=]\\s*['\\\"][A-Za-z0-9+/_\\-]{16,}['\\\"])",
+      "msg": "Possible hardcoded secret (AWS AKIA key / PEM private key / Bearer token / high-entropy api_key|secret|token assignment). Secrets never live in source (09/§Security) — move to an env var or vault and rotate the exposed value.",
+      "sample_violation": "const k = \"AKIAIOSFODNN7EXAMPLE\";"
     }
   ],
+  "worktree_guard": {
+    "bulk_delete_threshold": 25,
+    "module_root_empty_ratio": 0.9,
+    "destructive_bash": [
+      "\\brm\\b[^|;&\\n]*\\s-[a-zA-Z]*r[a-zA-Z]*f",
+      "\\brm\\b[^|;&\\n]*\\s-[a-zA-Z]*f[a-zA-Z]*r",
+      "\\bgit\\s+reset\\s+--hard\\b",
+      "\\bgit\\s+checkout\\s+(--\\s+)?\\.(\\s|$)",
+      "\\bgit\\s+clean\\s+-[a-zA-Z]*[dfx]",
+      "\\bgit\\s+worktree\\s+(remove|prune)\\b",
+      "\\bgit\\s+restore\\s+(--[a-z]+\\s+)*(--\\s+)?\\.(\\s|$)"
+    ]
+  },
   "resume_marker": {
     "regex": "[Ll]ast\\s+migration:?\\*?\\*?\\s*V?(\\d+)",
     "repo_glob": "ops/postgres/migrations/V*__*.sql",

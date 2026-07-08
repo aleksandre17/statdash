@@ -7,11 +7,14 @@ import os, sys, re, glob
 # the auto-load AND skipping the stale-check below. Encoding must not depend on the ambient console.
 try:
     sys.stdout.reconfigure(encoding="utf-8")
+    sys.stderr.reconfigure(encoding="utf-8")  # P7: stale-check skip note goes to stderr
 except (AttributeError, ValueError):
     pass
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from _manifest import load
+from _worktree import deletion_report
 root = os.environ.get("CLAUDE_PROJECT_DIR", ".")
+mf = load(root)
 brief = os.path.join(root, ".claude", "context", "opus-brief.md")
 try:
     text = open(brief, encoding="utf-8").read()
@@ -24,6 +27,13 @@ for ln in text.splitlines():
     if on: out.append(ln)
 print("=== RESUME STATE (opus-brief §Current State, injected by SessionStart hook) ===")
 print("\n".join(out))
+# working-tree loss guard (Tier A) — wiped tree is the FIRST thing seen on resume (SSOT _worktree.py)
+try:
+    _rep = deletion_report(root, mf)
+    if _rep:
+        print("\n⚠ " + _rep)
+except Exception:
+    pass
 try:
     _mode = open(os.path.join(root, ".claude", "session", "mode"), encoding="utf-8").read().strip() or "build"
 except OSError:
@@ -49,7 +59,7 @@ print("- HIGHEST STANDARD, situation-fit: SOLID + the right pattern + the highes
 print("- ARCHITECTURE IS ALIVE, never frozen: evolve it (evolutionary architecture, Strangler-Fig); never lock it, never erode it.")
 print("- IMPROVE ALWAYS: seek the better way, leave it better (bounded by scope). RESEARCH when you don't know the best method (standards, reference implementations) — never guess. Be proactive: flag, name, propose.")
 
-rm = load().get("resume_marker")
+rm = mf.get("resume_marker")
 if rm:
     try:
         m = re.search(rm["regex"], text)
@@ -60,6 +70,7 @@ if rm:
         if repo_max and claimed and repo_max > claimed:
             print(f"\n⚠ STALE RESUME WARNING: brief claims {rm['label']} V{claimed}, repo has V{repo_max}. "
                   f"§Current State may be out of date — RECONCILE before trusting this resume.")
-    except Exception:
-        pass
+    except Exception as e:
+        # P7: a broken safety net must be VISIBLE, not silently swallowed.
+        sys.stderr.write(f"[session-start] stale-check skipped: {type(e).__name__}: {e}\n")
 sys.exit(0)

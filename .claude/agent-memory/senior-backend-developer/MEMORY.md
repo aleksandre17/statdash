@@ -4,7 +4,7 @@
 - [CI DB gating](project_ci_db_gating.md) — how DB-gated suites un-skip; migrate vs seed vs self-provision preconditions
 - [Toolchain facts](project_toolchain_facts.md) — pnpm root is platform/, build:engine first, no node pin
 - [Deploy model](project_geostat_deploy_model.md) — jar vs context-dir server build layouts; node-vite remote tar-scope gap NOW FIXED; pre-existing test baseline
-- [LIVE deploy mechanism](project_live_deploy_mechanism.md) — REAL 192.168.1.199 path: server git clone /tmp/statdash-build + docker-compose v1 prod-file-ALONE; 🔴 postgres data is EPHEMERAL (misconfigured volume) — NEVER `up --force-recreate` whole stack; backup/rollback + smoke
+- [LIVE deploy mechanism](project_live_deploy_mechanism.md) — REAL 192.168.1.199 path: server git clone /tmp/statdash-build + docker-compose v1 prod-file-ALONE; 🟢 postgres landmine CLOSED (ADR-019 persistent vol statdash-prod-pgdata-v2 @ /home/postgres/pgdata) but STILL app-only recreate (--no-deps); backup/rollback + smoke
 - [geograph d3-geo](project_geograph_d3geo.md) — SVG choropleth: app peer-alias build contract (external lib = peerDep of pkg + direct dep of apps) + geojson CW-winding projection bug; READ THE MAP SCREENSHOT, DOM metrics lie
 - [API typecheck in-flight](project_api_typecheck_inflight.md) — RESOLVED: ADR-0027 region symbols landed (region.ts); apps/api typechecks fully green now
 - [check-laws path coupling](project_checklaws_path_coupling.md) — ops scripts hardcode lib dir paths (rename false-greens them); check-laws fully GREEN; check_zero strict retirement-lock helper vs check_ts content-law helper
@@ -25,6 +25,8 @@
 
 ## Feedback
 - [Flyway immutable](feedback_flyway_immutable.md) — never edit an applied migration, not even comments (checksum break)
+- [eslint owns dependency arrow](feedback_eslint_owns_dependency_arrow.md) — eslint no-restricted-imports is SSOT for the arrow; never mirror/extend arrow edges into kit manifest law_patterns (ADR-0033)
+- [measure FP before blocking law](feedback_measure_fp_before_blocking_law.md) — grep repo match-counts before adding a BLOCKING law_pattern; only precise config-key shapes, never bare constructs (2461 if/switch, 7292 arrows)
 
 
 ---
@@ -52,3 +54,6 @@
 
 ## Auto-relocated (memory-home-guard — reconcile into a topic section)
 - [LIVE deploy mechanism](project_live_deploy_mechanism.md) — REAL 192.168.1.199 path: server git clone /tmp/statdash-build + docker-compose v1 prod-file-ALONE; diverges from RUNBOOK; backup/rollback + smoke
+
+## Auto-relocated (memory-home-guard — reconcile into a topic section)
+- [LIVE deploy mechanism](project_live_deploy_mechanism.md) — REAL 192.168.1.199 path: server git clone /tmp/statdash-build + docker-compose v1 prod-file-ALONE; 🔴 postgres data is EPHEMERAL (misconfigured volume) — NEVER `up --force-recreate` whole stack; backup/rollback + smoke

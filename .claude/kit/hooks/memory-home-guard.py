@@ -26,18 +26,51 @@ try:
     sys.stdout.reconfigure(encoding="utf-8")
 except (AttributeError, ValueError):
     pass
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from _manifest import load
 
 ROOT = os.environ.get("CLAUDE_PROJECT_DIR") or os.getcwd()
 CANON = os.path.normpath(os.path.join(ROOT, ".claude", "agent-memory"))
 
 
-def find_strays(root):
-    strays = []
+def _candidate_homes(root):
+    """O1: strays are created cwd-relative, and specialists run at declared MODULE roots. So the
+    real candidate set is tiny and known — root + each `modules[]` entry's `.claude/agent-memory`.
+    Direct stat() on that set is sub-millisecond (vs os.walk over ~14k files ~= seconds)."""
+    homes = []
+    for m in load(root).get("modules", []) or []:
+        homes.append(os.path.join(root, *m.replace("\\", "/").split("/"), ".claude", "agent-memory"))
+    return homes
+
+
+def _capped_walk(root, maxdepth=5):
+    """Backstop for UNDECLARED cwds (e.g. a non-module parent dir like `platform/`). Depth-capped
+    and heavy-tree-pruned so it stays sub-second even on a large repo — never a full 14k-file walk."""
+    base = root.rstrip(os.sep).count(os.sep)
     for dp, dns, _ in os.walk(root):
-        dns[:] = [d for d in dns if d not in ("node_modules", ".git")]
+        dns[:] = [d for d in dns if d not in ("node_modules", ".git", "dist", ".idea", "__pycache__")]
+        if dp.count(os.sep) - base >= maxdepth:
+            dns[:] = []
         if os.path.basename(dp) == "agent-memory" and os.path.basename(os.path.dirname(dp)) == ".claude":
-            if os.path.normpath(dp) != CANON:
-                strays.append(dp)
+            yield dp
+
+
+def find_strays(root):
+    """Union of the fast manifest-driven candidates and the depth-capped backstop walk, deduped.
+    Preserves exact relocate+prune+name-clash behavior; only the DISCOVERY got cheaper."""
+    strays, seen = [], set()
+
+    def _consider(path):
+        cn = os.path.normpath(path)
+        if cn == CANON or cn in seen or not os.path.isdir(cn):
+            return
+        seen.add(cn)
+        strays.append(cn)
+
+    for h in _candidate_homes(root):
+        _consider(h)
+    for d in _capped_walk(root):
+        _consider(d)
     return strays
 
 

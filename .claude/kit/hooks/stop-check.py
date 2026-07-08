@@ -4,10 +4,12 @@ Code/learning globs come from project.json; kit has no hardcoded paths."""
 import os, sys, subprocess
 try:
     sys.stdout.reconfigure(encoding="utf-8")
+    sys.stderr.reconfigure(encoding="utf-8")  # warnings (incl. the — dash in the loss report) go to stderr
 except (AttributeError, ValueError):
     pass
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from _manifest import load
+from _worktree import deletion_report
 WARN_ONLY = True
 root = os.environ.get("CLAUDE_PROJECT_DIR", ".")
 mf = load()
@@ -46,6 +48,13 @@ try:
                           capture_output=True, text=True, timeout=10).stdout.split()
     if any(f.endswith(code_globs) for f in diff) and not any(f.startswith(learning_dir) for f in diff):
         warn.append(f"Production code changed but no {learning_dir} note staged. If an architectural concept was touched -> learning note is due (07). Judgment call.")
+except Exception:
+    pass
+# working-tree loss guard (Tier A, WARN-only — SSOT in _worktree.py)
+try:
+    rep = deletion_report(root, mf)
+    if rep:
+        warn.append(rep)
 except Exception:
     pass
 if warn:

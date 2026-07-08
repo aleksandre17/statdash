@@ -90,6 +90,27 @@
         }
       }
     },
+    "worktree_guard": {
+      "type": "object",
+      "description": "Working-tree loss guard thresholds (P2). Tier A (_worktree.py, WARN-only on Stop/SessionStart) alarms on a bulk deletion vs HEAD or a module root emptied past a ratio; Tier B (pre-bash-guard.py, non-blocking) flags whole-tree destructive shell commands. Content stays safe in HEAD — the guard never mutates the tree; it only warns + gives recovery commands.",
+      "properties": {
+        "bulk_delete_threshold": {
+          "type": "integer",
+          "default": 25,
+          "description": "Tier A alarm: total tracked files deleted vs HEAD at/above this count triggers the WARN, regardless of module distribution."
+        },
+        "module_root_empty_ratio": {
+          "type": "number",
+          "default": 0.9,
+          "description": "Tier A alarm: a declared module root is flagged EMPTIED when this fraction (0..1) or more of its HEAD-tracked files are deleted in the working tree."
+        },
+        "destructive_bash": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Tier B: Python regexes matched against a Bash command; a match injects a non-blocking reminder. Whole-tree catastrophic forms ONLY (recursive-force rm, git reset --hard, checkout/restore/clean of '.', worktree remove/prune) — never plain rm or branch checkout. Omit to use pre-bash-guard.py's built-in default list."
+        }
+      }
+    },
     "resume_marker": {
       "type": "object",
       "description": "How session-start.py detects stale resume state vs the repo.",
