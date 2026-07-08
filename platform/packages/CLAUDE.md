@@ -1,7 +1,7 @@
 # packages/ — Engine + React Layer Orientation
 
 > ავტოლოადი packages/-ის ნებისმიერ ფაილზე მუშაობისას.
-> **Layer orientation only** — field-level ✅/❌ patterns → `.claude/rules/data.md` (when in `packages/core/src/data/**`).
+> **Layer orientation only** — field-level ✅/❌ patterns live with each module's fitness tests (`packages/*/src/**/*.fitness.test.*`) + `docs/patterns/`.
 
 ---
 
@@ -52,5 +52,4 @@ packages/contracts ← apps/api
   (de-tenanted from the old first-tenant scope — ADR platform-structure-rearchitecture, Phase 5).
 
 Violation = instant red flag, enforced as a build gate by `eslint no-restricted-imports` (`platform/eslint.config.js`).
-Full canonical definition (per-layer ❌/✅ · module augmentation pattern)
-→ `.claude/individual/knowledge/principles.md` §Clean Architecture
+Executable SSOT for the arrow = `eslint no-restricted-imports` (`platform/eslint.config.js`); conceptual canon = `.claude/skills/architecture-standards/references/` §1 (Clean/Hexagonal) + `docs/patterns/`.
