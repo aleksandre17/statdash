@@ -82,4 +82,13 @@ describe('MetricEditor — save gating + pure output', () => {
     expect(emitted.agg).toBe('avg')
     expect(emitted.description).toEqual({ ka: 'აღწერა', en: 'A description' })
   })
+
+  it('discloses that the agg control is carried-not-consumed, wired via aria-describedby (UI-honesty)', () => {
+    render(<MetricEditor initial={GOVERNED} existingIds={['gdp_level']} locales={[...LOCALES]} locale="en" onSave={vi.fn()} onCancel={vi.fn()} />)
+    const aggControl = screen.getByLabelText('Default aggregation')
+    const helpId = aggControl.getAttribute('aria-describedby')
+    expect(helpId).toBeTruthy()
+    const caption = document.getElementById(helpId!)
+    expect(caption).toHaveTextContent('Recorded as governance metadata — not yet applied to charts/KPIs.')
+  })
 })

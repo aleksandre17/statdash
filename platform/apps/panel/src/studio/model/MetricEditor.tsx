@@ -29,7 +29,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import {
   Box, Stack, TextField, MenuItem, Button, Typography, Alert,
-  FormControl, InputLabel, Select, FormLabel, IconButton, Divider,
+  FormControl, InputLabel, Select, FormLabel, FormHelperText, IconButton, Divider,
 } from '@mui/material'
 import AddIcon from '@mui/icons-material/Add'
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline'
@@ -253,18 +253,27 @@ export function MetricEditor({
         </Select>
       </FormControl>
 
-      {/* agg — default cross-time aggregation; enum over METRIC_AGG_VALUES (Law 8, no hardcode). */}
+      {/* agg — default cross-time aggregation; enum over METRIC_AGG_VALUES (Law 8, no hardcode).
+          UI-HONESTY (AR-49 M2 QC): the value is carried-not-consumed today (see file-header
+          note) — an honest, non-alarming caption says so, wired via aria-describedby so
+          screen-reader users get the same disclosure as sighted stewards. */}
       <FormControl size="small" fullWidth>
         <InputLabel id="me-agg">{en ? 'Default aggregation' : 'ნაგულისხმევი აგრეგაცია'}</InputLabel>
         <Select
           labelId="me-agg"
           label={en ? 'Default aggregation' : 'ნაგულისხმევი აგრეგაცია'}
           value={draft.agg ?? ''}
+          aria-describedby="me-agg-help"
           onChange={(e) => set({ agg: (e.target.value || undefined) as ManifestMetric['agg'] })}
         >
           <MenuItem value=""><em>{en ? 'None' : 'არცერთი'}</em></MenuItem>
           {METRIC_AGG_VALUES.map((a) => (<MenuItem key={a} value={a}>{a}</MenuItem>))}
         </Select>
+        <FormHelperText id="me-agg-help">
+          {en
+            ? 'Recorded as governance metadata — not yet applied to charts/KPIs.'
+            : 'აღირიცხება როგორც მმართველობის მეტამონაცემი — გრაფიკებზე/KPI-ზე ჯერ არ მოქმედებს.'}
+        </FormHelperText>
       </FormControl>
 
       {/* methodology — provenance ref (flows to the methodology badge, Law 9). */}
