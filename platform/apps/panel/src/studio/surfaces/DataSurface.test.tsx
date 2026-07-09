@@ -1,15 +1,16 @@
 import { describe, it, expect, beforeEach } from 'vitest'
-import { render, screen, fireEvent } from '@testing-library/react'
+import { render, screen } from '@testing-library/react'
 import { DataSurface } from './DataSurface'
 import { useCanvasController } from '../useCanvasController'
 import { setupCanvasRegistry } from '../../canvas/setupCanvasRegistry'
 import { useConstructorStore } from '../../store/constructor.store'
 import type { NamedDataSpec } from '../../types/constructor'
 
-// The Studio Data surface — the governed Metric Palette is the primary affordance;
-// the full raw modeling (the SAME DataModelingPanel the wizard uses) is demoted
-// under the "Advanced" disclosure, lazy-loaded on open. Proves both: palette-first,
-// and the full editor reachable (no capability lost — the anti-cliff contract).
+// The Studio Data surface (AR-49 M2.1) — the author lens now shows ONLY the governed
+// Metric Palette. The raw source/spec/query modeler has RELOCATED behind the Steward
+// role (Model mode / ModelSurface); no query/pivot/cube editor is reachable from the
+// author's Data surface anymore (FF-AUTHOR-NO-QUERY). Nothing is lost — the machinery
+// moved audience, it was not deleted (proven by ModelSurface.test).
 
 const SPEC: NamedDataSpec = {
   id: 'spec-1', name: 'GDP query',
@@ -27,24 +28,22 @@ beforeEach(() => {
   useConstructorStore.setState({ dataSpecs: [SPEC], selectedNodeId: null })
 })
 
-describe('DataSurface — metric-first, editors demoted (AR-49 M1.3)', () => {
-  it('mounts the governed Metric Palette as the primary affordance', () => {
+describe('DataSurface — governed Metric Palette only, no query editor (AR-49 M2.1)', () => {
+  it('mounts the governed Metric Palette as the author\'s data affordance', () => {
     render(<Harness />)
     expect(screen.getByPlaceholderText('ძებნა…')).toBeInTheDocument()
   })
 
-  it('keeps the full raw modeling collapsed under Advanced by default', () => {
+  it('no longer exposes the "Advanced" disclosure (relocated to Model mode)', () => {
     render(<Harness />)
-    expect(screen.getByText('დამატებითი მოდელირება')).toBeInTheDocument()
-    // Collapsed → the heavy panel is NOT mounted (chunk stays out of the shell).
-    expect(screen.queryByText('მონაცემების წყაროები')).not.toBeInTheDocument()
+    expect(screen.queryByText('დამატებითი მოდელირება')).not.toBeInTheDocument()
   })
 
-  it('discloses the full DataModelingPanel on demand (no capability lost)', async () => {
+  it('exposes NO raw source/spec/query modeling machinery on the author lens (FF-AUTHOR-NO-QUERY)', () => {
     render(<Harness />)
-    fireEvent.click(screen.getByText('დამატებითი მოდელირება'))
-    // The lazy panel mounts and reads the store (the seeded spec appears).
-    expect(await screen.findByText('მონაცემების წყაროები')).toBeInTheDocument()
-    expect(screen.getByText('GDP query')).toBeInTheDocument()
+    // The DataModelingPanel's browser headings must be unreachable from here — even
+    // the seeded spec name must not leak (the modeler is not mounted at all).
+    expect(screen.queryByText('მონაცემების წყაროები')).not.toBeInTheDocument()
+    expect(screen.queryByText('GDP query')).not.toBeInTheDocument()
   })
 })

@@ -1,28 +1,44 @@
+import { lazy, Suspense } from 'react'
 import { Box, Typography } from '@mui/material'
-import HubOutlinedIcon from '@mui/icons-material/HubOutlined'
+import { SuspenseFallback } from '../../shared/SuspenseFallback'
 import type { Locale } from '../../types/constructor'
 
-// ── ModelSurface — the Steward's Model-mode left dock (AR-49 M2.0 scaffold) ────
+// The raw source/spec/query modeling body — the SAME shared component (extracted,
+// not forked, in M1.3). Lazy so the editor suite (DataSpec editors + dnd-kit +
+// source authoring) loads only when a Steward opens Model mode; it never weighs
+// down the eager StudioShell chunk or any author-lens surface.
+const DataModelingPanel = lazy(() =>
+  import('../../features/data-layer').then((m) => ({ default: m.DataModelingPanel })),
+)
+
+// ── ModelSurface — the Steward's "define" workspace (AR-49 M2.1) ────────────────
 //
-//  M2.0 unlocks the Model rail slot for the Steward lens; the surface it opens is
-//  intentionally a PLACEHOLDER here. The "define" half — the relocated raw modeler
-//  (M2.1) and in-tool metric authoring / the Metric Editor (M2.2) — lands in later
-//  M2 sub-milestones, per SPEC-authoring-reconception-M2 §9. Kept minimal + additive
-//  so M2.0 ships the ORGANIZING AXIS (the role lens) with zero regression; Model is
-//  a left surface over the SAME always-mounted canvas, never a route.
+//  The relocation the M1 Data surface reserved (spec §3.2, §7). In M2.0 this slot
+//  was a placeholder; M2.1 makes Model mode REAL by re-homing the raw
+//  source/spec/query/pivot modeler here — the Steward's escape hatch, over the SAME
+//  always-mounted live canvas (never a route). Strangler relocation, not a rewrite:
+//  the SAME DataModelingPanel the author's Data surface used to mount under its
+//  "Advanced" disclosure now lives ONLY behind the Steward lens (FF-AUTHOR-NO-QUERY).
+//  Nothing is lost — the machinery MOVED audience; an author who needs to model
+//  flips the Model-mode lens (M2.0) and lands here. The in-tool Metric Editor
+//  (define the governed catalog itself) is M2.2 — this milestone relocates the
+//  raw modeler only (SPEC-authoring-reconception-M2 §9, sub-milestone M2.1).
 export function ModelSurface({ locale }: { locale: Locale }) {
   const en = locale === 'en'
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, color: 'text.secondary' }}>
-      <HubOutlinedIcon />
-      <Typography variant="body2" fontWeight={700}>
-        {en ? 'Model mode' : 'მოდელის რეჟიმი'}
-      </Typography>
-      <Typography variant="caption">
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+      {/* Steward context — synchronous, so the surface reads its purpose before the
+          heavy modeler chunk resolves (progressive disclosure, Law 9). */}
+      <Typography variant="caption" color="text.secondary">
         {en
-          ? 'Define the governed semantic layer here — metric authoring arrives in M2.1.'
-          : 'აქ განისაზღვრება მართული სემანტიკური შრე — მეტრიკის ავტორინგი მალე, M2.1-ში.'}
+          ? 'Define the governed data model — sources, specs and queries behind the metrics authors compose with.'
+          : 'აქ განისაზღვრება მართული მონაცემთა მოდელი — წყაროები, სპეც-ები და მოთხოვნები იმ მეტრიკების უკან, რომლებითაც ავტორები აწყობენ.'}
       </Typography>
+
+      {/* The relocated raw modeler — the Steward's escape hatch (spec §3.2). */}
+      <Suspense fallback={<SuspenseFallback label="Loading data editors" fill={false} />}>
+        <DataModelingPanel />
+      </Suspense>
     </Box>
   )
 }

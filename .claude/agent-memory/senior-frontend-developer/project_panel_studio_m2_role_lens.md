@@ -1,8 +1,28 @@
 ---
 name: panel-studio-m2-role-lens
-description: AR-49 M2.0 — Steward role LENS (useRole swappable seam, rail unlock via stewardOnly, TopBar toggle, ModelSurface scaffold, FF-ROLE-IS-LENS). NOT a security boundary.
+description: AR-49 M2.0+M2.1 — Steward role LENS (useRole seam, rail stewardOnly, TopBar toggle, FF-ROLE-IS-LENS) + M2.1 modeler relocated into ModelSurface, FF-AUTHOR-NO-QUERY. NOT a security boundary.
 metadata:
   type: project
+---
+
+**M2.1 — relocate the modeler (DONE 2026-07-09, same branch).** ModelSurface is now REAL:
+`surfaces/ModelSurface.tsx` lazy-mounts the SHARED `features/data-layer` `DataModelingPanel`
+(no fork — Strangler host-swap) under a synchronous bilingual Steward caption ("Define the
+governed data model…"). `DataSurface.tsx` STRIPPED of the "Advanced" Accordion/lazy/Suspense →
+now MetricPalette only (author lens = governed nouns, no query cliff). Author who needs to model
+flips the M2.0 lens → Model surface (same live canvas). Metric Editor is still M2.2 (NOT built).
+New FF: `studio/authorNoQuery.fitness.test.ts` (FF-AUTHOR-NO-QUERY) — raw-globs `./surfaces/*.tsx`,
+strips comments FIRST (DataSurface prose now names DataModelingPanel), asserts no author surface
+references DataModelingPanel/DataSpecEditor/Query|Pivot|Transform|GrowthEditor/`features/data-layer`;
+excludes the single `stewardOnly` surface (ModelSurface), anchored to RAIL_ENTRIES. Tests: rewrote
+DataSurface.test (palette present + modeling machinery ABSENT), new ModelSurface.test (caption sync +
+lazy DataModelingPanel mounts + reads store), updated StudioShell.test Model-caption assertion.
+GATE: eslint 0 err, tsc -b apps/panel 0, studio+data-layer 21 files/104 PASS, boot smoke/composition/
+i18n/App.boot 6 PASS, **Playwright e2e boot.e2e.ts 2/2 PASS** (offline bridge — author boot still
+renders populated MetricPalette + binds a metric, no crash). e2e bridge gotcha: shim `@playwright/test`
+→ cache `705bc6…`, but `node_modules/playwright` junction → cache `361ceb…` (TWO 1.61.1 copies →
+"two versions" error); run CLI from the SHIM's cache: `node <705bc6…>/playwright/cli.js test boot.e2e.ts`.
+
 ---
 
 AR-49 **M2.0 — the Steward role LENS** DONE (2026-07-09, branch

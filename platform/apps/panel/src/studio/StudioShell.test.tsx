@@ -93,12 +93,14 @@ describe('StudioShell — role lens unlocks the Model slot (AR-49 M2.0)', () => 
     const model = within(rail).getByRole('button', { name: /Model/ })
     expect(model).toBeEnabled()
 
-    // Selecting Model swaps the dock to the Model surface (scaffold) — a summonable
-    // left surface over the same live canvas, never a route.
+    // Selecting Model swaps the dock to the Model surface — a summonable left surface
+    // over the same live canvas, never a route. In M2.1 Model mode is REAL: it hosts
+    // the relocated modeler (ModelSurface); its context caption renders synchronously
+    // while the heavy modeler chunk lazy-loads.
     fireEvent.click(model)
     expect(useConstructorStore.getState().activeSurface).toBe('model')
     expect(screen.getByRole('heading', { name: 'Model' })).toBeInTheDocument()
-    expect(screen.getByText(/Define the governed semantic layer/)).toBeInTheDocument()
+    expect(screen.getByText(/Define the governed data model/)).toBeInTheDocument()
   })
 
   it('leaving the Steward lens while on Model falls back to the default surface (no stranded dock)', () => {

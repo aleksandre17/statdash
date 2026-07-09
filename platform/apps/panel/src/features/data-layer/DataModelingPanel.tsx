@@ -25,15 +25,15 @@ import './data-modeling-panel.css'
 
 // ── DataModelingPanel — the reusable source/spec authoring body (AR-49 M1.3) ────
 //
-//  EXTRACTED verbatim from the wizard's DataStep so a single component carries the
-//  full data-modeling capability into BOTH hosts (no fork — Law 6 DRY, Law 7
-//  Strangler): the wizard's DataStep wraps it with its step header + "Continue"
-//  gate; the Studio Data surface mounts it under the demoted "Advanced" disclosure
-//  (spec §2.2 — Metric Palette is the author's default; raw modeling is present but
-//  never the first thing they hit). The store writes are byte-identical to the
-//  wizard's — the SAME hooks/actions (reorder*, updateDataSpec, createDataSpec,
-//  deleteDataSource, refreshDataSources). Layout is container-query responsive
-//  (data-modeling-panel.css): two-column in the wide step, stacked in the dock.
+//  EXTRACTED verbatim (M1.3, no fork — Law 6 DRY, Law 7 Strangler) so a single
+//  component carries the full data-modeling capability across hosts. Its host has
+//  RELOCATED with the define-vs-curate role split (AR-49 M2.1): it no longer sits on
+//  the author's Data surface (which is now the governed Metric Palette only —
+//  FF-AUTHOR-NO-QUERY) but in Model mode (ModelSurface), the Steward's "define"
+//  workspace behind the role lens. The store writes are unchanged — the SAME
+//  hooks/actions (reorder*, updateDataSpec, createDataSpec, deleteDataSource,
+//  refreshDataSources). Layout is container-query responsive (data-modeling-panel.css):
+//  two-column when wide, stacked in the narrow dock.
 
 // ── Selection model ───────────────────────────────────────────────────────────
 // Right/lower pane is driven by a discriminated selection: which list + which id.
