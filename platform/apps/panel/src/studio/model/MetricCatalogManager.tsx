@@ -111,6 +111,7 @@ export function MetricCatalogManager({ locale, locales }: { locale: Locale; loca
         <MetricEditor
           initial={initial}
           existingIds={existingIds}
+          catalogMetrics={metrics}
           locales={locales}
           locale={locale}
           onSave={commit}
@@ -164,7 +165,9 @@ export function MetricCatalogManager({ locale, locales }: { locale: Locale; loca
               <Box sx={{ flex: 1, minWidth: 0 }}>
                 <Typography variant="body2" fontWeight={600} noWrap>{readCatalogLabel(m.label, locale, m.id)}</Typography>
                 <Typography variant="caption" color="text.secondary" noWrap>
-                  {m.id}{m.code ? ` · ${Array.isArray(m.code) ? m.code.join(', ') : m.code}` : ''}
+                  {m.id}
+                  {m.code ? ` · ${Array.isArray(m.code) ? m.code.join(', ') : m.code}` : ''}
+                  {m.calc ? ` · ${en ? 'derived' : 'გამოთვლადი'}` : ''}
                 </Typography>
               </Box>
               <IconButton size="small" aria-label={`${en ? 'Edit' : 'რედაქტირება'} ${m.id}`} onClick={() => { setFeedback(null); setEdit({ mode: 'edit', metric: m }) }}>

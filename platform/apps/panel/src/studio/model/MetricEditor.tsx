@@ -10,9 +10,12 @@
 //  the draft is validated against the LIVE cube profile before Save enables
 //  (FF-CATALOG-EDIT-SAFE, validateMetric); the manager surfaces the blast radius.
 //
-//  DEFERRED (clear seam, spec §4.4): the calc / measure-algebra (derived metric)
-//  editor — the RUNTIME is live, only its authoring UI waits (M2.5). A disabled
-//  placeholder marks the seam.
+//  M3.0 (spec §3): the calc / measure-algebra (derived metric) editor is now LIVE.
+//  A "how to define" toggle chooses BASE (pick a dataset measure) vs CALCULATED
+//  (compose from other governed metrics via CalcBuilder). A calc metric carries
+//  `calc` INSTEAD of `code`; the governance form (id/label/unit/format/methodology/
+//  description) is shared. Output is a pure ManifestMetric{calc} the LIVE runtime
+//  resolves through the unchanged resolveMeasureRef/resolveMetricValue seam.
 //
 //  GOVERNANCE (M2.2 close, AR-49): `agg` (default cross-time aggregation) and
 //  `description` (bilingual info-affordance) are now carried end to end — the wire
@@ -30,6 +33,7 @@ import { useEffect, useMemo, useState } from 'react'
 import {
   Box, Stack, TextField, MenuItem, Button, Typography, Alert,
   FormControl, InputLabel, Select, FormLabel, FormHelperText, IconButton, Divider,
+  ToggleButtonGroup, ToggleButton,
 } from '@mui/material'
 import AddIcon from '@mui/icons-material/Add'
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline'
@@ -43,12 +47,19 @@ import {
   formatKeyOptions, draftFromMeasure, unitNeedsAttention,
 } from './metricDraft'
 import { validateMetric, isSaveable, type MetricIssue } from './metricValidation'
+import { emptyCalc } from './metricCalc'
+import { CalcBuilder } from './CalcBuilder'
 
 export interface MetricEditorProps {
   /** The metric to edit, or null to author a NEW one. */
   initial:       ManifestMetric | null
   /** All catalog metric ids (create-uniqueness check). */
   existingIds:   string[]
+  /**
+   * The full governed-metric catalog — the operand universe for a CALCULATED metric
+   * (M3.0). Optional: absent ⇒ base-metric authoring only (byte-identical M2.2 path).
+   */
+  catalogMetrics?: ManifestMetric[]
   /** Active locales — drives bilingual inputs + label completeness. */
   locales:       Locale[]
   /** The locale for single-locale UI copy. */
@@ -92,7 +103,7 @@ function LocaleInputs({
 }
 
 export function MetricEditor({
-  initial, existingIds, locales, locale, onSave, onCancel,
+  initial, existingIds, catalogMetrics = [], locales, locale, onSave, onCancel,
 }: MetricEditorProps) {
   const en = locale === 'en'
   const isNew = initial === null
@@ -141,16 +152,36 @@ export function MetricEditor({
   const chosenMeasure = profile?.measures.find((m) => m.code === (typeof draft.code === 'string' ? draft.code : undefined))
   const unitWarn = chosenMeasure ? unitNeedsAttention(chosenMeasure.unit) : false
 
+  const isCalc = draft.calc !== undefined
+
   const issues: MetricIssue[] = useMemo(
     () => validateMetric(draft, {
       profile,
       existingIds: isNew ? existingIds : existingIds.filter((id) => id !== initial?.id),
       isNew,
       activeLocales: locales,
+      catalogMetrics,
     }),
-    [draft, profile, existingIds, isNew, initial, locales],
+    [draft, profile, existingIds, isNew, initial, locales, catalogMetrics],
   )
   const saveable = isSaveable(issues)
+
+  // Switch the "how to define" mode — a calc metric carries `calc` INSTEAD of `code`
+  // (exactly one — MetricDef XOR). Switching to CALC drops the base measure picks;
+  // switching to BASE drops the algebra. Non-destructive within a mode (kept on toggle).
+  const setDefineMode = (mode: 'base' | 'calc') => {
+    if (mode === 'calc') {
+      setDraft((d) => {
+        const { code: _code, dataSource: _ds, ...rest } = d
+        return { ...rest, calc: d.calc ?? emptyCalc() }
+      })
+    } else {
+      setDraft((d) => {
+        const { calc: _calc, ...rest } = d
+        return rest
+      })
+    }
+  }
 
   const formatChoices = useMemo(() => formatKeyOptions(), [])
 
@@ -176,6 +207,35 @@ export function MetricEditor({
         }
       />
 
+      {/* how to define — BASE (dataset measure) vs CALCULATED (measure-algebra). */}
+      <FormControl component="fieldset" variant="standard" sx={{ display: 'block' }}>
+        <FormLabel component="legend" sx={{ fontSize: 12 }}>
+          {en ? 'How to define' : 'როგორ განისაზღვროს'}
+        </FormLabel>
+        <ToggleButtonGroup
+          size="small" exclusive sx={{ mt: 0.5 }}
+          value={isCalc ? 'calc' : 'base'}
+          onChange={(_, v) => { if (v) setDefineMode(v) }}
+          aria-label={en ? 'Definition mode' : 'განსაზღვრის რეჟიმი'}
+        >
+          <ToggleButton value="base">{en ? 'From a dataset measure' : 'მონაცემთა საზომიდან'}</ToggleButton>
+          <ToggleButton value="calc">{en ? 'Calculated (from other metrics)' : 'გამოთვლადი (სხვა მეტრიკებიდან)'}</ToggleButton>
+        </ToggleButtonGroup>
+      </FormControl>
+
+      {/* ── CALCULATED metric — the visual measure-algebra builder (M3.0) ── */}
+      {isCalc && draft.calc && (
+        <CalcBuilder
+          calc={draft.calc}
+          catalogMetrics={catalogMetrics}
+          selfId={draft.id}
+          locale={locale}
+          onChange={(calc) => set({ calc })}
+        />
+      )}
+
+      {/* ── BASE metric — dataset + measure pickers (hidden for a calc metric) ── */}
+      {!isCalc && (<>
       {/* dataset → dataSource (auto). */}
       <FormControl size="small" fullWidth disabled={datasets === null}>
         <InputLabel id="me-dataset">{en ? 'Dataset (cube)' : 'მონაცემთა ნაკრები (კუბი)'}</InputLabel>
@@ -213,6 +273,7 @@ export function MetricEditor({
       {draft.dataSource && profileEntry?.status === 'error' && (
         <Alert severity="warning" variant="outlined">{en ? 'Cube profile unavailable — validation is limited.' : 'კუბის პროფილი მიუწვდომელია — ვალიდაცია შეზღუდულია.'}</Alert>
       )}
+      </>)}
 
       <Divider flexItem />
 
@@ -295,20 +356,17 @@ export function MetricEditor({
         idBase="me-description"
       />
 
-      {/* default-dim pins — governed Record<dim, member> (Law 1 generic, no privileged dim). */}
-      <DefaultDimPins
-        draft={draft}
-        profile={profile}
-        locale={locale}
-        onChange={(dims) => set({ dims })}
-      />
-
-      {/* DEFERRED seam — the calc / measure-algebra (derived metric) editor (M2.5). */}
-      <Alert severity="info" variant="outlined" icon={false} sx={{ opacity: 0.75 }}>
-        {en
-          ? 'Derived (calculated) metric authoring — e.g. "GDP per capita = GDP ÷ population" — arrives in a later milestone. The runtime is live; only the visual expression builder waits.'
-          : 'გამოთვლადი (derived) მეტრიკის ავტორინგი მოგვიანებით დაემატება. გამომთვლელი უკვე მუშაობს — მხოლოდ ვიზუალური რედაქტორი ელოდება.'}
-      </Alert>
+      {/* default-dim pins — governed Record<dim, member> (Law 1 generic, no privileged
+          dim). BASE-metric only: a calc metric's coordinate pins live per-operand
+          (MetricInput.at), so a metric-level default-dims picker would confuse here. */}
+      {!isCalc && (
+        <DefaultDimPins
+          draft={draft}
+          profile={profile}
+          locale={locale}
+          onChange={(dims) => set({ dims })}
+        />
+      )}
 
       {/* validation issues — surfaced, wired to the form (a11y). */}
       {issues.length > 0 && (

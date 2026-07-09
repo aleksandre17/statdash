@@ -92,3 +92,36 @@ describe('MetricEditor — save gating + pure output', () => {
     expect(caption).toHaveTextContent('Recorded as governance metadata — not yet applied to charts/KPIs.')
   })
 })
+
+// ── M3.0 — the calc / measure-algebra builder ───────────────────────────────────
+const POP: ManifestMetric = { id: 'pop_total', code: 'POP', label: { ka: 'მოსახლეობა', en: 'Population' }, dataSource: 'stats' }
+const PER_CAPITA: ManifestMetric = {
+  id: 'gdp_per_capita',
+  label: { ka: 'მშპ ერთ სულზე', en: 'GDP per capita' },
+  calc: { inputs: { a: { measure: 'gdp_level' }, b: { measure: 'pop_total' } }, expr: { op: 'div', left: { $derived: 'a' }, right: { $derived: 'b' } } },
+}
+const CATALOG = [EXISTING, POP]
+
+describe('MetricEditor — calc / derived-metric builder (M3.0)', () => {
+  it('renders the measure-algebra builder for a calc metric (operands + aria-live formula preview)', () => {
+    render(<MetricEditor initial={PER_CAPITA} existingIds={['gdp_level', 'pop_total', 'gdp_per_capita']} catalogMetrics={CATALOG} locales={[...LOCALES]} locale="en" onSave={vi.fn()} onCancel={vi.fn()} />)
+    // The define-mode toggle reflects "Calculated"; the base measure picker is hidden.
+    expect(screen.getByRole('button', { name: /Calculated/ })).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.queryByLabelText('Measure')).not.toBeInTheDocument()
+    // The formula preview is a live text alternative (WCAG, spec §3.4).
+    const preview = screen.getByRole('status', { name: 'Formula preview' })
+    expect(preview).toHaveTextContent('(GDP ÷ Population)')
+  })
+
+  it('saves a valid calc metric as PURE JSON (no code, carries calc) — FF-CALC-AUTHORING-SERIALIZABLE', () => {
+    const onSave = vi.fn<(m: ManifestMetric) => void>()
+    render(<MetricEditor initial={PER_CAPITA} existingIds={['gdp_level', 'pop_total', 'gdp_per_capita']} catalogMetrics={CATALOG} locales={[...LOCALES]} locale="en" onSave={onSave} onCancel={vi.fn()} />)
+    const save = screen.getByRole('button', { name: 'Save changes' })
+    expect(save).toBeEnabled()
+    fireEvent.click(save)
+    const emitted = onSave.mock.calls[0][0]
+    expect(emitted.code).toBeUndefined()
+    expect(emitted.calc?.expr).toEqual({ op: 'div', left: { $derived: 'a' }, right: { $derived: 'b' } })
+    expect(JSON.parse(JSON.stringify(emitted))).toEqual(emitted)  // Law 2 — pure data
+  })
+})

@@ -73,3 +73,56 @@ describe('FF-CATALOG-EDIT-SAFE — graceful degradation when the profile is unav
     expect(isSaveable(issues)).toBe(true)  // warning does not block
   })
 })
+
+// ── FF-CALC-EDIT-SAFE — a CALCULATED (derived) metric validates its algebra (M3.0) ─
+describe('FF-CALC-EDIT-SAFE — a calculated metric validates its measure-algebra', () => {
+  const catalogMetrics: ManifestMetric[] = [
+    { id: 'gdp_level', code: 'B1GQ', label: { en: 'GDP' } },
+    { id: 'pop_total', code: 'POP', label: { en: 'Population' } },
+  ]
+  const ratio = { op: 'div', left: { $derived: 'a' }, right: { $derived: 'b' } }
+  const calcBase: ManifestMetric = {
+    id: 'gdp_per_capita',
+    label: { en: 'GDP per capita', ka: 'მშპ ერთ სულზე' },
+    calc: { inputs: { a: { measure: 'gdp_level' }, b: { measure: 'pop_total' } }, expr: ratio },
+  }
+  const cctx = { profile: null, existingIds: ['gdp_level', 'pop_total'], isNew: true, activeLocales: ['ka', 'en'] as const, catalogMetrics }
+
+  it('a valid ratio over two governed metrics is saveable', () => {
+    const issues = validateMetric(calcBase, cctx)
+    expect(issues.filter((i) => i.severity === 'error')).toEqual([])
+    expect(isSaveable(issues)).toBe(true)
+  })
+
+  it('rejects an operand that is not a governed metric', () => {
+    const bad = { ...calcBase, calc: { inputs: { a: { measure: 'ghost' }, b: { measure: 'pop_total' } }, expr: ratio } }
+    const issues = validateMetric(bad, cctx)
+    expect(issues.some((i) => i.field === 'calc' && i.severity === 'error')).toBe(true)
+    expect(isSaveable(issues)).toBe(false)
+  })
+
+  it('rejects a self-reference (a metric reading itself)', () => {
+    const selfRef = { ...calcBase, calc: { inputs: { a: { measure: 'gdp_per_capita' } }, expr: { $derived: 'a' } } }
+    const issues = validateMetric(selfRef, { ...cctx, catalogMetrics: [...catalogMetrics, calcBase] })
+    expect(issues.some((i) => i.field === 'calc' && i.severity === 'error')).toBe(true)
+  })
+
+  it('rejects a transitive cycle', () => {
+    const x: ManifestMetric = { id: 'x', label: { en: 'X' }, calc: { inputs: { a: { measure: 'gdp_per_capita' } }, expr: { $derived: 'a' } } }
+    const looped = { ...calcBase, calc: { inputs: { a: { measure: 'x' } }, expr: { $derived: 'a' } } }
+    const issues = validateMetric(looped, { ...cctx, catalogMetrics: [...catalogMetrics, calcBase, x] })
+    expect(issues.some((i) => i.field === 'calc' && i.severity === 'error')).toBe(true)
+  })
+
+  it('rejects an expr referencing an undeclared operand', () => {
+    const dangling = { ...calcBase, calc: { inputs: { a: { measure: 'gdp_level' } }, expr: { op: 'div', left: { $derived: 'a' }, right: { $derived: 'z' } } } }
+    const issues = validateMetric(dangling, cctx)
+    expect(issues.some((i) => i.field === 'calc' && i.severity === 'error')).toBe(true)
+  })
+
+  it('rejects a calc metric that also carries a raw code (XOR)', () => {
+    const both = { ...calcBase, code: 'B1GQ' }
+    const issues = validateMetric(both, cctx)
+    expect(issues.some((i) => i.field === 'calc' && i.severity === 'error')).toBe(true)
+  })
+})

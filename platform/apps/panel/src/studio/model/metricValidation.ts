@@ -15,8 +15,9 @@
 import type { ManifestMetric } from '@statdash/contracts'
 import type { CubeProfile } from '../../lib/cubeApi'
 import { isValidMetricId } from './metricDraft'
+import { collectInputRefs, calcCreatesCycle } from './metricCalc'
 
-export type IssueField = 'id' | 'label' | 'code' | 'unit' | 'dims'
+export type IssueField = 'id' | 'label' | 'code' | 'unit' | 'dims' | 'calc'
 export type IssueSeverity = 'error' | 'warning'
 
 export interface MetricIssue {
@@ -34,6 +35,13 @@ export interface ValidateContext {
   isNew:       boolean
   /** Active locales — a label must carry at least one non-empty active-locale value. */
   activeLocales: readonly string[]
+  /**
+   * The full governed-metric catalog — the operand universe for a CALCULATED metric
+   * (FF-CALC-EDIT-SAFE): every input measure must resolve to a real governed metric,
+   * and a cycle over this catalog is rejected. Absent ⇒ base-metric validation only
+   * (the M2.2 path, byte-identical).
+   */
+  catalogMetrics?: readonly ManifestMetric[]
 }
 
 /** True when a LocaleString map carries a non-empty value on at least one active locale. */
@@ -69,6 +77,15 @@ export function validateMetric(draft: ManifestMetric, ctx: ValidateContext): Met
       field: 'label', severity: 'error',
       message: { ka: 'დასახელება სავალდებულოა', en: 'A label is required' },
     })
+  }
+
+  // ── CALCULATED metric — validate the measure-algebra, skip the base code/dims path ─
+  //  A calc metric carries `calc` INSTEAD of `code` (exactly one — mirrors MetricDef).
+  //  FF-CALC-EDIT-SAFE: every input measure resolves to a real governed metric; the
+  //  expr references only declared inputs; no self-reference / cycle.
+  if (draft.calc) {
+    validateCalc(draft, ctx, issues)
+    return issues
   }
 
   // ── code — a real measure in the live cube profile (belt-and-suspenders) ─────
@@ -127,6 +144,96 @@ export function validateMetric(draft: ManifestMetric, ctx: ValidateContext): Met
   }
 
   return issues
+}
+
+/**
+ * Validate a CALCULATED metric's measure-algebra (FF-CALC-EDIT-SAFE). Mutates
+ * `issues`. Rules: exactly-one-of code/calc; ≥1 input; every input measure is a real
+ * governed metric (never a dangling ref); the expr references ONLY declared inputs;
+ * no self-reference / cycle over the catalog.
+ */
+function validateCalc(draft: ManifestMetric, ctx: ValidateContext, issues: MetricIssue[]): void {
+  const calc = draft.calc!
+  const catalog = ctx.catalogMetrics ?? []
+  const catalogIds = new Set(catalog.map((m) => m.id))
+
+  // A calc metric may NOT also carry a raw `code` (exactly one — Law 2 / MetricDef XOR).
+  if (draft.code !== undefined) {
+    issues.push({
+      field: 'calc', severity: 'error',
+      message: { ka: 'გამოთვლადი მეტრიკა ვერ ატარებს პირდაპირ საზომს (code)', en: 'A calculated metric cannot also carry a raw measure (code)' },
+    })
+  }
+
+  const inputEntries = Object.entries(calc.inputs)
+  if (inputEntries.length === 0) {
+    issues.push({
+      field: 'calc', severity: 'error',
+      message: { ka: 'დაამატეთ მინიმუმ ერთი ოპერანდი (მეტრიკა)', en: 'Add at least one operand (metric)' },
+    })
+  }
+
+  // Every input measure must resolve to a real GOVERNED metric (the operand universe).
+  for (const [name, input] of inputEntries) {
+    if (!input.measure) {
+      issues.push({
+        field: 'calc', severity: 'error',
+        message: { ka: `ოპერანდ „${name}“-ს არ აქვს არჩეული მეტრიკა`, en: `Operand "${name}" has no metric selected` },
+      })
+      continue
+    }
+    // Self-reference is a special, clearer message than a generic cycle.
+    if (input.measure === draft.id) {
+      issues.push({
+        field: 'calc', severity: 'error',
+        message: { ka: 'მეტრიკა ვერ დაეყრდნობა თავის თავს', en: 'A metric cannot reference itself' },
+      })
+      continue
+    }
+    if (!catalogIds.has(input.measure)) {
+      issues.push({
+        field: 'calc', severity: 'error',
+        message: { ka: `ოპერანდი „${input.measure}“ არ არის მართული მეტრიკა`, en: `Operand "${input.measure}" is not a governed metric` },
+      })
+    }
+  }
+
+  // The expr must reference only declared inputs (no dangling $derived).
+  const declared = new Set(Object.keys(calc.inputs))
+  const referenced = collectInputRefs(calc.expr)
+  for (const ref of referenced) {
+    if (!declared.has(ref)) {
+      issues.push({
+        field: 'calc', severity: 'error',
+        message: { ka: `ფორმულა მიმართავს გამოუცხადებელ ოპერანდს „${ref}“`, en: `The formula references an undeclared operand "${ref}"` },
+      })
+    }
+  }
+  // An expr that references NO input is not yet a meaningful derivation — gate Save.
+  if (inputEntries.length > 0 && referenced.length === 0) {
+    issues.push({
+      field: 'calc', severity: 'error',
+      message: { ka: 'აირჩიეთ ალგებრის ფორმა ან ააგეთ ფორმულა', en: 'Choose an algebra shape or build a formula' },
+    })
+  }
+  // A declared-but-unreferenced input is dead weight — warn (does not block Save).
+  for (const name of declared) {
+    if (!referenced.includes(name)) {
+      issues.push({
+        field: 'calc', severity: 'warning',
+        message: { ka: `ოპერანდი „${name}“ არ გამოიყენება ფორმულაში`, en: `Operand "${name}" is not used in the formula` },
+      })
+    }
+  }
+
+  // Cycle / self-reference over the whole catalog (un-resolvable at runtime).
+  const measures = inputEntries.map(([, i]) => i.measure).filter(Boolean)
+  if (draft.id && isValidMetricId(draft.id) && calcCreatesCycle(draft.id, measures, catalog as ManifestMetric[])) {
+    issues.push({
+      field: 'calc', severity: 'error',
+      message: { ka: 'ეს გამოთვლა ქმნის ციკლს (მეტრიკა დამოკიდებულია საკუთარ თავზე)', en: 'This calculation forms a cycle (the metric depends on itself)' },
+    })
+  }
 }
 
 /** True when the metric can be saved (no error-severity issues). */
