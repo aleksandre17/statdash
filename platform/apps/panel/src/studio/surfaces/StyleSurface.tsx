@@ -1,46 +1,57 @@
-import { Box, Typography, Paper, Chip, Alert } from '@mui/material'
-import { PLATFORM_CAPABILITIES } from '../../platform-capabilities'
+import { Box, Typography, Alert } from '@mui/material'
+import { useConstructorStore, useSite } from '../../store/constructor.store'
+import { TokenCatalogViewer } from '../TokenCatalogViewer'
+import { STRATA_PRESET, BRAND_TOKEN_GROUPS } from '../strata-preset'
+import type { Locale } from '../../types/constructor'
 
-// ── Style surface — token catalog viewer (read-only in M1.2) ──────────────────
+// ── Style surface — the WRITABLE brand-token editor (AR-49 M1.4) ──────────────
 //
-//  Relocates SiteStep's Theme tab into the Studio left dock: the DTCG token
-//  catalog grouped for browsing. It is READ-ONLY here by design.
+//  The read-only catalog chip viewer became a real editor: it writes
+//  `SiteDef.themeOverrides` (a `tokenKey → CSS value` map) through the EXISTING
+//  store action `updateSite` — byte-identical to hand-authoring the override map,
+//  no new save path (persisted via the same api-actions site write). Because
+//  StudioShell applies `themeOverrides` (over the Strata base) as inline custom
+//  properties on the shell root, every edit repaints the chrome AND the live
+//  canvas on the next render — the platform's own "rebrand = data" proof (Law 2:
+//  a theme edit produces only DATA, never a code path).
 //
-//  M1.4 turns this into the WRITABLE brand-token editor (StyleField → SiteDef.
-//  themeOverrides, live-previewed on the canvas — the platform's own rebrand-as-
-//  data proof). The writable seam is deliberately deferred, not scaffolded here.
-export function StyleSurface() {
-  const tokenGroups = Object.entries(PLATFORM_CAPABILITIES.tokens).reduce<
-    Record<string, { key: string; preview: string }[]>
-  >((acc, [key, desc]) => {
-    const preview = desc.cssVar ?? (desc.value !== undefined ? String(desc.value) : '—')
-    ;(acc[desc.group] ??= []).push({ key, preview })
-    return acc
-  }, {})
+//  Driven entirely by the self-describing TOKENS_CATALOG via TokenCatalogViewer
+//  (the reusable grouping component): bilingual labels, per-type controls, and
+//  reset-to-default per token. Scoped to the brand groups (colour / typography /
+//  radius) — the exhaustive per-token editor is the Refine lens (M3).
+export function StyleSurface({ locale }: { locale: Locale }) {
+  const site       = useSite()
+  const updateSite = useConstructorStore((s) => s.updateSite)
+  const overrides  = site.themeOverrides
+
+  const setToken = (key: string, value: string) =>
+    updateSite({ themeOverrides: { ...overrides, [key]: value } })
+
+  const resetToken = (key: string) => {
+    if (!(key in overrides)) return
+    const next = { ...overrides }
+    delete next[key]
+    updateSite({ themeOverrides: next })
+  }
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-      <Typography variant="overline" color="text.secondary">თემის ტოკენები</Typography>
-      {Object.entries(tokenGroups).map(([group, tokens]) => (
-        <Paper key={group} variant="outlined" sx={{ p: 1.5 }}>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-            <Typography variant="subtitle2" sx={{ textTransform: 'capitalize' }}>{group}</Typography>
-            <Chip size="small" label={tokens.length} />
-          </Box>
-          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-            {tokens.map(({ key, preview }) => (
-              <Chip
-                key={key} size="small" variant="outlined"
-                label={`${key.split('.').pop()}: ${preview}`}
-                sx={{ fontFamily: 'monospace', fontSize: 11 }}
-              />
-            ))}
-          </Box>
-        </Paper>
-      ))}
+      <Typography variant="overline" color="text.secondary">
+        {locale === 'en' ? 'Brand tokens' : 'ბრენდის ტოკენები'}
+      </Typography>
       <Alert severity="info" variant="outlined">
-        რედაქტირებადი ბრენდ-რედაქტორი (themeOverrides, ცოცხალი გადახედვა) — M1.4.
+        {locale === 'en'
+          ? 'Edit a token to re-skin the tool and canvas live. Blank = the Strata default; reset restores it.'
+          : 'შეცვალე ტოკენი — ხელსაწყო და ტილო ცოცხლად გადაფერდება. ცარიელი = Strata-ს ნაგულისხმევი; დაბრუნება აღადგენს.'}
       </Alert>
+      <TokenCatalogViewer
+        locale={locale}
+        value={overrides}
+        defaults={STRATA_PRESET}
+        groups={BRAND_TOKEN_GROUPS}
+        onChange={setToken}
+        onReset={resetToken}
+      />
     </Box>
   )
 }

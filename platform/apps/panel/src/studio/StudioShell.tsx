@@ -1,4 +1,4 @@
-import { lazy, Suspense } from 'react'
+import { lazy, Suspense, useState } from 'react'
 import { Box, Typography, Chip } from '@mui/material'
 // Token SSOT — the shell chrome reads @statdash/styles DTCG custom properties
 // (studio.css). Importing it here (not in main.tsx) keeps the token layer in the
@@ -16,8 +16,10 @@ import { DataSurface } from './surfaces/DataSurface'
 import { LayersSurface } from './surfaces/LayersSurface'
 import { PagesSiteSurface } from './surfaces/PagesSiteSurface'
 import { StyleSurface } from './surfaces/StyleSurface'
-import { useConstructorStore, useActiveSurface, usePages, useActivePageId } from '../store/constructor.store'
-import { useActiveLocales } from '../inspector/useActiveLocales'
+import { useConstructorStore, useActiveSurface, usePages, useActivePageId, useSite } from '../store/constructor.store'
+import { useActiveLocales, PLATFORM_LOCALES } from '../inspector/useActiveLocales'
+import { buildThemeVars } from './themeVars'
+import { STRATA_PRESET } from './strata-preset'
 import { useCommandPalette } from '../command/useCommandPalette'
 import { SuspenseFallback } from '../shared/SuspenseFallback'
 import type { StudioSurface, Locale } from '../types/constructor'
@@ -51,14 +53,33 @@ export function StudioShell() {
   const pages = usePages()
   const activePageId = useActivePageId()
   const setActivePage = useConstructorStore((s) => s.setActivePage)
-  const locale: Locale = useActiveLocales()[0] ?? 'ka'
+  const site = useSite()
   const cmdk = useCommandPalette()
+
+  // Locale: the site's first active locale, with a top-bar PREVIEW override (spec
+  // §2.1 "[ka|en]") — ephemeral view state, never persisted, reusing the existing
+  // locale derivation (no new i18n machinery).
+  const activeLocales = useActiveLocales()
+  const [previewLocale, setPreviewLocale] = useState<Locale | null>(null)
+  const locale: Locale = previewLocale ?? activeLocales[0] ?? 'ka'
+
+  // The live skin: Strata base + the author's themeOverrides on top (overrides
+  // win). Applied as inline custom properties on the shell root — chrome AND the
+  // canvas descend from it, so an edit repaints both on the next render. This is
+  // the whole "rebrand = data" mechanism (Law 2 — data only, no theme code path).
+  const themeStyle = buildThemeVars(STRATA_PRESET, site.themeOverrides)
 
   const heading = SURFACE_HEADINGS[activeSurface]?.[locale] ?? ''
 
   return (
-    <Box className="studio-shell">
-      <StudioTopBar locale={locale} onOpenCommand={() => cmdk.setOpen(true)} />
+    <Box className="studio-shell" style={themeStyle}>
+      <StudioTopBar
+        locale={locale}
+        locales={PLATFORM_LOCALES}
+        onLocaleChange={setPreviewLocale}
+        onOpenCommand={() => cmdk.setOpen(true)}
+        onOpenStyle={() => setSurface('style')}
+      />
 
       {/* ⌘K / slash palette — mounted only once opened (cmdk chunk on demand). */}
       {cmdk.open && (
@@ -134,7 +155,7 @@ function renderSurface(surface: StudioSurface, controller: ReturnType<typeof use
     case 'data':       return <DataSurface controller={controller} locale={locale} />
     case 'layers':     return <LayersSurface />
     case 'pages-site': return <PagesSiteSurface />
-    case 'style':      return <StyleSurface />
+    case 'style':      return <StyleSurface locale={locale} />
     case 'model':      return null // locked (M2) — unreachable via the rail
     default:           return null
   }

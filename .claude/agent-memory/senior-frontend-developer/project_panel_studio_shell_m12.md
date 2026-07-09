@@ -1,6 +1,6 @@
 ---
 name: panel-studio-shell-m12
-description: AR-49 Studio shell — M1.2 scaffold + M1.3a extract + M1.3b COMMIT (wizard deleted, flag removed, Studio is the only surface); IA, useCanvasController reuse seam, token-CSS import, M1.4 hand-off
+description: AR-49 Studio shell — M1.2 scaffold + M1.3a/b (wizard deleted) + M1.4 DONE (writable brand editor, Strata skin, themeVars live-preview, TokenCatalogViewer, TopBar regions, FF-CHROME-TOKEN-DRIVEN); IA, useCanvasController seam
 metadata:
   type: project
 ---
@@ -96,3 +96,40 @@ intact. NOTE: PageStep still had its own inline canvas copy (never migrated to t
 accepted warnings: useLivePreviewStores, DsdVersionPanel); vitest panel = 64 files / 416
 tests PASS (incl. boot smoke + boot-parity + mainI18nInit + the new App.boot). Provable
 only live: the Studio against a running api+db (MetricPalette population).
+
+**M1.4 DONE (2026-07-09 — writable brand editor + Strata skin; additive, reversible):**
+The read-only StyleSurface became a WRITABLE brand-token editor.
+- **Live-preview mechanism (was MISSING entirely):** `themeOverrides` was stored + saved
+  (api-actions) but NEVER applied to the DOM — no theme code existed. Built it in
+  `studio/themeVars.ts`: `buildThemeVars(...layers)` maps tokenKey→value layers to an inline
+  custom-property style object, using `TOKENS_CATALOG[key].cssVar` (self-describing, Law 8 —
+  new token previewable, zero code). StudioShell applies
+  `buildThemeVars(STRATA_PRESET, site.themeOverrides)` as `style=` on the `.studio-shell`
+  root; chrome AND the live canvas descend from it, custom props inherit → an edit repaints
+  BOTH on next render. THE data flow: store.site.themeOverrides → shell inline vars → cascade.
+- **Strata preset = PURE DATA in the app (NOT packages/styles):** `studio/strata-preset.ts`
+  `STRATA_PRESET: Record<tokenKey,cssValue>` (accent azure #14508C family + teal secondary
+  #2A9D8F + navy heading #0B2E52 + radii.card 10px). Deliberately app-scoped: tokens.css is
+  brand-NEUTRAL by design (a consumer rebinds role values); the panel is one such consumer.
+  It is the base skin layer; themeOverrides overrides it live → owner "retunes Strata" by
+  writing overrides, reset falls back to Strata. Brand hex lives ONLY here (data).
+- **TokenCatalogViewer.tsx** — the ONE reusable catalog-grouping/editor (kills the M1.3a
+  observation-(a) duplication). Controlled (value/defaults/onChange/onReset), groups
+  TOKENS_CATALOG, per-token control by `descriptor.group` (color→native swatch + text,
+  else text), reset-per-token, bilingual labels. Scoped by `BRAND_TOKEN_GROUPS`
+  (color/font-*/radii) — Refine lens (M3) drops the filter for the exhaustive editor.
+- **TopBar regions filled (observation (b)):** locale PREVIEW toggle (ephemeral useState
+  override in StudioShell, reuses useActiveLocales — no persist) + brand/theme IconButton
+  → setSurface('style'). StudioTopBar signature grew: locales/onLocaleChange/onOpenStyle.
+- **FF-CHROME-TOKEN-DRIVEN + FF-THEME-EDIT-DATA:** `studio/chromeTokenDriven.fitness.test.ts`
+  scans the chrome FRAME (studio.css + StudioShell/StudioTopBar/ActivityRail/RightDock) for
+  brand literals (hex/rgb/hsl, comments stripped) — editor CONTROLS (TokenField swatch
+  #8896a5 neutral) are out of scope by design. Loads sources via `import.meta.glob('?raw')`
+  (panel tsconfig has NO @types/node — do NOT use node:fs in panel tests). Planted-literal
+  test proves it bites. FF-THEME-EDIT-DATA: STRATA_PRESET all-string, all real catalog keys.
+- **GATE (M1.4, 2026-07-09):** eslint studio = 0; tsc -b apps/panel = 0; vitest panel =
+  69 files / 441 tests PASS (+5 files / +25 vs M1.3b). packages/styles NOT touched (no styles
+  build needed). MetricPalette *population* still provable only live (api+db).
+- **Brand choices to flag for owner:** the Strata hex values (azure #14508C / teal #2A9D8F /
+  navy #0B2E52 / radii.card 10px) are my design call for "institutional trust × modern
+  clarity" — retunable live in the editor.
