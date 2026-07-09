@@ -6,6 +6,7 @@
 - [Constructor C3+C5](project_panel_c3_c5.md) — cube capability-discovery + save guard (4 checks) / i18n shift-left
 - [Panel DataSpec editor](project_panel_dataspec_editor.md) — visual DataSpec Query Builder; engine types are the contract
 - [Studio shell (AR-49 M1.2)](project_panel_studio_shell_m12.md) — flag-gated authoring shell; useCanvasController reuse seam; token-CSS import; M1.3/M1.4 hand-offs
+- [Studio M2.0 role lens](project_panel_studio_m2_role_lens.md) — Steward lens: useRole swappable seam (not security), rail unlock via stewardOnly, TopBar toggle, FF-ROLE-IS-LENS
 - [Panel live canvas (N35)](project_panel_live_canvas.md) — real NodePageRenderer as Constructor canvas; undeclared host deps
 - [Page lifecycle workflow](project_page_lifecycle_workflow.md) — draft→publish, lifecycle store slice, save-guard/403 surfacing
 - [Live-preview request volume](project_live_preview_request_volume.md) — cube-request bounding via debounced page descriptor, not another cache

@@ -16,7 +16,10 @@ import { DataSurface } from './surfaces/DataSurface'
 import { LayersSurface } from './surfaces/LayersSurface'
 import { PagesSiteSurface } from './surfaces/PagesSiteSurface'
 import { StyleSurface } from './surfaces/StyleSurface'
+import { ModelSurface } from './surfaces/ModelSurface'
+import { useRole, useToggleRole } from './useRole'
 import { useConstructorStore, useActiveSurface, usePages, useActivePageId, useSite } from '../store/constructor.store'
+import { DEFAULT_STUDIO_SURFACE } from '../types/constructor'
 import { useActiveLocales, PLATFORM_LOCALES } from '../inspector/useActiveLocales'
 import { buildThemeVars } from './themeVars'
 import { STRATA_PRESET } from './strata-preset'
@@ -50,6 +53,12 @@ export function StudioShell() {
   const controller = useCanvasController()
   const activeSurface = useActiveSurface()
   const setSurface = useConstructorStore((s) => s.setSurface)
+
+  // The role LENS — StudioShell is the SINGLE useRole() call site; it threads the
+  // value into the rail and top bar (one reader, many consumers → the swappable
+  // seam stays crisp). Default `author` = today's exact M1 behavior (zero regression).
+  const role = useRole()
+  const toggleRole = useToggleRole()
   const pages = usePages()
   const activePageId = useActivePageId()
   const setActivePage = useConstructorStore((s) => s.setActivePage)
@@ -69,13 +78,22 @@ export function StudioShell() {
   // the whole "rebrand = data" mechanism (Law 2 — data only, no theme code path).
   const themeStyle = buildThemeVars(STRATA_PRESET, site.themeOverrides)
 
-  const heading = SURFACE_HEADINGS[activeSurface]?.[locale] ?? ''
+  // Effective surface under the lens: leaving the Steward lens while Model is the
+  // active surface must not strand the author on a dock with no rail affordance —
+  // fall back to the default surface (least astonishment). The role store stays
+  // decoupled from the document/surface store; the projection happens here.
+  const effectiveSurface: StudioSurface =
+    activeSurface === 'model' && role !== 'steward' ? DEFAULT_STUDIO_SURFACE : activeSurface
+
+  const heading = SURFACE_HEADINGS[effectiveSurface]?.[locale] ?? ''
 
   return (
     <Box className="studio-shell" style={themeStyle}>
       <StudioTopBar
         locale={locale}
         locales={PLATFORM_LOCALES}
+        role={role}
+        onToggleRole={toggleRole}
         onLocaleChange={setPreviewLocale}
         onOpenCommand={() => cmdk.setOpen(true)}
         onOpenStyle={() => setSurface('style')}
@@ -88,12 +106,12 @@ export function StudioShell() {
         </Suspense>
       )}
 
-      <ActivityRail active={activeSurface} onSelect={setSurface} locale={locale} />
+      <ActivityRail active={effectiveSurface} onSelect={setSurface} locale={locale} role={role} />
 
       {/* ── Left dock — the summoned surface ─────────────────────────────── */}
       <Box component="aside" aria-label={heading} className="studio-left-dock">
         <Typography variant="subtitle2" fontWeight={700} sx={{ mb: 1.5 }}>{heading}</Typography>
-        {renderSurface(activeSurface, controller, locale)}
+        {renderSurface(effectiveSurface, controller, locale)}
       </Box>
 
       {/* ── Canvas — ALWAYS mounted, ALWAYS live (the home) ──────────────── */}
@@ -147,8 +165,9 @@ export function StudioShell() {
   )
 }
 
-// Left-dock surface dispatch (OCP — one case per rail entry; Model is locked so it
-// never reaches here, but the default keeps the render total).
+// Left-dock surface dispatch (OCP — one case per rail entry). `model` is reached
+// only in the Steward lens (StudioShell projects it out for `author` via
+// effectiveSurface); M2.0 mounts the minimal Model scaffold (define content = later M2).
 function renderSurface(surface: StudioSurface, controller: ReturnType<typeof useCanvasController>, locale: Locale) {
   switch (surface) {
     case 'insert':     return <InsertSurface controller={controller} />
@@ -156,7 +175,7 @@ function renderSurface(surface: StudioSurface, controller: ReturnType<typeof use
     case 'layers':     return <LayersSurface />
     case 'pages-site': return <PagesSiteSurface />
     case 'style':      return <StyleSurface locale={locale} />
-    case 'model':      return null // locked (M2) — unreachable via the rail
+    case 'model':      return <ModelSurface locale={locale} />
     default:           return null
   }
 }

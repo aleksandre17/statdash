@@ -2,10 +2,12 @@ import { Box, Typography, Button, MenuItem, Select, IconButton, Tooltip, ToggleB
 import SearchIcon from '@mui/icons-material/Search'
 import LogoutIcon from '@mui/icons-material/Logout'
 import PaletteOutlinedIcon from '@mui/icons-material/PaletteOutlined'
+import HubOutlinedIcon from '@mui/icons-material/HubOutlined'
 import { PageWorkflowBar } from '../features/page-workflow'
 import { useConstructorStore, usePages, useActivePageId } from '../store/constructor.store'
 import { logout } from '../lib/auth'
 import type { Locale } from '../types/constructor'
+import type { Role } from './useRole'
 
 // ── StudioTopBar — persistent global-context bar (Framer IA) ──────────────────
 //
@@ -22,13 +24,17 @@ export interface StudioTopBarProps {
   locale:         Locale
   /** Selectable locales for the preview switcher. */
   locales:        readonly Locale[]
+  /** The role LENS (author | steward) — read by StudioShell via useRole (single seam). */
+  role:           Role
+  /** Toggle the role lens (author ⇄ steward) — the "Model mode" control drives this. */
+  onToggleRole:   () => void
   onLocaleChange: (locale: Locale) => void
   onOpenCommand:  () => void
   /** Summon the Style surface (brand-token editor). */
   onOpenStyle:    () => void
 }
 
-export function StudioTopBar({ locale, locales, onLocaleChange, onOpenCommand, onOpenStyle }: StudioTopBarProps) {
+export function StudioTopBar({ locale, locales, role, onToggleRole, onLocaleChange, onOpenCommand, onOpenStyle }: StudioTopBarProps) {
   const pages        = usePages()
   const activePageId = useActivePageId()
   const setActivePage = useConstructorStore((s) => s.setActivePage)
@@ -67,6 +73,30 @@ export function StudioTopBar({ locale, locales, onLocaleChange, onOpenCommand, o
           <ToggleButton key={l} value={l} aria-label={l}>{l}</ToggleButton>
         ))}
       </ToggleButtonGroup>
+
+      {/* ── Role lens toggle — "Model mode" (AR-49 M2.0, spec §2.2) ────────────
+          A toggle (aria-pressed) that flips the author ⇄ steward LENS. In the
+          Steward lens the Model rail slot unlocks. Native <button> → keyboard-
+          reachable (Tab + Enter/Space); bilingual accessible name + tooltip. NOT a
+          security control — it only re-projects surfaces over the SAME document. */}
+      <Tooltip
+        title={
+          role === 'steward'
+            ? (locale === 'en' ? 'Return to Compose' : 'დაბრუნება კომპოზიციაში')
+            : (locale === 'en' ? 'Enter Model mode' : 'მოდელის რეჟიმში შესვლა')
+        }
+      >
+        <Button
+          size="small"
+          variant={role === 'steward' ? 'contained' : 'outlined'}
+          startIcon={<HubOutlinedIcon fontSize="small" />}
+          onClick={onToggleRole}
+          aria-pressed={role === 'steward'}
+          aria-label={locale === 'en' ? 'Model mode' : 'მოდელის რეჟიმი'}
+        >
+          {locale === 'en' ? 'Model' : 'მოდელი'}
+        </Button>
+      </Tooltip>
 
       {/* ── Brand / theme access (reserved region, spec §2.1) → Style editor ── */}
       <Tooltip title={locale === 'en' ? 'Brand & theme' : 'ბრენდი და თემა'}>

@@ -133,3 +133,5 @@ The read-only StyleSurface became a WRITABLE brand-token editor.
 - **Brand choices to flag for owner:** the Strata hex values (azure #14508C / teal #2A9D8F /
   navy #0B2E52 / radii.card 10px) are my design call for "institutional trust × modern
   clarity" — retunable live in the editor.
+
+**M2.0 (Steward role lens) DONE — see [[project_panel_studio_m2_role_lens]].**

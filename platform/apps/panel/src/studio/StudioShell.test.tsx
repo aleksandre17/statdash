@@ -4,6 +4,7 @@ import { StudioShell } from './StudioShell'
 import { setupCanvasRegistry } from '../canvas/setupCanvasRegistry'
 import { useConstructorStore } from '../store/constructor.store'
 import { INITIAL_STUDIO_SURFACE } from '../store/constructor.history'
+import { useRoleStore } from './useRole'
 
 // The Studio scaffold: landmarks + a keyboard-reachable rail + the surfaces mount
 // via the existing stores + the Model slot is locked. Rendered in English (seed the
@@ -14,6 +15,9 @@ beforeEach(() => {
   setupCanvasRegistry() // idempotent — populates the palettes; keeps mounts crash-free
   useConstructorStore.setState({ activeSurface: INITIAL_STUDIO_SURFACE, selectedNodeId: null, chromeSelection: null })
   useConstructorStore.getState().updateSite({ defaultLocale: 'en', activeLocales: ['en'] })
+  // Default role lens = author (a fresh session lands here) — reset the persisted
+  // preference so each test starts from the documented default (AR-49 M2.0).
+  useRoleStore.setState({ role: 'author' })
 })
 
 describe('StudioShell — IA + landmarks (WCAG 2.1 AA)', () => {
@@ -62,13 +66,54 @@ describe('StudioShell — activity rail (summonable surfaces, no waterfall)', ()
     expect(screen.getByRole('heading', { name: 'Style' })).toBeInTheDocument()
   })
 
-  it('the Model slot is rendered but LOCKED (M2) — present, never selectable', () => {
+})
+
+// ── Role lens — the Steward unlocks Model (AR-49 M2.0) ────────────────────────
+//
+//  Role is a LENS over the SAME document (not RBAC): the default `author` lens is
+//  byte-identical to M1 (no Model slot); the `steward` lens unlocks the Model rail
+//  entry + its (scaffold) surface. The role is read through the single useRole()
+//  seam; these tests arrange it via the underlying preference store.
+describe('StudioShell — role lens unlocks the Model slot (AR-49 M2.0)', () => {
+  it('defaults to the author lens — the Model rail slot is ABSENT (M1 behavior preserved)', () => {
     render(<StudioShell />)
-    const model = screen.getByRole('button', { name: /Model/ })
-    expect(model).toBeDisabled()
-    // Clicking a disabled rail button cannot change the surface.
+    const rail = screen.getByRole('navigation', { name: 'Studio surfaces' })
+    // The five compose surfaces are present…
+    for (const name of ['Insert', 'Data', 'Layers', 'Pages & Site', 'Style']) {
+      expect(within(rail).getByRole('button', { name: new RegExp(name) })).toBeEnabled()
+    }
+    // …and Model is not offered at all in the author lens.
+    expect(within(rail).queryByRole('button', { name: /Model/ })).toBeNull()
+  })
+
+  it('the Steward lens unlocks Model as an ENABLED, selectable rail entry', () => {
+    useRoleStore.setState({ role: 'steward' })
+    render(<StudioShell />)
+    const rail = screen.getByRole('navigation', { name: 'Studio surfaces' })
+    const model = within(rail).getByRole('button', { name: /Model/ })
+    expect(model).toBeEnabled()
+
+    // Selecting Model swaps the dock to the Model surface (scaffold) — a summonable
+    // left surface over the same live canvas, never a route.
     fireEvent.click(model)
-    expect(useConstructorStore.getState().activeSurface).not.toBe('model')
+    expect(useConstructorStore.getState().activeSurface).toBe('model')
+    expect(screen.getByRole('heading', { name: 'Model' })).toBeInTheDocument()
+    expect(screen.getByText(/Define the governed semantic layer/)).toBeInTheDocument()
+  })
+
+  it('leaving the Steward lens while on Model falls back to the default surface (no stranded dock)', () => {
+    useRoleStore.setState({ role: 'steward' })
+    useConstructorStore.setState({ activeSurface: 'model' })
+    const { rerender } = render(<StudioShell />)
+    expect(screen.getByRole('heading', { name: 'Model' })).toBeInTheDocument()
+
+    // Flip back to author — Model must no longer be shown, and the dock recovers to
+    // the default (Insert) rather than stranding on a surface with no rail affordance.
+    useRoleStore.setState({ role: 'author' })
+    rerender(<StudioShell />)
+    expect(screen.getByRole('heading', { name: 'Insert' })).toBeInTheDocument()
+    const rail = screen.getByRole('navigation', { name: 'Studio surfaces' })
+    expect(within(rail).queryByRole('button', { name: /Model/ })).toBeNull()
   })
 })
 
