@@ -199,6 +199,12 @@ export default defineConfig([
   // Panel must declare @statdash/* or @plugins as its public import surface.
   // This rule keeps the future filter-repo panel split a no-op:
   // panel has zero hidden knowledge of the monorepo's internal paths.
+  //
+  // FF-NO-REACT-ADMIN (AR-49 M1.1): react-admin is retired from the panel. The
+  // dead <Resource> CRUD fork + the AdminContext/dataProvider/i18nProvider shell
+  // are gone; the one live capability (a toast hook) is now the panel's own
+  // `notify` port (store/notify.ts). This ban is the enforcement home — any new
+  // `from 'react-admin'` import anywhere under apps/panel is an ERROR (lint fails).
   {
     files: ['apps/panel/**/*.{ts,tsx}'],
     rules: {
@@ -207,6 +213,10 @@ export default defineConfig([
           {
             group: ['../../packages/**', '../../../packages/**', '**/packages/**'],
             message: 'Panel must not reach into platform package source by relative path. Use @statdash/* or @plugins aliases.',
+          },
+          {
+            group: ['react-admin', 'react-admin/*'],
+            message: 'react-admin is retired from the panel (AR-49 M1.1, FF-NO-REACT-ADMIN). Use the panel\'s own `notify` port (store/notify.ts) for toasts; config CRUD goes through store/api-actions → lib/api.',
           },
         ],
       }],

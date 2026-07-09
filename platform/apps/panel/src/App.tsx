@@ -1,10 +1,8 @@
 import { useState, useEffect, useCallback } from 'react'
-import { AdminContext }             from 'react-admin'
 import { CssBaseline, Box, CircularProgress } from '@mui/material'
-import { dataProvider }      from './providers/dataProvider'
-import { i18nProvider }      from './providers/i18nProvider'
 import { ConstructorWizard } from './features/wizard'
 import { LoginForm }         from './features/auth/LoginForm'
+import { ToastHost }         from './shared/ToastHost'
 import { useConstructorStore } from './store/constructor.store'
 import { initFromApi } from './store/api-actions'
 import { bootstrapCatalog } from './store/bootstrapCatalog'
@@ -21,10 +19,12 @@ import './inspector/controls/value-mapping/register'
 //  ready      — constructor ready to use
 type AppState = 'login' | 'loading' | 'ready'
 
-// ── AdminContext (not Admin) — RA as a provider layer only ───────────────────
-// AdminContext supplies: dataProvider, i18nProvider, useNotify, useDataProvider,
-// auth hooks — but ZERO layout, routing, or chrome.
-// Constructor owns the full viewport directly.
+// ── Provider-free shell (react-admin retired, AR-49 M1.1) ────────────────────
+// The panel owns its full viewport directly. The one live capability react-admin
+// carried — a toast hook — is now the panel's own `notify` port (store/notify.ts,
+// rendered by <ToastHost/>). Config CRUD flows through store/api-actions → lib/api
+// directly (never an RA dataProvider), and locale is the panel's own LocaleString
+// + locale state, so no provider wrapper remains.
 //
 // Boot flow:
 //   1. Check isAuthenticated() → if false → show LoginForm
@@ -108,9 +108,10 @@ export function App() {
 
   // ── Constructor ───────────────────────────────────────────────────────────────
   return (
-    <AdminContext dataProvider={dataProvider} i18nProvider={i18nProvider}>
+    <>
       <CssBaseline />
       <ConstructorWizard />
-    </AdminContext>
+      <ToastHost />
+    </>
   )
 }

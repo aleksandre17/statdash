@@ -2,7 +2,7 @@
 //
 //  Collects username + password → calls login() → notifies parent on success.
 //  Shows a descriptive error on 401, a generic message on network failure.
-//  No react-admin dependency — pure MUI so it can render before AdminContext.
+//  No react-admin dependency — pure MUI (the panel is react-admin-free, AR-49 M1.1).
 //
 
 import { useState } from 'react'

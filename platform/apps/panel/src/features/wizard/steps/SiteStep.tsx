@@ -6,7 +6,7 @@ import DeleteIcon from '@mui/icons-material/Delete'
 import LanguageIcon from '@mui/icons-material/Language'
 import PaletteIcon from '@mui/icons-material/Palette'
 import NavigationIcon from '@mui/icons-material/Navigation'
-import { useNotify } from 'react-admin'
+import { useToast } from '../../../store/notify'
 import {
   SortableContext, verticalListSortingStrategy,
   useSortable, arrayMove,
@@ -66,7 +66,7 @@ export function SiteStep() {
   const removeNavItem = useConstructorStore((s) => s.removeNavItem)
   const markStepDone = useConstructorStore((s) => s.markStepDone)
   const goToStep     = useConstructorStore((s) => s.goToStep)
-  const notify       = useNotify()
+  const notify       = useToast()
   const sensors      = useDndSensors()
 
   const [tab, setTab] = useState(0)
