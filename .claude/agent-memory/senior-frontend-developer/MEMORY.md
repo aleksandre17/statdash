@@ -13,6 +13,8 @@
 - [Value mappings architecture](project_value_mappings_architecture.md) — EXP-06 value→{text,token,icon}, token-bound, layer split
 - [Panel code-splitting](project_panel_code_splitting.md) — lazy boundaries + Rolldown vendor groups; jsx-runtime/apexcharts priority gotcha
 - [Panel tsconfig constraints](project_panel_tsconfig_constraints.md) — no TS parameter-properties / import type required
+- [Panel Playwright e2e harness](project_panel_playwright_e2e.md) — real-browser boot/bind proof; runner separation; mock-API; offline-run bridge (pw 1.61.1)
+- [Canvas chromeConfig defect](project_panel_canvas_chromeconfig_defect.md) — live canvas can't render nodes in-browser (CanvasView omits chromeConfig); NodeErrorBoundary masks it
 
 ## Data / stores
 - [Live store measure pinning](project_live_store_measure_pinning.md) — live ApiStore does pure dim_key containment, no measure filter/agg

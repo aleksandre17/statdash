@@ -20,6 +20,7 @@
     "typecheck": "tsc -b apps/geostat/tsconfig.app.json --noEmit",
     "preview": "pnpm --filter ./apps/geostat run preview",
     "test": "vitest run",
+    "test:e2e:panel": "pnpm --filter ./apps/panel run test:e2e",
     "check-laws": "bash ../ops/scripts/check-laws.sh",
     "validate:local": "bash ../ops/scripts/validate-local.sh",
     "layer-status": "bash ../ops/scripts/layer-status.sh",
