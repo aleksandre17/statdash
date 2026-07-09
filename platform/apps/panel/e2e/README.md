@@ -43,7 +43,36 @@ surface the boot path touches, via Playwright route interception
   parallel reads `initFromApi()` makes, each as a `{ data }` envelope, plus a seed
   page whose `config` is a real `NodePageConfig` tree (a `chart` node = the governed
   bind target).
+- **Cube discovery (steward metric-authoring, M2.2):** `GET /api/stats/datasets` → a
+  one-row dataset list, and `GET /api/cube/:code/profile` → a real `CubeProfile`
+  (one measure with a **resolved unit** so the editor's unit field pre-fills, one
+  dimension with members so a default-dim pin is authorable). The stub is typed
+  against `src/lib/cubeApi` — the wire shape is the compile-checked contract.
+- **Stateful catalog save (M2.2):** `PUT /api/config/site { metrics, dimensions }`
+  replaces a per-page **mutable** catalog (seeded from the governed set), and the
+  SAME `GET /api/bootstrap` then serves the updated set — so the steward → author
+  loop is faithful on BOTH paths: the live-refresh loop (register + palette
+  invalidate) shows the metric with no reload, and a reload/re-register path would
+  see it too.
 - Auth is seeded directly (`sessionStorage` token) so the app boots past `LoginForm`.
+
+## Specs
+
+- **`boot.e2e.ts`** — the keystone: boot → populated governed `MetricPalette` →
+  select a chart block via the Layers outline → click-bind a metric → the
+  `data.query.measure` config write (Inspector + live-region proofs); plus the direct
+  live-canvas render proof.
+- **`steward.e2e.ts`** — the **M2.2 headline** (in-tool metric authoring), end to end:
+  boot in the **author** lens → flip the top-bar **Model mode** toggle to the
+  **steward** lens (the Model rail slot unlocks) → open **Model** → **New metric** →
+  PICK dataset + measure (assert the **unit pre-fills** from the cube's resolved
+  unit) → set a slug-legal id + a bilingual **governed** label + a display format →
+  **Create** → assert save success → flip back to the **author** lens → open **Data**
+  → assert the newly authored metric is in the **MetricPalette** by its *governed*
+  label (distinct from the cube measure label, so it proves the governance text
+  round-tripped, not just the cube echo). This is the steward-authors → author-sees
+  loop, in Chromium — the "green ≠ works" closer for M2.2.
+- **`a11y.e2e.ts`** — axe scan (self-skips until `@axe-core/playwright` is installed).
 
 Everything the mock covers is **structure + boot ordering + governed-catalog wiring +
 the metric-bind config write** — i.e. the M0/M1 class of defect. What it deliberately
@@ -109,6 +138,24 @@ kpi-strip interprets to an EMPTY KPI set (the shell renders its `<EmptyState/>`)
 throwing. `items` is REQUIRED by `KpiStripNode`, so a well-formed strip is byte-identical;
 the guard only covers the untyped node-config boundary (Postel/ISP). jsdom net:
 `packages/core/src/data/kpi-specless-failsoft.fitness.test.ts`.
+
+### 3. FLAGGED (product code, not fixed here) — non-idempotent page hydration duplicates a page on re-boot
+
+`steward.e2e.ts` surfaced (in the browser console) a repeated React warning:
+`Encountered two children with the same key, 'page-gdp'`. Root cause is **app-side**,
+not the harness: `initFromApi()` (`src/store/api-actions.ts`) hydrates each page via
+`store.addPage(...)`, and `addPagePatch` (`src/store/constructor.pages.ts`) is a **blind
+append** (`{ pages: [...s.pages, page] }`), not an upsert-by-id. React 18 **StrictMode**
+double-invokes the boot effect in dev, so the same page is appended twice → duplicate
+keys in the footer page-tablist and the top-bar page `<Select>`.
+
+Harmless in production (single invoke) and non-blocking (the test passes), but it is a
+latent robustness gap: any **re-hydrate** without a store reset (StrictMode, a manual
+reload path, a future re-`initFromApi`) duplicates pages. The correct fix is an
+**idempotent** hydrate — `addPage` should upsert by id, or `initFromApi` should reset
+the page list before loading. **Not fixed here** (this task is test-infra only; it is a
+product-code change to route). Pre-existing: `boot.e2e.ts` uses the same seed and emits
+the same warning.
 
 ## Accessibility (axe)
 

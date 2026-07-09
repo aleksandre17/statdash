@@ -20,6 +20,9 @@
 //  envelope, so no request 404s the boot (fail-soft parity with the live api).
 //
 import type { Page, Route } from '@playwright/test'
+// The wire IS the contract (Law 5): the steward-flow profile stub is typed against
+// the exact shape the panel consumes, so a server-shape drift breaks compile here.
+import type { CubeProfile, CubeDatasetRow } from '../../src/lib/cubeApi'
 
 // ── The governed catalog the mocked /api/bootstrap serves ──────────────────────
 //  Faithful subset of geostat.provisioning.json site_config.metrics/.dimensions —
@@ -36,6 +39,57 @@ export const GOVERNED_CATALOG = {
     { id: 'geo',    code: 'geo',    label: { ka: 'გეოგრაფია', en: 'Geography' }, conceptRole: 'geo', defaultMember: 'GE' },
     { id: 'sector', code: 'sector', label: { ka: 'სექტორი',   en: 'Sector' },    conceptRole: 'sector' },
   ],
+}
+
+// ── Cube discovery stub for the STEWARD metric-authoring flow (M2.2) ───────────
+//  The Metric Editor is "pick, never type" (Law 2): it lists datasets, then reads a
+//  live cube profile to offer real measures (unit auto-fills) + dimensions (members).
+//  These two stubs are the faithful shapes cubeApi.datasets()/profile(code) unwrap
+//  (`{ data }` envelope). One dataset, one measure carrying a RESOLVED unit
+//  (source:'measure' → the editor pre-fills the unit field), one dimension with
+//  members (so a default-dim pin is authorable).
+export const STEWARD_DATASET: CubeDatasetRow = { code: 'nat-accounts', label: 'National Accounts' }
+
+export const STEWARD_PROFILE: CubeProfile = {
+  datasetCode: STEWARD_DATASET.code,
+  dimensions: [
+    {
+      code: 'time', conceptRole: 'time', isTime: true,
+      members: [
+        { code: '2023', label: { ka: '2023', en: '2023' }, parentCode: null },
+        { code: '2024', label: { ka: '2024', en: '2024' }, parentCode: null },
+      ],
+    },
+    {
+      code: 'geo', conceptRole: 'geo', isTime: false,
+      members: [{ code: 'GE', label: { ka: 'საქართველო', en: 'Georgia' }, parentCode: null }],
+    },
+  ],
+  measures: [
+    {
+      code: 'gdp-deflator',
+      label: { ka: 'მშპ დეფლატორი', en: 'GDP deflator' },
+      // A resolved unit (source !== 'none') → the editor's unit field pre-fills to
+      // this bilingual label and does NOT warn (unitNeedsAttention === false).
+      unit: {
+        unit_code: 'IDX', symbol: 'idx',
+        label: { ka: 'ინდექსი (2015=100)', en: 'Index (2015=100)' },
+        unit_type: 'index', unit_mult: 0, decimals: 1, base_period: '2015', source: 'measure',
+      },
+    },
+  ],
+  actualRegion: { available: false, combinations: null },
+}
+
+// The metric the steward AUTHORS in steward.e2e — its governed label is deliberately
+// DISTINCT from the cube measure label ('GDP deflator'), so the palette assertion
+// proves the STEWARD's governance text round-tripped (PUT → bootstrap → register →
+// palette), not merely the cube echo. Id is slug-legal (no dot) — a hand-authored id
+// must pass isValidMetricId, unlike the provisioned 'gdp.current'.
+export const AUTHORED_METRIC = {
+  id:    'gdp_deflator',
+  code:  'gdp-deflator',
+  label: { ka: 'მშპ ფასების დეფლატორი', en: 'GDP price deflator' },
 }
 
 // The bind target — the id of the chart node the seed page carries (see PAGE_CONFIG).
@@ -98,16 +152,49 @@ const json = (route: Route, body: unknown) =>
  * Install the governed-catalog API stub on a page. Call BEFORE `page.goto` so the
  * boot's first fetch is already intercepted. One handler switches on the request
  * path (unambiguous precedence — no route-ordering surprises).
+ *
+ * STATEFUL for the steward loop (M2.2): the handler owns a per-page MUTABLE catalog
+ * seeded from GOVERNED_CATALOG. `PUT /api/config/site { metrics, dimensions }`
+ * replaces it, and the SAME `GET /api/bootstrap` then serves the updated set — so a
+ * reload/re-registration path is faithful (a steward-authored metric is
+ * indistinguishable from a provisioned one after persistence, FF-METRIC-AUTHORING-
+ * SERIALIZABLE). The live-refresh loop (register + palette invalidate) is client-side,
+ * so the palette shows the metric WITHOUT a reload; this state makes the reload path
+ * honest too.
  */
 export async function mockPanelApi(page: Page): Promise<void> {
+  // Deep-cloned so each installed stub (one per test) mutates its own copy — no
+  // cross-test bleed through the module-level GOVERNED_CATALOG.
+  const catalog: { metrics: unknown[]; dimensions: unknown[] } = {
+    metrics:    structuredClone(GOVERNED_CATALOG.metrics),
+    dimensions: structuredClone(GOVERNED_CATALOG.dimensions),
+  }
+
   await page.route('**/api/**', async (route) => {
     const url = new URL(route.request().url())
     const p = url.pathname
+    const method = route.request().method()
 
-    if (p.endsWith('/api/bootstrap'))            return json(route, GOVERNED_CATALOG) // body-direct (ADR-0026)
+    // /api/bootstrap serves the LIVE (post-PUT) catalog, body-direct (ADR-0026).
+    if (p.endsWith('/api/bootstrap'))            return json(route, catalog)
+
+    // Cube discovery (steward "pick, never type") — datasets list + live profile.
+    if (p.endsWith('/api/stats/datasets'))       return json(route, { data: [STEWARD_DATASET] })
+    if (p.includes('/api/cube/') && p.endsWith('/profile')) return json(route, { data: STEWARD_PROFILE })
+
     if (p.endsWith('/api/config/data-sources'))  return json(route, { data: [] })
     if (p.endsWith('/api/config/data-specs'))    return json(route, { data: [] })
-    if (p.endsWith('/api/config/site'))          return json(route, { data: SITE })
+    if (p.endsWith('/api/config/site')) {
+      // The steward catalog SAVE — a per-key upsert of { metrics, dimensions } that
+      // leaves the rest of site_config untouched (routes/config/site.ts semantics).
+      if (method === 'PUT') {
+        const body = (route.request().postDataJSON() ?? {}) as { metrics?: unknown[]; dimensions?: unknown[] }
+        if (Array.isArray(body.metrics))    catalog.metrics = body.metrics
+        if (Array.isArray(body.dimensions)) catalog.dimensions = body.dimensions
+        return json(route, { data: body })
+      }
+      return json(route, { data: SITE })
+    }
     if (p.endsWith('/api/config/nav'))           return json(route, { data: [] })
     if (p.endsWith('/api/config/pages'))         return json(route, { data: [PAGE_LIST_ROW] })
     if (p.includes('/api/config/pages/'))        return json(route, { data: PAGE_DETAIL_ROW })
