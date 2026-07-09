@@ -92,10 +92,16 @@ export async function initFromApi(): Promise<boolean> {
     sources.forEach((r) => store.addDataSource(fromApiDataSource(r)))
     specs.forEach((r) => store.addDataSpec(fromApiDataSpec(r)))
     store.updateSite(fromApiSite(siteMap, navRows))
+    // Hydrate is an authoritative REPLACE of the pages collection (setPages), never
+    // an incremental append (addPage) — idempotent under a re-run of this whole
+    // function (React StrictMode's double-invoked boot effect, or a re-init after
+    // re-login), so it can never duplicate a page id / duplicate a React key in the
+    // page tablist or top-bar page Select. See store/constructor.pages.ts setPagesPatch.
+    store.setPages(pageDetails.map(fromApiPage))
     pageDetails.forEach((p) => {
-      store.addPage(fromApiPage(p))
       // Reflect the server FSM for each loaded page (status + published flag).
-      // A freshly-loaded page is clean (no local edits yet) — dirty:false.
+      // A freshly-loaded page is clean (no local edits yet) — dirty:false. Keyed by
+      // id (a record merge, not an append) so this loop is already idempotent.
       store.reflectLifecycle(p.id, {
         status:          toPageStatus(p.status),
         versionNumber:   p.version_number,

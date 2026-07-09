@@ -35,6 +35,7 @@ import {
 } from './constructor.lifecycle'
 import {
   addPagePatch,
+  setPagesPatch,
   updatePagePatch,
   removePagePatch,
   reorderPageNodesPatch,
@@ -77,6 +78,8 @@ export interface ConstructorStore extends ConstructorSession, StudioUiSlice, His
 
   // Page Layer actions
   addPage:          (page: CanvasPage) => void
+  /** Idempotent HYDRATE — replaces the whole pages collection (boot load, not a user edit). */
+  setPages:         (pages: CanvasPage[]) => void
   updatePage:       (id: string, patch: Partial<Omit<CanvasPage, 'nodes'>>) => void
   removePage:       (id: string) => void
   setActivePage:    (id: string | null) => void
@@ -276,6 +279,13 @@ export const useConstructorStore = create<ConstructorStore>()(
       // ── Page Layer — thin wiring over pure reducers (constructor.pages) ──────
       addPage: (page) =>
         set((s) => ({ ...pushHistory(s as ConstructorStore, `Add Page: ${page.title.en}`), ...addPagePatch(s, page) }), false, 'pages/addPage'),
+      // Replace the whole pages set with the server's authoritative load — mirrors
+      // setDataSources: a server-state sync is not a user edit, so it is NOT
+      // history-tracked (an undo must never "unload" a hydrated page), and it is a
+      // REPLACE, not an append, so re-running hydrate (StrictMode double-invoke,
+      // re-init after re-login) is idempotent — no duplicate page ids.
+      setPages: (pages) =>
+        set(setPagesPatch(pages), false, 'pages/setPages'),
       updatePage: (id, patch) =>
         set((s) => ({ ...pushHistory(s as ConstructorStore, `Update Page`), ...updatePagePatch(s, id, patch) }), false, 'pages/updatePage'),
       removePage: (id) =>

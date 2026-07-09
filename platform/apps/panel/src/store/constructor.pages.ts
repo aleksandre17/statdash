@@ -17,6 +17,20 @@ export function addPagePatch(s: PagesState, page: CanvasPage): PagesPatch {
   return { pages: [...s.pages, page] }
 }
 
+/**
+ * Replace the WHOLE pages collection with the server's authoritative set — the
+ * boot HYDRATE path (initFromApi), never a user edit. `addPagePatch` is a blind
+ * append and is correct for that: a user's "add page" action must always create
+ * one more page. Hydrate is different — it is loading the SAME server-side set,
+ * so it must be idempotent: loading it twice (e.g. React StrictMode's
+ * double-invoked boot effect racing initFromApi) must not duplicate page ids
+ * (which would render duplicate React keys in the page tablist / top-bar page
+ * Select). A REPLACE, not an append, is what "authoritative load" means.
+ */
+export function setPagesPatch(pages: CanvasPage[]): Pick<PagesState, 'pages'> {
+  return { pages }
+}
+
 export function updatePagePatch(
   s: PagesState,
   id: string,
