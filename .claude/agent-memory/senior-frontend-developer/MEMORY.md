@@ -1,6 +1,7 @@
 # Memory Index
 
 ## Constructor (apps/panel)
+- [Panel M0 boot gaps](project_panel_m0_boot_gaps.md) — AR-49 MetricPalette unreachable live: no metric-registration path + main.tsx omits i18next.init (test-masked)
 - [Constructor architecture (state)](project_constructor_state.md) — Inspector/SchemaSource seam, registry pattern, Coverage Fitness gate, standing gotchas
 - [Constructor C3+C5](project_panel_c3_c5.md) — cube capability-discovery + save guard (4 checks) / i18n shift-left
 - [Panel DataSpec editor](project_panel_dataspec_editor.md) — visual DataSpec Query Builder; engine types are the contract

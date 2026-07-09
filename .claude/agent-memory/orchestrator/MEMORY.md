@@ -9,6 +9,7 @@
 - [gate render suite on data changes](feedback_gate_render_suite_on_data_changes.md) — config/data changes gating the CONSUMING app's render suite, not just own units
 - [localeString leak + apex blindspot](feedback_localestring_leak_apex_blindspot.md) — bilingual-but-string field = silent React #31; jsdom misses chart shells
 - [model launch ledger](feedback_model_launch_ledger.md) — requested≠verified model; ledger every Agent() launch; probe = ground-truth instrument
+- [panel live-boot verification](feedback_panel_live_boot_verification.md) — unit/fitness green ≠ works; prove panel features through the REAL boot path; jsdom masks boot-wiring (i18next.init, metric registration)
 
 ## Project — operational
 - [authoring reconception](project_authoring_reconception.md) — owner-mandated bold reconception of panel (UI+func+concept+arch); vision leads, existing adapts; dislikes 3-step wizard

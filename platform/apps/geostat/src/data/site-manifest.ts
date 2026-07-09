@@ -17,10 +17,18 @@
 //           Retool fetchAppManifest (resources + pages in one bootstrap call).
 //
 import type { SiteManifestContract, ManifestMetric, ManifestDimension } from '@statdash/contracts'
-import type { DataStore, DatasourceInstanceConfig, MetricDef, DimensionDef } from '@statdash/engine'
-import { registerMetrics, registerDimensions }                 from '@statdash/engine'
+import type { DataStore, DatasourceInstanceConfig }            from '@statdash/engine'
+import { registerManifestMetrics, registerManifestDimensions } from '@statdash/engine'
 import type { NavEntry, I18nConfig, ChromeConfig, ChromeEntry } from '@statdash/react'
 import type { NodePageConfig }                                 from '@statdash/react/engine'
+
+// The manifest→registry boot seam now lives in @statdash/engine (packages/core) —
+// the layer that OWNS MetricDef/DimensionDef and may import the zero-dep wire mirror
+// (ManifestMetric/ManifestDimension), so the refinement is one platform SSOT reused
+// by every boot (this runner + the Constructor's authoring boot), not a per-app fork
+// (Law 8 / DRY). Re-exported here so this module's existing importers (parity-harness,
+// metric-delivery.fitness) keep resolving them from './site-manifest' unchanged.
+export { registerManifestMetrics, registerManifestDimensions }
 
 // ── SiteManifest — JSON-serializable ──────────────────────────────────
 //
@@ -55,80 +63,6 @@ export interface SiteManifest extends Omit<
   metrics?:     ManifestMetric[]
   /** Governed dimensions (peer of metrics) — registerManifestDimensions(dimensions) primes the registry. */
   dimensions?:  ManifestDimension[]
-}
-
-// ── registerManifestMetrics — the semantic-layer boot seam ────────────────────
-//
-//  The metric-delivery mirror of the datasource flow: just as the runner reads
-//  `manifest.datasources` and dispatches each to a store-builder, it reads
-//  `manifest.metrics` and registers each MetricDef into the engine's process-global
-//  registry (the `registerMetrics(catalog)` seam). This MUST run before render so a
-//  DataSpec referencing a metric-id resolves through `resolveMeasureRef` to the
-//  underlying code (FF-METRICS-DELIVERED: manifest→boot→registry).
-//
-//  The manifest carries the wire shape `ManifestMetric` (opaque blob, owned by the
-//  api projection); HERE — the consumer that owns the engine's `MetricDef` — we
-//  REFINE it: the registry key is `id`, the rest is the def. Empty/absent ⇒ a no-op
-//  (Postel — registerMetrics({}) leaves the raw-code status quo byte-identical).
-//  Idempotent + last-write-wins per id (registerMetrics contract), so a re-boot or
-//  a manifest refetch re-registers the same catalog without drift.
-
-export function registerManifestMetrics(metrics: ManifestMetric[] | undefined): void {
-  if (!metrics || metrics.length === 0) return
-  const catalog: Record<string, MetricDef> = {}
-  for (const m of metrics) {
-    catalog[m.id] = {
-      label:       m.label,
-      // BASE vs CALCULATED metric (DC-01): exactly one of code/calc is present on
-      // the wire. `code` ⇒ a direct measure; `calc` ⇒ the measure-algebra blob the
-      // runner refines into engine MetricCalc (its `expr` is carried opaquely on
-      // the wire as JsonValue — contracts cannot import @statdash/expr across the
-      // arrow — so the refinement to a real Expr happens HERE, the layer that owns
-      // the engine type, exactly like the renderer-owned page blobs are refined).
-      ...(m.code        !== undefined ? { code:        m.code }        : {}),
-      ...(m.calc        !== undefined ? { calc:        m.calc as unknown as MetricDef['calc'] } : {}),
-      ...(m.unit        !== undefined ? { unit:        m.unit }        : {}),
-      // `format` is a FormatKey on the wire (typed `string` because contracts cannot
-      // import engine's FormatKey across the arrow); refined back to MetricDef['format']
-      // HERE, the layer that owns the engine type — exactly like `calc`/`dims`.
-      ...(m.format      !== undefined ? { format:      m.format as MetricDef['format'] } : {}),
-      ...(m.methodology !== undefined ? { methodology: m.methodology } : {}),
-      ...(m.dims        !== undefined ? { dims:        m.dims as MetricDef['dims'] } : {}),
-      ...(m.dataSource  !== undefined ? { dataSource:  m.dataSource }  : {}),
-    }
-  }
-  registerMetrics(catalog)
-}
-
-// ── registerManifestDimensions — the governed-dimension boot seam ──────────────
-//
-//  The exact PEER of registerManifestMetrics (Law 1: dimensions are equal
-//  citizens of the semantic layer). The runner reads `manifest.dimensions` and
-//  registers each DimensionDef into the engine's process-global registry
-//  (`registerDimensions(catalog)`), so a governed-dimension picker resolves its
-//  label/default/whitelist while the members still come FROM the cube profile at
-//  runtime (Law 5 — never copied into config).
-//
-//  The manifest carries the wire shape `ManifestDimension` (opaque blob, owned by
-//  the api projection); HERE — the consumer that owns the engine's `DimensionDef`
-//  — we REFINE it: the registry key is `id`, the rest is the def. Empty/absent ⇒
-//  a no-op (Postel — dimensions still reach the author as raw cube-profile
-//  members). Idempotent + last-write-wins per id (registerDimensions contract).
-
-export function registerManifestDimensions(dimensions: ManifestDimension[] | undefined): void {
-  if (!dimensions || dimensions.length === 0) return
-  const catalog: Record<string, DimensionDef> = {}
-  for (const d of dimensions) {
-    catalog[d.id] = {
-      code:  d.code,
-      label: d.label,
-      ...(d.conceptRole   !== undefined ? { conceptRole:   d.conceptRole }   : {}),
-      ...(d.defaultMember !== undefined ? { defaultMember: d.defaultMember } : {}),
-      ...(d.members       !== undefined ? { members:       d.members }       : {}),
-      ...(d.description   !== undefined ? { description:   d.description }    : {}),
-    }
-  }
-  registerDimensions(catalog)
 }
 
 // ── SiteBootstrap — runtime shell data ────────────────────────────────

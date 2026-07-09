@@ -1,6 +1,6 @@
 // Global vitest setup for apps/panel — runs before every test file.
 import '@testing-library/jest-dom'
-import i18next from 'i18next'
+import { initPanelI18n } from './src/boot/initI18n'
 
 // jsdom lacks ResizeObserver — the CanvasOverlay observes its root to reposition
 // frames on layout changes. A no-op stub is enough for the test environment.
@@ -29,12 +29,8 @@ if (!('IntersectionObserver' in globalThis)) {
 }
 
 // registerSlice() calls i18next.addResources for slices that ship i18n. Those
-// methods only exist after init() (geostat does this in main.tsx before
-// setupRegistrations). Initialise the singleton once here so the canvas
-// registry setup can register slices in tests.
-if (!i18next.isInitialized) {
-  void i18next.init({
-    lng: 'ka', fallbackLng: 'ka', resources: {},
-    interpolation: { escapeValue: false },
-  })
-}
+// methods only exist after init(). Use the APP's OWN init (src/boot/initI18n) —
+// the exact function main.tsx calls — so the test harness and the running app
+// share ONE init SSOT and can never drift (the drift that let the suite stay green
+// while the running app white-screened on the missing init — Gap B).
+initPanelI18n()

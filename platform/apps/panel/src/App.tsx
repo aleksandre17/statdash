@@ -7,6 +7,7 @@ import { ConstructorWizard } from './features/wizard'
 import { LoginForm }         from './features/auth/LoginForm'
 import { useConstructorStore } from './store/constructor.store'
 import { initFromApi } from './store/api-actions'
+import { bootstrapCatalog } from './store/bootstrapCatalog'
 import { MOCK_SOURCES, MOCK_SPECS, MOCK_SITE, MOCK_PAGE } from './store/mock-data'
 import { isAuthenticated, AuthError } from './lib/auth'
 // Boot-time control registration: surface rich FieldControls the registry can't
@@ -49,7 +50,12 @@ export function App() {
       return
     }
     try {
-      const ok = await initFromApi()
+      // Boot reads run concurrently: initFromApi hydrates the config CRUD layers;
+      // bootstrapCatalog (Gap A) primes the governed metric/dimension registry from
+      // /api/bootstrap so describeApp() — and thus the MetricPalette — is populated
+      // BEFORE the wizard's Page step mounts. bootstrapCatalog is fail-soft (never
+      // throws), so it never blocks the config boot from reaching 'ready'.
+      const [ok] = await Promise.all([initFromApi(), bootstrapCatalog()])
       if (!ok) {
         MOCK_SOURCES.forEach((ds)   => store.addDataSource(ds))
         MOCK_SPECS.forEach((spec)   => store.addDataSpec(spec))

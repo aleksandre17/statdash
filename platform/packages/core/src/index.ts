@@ -315,6 +315,12 @@ export { resolveMetricValue, calcMetricRequirements, isCalculatedMetric } from '
 export type { DimensionDef }    from './data/dimension'
 export { registerDimension, registerDimensions, getDimension, listDimensions,
          listDimensionDefs }    from './data/dimension'
+// ── manifest → registry boot seam — the wire→engine refinement, one platform SSOT ──
+//  registerManifestMetrics/registerManifestDimensions refine the zero-dep wire
+//  shapes (ManifestMetric/ManifestDimension) into MetricDef/DimensionDef and prime
+//  the registries. Reused by EVERY boot (the geostat runner, the Constructor's
+//  authoring boot) — not a per-app fork (Law 8 / DRY).
+export { registerManifestMetrics, registerManifestDimensions }         from './data/manifest-catalog'
 // metric→store binding [M1] — the Cube.dev `dataSource` middle tier. A node's
 // DataSpec → the storeKey its referenced metric names (plain string; react's
 // resolveStore consumes it, no core→react import — arrow clean).
