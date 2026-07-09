@@ -46,6 +46,19 @@ export interface MetricCalc {
 }
 
 /**
+ * The allowed cross-time aggregations a metric may declare — the SINGLE SSOT for
+ * both the `MetricAgg` type AND any picker over the values (Law 8: an authoring
+ * agg-picker sources its options FROM here, never a hardcoded list; a new
+ * aggregation = one entry added here and every consumer — type + picker — follows).
+ * A runtime tuple so it is enumerable at authoring time; `as const` so the derived
+ * union stays exact.
+ */
+export const METRIC_AGG_VALUES = ['sum', 'avg', 'last'] as const
+
+/** A metric's declared cross-time aggregation — the exact union over METRIC_AGG_VALUES. */
+export type MetricAgg = (typeof METRIC_AGG_VALUES)[number]
+
+/**
  * Definition of one named metric.
  * Thin — not a modeling language. No filters, no joins, no SQL.
  */
@@ -79,8 +92,8 @@ export interface MetricDef {
    * display consumer (the featured slider / metric-driven panels) lands in AR-40 P1.
    */
   format?:       FormatKey
-  /** Default aggregation across time. */
-  agg?:          'sum' | 'avg' | 'last'
+  /** Default aggregation across time (the METRIC_AGG_VALUES SSOT). */
+  agg?:          MetricAgg
   /** Parent metric id (for hierarchical navigation / drill-down). */
   parent?:       string
   /** URL to the official methodology page. Flows into ProvenanceRecord.methodology. */
@@ -170,8 +183,8 @@ export interface ResolvedMeasure {
   format?:      FormatKey
   /** Metric-default methodology URL, if declared on the metric. */
   methodology?: string
-  /** Metric-default cross-time aggregation, if declared. */
-  agg?:         'sum' | 'avg' | 'last'
+  /** Metric-default cross-time aggregation, if declared (the METRIC_AGG_VALUES SSOT). */
+  agg?:         MetricAgg
   /** Metric-default dimension filters — merged into the query as DEFAULTS (explicit query-time filters win). */
   dims?:        Partial<Record<string, FilterValue>>
   /**

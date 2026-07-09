@@ -38,6 +38,10 @@ const FIXTURE: ManifestMetric[] = [
     label:      { ka: 'მშპ', en: 'GDP' },
     unit:       { ka: 'მლნ ლარი', en: 'Million Georgian Lari' },
     methodology: 'https://example.org/methodology/gdp',
+    // Governance authored by a steward (M2.2 close): a NON-DEFAULT cross-time
+    // aggregation + a bilingual description — must survive the wire round-trip.
+    agg:         'avg',
+    description: { ka: 'მთლიანი შიდა პროდუქტი', en: 'Gross domestic product' },
     dataSource: 'gdpStore',
   },
   {
@@ -68,6 +72,26 @@ describe('FF-METRICS-DELIVERED — manifest metrics reach the engine registry', 
     const manifest = { metrics: FIXTURE } as unknown as SiteManifest
     registerManifestMetrics(manifest.metrics)
     expect(resolveMeasureRef('dlv:gdp').unit).toEqual({ ka: 'მლნ ლარი', en: 'Million Georgian Lari' })
+  })
+})
+
+describe('FF-METRIC-AGG-DESC-DELIVERED — authored agg + description survive delivery', () => {
+  it('the wire agg + description refine byte-identically onto the engine MetricDef (registry)', () => {
+    registerManifestMetrics(FIXTURE)
+    const def = getMetric('dlv:gdp')
+    // A steward authored a NON-DEFAULT agg — it must NOT be dropped at the boot seam.
+    expect(def?.agg).toBe('avg')
+    expect(def?.description).toEqual({ ka: 'მთლიანი შიდა პროდუქტი', en: 'Gross domestic product' })
+  })
+
+  it('the delivered agg reaches the one binding seam (resolveMeasureRef governance)', () => {
+    registerManifestMetrics(FIXTURE)
+    // resolveMeasureRef carries the metric-default agg — the seam a cross-time
+    // consumer reads. (Governance-only metadata TODAY: carried, not yet consumed by
+    // an interpreter — this locks that the delivery half does not silently drop it.)
+    expect(resolveMeasureRef('dlv:gdp').agg).toBe('avg')
+    // A metric that declares no agg contributes none (byte-identical status quo).
+    expect(resolveMeasureRef('dlv:multi').agg).toBeUndefined()
   })
 })
 

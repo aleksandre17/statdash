@@ -50,8 +50,12 @@ export function registerManifestMetrics(metrics: ManifestMetric[] | undefined): 
       // HERE, the layer that owns the engine type — exactly like `calc`/`dims`.
       ...(m.format      !== undefined ? { format:      m.format as MetricDef['format'] } : {}),
       ...(m.methodology !== undefined ? { methodology: m.methodology } : {}),
+      // `agg` is a closed literal union on both sides (the METRIC_AGG_VALUES SSOT) —
+      // mirrored precisely on the wire, so it refines onto MetricDef with no cast.
+      ...(m.agg         !== undefined ? { agg:         m.agg }         : {}),
       ...(m.dims        !== undefined ? { dims:        m.dims as MetricDef['dims'] } : {}),
       ...(m.dataSource  !== undefined ? { dataSource:  m.dataSource }  : {}),
+      ...(m.description !== undefined ? { description: m.description } : {}),
     }
   }
   registerMetrics(catalog)

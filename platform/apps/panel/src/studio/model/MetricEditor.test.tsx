@@ -23,6 +23,7 @@ const PROFILE: CubeProfile = {
 }
 
 const EXISTING: ManifestMetric = { id: 'gdp_level', code: 'B1GQ', label: { ka: 'მშპ', en: 'GDP' }, unit: { ka: 'მლნ ₾', en: 'mln GEL' }, dataSource: 'stats' }
+const GOVERNED: ManifestMetric = { ...EXISTING, agg: 'avg', description: { ka: 'აღწერა', en: 'A description' } }
 const LOCALES = ['ka', 'en'] as const
 
 beforeEach(() => {
@@ -65,5 +66,20 @@ describe('MetricEditor — save gating + pure output', () => {
     expect(emitted.id).toBe('gdp_level')            // id preserved (immutable)
     // Pure data — a function-free JSON round-trip (Law 2 / FF-METRIC-AUTHORING-SERIALIZABLE).
     expect(JSON.parse(JSON.stringify(emitted))).toEqual(emitted)
+  })
+
+  it('surfaces the agg picker + description control and round-trips governed metadata', () => {
+    const onSave = vi.fn<(m: ManifestMetric) => void>()
+    const { container } = render(<MetricEditor initial={GOVERNED} existingIds={['gdp_level']} locales={[...LOCALES]} locale="en" onSave={onSave} onCancel={vi.fn()} />)
+    // Both governance controls are present (Law 8 enum agg picker, Law 4 bilingual description).
+    expect(screen.getByLabelText('Default aggregation')).toBeInTheDocument()
+    expect(screen.getByText('Description')).toBeInTheDocument()
+    // The description en input (stable id) carries the authored value.
+    expect(container.querySelector<HTMLInputElement>('#me-description-en')?.value).toBe('A description')
+    // An authored agg + description survive the save without a code change (round-trip).
+    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }))
+    const emitted = onSave.mock.calls[0][0]
+    expect(emitted.agg).toBe('avg')
+    expect(emitted.description).toEqual({ ka: 'აღწერა', en: 'A description' })
   })
 })

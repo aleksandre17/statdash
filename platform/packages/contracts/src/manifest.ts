@@ -110,10 +110,26 @@ export interface ManifestMetric {
   format?:      string
   /** External methodology page URL — flows into ProvenanceRecord.methodology. */
   methodology?: string
+  /**
+   * Default cross-time aggregation for the metric's value — the wire mirror of
+   * engine `MetricDef.agg` (a `MetricAgg`: 'sum' | 'avg' | 'last'). A CLOSED literal
+   * union, so — unlike `format` — it is mirrored precisely here (contracts stays
+   * zero-dep; the runner refines it back onto MetricDef at the registerManifestMetrics
+   * boot seam). Additive / backward-compatible — absent ⇒ current behavior. Pure
+   * config data (Law 2). NOTE: governance-only metadata today — the resolved `agg`
+   * is carried through resolveMeasureRef but not yet consumed by an interpreter.
+   */
+  agg?:         'sum' | 'avg' | 'last'
   /** Default dimension filters merged as query DEFAULTS (explicit query filters win). */
   dims?:        Record<string, unknown>
   /** storeKey this metric routes a referencing node to (explicit node storeKey wins). */
   dataSource?:  string
+  /**
+   * Longer bilingual description for the info-affordance / tooltips — the wire mirror
+   * of engine `MetricDef.description` (a LocaleString {ka,en} map, Law 4). Additive /
+   * backward-compatible — absent ⇒ current behavior. Pure config data (Law 2).
+   */
+  description?: Record<string, string>
 }
 
 /**

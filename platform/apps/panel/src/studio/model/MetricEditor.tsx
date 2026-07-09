@@ -12,11 +12,16 @@
 //
 //  DEFERRED (clear seam, spec §4.4): the calc / measure-algebra (derived metric)
 //  editor — the RUNTIME is live, only its authoring UI waits (M2.5). A disabled
-//  placeholder marks the seam. WIRE-CONTRACT NOTE: `agg` and `description` are
-//  MetricDef fields but NOT ManifestMetric fields, and registerManifestMetrics does
-//  not carry them — authoring them here would persist DEAD data (dropped at the boot
-//  seam). They are omitted until the wire contract carries them (a contracts+engine
-//  change, out of M2.2's apps/panel-only scope).
+//  placeholder marks the seam.
+//
+//  GOVERNANCE (M2.2 close, AR-49): `agg` (default cross-time aggregation) and
+//  `description` (bilingual info-affordance) are now carried end to end — the wire
+//  contract (ManifestMetric) mirrors them, registerManifestMetrics refines them onto
+//  MetricDef, and both surface below. The agg picker is enum-driven off the engine's
+//  METRIC_AGG_VALUES SSOT (Law 8 — a new aggregation is a new option with zero code).
+//  Absent ⇒ current behavior (Postel). NOTE: metric-level `agg` is governance-only
+//  metadata today — resolved through resolveMeasureRef but not yet read by an
+//  interpreter; authoring it records the steward's intent for when it is consumed.
 //
 //  Accessibility (WCAG 2.1 AA, Law 9): every control is labelled; the immutable id
 //  states why; validation issues render in a labelled list wired to the form.
@@ -29,6 +34,7 @@ import {
 import AddIcon from '@mui/icons-material/Add'
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline'
 import type { ManifestMetric } from '@statdash/contracts'
+import { METRIC_AGG_VALUES } from '@statdash/engine'
 import type { Locale } from '../../types/constructor'
 import { cubeApi, type CubeDatasetRow, type CubeProfile } from '../../lib/cubeApi'
 import { useCubeProfileStore } from '../../discovery/cubeProfile.store'
@@ -247,6 +253,20 @@ export function MetricEditor({
         </Select>
       </FormControl>
 
+      {/* agg — default cross-time aggregation; enum over METRIC_AGG_VALUES (Law 8, no hardcode). */}
+      <FormControl size="small" fullWidth>
+        <InputLabel id="me-agg">{en ? 'Default aggregation' : 'ნაგულისხმევი აგრეგაცია'}</InputLabel>
+        <Select
+          labelId="me-agg"
+          label={en ? 'Default aggregation' : 'ნაგულისხმევი აგრეგაცია'}
+          value={draft.agg ?? ''}
+          onChange={(e) => set({ agg: (e.target.value || undefined) as ManifestMetric['agg'] })}
+        >
+          <MenuItem value=""><em>{en ? 'None' : 'არცერთი'}</em></MenuItem>
+          {METRIC_AGG_VALUES.map((a) => (<MenuItem key={a} value={a}>{a}</MenuItem>))}
+        </Select>
+      </FormControl>
+
       {/* methodology — provenance ref (flows to the methodology badge, Law 9). */}
       <TextField
         size="small"
@@ -255,6 +275,15 @@ export function MetricEditor({
         value={draft.methodology ?? ''}
         onChange={(e) => set({ methodology: e.target.value || undefined })}
         placeholder="https://…"
+      />
+
+      {/* description — longer bilingual info-affordance (LocaleString, Law 4). */}
+      <LocaleInputs
+        legend={en ? 'Description' : 'აღწერა'}
+        value={draft.description}
+        locales={locales}
+        onChange={(description) => set({ description: hasAnyLabel(description) ? description : undefined })}
+        idBase="me-description"
       />
 
       {/* default-dim pins — governed Record<dim, member> (Law 1 generic, no privileged dim). */}
