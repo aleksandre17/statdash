@@ -48,6 +48,24 @@ only (full source/spec/DataSpecEditor/Excel relocation is M1.3); PagesSiteSurfac
 reorder + real "+add page" (still the `notify('coming')` stub) are M1.3; StyleSurface
 writable themeOverrides editor is M1.4.
 
+**M1.3a DONE (2026-07-09, ADDITIVE — wizard NOT deleted, flag NOT flipped; M1.3b awaits
+owner):** relocated the last wizard-only capability via EXTRACT-AND-DELEGATE (not fork —
+the DRY seam the brief mandates). New shared components consumed by BOTH the wizard step
+and the Studio surface: `features/data-layer/DataModelingPanel.tsx` (the full source/spec
+browser+editor lifted from DataStep; container-query responsive via
+`data-modeling-panel.css` — 2-col in the wide step, stacked in the 300px dock) and
+`features/site/{SiteIdentityEditor,NavEditor}.tsx` (lifted from SiteStep; NavEditor takes
+`onAddPage` so the wizard keeps its stub while Studio wires real create). DataStep/SiteStep
+are now THIN frames (header+waterfall-gate) around the shared bodies — behavior
+byte-identical. `DataSurface` mounts DataModelingPanel LAZY under the Advanced accordion
+(only on expand — keeps the 60kB data-layer chunk out of the eager 12.7kB StudioShell
+chunk). `PagesSiteSurface` = SiteIdentityEditor + NavEditor + lazy `PageBrowser` for real
+"+add page" (done⁺, exceeds wizard stub). StyleSurface stays read-only (parity; writable =
+M1.4). RightDock/TopBar/Insert/Layers already fully covered PageStep in M1.2 — no work
+needed. Parity checklist: `docs/architecture/proposals/M1.3-parity.md` (no
+wizard-deletion boundary hit). GATE: tsc 0, eslint 0, panel vitest 65 files/421 tests PASS
+(added DataModelingPanel/DataSurface/PagesSiteSurface tests = +3 files/+11), vite build OK.
+
 **Test gotchas:** (1) App defaults to `ka` locale (site.activeLocales empty → falls back to
 ka) so rail aria-labels are Georgian in App-level tests; seed `updateSite({defaultLocale:
 'en',activeLocales:['en']})` for English assertions (StudioShell.test does this). (2) A

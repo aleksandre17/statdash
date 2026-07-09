@@ -7,6 +7,10 @@
 export { DataSpecEditor } from './DataSpecEditor'
 export type { DataSpecEditorProps } from './DataSpecEditor'
 
+// The full source/spec browser + editor body — shared by the wizard's DataStep
+// and the Studio Data surface (AR-49 M1.3). One component, no fork.
+export { DataModelingPanel } from './DataModelingPanel'
+
 export { QuerySpecEditor } from './editors/QuerySpecEditor'
 export { TimeseriesEditor } from './editors/TimeseriesEditor'
 export { GrowthEditor } from './editors/GrowthEditor'

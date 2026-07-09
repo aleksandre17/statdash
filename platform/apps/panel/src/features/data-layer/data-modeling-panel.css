@@ -1,0 +1,27 @@
+/* ================================================================
+   DataModelingPanel — the source/spec browser + editor, shared by the
+   wizard's DataStep and the Studio Data surface (AR-49 M1.3).
+
+   Container-query responsive so ONE component fits both hosts without a
+   layout prop: two columns (browser | editor) in the wizard's wide step,
+   stacked (browser above editor) in the Studio's narrow left dock. The
+   panel measures its OWN inline-size — it is host-agnostic (SOLID: the
+   component doesn't know or care who mounts it).
+   ================================================================ */
+
+.data-modeling-panel {
+  container-type: inline-size;
+}
+
+.data-modeling-panel__grid {
+  display: grid;
+  grid-template-columns: 1fr;   /* stacked by default (narrow dock) */
+  gap: 16px;
+  min-height: 360px;
+}
+
+@container (min-width: 560px) {
+  .data-modeling-panel__grid {
+    grid-template-columns: 320px 1fr;  /* browser | editor (wide step) */
+  }
+}

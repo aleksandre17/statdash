@@ -1,85 +1,27 @@
 import { useState } from 'react'
-import { Box, Tabs, Tab, TextField, ToggleButton, ToggleButtonGroup, Typography,
-         IconButton, Paper, Button, Chip } from '@mui/material'
-import DragIndicatorIcon from '@mui/icons-material/DragIndicator'
-import DeleteIcon from '@mui/icons-material/Delete'
+import { Box, Tabs, Tab, Typography, Paper, Button, Chip } from '@mui/material'
 import LanguageIcon from '@mui/icons-material/Language'
 import PaletteIcon from '@mui/icons-material/Palette'
 import NavigationIcon from '@mui/icons-material/Navigation'
 import { useToast } from '../../../store/notify'
-import {
-  SortableContext, verticalListSortingStrategy,
-  useSortable, arrayMove,
-} from '@dnd-kit/sortable'
-import { CSS } from '@dnd-kit/utilities'
-import { DndContext, type DragEndEvent, closestCenter } from '@dnd-kit/core'
-import { useConstructorStore, useSite } from '../../../store/constructor.store'
-import { useDndSensors } from '../../../shared/dnd/useDndSensors'
-import type { Locale, NavItem } from '../../../types/constructor'
+import { useConstructorStore } from '../../../store/constructor.store'
+import { SiteIdentityEditor, NavEditor } from '../../site'
 import { PLATFORM_CAPABILITIES } from '../../../platform-capabilities'
 
-// ── Sortable navigation row ───────────────────────────────────────────────────
-interface SortableNavRowProps {
-  item:     NavItem
-  onDelete: () => void
-}
-
-function SortableNavRow({ item, onDelete }: SortableNavRowProps) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: item.id })
-
-  return (
-    <Paper
-      ref={setNodeRef}
-      variant="outlined"
-      sx={{
-        display: 'flex', alignItems: 'center', gap: 1.5, px: 1.5, py: 1, mb: 1,
-        opacity: isDragging ? 0.5 : 1,
-        transform: CSS.Transform.toString(transform),
-        transition,
-      }}
-    >
-      <Box
-        component="span"
-        {...attributes}
-        {...listeners}
-        aria-label={`Reorder ${item.label.en}`}
-        sx={{ display: 'flex', cursor: 'grab', color: 'text.disabled', touchAction: 'none' }}
-      >
-        <DragIndicatorIcon fontSize="small" />
-      </Box>
-      <Box sx={{ flex: 1 }}>
-        <Typography variant="body2" fontWeight={600}>{item.label.ka}</Typography>
-        <Typography variant="caption" color="text.secondary">{item.label.en}</Typography>
-      </Box>
-      <Chip size="small" variant="outlined" label={item.pageId} />
-      <IconButton size="small" aria-label={`Delete ${item.label.en}`} onClick={onDelete}>
-        <DeleteIcon fontSize="small" />
-      </IconButton>
-    </Paper>
-  )
-}
-
+// ── SiteStep — the wizard's site step (AR-49) ─────────────────────────────────
+//
+//  The Identity + Navigation tabs now render the shared SiteIdentityEditor /
+//  NavEditor (extracted so the Studio Pages&Site surface mounts the SAME controls
+//  — no fork, Law 6/7). Behavior is byte-identical: the wizard's "+ add page" stays
+//  its `notify('coming soon')` stub (injected via onAddPage), and the read-only
+//  Theme viewer stays here (the Studio's Style surface owns its own; M1.4 makes it
+//  writable). The step header + waterfall gate remain — deleted with the wizard.
 export function SiteStep() {
-  const site         = useSite()
-  const updateSite   = useConstructorStore((s) => s.updateSite)
-  const reorderNav   = useConstructorStore((s) => s.reorderNav)
-  const removeNavItem = useConstructorStore((s) => s.removeNavItem)
-  const markStepDone = useConstructorStore((s) => s.markStepDone)
   const goToStep     = useConstructorStore((s) => s.goToStep)
+  const markStepDone = useConstructorStore((s) => s.markStepDone)
   const notify       = useToast()
-  const sensors      = useDndSensors()
 
   const [tab, setTab] = useState(0)
-
-  const handleNavDragEnd = (e: DragEndEvent) => {
-    const { active, over } = e
-    if (!over || active.id === over.id) return
-    const ids = site.nav.map((n) => n.id)
-    const oldIndex = ids.indexOf(String(active.id))
-    const newIndex = ids.indexOf(String(over.id))
-    if (oldIndex < 0 || newIndex < 0) return
-    reorderNav(arrayMove(ids, oldIndex, newIndex))
-  }
 
   // Group token keys by their catalog group for the Theme tab.
   const tokenGroups = Object.entries(PLATFORM_CAPABILITIES.tokens).reduce<
@@ -111,59 +53,15 @@ export function SiteStep() {
       <Box sx={{ flex: 1, overflow: 'auto' }}>
         {/* ── Identity ──────────────────────────────────────────────────────── */}
         {tab === 0 && (
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, maxWidth: 520, pt: 1 }}>
-            <TextField
-              label="საიტის სახელი"
-              value={site.name}
-              onChange={(e) => updateSite({ name: e.target.value })}
-              fullWidth
-            />
-            <Box>
-              <Typography variant="caption" color="text.secondary" gutterBottom display="block">
-                ნაგულისხმევი ენა
-              </Typography>
-              <ToggleButtonGroup
-                exclusive
-                value={site.defaultLocale}
-                onChange={(_, v: Locale | null) => { if (v) updateSite({ defaultLocale: v }) }}
-                aria-label="Default locale"
-              >
-                <ToggleButton value="ka" aria-label="Georgian">ka</ToggleButton>
-                <ToggleButton value="en" aria-label="English">en</ToggleButton>
-              </ToggleButtonGroup>
-            </Box>
-            <TextField
-              label="ლოგოს URL"
-              value={site.logo ?? ''}
-              onChange={(e) => updateSite({ logo: e.target.value })}
-              placeholder="https://…"
-              fullWidth
-            />
+          <Box sx={{ maxWidth: 520, pt: 1 }}>
+            <SiteIdentityEditor />
           </Box>
         )}
 
         {/* ── Navigation ────────────────────────────────────────────────────── */}
         {tab === 1 && (
           <Box sx={{ maxWidth: 560, pt: 1 }}>
-            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleNavDragEnd}>
-              <SortableContext items={site.nav.map((n) => n.id)} strategy={verticalListSortingStrategy}>
-                {site.nav.map((item) => (
-                  <SortableNavRow key={item.id} item={item} onDelete={() => removeNavItem(item.id)} />
-                ))}
-              </SortableContext>
-            </DndContext>
-            {site.nav.length === 0 && (
-              <Typography variant="body2" color="text.disabled" sx={{ py: 2 }}>
-                ნავიგაციის ელემენტები ჯერ არ არის.
-              </Typography>
-            )}
-            <Button
-              sx={{ mt: 1 }}
-              variant="outlined"
-              onClick={() => notify('გვერდის დამატება — მალე', { type: 'info' })}
-            >
-              + გვერდის დამატება
-            </Button>
+            <NavEditor onAddPage={() => notify('გვერდის დამატება — მალე', { type: 'info' })} />
           </Box>
         )}
 

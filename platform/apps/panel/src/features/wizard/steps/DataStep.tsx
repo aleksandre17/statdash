@@ -1,137 +1,18 @@
-import { useState } from 'react'
-import { Box, Typography, Button, Chip, Paper, Divider } from '@mui/material'
+import { Box, Typography, Button } from '@mui/material'
 import StorageIcon from '@mui/icons-material/Storage'
-import DataObjectIcon from '@mui/icons-material/DataObject'
-import AddIcon from '@mui/icons-material/Add'
-import UploadFileIcon from '@mui/icons-material/UploadFile'
-import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline'
-import DragIndicatorIcon from '@mui/icons-material/DragIndicator'
-import {
-  SortableContext, verticalListSortingStrategy,
-  useSortable, arrayMove,
-} from '@dnd-kit/sortable'
-import { CSS } from '@dnd-kit/utilities'
-import { DndContext, type DragEndEvent, closestCenter } from '@dnd-kit/core'
-import { useConstructorStore, useDataSources, useDataSpecs } from '../../../store/constructor.store'
-import { useDndSensors } from '../../../shared/dnd/useDndSensors'
-import type { DataSpec } from '@statdash/engine'
-import { DataSpecEditor } from '../../data-layer'
-import { ShowMe } from '../../data-layer/showme/ShowMe'
-import { SourceAuthoringPanel } from '../../datasources/SourceAuthoringPanel'
-import { ExcelUpload } from '../../datasources/ExcelUpload'
-import { deleteDataSource, createDataSpec, refreshDataSources } from '../../../store/api-actions'
-import type { ConnectionStatus } from '../../../types/constructor'
+import { useConstructorStore } from '../../../store/constructor.store'
+import { DataModelingPanel } from '../../data-layer'
 
-// ── Selection model ───────────────────────────────────────────────────────────
-// Right panel is driven by a discriminated selection: which list + which id.
-//  - 'source'     edit an existing source (authoring panel, prefilled)
-//  - 'source-new' add a new source       (authoring panel, blank)
-//  - 'upload'     drop a canonical .xlsx  (Excel ingest → validate → approve)
-//  - 'spec'       edit a DataSpec
-type Selection =
-  | { kind: 'source'; id: string }
-  | { kind: 'source-new' }
-  | { kind: 'upload' }
-  | { kind: 'spec';   id: string }
-  | null
-
-const STATUS_COLOR: Record<ConnectionStatus, 'success' | 'error' | 'default' | 'warning'> = {
-  connected: 'success',
-  error:     'error',
-  idle:      'default',
-  pending:   'warning',
-}
-
-// ── Sortable row (shared by both lists) ───────────────────────────────────────
-interface SortableRowProps {
-  id:       string
-  primary:  string
-  icon:     React.ReactNode
-  selected: boolean
-  endAdornment?: React.ReactNode
-  onSelect: () => void
-}
-
-function SortableRow({ id, primary, icon, selected, endAdornment, onSelect }: SortableRowProps) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id })
-
-  return (
-    <Paper
-      ref={setNodeRef}
-      variant="outlined"
-      onClick={onSelect}
-      sx={{
-        display: 'flex', alignItems: 'center', gap: 1, px: 1, py: 0.75, mb: 0.75,
-        cursor: 'pointer', userSelect: 'none',
-        borderColor: selected ? 'primary.main' : 'divider',
-        borderWidth: selected ? 2 : 1,
-        bgcolor: selected ? 'action.selected' : 'background.paper',
-        opacity: isDragging ? 0.5 : 1,
-        transform: CSS.Transform.toString(transform),
-        transition,
-      }}
-    >
-      <Box
-        component="span"
-        {...attributes}
-        {...listeners}
-        aria-label={`Reorder ${primary}`}
-        sx={{ display: 'flex', cursor: 'grab', color: 'text.disabled', touchAction: 'none' }}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <DragIndicatorIcon fontSize="small" />
-      </Box>
-      <Box sx={{ display: 'flex', color: 'text.secondary' }}>{icon}</Box>
-      <Typography variant="body2" sx={{ flex: 1, fontWeight: selected ? 600 : 400 }}>
-        {primary}
-      </Typography>
-      {endAdornment}
-    </Paper>
-  )
-}
-
+// ── DataStep — the wizard's data-modeling step (AR-49) ────────────────────────
+//
+//  The step is now a THIN frame: its own header + the "Continue → Site" waterfall
+//  gate wrap the shared DataModelingPanel (the source/spec browser + editor,
+//  extracted so the Studio Data surface mounts the SAME body — no fork, Law 6/7).
+//  Behavior is byte-identical to the pre-extraction step; only the gate + heading
+//  are wizard-specific and remain here (they are deleted with the wizard in M1.3b).
 export function DataStep() {
-  const sources = useDataSources()
-  const specs   = useDataSpecs()
-  const reorderSources = useConstructorStore((s) => s.reorderDataSources)
-  const reorderSpecs   = useConstructorStore((s) => s.reorderDataSpecs)
-  const updateDataSpec = useConstructorStore((s) => s.updateDataSpec)
-  const markStepDone   = useConstructorStore((s) => s.markStepDone)
-  const goToStep       = useConstructorStore((s) => s.goToStep)
-  const sensors        = useDndSensors()
-
-  const [selection, setSelection] = useState<Selection>(null)
-
-  const handleSourceDragEnd = (e: DragEndEvent) => {
-    const { active, over } = e
-    if (!over || active.id === over.id) return
-    const oldIndex = sources.findIndex((d) => d.id === active.id)
-    const newIndex = sources.findIndex((d) => d.id === over.id)
-    if (oldIndex < 0 || newIndex < 0) return
-    reorderSources(arrayMove(sources, oldIndex, newIndex).map((d) => d.id))
-  }
-
-  const handleSpecDragEnd = (e: DragEndEvent) => {
-    const { active, over } = e
-    if (!over || active.id === over.id) return
-    const oldIndex = specs.findIndex((d) => d.id === active.id)
-    const newIndex = specs.findIndex((d) => d.id === over.id)
-    if (oldIndex < 0 || newIndex < 0) return
-    reorderSpecs(arrayMove(specs, oldIndex, newIndex).map((d) => d.id))
-  }
-
-  // Show-Me: a suggested chart → a persisted, populated DataSpec, then selected
-  // for editing. Reuses createDataSpec (the same path the data layer already
-  // uses to add a spec) — Show-Me only supplies the populated spec + a name.
-  const handleSuggestionInsert = (spec: DataSpec, panelType: string) => {
-    void createDataSpec({ name: `${panelType} (შემოთავაზებული)`, spec })
-      .then((created) => setSelection({ kind: 'spec', id: created.id }))
-  }
-
-  const selectedSource = selection?.kind === 'source' ? sources.find((d) => d.id === selection.id) ?? null : null
-  const selectedSpec   = selection?.kind === 'spec'   ? specs.find((d) => d.id === selection.id) ?? null   : null
-  // The authoring panel shows for both an existing source and a brand-new one.
-  const showAuthoring  = selection?.kind === 'source' || selection?.kind === 'source-new'
+  const markStepDone = useConstructorStore((s) => s.markStepDone)
+  const goToStep     = useConstructorStore((s) => s.goToStep)
 
   return (
     <Box sx={{ p: 3, display: 'flex', flexDirection: 'column', gap: 2, height: '100%' }}>
@@ -145,125 +26,8 @@ export function DataStep() {
         </Box>
       </Box>
 
-      <Box sx={{ display: 'grid', gridTemplateColumns: '320px 1fr', gap: 2, flex: 1, minHeight: 420 }}>
-        {/* ── LEFT: Browser ─────────────────────────────────────────────────── */}
-        <Paper variant="outlined" sx={{ p: 1.5, display: 'flex', flexDirection: 'column', gap: 2, overflow: 'auto' }}>
-          <Box>
-            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <Typography variant="overline" color="text.secondary">მონაცემების წყაროები</Typography>
-              <Box sx={{ display: 'flex', gap: 0.5 }}>
-                <Button
-                  size="small" startIcon={<UploadFileIcon />}
-                  onClick={() => setSelection({ kind: 'upload' })}
-                >
-                  Excel
-                </Button>
-                <Button
-                  size="small" startIcon={<AddIcon />}
-                  onClick={() => setSelection({ kind: 'source-new' })}
-                >
-                  დამატება
-                </Button>
-              </Box>
-            </Box>
-            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleSourceDragEnd}>
-              <SortableContext items={sources.map((d) => d.id)} strategy={verticalListSortingStrategy}>
-                {sources.map((ds) => (
-                  <SortableRow
-                    key={ds.id}
-                    id={ds.id}
-                    primary={ds.name}
-                    icon={<StorageIcon fontSize="small" />}
-                    selected={selection?.kind === 'source' && selection.id === ds.id}
-                    endAdornment={<Chip size="small" label={ds.status} color={STATUS_COLOR[ds.status]} />}
-                    onSelect={() => setSelection({ kind: 'source', id: ds.id })}
-                  />
-                ))}
-              </SortableContext>
-            </DndContext>
-          </Box>
-
-          <Divider />
-
-          <Box>
-            <Typography variant="overline" color="text.secondary">მონაცემების სპეც-ები</Typography>
-            <Box sx={{ mb: 1 }}>
-              <ShowMe onInsert={handleSuggestionInsert} />
-            </Box>
-            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleSpecDragEnd}>
-              <SortableContext items={specs.map((d) => d.id)} strategy={verticalListSortingStrategy}>
-                {specs.map((spec) => (
-                  <SortableRow
-                    key={spec.id}
-                    id={spec.id}
-                    primary={spec.name}
-                    icon={<DataObjectIcon fontSize="small" />}
-                    selected={selection?.kind === 'spec' && selection.id === spec.id}
-                    onSelect={() => setSelection({ kind: 'spec', id: spec.id })}
-                  />
-                ))}
-              </SortableContext>
-            </DndContext>
-          </Box>
-        </Paper>
-
-        {/* ── RIGHT: Editor ─────────────────────────────────────────────────── */}
-        <Paper variant="outlined" sx={{ p: 3, overflow: 'auto' }}>
-          {!selection && (
-            <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column',
-                       alignItems: 'center', justifyContent: 'center', color: 'text.disabled', gap: 1 }}>
-              <DataObjectIcon sx={{ fontSize: 48 }} />
-              <Typography variant="body2">აირჩიეთ წყარო ან სპეც-ი — ან დაამატეთ ახალი</Typography>
-            </Box>
-          )}
-
-          {showAuthoring && (
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-              {selectedSource && (
-                <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-                  <Chip size="small" label={selectedSource.type.toUpperCase()} color="primary" variant="outlined" />
-                  <Chip size="small" label={selectedSource.status} color={STATUS_COLOR[selectedSource.status]} />
-                  <Box sx={{ flex: 1 }} />
-                  <Button
-                    size="small" color="error" startIcon={<DeleteOutlineIcon />}
-                    onClick={() => { void deleteDataSource(selectedSource.id); setSelection(null) }}
-                  >
-                    წაშლა
-                  </Button>
-                </Box>
-              )}
-              <SourceAuthoringPanel
-                key={selectedSource?.id ?? 'new'}
-                existing={selectedSource}
-                onSaved={(id) => setSelection({ kind: 'source', id })}
-              />
-            </Box>
-          )}
-
-          {selection?.kind === 'upload' && (
-            <ExcelUpload onIngested={() => { void refreshDataSources() }} />
-          )}
-
-          {selectedSpec && (
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-              <Typography variant="h6" fontWeight={600}>{selectedSpec.name}</Typography>
-              <Typography variant="body2" color="text.secondary">{selectedSpec.description ?? '—'}</Typography>
-              <Box>
-                <Chip
-                  size="small"
-                  label={String((selectedSpec.spec as { type?: string }).type ?? 'spec')}
-                  color="secondary"
-                  variant="outlined"
-                />
-              </Box>
-              <Divider />
-              <DataSpecEditor
-                value={selectedSpec.spec}
-                onChange={(spec) => updateDataSpec(selectedSpec.id, { spec })}
-              />
-            </Box>
-          )}
-        </Paper>
+      <Box sx={{ flex: 1, minHeight: 420 }}>
+        <DataModelingPanel />
       </Box>
 
       <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
