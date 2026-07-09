@@ -22,9 +22,13 @@
 //  FAIL-SOFT: no cube-bound source / profile error / API unreachable falls back to
 //  the static store and shows a non-blocking badge — the editor never crashes.
 //
-//  Registry: setupCanvasRegistry() must have run so every node type the page
-//  references has a registered shell. CanvasView calls it defensively (the
-//  call is idempotent) so the component renders correctly in isolation/tests.
+//  Registry: the engine registries (node/store-builder/projector slices +
+//  perspectives) are populated by `setupCanvasRegistry()` as an EXPLICIT boot
+//  step in `App.startApp` (before the app reaches 'ready'), NOT as a side effect
+//  of this module loading. CanvasView therefore ASSUMES the registry is already
+//  populated — which holds because the app boots it before any surface mounts,
+//  including for a brand-new / empty site with no page yet. Tests that render
+//  CanvasView in isolation run the same boot step in a `beforeAll`.
 //
 //  Law 3: CanvasView lives in apps/panel — the engine stays app-agnostic. It
 //  consumes NodePageRenderer as-is; no fork.
@@ -34,16 +38,12 @@ import { MemoryRouter }       from 'react-router-dom'
 import { SiteProvider }       from '@statdash/react'
 import { NodePageRenderer }   from '@statdash/react/engine'
 import type { NodePageConfig } from '@statdash/react/engine'
-import { setupCanvasRegistry } from './setupCanvasRegistry'
 import { CanvasOverlay }      from './CanvasOverlay'
 import { CanvasToolbar }      from './CanvasToolbar'
 import { useLivePreviewStores, type PreviewMode } from './useLivePreviewStores'
 import { useDebouncedLivePage } from './useDebouncedLivePage'
 import type { NodeBase }      from '@statdash/react/engine'
 import './canvas.css'
-
-// One-time, idempotent. Module scope so it runs before first render.
-setupCanvasRegistry()
 
 const CANVAS_I18N = { locales: ['ka', 'en'], defaultLocale: 'ka', fallbackLocale: 'ka' }
 

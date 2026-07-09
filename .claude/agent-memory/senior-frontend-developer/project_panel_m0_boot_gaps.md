@@ -55,3 +55,31 @@ bootstrapSite. See [[project_bootstrap_runner_phasea]], [[project_runner_chrome_
   source guard RED. Harness files deleted.
 - STILL PROVABLE ONLY LIVE (no Docker here): the actual /api/bootstrap response carrying
   the 17 metrics/6 dims from geostat.provisioning.json against a running api+db.
+
+**M1 review follow-up — registry boot promoted (2026-07-09, branch feat/ar49-m0-metric-first-authoring).**
+The M0-class "green≠works" seam the review flagged: `setupCanvasRegistry()` ran ONLY as a
+`CanvasView.tsx` MODULE-EVAL side effect, so a new/EMPTY site never registered
+perspectives/store-builders/node-slices until a page first mounted the canvas. FIXED root-cause:
+- `setupCanvasRegistry` is now an EXPLICIT, idempotent boot step in `App.startApp`, awaited
+  before EVERY `setAppState('ready')` (incl. the HMR early-return + the network-fallback path).
+  It is DYNAMICALLY imported (`import('./canvas/setupCanvasRegistry').then(m=>m.setupCanvasRegistry())`)
+  — NOT static — to keep its heavy plugin/engine graph (apexcharts/leaflet/shells) OUT of the eager
+  main chunk (honors [[project_panel_code_splitting]]); it loads in parallel with initFromApi/
+  bootstrapCatalog inside the boot `Promise.all`. The module-eval call at CanvasView.tsx:46 is GONE;
+  CanvasView now ASSUMES a boot-populated registry.
+- Consequence for tests: two suites that rendered CanvasView in isolation and RELIED on the
+  module-eval (`canvas/CanvasView.test.tsx`, `canvas/CanvasLivePreview.test.tsx`) now call
+  `setupCanvasRegistry()` in a `beforeAll`, like every other registry-dependent panel suite.
+- The M0-class CLOSER: `boot/bootComposition.test.tsx` — renders the REAL `<App>`, runs the REAL
+  `bootstrapCatalog()` against a DEFERRED mocked `fetch('/api/bootstrap')` (faithful subset of
+  geostat.provisioning metrics/dims), seeds a page + NO data sources (the empty-site path), and
+  asserts a POPULATED MetricPalette inside a mounted StudioShell. It PROVES boot ordering
+  deterministically: after synchronizing on the registry import + draining microtasks (bootstrap
+  still held), the App must STILL be in 'loading' — dropping the `await` on bootstrapCatalog fires
+  'ready' early → 'Loading constructor' gone → RED (verified empirically). Needs a 30000ms per-test
+  timeout (lazy StudioShell transforms the whole subsystem graph under full-suite contention).
+- Also this pass: FF-NOTIFY-PORT tests (`store/notify.test.ts` + `shared/ToastHost.test.tsx`),
+  StudioShell theme-DOM leg (override → `--css-var` on `.studio-shell` root, in StudioShell.test),
+  and FF-WIZARD-CAPABILITY-PARITY formally RETIRED in `M1.3-parity.md` (superseded by per-surface
+  tests — wizard deleted, nothing to diff against). GATE: tsc 0, eslint 0 err (2 pre-existing warns),
+  panel vitest 72 files / 455 tests PASS.

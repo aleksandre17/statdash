@@ -1,7 +1,13 @@
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect, vi, beforeAll } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import { CanvasView } from './CanvasView'
+import { setupCanvasRegistry } from './setupCanvasRegistry'
 import type { NodePageConfig } from '@statdash/react/engine'
+
+// Registration is now an explicit boot step (App.startApp), not a CanvasView
+// module-eval side effect — so a test rendering CanvasView in isolation runs the
+// same boot step the app runs, exactly as every other registry-dependent suite.
+beforeAll(() => { setupCanvasRegistry() })
 
 // Minimal inner-page with one section — exercises the engine renderer end to
 // end (SiteProvider + staticStore + NodePageRenderer) plus the overlay layer.

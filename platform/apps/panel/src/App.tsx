@@ -51,9 +51,21 @@ export function App() {
   // re-login path sets it at the call site (LoginForm onSuccess). Keeping the
   // first state write off the synchronous effect tick avoids cascading renders.
   const startApp = useCallback(async () => {
+    // ── Explicit registry boot (root-cause fix for the CanvasView module-eval coupling) ──
+    // Populate the engine registries (perspectives + node/store-builder/projector slices)
+    // as an EXPLICIT, idempotent boot step, so a brand-new / EMPTY site (no page yet) has a
+    // fully populated registry the moment the Studio reaches 'ready' — registration is no
+    // longer a side effect of the canvas first mounting a page (the latent coupling the
+    // M1 review flagged). Dynamically imported so its heavy plugin/engine graph (the shell
+    // components, ApexCharts, Leaflet) stays OUT of the eager boot chunk (the panel's
+    // code-splitting architecture) and loads in parallel with the API boot below. Awaited
+    // before every 'ready' transition; safe on the already-hydrated re-entry (idempotent).
+    const registryBoot = import('./canvas/setupCanvasRegistry').then((m) => m.setupCanvasRegistry())
+
     const store = useConstructorStore.getState()
     // Guard against HMR / double-mount (StrictMode) re-seeding an already-hydrated store.
     if (store.dataSources.length > 0) {
+      await registryBoot
       setAppState('ready')
       return
     }
@@ -61,9 +73,10 @@ export function App() {
       // Boot reads run concurrently: initFromApi hydrates the config CRUD layers;
       // bootstrapCatalog (Gap A) primes the governed metric/dimension registry from
       // /api/bootstrap so describeApp() — and thus the MetricPalette — is populated
-      // BEFORE the Studio's Data surface mounts. bootstrapCatalog is fail-soft (never
-      // throws), so it never blocks the config boot from reaching 'ready'.
-      const [ok] = await Promise.all([initFromApi(), bootstrapCatalog()])
+      // BEFORE the Studio's Data surface mounts; registryBoot (above) registers the
+      // node/slice shells. bootstrapCatalog is fail-soft (never throws), so it never
+      // blocks the config boot from reaching 'ready'.
+      const [ok] = await Promise.all([initFromApi(), bootstrapCatalog(), registryBoot])
       if (!ok) {
         MOCK_SOURCES.forEach((ds)   => store.addDataSource(ds))
         MOCK_SPECS.forEach((spec)   => store.addDataSpec(spec))
@@ -77,7 +90,9 @@ export function App() {
       if (err instanceof AuthError && err.status === 401) {
         setAppState('login')
       } else {
-        // Network failure fallback — use mock data, proceed
+        // Network failure fallback — use mock data, proceed. The registry still boots
+        // (awaited) so the offline/mock canvas renders against a populated registry.
+        await registryBoot
         const store2 = useConstructorStore.getState()
         MOCK_SOURCES.forEach((ds)   => store2.addDataSource(ds))
         MOCK_SPECS.forEach((spec)   => store2.addDataSpec(spec))

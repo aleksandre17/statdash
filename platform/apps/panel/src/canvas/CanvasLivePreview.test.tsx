@@ -13,7 +13,7 @@
 //  the existing discovery tests stub. The constructor store is the real singleton,
 //  driven through its public actions.
 //
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, beforeAll } from 'vitest'
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react'
 import type { CubeProfile } from '../lib/cubeApi'
 import type { NodePageConfig } from '@statdash/react/engine'
@@ -39,6 +39,7 @@ vi.mock('@statdash/react/engine', async (orig) => {
 vi.mock('../lib/cubeApi', () => ({ cubeApi: { profile, classify: vi.fn() } }))
 
 import { CanvasView } from './CanvasView'
+import { setupCanvasRegistry } from './setupCanvasRegistry'
 import { useConstructorStore } from '../store/constructor.store'
 import { useCubeProfileStore } from '../discovery/cubeProfile.store'
 import type { DataSourceDef } from '../types/constructor'
@@ -57,6 +58,10 @@ const cubeSource: DataSourceDef = {
   id: 'ds-cube', name: 'Stats', type: 'sdmx-json', url: 'http://api',
   config: { datasetCode: 'GDP', nonTimeDims: ['measure'] }, status: 'connected',
 }
+
+// Registration is now an explicit boot step (App.startApp), not a CanvasView
+// module-eval side effect — run it once so the isolated canvas has its node shells.
+beforeAll(() => { setupCanvasRegistry() })
 
 // Reset the shared singletons + mocks between tests (the store/profile cache are
 // module-global; a dirty state would leak across cases).

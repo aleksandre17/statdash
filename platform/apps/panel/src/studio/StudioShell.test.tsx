@@ -82,3 +82,30 @@ describe('StudioShell — surfaces mount via the existing subsystems', () => {
     expect(screen.getByPlaceholderText('ძებნა…')).toBeInTheDocument()
   })
 })
+
+// ── FF-THEME-EDIT-DATA (DOM leg) — an applied themeOverride reaches the cascade ──
+//
+//  themeVars.test proves buildThemeVars maps token DATA → an inline style object.
+//  This proves the LAST mile: StudioShell actually applies that object to the mounted
+//  `.studio-shell` root as CSS custom properties — so the whole "rebrand = data"
+//  cascade (chrome + canvas descend from this root and inherit) is wired, not just the
+//  pure function. Without the `style={themeStyle}` binding this leg goes RED.
+describe('StudioShell — theme overrides land as custom properties on the shell root', () => {
+  it('applies a themeOverride as the expected --css-var on .studio-shell (override beats the Strata base)', () => {
+    useConstructorStore.getState().updateSite({
+      themeOverrides: {
+        'color.accent': '#abcdef',          // overrides the Strata azure (#14508C)
+        'color.accent-secondary': '#123456', // a second override
+      },
+    })
+    render(<StudioShell />)
+
+    const root = document.querySelector('.studio-shell') as HTMLElement
+    expect(root).not.toBeNull()
+    // The author override wins over the Strata preset base.
+    expect(root.style.getPropertyValue('--color-accent')).toBe('#abcdef')
+    expect(root.style.getPropertyValue('--color-accent-secondary')).toBe('#123456')
+    // A token with no override still carries the Strata base value (layering intact).
+    expect(root.style.getPropertyValue('--radius-card')).toBe('10px')
+  })
+})
