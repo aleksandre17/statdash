@@ -297,6 +297,87 @@ describe('runProvisioning', () => {
       expect(pg.siteConfig).toHaveLength(0)
     })
   })
+
+  // ── Governed-catalog data-safety (AR-49 M2.2 / SPEC-M2 decision #4) ────────────
+  // `metrics`/`dimensions` are steward-authorable IN-TOOL: a steward save writes into
+  // the same site_config keys provisioning seeds. Provisioning must therefore MERGE
+  // per entry-id, never replace — so a re-provision can seed genuinely-new catalog
+  // entries yet NEVER wipes a metric/dimension a steward authored in the tool.
+
+  const catalogManifest = (metrics: unknown[]): string =>
+    JSON.stringify({ version: 1, siteConfig: [{ key: 'metrics', value: metrics }] })
+
+  const A = { id: 'gdp.current', code: 'gdp-cur', label: { en: 'GDP' }, dataSource: 'gdp' }
+  const STEWARD = { id: 'steward.custom', code: 'x-custom', label: { en: 'Steward metric' }, dataSource: 'gdp' }
+
+  it('seeds a genuinely-absent governed catalog on first provision (create)', async () => {
+    await withDir({ 'site.json': catalogManifest([A]) }, async (dir) => {
+      const report = await runProvisioning(pg, { dir, logger: silent })
+      expect(report.results).toEqual([{ kind: 'siteConfig', key: 'metrics', outcome: 'created' }])
+      expect(pg.siteConfig[0].value).toEqual([A])
+    })
+  })
+
+  it('a steward-authored metric SURVIVES a re-provision (no wipe — the data-safety guard)', async () => {
+    await withDir({ 'site.json': catalogManifest([A]) }, async (dir) => {
+      // 1) Initial provision seeds the catalog with the provisioning-owned metric A.
+      await runProvisioning(pg, { dir, logger: silent })
+      expect(pg.siteConfig[0].value).toEqual([A])
+
+      // 2) Simulate the steward authoring a metric in-tool: PUT /api/config/site
+      //    replaces `metrics` with [provisioned + steward-authored].
+      pg.siteConfig[0].value = [A, STEWARD]
+
+      // 3) Re-run provisioning with the UNCHANGED file (only A). A naive wholesale
+      //    replace would clobber STEWARD; the per-id merge preserves it.
+      const second = await runProvisioning(pg, { dir, logger: silent })
+
+      // A's id already present ⇒ nothing to seed ⇒ merged === stored ⇒ unchanged.
+      expect(second.results).toEqual([{ kind: 'siteConfig', key: 'metrics', outcome: 'unchanged' }])
+      expect(pg.siteConfig[0].value).toEqual([A, STEWARD])   // STEWARD survived
+    })
+  })
+
+  it('seeds a genuinely-new provisioning metric while preserving steward-authored ones', async () => {
+    const B = { id: 'gdp.deflator', code: 'gdp-def', label: { en: 'Deflator' }, dataSource: 'gdp' }
+    await withDir({ 'site.json': catalogManifest([A]) }, async (dir) => {
+      await runProvisioning(pg, { dir, logger: silent })
+      pg.siteConfig[0].value = [A, STEWARD]                  // steward authored one
+
+      // Provisioning JSON grows a genuinely-new metric B.
+      await writeFile(join(dir, 'site.json'), catalogManifest([A, B]), 'utf8')
+      const report = await runProvisioning(pg, { dir, logger: silent })
+
+      expect(report.results).toEqual([{ kind: 'siteConfig', key: 'metrics', outcome: 'updated' }])
+      // B seeded (absent id), STEWARD kept, A untouched — union by id.
+      expect(pg.siteConfig[0].value).toEqual([A, STEWARD, B])
+    })
+  })
+
+  it('does NOT overwrite a steward-edited metric that shares a provisioning id (existing wins — the accepted trade-off)', async () => {
+    await withDir({ 'site.json': catalogManifest([A]) }, async (dir) => {
+      await runProvisioning(pg, { dir, logger: silent })
+      // Steward edits A's label in-tool (same id).
+      const editedA = { ...A, label: { en: 'GDP (steward-renamed)' } }
+      pg.siteConfig[0].value = [editedA]
+
+      // Re-provision with the original A: its id is present ⇒ NOT re-applied.
+      const report = await runProvisioning(pg, { dir, logger: silent })
+      expect(report.results).toEqual([{ kind: 'siteConfig', key: 'metrics', outcome: 'unchanged' }])
+      expect(pg.siteConfig[0].value).toEqual([editedA])      // steward edit preserved
+    })
+  })
+
+  it('leaves OTHER site_config keys on wholesale replace (merge is scoped to the catalog keys)', async () => {
+    await withDir({ 'site.json': JSON.stringify({ version: 1, siteConfig: [{ key: 'nav', value: [{ id: 'a' }] }] }) }, async (dir) => {
+      await runProvisioning(pg, { dir, logger: silent })
+      // A non-governed key still fully replaces on change (no per-id union).
+      await writeFile(join(dir, 'site.json'), JSON.stringify({ version: 1, siteConfig: [{ key: 'nav', value: [{ id: 'b' }] }] }), 'utf8')
+      const report = await runProvisioning(pg, { dir, logger: silent })
+      expect(report.results).toEqual([{ kind: 'siteConfig', key: 'nav', outcome: 'updated' }])
+      expect(pg.siteConfig[0].value).toEqual([{ id: 'b' }])  // replaced, not merged to [{a},{b}]
+    })
+  })
 })
 
 const silent = { info() {}, warn() {}, error() {} }

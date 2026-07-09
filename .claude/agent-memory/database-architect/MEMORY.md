@@ -23,6 +23,7 @@
 - [V31 Reference Metadata](project_v31_reference_metadata.md) — SDMX ESMS-lite; reference_metadata SCD-2 backs Law-9 badges; content cols use OPTIONAL locale guard (human-facing → complete-when-present); contract in @statdash/contracts
 - [V38 AgencyScheme (DB-08)](project_v38_agency_scheme.md) — identity SSOT; stats.agency(UUID id, mutable code); nullable agency_id FK re-point (EXPAND); CONTRACT+MT deferred; agency_id(identity) ≠ tenant_id(isolation); V6 seam untouched
 - [Governed dimension catalog (AR-49 M0 item 6)](project_governed_dimension_catalog.md) — provisioning siteConfig `dimensions` key (peer of `metrics`); measure EXCLUDED (peer split: measure→metric, other dims→dimension); conceptRole from V30; members from DSD; I added the missing bootstrap `dimensions` projection; fitness now 7 siteConfig keys
+- [Provisioning catalog merge (AR-49 M2.2)](project_provisioning_catalog_merge.md) — provisioning MERGES site_config.metrics/dimensions per entry-id (existing wins) not wholesale replace; steward-authored entries survive re-provision; trade-off (provisioning can't update an existing id) → AR-47
 
 ## Live data-source truths (from the real workbooks / source systems)
 - [Live SSOT: canonical vs retired bundle](project_live_ssot_canonical_vs_retired_bundle.md) — LIVE data = DATA/canonical/*.xlsx (genuine en); ops/seed-data bundle is RETIRED (en=ka placeholder) — a diagnosis trap

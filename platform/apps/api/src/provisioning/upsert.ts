@@ -10,7 +10,58 @@ import type {
   PageProvision, NavItemProvision, SiteConfigProvision,
   ContentConstraintProvision, ContentConstraintMemberProvision,
 } from './types.js'
-import { jsonEqual, errMsg } from './util.js'
+import { jsonEqual, errMsg, isObject } from './util.js'
+
+// ── Governed-catalog keys — steward-authorable in-tool (AR-49 M2.2) ───────────
+//
+// `metrics` and `dimensions` are the semantic-layer catalog the Studio's Steward
+// edits IN-TOOL (SPEC-authoring-reconception-M2, decision #4). A steward save
+// (`PUT /api/config/site`) writes authored entries into the SAME site_config keys
+// provisioning seeds. So for these two keys provisioning must NOT replace the value
+// wholesale — a re-provision would wipe every steward-authored metric/dimension.
+// Instead it MERGES per entry-id: stored entries are kept verbatim, provisioned
+// entries seed ONLY when their id is genuinely absent.
+//
+// Accepted trade-off (documented, SPEC §4.3 / §14.4): because provisioning-owned
+// and steward-owned entries share one JSON map keyed by id, a provisioning UPDATE
+// to an entry whose id already exists in the DB will NOT apply while that id is
+// present (existing wins). That is acceptable for the single-tenant seed-then-author
+// model; per-entry provenance/versioning (which would let provisioning and stewards
+// co-own an id) is the later relational-table concern (AR-47). Every OTHER
+// site_config key keeps wholesale last-write-wins replace, unchanged.
+const GOVERNED_CATALOG_KEYS = new Set(['metrics', 'dimensions'])
+
+/** Entry identity for the per-id catalog merge. Metrics and dimensions both key on `id`. */
+function catalogId(entry: unknown): string | undefined {
+  return isObject(entry) && typeof entry.id === 'string' ? entry.id : undefined
+}
+
+/**
+ * Per-id union of a governed catalog (metrics/dimensions). Every STORED entry is
+ * preserved verbatim — a steward-authored entry, or a prior seed a steward may have
+ * edited, always SURVIVES. Each PROVISIONED entry is appended only when its id is
+ * absent from the stored set; an id already present is left as-is (existing wins —
+ * the documented trade-off above). Returns the merged array, or `null` when the two
+ * values are not BOTH arrays, so the caller can refuse to clobber an unmergeable
+ * (possibly steward-authored) value rather than guess a data-loss-prone default.
+ */
+function mergeCatalogById(stored: unknown, provisioned: unknown): unknown[] | null {
+  if (!Array.isArray(stored) || !Array.isArray(provisioned)) return null
+  const seen = new Set<string>()
+  for (const e of stored) {
+    const id = catalogId(e)
+    if (id !== undefined) seen.add(id)
+  }
+  const merged = [...stored]
+  for (const e of provisioned) {
+    const id = catalogId(e)
+    // Seed only genuinely-absent ids. An id-less provisioned entry is malformed
+    // (governed catalog entries are id-bearing by contract — config-cube-contract);
+    // it is skipped rather than appended, so a re-provision stays idempotent.
+    if (id !== undefined && !seen.has(id)) merged.push(e)
+  }
+  return merged
+}
 
 // Re-exported so consumers keep a single import surface (./upsert.js) across the
 // per-concern split. The data_source upserter lives in its own one-body file.
@@ -213,9 +264,25 @@ export async function upsertSiteConfig(pg: PgPool, entry: SiteConfigProvision, c
       [key],
     )
 
+    // The value to persist. For a governed-catalog key with an existing value we
+    // MERGE per entry-id (steward-authored entries survive); every other key — and
+    // the fresh-seed (create) path — writes the provisioned value verbatim.
+    let valueToWrite: unknown = entry.value
     let outcome: UpsertOutcome
     if (existing[0]) {
-      if (jsonEqual(existing[0].value, entry.value)) {
+      const current = existing[0].value
+      if (GOVERNED_CATALOG_KEYS.has(key)) {
+        const merged = mergeCatalogById(current, entry.value)
+        if (merged === null) {
+          // Not both arrays: refuse to overwrite a possibly steward-authored catalog
+          // with an unmergeable value. Additive + safe — skip and report, never destroy.
+          await client.query('ROLLBACK')
+          ctx.log.warn({ key }, 'provisioning: governed catalog value not mergeable (not both arrays) — skipped to avoid data loss')
+          return { kind: 'siteConfig', key, outcome: 'skipped', reason: 'catalog value not mergeable (not both arrays)' }
+        }
+        valueToWrite = merged
+      }
+      if (jsonEqual(current, valueToWrite)) {
         await client.query('COMMIT')
         ctx.log.info({ key, outcome: 'unchanged' }, 'provisioning: site config')
         return { kind: 'siteConfig', key, outcome: 'unchanged' }
@@ -228,7 +295,7 @@ export async function upsertSiteConfig(pg: PgPool, entry: SiteConfigProvision, c
     await client.query(
       `INSERT INTO config.site_config (key, value) VALUES ($1, $2::jsonb)
          ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value`,
-      [key, JSON.stringify(entry.value)],
+      [key, JSON.stringify(valueToWrite)],
     )
 
     await client.query('COMMIT')
