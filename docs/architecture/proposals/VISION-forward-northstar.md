@@ -22,7 +22,12 @@
 - **M3.3 — Dimension curation editor** (thin; the "define" side for dimensions).
 - **M3.4 — Kinder-expert T3**: make the raw pipeline surface (query/pivot/transform) *gentler* with plain-language labels/help — never non-programmer, but humane. Honesty-preserving.
 - **The honesty boundary as product doctrine** — *derive meaning from governed data = non-programmer; define what raw data IS (SDMX/DSD ingestion, cube-profile, row-shaping) = stays expert.* Bless it so we never overpromise.
-- **The kitchen (discoverability + polish)** — the live-UI issues the owner is finding: font/text contrast (WCAG AA), Model-mode/role-toggle discoverability (if the author of the concept can't find metric authoring, no user will), and a real-browser e2e pass over the whole Studio. This is where "good" becomes "used."
+- **The kitchen (discoverability + polish)** — the live-UI issues the owner is finding (their eyes are the current instrument; the Studio UI was never browser-verified). This is where "good" becomes "used." Concrete, already found:
+  - **TOP kitchen item — MUI theme bound to DTCG tokens (ADR-worthy, held for owner).** The panel has NO MUI `ThemeProvider`/`createTheme` — every MUI control (⌘K, Model toggle, locale, selects, page chip) renders on MUI's default bright blue `#1976d2`, clashing hard with Strata's deep azure/navy. This is the *bulk* of "terrible font colors" and token DATA cannot reach it. Fix = a MUI theme via **CSS-variables theming (`extendTheme`/`CssVarsProvider`)**, NOT naive `var()`-in-palette (MUI's `alpha()/decomposeColor()` throws on a `var()` string). Affects the whole panel look → ADR + owner in the loop.
+  - **Model-mode / role-toggle discoverability** — the owner couldn't find metric authoring (it's behind the steward lens by design); if the concept's author can't find it, no user will. Make the role toggle + Model entry obvious (likely worsened by the contrast/blue clash hiding the top bar).
+  - **Strata text identity** — DONE (foreground-token cohesion + FF-STRATA-CONTRAST guard).
+  - **FF-CHROME-TOKEN-DRIVEN is toothless** — vitest returns empty for CSS `?raw`, so its file scan is vacuous (a planted brand literal wouldn't be caught). Rework to read sources safely. Follow-up.
+  - **Real-browser e2e over the whole Studio** on staging — replace the owner's eyes with a Playwright pass (alpine-chrome in the deploy env couldn't render; run it against the served staging panel).
 
 ## 2. The platform capability roadmap (the compounding order)
 
