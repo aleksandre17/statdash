@@ -1,15 +1,14 @@
 import { useState, useEffect, useCallback, lazy, Suspense } from 'react'
 import { CssBaseline, Box, CircularProgress } from '@mui/material'
-import { ConstructorWizard } from './features/wizard'
 import { LoginForm }         from './features/auth/LoginForm'
 import { ToastHost }         from './shared/ToastHost'
 import { SuspenseFallback }  from './shared/SuspenseFallback'
-import { studioShellEnabled } from './config/flags'
 import { useConstructorStore } from './store/constructor.store'
 
-// AR-49 M1.2 — the Studio shell, lazy so its chunk (incl. the @statdash/styles
-// token CSS the chrome consumes) loads ONLY when the flag is on. The wizard path
-// never pulls it — Strangler: the shell is purely additive behind the flag.
+// AR-49 M1.3b — the Studio is now THE (and only) authoring surface; the 3-step
+// wizard is retired (Strangler complete). Still lazy so its chunk (incl. the
+// @statdash/styles token CSS the chrome consumes) streams in after the boot shell
+// paints rather than bloating the initial bundle.
 const StudioShell = lazy(() =>
   import('./studio/StudioShell').then((m) => ({ default: m.StudioShell })),
 )
@@ -62,7 +61,7 @@ export function App() {
       // Boot reads run concurrently: initFromApi hydrates the config CRUD layers;
       // bootstrapCatalog (Gap A) primes the governed metric/dimension registry from
       // /api/bootstrap so describeApp() — and thus the MetricPalette — is populated
-      // BEFORE the wizard's Page step mounts. bootstrapCatalog is fail-soft (never
+      // BEFORE the Studio's Data surface mounts. bootstrapCatalog is fail-soft (never
       // throws), so it never blocks the config boot from reaching 'ready'.
       const [ok] = await Promise.all([initFromApi(), bootstrapCatalog()])
       if (!ok) {
@@ -116,19 +115,15 @@ export function App() {
   }
 
   // ── Constructor ───────────────────────────────────────────────────────────────
-  //  Flag routing (AR-49 M1.2): flag ON → the Studio shell; OFF (default) → the
-  //  3-step wizard, byte-identical to before. Read at render so a persisted
-  //  localStorage override takes effect on the next paint without a rebuild.
+  //  The Studio is the only authoring surface (AR-49 M1.3b — wizard retired). It is
+  //  lazy so its chunk streams in behind the boot shell; there is no fallback path,
+  //  so the boot smoke (boot/bootSmoke.test) is the safety net that it mounts live.
   return (
     <>
       <CssBaseline />
-      {studioShellEnabled()
-        ? (
-          <Suspense fallback={<SuspenseFallback label="Loading studio" />}>
-            <StudioShell />
-          </Suspense>
-        )
-        : <ConstructorWizard />}
+      <Suspense fallback={<SuspenseFallback label="Loading studio" />}>
+        <StudioShell />
+      </Suspense>
       <ToastHost />
     </>
   )

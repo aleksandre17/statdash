@@ -41,7 +41,7 @@ const CommandPalette = lazy(() =>
 //  wizard uses; the shell only re-homes them and threads them through one shared
 //  canvas controller.
 //
-//  Behind the STUDIO_SHELL flag (config/flags) — the wizard remains the default.
+//  The only authoring surface (AR-49 M1.3b — the 3-step wizard is retired).
 //  Accessibility (WCAG 2.1 AA, Law 9): landmark regions (header/nav/main/aside/
 //  footer), a keyboard-reachable rail, and an Inspector that appears on selection.
 export function StudioShell() {

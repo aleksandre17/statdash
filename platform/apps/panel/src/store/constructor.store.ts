@@ -5,12 +5,11 @@ import type {
   SiteDef, NavItem,
   CanvasPage, CanvasNode,
   ChromeSelection,
-  WizardStep,
   StudioSurface,
 } from '../types/constructor'
 import {
   type ConstructorSession,
-  type WizardSlice,
+  type StudioUiSlice,
   type HistorySlice,
   type HistoryEntry,
   INITIAL_SESSION,
@@ -48,13 +47,10 @@ import {
 
 // ── Full Store ─────────────────────────────────────────────────────────────────
 
-export interface ConstructorStore extends ConstructorSession, WizardSlice, HistorySlice, LifecycleSlice {
-  // Wizard actions
-  goToStep:       (step: WizardStep) => void
-  markStepDone:   (step: WizardStep) => void
+export interface ConstructorStore extends ConstructorSession, StudioUiSlice, HistorySlice, LifecycleSlice {
   selectNode:     (id: string | null) => void
 
-  // Studio activity-rail surface (AR-49 M1.2) — non-ordered lens, never gated.
+  // Studio activity-rail surface (AR-49) — non-ordered lens, never gated.
   setSurface:     (surface: StudioSurface) => void
 
   // Data Layer actions
@@ -112,8 +108,6 @@ export const useConstructorStore = create<ConstructorStore>()(
       // ── Initial state ──────────────────────────────────────────────────────
       ...INITIAL_SESSION,
       ...INITIAL_LIFECYCLE,
-      activeStep:      0,
-      completedSteps:  new Set<WizardStep>(),
       activeSurface:   INITIAL_STUDIO_SURFACE,
       selectedNodeId:  null,
       chromeSelection: null,
@@ -122,14 +116,7 @@ export const useConstructorStore = create<ConstructorStore>()(
       canUndo:        false,
       canRedo:        false,
 
-      // ── Wizard ─────────────────────────────────────────────────────────────
-      goToStep: (step) => set({ activeStep: step }, false, 'wizard/goToStep'),
-      markStepDone: (step) =>
-        set(
-          (s) => ({ completedSteps: new Set([...s.completedSteps, step]) }),
-          false,
-          'wizard/markStepDone',
-        ),
+      // ── Selection ──────────────────────────────────────────────────────────
       // Selecting a node clears any chrome selection (mutual exclusivity — one
       // Inspector shows one element; least astonishment).
       selectNode: (id) =>
@@ -333,8 +320,6 @@ export const useConstructorStore = create<ConstructorStore>()(
               canUndo:   s.undoStack.length > 1,
               canRedo:   true,
               // Preserve UI state
-              activeStep:      s.activeStep,
-              completedSteps:  s.completedSteps,
               activeSurface:   s.activeSurface,
               selectedNodeId:  s.selectedNodeId,
               chromeSelection: s.chromeSelection,
@@ -355,8 +340,6 @@ export const useConstructorStore = create<ConstructorStore>()(
               redoStack: s.redoStack.slice(0, -1),
               canUndo:   true,
               canRedo:   s.redoStack.length > 1,
-              activeStep:      s.activeStep,
-              completedSteps:  s.completedSteps,
               activeSurface:   s.activeSurface,
               selectedNodeId:  s.selectedNodeId,
               chromeSelection: s.chromeSelection,

@@ -1,6 +1,6 @@
 ---
 name: panel-studio-shell-m12
-description: AR-49 M1.2 Studio shell scaffold — flag mechanism, IA, useCanvasController reuse seam, token-CSS import, and the M1.3/M1.4 hand-off points
+description: AR-49 Studio shell — M1.2 scaffold + M1.3a extract + M1.3b COMMIT (wizard deleted, flag removed, Studio is the only surface); IA, useCanvasController reuse seam, token-CSS import, M1.4 hand-off
 metadata:
   type: project
 ---
@@ -11,11 +11,12 @@ shell** as an ADDITIVE, flag-gated alternative to the 3-step wizard. Spec:
 UNTOUCHED and remains the default (Strangler). All new code is `apps/panel/src` only —
 arrow untouched (Law 3).
 
-**Feature flag** (`src/config/flags.ts`): `studioShellEnabled()` — localStorage override
-`statdash.studioShell` (on/true/1 vs off/false/0) WINS over env `VITE_STUDIO_SHELL`. Off
-by default on both. Preview live without rebuild:
-`localStorage.setItem('statdash.studioShell','on'); location.reload()`. App.tsx routes
-`studioShellEnabled() ? <StudioShell/> (lazy) : <ConstructorWizard/>`.
+**Feature flag — REMOVED in M1.3b.** Was `src/config/flags.ts` `studioShellEnabled()`
+(localStorage `statdash.studioShell` over env `VITE_STUDIO_SHELL`). Deleted at commitment
+(clean removal — git is the rollback, nothing left to toggle to). `App.tsx` now mounts
+`<StudioShell/>` (lazy) UNCONDITIONALLY — no branch. `config/flags.ts`, `flags.test.ts`,
+`App.studioFlag.test.tsx`, and the `VITE_STUDIO_SHELL` entries in `.env.example`/`vite-env.d.ts`
+are gone. New boot test: `App.boot.test.tsx` (asserts App boots straight into the Studio).
 
 **Shell structure** (`src/studio/`): CSS-grid `StudioShell.tsx` with 5 landmark regions —
 `StudioTopBar` (header/banner: wordmark "Strata", page switcher, ⌘K, relocated
@@ -76,7 +77,22 @@ and avoid the heavy lazy CanvasView mount. (4) MetricPalette search box: query
 `getByPlaceholderText('ძებნა…')` (no `searchbox` role). See
 [[project_panel_m0_boot_gaps]], [[project_panel_live_canvas]], [[project_semantic_token_spine]].
 
-**GATE (2026-07-09):** tsc -b apps/panel = 0; eslint = 0 errors (2 pre-existing accepted
-warnings); vitest panel = 62 files / 410 tests PASS (incl. boot smoke + boot-parity +
-mainI18nInit); vite build OK (StudioShell 14.6 kB lazy chunk). Provable only live: the
-flag-on shell against a running api+db (MetricPalette population).
+**M1.3b DONE (2026-07-09 — COMMITMENT step, owner-authorized; reversible via git):**
+DELETED `features/wizard/*` entirely (ConstructorWizard, WizardStepper, index.ts,
+steps/{DataStep,SiteStep,PageStep}) — every remaining export was wizard-only (grep-confirmed;
+the shared bodies `features/site/*` + `features/data-layer/DataModelingPanel.tsx` survive,
+they live OUTSIDE features/wizard by design). Removed the flag machinery (above). Removed
+the dead wizard-only store state: `WizardStep` type, `WIZARD_STEPS`/`WizardStepMeta`
+(types/constructor.ts); `goToStep`/`markStepDone` actions + `activeStep`/`completedSteps`
+init + their undo/redo-preserve lines (constructor.store.ts); `useWizardStep`/
+`useCompletedSteps` selectors. Renamed the slice `WizardSlice → StudioUiSlice`
+(constructor.history.ts) — it now holds only `activeSurface`/`selectedNodeId`/`chromeSelection`.
+PageStep's inline canvas closures died WITH the wizard; the surviving Studio canvas uses
+`useCanvasController` (the DRY seam M1.2 extracted) — so no re-fork was needed. Writes/undo-redo
+intact. NOTE: PageStep still had its own inline canvas copy (never migrated to the controller)
+— deleting the wizard simply removed that frozen duplicate, exactly as the M1.2 plan intended.
+
+**GATE (M1.3b, 2026-07-09):** tsc -b apps/panel = 0; eslint = 0 errors (2 pre-existing
+accepted warnings: useLivePreviewStores, DsdVersionPanel); vitest panel = 64 files / 416
+tests PASS (incl. boot smoke + boot-parity + mainI18nInit + the new App.boot). Provable
+only live: the Studio against a running api+db (MetricPalette population).

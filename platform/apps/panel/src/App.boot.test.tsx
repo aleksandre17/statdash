@@ -14,29 +14,15 @@ vi.mock('./store/bootstrapCatalog', () => ({ bootstrapCatalog: vi.fn(async () =>
 import { App } from './App'
 import { setupCanvasRegistry } from './canvas/setupCanvasRegistry'
 import { setToken, logout } from './lib/auth'
-import { STUDIO_SHELL_FLAG } from './config/flags'
 
 beforeEach(() => {
-  setupCanvasRegistry()      // palettes populate; shell/wizard mounts stay crash-free
+  setupCanvasRegistry()      // palettes populate; shell mounts stay crash-free
   setToken('test-token')     // isAuthenticated() → true, so App boots past LoginForm
 })
-afterEach(() => {
-  logout()
-  localStorage.removeItem(STUDIO_SHELL_FLAG)
-})
+afterEach(() => logout())
 
-describe('App — STUDIO_SHELL flag routing (Strangler: additive, reversible)', () => {
-  it('flag OFF (default) → the 3-step wizard, no Studio chrome', async () => {
-    render(<App />)
-    // WizardStepper renders the step labels (default locale ka) once boot is ready.
-    expect(await screen.findByText('მონაცემები')).toBeInTheDocument()
-    // No Studio banner/rail on the wizard path (App defaults to ka locale).
-    expect(screen.queryByRole('banner')).not.toBeInTheDocument()
-    expect(screen.queryByRole('navigation', { name: 'სტუდიოს ზედაპირები' })).not.toBeInTheDocument()
-  })
-
-  it('flag ON → the StudioShell mounts, no wizard stepper', async () => {
-    localStorage.setItem(STUDIO_SHELL_FLAG, 'on')
+describe('App — boots straight into the Studio (AR-49 M1.3b: wizard retired)', () => {
+  it('mounts the StudioShell unconditionally — no flag, no wizard', async () => {
     render(<App />)
     // The shell top bar (banner) appears once its lazy chunk + boot resolve.
     // Generous timeout — the lazy StudioShell chunk transforms its whole subsystem
@@ -44,7 +30,7 @@ describe('App — STUDIO_SHELL flag routing (Strangler: additive, reversible)', 
     expect(await screen.findByRole('banner', {}, { timeout: 20000 })).toBeInTheDocument()
     // Rail nav (App defaults to ka locale, so its name is Georgian).
     expect(screen.getByRole('navigation', { name: 'სტუდიოს ზედაპირები' })).toBeInTheDocument()
-    // The wizard stepper's visible step label is not on the Studio path.
+    // The retired wizard stepper's step label is never on the Studio path.
     expect(screen.queryByText('მონაცემები')).not.toBeInTheDocument()
   })
 })

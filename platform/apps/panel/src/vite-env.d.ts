@@ -10,11 +10,6 @@ interface ImportMetaEnv {
   readonly VITE_API_URL?: string
   /** Canonical-format documentation URL surfaced in the Excel upload panel. */
   readonly VITE_CANONICAL_FORMAT_DOC?: string
-  /**
-   * AR-49 Studio shell flag. 'true'/'1' mounts the StudioShell in place of the
-   * 3-step wizard. Off by default (wizard stays the default surface until M1.3).
-   */
-  readonly VITE_STUDIO_SHELL?: string
 }
 
 interface ImportMeta {

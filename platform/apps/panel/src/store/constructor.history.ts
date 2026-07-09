@@ -3,7 +3,6 @@ import type {
   SiteDef,
   CanvasPage,
   ChromeSelection,
-  WizardStep,
   StudioSurface,
 } from '../types/constructor'
 import { DEFAULT_STUDIO_SURFACE } from '../types/constructor'
@@ -13,7 +12,7 @@ import { DEFAULT_STUDIO_SURFACE } from '../types/constructor'
 // Undo pops and restores; Redo pops from redoStack.
 //
 // Split out of constructor.store.ts (one concern per file): this module owns the
-// session shape, the wizard-UI slice, the history slice, and the snapshot/push
+// session shape, the Studio-UI slice, the history slice, and the snapshot/push
 // helpers. The store module owns only the action wiring.
 
 export interface HistoryEntry {
@@ -41,17 +40,15 @@ export interface ConstructorSession {
   activePageId: string | null
 }
 
-// ── Wizard UI ─────────────────────────────────────────────────────────────────
+// ── Studio UI ───────────────────────────────────────────────────────────────
 
-export interface WizardSlice {
-  activeStep:      WizardStep
-  completedSteps:  Set<WizardStep>
+export interface StudioUiSlice {
   /**
-   * The Studio activity-rail surface currently shown in the left dock (AR-49
-   * M1.2). ADDITIVE to the wizard slice — the wizard ignores it; the Studio
-   * shell reads it. Preserved across undo/redo like the other UI-navigation
-   * fields (it is view state, not an undoable edit). In M1.3 this REPLACES the
-   * ordered `activeStep`/`completedSteps` gating fields entirely.
+   * The Studio activity-rail surface currently shown in the left dock (AR-49).
+   * A NON-ordered lens summoned over the always-mounted canvas — it replaced the
+   * retired wizard's ordered `activeStep`/`completedSteps` gating (M1.3b).
+   * Preserved across undo/redo like the other UI-navigation fields (view state,
+   * not an undoable edit).
    */
   activeSurface:   StudioSurface
   selectedNodeId:  string | null
