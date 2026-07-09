@@ -20,8 +20,8 @@ import type { RegistryManifest }  from './NodeRegistry'
 import type { SpecDescriptor, PerspectiveOption } from '@statdash/engine'
 import { nodeRegistry }                     from './register-all'
 import { chartRegistry }                    from '@statdash/charts'
-import { SPEC_CATALOG, perspectiveRegistry, listTransformOps, listMetricDefs, listExportFormats } from '@statdash/engine'
-import type { MetricDef }                              from '@statdash/engine'
+import { SPEC_CATALOG, perspectiveRegistry, listTransformOps, listMetricDefs, listDimensionDefs, listExportFormats } from '@statdash/engine'
+import type { MetricDef, DimensionDef }                from '@statdash/engine'
 import { registeredKinds }                  from './storeManifest'
 import { filterControlRegistry }            from './filterControlRegistry'
 
@@ -52,7 +52,13 @@ import { filterControlRegistry }            from './filterControlRegistry'
 //  axes + the SET of built-in capability ids that ship at import time. Removing
 //  one fails that test, forcing this constant to be bumped consciously rather
 //  than drifting silently.
-export const CONTRACT_VERSION = '1.0.0' as const
+//
+//  1.1.0 — MINOR (AR-49/M0): added the back-compatible `dimensions` axis (the
+//  governed-dimension catalog, peer of `metrics`, Law 1). A new axis of VALUES,
+//  no existing axis renamed/dropped/reshaped — every existing consumer keeps
+//  working (an unknown axis is ignored). Per the bump policy above, a new axis is
+//  MINOR, not MAJOR.
+export const CONTRACT_VERSION = '1.1.0' as const
 
 // ── AppManifest — the Constructor's full build contract ───────────────────────
 
@@ -69,6 +75,7 @@ export const CONTRACT_VERSION = '1.0.0' as const
  *   datasourceKinds     → datasource-kind picker in the datasource manager
  *   transformOps        → transform-step picker in the pipeline editor [N12]
  *   metrics             → data-catalog picker for metric-based specs [N26]
+ *   dimensions          → governed-dimension picker (peer of metrics) [AR-49/M0]
  *   exportFormats       → export-format picker in the panel config [N16]
  *   filterControlTypes  → filter control type picker in the filter-bar builder
  */
@@ -98,6 +105,15 @@ export interface AppManifest {
    * Populated after setupRegistrations(); empty in test/SSR environments.
    */
   metrics:          Record<string, MetricDef>
+  /**
+   * All registered governed dimensions keyed by id — the Constructor's
+   * dimension-ref picker, the PEER of `metrics` (Law 1: dimensions are equal
+   * citizens of the semantic layer) [AR-49/M0]. Members still resolve FROM the
+   * cube profile at runtime (Law 5); this catalog carries only the governed
+   * curation (label / conceptRole / default / whitelist). Populated after
+   * setupRegistrations(); empty in test/SSR environments.
+   */
+  dimensions:       Record<string, DimensionDef>
   /**
    * Registered export format ids (e.g. ['csv', 'sdmx-json']) — drives the
    * Constructor's export-format picker and panel export menu [N16].
@@ -139,6 +155,7 @@ export function describeApp(): AppManifest {
     datasourceKinds: registeredKinds(),
     transformOps:        listTransformOps(),
     metrics:             listMetricDefs(),
+    dimensions:          listDimensionDefs(),
     exportFormats:       listExportFormats(),
     filterControlTypes:  filterControlRegistry.types(),
   }

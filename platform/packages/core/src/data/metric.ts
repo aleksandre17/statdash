@@ -239,6 +239,30 @@ export function resolveMeasureRef(ref: string | string[]): ResolvedMeasure {
 }
 
 /**
+ * Compose metric-default dims UNDER an explicit filter — the ONE governed-merge
+ * semantics shared by the query/chart path (resolveQueryMeasures, resolvers.ts) and
+ * the KPI read path (kpi-coord.metricFilter). Metric dims are DEFAULTS: the explicit
+ * filter's keys WIN on collision (`{ ...metricDims, ...explicit }`), so an author's
+ * own slice always overrides the metric governance while the metric FILLS every dim
+ * the author left open. No metric dims ⇒ the explicit filter is returned untouched
+ * (identity — a raw-code / dims-less-metric path stays byte-identical, FF-RAW-CODE-
+ * IDENTICAL). One helper on BOTH surfaces ⇒ a chart and a KPI reading the SAME
+ * governed metric resolve the SAME coordinate and can never drift ("one governed
+ * number on every surface" — the M0 DoD).
+ *
+ * Generic over each side's value vocabulary (the query path carries `FilterValue`;
+ * the KPI `DimFilter` carries `DimVal | DimFilterRef`) — the merge is a pure
+ * structural spread, so it composes either vocabulary without privileging a dim (Law 1).
+ */
+export function mergeMetricDims<D, E>(
+  metricDims: Partial<Record<string, D>> | undefined,
+  explicit:   Partial<Record<string, E>> | undefined,
+): Partial<Record<string, D | E>> | undefined {
+  if (!metricDims) return explicit
+  return { ...metricDims, ...explicit }
+}
+
+/**
  * Return all registered metrics as a JSON-serializable Record keyed by id.
  * Used by describeApp() to populate the Constructor's data-catalog picker.
  */

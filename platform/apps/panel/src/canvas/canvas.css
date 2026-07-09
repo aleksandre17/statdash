@@ -154,6 +154,15 @@
   background-color: transparent;
 }
 
+/* Metric-drag hover — a distinct dashed accent frame while a governed metric is
+ * dragged over a block (AR-49 M0 item 9). Shape (dashed) + color, not color-only. */
+.canvas-node--metric-over,
+.canvas-node--metric-over:hover {
+  border-style: dashed;
+  border-color: var(--canvas-accent);
+  background-color: var(--canvas-accent-soft);
+}
+
 /* Resize handle — CSS-only affordance on the selected node. */
 .canvas-node--selected::after {
   content: '';

@@ -52,10 +52,32 @@ export const ChartSchema: PropSchema = [
       { value: 'heatmap', label: { ka: 'სითბური რუკა', en: 'Heatmap' } },
     ],
   },
+  // ── Governed metric-ref (AR-49 / M0 build-item 10) ────────────────────────
+  //  The GOVERNED bind target: a metric-ref is just an `enum-ref` whose options
+  //  come from the semantic-layer catalog (source:'metrics', backed by
+  //  describeApp().metrics) — the author picks a governed noun, never types a raw
+  //  SDMX code (Law 2). `field` is the chart's OWN measure dot-path: a `query`
+  //  DataSpec keeps its measure at `data.query.measure` (the universal DataSpec
+  //  branch; confirmed against geostat.provisioning — its charts/sections already
+  //  hold metric-ids like 'gdp.current'/'regional.gva' here). This is the exact
+  //  dot-path the Metric-Palette bind affordance (item 9) writes to, so a bind
+  //  produces config byte-identical to hand-authoring; resolveMeasureRef (AR-40)
+  //  lowers the metric-id → underlying code with NO new runtime path (SPEC §3).
+  //  Law 1: the picker resolves generically by id — no dimension name here.
+  //  NOT `required`: a chart may INHERIT its rows from the parent section's
+  //  `data`, so its own measure is legitimately absent — marking it required
+  //  would flag every section-fed chart in validateNodeConfig (additive floor).
+  {
+    field:  'data.query.measure',
+    type:   'enum-ref',
+    source: 'metrics',
+    label:  { ka: 'მეტრიკა', en: 'Metric' },
+  },
   ...DATA_INTEGRITY_SCHEMA,
 ]
 
 export const ChartGroups: PropertyGroup[] = [
+  { label: { ka: 'მონაცემები',   en: 'Data'          }, fields: ['data.query.measure'] },
   { label: { ka: 'ვიზუალიზაცია', en: 'Visualisation' }, fields: ['chartType'] },
   { label: { ka: 'ლეგენდა',      en: 'Legend'          }, fields: ['view.legend', 'view.tooltip'] },
   { label: { ka: 'მონაცემთა მთლიანობა', en: 'Data integrity' }, fields: [...DATA_INTEGRITY_FIELDS] },

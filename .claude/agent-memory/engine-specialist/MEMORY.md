@@ -12,6 +12,7 @@
 - [CLUSTER② Law-1 + inert seams](project_cluster2_law1_seams.md) — GrowthResolver privileged-literal leak fix (`atTime` wrong for obs-meta reads, use filter-key TIME_DIM); AD-6 `available` gate STILL not threaded in SiteRenderer (flagged); GRAIN-G4 granularity→grain default-gated
 - [Adoption epic (X-2)](project_adoption_epic.md) — all 4 Acts done; Act 1's cross-workstream metric-delivery gap resolved later by AR-40 P0
 - [AR-40 P0 semantic-layer spine](project_ar40_p0_spine.md) — KPI render+preliminary made metric-aware; the 3-paths-read-a-measure-ref bug (only warm resolved through resolveMeasureRef); gdp-total KPI migrated to metric-id
+- [AR-49 M0 dimension catalog](project_ar49_m0_dimension_catalog.md) — DimensionDef governed-dim registry (peer of metric), manifest.dimensions, describeApp 1.1.0 bump; engine items 1-5 done, 6-11 pending
 - [Preliminary-badge year-aware fix](project_preliminary_displayed_slice.md) — badge must derive from the DISPLAYED obs slice, not dataset-wide; applyEncoding now carries obsStatus
 - [AR-36 pivot P0](project_ar36_pivot_p0.md) — state-bound encoding channels (CtxScopeRef + resolveEncodingRefs pre-pass, called in react before applyEncoding)
 - [AR-36 pivot P1/P2/P3](project_ar36_pivot_p123.md) — regional 2-panel fold to ONE pivot; grain must bind to state (chart interpreters don't aggregate same-label rows); resolvePipeRefs seam for aggregate.by/sort

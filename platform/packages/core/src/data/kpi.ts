@@ -20,7 +20,7 @@ import { evalVisibility }        from '../config/visibility'
 import type {
   ObsRef, KpiValueSpec, KpiTrendSpec, KpiSpec,
 } from './kpi-spec'
-import { resolveTime, withFilter } from './kpi-coord'
+import { resolveTime, withFilter, metricFilter } from './kpi-coord'
 import { valueIsPreliminary }      from './kpi-preliminary'
 
 // Re-export the vocabulary so existing `from './kpi'` / `from '../data/kpi'`
@@ -82,13 +82,13 @@ function cagrZeroBaseline(measure: string, from: number, to: number): void {
 function resolveValue(spec: KpiValueSpec, ctx: SectionContext, store: DataStore): string {
   switch (spec.type) {
     case 'point': {
-      const c = withFilter(ctx, spec.filter)
+      const c = withFilter(ctx, metricFilter(spec.measure, spec.filter))
       const t = resolveTime(spec.time, c)
       const n = readMeasure(store, spec.measure, atTime(t, c))
       return getFormatter(spec.format)(spec.abs ? Math.abs(n) : n)
     }
     case 'yoy': {
-      const c    = withFilter(ctx, spec.filter)
+      const c    = withFilter(ctx, metricFilter(spec.measure, spec.filter))
       const t    = resolveTime(spec.time, c)
       const cur  = readMeasure(store, spec.measure, atTime(t, c))
       const prev = readMeasure(store, spec.measure, atTime(t - 1, c))
@@ -96,7 +96,7 @@ function resolveValue(spec: KpiValueSpec, ctx: SectionContext, store: DataStore)
       return getFormatter('sign_pct')(pct)
     }
     case 'cagr': {
-      const c     = withFilter(ctx, spec.filter)
+      const c     = withFilter(ctx, metricFilter(spec.measure, spec.filter))
       const from  = resolveTime(spec.from, c)
       const to    = resolveTime(spec.to, c)
       const vFrom = readMeasure(store, spec.measure, atTime(from, c))
@@ -110,7 +110,7 @@ function resolveValue(spec: KpiValueSpec, ctx: SectionContext, store: DataStore)
       // reducer for a RATE series (each year's rate read at its pinned coordinate,
       // GENERICALLY via atTime). Absent `format` ⇒ fmtKpiPct (byte-identical to the
       // share/metric default); a rate card supplies 'sign_pct' to keep the sign.
-      const c   = withFilter(ctx, spec.filter)
+      const c   = withFilter(ctx, metricFilter(spec.measure, spec.filter))
       const lo  = Math.min(resolveTime(spec.from, c), resolveTime(spec.to, c))
       const hi  = Math.max(resolveTime(spec.from, c), resolveTime(spec.to, c))
       let sum = 0
@@ -121,7 +121,7 @@ function resolveValue(spec: KpiValueSpec, ctx: SectionContext, store: DataStore)
     }
     case 'share': {
       const getRef = (ref: ObsRef): number => {
-        const rc = withFilter(ctx, ref.filter)
+        const rc = withFilter(ctx, metricFilter(ref.measure, ref.filter))
         return readMeasure(store, ref.measure, atTime(resolveTime(ref.time, rc), rc))
       }
       const n = getRef(spec.num)
@@ -131,7 +131,12 @@ function resolveValue(spec: KpiValueSpec, ctx: SectionContext, store: DataStore)
     case 'expr': {
       const c    = withFilter(ctx, spec.filter)
       const t    = resolveTime(spec.time, c)
-      const vals = spec.codes.map((code) => readMeasure(store, code, atTime(t, c)))
+      // Each code reads at ITS OWN governed coordinate — a metric-id code folds its
+      // default dims (metricFilter), a raw code returns spec.filter untouched (so a
+      // raw-code expr stays byte-identical). The time pin is shared (metric dims never
+      // touch the time axis, Law 1).
+      const vals = spec.codes.map((code) =>
+        readMeasure(store, code, atTime(t, withFilter(ctx, metricFilter(code, spec.filter)))))
       const n    = spec.op === 'subtract'
         ? vals[0] - vals.slice(1).reduce((a, b) => a + b, 0)
         : vals.reduce((a, b) => a + b, 0)
@@ -167,14 +172,14 @@ function resolveTrend(
   // percent ('pct') so it reads "53.1%".
   if (spec.type === 'share') {
     const getRef = (ref: ObsRef): number => {
-      const rc = withFilter(ctx, ref.filter)
+      const rc = withFilter(ctx, metricFilter(ref.measure, ref.filter))
       return readMeasure(store, ref.measure, atTime(resolveTime(ref.time, rc), rc))
     }
     const n = getRef(spec.num)
     const d = getRef(spec.denom)
     return { value: getFormatter('pct')(d ? (n / d) * 100 : 0), dir: 'none' }
   }
-  const c = withFilter(ctx, spec.filter)
+  const c = withFilter(ctx, metricFilter(spec.measure, spec.filter))
   switch (spec.type) {
     case 'yoy': {
       const t    = resolveTime(spec.time, c)
@@ -303,21 +308,25 @@ export function extractKpiRequirements(
   }
 
   const fromValue = (spec: KpiValueSpec, base: SectionContext): void => {
+    // Every context folds the measure's GOVERNED default dims via metricFilter — the
+    // IDENTICAL fold the render (resolveValue) applies. Warm === read: if the read
+    // coordinate gains the metric defaults, the warm requirement MUST too, else
+    // warm-key ≠ read-key and an async store stays cold (the kpi-strip crash).
     switch (spec.type) {
       case 'point': {
-        const c = withFilter(base, spec.filter)
+        const c = withFilter(base, metricFilter(spec.measure, spec.filter))
         push(spec.measure, c, resolveTime(spec.time, c))
         return
       }
       case 'yoy': {
-        const c = withFilter(base, spec.filter)
+        const c = withFilter(base, metricFilter(spec.measure, spec.filter))
         const t = resolveTime(spec.time, c)
         push(spec.measure, c, t)
         push(spec.measure, c, t - 1)   // the comparison period — the crash year
         return
       }
       case 'cagr': {
-        const c = withFilter(base, spec.filter)
+        const c = withFilter(base, metricFilter(spec.measure, spec.filter))
         push(spec.measure, c, resolveTime(spec.from, c))
         push(spec.measure, c, resolveTime(spec.to, c))
         return
@@ -326,15 +335,15 @@ export function extractKpiRequirements(
         // The mean reads EVERY year in [from,to] — enumerate one requirement per
         // year (mirrors the `growth` DataSpec's per-year enumeration) so the warm
         // set is the EXACT superset the render reads (warm === render, no drift).
-        const c  = withFilter(base, spec.filter)
+        const c  = withFilter(base, metricFilter(spec.measure, spec.filter))
         const lo = Math.min(resolveTime(spec.from, c), resolveTime(spec.to, c))
         const hi = Math.max(resolveTime(spec.from, c), resolveTime(spec.to, c))
         for (let t = lo; t <= hi; t++) push(spec.measure, c, t)
         return
       }
       case 'share': {
-        const cn = withFilter(base, spec.num.filter)
-        const cd = withFilter(base, spec.denom.filter)
+        const cn = withFilter(base, metricFilter(spec.num.measure,   spec.num.filter))
+        const cd = withFilter(base, metricFilter(spec.denom.measure, spec.denom.filter))
         push(spec.num.measure,   cn, resolveTime(spec.num.time, cn))
         push(spec.denom.measure, cd, resolveTime(spec.denom.time, cd))
         return
@@ -342,7 +351,9 @@ export function extractKpiRequirements(
       case 'expr': {
         const c = withFilter(base, spec.filter)
         const t = resolveTime(spec.time, c)
-        for (const code of spec.codes) push(code, c, t)
+        // Per-code governed coordinate (mirrors resolveValue's expr read) — a metric-id
+        // code folds its defaults, a raw code stays byte-identical.
+        for (const code of spec.codes) push(code, withFilter(base, metricFilter(code, spec.filter)), t)
         return
       }
       case 'metric': {
@@ -360,13 +371,13 @@ export function extractKpiRequirements(
     // 'share' trend — warm num AND denom at their own pinned coordinates (mirrors
     // the `share` VALUE warm in fromValue, so warm === render for a trend share).
     if (spec.type === 'share') {
-      const cn = withFilter(base, spec.num.filter)
-      const cd = withFilter(base, spec.denom.filter)
+      const cn = withFilter(base, metricFilter(spec.num.measure,   spec.num.filter))
+      const cd = withFilter(base, metricFilter(spec.denom.measure, spec.denom.filter))
       push(spec.num.measure,   cn, resolveTime(spec.num.time, cn))
       push(spec.denom.measure, cd, resolveTime(spec.denom.time, cd))
       return
     }
-    const c = withFilter(base, spec.filter)
+    const c = withFilter(base, metricFilter(spec.measure, spec.filter))
     if (spec.type === 'yoy') {
       const t = resolveTime(spec.time, c)
       push(spec.measure, c, t)

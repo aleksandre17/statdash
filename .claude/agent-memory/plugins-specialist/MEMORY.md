@@ -20,6 +20,7 @@
 - [CAPS consumer wired](project_caps_consumer.md) — getGroupedPaletteEntries() in paletteEntries.ts consumes getByCapability(CAPS.*)
 - [DI inject-render lint gate](project_di_inject_render_lint_gate.md) — react-hooks/static-components off-override scoped to packages/plugins/**; needs a per-file override if promoted to packages/react
 - [CommandBus migration](project_commandbus_migration.md) — GeorgraphShell + ExportBar migrated to ctx.bus.dispatch; filter controls still use useFilter() by design
+- [Metric-ref bind target](project_metric_ref_bind_target.md) — AR-49/M0 governed metric picker: chart measure=`data.query.measure` enum-ref source:'metrics'; kpi ITEM-SCHEMA gap; regen page-config schema
 
 ## Filter / ref / template seams
 - [Action-field ref seam](project_action_field_ref_seam.md) — FilterAction.key/fromField accept {$ctx} refs; composition _selKey is CONSTANT "region" until AR-38 sector arm

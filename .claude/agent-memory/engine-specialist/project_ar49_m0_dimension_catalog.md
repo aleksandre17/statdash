@@ -1,0 +1,26 @@
+---
+name: ar49-m0-dimension-catalog
+description: AR-49/M0 engine foundation — DimensionDef registry (peer of metric), manifest.dimensions, describeApp 1.1.0; items 1-5 + item-11 fitness done; KPI default-dim asymmetry CLOSED (mergeMetricDims shared merge)
+metadata:
+  type: project
+---
+
+AR-49 M0 (authoring reconception) engine foundation — items 1-5 of the SPEC build decomposition (`docs/architecture/proposals/SPEC-authoring-reconception-M0.md`).
+
+**Shipped (engine-specialist, items 1-5):**
+- `DimensionDef` is the governed-dimension PEER of `MetricDef` (Law 1: dimensions are equal citizens). Registry `packages/core/src/data/dimension.ts` mirrors metric.ts exactly: `registerDimension(s)`/`getDimension`/`listDimensions`/`listDimensionDefs`. THIN curation (code/label/conceptRole/defaultMember/members?/description) — members resolve FROM the DSD at runtime (Law 5), never copied into config; `members?` is a subset-whitelist only. Pure vocabulary leaf (same purity fitness as [[reference-measure-ref-seam]]'s metric.ts).
+- Wire mirror `ManifestDimension` + `SiteManifestContract.dimensions?[]` in `packages/contracts/src/manifest.ts` (zero-dep, refined at boot).
+- Boot seam `registerManifestDimensions` in `apps/geostat/src/data/site-manifest.ts`, called in `bootstrapSite` right after `registerManifestMetrics`.
+- `PropFieldSource` gained open tokens `'metrics'`/`'dimensions'` (the metric-ref/dimension-ref governed pickers = enum-ref sources, NOT a new PropFieldType — see spec §2.1/§9a).
+- `describeApp()` emits `dimensions: listDimensionDefs()`; **CONTRACT_VERSION 1.0.0 → 1.1.0** (MINOR: new values axis). Axis-lock `EXPECTED_AXES` + shape test updated; page-config.schema.json re-emitted via `pnpm gen:schema` ($id/version now 1.1.0 — the drift fitness in packages/plugins compares live vs committed).
+
+**Why:** completes the AR-40 semantic-layer spine ([[project-ar40-p0-spine]]) with the dimension half so the catalog is browsable/bindable. M0 is additive over resolveMeasureRef/DataStore — breaks nothing (renderer/ViewSnapshot/export untouched).
+
+**Item-11 CORE fitness (engine-specialist, test-only, no prod change):**
+- `data/bind-parity.fitness.test.ts` — **FF-BIND-PARITY**: interpretSpec(query measure=metric-id) deep-equals interpretSpec(raw code + governance dims as explicit filter); interpretKpi(point/yoy measure=metric-id) deep-equals interpretKpi(raw code + governed filter). Parity HELD. Includes a false-green guard (resolveMeasureRef proves the inputs really differ).
+
+**Item-11 FOLLOW-UP — KPI default-dim asymmetry CLOSED (engine-specialist, 2026-07-09, prod change):**
+The M0 QC finding (chief-engineer `[[ar38-default-asymmetry]]` fact 3) — `MetricDef.dims` folded on the query/chart path but DROPPED on the KPI `readMeasure` path, so a palette-bound dims-metric would render one number on a chart and a different one on a KPI — is FIXED root-cause. New shared helper `mergeMetricDims(metricDims, explicit)` in `data/metric.ts` (exported from barrel next to resolveMeasureRef): `{...metricDims, ...explicit}` (explicit WINS, metric FILLS unpinned). Both surfaces now fold through it: query path via `resolveQueryMeasures` (resolvers.ts, refactored to call it), KPI path via new `metricFilter(measure, filter)` in `data/kpi-coord.ts`, applied at EVERY read site in `kpi.ts` `resolveValue`/`resolveTrend` **and** the warm sibling `extractKpiRequirements` (warm===read invariant — else async stores go cold). Precedence: KPI explicit filter > metric default dims > live selection (folded via `withFilter`, which overlays the filter on ctx.dims) — IDENTICAL to the query path, so chart & KPI compose the same coordinate and can't drift. No shipped KPI moves: every shipped KPI measure is a raw code or a dims-less metric → metricFilter is IDENTITY → byte-identical (geostat render/delivery 16 files/127 tests unchanged). See [[reference-measure-ref-seam]].
+- `data/dimension.fitness.test.ts` (extended) — **FF-NO-PRIVILEGED-DIM** (Law 1: scans dimension.ts + metric.ts + registry/resolvers.ts for a `'time'|'geo'|'year'|'region'|'regionId'` literal after a full block+inline comment strip — the `(?<!:)` lookbehind spares `://` URLs; all live matches were comments) + **FF-DIMENSION-MEMBERS-FROM-SDMX** (Law 5: structural — members? is `DimVal[]` bare-code subset-ref, never a labelled `{code,label}[]` catalog; behavioural — distinct members enumerate from the store via storeObs, a DimensionDef whitelist neither adds nor shrinks the DSD member set).
+
+**How to apply:** items 6-10 + the PANEL FFs (FF-METRIC-REF-GOVERNED, FF-CATALOG-DISCOVERY-PURE, FF-METRIC-CATALOG-SERIALIZABLE) are OTHER specialists — panel FFs wait for the palette. As of 2026-07-09 those are mid-flight in the shared tree (apps/panel/src/discovery/MetricPalette.tsx, metricBinding.ts, EnumRefField semantic branch, CanvasOverlay/CanvasView bind affordance — all uncommitted). `tsc -b apps/panel` had 2 PRE-EXISTING errors in apps/panel/src/canvas/{CanvasOverlay,CanvasView}.tsx (an `onBindMetric` prop mismatch in that in-progress item-9 work) — NOT from the core fitness (test files are excluded from the tsc graph). If asked to consume dimensions in the panel, note react/engine barrel may not yet re-export DimensionDef (add for parity with MetricDef when panel needs it).

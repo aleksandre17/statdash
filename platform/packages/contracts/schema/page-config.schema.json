@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://statdash.dev/schema/1.0.0/page-config.schema.json",
-  "version": "1.0.0",
+  "$id": "https://statdash.dev/schema/1.1.0/page-config.schema.json",
+  "version": "1.1.0",
   "title": "StatDash Page Config",
   "description": "The whole-config wire contract for a StatDash page (NodePageConfig). Generated from describeApp() — the registry manifest is the SSOT.",
   "$defs": {
@@ -1269,6 +1269,11 @@
             "scatter",
             "heatmap"
           ]
+        },
+        "data.query.measure": {
+          "title": "Metric",
+          "description": "enum-ref field",
+          "type": "string"
         },
         "preliminary": {
           "title": "Preliminary data",

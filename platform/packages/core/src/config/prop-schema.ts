@@ -57,6 +57,14 @@ export type PropFieldType =
 //    'perspectives'     — registered perspective set (the `perspective(s)` a
 //                         perspective-* leaf binds to: pick a registered perspective,
 //                         never type a raw id)
+//    'metrics'          — governed MetricDef ids from the semantic layer (AR-49/M0):
+//                         the "metric-ref" picker. Backed by describeApp().metrics —
+//                         the author picks a GOVERNED noun, never types a raw code
+//                         (Law 2). Distinct from 'cube.measures' (raw SDMX codes).
+//    'dimensions'       — governed DimensionDef ids from the semantic layer (AR-49/M0):
+//                         the "dimension-ref" picker, the peer of 'metrics' (Law 1).
+//                         Backed by describeApp().dimensions; members still resolve
+//                         FROM the DSD at runtime. Distinct from 'cube.dimensions'.
 //
 export type PropFieldSource =
   | 'cube.measures'
@@ -67,6 +75,8 @@ export type PropFieldSource =
   | 'pages'
   | 'filterParams'
   | 'perspectives'
+  | 'metrics'
+  | 'dimensions'
   | (string & {})
 
 /** One option for an enum-like select field. */

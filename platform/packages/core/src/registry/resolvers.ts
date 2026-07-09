@@ -13,7 +13,7 @@ import type { DataStore, StoreQuery }        from '../data/store'
 import { storeVal, storeObs }               from '../data/store'
 import { resolveCode }                       from './spec-helpers'
 import type { CtxRef, DimVal, FilterValue, NeCtxRef, ObsQuery }  from '../sdmx'
-import { resolveMeasureRef }                  from '../data/metric'
+import { resolveMeasureRef, mergeMetricDims } from '../data/metric'
 import { desugar }                             from '../data/desugar'
 import { resolveRef }                          from '../ref/ref'
 import { tagLocaleString }                    from '../i18n/types'
@@ -72,10 +72,11 @@ export function resolveQueryMeasures(query: ObsQuery): ObsQuery {
   const measure: string | string[] =
     resolved.codes.length === 1 ? resolved.codes[0]! : resolved.codes
 
-  // Metric dims are DEFAULTS — the query's explicit filter overrides them.
-  const filter = resolved.dims
-    ? { ...resolved.dims, ...query.filter }
-    : query.filter
+  // Metric dims are DEFAULTS — the query's explicit filter overrides them. The merge
+  // is the SHARED governed-merge helper (metric.ts), the SAME one the KPI read path
+  // (kpi-coord.metricFilter) folds through, so a chart and a KPI reading the same
+  // governed metric compose an identical coordinate and cannot drift.
+  const filter = mergeMetricDims(resolved.dims, query.filter)
 
   return filter !== undefined
     ? { ...query, measure, filter }

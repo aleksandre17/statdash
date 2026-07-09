@@ -5330,6 +5330,78 @@
           "dataSource": "accounts"
         },
         {
+          "id": "gdp.finalConsumption",
+          "code": "final-consumption-expenditure",
+          "label": {
+            "ka": "საბოლოო მოხმარება",
+            "en": "Final consumption expenditure"
+          },
+          "unit": {
+            "ka": "მლნ ₾",
+            "en": "GEL mn"
+          },
+          "format": "mln_gel",
+          "dataSource": "gdp",
+          "dims": {
+            "geo": "GE",
+            "approach": "EXP"
+          }
+        },
+        {
+          "id": "gdp.capitalFormation",
+          "code": "gross-capital-formation",
+          "label": {
+            "ka": "მთლიანი კაპიტალის ფორმირება",
+            "en": "Gross capital formation"
+          },
+          "unit": {
+            "ka": "მლნ ₾",
+            "en": "GEL mn"
+          },
+          "format": "mln_gel",
+          "dataSource": "gdp",
+          "dims": {
+            "geo": "GE",
+            "approach": "EXP"
+          }
+        },
+        {
+          "id": "gdp.exports",
+          "code": "exports-of-goods-and-services",
+          "label": {
+            "ka": "საქონლისა და მომსახურების ექსპორტი",
+            "en": "Exports of goods and services"
+          },
+          "unit": {
+            "ka": "მლნ ₾",
+            "en": "GEL mn"
+          },
+          "format": "mln_gel",
+          "dataSource": "gdp",
+          "dims": {
+            "geo": "GE",
+            "approach": "EXP"
+          }
+        },
+        {
+          "id": "gdp.imports",
+          "code": "imports-of-goods-and-services",
+          "label": {
+            "ka": "საქონლისა და მომსახურების იმპორტი",
+            "en": "Imports of goods and services"
+          },
+          "unit": {
+            "ka": "მლნ ₾",
+            "en": "GEL mn"
+          },
+          "format": "mln_gel",
+          "dataSource": "gdp",
+          "dims": {
+            "geo": "GE",
+            "approach": "EXP"
+          }
+        },
+        {
           "id": "regional.gva",
           "code": "GVA",
           "label": {
@@ -5384,6 +5456,91 @@
               },
               "right": 100
             }
+          }
+        }
+      ]
+    },
+    {
+      "key": "dimensions",
+      "value": [
+        {
+          "id": "time",
+          "code": "time",
+          "label": {
+            "ka": "პერიოდი",
+            "en": "Period"
+          },
+          "conceptRole": "time",
+          "description": {
+            "ka": "დროის განზომილება (წელი). წევრები იტვირთება DSD-დან.",
+            "en": "The time dimension (year). Members resolve from the DSD."
+          }
+        },
+        {
+          "id": "geo",
+          "code": "geo",
+          "label": {
+            "ka": "გეოგრაფია",
+            "en": "Geography"
+          },
+          "conceptRole": "geo",
+          "defaultMember": "GE",
+          "description": {
+            "ka": "გეოგრაფიული ერთეული (ქვეყანა/რეგიონი). წევრები იტვირთება DSD-დან.",
+            "en": "Geographic area (country/region). Members resolve from the DSD."
+          }
+        },
+        {
+          "id": "approach",
+          "code": "approach",
+          "label": {
+            "ka": "მიდგომა",
+            "en": "Approach"
+          },
+          "conceptRole": "classification",
+          "defaultMember": "_Z",
+          "description": {
+            "ka": "მშპ-ის გამოთვლის მიდგომა (წარმოება/დანახარჯები/შემოსავალი). წევრები იტვირთება DSD-დან.",
+            "en": "GDP compilation approach (production/expenditure/income). Members resolve from the DSD."
+          }
+        },
+        {
+          "id": "account",
+          "code": "account",
+          "label": {
+            "ka": "ანგარიში",
+            "en": "Account"
+          },
+          "conceptRole": "classification",
+          "description": {
+            "ka": "ეროვნული ანგარიშების თანმიმდევრობა (SNA). წევრები იტვირთება DSD-დან.",
+            "en": "The sequence of national accounts (SNA). Members resolve from the DSD."
+          }
+        },
+        {
+          "id": "side",
+          "code": "side",
+          "label": {
+            "ka": "მხარე",
+            "en": "Side"
+          },
+          "conceptRole": "classification",
+          "description": {
+            "ka": "ანგარიშის მხარე — რესურსები (R) ან გამოყენება (U). წევრები იტვირთება DSD-დან.",
+            "en": "Account side — resources (R) or uses (U). Members resolve from the DSD."
+          }
+        },
+        {
+          "id": "sector",
+          "code": "sector",
+          "label": {
+            "ka": "სექტორი",
+            "en": "Sector"
+          },
+          "conceptRole": "classification",
+          "description": {
+            "ka": "ეკონომიკური საქმიანობის სექტორი. წევრები იტვირთება DSD-დან.",
+            "en": "Economic activity sector. Members resolve from the DSD."
           }
         }
       ]

@@ -15,6 +15,9 @@
 - [De-tenant augmentation seam](project_detenant_augmentation_seam.md) — react/styles carry zero tenant content; generic PlatformXMap open via module augmentation
 - [Extension points](project_extension_points.md) — VS Code contribution-points pattern (ExtensionRegistry/useExtensions); PANEL_TITLE_BADGE/SECTION_HEADER_ACTIONS
 
+## Authoring / catalog (AR-49 Constructor)
+- [Metric catalog store](project_metric_catalog_store.md) — AR-49 M0 panel semantic-catalog seam: metricCatalog.store + useMetricCatalog + semanticCatalogOptions (governed peer of cubeProfile)
+
 ## Data / async render path
 - [Async render warm-read](project_async_render_warm_read.md) — capability-transparent CachedStore + useNodeRows warm-then-sync-read Cache-Aside
 - [KPI warm surface](project_kpi_warm_surface.md) — kpi-strip is a 2nd async-warm surface (interpretKpis, not useNodeRows); yoy year-1 warm
@@ -31,6 +34,7 @@
 
 ## Build / test infrastructure
 - [Worktree vitest MAX_PATH block](project_worktree_vitest_maxpath_block.md) — independent re-confirmation; see senior-frontend-developer's canonical writeup
+- [Fitness raw source scan](project_fitness_raw_source_scan.md) — scan a module's own source in a panel fitness via Vite `?raw`, not import.meta.url/__dirname (both fail under Vitest 4)
 
 ## Feedback — corrections & validated approaches
 - [Registry over special-case](feedback_registry_over_special_case.md) — generic renderers iterate a registry; concerns live in registered units, never renderer branches

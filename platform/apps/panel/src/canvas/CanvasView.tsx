@@ -66,10 +66,17 @@ export interface CanvasViewProps {
   onDropNode:     (parentId: string, slotKey: string, nodeType: string) => void
   /** Reserved for node-to-node moves (drag an existing node into another slot). */
   onMoveNode?:    (nodeId: string, targetParentId: string, targetSlot: string) => void
+  /**
+   * Bind a governed metric (dragged from the Metric Palette) onto a block on the
+   * canvas — the drag half of AR-49 M0 item 9's bind affordance. The overlay's
+   * node frames become metric drop targets; the write is the host's byte-identical
+   * metricBinding write (spec §3). Absent ⇒ metric drops are ignored.
+   */
+  onBindMetric?:  (nodeId: string, metricId: string) => void
 }
 
 export function CanvasView({
-  page, selectedNodeId, dragging, previewPerspectiveId, onSelectNode, onDropNode,
+  page, selectedNodeId, dragging, previewPerspectiveId, onSelectNode, onDropNode, onBindMetric,
 }: CanvasViewProps) {
   // Preview mode is canvas view-state — transient and local to this component
   // (the same pattern as `dragging`; there is no persisted canvas-view-state slice
@@ -125,6 +132,7 @@ export function CanvasView({
         dragging={dragging}
         onSelect={onSelectNode}
         onDrop={onDropNode}
+        onBindMetric={onBindMetric}
       />
     </div>
   )

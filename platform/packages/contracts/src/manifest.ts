@@ -117,6 +117,47 @@ export interface ManifestMetric {
 }
 
 /**
+ * Named dimension descriptor — the wire shape of one entry in a tenant's
+ * semantic layer, the PEER of `ManifestMetric` (Law 1: dimensions are equal
+ * citizens of the semantic layer, not a metric afterthought). Same delivery
+ * channel as `metrics`/`datasources`: pure config-data the api projects out of
+ * site_config and the runner registers at boot via `registerDimensions`. The
+ * runner refines this opaque blob into the engine's `DimensionDef` exactly as it
+ * refines `metrics` into `MetricDef` — the api is a pass-through projection and
+ * never owns the engine's semantic shape (Law 3: api cannot import
+ * @statdash/engine's DimensionDef across the arrow; this zero-dep mirror is the
+ * shared home).
+ *
+ * The governed noun CURATES the raw cube-profile dimension; it never DUPLICATES
+ * the SDMX member list into config (Law 5 — members resolve FROM the DSD at
+ * runtime). `code` names the underlying SDMX/cube dimension this governs; `label`
+ * is the governed bilingual noun (LocaleString map, Law 4). `conceptRole` is an
+ * OPEN string advisory hint ('geo'|'time'|'sector'|…), NEVER a privileged union
+ * (Law 1 — the engine never branches on a hardcoded dimension name).
+ * `defaultMember` pins the member used when the author drops the dim without
+ * choosing; `members` is an OPTIONAL curation whitelist (a subset-reference into
+ * the profile's member list, ABSENT ⇒ all members from the cube profile — never
+ * the SSOT). Member/default values are JSON scalars (the `DimVal` universe:
+ * string | number | boolean | null).
+ */
+export interface ManifestDimension {
+  /** Registry key — the dimension-id a picker/DataSpec references. */
+  id:             string
+  /** Underlying SDMX/cube dimension code this governs (members come FROM the DSD, Law 5). */
+  code:           string
+  /** Bilingual display label (LocaleString {ka,en}). */
+  label:          Record<string, string>
+  /** Advisory concept-role hint ('geo'|'time'|'sector'|…) — OPEN string, never a privileged union (Law 1). */
+  conceptRole?:   string
+  /** Default member pin when the author drops the dim without choosing (e.g. '_T'). */
+  defaultMember?: string | number | boolean | null
+  /** Optional curation whitelist — a SUBSET-reference into the profile's members, never the SSOT (Law 5). */
+  members?:       (string | number | boolean | null)[]
+  /** Longer bilingual description for the info-affordance (LocaleString). */
+  description?:   Record<string, string>
+}
+
+/**
  * The SiteManifest as it crosses the api ↔ runner boundary.
  *
  * `pages`/`nav`/`chrome`/`chromeConfig`/`i18n` carry renderer-owned blobs typed as
@@ -149,4 +190,14 @@ export interface SiteManifestContract {
    * the raw-code status quo (byte-identical, FF-RAW-CODE-IDENTICAL).
    */
   metrics?:     ManifestMetric[]
+  /**
+   * The tenant's governed dimensions — the PEER of `metrics` (Law 1). Named
+   * dimensions the runner registers at boot (`registerDimensions`) so a picker
+   * can bind a governed dimension (label/default/whitelist) whose members still
+   * resolve FROM the cube profile at runtime (Law 5 — never copied into config).
+   * Delivered as config-data exactly like `metrics`/`datasources`. Absent/empty ⇒
+   * dimensions reach the author only as raw cube-profile members (byte-identical
+   * status quo).
+   */
+  dimensions?:  ManifestDimension[]
 }

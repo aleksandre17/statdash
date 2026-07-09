@@ -24,6 +24,18 @@
 //  falling back to the profile's first dimension. Both `source` and `sourceDim`
 //  are typed PropField descriptors (the engine names the ref; the panel binds it).
 //
+//  A THIRD family (AR-49 M0 item 8) — the GOVERNED semantic catalog:
+//
+//    Semantic-catalog sources (governed nouns, not raw SDMX codes):
+//      'metrics' | 'dimensions'
+//        → resolved from the semantic layer (useMetricCatalog → describeApp()),
+//          so a governed field offers registered MetricDef/DimensionDef ids. The
+//          author PICKS a governed noun; the picked id lowers through the unchanged
+//          resolveMeasureRef seam (byte-identical to hand-authoring the id). Same
+//          CubeOption shape → the SAME <select> renders it unchanged. Gated on the
+//          catalog being 'ready' (idle/error render the empty/hint path, never a
+//          crash), structurally identical to the cube-profile branch.
+//
 import { useMemo } from 'react'
 import { perspectiveRegistry } from '@statdash/engine'
 import type { FilterSchemaInput } from '@statdash/engine'
@@ -37,6 +49,12 @@ import {
   measureOptions, dimensionOptions, memberOptions, isCubeSource,
   type CubeOption,
 } from '../../discovery/cubeEnumOptions'
+import { useMetricCatalog } from '../../discovery/useMetricCatalog'
+import {
+  metricOptions,
+  dimensionOptions as dimensionCatalogOptions,
+  isSemanticSource,
+} from '../../discovery/semanticCatalogOptions'
 
 /** One resolved option. label is already resolved to the active locale. */
 interface ResolvedOption { value: string; label: string }
@@ -112,6 +130,9 @@ export function EnumRefField({ field, id, value, locale, siblingValues, onChange
   const store = useConstructorStore((s) => s)
   // The active dataset's profile — drives the cube.* sources (C3).
   const active = useActiveProfile()
+  // The governed semantic catalog — drives the 'metrics'/'dimensions' sources
+  // (AR-49 M0). Mirrors useActiveProfile: gate on `status !== 'ready'`.
+  const catalog = useMetricCatalog()
 
   // `source` selects the catalog; `sourceDim` scopes a 'cube.members' field to a
   // sibling-chosen dimension (both are typed PropField descriptors).
@@ -142,6 +163,20 @@ export function EnumRefField({ field, id, value, locale, siblingValues, onChange
   const { options, hint } = useMemo<{ options: ResolvedOption[]; hint: string }>(() => {
     if (!sourceKey) return { options: [], hint: 'no source declared' }
 
+    // ── Semantic-catalog sources (AR-49 M0 — governed metric/dimension ids) ──
+    //  Structurally identical to the cube branch: gate on the catalog being
+    //  'ready', then resolve through the SAME pure option resolvers the palette
+    //  uses. The option `value` is the registry id (a metric-id/dimension-id),
+    //  which lowers via the unchanged resolveMeasureRef seam — so a governed pick
+    //  is byte-identical to hand-authoring the id (Law 2: pick, never type).
+    if (isSemanticSource(sourceKey)) {
+      if (catalog.status !== 'ready') return { options: [], hint: 'catalog loading…' }
+      const semanticOpts: CubeOption[] = sourceKey === 'metrics'
+        ? metricOptions(catalog.metrics, locale)
+        : dimensionCatalogOptions(catalog.dimensions, locale)
+      return { options: semanticOpts, hint: `no ${sourceKey} available` }
+    }
+
     // ── Cube-profile sources (C3) ──────────────────────────────────────────
     if (isCubeSource(sourceKey)) {
       if (active.status === 'none')    return { options: [], hint: 'no dataset bound' }
@@ -159,7 +194,7 @@ export function EnumRefField({ field, id, value, locale, siblingValues, onChange
     // ── Session-store sources ──────────────────────────────────────────────
     const resolver = STORE_SOURCES[sourceKey]
     return { options: resolver ? resolver(store, locale) : [], hint: `no "${sourceKey}" available` }
-  }, [sourceKey, store, locale, active, memberDim])
+  }, [sourceKey, store, locale, active, catalog, memberDim])
 
   return (
     <select

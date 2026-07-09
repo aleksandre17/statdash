@@ -17,6 +17,7 @@ import { nodeRegistry }              from '@statdash/react/engine'
 import type { NodeBase, SlotDef }    from '@statdash/react/engine'
 import { walkNodes }                 from './walkNodes'
 import type { WalkedNode }           from './walkNodes'
+import { hasMetricDrag, readMetricDrag } from '../discovery/metricDrag'
 
 // ── Measured geometry, relative to the canvas root ────────────────────────
 
@@ -33,15 +34,23 @@ export interface CanvasOverlayProps {
   dragging?:       boolean
   onSelect:       (nodeId: string | null) => void
   onDrop:         (parentId: string, slotKey: string, nodeType: string) => void
+  /**
+   * Bind a governed metric dragged from the Metric Palette onto a node frame
+   * (AR-49 M0 item 9). Each node frame becomes a metric drop target; the host
+   * performs the byte-identical bind write. Absent ⇒ metric drops are ignored.
+   */
+  onBindMetric?:  (nodeId: string, metricId: string) => void
 }
 
 export function CanvasOverlay({
-  page, selectedNodeId, dragging = false, onSelect, onDrop,
+  page, selectedNodeId, dragging = false, onSelect, onDrop, onBindMetric,
 }: CanvasOverlayProps) {
   const overlayRef = useRef<HTMLDivElement>(null)
   const [frames, setFrames] = useState<NodeFrame[]>([])
   const [drops,  setDrops]  = useState<DropFrame[]>([])
   const [overSlot, setOverSlot] = useState<string | null>(null)
+  // The node frame a metric drag is currently hovering (highlight target).
+  const [metricOverId, setMetricOverId] = useState<string | null>(null)
 
   // Measure anchors after every render/resize. Anchors live in the sibling
   // renderer layer; the overlay's offsetParent is the shared .canvas-root.
@@ -105,6 +114,25 @@ export function CanvasOverlay({
     onDrop(d.parentId, d.slotKey, nodeType)
   }
 
+  // ── Metric drag → bind onto a node frame (AR-49 M0 item 9) ────────────────
+  //  A metric drag is distinct from a palette node-type drag: it carries the
+  //  metricDrag custom format, targets a NODE (not a slot), and is available on
+  //  the always-present node frames (no `dragging` slot-zone reveal needed).
+  const handleMetricOver = (nodeId: string) => (e: React.DragEvent) => {
+    if (!onBindMetric || !hasMetricDrag(e.dataTransfer)) return
+    e.preventDefault() // signal a valid drop target
+    e.dataTransfer.dropEffect = 'copy'
+    setMetricOverId(nodeId)
+  }
+  const handleMetricDrop = (nodeId: string) => (e: React.DragEvent) => {
+    if (!onBindMetric || !hasMetricDrag(e.dataTransfer)) return
+    e.preventDefault()
+    e.stopPropagation()
+    setMetricOverId(null)
+    const metricId = readMetricDrag(e.dataTransfer)
+    if (metricId) onBindMetric(nodeId, metricId)
+  }
+
   return (
     <div
       ref={overlayRef}
@@ -116,13 +144,19 @@ export function CanvasOverlay({
         <button
           key={`node-${f.id}`}
           type="button"
-          className={`canvas-node${f.id === selectedNodeId ? ' canvas-node--selected' : ''}`}
+          className={
+            `canvas-node${f.id === selectedNodeId ? ' canvas-node--selected' : ''}` +
+            `${f.id === metricOverId ? ' canvas-node--metric-over' : ''}`
+          }
           data-node-id={f.id}
           data-node-type={f.type}
           aria-label={`Select ${f.type}`}
           aria-pressed={f.id === selectedNodeId}
           style={{ left: f.rect.left, top: f.rect.top, width: f.rect.width, height: f.rect.height }}
           onClick={(e) => { e.stopPropagation(); onSelect(f.id) }}
+          onDragOver={handleMetricOver(f.id)}
+          onDragLeave={() => setMetricOverId((s) => (s === f.id ? null : s))}
+          onDrop={handleMetricDrop(f.id)}
         >
           {f.id === selectedNodeId && <span className="canvas-node__tag">{f.type}</span>}
         </button>

@@ -16,9 +16,9 @@
 //  Pattern: Grafana bootData (stores manifest + nav from API on startup),
 //           Retool fetchAppManifest (resources + pages in one bootstrap call).
 //
-import type { SiteManifestContract, ManifestMetric }          from '@statdash/contracts'
-import type { DataStore, DatasourceInstanceConfig, MetricDef } from '@statdash/engine'
-import { registerMetrics }                                     from '@statdash/engine'
+import type { SiteManifestContract, ManifestMetric, ManifestDimension } from '@statdash/contracts'
+import type { DataStore, DatasourceInstanceConfig, MetricDef, DimensionDef } from '@statdash/engine'
+import { registerMetrics, registerDimensions }                 from '@statdash/engine'
 import type { NavEntry, I18nConfig, ChromeConfig, ChromeEntry } from '@statdash/react'
 import type { NodePageConfig }                                 from '@statdash/react/engine'
 
@@ -53,6 +53,8 @@ export interface SiteManifest extends Omit<
   datasources?: DatasourceInstanceConfig[]
   /** Semantic layer — JSON-serializable; registerManifestMetrics(metrics) primes the registry. */
   metrics?:     ManifestMetric[]
+  /** Governed dimensions (peer of metrics) — registerManifestDimensions(dimensions) primes the registry. */
+  dimensions?:  ManifestDimension[]
 }
 
 // ── registerManifestMetrics — the semantic-layer boot seam ────────────────────
@@ -96,6 +98,37 @@ export function registerManifestMetrics(metrics: ManifestMetric[] | undefined): 
     }
   }
   registerMetrics(catalog)
+}
+
+// ── registerManifestDimensions — the governed-dimension boot seam ──────────────
+//
+//  The exact PEER of registerManifestMetrics (Law 1: dimensions are equal
+//  citizens of the semantic layer). The runner reads `manifest.dimensions` and
+//  registers each DimensionDef into the engine's process-global registry
+//  (`registerDimensions(catalog)`), so a governed-dimension picker resolves its
+//  label/default/whitelist while the members still come FROM the cube profile at
+//  runtime (Law 5 — never copied into config).
+//
+//  The manifest carries the wire shape `ManifestDimension` (opaque blob, owned by
+//  the api projection); HERE — the consumer that owns the engine's `DimensionDef`
+//  — we REFINE it: the registry key is `id`, the rest is the def. Empty/absent ⇒
+//  a no-op (Postel — dimensions still reach the author as raw cube-profile
+//  members). Idempotent + last-write-wins per id (registerDimensions contract).
+
+export function registerManifestDimensions(dimensions: ManifestDimension[] | undefined): void {
+  if (!dimensions || dimensions.length === 0) return
+  const catalog: Record<string, DimensionDef> = {}
+  for (const d of dimensions) {
+    catalog[d.id] = {
+      code:  d.code,
+      label: d.label,
+      ...(d.conceptRole   !== undefined ? { conceptRole:   d.conceptRole }   : {}),
+      ...(d.defaultMember !== undefined ? { defaultMember: d.defaultMember } : {}),
+      ...(d.members       !== undefined ? { members:       d.members }       : {}),
+      ...(d.description   !== undefined ? { description:   d.description }    : {}),
+    }
+  }
+  registerDimensions(catalog)
 }
 
 // ── SiteBootstrap — runtime shell data ────────────────────────────────
@@ -235,5 +268,8 @@ export async function bootstrapSite(): Promise<SiteBootstrap> {
   // gates render on the resolved SiteBootstrap, so this always precedes the first
   // page render. Absent metrics ⇒ no-op (byte-identical raw-code status quo).
   registerManifestMetrics(manifest.metrics)
+  // Governed dimensions — the peer of metrics (Law 1). Same manifest→boot→registry
+  // flow; absent ⇒ no-op (dimensions still reach the author as raw cube members).
+  registerManifestDimensions(manifest.dimensions)
   return { manifest, stores }
 }

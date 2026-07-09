@@ -52,6 +52,7 @@ const EXPECTED_AXES: ReadonlySet<string> = new Set([
   'datasourceKinds',
   'transformOps',
   'metrics',
+  'dimensions',
   'exportFormats',
   'filterControlTypes',
 ])

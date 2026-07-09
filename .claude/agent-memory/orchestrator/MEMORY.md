@@ -11,6 +11,7 @@
 - [model launch ledger](feedback_model_launch_ledger.md) — requested≠verified model; ledger every Agent() launch; probe = ground-truth instrument
 
 ## Project — operational
+- [authoring reconception](project_authoring_reconception.md) — owner-mandated bold reconception of panel (UI+func+concept+arch); vision leads, existing adapts; dislikes 3-step wizard
 - [landing slider = featured (yellow)](project_landing_slider_featured.md) — slider built FROM yellow-highlighted source cells via semantic layer; authoring-only signal
 - [server deploy build context](project_server_deploy_build_context.md) — server clone tracks only main; push+fetch-by-name; provisioning JSON is baked into api image
 - [MT decision deferred](project_mt_deferred.md) — owner deferred multi-tenancy; perfect single-tenant first; preserve the tenant_id seam, don't build MT

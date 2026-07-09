@@ -107,6 +107,11 @@ const SITE_KEY = {
   // at boot. Stored verbatim as a site_config 'metrics' key (no new table — rides
   // the existing key/value pattern, same as nav). Read directly (array, like nav).
   metrics:      'metrics',
+  // Governed dimensions — the PEER of metrics (Law 1: dimensions are equal citizens
+  // of the semantic layer). A ManifestDimension[] blob the runner registers at boot
+  // (registerManifestDimensions). Same delivery channel/pattern as 'metrics'; stored
+  // verbatim as a site_config 'dimensions' key, read directly (array, like nav).
+  dimensions:   'dimensions',
 } as const
 
 // ── Row shapes (server-internal; never leaked) ────────────────────────────────
@@ -291,6 +296,16 @@ export const bootstrapRoutes: FastifyPluginAsync = async (app) => {
       ? (metricsBlobRaw as SiteManifestContract['metrics'])
       : undefined
 
+    // dimensions: the governed-dimension blob (ManifestDimension[]), the PEER of
+    // metrics (Law 1). Verbatim pass-through — the backend does not own its inner
+    // shape (the engine's DimensionDef does). An absent key is the raw-cube-member
+    // status quo (omit ⇒ runner registers nothing), NOT a Phase-B seeding gap, so it
+    // is read directly (not via pick) and never reported in `missing`.
+    const dimensionsBlobRaw = site[SITE_KEY.dimensions]
+    const dimensions = Array.isArray(dimensionsBlobRaw)
+      ? (dimensionsBlobRaw as SiteManifestContract['dimensions'])
+      : undefined
+
     if (missing.length > 0) {
       app.log.info(
         { missing },
@@ -325,6 +340,10 @@ export const bootstrapRoutes: FastifyPluginAsync = async (app) => {
       // omitted; a runner that registers no metrics is byte-identical to the
       // raw-code status quo — Postel + FF-RAW-CODE-IDENTICAL).
       ...(metrics !== undefined ? { metrics } : {}),
+      // Governed dimensions — the peer of metrics (Law 1). Included only when the
+      // 'dimensions' key is present (else omitted; a runner that registers no
+      // governed dimensions is byte-identical to the raw-cube-member status quo).
+      ...(dimensions !== undefined ? { dimensions } : {}),
       // ADR SDMX-P1-C — included only when V29 yielded a tree (else the key is
       // absent and a consumer that does not know it is unaffected — Postel).
       ...(categories !== undefined ? { categories } : {}),

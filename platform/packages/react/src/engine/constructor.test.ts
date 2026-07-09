@@ -34,6 +34,7 @@ describe('describeApp() — shape', () => {
     expect(manifest).toHaveProperty('datasourceKinds')
     expect(manifest).toHaveProperty('transformOps')
     expect(manifest).toHaveProperty('metrics')
+    expect(manifest).toHaveProperty('dimensions')
     expect(manifest).toHaveProperty('exportFormats')
     expect(manifest).toHaveProperty('filterControlTypes')
   })
@@ -109,6 +110,13 @@ describe('describeApp() — shape', () => {
     expect(typeof metrics).toBe('object')
     expect(metrics).not.toBeNull()
     expect(Array.isArray(metrics)).toBe(false)
+  })
+
+  it('dimensions is a plain object (empty in node test env — no setupRegistrations)', () => {
+    const { dimensions } = describeApp()
+    expect(typeof dimensions).toBe('object')
+    expect(dimensions).not.toBeNull()
+    expect(Array.isArray(dimensions)).toBe(false)
   })
 
 })

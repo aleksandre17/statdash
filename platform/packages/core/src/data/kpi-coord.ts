@@ -14,7 +14,33 @@
 import type { SectionContext } from '../core/context'
 import { TIME_DIM }             from '../core/context'
 import type { DimVal }          from '../sdmx'
+import { resolveMeasureRef, mergeMetricDims } from './metric'
 import type { TimeRef, DimFilter, DimFilterRef } from './kpi-spec'
+
+// ── metricFilter — fold a measure's GOVERNED default dims into the KPI read ────
+//
+//  The KPI read-path twin of resolveQueryMeasures' query-path merge: a measure that
+//  resolves to a registered metric-id contributes its default `dims` as DEFAULTS, the
+//  KPI's OWN `filter` winning on collision. Both surfaces call the SHARED mergeMetricDims
+//  (metric.ts), so a chart and a KPI reading the same governed metric compose an
+//  IDENTICAL coordinate and can never drift — the M0 "one governed number on every
+//  surface" DoD.
+//
+//  The folded filter is applied by `withFilter` (below), which OVERLAYS it on ctx.dims
+//  — yielding the precedence  KPI explicit filter > metric default dims > live selection,
+//  the SAME precedence the query path yields (its filter overlays the ctx baseline). A
+//  raw code, or a metric with no `dims`, returns the filter UNTOUCHED (identity), so every
+//  existing KPI is byte-identical (FF-RAW-CODE-IDENTICAL).
+//
+//  Metric governance dims are scalar coordinate pins that participate in the DimFilter
+//  vocabulary as literal pins; the bridge cast reflects that (a metric never declares an
+//  array/`$ne` default in practice — those richer FilterValue forms are a query-path concern).
+export function metricFilter(measure: string, filter?: DimFilter): DimFilter | undefined {
+  const dims = resolveMeasureRef(measure).dims
+  if (!dims) return filter
+  const governed = dims as unknown as Partial<Record<string, DimVal | DimFilterRef>>
+  return mergeMetricDims(governed, filter) as DimFilter
+}
 
 export function resolveTime(ref: TimeRef | undefined, ctx: SectionContext): number {
   if (ref === undefined)                        return ctx.dims[TIME_DIM] as number

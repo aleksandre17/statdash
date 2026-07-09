@@ -32,6 +32,18 @@ strict `!==` (comparison.ts:26), so if it saw `undefined` (absent) instead of `'
 (nothing selected) would misfire into the sector-selected branch. The `''` sentinel harmony
 (region & sector both default `''`) is what keeps the truth table correct.
 
+**Fact 3 — AR-49 M0 makes this asymmetry palette-reachable (confirmed 2026-07-09, M0 review):**
+The same query-vs-KPI-path split governs `MetricDef.dims` (metric default dims). On the query/chart
+path `resolveQueryMeasures` merges metric default dims into the filter as defaults; on the KPI path
+`readMeasure` IGNORES them (bind-parity.fitness.test.ts encodes this — KPI parity holds ONLY because
+the metric's `dims` are dropped). Today it is LATENT: the 4 metrics that declare `dims`
+(`gdp.finalConsumption`/`capitalFormation`/`exports`/`imports`, all `{geo:GE,approach:EXP}`) are
+catalog-only (0 page references). But the Metric Palette lets an author drag such a metric onto a
+KPI → the KPI silently ignores `approach:EXP` → diverges from the same metric on a chart,
+contradicting the M0 DoD ("one governed number on every surface"). Follow-up: honor metric default
+dims on the KPI `readMeasure` path, OR have the palette refuse/flag binding a default-dims metric to
+a KPI. Pre-existing seam (AR-40), not introduced by M0.
+
 **Data-integrity note (not a defect):** state-A chart shows Σ(leaf sectors) per geo while the KPI
 shows the `_T` row directly. Equal only under SNA additivity (Σ industries == total). Same
 assumption already shipped for the geo dim — verify prod chart totals match KPIs, but it is not a

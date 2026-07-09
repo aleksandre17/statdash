@@ -305,8 +305,16 @@ export type { FeaturedItemSpec, FeaturedSlideDef, FeaturedStoreResolver, Feature
 // ── Metric registry [N26] — Constructor metric vocabulary + extension seam ──
 export type { MetricDef, ResolvedMeasure, MetricInput, MetricCalc }    from './data/metric'
 export { registerMetric, registerMetrics, getMetric, listMetrics, listMetricDefs,
-         resolveMeasureRef, withMetricProvenance }                     from './data/metric'
+         resolveMeasureRef, mergeMetricDims, withMetricProvenance }    from './data/metric'
 export { resolveMetricValue, calcMetricRequirements, isCalculatedMetric } from './data/metric-calc'
+// ── Dimension registry [AR-49 / M0] — the governed-dimension PEER of metric ──
+//  Law 1: dimensions are equal citizens of the semantic layer. A thin curation
+//  (governed label / conceptRole / default / whitelist) over the cube-profile
+//  dimension; members resolve FROM the DSD at runtime (Law 5), never copied here.
+//  Delivered exactly like metrics (registerDimensions ← manifest.dimensions).
+export type { DimensionDef }    from './data/dimension'
+export { registerDimension, registerDimensions, getDimension, listDimensions,
+         listDimensionDefs }    from './data/dimension'
 // metric→store binding [M1] — the Cube.dev `dataSource` middle tier. A node's
 // DataSpec → the storeKey its referenced metric names (plain string; react's
 // resolveStore consumes it, no core→react import — arrow clean).

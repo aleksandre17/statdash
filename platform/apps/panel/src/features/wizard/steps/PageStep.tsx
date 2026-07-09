@@ -6,6 +6,10 @@ import DeleteIcon from '@mui/icons-material/Delete'
 import SearchIcon from '@mui/icons-material/Search'
 import { useConstructorStore, useActivePage, useSelectedNode, useChromeSelection } from '../../../store/constructor.store'
 import { NodePalette }   from '../../../canvas/NodePalette'
+import { MetricPalette } from '../../../discovery/MetricPalette'
+import { nodeSchemaSource } from '../../../inspector/schemaSource'
+import { firstMetricField, isMetricBindable, bindMetricToProps } from '../../../discovery/metricBinding'
+import { useActiveLocales } from '../../../inspector/useActiveLocales'
 import { OutlineTree }   from '../../../outline'
 import { useCommandPalette } from '../../../command/useCommandPalette'
 import { SuspenseFallback } from '../../../shared/SuspenseFallback'
@@ -57,9 +61,35 @@ export function PageStep() {
   // perspectives[0] (the SSOT default).
   const [previewPerspectiveId, setPreviewPerspectiveId] = useState<string | undefined>(undefined)
   const cmdk = useCommandPalette()
+  const locale = useActiveLocales()[0] ?? 'ka'
 
   const pageId   = page?.id ?? null
   const selected = page && selectedId ? page.nodes[selectedId] ?? null : null
+
+  // ── Metric bind (AR-49 M0 item 9) — one write, both gestures ──────────────
+  //  Both the Metric Palette click/keyboard path and the canvas drag-drop funnel
+  //  through here. The target measure field is DISCOVERED from the block's own
+  //  PropSchema (metricBinding.firstMetricField), never hardcoded per type; the
+  //  write is the SAME setAtPath + updateNode the Inspector uses, so the config is
+  //  byte-identical to hand-authoring the metric-id (spec §3).
+  const bindMetric = useCallback(
+    (nodeId: string, metricId: string) => {
+      if (!pageId || !page) return
+      const node = page.nodes[nodeId]
+      if (!node) return
+      const field = firstMetricField(nodeSchemaSource.getSchema(node))
+      if (!field) return // block declares no metric-ref field → not a bind target (no-op)
+      updateNode(pageId, nodeId, { props: bindMetricToProps(node.props, field.field, metricId) })
+      markPageDirty(pageId)
+      selectNode(nodeId) // reflect the bound block so the Inspector shows the picked metric
+    },
+    [pageId, page, updateNode, markPageDirty, selectNode],
+  )
+
+  // Whether the CURRENTLY selected block can receive a click-bind (drives the
+  // palette affordance + the announced hint). Drag onto any bindable block works
+  // regardless of selection.
+  const selectedBindable = selected ? isMetricBindable(nodeSchemaSource.getSchema(selected)) : false
 
   // Live engine config — projected from the store model (single source of truth).
   const nodeConfig = page ? toNodePageConfig(page) : null
@@ -169,6 +199,14 @@ export function PageStep() {
           <Typography variant="overline" color="text.secondary">პალიტრა</Typography>
           <NodePalette onDragStateChange={setDragging} />
           <Divider sx={{ my: 1.5 }} />
+          {/* Governed metric catalog (AR-49 M0) — browse + bind, beside the wizard. */}
+          <MetricPalette
+            locale={locale}
+            canBind={selectedBindable}
+            bindHint={selected ? 'არჩეული ბლოკი მეტრიკას არ იღებს' : 'აირჩიეთ მონაცემთა ბლოკი მეტრიკის მისაბმელად'}
+            onBind={(metricId) => { if (selectedId) bindMetric(selectedId, metricId) }}
+          />
+          <Divider sx={{ my: 1.5 }} />
           <Typography variant="overline" color="text.secondary">გარსი</Typography>
           <ChromePalette />
         </Paper>
@@ -191,6 +229,7 @@ export function PageStep() {
                   previewPerspectiveId={previewPerspectiveId}
                   onSelectNode={selectNode}
                   onDropNode={handleDrop}
+                  onBindMetric={bindMetric}
                 />
               </Suspense>
             )
