@@ -21,6 +21,8 @@
 - [Restructure paths](project_restructure_paths.md) — engine/* → platform/packages/*; @statdash/* scope (landed, @geostat/* fully retired)
 
 ## Reference — durable seam contracts (spot-checked against current code)
+- [Fail-soft interpret guard](reference_failsoft_interpret_guard.md) — per-node interpreters (interpretKpis + extractKpiRequirements twin) tolerate absent optional input `?? []`, never hard-throw into NodeErrorBoundary; engine twin of chrome fail-soft; class has bitten twice
+- [Panel e2e offline bridge](reference_panel_e2e_offline_bridge.md) — run boot.e2e.ts offline via cached playwright 1.61.1 + gitignored @playwright/test shim; panel bundles @statdash/* from SOURCE so a core edit is live with no rebuild
 - [No-privileged-literal guard](reference_no_privileged_literal_guard.md) — FF-NO-PRIVILEGED-LITERAL scans registry/**; forbids privileged-dim + `<x>Color/<x>Label`; `measure` field exempt
 - [Always-resolve seam](reference_alwaysresolve_seam.md) — ParamHidden.alwaysResolve hoists a default out of the perspective-ownership gate (post-P6; not bar-visibility anymore)
 - [Time-dim SSOT](reference_time_dim_ssot.md) — TIME_DIM + atTime() in core/context.ts; never a raw 'time' literal

@@ -266,7 +266,14 @@ export function interpretKpis(
   store:        DataStore,
   filterParams: Record<string, unknown> = {},
 ): KpiDef[] {
-  return specs
+  // Postel / ISP tolerance — a kpi-strip's `items` is REQUIRED by the KpiStripNode
+  // type, but a hand-authored / API-hydrated node-config may omit it (untyped JSON
+  // boundary). An absent `specs` interprets to an EMPTY KPI set (the shell then
+  // renders <EmptyState/>), it MUST NOT hard-throw `undefined.filter` into
+  // NodeErrorBoundary. This is the engine-layer twin of the fail-soft chrome guard
+  // (`useChromeConfig ?? EMPTY_CHROME_CONFIG`, packages/react): an interpreter
+  // tolerates an absent optional input by rendering nothing, never by crashing.
+  return (specs ?? [])
     .filter((s) => kpiVisible(s, ctx, filterParams))
     .map((s) => interpretKpi(s, ctx, store))
 }
@@ -388,7 +395,13 @@ export function extractKpiRequirements(
     }
   }
 
-  for (const spec of specs) {
+  // Same Postel tolerance as interpretKpis — warm === render: if the render twin
+  // folds an absent `specs` to an empty set, the warm twin MUST too, so a spec-less
+  // kpi-strip yields zero requirements (no warm) rather than throwing `undefined`
+  // iteration. (useKpiRows already wraps this call in try/catch, but the core
+  // function is a public @statdash/engine entry point and must be tolerant at its own
+  // boundary — the guard belongs here, not only in the react caller.)
+  for (const spec of specs ?? []) {
     if (!kpiVisible(spec, ctx, filterParams)) continue   // SAME predicate (+fr) as interpretKpis — warm === render
     fromValue(spec.value, ctx)
     if (spec.trend) fromTrend(spec.trend, ctx)

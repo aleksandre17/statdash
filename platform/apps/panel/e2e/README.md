@@ -93,17 +93,22 @@ no `chromeConfig` of its own. jsdom net:
 `packages/react/src/context/useChromeConfig.fitness.test.tsx`). The `boot.e2e.ts`
 `test.fixme` is now a **real** assertion — the direct canvas-frame render proof.
 
-### 2. OPEN (flagged, not fixed here) — kpi-strip crashes on absent specs
+### 2. FIXED — kpi-strip crashes on absent specs
 
 The same run surfaced a SECOND fail-soft gap of the same class, in a different layer:
-`interpretKpis` (`packages/core/src/data/kpi.ts`) calls `specs.filter(...)` and throws
-`Cannot read properties of undefined (reading 'filter')` when a `kpi-strip` node carries
-no specs — the mock seed page has such a node. It is **isolated per-node** by
-`NodeErrorBoundary` (the chart still renders, so finding #1's proof holds), but the panel
-still crashes into a fallback card in a real browser. Recommended root-cause guard:
-`interpretKpis` (and/or `useKpiRows`) should treat absent specs as an empty list
-(`specs ?? []`) — the engine-layer twin of the chrome guard above. Owner: engine layer
-(out of the shell layer's remit); route via the architect.
+`interpretKpis` (`packages/core/src/data/kpi.ts`) called `specs.filter(...)` and threw
+`Cannot read properties of undefined (reading 'filter')` when a `kpi-strip` node carried
+no specs — the mock seed page has such a node. It was **isolated per-node** by
+`NodeErrorBoundary` (the chart still rendered, so finding #1's proof held), but the panel
+still crashed into a fallback card in a real browser.
+
+**Fixed** at the packages/core layer (the engine-layer twin of the fail-soft chrome guard
+above): BOTH public per-node KPI entry points now fold an absent `specs` to `[]` — the
+render twin `interpretKpis` AND the warm twin `extractKpiRequirements` — so a spec-less
+kpi-strip interprets to an EMPTY KPI set (the shell renders its `<EmptyState/>`) instead of
+throwing. `items` is REQUIRED by `KpiStripNode`, so a well-formed strip is byte-identical;
+the guard only covers the untyped node-config boundary (Postel/ISP). jsdom net:
+`packages/core/src/data/kpi-specless-failsoft.fitness.test.ts`.
 
 ## Accessibility (axe)
 
