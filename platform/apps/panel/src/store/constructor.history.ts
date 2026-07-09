@@ -4,7 +4,9 @@ import type {
   CanvasPage,
   ChromeSelection,
   WizardStep,
+  StudioSurface,
 } from '../types/constructor'
+import { DEFAULT_STUDIO_SURFACE } from '../types/constructor'
 
 // ── History (undo/redo) ───────────────────────────────────────────────────────
 // Command-pattern: each mutating action pushes a snapshot to undoStack.
@@ -44,10 +46,21 @@ export interface ConstructorSession {
 export interface WizardSlice {
   activeStep:      WizardStep
   completedSteps:  Set<WizardStep>
+  /**
+   * The Studio activity-rail surface currently shown in the left dock (AR-49
+   * M1.2). ADDITIVE to the wizard slice — the wizard ignores it; the Studio
+   * shell reads it. Preserved across undo/redo like the other UI-navigation
+   * fields (it is view state, not an undoable edit). In M1.3 this REPLACES the
+   * ordered `activeStep`/`completedSteps` gating fields entirely.
+   */
+  activeSurface:   StudioSurface
   selectedNodeId:  string | null
   /** The selected chrome element (Phase C). Mutually exclusive with a node. */
   chromeSelection: ChromeSelection | null
 }
+
+/** The Studio surface the session opens on — re-exported for store init/tests. */
+export const INITIAL_STUDIO_SURFACE = DEFAULT_STUDIO_SURFACE
 
 // ── Initial state ─────────────────────────────────────────────────────────────
 

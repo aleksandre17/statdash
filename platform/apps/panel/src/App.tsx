@@ -1,9 +1,18 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, lazy, Suspense } from 'react'
 import { CssBaseline, Box, CircularProgress } from '@mui/material'
 import { ConstructorWizard } from './features/wizard'
 import { LoginForm }         from './features/auth/LoginForm'
 import { ToastHost }         from './shared/ToastHost'
+import { SuspenseFallback }  from './shared/SuspenseFallback'
+import { studioShellEnabled } from './config/flags'
 import { useConstructorStore } from './store/constructor.store'
+
+// AR-49 M1.2 — the Studio shell, lazy so its chunk (incl. the @statdash/styles
+// token CSS the chrome consumes) loads ONLY when the flag is on. The wizard path
+// never pulls it — Strangler: the shell is purely additive behind the flag.
+const StudioShell = lazy(() =>
+  import('./studio/StudioShell').then((m) => ({ default: m.StudioShell })),
+)
 import { initFromApi } from './store/api-actions'
 import { bootstrapCatalog } from './store/bootstrapCatalog'
 import { MOCK_SOURCES, MOCK_SPECS, MOCK_SITE, MOCK_PAGE } from './store/mock-data'
@@ -107,10 +116,19 @@ export function App() {
   }
 
   // ── Constructor ───────────────────────────────────────────────────────────────
+  //  Flag routing (AR-49 M1.2): flag ON → the Studio shell; OFF (default) → the
+  //  3-step wizard, byte-identical to before. Read at render so a persisted
+  //  localStorage override takes effect on the next paint without a rebuild.
   return (
     <>
       <CssBaseline />
-      <ConstructorWizard />
+      {studioShellEnabled()
+        ? (
+          <Suspense fallback={<SuspenseFallback label="Loading studio" />}>
+            <StudioShell />
+          </Suspense>
+        )
+        : <ConstructorWizard />}
       <ToastHost />
     </>
   )

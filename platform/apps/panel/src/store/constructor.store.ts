@@ -6,6 +6,7 @@ import type {
   CanvasPage, CanvasNode,
   ChromeSelection,
   WizardStep,
+  StudioSurface,
 } from '../types/constructor'
 import {
   type ConstructorSession,
@@ -13,6 +14,7 @@ import {
   type HistorySlice,
   type HistoryEntry,
   INITIAL_SESSION,
+  INITIAL_STUDIO_SURFACE,
   snapshot,
   pushHistory,
 } from './constructor.history'
@@ -51,6 +53,9 @@ export interface ConstructorStore extends ConstructorSession, WizardSlice, Histo
   goToStep:       (step: WizardStep) => void
   markStepDone:   (step: WizardStep) => void
   selectNode:     (id: string | null) => void
+
+  // Studio activity-rail surface (AR-49 M1.2) — non-ordered lens, never gated.
+  setSurface:     (surface: StudioSurface) => void
 
   // Data Layer actions
   addDataSource:     (ds: DataSourceDef) => void
@@ -109,6 +114,7 @@ export const useConstructorStore = create<ConstructorStore>()(
       ...INITIAL_LIFECYCLE,
       activeStep:      0,
       completedSteps:  new Set<WizardStep>(),
+      activeSurface:   INITIAL_STUDIO_SURFACE,
       selectedNodeId:  null,
       chromeSelection: null,
       undoStack:      [],
@@ -128,6 +134,11 @@ export const useConstructorStore = create<ConstructorStore>()(
       // Inspector shows one element; least astonishment).
       selectNode: (id) =>
         set({ selectedNodeId: id, chromeSelection: null }, false, 'canvas/selectNode'),
+
+      // Summon a Studio activity-rail surface. Pure view-state (no gating, no
+      // history) — the anti-waterfall: any surface is reachable from any other.
+      setSurface: (surface) =>
+        set({ activeSurface: surface }, false, 'studio/setSurface'),
 
       // ── Data Layer ─────────────────────────────────────────────────────────
       addDataSource: (ds) =>
@@ -324,6 +335,7 @@ export const useConstructorStore = create<ConstructorStore>()(
               // Preserve UI state
               activeStep:      s.activeStep,
               completedSteps:  s.completedSteps,
+              activeSurface:   s.activeSurface,
               selectedNodeId:  s.selectedNodeId,
               chromeSelection: s.chromeSelection,
             }
@@ -345,6 +357,7 @@ export const useConstructorStore = create<ConstructorStore>()(
               canRedo:   s.redoStack.length > 1,
               activeStep:      s.activeStep,
               completedSteps:  s.completedSteps,
+              activeSurface:   s.activeSurface,
               selectedNodeId:  s.selectedNodeId,
               chromeSelection: s.chromeSelection,
             }

@@ -8,6 +8,7 @@ import { useConstructorStore } from './constructor.store'
 
 export const useWizardStep      = () => useConstructorStore((s) => s.activeStep)
 export const useCompletedSteps  = () => useConstructorStore((s) => s.completedSteps)
+export const useActiveSurface   = () => useConstructorStore((s) => s.activeSurface)
 export const useDataSources     = () => useConstructorStore((s) => s.dataSources)
 export const useDataSpecs       = () => useConstructorStore((s) => s.dataSpecs)
 export const useSite            = () => useConstructorStore((s) => s.site)

@@ -1,0 +1,94 @@
+/* ================================================================
+   Studio shell chrome (AR-49 M1.2)
+
+   TOKEN-DRIVEN by mandate: every colour/typography value reads a
+   @statdash/styles DTCG custom property (imported by StudioShell.tsx)
+   — NO hardcoded brand literals. "Make the tool look like Strata" then
+   becomes a token preset (M1.4 / FF-CHROME-TOKEN-DRIVEN), zero chrome
+   code. Structural values (px/rem grid tracks) are layout, not brand.
+   ================================================================ */
+
+.studio-shell {
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  grid-template-columns: auto auto minmax(0, 1fr) auto;
+  grid-template-areas:
+    "topbar topbar topbar topbar"
+    "rail   left   canvas right"
+    "bottom bottom bottom bottom";
+  height: 100vh;
+  background: var(--color-surface);
+  color: var(--color-text-primary);
+  font-family: var(--font-family-base);
+}
+
+/* ── Top bar (banner) ─────────────────────────────────────────── */
+.studio-topbar {
+  grid-area: topbar;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: var(--color-surface-raised);
+  border-bottom: var(--border-width-thin) solid var(--color-border-subtle);
+}
+.studio-wordmark {
+  font-family: var(--font-family-display);
+  font-weight: var(--font-weight-bold);
+  font-size: var(--font-size-lg);
+  letter-spacing: var(--letter-spacing-tight);
+  color: var(--color-heading-display);
+}
+
+/* ── Activity rail (nav) ──────────────────────────────────────── */
+.studio-rail {
+  grid-area: rail;
+  background: var(--color-surface-raised);
+  border-right: var(--border-width-thin) solid var(--color-border-subtle);
+  overflow-y: auto;
+}
+.studio-rail__btn[data-active] {
+  color: var(--color-accent);
+  background: var(--color-accent-bg);
+}
+
+/* ── Left dock (summoned surface) ─────────────────────────────── */
+.studio-left-dock {
+  grid-area: left;
+  width: 300px;
+  overflow: auto;
+  padding: var(--spacing-md);
+  background: var(--color-surface);
+  border-right: var(--border-width-thin) solid var(--color-border-subtle);
+}
+
+/* ── Canvas (always-mounted home) ─────────────────────────────── */
+.studio-canvas {
+  grid-area: canvas;
+  overflow: hidden;
+  min-width: 0;
+  background: var(--color-surface-sunken);
+}
+
+/* ── Right dock (selection-contextual inspector) ──────────────── */
+.studio-right-dock {
+  grid-area: right;
+  width: 320px;
+  overflow: auto;
+  padding: var(--spacing-md);
+  background: var(--color-surface);
+  border-left: var(--border-width-thin) solid var(--color-border-subtle);
+}
+
+/* ── Bottom strip (page tabs + status) ────────────────────────── */
+.studio-bottom {
+  grid-area: bottom;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-xs) var(--spacing-md);
+  background: var(--color-surface-raised);
+  border-top: var(--border-width-thin) solid var(--color-border-subtle);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+}

@@ -156,6 +156,19 @@ export interface CanvasPage {
 
 export type WizardStep = 0 | 1 | 2
 
+// ── Studio shell (AR-49 M1.2) ───────────────────────────────────────────────
+//
+//  The Studio's activity-rail surfaces. Unlike WizardStep (an ORDERED index that
+//  gates the next), a StudioSurface is a NON-ordered lens summoned over the
+//  always-mounted canvas — nothing gates anything (spec §2.1). `model` is the
+//  M2 Steward-role slot: present in the union (the rail renders its LOCKED slot)
+//  but never selectable until M2 fills it.
+//
+export type StudioSurface = 'insert' | 'data' | 'layers' | 'pages-site' | 'style' | 'model'
+
+/** The surface the Studio opens on — Insert (drop a block) is the first affordance. */
+export const DEFAULT_STUDIO_SURFACE: StudioSurface = 'insert'
+
 export const WIZARD_STEPS = [
   { index: 0 as const, id: 'data',  label: { ka: 'მონაცემები', en: 'Data'  }, description: { ka: 'DataSource-ები და DataSpec-ები', en: 'Data sources and specs' } },
   { index: 1 as const, id: 'site',  label: { ka: 'საიტი',     en: 'Site'  }, description: { ka: 'იდენტობა, ნავიგაცია, თემა',     en: 'Identity, navigation, theme' } },
