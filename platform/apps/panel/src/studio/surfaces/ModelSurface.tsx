@@ -1,6 +1,8 @@
 import { lazy, Suspense } from 'react'
-import { Box, Typography } from '@mui/material'
+import { Box, Typography, Divider } from '@mui/material'
 import { SuspenseFallback } from '../../shared/SuspenseFallback'
+import { MetricCatalogManager } from '../model/MetricCatalogManager'
+import { useActiveLocales } from '../../inspector/useActiveLocales'
 import type { Locale } from '../../types/constructor'
 
 // The raw source/spec/query modeling body — the SAME shared component (extracted,
@@ -23,19 +25,33 @@ const DataModelingPanel = lazy(() =>
 //  flips the Model-mode lens (M2.0) and lands here. The in-tool Metric Editor
 //  (define the governed catalog itself) is M2.2 — this milestone relocates the
 //  raw modeler only (SPEC-authoring-reconception-M2 §9, sub-milestone M2.1).
+//
+//  M2.2 (2026-07-09) fills Model mode's HEADLINE region: in-tool metric AUTHORING
+//  (MetricCatalogManager). Region order is top-to-bottom by frequency (spec §3.2,
+//  progressive disclosure): (1) the governed metric catalog + editor — the "define"
+//  half; (2) the relocated raw modeler — the escape hatch below it. Dimension
+//  authoring (spec §4.5 / M2.4) is DEFERRED — dimensions still reach authors as raw
+//  cube members; the semanticCatalog store preserves any existing dimensions through
+//  save (a clear seam, no capability lost).
 export function ModelSurface({ locale }: { locale: Locale }) {
   const en = locale === 'en'
+  const locales = useActiveLocales()
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
       {/* Steward context — synchronous, so the surface reads its purpose before the
           heavy modeler chunk resolves (progressive disclosure, Law 9). */}
       <Typography variant="caption" color="text.secondary">
         {en
-          ? 'Define the governed data model — sources, specs and queries behind the metrics authors compose with.'
-          : 'აქ განისაზღვრება მართული მონაცემთა მოდელი — წყაროები, სპეც-ები და მოთხოვნები იმ მეტრიკების უკან, რომლებითაც ავტორები აწყობენ.'}
+          ? 'Define the governed data model — metrics authors compose with, plus the sources, specs and queries behind them.'
+          : 'აქ განისაზღვრება მართული მონაცემთა მოდელი — მეტრიკები, რომლებითაც ავტორები აწყობენ, და მათ უკან არსებული წყაროები, სპეც-ები და მოთხოვნები.'}
       </Typography>
 
-      {/* The relocated raw modeler — the Steward's escape hatch (spec §3.2). */}
+      {/* Region 1 — the headline: define/edit the governed metric catalog (M2.2). */}
+      <MetricCatalogManager locale={locale} locales={locales} />
+
+      <Divider flexItem />
+
+      {/* Region 3 — the relocated raw modeler — the Steward's escape hatch (spec §3.2). */}
       <Suspense fallback={<SuspenseFallback label="Loading data editors" fill={false} />}>
         <DataModelingPanel />
       </Suspense>

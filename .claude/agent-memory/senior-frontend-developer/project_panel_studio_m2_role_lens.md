@@ -1,8 +1,46 @@
 ---
 name: panel-studio-m2-role-lens
-description: AR-49 M2.0+M2.1 — Steward role LENS (useRole seam, rail stewardOnly, TopBar toggle, FF-ROLE-IS-LENS) + M2.1 modeler relocated into ModelSurface, FF-AUTHOR-NO-QUERY. NOT a security boundary.
+description: AR-49 M2.0+M2.1+M2.2 — Steward role LENS (useRole seam, FF-ROLE-IS-LENS) + M2.1 modeler relocated + M2.2 in-tool metric AUTHORING (studio/model/*, semanticCatalog store, saveSemanticCatalog live loop, FF-CATALOG-EDIT-SAFE/ONE-SSOT/AUTHORING-SERIALIZABLE/ID-IMMUTABLE).
 metadata:
   type: project
+---
+
+**M2.2 — in-tool metric AUTHORING (DONE 2026-07-09, same branch; apps/panel-only, arrow held).**
+The headline: a Steward defines a governed metric in Model mode; it saves to site_config
+and appears in the Author's MetricPalette with NO reload. All new code under
+`apps/panel/src/studio/model/`:
+- **semanticCatalog.store.ts** — editable working copy (`ManifestMetric[]`/`ManifestDimension[]`,
+  the WIRE shape), lazy `ensure()` from `fetchCatalogManifest()` (same /api/bootstrap channel
+  bootstrapCatalog uses), upsert/remove by id + `dirty`. SEPARATE from `discovery/metricCatalog.store`
+  (that = READ palette projection of the engine registry/describeApp; this = authoring copy).
+  FF-CATALOG-ONE-SSOT means one PERSISTED catalog, not one in-memory store.
+- **saveSemanticCatalog.ts** — the loop: `configApi.site.update({metrics,dimensions})` (PUT
+  /api/config/site is a per-KEY upsert → targeted, saveSite untouched, ISP) → `applyCatalogLive`
+  = registerManifestMetrics/Dimensions + `useMetricCatalogStore.invalidate()` → palette re-reads
+  describeApp. Fail-soft (403→forbidden). GOTCHA: registerMetrics is last-write-wins with NO
+  unregister, so CREATE/EDIT are live but DELETE only clears from palette after reload (flagged).
+- **metricDraft.ts** (pure) — `formatKeyOptions()` from LIVE `FORMATTERS` registry keys (FormatKey
+  is NOT exported from core; use the registry — Law 8 zero-code extend); `draftFromMeasure` unit
+  pre-fill from CubeResolvedUnit; slug id rules.
+- **metricValidation.ts** (pure, FF-CATALOG-EDIT-SAFE) — code∈profile.measures, dims keys∈dimensions,
+  members real; legal immutable id, unique-on-create, required label; profile-null → WARNING not error.
+- **metricImpact.ts** (pure) — reverse index via schema-driven `metricRefFields`+`getAtPath` (NOT a
+  naive string scan; inject `nodeSchemaSource.getSchema`).
+- **MetricEditor.tsx** — pick dataset(cubeApi.datasets)→measure(cubeProfile.store)→govern; id DISABLED
+  on edit (FF-ID-IMMUTABLE). **MetricCatalogManager.tsx** — list+editor host+impact banner+delete-guard.
+  Wired into ModelSurface region 1 (above the relocated DataModelingPanel).
+- **WIRE-CONTRACT FINDING (Observation Duty):** `agg` and `description` are MetricDef fields but NOT
+  ManifestMetric fields, and `registerManifestMetrics` does NOT map them → authoring them = DEAD data
+  (dropped at boot seam). OMITTED from the editor; need contracts+engine change to author (out of scope).
+  Spec §4.1 lists agg but §5.2's "carries every field" omits it — internal spec contradiction.
+- **DEFERRED:** calc/derived editor (M2.5, disabled placeholder seam) + dimension authoring (M2.4 —
+  store preserves existing dimensions through save).
+- **GATE:** eslint apps/panel/src 0 err (2 pre-existing warnings), tsc -b apps/panel 0, vitest panel
+  **84 files / 516 PASS** (+8 files: metricDraft/metricValidation/metricImpact/semanticCatalog.store/
+  saveSemanticCatalog/MetricEditor/MetricCatalogManager/catalogAuthoring.fitness). e2e NOT run —
+  playwright package unresolvable in this worktree's node_modules (only browser caches present); loop
+  proven at vitest integration level. ModelSurface.test findByText bumped to 20s (eager graph grew).
+
 ---
 
 **M2.1 — relocate the modeler (DONE 2026-07-09, same branch).** ModelSurface is now REAL:

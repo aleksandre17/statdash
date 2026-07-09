@@ -31,7 +31,9 @@ describe('ModelSurface — the Steward\'s define workspace mounts the relocated 
     render(<ModelSurface locale="ka" />)
     // The lazy modeler resolves and reads the store — its source browser + the seeded
     // spec appear, proving the machinery is fully functional in Model mode.
-    expect(await screen.findByText('მონაცემების წყაროები')).toBeInTheDocument()
+    // Generous timeout: Model mode's eager graph grew (M2.2 MetricCatalogManager),
+    // so the FIRST dynamic import of the modeler subsystem transforms more up front.
+    expect(await screen.findByText('მონაცემების წყაროები', {}, { timeout: 20000 })).toBeInTheDocument()
     expect(screen.getByText('GDP query')).toBeInTheDocument()
   })
 })
