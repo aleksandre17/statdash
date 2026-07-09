@@ -38,3 +38,23 @@ export interface ChromeConfig {
   // ── Copyright — cross-cutting: read by ≥2 shells (footer + sidebar).
   copyright?:    LocaleString
 }
+
+// ── EMPTY_CHROME_CONFIG — the brand-free sentinel (fail-soft chrome) ───────
+//
+//  The canonical "no tenant brand configured" ChromeConfig: every field absent.
+//  This is NOT a degraded/error state — it is a VALID chrome config that shells
+//  already fully support, because each chrome shell reads every field defensively
+//  (AppHeader's `hasBrand` logo guard, footer/sidebar `config.copyright &&`,
+//  locale-switcher `config.localeLabels?.[l]`). Two independent call sites already
+//  produce exactly this shape at runtime:
+//    • an app-tier offline fallback manifest that ships `chromeConfig: {}` when the
+//      bootstrap API is unreachable (the brand-free "site unavailable" state).
+//    • any SiteProvider mounted WITHOUT a chromeConfig (e.g. the Constructor's live
+//      authoring canvas), where useChromeConfig() folds to this sentinel.
+//
+//  Frozen so it is a shared singleton and can never be mutated by a consumer.
+//  The `as ChromeConfig` mirrors the sanctioned app-tier offline-fallback cast: the
+//  two required brand-identity fields are optional IN PRACTICE (the header guards
+//  them), and this is the one blessed place that names that reality — so no other
+//  call site needs its own cast (the offline-fallback manifest may adopt it).
+export const EMPTY_CHROME_CONFIG: ChromeConfig = Object.freeze({}) as ChromeConfig

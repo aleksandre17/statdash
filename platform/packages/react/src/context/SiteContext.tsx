@@ -27,6 +27,7 @@ import {
 import type { NavItemDef }                                        from '../page'
 import type { NodePageConfig }                                    from '../engine/types'
 import type { ChromeConfig }                                      from './ChromeConfig'
+import { EMPTY_CHROME_CONFIG }                                    from './ChromeConfig'
 import type { ChromeEntry }                                        from '../engine/types'
 
 export type { ChromeConfig } from './ChromeConfig'
@@ -161,11 +162,20 @@ export function useSiteChrome(): Record<string, ChromeEntry> {
   return ctx.chrome
 }
 
+// useChromeConfig — chrome brand base, fail-soft on an absent config.
+//  A chrome shell must not hard-crash on absent OPTIONAL context (ISP/Postel, the
+//  same posture as useResolveLocaleSafe below). When a SiteProvider is mounted
+//  without a chromeConfig — the Constructor's live authoring canvas, or any
+//  chrome-less preview mount — this folds to EMPTY_CHROME_CONFIG (the brand-free
+//  sentinel every shell already supports) instead of throwing. That absent case
+//  is indistinguishable, to every consumer, from the sanctioned `emptyManifest()`
+//  `chromeConfig: {}` fallback: both mean "no tenant brand", and the shells guard
+//  every field. The ONLY remaining throw is genuine misuse — calling the hook
+//  OUTSIDE a <SiteProvider> — kept consistent with every other site hook.
 export function useChromeConfig(): ChromeConfig {
   const ctx = useContext(SiteContext)
   if (!ctx) throw new Error('[useChromeConfig] Must be called inside <SiteProvider>.')
-  if (!ctx.chromeConfig) throw new Error('[useChromeConfig] chromeConfig not provided to <SiteProvider>.')
-  return ctx.chromeConfig
+  return ctx.chromeConfig ?? EMPTY_CHROME_CONFIG
 }
 
 export function useSitePages(): Record<string, NodePageConfig> {

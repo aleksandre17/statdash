@@ -12,6 +12,10 @@
 
 ## Chrome
 - [Chrome shells](project_chrome_shells.md) — zero-prop/no-RenderContext scope note + new-inline-slot checklist (F1-lock, schema-less count guard, theme persist)
+- [Chrome fail-soft chromeConfig](project_chrome_failsoft_chromeconfig.md) — useChromeConfig folds ABSENT chromeConfig to EMPTY_CHROME_CONFIG sentinel (never throws); still throws outside provider; tenant-token gate is strict
+
+## E2E / real-browser
+- [Panel Playwright offline bridge](reference_panel_playwright_offline_bridge.md) — run apps/panel e2e via cached standalone playwright 1.61.1 + @playwright/test mjs shim + ms-playwright browsers
 
 ## Node/panel/page registration & composition
 - [New node registration checklist](project_new_node_registration_checklist.md) — every place a new node type must register; schema drift test is array-order-sensitive

@@ -70,22 +70,40 @@ real-browser / real-DB proven"):
 7. **Catalog parity** — the panel palette shows the SAME governed nouns the runner
    boots from the same `/api/bootstrap` manifest against a real provisioned tenant.
 
-## Known finding surfaced by this harness (flagged, not fixed here)
+## Findings surfaced by this harness
+
+### 1. FIXED — live canvas swallowed by a chrome-less SiteProvider
 
 On its **first run** this harness caught a textbook "green ≠ works" defect:
 `apps/panel/src/canvas/CanvasView.tsx` builds its `<SiteProvider>` **without a
 `chromeConfig`**, but the `inner-page` shell unconditionally mounts
-`<ChromeSlot slot="InnerSidebar" />` → `useChromeConfig()` throws → `NodeErrorBoundary`
-swallows it into a "Failed to load component" card, so the **live canvas cannot render
-page nodes in a real browser**. jsdom suites stay green because the sibling proof
+`<ChromeSlot slot="InnerSidebar" />` → `useChromeConfig()` **threw** → `NodeErrorBoundary`
+swallowed it into a "Failed to load component" card, so the **live canvas could not
+render page nodes in a real browser**. jsdom suites stayed green because the sibling proof
 (`src/save/authorRender.e2e.test.tsx`) passes `chromeConfig` to its *own* SiteProvider —
-the test compensates for what the product omits.
+the test compensated for what the product omits.
 
-This is a **runtime/product** fix (out of scope for this test-infra task). It is
-documented as a `test.fixme` in `boot.e2e.ts`; once fixed, delete the `.fixme` to turn
-it into the direct canvas-frame bind proof. The keystone bind proof already routes
-around it via the store-backed Layers **outline** selection, so the M0+M1 win stands
-independently.
+**Fixed** at the packages/react layer (the "fail-soft chrome" direction): `useChromeConfig`
+now folds an **absent** `chromeConfig` to `EMPTY_CHROME_CONFIG` — the brand-free sentinel
+every chrome shell already supports, identical to the app-tier offline-fallback
+`chromeConfig: {}` — instead of throwing. A chrome shell must not hard-crash on absent
+optional context; the guard makes **every** chrome-less mount valid, so the canvas needs
+no `chromeConfig` of its own. jsdom net:
+`packages/plugins/chrome/chrome-config-optional.fitness.test.tsx` (+ the hook contract
+`packages/react/src/context/useChromeConfig.fitness.test.tsx`). The `boot.e2e.ts`
+`test.fixme` is now a **real** assertion — the direct canvas-frame render proof.
+
+### 2. OPEN (flagged, not fixed here) — kpi-strip crashes on absent specs
+
+The same run surfaced a SECOND fail-soft gap of the same class, in a different layer:
+`interpretKpis` (`packages/core/src/data/kpi.ts`) calls `specs.filter(...)` and throws
+`Cannot read properties of undefined (reading 'filter')` when a `kpi-strip` node carries
+no specs — the mock seed page has such a node. It is **isolated per-node** by
+`NodeErrorBoundary` (the chart still renders, so finding #1's proof holds), but the panel
+still crashes into a fallback card in a real browser. Recommended root-cause guard:
+`interpretKpis` (and/or `useKpiRows`) should treat absent specs as an empty list
+(`specs ?? []`) — the engine-layer twin of the chrome guard above. Owner: engine layer
+(out of the shell layer's remit); route via the architect.
 
 ## Accessibility (axe)
 
