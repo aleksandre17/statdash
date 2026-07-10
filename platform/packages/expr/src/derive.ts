@@ -90,6 +90,8 @@ function collectDerivedRefs(expr: ExprVal): Set<string> {
 
       case 'null': case 'exists': walk(obj['value']); break
 
+      case 'abs': case 'neg': walk(obj['value']); break
+
       case 'and': case 'or':
         ;(obj['exprs'] as unknown[]).forEach(walk); break
 

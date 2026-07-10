@@ -254,6 +254,28 @@ export const OPS_CATALOG: Record<string, OpDescriptor> = {
     example: '{ "op": "mod", "left": { "$row": "index" }, "right": 2 }',
   },
 
+  'abs': {
+    category: 'arithmetic',
+    label:       { ka: 'აბსოლუტური', en: 'Absolute value' },
+    description: { ka: 'აბრუნებს მნიშვნელობის აბსოლუტურ (ნიშნისგან დამოუკიდებელ) სიდიდეს.',
+                   en: 'Returns the absolute (sign-independent) magnitude of the value.' },
+    fields: [
+      { key: 'value', type: 'exprVal', label: { ka: 'მნიშვნელობა', en: 'Value' } },
+    ],
+    example: '{ "op": "abs", "value": { "$row": "delta" } }',
+  },
+
+  'neg': {
+    category: 'arithmetic',
+    label:       { ka: 'უარყოფითი (−x)', en: 'Negate (−x)' },
+    description: { ka: 'აბრუნებს მნიშვნელობის ნიშანშეცვლილ (უარყოფით) სიდიდეს.',
+                   en: 'Returns the arithmetic negation (sign-flipped value).' },
+    fields: [
+      { key: 'value', type: 'exprVal', label: { ka: 'მნიშვნელობა', en: 'Value' } },
+    ],
+    example: '{ "op": "neg", "value": { "$row": "value" } }',
+  },
+
   // ── String ────────────────────────────────────────────────────────────────────
 
   'template': {

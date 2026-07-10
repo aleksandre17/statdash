@@ -1,156 +1,79 @@
-// ── DeriveExpr evaluator + string formula parser ─────────────────────────────
+// ── derive step — routes through the ONE expression dialect [AR-50 M5] ───────
 //
-//  Two entry-points for the `derive` TransformStep:
-//    evalExpr     — tree evaluator (DeriveExpr → value)
-//    applyDerive  — step handler (exported; consumed by pipeline.ts via steps.ts)
+//  The `derive` TransformStep computes a new per-row field from a declarative
+//  expression. It has ONE AST (`@statdash/expr`'s `Expr`) and ONE evaluator
+//  (`evalExpr`) — the former in-house `DeriveExpr` AST + tree evaluator + string
+//  parser (a SECOND dialect that lived alongside @statdash/expr, breaching the
+//  "never a second dialect" invariant declared in data/metric-calc.ts) has been
+//  retired. The string formula surface is preserved by @statdash/expr's
+//  `parseFormula`, which compiles the infix form to the SAME canonical AST.
 //
-//  ExprParser implements a recursive-descent grammar for the string formula form:
-//    Grammar (precedence low → high):
-//      ternary    := or ('?' ternary ':' ternary)?
-//      or         := and ('||' and)*
-//      and        := comparison ('&&' comparison)*
-//      comparison := additive (('==' | '!=' | '<' | '<=' | '>' | '>=') additive)?
-//      additive   := unary (('+' | '-') unary)*
-//      multiplicative := unary (('*' | '/') unary)*
-//      unary      := ('!' | '-') unary | primary
-//      primary    := '(' ternary ')' | field | number | 'string'
+//  Field semantics: the legacy dialect read a bare identifier as `row[field] ?? 0`.
+//  We reproduce that EXACTLY via the injectable field policy below — a bare
+//  identifier lowers to `coalesce([{ $row }, 0])`, so a present field (incl. a
+//  bilingual LocaleString cell) passes through and a missing field folds to 0.
+//  This keeps the migration byte-identical for every stored config (proven by
+//  derive-parity.fitness.test.ts).
 //
 
-import type { RawRow, DeriveExpr, TransformStep } from './types'
+import type { Expr, ExprVal } from '@statdash/expr'
+import { parseFormula, evalExpr } from '@statdash/expr'
+import type { DimVal } from '../../sdmx'
+import type { RawRow, TransformStep, PipelineContext } from './types'
 
-// ── Expression evaluator ──────────────────────────────────────────────
+// ── Field policy — reproduce the legacy `row[field] ?? 0` read ─────────────────
+//
+//  `coalesce` is a null-check (first non-null), and `$row` yields null for a
+//  missing/undefined cell — so `coalesce([{ $row: id }, 0])` is byte-identical to
+//  the legacy `field` op's `row[id] ?? 0`. A present 0 / '' / false is returned
+//  as-is (?? only falls through on null/undefined), matching the old dialect.
+//
+const deriveField = (id: string): ExprVal => ({
+  op: 'coalesce',
+  values: [{ $row: id }, { $literal: 0 }],
+})
 
-function evalExpr(expr: DeriveExpr, row: RawRow): number | string {
-  // num: coerce branch result to number for arithmetic / ordering / logical ops
-  const num = (e: DeriveExpr): number => { const v = evalExpr(e, row); return typeof v === 'number' ? v : Number(v) || 0 }
-  const bool = (e: DeriveExpr): boolean => num(e) !== 0
-
-  switch (expr.op) {
-    case 'field':   return (row[expr.field] ?? 0) as number | string
-    case 'literal': return expr.value
-    case 'add':     return num(expr.a) + num(expr.b)
-    case 'sub':     return num(expr.a) - num(expr.b)
-    case 'mul':     return num(expr.a) * num(expr.b)
-    case 'div': {   const d = num(expr.b); return d !== 0 ? num(expr.a) / d : 0 }
-    case 'abs':     return Math.abs(num(expr.a))
-    case 'neg':     return -num(expr.a)
-    case 'eq':      return evalExpr(expr.a, row) === evalExpr(expr.b, row) ? 1 : 0
-    case 'neq':     return evalExpr(expr.a, row) !== evalExpr(expr.b, row) ? 1 : 0
-    case 'gt':      return num(expr.a) >  num(expr.b) ? 1 : 0
-    case 'gte':     return num(expr.a) >= num(expr.b) ? 1 : 0
-    case 'lt':      return num(expr.a) <  num(expr.b) ? 1 : 0
-    case 'lte':     return num(expr.a) <= num(expr.b) ? 1 : 0
-    case 'and':     return bool(expr.a) && bool(expr.b) ? 1 : 0
-    case 'or':      return bool(expr.a) || bool(expr.b) ? 1 : 0
-    case 'not':     return bool(expr.a) ? 0 : 1
-    case 'if':      return bool(expr.cond) ? evalExpr(expr.then, row) : evalExpr(expr.else, row)
-  }
+// ── compileDerive — string | Expr → canonical Expr (once per step) ─────────────
+//
+//  A string is the friendly infix surface (Vega-Lite `calculate` analogue); an
+//  object is already the canonical `Expr` AST (the advanced/authored-JSON form).
+//  Compiled ONCE outside the row loop — the AST is row-independent.
+//
+function compileDerive(expr: string | Expr): Expr {
+  return typeof expr === 'string' ? parseFormula(expr, { field: deriveField }) : expr
 }
 
-// ── String expression parser — recursive descent ──────────────────────
-
-class ExprParser {
-  private readonly tokens: string[]
-  private pos = 0
-
-  constructor(input: string) {
-    // Tokenize: multi-char ops first, then string literals, numbers, identifiers, single chars
-    this.tokens = input.match(/==|!=|<=|>=|&&|\|\||'[^']*'|\d+(?:\.\d+)?|[a-zA-Z_]\w*|[<>+\-*/()!?:]/g) ?? []
-  }
-
-  private peek(): string | undefined { return this.tokens[this.pos] }
-  private consume(): string          { return this.tokens[this.pos++] }
-  private expect(t: string): void {
-    if (this.peek() !== t) throw new Error(`derive: expected '${t}', got '${this.peek() ?? 'end'}'`)
-    this.consume()
-  }
-
-  parse(): DeriveExpr {
-    const e = this.ternary()
-    if (this.pos < this.tokens.length) throw new Error(`derive: unexpected '${this.peek()}'`)
-    return e
-  }
-
-  private ternary(): DeriveExpr {
-    const cond = this.or()
-    if (this.peek() !== '?') return cond
-    this.consume()
-    const then = this.ternary()
-    this.expect(':')
-    return { op: 'if', cond, then, else: this.ternary() }
-  }
-
-  private or(): DeriveExpr {
-    let l = this.and()
-    while (this.peek() === '||') { this.consume(); l = { op: 'or', a: l, b: this.and() } }
-    return l
-  }
-
-  private and(): DeriveExpr {
-    let l = this.comparison()
-    while (this.peek() === '&&') { this.consume(); l = { op: 'and', a: l, b: this.comparison() } }
-    return l
-  }
-
-  private comparison(): DeriveExpr {
-    const l = this.additive()
-    const t = this.peek()
-    if (t !== '==' && t !== '!=' && t !== '<' && t !== '<=' && t !== '>' && t !== '>=') return l
-    this.consume()
-    const r = this.additive()
-    const op = t === '==' ? 'eq' as const : t === '!=' ? 'neq' as const
-             : t === '<'  ? 'lt' as const : t === '<=' ? 'lte' as const
-             : t === '>'  ? 'gt' as const :              'gte' as const
-    return { op, a: l, b: r }
-  }
-
-  private additive(): DeriveExpr {
-    let l = this.multiplicative()
-    for (let t = this.peek(); t === '+' || t === '-'; t = this.peek()) {
-      this.consume()
-      l = { op: t === '+' ? 'add' : 'sub', a: l, b: this.multiplicative() }
-    }
-    return l
-  }
-
-  private multiplicative(): DeriveExpr {
-    let l = this.unary()
-    for (let t = this.peek(); t === '*' || t === '/'; t = this.peek()) {
-      this.consume()
-      l = { op: t === '*' ? 'mul' : 'div', a: l, b: this.unary() }
-    }
-    return l
-  }
-
-  private unary(): DeriveExpr {
-    if (this.peek() === '!') { this.consume(); return { op: 'not', a: this.unary() } }
-    if (this.peek() === '-') { this.consume(); return { op: 'neg', a: this.unary() } }
-    return this.primary()
-  }
-
-  private primary(): DeriveExpr {
-    const t = this.peek()
-    if (t === undefined) throw new Error('derive: unexpected end of expression')
-    if (t === '(') {
-      this.consume()
-      const e = this.ternary()
-      this.expect(')')
-      return e
-    }
-    if (/^\d/.test(t))    { this.consume(); return { op: 'literal', value: Number(t) } }
-    if (t.startsWith("'")){ this.consume(); return { op: 'literal', value: t.slice(1, -1) } }
-    if (/^[a-zA-Z_]/.test(t)) { this.consume(); return { op: 'field', field: t } }
-    throw new Error(`derive: unexpected token '${t}'`)
-  }
+// ── normalizeCell — preserve the derive step's number|string cell contract ─────
+//
+//  The legacy tree evaluator returned `number | string` only — never boolean, never
+//  null (its `field` op folded missing → 0, its `div` folded ÷0 → 0). @statdash/expr
+//  is generic (comparisons yield booleans; div-by-zero and missing refs yield null).
+//  This boundary normalization keeps derived cells byte-identical to the old output:
+//    boolean → 1 / 0   (the old 1/0 numeric truth values)
+//    null    → 0       (old never emitted null; missing/÷0 folded to 0)
+//  Strings and finite numbers pass through untouched.
+//
+function normalizeCell(v: unknown): DimVal {
+  if (typeof v === 'boolean') return v ? 1 : 0
+  if (v === null || v === undefined) return 0
+  return v as DimVal
 }
 
-function parseDeriveExpr(input: string): DeriveExpr {
-  return new ExprParser(input).parse()
-}
-
-export function applyDerive(rows: RawRow[], step: Extract<TransformStep, { op: 'derive' }>): RawRow[] {
+export function applyDerive(
+  rows: RawRow[],
+  step: Extract<TransformStep, { op: 'derive' }>,
+  ctx?: PipelineContext,
+): RawRow[] {
   const target = step.as ?? step.name
   if (!target) throw new Error("derive: missing 'as' (or legacy 'name') field")
-  const tree: DeriveExpr = typeof step.expr === 'string' ? parseDeriveExpr(step.expr) : step.expr
-  return rows.map((row) => ({ ...row, [target]: evalExpr(tree, row) }))
+
+  const ast  = compileDerive(step.expr)
+  const dims = ctx?.section?.dims ?? {}
+
+  return rows.map((row) => ({
+    ...row,
+    // scope.row → bare-identifier reads; scope.dims → explicit `{ $ctx }` refs
+    // (a forward capability — the string surface only emits row reads).
+    [target]: normalizeCell(evalExpr(ast, { row, dims, derived: {} })),
+  }))
 }

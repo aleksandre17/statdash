@@ -141,7 +141,7 @@ describe('DataSpec ratio-list / pivot / transform / custom — round-trip', () =
     source:   [{ measure: 'B1G', value: 1000, time: 2023 }],
     steps:    [
       { op: 'rename', fields: { time: 'year' } },
-      { op: 'derive', as: 'share', expr: { op: 'div', a: { op: 'field', field: 'value' }, b: { op: 'literal', value: 1000 } } },
+      { op: 'derive', as: 'share', expr: { op: 'div', left: { $row: 'value' }, right: { $literal: 1000 } } },
     ],
     encoding: { label: 'year', value: 'value' },
   }))

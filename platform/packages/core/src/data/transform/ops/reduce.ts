@@ -11,6 +11,7 @@
 
 import type { RawRow, TransformStep } from '../types'
 import type { DimVal }                from '../../../sdmx'
+import { reduceValues }              from '../reducers'
 
 export function applyReduce(rows: RawRow[], step: Extract<TransformStep, { op: 'reduce' }>): RawRow[] {
   const { fn, field } = step
@@ -21,7 +22,7 @@ export function applyReduce(rows: RawRow[], step: Extract<TransformStep, { op: '
 
   // Group rows — key is the composite group-by value string
   const order:  string[]                                        = []
-  const groups: Map<string, { key: RawRow; values: DimVal[]; rows: RawRow[] }> = new Map()
+  const groups: Map<string, { key: RawRow; values: DimVal[] }> = new Map()
 
   for (const row of rows) {
     const keyStr = byFields.length === 0
@@ -31,31 +32,18 @@ export function applyReduce(rows: RawRow[], step: Extract<TransformStep, { op: '
     if (!groups.has(keyStr)) {
       const key: RawRow = {}
       for (const k of byFields) key[k] = row[k]
-      groups.set(keyStr, { key, values: [], rows: [] })
+      groups.set(keyStr, { key, values: [] })
       order.push(keyStr)
     }
 
-    const g = groups.get(keyStr)!
-    g.values.push(row[field] ?? 0)
-    g.rows.push(row)
+    groups.get(keyStr)!.values.push(row[field] ?? 0)
   }
 
   return order.map((keyStr) => {
-    const { key, values, rows: groupRows } = groups.get(keyStr)!
-    const nums = values.map(Number)
-
-    let result: number | string = 0
-    switch (fn) {
-      case 'sum':   result = nums.reduce((a, b) => a + b, 0); break
-      case 'mean':  result = nums.length ? nums.reduce((a, b) => a + b, 0) / nums.length : 0; break
-      case 'min':   result = nums.length ? Math.min(...nums) : 0; break
-      case 'max':   result = nums.length ? Math.max(...nums) : 0; break
-      case 'count': result = values.length; break
-      case 'first': result = groupRows.length ? Number(groupRows[0][field] ?? 0) : 0; break
-      case 'last':  result = groupRows.length ? Number(groupRows[groupRows.length - 1][field] ?? 0) : 0; break
-      default:      break
-    }
-
+    const { key, values } = groups.get(keyStr)!
+    // values are pushed in row order (row[field] ?? 0), so reduceValues' positional
+    // first/last read the same cells the legacy inline switch did — byte-identical.
+    const result = reduceValues(fn, values.map(Number))
     return { ...key, [outputField]: result }
   })
 }

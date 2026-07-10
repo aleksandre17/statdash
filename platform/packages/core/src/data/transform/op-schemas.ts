@@ -82,12 +82,17 @@ export const aggregateSchema: PropSchema = [
 ]
 
 // ── rollup — append aggregate ("totals") rows along one dim ───────────
+//  The ONE canonical aggregation vocabulary (shared with `reduce`). `mean` is the
+//  statistical-canon name for the arithmetic mean; the legacy `avg` still LOADS
+//  (normalized to `mean` by canonAgg) but is no longer offered for new authoring.
 const AGG_OPTIONS = [
   { value: 'sum',   label: bi('ჯამი', 'sum') },
-  { value: 'avg',   label: bi('საშუალო', 'avg') },
+  { value: 'mean',  label: bi('საშუალო', 'mean') },
   { value: 'min',   label: bi('მინ', 'min') },
   { value: 'max',   label: bi('მაქს', 'max') },
   { value: 'count', label: bi('რაოდ.', 'count') },
+  { value: 'first', label: bi('პირველი', 'first') },
+  { value: 'last',  label: bi('ბოლო', 'last') },
 ]
 
 export const rollupSchema: PropSchema = [

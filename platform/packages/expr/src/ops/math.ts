@@ -3,10 +3,15 @@ import type { DimVal, Expr, ExprScope, ExprVal } from '../types.ts'
 type MathOp = Extract<Expr,
   | { op: 'add' } | { op: 'sub' } | { op: 'mul' }
   | { op: 'div' } | { op: 'mod' }
+  | { op: 'abs' } | { op: 'neg' }
 >
 type EvalFn = (expr: ExprVal, scope: ExprScope) => DimVal
 
 export function evalMath(expr: MathOp, scope: ExprScope, evalFn: EvalFn): DimVal {
+  // Unary ops read `value`; binary ops read `left`/`right`.
+  if (expr.op === 'abs') return Math.abs(evalFn(expr.value, scope) as number)
+  if (expr.op === 'neg') return -(evalFn(expr.value, scope) as number)
+
   const l = evalFn(expr.left,  scope) as number
   const r = evalFn(expr.right, scope) as number
 

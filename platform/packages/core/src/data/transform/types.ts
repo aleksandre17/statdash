@@ -1,45 +1,28 @@
+import type { Expr }                            from '@statdash/expr'
 import type { DimVal, FilterValue, ObsQuery }  from '../../sdmx'
 import type { EngineRow, EncodingSpec }         from '../encoding'
 import type { CtxScopeRef }                     from '../../ref/ref'
+import type { Reducer, ReducerAlias }           from './reducers'
 
 // ── RawRow — typed data row (Phase 2.1: alias to EngineRow) ──────────
 export type RawRow = EngineRow
 
-// ── DeriveExpr — JSON-serializable expression tree ────────────────────
+// ── DeriveExpr — the canonical expression AST (deprecated alias) ───────
 //
-//  Used by the 'derive' TransformStep to compute new fields without
-//  writing functions. Analogous to Vega-Lite calculate transform.
-//  100% JSON-serializable — config-compatible.
+//  @deprecated Use `Expr` from '@statdash/expr' directly. Retained ONLY as a
+//  name-compatible alias so existing public imports keep resolving. As of the
+//  AR-50 M5 convergence there is exactly ONE expression AST — @statdash/expr's
+//  `Expr` — and ONE evaluator (`evalExpr`); the former in-house DeriveExpr AST +
+//  tree evaluator + string parser (a SECOND dialect) has been retired.
 //
-//  Arithmetic example — compute share %:
-//    { op: 'mul',
-//      a: { op: 'div', a: { op: 'field', field: 'value' },
-//                      b: { op: 'field', field: 'total' } },
-//      b: { op: 'literal', value: 100 } }
-//
-//  Boolean/conditional example — flag carry-forward rows:
-//    { op: 'if',
-//      cond: { op: 'and',
-//        a: { op: 'eq',  a: { op: 'field', field: 'side'   }, b: { op: 'literal', value: 'R' } },
-//        b: { op: 'gt',  a: { op: 'field', field: 'seqPos' }, b: { op: 'literal', value: 0  } } },
-//      then: { op: 'literal', value: 1 },
-//      else: { op: 'literal', value: 0 } }
-//
-//  String form (Vega-Lite calculate analogue):
+//  The `derive` TransformStep authors either the canonical `Expr` tree or a string
+//  formula (Vega-Lite `calculate` analogue), e.g.:
 //    "side == 'R' && seqPos > 0 ? 1 : 0"
 //    "value / total * 100"
 //    "!isClosing && order < 3 ? value : 0"
+//  The string form is compiled to `Expr` by @statdash/expr's `parseFormula`.
 //
-export type DeriveExpr =
-  | { op: 'field';                        field: string              }  // row[field] — string or number
-  | { op: 'literal';                      value: number | string     }  // constant
-  | { op: 'add' | 'sub' | 'mul' | 'div'; a: DeriveExpr; b: DeriveExpr }  // arithmetic; div by 0 → 0
-  | { op: 'abs' | 'neg';                  a: DeriveExpr              }  // unary arithmetic
-  | { op: 'eq'  | 'neq';                  a: DeriveExpr; b: DeriveExpr }  // equality; compares raw (string-safe)
-  | { op: 'gt'  | 'gte' | 'lt' | 'lte';  a: DeriveExpr; b: DeriveExpr }  // numeric ordering
-  | { op: 'and' | 'or';                   a: DeriveExpr; b: DeriveExpr }  // logical; 0 = false
-  | { op: 'not';                           a: DeriveExpr              }  // logical not; 0 = false
-  | { op: 'if'; cond: DeriveExpr; then: DeriveExpr; else: DeriveExpr }  // ternary; cond 0 = false
+export type DeriveExpr = Expr
 
 // ── TransformStep — discriminated union of pipeline operations ────────
 export type TransformStep =
@@ -146,12 +129,12 @@ export type TransformStep =
        */
       by:      string[] | CtxScopeRef
       measure: string
-      agg:     'sum' | 'avg' | 'min' | 'max' | 'count'
+      agg:     ReducerAlias   // canonical Reducer set; legacy 'avg' accepted (→ 'mean')
       as?:     string
     }
   | { op: 'aggregate'
       groupBy:      string[]
-      aggregations: { field: string; op: 'sum' | 'avg' | 'min' | 'max' | 'count'; as?: string }[]
+      aggregations: { field: string; op: ReducerAlias; as?: string }[]
     }
   /**
    * rollup — APPEND aggregate rows along one dim, preserving the original rows.
@@ -173,7 +156,7 @@ export type TransformStep =
       dim:    string
       as:     DimVal
       of:     '*' | readonly DimVal[]
-      agg:    'sum' | 'avg' | 'min' | 'max' | 'count'
+      agg:    ReducerAlias   // canonical Reducer set; legacy 'avg' accepted (→ 'mean')
       field?: string
     }
   /**
@@ -286,7 +269,7 @@ export type TransformStep =
    *   by    — grouping key(s); omit to reduce the entire dataset to one row
    *   as    — output field name (default: `${field}_${fn}`)
    */
-  | { op: 'reduce'; fn: 'sum'|'mean'|'min'|'max'|'count'|'first'|'last'; field: string; by?: string|string[]; as?: string }
+  | { op: 'reduce'; fn: Reducer; field: string; by?: string|string[]; as?: string }
   /**
    * window — Running aggregation over an ordered series.
    * Rows must be pre-sorted before this step.

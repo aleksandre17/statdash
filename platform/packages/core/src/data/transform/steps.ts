@@ -4,6 +4,8 @@ import { composeLocale, tagLocaleString }      from '../../i18n/types'
 import type { LocaleString }                   from '../../i18n/types'
 import { resolveRef }                         from '../../ref/ref'
 import { roundAgg }                           from '../round'
+import { reduceValues, canonAgg }             from './reducers'
+import type { ReducerAlias }                  from './reducers'
 import type { RawRow, TransformStep, PipelineContext } from './types'
 
 // ── tagCell — brand an AUTHORED object-valued cell as an i18n carrier ──────────
@@ -173,18 +175,7 @@ export function applySelect(rows: RawRow[], step: Extract<TransformStep, { op: '
 // ── derive step — delegated to ./derive ──────────────────────────────
 export { applyDerive } from './derive'
 
-function aggFn(op: 'sum' | 'avg' | 'min' | 'max' | 'count', values: number[]): number {
-  if (values.length === 0) return 0
-  switch (op) {
-    case 'sum':   return values.reduce((a, b) => a + b, 0)
-    case 'avg':   return values.reduce((a, b) => a + b, 0) / values.length
-    case 'min':   return Math.min(...values)
-    case 'max':   return Math.max(...values)
-    case 'count': return values.length
-  }
-}
-
-type AggSpec = { field: string; op: 'sum' | 'avg' | 'min' | 'max' | 'count'; as?: string }
+type AggSpec = { field: string; op: ReducerAlias; as?: string }
 
 function normalizeAggregate(step: Extract<TransformStep, { op: 'aggregate' }>): { groupBy: string[]; aggregations: AggSpec[] } {
   if ('by' in step) {
@@ -225,7 +216,7 @@ export function applyAggregate(rows: RawRow[], step: Extract<TransformStep, { op
     const out: RawRow = { ...key }
     for (const a of aggregations) {
       const field = a.as ?? a.field
-      out[field]  = roundAgg(aggFn(a.op, buckets[field]))
+      out[field]  = roundAgg(reduceValues(canonAgg(a.op), buckets[field]))
     }
     return out
   })
@@ -349,7 +340,7 @@ export function applyRollup(rows: RawRow[], step: Extract<TransformStep, { op: '
   const out: RawRow[] = [...rows]
   for (const { key, values } of groups.values()) {
     const rollupRow: RawRow = { ...key, [step.dim]: step.as }
-    rollupRow[field] = roundAgg(aggFn(step.agg, values))
+    rollupRow[field] = roundAgg(reduceValues(canonAgg(step.agg), values))
     out.push(rollupRow)
   }
   return out

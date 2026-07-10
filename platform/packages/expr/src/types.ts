@@ -53,6 +53,8 @@ export type Expr =
   | { op: 'mul'; left: ExprVal; right: ExprVal }
   | { op: 'div'; left: ExprVal; right: ExprVal }
   | { op: 'mod'; left: ExprVal; right: ExprVal }
+  | { op: 'abs'; value: ExprVal }               // |x| — absolute value (unary)
+  | { op: 'neg'; value: ExprVal }               // -x — arithmetic negation (unary)
   // Lookup
   | { op: 'get';      ref: ExprRef; path: string }  // deep path: 'address.city'
   | { op: 'coalesce'; values: ExprVal[]           }  // first non-null

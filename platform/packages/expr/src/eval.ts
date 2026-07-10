@@ -84,6 +84,8 @@ function evalOp(expr: Expr, scope: ExprScope): unknown {
     case 'mul':
     case 'div':
     case 'mod':
+    case 'abs':
+    case 'neg':
       return evalMath(expr, scope, evalExpr)
 
     // ── Lookup ───────────────────────────────────────────────────────────────
