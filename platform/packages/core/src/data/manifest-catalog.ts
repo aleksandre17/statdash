@@ -53,6 +53,11 @@ export function registerManifestMetrics(metrics: ManifestMetric[] | undefined): 
       // `agg` is a closed literal union on both sides (the METRIC_AGG_VALUES SSOT) —
       // mirrored precisely on the wire, so it refines onto MetricDef with no cast.
       ...(m.agg         !== undefined ? { agg:         m.agg }         : {}),
+      // Additivity (AR-50 M2) — closed literal unions on both sides, so they refine
+      // onto MetricDef with no cast (mirror of `agg`). Absent ⇒ the conservative
+      // structural default via effectiveAdditivity (byte-identical for base metrics).
+      ...(m.additivity   !== undefined ? { additivity:   m.additivity }   : {}),
+      ...(m.semiAdditive !== undefined ? { semiAdditive: m.semiAdditive } : {}),
       ...(m.dims        !== undefined ? { dims:        m.dims as MetricDef['dims'] } : {}),
       ...(m.dataSource  !== undefined ? { dataSource:  m.dataSource }  : {}),
       ...(m.description !== undefined ? { description: m.description } : {}),

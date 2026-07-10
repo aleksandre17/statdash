@@ -323,11 +323,20 @@ export { interpretFeatured, extractFeaturedRequirements, featuredToKpiSpec }  fr
 export type { FeaturedItemSpec, FeaturedSlideDef, FeaturedStoreResolver, FeaturedRequirement } from './data/featured'
 
 // ── Metric registry [N26] — Constructor metric vocabulary + extension seam ──
-export type { MetricDef, ResolvedMeasure, MetricInput, MetricCalc, MetricAgg } from './data/metric'
+export type { MetricDef, ResolvedMeasure, MetricInput, MetricCalc, MetricAgg,
+         Additivity, SemiAdditiveRule }                               from './data/metric'
 export { registerMetric, registerMetrics, getMetric, listMetrics, listMetricDefs,
          resolveMeasureRef, mergeMetricDims, withMetricProvenance,
-         METRIC_AGG_VALUES }                                          from './data/metric'
+         METRIC_AGG_VALUES, ADDITIVITY_VALUES,
+         effectiveAdditivity, defaultAdditivity }                     from './data/metric'
 export { resolveMetricValue, calcMetricRequirements, isCalculatedMetric } from './data/metric-calc'
+// ── Measure algebra at grain [AR-50 M2] — the grain-polymorphic evaluator ──
+//  evalCalcAtGrain generalizes a calc metric from scalar (grain-∅, byte-identical
+//  to resolveMetricValue) to any grain via align-join + per-row Expr eval. The
+//  additivity model is CONSUMED here: guardNoSumOfRatio is the FF-NO-SUM-OF-RATIO
+//  gate; rollupForAxis is the DAX semi-additive per-axis reducer selection.
+export { evalCalcAtGrain, guardNoSumOfRatio, rollupForAxis, isSummingOp,
+         NonAdditiveSumError }                                        from './data/metric-grain'
 // ── Dimension registry [AR-49 / M0] — the governed-dimension PEER of metric ──
 //  Law 1: dimensions are equal citizens of the semantic layer. A thin curation
 //  (governed label / conceptRole / default / whitelist) over the cube-profile

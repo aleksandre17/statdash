@@ -58,6 +58,29 @@ export const METRIC_AGG_VALUES = ['sum', 'avg', 'last'] as const
 /** A metric's declared cross-time aggregation — the exact union over METRIC_AGG_VALUES. */
 export type MetricAgg = (typeof METRIC_AGG_VALUES)[number]
 
+// ── Additivity — the OLAP/DAX grain-behaviour class of a measure [AR-50 M2] ─────
+//
+//  The scientific core: a measure declares HOW it may cross a dimension when a query
+//  asks for a COARSER grain than the stored cells. This is the SSAS/DAX additivity
+//  canon (Law 4, adopted whole) — the classification that finally CONSUMES the
+//  previously-inert `agg` seam. Every axis is generic (Law 1 — never time-special);
+//  the SSOT tuple lets an authoring picker source its options FROM here (Law 8).
+export const ADDITIVITY_VALUES = ['additive', 'semi-additive', 'non-additive'] as const
+
+/** A measure's grain-behaviour class — the exact union over ADDITIVITY_VALUES. */
+export type Additivity = (typeof ADDITIVITY_VALUES)[number]
+
+/**
+ * The per-axis rule a SEMI-ADDITIVE measure needs (DAX `LASTNONBLANK`): which axes
+ * SUM and what op collapses the non-summable ones. `additiveOver` names the summable
+ * axes GENERICALLY (Law 1 — e.g. `['geo','sector']` for a stock summed over space but
+ * `last`-valued over time); every OTHER axis takes `nonAdditiveOp`. Pure data (Law 2).
+ */
+export interface SemiAdditiveRule {
+  additiveOver:  string[]
+  nonAdditiveOp: 'last' | 'first' | 'avg'
+}
+
 /**
  * Definition of one named metric.
  * Thin — not a modeling language. No filters, no joins, no SQL.
@@ -94,6 +117,26 @@ export interface MetricDef {
   format?:       FormatKey
   /** Default aggregation across time (the METRIC_AGG_VALUES SSOT). */
   agg?:          MetricAgg
+  /**
+   * Grain-behaviour class (OLAP/DAX additivity) — HOW this measure may cross a
+   * dimension when a query requests a COARSER grain than the stored cells [AR-50 M2]:
+   *   `additive`      (flows: GDP, output)         — sum over every axis (today's default).
+   *   `semi-additive` (stocks: debt, capital, pop) — sum over `semiAdditive.additiveOver`,
+   *                                                  `nonAdditiveOp` over every OTHER axis.
+   *   `non-additive`  (ratios: deflator, share, per-capita) — MAY NEVER be summed; it is
+   *                                                  RE-DERIVED from `calc` at the target
+   *                                                  grain (FF-NO-SUM-OF-RATIO). A
+   *                                                  non-additive metric with NO `calc`
+   *                                                  cannot be aggregated at all.
+   * Absent ⇒ the conservative structural default via `effectiveAdditivity` (a `calc`
+   * metric ⇒ non-additive; a base metric ⇒ additive) — byte-identical to today's flat
+   * sum for base metrics (FF-ADDITIVITY-DEFAULT-IDENTICAL). Scalar reads never consult
+   * it. Pure config data (Law 2), Constructor-authorable — the CLASSIFICATION is a
+   * DECLARED field, never a runtime value-sniff.
+   */
+  additivity?:   Additivity
+  /** Per-axis rule for a SEMI-ADDITIVE measure (DAX LASTNONBLANK). Ignored for the other classes. */
+  semiAdditive?: SemiAdditiveRule
   /** Parent metric id (for hierarchical navigation / drill-down). */
   parent?:       string
   /** URL to the official methodology page. Flows into ProvenanceRecord.methodology. */
@@ -281,6 +324,38 @@ export function mergeMetricDims<D, E>(
  */
 export function listMetricDefs(): Record<string, MetricDef> {
   return Object.fromEntries(_registry.entries())
+}
+
+// ── Additivity classification — the SSOT resolver [AR-50 M2] ───────────────────
+//
+//  ONE place resolves a metric's grain-behaviour class, so the grain evaluator
+//  (metric-grain.ts), the no-sum guard, and any authoring picker AGREE. The class is
+//  a DECLARED field; when absent it resolves to a conservative structural default —
+//  a deterministic function of the metric's SHAPE (has-`calc`), NEVER an inspection
+//  of data values. This keeps the classification explicit and testable while a
+//  not-yet-migrated catalog stays byte-identical for base metrics (all additive).
+
+/**
+ * The RESOLVED additivity class of a metric — the explicit `additivity` field wins;
+ * else the conservative structural default (a `calc`/derived metric ⇒ 'non-additive',
+ * because a ratio/identity must be re-derived not summed; a base metric ⇒ 'additive',
+ * today's flat-sum status quo). Pure — reads only the MetricDef (leaf-safe). An
+ * undefined metric (a raw code) is additive: a raw store code sums exactly as before.
+ */
+export function effectiveAdditivity(metric: MetricDef | undefined): Additivity {
+  if (!metric) return 'additive'
+  if (metric.additivity) return metric.additivity
+  return metric.calc ? 'non-additive' : 'additive'
+}
+
+/**
+ * The conservative additivity a catalog MIGRATION stamps onto an un-classified metric
+ * — the same structural default `effectiveAdditivity` resolves, surfaced so a
+ * migration can PERSIST the class EXPLICITLY (turning the runtime default into a
+ * stored field). Idempotent: a metric that already declares `additivity` keeps it.
+ */
+export function defaultAdditivity(metric: MetricDef): Additivity {
+  return effectiveAdditivity(metric)
 }
 
 /**

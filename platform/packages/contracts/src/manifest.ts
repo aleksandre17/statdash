@@ -120,6 +120,20 @@ export interface ManifestMetric {
    * is carried through resolveMeasureRef but not yet consumed by an interpreter.
    */
   agg?:         'sum' | 'avg' | 'last'
+  /**
+   * Grain-behaviour class (OLAP/DAX additivity) — the wire mirror of engine
+   * `MetricDef.additivity` [AR-50 M2]. A CLOSED literal union (like `agg`), mirrored
+   * precisely here (contracts stays zero-dep; the runner refines it onto MetricDef at
+   * the registerManifestMetrics boot seam). `additive` (flows) sums over every axis;
+   * `semi-additive` (stocks) sums over `semiAdditive.additiveOver` and collapses the
+   * rest; `non-additive` (ratios) is re-derived from `calc` at grain, never summed
+   * (FF-NO-SUM-OF-RATIO). Absent ⇒ the conservative structural default (a `calc`
+   * metric ⇒ non-additive; a base metric ⇒ additive). Pure config data (Law 2),
+   * Constructor-authorable — the CLASSIFICATION is explicit, never a runtime sniff.
+   */
+  additivity?:  'additive' | 'semi-additive' | 'non-additive'
+  /** Per-axis rule for a SEMI-ADDITIVE measure (DAX LASTNONBLANK). Generic axes (Law 1). */
+  semiAdditive?: { additiveOver: string[]; nonAdditiveOp: 'last' | 'first' | 'avg' }
   /** Default dimension filters merged as query DEFAULTS (explicit query filters win). */
   dims?:        Record<string, unknown>
   /** storeKey this metric routes a referencing node to (explicit node storeKey wins). */
