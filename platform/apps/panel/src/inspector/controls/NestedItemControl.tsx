@@ -51,7 +51,7 @@
 //
 import './NestedItemControl.css'
 import {
-  createContext, useCallback, useContext, useEffect, useMemo, useRef, useState,
+  createContext, useCallback, useContext, useEffect, useId, useMemo, useRef, useState,
   type ReactNode,
 } from 'react'
 import type { PropSchema, PropertyGroup, PropField } from '@statdash/react/engine'
@@ -62,6 +62,7 @@ import { Inspector } from '../Inspector'
 import { getAtPath, setAtPath } from '../showWhen'
 import { readLocale } from '../localeString'
 import { JsonControl } from './primitives'
+import { useBreadcrumbSlot } from '../breadcrumbSlot'
 
 // ── Drill-depth backstop ──────────────────────────────────────────────────────
 //
@@ -303,6 +304,22 @@ function DrillEditor(
   const emitRoot = useCallback((next: unknown) => onChange(next), [onChange])
   const goTo     = useCallback((i: number) => setSteps((prev) => prev.slice(0, i)), [])
 
+  // ── One-header-tier promotion (SL-1) ────────────────────────────────────────
+  //  When a HOST provides a breadcrumb slot (the RightDock header), a DRILLED editor
+  //  promotes its breadcrumb UP into that slot — replacing the dock's context switch
+  //  — instead of rendering it in-body. With no host (isolation / other mounts) the
+  //  slot is null and the breadcrumb renders locally, exactly as D7.1b did.
+  const slot     = useBreadcrumbSlot()
+  const slotId   = useId()
+  const drilled  = activeCrumbs.length > 1
+  const hoisted  = drilled && slot != null
+  useEffect(() => {
+    if (!slot) return
+    if (drilled) slot.promote(slotId, <Breadcrumb crumbs={activeCrumbs} onNavigate={goTo} />)
+    else         slot.release(slotId)
+  }, [slot, slotId, drilled, activeCrumbs, goTo])
+  useEffect(() => () => slot?.release(slotId), [slot, slotId])
+
   // Drill into a nested field of the CURRENT object screen (append a crumb).
   const drill = useCallback((f: PropField, title: string) => {
     setSteps((prev) => [...prev, {
@@ -329,7 +346,7 @@ function DrillEditor(
 
   return (
     <div className="insp-nested" role="group" aria-label={rootLabel}>
-      {activeCrumbs.length > 1 && <Breadcrumb crumbs={activeCrumbs} onNavigate={goTo} />}
+      {drilled && !hoisted && <Breadcrumb crumbs={activeCrumbs} onNavigate={goTo} />}
       <div className="insp-nested__screen" ref={screenRef}>
         {deepest.kind === 'array' ? (
           <ArrayListScreen

@@ -98,16 +98,30 @@
   padding-top: var(--spacing-sm);
 }
 
+/* ── 3-zone contract (SL-1): HEADER (fixed) · BODY (flex-fill scroll) · FOOTER
+   (fixed). The header is exactly ONE tier — the context switch XOR the promoted
+   drill breadcrumb — never both stacked (FF-DOCK-ONE-HEADER-TIER). */
 .studio-dock__header {
   display: flex;
   align-items: center;
   gap: var(--spacing-xs);
   padding: 0 var(--spacing-sm) 0 var(--spacing-md);
   border-bottom: var(--border-width-thin) solid var(--color-border-subtle);
+  flex: 0 0 auto;
 }
 
-/* The content region flexes to fill ALL remaining height and owns the scroll, so a
-   short form or a single empty-state fills the dock instead of stranding a void. */
+/* The promoted breadcrumb tier (replaces the context switch while drilled). It must
+   stay legible in the bounded dock — it flexes and clips rather than widening it. */
+.studio-dock__header-crumbs {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  padding-block: var(--spacing-xs);
+}
+
+/* The BODY flexes to fill ALL remaining height and owns the scroll, so a short form
+   or a single empty-state fills the dock instead of stranding a void — it is the
+   dock's SOLE flex-fill scroll region (FF-DOCK-ZONES / FF-RIGHTDOCK-FILLS). */
 .studio-dock__content {
   flex: 1 1 auto;
   min-height: 0;
@@ -115,6 +129,17 @@
   flex-direction: column;
   overflow: auto;
   padding: var(--spacing-md);
+}
+
+/* FOOTER — a fixed action tier (Delete); stays reachable however far the body
+   scrolls. Absent when the active context has nothing to act on. */
+.studio-dock__footer {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-top: var(--border-width-thin) solid var(--color-border-subtle);
 }
 
 /* Leading-edge resize separator (canvas-facing). */

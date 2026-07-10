@@ -11,11 +11,12 @@ import { PerspectivesPane } from '../features/perspectives'
 import { FiltersDrawer } from '../features/filters'
 import { nodeContextEditors } from './nodeContextEditors'
 import { StudioEmptyState } from './StudioEmptyState'
+import { BreadcrumbSlotContext, useBreadcrumbHost } from '../inspector/breadcrumbSlot'
 import type { VisibilityExpr } from '@statdash/engine'
 import type { Locale } from '../types/constructor'
 import type { CanvasController } from './useCanvasController'
 
-// ── RightDock — the canonical tri-context inspector dock (AR-49 M4 Wave 7) ──────
+// ── RightDock — the canonical tri-context inspector dock (AR-49 M4 Wave 7 · SL-1) ─
 //
 //  The dock shows exactly ONE context, chosen by the active selection (owner idea 5:
 //  "always show exactly what the active selection is"):
@@ -25,10 +26,19 @@ import type { CanvasController } from './useCanvasController'
 //      which is the idle default (no-worse-than-now: page authoring stays visible);
 //    • no page exists → a single guided empty-state.
 //  A persistent "Page" tab keeps page-scope authoring one gesture away even while a
-//  node is selected (D8 tri-context; the "no worse than now" guardrail). The content
-//  region is flex-fill so there is never a short island above a stacked remainder
-//  (the reported dead-space defect) — fill-by-construction. The dock is collapsible
-//  (canvas reclaims the space) and resizable.
+//  node is selected (D8 tri-context; the "no worse than now" guardrail).
+//
+//  ── The 3-zone contract (SL-1 — one header tier, never a collision) ───────────
+//  The dock is a HEADER / BODY / FOOTER structure (SPEC-studio-shell-layout §6):
+//    • HEADER — exactly ONE tier: the context switch (Element | Page) at the top
+//      level, REPLACED BY the drill breadcrumb when the author has drilled into a
+//      nested item (D7.1b promotes it here via DockHeaderSlot). Mutually exclusive —
+//      never both stacked. The schema-group/facet tabs do NOT live here.
+//    • BODY — the sole flex-fill scroll region: the facet-grouped Inspector (its
+//      group accordion/tabs, M4 §2.11) + the active form, or a single guided
+//      empty-state. Fill-by-construction so a short form never strands a void.
+//    • FOOTER — the element actions (Delete), a fixed tier that stays reachable
+//      regardless of how far the body scrolls.
 //
 //  Scope is DERIVED from selection: selecting an element switches to the element
 //  context; deselecting (incl. canvas-background click, already `onSelect(null)`)
@@ -86,6 +96,11 @@ export function RightDock({ controller, locale, collapsed, onToggleCollapsed, wi
   const scope: DockScope = scopeOverride ?? (selKey ? 'element' : 'page')
   const setScope = setScopeOverride
 
+  // The one-header-tier seam: a drilled nested editor (D7.1b) in the body PROMOTES
+  // its breadcrumb up here; while promoted the header shows the breadcrumb XOR the
+  // context switch — never both. Absent a drill, `promoted` is null → context switch.
+  const { slot: breadcrumbSlot, promoted } = useBreadcrumbHost()
+
   // ── Resize (pointer-drag on the left edge + keyboard on the separator) ────────
   const dragRef = useRef<{ x: number; w: number } | null>(null)
   const onResizeDown = (e: ReactPointerEvent) => {
@@ -126,6 +141,8 @@ export function RightDock({ controller, locale, collapsed, onToggleCollapsed, wi
   // fully covered by the generic Inspector. (D7.3 filter-bar control drill bridge.)
   const ContextEditor = selected ? nodeContextEditors[selected.type] : undefined
 
+  // The element BODY — schema-driven form only; the Delete action lives in the
+  // FOOTER zone (below), so it stays reachable no matter how far the form scrolls.
   const nodePanel = selected && (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
       <Chip size="small" label={selected.type} color="primary" variant="outlined" sx={{ alignSelf: 'flex-start' }} />
@@ -141,11 +158,15 @@ export function RightDock({ controller, locale, collapsed, onToggleCollapsed, wi
         value={(selected.props.view as { visibleWhen?: VisibilityExpr } | undefined)?.visibleWhen}
         onChange={setVisibleWhen}
       />
-      <Divider />
-      <Button size="small" color="error" startIcon={<DeleteIcon />} onClick={deleteSelected}>
-        {t('del', locale)}
-      </Button>
     </Box>
+  )
+
+  // FOOTER — element actions. Present only in the element context with a node
+  // selected (chrome/page/empty states carry no destructive action here).
+  const footer = scope === 'element' && selected && !chromeSel && (
+    <Button size="small" color="error" startIcon={<DeleteIcon />} onClick={deleteSelected}>
+      {t('del', locale)}
+    </Button>
   )
 
   // ── Content — ONE context, flex-fill (never an island + stacked remainder) ────
@@ -192,8 +213,12 @@ export function RightDock({ controller, locale, collapsed, onToggleCollapsed, wi
         onKeyDown={onResizeKey}
       />
 
+      {/* HEADER — exactly ONE tier: the promoted drill breadcrumb XOR the context
+          switch (never both stacked). The collapse control is chrome, not a tier. */}
       <Box className="studio-dock__header">
-        {pageId ? (
+        {promoted ? (
+          <Box className="studio-dock__header-crumbs">{promoted}</Box>
+        ) : pageId ? (
           <Tabs
             value={scope}
             onChange={(_, v: DockScope) => setScope(v)}
@@ -216,9 +241,16 @@ export function RightDock({ controller, locale, collapsed, onToggleCollapsed, wi
         </Tooltip>
       </Box>
 
-      <Box className="studio-dock__content" data-testid="dock-content">
-        {content}
-      </Box>
+      {/* BODY — the sole flex-fill scroll region. The DockHeaderContext provider
+          lets a drilled nested editor promote its breadcrumb up into the header. */}
+      <BreadcrumbSlotContext.Provider value={breadcrumbSlot}>
+        <Box className="studio-dock__content" data-testid="dock-content">
+          {content}
+        </Box>
+      </BreadcrumbSlotContext.Provider>
+
+      {/* FOOTER — element actions, a fixed tier (absent when there is nothing to act on). */}
+      {footer && <Box className="studio-dock__footer">{footer}</Box>}
     </Box>
   )
 }
