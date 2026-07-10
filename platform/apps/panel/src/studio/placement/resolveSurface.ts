@@ -37,8 +37,9 @@ import { deriveWeight, toCanonicalWeight, type SubjectShape } from './weight'
 //    popover           — a light, trigger-anchored floating editor (glance edit).
 //    dock-panel        — the right dock's element/page panel (the default form home).
 //    dock-drill        — progressive drill-in *within* the dock (the D7.1b editor).
-//    focus-view        — a SEPARATE Studio route/screen (realized later, SL-4) for
-//                        workspace-weight subjects — emitted here, not rendered.
+//    focus-view        — a SEPARATE Studio route/screen (realized SL-2) for
+//                        workspace-weight subjects; SL-4 wires the nested-item drill
+//                        boundary to escalate INTO it when this verdict is returned.
 //    relocated-surface — a dedicated left-dock / relocated home (Pages&Site, Model,
 //                        global Style) for site-scope subjects; off the weight ladder.
 //

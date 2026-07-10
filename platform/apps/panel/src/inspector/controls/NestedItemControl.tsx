@@ -56,16 +56,22 @@ import {
 } from 'react'
 import type { PropSchema, PropertyGroup, PropField } from '@statdash/react/engine'
 import type { FieldControlProps } from '../fieldControl.types'
-import type { SchemaSource } from '../schemaSource'
 import type { CanvasNode, Locale } from '../../types/constructor'
 import { Inspector } from '../Inspector'
-import { getAtPath, setAtPath } from '../showWhen'
-import { readLocale } from '../localeString'
 import { JsonControl } from './primitives'
+// Pure helpers (dot-path grammar + label/summary/seed), extracted for one-body hygiene.
+import {
+  readAt, writeAt, joinPath, pathToId,
+  fixedSchemaSource, makeDefaultItem, fieldLabel, itemTitle, summarizeArray, summarizeObject,
+} from './nestedItemControl.helpers'
 import { useBreadcrumbSlot } from '../breadcrumbSlot'
 // The glance-weight RENAME micro-edit, routed to the SL-3 <EditPopover> (§3.2
 // nested-item · glance → POPOVER). Extracted to its own concern (one-body hygiene).
 import { useRowRename } from './useRowRename'
+// SL-4 — the overflow-escalation seam. A workspace-weight drill target escalates OUT
+// of the bounded dock to a focus-view (the Placement Law verdict), instead of cramming.
+import { useFocusEscalation } from '../focusEscalation'
+import { shouldEscalate } from './nestedItemPlacement'
 
 // ── Drill-depth backstop ──────────────────────────────────────────────────────
 //
@@ -76,77 +82,6 @@ import { useRowRename } from './useRowRename'
 //  unbounded path.
 //
 const MAX_NESTING = 8
-
-// ── Path helpers (dot-path grammar; empty path = the root value itself) ───────
-
-/** Read a value at an absolute dot-path from the root; '' addresses the root. */
-function readAt(root: unknown, dotPath: string): unknown {
-  return dotPath === '' ? root : getAtPath(root, dotPath)
-}
-/** Immutable write at an absolute dot-path from the root; '' replaces the root. */
-function writeAt(root: unknown, dotPath: string, value: unknown): unknown {
-  return dotPath === '' ? value : setAtPath(root, dotPath, value)
-}
-/** Append a segment to a dot-path ('' base → the segment alone). */
-function joinPath(base: string, seg: string): string {
-  return base === '' ? seg : `${base}.${seg}`
-}
-/** Namespace a DOM id by dot-path so each drill level's controls never collide. */
-function pathToId(prefix: string, dotPath: string): string {
-  return dotPath === '' ? prefix : `${prefix}-${dotPath.replace(/\./g, '-')}`
-}
-
-// ── Helpers (pure) ────────────────────────────────────────────────────────────
-
-/** A SchemaSource that returns a FIXED schema + groups (the field's itemSchema),
- *  independent of the modeled node — the port the level Inspector reads. */
-function fixedSchemaSource(schema: PropSchema, groups: PropertyGroup[]): SchemaSource {
-  return { getSchema: () => schema, getGroups: () => groups }
-}
-
-/** Seed a fresh item from its schema's declared defaults (immutable build). */
-function makeDefaultItem(schema: PropSchema): Record<string, unknown> {
-  let out: Record<string, unknown> = {}
-  for (const f of schema) {
-    if (f.default !== undefined) out = setAtPath(out, f.field, f.default)
-  }
-  return out
-}
-
-/** A field's display label, active-locale-resolved (LocaleString | string). */
-function fieldLabel(field: PropField, locale: Locale): string {
-  return readLocale(field.label as never, locale) || field.field
-}
-
-/** Display title for an item: the `itemLabel` dot-path value (locale-resolved for
- *  a LocaleString), else the 1-based "Item N" fallback. */
-function itemTitle(
-  item: unknown, itemLabel: string | undefined, index: number, locale: Locale,
-): string {
-  const fallback = `Item ${index + 1}`
-  if (!itemLabel) return fallback
-  const raw = getAtPath(item, itemLabel)
-  if (raw == null) return fallback
-  if (typeof raw === 'string') return raw || fallback
-  if (typeof raw === 'number' || typeof raw === 'boolean') return String(raw)
-  if (typeof raw === 'object') {
-    const s = readLocale(raw as never, locale) // LocaleString or similar record
-    return s || fallback
-  }
-  return fallback
-}
-
-/** Row summary for a nested ARRAY drill-affordance (count, no fields shown). */
-function summarizeArray(value: unknown): string {
-  const n = Array.isArray(value) ? value.length : 0
-  return n === 0 ? 'No items' : n === 1 ? '1 item' : `${n} items`
-}
-
-/** Row summary for a nested OBJECT drill-affordance (its itemLabel value, if any). */
-function summarizeObject(value: unknown, field: PropField, locale: Locale): string {
-  if (field.itemLabel) return itemTitle(value, field.itemLabel, 0, locale)
-  return ''
-}
 
 // ── DrillContext — a nested array/object field becomes a drill affordance ──────
 //
@@ -241,15 +176,22 @@ function NestedFieldRow(
 // ── DrillEditor — one root field, one unified drill path + breadcrumb ─────────
 
 function DrillEditor(
-  props: FieldControlProps & { rootKind: LevelKind },
+  props: FieldControlProps & { rootKind: LevelKind; initialSteps?: Step[] },
 ): ReactNode {
-  const { field, id, value, onChange, locale, rootKind } = props
+  const { field, id, value, onChange, locales, locale, rootKind, initialSteps } = props
 
   const rootLabel = fieldLabel(field, locale)
 
   // The steps the author has drilled into, beyond the root (component-local UI
-  // state — like the canvas selection, never config).
-  const [steps, setSteps] = useState<Step[]>([])
+  // state — like the canvas selection, never config). An ESCALATED mount (SL-4) is
+  // SEEDED with the drill path that led here (`initialSteps`), so the focus-view opens
+  // exactly at the escalation point and the breadcrumb spine continues unbroken.
+  const [steps, setSteps] = useState<Step[]>(initialSteps ?? [])
+
+  // SL-4 — the overflow-escalation host (the dock's StudioShell). Null in isolation
+  // (unit tests, any other mount) → the editor falls back to an in-dock drill exactly
+  // as D7.1b did (fail-soft — zero regression); the shell always provides it live.
+  const escalation = useFocusEscalation()
 
   // Crumbs = the root (derived from the field, always fresh) + the drilled steps,
   // with cumulative absolute dot-paths.
@@ -323,21 +265,55 @@ function DrillEditor(
   }, [slot, slotId, drilled, activeCrumbs, goTo])
   useEffect(() => () => slot?.release(slotId), [slot, slotId])
 
-  // Drill into a nested field of the CURRENT object screen (append a crumb).
+  // ── SL-4 escalation — hand a workspace subject OUT to a focus-view ────────────
+  //  The escalated editor is the SAME DrillEditor rooted at THIS top-level field,
+  //  pre-seeded with the full drill path (`nextSteps`) so the ONE breadcrumb spine
+  //  continues; it binds to a LIVE store value the host supplies, so edits round-trip
+  //  and Back is loss-free. Deterministic: the target is `resolveSurface`'s verdict.
+  const escalateTo = useCallback((nextSteps: Step[], title: string) => {
+    escalation?.escalate({
+      fieldPath: field.field,
+      title:     { ka: title, en: title },
+      render:    (bind) => (
+        <DrillEditor
+          field={field}
+          id={id}
+          value={bind.value}
+          onChange={bind.onChange}
+          locales={locales}
+          locale={locale}
+          rootKind={rootKind}
+          initialSteps={nextSteps}
+        />
+      ),
+    })
+  }, [escalation, field, id, locales, locale, rootKind])
+
+  // Drill into a nested field of the CURRENT object screen (append a crumb) — OR, when
+  // that field is a workspace-weight OBJECT (its itemSchema is rich/deep), escalate it
+  // out to a focus-view. An ARRAY field stays a bounded in-dock LIST (its items escalate
+  // on open, below). The verdict is the pure Placement Law — no per-type literal.
   const drill = useCallback((f: PropField, title: string) => {
-    setSteps((prev) => [...prev, {
+    const step: Step = {
       seg:       f.field,
       label:     title,
       kind:      f.type === 'array' ? 'array' : 'object',
       schema:    f.itemSchema ?? [],
       groups:    f.itemGroups ?? [],
       itemLabel: f.itemLabel,
-    }])
-  }, [])
+    }
+    if (escalation && f.type !== 'array' && shouldEscalate(f.itemSchema ?? [])) {
+      escalateTo([...steps, step], title)
+    } else {
+      setSteps((prev) => [...prev, step])
+    }
+  }, [escalation, escalateTo, steps])
 
   // Open an item of the CURRENT array screen (its fields = the array's itemSchema).
-  const openItem = (index: number, title: string) =>
-    setSteps((prev) => [...prev, {
+  // A WORKSPACE-weight item (rich/deep itemSchema) escalates OUT to a focus-view; a
+  // form-weight one drills in the dock, unchanged (D7.1b) — FF-NO-CRAMMED-DOCK.
+  const openItem = (index: number, title: string) => {
+    const itemStep: Step = {
       seg:            String(index),
       label:          title,
       kind:           'object',
@@ -345,7 +321,13 @@ function DrillEditor(
       groups:         deepest.groups,
       isItem:         true,
       titleItemLabel: deepest.itemLabel,
-    }])
+    }
+    if (escalation && shouldEscalate(deepest.schema)) {
+      escalateTo([...steps, itemStep], title)
+    } else {
+      setSteps((prev) => [...prev, itemStep])
+    }
+  }
 
   return (
     <div className="insp-nested" role="group" aria-label={rootLabel}>

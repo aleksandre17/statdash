@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import { ModelSurface } from './surfaces/ModelSurface'
 import type { Locale } from '../types/constructor'
+import type { FocusEscalationRequest, FieldBinding } from '../inspector/focusEscalation'
 
 // ── Focus-view target registry (AR-49 SL-2, SPEC-studio-shell-layout §3.4) ─────
 //
@@ -57,3 +58,23 @@ export function getFocusViewTarget(id: string): FocusViewTarget | undefined {
 }
 
 export type FocusViewTargetId = keyof typeof FOCUS_VIEW_TARGETS
+
+// ── Escalated (dynamic) target — the SL-4 overflow subject ─────────────────────
+//
+//  A workspace-weight subject the nested-item editor escalated OUT of the dock is NOT
+//  a pre-registered route — it is built at runtime from the escalation request + the
+//  host's LIVE field binding (value+onChange out of the store). This factory is the
+//  registry's constructor for that dynamic target, so the escalated subject rides the
+//  SAME <FocusView> shell as the static targets (one container, no fork). Its render
+//  hands the producer's editor the live binding, so it edits real config and returns
+//  loss-free.
+//
+export const ESCALATED_TARGET_ID = 'escalated-subject'
+
+export function makeEscalatedTarget(req: FocusEscalationRequest, bind: FieldBinding): FocusViewTarget {
+  return {
+    id:     ESCALATED_TARGET_ID,
+    title:  req.title,
+    render: () => req.render(bind),
+  }
+}

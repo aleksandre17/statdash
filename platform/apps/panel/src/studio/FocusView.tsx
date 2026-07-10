@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react'
 import type { KeyboardEvent as ReactKeyboardEvent } from 'react'
 import { Box, Button, Breadcrumbs, Typography } from '@mui/material'
 import ArrowBackIcon from '@mui/icons-material/ArrowBack'
-import { getFocusViewTarget } from './focusViewRegistry'
+import { getFocusViewTarget, type FocusViewTarget } from './focusViewRegistry'
 import { BreadcrumbSlotContext, useBreadcrumbHost } from '../inspector/breadcrumbSlot'
 import type { Locale } from '../types/constructor'
 
@@ -55,22 +55,30 @@ const T = {
 const t = (k: keyof typeof T, locale: Locale) => T[k][locale] ?? T[k].en
 
 export interface FocusViewProps {
-  /** The registered target to render (a focus-view "route" key). */
-  targetId: string
+  /** The registered target to render (a focus-view "route" key) — a STATIC target
+   *  (e.g. Model). Ignored when `target` is supplied directly. */
+  targetId?: string
+  /** A DYNAMIC target supplied directly (SL-4 overflow escalation): a workspace
+   *  subject the dock escalated out, built at runtime rather than pre-registered.
+   *  Takes precedence over `targetId`. */
+  target?: FocusViewTarget
   locale: Locale
   /** Return to the editing shell (breadcrumb-back / Esc). Loss-free — shell state persists. */
   onBack: () => void
 }
 
-export function FocusView({ targetId, locale, onBack }: FocusViewProps) {
-  const target = getFocusViewTarget(targetId)
+export function FocusView({ targetId, target, locale, onBack }: FocusViewProps) {
+  // A directly-supplied dynamic target (SL-4 escalation) wins; else resolve a static
+  // one from the registry. Both render through the SAME shell — the escalated
+  // workspace subject and Model share one focus-view container (OCP).
+  const resolved = target ?? (targetId ? getFocusViewTarget(targetId) : undefined)
   const backRef = useRef<HTMLButtonElement>(null)
 
   // WCAG 2.4.3 — move focus INTO the screen on enter. The back control is the
   // orientation anchor: keyboard-first return is one key away, Tab forward reaches
   // the workspace. Runs after the target body mounts (parent effect), so it wins
   // even if the body grabs focus for its own region.
-  useEffect(() => { backRef.current?.focus() }, [targetId])
+  useEffect(() => { backRef.current?.focus() }, [targetId, resolved])
 
   // Share the SL-1 breadcrumb spine: a nested drill inside the body promotes its
   // crumb up here (one navigation spine, dock-drill ↔ focus-view).
@@ -78,12 +86,12 @@ export function FocusView({ targetId, locale, onBack }: FocusViewProps) {
 
   // Fail-soft: an unknown target id must never strand the author on a blank screen —
   // return to the shell rather than render nothing (defensive; the registry is the SSOT).
-  if (!target) {
+  if (!resolved) {
     onBack()
     return null
   }
 
-  const title = target.title[locale] ?? target.title.en
+  const title = resolved.title[locale] ?? resolved.title.en
 
   const onKeyDown = (e: ReactKeyboardEvent) => {
     if (e.key === 'Escape' && !e.defaultPrevented) {
@@ -126,7 +134,7 @@ export function FocusView({ targetId, locale, onBack }: FocusViewProps) {
           breadcrumb slot so a nested drill promotes into this screen's chrome. */}
       <BreadcrumbSlotContext.Provider value={slot}>
         <Box component="main" className="studio-focusview__body">
-          {target.render({ locale })}
+          {resolved.render({ locale })}
         </Box>
       </BreadcrumbSlotContext.Provider>
     </Box>

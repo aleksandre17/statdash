@@ -1,4 +1,4 @@
-import { lazy, Suspense, useState, type CSSProperties } from 'react'
+import { lazy, Suspense, useMemo, useState, type CSSProperties } from 'react'
 import { Box, Typography, Chip, GlobalStyles } from '@mui/material'
 // Token SSOT — the shell chrome reads @statdash/styles DTCG custom properties
 // (studio.css). Importing it here (not in main.tsx) keeps the token layer in the
@@ -18,6 +18,9 @@ import { LayersSurface } from './surfaces/LayersSurface'
 import { PagesSiteSurface } from './surfaces/PagesSiteSurface'
 import { StyleSurface } from './surfaces/StyleSurface'
 import { FocusView } from './FocusView'
+import { makeEscalatedTarget, type FocusViewTarget } from './focusViewRegistry'
+import { FocusEscalationContext, type FocusEscalationRequest, type FieldBinding } from '../inspector/focusEscalation'
+import { getAtPath } from '../inspector/showWhen'
 import { useRole, useSetRole } from './useRole'
 import { useConstructorStore, useActiveSurface, usePages, useActivePageId, useSite } from '../store/constructor.store'
 import { DEFAULT_STUDIO_SURFACE } from '../types/constructor'
@@ -79,6 +82,15 @@ export function StudioShell() {
   const [dockCollapsed, setDockCollapsed] = useState(false)
   const [dockWidth, setDockWidth] = useState(320)
 
+  // SL-4 overflow escalation — the dock is bounded and holds FORM weight only. When
+  // the nested-item editor is about to enter a WORKSPACE-weight subject (the Placement
+  // Law verdict), it escalates OUT to a focus-view instead of cramming the dock.
+  // StudioShell is the HOST: it holds the pending request and, while set, swaps the
+  // grid for the escalated focus-view (below). The port is provided around the dock so
+  // only the dock's drill boundary can escalate; a null host (isolation) → in-dock drill.
+  const [escalation, setEscalation] = useState<FocusEscalationRequest | null>(null)
+  const focusEscalation = useMemo(() => ({ escalate: setEscalation }), [])
+
   // The live skin: Strata base + the author's themeOverrides on top (overrides win).
   // Applied as custom properties on the DOCUMENT ROOT (`:root:root`) rather than
   // inline on the shell Box (ADR-021 §3): the shell + canvas still inherit (they are
@@ -118,6 +130,21 @@ export function StudioShell() {
   // is active the shell swaps its whole grid for the focus-view screen; back returns.
   const focusViewTargetId = effectiveSurface === 'model' ? 'data-model' : null
 
+  // The escalated focus-view target — built from the pending request + a LIVE binding
+  // to the subject's root field on the selected node (value re-read each render, writes
+  // funnel back through the store via patchProp). Requires a live selection; if it
+  // vanished, nothing renders (the escalation quietly drops). Takes precedence over the
+  // Model route below — an active escalation is what the author navigated INTO.
+  const { selected: selectedNode, patchProp } = controller
+  const escalatedTarget = useMemo<FocusViewTarget | null>(() => {
+    if (!escalation || !selectedNode) return null
+    const bind: FieldBinding = {
+      value:    getAtPath(selectedNode.props, escalation.fieldPath),
+      onChange: (next) => patchProp(escalation.fieldPath, next),
+    }
+    return makeEscalatedTarget(escalation, bind)
+  }, [escalation, selectedNode, patchProp])
+
   return (
     <>
       {/* Strata + live edits on the document root → chrome, canvas AND body portals inherit.
@@ -132,7 +159,12 @@ export function StudioShell() {
         </Suspense>
       )}
 
-      {focusViewTargetId ? (
+      {escalatedTarget ? (
+        // ── ESCALATED FOCUS-VIEW — a workspace subject the dock overflowed OUT (SL-4).
+        //  Same separate-screen container as Model; Back returns to the dock loss-free
+        //  (the selection + drill path are untouched). One breadcrumb spine continues.
+        <FocusView target={escalatedTarget} locale={locale} onBack={() => setEscalation(null)} />
+      ) : focusViewTargetId ? (
         // ── FOCUS-VIEW screen — a SEPARATE route the workspace subject navigated to.
         //  The rail + docks + canvas grid are gone (not the primary chrome here — §3.4 /
         //  FF-FOCUSVIEW-SEPARATE-ROUTE); a breadcrumb-back returns to the editing shell.
@@ -196,14 +228,18 @@ export function StudioShell() {
         data-collapsed={dockCollapsed || undefined}
         style={{ '--studio-dock-w': `${dockWidth}px` } as CSSProperties}
       >
-        <RightDock
-          controller={controller}
-          locale={locale}
-          collapsed={dockCollapsed}
-          onToggleCollapsed={() => setDockCollapsed((c) => !c)}
-          width={dockWidth}
-          onResize={setDockWidth}
-        />
+        {/* The escalation host is provided AROUND the dock only — so a workspace-weight
+            drill boundary in the Inspector can hand its subject OUT to a focus-view. */}
+        <FocusEscalationContext.Provider value={focusEscalation}>
+          <RightDock
+            controller={controller}
+            locale={locale}
+            collapsed={dockCollapsed}
+            onToggleCollapsed={() => setDockCollapsed((c) => !c)}
+            width={dockWidth}
+            onResize={setDockWidth}
+          />
+        </FocusEscalationContext.Provider>
       </Box>
 
       {/* ── Bottom strip — page tabs + status ────────────────────────────── */}
