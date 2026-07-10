@@ -14,9 +14,10 @@
 //    1. coverage:'localized'  → LocaleField (the localized-variant override)
 //    2. type === 'enum-ref'   → EnumRefField (data-driven options)
 //    3. field.options present + static select → SelectControl
-//    4. controls.get(field.type) → registered control
-//    5. fallback → JsonControl (raw-JSON editor, the documented default)
-//  (1–3 are resolved by the Inspector via resolveControl; 4–5 by get().)
+//    4. array/object + itemSchema → ArrayOf/Object nested editor (D7.1)
+//    5. controls.get(field.type) → registered control
+//    6. fallback → JsonControl (raw-JSON editor, the documented default)
+//  (1–4 are resolved by the Inspector via resolveControl; 5–6 by get().)
 //
 import type { PropField } from '@statdash/react/engine'
 import type { FieldControl, FieldControlKey } from './fieldControl.types'
@@ -26,6 +27,21 @@ import {
 } from './controls/primitives'
 import { LocaleField }  from './controls/LocaleField'
 import { EnumRefField } from './controls/EnumRefField'
+import { ArrayOfControl, ObjectControl } from './controls/NestedItemControl'
+
+/**
+ * True when an array/object field carries a structured `itemSchema` (D7.0/ADR-022)
+ * — the signal that it is authored item-by-item via the recursive nested editor
+ * rather than the opaque raw-JSON fallback. Mirrors the ADR's `isOpaqueNested`
+ * predicate (keys off `'itemSchema' in field`): WITH it → structured, WITHOUT it
+ * → opaque. Guarded to array/object only (the two nesting-capable types).
+ */
+function isStructuredNested(field: PropField): boolean {
+  return (
+    (field.type === 'array' || field.type === 'object') &&
+    field.itemSchema != null
+  )
+}
 
 /** Open keyed registry of field controls. Map-backed; string keys (see header). */
 class FieldControlRegistryImpl {
@@ -58,7 +74,15 @@ class FieldControlRegistryImpl {
     // 3. static options on a non-rich field → a plain select.
     if (field.options && field.options.length > 0) return SelectControl
 
-    // 4. registered control by declared type, else 5. raw-JSON fallback.
+    // 4. structured nested array/object (itemSchema present, D7.1) → the recursive
+    //    item editor. WITHOUT itemSchema this predicate is false and the field
+    //    falls through to the by-type JsonControl (graceful fallback — ZERO
+    //    regression to any existing array/object field).
+    if (isStructuredNested(field)) {
+      return field.type === 'object' ? ObjectControl : ArrayOfControl
+    }
+
+    // 5. registered control by declared type, else 6. raw-JSON fallback.
     return this.controls.get(field.type) ?? this.fallbackControl
   }
 

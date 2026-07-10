@@ -7,6 +7,7 @@ import {
 } from './controls/primitives'
 import { LocaleField }  from './controls/LocaleField'
 import { EnumRefField } from './controls/EnumRefField'
+import { ArrayOfControl, ObjectControl } from './controls/NestedItemControl'
 
 const f = (over: Partial<PropField>): PropField =>
   ({ field: 'x', type: 'string', label: 'X', ...over })
@@ -49,6 +50,22 @@ describe('FieldControlRegistry.resolve — precedence (OCP dispatch)', () => {
   it('rich/opaque types fall back to the JSON control', () => {
     expect(fieldControlRegistry.resolve(f({ type: 'object' }))).toBe(JsonControl)
     expect(fieldControlRegistry.resolve(f({ type: 'DataSpec' }))).toBe(JsonControl)
+  })
+
+  // ── D7.1 — structured nested (itemSchema) precedence ────────────────────────
+  it('array/object WITHOUT itemSchema keep the raw-JSON control (graceful fallback)', () => {
+    expect(fieldControlRegistry.resolve(f({ type: 'array' }))).toBe(JsonControl)
+    expect(fieldControlRegistry.resolve(f({ type: 'object' }))).toBe(JsonControl)
+  })
+
+  it('array WITH itemSchema resolves to the ArrayOf nested editor', () => {
+    const field = f({ type: 'array', itemSchema: [{ field: 'label', type: 'string', label: 'L' }] })
+    expect(fieldControlRegistry.resolve(field)).toBe(ArrayOfControl)
+  })
+
+  it('object WITH itemSchema resolves to the Object nested editor', () => {
+    const field = f({ type: 'object', itemSchema: [{ field: 'label', type: 'string', label: 'L' }] })
+    expect(fieldControlRegistry.resolve(field)).toBe(ObjectControl)
   })
 
   it('an unregistered type falls back to the JSON control (no throw)', () => {

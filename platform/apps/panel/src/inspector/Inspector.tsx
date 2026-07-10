@@ -97,9 +97,19 @@ export interface InspectorProps {
    * kind = a new source, this component unchanged (OCP).
    */
   schemaSource?: SchemaSource
+  /**
+   * DOM id namespace for this panel's controls (default `'insp'`). Every control,
+   * tab, and group body id is prefixed with it so MULTIPLE Inspectors on one page
+   * (the nested-item editor renders one per array item — D7.1) never collide on a
+   * DOM id, keeping every `label[htmlFor]`/`aria-controls` association unique
+   * (WCAG 2.1 AA). The default keeps every existing id byte-identical.
+   */
+  idPrefix?: string
 }
 
-export function Inspector({ node, onChange, schemaSource = nodeSchemaSource }: InspectorProps) {
+export function Inspector({
+  node, onChange, schemaSource = nodeSchemaSource, idPrefix = 'insp',
+}: InspectorProps) {
   const site    = useSite()
   const locales = useActiveLocales()
   const locale  = site.defaultLocale
@@ -131,7 +141,7 @@ export function Inspector({ node, onChange, schemaSource = nodeSchemaSource }: I
     (field: PropField) => {
       if (!isVisible(field.showWhen, node.props)) return null
 
-      const id      = `insp-${field.field.replace(/\./g, '-')}`
+      const id      = `${idPrefix}-${field.field.replace(/\./g, '-')}`
       const Control = fieldControlRegistry.resolve(field)
       const label   = resolveLabel(field.label as LocaleString, locale, field.field)
       const value   = getAtPath(node.props, field.field)
@@ -162,7 +172,7 @@ export function Inspector({ node, onChange, schemaSource = nodeSchemaSource }: I
         </div>
       )
     },
-    [node.props, locale, locales, onChange],
+    [node.props, locale, locales, onChange, idPrefix],
   )
 
   // NB: the "no schema" dead-end panel is GONE by construction (Wave 8,
@@ -205,9 +215,9 @@ export function Inspector({ node, onChange, schemaSource = nodeSchemaSource }: I
               key={g.key}
               role="tab"
               type="button"
-              id={`insp-tab-${i}`}
+              id={`${idPrefix}-tab-${i}`}
               aria-selected={i === active}
-              aria-controls={`insp-panel-${i}`}
+              aria-controls={`${idPrefix}-panel-${i}`}
               tabIndex={i === active ? 0 : -1}
               data-active={i === active || undefined}
               className="insp__tab"
@@ -222,8 +232,8 @@ export function Inspector({ node, onChange, schemaSource = nodeSchemaSource }: I
           <div
             key={g.key}
             role="tabpanel"
-            id={`insp-panel-${i}`}
-            aria-labelledby={`insp-tab-${i}`}
+            id={`${idPrefix}-panel-${i}`}
+            aria-labelledby={`${idPrefix}-tab-${i}`}
             hidden={i !== active}
             className="insp__tabpanel"
           >
@@ -257,7 +267,7 @@ export function Inspector({ node, onChange, schemaSource = nodeSchemaSource }: I
           )
         }
         const open   = !collapsed.has(g.key)
-        const bodyId = `insp-body-${g.key.replace(/[^\w-]/g, '-')}`
+        const bodyId = `${idPrefix}-body-${g.key.replace(/[^\w-]/g, '-')}`
         return (
           <fieldset className="insp__group" key={g.key} data-open={open || undefined}>
             <legend className="insp__legend">

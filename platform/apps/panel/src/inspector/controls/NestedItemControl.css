@@ -1,0 +1,95 @@
+/* ── NestedItemControl — the recursive nested-item editor (D7.1) ──────────── */
+/*  Structured list/object editor for array/object PropFields that carry an     */
+/*  itemSchema. Token-driven, BEM, inherits the Inspector control baseline.     */
+
+.insp-nested {
+  display: flex;
+  flex-direction: column;
+  gap: var(--insp-gap-sm, 8px);
+  border: 1px solid var(--insp-divider, #e2e8f0);
+  border-radius: var(--insp-radius-sm, 4px);
+  padding: var(--insp-gap-sm, 8px);
+}
+
+.insp-nested__list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--insp-gap-sm, 8px);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.insp-nested__empty {
+  margin: 0;
+  color: var(--insp-muted, #94a3b8);
+  font-size: var(--insp-font-sm, 0.8125rem);
+}
+
+.insp-nested__item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--insp-gap-xs, 4px);
+  border: 1px solid var(--insp-border, #cbd5e1);
+  border-radius: var(--insp-radius-sm, 4px);
+  background: var(--insp-badge-bg, #f8fafc);
+  padding: var(--insp-gap-sm, 8px);
+}
+
+.insp-nested__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--insp-gap-sm, 8px);
+}
+
+.insp-nested__title {
+  font-size: var(--insp-font-sm, 0.8125rem);
+  font-weight: 600;
+  color: var(--insp-fg, #1e293b);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.insp-nested__actions {
+  display: flex;
+  gap: var(--insp-gap-xs, 4px);
+  flex-shrink: 0;
+}
+
+.insp-nested__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.75rem;
+  height: 1.75rem;
+  padding: 0 var(--insp-gap-xs, 4px);
+  border: 1px solid var(--insp-border, #cbd5e1);
+  border-radius: var(--insp-radius-sm, 4px);
+  background: var(--insp-control-bg, #fff);
+  color: var(--insp-fg, #1e293b);
+  font: inherit;
+  font-size: var(--insp-font-sm, 0.8125rem);
+  line-height: 1;
+  cursor: pointer;
+}
+
+.insp-nested__btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.insp-nested__btn:focus-visible {
+  outline: 2px solid var(--insp-focus, #2563eb);
+  outline-offset: 1px;
+}
+
+.insp-nested__add {
+  align-self: flex-start;
+}
+
+.insp-nested__body {
+  padding-top: var(--insp-gap-xs, 4px);
+  border-top: 1px solid var(--insp-divider, #e2e8f0);
+}

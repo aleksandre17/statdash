@@ -17,3 +17,4 @@ export type { FieldControl, FieldControlProps, FieldControlKey } from './fieldCo
 export { useActiveLocales, orderLocales, PLATFORM_LOCALES } from './useActiveLocales'
 export { LocaleField }  from './controls/LocaleField'
 export { EnumRefField } from './controls/EnumRefField'
+export { ArrayOfControl, ObjectControl } from './controls/NestedItemControl'
