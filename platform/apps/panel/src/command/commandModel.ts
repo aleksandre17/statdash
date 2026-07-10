@@ -12,7 +12,22 @@
 //  exact insert commands Cmd-K offers without rendering React.
 //
 import { getPaletteEntries } from '../canvas/paletteEntries'
+import type { LocaleString } from '@statdash/react/engine'
 import type { CanvasPage } from '../types/constructor'
+
+/**
+ * Resolve a palette entry's i18n label to a bilingual command label ("ka · en"),
+ * matching the ⌘K convention (workspaceCommands). The palette is now the SSOT of
+ * the raw LocaleString; ⌘K has no active-locale here, so it shows both — a
+ * non-programmer finds the command in either language.
+ */
+function bilingualLabel(label: LocaleString): string {
+  if (typeof label === 'string') return label
+  const ka = label.ka
+  const en = label.en
+  if (ka && en) return ka === en ? ka : `${ka} · ${en}`
+  return ka ?? en ?? Object.values(label)[0] ?? ''
+}
 
 export type CommandKind = 'insert' | 'navigate' | 'action'
 
@@ -58,7 +73,7 @@ export function insertCommands(): Command[] {
   return getPaletteEntries().map((entry) => ({
     id:       `insert:${entry.type}`,
     kind:     'insert' as const,
-    label:    entry.label,
+    label:    bilingualLabel(entry.label),
     keywords: [entry.type, entry.category ?? '', ...entry.caps],
     group:    'ჩასმა · Insert',
     nodeType: entry.type,

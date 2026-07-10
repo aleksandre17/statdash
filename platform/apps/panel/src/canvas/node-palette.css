@@ -1,0 +1,134 @@
+/* ── node-palette.css — icon-tile palette (AR-49 M4 Wave 1) ─────────────────────
+ *
+ *  The Insert palette elevated from a ragged bulleted `•` text list to grouped,
+ *  uniform-width icon tiles ([icon] Name — description) — the Builder.io / Webflow /
+ *  Framer palette idiom. Every value reads a @statdash/styles DTCG token (with a
+ *  neutral literal fallback for non-Studio mounts, mirroring page-step.css); no
+ *  brand literal is authored here. Structural px/rem are layout, not brand.
+ * ───────────────────────────────────────────────────────────────────────────── */
+
+.node-palette {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.node-palette__group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.node-palette__group + .node-palette__group {
+  margin-top: 10px;
+}
+
+.node-palette__group-heading {
+  margin: 0 0 2px;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-text-secondary, #6b7280);
+}
+
+.node-palette__group-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* ── The tile — uniform-width card, icon + name + optional description ───────── */
+
+.node-palette__tile {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  width: 100%;
+  text-align: left;
+  padding: 8px 10px;
+  font: inherit;
+  color: var(--color-text-primary, #1a1a2e);
+  background: var(--color-surface, #fff);
+  border: 1px solid var(--color-border, #dee2e6);
+  border-radius: var(--radius-sm, 6px);
+  cursor: grab;
+  touch-action: none;
+  transition: border-color 120ms ease, background-color 120ms ease;
+}
+
+.node-palette__tile:hover {
+  border-color: var(--color-accent, #005a9c);
+  background: var(--color-accent-muted, #e8f0f8);
+}
+
+.node-palette__tile:focus-visible {
+  outline: 2px solid var(--color-accent, #005a9c);
+  outline-offset: 2px;
+}
+
+.node-palette__tile:active {
+  cursor: grabbing;
+}
+
+.node-palette__tile-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  margin-top: 1px;
+  color: var(--color-accent, #005a9c);
+}
+
+.node-palette__tile-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.node-palette__tile-name {
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.node-palette__tile-desc {
+  font-size: 0.75rem;
+  line-height: 1.3;
+  color: var(--color-text-secondary, #6b7280);
+}
+
+/* Recommended tiles read as fit-for-data — a subtle accent border. */
+.node-palette__group--recommended .node-palette__tile {
+  border-color: var(--color-accent, #005a9c);
+}
+
+/* ── Leaf-selection guided hint (M4.1 Thread A) ─────────────────────────────── */
+
+.node-palette__leaf-hint {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px;
+  border: 1px dashed var(--color-border, #dee2e6);
+  border-radius: var(--radius-sm, 6px);
+  background: var(--color-surface-muted, #f6f7f9);
+}
+
+.node-palette__leaf-hint-title {
+  font-weight: 600;
+  font-size: 0.8125rem;
+  color: var(--color-text-primary, #1a1a2e);
+}
+
+.node-palette__leaf-hint-body {
+  font-size: 0.75rem;
+  line-height: 1.35;
+  color: var(--color-text-secondary, #6b7280);
+}

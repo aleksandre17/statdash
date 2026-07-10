@@ -9,6 +9,7 @@
 //  grouping when registered slices declare the matching caps.
 //
 import { describe, it, expect, beforeAll } from 'vitest'
+import { resolveLocaleString }             from '@statdash/engine'
 import { setupCanvasRegistry }              from './setupCanvasRegistry'
 import { getPaletteEntries, getGroupedPaletteEntries } from './paletteEntries'
 
@@ -111,11 +112,14 @@ describe('getGroupedPaletteEntries — capability-driven grouping', () => {
     expect(dupes).toEqual([])
   })
 
-  it('every entry in every group has a non-empty type and label', () => {
+  it('every entry in every group has a non-empty type and a resolvable label', () => {
     for (const group of getGroupedPaletteEntries()) {
       for (const entry of group.entries) {
         expect(entry.type.length).toBeGreaterThan(0)
-        expect(entry.label.length).toBeGreaterThan(0)
+        // label is now a raw LocaleString (resolved at the render seam) — resolve
+        // it to assert it carries non-empty content in either locale.
+        const resolved = resolveLocaleString(entry.label, 'en', 'ka')
+        expect(resolved.length).toBeGreaterThan(0)
       }
     }
   })

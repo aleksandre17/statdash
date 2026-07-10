@@ -212,7 +212,7 @@ export function StudioShell() {
 // effectiveSurface); M2.0 mounts the minimal Model scaffold (define content = later M2).
 function renderSurface(surface: StudioSurface, controller: ReturnType<typeof useCanvasController>, locale: Locale) {
   switch (surface) {
-    case 'insert':     return <InsertSurface controller={controller} />
+    case 'insert':     return <InsertSurface controller={controller} locale={locale} />
     case 'data':       return <DataSurface controller={controller} locale={locale} />
     case 'layers':     return <LayersSurface locale={locale} />
     case 'pages-site': return <PagesSiteSurface />
