@@ -1,6 +1,8 @@
-/* ── NestedItemControl — the recursive nested-item editor (D7.1) ──────────── */
-/*  Structured list/object editor for array/object PropFields that carry an     */
-/*  itemSchema. Token-driven, BEM, inherits the Inspector control baseline.     */
+/* ── NestedItemControl — the recursive nested-item DRILL-IN editor (D7.1b) ── */
+/*  Progressive-disclosure editor for array/object PropFields that carry an     */
+/*  itemSchema: a list of summary rows → click → focused per-item editor +      */
+/*  breadcrumb back. Only the ACTIVE level's fields are ever rendered. Token-    */
+/*  driven, BEM, inherits the Inspector control baseline.                       */
 
 .insp-nested {
   display: flex;
@@ -9,6 +11,68 @@
   border: 1px solid var(--insp-divider, #e2e8f0);
   border-radius: var(--insp-radius-sm, 4px);
   padding: var(--insp-gap-sm, 8px);
+}
+
+/* ── Breadcrumb — the drill path (shown once drilled in) ───────────────────── */
+
+.insp-nested__crumbs {
+  font-size: var(--insp-font-sm, 0.8125rem);
+}
+
+.insp-nested__crumb-list {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--insp-gap-xs, 4px);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.insp-nested__crumb {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--insp-gap-xs, 4px);
+  min-width: 0;
+}
+
+.insp-nested__crumb-btn {
+  border: 0;
+  background: none;
+  padding: 0;
+  font: inherit;
+  color: var(--insp-focus, #2563eb);
+  cursor: pointer;
+  text-decoration: underline;
+  max-width: 12rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.insp-nested__crumb-btn:focus-visible {
+  outline: 2px solid var(--insp-focus, #2563eb);
+  outline-offset: 1px;
+  border-radius: var(--insp-radius-sm, 4px);
+}
+
+.insp-nested__crumb-sep {
+  color: var(--insp-muted, #94a3b8);
+}
+
+.insp-nested__crumb-current {
+  font-weight: 600;
+  color: var(--insp-fg, #1e293b);
+  max-width: 14rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.insp-nested__screen {
+  display: flex;
+  flex-direction: column;
+  gap: var(--insp-gap-sm, 8px);
 }
 
 .insp-nested__list {
@@ -26,36 +90,92 @@
   font-size: var(--insp-font-sm, 0.8125rem);
 }
 
+/* ── Summary row — a collapsed item (title + open affordance + actions) ────── */
+
 .insp-nested__item {
   display: flex;
-  flex-direction: column;
+  align-items: center;
   gap: var(--insp-gap-xs, 4px);
   border: 1px solid var(--insp-border, #cbd5e1);
   border-radius: var(--insp-radius-sm, 4px);
   background: var(--insp-badge-bg, #f8fafc);
-  padding: var(--insp-gap-sm, 8px);
+  padding: var(--insp-gap-xs, 4px) var(--insp-gap-sm, 8px);
 }
 
-.insp-nested__head {
+/* The open affordance — the whole row title clicks to drill in. */
+.insp-nested__row {
   display: flex;
+  flex: 1 1 auto;
   align-items: center;
   justify-content: space-between;
   gap: var(--insp-gap-sm, 8px);
+  min-width: 0;
+  border: 0;
+  background: none;
+  padding: var(--insp-gap-xs, 4px) 0;
+  font: inherit;
+  color: var(--insp-fg, #1e293b);
+  text-align: left;
+  cursor: pointer;
+}
+
+.insp-nested__row:focus-visible {
+  outline: 2px solid var(--insp-focus, #2563eb);
+  outline-offset: 1px;
+  border-radius: var(--insp-radius-sm, 4px);
 }
 
 .insp-nested__title {
   font-size: var(--insp-font-sm, 0.8125rem);
   font-weight: 600;
-  color: var(--insp-fg, #1e293b);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.insp-nested__chevron {
+  flex-shrink: 0;
+  color: var(--insp-muted, #94a3b8);
+  font-size: 1rem;
+  line-height: 1;
 }
 
 .insp-nested__actions {
   display: flex;
   gap: var(--insp-gap-xs, 4px);
   flex-shrink: 0;
+}
+
+/* ── Drill row — a nested array/object sub-field, collapsed inside an item ─── */
+
+.insp-nested__drill-row {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--insp-gap-sm, 8px);
+  border: 1px solid var(--insp-border, #cbd5e1);
+  border-radius: var(--insp-radius-sm, 4px);
+  background: var(--insp-control-bg, #fff);
+  padding: var(--insp-gap-xs, 4px) var(--insp-gap-sm, 8px);
+  min-height: 1.75rem;
+  font: inherit;
+  font-size: var(--insp-font-sm, 0.8125rem);
+  color: var(--insp-fg, #1e293b);
+  text-align: left;
+  cursor: pointer;
+}
+
+.insp-nested__drill-row:focus-visible {
+  outline: 2px solid var(--insp-focus, #2563eb);
+  outline-offset: 1px;
+}
+
+.insp-nested__drill-summary {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--insp-muted, #94a3b8);
 }
 
 .insp-nested__btn {
@@ -87,9 +207,4 @@
 
 .insp-nested__add {
   align-self: flex-start;
-}
-
-.insp-nested__body {
-  padding-top: var(--insp-gap-xs, 4px);
-  border-top: 1px solid var(--insp-divider, #e2e8f0);
 }
