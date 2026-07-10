@@ -242,3 +242,83 @@ describe('propSchemaToJsonSchema — dot-path fields', () => {
   })
 
 })
+
+// ── Nested itemSchema (D7 / ADR-022) — the deep-authorability seam ─────────
+//
+//  A field WITH `itemSchema` is a STRUCTURED nested container: an `array` emits
+//  a proper `items` sub-schema, an `object` emits `properties`. A field WITHOUT
+//  `itemSchema` stays OPAQUE (bare `{type:'array'}`/`{type:'object'}`) — the
+//  graceful fallback that keeps every current config byte-identical.
+
+describe('propSchemaToJsonSchema — nested itemSchema recursion', () => {
+
+  it('array WITHOUT itemSchema stays opaque (bare type:array, no items) — byte-identical fallback', () => {
+    const result = propSchemaToJsonSchema([field({ field: 'items', type: 'array' })])
+    const prop = result.properties['items']
+    expect(prop.type).toBe('array')
+    expect(prop).not.toHaveProperty('items')
+  })
+
+  it('object WITHOUT itemSchema stays opaque (bare type:object, no properties)', () => {
+    const result = propSchemaToJsonSchema([field({ field: 'bag', type: 'object' })])
+    const prop = result.properties['bag']
+    expect(prop.type).toBe('object')
+    expect(prop).not.toHaveProperty('properties')
+  })
+
+  it('array WITH itemSchema emits a proper items sub-schema (per-item fields exposed)', () => {
+    const result = propSchemaToJsonSchema([field({
+      field:      'cards',
+      type:       'array',
+      itemSchema: [
+        field({ field: 'label', type: 'string' }),
+        field({ field: 'color', type: 'color' }),
+      ],
+    })])
+    const items = result.properties['cards'].items
+    expect(items).toBeDefined()
+    expect(items!.type).toBe('object')
+    expect(Object.keys(items!.properties!)).toEqual(['label', 'color'])
+    expect(items!.properties!['color'].$comment).toBe('color')
+  })
+
+  it('object WITH itemSchema emits properties (the object fields are exposed)', () => {
+    const result = propSchemaToJsonSchema([field({
+      field:      'value',
+      type:       'object',
+      itemSchema: [field({ field: 'measure', type: 'enum-ref' })],
+    })])
+    const prop = result.properties['value']
+    expect(prop.type).toBe('object')
+    expect(Object.keys(prop.properties!)).toEqual(['measure'])
+  })
+
+  it('itemSchema recurses to arbitrary depth (item → its own array field → …)', () => {
+    const result = propSchemaToJsonSchema([field({
+      field:      'slides',
+      type:       'array',
+      itemSchema: [
+        field({ field: 'title', type: 'LocaleString' }),
+        field({
+          field:      'stats',
+          type:       'array',
+          itemSchema: [field({ field: 'value', type: 'number' })],
+        }),
+      ],
+    })])
+    const slide = result.properties['slides'].items
+    const stats = slide!.properties!['stats']
+    expect(stats.type).toBe('array')
+    expect(Object.keys(stats.items!.properties!)).toEqual(['value'])
+  })
+
+  it('nested itemSchema output is JSON-serializable', () => {
+    const result = propSchemaToJsonSchema([field({
+      field:      'items',
+      type:       'array',
+      itemSchema: [field({ field: 'label', type: 'string', required: true })],
+    })])
+    expect(JSON.parse(JSON.stringify(result))).toEqual(result)
+  })
+
+})

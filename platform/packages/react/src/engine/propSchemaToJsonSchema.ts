@@ -148,6 +148,25 @@ function buildProperty(field: PropField): JsonSchemaProperty {
   // ── type mapping
   Object.assign(prop, typeDescriptor(field.type))
 
+  // ── NESTED-ITEM SCHEMA (D7 / ADR-022) — recurse the sub-schema, lossless.
+  //  A field WITH `itemSchema` is a STRUCTURED nested container, not opaque: an
+  //  `array` field emits a proper `items` sub-schema, an `object` field emits
+  //  `properties`. WITHOUT `itemSchema` the emission is unchanged (a bare
+  //  `{type:'array'}`/`{type:'object'}`), so every existing config round-trips
+  //  byte-identically. Recursion is free — `propSchemaToSubSchema` calls back
+  //  into `buildProperty`, so an `itemSchema` sub-field's own `itemSchema`
+  //  descends to arbitrary depth. Mirrors the dot-path grammar's numeric-segment
+  //  descent (`prop-path.ts`) so read/write and wire agree.
+  if (field.itemSchema) {
+    const sub = propSchemaToSubSchema(field.itemSchema)
+    if (field.type === 'array') {
+      prop.items = sub
+    } else if (field.type === 'object') {
+      prop.properties           = sub.properties
+      prop.additionalProperties = sub.additionalProperties
+    }
+  }
+
   // ── options → enum (string-valued select fields)
   if (field.options && field.options.length > 0) {
     prop.enum = field.options.map(o => o.value)

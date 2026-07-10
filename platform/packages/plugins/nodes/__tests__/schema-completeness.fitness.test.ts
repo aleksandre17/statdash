@@ -279,6 +279,24 @@ describe('Constructor C0 — nested item-schema backlog is visible + non-regress
     expect(blank).toEqual([])
   })
 
+  // D7.0 / ADR-022 — the seam is DETECTABLE: `isOpaqueNested` keys off the actual
+  // presence of `itemSchema` on the field object (a runtime `in` check), so a field
+  // that GAINS an itemSchema (D7.2) is no longer opaque and drops out of the backlog
+  // automatically — while a bare array/object field stays opaque (unchanged). This
+  // proves the forcing-function will fire the moment a meta populates the seam.
+  it('a field WITH itemSchema is not opaque; a bare array/object field still is (seam detectable)', () => {
+    const label = { en: 'x' }
+    const bareArray:  PropField = { field: 'items', type: 'array',  label }
+    const bareObject: PropField = { field: 'bag',   type: 'object', label }
+    const structured: PropField = {
+      field: 'items', type: 'array', label,
+      itemSchema: [{ field: 'measure', type: 'enum-ref', source: 'metrics', label }],
+    }
+    expect(isOpaqueNested(bareArray)).toBe(true)
+    expect(isOpaqueNested(bareObject)).toBe(true)
+    expect(isOpaqueNested(structured)).toBe(false)  // ← forcing function drops it from SCHEMA_TODO
+  })
+
 })
 
 // ── Schema vocabulary extensions (enum-ref + coverage) are usable ─────────────

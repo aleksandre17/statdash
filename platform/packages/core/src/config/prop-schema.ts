@@ -139,6 +139,35 @@ export interface PropField {
    * `'string'` or `'enum-ref'` field can also be localized.
    */
   coverage?:   'localized'
+  /**
+   * NESTED-ITEM SCHEMA (D7 — deep authorability, ADR-022). The PropSchema of each
+   * ITEM (when `type === 'array'`) or of the object's fields (when
+   * `type === 'object'`). Present ⇒ the field is a STRUCTURED nested container,
+   * authored via the recursive nested editor (item-by-item, each sub-field its own
+   * control). Absent ⇒ the field stays OPAQUE and gracefully falls back to the
+   * raw-JSON control — so every current `array`/`object` field is byte-identical
+   * and un-migrated. This is an OPTIONAL FIELD on the existing `array`/`object`
+   * types, NOT a new `PropFieldType` (Law 8 / OCP: new nested capability = a
+   * populated optional field; `PropField`, `SliceMeta`, `NodeRegistry`, and
+   * `Inspector` interfaces are UNCHANGED). Recursive: an `itemSchema` sub-field
+   * may itself carry an `itemSchema` (arbitrary depth); the wire bridge
+   * (`propSchemaToSubSchema`) and the dot-path grammar (`prop-path.ts`, numeric
+   * segments — `items.0.value.measure`) already descend it losslessly.
+   * DATA, not code — a nested PropSchema is Constructor-serializable (Law 2).
+   */
+  itemSchema?: PropSchema
+  /**
+   * Dot-path into an item used as its DISPLAY TITLE in the nested list editor
+   * (e.g. `'label'`, `'id'`). Absent ⇒ the editor falls back to "Item N". Purely
+   * presentational — never a write target, ignored unless `itemSchema` is present.
+   */
+  itemLabel?:  string
+  /**
+   * Item-level property groups for the nested Inspector (mirrors the top-level
+   * `PropertyGroup` accordion sections, scoped to one item's `itemSchema`).
+   * Ignored unless `itemSchema` is present.
+   */
+  itemGroups?: PropertyGroup[]
 }
 
 /** Ordered list of typed field descriptors for a slice's property panel. */
