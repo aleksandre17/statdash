@@ -152,6 +152,10 @@ export function StudioShell() {
                 onSelectNode={controller.selectNode}
                 onDropNode={controller.handleDrop}
                 onBindMetric={controller.bindMetric}
+                nav={controller.canvasSite.nav}
+                chrome={controller.canvasSite.chrome}
+                chromeConfig={controller.canvasSite.chromeConfig}
+                locale={locale}
               />
             </Suspense>
           )

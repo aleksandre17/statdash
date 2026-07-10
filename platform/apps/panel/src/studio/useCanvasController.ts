@@ -1,10 +1,11 @@
-import { useState, useCallback } from 'react'
-import { useConstructorStore, useActivePage, useSelectedNode, useChromeSelection } from '../store/constructor.store'
+import { useState, useCallback, useMemo } from 'react'
+import { useConstructorStore, useActivePage, useSelectedNode, useChromeSelection, useSite, usePages } from '../store/constructor.store'
 import { nodeSchemaSource } from '../inspector/schemaSource'
 import { firstMetricField, isMetricBindable, bindMetricToProps } from '../discovery/metricBinding'
 import { setAtPath } from '../inspector/showWhen'
 import { makeNode } from '../canvas/insertNode'
 import { toNodePageConfig } from '../canvas/canvasPageAdapter'
+import { projectCanvasSiteChrome } from '../canvas/canvasSiteChrome'
 import type { VisibilityExpr } from '@statdash/engine'
 
 // ── useCanvasController — the canvas↔store glue, extracted for reuse (AR-49 M1.2)
@@ -28,6 +29,8 @@ export function useCanvasController() {
   const page       = useActivePage()
   const selectedId = useSelectedNode()
   const chromeSel  = useChromeSelection()
+  const site       = useSite()
+  const pages      = usePages()
   const selectNode    = useConstructorStore((s) => s.selectNode)
   const insertNode    = useConstructorStore((s) => s.insertNode)
   const updateNode    = useConstructorStore((s) => s.updateNode)
@@ -42,6 +45,11 @@ export function useCanvasController() {
   const selected = page && selectedId ? page.nodes[selectedId] ?? null : null
   const nodeConfig = page ? toNodePageConfig(page) : null
   const selectedBindable = selected ? isMetricBindable(nodeSchemaSource.getSchema(selected)) : false
+
+  // The canvas's runner-parity chrome inputs (nav/chrome/chromeConfig) — projected
+  // from the authoring session so the live canvas rail renders the REAL nav links +
+  // slot config (WYSIWYG). Memoised on the two inputs it derives from.
+  const canvasSite = useMemo(() => projectCanvasSiteChrome(site, pages), [site, pages])
 
   // Bind a governed metric onto a block — one write, both gestures (drag + click).
   const bindMetric = useCallback(
@@ -107,6 +115,7 @@ export function useCanvasController() {
 
   return {
     page, pageId, selected, selectedId, chromeSel, nodeConfig, selectedBindable,
+    canvasSite,
     dragging, setDragging,
     previewPerspectiveId, setPreviewPerspectiveId,
     selectNode,

@@ -36,8 +36,9 @@
 import { useState }           from 'react'
 import { MemoryRouter }       from 'react-router-dom'
 import { SiteProvider }       from '@statdash/react'
+import type { NavEntry, ChromeConfig } from '@statdash/react'
 import { NodePageRenderer }   from '@statdash/react/engine'
-import type { NodePageConfig } from '@statdash/react/engine'
+import type { NodePageConfig, ChromeEntry } from '@statdash/react/engine'
 import { CanvasOverlay }      from './CanvasOverlay'
 import { CanvasToolbar }      from './CanvasToolbar'
 import { useLivePreviewStores, type PreviewMode } from './useLivePreviewStores'
@@ -46,6 +47,13 @@ import type { NodeBase }      from '@statdash/react/engine'
 import './canvas.css'
 
 const CANVAS_I18N = { locales: ['ka', 'en'], defaultLocale: 'ka', fallbackLocale: 'ka' }
+
+// Empty defaults: a CanvasView mounted without site chrome (isolated tests, a
+// brand-new session) behaves EXACTLY as before this seam existed — the shells fold
+// to their fail-soft states (hollow-but-safe rail). Module-scoped constants so they
+// are shared, stable references (no re-render churn from a fresh {}/[] each render).
+const EMPTY_NAV:    NavEntry[]                   = []
+const EMPTY_CHROME: Record<string, ChromeEntry> = {}
 
 export interface CanvasViewProps {
   /** The live NodePageConfig being edited — rendered verbatim by the engine. */
@@ -73,10 +81,23 @@ export interface CanvasViewProps {
    * metricBinding write (spec §3). Absent ⇒ metric drops are ignored.
    */
   onBindMetric?:  (nodeId: string, metricId: string) => void
+  /**
+   * The site's REAL chrome inputs — the panel's analogue of the runner's
+   * manifest.{nav,chrome,chromeConfig} (projected by projectCanvasSiteChrome). These
+   * make the canvas WYSIWYG: the InnerSidebar rail renders the authored nav links +
+   * slot config instead of a hollow default. Absent ⇒ empty/fail-soft (unchanged
+   * pre-seam behaviour), so isolated mounts still render safely.
+   */
+  nav?:          NavEntry[]
+  chrome?:       Record<string, ChromeEntry>
+  chromeConfig?: ChromeConfig
+  /** Preview locale for chrome content (the top-bar ka|en switch); defaults to ka. */
+  locale?:       string
 }
 
 export function CanvasView({
   page, selectedNodeId, dragging, previewPerspectiveId, onSelectNode, onDropNode, onBindMetric,
+  nav = EMPTY_NAV, chrome = EMPTY_CHROME, chromeConfig, locale,
 }: CanvasViewProps) {
   // Preview mode is canvas view-state — transient and local to this component
   // (the same pattern as `dragging`; there is no persisted canvas-view-state slice
@@ -119,7 +140,15 @@ export function CanvasView({
           switch remounts FilterProvider → fresh perspectiveState). */}
       <div className="canvas-layer canvas-layer--renderer" aria-hidden="true">
         <MemoryRouter key={previewEntry} initialEntries={[previewEntry]}>
-          <SiteProvider stores={stores} nav={[]} pages={{}} i18n={CANVAS_I18N}>
+          <SiteProvider
+            stores={stores}
+            nav={nav}
+            chrome={chrome}
+            chromeConfig={chromeConfig}
+            pages={{}}
+            locale={locale}
+            i18n={CANVAS_I18N}
+          >
             <NodePageRenderer page={renderedPage} />
           </SiteProvider>
         </MemoryRouter>
