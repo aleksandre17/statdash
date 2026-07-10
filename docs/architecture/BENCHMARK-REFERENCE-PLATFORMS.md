@@ -6,10 +6,14 @@
 >
 > **Reading rules:** *Reference-leaders* = market claims from domain knowledge of those products. *We-today* = grounded in files cited (path). *Severity* = **None** (at/above standard) · **Lag** (have the seam, under-built/under-populated) · **Missing** (no seam). *Opportunity* = the canonical adoption in one line. Registered visions are cross-linked to `ARCHITECTURE-REGISTRY.md` (AR-*) and NOT re-litigated here.
 > _First scan: 2026-07-08 (platform-architect)._
+>
+> **Structure — this file now carries TWO instruments:**
+> - **Part I — Capability-parity matrix** (below): the terse one-body SSOT the lead consults at every Leader's Scan to spot functional LAGs. Row-per-capability, severity-graded, refreshed when a seam or a leader moves.
+> - **Part II — Deep constructor study** (from `## Part II`): the durable *design* reference that studies HOW the reference-class constructors think and make authoring SIMPLE — per-group mental models, contextual-simplicity mechanisms, where each falls short for our quadrant → the canonical principles we adopt, the sharpened our-better thesis, and NEW improvement candidates that feed M4-and-beyond. Added 2026-07-10 (owner mandate: "study so we build BETTER than them"). Part II is expert distillation from trained product knowledge (no live web audit was available), grounded at every recommendation in a cited codebase seam.
 
 ---
 
-## Capability matrix
+# Part I — Capability-parity matrix (Leader's-Scan instrument)
 
 | # | Capability area | Reference leaders ship (concrete) | We today (cited) | Severity | Opportunity (canonical form) |
 |---|-----------------|-----------------------------------|------------------|----------|------------------------------|
@@ -36,3 +40,173 @@
 2. Re-rank the **Lag/Missing** rows by (Constructor-phase leverage × distance from standard) — that ranking is the scan's Top-5.
 3. New **Missing** rows or a leader shipping a new model = a refresh trigger; add the row, then propose an initiative into `ARCHITECTURE-REGISTRY.md` (never here — this file stays one-body).
 4. Honesty rule: keep the **None** rows visible. A benchmark that only lists gaps mis-calibrates the platform's real standing (versioning, expr, validation, tokens, i18n, a11y are genuinely reference-grade).
+
+---
+---
+
+# Part II — Deep constructor study (durable design reference)
+
+> **What this is.** A depth-over-breadth distillation of how the reference-class *constructors* (not their runtimes) are designed — the primary abstraction each hands the author, the specific UX mechanisms that make authoring SIMPLE (the owner's north-star: "the user sees only what they need in that context"), and where each falls short for **our unique quadrant**: *statistics-grade governance (LookML/Eurostat integrity, one-governed-number) AND non-programmer-authorable, without a query language.* It exists to FEED the build (M4 §`SPEC-authoring-reconception-M4-ia-canonical.md` and beyond), not to archive.
+>
+> **Honesty constraint (owner-set).** No live web research was available. This is **expert distillation from trained product knowledge** of how these products actually behave — real patterns and mental models, not a live audit. Where a specific is uncertain it is marked *(uncertain)*. Every recommendation is **grounded in a cited codebase seam** — we do not propose reinventing what we already own; we cite it.
+>
+> **Invariants held throughout** (nothing here proposes violating them): the dependency arrow (`contracts←expr←core←charts←react←plugins←apps`), config-is-data (Law 2 — no functions/`eval`/`fetch` in config), the semantic spine (one `resolveMeasureRef` path), role-is-lens, Law 9 (provenance/a11y), and YAGNI on net-new surfaces (defer a capability until a real consumer exists — [[maximal-orthogonality]]).
+
+---
+
+## II.0 The axes every constructor is positioned on
+
+Before the per-group dives, the two axes that organize the whole class — and locate our target:
+
+- **Power ⟷ Simplicity.** Retool/Looker/Malloy sit at *power* (a query/expression language, expert users); Notion/Wix-ADI/Framer sit at *simplicity* (blocks, presets, non-experts). Almost every product trades one for the other.
+- **Governed ⟷ Free.** Looker/LookML, dbt, Tableau-certified, Power-BI-endorsed sit at *governed* (a defined-once semantic model, provenance, one number); Webflow/Framer/Builder/Notion sit at *free* (any content, any binding, no defined semantics).
+
+Plotting the class: the **governed-and-simple** cell is nearly empty. Looker is governed but expert (LookML). Builder.io is simple but ungoverned. Metabase straddles but its "governed" half is a modeler surface, not a non-programmer surface. **Our quadrant is governed × simple × no-query** — and our seams already aim there: a governed *noun* (`ManifestMetric`) that a non-programmer binds by drag (`fieldwells/binding.ts`), suggested by the data's own profile (`showme/ShowMe.tsx`), with provenance modeled (`MetadataPort`/`agency_scheme` AR-20). The study's job is to import each leader's *simplicity mechanism* without importing its *query language*, and each leader's *governance mechanism* without importing its *expert surface*.
+
+---
+
+## II.1 Per-group constructor distillation
+
+> Each group: **① Mental model** (the one abstraction the author manipulates) · **② How they solve OUR eight problems** (mapped to the M4 audit findings + the doctrine) · **③ Contextual-simplicity mechanisms** (why it is simple for a non-expert) · **④ Where it falls short for OUR quadrant** (the precise gap we beat).
+
+### Group A — Page/site builders (Webflow · Framer · Builder.io · Plasmic · Puck · Gutenberg · Wix)
+
+**① Mental model.** A **component/element tree** the author manipulates directly on a WYSIWYG canvas; every node is a box with a style-box and a props-box. Webflow adds the **CSS box model made literal** (the author IS writing CSS via panels — classes + combo-classes as the reuse unit). Framer adds **variants + interaction states** (a component is a state machine of visual variants). Builder.io is the closest structural cousin to us: **registered components with typed `inputs`** + a headless **content model**, so the canvas is a projection of a registry (exactly our `NodeSliceMeta`→palette). Puck is the open-source distillation of *this* idea: a tiny React config-driven editor where each component ships a `fields` descriptor. Gutenberg = **blocks** with `block.json` (attributes + supports). Wix ADI = **AI generates the whole first site from a Q&A**, then hands off to the Editor.
+
+**② How they solve our problems.** *Entry-state:* boot into the last-edited/first page on the canvas — never a void (Builder, Framer, Webflow). *Insert palette:* icon-tile catalog with name + description + preview, grouped, searchable (Webflow Add-panel, Framer Insert, Builder registered-component list). *Contextual inspector:* right panel scoped to the selected node, tabbed Style/Settings/Interactions (Webflow Style-panel is the archetype). *Data binding:* Builder binds a content-model field / data source to an input; Webflow binds a **CMS Collection** field to an element; Framer binds a **CMS collection** to a component and **repeats** it. *Navigator/hierarchy:* Webflow **Navigator** and Framer/Figma **Layers** show the full tree. *Templates/page-types:* Webflow page types (static/CMS/commerce), Framer presets, Wix ADI verticals, Builder starters. *Undo/history:* linear undo + (Builder) revision history.
+
+**③ Contextual-simplicity mechanisms.** Selection-driven right panel (you see only the selected node's props). **Progressive disclosure** via tabs and collapsible sections (Webflow's Style panel hides advanced sub-panels until opened). Framer's **"only the props declared by this variant"**. Gutenberg's **slash-command** inline insert (`/image`) — insertion at the cursor, no panel trip. Builder's palette is a **pure projection of what's registered** — the author browses capabilities, not a hand-list.
+
+**④ Where they fall short for OUR quadrant.** **No governed number.** A Webflow CMS field or Builder input is a *raw* value — there is no "define-once, one-number-everywhere, with provenance" concept. Binding is to a column/field, not to a *governed metric* with unit/agency/methodology/preliminary. Provenance is entirely absent (or, in Builder, a modeler concern invisible on the authored page). Their "repeat over a collection" is powerful but ungoverned — no notion that each repeated card must show the *same* certified number. **We beat them by making the bind target a governed noun** (`ManifestMetric` via `fieldwells/binding.ts`) with provenance first-class in the authoring surface (M4 §2.2/§2.4, Law 9) — their simplicity, our governance.
+
+### Group B — App builders (Retool · Appsmith · ToolJet)
+
+**① Mental model.** A **binding graph**: components on a canvas + queries/resources, wired by **`{{ }}` reactive expressions** (a spreadsheet-like dependency graph — change a query, everything referencing it recomputes). The primary abstraction is *state + reactive references*, not a document tree.
+
+**② How they solve our problems.** *Insert:* component palette (grouped). *Inspector:* right panel, **property groups** (Retool/Appsmith organize the inspector into labelled sections — the exact idiom our `PropertyGroup` in `prop-schema.ts` cites). *Data binding:* the `{{ }}` sandboxed-JS reference from any prop to any query result — maximally powerful, maximally expert. *Events:* per-component event handlers (onClick → run query / control component). *Preview:* live query preview panel (run the query, see rows before wiring). *Templates:* app templates + sample DB for an explorable empty state.
+
+**③ Contextual-simplicity mechanisms.** Property groups collapse advanced config. **Autocomplete/intellisense** in the `{{ }}` editor (surfaces available state). A **live-preview pane** so the author sees real data immediately. Sample resources so the tool is never empty-and-dead.
+
+**④ Where they fall short for OUR quadrant.** **The `{{ }}` expression IS the query language** — this is the powerful-but-expert pole; a non-programmer cannot author a Retool app. Governance is nil: any component can bind any raw query result; there is no certified metric, no provenance, no "one number." **We beat them by keeping their *reactive-preview* and *property-group* ergonomics while replacing `{{ }}` with a governed-noun pick** — `resolveMeasureRef` gives the reactive preview (M4 §2.7 "Preview value" chip) without exposing an expression language (FF-AUTHOR-NO-QUERY). Our `PropertyGroup`-derived Inspector tabs (M4 §2.11) are Retool's property groups, but the field controls are a *typed, safe registry* (`PropFieldType` discriminated union in `prop-schema.ts`), not free JS.
+
+### Group C — Design tools (Figma · FigJam) — the contextual-editing gold standard
+
+**① Mental model.** A **spatial layer tree** of frames/objects; **components + instances with overrides** are the reuse spine (define a component once, place instances, override per-instance); **variants** bundle a component's states; **auto-layout** is constraint-based flow. The author manipulates *objects in space* with a properties panel that is ruthlessly selection-scoped.
+
+**② How they solve our problems.** *Contextual inspector (study hardest — this is the owner's north-star):* the right panel shows **exactly** the properties of the current selection and **nothing else** — select a frame → layout/constraints; select text → typography; select an instance → its **component properties** (the author sees only the knobs the component *exposed*, a curated subset, not every internal). Multi-select → the **intersection** of shared properties. *Navigator:* the Layers panel = the full hierarchy, with nesting, lock, hide. *Palette/assets:* the **Assets panel** = your components library, searchable, drag-to-place. *History:* named version history + multiplayer + comments.
+
+**③ Contextual-simplicity mechanisms.** This is the masterclass. **Selection drives everything** — zero mode-switching; the panel *is* the context. **Component properties as a curated surface** — the component author decides which props are exposed to instance-editors, so a consumer sees a *simple* surface even over a complex component (this is precisely our M4 §2.10 "expose the interface as PropSchema" done at the design layer). **Progressive disclosure** everywhere (advanced sections collapsed). **Comments/annotations** anchored to objects (async review without a separate tool).
+
+**④ Where they fall short for OUR quadrant.** Figma has **no data and no governance** — it is pure presentation; there is nothing to bind, no number, no provenance. That is not a criticism of Figma (out of its domain) but it means we borrow its *interaction model* (selection-scoped panel, component-properties-as-curated-surface, instances-with-overrides) and supply the entire data/governance dimension ourselves. **Our-better is not "beat Figma at design" — it is "bring Figma's contextual-editing discipline to a *governed-data* authoring tool,"** which no BI or builder product has done. M4 §2.10 (schema-complete Inspector) + §2.11 (selection-driven tri-context dock) are the direct import of Figma's discipline; the NEW "symbols/instances" candidate (II.4) imports its reuse spine.
+
+### Group D — Docs/structured content (Notion · Sanity · Contentful)
+
+**① Mental model.** **Notion:** a linear **block** stream (`/`-inserted), where a block can be a database view — the doc IS the canvas, insertion is inline. **Sanity:** a **schema-defined structured document** (`defineType`/`defineField`) rendered by the **Studio** — the editor is *generated from the schema* (the purest schema→UI lineage alongside JSON-Forms), and **Structure Builder** lets you shape the *navigation/desk* over your content. **Contentful:** **content models** (typed fields) + an entry editor, references between entries, and a **publishing workflow** (draft → in-review → published) with roles.
+
+**② How they solve our problems.** *Entry-state:* Notion opens a document (never a void); a new page offers **templates**. *Insert:* Notion's **slash command** — the canonical inline contextual insert. *Inspector:* Sanity/Contentful generate the field editor **from the schema** (our exact PropSchema→Inspector pattern). *Provenance/workflow:* Contentful/Sanity have **editorial workflows** (draft/review/publish states, roles, scheduled publish) and **field-level localization**. *Templates:* Notion database + page templates; Contentful content-type presets.
+
+**③ Contextual-simplicity mechanisms.** Notion's `/` menu = **insert-in-context, filtered-as-you-type** (no palette trip, no mode). Sanity's editor shows **only the fields the schema declares**, grouped, with validation inline — simple *because* the schema curated it. Contentful's workflow shows the author only the actions valid in the current state (state-machine-scoped affordances).
+
+**④ Where they fall short for OUR quadrant.** Structured content is governed *at the schema level* but **has no numeric/statistical semantics** — a Contentful field is text/ref/media, never a "governed measure with unit/agency/methodology/preliminary." There is no metric, no cube, no provenance-on-a-number. **We beat them by fusing their schema-generated editor (which we already have — `Inspector.tsx` reads `getSchema(node)`) with a *statistical* type system** (`PropFieldType` includes `DataSpec`/`ChartDef`; the bind target is a governed metric). Their **editorial workflow** (Contentful/Sanity) is the strongest thing to *adopt* — it is exactly AR-47 (config authoring governance draft→review→publish), and their **comments/annotations** feed the same. We should not out-invent workflow; we should adopt Contentful's model wholesale into AR-47.
+
+### Group E — BI / semantic layer (Looker+LookML · Metabase · Malloy · Tableau · Power BI · Sigma)
+
+**① Mental model.** Two sub-families. *Semantic-model-first* (**Looker/LookML**, **Malloy**, **dbt-metrics**, **Cube**): the author **defines a governed model in code** (dimensions, measures, joins) once; consumers **Explore** it without writing SQL — the model is the SSOT, the Explore is a constrained pick-list over it. This is *our* governance ideal — but the define surface is a **language** (LookML/Malloy), i.e. expert. *Visualization-first* (**Tableau**, **Power BI**, **Sigma**): the author drags **fields into shelves/wells** and the tool infers a chart; **"Show Me"** (Tableau) suggests chart types fit for the selected fields; governance is layered on via **certified/endorsed** dataset badges.
+
+**② How they solve our problems.** *Data binding — the gold idiom:* **field-wells / shelves** (Tableau rows/columns/marks; Power BI field wells; Sigma) — drag a field into a well, the chart updates. *Suggestion:* Tableau **"Show Me"** greys out chart types that don't fit the current fields and highlights the recommended one. *Provenance/governance:* Tableau **Certified** data sources, Power BI **endorsement** (Promoted/Certified), Looker's model-as-code review — a *governance lifecycle* on the data asset. *Define-vs-consume:* Looker **Develop (LookML) vs Explore** — the sharpest "two lenses over one model" in the class (our M4 §2.2). *Lineage:* Sigma/Power BI show **field lineage** (where a number comes from).
+
+**③ Contextual-simplicity mechanisms.** Field-wells make binding **direct-manipulation** (no formula for the common case). "Show Me" is **fit-for-data guidance** (the tool proposes, the author confirms). Certified badges give the consumer **trust-at-a-glance** without reading the model. Explore hides the model's complexity behind a **curated pick-list**.
+
+**④ Where they fall short for OUR quadrant.** Looker/Malloy: **the define surface is a language** — a statistics author who is not a developer cannot write LookML. Tableau/Power BI: **the visualization author CAN inject ungoverned calculated fields** — governance is opt-in (certify *after the fact*), not structural, and the "measure" is often a raw column, not a defined-once statistical number. None of them are *non-programmer authorable AND governed by construction*. **We beat them precisely here:** we already ship **"Show Me"** (`showme/ShowMe.tsx`, projected from SDMX role — *more* principled than Tableau's heuristic because it reads the data's *semantic* role, not just its datatype) and **field-wells** (`fieldwells/binding.ts` — with a *byte-identical* invariant that the drag path and the typed-editor path produce the same config, which Tableau does not guarantee), but our well's chip is a **governed `ManifestMetric`**, defined without a language (the M3.0 calc/derived-metric editor, no LookML), with provenance modeled (AR-20). Looker's Explore-vs-Develop becomes our *role-is-lens over one `<MetricCard>`* (M4 §2.2) — same model, but the define surface is *forms, not code*. **This group is where our thesis is sharpest: we are Looker's governance with Tableau's directness and Notion's non-programmer surface, none of which any single one of them achieves.**
+
+### Group F — Form/schema-driven (Form.io · JSON-Forms · react-jsonschema-form)
+
+**① Mental model.** A **JSON Schema (+ UI Schema)** IS the source of truth; a **generic renderer** walks it and emits the form — the purest `render(schema) → UI` in the class, and the direct lineage of our PropSchema Inspector. Form.io adds a **visual form builder** (drag fields → it emits the schema) + conditional logic + a server. JSON-Forms cleanly separates **data schema** (what is valid) from **UI schema** (how it lays out) + a **renderer registry** (control mapped by tester → renderer). RJSF is the React-idiomatic single-schema renderer.
+
+**② How they solve our problems.** *Inspector/authoring:* the whole point — fields are generated from schema, validated at the boundary (Ajv). *Conditional visibility:* JSON-Forms `rule` (SHOW/HIDE/ENABLE/DISABLE), Form.io conditional + advanced logic. *Extensibility:* JSON-Forms **renderer registry** (register a control keyed by a tester) = OCP for field controls — our `fieldControlRegistry` is exactly this. *Validation:* schema-at-boundary, the two-tier model.
+
+**③ Contextual-simplicity mechanisms.** The author of the *form* never writes render code — the schema curates the surface. JSON-Forms' **layout schema** gives grouping/tabs for free (our `PropertyGroup`). The renderer registry means a new field type is *registered*, and every form gets it — capability, not one-off.
+
+**④ Where they fall short for OUR quadrant.** They are **domain-free** — a JSON-Forms schema has no statistical types, no governed metric, no provenance, no chart. They give us the *engine pattern* (schema→UI, renderer registry, boundary validation) but none of the *domain*. **We beat them by making the schema *statistical*:** `PropFieldType` carries `DataSpec`/`ChartDef`/`enum-ref`-from-a-live-catalog (`prop-schema.ts`) — field types no generic form library has — and the **completeness gate** (M4 §2.10 `FF-SCHEMA-COMPLETE`, compile-time 1:1 against the element interface) makes "every renderable prop is authorable" a *build gate*, which no form library enforces (they trust the schema author). This is the form-library lineage taken to a governed, provably-complete extreme.
+
+---
+
+## II.2 Canonical principles for OUR constructor (ranked · attributed · seam · wave)
+
+> The ranked design laws we adopt from the best of the class. Each: *what*, *who does it best*, *our seam* (where it lives / should live), *M4 wave*.
+
+| # | Canonical principle | Who does it best | Our seam | Wave |
+|---|---------------------|------------------|----------|------|
+| 1 | **Selection IS the context** — the inspector shows exactly the selected node's props and nothing else; zero mode-switching | **Figma** (component-properties as curated surface) · Webflow · Retool | `Inspector.tsx` (`getSchema(node)` generic renderer) → tri-context dock | M4 §2.10/§2.11 · W7/W8 |
+| 2 | **The palette/inspector is a pure projection of a registry** — new capability = new registered descriptor, zero catalog code (OCP) | **Builder.io** (`registerComponent` inputs) · Puck (`fields`) · JSON-Forms (renderer registry) · Gutenberg (`block.json`) | `NodeSliceMeta`→palette · `fieldControlRegistry` · `PropFieldType` union (`prop-schema.ts`) | M4 §2.3 · W1 |
+| 3 | **Define-once, consume-everywhere over ONE governed model** — two lenses (develop vs explore), never two truths | **Looker** (LookML ⟷ Explore) · dbt docs · Metabase | one `<MetricCard>`, role-is-lens; `resolveMeasureRef` single path | M4 §2.2 · W2 |
+| 4 | **Direct-manipulation binding via field-wells + fit-for-data suggestion** — drag a field into a well; the tool proposes the chart | **Tableau** (shelves + "Show Me") · Power BI · Sigma | `fieldwells/binding.ts` (byte-identical) · `showme/ShowMe.tsx` (SDMX-role projection) | shipped; extend in W2/W3 |
+| 5 | **Schema-generated, boundary-validated editor** — the author never writes render code; the schema curates the surface | **Sanity/Contentful** (schema→Studio) · Form.io · JSON-Forms · RJSF | `PropSchema`→`Inspector.tsx`; Ajv-at-boundary two-tier validation | M4 §2.10 · W8 |
+| 6 | **Never a void — boot into content; every empty region guides the next action** | **Notion** (opens a doc) · Builder/Figma (first page) · Linear (empty-state CTAs) | derived `useEffectiveActivePage`; `<StudioEmptyState>` `EmptyKind` | M4 §2.1 · W0 |
+| 7 | **Templates/page-types as the anti-blank-canvas** — start from a type-appropriate structure, not a void | **Notion** templates · Webflow page types · Wix ADI · Contentful models | `starterTemplates.ts`→`PageTypePreset` registry | M4 §2.8 · W9 |
+| 8 | **The full hierarchy is legible in one Navigator** — orient, don't guess | **Webflow** Navigator · **Figma** Layers | `outline/OutlineTree` (+ chrome tier) | M4 §2.9 · W10 |
+| 9 | **Inline, filtered-as-you-type insertion in context** (slash command) — insert without a panel trip | **Notion** `/` · Gutenberg · Linear | `NodePalette` (add inline `/` path — NEW, II.4) | candidate |
+| 10 | **Governance lifecycle on the data asset** — certified/endorsed/preliminary as a visible, filterable state | **Tableau Certified** · **Power BI endorsement** · Collibra | `ManifestMetric` + `MetadataPort` (extend — NEW, II.4) | candidate |
+| 11 | **Reuse spine: define a component once, place instances with per-instance overrides** | **Figma** components/instances · Webflow symbols · Framer | node tree + registry (NEW symbols capability, II.4) | candidate |
+| 12 | **Editorial workflow: draft → in-review → published, role-scoped, with comments** | **Contentful** · **Sanity** · Figma comments | AR-47 (registered) — adopt Contentful's model wholesale | AR-47 |
+| 13 | **Reactive live-preview of the real result before commit** — see the number/rows immediately | **Retool/Appsmith** live query preview · Tableau Prep · Looker Explore | `resolveMeasureRef` "Preview value" chip | M4 §2.7 · W6 |
+| 14 | **Field lineage / provenance surfaced to the consumer, not just the modeler** | **Sigma** lineage · Power BI · Looker | `agency_scheme` AR-20 · AR-43 lineage vision | AR-43/44 |
+
+**Ranking logic:** 1–8 are *adopt-now* (each maps to a live M4 wave or a shipped seam); 9–11 are *NEW candidates* (II.4); 12–14 are *already-registered* visions to hold the line on (adopt the leader's model, don't re-invent).
+
+---
+
+## II.3 The "our-better" thesis, sharpened (architecture, not marketing)
+
+For the **governed × simple × no-query** quadrant, the concrete ways we exceed each leader — each a structural claim, each tied to a seam:
+
+1. **Registry-projected palette + inspector vs their hand-maintained catalogs.** Builder/Webflow curate palettes; JSON-Forms/Puck register field defs. We do *both* and gate it: `NodeSliceMeta`→palette is a pure projection (Benchmark row 2 = None), and the **completeness gate** (`FF-SCHEMA-COMPLETE`, compile-time 1:1 against the element interface, M4 §2.10) makes "every renderable prop is authorable" a *build failure if violated* — no leader enforces authoring-completeness; they trust the schema author. **Better = provable, not merely present.**
+
+2. **Derived-home fitness function vs their lifecycle boot.** Every builder boots into a page *by lifecycle* (an effect runs, selects a page). We make "there is always a home" **unrepresentable-otherwise** via derivation (`activePageId ?? pages[0]`, `FF-ALWAYS-A-HOME`, M4 §2.1). **Better = a fitness function, not a hope** (the audit proved the imperative boot still yielded `null`).
+
+3. **Governed-noun binding vs a query language.** Retool binds via `{{ JS }}`; Looker via LookML; Tableau lets you inject ungoverned calc fields. We bind by dragging a **governed `ManifestMetric` chip** into a field-well (`fieldwells/binding.ts`) — *and* guarantee the drag path is **byte-identical** to the typed-editor path (an invariant Tableau does not make). The metric is defined without a language (M3.0 calc editor). **Better = Tableau's directness + Looker's governance − the expert surface.**
+
+4. **Semantic-role suggestion vs datatype heuristic.** Tableau "Show Me" suggests from field *datatypes*. Our `showme/ShowMe.tsx` suggests from **SDMX semantic role** (isTime→timeseries, geo→map, hierarchy→tree) — richer signal, and it emits the *same populated `query` DataSpec* the typed editor produces (no second dialect). **Better = semantics over datatype, one config output.**
+
+5. **Provenance in the authoring surface vs modeler-only.** Every builder that has provenance shows it to the *modeler* (Looker Develop) or nowhere. We put agency/code/unit/last-updated/methodology/preliminary on the **`<MetricCard>` in BOTH lenses** (M4 §2.2, Law 9), resolved from the existing `MetadataPort`/AR-20 — where the author *binds*, not only where the modeler *models*. **Better = provenance is first-class at the point of authoring, for a non-modeler.**
+
+6. **One-model-two-lenses as role-is-lens vs two routes/permissions.** Looker's Develop/Explore are two apps; Metabase's model/reference are two screens. Ours is **one `<MetricCard>` under two affordance lenses** (role-is-lens, `FF-ROLE-IS-LENS`) — no duplicate markup, provenance in both. **Better = SRP at the component level, enforced by a fitness gate forbidding a second metric-row.**
+
+7. **Statistics-grade field types vs domain-free schemas.** JSON-Forms/Contentful field types are generic (string/ref/media). Our `PropFieldType` carries `DataSpec`/`ChartDef`/`enum-ref`-from-live-catalog (`prop-schema.ts`) — the schema→UI engine of the form-library lineage, but with a *statistical* type system no generic library has. **Better = the form-library pattern, domain-specialized and completeness-gated.**
+
+8. **Non-blocking guidance vs a wizard OR a void.** Wix ADI blocks you through a Q&A; most builders drop you into a void. Our Guided-Canvas doctrine (M4 §1.5) guides by *affordance* (empty-state CTAs, readiness signals, suggestions) with the ONLY hard gate being *structural impossibility* — and every affordance is a **projection of a registry/graph we already own** (capability registry, `computeMetricImpact` reverse index, save-guard readiness), so guidance is self-maintaining and fitness-checked, not a tour that rots. **Better = guided AND non-blocking AND self-maintaining.**
+
+**The one-sentence thesis:** *we are Looker's governance with Tableau's directness, Figma's contextual-editing discipline, and Notion's non-programmer surface — a combination no single leader achieves — because our governed noun, our registry-projected surfaces, and our completeness/home/role fitness gates let us hold both axes at once.*
+
+---
+
+## II.4 NEW improvement candidates the study surfaced (feed the roadmap)
+
+> Only items **NOT already in the M4 spec** (§2.1–§2.11 / Waves 0–10) and **NOT already registered** (AR-36/38/40/42/43/46/47/48, AR-30-deferred). Each: *what · reference lineage · our seam · rough effort · governed-quadrant twist · disposition.* Effort: **S** ≤ few days apps-only · **M** ~1 wave · **L** multi-wave / crosses a packages seam.
+
+| # | Candidate | Reference lineage | Our seam / cost | Effort | Governed-quadrant twist (why it's our-better, not a copy) | Disposition |
+|---|-----------|-------------------|-----------------|--------|-----------------------------------------------------------|-------------|
+| **N1** | **Reusable node/section *symbols* with per-instance overrides** — author a block once (e.g. a "governed indicator card"), place instances across pages/profiles, override per instance | Figma components/instances · Webflow symbols · Framer · Builder.io | node tree + registry; a `symbolRef` node kind + an override map; touches `packages` (new node/engine concept) | **L** | Instances **rebind a different governed metric** while inheriting layout+provenance chrome — one certified card design, N governed numbers. No builder's symbol carries governance. | **Propose as an AR** — highest-leverage net-new; sequence like M3's growth-noun (coordinated packages change) |
+| **N2** | **Collection/repeat binding over a governed dimension** — render one card/row per member of a dimension (one per region, one per sector), each showing its own governed number | Webflow CMS Collection List · Builder.io repeat · Framer CMS · Sanity arrays | dimension model + `resolveMeasureRef`; a `repeat` node bound to a dimension's members; touches `packages` | **L** | The repeat is over a **governed dimension's members** (not a raw CMS list), each cell the *same* certified measure sliced per member — "one number per member, provenance intact." This is the statistics-native killer feature (regional profiles auto-built). | **Propose as an AR** — pairs with N1; the two together = symbol + repeat = template-driven governed pages |
+| **N3** | **Metric endorsement/certification lifecycle** — a governance state on each metric (`draft → certified → deprecated`), shown as a badge on `<MetricCard>`, filterable, and blocked from publish if a page binds a non-certified metric (soft-warn, not hard-gate) | Tableau Certified · Power BI endorsement (Promoted/Certified) · Collibra · Looker | extend `ManifestMetric`/`MetadataPort` (additive field, expand-contract); badge on `<MetricCard>` (M4 §2.2) | **M** | Law 9 already models *preliminary*; this generalizes it to a **governance lifecycle** a stat agency needs (a number is certified by a methodology owner). Distinct from AR-47 (which governs *config*; this governs the *metric*). | **Propose as an AR** — small, high statistics-grade value; complements AR-47 at the noun level |
+| **N4** | **Inline slash-command insert on canvas** — type `/` at a cursor position to insert a block, filtered-as-you-type, from the same registry the palette projects | Notion `/` · Gutenberg · Linear | atop `NodePalette` + the elevated palette (M4 §2.3); apps-only | **M** | The `/` menu is a **projection of the capability registry, capability-gated to the bound dataset** — so it only offers blocks that *fit the data in context* (Notion's `/` is data-blind). Accelerator, never the only path (keeps the palette). | **Fold into M4** as a W1 follow-on (extends the palette wave) |
+| **N5** | **Breakpoint/device preview switcher in the Studio canvas** — toggle mobile/tablet/desktop to preview the responsive config while authoring | Webflow · Framer · Figma responsive | consumes the **already-built responsive composition model** (`sx` responsive + `resolveStyle` merge — [[project_responsive_composition_model]]); apps-only canvas toolbar | **M** | We already *store* responsive style; we don't *preview* it while authoring. Pure consumption of an owned seam — high polish-to-cost. | **Fold into M4** as a small canvas-toolbar wave (pairs with W7 dock) |
+| **N6** | **Visual/guided derived-metric builder** — build a computed metric by picking fields + operators from palettes (no formula *text*), with live preview | Power BI quick-measures · Tableau calc-field drag · Airtable formula assist | extends the **M3.0 calc/derived-metric editor** (`metricCalc.ts`) + the `@statdash/expr` AST (already the safe, serializable target) | **M** | Keeps **FF-AUTHOR-NO-QUERY**: the expr AST is the compile target, but the *surface* is field-pick + operator-palette, so a non-programmer authors a governed derived number without typing an expression. | **Propose as an AR** or fold into the M3 line — extends a shipped seam |
+| **N7** | **Faceted metric-catalog search** — search + facet the catalog by domain/agency/unit/certification/usage as it grows past a browsable list | Looker data dictionary · dbt docs · Sigma catalog · Collibra | `discovery/metricCatalog.store.ts` + `<MetricCard>` grid (M4 §2.2); apps-only | **M** | The facets are **governed dimensions of the catalog** (agency, certification from N3, usage from `computeMetricImpact`) — a governed data-dictionary, not a text search. Scales §2.2 when the catalog is large. | **Fold into M4** as a §2.2 follow-on once catalog size warrants (YAGNI-gate on real scale) |
+| **N8** | **Consumer-facing per-number provenance popover** — click any rendered number in the *runner* → "where did this come from" (agency, code, methodology, last-updated, lineage) | Sigma lineage · Power BI · "Explore from here" | `agency_scheme` AR-20 + AR-43 lineage; runner-side (not authoring) | **S–M** | The authoring surface gets provenance in M4 §2.2; this is the *reader's* symmetric right (Law 9 for the consumer). Likely **belongs to AR-43/AR-44**, not net-new. | **Route into AR-43/44** — flag, don't re-propose |
+| **N9** | **Review annotations / comments-on-config** — anchored comments on a node/metric during draft→review | Figma comments · Sanity · Contentful workflow | part of the AR-47 editorial workflow | **M** | Review of a *governed config change* (who approved binding metric X to page Y) — comments are the review evidence trail. | **Fold into AR-47** — it's the workflow's missing collaboration layer |
+
+**Recommended roadmap folding (for the lead):**
+- **Net-new ARs to register** (strongest, clearest our-better, not covered anywhere): **N1 (symbols)**, **N2 (governed repeat)**, **N3 (metric certification lifecycle)**. N1+N2 together are the biggest capability jump — governed, template-driven, multi-page statistics pages (regional profiles that build themselves). N3 is small and high statistics-value.
+- **Fold into M4 waves** (extend an existing wave, apps-only): **N4 (slash insert)** → W1, **N5 (breakpoint preview)** → W7-adjacent, **N7 (faceted catalog)** → §2.2 follow-on (YAGNI-gate on scale).
+- **Extend a shipped seam** (M3 line): **N6 (visual derived-metric builder)** — register as an AR or a small spec.
+- **Route into existing ARs (do not re-propose):** **N8** → AR-43/44, **N9** → AR-47.
+
+---
+
+## II.5 Living-document maintenance (Part II)
+
+- **Refresh trigger:** a leader ships a materially new *constructor* model (not a runtime feature) OR a new group enters our reference set OR an M4 wave lands (update the seam/wave columns in II.2). Part I (the matrix) refreshes on *capability* movement; Part II refreshes on *design-pattern* movement.
+- **Grounding rule (same as Part I):** every "our seam" citation is a claim about code at write-time — re-ground it against the file before acting (code is authoritative; this doc goes stale).
+- **Candidate discipline:** when a II.4 candidate is accepted, register it in `ARCHITECTURE-REGISTRY.md` (AR-*) and replace its row's disposition with the AR link — never let II.4 become a second, competing backlog. YAGNI still governs net-new surfaces ([[maximal-orthogonality]]): a candidate waits for a real consumer.
+- **Honesty rule:** keep the *(uncertain)* marks; when a specific is later confirmed/corrected, edit in place. This is expert distillation — it improves by correction, not by pretending certainty.
