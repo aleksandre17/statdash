@@ -30,8 +30,27 @@ export interface Command {
   nodeType?: string
   /** For navigate commands — the target node id. */
   nodeId?:   string
-  /** For action commands — the action name (delete / duplicate). */
-  action?:   'delete' | 'duplicate'
+  /** For action commands — the action name (delete / duplicate / open-data-model). */
+  action?:   'delete' | 'duplicate' | 'open-data-model'
+}
+
+/**
+ * Workspace commands — jump straight to a Studio workspace from anywhere. Today the
+ * one entry is "Data model": the documented-but-unbuilt ⌘K seam (useRole.ts) that
+ * lands the user directly in metric authoring (sets the Steward lens + opens the
+ * Model surface in one step — the SAME composed action the top-bar switch fires).
+ * Always available (no selection needed), bilingual + rich keywords so a
+ * non-programmer finds it by intent ("metric", "define") not the internal concept.
+ */
+export function workspaceCommands(): Command[] {
+  return [{
+    id:       'action:open-data-model',
+    kind:     'action' as const,
+    label:    'მონაცემთა მოდელი · Data model',
+    keywords: ['data model', 'metric', 'metrics', 'define', 'catalog', 'author', 'steward', 'model', 'მეტრიკა', 'მოდელი', 'კატალოგი'],
+    group:    'გადასვლა · Go to',
+    action:   'open-data-model',
+  }]
 }
 
 /** Insert commands — one per registered, droppable node type (registry-driven). */
@@ -84,5 +103,5 @@ export function buildCommands(
   slashMode = false,
 ): Command[] {
   if (slashMode) return insertCommands()
-  return [...insertCommands(), ...navigateCommands(page), ...actionCommands(selectedId)]
+  return [...insertCommands(), ...workspaceCommands(), ...navigateCommands(page), ...actionCommands(selectedId)]
 }

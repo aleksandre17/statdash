@@ -15,6 +15,7 @@ import {
   useConstructorStore, useActivePage, useActivePageId, useSelectedNode,
 } from '../store/constructor.store'
 import { makeNode, resolveInsertParent } from '../canvas/insertNode'
+import { useSetRole } from '../studio/useRole'
 import type { Command } from './commandModel'
 
 // Same id factory shape PageStep uses (collision-resistant short id).
@@ -28,8 +29,20 @@ export function useCommandRunner() {
   const selectNode = useConstructorStore((s) => s.selectNode)
   const removeNode = useConstructorStore((s) => s.removeNode)
   const markDirty  = useConstructorStore((s) => s.markPageDirty)
+  const setSurface = useConstructorStore((s) => s.setSurface)
+  const setRole    = useSetRole()
 
   return useCallback((cmd: Command) => {
+    // Workspace navigation is document-independent (no active page required), so it
+    // runs BEFORE the page guard. "Data model" is the composed one-action jump: set
+    // the Steward lens (through the useSetRole seam — never the store source) AND
+    // open the Model surface, landing the user directly in metric authoring.
+    if (cmd.kind === 'action' && cmd.action === 'open-data-model') {
+      setRole('steward')
+      setSurface('model')
+      return
+    }
+
     if (!page || !pageId) return
 
     if (cmd.kind === 'insert' && cmd.nodeType) {
@@ -70,5 +83,5 @@ export function useCommandRunner() {
       markDirty(pageId)
       selectNode(clone.id)
     }
-  }, [page, pageId, selectedId, insertNode, selectNode, removeNode, markDirty])
+  }, [page, pageId, selectedId, insertNode, selectNode, removeNode, markDirty, setSurface, setRole])
 }

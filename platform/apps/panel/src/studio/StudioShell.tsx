@@ -17,7 +17,7 @@ import { LayersSurface } from './surfaces/LayersSurface'
 import { PagesSiteSurface } from './surfaces/PagesSiteSurface'
 import { StyleSurface } from './surfaces/StyleSurface'
 import { ModelSurface } from './surfaces/ModelSurface'
-import { useRole, useToggleRole } from './useRole'
+import { useRole, useSetRole } from './useRole'
 import { useConstructorStore, useActiveSurface, usePages, useActivePageId, useSite } from '../store/constructor.store'
 import { DEFAULT_STUDIO_SURFACE } from '../types/constructor'
 import { useActiveLocales, PLATFORM_LOCALES } from '../inspector/useActiveLocales'
@@ -58,7 +58,7 @@ export function StudioShell() {
   // value into the rail and top bar (one reader, many consumers → the swappable
   // seam stays crisp). Default `author` = today's exact M1 behavior (zero regression).
   const role = useRole()
-  const toggleRole = useToggleRole()
+  const setRole = useSetRole()
   const pages = usePages()
   const activePageId = useActivePageId()
   const setActivePage = useConstructorStore((s) => s.setActivePage)
@@ -87,13 +87,23 @@ export function StudioShell() {
 
   const heading = SURFACE_HEADINGS[effectiveSurface]?.[locale] ?? ''
 
+  // The Data-model workspace as ONE intentful action (spec §2.2, defect fix): enter
+  // = Steward lens + land on the Model surface (metric authoring) in a single click;
+  // exit = back to the author (Compose) lens, where effectiveSurface projects Model
+  // back to the default (no stranded dock). Composed HERE so every entry point (the
+  // top-bar switch AND the ⌘K command) shares one definition, and role is only ever
+  // set through the useSetRole seam (FF-ROLE-IS-LENS — never the store source).
+  const enterDataModel = () => { setRole('steward'); setSurface('model') }
+  const exitDataModel = () => setRole('author')
+
   return (
     <Box className="studio-shell" style={themeStyle}>
       <StudioTopBar
         locale={locale}
         locales={PLATFORM_LOCALES}
         role={role}
-        onToggleRole={toggleRole}
+        onOpenDataModel={enterDataModel}
+        onExitDataModel={exitDataModel}
         onLocaleChange={setPreviewLocale}
         onOpenCommand={() => cmdk.setOpen(true)}
         onOpenStyle={() => setSurface('style')}

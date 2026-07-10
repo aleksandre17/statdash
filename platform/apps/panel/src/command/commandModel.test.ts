@@ -3,7 +3,7 @@ import { describe, it, expect, beforeAll } from 'vitest'
 import { setupCanvasRegistry } from '../canvas/setupCanvasRegistry'
 import { getPaletteEntries } from '../canvas/paletteEntries'
 import {
-  insertCommands, navigateCommands, actionCommands, buildCommands,
+  insertCommands, navigateCommands, actionCommands, workspaceCommands, buildCommands,
 } from './commandModel'
 import type { CanvasPage } from '../types/constructor'
 
@@ -45,17 +45,32 @@ describe('navigateCommands / actionCommands', () => {
   })
 })
 
+describe('workspaceCommands — the ⌘K jump to metric authoring (documented useRole seam)', () => {
+  it('exposes an always-available "Data model" command that opens the workspace', () => {
+    const cmds = workspaceCommands()
+    const dm = cmds.find((c) => c.action === 'open-data-model')
+    expect(dm).toBeDefined()
+    expect(dm!.kind).toBe('action')
+    // Found by INTENT, not the internal concept — search hits "metric"/"define".
+    expect(dm!.keywords).toEqual(expect.arrayContaining(['metric', 'define']))
+  })
+})
+
 describe('buildCommands slash mode', () => {
-  it('full mode includes insert + navigate + actions', () => {
+  it('full mode includes insert + navigate + actions + the workspace jump', () => {
     const cmds = buildCommands(page, 'a', false)
     expect(cmds.some((c) => c.kind === 'insert')).toBe(true)
     expect(cmds.some((c) => c.kind === 'navigate')).toBe(true)
     expect(cmds.some((c) => c.kind === 'action')).toBe(true)
+    // The ⌘K "Data model" jump is offered in the full palette (not slash-insert).
+    expect(cmds.some((c) => c.action === 'open-data-model')).toBe(true)
   })
 
   it('slash mode narrows to INSERT only (Notion/Gutenberg quick-insert)', () => {
     const cmds = buildCommands(page, 'a', true)
     expect(cmds.length).toBeGreaterThan(0)
     expect(cmds.every((c) => c.kind === 'insert')).toBe(true)
+    // The workspace jump is NOT a slash-insert command.
+    expect(cmds.some((c) => c.action === 'open-data-model')).toBe(false)
   })
 })

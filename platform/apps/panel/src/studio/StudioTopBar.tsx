@@ -2,7 +2,8 @@ import { Box, Typography, Button, MenuItem, Select, IconButton, Tooltip, ToggleB
 import SearchIcon from '@mui/icons-material/Search'
 import LogoutIcon from '@mui/icons-material/Logout'
 import PaletteOutlinedIcon from '@mui/icons-material/PaletteOutlined'
-import HubOutlinedIcon from '@mui/icons-material/HubOutlined'
+import SchemaOutlinedIcon from '@mui/icons-material/SchemaOutlined'
+import DashboardCustomizeOutlinedIcon from '@mui/icons-material/DashboardCustomizeOutlined'
 import { PageWorkflowBar } from '../features/page-workflow'
 import { useConstructorStore, usePages, useActivePageId } from '../store/constructor.store'
 import { logout } from '../lib/auth'
@@ -26,18 +27,25 @@ export interface StudioTopBarProps {
   locales:        readonly Locale[]
   /** The role LENS (author | steward) — read by StudioShell via useRole (single seam). */
   role:           Role
-  /** Toggle the role lens (author ⇄ steward) — the "Model mode" control drives this. */
-  onToggleRole:   () => void
+  /**
+   * Enter the Data-model workspace: ONE intentful action that both sets the Steward
+   * lens AND lands the user in metric authoring (the Model surface). Composed by
+   * StudioShell so the top bar never touches the role SOURCE (FF-ROLE-IS-LENS).
+   */
+  onOpenDataModel: () => void
+  /** Leave the Data-model workspace — return to the Compose (author) lens. */
+  onExitDataModel: () => void
   onLocaleChange: (locale: Locale) => void
   onOpenCommand:  () => void
   /** Summon the Style surface (brand-token editor). */
   onOpenStyle:    () => void
 }
 
-export function StudioTopBar({ locale, locales, role, onToggleRole, onLocaleChange, onOpenCommand, onOpenStyle }: StudioTopBarProps) {
+export function StudioTopBar({ locale, locales, role, onOpenDataModel, onExitDataModel, onLocaleChange, onOpenCommand, onOpenStyle }: StudioTopBarProps) {
   const pages        = usePages()
   const activePageId = useActivePageId()
   const setActivePage = useConstructorStore((s) => s.setActivePage)
+  const en = locale === 'en'
 
   const handleLogout = () => { logout(); window.location.reload() }
 
@@ -74,29 +82,43 @@ export function StudioTopBar({ locale, locales, role, onToggleRole, onLocaleChan
         ))}
       </ToggleButtonGroup>
 
-      {/* ── Role lens toggle — "Model mode" (AR-49 M2.0, spec §2.2) ────────────
-          A toggle (aria-pressed) that flips the author ⇄ steward LENS. In the
-          Steward lens the Model rail slot unlocks. Native <button> → keyboard-
-          reachable (Tab + Enter/Space); bilingual accessible name + tooltip. NOT a
-          security control — it only re-projects surfaces over the SAME document. */}
-      <Tooltip
-        title={
-          role === 'steward'
-            ? (locale === 'en' ? 'Return to Compose' : 'დაბრუნება კომპოზიციაში')
-            : (locale === 'en' ? 'Enter Model mode' : 'მოდელის რეჟიმში შესვლა')
-        }
+      {/* ── Workspace switch — Compose ⇄ Data model (AR-49, Framer/Webflow IA) ──
+          A segmented mode switch (the Framer/Webflow "design ⇄ build" pattern):
+          the current workspace is ALWAYS visible as the selected segment (state
+          reads as its own thing), and picking the other segment is a SINGLE
+          intentful action. Choosing "Data model" both sets the Steward lens AND
+          lands the user in metric authoring (StudioShell composes onOpenDataModel);
+          "Compose" returns to the author lens. This collapses the old two-step
+          (flip an invisible role toggle, THEN hunt for a look-alike rail icon) into
+          one click with unmistakable feedback — the segment highlights AND the
+          surface swaps. Names the DESTINATION, never the internal "role lens".
+          MUI ToggleButtons are native <button aria-pressed> → keyboard-reachable,
+          bilingual accessible names (WCAG 2.1 AA · 4.1.2). NOT a security control —
+          it only re-projects surfaces over the SAME document (FF-ROLE-IS-LENS). */}
+      <ToggleButtonGroup
+        exclusive
+        size="small"
+        value={role === 'steward' ? 'model' : 'compose'}
+        onChange={(_, v: 'compose' | 'model' | null) => {
+          if (v === 'model') onOpenDataModel()
+          else if (v === 'compose') onExitDataModel()
+        }}
+        aria-label={en ? 'Workspace' : 'სამუშაო სივრცე'}
+        className="studio-mode-switch"
       >
-        <Button
-          size="small"
-          variant={role === 'steward' ? 'contained' : 'outlined'}
-          startIcon={<HubOutlinedIcon fontSize="small" />}
-          onClick={onToggleRole}
-          aria-pressed={role === 'steward'}
-          aria-label={locale === 'en' ? 'Model mode' : 'მოდელის რეჟიმი'}
-        >
-          {locale === 'en' ? 'Model' : 'მოდელი'}
-        </Button>
-      </Tooltip>
+        <Tooltip title={en ? 'Compose pages with governed metrics' : 'გვერდების აწყობა მართული მეტრიკებით'}>
+          <ToggleButton value="compose" aria-label={en ? 'Compose' : 'კომპოზიცია'}>
+            <DashboardCustomizeOutlinedIcon fontSize="small" sx={{ mr: 0.5 }} />
+            {en ? 'Compose' : 'კომპოზიცია'}
+          </ToggleButton>
+        </Tooltip>
+        <Tooltip title={en ? 'Define metrics & the data model' : 'მეტრიკებისა და მონაცემთა მოდელის განსაზღვრა'}>
+          <ToggleButton value="model" aria-label={en ? 'Data model' : 'მონაცემთა მოდელი'}>
+            <SchemaOutlinedIcon fontSize="small" sx={{ mr: 0.5 }} />
+            {en ? 'Data model' : 'მონაცემთა მოდელი'}
+          </ToggleButton>
+        </Tooltip>
+      </ToggleButtonGroup>
 
       {/* ── Brand / theme access (reserved region, spec §2.1) → Style editor ── */}
       <Tooltip title={locale === 'en' ? 'Brand & theme' : 'ბრენდი და თემა'}>

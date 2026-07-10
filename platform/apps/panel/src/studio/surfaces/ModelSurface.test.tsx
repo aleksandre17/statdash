@@ -27,6 +27,15 @@ describe('ModelSurface — the Steward\'s define workspace mounts the relocated 
     expect(screen.getByText(/Define the governed data model/)).toBeInTheDocument()
   })
 
+  it('moves focus into the opened workspace region on mount (WCAG 2.1 AA · 2.4.3)', () => {
+    // The surface mounts only when the user opens the Data-model workspace, so focus
+    // lands here — the keyboard/AT payoff of the one-action jump the old split flow
+    // never delivered.
+    render(<ModelSurface locale="en" />)
+    const region = screen.getByRole('group', { name: 'Data model workspace' })
+    expect(region).toHaveFocus()
+  })
+
   it('mounts the full DataModelingPanel (the relocated raw modeler — no capability lost)', async () => {
     render(<ModelSurface locale="ka" />)
     // The lazy modeler resolves and reads the store — its source browser + the seeded

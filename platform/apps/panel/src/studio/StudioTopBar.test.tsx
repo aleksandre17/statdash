@@ -9,7 +9,8 @@ describe('StudioTopBar — locale + brand/theme regions filled (AR-49 M1.4)', ()
     locale: 'en' as const,
     locales: ['ka', 'en'] as const,
     role: 'author' as const,
-    onToggleRole: vi.fn(),
+    onOpenDataModel: vi.fn(),
+    onExitDataModel: vi.fn(),
     onLocaleChange: vi.fn(),
     onOpenCommand: vi.fn(),
     onOpenStyle: vi.fn(),
@@ -30,36 +31,54 @@ describe('StudioTopBar — locale + brand/theme regions filled (AR-49 M1.4)', ()
   })
 })
 
-// ── Role lens toggle — "Model mode" (AR-49 M2.0) ──────────────────────────────
+// ── Workspace switch — Compose ⇄ Data model (AR-49 defect fix) ─────────────────
 //
-//  The toggle is the affordance that enters/exits the Steward lens. It must be a
-//  keyboard-reachable native button with a stable accessible name and toggle
-//  semantics (aria-pressed), so it works for keyboard + AT users (WCAG 2.1 AA).
-describe('StudioTopBar — role lens toggle (AR-49 M2.0)', () => {
+//  The segmented switch is the single discoverable affordance that enters/exits the
+//  Data-model workspace. It names the DESTINATION ("Data model"), not the internal
+//  "role lens": choosing "Data model" is ONE intentful action that both flips the
+//  Steward lens and lands the user in metric authoring (StudioShell composes
+//  onOpenDataModel). Both segments are keyboard-reachable native <button aria-pressed>
+//  so state reads for keyboard + AT users (WCAG 2.1 AA · 4.1.2).
+describe('StudioTopBar — workspace switch (AR-49 defect fix)', () => {
   const base = {
     locale: 'en' as const,
     locales: ['ka', 'en'] as const,
     role: 'author' as const,
-    onToggleRole: vi.fn(),
+    onOpenDataModel: vi.fn(),
+    onExitDataModel: vi.fn(),
     onLocaleChange: vi.fn(),
     onOpenCommand: vi.fn(),
     onOpenStyle: vi.fn(),
   }
 
-  it('renders a keyboard-reachable Model-mode toggle and fires onToggleRole on click', () => {
-    const onToggleRole = vi.fn()
-    render(<StudioTopBar {...base} onToggleRole={onToggleRole} />)
-    const toggle = screen.getByRole('button', { name: 'Model mode' })
-    // Native <button> — keyboard-operable by construction (WCAG 4.1.2).
-    expect(toggle.tagName).toBe('BUTTON')
-    fireEvent.click(toggle)
-    expect(onToggleRole).toHaveBeenCalledTimes(1)
+  it('offers keyboard-reachable Compose + Data model segments (native buttons)', () => {
+    render(<StudioTopBar {...base} />)
+    const compose = screen.getByRole('button', { name: 'Compose' })
+    const model   = screen.getByRole('button', { name: 'Data model' })
+    expect(compose.tagName).toBe('BUTTON')
+    expect(model.tagName).toBe('BUTTON')
   })
 
-  it('reflects the lens state via aria-pressed (author → false, steward → true)', () => {
+  it('choosing "Data model" from the author lens fires onOpenDataModel (the one-action jump)', () => {
+    const onOpenDataModel = vi.fn()
+    render(<StudioTopBar {...base} role="author" onOpenDataModel={onOpenDataModel} />)
+    fireEvent.click(screen.getByRole('button', { name: 'Data model' }))
+    expect(onOpenDataModel).toHaveBeenCalledTimes(1)
+  })
+
+  it('choosing "Compose" from the steward lens fires onExitDataModel', () => {
+    const onExitDataModel = vi.fn()
+    render(<StudioTopBar {...base} role="steward" onExitDataModel={onExitDataModel} />)
+    fireEvent.click(screen.getByRole('button', { name: 'Compose' }))
+    expect(onExitDataModel).toHaveBeenCalledTimes(1)
+  })
+
+  it('reflects the active workspace via aria-pressed (author → Compose, steward → Data model)', () => {
     const { rerender } = render(<StudioTopBar {...base} role="author" />)
-    expect(screen.getByRole('button', { name: 'Model mode' })).toHaveAttribute('aria-pressed', 'false')
+    expect(screen.getByRole('button', { name: 'Compose' })).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getByRole('button', { name: 'Data model' })).toHaveAttribute('aria-pressed', 'false')
     rerender(<StudioTopBar {...base} role="steward" />)
-    expect(screen.getByRole('button', { name: 'Model mode' })).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getByRole('button', { name: 'Compose' })).toHaveAttribute('aria-pressed', 'false')
+    expect(screen.getByRole('button', { name: 'Data model' })).toHaveAttribute('aria-pressed', 'true')
   })
 })

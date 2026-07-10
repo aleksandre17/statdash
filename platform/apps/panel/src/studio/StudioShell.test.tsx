@@ -82,15 +82,15 @@ describe('StudioShell — role lens unlocks the Model slot (AR-49 M2.0)', () => 
     for (const name of ['Insert', 'Data', 'Layers', 'Pages & Site', 'Style']) {
       expect(within(rail).getByRole('button', { name: new RegExp(name) })).toBeEnabled()
     }
-    // …and Model is not offered at all in the author lens.
-    expect(within(rail).queryByRole('button', { name: /Model/ })).toBeNull()
+    // …and the Data model slot is not offered at all in the author lens.
+    expect(within(rail).queryByRole('button', { name: /Data model/ })).toBeNull()
   })
 
   it('the Steward lens unlocks Model as an ENABLED, selectable rail entry', () => {
     useRoleStore.setState({ role: 'steward' })
     render(<StudioShell />)
     const rail = screen.getByRole('navigation', { name: 'Studio surfaces' })
-    const model = within(rail).getByRole('button', { name: /Model/ })
+    const model = within(rail).getByRole('button', { name: /Data model/ })
     expect(model).toBeEnabled()
 
     // Selecting Model swaps the dock to the Model surface — a summonable left surface
@@ -99,7 +99,23 @@ describe('StudioShell — role lens unlocks the Model slot (AR-49 M2.0)', () => 
     // while the heavy modeler chunk lazy-loads.
     fireEvent.click(model)
     expect(useConstructorStore.getState().activeSurface).toBe('model')
-    expect(screen.getByRole('heading', { name: 'Model' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Data model' })).toBeInTheDocument()
+    expect(screen.getByText(/Define the governed data model/)).toBeInTheDocument()
+  })
+
+  it('the top-bar "Data model" switch is the ONE-ACTION jump: sets steward AND opens metric authoring', () => {
+    // Default author lens — the workspace switch shows "Data model" as the OTHER
+    // segment (a single, discoverable, destination-named affordance in the banner).
+    render(<StudioShell />)
+    // No Model rail slot yet (author lens) — the only "Data model" control is the
+    // top-bar segment, so this is unambiguous.
+    fireEvent.click(screen.getByRole('button', { name: 'Data model' }))
+
+    // ONE click landed the user IN metric authoring: the role flipped to steward AND
+    // the active surface is Model (the old flow needed two separate clicks for this).
+    expect(useRoleStore.getState().role).toBe('steward')
+    expect(useConstructorStore.getState().activeSurface).toBe('model')
+    expect(screen.getByRole('heading', { name: 'Data model' })).toBeInTheDocument()
     expect(screen.getByText(/Define the governed data model/)).toBeInTheDocument()
   })
 
@@ -107,7 +123,7 @@ describe('StudioShell — role lens unlocks the Model slot (AR-49 M2.0)', () => 
     useRoleStore.setState({ role: 'steward' })
     useConstructorStore.setState({ activeSurface: 'model' })
     const { rerender } = render(<StudioShell />)
-    expect(screen.getByRole('heading', { name: 'Model' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Data model' })).toBeInTheDocument()
 
     // Flip back to author — Model must no longer be shown, and the dock recovers to
     // the default (Insert) rather than stranding on a surface with no rail affordance.
@@ -115,7 +131,7 @@ describe('StudioShell — role lens unlocks the Model slot (AR-49 M2.0)', () => 
     rerender(<StudioShell />)
     expect(screen.getByRole('heading', { name: 'Insert' })).toBeInTheDocument()
     const rail = screen.getByRole('navigation', { name: 'Studio surfaces' })
-    expect(within(rail).queryByRole('button', { name: /Model/ })).toBeNull()
+    expect(within(rail).queryByRole('button', { name: /Data model/ })).toBeNull()
   })
 })
 

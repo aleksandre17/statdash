@@ -33,7 +33,7 @@ export const RAIL_ENTRIES: readonly RailEntry[] = [
   { id: 'layers',     label: { ka: 'შრეები',       en: 'Layers' },       icon: LayersOutlinedIcon },
   { id: 'pages-site', label: { ka: 'გვერდები/საიტი', en: 'Pages & Site' }, icon: WebOutlinedIcon },
   { id: 'style',      label: { ka: 'სტილი',        en: 'Style' },        icon: PaletteOutlinedIcon },
-  { id: 'model',      label: { ka: 'მოდელი',       en: 'Model' },        icon: HubOutlinedIcon, stewardOnly: true },
+  { id: 'model',      label: { ka: 'მონაცემთა მოდელი', en: 'Data model' }, icon: HubOutlinedIcon, stewardOnly: true },
 ] as const
 
 /**

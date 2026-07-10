@@ -1,4 +1,4 @@
-import { lazy, Suspense } from 'react'
+import { lazy, Suspense, useEffect, useRef } from 'react'
 import { Box, Typography, Divider } from '@mui/material'
 import { SuspenseFallback } from '../../shared/SuspenseFallback'
 import { MetricCatalogManager } from '../model/MetricCatalogManager'
@@ -36,8 +36,24 @@ const DataModelingPanel = lazy(() =>
 export function ModelSurface({ locale }: { locale: Locale }) {
   const en = locale === 'en'
   const locales = useActiveLocales()
+
+  // Focus lands in the opened surface (WCAG 2.1 AA · 2.4.3 focus order): ModelSurface
+  // mounts ONLY when the user opens the Data-model workspace (the top-bar switch or
+  // the ⌘K command), so moving focus to this region on mount announces the workspace
+  // to AT and puts keyboard focus where the work is — the intentful-action landing
+  // the split two-click flow never provided. tabIndex=-1 → programmatically focusable
+  // without adding a stray Tab stop.
+  const regionRef = useRef<HTMLDivElement>(null)
+  useEffect(() => { regionRef.current?.focus() }, [])
+
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+    <Box
+      ref={regionRef}
+      tabIndex={-1}
+      role="group"
+      aria-label={en ? 'Data model workspace' : 'მონაცემთა მოდელის სამუშაო სივრცე'}
+      sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, outline: 'none' }}
+    >
       {/* Steward context — synchronous, so the surface reads its purpose before the
           heavy modeler chunk resolves (progressive disclosure, Law 9). */}
       <Typography variant="caption" color="text.secondary">

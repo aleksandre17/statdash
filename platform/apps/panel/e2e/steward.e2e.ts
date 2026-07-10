@@ -11,9 +11,10 @@
 //
 //  The loop, end to end:
 //    1. BOOT      — author lens, the Studio mounts (no white-screen / boot-order crash).
-//    2. LENS      — flip the top-bar "Model mode" toggle → the Steward lens unlocks the
-//                   Model rail slot (role is a LENS over ONE document, not a route).
-//    3. MODEL     — open Model → the MetricCatalogManager (headline region) renders.
+//    2. OPEN      — ONE click on the top-bar "Data model" workspace segment → sets the
+//                   Steward lens AND lands directly in metric authoring (the composed
+//                   one-action jump; role is a LENS over ONE document, not a route).
+//    3. MODEL     — the MetricCatalogManager (headline region) is already rendered.
 //    4. AUTHOR    — New metric → PICK dataset + measure (assert the unit PRE-FILLS from
 //                   the cube's resolved unit) → set a slug-legal id + a bilingual
 //                   GOVERNED label + a display format → Create.
@@ -43,17 +44,21 @@ test('steward authors a governed metric in-tool → the author sees it in the pa
   await expect(page.getByRole('banner')).toBeVisible({ timeout: 60_000 })
   await expect(page.locator('.studio-shell')).toBeVisible()
 
-  // ── 2. LENS — flip to the Steward lens via the top-bar "Model mode" toggle ───
-  //  The toggle is a real <button aria-pressed>; before the flip the Model rail slot
-  //  is absent (author lens), after it the slot appears (role-as-lens projection).
-  await expect(page.getByRole('button', { name: 'Model', exact: true })).toHaveCount(0)
-  const modelToggle = page.getByRole('button', { name: 'Model mode' })
-  await expect(modelToggle).toHaveAttribute('aria-pressed', 'false')
-  await modelToggle.click()
-  await expect(modelToggle).toHaveAttribute('aria-pressed', 'true')
+  // ── 2. OPEN — ONE click on the "Data model" workspace segment ────────────────
+  //  The segmented switch names the destination; the current workspace is the
+  //  selected segment (state reads for AT via aria-pressed). Before the jump Compose
+  //  is active and no Model rail slot exists (author lens). A single click on
+  //  "Data model" flips the Steward lens AND opens metric authoring — no separate
+  //  rail hunt (the composed one-action jump the split two-click flow lacked).
+  const banner    = page.getByRole('banner')
+  const composeSeg = banner.getByRole('button', { name: 'Compose' })
+  const modelSeg   = banner.getByRole('button', { name: 'Data model' })
+  await expect(composeSeg).toHaveAttribute('aria-pressed', 'true')
+  await expect(modelSeg).toHaveAttribute('aria-pressed', 'false')
+  await modelSeg.click()
+  await expect(modelSeg).toHaveAttribute('aria-pressed', 'true')
 
-  // ── 3. MODEL — open the Model surface (now a rail entry) → catalog manager ────
-  await page.getByRole('button', { name: 'Model', exact: true }).click()
+  // ── 3. MODEL — the one action already landed us in the catalog manager ───────
   await expect(page.getByRole('region', { name: 'Governed metric catalog' })).toBeVisible()
 
   // ── 4. AUTHOR — open the editor and author against the LIVE cube profile ──────
@@ -97,12 +102,14 @@ test('steward authors a governed metric in-tool → the author sees it in the pa
   //  in the palette (PUT /api/config/site succeeded, catalog re-registered live).
   await expect(page.getByText(`Saved "${AUTHORED_METRIC.id}"`)).toBeVisible()
 
-  // ── 6. AUTHOR-SEES — flip back to the author lens, open Data, find the metric ──
-  await modelToggle.click()
-  await expect(modelToggle).toHaveAttribute('aria-pressed', 'false')
-  // Model is gone from the rail again (author lens); the Data surface reveals the palette.
-  await expect(page.getByRole('button', { name: 'Model', exact: true })).toHaveCount(0)
-  await page.getByRole('button', { name: 'Data' }).click()
+  // ── 6. AUTHOR-SEES — return to Compose, open Data, find the metric ───────────
+  await composeSeg.click()
+  await expect(composeSeg).toHaveAttribute('aria-pressed', 'true')
+  await expect(modelSeg).toHaveAttribute('aria-pressed', 'false')
+  // The Model rail slot is gone again (author lens) — only the banner "Data model"
+  // segment remains; the Data surface reveals the palette.
+  await expect(page.getByRole('button', { name: 'Data model', exact: true })).toHaveCount(1)
+  await page.getByRole('button', { name: 'Data', exact: true }).click()
 
   const palette = page.getByTestId('metric-palette')
   await expect(palette).toBeVisible()
