@@ -5,12 +5,14 @@
 //  zero palette code change. rootOnly page templates are excluded — they are
 //  tree roots, never droppable children. Pure → shared by the component + tests.
 //
-//  Capability-driven grouping [N29]: getGroupedPaletteEntries() uses
-//  nodeRegistry.getByCapability(CAPS.*) to partition the palette into named
-//  groups — the real consumer that eliminates the CAPS/getByCapability dead-seam.
-//  Adding a new cap to a meta.ts is all that's needed to re-classify a type.
+//  SEMANTIC category grouping (FF-PALETTE-CATEGORY-DRIVEN): getGroupedPaletteEntries()
+//  partitions the palette by each slice's DECLARED `meta.category` (layout | data |
+//  content) — the taxonomy the slice author owns, not a capability-derived guess.
+//  This replaced the old capability partition (COLLAPSIBLE⇒layout / FILTERABLE⇒data),
+//  which mis-grouped real layout primitives (grid/columns/divider/spacer declare no
+//  such caps) under "content". A new slice lands in its group by declaring ONE field.
 //
-import { nodeRegistry, CAPS } from '@statdash/react/engine'
+import { nodeRegistry } from '@statdash/react/engine'
 import type { LocaleString, NodeCap } from '@statdash/react/engine'
 import { PALETTE_GROUP_LABELS } from './paletteGroupLabels'
 
@@ -82,60 +84,62 @@ export function getPaletteEntries(): PaletteEntry[] {
 }
 
 /**
- * Capability-driven grouped palette [N29] — the real consumer of CAPS +
- * getByCapability.
+ * Authoring-canonical order for the semantic category groups: data panels (the
+ * primary value) → layout primitives → static content. A category present in the
+ * registry but not listed here still surfaces (appended in first-seen order) — a
+ * new taxonomy category shows with zero grouping code, needing only its localized
+ * heading row (FF-PALETTE-META-DRIVEN).
+ */
+const PALETTE_CATEGORY_ORDER = ['data', 'layout', 'content'] as const
+
+/**
+ * Palette group key for a placeable's declared `meta.category`. `page` slices are
+ * rootOnly (already excluded upstream) and `filter` controls are not node-registry
+ * entries, so neither reaches here; an absent/unknown category degrades gracefully
+ * into `content` so the palette never silently drops a registered tile.
+ */
+function paletteCategoryKey(category: string | undefined): string {
+  return category ?? 'content'
+}
+
+/**
+ * Semantic category-driven grouped palette (FF-PALETTE-CATEGORY-DRIVEN).
  *
- * Groups are derived from the registry via capability queries:
- *   "Data panels"    — types declaring CAPS.FILTERABLE (respond to filter ctx)
- *   "Layout"         — types declaring CAPS.COLLAPSIBLE but not FILTERABLE
- *                      (sections, structural containers with UI behaviour)
- *   "Content"        — remaining non-root types (static content: hero, links…)
+ * Every tile's group is a pure projection of its slice's DECLARED `meta.category`
+ * — the semantic taxonomy the slice author owns (layout | data | content), NOT a
+ * capability-derived partition. This is the fix for the taxonomy defect where the
+ * "Layout" group held only `section` (the sole COLLAPSIBLE type) while the real
+ * layout primitives (grid, columns, divider, spacer, stack, wrap, card) fell into
+ * "Content" because they declare no capability. Now a slice lands in its group by
+ * declaring one field; the palette needs zero code to re-classify it (OCP).
  *
- * The grouping is additive: adding a new cap to a meta.ts re-classifies that
- * type with zero palette code change. New caps = new groups added here only.
- *
- * Each group is de-duped by type and ordered: FILTERABLE types first, then
- * collapsible-only, then content. rootOnly entries are excluded everywhere.
+ * Heading = the group-labels table's English default (locale-free derivation);
+ * NodePalette re-resolves it to the active locale at render (paletteGroupHeading).
+ * rootOnly entries are excluded upstream (getPaletteEntries).
  */
 export function getGroupedPaletteEntries(): PaletteGroup[] {
-  // ── Capability sets (type-level, first variant wins) ──────────────────
-  const filterableTypes = new Set(
-    nodeRegistry.getByCapability(CAPS.FILTERABLE)
-      .filter((e) => !e.rootOnly)
-      .map((e) => e.type),
-  )
-
-  const collapsibleTypes = new Set(
-    nodeRegistry.getByCapability(CAPS.COLLAPSIBLE)
-      .filter((e) => !e.rootOnly)
-      .map((e) => e.type),
-  )
-
-  // ── Full non-root entry map — one entry per type ───────────────────────
   const allEntries = getPaletteEntries()    // already deduped + rootOnly-filtered
-  const byType = new Map(allEntries.map((e) => [e.type, e]))
 
-  // ── Partition into groups (types can appear in at most one group) ──────
-  const dataEntries:    PaletteEntry[] = []
-  const layoutEntries:  PaletteEntry[] = []
-  const contentEntries: PaletteEntry[] = []
-
+  // Partition by declared semantic category (first-seen order preserved per group).
+  const byCategory = new Map<string, PaletteEntry[]>()
   for (const entry of allEntries) {
-    if (filterableTypes.has(entry.type)) {
-      dataEntries.push(entry)
-    } else if (collapsibleTypes.has(entry.type)) {
-      layoutEntries.push(entry)
-    } else {
-      contentEntries.push(byType.get(entry.type)!)
-    }
+    const key = paletteCategoryKey(entry.category)
+    const bucket = byCategory.get(key)
+    if (bucket) bucket.push(entry)
+    else byCategory.set(key, [entry])
   }
 
-  // Heading = the group-labels table's English default (locale-free derivation);
-  // NodePalette re-resolves it to the active locale at render (paletteGroupHeading).
-  const groups: PaletteGroup[] = []
-  if (dataEntries.length)    groups.push({ key: 'data',    heading: PALETTE_GROUP_LABELS.data.en,    entries: dataEntries })
-  if (layoutEntries.length)  groups.push({ key: 'layout',  heading: PALETTE_GROUP_LABELS.layout.en,  entries: layoutEntries })
-  if (contentEntries.length) groups.push({ key: 'content', heading: PALETTE_GROUP_LABELS.content.en, entries: contentEntries })
+  // Known categories in authoring-canonical order, then any novel category in
+  // first-seen order (OCP — a new category needs no edit here, only a heading row).
+  const known: readonly string[] = PALETTE_CATEGORY_ORDER
+  const orderedKeys = [
+    ...PALETTE_CATEGORY_ORDER.filter((k) => byCategory.has(k)),
+    ...[...byCategory.keys()].filter((k) => !known.includes(k)),
+  ]
 
-  return groups
+  return orderedKeys.map((key) => ({
+    key,
+    heading: PALETTE_GROUP_LABELS[key]?.en ?? key,
+    entries: byCategory.get(key)!,
+  }))
 }

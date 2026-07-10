@@ -2,8 +2,8 @@
 //
 //  Open-registry discovery (Builder.io / Webflow / Framer palette): the palette is
 //  built from nodeRegistry.list() — every registered slice appears with zero
-//  palette code change. Capability-driven grouping [N29] partitions it via
-//  getByCapability(CAPS.*).
+//  palette code change. Semantic category grouping (FF-PALETTE-CATEGORY-DRIVEN)
+//  partitions it by each slice's declared `meta.category` (layout | data | content).
 //
 //  M4 Wave 1 — palette elevation (§2.3): each entry renders as an ICON TILE
 //  ([icon] Name — description), grouped, uniform width — killing the ragged `•`
@@ -166,7 +166,7 @@ export function NodePalette({ locale = 'ka', selectedType, onDragStateChange }: 
     )
   }
 
-  // Grouped render — one <section> per capability group, recommendations first.
+  // Grouped render — one <section> per semantic category group, recommendations first.
   if (groups.length > 0) {
     return (
       <div className="node-palette" data-testid="node-palette" aria-label="Node palette">
