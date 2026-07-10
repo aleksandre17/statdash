@@ -8,7 +8,9 @@ vi.mock('../../lib/cubeApi', async (orig) => {
   const actual = await orig<typeof import('../../lib/cubeApi')>()
   return {
     ...actual,
-    cubeApi: { ...actual.cubeApi, datasets: vi.fn(async () => [{ code: 'stats', label: 'Stats' }]), profile: vi.fn(async () => PROFILE) },
+    // `label` is a bilingual LocaleString ({en,ka}) — the real GET /api/stats/datasets
+    // shape (a JSONB column), so the mock REPRODUCES the LocaleString-as-JSX-child class.
+    cubeApi: { ...actual.cubeApi, datasets: vi.fn(async () => [{ code: 'stats', label: { en: 'Stats', ka: 'სტატისტიკა' } }]), profile: vi.fn(async () => PROFILE) },
   }
 })
 
@@ -35,6 +37,24 @@ describe('MetricEditor — accessibility (Law 9)', () => {
     render(<MetricEditor initial={null} existingIds={[]} locales={[...LOCALES]} locale="en" onSave={vi.fn()} onCancel={vi.fn()} />)
     expect(screen.getByRole('form', { name: 'Metric editor' })).toBeInTheDocument()
     expect(screen.getByLabelText(/Metric id/)).toBeRequired()
+  })
+})
+
+describe('MetricEditor — dataset picker renders a LocaleString label, not the raw object', () => {
+  // Regression lock for React #31 ("Objects are not valid as a React child ({en,ka})").
+  // GET /api/stats/datasets returns `label` as a bilingual LocaleString; painting it
+  // raw unmounts the editor and blocks ALL base-metric authoring. The picker must
+  // resolve it through readLocale. Seed a chosen dataset so the Select's DISPLAY
+  // renders the selected row's label — the exact render site that crashed live.
+  it('paints the LOCALIZED dataset label when the wire label is an {en,ka} object', async () => {
+    render(
+      <MetricEditor
+        initial={{ id: 'x', label: {}, dataSource: 'stats' } as ManifestMetric}
+        existingIds={[]} locales={[...LOCALES]} locale="en" onSave={vi.fn()} onCancel={vi.fn()}
+      />,
+    )
+    // The localized string shows; a raw-object regression would throw during render.
+    expect(await screen.findByText('Stats (stats)')).toBeInTheDocument()
   })
 })
 

@@ -34,6 +34,8 @@ import type {
   DatasourceInstanceConfig, SourceMetadata, SourceTestResult, Observation,
 } from '@statdash/engine'
 import { cubeApi, type CubeDatasetRow } from '../../lib/cubeApi'
+import { readLocale } from '../../inspector/localeString'
+import { useActiveLocales } from '../../inspector/useActiveLocales'
 import { createDataSource, updateDataSource } from '../../store/api-actions'
 import type { DataSourceDef } from '../../types/constructor'
 import { JsonDataField } from '../data-layer/editors/JsonDataField'
@@ -287,6 +289,9 @@ function StatsConfig({
 }) {
   const [datasets, setDatasets] = useState<CubeDatasetRow[] | null>(null)
   const [loadError, setLoadError] = useState<string | null>(null)
+  // The dataset `label` is a bilingual LocaleString; resolve it through the SSOT
+  // reader at the display locale (site's first active) — never paint the raw object.
+  const locale = useActiveLocales()[0] ?? 'ka'
 
   useEffect(() => {
     let alive = true
@@ -315,7 +320,7 @@ function StatsConfig({
         >
           {(datasets ?? []).map((d) => (
             <MenuItem key={d.code} value={d.code}>
-              {d.label} <Box component="span" sx={{ color: 'text.disabled', ml: 1 }}>({d.code})</Box>
+              {readLocale(d.label, locale)} <Box component="span" sx={{ color: 'text.disabled', ml: 1 }}>({d.code})</Box>
             </MenuItem>
           ))}
         </Select>

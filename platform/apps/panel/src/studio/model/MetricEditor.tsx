@@ -246,7 +246,7 @@ export function MetricEditor({
           onChange={(e) => onPickDataset(e.target.value)}
         >
           {(datasets ?? []).map((d) => (
-            <MenuItem key={d.code} value={d.code}>{d.label} ({d.code})</MenuItem>
+            <MenuItem key={d.code} value={d.code}>{readLocale(d.label, locale)} ({d.code})</MenuItem>
           ))}
         </Select>
       </FormControl>

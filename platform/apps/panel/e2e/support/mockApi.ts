@@ -48,7 +48,14 @@ export const GOVERNED_CATALOG = {
 //  (`{ data }` envelope). One dataset, one measure carrying a RESOLVED unit
 //  (source:'measure' → the editor pre-fills the unit field), one dimension with
 //  members (so a default-dim pin is authorable).
-export const STEWARD_DATASET: CubeDatasetRow = { code: 'nat-accounts', label: 'National Accounts' }
+// `label` is a bilingual LocaleString ({en,ka}) — the FAITHFUL shape GET
+// /api/stats/datasets serves (a JSONB column), so this stub REPRODUCES the
+// LocaleString-as-JSX-child class the picker must resolve (a string mock would keep
+// hiding React #31). See src/lib/cubeApi.ts CubeDatasetRow.
+export const STEWARD_DATASET: CubeDatasetRow = {
+  code:  'nat-accounts',
+  label: { en: 'National Accounts', ka: 'ეროვნული ანგარიშები' },
+}
 
 export const STEWARD_PROFILE: CubeProfile = {
   datasetCode: STEWARD_DATASET.code,

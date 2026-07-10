@@ -28,10 +28,18 @@ const CUBE_PREFIX = '/api/cube'
 // for source authoring). Distinct server scope, same transport (Law 5).
 const STATS_PREFIX = '/api/stats'
 
-/** One row of GET /api/stats/datasets — a pickable cube (code + display label). */
+/**
+ * One row of GET /api/stats/datasets — a pickable cube (code + display label).
+ *
+ * `label` is a bilingual LocaleString ({en,ka}) — the api serves `stats.dataset.label`
+ * straight from its JSONB column (routes/stats/datasets.ts), NOT a plain string. It
+ * MUST be resolved through the locale reader (readLocale) before it reaches a React
+ * child; painting the raw object throws React #31 ("Objects are not valid as a React
+ * child"). Typed here as the same wire LocaleString the sibling measure label uses.
+ */
 export interface CubeDatasetRow {
   code:  string
-  label: string
+  label: CubeLocaleString
 }
 
 // ── Wire shapes (exact mirror of the api cube route contract) ────────────────

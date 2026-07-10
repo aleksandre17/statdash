@@ -71,7 +71,9 @@ test('steward authors a governed metric in-tool → the author sees it in the pa
 
   // dataset PICK (MUI Select → open + choose the real option; never hand-typed).
   await page.getByRole('combobox', { name: /Dataset \(cube\)/ }).click()
-  await page.getByRole('option', { name: new RegExp(STEWARD_DATASET.label) }).click()
+  // The option paints the LOCALIZED label (site is English-first) — readLocale over
+  // the {en,ka} LocaleString, never the raw object (React #31).
+  await page.getByRole('option', { name: new RegExp(STEWARD_DATASET.label.en) }).click()
 
   // measure PICK — derives code + PRE-FILLS the unit from the measure's resolved unit.
   const measure = STEWARD_PROFILE.measures[0]
