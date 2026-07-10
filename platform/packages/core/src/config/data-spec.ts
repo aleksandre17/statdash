@@ -143,6 +143,10 @@ export interface TimeDimensionSpec {
 //  'ratio-list' — each row = measure / denominator × 100.
 //  'pivot'      — wide→long shorthand (sugar for transform + melt).
 //  'transform'  — full declarative pipeline (Vega-Lite transform analogue).
+//  'metric'     — SEMANTIC query [AR-50 M-SQ]: governed metric(s) × a generic grain.
+//                 The metric-first NOUN — names governed metrics + a `by`/`time` grain,
+//                 lowered onto measure resolution + the M2 grain algebra (evalMeasure
+//                 AtGrain). The Cube/dbt-SL/MetricFlow query shape, SDMX-native.
 //
 //  All branches are 100% JSON-serializable and Constructor-authorable.
 //  The SINGLE extension path is the resolver registry: to add a new capability,
@@ -208,6 +212,57 @@ export type DataSpec =
       steps:    TransformStep[]
       encoding: EncodingSpec
     }
+  | MetricSpec
+
+// ── MetricRef — a governed-metric reference in a semantic query [AR-50 M-SQ] ──
+//
+//  A metric-id registered in the MetricRegistry (governed measure/calc-metric) OR a
+//  raw SDMX code — resolved through the ONE resolveMeasureRef seam, exactly like every
+//  other measure reference in the union. A plain string keeps the spec Constructor-
+//  trivial (a metric picker emits ids); an object form (per-ref label/format override)
+//  is a future door, not built here (YAGNI).
+export type MetricRef = string
+
+// ── MetricSpec — the `metric` DataSpec: a declarative SemanticQuery [AR-50 M-SQ] ──
+//
+//  Metric-first, made STRUCTURAL. Where every other discriminant binds at the physical
+//  `ObsQuery`/`code` level, `metric` names GOVERNED metrics + a GRAIN and lets the
+//  resolver LOWER onto the existing machinery — measure resolution (resolveMeasureRef)
+//  + the M2 grain algebra (evalMeasureAtGrain: calc metrics re-derive at grain via the
+//  align-join + Expr eval; base metrics roll up per grain cell). The semantic-layer
+//  query shape (Cube `measures`+`dimensions`+`timeDimensions`, dbt-SL/MetricFlow
+//  `metrics`+`group_by`) in its SDMX-native form — no foreign query engine (Law 5).
+//
+//  100% JSON-serializable — every field is data (Law 2); a metric spec is fully
+//  dep-extractable (extractDeps) so the reactive graph invalidates it correctly.
+//
+//  Law 1 (no privileged dims): `by` and `time.dim` are GENERIC grain axes. `time` is
+//  the FIRST-CLASS time concept (range clamp + granularity) — an affordance, NOT a
+//  special dimension: its `dim` simply joins the grain (grain = by ⊕ time.dim).
+export interface MetricSpec {
+  type:    'metric'
+  /** Governed metric refs (metric-ids or raw codes) — one series per ref. */
+  metrics: MetricRef[]
+  /**
+   * The generic grain axes to group by (Law 1 — any dim keys; e.g. `['geo']` for a
+   * cross-section). One row per distinct grain tuple per metric. Absent/empty ⇒ a
+   * SCALAR (grain-∅) — a single governed value per metric (the KPI coordinate).
+   */
+  by?:     string[]
+  /**
+   * First-class time grain [ADR R5]. Its `dim` JOINS the grain (grain = by ⊕ time.dim,
+   * de-duped); `range` CLAMPS the emitted tuples (folded via the SAME effectiveBounds
+   * the val-cell specs use); `granularity` is the LOD door. A metric "over time" sets
+   * `time: { dim: TIME_DIM }` — or equivalently `by: [TIME_DIM]` (Law 1, both legal).
+   */
+  time?:   TimeDimensionSpec
+  /**
+   * Generic filter pins that NARROW the read coordinate (Law 1 — any dim). Merged OVER
+   * ctx.dims for every underlying read (the semantic-layer `where`/`filters` clause,
+   * scalar-pin form). Pure data — a coordinate, never a predicate function (Law 2).
+   */
+  where?:  Partial<Record<string, DimVal>>
+}
 
 // ── PointSeriesSpec — INTERNAL store-aware lowering primitive (NOT public) ─────
 //

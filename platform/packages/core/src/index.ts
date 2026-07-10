@@ -335,7 +335,10 @@ export { resolveMetricValue, calcMetricRequirements, isCalculatedMetric } from '
 //  to resolveMetricValue) to any grain via align-join + per-row Expr eval. The
 //  additivity model is CONSUMED here: guardNoSumOfRatio is the FF-NO-SUM-OF-RATIO
 //  gate; rollupForAxis is the DAX semi-additive per-axis reducer selection.
-export { evalCalcAtGrain, guardNoSumOfRatio, rollupForAxis, isSummingOp,
+//  evalMeasureAtGrain is the COMPLETE "any governed measure at grain" entry (calc via
+//  evalCalcAtGrain, base via the same align machinery) — the seam the `metric` DataSpec
+//  (AR-50 M-SQ) lowers onto.
+export { evalCalcAtGrain, evalMeasureAtGrain, guardNoSumOfRatio, rollupForAxis, isSummingOp,
          NonAdditiveSumError }                                        from './data/metric-grain'
 // ── Dimension registry [AR-49 / M0] — the governed-dimension PEER of metric ──
 //  Law 1: dimensions are equal citizens of the semantic layer. A thin curation

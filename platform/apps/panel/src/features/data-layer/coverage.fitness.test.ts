@@ -123,17 +123,24 @@ const COVERAGE_TODO = {
     joinByField: 'PERMANENT — carries resolved EngineRow[]; declarative front-door is `blend`',
   },
   dataSpecs: {
-    // V2 DONE + ENG-16 — EVERY DataSpec discriminant now has a dedicated editor
+    // V2 + ENG-16 — the SEVEN original discriminants each have a dedicated editor
     // rendered through DataSpecEditor, and the dead `custom`/`fn` escape hatch was
     // REMOVED from the union wholesale (the single extension path is `registerSpec`,
-    // not a competing function-pointer). So this allowlist is EMPTY: every
-    // discriminant the engine ships is authorable; a type without an editor FAILS:
+    // not a competing function-pointer):
     //   query     → QueryEditor
     //   row-list  → RowListEditor    (RowSpec[] authored via the generic Inspector,
     //                                 schema carried in the engine rowspec registry)
     //   timeseries/growth/ratio-list → dedicated editors
     //   transform → TransformEditor   (PipelineBuilder + EncodingEditor + JSON source)
     //   pivot     → PivotEditor       (friendly rows/keyField/valueFields/colors)
+    //
+    // `metric` (AR-50 M-SQ) — the semantic-query discriminant — is STRUCTURALLY complete
+    // (resolver + extractDeps + warm reqs all green), but its Constructor surface is a
+    // FOLLOW-ON: a metric-first authoring pane that reuses the existing governed-metric
+    // picker (MetricCatalogManager selection) + a by/time grain control, emitting the
+    // pure-data spec. Allowlisted here (roadmap-keyed, not silent drift) until that pane
+    // lands; removing this entry when the editor ships is the forcing function.
+    metric: 'AR-50 M-SQ-EDITOR — metric-picker + by/time grain authoring pane (follow-on)',
   },
   paramDefs: {
     // V0 — page-level FilterSchema/ParamDef authoring is DONE. Every ParamDef

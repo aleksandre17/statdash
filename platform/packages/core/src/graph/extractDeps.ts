@@ -267,6 +267,27 @@ function scanSpec(spec: DataSpec, acc: Acc, ambientDims?: readonly string[]): vo
       addAmbient(acc, ambientDims)
       if (spec.pipe) scanTransforms(spec.pipe, acc)
       break
+    case 'metric': {
+      // Semantic query [AR-50 M-SQ]. Measures + metric-declared store routing are already
+      // captured by the specMeasureRefs loop above. The remaining edges are the GRAIN and
+      // the coordinate:
+      //   • grain axes (by ⊕ time.dim) — the dims the metric spec groups/re-derives by;
+      //     each is a read dep (a change re-enumerates the grain). Generic keys (Law 1).
+      //   • time.range $ctx bounds — swept by addTimeBinding (also adds time.dim).
+      //   • where pins — each narrows the read coordinate ⇒ a read dep.
+      //   • ambient dims — like every val-based spec, each grain cell is an OLAP point-read
+      //     over the whole active coordinate (matchedValues iterates ctx.dims), so the value
+      //     depends on every ambient dim, not just the grain axes.
+      if (spec.by) for (const d of spec.by) acc.dims.add(d)
+      addTimeBinding(acc, undefined, undefined, spec.time)
+      if (spec.where) for (const d of Object.keys(spec.where)) acc.dims.add(d)
+      addAmbient(acc, ambientDims)
+      // Series labels are GOVERNED metric labels (localized LocaleStrings, tagged for the
+      // React locale boundary) ⇒ the rendered labels change with locale. Coarse-but-safe
+      // per the V1 locale-detection policy (this module's header).
+      acc.locale = true
+      break
+    }
     case 'transform':
       scanTransforms(spec.steps, acc)
       if (spec.encoding) scanEncoding(spec.encoding, acc)

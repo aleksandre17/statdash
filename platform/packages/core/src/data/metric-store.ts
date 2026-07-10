@@ -48,6 +48,10 @@ function measureRefs(spec: DataSpec): string[] {
       return Array.isArray(spec.code) ? [...spec.code] : [spec.code]
     case 'ratio-list':
       return spec.pairs.flatMap((p) => [p.code, p.denom])
+    case 'metric':
+      // The governed metric refs are the spec's measure references (a calc metric-id
+      // expands to its component codes downstream via resolveMeasureRef).
+      return [...spec.metrics]
     case 'pivot':
     case 'transform':
       return []

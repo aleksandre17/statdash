@@ -240,3 +240,54 @@ export function evalCalcAtGrain(
   }
   return out
 }
+
+// ── evalMeasureAtGrain — ANY governed measure at grain (calc OR base) [AR-50 M-SQ] ──
+//
+//  The complete "measure at grain" entry point the `metric` DataSpec lowers onto.
+//  evalCalcAtGrain (above) covers a CALC metric — the align-join + per-row Expr eval —
+//  and, by design, declines a BASE ref at a non-empty grain ("the caller falls back to
+//  a raw row query"). This function IS that caller, folded back into the grain SSOT so
+//  grain semantics live in ONE module:
+//
+//    • CALC metric → evalCalcAtGrain (native at any grain, single or multi-axis).
+//    • BASE metric / raw code → read the underlying measure at each grain CELL. It
+//      REUSES the very same align machinery (enumerateGrainTuples + readInputAt +
+//      sortByGrain) as a ONE-input read — NOT a reimplementation of the algebra, just
+//      the algebra with no Expr and a single component. readInputAt routes a base input
+//      through storeValAt (the OLAP cell sum) behind guardNoSumOfRatio, so a DECLARED
+//      non-additive base measure with no `calc` to re-derive throws rather than silently
+//      summing (FF-NO-SUM-OF-RATIO). Grain-∅ ⇒ one scalar cell (byte-identical to a
+//      storeVal read at ctx.dims).
+//
+//  Emits one `{ ...grainTuple, value }` EngineRow per aligned tuple — the SAME uniform
+//  shape evalCalcAtGrain returns, so a caller reshapes both branches identically. Grain
+//  is a GENERIC ordered set of dim keys (Law 1 — `time` is not special).
+export function evalMeasureAtGrain(
+  ref:   string,
+  ctx:   SectionContext,
+  store: DataStore,
+  grain: readonly string[] = [],
+): EngineRow[] {
+  // CALC metric → the align-join + Expr algebra (native multi-axis, scalar-identical at ∅).
+  if (getMetric(ref)?.calc) return evalCalcAtGrain(ref, ctx, store, grain)
+
+  // BASE metric / raw code — read the one underlying measure at each grain cell.
+  const input: MetricInput = { measure: ref }
+  if (grain.length === 0) {
+    // Grain-∅ ≡ a single OLAP cell at ctx.dims (byte-identical to storeVal). readInputAt
+    // guards a declared non-additive base before the sum.
+    return [{ value: readInputAt(input, {}, ctx, store) }]
+  }
+
+  // ALIGN — the distinct grain tuples the measure populates (the SAME outer align as calc,
+  // one input). EVAL — a single storeValAt cell read per tuple (no Expr for a base measure).
+  const tuples = new Map<string, Record<string, DimVal>>()
+  enumerateGrainTuples(input, grain, ctx, store, tuples)
+
+  const out: EngineRow[] = []
+  for (const key of [...tuples.keys()].sort(sortByGrain(grain, tuples))) {
+    const tuple = tuples.get(key)!
+    out.push({ ...tuple, value: readInputAt(input, tuple, ctx, store) })
+  }
+  return out
+}

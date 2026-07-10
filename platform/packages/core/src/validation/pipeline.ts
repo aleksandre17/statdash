@@ -116,6 +116,11 @@ export function validateDataSpec(
       if (!spec.encoding?.label)
         v.error(path + '.encoding.label', 'MISSING_ENCODING', 'query requires encoding.label')
       break
+
+    case 'metric':
+      if (!spec.metrics?.length)
+        v.error(path + '.metrics', 'MISSING_REQUIRED', 'metric spec requires at least one metric')
+      break
   }
 
   return v.build()

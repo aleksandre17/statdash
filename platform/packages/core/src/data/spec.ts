@@ -195,6 +195,26 @@ export function extractRequirements(
         ...resolveMeasureRef(denom).codes.map((c) => ({ code: c, dims: ctx.dims })),
       ])
 
+    case 'metric': {
+      // Semantic query [AR-50 M-SQ]. The resolver enumerates every grain coordinate
+      // (evalMeasureAtGrain scans the store at ctx.dims with the grain axes OPENED), so
+      // warm ONE UNBOUNDED slice per underlying code with the grain axes STRIPPED — the
+      // superset spanning every tuple the read visits (mirrors point-series 'all' / the
+      // query rangeMode branch; never warm [] for a reading spec, FF-NO-EMPTY-REQS). The
+      // `where` pins narrow the fixed slice; grain axes (by ⊕ time.dim) are removed since
+      // the read spans all their values. A calc metric-id expands to its component codes.
+      const grainAxes = new Set<string>([
+        ...(lowered.by ?? []),
+        ...(lowered.time?.dim ? [lowered.time.dim] : []),
+      ])
+      const base: Record<string, DimVal> = {}
+      for (const [d, v] of Object.entries(ctx.dims)) if (!grainAxes.has(d) && v != null) base[d] = v as DimVal
+      for (const [d, v] of Object.entries(lowered.where ?? {})) if (v != null) base[d] = v as DimVal
+      return lowered.metrics.flatMap((ref) =>
+        resolveMeasureRef(ref).codes.map((code) => ({ code, dims: { ...base } })),
+      )
+    }
+
     case 'query': {
       const measures = resolveMeasureRef(lowered.query.measure).codes
 
