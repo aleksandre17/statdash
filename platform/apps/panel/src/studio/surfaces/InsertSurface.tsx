@@ -17,7 +17,11 @@ export function InsertSurface({ controller, locale }: { controller: CanvasContro
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
       <Typography variant="overline" color="text.secondary">{INSERT_SECTION_LABELS.blocks[locale]}</Typography>
-      <NodePalette locale={locale} onDragStateChange={controller.setDragging} />
+      <NodePalette
+        locale={locale}
+        selectedType={controller.selected?.type ?? null}
+        onDragStateChange={controller.setDragging}
+      />
       <Divider sx={{ my: 1 }} />
       <Typography variant="overline" color="text.secondary">{INSERT_SECTION_LABELS.chrome[locale]}</Typography>
       <ChromePalette />

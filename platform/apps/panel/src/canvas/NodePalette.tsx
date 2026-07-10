@@ -28,8 +28,9 @@ import { useMemo }                                      from 'react'
 import { resolveLocaleString }                          from '@statdash/engine'
 import { getPaletteEntries, getGroupedPaletteEntries }  from './paletteEntries'
 import type { PaletteEntry, PaletteGroup }              from './paletteEntries'
-import { paletteGroupHeading }                          from './paletteGroupLabels'
+import { paletteGroupHeading, PALETTE_LEAF_HINT }       from './paletteGroupLabels'
 import { renderPaletteIcon }                            from './paletteIcons'
+import { nestAccepts, isDropTarget }                    from './insertNode'
 import { useActiveProfile }                             from '../discovery/useActiveProfile'
 import { gatePaletteEntries }                           from '../discovery/capabilityGate'
 import { suggestPanels }                                from '../discovery/suggestPanels'
@@ -39,6 +40,15 @@ import './node-palette.css'
 export interface NodePaletteProps {
   /** Active UI locale — resolves each tile's i18n label/description at render. */
   locale?: Locale
+  /**
+   * Type of the currently-selected node (M4.1 Thread A — context-aware palette).
+   *   - a CONTAINER selected → offer ONLY schema-compatible children (nestAccepts);
+   *   - a LEAF selected → offer NO node tile + a guided hint to the Inspector;
+   *   - null / nothing selected → the full page/frame-level set (today's behaviour).
+   * The palette NARROWS, it never BLOCKS (FF-NO-WORKFLOW-GATE): a legal insert is
+   * always reachable by selecting a compatible container or clearing the selection.
+   */
+  selectedType?: string | null
   onDragStateChange?: (dragging: boolean) => void
 }
 
@@ -79,21 +89,31 @@ function PaletteItem({
   )
 }
 
-export function NodePalette({ locale = 'ka', onDragStateChange }: NodePaletteProps) {
+export function NodePalette({ locale = 'ka', selectedType, onDragStateChange }: NodePaletteProps) {
   const active = useActiveProfile()
 
-  // Gate the capability groups against the active profile (C3). Each group's
-  // entries are filtered; empty groups drop out. Memoised on the profile status.
+  // Context-aware narrowing (M4.1 Thread A). A container selected → keep only the
+  // types it can hold (nestAccepts, the SAME predicate the insert router uses, so a
+  // palette-offered tile is guaranteed to nest where shown — no silent redirect).
+  // Nothing selected → nestAccepts(undefined, …) is true for all (the full set).
+  const leaf = selectedType != null && !isDropTarget(selectedType)
+  const acceptsInSelection = useMemo(
+    () => (t: string) => nestAccepts(selectedType ?? undefined, t),
+    [selectedType],
+  )
+
+  // Gate the capability groups against the active profile (C3), then narrow to the
+  // selection's accept-set. Empty groups drop out. Memoised on profile + selection.
   const groups = useMemo<PaletteGroup[]>(() => {
     const raw = getGroupedPaletteEntries()
     return raw
-      .map((g) => ({ ...g, entries: gatePaletteEntries(g.entries, active) }))
+      .map((g) => ({ ...g, entries: gatePaletteEntries(g.entries, active).filter((e) => acceptsInSelection(e.type)) }))
       .filter((g) => g.entries.length > 0)
-  }, [active])
+  }, [active, acceptsInSelection])
 
   const flat = useMemo<PaletteEntry[]>(
-    () => gatePaletteEntries(getPaletteEntries(), active),
-    [active],
+    () => gatePaletteEntries(getPaletteEntries(), active).filter((e) => acceptsInSelection(e.type)),
+    [active, acceptsInSelection],
   )
 
   // Recommended section — suggestPanels(profile) intersected with the gated,
@@ -126,6 +146,25 @@ export function NodePalette({ locale = 'ka', onDragStateChange }: NodePalettePro
         </ul>
       </section>
     ) : null
+
+  // Leaf selection (M4.1 Thread A) — a block that accepts no child blocks. The
+  // honest, canonical answer is NO node tile + a guided hint pivoting the author to
+  // the Inspector (its own props / the filterSchema), never an invented cross-tier
+  // slot. This is guidance-by-affordance, not a block: clearing the selection or
+  // selecting a container restores the full/compatible palette.
+  if (leaf) {
+    return (
+      <div
+        className="node-palette__leaf-hint"
+        role="note"
+        data-testid="node-palette-leaf-hint"
+        aria-label={PALETTE_LEAF_HINT.title[locale]}
+      >
+        <span className="node-palette__leaf-hint-title">{PALETTE_LEAF_HINT.title[locale]}</span>
+        <span className="node-palette__leaf-hint-body">{PALETTE_LEAF_HINT.body[locale]}</span>
+      </div>
+    )
+  }
 
   // Grouped render — one <section> per capability group, recommendations first.
   if (groups.length > 0) {

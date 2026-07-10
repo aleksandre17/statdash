@@ -33,16 +33,37 @@ export function makeNode(type: string, id: string, variant?: string): CanvasNode
 }
 
 /**
- * Whether `childType` may be nested under `parentType` per the registry's slot
- * `accepts` contract. The page root (no parentType) and slot-less / open-accepts
- * containers accept anything (graceful default — the same rule CanvasOverlay's
- * drop uses). The single SSOT for "is this nest legal", shared by the Outline
- * drag and the palette drop so they cannot diverge.
+ * Whether `parentType` is a NODE-TREE drop target at all — the leaf/container
+ * discriminant (D-M4.1-A). Reads the already-declared `canHaveChildren` meta: the
+ * page root (no parentType) is always a top-level target; a registered node is a
+ * target ONLY when its meta pins `canHaveChildren === true`. A LEAF (chart, kpi,
+ * hero, filter-bar — `canHaveChildren` false/absent) accepts NO child node, even
+ * if it happens to declare an empty `slots` object (hero: `slots:{}`).
+ */
+export function isDropTarget(parentType: string | undefined): boolean {
+  if (!parentType) return true                       // page root — top-level target
+  return nodeRegistry.getMeta(parentType)?.canHaveChildren === true
+}
+
+/**
+ * Whether `childType` may be nested under `parentType`. Two questions, both from
+ * already-declared meta (D-M4.1-A — no new field, no packages change):
+ *   1. Is the parent a drop target at all?  → `canHaveChildren === true` (isDropTarget)
+ *   2. Which child types may it hold?        → `slots.accepts` (empty ⇒ any)
+ *
+ * Previously step 1 was skipped — a slot-less parent returned `true`, conflating
+ * "leaf (accepts nothing)" with "open container (accepts anything)" and causing
+ * `resolveInsertParent` to silently redirect an incompatible insert to page top.
+ * Gating on `canHaveChildren` FIRST fixes that silent-fail at the root: a leaf is
+ * never a nest target, so the palette never offers (and the router never redirects)
+ * an incompatible tile. The single SSOT shared by the Outline drag, the palette
+ * drop, the ⌘K insert, and the context-aware palette filter (M4.1 Thread A).
  */
 export function nestAccepts(parentType: string | undefined, childType: string): boolean {
   if (!parentType) return true                       // page root accepts any top-level node
+  if (!isDropTarget(parentType)) return false        // a leaf accepts no child node
   const slots = nodeRegistry.getSlots(parentType)
-  if (!slots) return true                            // leaf/undeclared container → permissive
+  if (!slots) return true                            // open container (no explicit slots) → any
   const defs = Object.values(slots)
   if (defs.length === 0) return true
   // Accept if ANY slot accepts the type (a node has at most one children list in
