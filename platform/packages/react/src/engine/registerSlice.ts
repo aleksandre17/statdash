@@ -1,9 +1,12 @@
-// ── registerSlice — hub: dispatches a RegistrableSlice to the right registry ─
+// ── registerSlice — hub: ONE ObjectMeta ingestion + behaviour routing ──
 //
-//  Three registry branches, discriminated by META.sliceType:
-//    'node'    → nodeRegistry + skeletonRegistry + i18next (if META.i18n)
-//    'chrome'  → chromeRegistry
-//    'control' → filterControlRegistry
+//  ADR-023 R1. Every slice feeds the single `objectRegistry` (the one type-
+//  descriptor / discovery registry) FIRST, kind-agnostically. Behaviour is then
+//  routed to the kind's typed store — these are behaviour registries, not a
+//  second type system:
+//    'node'|'page'|'panel' → nodeRegistry (renderer+skeleton+validate+migrate) + i18next
+//    'chrome'              → chromeRegistry (shell) + i18next
+//    'control'             → filterControlRegistry (shell+codec) + i18next
 //
 //  Called once per slice in setupRegistrations.ts.
 //  Not called from slice files — side-effect registration anti-pattern.
@@ -12,6 +15,8 @@ import i18next, { type i18n as I18nInstance }       from 'i18next'
 import type { ReactNode }                           from 'react'
 import { registerNodeType }                         from '@statdash/engine'
 import { nodeRegistry }                              from './register-all'
+import { objectRegistry }                            from './objectRegistry'
+import type { SliceMeta }                            from './slice-meta'
 import { chromeRegistry }                           from './chromeRegistry'
 import { filterControlRegistry }                    from './filterControlRegistry'
 import type { FilterControlSlice }                  from './filterControlRegistry'
@@ -69,6 +74,14 @@ export type RegistrableSlice =
   | FilterControlSlice
 
 export function registerSlice(mod: RegistrableSlice): void {
+  // ── ONE ObjectMeta ingestion path (ADR-023 · FF-ONE-TYPE-SYSTEM) ──────
+  // Every kind — node/page/panel/chrome/control — feeds the single type-
+  // descriptor registry FIRST, kind-agnostically. The behaviour routing below
+  // (renderer/shell/codec + i18n) is a *secondary* concern layered on the same
+  // identity; it is NOT a per-kind type registry. objectRegistry is the one
+  // discovery surface the Constructor browses.
+  objectRegistry.register(mod.META as SliceMeta)
+
   const { sliceType } = mod.META
   if (sliceType === 'node' || sliceType === 'page' || sliceType === 'panel') {
     const m = mod.META as AnyNodeSliceMeta

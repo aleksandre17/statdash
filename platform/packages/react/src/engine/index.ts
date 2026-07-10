@@ -28,6 +28,7 @@ export type {
   NodeRenderer,
   // slice taxonomy
   SliceCategory,
+  ObjectMeta,
   NodeSliceMeta,
   PageSliceMeta,
   PanelSliceMeta,
@@ -189,6 +190,13 @@ export type { RegistrableSlice, NodeSliceExport, ChromeSliceExport } from './reg
 
 // ── Singleton registry ────────────────────────────────────────────────
 export { nodeRegistry } from './register-all'
+
+// ── Unified object-type registry (ADR-023 · R1) ───────────────────────
+//  The ONE discovery surface across all kinds (node/page/panel/chrome/control):
+//  kind-agnostic ObjectMeta descriptors, fed by the single registerSlice
+//  ingestion path. Behaviour stays in the typed behaviour registries above.
+export { ObjectRegistry, objectRegistry, normalizeObjectIdentity } from './objectRegistry'
+export type { ObjectKind, ObjectRegistryEntry }                    from './objectRegistry'
 
 // ── Frame system — page frame provider + hook ─────────────────────────
 export { FrameProvider, usePageFrame }    from '../context/FrameContext'

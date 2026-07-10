@@ -21,6 +21,7 @@
 - [Restructure paths](project_restructure_paths.md) — engine/* → platform/packages/*; @statdash/* scope (landed, @geostat/* fully retired)
 
 ## Reference — durable seam contracts (spot-checked against current code)
+- [ObjectMeta one type system](reference_object_meta_one_type_system.md) — ADR-023 R1: ObjectMeta base + kind-as-facet refinements; objectRegistry one discovery registry; `type` is node-tier (not base) — byte-identical `in`-narrowing rule
 - [Fail-soft interpret guard](reference_failsoft_interpret_guard.md) — per-node interpreters (interpretKpis + extractKpiRequirements twin) tolerate absent optional input `?? []`, never hard-throw into NodeErrorBoundary; engine twin of chrome fail-soft; class has bitten twice
 - [Panel e2e offline bridge](reference_panel_e2e_offline_bridge.md) — run boot.e2e.ts offline via cached playwright 1.61.1 + gitignored @playwright/test shim; panel bundles @statdash/* from SOURCE so a core edit is live with no rebuild
 - [No-privileged-literal guard](reference_no_privileged_literal_guard.md) — FF-NO-PRIVILEGED-LITERAL scans registry/**; forbids privileged-dim + `<x>Color/<x>Label`; `measure` field exempt
@@ -52,3 +53,6 @@
 - [Defaults-vs-saveGuard contract](reference_defaults_guard_contract.md) — getDefaults must omit optional localized fields / seed required ones complete
 - [Tenant-content gates](reference_tenant_content_gates.md) — two gates (vitest ALLOW + bash LAW4_CATALOG_ALLOW twin) must stay in sync for authoring-label catalogs
 - [Effects retirement](reference_effects_retirement.md) — Effect/applyEffects/schema.effects deleted wholesale, locked by check-laws grep guard; BRE `\?` pitfall
+
+## Auto-relocated (memory-home-guard — reconcile into a topic section)
+- [Panel StyleSurface gate flake](project_gate_panel_flake.md) — full-graph `pnpm test` can false-RED on a panel StyleSurface timeout; verify heavy panel React tests in isolation

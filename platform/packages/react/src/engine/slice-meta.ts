@@ -1,6 +1,9 @@
-// ── slice-meta.ts — Plugin taxonomy: SliceMeta discriminated union ────
+// ── slice-meta.ts — ONE type system: ObjectMeta + kind refinements ────
 //
-//  Five sliceType discriminants (5-tier plugin taxonomy):
+//  ADR-023 "One Type System, One Tree, Two Residences." The five META names
+//  are DERIVED refinements of ONE `ObjectMeta` base — "kind" is a pinned facet,
+//  not a fifth mechanism. Byte-identical import sites; the SliceMeta union stays
+//  discriminated on `sliceType`.
 //    'node'    → NodeSliceMeta    — general nodes (section, hero, filter-bar…)
 //    'page'    → PageSliceMeta    — page template roots (inner-page, tab-page…)
 //    'panel'   → PanelSliceMeta   — leaf data panels (chart, table, kpi-strip)
@@ -163,16 +166,34 @@ import type { PropSchema } from '@statdash/engine'
 export type { VariantDef, VariantSchema } from './variant-meta'
 import type { VariantSchema } from './variant-meta'
 
-// ── Slice META — three distinct node contracts per sliceType ──────────
-
-/**
- * META for page template slices (inner-page, tab-page, container-page).
- * Pages are always tree roots — rootOnly is a literal `true`, not a flag.
- * Constructor hides page templates unless the canvas is empty.
- */
-export interface PageSliceMeta {
-  sliceType:        'page'
-  type:             string
+// ── ObjectMeta — the ONE type system (ADR-023 · kind-as-facet) ────────
+//
+//  "One Type System, One Tree, Two Residences." Every registrable object —
+//  node, page template, data panel, chrome slot, filter control — is ONE
+//  `ObjectMeta` refined by *pinned facets*, not a separate META mechanism.
+//  A "kind" (page-ness, panel-ness, chrome-ness) is expressed as declarative
+//  facet fields (`rootOnly`, `canHaveChildren`, `chrome`-identity, `control`-
+//  identity), Figma-mixin style — never as a fifth machinery. The five META
+//  names below are DERIVED refinements (`ObjectMeta & { …pinned facets }`), so
+//  every existing `import { PanelSliceMeta }` site is byte-identical while the
+//  underlying type system is unified.
+//
+//  Reference platforms: Figma (node = trait-mixin composition), Sanity (one
+//  schema registry across bands), Gutenberg (`supports` facets), ECS (facets
+//  are data; behaviour lives in the interpreter). See ADR-023 + SPEC-rendering-
+//  core-object-model.md §3.1.
+//
+//  Facet grammar is *shared* (all kinds carry the optional vocabulary); the
+//  refinements PIN the illegal-state facets (page `rootOnly: true`, panel
+//  `canHaveChildren: false`) so make-illegal-states-unrepresentable is kept
+//  exactly where it is load-bearing.
+//
+export interface ObjectMeta {
+  // Identity is kind-specific and NOT on the shared base: node/page/panel carry
+  // `type` (re-required in their refinements), chrome carries `slot`/`key`,
+  // control carries `controlType`. The ONE universal `(type, variant)` identity
+  // is synthesized at registry ingestion (normalizeObjectIdentity), keeping this
+  // base — and every kind's `in`-narrowing — byte-identical.
   variant?:         string
   label?:           LocaleString
   icon?:            string
@@ -181,14 +202,34 @@ export interface PageSliceMeta {
   schema?:          PropSchema
   defaults?:        Record<string, unknown>
   groups?:          PropertyGroup[]
+  /** Tree-band composition (Builder.io slots) — the ONE children mechanism. */
   slots?:           Record<string, SlotDef>
-  canHaveChildren?: boolean
-  rootOnly:         true             // literal — pages MUST be root-only
-  singleton?:       boolean
-  /** Declared capability tokens [N29] — Constructor palette filtering. */
+  /** Facet band [N29] — declared capability tokens (Constructor palette filtering). */
   caps?:            NodeCap[]
+  // ── kind facets (all optional; literal-pinned by the refinements) ──
+  transparent?:     boolean
+  canHaveChildren?: boolean
+  singleton?:       boolean
+  rootOnly?:        boolean
+  /** Declared visual variants → `data-*` attrs (see variant-meta.ts). */
+  variants?:        VariantSchema
+  /** How this node's nav section is read (when caps includes `nav-contributor`). */
+  navContribution?: NavContribution
   version?:         number
   i18n?:            Record<string, Record<string, string>>
+}
+
+// ── Slice META — five kind refinements of the ONE ObjectMeta ──────────
+
+/**
+ * META for page template slices (inner-page, tab-page, container-page).
+ * Pages are always tree roots — rootOnly is a literal `true`, not a flag.
+ * Constructor hides page templates unless the canvas is empty.
+ */
+export type PageSliceMeta = ObjectMeta & {
+  sliceType: 'page'
+  type:      string
+  rootOnly:  true             // literal — pages MUST be root-only
 }
 
 /**
@@ -197,60 +238,21 @@ export interface PageSliceMeta {
  * not a free flag: a panel that contains children is an illegal state and the
  * type system rejects it (make-illegal-states-unrepresentable).
  * category is required: Constructor uses it for palette grouping (always 'data').
- *
- * `slots` is intentionally absent — a leaf has no insertion targets, so the
- * Constructor's drag-and-drop accept logic never offers a panel as a drop zone.
  */
-export interface PanelSliceMeta {
+export type PanelSliceMeta = ObjectMeta & {
   sliceType:        'panel'
   type:             string
-  variant?:         string
-  label?:           LocaleString
-  icon?:            string
   category:         SliceCategory     // required on panels; expected 'data'
-  preview?:         string
-  schema?:          PropSchema
-  defaults?:        Record<string, unknown>
-  groups?:          PropertyGroup[]
   canHaveChildren?: false             // literal false — panels are always leaves
-  /** Declared capability tokens [N29] — Constructor palette filtering. */
-  caps?:            NodeCap[]
-  version?:         number
-  i18n?:            Record<string, Record<string, string>>
-  // Panels are leaves — no slots, no rootOnly, no transparent, no singleton
 }
 
 /**
  * META for general node slices (section, filter-bar, geograph, hero, links…).
  * category groups the Constructor palette. transparent nodes are expanded in-place.
  */
-export interface NodeSliceMeta {
-  sliceType:        'node'
-  type:             string
-  variant?:         string
-  label?:           LocaleString
-  icon?:            string
-  category?:        SliceCategory
-  preview?:         string
-  schema?:          PropSchema
-  defaults?:        Record<string, unknown>
-  groups?:          PropertyGroup[]
-  slots?:           Record<string, SlotDef>
-  transparent?:     boolean
-  canHaveChildren?: boolean
-  singleton?:       boolean
-  /** Declared visual variants → `data-*` attrs (see variant-meta.ts); shells spread, never hand-code a `--modifier` class. */
-  variants?:        VariantSchema
-  /** Declared capability tokens [N29] — Constructor palette filtering. */
-  caps?:            NodeCap[]
-  /**
-   * How this node's nav section is read when it declares the `nav-contributor`
-   * cap. Optional — absent ⇒ DEFAULT_NAV_CONTRIBUTION (anchor??id, title,
-   * view.visibleWhen). Ignored when `nav-contributor` is not in `caps`.
-   */
-  navContribution?: NavContribution
-  version?:         number
-  i18n?:            Record<string, Record<string, string>>
+export type NodeSliceMeta = ObjectMeta & {
+  sliceType: 'node'
+  type:      string
 }
 
 // ── ChromeEntry — chrome slot configuration (JSON-serializable) ────────
@@ -277,50 +279,37 @@ export interface ChromeSlotConfig {
 /** Chrome entry in SiteManifest.chrome or PageConfigBase.chrome. */
 export type ChromeEntry = string | ChromeSlotConfig
 
-/** META for a chrome slot slice (header/sidebar/footer variant) */
-export interface ChromeSliceMeta {
+/**
+ * META for a chrome slot slice (header/sidebar/footer variant).
+ * Chrome-ness is the `slot`/`key` identity facet (+ layout defaults). The
+ * i18n catalog registers under the `slot` namespace (AR-37 P1) so a chrome
+ * shell resolves its fixed labels/aria via `useT(slot)` — symmetric with
+ * node/panel `META.i18n`. Bilingual, tenant-agnostic framework strings (Law 4).
+ */
+export type ChromeSliceMeta = ObjectMeta & {
   sliceType:     'chrome'
   slot:          string
   key:           string
-  label:         LocaleString   // LocaleString = string | Record<string,string> — plain string still valid
-  preview?:      string
-  // ── Constructor chrome editor
-  icon?:         string
-  schema?:       PropSchema
-  version?:      number
-  // ── Layout defaults — where this slot lives when no override is set
+  label:         LocaleString   // required — LocaleString = string | Record<string,string>
   /** Default layout region: 'top' | 'bottom' | 'left' | 'right' | 'overlay' | 'inline'. */
   defaultRegion: string
   /** Default sort order within the region. Lower = earlier. */
   defaultOrder:  number
-  /**
-   * Chrome-slot UI-string catalog, registered into i18next under the `slot`
-   * namespace (AR-37 P1). Symmetric with node/panel `META.i18n` — a chrome shell
-   * resolves its fixed labels/aria via `useT(slot)` instead of a hardcoded JSX
-   * literal, so nav/switcher chrome flips with the URL locale. Bilingual, tenant-
-   * agnostic framework strings (Law 4) — the same in-repo home section/kpi-strip use.
-   */
-  i18n?:         Record<string, Record<string, string>>
 }
 
-/** META for a filter control slice (year-select, cascade, select…) */
-export interface FilterControlMeta {
+/**
+ * META for a filter control slice (year-select, cascade, select…).
+ * Control-ness is the `controlType` identity facet (+ targeted `dimension`).
+ * The i18n catalog registers under the `controlType` namespace (AR-37 P1) so a
+ * control shell resolves its connector words / aria via `useT(controlType)` —
+ * symmetric with node/panel/chrome `META.i18n`. Bilingual, tenant-agnostic (Law 4).
+ */
+export type FilterControlMeta = ObjectMeta & {
   sliceType:   'control'
   controlType: string
   label:       string
-  category?:   SliceCategory
   /** Which data dimension this control targets (e.g. 'geo', 'time', 'indicator'). */
   dimension?:  string
-  /**
-   * Filter-control UI-string catalog, registered into i18next under the
-   * `controlType` namespace (AR-37 P1). Symmetric with node/panel/chrome
-   * `META.i18n` — a control shell resolves its fixed connector words / aria via
-   * `useT(controlType)` instead of a hardcoded JSX literal, so filter chrome
-   * flips with the URL locale. Control was the last slice kind still lacking
-   * this seam (registerSlice notes the same gap chrome once had). Bilingual,
-   * tenant-agnostic framework strings (Law 4).
-   */
-  i18n?:       Record<string, Record<string, string>>
 }
 
 export type SliceMeta = NodeSliceMeta | PageSliceMeta | PanelSliceMeta | ChromeSliceMeta | FilterControlMeta

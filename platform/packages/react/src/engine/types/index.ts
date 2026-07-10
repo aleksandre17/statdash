@@ -48,6 +48,7 @@ export type {
   PropFieldValidation,
   PropField,
   PropSchema,
+  ObjectMeta,
   PageSliceMeta,
   PanelSliceMeta,
   NodeSliceMeta,
