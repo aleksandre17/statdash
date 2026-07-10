@@ -284,6 +284,15 @@ export { setDiagnosticObserver, emitDiagnostic }                       from './r
 export type { ScopeOverride }                                           from './data/scopeOverride'
 export { mergeScope }                                                   from './data/mergeScope'
 
+// ── Reactive query graph [AR-49 / ADR-024] — the config → dependency SSOT ──────
+//  extractDeps is the pure, framework-free static analyzer that computes the TOTAL
+//  dependency (edge) set of one renderable — generalising specDimKey + varsKey +
+//  the storeKey cascade + the AR-36 ref scanner + locale + collectRequirements into
+//  ONE mechanism. It COMPUTES deps here (V1); the reactive graph (V2) compiles from
+//  it, the render switch (V3) consumes it. Reversible: delete src/graph/ to revert.
+export type { NodeDeps, DepScanCtx, DepNode }                          from './graph/extractDeps'
+export { extractDeps }                                                 from './graph/extractDeps'
+
 // ── Core Resolvers ────────────────────────────────────────────────────
 export type { SpecResolveObserver }                                     from './data/spec'
 export { interpretSpec, extractRequirements, setSpecResolveObserver }  from './data/spec'
