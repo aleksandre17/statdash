@@ -57,3 +57,17 @@ export const PALETTE_LEAF_HINT: {
     en: 'Edit its content in the Inspector (right panel).',
   },
 }
+
+// ── Insert guided hint (M4.1 auto-wrap fallback / FF-INSERT-NEVER-CLIFF) ───────
+//
+//  When an insert (⌘K / slash) targets a type that no single canonical wrapper can
+//  legally hold at page level (a deeper or ambiguous structure would be needed),
+//  the insert does NOT invent an ambiguous tree and does NOT silently no-op — it
+//  surfaces this guided hint, naming the block and the structure to build first.
+//  Guidance-by-affordance (the §1.5 doctrine), the peer of PALETTE_LEAF_HINT.
+//
+export function insertNeedsContainerHint(typeLabel: string, locale: Locale): string {
+  return locale === 'en'
+    ? `“${typeLabel}” goes inside a layout container. Add a Section, then a layout block (Grid or Columns) inside it, and place it there.`
+    : `„${typeLabel}“ განთავსდება ლეიაუთ-კონტეინერში. ჯერ დაამატეთ სექცია, მასში ლეიაუთ-ბლოკი (გრიდი ან სვეტები), და იქ ჩასვით.`
+}

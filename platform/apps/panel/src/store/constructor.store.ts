@@ -43,6 +43,7 @@ import {
   updateNodePatch,
   removeNodePatch,
   insertNodePatch,
+  insertNodesPatch,
   moveNodePatch,
 } from './constructor.pages'
 
@@ -89,6 +90,10 @@ export interface ConstructorStore extends ConstructorSession, StudioUiSlice, His
   removeNode:       (pageId: string, nodeId: string) => void
   /** Insert a NEW node into a container (parentId === pageId ⇒ top-level) at an index. */
   insertNode:       (pageId: string, node: CanvasNode, parentId: string, index?: number) => void
+  /** Insert an ORDERED sequence of nodes as ONE undoable action — the auto-wrap
+   *  primitive (page → section → node). Ops are folded in order so a wrapper op
+   *  precedes any op nesting under it. Byte-identical to the composed single inserts. */
+  insertNodes:      (pageId: string, ops: ReadonlyArray<{ node: CanvasNode; parentId: string; index?: number }>) => void
   /** Move an EXISTING node to a container at an index — Outline reorder / re-nest. */
   moveNode:         (pageId: string, nodeId: string, parentId: string, index?: number) => void
 
@@ -301,6 +306,8 @@ export const useConstructorStore = create<ConstructorStore>()(
         set((s) => ({ ...pushHistory(s as ConstructorStore, `Remove node`), ...removeNodePatch(s, pageId, nodeId) }), false, 'canvas/removeNode'),
       insertNode: (pageId, node, parentId, index) =>
         set((s) => ({ ...pushHistory(s as ConstructorStore, `Add ${node.type}`), ...insertNodePatch(s, pageId, node, parentId, index) }), false, 'canvas/insertNode'),
+      insertNodes: (pageId, ops) =>
+        set((s) => ({ ...pushHistory(s as ConstructorStore, `Add ${ops.at(-1)?.node.type ?? 'node'}`), ...insertNodesPatch(s, pageId, ops) }), false, 'canvas/insertNodes'),
       moveNode: (pageId, nodeId, parentId, index) =>
         set((s) => ({ ...pushHistory(s as ConstructorStore, `Move node`), ...moveNodePatch(s, pageId, nodeId, parentId, index) }), false, 'canvas/moveNode'),
 

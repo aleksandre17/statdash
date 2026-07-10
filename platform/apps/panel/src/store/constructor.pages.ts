@@ -156,6 +156,26 @@ export function insertNodePatch(
 }
 
 /**
+ * Insert a SEQUENCE of nodes as one composed mutation — the auto-wrap primitive
+ * (page → section → chart) applied atomically so it is a SINGLE undoable action.
+ * Ops are folded in order (each op sees the prior op's result), so a wrapper op
+ * must precede any op that nests under it. Byte-identical to N separate
+ * insertNodePatch calls, minus the N-1 intermediate history entries — the store
+ * composes ONE pushHistory around this (see `insertNodes`). Empty ops → no-op.
+ */
+export function insertNodesPatch(
+  s: PagesState,
+  pageId: string,
+  ops: ReadonlyArray<{ node: CanvasNode; parentId: string; index?: number }>,
+): PagesPatch {
+  let acc: PagesState = s
+  for (const op of ops) {
+    acc = { ...acc, ...insertNodePatch(acc, pageId, op.node, op.parentId, op.index) }
+  }
+  return acc === s ? {} : { pages: acc.pages }
+}
+
+/**
  * Move an EXISTING node to a (possibly new) container at an index — the Outline's
  * drag-to-reorder / drag-to-re-nest. Detaches the id from whichever container
  * currently holds it (top-level or a parent's childIds) and re-inserts it under

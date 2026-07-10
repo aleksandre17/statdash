@@ -8,13 +8,34 @@
 //
 //  Two pure pieces + one orchestrator:
 //    makeNode(type, id)        build the CanvasNode (id + registry defaults + no children)
-//    slotAccepts(parent, type) the registry's accepts contract for a nest
-//    resolveInsertParent(...)   where a type may land given the current selection
+//    nestAccepts(parent, type) the registry's accepts contract for a nest
+//    resolveInsertPlan(...)     HOW a type lands given the current selection —
+//                              direct nest, auto-wrap into a container, or a
+//                              guided hint (never a hidden no-op / invalid tree)
 //  The component layer supplies the id factory and the store action; this module
 //  owns the "what shape + where" decision so it cannot drift between surfaces.
 //
 import { nodeRegistry } from '@statdash/react/engine'
 import type { CanvasNode, CanvasPage } from '../types/constructor'
+
+/**
+ * The page frame type the store's canvasPageAdapter wraps top-level nodes in
+ * (`toNodePageConfig`). The page root is not a CanvasNode in the flat map — it is
+ * this implicit frame — so its slot/accepts contract is read via this SSOT rather
+ * than re-hardcoding the literal at each call site. If the Constructor ever frames
+ * pages with a different root, this is the ONE line to change.
+ */
+export const PAGE_ROOT_TYPE = 'inner-page'
+
+/**
+ * The canonical page-level content container an auto-wrap creates. When a type is
+ * not directly page-acceptable, the insert wraps it in a `section` (page → section
+ * → type) — the document-editor "insert anything, the tool builds the structure"
+ * rule (Notion/Gutenberg). The wrap is only offered when the registry contracts
+ * actually permit it (nestAccepts guards below), so this constant names the
+ * PREFERENCE, never bypasses the accept contract.
+ */
+export const AUTOWRAP_CONTAINER = 'section'
 
 /**
  * Build a fresh CanvasNode for `type`, seeding props from the slice registry's
@@ -53,7 +74,7 @@ export function isDropTarget(parentType: string | undefined): boolean {
  *
  * Previously step 1 was skipped — a slot-less parent returned `true`, conflating
  * "leaf (accepts nothing)" with "open container (accepts anything)" and causing
- * `resolveInsertParent` to silently redirect an incompatible insert to page top.
+ * the insert resolver to silently redirect an incompatible insert to page top.
  * Gating on `canHaveChildren` FIRST fixes that silent-fail at the root: a leaf is
  * never a nest target, so the palette never offers (and the router never redirects)
  * an incompatible tile. The single SSOT shared by the Outline drag, the palette
@@ -72,21 +93,97 @@ export function nestAccepts(parentType: string | undefined, childType: string): 
 }
 
 /**
- * Decide the container a newly-inserted `type` should land in, given the current
- * selection. Mirrors document-editor insert ergonomics (Notion/Gutenberg insert
- * "near the cursor"):
- *   - no selection            → page top-level
- *   - selected node is a legal container for the type → inside it
- *   - otherwise               → page top-level (sibling of the selection's branch)
- * Returns the parentId to insert under (pageId for top-level).
+ * How a newly-inserted `type` lands given the current selection (FF-INSERT-NEVER-
+ * CLIFF). A discriminated union so the illegal "insert into a parent that rejects
+ * it" state is unrepresentable — every plan is a VALID placement or an explicit
+ * guided hint, never a hidden no-op and never an invalid tree:
+ *
+ *   'direct'  — nest straight into `parentId` (a selected container that accepts
+ *               the type, OR the page frame when it directly accepts the type).
+ *   'wrap'    — the page does not directly accept the type, but the canonical
+ *               container `wrapperType` (which the page DOES accept) accepts it:
+ *               create the wrapper under `parentId`, nest the type inside it, in
+ *               one undoable action (page → section → type).
+ *   'blocked' — no single unambiguous wrapper makes the insert valid (a deeper /
+ *               ambiguous structure would be needed); surface a guided hint rather
+ *               than invent an ambiguous tree.
  */
-export function resolveInsertParent(
+export type InsertPlan =
+  | { kind: 'direct';  parentId: string }
+  | { kind: 'wrap';    wrapperType: string; parentId: string }
+  | { kind: 'blocked'; reason: 'no-single-wrapper' }
+
+/** One resolved insert operation — a built node and the container it lands under. */
+export interface InsertOp {
+  node:     CanvasNode
+  parentId: string
+}
+
+/**
+ * Resolve the insert plan for `type` given the current selection. Mirrors document-
+ * editor ergonomics (Notion/Gutenberg "insert anything; the tool builds the needed
+ * structure"), reconciled with the Wave-1 contextual filter:
+ *   1. a selected CONTAINER that accepts the type → nest directly inside it;
+ *   2. else the page frame directly accepts the type → page top-level;
+ *   3. else the canonical wrapper (`section`) both fits the page AND accepts the
+ *      type → auto-wrap (page → section → type);
+ *   4. else → a guided hint (blocked), never an invalid tree or silent no-op.
+ *
+ * Every branch is registry-validated via `nestAccepts`, so a contract change (a
+ * slot widening/narrowing its `accepts`) automatically reshapes the plan — no
+ * hardcoded per-type placement list.
+ */
+export function resolveInsertPlan(
   page: CanvasPage,
   selectedId: string | null | undefined,
   type: string,
-): string {
-  if (!selectedId) return page.id
-  const selected = page.nodes[selectedId]
-  if (!selected) return page.id
-  return nestAccepts(selected.type, type) ? selected.id : page.id
+): InsertPlan {
+  // 1. A selected container that can legally hold the type → nest directly.
+  if (selectedId) {
+    const selected = page.nodes[selectedId]
+    if (selected && nestAccepts(selected.type, type)) {
+      return { kind: 'direct', parentId: selected.id }
+    }
+  }
+  // 2. Page/frame level: the frame directly accepts the type → top-level insert.
+  if (nestAccepts(PAGE_ROOT_TYPE, type)) {
+    return { kind: 'direct', parentId: page.id }
+  }
+  // 3. Auto-wrap into the canonical container the page accepts AND that accepts
+  //    the type (page → section → type), one undoable action.
+  if (
+    nestAccepts(PAGE_ROOT_TYPE, AUTOWRAP_CONTAINER) &&
+    nestAccepts(AUTOWRAP_CONTAINER, type)
+  ) {
+    return { kind: 'wrap', wrapperType: AUTOWRAP_CONTAINER, parentId: page.id }
+  }
+  // 4. No single unambiguous wrapper makes it valid → guided hint.
+  return { kind: 'blocked', reason: 'no-single-wrapper' }
+}
+
+/**
+ * Compile an insert plan into the ordered node-insert operations a surface applies
+ * through the store's batched `insertNodes` (ONE history entry). The id factory is
+ * called once per created node IN ORDER, so two surfaces that share the same
+ * factory sequence produce byte-identical results — the V6 invariant, now covering
+ * the auto-wrap (a ⌘K wrap == a palette wrap). A 'blocked' plan compiles to no ops
+ * (the caller surfaces the guided hint instead).
+ */
+export function planInserts(
+  plan: InsertPlan,
+  type: string,
+  makeId: () => string,
+  variant?: string,
+): InsertOp[] {
+  if (plan.kind === 'blocked') return []
+  if (plan.kind === 'direct') {
+    return [{ node: makeNode(type, makeId(), variant), parentId: plan.parentId }]
+  }
+  // wrap: build the wrapper first (its id is the child's parent), then the child.
+  const wrapper = makeNode(plan.wrapperType, makeId())
+  const child   = makeNode(type, makeId(), variant)
+  return [
+    { node: wrapper, parentId: plan.parentId },
+    { node: child,   parentId: wrapper.id },
+  ]
 }

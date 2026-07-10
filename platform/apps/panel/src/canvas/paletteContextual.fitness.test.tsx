@@ -14,7 +14,7 @@ import { render, screen } from '@testing-library/react'
 import { setupCanvasRegistry } from './setupCanvasRegistry'
 import { NodePalette }         from './NodePalette'
 import { getPaletteEntries }   from './paletteEntries'
-import { nestAccepts, isDropTarget, resolveInsertParent } from './insertNode'
+import { nestAccepts, isDropTarget, resolveInsertPlan } from './insertNode'
 import type { CanvasPage } from '../types/constructor'
 
 beforeAll(() => { setupCanvasRegistry() })
@@ -72,8 +72,10 @@ describe('FF-PALETTE-CONTEXTUAL — the palette projection', () => {
   it('(b) every offered tile actually nests into the selection (no silent redirect)', () => {
     render(<NodePalette selectedType="section" />)
     for (const t of buttonTypes()) {
-      expect(resolveInsertParent(page, 'sec', t!), `tile ${t} redirected off the selection`)
-        .toBe('sec')
+      // A container is selected and the tile is offered ⇒ the plan is a DIRECT nest
+      // into that container (never a redirect to page-top, never an auto-wrap).
+      expect(resolveInsertPlan(page, 'sec', t!), `tile ${t} did not nest into the selection`)
+        .toEqual({ kind: 'direct', parentId: 'sec' })
     }
   })
 
