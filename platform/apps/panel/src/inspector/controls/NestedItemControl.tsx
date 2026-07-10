@@ -63,6 +63,9 @@ import { getAtPath, setAtPath } from '../showWhen'
 import { readLocale } from '../localeString'
 import { JsonControl } from './primitives'
 import { useBreadcrumbSlot } from '../breadcrumbSlot'
+// The glance-weight RENAME micro-edit, routed to the SL-3 <EditPopover> (§3.2
+// nested-item · glance → POPOVER). Extracted to its own concern (one-body hygiene).
+import { useRowRename } from './useRowRename'
 
 // ── Drill-depth backstop ──────────────────────────────────────────────────────
 //
@@ -451,6 +454,16 @@ function ArrayListScreen({
     onEmit(next)
   }
 
+  // ── Rename — the glance-weight micro-edit, routed to the SL-3 popover ──────────
+  //  Renaming ONE row (its `itemLabel` field) is a single transient property: §3.2
+  //  nested-item · glance → POPOVER. Encapsulated in `useRowRename` (one concern per
+  //  file): it edits the label IN PLACE, anchored to the row, without drilling into
+  //  the whole item form (that would be the form-weight dock-drill).
+  const rowRename = useRowRename({
+    items, itemLabel, locale, onEmit,
+    titleOf: (i) => itemTitle(items[i], itemLabel, i, locale),
+  })
+
   return (
     <div ref={rootRef}>
       {items.length === 0 ? (
@@ -471,6 +484,15 @@ function ArrayListScreen({
                   <span className="insp-nested__chevron" aria-hidden="true">›</span>
                 </button>
                 <div className="insp-nested__actions">
+                  {itemLabel && (
+                    <button
+                      type="button"
+                      className="insp-nested__btn insp-nested__rename"
+                      onClick={(e) => rowRename.openRename(i, e.currentTarget)}
+                      aria-label={`Rename ${title}`}
+                      aria-haspopup="dialog"
+                    >✎</button>
+                  )}
                   <button
                     type="button"
                     className="insp-nested__btn insp-nested__up"
@@ -502,6 +524,10 @@ function ArrayListScreen({
         className="insp-nested__btn insp-nested__add"
         onClick={add}
       >+ Add item</button>
+
+      {/* SL-3 glance-weight micro-edit: rename this row in place, anchored to it —
+          a single property pops OUT, the dock stays bounded (§3.2). */}
+      {rowRename.popover}
     </div>
   )
 }
