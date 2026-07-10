@@ -235,7 +235,7 @@ const metaId = (m: PlaceableMeta | ChromeSliceMeta): string =>
 function isOpaqueNested(f: PropField): boolean {
   // tier-c-ready: once PropField carries `itemSchema`, a field that has one is no
   // longer opaque and drops out of the backlog automatically.
-  const hasItemSchema = 'itemSchema' in (f as Record<string, unknown>)
+  const hasItemSchema = 'itemSchema' in (f as unknown as Record<string, unknown>)
   return (f.type === 'array' || f.type === 'object') && !hasItemSchema
 }
 
