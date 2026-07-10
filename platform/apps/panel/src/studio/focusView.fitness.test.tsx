@@ -67,14 +67,30 @@ function stripComments(src: string): string {
 }
 
 describe('FF-MODEL-IS-FOCUSVIEW — Model composes the shared shell via the registry', () => {
-  it('the registry holds a data-model target whose body is ModelSurface (entry via the registry)', () => {
+  it('the registry holds a data-model target whose body is the role-split DataModelBody', () => {
     const target = getFocusViewTarget('data-model')
     expect(target).toBeDefined()
     expect(target!.title.en).toBe('Data model')
-    // The target renders the SAME ModelSurface (the relocation, not a rewrite): its
-    // element type is the ModelSurface function component.
+    // The target renders the role-split body (AR-50 M5b): DataModelBody projects the
+    // destination by the lens — steward→ModelSurface, author→DataDictionarySurface —
+    // so the destination is reachable in ANY lens while the modeler stays steward-only.
     const el = target!.render({ locale: 'en' }) as { type?: { name?: string } }
-    expect(el.type?.name).toBe('ModelSurface')
+    expect(el.type?.name).toBe('DataModelBody')
+  })
+
+  it('the data-model body renders the read-only Dictionary for AUTHOR and the modeler for STEWARD', () => {
+    // Author lens → the read-only Data Dictionary (no modeler, no query cliff).
+    useRoleStore.setState({ role: 'author' })
+    const { unmount } = render(<StudioShell />)
+    expect(screen.getByTestId('data-dictionary')).toBeInTheDocument()
+    expect(screen.queryByText(/Define the governed data model/)).toBeNull()
+    unmount()
+
+    // Steward lens → the full modeler (the relocated ModelSurface).
+    useRoleStore.setState({ role: 'steward' })
+    render(<StudioShell />)
+    expect(screen.getByText(/Define the governed data model/)).toBeInTheDocument()
+    expect(screen.queryByTestId('data-dictionary')).toBeNull()
   })
 
   it('the Studio shell composes the shared <FocusView> for Model — no fork', () => {
@@ -86,14 +102,15 @@ describe('FF-MODEL-IS-FOCUSVIEW — Model composes the shared shell via the regi
     expect(screen.getByText(/Define the governed data model/)).toBeInTheDocument()
   })
 
-  it('ModelSurface is rendered ONLY through the focus-view registry (no direct shell mount)', () => {
+  it('ModelSurface is rendered ONLY through DataModelBody (the registry body — no direct shell mount)', () => {
     // Any consumer that IMPORTS the ModelSurface component (excluding its own module,
-    // tests, and the registry) would be a forked takeover. The registry is the sole
-    // legitimate mount site (FF-MODEL-IS-FOCUSVIEW).
+    // tests, and DataModelBody — the role-split body the registry renders) would be a
+    // forked takeover. DataModelBody is the sole legitimate mount site, behind its
+    // steward branch (FF-MODEL-IS-FOCUSVIEW + FF-AUTHOR-NO-QUERY).
     const offenders = Object.entries(STUDIO_SOURCES)
       .filter(([path]) =>
         !path.includes('/ModelSurface.') &&
-        !path.includes('/focusViewRegistry.') &&
+        !path.includes('/DataModelBody.') &&
         !path.includes('.test.') &&
         !path.includes('.fitness.'),
       )

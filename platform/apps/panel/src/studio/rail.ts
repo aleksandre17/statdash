@@ -7,24 +7,26 @@ import WebOutlinedIcon from '@mui/icons-material/WebOutlined'
 import PaletteOutlinedIcon from '@mui/icons-material/PaletteOutlined'
 import HubOutlinedIcon from '@mui/icons-material/HubOutlined'
 import type { StudioSurface } from '../types/constructor'
-import type { Role } from './useRole'
 
-// ── Activity-rail registry (AR-49 M1.2 · M2.0 role lens) ──────────────────────
+// ── Activity-rail registry (AR-49 M1.2 · AR-50 M5b data-model first-class) ─────
 //
-//  The five author surfaces + the role-gated Model slot (Steward lens). This is a
-//  data table, not a switch: the rail renders from it and StudioShell dispatches
-//  the left-dock content from it, so adding a surface is one row + one case (OCP).
-//  A `stewardOnly` entry is projected out of the rail in the `author` lens and in
-//  only when `useRole() === 'steward'` — the role-as-lens visibility rule lives as
-//  one predicate over the table (`visibleRailEntries`), never a branch per consumer.
+//  The five compose surfaces + the Data-model destination. This is a data table, not
+//  a switch: the rail renders from it and StudioShell dispatches the left-dock content
+//  from it, so adding a surface is one row + one case (OCP).
+//
+//  ── No visibility gate — the data model is reachable by EVERYONE (AR-50 M5b) ───
+//  The Data-model entry is ALWAYS visible (the G6 "built ≠ buried" fix): the whole
+//  data-model capability used to be gated behind the Steward lens and was unreachable
+//  from a default author session. Role now splits the destination's CONTENT (author →
+//  read-only Data Dictionary, steward → the full modeler — DataModelBody), NOT its
+//  visibility. So the rail is a flat, always-visible list; the role lens never hides a
+//  destination (FF-ROLE-IS-LENS / FF-DATA-REACHABLE).
 
 export interface RailEntry {
   id:     StudioSurface
   /** Bilingual rail label / tooltip (Law 9 — no bare hardcoded UI string leaks). */
   label:  { ka: string; en: string }
   icon:   ComponentType<SvgIconProps>
-  /** Role-gated — visible ONLY in the Steward lens (AR-49 M2.0). */
-  stewardOnly?: boolean
 }
 
 export const RAIL_ENTRIES: readonly RailEntry[] = [
@@ -33,19 +35,8 @@ export const RAIL_ENTRIES: readonly RailEntry[] = [
   { id: 'layers',     label: { ka: 'შრეები',       en: 'Layers' },       icon: LayersOutlinedIcon },
   { id: 'pages-site', label: { ka: 'გვერდები/საიტი', en: 'Pages & Site' }, icon: WebOutlinedIcon },
   { id: 'style',      label: { ka: 'სტილი',        en: 'Style' },        icon: PaletteOutlinedIcon },
-  { id: 'model',      label: { ka: 'მონაცემთა მოდელი', en: 'Data model' }, icon: HubOutlinedIcon, stewardOnly: true },
+  { id: 'model',      label: { ka: 'მონაცემთა მოდელი', en: 'Data model' }, icon: HubOutlinedIcon },
 ] as const
-
-/**
- * The rail entries visible under the current role LENS. `author` sees the five
- * compose surfaces; `steward` additionally sees Model. A predicate over the data
- * table (OCP) — a future role-gated surface is one more `stewardOnly` row, no
- * switch and no consumer change (the rail gates on the lens value, never on an
- * auth/tenant/user primitive — FF-ROLE-IS-LENS).
- */
-export function visibleRailEntries(role: Role): readonly RailEntry[] {
-  return RAIL_ENTRIES.filter((e) => !e.stewardOnly || role === 'steward')
-}
 
 /** The heading shown atop each left-dock surface (bilingual). */
 export const SURFACE_HEADINGS: Record<StudioSurface, { ka: string; en: string }> =

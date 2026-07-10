@@ -7,12 +7,16 @@
 //  surface is the governed Metric Palette only. This guard goes RED if any author
 //  surface re-grows a reference to the modeling machinery (a relocation regression).
 //
-//  The single Steward-only surface (ModelSurface) is the legitimate home of the
-//  modeler and is excluded — its exclusion is anchored to the single `stewardOnly`
-//  rail entry (asserted below), so the guard cannot silently exempt an author surface.
+//  The single Steward-scope surface (ModelSurface) is the legitimate home of the
+//  modeler and is excluded — its exclusion is anchored (below) to it being the SOLE
+//  surface that references the machinery: every OTHER surface, INCLUDING the author's
+//  read-only Data Dictionary (AR-50 M5b), is machinery-free. So the guard cannot
+//  silently exempt an author surface. The Data-model destination is reachable in any
+//  lens (AR-50 M5b), but ModelSurface is mounted ONLY behind the steward branch of the
+//  content split (DataModelBody, focusViewRegistry) — proven by roleIsLens + the
+//  FF-MODEL-IS-FOCUSVIEW "ModelSurface imported only via the registry" guard.
 //
 import { describe, it, expect } from 'vitest'
-import { RAIL_ENTRIES } from './rail'
 
 // All Studio surface sources as raw text (Vite ?raw) — browser-graph typed, no fs dep.
 const SURFACE_SOURCES = import.meta.glob(['./surfaces/*.tsx'], {
@@ -44,12 +48,21 @@ describe('FF-AUTHOR-NO-QUERY — no query/pivot editor reachable from an author 
     expect(AUTHOR_SURFACES.length).toBeGreaterThanOrEqual(4)
   })
 
-  it('exactly one Steward-only surface hosts the modeler — the exclusion is anchored', () => {
-    const gated = RAIL_ENTRIES.filter((e) => e.stewardOnly)
-    expect(gated).toHaveLength(1)
-    expect(gated[0].id).toBe('model')
-    // The exclusion above (ModelSurface) IS that single steward surface.
-    expect(SURFACE_SOURCES['./surfaces/ModelSurface.tsx']).toBeDefined()
+  it('ModelSurface is the SOLE surface that references the modeler — the exclusion is anchored', () => {
+    // The exclusion of ModelSurface from the author scan is legitimate ONLY because it
+    // is the SINGLE surface that touches the machinery. Assert exactly that: among ALL
+    // surfaces, the only one whose (comment-stripped) source references the query
+    // machinery is ModelSurface. So every OTHER surface — including the new read-only
+    // Data Dictionary (the author's data-model view) — is provably machinery-free, and
+    // the guard cannot silently exempt an author surface by a stale path filter.
+    const hosting = Object.entries(SURFACE_SOURCES)
+      .filter(([path]) => !path.includes('.test.') && !path.includes('.fitness.'))
+      .filter(([, src]) => QUERY_MACHINERY.test(stripComments(src)))
+      .map(([path]) => path)
+    expect(hosting).toEqual(['./surfaces/ModelSurface.tsx'])
+    // And the author's read-only data-model view exists and is one of the scanned
+    // (machinery-free) author surfaces.
+    expect(SURFACE_SOURCES['./surfaces/DataDictionarySurface.tsx']).toBeDefined()
   })
 
   it('no author-lens surface references the raw modeling machinery (comments stripped first)', () => {

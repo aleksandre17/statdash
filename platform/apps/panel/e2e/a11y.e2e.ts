@@ -35,7 +35,7 @@ test('the booted Studio shell has no serious/critical WCAG 2.1 AA violations', a
 
   await page.goto('/')
   await expect(page.getByRole('banner')).toBeVisible({ timeout: 60_000 })
-  await page.getByRole('button', { name: 'Data' }).click()
+  await page.getByRole('navigation', { name: 'Studio surfaces' }).getByRole('button', { name: 'Data', exact: true }).click()
   await expect(page.getByTestId('metric-palette')).toBeVisible()
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamically-loaded optional dep

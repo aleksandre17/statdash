@@ -9,11 +9,13 @@
 //       the seam to the source. This is what makes the source swappable to an auth
 //       claim later without touching a single consumer.
 //   (2) No Studio UI file gates its rendering on an auth/tenant/user PRIMITIVE
-//       (a JWT claim, an auth token, a tenant id). The Model surface gates on the
-//       LENS value (`role === 'steward'`), never on authorization — because the lens
-//       is not an enforcement boundary yet ("lens now, RBAC later").
-//   (3) Exactly one rail entry is `stewardOnly` (the Model slot) — the single
-//       role-gated surface.
+//       (a JWT claim, an auth token, a tenant id). The data-model content split gates
+//       on the LENS value (`role === 'steward'`), never on authorization — because the
+//       lens is not an enforcement boundary yet ("lens now, RBAC later").
+//   (3) The role lens splits CONTENT, not VISIBILITY (AR-50 M5b). The rail is a flat,
+//       always-visible list — no entry is role-gated, so the data-model destination is
+//       reachable in ANY lens; the lens only chooses that destination's BODY
+//       (DataModelBody: author→dictionary, steward→modeler). "Built ≠ buried."
 //
 import { describe, it, expect } from 'vitest'
 import { RAIL_ENTRIES } from './rail'
@@ -63,10 +65,26 @@ describe('FF-ROLE-IS-LENS — role read only through the useRole() seam', () => 
     expect(offenders).toEqual([])
   })
 
-  it('exactly one rail entry is role-gated (the Model slot) — the single steward surface', () => {
-    const gated = RAIL_ENTRIES.filter((e) => e.stewardOnly)
-    expect(gated).toHaveLength(1)
-    expect(gated[0].id).toBe('model')
+  it('the role lens splits CONTENT, not VISIBILITY — the rail is a flat, always-visible list', () => {
+    // No RailEntry carries a role/visibility gate (the `stewardOnly` field is gone):
+    // every destination, including `model`, is always visible regardless of the lens.
+    for (const entry of RAIL_ENTRIES) {
+      expect(entry).not.toHaveProperty('stewardOnly')
+    }
+    // The data-model destination is present in the flat rail (reachable in any lens).
+    expect(RAIL_ENTRIES.some((e) => e.id === 'model')).toBe(true)
+  })
+
+  it('the data-model destination splits its BODY by the lens value (content, not access)', () => {
+    // The one predicate that projects the data-model destination — steward→modeler,
+    // author→dictionary — gates on the LENS value, read through the useRole() seam
+    // (DataModelBody is scanned as a consumer above: no source reach / auth primitive).
+    // Assert the split predicate lives in DataModelBody (the registry's role-split body).
+    const body = ALL_SOURCES['./DataModelBody.tsx']
+    expect(body).toBeDefined()
+    const clean = stripComments(body)
+    expect(/role\s*===\s*'steward'/.test(clean)).toBe(true)
+    expect(/\bDataDictionarySurface\b/.test(clean)).toBe(true)
   })
 
   it('the guard actually bites — a planted source reach + auth gate are detected', () => {

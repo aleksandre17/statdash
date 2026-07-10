@@ -8,7 +8,6 @@ import { PageWorkflowBar } from '../features/page-workflow'
 import { useConstructorStore, usePages, useActivePageId } from '../store/constructor.store'
 import { logout } from '../lib/auth'
 import type { Locale } from '../types/constructor'
-import type { Role } from './useRole'
 
 // ── StudioTopBar — persistent global-context bar (Framer IA) ──────────────────
 //
@@ -25,15 +24,16 @@ export interface StudioTopBarProps {
   locale:         Locale
   /** Selectable locales for the preview switcher. */
   locales:        readonly Locale[]
-  /** The role LENS (author | steward) — read by StudioShell via useRole (single seam). */
-  role:           Role
+  /** Whether the Data-model destination is the active screen (NAVIGATION, not role). */
+  dataModelActive: boolean
   /**
-   * Enter the Data-model workspace: ONE intentful action that both sets the Steward
-   * lens AND lands the user in metric authoring (the Model surface). Composed by
-   * StudioShell so the top bar never touches the role SOURCE (FF-ROLE-IS-LENS).
+   * Enter the Data-model destination — PURE NAVIGATION (AR-50 M5b): opens the
+   * Data-model screen WITHOUT touching the role lens, so the user lands on the
+   * role-appropriate content (author → read-only Data Dictionary). Composed by
+   * StudioShell; the top bar never touches the role source (FF-ROLE-IS-LENS).
    */
   onOpenDataModel: () => void
-  /** Leave the Data-model workspace — return to the Compose (author) lens. */
+  /** Leave the Data-model destination — return to the Compose surface (lens untouched). */
   onExitDataModel: () => void
   onLocaleChange: (locale: Locale) => void
   onOpenCommand:  () => void
@@ -41,7 +41,7 @@ export interface StudioTopBarProps {
   onOpenStyle:    () => void
 }
 
-export function StudioTopBar({ locale, locales, role, onOpenDataModel, onExitDataModel, onLocaleChange, onOpenCommand, onOpenStyle }: StudioTopBarProps) {
+export function StudioTopBar({ locale, locales, dataModelActive, onOpenDataModel, onExitDataModel, onLocaleChange, onOpenCommand, onOpenStyle }: StudioTopBarProps) {
   const pages        = usePages()
   const activePageId = useActivePageId()
   const setActivePage = useConstructorStore((s) => s.setActivePage)
@@ -82,23 +82,22 @@ export function StudioTopBar({ locale, locales, role, onOpenDataModel, onExitDat
         ))}
       </ToggleButtonGroup>
 
-      {/* ── Workspace switch — Compose ⇄ Data model (AR-49, Framer/Webflow IA) ──
-          A segmented mode switch (the Framer/Webflow "design ⇄ build" pattern):
-          the current workspace is ALWAYS visible as the selected segment (state
-          reads as its own thing), and picking the other segment is a SINGLE
-          intentful action. Choosing "Data model" both sets the Steward lens AND
-          lands the user in metric authoring (StudioShell composes onOpenDataModel);
-          "Compose" returns to the author lens. This collapses the old two-step
-          (flip an invisible role toggle, THEN hunt for a look-alike rail icon) into
-          one click with unmistakable feedback — the segment highlights AND the
-          surface swaps. Names the DESTINATION, never the internal "role lens".
-          MUI ToggleButtons are native <button aria-pressed> → keyboard-reachable,
-          bilingual accessible names (WCAG 2.1 AA · 4.1.2). NOT a security control —
-          it only re-projects surfaces over the SAME document (FF-ROLE-IS-LENS). */}
+      {/* ── Workspace switch — Compose ⇄ Data model (Framer/Webflow IA) ─────────
+          A segmented NAVIGATION switch (the Framer/Webflow "design ⇄ build" pattern):
+          the active screen is the selected segment, and picking the other is a SINGLE
+          intentful action. Choosing "Data model" navigates to the always-reachable
+          Data-model destination (AR-50 M5b) — WITHOUT touching the role lens, so the
+          user lands on the role-appropriate content (author → read-only Dictionary,
+          steward → modeler); "Compose" returns to the editing surface. It NAMES the
+          destination and reflects NAVIGATION, never the internal "role lens". This is
+          one of several always-visible entries to the destination (the rail entry is
+          the first-class one). MUI ToggleButtons are native <button aria-pressed> →
+          keyboard-reachable, bilingual accessible names (WCAG 2.1 AA · 4.1.2). NOT a
+          security control — it only re-projects screens over the SAME document. */}
       <ToggleButtonGroup
         exclusive
         size="small"
-        value={role === 'steward' ? 'model' : 'compose'}
+        value={dataModelActive ? 'model' : 'compose'}
         onChange={(_, v: 'compose' | 'model' | null) => {
           if (v === 'model') onOpenDataModel()
           else if (v === 'compose') onExitDataModel()
@@ -112,7 +111,7 @@ export function StudioTopBar({ locale, locales, role, onOpenDataModel, onExitDat
             {en ? 'Compose' : 'კომპოზიცია'}
           </ToggleButton>
         </Tooltip>
-        <Tooltip title={en ? 'Define metrics & the data model' : 'მეტრიკებისა და მონაცემთა მოდელის განსაზღვრა'}>
+        <Tooltip title={en ? 'Browse & define metrics and the data model' : 'მეტრიკებისა და მონაცემთა მოდელის დათვალიერება/განსაზღვრა'}>
           <ToggleButton value="model" aria-label={en ? 'Data model' : 'მონაცემთა მოდელი'}>
             <SchemaOutlinedIcon fontSize="small" sx={{ mr: 0.5 }} />
             {en ? 'Data model' : 'მონაცემთა მოდელი'}

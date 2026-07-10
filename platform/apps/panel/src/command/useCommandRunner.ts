@@ -21,7 +21,6 @@ import { makeNode, resolveInsertPlan, planInserts } from '../canvas/insertNode'
 import { insertNeedsContainerHint } from '../canvas/paletteGroupLabels'
 import { useToast } from '../store/notify'
 import { useActiveLocales } from '../inspector/useActiveLocales'
-import { useSetRole } from '../studio/useRole'
 import type { Command } from './commandModel'
 
 // Same id factory shape PageStep uses (collision-resistant short id).
@@ -37,17 +36,15 @@ export function useCommandRunner() {
   const removeNode = useConstructorStore((s) => s.removeNode)
   const markDirty  = useConstructorStore((s) => s.markPageDirty)
   const setSurface = useConstructorStore((s) => s.setSurface)
-  const setRole    = useSetRole()
   const notify     = useToast()
   const locale     = useActiveLocales()[0] ?? 'ka'
 
   return useCallback((cmd: Command) => {
     // Workspace navigation is document-independent (no active page required), so it
-    // runs BEFORE the page guard. "Data model" is the composed one-action jump: set
-    // the Steward lens (through the useSetRole seam — never the store source) AND
-    // open the Model surface, landing the user directly in metric authoring.
+    // runs BEFORE the page guard. "Data model" is PURE NAVIGATION (AR-50 M5b): open
+    // the always-reachable Data-model destination WITHOUT touching the role lens, so
+    // the user lands on the role-appropriate content (author → read-only Dictionary).
     if (cmd.kind === 'action' && cmd.action === 'open-data-model') {
-      setRole('steward')
       setSurface('model')
       return
     }
@@ -104,5 +101,5 @@ export function useCommandRunner() {
       markDirty(pageId)
       selectNode(clone.id)
     }
-  }, [page, pageId, selectedId, insertNodes, insertNode, selectNode, removeNode, markDirty, setSurface, setRole, notify, locale])
+  }, [page, pageId, selectedId, insertNodes, insertNode, selectNode, removeNode, markDirty, setSurface, notify, locale])
 }

@@ -8,7 +8,7 @@ describe('StudioTopBar — locale + brand/theme regions filled (AR-49 M1.4)', ()
   const base = {
     locale: 'en' as const,
     locales: ['ka', 'en'] as const,
-    role: 'author' as const,
+    dataModelActive: false,
     onOpenDataModel: vi.fn(),
     onExitDataModel: vi.fn(),
     onLocaleChange: vi.fn(),
@@ -31,19 +31,19 @@ describe('StudioTopBar — locale + brand/theme regions filled (AR-49 M1.4)', ()
   })
 })
 
-// ── Workspace switch — Compose ⇄ Data model (AR-49 defect fix) ─────────────────
+// ── Workspace switch — Compose ⇄ Data model (AR-50 M5b: pure navigation) ───────
 //
-//  The segmented switch is the single discoverable affordance that enters/exits the
-//  Data-model workspace. It names the DESTINATION ("Data model"), not the internal
-//  "role lens": choosing "Data model" is ONE intentful action that both flips the
-//  Steward lens and lands the user in metric authoring (StudioShell composes
-//  onOpenDataModel). Both segments are keyboard-reachable native <button aria-pressed>
-//  so state reads for keyboard + AT users (WCAG 2.1 AA · 4.1.2).
-describe('StudioTopBar — workspace switch (AR-49 defect fix)', () => {
+//  The segmented switch is a discoverable NAVIGATION affordance to the Data-model
+//  destination. It names the DESTINATION ("Data model") and reflects which screen is
+//  active — NOT the role lens. Choosing "Data model" navigates to the destination
+//  WITHOUT escalating the lens (StudioShell composes onOpenDataModel as pure
+//  navigation); the destination's body is then role-appropriate. Both segments are
+//  keyboard-reachable native <button aria-pressed> (WCAG 2.1 AA · 4.1.2).
+describe('StudioTopBar — workspace navigation switch (AR-50 M5b)', () => {
   const base = {
     locale: 'en' as const,
     locales: ['ka', 'en'] as const,
-    role: 'author' as const,
+    dataModelActive: false,
     onOpenDataModel: vi.fn(),
     onExitDataModel: vi.fn(),
     onLocaleChange: vi.fn(),
@@ -59,25 +59,25 @@ describe('StudioTopBar — workspace switch (AR-49 defect fix)', () => {
     expect(model.tagName).toBe('BUTTON')
   })
 
-  it('choosing "Data model" from the author lens fires onOpenDataModel (the one-action jump)', () => {
+  it('choosing "Data model" fires onOpenDataModel (navigate to the destination)', () => {
     const onOpenDataModel = vi.fn()
-    render(<StudioTopBar {...base} role="author" onOpenDataModel={onOpenDataModel} />)
+    render(<StudioTopBar {...base} onOpenDataModel={onOpenDataModel} />)
     fireEvent.click(screen.getByRole('button', { name: 'Data model' }))
     expect(onOpenDataModel).toHaveBeenCalledTimes(1)
   })
 
-  it('choosing "Compose" from the steward lens fires onExitDataModel', () => {
+  it('choosing "Compose" while the data model is active fires onExitDataModel', () => {
     const onExitDataModel = vi.fn()
-    render(<StudioTopBar {...base} role="steward" onExitDataModel={onExitDataModel} />)
+    render(<StudioTopBar {...base} dataModelActive onExitDataModel={onExitDataModel} />)
     fireEvent.click(screen.getByRole('button', { name: 'Compose' }))
     expect(onExitDataModel).toHaveBeenCalledTimes(1)
   })
 
-  it('reflects the active workspace via aria-pressed (author → Compose, steward → Data model)', () => {
-    const { rerender } = render(<StudioTopBar {...base} role="author" />)
+  it('reflects the active SCREEN via aria-pressed (compose vs data-model), not the role', () => {
+    const { rerender } = render(<StudioTopBar {...base} dataModelActive={false} />)
     expect(screen.getByRole('button', { name: 'Compose' })).toHaveAttribute('aria-pressed', 'true')
     expect(screen.getByRole('button', { name: 'Data model' })).toHaveAttribute('aria-pressed', 'false')
-    rerender(<StudioTopBar {...base} role="steward" />)
+    rerender(<StudioTopBar {...base} dataModelActive={true} />)
     expect(screen.getByRole('button', { name: 'Compose' })).toHaveAttribute('aria-pressed', 'false')
     expect(screen.getByRole('button', { name: 'Data model' })).toHaveAttribute('aria-pressed', 'true')
   })

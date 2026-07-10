@@ -9,18 +9,19 @@
 //  live MUI form, the role-lens surface projection, the PUT→register→invalidate save
 //  loop, and the palette re-read all cohere in a running browser.
 //
-//  The loop, end to end:
+//  The loop, end to end (AR-50 M5b: navigation decoupled from identity):
 //    1. BOOT      — author lens, the Studio mounts (no white-screen / boot-order crash).
-//    2. OPEN      — ONE click on the top-bar "Data model" workspace segment → sets the
-//                   Steward lens AND lands directly in metric authoring (the composed
-//                   one-action jump; role is a LENS over ONE document, not a route).
-//    3. MODEL     — the MetricCatalogManager (headline region) is already rendered.
+//    2. OPEN      — ONE click on the top-bar "Data model" destination switch → NAVIGATES
+//                   to the always-reachable data-model screen WITHOUT escalating the
+//                   lens: the author lands on the READ-ONLY Data Dictionary.
+//    3. EDIT      — flip the in-place lens toggle to "Edit (Steward)" → the modeler's
+//                   MetricCatalogManager (headline region) renders.
 //    4. AUTHOR    — New metric → PICK dataset + measure (assert the unit PRE-FILLS from
 //                   the cube's resolved unit) → set a slug-legal id + a bilingual
 //                   GOVERNED label + a display format → Create.
 //    5. SAVE      — assert the save-success feedback ("…now in the palette").
-//    6. AUTHOR-SEES — flip back to the author lens → open Data → assert the newly
-//                   authored metric is in the MetricPalette by its GOVERNED label
+//    6. AUTHOR-SEES — breadcrumb-back to the compose shell → open Data → assert the
+//                   newly authored metric is in the MetricPalette by its GOVERNED label
 //                   (distinct from the cube measure label → proves the steward's
 //                   governance text round-tripped, not merely the cube echo).
 //
@@ -44,21 +45,26 @@ test('steward authors a governed metric in-tool → the author sees it in the pa
   await expect(page.getByRole('banner')).toBeVisible({ timeout: 60_000 })
   await expect(page.locator('.studio-shell')).toBeVisible()
 
-  // ── 2. OPEN — ONE click on the "Data model" workspace segment ────────────────
-  //  The segmented switch names the destination; the current workspace is the
-  //  selected segment (state reads for AT via aria-pressed). Before the jump Compose
-  //  is active and no Model rail slot exists (author lens). A single click on
-  //  "Data model" flips the Steward lens AND opens metric authoring — no separate
-  //  rail hunt (the composed one-action jump the split two-click flow lacked).
+  // ── 2. OPEN — ONE click on the "Data model" destination switch ───────────────
+  //  The segmented switch NAMES the destination and reflects which SCREEN is active.
+  //  Before the jump Compose is the active screen. A single click on "Data model"
+  //  NAVIGATES to the always-reachable data-model destination WITHOUT escalating the
+  //  lens — the author lands on the READ-ONLY Data Dictionary (the built ≠ buried fix;
+  //  the raw query cliff stays off the author path).
   const banner    = page.getByRole('banner')
   const composeSeg = banner.getByRole('button', { name: 'Compose' })
   const modelSeg   = banner.getByRole('button', { name: 'Data model' })
   await expect(composeSeg).toHaveAttribute('aria-pressed', 'true')
   await expect(modelSeg).toHaveAttribute('aria-pressed', 'false')
   await modelSeg.click()
-  await expect(modelSeg).toHaveAttribute('aria-pressed', 'true')
+  // The destination opened as the READ-ONLY Dictionary (author lens, not the modeler).
+  await expect(page.getByTestId('data-dictionary')).toBeVisible()
+  await expect(page.getByTestId('dict-metric-gdp.current')).toBeVisible()
 
-  // ── 3. MODEL — the one action already landed us in the catalog manager ───────
+  // ── 3. EDIT — flip the in-place lens toggle to Steward → the modeler renders ─
+  //  The Dictionary is read-only; opting into editing is an explicit, in-place action
+  //  (the lens toggle), never an auto-escalation. This lands the MetricCatalogManager.
+  await page.getByRole('button', { name: 'Edit (Steward)' }).click()
   await expect(page.getByRole('region', { name: 'Governed metric catalog' })).toBeVisible()
 
   // ── 4. AUTHOR — open the editor and author against the LIVE cube profile ──────
@@ -104,14 +110,14 @@ test('steward authors a governed metric in-tool → the author sees it in the pa
   //  in the palette (PUT /api/config/site succeeded, catalog re-registered live).
   await expect(page.getByText(`Saved "${AUTHORED_METRIC.id}"`)).toBeVisible()
 
-  // ── 6. AUTHOR-SEES — return to Compose, open Data, find the metric ───────────
-  await composeSeg.click()
-  await expect(composeSeg).toHaveAttribute('aria-pressed', 'true')
-  await expect(modelSeg).toHaveAttribute('aria-pressed', 'false')
-  // The Model rail slot is gone again (author lens) — only the banner "Data model"
-  // segment remains; the Data surface reveals the palette.
-  await expect(page.getByRole('button', { name: 'Data model', exact: true })).toHaveCount(1)
-  await page.getByRole('button', { name: 'Data', exact: true }).click()
+  // ── 6. AUTHOR-SEES — breadcrumb-back to the compose shell, open Data, find it ─
+  //  The data-model screen is a separate focus-view; a breadcrumb-back returns to the
+  //  editing shell (loss-free). The Data surface then reveals the palette — the
+  //  authored metric is a first-class governed noun there regardless of lens.
+  await page.getByRole('button', { name: 'Back' }).click()
+  await expect(page.locator('.studio-shell')).toBeVisible()
+  const rail = page.getByRole('navigation', { name: 'Studio surfaces' })
+  await rail.getByRole('button', { name: 'Data', exact: true }).click()
 
   const palette = page.getByTestId('metric-palette')
   await expect(palette).toBeVisible()

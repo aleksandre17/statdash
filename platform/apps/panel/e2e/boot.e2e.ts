@@ -51,7 +51,7 @@ test('boots to the Studio with a populated governed MetricPalette, and binds a m
   // ── 2. PALETTE (populated with REAL governed nouns) ──────────────────────────
   //  Default surface is Insert; summon the Data surface (English rail — site seeded
   //  en) to reveal the MetricPalette.
-  await page.getByRole('button', { name: 'Data' }).click()
+  await page.getByRole('navigation', { name: 'Studio surfaces' }).getByRole('button', { name: 'Data', exact: true }).click()
 
   const palette = page.getByTestId('metric-palette')
   await expect(palette).toBeVisible()
@@ -83,7 +83,7 @@ test('boots to the Studio with a populated governed MetricPalette, and binds a m
 
   //  Back on the Data surface the block is now bindable: the tile advertises the
   //  bind affordance (canBind), and the metric select starts UNbound.
-  await page.getByRole('button', { name: 'Data' }).click()
+  await page.getByRole('navigation', { name: 'Studio surfaces' }).getByRole('button', { name: 'Data', exact: true }).click()
   const boundGdpTile = page.getByTestId('metric-tile-gdp.current')
   await expect(boundGdpTile).toHaveAttribute('aria-label', /GDP at current prices.*(bind|მისაბმელად)/i)
   const metricField = inspector.getByRole('combobox', { name: /Metric|მეტრიკა/ })

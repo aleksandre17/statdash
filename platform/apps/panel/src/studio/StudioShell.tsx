@@ -21,7 +21,6 @@ import { FocusView } from './FocusView'
 import { makeEscalatedTarget, type FocusViewTarget } from './focusViewRegistry'
 import { FocusEscalationContext, type FocusEscalationRequest, type FieldBinding } from '../inspector/focusEscalation'
 import { getAtPath } from '../inspector/showWhen'
-import { useRole, useSetRole } from './useRole'
 import { useConstructorStore, useActiveSurface, usePages, useActivePageId, useSite } from '../store/constructor.store'
 import { DEFAULT_STUDIO_SURFACE } from '../types/constructor'
 import { useActiveLocales, PLATFORM_LOCALES } from '../inspector/useActiveLocales'
@@ -58,11 +57,11 @@ export function StudioShell() {
   const activeSurface = useActiveSurface()
   const setSurface = useConstructorStore((s) => s.setSurface)
 
-  // The role LENS — StudioShell is the SINGLE useRole() call site; it threads the
-  // value into the rail and top bar (one reader, many consumers → the swappable
-  // seam stays crisp). Default `author` = today's exact M1 behavior (zero regression).
-  const role = useRole()
-  const setRole = useSetRole()
+  // The role LENS is NOT read here anymore. AR-50 M5b decoupled navigation from
+  // identity: entering the Data-model destination is pure navigation (setSurface), and
+  // the role lens splits only that destination's CONTENT (DataModelBody, in the
+  // focus-view registry — author→dictionary, steward→modeler). The shell threads no
+  // role, so opening the destination never escalates the lens.
   const pages = usePages()
   const activePageId = useActivePageId()
   const setActivePage = useConstructorStore((s) => s.setActivePage)
@@ -102,33 +101,22 @@ export function StudioShell() {
   // stylesheet insertion order. Still pure DATA — no theme code path (Law 2).
   const themeStyle = buildThemeVars(STRATA_PRESET, site.themeOverrides)
 
-  // Effective surface under the lens: leaving the Steward lens while Model is the
-  // active surface must not strand the author on a dock with no rail affordance —
-  // fall back to the default surface (least astonishment). The role store stays
-  // decoupled from the document/surface store; the projection happens here.
-  const effectiveSurface: StudioSurface =
-    activeSurface === 'model' && role !== 'steward' ? DEFAULT_STUDIO_SURFACE : activeSurface
+  const heading = SURFACE_HEADINGS[activeSurface]?.[locale] ?? ''
 
-  const heading = SURFACE_HEADINGS[effectiveSurface]?.[locale] ?? ''
-
-  // The Data-model workspace as ONE intentful action (spec §2.2, defect fix): enter
-  // = Steward lens + the Data-model FOCUS-VIEW (SL-2). Setting the Steward lens while
-  // `activeSurface === 'model'` makes `effectiveSurface` resolve to `model`, which
-  // the render below routes to the <FocusView> SCREEN (a separate route, not a dock
-  // surface). Exit = back to the author (Compose) lens, where effectiveSurface
-  // projects Model back to the default (no stranded dock) → the editing shell returns.
-  // Composed HERE so every entry point (the top-bar switch AND the ⌘K command) shares
-  // one definition, and role is only ever set through the useSetRole seam
-  // (FF-ROLE-IS-LENS — never the store source). Entry is unchanged from M2 — only the
-  // CONTAINER `model` lands in changed (left dock → focus-view screen).
-  const enterDataModel = () => { setRole('steward'); setSurface('model') }
-  const exitDataModel = () => setRole('author')
+  // Enter / leave the Data-model destination — PURE NAVIGATION (AR-50 M5b). Entering
+  // is one intentful action shared by every entry point (the always-visible rail
+  // entry, the top-bar switch, the ⌘K command); it sets the `model` surface and NEVER
+  // touches the role lens, so an author lands on the read-only Data Dictionary
+  // (DataModelBody splits the body by lens). Leaving returns to the default compose
+  // surface, loss-free, the lens untouched. Navigation and identity are independent.
+  const enterDataModel = () => setSurface('model')
+  const exitDataModel = () => setSurface(DEFAULT_STUDIO_SURFACE)
 
   // The focus-view route is a SCREEN STATE, not a URL (App.tsx is a state machine, not
-  // a router — see FocusView.tsx / the SL-2 report). `model` is the first — and, this
-  // step, only — focus-view target (brief boundary: SL-4/SL-5 wire the rest). When it
-  // is active the shell swaps its whole grid for the focus-view screen; back returns.
-  const focusViewTargetId = effectiveSurface === 'model' ? 'data-model' : null
+  // a router — see FocusView.tsx / the SL-2 report). The `model` surface is the first
+  // focus-view target, reachable in ANY lens (its body is role-split, not its route).
+  // When active the shell swaps its whole grid for the focus-view screen; back returns.
+  const focusViewTargetId = activeSurface === 'model' ? 'data-model' : null
 
   // The escalated focus-view target — built from the pending request + a LIVE binding
   // to the subject's root field on the selected node (value re-read each render, writes
@@ -180,7 +168,7 @@ export function StudioShell() {
       <StudioTopBar
         locale={locale}
         locales={PLATFORM_LOCALES}
-        role={role}
+        dataModelActive={activeSurface === 'model'}
         onOpenDataModel={enterDataModel}
         onExitDataModel={exitDataModel}
         onLocaleChange={setPreviewLocale}
@@ -188,12 +176,12 @@ export function StudioShell() {
         onOpenStyle={() => setSurface('style')}
       />
 
-      <ActivityRail active={effectiveSurface} onSelect={setSurface} locale={locale} role={role} />
+      <ActivityRail active={activeSurface} onSelect={setSurface} locale={locale} />
 
       {/* ── Left dock — the summoned surface ─────────────────────────────── */}
       <Box component="aside" aria-label={heading} className="studio-left-dock">
         <Typography variant="subtitle2" fontWeight={700} sx={{ mb: 1.5 }}>{heading}</Typography>
-        {renderSurface(effectiveSurface, controller, locale)}
+        {renderSurface(activeSurface, controller, locale)}
       </Box>
 
       {/* ── Canvas — ALWAYS mounted, ALWAYS live (the home) ──────────────── */}
@@ -273,9 +261,10 @@ export function StudioShell() {
   )
 }
 
-// Left-dock surface dispatch (OCP — one case per rail entry). `model` is reached
-// only in the Steward lens (StudioShell projects it out for `author` via
-// effectiveSurface); M2.0 mounts the minimal Model scaffold (define content = later M2).
+// Left-dock surface dispatch (OCP — one case per rail entry). `model` is never a
+// left-dock surface: it re-homed onto the FOCUS-VIEW screen (SL-2), reachable in ANY
+// lens (AR-50 M5b) — when activeSurface is `model`, StudioShell renders <FocusView>
+// in place of the whole grid, so renderSurface is never reached for it.
 function renderSurface(surface: StudioSurface, controller: ReturnType<typeof useCanvasController>, locale: Locale) {
   switch (surface) {
     case 'insert':     return <InsertSurface controller={controller} locale={locale} />
@@ -283,10 +272,10 @@ function renderSurface(surface: StudioSurface, controller: ReturnType<typeof use
     case 'layers':     return <LayersSurface locale={locale} />
     case 'pages-site': return <PagesSiteSurface />
     case 'style':      return <StyleSurface locale={locale} />
-    // `model` is no longer a left-dock surface — the Data-model workspace re-homed
-    // onto the FOCUS-VIEW screen (SL-2). When effectiveSurface is `model`, StudioShell
+    // `model` is no longer a left-dock surface — the Data-model destination re-homed
+    // onto the FOCUS-VIEW screen (SL-2). When activeSurface is `model`, StudioShell
     // renders <FocusView> in place of the whole grid, so renderSurface is never
-    // reached for it — FocusView is the container, ModelSurface only its registered body.
+    // reached for it — FocusView is the container, DataModelBody its role-split body.
     default:           return null
   }
 }

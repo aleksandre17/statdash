@@ -43,7 +43,8 @@ describe('StudioShell — activity rail (summonable surfaces, no waterfall)', ()
     render(<StudioShell />)
     const rail = screen.getByRole('navigation', { name: 'Studio surfaces' })
     for (const name of ['Insert', 'Data', 'Layers', 'Pages & Site', 'Style']) {
-      const btn = within(rail).getByRole('button', { name: new RegExp(name) })
+      // Exact match — 'Data' must NOT also select the always-visible 'Data model' entry.
+      const btn = within(rail).getByRole('button', { name })
       expect(btn).toBeEnabled()
     }
   })
@@ -54,95 +55,108 @@ describe('StudioShell — activity rail (summonable surfaces, no waterfall)', ()
     // heading reads Insert.
     expect(screen.getByRole('heading', { name: 'Insert' })).toBeInTheDocument()
     const rail = screen.getByRole('navigation', { name: 'Studio surfaces' })
-    expect(within(rail).getByRole('button', { name: /Insert/ })).toHaveAttribute('aria-current', 'true')
+    expect(within(rail).getByRole('button', { name: 'Insert' })).toHaveAttribute('aria-current', 'true')
 
-    // Jump straight to Data — no step must be "completed" first.
-    fireEvent.click(within(rail).getByRole('button', { name: /Data/ }))
+    // Jump straight to Data — no step must be "completed" first. Exact match so
+    // 'Data' does not collide with the always-visible 'Data model' entry.
+    fireEvent.click(within(rail).getByRole('button', { name: 'Data' }))
     expect(screen.getByRole('heading', { name: 'Data' })).toBeInTheDocument()
     expect(useConstructorStore.getState().activeSurface).toBe('data')
 
     // And straight to Style from Data — order-free.
-    fireEvent.click(within(rail).getByRole('button', { name: /Style/ }))
+    fireEvent.click(within(rail).getByRole('button', { name: 'Style' }))
     expect(screen.getByRole('heading', { name: 'Style' })).toBeInTheDocument()
   })
 
 })
 
-// ── Role lens — the Steward unlocks Model (AR-49 M2.0) ────────────────────────
+// ── Data model — a first-class, always-reachable destination (AR-50 M5b) ──────
 //
-//  Role is a LENS over the SAME document (not RBAC): the default `author` lens is
-//  byte-identical to M1 (no Model slot); the `steward` lens unlocks the Model rail
-//  entry + its (scaffold) surface. The role is read through the single useRole()
-//  seam; these tests arrange it via the underlying preference store.
-describe('StudioShell — role lens unlocks the Model slot (AR-49 M2.0)', () => {
-  it('defaults to the author lens — the Model rail slot is ABSENT (M1 behavior preserved)', () => {
+//  The G6 "built ≠ buried" fix: the Data-model destination is ALWAYS in the rail (no
+//  role gate), and the role lens splits only its CONTENT (author→read-only Dictionary,
+//  steward→modeler). Navigation is decoupled from identity — opening the destination
+//  NEVER escalates the lens. These tests arrange the lens via the preference store.
+describe('StudioShell — the Data-model destination is reachable in every lens (AR-50 M5b)', () => {
+  it('the DEFAULT (author) session offers the Data-model rail entry — it is NOT buried', () => {
     render(<StudioShell />)
     const rail = screen.getByRole('navigation', { name: 'Studio surfaces' })
-    // The five compose surfaces are present…
-    for (const name of ['Insert', 'Data', 'Layers', 'Pages & Site', 'Style']) {
-      expect(within(rail).getByRole('button', { name: new RegExp(name) })).toBeEnabled()
+    // The five compose surfaces AND the always-visible Data-model destination (exact
+    // names — 'Data' must not collide with 'Data model').
+    for (const name of ['Insert', 'Data', 'Layers', 'Pages & Site', 'Style', 'Data model']) {
+      expect(within(rail).getByRole('button', { name })).toBeEnabled()
     }
-    // …and the Data model slot is not offered at all in the author lens.
-    expect(within(rail).queryByRole('button', { name: /Data model/ })).toBeNull()
   })
 
-  it('the Steward lens unlocks Model as an ENABLED, selectable rail entry that opens the Focus-View', () => {
-    useRoleStore.setState({ role: 'steward' })
+  it('from a DEFAULT author session, selecting Data model opens the READ-ONLY Dictionary (no query cliff)', () => {
     render(<StudioShell />)
     const rail = screen.getByRole('navigation', { name: 'Studio surfaces' })
-    const model = within(rail).getByRole('button', { name: /Data model/ })
-    expect(model).toBeEnabled()
+    fireEvent.click(within(rail).getByRole('button', { name: /Data model/ }))
 
-    // Selecting Model NAVIGATES to the Data-model FOCUS-VIEW — a SEPARATE Studio
-    // screen (SL-2), not a left-dock surface: the editing rail is gone (not the
-    // primary chrome), a labelled focus-view region + breadcrumb-back appear, and the
-    // relocated ModelSurface body (its caption) renders inside it.
-    fireEvent.click(model)
+    // The Data-model FOCUS-VIEW screen opens (rail gone, breadcrumb-back present)…
     expect(useConstructorStore.getState().activeSurface).toBe('model')
     expect(screen.getByRole('region', { name: 'Data model' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Back' })).toBeInTheDocument()
-    expect(screen.queryByRole('navigation', { name: 'Studio surfaces' })).toBeNull()
-    expect(screen.getByText(/Define the governed data model/)).toBeInTheDocument()
+    // …and the AUTHOR lens is untouched (no escalation) → the read-only Dictionary, NOT
+    // the modeler. The raw query cliff never lands on the author path.
+    expect(useRoleStore.getState().role).toBe('author')
+    expect(screen.getByTestId('data-dictionary')).toBeInTheDocument()
+    expect(screen.queryByText(/Define the governed data model/)).toBeNull()
   })
 
-  it('the top-bar "Data model" switch is the ONE-ACTION jump: sets steward AND opens the Focus-View', () => {
-    // Default author lens — the workspace switch shows "Data model" as the OTHER
-    // segment (a single, discoverable, destination-named affordance in the banner).
+  it('the Steward lens opens the SAME destination as the full modeler', () => {
+    useRoleStore.setState({ role: 'steward' })
     render(<StudioShell />)
-    // No Model rail slot yet (author lens) — the only "Data model" control is the
-    // top-bar segment, so this is unambiguous.
-    fireEvent.click(screen.getByRole('button', { name: 'Data model' }))
-
-    // ONE click landed the user IN the Data-model focus-view SCREEN: the role flipped
-    // to steward AND the active surface is Model, routed to the separate focus-view.
-    expect(useRoleStore.getState().role).toBe('steward')
-    expect(useConstructorStore.getState().activeSurface).toBe('model')
+    const rail = screen.getByRole('navigation', { name: 'Studio surfaces' })
+    fireEvent.click(within(rail).getByRole('button', { name: /Data model/ }))
     expect(screen.getByRole('region', { name: 'Data model' })).toBeInTheDocument()
     expect(screen.getByText(/Define the governed data model/)).toBeInTheDocument()
+    expect(screen.queryByTestId('data-dictionary')).toBeNull()
   })
 
-  it('breadcrumb-back leaves the Focus-View and returns to the editing shell (author lens, no stranded dock)', () => {
+  it('the top-bar "Data model" switch is PURE NAVIGATION — it opens the destination without escalating the lens', () => {
+    render(<StudioShell />)
+    // The top-bar segment and the rail entry both name "Data model"; drive the banner one.
+    const banner = screen.getByRole('banner')
+    fireEvent.click(within(banner).getByRole('button', { name: 'Data model' }))
+
+    // Navigated to the destination, but the lens stayed author → the read-only Dictionary.
+    expect(useConstructorStore.getState().activeSurface).toBe('model')
+    expect(useRoleStore.getState().role).toBe('author')
+    expect(screen.getByTestId('data-dictionary')).toBeInTheDocument()
+  })
+
+  it('the in-place lens toggle opts INTO editing (author→steward) without leaving the destination', () => {
+    render(<StudioShell />)
+    fireEvent.click(within(screen.getByRole('navigation', { name: 'Studio surfaces' })).getByRole('button', { name: /Data model/ }))
+    // Author landed on the Dictionary; flip the lens toggle to Edit → the modeler.
+    expect(screen.getByTestId('data-dictionary')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: /Edit \(Steward\)/ }))
+    expect(useRoleStore.getState().role).toBe('steward')
+    expect(screen.getByText(/Define the governed data model/)).toBeInTheDocument()
+  })
+
+  it('breadcrumb-back leaves the Focus-View and returns to the editing shell (lens untouched)', () => {
     useRoleStore.setState({ role: 'steward' })
     useConstructorStore.setState({ activeSurface: 'model' })
     render(<StudioShell />)
-    // The focus-view SCREEN is shown (not a dock) — the rail/shell is not the chrome.
     expect(screen.getByRole('region', { name: 'Data model' })).toBeInTheDocument()
     expect(screen.queryByRole('navigation', { name: 'Studio surfaces' })).toBeNull()
 
-    // Back returns to the editing shell: the author lens is restored and the shell
-    // recovers to the default (Insert) rather than stranding on a Model dock.
+    // Back returns to the editing shell at the default surface; navigation is
+    // independent of identity, so the lens is NOT reset by leaving.
     fireEvent.click(screen.getByRole('button', { name: 'Back' }))
-    expect(useRoleStore.getState().role).toBe('author')
+    expect(useRoleStore.getState().role).toBe('steward')
     expect(screen.getByRole('heading', { name: 'Insert' })).toBeInTheDocument()
+    // The Data-model rail entry is present again in the restored shell (always visible).
     const rail = screen.getByRole('navigation', { name: 'Studio surfaces' })
-    expect(within(rail).queryByRole('button', { name: /Data model/ })).toBeNull()
+    expect(within(rail).getByRole('button', { name: /Data model/ })).toBeEnabled()
   })
 })
 
 describe('StudioShell — surfaces mount via the existing subsystems', () => {
   it('the Data surface mounts the governed Metric Palette', () => {
     render(<StudioShell />)
-    fireEvent.click(within(screen.getByRole('navigation', { name: 'Studio surfaces' })).getByRole('button', { name: /Data/ }))
+    fireEvent.click(within(screen.getByRole('navigation', { name: 'Studio surfaces' })).getByRole('button', { name: 'Data' }))
     // MetricPalette exposes its search box (placeholder "ძებნა…") — proof the real
     // palette mounted (its empty/loading state is fine; population is a boot concern
     // proven elsewhere in bootSmoke).

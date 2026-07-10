@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { ModelSurface } from './surfaces/ModelSurface'
+import { DataModelBody } from './DataModelBody'
 import type { Locale } from '../types/constructor'
 import type { FocusEscalationRequest, FieldBinding } from '../inspector/focusEscalation'
 
@@ -19,13 +19,16 @@ import type { FocusEscalationRequest, FieldBinding } from '../inspector/focusEsc
 //  `if (id === 'data-model')` — so placement stays derived and uniform, and adding
 //  a workspace editor is additive (open for extension, the shell closed to change).
 //
-//  ── Model mode is the first target (FF-MODEL-IS-FOCUSVIEW) ────────────────────
-//  Model mode — the Steward's define workspace — was the un-generalized precedent
-//  (an activeSurface that swapped the left dock). It re-homes here as the FIRST
-//  registered target, proving the shell with zero capability change: the SAME
-//  ModelSurface body now renders inside the shared `<FocusView>` screen instead of
-//  the dock. ModelSurface's ONLY mount site is this registry — the shell no longer
-//  references it directly.
+//  ── Data model is the first target — ROLE-SPLIT content (AR-50 M5b) ───────────
+//  The `data-model` target is reachable by EVERYONE (an always-visible rail entry —
+//  the G6 "built ≠ buried" fix), and its BODY is DataModelBody, which splits by the
+//  role LENS, not its visibility: author → the read-only Data Dictionary; steward → the
+//  full modeler (the unchanged ModelSurface). Navigation and identity are decoupled —
+//  entering the destination NEVER escalates the lens; an explicit, in-place lens toggle
+//  opts INTO editing. This keeps the destination discoverable while metric-first stays
+//  intact (FF-AUTHOR-NO-QUERY): the query cliff lives ONLY behind the steward branch.
+//  ModelSurface's ONLY mount site is DataModelBody (behind that branch) — the registry
+//  renders DataModelBody, never ModelSurface directly.
 
 export interface FocusViewRenderContext {
   locale: Locale
@@ -48,7 +51,7 @@ export const FOCUS_VIEW_TARGETS: Readonly<Record<string, FocusViewTarget>> = {
   'data-model': {
     id: 'data-model',
     title: { ka: 'მონაცემთა მოდელი', en: 'Data model' },
-    render: ({ locale }) => <ModelSurface locale={locale} />,
+    render: ({ locale }) => <DataModelBody locale={locale} />,
   },
 } as const
 
