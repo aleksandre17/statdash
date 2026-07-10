@@ -169,3 +169,38 @@
   font-size: var(--font-size-sm);
   color: var(--color-text-secondary);
 }
+
+/* ── Focus-view (SL-2): a SEPARATE Studio screen for workspace-weight subjects ───
+   NOT a grid column — it replaces the whole shell grid while active (§3.4). A HEADER
+   (fixed: breadcrumb-back + context title) over a BODY (flex-fill, owns its scroll),
+   full-viewport. Token-driven — no brand literal (FF-CHROME-TOKEN-DRIVEN). */
+.studio-focusview {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  min-height: 0;
+  background: var(--color-surface);
+  color: var(--color-text-primary);
+  font-family: var(--font-family-base);
+}
+.studio-focusview__header {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: var(--color-surface-raised);
+  border-bottom: var(--border-width-thin) solid var(--color-border-subtle);
+}
+.studio-focusview__crumbs {
+  min-width: 0;
+  overflow: hidden;
+}
+/* The BODY owns the scroll so the header stays pinned — the workspace editor fills
+   the remaining height (no stranded void), mirroring the dock's fill-by-construction. */
+.studio-focusview__body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  padding: var(--spacing-md);
+}

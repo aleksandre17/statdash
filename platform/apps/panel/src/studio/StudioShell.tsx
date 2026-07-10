@@ -17,7 +17,7 @@ import { DataSurface } from './surfaces/DataSurface'
 import { LayersSurface } from './surfaces/LayersSurface'
 import { PagesSiteSurface } from './surfaces/PagesSiteSurface'
 import { StyleSurface } from './surfaces/StyleSurface'
-import { ModelSurface } from './surfaces/ModelSurface'
+import { FocusView } from './FocusView'
 import { useRole, useSetRole } from './useRole'
 import { useConstructorStore, useActiveSurface, usePages, useActivePageId, useSite } from '../store/constructor.store'
 import { DEFAULT_STUDIO_SURFACE } from '../types/constructor'
@@ -100,18 +100,44 @@ export function StudioShell() {
   const heading = SURFACE_HEADINGS[effectiveSurface]?.[locale] ?? ''
 
   // The Data-model workspace as ONE intentful action (spec §2.2, defect fix): enter
-  // = Steward lens + land on the Model surface (metric authoring) in a single click;
-  // exit = back to the author (Compose) lens, where effectiveSurface projects Model
-  // back to the default (no stranded dock). Composed HERE so every entry point (the
-  // top-bar switch AND the ⌘K command) shares one definition, and role is only ever
-  // set through the useSetRole seam (FF-ROLE-IS-LENS — never the store source).
+  // = Steward lens + the Data-model FOCUS-VIEW (SL-2). Setting the Steward lens while
+  // `activeSurface === 'model'` makes `effectiveSurface` resolve to `model`, which
+  // the render below routes to the <FocusView> SCREEN (a separate route, not a dock
+  // surface). Exit = back to the author (Compose) lens, where effectiveSurface
+  // projects Model back to the default (no stranded dock) → the editing shell returns.
+  // Composed HERE so every entry point (the top-bar switch AND the ⌘K command) shares
+  // one definition, and role is only ever set through the useSetRole seam
+  // (FF-ROLE-IS-LENS — never the store source). Entry is unchanged from M2 — only the
+  // CONTAINER `model` lands in changed (left dock → focus-view screen).
   const enterDataModel = () => { setRole('steward'); setSurface('model') }
   const exitDataModel = () => setRole('author')
 
+  // The focus-view route is a SCREEN STATE, not a URL (App.tsx is a state machine, not
+  // a router — see FocusView.tsx / the SL-2 report). `model` is the first — and, this
+  // step, only — focus-view target (brief boundary: SL-4/SL-5 wire the rest). When it
+  // is active the shell swaps its whole grid for the focus-view screen; back returns.
+  const focusViewTargetId = effectiveSurface === 'model' ? 'data-model' : null
+
   return (
     <>
-      {/* Strata + live edits on the document root → chrome, canvas AND body portals inherit. */}
+      {/* Strata + live edits on the document root → chrome, canvas AND body portals inherit.
+          Emitted for BOTH screens (shell + focus-view) so the focus-view inherits the skin. */}
       <GlobalStyles styles={{ ':root:root': themeStyle as Record<string, string | number> }} />
+
+      {/* ⌘K / slash palette — mounted once opened (cmdk chunk on demand). Lifted above the
+          screen branch so the global ⌘K shortcut works on the focus-view screen too. */}
+      {cmdk.open && (
+        <Suspense fallback={<SuspenseFallback label="Loading command palette" fill={false} />}>
+          <CommandPalette open={cmdk.open} onOpenChange={cmdk.setOpen} />
+        </Suspense>
+      )}
+
+      {focusViewTargetId ? (
+        // ── FOCUS-VIEW screen — a SEPARATE route the workspace subject navigated to.
+        //  The rail + docks + canvas grid are gone (not the primary chrome here — §3.4 /
+        //  FF-FOCUSVIEW-SEPARATE-ROUTE); a breadcrumb-back returns to the editing shell.
+        <FocusView targetId={focusViewTargetId} locale={locale} onBack={exitDataModel} />
+      ) : (
       <Box className="studio-shell">
       <StudioTopBar
         locale={locale}
@@ -123,13 +149,6 @@ export function StudioShell() {
         onOpenCommand={() => cmdk.setOpen(true)}
         onOpenStyle={() => setSurface('style')}
       />
-
-      {/* ⌘K / slash palette — mounted only once opened (cmdk chunk on demand). */}
-      {cmdk.open && (
-        <Suspense fallback={<SuspenseFallback label="Loading command palette" fill={false} />}>
-          <CommandPalette open={cmdk.open} onOpenChange={cmdk.setOpen} />
-        </Suspense>
-      )}
 
       <ActivityRail active={effectiveSurface} onSelect={setSurface} locale={locale} role={role} />
 
@@ -207,6 +226,7 @@ export function StudioShell() {
         <span>{pages.length} {locale === 'en' ? 'pages' : 'გვერდი'}</span>
       </Box>
       </Box>
+      )}
     </>
   )
 }
@@ -221,7 +241,10 @@ function renderSurface(surface: StudioSurface, controller: ReturnType<typeof use
     case 'layers':     return <LayersSurface locale={locale} />
     case 'pages-site': return <PagesSiteSurface />
     case 'style':      return <StyleSurface locale={locale} />
-    case 'model':      return <ModelSurface locale={locale} />
+    // `model` is no longer a left-dock surface — the Data-model workspace re-homed
+    // onto the FOCUS-VIEW screen (SL-2). When effectiveSurface is `model`, StudioShell
+    // renders <FocusView> in place of the whole grid, so renderSurface is never
+    // reached for it — FocusView is the container, ModelSurface only its registered body.
     default:           return null
   }
 }

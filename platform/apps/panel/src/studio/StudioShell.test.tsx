@@ -86,24 +86,26 @@ describe('StudioShell — role lens unlocks the Model slot (AR-49 M2.0)', () => 
     expect(within(rail).queryByRole('button', { name: /Data model/ })).toBeNull()
   })
 
-  it('the Steward lens unlocks Model as an ENABLED, selectable rail entry', () => {
+  it('the Steward lens unlocks Model as an ENABLED, selectable rail entry that opens the Focus-View', () => {
     useRoleStore.setState({ role: 'steward' })
     render(<StudioShell />)
     const rail = screen.getByRole('navigation', { name: 'Studio surfaces' })
     const model = within(rail).getByRole('button', { name: /Data model/ })
     expect(model).toBeEnabled()
 
-    // Selecting Model swaps the dock to the Model surface — a summonable left surface
-    // over the same live canvas, never a route. In M2.1 Model mode is REAL: it hosts
-    // the relocated modeler (ModelSurface); its context caption renders synchronously
-    // while the heavy modeler chunk lazy-loads.
+    // Selecting Model NAVIGATES to the Data-model FOCUS-VIEW — a SEPARATE Studio
+    // screen (SL-2), not a left-dock surface: the editing rail is gone (not the
+    // primary chrome), a labelled focus-view region + breadcrumb-back appear, and the
+    // relocated ModelSurface body (its caption) renders inside it.
     fireEvent.click(model)
     expect(useConstructorStore.getState().activeSurface).toBe('model')
-    expect(screen.getByRole('heading', { name: 'Data model' })).toBeInTheDocument()
+    expect(screen.getByRole('region', { name: 'Data model' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Back' })).toBeInTheDocument()
+    expect(screen.queryByRole('navigation', { name: 'Studio surfaces' })).toBeNull()
     expect(screen.getByText(/Define the governed data model/)).toBeInTheDocument()
   })
 
-  it('the top-bar "Data model" switch is the ONE-ACTION jump: sets steward AND opens metric authoring', () => {
+  it('the top-bar "Data model" switch is the ONE-ACTION jump: sets steward AND opens the Focus-View', () => {
     // Default author lens — the workspace switch shows "Data model" as the OTHER
     // segment (a single, discoverable, destination-named affordance in the banner).
     render(<StudioShell />)
@@ -111,24 +113,26 @@ describe('StudioShell — role lens unlocks the Model slot (AR-49 M2.0)', () => 
     // top-bar segment, so this is unambiguous.
     fireEvent.click(screen.getByRole('button', { name: 'Data model' }))
 
-    // ONE click landed the user IN metric authoring: the role flipped to steward AND
-    // the active surface is Model (the old flow needed two separate clicks for this).
+    // ONE click landed the user IN the Data-model focus-view SCREEN: the role flipped
+    // to steward AND the active surface is Model, routed to the separate focus-view.
     expect(useRoleStore.getState().role).toBe('steward')
     expect(useConstructorStore.getState().activeSurface).toBe('model')
-    expect(screen.getByRole('heading', { name: 'Data model' })).toBeInTheDocument()
+    expect(screen.getByRole('region', { name: 'Data model' })).toBeInTheDocument()
     expect(screen.getByText(/Define the governed data model/)).toBeInTheDocument()
   })
 
-  it('leaving the Steward lens while on Model falls back to the default surface (no stranded dock)', () => {
+  it('breadcrumb-back leaves the Focus-View and returns to the editing shell (author lens, no stranded dock)', () => {
     useRoleStore.setState({ role: 'steward' })
     useConstructorStore.setState({ activeSurface: 'model' })
-    const { rerender } = render(<StudioShell />)
-    expect(screen.getByRole('heading', { name: 'Data model' })).toBeInTheDocument()
+    render(<StudioShell />)
+    // The focus-view SCREEN is shown (not a dock) — the rail/shell is not the chrome.
+    expect(screen.getByRole('region', { name: 'Data model' })).toBeInTheDocument()
+    expect(screen.queryByRole('navigation', { name: 'Studio surfaces' })).toBeNull()
 
-    // Flip back to author — Model must no longer be shown, and the dock recovers to
-    // the default (Insert) rather than stranding on a surface with no rail affordance.
-    useRoleStore.setState({ role: 'author' })
-    rerender(<StudioShell />)
+    // Back returns to the editing shell: the author lens is restored and the shell
+    // recovers to the default (Insert) rather than stranding on a Model dock.
+    fireEvent.click(screen.getByRole('button', { name: 'Back' }))
+    expect(useRoleStore.getState().role).toBe('author')
     expect(screen.getByRole('heading', { name: 'Insert' })).toBeInTheDocument()
     const rail = screen.getByRole('navigation', { name: 'Studio surfaces' })
     expect(within(rail).queryByRole('button', { name: /Data model/ })).toBeNull()
