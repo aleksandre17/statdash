@@ -137,12 +137,18 @@ export function StudioShell() {
   // Model route below — an active escalation is what the author navigated INTO.
   const { selected: selectedNode, patchProp } = controller
   const escalatedTarget = useMemo<FocusViewTarget | null>(() => {
-    if (!escalation || !selectedNode) return null
-    const bind: FieldBinding = {
-      value:    getAtPath(selectedNode.props, escalation.fieldPath),
-      onChange: (next) => patchProp(escalation.fieldPath, next),
+    if (!escalation) return null
+    if (escalation.source === 'node-field') {
+      // NODE-FIELD (SL-4): bind the selected node's field live. No selection → nothing to bind.
+      if (!selectedNode) return null
+      const bind: FieldBinding = {
+        value:    getAtPath(selectedNode.props, escalation.fieldPath),
+        onChange: (next) => patchProp(escalation.fieldPath, next),
+      }
+      return makeEscalatedTarget(escalation, bind)
     }
-    return makeEscalatedTarget(escalation, bind)
+    // SELF-BOUND (SL-5): a page-scoped pipeline binds its own store — no node field needed.
+    return makeEscalatedTarget(escalation, null)
   }, [escalation, selectedNode, patchProp])
 
   return (

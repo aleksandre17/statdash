@@ -10,14 +10,7 @@
 //  label KA/EN + metric + type + a `value` sub-object + unit + color + … for
 //  every item, stacked). That violates the same "only the ACTIVE one's
 //  everything shows" canon we hold at the left/right docks and the canvas
-//  selection. D7.1b reworks it into PROGRESSIVE DISCLOSURE, benchmarked against
-//  Sanity Studio (array-of-objects → click an item → focused edit view, others
-//  collapse), Framer array controls, Figma "enter instance":
-//
-//    • An ARRAY renders as a LIST of collapsed SUMMARY ROWS — title + reorder +
-//      remove + an open affordance. NO item's fields are shown in the list.
-//    • Clicking a row DRILLS IN: the editor region shows ONLY that item's
-//      itemSchema form, with a BREADCRUMB back to the list. No sibling is
+//  selection. D7.1b reworks it into PROGRESSIVE DISCLOSURE, benchmarked against  ხო
 //      rendered expanded — at any instant AT MOST ONE item's field-editor exists.
 //    • An OBJECT (or a drilled item) shows its scalar fields inline; its OWN
 //      nested array/object sub-fields render as DRILL ROWS, not expanded — so
@@ -272,6 +265,7 @@ function DrillEditor(
   //  and Back is loss-free. Deterministic: the target is `resolveSurface`'s verdict.
   const escalateTo = useCallback((nextSteps: Step[], title: string) => {
     escalation?.escalate({
+      source:    'node-field',
       fieldPath: field.field,
       title:     { ka: title, en: title },
       render:    (bind) => (

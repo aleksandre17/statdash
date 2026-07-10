@@ -59,22 +59,23 @@ export function getFocusViewTarget(id: string): FocusViewTarget | undefined {
 
 export type FocusViewTargetId = keyof typeof FOCUS_VIEW_TARGETS
 
-// ── Escalated (dynamic) target — the SL-4 overflow subject ─────────────────────
+// ── Escalated (dynamic) target — the SL-4/SL-5 overflow subject ─────────────────
 //
-//  A workspace-weight subject the nested-item editor escalated OUT of the dock is NOT
-//  a pre-registered route — it is built at runtime from the escalation request + the
-//  host's LIVE field binding (value+onChange out of the store). This factory is the
-//  registry's constructor for that dynamic target, so the escalated subject rides the
-//  SAME <FocusView> shell as the static targets (one container, no fork). Its render
-//  hands the producer's editor the live binding, so it edits real config and returns
-//  loss-free.
+//  A workspace-weight subject escalated OUT of the dock is NOT a pre-registered route —
+//  it is built at runtime from the escalation request. This factory is the registry's
+//  constructor for that dynamic target, so the escalated subject rides the SAME
+//  <FocusView> shell as the static targets (one container, no fork). It adapts to the
+//  request's live-binding source: a NODE-FIELD subject is handed the host's live
+//  `FieldBinding` (value+onChange out of the store); a SELF-BOUND subject mounts its own
+//  store-hooked editor (no host binding — `bind` is null). Either way it edits real
+//  config live and returns loss-free.
 //
 export const ESCALATED_TARGET_ID = 'escalated-subject'
 
-export function makeEscalatedTarget(req: FocusEscalationRequest, bind: FieldBinding): FocusViewTarget {
+export function makeEscalatedTarget(req: FocusEscalationRequest, bind: FieldBinding | null): FocusViewTarget {
   return {
     id:     ESCALATED_TARGET_ID,
     title:  req.title,
-    render: () => req.render(bind),
+    render: () => (req.source === 'node-field' ? req.render(bind!) : req.render()),
   }
 }

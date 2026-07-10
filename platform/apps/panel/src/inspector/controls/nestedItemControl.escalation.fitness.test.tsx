@@ -79,8 +79,11 @@ describe('FF-NO-CRAMMED-DOCK (live) — a workspace item ESCALATES, never drills
     )
     fireEvent.click(screen.getByRole('button', { name: 'Edit GDP' }))
     expect(captured).toBeDefined()
-    expect(captured!.fieldPath).toBe('series')   // the top-level field on the node
-    expect(captured!.title.en).toBe('GDP')       // the subject's own name
+    const req = captured!
+    expect(req.source).toBe('node-field')        // a nested-item drill is a NODE-FIELD escalation
+    if (req.source !== 'node-field') throw new Error('expected node-field escalation')
+    expect(req.fieldPath).toBe('series')         // the top-level field on the node
+    expect(req.title.en).toBe('GDP')             // the subject's own name
   })
 
   it('the escalated render(bind) mounts the SAME editor seeded at the item — one spine, live', () => {
@@ -96,8 +99,10 @@ describe('FF-NO-CRAMMED-DOCK (live) — a workspace item ESCALATES, never drills
     // Render the escalated body with a LIVE binding (what StudioShell supplies from the
     // store). It opens directly at the item, and the breadcrumb spine continues (Series
     // › GDP) — the dock-drill path is replayed in the focus-view, one navigable spine.
+    const req = captured!
+    if (req.source !== 'node-field') throw new Error('expected node-field escalation')
     const onChange = vi.fn()
-    render(captured!.render({ value: [{ label: 'GDP', query: {} }], onChange }))
+    render(req.render({ value: [{ label: 'GDP', query: {} }], onChange }))
     const crumbs = screen.getByRole('navigation', { name: 'Breadcrumb' })
     expect(within(crumbs).getByText('Series')).toBeInTheDocument()
     expect(within(crumbs).getByText('GDP')).toBeInTheDocument()

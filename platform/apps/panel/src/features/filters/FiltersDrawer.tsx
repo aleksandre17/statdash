@@ -1,4 +1,4 @@
-// ── FiltersDrawer — page-level FilterSchema authoring surface [V0] ─────────────
+// ── FiltersDrawer — page-level FilterSchema authoring surface [V0 · SL-5] ──────
 //
 //  The ADR's "Data/Filters drawer": authors the page's filter bars + their
 //  controls (ParamDefs) — the single biggest Constructor coverage gap ("a
@@ -13,32 +13,115 @@
 //      page.meta.filterSchema, which the page round-trip already carries LOSSLESS
 //      (canvasPageAdapter structural pass-through, P-3) — validateConfig unaffected.
 //
+//  ── The Placement Law gate (SL-5 — the first REAL page-scope escalation) ───────
+//  The full authoring surface (every bar, every control's ParamDefEditor expanded)
+//  is WORKSPACE-weight — the whole page FilterSchema is a §3.1 rich sub-document
+//  (`filterPlacement`). Stacking it in the page dock beneath the page panes is the
+//  reported cram. So the drawer no longer renders its body straight into the dock:
+//  it derives its container from the Placement Law and, when the verdict is
+//  `focus-view` AND an escalation host is present (the StudioShell dock), it renders
+//  a COMPACT AFFORDANCE that escalates the full body OUT to a focus-view screen —
+//  the same DIP port SL-4 built (`useFocusEscalation`), the SELF-BOUND variant (the
+//  body re-sources its own live store state, so no host field binding is needed).
+//  With no host (isolation, or already inside the focus-view) or a light/empty
+//  pipeline, it renders the body inline exactly as before — fail-soft, zero regression.
+//
 //  YAGNI (this slice): the advanced top-level keys crossValidate /
 //  context / computed are PRESERVED verbatim (setBarParams never touches them) but
 //  not yet authored here — surfacing the bars + ParamDefs is the core "build the
 //  filters" need. A later slice adds their builders behind the same Inspector seam.
 //
 import {
-  Box, Typography, Paper, IconButton, Divider, Stack, Tooltip,
+  Box, Typography, Paper, IconButton, Divider, Stack, Tooltip, Button,
 } from '@mui/material'
 import DeleteIcon       from '@mui/icons-material/Delete'
 import ArrowUpwardIcon  from '@mui/icons-material/ArrowUpward'
 import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward'
 import FilterAltIcon    from '@mui/icons-material/FilterAlt'
+import ChevronRightIcon from '@mui/icons-material/ChevronRight'
 import { ParamDefEditor } from './ParamDefEditor'
-import { moveItem } from './filterSchemaModel'
+import { moveItem, type BarView } from './filterSchemaModel'
 import { makeParamNode } from './paramFactory'
 import { useFilterBarAuthoring } from './useFilterBarAuthoring'
+import { filtersPipelineContainer } from './filterPlacement'
 import { AddControl } from './AddControl'
+import { useFocusEscalation } from '../../inspector/focusEscalation'
+import type { Locale } from '../../types/constructor'
 
-export function FiltersDrawer() {
+const T = {
+  filters:   { en: 'Filters',        ka: 'ფილტრები' },
+  configure: { en: 'Configure',      ka: 'კონფიგურაცია' },
+  bars:      { en: 'bars',           ka: 'ზოლი' },
+  controls:  { en: 'controls',       ka: 'კონტროლი' },
+} as const
+const t = (k: keyof typeof T, locale: Locale) => T[k][locale] ?? T[k].en
+
+export interface FiltersDrawerProps {
+  /** UI locale for the affordance chrome (the body keeps its own ka labels). */
+  locale?: Locale
+}
+
+/** Total control count across all bars — the affordance summary metric. */
+function controlCount(bars: BarView[]): number {
+  return bars.reduce((n, b) => n + b.params.length, 0)
+}
+
+// ── FiltersDrawer — the Placement Law gate (affordance vs inline body) ─────────
+export function FiltersDrawer({ locale = 'ka' }: FiltersDrawerProps = {}) {
+  const { page, barViews } = useFilterBarAuthoring()
+  const escalation = useFocusEscalation()
+
+  // Page-scoped: RightDock mounts this only when a page is active and owns the single
+  // "no page" empty-state — self-suppress here (no duplicate literal, FF-ONE-EMPTYSTATE).
+  if (!page) return null
+
+  // The derived verdict — never a per-type literal. A populated pipeline is workspace
+  // (§3.1 rich sub-document) → focus-view; an empty one stays a light in-dock stub.
+  const escalate = escalation && filtersPipelineContainer(barViews) === 'focus-view'
+
+  // In the dock with a workspace pipeline → a compact affordance that hands the full
+  // body OUT to a focus-view (SELF-BOUND: the body re-sources its own live store state).
+  if (escalate) {
+    return (
+      <Box data-testid="filters-affordance" sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+        <Stack direction="row" spacing={1} alignItems="center">
+          <FilterAltIcon fontSize="small" />
+          <Typography variant="overline" color="text.secondary">{t('filters', locale)}</Typography>
+        </Stack>
+        <Button
+          variant="outlined"
+          size="small"
+          endIcon={<ChevronRightIcon />}
+          onClick={() => escalation!.escalate({
+            source: 'self-bound',
+            title:  T.filters,
+            render: () => <FiltersDrawerBody />,
+          })}
+          sx={{ justifyContent: 'space-between', textTransform: 'none' }}
+          aria-label={`${t('configure', locale)} ${t('filters', locale)}`}
+        >
+          {barViews.length} {t('bars', locale)} · {controlCount(barViews)} {t('controls', locale)}
+        </Button>
+      </Box>
+    )
+  }
+
+  // Inline body — in the focus-view (no host), or a light/empty pipeline in the dock.
+  return <FiltersDrawerBody />
+}
+
+// ── FiltersDrawerBody — the full authoring surface (bars → controls) ───────────
+//
+//  Self-bound: it reads/writes page.meta.filterSchema through `useFilterBarAuthoring`
+//  directly, so it stays LIVE whether mounted inline in the dock OR in the escalated
+//  focus-view screen (the store, not a captured closure, is the source of truth).
+//
+function FiltersDrawerBody() {
   // The ONE filter-control write-through seam (SSOT) — shared with the D7.3
   // Element-context node bridge, so both surfaces edit page.meta.filterSchema
   // through the identical reducer path (no second copy, no fork).
   const { page, barViews, commitBar } = useFilterBarAuthoring()
 
-  // Page-scoped: RightDock mounts this only when a page is active and owns the single
-  // "no page" empty-state — self-suppress here (no duplicate literal, FF-ONE-EMPTYSTATE).
   if (!page) return null
 
   if (barViews.length === 0) {

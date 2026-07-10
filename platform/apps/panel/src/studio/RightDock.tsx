@@ -183,7 +183,7 @@ export function RightDock({ controller, locale, collapsed, onToggleCollapsed, wi
         <Divider sx={{ my: 1.5 }} />
         <PerspectivesPane onPreviewChange={setPreviewPerspectiveId} />
         <Divider sx={{ my: 1.5 }} />
-        <FiltersDrawer />
+        <FiltersDrawer locale={locale} />
       </Box>
     )
   } else if (chromeSel) {
