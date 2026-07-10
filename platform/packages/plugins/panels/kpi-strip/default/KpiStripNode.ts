@@ -7,24 +7,74 @@ export interface KpiStripNode extends NodeBase {
   items: KpiSpec[]
 }
 
-// ── ITEM-SCHEMA flag (AR-49 / M0 build-item 10) — deferred, deliberately ──────
-//  The spec (SPEC-authoring-reconception-M0 §2.3) would make each KPI item's
-//  `value.measure` a GOVERNED metric-ref via a NESTED `itemSchema` on this
-//  `items` array field. That affordance does NOT exist yet: `PropField` carries
-//  no `itemSchema` property (packages/core/config/prop-schema.ts) and no Inspector
-//  array item-editor honours a per-item PropSchema. Per the flag's own escape
-//  clause, we therefore DO NOT force an inline per-item picker here — the KPI
-//  per-item metric-ref lands via the Metric-Palette bind affordance (item 9),
-//  which writes the metric-id straight to `items[i].value.measure`. Adding the
-//  nested `itemSchema` (a core PropField widen + a panel array-item resolver) is
-//  the documented fast-follow; both live OUTSIDE this layer's scope (core +
-//  apps/panel), so this schema stays byte-identical for now (additive floor).
-export const KpiStripSchema = defineSchema([
-  { field: 'items', type: 'array', label: { ka: 'KPI მეტრიკები', en: 'KPI metrics' }, required: true },
+// ── KpiValueItemSchema — the per-VALUE nested schema (D7.2 / ADR-022) ─────────
+//  The M0 payoff: `value.measure` is a GOVERNED metric-ref (enum-ref source
+//  'metrics') — the author binds a governed noun, never a raw code (Law 2). The
+//  coordinate `filter` (DimFilter) is a free-form dim→value map → OPAQUE by design
+//  (acknowledged in OPAQUE_BY_DESIGN). `time` is the literal-year common case of
+//  TimeRef. KpiValueSpec is a discriminated union whose only shared key is the
+//  system `type`, so this superset schema needs no interface assert (EditableKeys
+//  of the union is empty) — it models the point/level fields authors reach for.
+export const KpiValueItemSchema = defineSchema([
+  { field: 'measure', type: 'enum-ref', source: 'metrics', label: { ka: 'მეტრიკა', en: 'Metric' } },
+  {
+    field: 'type', type: 'string', label: { ka: 'ტიპი', en: 'Type' },
+    options: [
+      { value: 'point',  label: { ka: 'წერტილი',     en: 'Point'  } },
+      { value: 'yoy',    label: { ka: 'წლიური %',    en: 'YoY %'  } },
+      { value: 'cagr',   label: { ka: 'CAGR',        en: 'CAGR'   } },
+      { value: 'mean',   label: { ka: 'საშუალო',     en: 'Mean'   } },
+      { value: 'share',  label: { ka: 'წილი',        en: 'Share'  } },
+      { value: 'expr',   label: { ka: 'გამოსახულება', en: 'Expr'   } },
+      { value: 'metric', label: { ka: 'გამოთვლილი',   en: 'Metric' } },
+    ],
+  },
+  { field: 'time',   type: 'number', label: { ka: 'წელი', en: 'Year' } },
+  {
+    field: 'format', type: 'string', label: { ka: 'ფორმატი', en: 'Format' },
+    // Tenant-NEUTRAL format labels (Law 1 — no tenant currency in a library).
+    options: [
+      { value: 'mln_gel',  label: { ka: 'მილიონები',      en: 'Millions'    } },
+      { value: 'sign_pct', label: { ka: 'ნიშნიანი %',      en: 'Signed %'    } },
+      { value: 'pct',      label: { ka: 'პროცენტი',        en: 'Percent'     } },
+      { value: 'decimal1', label: { ka: 'ათწილადი (0.0)',  en: 'Decimal 0.0' } },
+      { value: 'decimal2', label: { ka: 'ათწილადი (0.00)', en: 'Decimal 0.00'} },
+    ],
+  },
+  { field: 'filter', type: 'object', label: { ka: 'კოორდინატი (dim→value)', en: 'Coordinate (dim→value)' } },
 ])
 
-// FF-SCHEMA-COMPLETE (tier b): `items` (KpiSpec[]) covered top-level; the per-item
-// governed metric-ref (value.measure) is the tier-c itemSchema backlog (SCHEMA_TODO).
+// ── KpiItemSchema — the per-KPI nested schema; recurses into `value` ─────────
+//  Structured per-item authoring (AR-49 / M0 build-item 10, formerly deferred to
+//  the tier-c seam that now exists — ADR-022). The `when` (VisibilityExpr) and
+//  `trend` (KpiTrendSpec union) sub-objects stay OPAQUE by design (raw-JSON in the
+//  nested editor), acknowledged in OPAQUE_BY_DESIGN.
+export const KpiItemSchema = defineSchema([
+  { field: 'label',          type: 'LocaleString', label: { ka: 'წარწერა', en: 'Label' }, coverage: 'localized', required: true },
+  { field: 'value',          type: 'object',       label: { ka: 'მნიშვნელობა', en: 'Value' }, itemSchema: KpiValueItemSchema },
+  { field: 'unit',           type: 'LocaleString', label: { ka: 'ერთეული', en: 'Unit' }, coverage: 'localized' },
+  { field: 'color',          type: 'color',        label: { ka: 'ფერი', en: 'Colour' } },
+  { field: 'when',           type: 'object',       label: { ka: 'ხილვადობა', en: 'Visibility' } },
+  { field: 'trend',          type: 'object',       label: { ka: 'ტრენდი', en: 'Trend' } },
+  { field: 'trendSub',       type: 'LocaleString', label: { ka: 'ტრენდის წარწერა', en: 'Trend caption' }, coverage: 'localized' },
+  { field: 'preliminary',    type: 'boolean',      label: { ka: 'წინასწარი', en: 'Preliminary' } },
+  { field: 'note',           type: 'string',       label: { ka: 'შენიშვნა', en: 'Note' } },
+  { field: 'methodologyUrl', type: 'string',       label: { ka: 'მეთოდოლოგიის URL', en: 'Methodology URL' } },
+])
+
+// FF-SCHEMA-COMPLETE depth (tier c): 1:1 with KpiSpec's editable keys (`id`
+// excluded as SystemKey).
+export type _KpiItemCovers = Expect<AssertSchemaCovers<KpiSpec, typeof KpiItemSchema>>
+
+export const KpiStripSchema = defineSchema([
+  {
+    field: 'items', type: 'array', label: { ka: 'KPI მეტრიკები', en: 'KPI metrics' }, required: true,
+    itemSchema: KpiItemSchema, itemLabel: 'label',
+  },
+])
+
+// FF-SCHEMA-COMPLETE (tier b): `items` (KpiSpec[]) is now a STRUCTURED nested field
+// — the per-item governed metric-ref lands via KpiValueItemSchema.measure.
 export type _KpiStripCovers = Expect<AssertSchemaCovers<KpiStripNode, typeof KpiStripSchema>>
 
 export const KpiStripGroups: PropertyGroup[] = [

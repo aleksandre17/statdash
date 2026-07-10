@@ -507,7 +507,34 @@
         "crumbs": {
           "title": "Breadcrumbs",
           "description": "array field",
-          "type": "array"
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "label": {
+                "title": "Label",
+                "description": "LocaleString field",
+                "oneOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "object"
+                  }
+                ],
+                "$comment": "LocaleString"
+              },
+              "href": {
+                "title": "Link",
+                "description": "string field",
+                "type": "string"
+              }
+            },
+            "required": [
+              "label"
+            ],
+            "additionalProperties": false
+          }
         },
         "type": {
           "const": "page-header"
@@ -637,7 +664,54 @@
         "items": {
           "title": "Links",
           "description": "array field",
-          "type": "array"
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "href": {
+                "title": "URL",
+                "description": "LocaleString field",
+                "oneOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "object"
+                  }
+                ],
+                "$comment": "LocaleString"
+              },
+              "label": {
+                "title": "Label",
+                "description": "LocaleString field",
+                "oneOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "object"
+                  }
+                ],
+                "$comment": "LocaleString"
+              },
+              "icon": {
+                "title": "Icon",
+                "description": "doc: Document, info: Info, ext: External",
+                "type": "string",
+                "enum": [
+                  "doc",
+                  "info",
+                  "ext"
+                ]
+              }
+            },
+            "required": [
+              "href",
+              "label",
+              "icon"
+            ],
+            "additionalProperties": false
+          }
         },
         "type": {
           "const": "links"
@@ -746,7 +820,61 @@
         "cards": {
           "title": "Cards",
           "description": "array field",
-          "type": "array"
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "title": {
+                "title": "Title",
+                "description": "LocaleString field",
+                "oneOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "object"
+                  }
+                ],
+                "$comment": "LocaleString"
+              },
+              "sub": {
+                "title": "Subtitle",
+                "description": "LocaleString field",
+                "oneOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "object"
+                  }
+                ],
+                "$comment": "LocaleString"
+              },
+              "color": {
+                "title": "Accent colour",
+                "description": "color field",
+                "type": "string",
+                "$comment": "color"
+              },
+              "img": {
+                "title": "Image URL",
+                "description": "string field",
+                "type": "string"
+              },
+              "pageBg": {
+                "title": "Page background",
+                "description": "string field",
+                "type": "string"
+              }
+            },
+            "required": [
+              "title",
+              "color",
+              "img",
+              "pageBg"
+            ],
+            "additionalProperties": false
+          }
         },
         "type": {
           "const": "hero"
@@ -791,7 +919,121 @@
         "slides": {
           "title": "Slides",
           "description": "array field",
-          "type": "array"
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "tab": {
+                "title": "Tab",
+                "description": "LocaleString field",
+                "oneOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "object"
+                  }
+                ],
+                "$comment": "LocaleString"
+              },
+              "title": {
+                "title": "Title",
+                "description": "LocaleString field",
+                "oneOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "object"
+                  }
+                ],
+                "$comment": "LocaleString"
+              },
+              "stats": {
+                "title": "Stats",
+                "description": "array field",
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "icon": {
+                      "title": "Icon",
+                      "description": "icon field",
+                      "type": "string",
+                      "$comment": "icon"
+                    },
+                    "iconBg": {
+                      "title": "Icon background",
+                      "description": "color field",
+                      "type": "string",
+                      "$comment": "color"
+                    },
+                    "label": {
+                      "title": "Label",
+                      "description": "LocaleString field",
+                      "oneOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "object"
+                        }
+                      ],
+                      "$comment": "LocaleString"
+                    },
+                    "value": {
+                      "title": "Value",
+                      "description": "string field",
+                      "type": "string"
+                    },
+                    "unit": {
+                      "title": "Unit",
+                      "description": "LocaleString field",
+                      "oneOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "object"
+                        }
+                      ],
+                      "$comment": "LocaleString"
+                    },
+                    "change": {
+                      "title": "Change (%)",
+                      "description": "number field",
+                      "type": "number"
+                    },
+                    "changeText": {
+                      "title": "Change caption",
+                      "description": "LocaleString field",
+                      "oneOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "object"
+                        }
+                      ],
+                      "$comment": "LocaleString"
+                    }
+                  },
+                  "required": [
+                    "label",
+                    "value",
+                    "unit"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            },
+            "required": [
+              "tab",
+              "title",
+              "stats"
+            ],
+            "additionalProperties": false
+          }
         },
         "type": {
           "const": "stats-carousel"
@@ -842,7 +1084,131 @@
         "items": {
           "title": "Featured items",
           "description": "array field",
-          "type": "array"
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "metric": {
+                "title": "Metric",
+                "description": "enum-ref field",
+                "type": "string"
+              },
+              "label": {
+                "title": "Label (override)",
+                "description": "LocaleString field",
+                "oneOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "object"
+                  }
+                ],
+                "$comment": "LocaleString"
+              },
+              "unit": {
+                "title": "Unit (override)",
+                "description": "LocaleString field",
+                "oneOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "object"
+                  }
+                ],
+                "$comment": "LocaleString"
+              },
+              "format": {
+                "title": "Format",
+                "description": "mln_gel: Millions, sign_pct: Signed %, pct: Percent, decimal1: Decimal 0.0, decimal2: Decimal 0.00",
+                "type": "string",
+                "enum": [
+                  "mln_gel",
+                  "sign_pct",
+                  "pct",
+                  "decimal1",
+                  "decimal2"
+                ]
+              },
+              "href": {
+                "title": "Link (slug/URL)",
+                "description": "LocaleString field",
+                "oneOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "object"
+                  }
+                ],
+                "$comment": "LocaleString"
+              },
+              "group": {
+                "title": "Group (tab)",
+                "description": "LocaleString field",
+                "oneOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "object"
+                  }
+                ],
+                "$comment": "LocaleString"
+              },
+              "icon": {
+                "title": "Icon",
+                "description": "icon field",
+                "type": "string",
+                "$comment": "icon"
+              },
+              "order": {
+                "title": "Order",
+                "description": "number field",
+                "type": "number"
+              },
+              "color": {
+                "title": "Accent colour",
+                "description": "color field",
+                "type": "string",
+                "$comment": "color"
+              },
+              "trendSub": {
+                "title": "Trend caption",
+                "description": "LocaleString field",
+                "oneOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "object"
+                  }
+                ],
+                "$comment": "LocaleString"
+              },
+              "time": {
+                "title": "Year",
+                "description": "number field",
+                "type": "number"
+              },
+              "at": {
+                "title": "Coordinate (dim→value)",
+                "description": "object field",
+                "type": "object"
+              },
+              "trend": {
+                "title": "Trend",
+                "description": "object field",
+                "type": "object"
+              }
+            },
+            "required": [
+              "metric",
+              "href"
+            ],
+            "additionalProperties": false
+          }
         },
         "type": {
           "const": "featured-slider"
@@ -1333,7 +1699,135 @@
         "items": {
           "title": "KPI metrics",
           "description": "array field",
-          "type": "array"
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "label": {
+                "title": "Label",
+                "description": "LocaleString field",
+                "oneOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "object"
+                  }
+                ],
+                "$comment": "LocaleString"
+              },
+              "value": {
+                "title": "Value",
+                "description": "object field",
+                "type": "object",
+                "properties": {
+                  "measure": {
+                    "title": "Metric",
+                    "description": "enum-ref field",
+                    "type": "string"
+                  },
+                  "type": {
+                    "title": "Type",
+                    "description": "point: Point, yoy: YoY %, cagr: CAGR, mean: Mean, share: Share, expr: Expr, metric: Metric",
+                    "type": "string",
+                    "enum": [
+                      "point",
+                      "yoy",
+                      "cagr",
+                      "mean",
+                      "share",
+                      "expr",
+                      "metric"
+                    ]
+                  },
+                  "time": {
+                    "title": "Year",
+                    "description": "number field",
+                    "type": "number"
+                  },
+                  "format": {
+                    "title": "Format",
+                    "description": "mln_gel: Millions, sign_pct: Signed %, pct: Percent, decimal1: Decimal 0.0, decimal2: Decimal 0.00",
+                    "type": "string",
+                    "enum": [
+                      "mln_gel",
+                      "sign_pct",
+                      "pct",
+                      "decimal1",
+                      "decimal2"
+                    ]
+                  },
+                  "filter": {
+                    "title": "Coordinate (dim→value)",
+                    "description": "object field",
+                    "type": "object"
+                  }
+                },
+                "additionalProperties": false
+              },
+              "unit": {
+                "title": "Unit",
+                "description": "LocaleString field",
+                "oneOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "object"
+                  }
+                ],
+                "$comment": "LocaleString"
+              },
+              "color": {
+                "title": "Colour",
+                "description": "color field",
+                "type": "string",
+                "$comment": "color"
+              },
+              "when": {
+                "title": "Visibility",
+                "description": "object field",
+                "type": "object"
+              },
+              "trend": {
+                "title": "Trend",
+                "description": "object field",
+                "type": "object"
+              },
+              "trendSub": {
+                "title": "Trend caption",
+                "description": "LocaleString field",
+                "oneOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "object"
+                  }
+                ],
+                "$comment": "LocaleString"
+              },
+              "preliminary": {
+                "title": "Preliminary",
+                "description": "boolean field",
+                "type": "boolean"
+              },
+              "note": {
+                "title": "Note",
+                "description": "string field",
+                "type": "string"
+              },
+              "methodologyUrl": {
+                "title": "Methodology URL",
+                "description": "string field",
+                "type": "string"
+              }
+            },
+            "required": [
+              "label"
+            ],
+            "additionalProperties": false
+          }
         },
         "type": {
           "const": "kpi-strip"
@@ -1497,8 +1991,33 @@
         },
         "thresholds": {
           "title": "Thresholds",
-          "description": "object field",
-          "type": "object"
+          "description": "array field",
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "value": {
+                "title": "Threshold value",
+                "description": "number field",
+                "type": "number"
+              },
+              "color": {
+                "title": "Colour",
+                "description": "color field",
+                "type": "string",
+                "$comment": "color"
+              },
+              "label": {
+                "title": "Label",
+                "description": "string field",
+                "type": "string"
+              }
+            },
+            "required": [
+              "color"
+            ],
+            "additionalProperties": false
+          }
         },
         "preliminary": {
           "title": "Preliminary data",

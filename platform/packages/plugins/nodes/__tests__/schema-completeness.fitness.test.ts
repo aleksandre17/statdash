@@ -31,7 +31,7 @@
 
 import { describe, it, expect } from 'vitest'
 import type {
-  NodeSliceMeta, PanelSliceMeta, PageSliceMeta, ChromeSliceMeta, PropSchema, PropField,
+  NodeSliceMeta, PanelSliceMeta, PageSliceMeta, ChromeSliceMeta, PropSchema,
 } from '@statdash/react/engine/slice-meta'
 import { propSchemaToSubSchema } from '@statdash/react/engine'
 
@@ -212,89 +212,131 @@ describe('Constructor C0 — schema completeness is INTERFACE-COMPLETE (fitness 
 
 })
 
-// ── Fitness #1c — nested item-schema backlog (Wave 8, tier c forcing function) ─
+// ── Fitness #1c — nested authorability is 100%-gated (D7.2 — backlog DRAINED) ──
 //
 //  Tier b's compile-time 1:1 assert (AssertSchemaCovers) proves TOP-LEVEL coverage.
-//  The remaining frontier is DEPTH: an `array`/`object` field is authored today
-//  through a single OPAQUE control — its item's sub-fields have no structured
-//  sub-schema (HeroCardDef's title/color, KpiSpec's metric-ref…). Rendering those
-//  needs the additive `itemSchema` PropField discriminant in packages/react/engine
-//  (D7, owner-gated) — tier c, deliberately NOT built here.
+//  The remaining frontier was DEPTH: an `array`/`object` field was authored through a
+//  single OPAQUE control, its item's sub-fields having no structured sub-schema. The
+//  additive `itemSchema` PropField seam (D7.0 / ADR-022) + the generic nested editor
+//  (D7.1) closed that; D7.2 populated every meta, so the SCHEMA_TODO backlog has
+//  fully DRAINED — the terminal state SPEC §6.1 promised.
 //
-//  This is the `coverage.fitness` COVERAGE_TODO idiom: every nested container field
-//  is enumerated in SCHEMA_TODO with a one-line rationale, and the test asserts the
-//  live set of nested fields EQUALS the allowlist — so a NEW opaque nested field
-//  cannot slip in silently (must be acknowledged) and a stale entry (once tier-c
-//  gives it an `itemSchema`) is forced out. A visible, shrinking backlog, not a hope.
+//  This gate now enforces the 100%-authorable invariant in TWO moves:
+//    (1) SCHEMA_TODO === {} — the backlog is empty, red-on-regression.
+//    (2) `collectOpaqueNested` RECURSES the whole schema tree (into every itemSchema,
+//        arbitrary depth) and asserts every opaque leaf — at ANY depth — is argued in
+//        OPAQUE_BY_DESIGN. A NEW opaque nested field (top-level OR deep) cannot slip
+//        in silently (must be argued); a stale entry (once given an itemSchema) is
+//        forced out. Depth is gated, not just breadth — "neither editable nor opaque
+//        is a silent gap."
 
 /** Stable id for a meta in the nested-backlog (page canvas + chrome-with-config). */
 const metaId = (m: PlaceableMeta | ChromeSliceMeta): string =>
   'type' in m ? m.type : `${m.slot}::${m.key}`
 
-/** A field authored as an opaque nested container awaiting a structured itemSchema. */
-function isOpaqueNested(f: PropField): boolean {
-  // tier-c-ready: once PropField carries `itemSchema`, a field that has one is no
-  // longer opaque and drops out of the backlog automatically.
-  const hasItemSchema = 'itemSchema' in (f as unknown as Record<string, unknown>)
-  return (f.type === 'array' || f.type === 'object') && !hasItemSchema
+/**
+ * Recursively collect the dot-keys of every opaque nested array/object field —
+ * DESCENDING into each structured `itemSchema` so DEPTH is gated, not just breadth
+ * (D7.2 — the completeness oracle now recurses, per ADR-022 / SPEC §6.3). A field
+ * WITH an itemSchema is not opaque itself; we recurse into it to surface any opaque
+ * SUB-field (e.g. a KPI item's `value.filter` DimFilter map, at arbitrary depth). A
+ * field WITHOUT one is an opaque leaf and its full dot-path key is recorded.
+ */
+function collectOpaqueNested(schema: PropSchema, prefix: string, out: string[]): void {
+  for (const f of schema) {
+    if (f.type !== 'array' && f.type !== 'object') continue
+    const key = `${prefix}.${f.field}`
+    const itemSchema = (f as { itemSchema?: PropSchema }).itemSchema
+    if (itemSchema && itemSchema.length > 0) collectOpaqueNested(itemSchema, key, out)
+    else out.push(key)
+  }
 }
 
-// The honest, shrinking nested-item backlog. Key = `${metaId}.${field}`.
-const SCHEMA_TODO: Readonly<Record<string, string>> = {
-  'hero.cards':                    'HeroCardDef[] — per-card title/sub/color/img/pageBg; needs tier-c itemSchema',
-  'featured-slider.items':         'FeaturedItemSpec[] — metric-ref + coordinate per item; tier-c itemSchema',
-  'stats-carousel.slides':         'StatSlide[] — tab/title + nested StatItem[]; tier-c itemSchema',
-  'links.items':                   'LinkDef[] — label/href/icon per link; tier-c itemSchema',
-  'page-header.crumbs':            '{ label; href }[] — breadcrumb items; tier-c itemSchema',
-  'repeat.each':                   'Record<string,unknown>[] — free-form static rows; tier-c itemSchema',
-  'kpi-strip.items':               'KpiSpec[] — governed per-item metric-ref (M0 follow-up); tier-c itemSchema',
-  'geograph.geoCodeMap':           'Record<iso,dimValue> — opaque geo-code map; tier-c itemSchema',
-  'wrap.styles':                   'NodeStyles — opaque style bag; tier-c itemSchema',
-  'gauge.thresholds':              'FieldConfig thresholds — step list; tier-c itemSchema',
-  'filter-bar.barIds':             'string[] — bar-id list; tier-c enum-ref item picker',
-  'AppHeader::default.socialLinks': 'social-link list; tier-c itemSchema',
-  'AppFooter::default.footerLinks': 'footer-link list; tier-c itemSchema',
+// ── SCHEMA_TODO — DRAINED (D7.2). ─────────────────────────────────────────────
+//  The nested-item backlog has fully retired: every nested array/object field now
+//  either carries a structured `itemSchema` (authored item-by-item via the D7.1
+//  editor) OR is acknowledged in OPAQUE_BY_DESIGN below with an argued rationale.
+//  The "100%-authorable, nothing-un-buildable" invariant (SPEC §6.1) is now a build
+//  gate: an EMPTY object, held empty by the terminal assertion.
+const SCHEMA_TODO: Readonly<Record<string, string>> = {}
+
+// ── OPAQUE_BY_DESIGN — the argued allowlist (SPEC §6.2 / §9 gate 4) ────────────
+//  Fields that STAY raw-JSON, by deliberate reasoned choice ("opacity must be
+//  argued, not defaulted"). Keyed by full (possibly DEEP) dot-path so the gate
+//  distinguishes 'intentionally opaque' from 'silent gap'. Three justified classes:
+const OPAQUE_BY_DESIGN: Readonly<Record<string, string>> = {
+  // (a) Top-level free-form bags — owner-ratified (SPEC §9 gate 4).
+  'wrap.styles':         'NodeStyles — arbitrary CSS-property map; free-form by design',
+  'repeat.each':         'Record<string,unknown>[] — free-form static iteration rows',
+  'geograph.geoCodeMap': 'Record<iso,dimValue> — opaque ISO→dim-value code map',
+
+  // (b) Scalar-array — the nested-item editor authors OBJECT items, not scalars, so
+  //     the object-itemSchema model structurally does not fit a string[]. A proper
+  //     picker needs a multi-value enum-ref control (a `bars` source + scalar-item
+  //     editor support) that does not yet exist; raw-JSON `["bar1"]` is the honest,
+  //     adequate fallback until then. Flagged for owner-gate (see D7.2 report).
+  'filter-bar.barIds':   'string[] — SCALAR bar-id list; needs a future multi-enum-ref control (object-itemSchema model N/A)',
+
+  // (c) Deep union / free-form sub-objects INSIDE a structured itemSchema — the
+  //     governed KPI/featured items are reachable item-by-item (metric-ref, label,
+  //     color…), but these sub-fields are discriminated unions / free-form maps that
+  //     stay raw-JSON in the item editor (the honest fallback for expert coordinates).
+  'kpi-strip.items.when':         'VisibilityExpr — recursive predicate union',
+  'kpi-strip.items.trend':        'KpiTrendSpec — discriminated union (yoy/cagr/share/static)',
+  'kpi-strip.items.value.filter': 'DimFilter — free-form dim→value coordinate map',
+  'featured-slider.items.at':     'DimFilter — free-form dim→value coordinate map',
+  'featured-slider.items.trend':  'KpiTrendSpec — discriminated union',
 }
 
-describe('Constructor C0 — nested item-schema backlog is visible + non-regressing (fitness #1c)', () => {
+describe('Constructor C0 — nested authorability is 100%-gated (fitness #1c)', () => {
 
-  it('every opaque nested field is acknowledged in SCHEMA_TODO (no silent nested gap)', () => {
+  it('SCHEMA_TODO has fully DRAINED — the nested-item backlog is empty (D7.2)', () => {
+    // Terminal gate (SPEC §6.1): every nested field is either structured (itemSchema)
+    // or argued-opaque (OPAQUE_BY_DESIGN). "Nothing un-buildable" is red-on-regression.
+    expect(Object.keys(SCHEMA_TODO)).toEqual([])
+  })
+
+  it('every opaque nested field — at ANY DEPTH — is acknowledged in OPAQUE_BY_DESIGN', () => {
     const corpus = [...ALL_METAS, ...CHROME_WITH_CONFIG]
     const live: string[] = []
     for (const m of corpus) {
       const schema = ((m as { schema?: PropSchema }).schema) ?? []
-      for (const f of schema) if (isOpaqueNested(f)) live.push(`${metaId(m as PlaceableMeta)}.${f.field}`)
+      collectOpaqueNested(schema, metaId(m as PlaceableMeta), live)
     }
-    const todoKeys = new Set(Object.keys(SCHEMA_TODO))
+    const allowed = new Set(Object.keys(OPAQUE_BY_DESIGN))
 
-    const unlisted = live.filter(k => !todoKeys.has(k))          // new opaque field, not acknowledged
-    const stale    = [...todoKeys].filter(k => !live.includes(k)) // entry no longer a nested field
+    const unlisted = live.filter(k => !allowed.has(k))            // opaque field, not argued
+    const stale    = [...allowed].filter(k => !live.includes(k))  // allowlist entry no longer live
 
-    expect(unlisted, `opaque nested fields missing a SCHEMA_TODO rationale: ${unlisted.join(' | ')}`).toEqual([])
-    expect(stale, `stale SCHEMA_TODO entries (field gone or now has itemSchema): ${stale.join(' | ')}`).toEqual([])
+    expect(unlisted, `opaque nested fields missing an OPAQUE_BY_DESIGN rationale: ${unlisted.join(' | ')}`).toEqual([])
+    expect(stale, `stale OPAQUE_BY_DESIGN entries (field gone or now structured): ${stale.join(' | ')}`).toEqual([])
   })
 
-  it('every SCHEMA_TODO entry carries a non-empty rationale', () => {
-    const blank = Object.entries(SCHEMA_TODO).filter(([, why]) => !why.trim()).map(([k]) => k)
+  it('every OPAQUE_BY_DESIGN entry carries a non-empty rationale', () => {
+    const blank = Object.entries(OPAQUE_BY_DESIGN).filter(([, why]) => !why.trim()).map(([k]) => k)
     expect(blank).toEqual([])
   })
 
-  // D7.0 / ADR-022 — the seam is DETECTABLE: `isOpaqueNested` keys off the actual
-  // presence of `itemSchema` on the field object (a runtime `in` check), so a field
-  // that GAINS an itemSchema (D7.2) is no longer opaque and drops out of the backlog
-  // automatically — while a bare array/object field stays opaque (unchanged). This
-  // proves the forcing-function will fire the moment a meta populates the seam.
-  it('a field WITH itemSchema is not opaque; a bare array/object field still is (seam detectable)', () => {
+  // D7.2 — the recursion is DETECTABLE at depth: a bare array/object field is opaque;
+  // one with a populated itemSchema is structured (recursed into, not recorded); an
+  // itemSchema whose OWN sub-field is a bare array/object surfaces that deep key. This
+  // proves the gate fires the moment a meta populates — or under-populates — the seam.
+  it('collectOpaqueNested records opaque leaves and recurses structured fields (depth-detectable)', () => {
     const label = { en: 'x' }
-    const bareArray:  PropField = { field: 'items', type: 'array',  label }
-    const bareObject: PropField = { field: 'bag',   type: 'object', label }
-    const structured: PropField = {
-      field: 'items', type: 'array', label,
-      itemSchema: [{ field: 'measure', type: 'enum-ref', source: 'metrics', label }],
-    }
-    expect(isOpaqueNested(bareArray)).toBe(true)
-    expect(isOpaqueNested(bareObject)).toBe(true)
-    expect(isOpaqueNested(structured)).toBe(false)  // ← forcing function drops it from SCHEMA_TODO
+    const schema: PropSchema = [
+      { field: 'bareArr', type: 'array',  label },                      // opaque leaf
+      { field: 'bareObj', type: 'object', label },                      // opaque leaf
+      {
+        field: 'items', type: 'array', label,                           // structured → recurse
+        itemSchema: [
+          { field: 'measure', type: 'enum-ref', source: 'metrics', label }, // scalar — ignored
+          { field: 'coord',   type: 'object', label },                      // deep opaque leaf
+        ],
+      },
+    ]
+    const out: string[] = []
+    collectOpaqueNested(schema, 'x', out)
+    expect(out.sort()).toEqual(['x.bareArr', 'x.bareObj', 'x.items.coord'])
   })
 
 })

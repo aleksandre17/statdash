@@ -6,7 +6,8 @@
 //  every other slice kind already uses. New element = new schema; the base is
 //  never widened (Open/Closed).
 //
-import type { ChromeSliceMeta, PropSchema } from '@statdash/react/engine'
+import type { ChromeSliceMeta } from '@statdash/react/engine'
+import { defineSchema, type AssertSchemaCovers, type Expect } from '../../../schema-contract'
 
 // ── SocialLinkDef — one social-media link rendered in the header actions ──
 //
@@ -35,19 +36,34 @@ export interface AppHeaderConfig {
   showNav?:     boolean
 }
 
+// ── SocialLinkItemSchema — the per-LINK nested schema (D7.2 / ADR-022) ───────
+//  Structured authoring for a header social link. `icon` is the raw SVG path `d`
+//  string (matching SocialLinkDef.icon: string); `label` is the aria-label.
+export const SocialLinkItemSchema = defineSchema([
+  { field: 'href',  type: 'string',  label: { ka: 'ბმული',        en: 'URL' }, required: true },
+  { field: 'label', type: 'string',  label: { ka: 'წარწერა (aria)', en: 'Label (aria)' }, required: true },
+  { field: 'icon',  type: 'string',  label: { ka: 'SVG იკონა (path d)', en: 'SVG icon (path d)' }, required: true },
+  { field: 'fill',  type: 'boolean', label: { ka: 'შევსებული', en: 'Filled' } },
+])
+
+// FF-SCHEMA-COMPLETE depth (tier c): 1:1 with SocialLinkDef's editable keys.
+export type _SocialLinkCovers = Expect<AssertSchemaCovers<SocialLinkDef, typeof SocialLinkItemSchema>>
+
 // ── AppHeaderSchema — Constructor/Inspector property descriptors ────────
-export const AppHeaderSchema: PropSchema = [
+export const AppHeaderSchema = defineSchema([
   {
     field: 'socialLinks',
     type:  'array',
     label: { ka: 'სოციალური ბმულები', en: 'Social Links' },
+    itemSchema: SocialLinkItemSchema,
+    itemLabel: 'label',
   },
   {
     field: 'showNav',
     type:  'boolean',
     label: { ka: 'ზედა ნავიგაციის ჩვენება', en: 'Show top navigation' },
   },
-]
+])
 
 export const META: ChromeSliceMeta = {
   sliceType:     'chrome',

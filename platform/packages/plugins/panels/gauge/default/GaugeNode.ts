@@ -1,5 +1,5 @@
 import type { NodeBase, PropertyGroup } from '@statdash/react/engine'
-import type { FieldConfig }                         from '@statdash/engine'
+import type { FieldConfig, Threshold }               from '@statdash/engine'
 import { DATA_INTEGRITY_SCHEMA, DATA_INTEGRITY_FIELDS } from '../../dataIntegritySchema'
 import { defineSchema, type AssertSchemaCovers, type Expect } from '../../../schema-contract'
 
@@ -22,6 +22,19 @@ export interface GaugeNode extends NodeBase {
   /** Show the numeric value label inside the gauge arc. Default: true */
   showValue?:   boolean
 }
+
+// ── ThresholdItemSchema — the per-STEP nested schema (D7.2 / ADR-022) ────────
+//  One Threshold step: activation `value` (null = base color, authored as a number
+//  or cleared), `color`, optional `label`. Declared BEFORE GaugeSchema (const
+//  init order) since GaugeSchema references it.
+export const ThresholdItemSchema = defineSchema([
+  { field: 'value', type: 'number', label: { ka: 'ზღვრის მნიშვნელობა', en: 'Threshold value' } },
+  { field: 'color', type: 'color',  label: { ka: 'ფერი',              en: 'Colour' }, required: true },
+  { field: 'label', type: 'string', label: { ka: 'წარწერა',           en: 'Label' } },
+])
+
+// FF-SCHEMA-COMPLETE depth (tier c): 1:1 with Threshold's editable keys.
+export type _ThresholdItemCovers = Expect<AssertSchemaCovers<Threshold, typeof ThresholdItemSchema>>
 
 export const GaugeSchema = defineSchema([
   {
@@ -49,16 +62,21 @@ export const GaugeSchema = defineSchema([
     default: true,
   },
   {
+    // Threshold[] is an ARRAY (corrected from the prior mistaken `object`), now a
+    // STRUCTURED nested field authored step-by-step (D7.2 / ADR-022). The schema
+    // TYPE descriptor is authoring metadata only — the stored value (a Threshold[])
+    // is byte-identical; only the editor changes (JsonControl → ArrayOfControl).
     field: 'thresholds',
-    type:  'object',
+    type:  'array',
     label: { ka: 'ზღვრები', en: 'Thresholds' },
+    itemSchema: ThresholdItemSchema,
+    itemLabel: 'label',
   },
   ...DATA_INTEGRITY_SCHEMA,
 ])
 
-// FF-SCHEMA-COMPLETE (tier b): 1:1 with editable keys. `thresholds` (FieldConfig
-// thresholds) is covered top-level as an opaque object; structured per-step
-// authoring is the tier-c backlog. `preliminary` covered via the shared fragment.
+// FF-SCHEMA-COMPLETE (tier b): 1:1 with editable keys. `thresholds` (Threshold[])
+// is now a STRUCTURED nested field. `preliminary` covered via the shared fragment.
 export type _GaugeCovers = Expect<AssertSchemaCovers<GaugeNode, typeof GaugeSchema>>
 
 export const GaugeGroups: PropertyGroup[] = [
