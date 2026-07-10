@@ -19,24 +19,21 @@
 //
 import { Box, Typography, Stack } from '@mui/material'
 import TuneIcon from '@mui/icons-material/Tune'
-import { useConstructorStore, useActivePage } from '../../store/constructor.store'
+import { useConstructorStore, useEffectiveActivePage } from '../../store/constructor.store'
 import { Inspector } from '../../inspector'
 import { setAtPath } from '../../inspector/showWhen'
 import { pageSchemaSource } from './pageSchemaSource'
 import type { CanvasNode, PageMeta } from '../../types/constructor'
 
 export function PageInspectorPanel() {
-  const page          = useActivePage()
+  const page          = useEffectiveActivePage()
   const updatePage    = useConstructorStore((s) => s.updatePage)
   const markPageDirty = useConstructorStore((s) => s.markPageDirty)
 
-  if (!page) {
-    return (
-      <Box sx={{ p: 2, color: 'text.disabled' }}>
-        <Typography variant="body2">გვერდი არ არის არჩეული</Typography>
-      </Box>
-    )
-  }
+  // Page-scoped: the host (RightDock) only mounts this when a page is active AND owns
+  // the single "no page" empty-state — so here we simply self-suppress (no duplicate
+  // empty-state literal; FF-ONE-EMPTYSTATE).
+  if (!page) return null
 
   const pageId = page.id
   const meta   = (page.meta ?? {}) as Record<string, unknown>

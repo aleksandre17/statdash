@@ -29,11 +29,13 @@ import {
   useConstructorStore, useActivePage, useActivePageId, useSelectedNode,
 } from '../store/constructor.store'
 import { nestAccepts } from '../canvas/insertNode'
+import { StudioEmptyState } from '../studio/StudioEmptyState'
 import { buildOutlineRows, type OutlineRow } from './outlineModel'
 import { OutlineItem } from './OutlineItem'
+import type { Locale } from '../types/constructor'
 import './outline.css'
 
-export function OutlineTree() {
+export function OutlineTree({ locale = 'ka' }: { locale?: Locale } = {}) {
   const page       = useActivePage()
   const pageId     = useActivePageId()
   const selectedId = useSelectedNode()
@@ -41,6 +43,7 @@ export function OutlineTree() {
   const moveNode   = useConstructorStore((s) => s.moveNode)
   const removeNode = useConstructorStore((s) => s.removeNode)
   const markDirty  = useConstructorStore((s) => s.markPageDirty)
+  const setSurface = useConstructorStore((s) => s.setSurface)
   const sensors    = useDndSensors()
 
   const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(new Set())
@@ -148,12 +151,10 @@ export function OutlineTree() {
     }
   }, [rows, collapsed, focusRow, toggleCollapse, pageId])
 
+  // No effective page ⇒ no pages exist (always-a-home). The single empty-state
+  // component owns the copy (FF-ONE-EMPTYSTATE) — no inline literal here.
   if (!page) {
-    return (
-      <div className="outline outline--empty" data-testid="outline-empty">
-        <span className="outline__empty-text">გვერდი არ არის არჩეული</span>
-      </div>
-    )
+    return <StudioEmptyState kind="no-pages" locale={locale} />
   }
 
   return (
@@ -185,13 +186,14 @@ export function OutlineTree() {
               onKeyNav={handleKeyNav}
             />
           ))}
-          {rows.length === 0 && (
-            <li className="outline__empty-text" role="treeitem" aria-disabled="true">
-              ცარიელი გვერდი — გადმოიტანეთ ელემენტი
-            </li>
-          )}
         </ul>
       </SortableContext>
+      {/* Page selected but empty → the page-blank empty-state (single component),
+          its CTA routing to the Insert surface. Rendered OUTSIDE the tree <ul> so
+          the tree stays valid (no non-treeitem child). */}
+      {rows.length === 0 && (
+        <StudioEmptyState kind="page-blank" locale={locale} onAction={() => setSurface('insert')} />
+      )}
     </DndContext>
   )
 }

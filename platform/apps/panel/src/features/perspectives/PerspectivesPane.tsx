@@ -36,7 +36,7 @@ import ArrowUpwardIcon   from '@mui/icons-material/ArrowUpward'
 import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward'
 import LayersIcon        from '@mui/icons-material/Layers'
 import type { PerspectiveDef, PerspectivesByParam } from '@statdash/engine'
-import { useConstructorStore, useActivePage } from '../../store/constructor.store'
+import { useConstructorStore, useEffectiveActivePage } from '../../store/constructor.store'
 import { useActiveLocales } from '../../inspector/useActiveLocales'
 import { readLocale } from '../../inspector/localeString'
 import { PerspectiveDefEditor } from './PerspectiveDefEditor'
@@ -58,7 +58,7 @@ export interface PerspectivesPaneProps {
 }
 
 export function PerspectivesPane({ onPreviewChange }: PerspectivesPaneProps = {}) {
-  const page          = useActivePage()
+  const page          = useEffectiveActivePage()
   const updatePage    = useConstructorStore((s) => s.updatePage)
   const markPageDirty = useConstructorStore((s) => s.markPageDirty)
   const locales       = useActiveLocales()
@@ -81,13 +81,9 @@ export function PerspectivesPane({ onPreviewChange }: PerspectivesPaneProps = {}
     commitAxis(DEFAULT_PERSPECTIVE_PARAM, [makePerspectiveDef(locales)])
   }
 
-  if (!page) {
-    return (
-      <Box sx={{ p: 2, color: 'text.disabled' }}>
-        <Typography variant="body2">გვერდი არ არის არჩეული</Typography>
-      </Box>
-    )
-  }
+  // Page-scoped: RightDock mounts this only when a page is active and owns the single
+  // "no page" empty-state — self-suppress here (no duplicate literal, FF-ONE-EMPTYSTATE).
+  if (!page) return null
 
   return (
     <Box sx={{ p: 2, display: 'flex', flexDirection: 'column', gap: 2 }} data-testid="perspectives-pane">

@@ -10,20 +10,6 @@
   font-size: 13px;
 }
 
-.outline--empty {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 100%;
-  color: var(--color-text-disabled, #9aa0a6);
-}
-
-.outline__empty-text {
-  color: var(--color-text-disabled, #9aa0a6);
-  padding: 8px 10px;
-  font-style: italic;
-}
-
 .outline__item {
   display: flex;
   align-items: center;

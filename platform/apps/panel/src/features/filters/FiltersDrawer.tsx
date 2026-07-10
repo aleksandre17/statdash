@@ -27,7 +27,7 @@ import ArrowUpwardIcon  from '@mui/icons-material/ArrowUpward'
 import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward'
 import FilterAltIcon    from '@mui/icons-material/FilterAlt'
 import type { FilterSchemaInput, ParamNode, ParamDefType } from '@statdash/engine'
-import { useConstructorStore, useActivePage } from '../../store/constructor.store'
+import { useConstructorStore, useEffectiveActivePage } from '../../store/constructor.store'
 import { ParamDefEditor } from './ParamDefEditor'
 import { toBarViews, setBarParams } from './filterSchemaModel'
 import { makeParamNode, PARAM_TYPE_OPTIONS } from './paramFactory'
@@ -42,7 +42,7 @@ function moveItem<T>(arr: T[], from: number, to: number): T[] {
 }
 
 export function FiltersDrawer() {
-  const page          = useActivePage()
+  const page          = useEffectiveActivePage()
   const updatePage    = useConstructorStore((s) => s.updatePage)
   const markPageDirty = useConstructorStore((s) => s.markPageDirty)
 
@@ -61,13 +61,9 @@ export function FiltersDrawer() {
     markPageDirty(pageId)
   }
 
-  if (!page) {
-    return (
-      <Box sx={{ p: 2, color: 'text.disabled' }}>
-        <Typography variant="body2">გვერდი არ არის არჩეული</Typography>
-      </Box>
-    )
-  }
+  // Page-scoped: RightDock mounts this only when a page is active and owns the single
+  // "no page" empty-state — self-suppress here (no duplicate literal, FF-ONE-EMPTYSTATE).
+  if (!page) return null
 
   if (barViews.length === 0) {
     return (

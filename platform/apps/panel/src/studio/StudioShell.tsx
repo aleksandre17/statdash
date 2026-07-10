@@ -9,6 +9,7 @@ import './studio.css'
 import { ActivityRail } from './ActivityRail'
 import { StudioTopBar } from './StudioTopBar'
 import { RightDock } from './RightDock'
+import { StudioEmptyState } from './StudioEmptyState'
 import { SURFACE_HEADINGS } from './rail'
 import { useCanvasController } from './useCanvasController'
 import { InsertSurface } from './surfaces/InsertSurface'
@@ -149,15 +150,18 @@ export function StudioShell() {
             </Suspense>
           )
           : (
-            <Box sx={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'text.disabled' }}>
-              <Typography variant="body2">{locale === 'en' ? 'No page selected' : 'გვერდი არ არის არჩეული'}</Typography>
+            // Reached only when the effective active page is null — i.e. NO pages exist
+            // (a null/stale selection with pages present now resolves to the first page,
+            // FF-ALWAYS-A-HOME). So the canvas home is the no-pages state, CTA → Pages.
+            <Box sx={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <StudioEmptyState kind="no-pages" locale={locale} onAction={() => setSurface('pages-site')} />
             </Box>
           )}
       </Box>
 
       {/* ── Right dock — selection-contextual Inspector ──────────────────── */}
       <Box component="aside" aria-label={locale === 'en' ? 'Inspector' : 'ინსპექტორი'} className="studio-right-dock">
-        <RightDock controller={controller} />
+        <RightDock controller={controller} locale={locale} />
       </Box>
 
       {/* ── Bottom strip — page tabs + status ────────────────────────────── */}
@@ -191,7 +195,7 @@ function renderSurface(surface: StudioSurface, controller: ReturnType<typeof use
   switch (surface) {
     case 'insert':     return <InsertSurface controller={controller} />
     case 'data':       return <DataSurface controller={controller} locale={locale} />
-    case 'layers':     return <LayersSurface />
+    case 'layers':     return <LayersSurface locale={locale} />
     case 'pages-site': return <PagesSiteSurface />
     case 'style':      return <StyleSurface locale={locale} />
     case 'model':      return <ModelSurface locale={locale} />
