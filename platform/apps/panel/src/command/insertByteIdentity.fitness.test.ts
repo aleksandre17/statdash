@@ -15,7 +15,7 @@
 import { describe, it, expect, beforeAll } from 'vitest'
 import { setupCanvasRegistry } from '../canvas/setupCanvasRegistry'
 import { getPaletteEntries } from '../canvas/paletteEntries'
-import { resolveInsertPlan, planInserts, nestAccepts, PAGE_ROOT_TYPE } from '../canvas/insertNode'
+import { resolveInsertPlan, planInserts, nestAccepts } from '../canvas/insertNode'
 import { insertNodesPatch } from '../store/constructor.pages'
 import { toNodePageConfig } from '../canvas/canvasPageAdapter'
 import type { CanvasPage } from '../types/constructor'
@@ -23,7 +23,7 @@ import type { CanvasPage } from '../types/constructor'
 beforeAll(() => { setupCanvasRegistry() })
 
 function emptyPage(): CanvasPage {
-  return { id: 'p1', title: { ka: 'გვ', en: 'Pg' }, slug: 'pg', nodeIds: [], nodes: {} }
+  return { id: 'p1', type: 'inner-page', title: { ka: 'გვ', en: 'Pg' }, slug: 'pg', nodeIds: [], nodes: {} }
 }
 const state = (page: CanvasPage) => ({ pages: [page], activePageId: page.id })
 /** Deterministic id factory — the only insert-path variable, fixed so paths compare. */
@@ -59,11 +59,12 @@ describe('byte-identical insert (V6 invariant)', () => {
     const cfg = insertVia('chart') as unknown as {
       type: string; children?: Array<{ type: string; children?: Array<{ type: string }> }>
     }
-    expect(cfg.type).toBe(PAGE_ROOT_TYPE)
+    // The serialized root carries the page's OWN kind (not a privileged literal).
+    expect(cfg.type).toBe(emptyPage().type)
     expect(cfg.children?.[0]?.type).toBe('section')
     expect(cfg.children?.[0]?.children?.[0]?.type).toBe('chart')
     // The wrap is registry-legal at every level (no invented/invalid nest).
-    expect(nestAccepts(PAGE_ROOT_TYPE, 'section')).toBe(true)
+    expect(nestAccepts(emptyPage().type, 'section')).toBe(true)
     expect(nestAccepts('section', 'chart')).toBe(true)
   })
 

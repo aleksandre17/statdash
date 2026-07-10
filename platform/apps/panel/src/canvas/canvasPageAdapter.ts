@@ -33,11 +33,24 @@ type EngineNode = NodeBase & { children?: EngineNode[] }
 //
 const STRUCTURAL_KEYS = new Set(['type', 'variant', 'id', 'children'])
 
+// ── Default page-root kind ──────────────────────────────────────────────────
+//
+//  The fallback kind for a genuinely kind-less page root — used ONLY when an
+//  inbound config omits `type` (a hand-authored / legacy tree). It is NOT a
+//  privileged stamp: `toNodePageConfig` serializes the page's OWN `type`; every
+//  in-app page-creation path sets an explicit kind, so this default is never the
+//  silently-privileged literal it used to be (Law 1). One SSOT for "the kind a
+//  blank page starts as", shared by the store's blank-page creators.
+//
+export const DEFAULT_PAGE_TYPE = 'inner-page'
+
 // ── Reserved PAGE-structural keys ───────────────────────────────────────────
 //
 //  Keys on the page root (NodePageConfig) that the CanvasPage already models as
 //  first-class columns and so must NOT be swept into `meta`:
-//    type/children → owned by the inner-page root + nodeIds (node-structural)
+//    type     → CanvasPage.type (the page KIND — read into the first-class
+//               column, NOT discarded and NOT swept into meta)
+//    children → owned by the page root + nodeIds (node-structural)
 //    id            → CanvasPage.id
 //    path          → CanvasPage.slug
 //  EVERY OTHER page-root key (a PageConfigBase field: frame, chrome,
@@ -76,12 +89,15 @@ function toEngineNode(node: CanvasNode, page: CanvasPage): EngineNode {
 /**
  * Project a CanvasPage into a NodePageConfig the engine can render.
  *
- * The page IS the root node (engine convention — no `root` wrapper). We wrap
- * the ordered top-level nodes in an `inner-page` root so NodePageRenderer's
- * navigation/filter wiring resolves. Identity PageConfigBase fields (id←id,
- * path←slug) come from the CanvasPage columns; every OTHER page-level field
- * (frame, chrome, presentation, filterSchema, vars, perspectives, …) is
- * spread back from `page.meta` so the round-trip is page-level lossless.
+ * The page IS the root node (engine convention — no `root` wrapper). The ordered
+ * top-level nodes become the root's children under the page's OWN kind
+ * (`page.type` — inner-page / tab-page / container-page), so NodePageRenderer
+ * resolves THIS page's real shell, never a privileged inner-page frame. Identity
+ * PageConfigBase fields (id←id, path←slug) come from the CanvasPage columns;
+ * every OTHER page-level field (frame, chrome, presentation, filterSchema, vars,
+ * perspectives, …) is spread back from `page.meta` so the round-trip is page-
+ * level lossless. `DEFAULT_PAGE_TYPE` only backstops an (unrepresentable, since
+ * `type` is required) empty kind — the round-trip stays symmetric.
  */
 export function toNodePageConfig(page: CanvasPage): NodePageConfig {
   const children = page.nodeIds
@@ -91,7 +107,7 @@ export function toNodePageConfig(page: CanvasPage): NodePageConfig {
 
   return {
     ...(page.meta ?? {}),               // frame/chrome/presentation/filterSchema/vars/perspectives/…
-    type:     'inner-page',
+    type:     page.type || DEFAULT_PAGE_TYPE,
     id:       page.id,
     path:     page.slug,
     children,
@@ -143,10 +159,13 @@ function flattenNode(
  * Hydrate a flat editor CanvasPage from a stored NodePageConfig (the NodeDef
  * tree from `GET /api/pages/:id`). The inverse of toNodePageConfig.
  *
- * The page root (`inner-page`) is unwrapped — its identity (id, slug←path) maps
- * onto the CanvasPage, and its top-level children become the ordered nodeIds.
- * `title` is not part of the engine node shape; the caller supplies it (it lives
- * on the page list row, not the config tree), defaulting to the slug.
+ * The page root is unwrapped — its identity (id, slug←path) and its KIND (type)
+ * map onto the CanvasPage, and its top-level children become the ordered nodeIds.
+ * The page's declared `type` is PRESERVED as a first-class column (was silently
+ * dropped — the round-trip data-loss this fix closes); a kind-less inbound config
+ * backstops to `DEFAULT_PAGE_TYPE`. `title` is not part of the engine node shape;
+ * the caller supplies it (it lives on the page list row, not the config tree),
+ * defaulting to the slug.
  *
  * Lossless against toNodePageConfig: every node's type/variant/props/childIds
  * and document order survive the round-trip — AND every page-level field
@@ -161,6 +180,7 @@ export function fromNodePageConfig(
   const root = cfg as unknown as Record<string, unknown>
   const id   = typeof root.id === 'string' ? root.id : 'page'
   const slug = typeof root.path === 'string' ? root.path : id
+  const type = typeof root.type === 'string' && root.type ? root.type : DEFAULT_PAGE_TYPE
 
   const nodes: Record<string, CanvasNode> = {}
   const rawTop = Array.isArray(root.children) ? (root.children as unknown[]) : []
@@ -173,6 +193,7 @@ export function fromNodePageConfig(
 
   return {
     id,
+    type,
     title: title ?? { ka: slug, en: slug },
     slug,
     nodeIds,

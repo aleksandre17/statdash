@@ -12,7 +12,7 @@ function node(id: string, measure?: string): CanvasNode {
   return { id, type: 'chart', props: measure ? { measure } : {}, childIds: [] }
 }
 function page(id: string, title: string, nodes: CanvasNode[]): CanvasPage {
-  return { id, title: { ka: title, en: title }, slug: id, nodeIds: nodes.map((n) => n.id), nodes: Object.fromEntries(nodes.map((n) => [n.id, n])) }
+  return { id, type: 'inner-page', title: { ka: title, en: title }, slug: id, nodeIds: nodes.map((n) => n.id), nodes: Object.fromEntries(nodes.map((n) => [n.id, n])) }
 }
 
 describe('computeMetricImpact — schema-driven, not a naive string scan', () => {

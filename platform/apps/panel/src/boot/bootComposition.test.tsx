@@ -58,7 +58,7 @@ const GOVERNED_CATALOG = {
 // A minimal empty page — enough to mount the always-home canvas against the
 // boot-populated registry (the empty-new-site guarantee) without heavy content.
 const SEED_PAGE: CanvasPage = {
-  id: 'p1', title: { ka: 'ტესტი', en: 'Test' }, slug: 'test', nodeIds: [], nodes: {},
+  id: 'p1', type: 'inner-page', title: { ka: 'ტესტი', en: 'Test' }, slug: 'test', nodeIds: [], nodes: {},
 }
 
 // Deferred /api/bootstrap response — resolved by the test to drive the ordering proof.

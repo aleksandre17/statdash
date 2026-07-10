@@ -18,7 +18,7 @@ import type { CanvasPage } from '../../types/constructor'
 
 function seedPage(perspectives?: PerspectivesByParam): CanvasPage {
   const page: CanvasPage = {
-    id: 'p1', title: { ka: 'გვ', en: 'Pg' }, slug: 'pg', nodeIds: [], nodes: {},
+    id: 'p1', type: 'inner-page', title: { ka: 'გვ', en: 'Pg' }, slug: 'pg', nodeIds: [], nodes: {},
     ...(perspectives ? { meta: { perspectives } } : {}),
   }
   useConstructorStore.setState({ pages: [page], activePageId: 'p1' })

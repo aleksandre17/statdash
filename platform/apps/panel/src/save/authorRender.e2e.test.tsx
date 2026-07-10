@@ -50,7 +50,7 @@ const store = () => useConstructorStore.getState()
 function startSession(): string {
   const pageId = 'e2e-page'
   useConstructorStore.setState({
-    pages: [{ id: pageId, title: { ka: 'მთავარი', en: 'Home' }, slug: 'home', nodeIds: [], nodes: {} }],
+    pages: [{ id: pageId, type: 'inner-page', title: { ka: 'მთავარი', en: 'Home' }, slug: 'home', nodeIds: [], nodes: {} }],
     activePageId: pageId,
     selectedNodeId: null,
     chromeSelection: null,

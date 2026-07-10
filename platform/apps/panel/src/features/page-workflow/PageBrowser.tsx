@@ -15,6 +15,7 @@ import WidgetsIcon from '@mui/icons-material/Widgets'
 import { usePages } from '../../store/constructor.store'
 import { useConstructorStore } from '../../store/constructor.store'
 import { openPage, createPage } from '../../store/api-actions'
+import { DEFAULT_PAGE_TYPE } from '../../canvas/canvasPageAdapter'
 import { PageStatusBadge } from './PageStatusBadge'
 import { TemplateGallery } from '../templates'
 
@@ -53,6 +54,9 @@ export function PageBrowser({ open, onClose }: PageBrowserProps) {
     setError(null)
     try {
       const page = await createPage({
+        // A blank page starts as the default kind — the author can retype it via
+        // the page Inspector once page-kind authoring lands (never a hidden default).
+        type:    DEFAULT_PAGE_TYPE,
         title:   { ka: titleKa.trim(), en: (titleEn || titleKa).trim() },
         slug,
         nodeIds: [],

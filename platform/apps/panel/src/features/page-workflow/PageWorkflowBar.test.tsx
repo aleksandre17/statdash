@@ -48,7 +48,7 @@ function seed(page: CanvasPage, status: 'draft' | 'published' = 'draft') {
 
 function cleanPage(): CanvasPage {
   const sec: CanvasNode = { id: 'sec-1', type: 'section', props: { title: 'GDP' }, childIds: [] }
-  return { id: 'p1', title: { ka: 'მთ', en: 'H' }, slug: 'home', nodeIds: ['sec-1'], nodes: { 'sec-1': sec } }
+  return { id: 'p1', type: 'inner-page', title: { ka: 'მთ', en: 'H' }, slug: 'home', nodeIds: ['sec-1'], nodes: { 'sec-1': sec } }
 }
 
 function badPage(): CanvasPage {
@@ -58,7 +58,7 @@ function badPage(): CanvasPage {
              cards: [{ id: 'c', title: { ka: 'ბ', en: 'b' }, color: '#000', img: '', pageBg: '' }] },
     childIds: [],
   }
-  return { id: 'p1', title: { ka: 'მთ', en: 'H' }, slug: 'home', nodeIds: ['hero-1'], nodes: { 'hero-1': hero } }
+  return { id: 'p1', type: 'inner-page', title: { ka: 'მთ', en: 'H' }, slug: 'home', nodeIds: ['hero-1'], nodes: { 'hero-1': hero } }
 }
 
 beforeEach(() => { responder = () => ({ status: 200, data: {} }); installFetch() })

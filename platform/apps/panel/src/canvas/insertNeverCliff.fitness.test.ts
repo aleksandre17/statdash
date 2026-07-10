@@ -16,7 +16,7 @@ import { setupCanvasRegistry } from './setupCanvasRegistry'
 import { getPaletteEntries } from './paletteEntries'
 import {
   resolveInsertPlan, planInserts, nestAccepts,
-  PAGE_ROOT_TYPE, AUTOWRAP_CONTAINER,
+  AUTOWRAP_CONTAINER,
 } from './insertNode'
 import { insertNodesPatch } from '../store/constructor.pages'
 import type { CanvasPage } from '../types/constructor'
@@ -29,7 +29,7 @@ beforeAll(() => { setupCanvasRegistry() })
 // hero is a 'blocked' insert below).
 function basePage(): CanvasPage {
   return {
-    id: 'p1', title: { ka: 'გ', en: 'P' }, slug: 'p',
+    id: 'p1', type: 'inner-page', title: { ka: 'გ', en: 'P' }, slug: 'p',
     nodeIds: ['sec', 'fb'],
     nodes: {
       sec: { id: 'sec', type: 'section',    props: {}, childIds: [] },
@@ -40,9 +40,9 @@ function basePage(): CanvasPage {
 const state = (page: CanvasPage) => ({ pages: [page], activePageId: page.id })
 const ids = () => { let n = 0; return () => `n-${n++}` }
 
-// The type of a container id within a page (page root id → PAGE_ROOT_TYPE frame).
+// The type of a container id within a page (page root id → the page's OWN kind).
 function parentTypeOf(page: CanvasPage, parentId: string): string {
-  return parentId === page.id ? PAGE_ROOT_TYPE : page.nodes[parentId].type
+  return parentId === page.id ? page.type : page.nodes[parentId].type
 }
 
 // Assert a produced page-config is a legal tree: every node sits in a parent that
@@ -58,7 +58,7 @@ function assertLegalTree(page: CanvasPage): void {
       check(child.type, child.childIds)
     }
   }
-  check(PAGE_ROOT_TYPE, page.nodeIds)
+  check(page.type, page.nodeIds)
 }
 
 const droppable = () => getPaletteEntries().map((e) => e.type)

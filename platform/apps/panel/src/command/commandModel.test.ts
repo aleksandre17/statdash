@@ -10,7 +10,7 @@ import type { CanvasPage } from '../types/constructor'
 beforeAll(() => { setupCanvasRegistry() })
 
 const page: CanvasPage = {
-  id: 'p1', title: { ka: 'გ', en: 'P' }, slug: 'p',
+  id: 'p1', type: 'inner-page', title: { ka: 'გ', en: 'P' }, slug: 'p',
   nodeIds: ['a'],
   nodes: { a: { id: 'a', type: 'section', props: { title: 'Sec' }, childIds: [] } },
 }

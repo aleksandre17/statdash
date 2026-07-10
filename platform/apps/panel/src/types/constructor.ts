@@ -137,6 +137,20 @@ export type PageMeta = Omit<PageConfigBase, 'id' | 'path'>
 
 export interface CanvasPage {
   id:       string
+  /**
+   * The page-root KIND — the engine's page-root node type (`inner-page` /
+   * `tab-page` / `container-page`; see PAGE_ROOT_TYPES). First-class + node-
+   * structural, exactly like the engine root node's own `type`: the canvas renders
+   * THIS page's real shell (landing→landing frame, inner→inner) and the adapter
+   * round-trips it LOSSLESSLY — never a privileged hardcoded literal (Law 1).
+   *
+   * REQUIRED so every creation path must declare it (`DEFAULT_PAGE_TYPE` for a
+   * genuinely kind-less blank page). This makes the `undefined`-type case
+   * unrepresentable, which is what keeps the fromNodePageConfig∘toNodePageConfig
+   * round-trip SYMMETRIC — a type-less page can never silently acquire (and then
+   * be locked into) the default on reload.
+   */
+  type:     string
   title:    { ka: string; en: string }
   slug:     string
   /** Ordered top-level node IDs — D&D reorder updates this array. */

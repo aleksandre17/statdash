@@ -60,7 +60,7 @@ const store = () => useConstructorStore.getState()
 /** A clean, save-ready page: one section with a required title. */
 function cleanPage(id = 'p1'): CanvasPage {
   const sec: CanvasNode = { id: 'sec-1', type: 'section', props: { title: 'GDP' }, childIds: [] }
-  return { id, title: { ka: 'მთავარი', en: 'Home' }, slug: 'home', nodeIds: ['sec-1'], nodes: { 'sec-1': sec } }
+  return { id, type: 'inner-page', title: { ka: 'მთავარი', en: 'Home' }, slug: 'home', nodeIds: ['sec-1'], nodes: { 'sec-1': sec } }
 }
 
 beforeEach(() => {
@@ -79,7 +79,7 @@ describe('savePage — the save→guard gate', () => {
                cards: [{ id: 'c', title: { ka: 'ბ', en: 'b' }, color: '#000', img: '', pageBg: '' }] },
       childIds: [],
     }
-    resetStore({ id: 'p1', title: { ka: 'მთ', en: 'H' }, slug: 'home', nodeIds: ['hero-1'], nodes: { 'hero-1': hero } })
+    resetStore({ id: 'p1', type: 'inner-page', title: { ka: 'მთ', en: 'H' }, slug: 'home', nodeIds: ['hero-1'], nodes: { 'hero-1': hero } })
 
     const report = await savePage('p1')
 
@@ -125,7 +125,7 @@ describe('savePage — locale-completeness honors the site ACTIVE set (Q-5 SSOT)
                cards: [{ id: 'c', title: { ka: 'ბ', en: 'b' }, color: '#000', img: '', pageBg: '' }] },
       childIds: [],
     }
-    return { id: 'p1', title: { ka: 'მთ', en: 'H' }, slug: 'home', nodeIds: ['hero-1'], nodes: { 'hero-1': hero } }
+    return { id: 'p1', type: 'inner-page', title: { ka: 'მთ', en: 'H' }, slug: 'home', nodeIds: ['hero-1'], nodes: { 'hero-1': hero } }
   }
 
   it('REJECTS a config missing a NON-default active locale (en) when site.activeLocales = [ka,en]', async () => {
@@ -198,7 +198,7 @@ describe('open → hydrate → edit → save round-trip', () => {
   it('opens a page from GET /:id, hydrates the canvas, then saves the edited config', async () => {
     // The server returns a persisted config tree (one section).
     const persisted = toNodePageConfig(cleanPage('p9'))
-    resetStore({ id: 'placeholder', title: { ka: 'x', en: 'x' }, slug: 'x', nodeIds: [], nodes: {} })
+    resetStore({ id: 'placeholder', type: 'inner-page', title: { ka: 'x', en: 'x' }, slug: 'x', nodeIds: [], nodes: {} })
 
     responder = (c) => {
       if (c.method === 'GET' && c.url.endsWith('/pages/p9')) {
@@ -235,12 +235,12 @@ describe('open → hydrate → edit → save round-trip', () => {
 
 describe('createPage — new page flow', () => {
   it('POSTs a new page and reflects a clean draft at version 1', async () => {
-    resetStore({ id: 'x', title: { ka: 'x', en: 'x' }, slug: 'x', nodeIds: [], nodes: {} })
+    resetStore({ id: 'x', type: 'inner-page', title: { ka: 'x', en: 'x' }, slug: 'x', nodeIds: [], nodes: {} })
     responder = (c) => c.method === 'POST' && c.url.endsWith('/pages')
       ? { status: 201, data: { id: 'new-1' } }
       : { status: 200, data: {} }
 
-    const page = await createPage({ title: { ka: 'ახალი', en: 'New' }, slug: 'new', nodeIds: [], nodes: {} })
+    const page = await createPage({ type: 'inner-page', title: { ka: 'ახალი', en: 'New' }, slug: 'new', nodeIds: [], nodes: {} })
 
     expect(page.id).toBe('new-1')
     expect(calls.some((c) => c.method === 'POST' && c.url.endsWith('/pages'))).toBe(true)

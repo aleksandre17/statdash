@@ -26,7 +26,7 @@ beforeAll(() => {
 
 function seedPage(meta?: CanvasPage['meta']): CanvasPage {
   const page: CanvasPage = {
-    id: 'p1', title: { ka: 'გვ', en: 'Pg' }, slug: 'pg', nodeIds: [], nodes: {},
+    id: 'p1', type: 'inner-page', title: { ka: 'გვ', en: 'Pg' }, slug: 'pg', nodeIds: [], nodes: {},
     ...(meta ? { meta } : {}),
   }
   useConstructorStore.setState({ pages: [page], activePageId: 'p1' })

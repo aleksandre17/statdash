@@ -57,7 +57,7 @@ describe('methodology fieldset — section node carries authorable methodology f
 
   it('authored methodology round-trips losslessly through canvasPageAdapter', () => {
     const page: CanvasPage = {
-      id: 'p', title: { ka: 'გ', en: 'P' }, slug: 'p', nodeIds: ['s1'],
+      id: 'p', type: 'inner-page', title: { ka: 'გ', en: 'P' }, slug: 'p', nodeIds: ['s1'],
       nodes: {
         s1: {
           id: 's1', type: 'section',
@@ -94,7 +94,7 @@ describe('preliminary flag — data panels author the badge driver (signal #1)',
     // The authored value lands on the node body that becomes the engine def —
     // exactly `def.preliminary === true`, resolvePreliminary's signal #1.
     const page: CanvasPage = {
-      id: 'p', title: { ka: 'გ', en: 'P' }, slug: 'p', nodeIds: ['c1'],
+      id: 'p', type: 'inner-page', title: { ka: 'გ', en: 'P' }, slug: 'p', nodeIds: ['c1'],
       nodes: { c1: { ...node, props: setAtPath(node.props, field, value) } },
     }
     const cfg = toNodePageConfig(page) as unknown as { children: Array<{ preliminary?: boolean }> }

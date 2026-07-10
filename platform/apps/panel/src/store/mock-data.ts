@@ -46,6 +46,7 @@ export const MOCK_SITE: SiteDef = {
 
 export const MOCK_PAGE: CanvasPage = {
   id: 'page-2',
+  type: 'inner-page',
   title: { ka: 'მშპ', en: 'GDP' },
   slug: 'gdp',
   nodeIds: ['node-1', 'node-2', 'node-3'],

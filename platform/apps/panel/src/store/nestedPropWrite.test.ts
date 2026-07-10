@@ -18,7 +18,7 @@ import { INITIAL_SESSION } from './constructor.history'
 import type { CanvasPage } from '../types/constructor'
 
 const seedPage = (): CanvasPage => ({
-  id: 'p1', title: { ka: 'p', en: 'p' }, slug: 'p',
+  id: 'p1', type: 'inner-page', title: { ka: 'p', en: 'p' }, slug: 'p',
   nodeIds: ['n1'],
   nodes: {
     n1: {

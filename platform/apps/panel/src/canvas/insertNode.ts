@@ -19,15 +19,6 @@ import { nodeRegistry } from '@statdash/react/engine'
 import type { CanvasNode, CanvasPage } from '../types/constructor'
 
 /**
- * The page frame type the store's canvasPageAdapter wraps top-level nodes in
- * (`toNodePageConfig`). The page root is not a CanvasNode in the flat map — it is
- * this implicit frame — so its slot/accepts contract is read via this SSOT rather
- * than re-hardcoding the literal at each call site. If the Constructor ever frames
- * pages with a different root, this is the ONE line to change.
- */
-export const PAGE_ROOT_TYPE = 'inner-page'
-
-/**
  * The canonical page-level content container an auto-wrap creates. When a type is
  * not directly page-acceptable, the insert wraps it in a `section` (page → section
  * → type) — the document-editor "insert anything, the tool builds the structure"
@@ -145,14 +136,16 @@ export function resolveInsertPlan(
       return { kind: 'direct', parentId: selected.id }
     }
   }
-  // 2. Page/frame level: the frame directly accepts the type → top-level insert.
-  if (nestAccepts(PAGE_ROOT_TYPE, type)) {
+  // 2. Page/frame level: the page's OWN root kind directly accepts the type →
+  //    top-level insert. Read per-page (`page.type`), never a privileged literal:
+  //    a landing/tab/container page root accepts what THAT root's slots accept.
+  if (nestAccepts(page.type, type)) {
     return { kind: 'direct', parentId: page.id }
   }
   // 3. Auto-wrap into the canonical container the page accepts AND that accepts
   //    the type (page → section → type), one undoable action.
   if (
-    nestAccepts(PAGE_ROOT_TYPE, AUTOWRAP_CONTAINER) &&
+    nestAccepts(page.type, AUTOWRAP_CONTAINER) &&
     nestAccepts(AUTOWRAP_CONTAINER, type)
   ) {
     return { kind: 'wrap', wrapperType: AUTOWRAP_CONTAINER, parentId: page.id }

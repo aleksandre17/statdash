@@ -21,7 +21,7 @@ beforeAll(() => { setupCanvasRegistry() })
 
 // A page with one container (section) + one leaf (hero), each selectable.
 const page: CanvasPage = {
-  id: 'p1', title: { ka: 'გ', en: 'P' }, slug: 'p',
+  id: 'p1', type: 'inner-page', title: { ka: 'გ', en: 'P' }, slug: 'p',
   nodeIds: ['sec', 'her'],
   nodes: {
     sec: { id: 'sec', type: 'section',   props: {}, childIds: [] },

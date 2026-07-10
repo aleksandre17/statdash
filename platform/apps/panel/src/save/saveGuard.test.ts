@@ -18,7 +18,7 @@ const LOCALES = ['ka', 'en'] as const
 /** A clean, save-ready page: a section with a title + a complete-locale hero. */
 function validPage(): CanvasPage {
   return {
-    id: 'p1', title: { ka: 'გვერდი', en: 'Page' }, slug: 'p1',
+    id: 'p1', type: 'inner-page', title: { ka: 'გვერდი', en: 'Page' }, slug: 'p1',
     nodeIds: ['s1', 'h1'],
     nodes: {
       s1: { id: 's1', type: 'section', props: { title: 'GDP' }, childIds: [] },

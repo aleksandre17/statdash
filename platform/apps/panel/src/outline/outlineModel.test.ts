@@ -4,7 +4,7 @@ import { buildOutlineRows } from './outlineModel'
 import type { CanvasPage } from '../types/constructor'
 
 const page: CanvasPage = {
-  id: 'p1', title: { ka: 'გ', en: 'P' }, slug: 'p',
+  id: 'p1', type: 'inner-page', title: { ka: 'გ', en: 'P' }, slug: 'p',
   nodeIds: ['a', 'b'],
   nodes: {
     a:  { id: 'a',  type: 'section', props: { title: 'Overview' }, childIds: ['a1'] },

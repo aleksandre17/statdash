@@ -1,10 +1,11 @@
 import { describe, it, expect } from 'vitest'
-import { toNodePageConfig, fromNodePageConfig } from './canvasPageAdapter'
+import { toNodePageConfig, fromNodePageConfig, DEFAULT_PAGE_TYPE } from './canvasPageAdapter'
 import type { CanvasPage, PageMeta }  from '../types/constructor'
 import type { NodePageConfig, PageConfigBase } from '@statdash/react/engine'
 
 const page: CanvasPage = {
   id:    'page-2',
+  type:  'inner-page',
   title: { ka: 'მშპ', en: 'GDP' },
   slug:  'gdp',
   nodeIds: ['n1', 'n2'],
@@ -91,7 +92,7 @@ describe('round-trip fitness (ADR): fromNodePageConfig ∘ toNodePageConfig = id
     // A node whose props carry nested structure — the shape a dotted-path schema
     // field (e.g. "view.width", "series.0.color") authors via setAtPath.
     const nestedPage: CanvasPage = {
-      id: 'page-n', title: { ka: 'n', en: 'n' }, slug: 'n',
+      id: 'page-n', type: 'inner-page', title: { ka: 'n', en: 'n' }, slug: 'n',
       nodeIds: ['x1'],
       nodes: {
         x1: {
@@ -104,6 +105,51 @@ describe('round-trip fitness (ADR): fromNodePageConfig ∘ toNodePageConfig = id
     }
     const restored = fromNodePageConfig(toNodePageConfig(nestedPage), nestedPage.title)
     expect(restored).toEqual(nestedPage)
+  })
+})
+
+// ── FF-NO-PRIVILEGED-PAGE-TYPE — the page KIND round-trips losslessly ─────────
+//
+//  Law 1 (no privileged type) for the PAGE ROOT. The adapter must NOT stamp a
+//  hardcoded page-type literal: each page carries its OWN `type` and it survives
+//  fromNodePageConfig∘toNodePageConfig verbatim. Proven with a NON-inner-page
+//  fixture — if the adapter hardcodes `'inner-page'` (the old defect), the
+//  serialized type diverges from the page's declared kind and these fail. This
+//  locks the regression so the privileged hardcode cannot silently return.
+//
+describe('FF-NO-PRIVILEGED-PAGE-TYPE — the page kind is per-page, not hardcoded', () => {
+  // A page whose kind is NOT the historical privileged default — the adapter is
+  // kind-agnostic (pure string pass-through), so an arbitrary declared kind proves
+  // there is no baked-in literal.
+  const landingPage: CanvasPage = {
+    id: 'lp', type: 'landing', title: { ka: 'ლენდინგი', en: 'Landing' }, slug: 'lp',
+    nodeIds: ['h1'],
+    nodes: { h1: { id: 'h1', type: 'hero', props: { title: { ka: 'გ', en: 'H' } }, childIds: [] } },
+  }
+
+  it('toNodePageConfig stamps the page OWN type (not a privileged literal)', () => {
+    const cfg = toNodePageConfig(landingPage) as unknown as { type: string }
+    expect(cfg.type).toBe('landing')          // the page's own kind, verbatim
+    expect(cfg.type).not.toBe(DEFAULT_PAGE_TYPE)
+  })
+
+  it('the declared kind round-trips losslessly (no data-loss on load)', () => {
+    const restored = fromNodePageConfig(toNodePageConfig(landingPage), landingPage.title)
+    expect(restored.type).toBe('landing')     // was silently DROPPED before the fix
+    expect(restored).toEqual(landingPage)      // whole page, kind included
+  })
+
+  it('a tab-page kind is preserved distinctly (each kind keeps its own)', () => {
+    const tab: CanvasPage = { ...landingPage, id: 't', slug: 't', type: 'tab-page' }
+    const restored = fromNodePageConfig(toNodePageConfig(tab), tab.title)
+    expect(restored.type).toBe('tab-page')
+  })
+
+  it('a kind-less inbound config backstops to DEFAULT_PAGE_TYPE (symmetric fallback)', () => {
+    // Only a legacy/hand-authored config with no `type` uses the default — never a
+    // silent privilege over a declared kind.
+    const cfg = { id: 'k', path: 'k', children: [] } as unknown as NodePageConfig
+    expect(fromNodePageConfig(cfg).type).toBe(DEFAULT_PAGE_TYPE)
   })
 })
 
@@ -168,6 +214,7 @@ const fullMeta: PageMeta = {
 // A COMPLETE page: identity columns + every page-level field + a nested subtree.
 const fullPage: CanvasPage = {
   id:      'page-full',
+  type:    'inner-page',
   title:   { ka: 'სრული', en: 'Full' },
   slug:    'full',
   nodeIds: ['n1', 'n2'],

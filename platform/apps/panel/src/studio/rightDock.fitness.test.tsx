@@ -60,7 +60,7 @@ function renderDock(over: Partial<CanvasController>) {
 const HERO: CanvasNode = { id: 'n1', type: 'hero', props: {}, childIds: [] }
 
 function seedPage() {
-  const page: CanvasPage = { id: 'p1', title: { ka: 'გვ', en: 'Pg' }, slug: 'pg', nodeIds: [], nodes: {} }
+  const page: CanvasPage = { id: 'p1', type: 'inner-page', title: { ka: 'გვ', en: 'Pg' }, slug: 'pg', nodeIds: [], nodes: {} }
   useConstructorStore.setState({ pages: [page], activePageId: 'p1' })
 }
 

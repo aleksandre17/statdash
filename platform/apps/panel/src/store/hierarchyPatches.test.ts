@@ -12,6 +12,7 @@ import type { CanvasPage, CanvasNode } from '../types/constructor'
 function basePage(): CanvasPage {
   return {
     id:    'p1',
+    type:  'inner-page',
     title: { ka: 'გვ', en: 'Pg' },
     slug:  'pg',
     nodeIds: ['a', 'b'],
