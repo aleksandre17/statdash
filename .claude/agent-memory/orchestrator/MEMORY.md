@@ -5,6 +5,7 @@
 > This index holds only THIS-project facts + project-bound feedback. Rule: a lesson true on any codebase → kit; a fact of this repo → here.
 
 ## Feedback — project-bound
+> Agnostic leadership doctrine (idea-source, principled-refusal incl. vs owner, one-team observation-duty) lives in `kit/feedback/feedback_leadership_doctrine.md` — NOT here. This index holds only THIS-repo facts.
 - [green-gate panel typecheck](feedback_green_gate_panel_typecheck.md) — gate MUST include `pnpm lint` + `tsc -b apps/panel`; root typecheck is geostat-only
 - [gate render suite on data changes](feedback_gate_render_suite_on_data_changes.md) — config/data changes gating the CONSUMING app's render suite, not just own units
 - [localeString leak + apex blindspot](feedback_localestring_leak_apex_blindspot.md) — bilingual-but-string field = silent React #31; jsdom misses chart shells
