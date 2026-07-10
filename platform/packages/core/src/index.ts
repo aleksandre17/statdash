@@ -292,6 +292,17 @@ export { mergeScope }                                                   from './
 //  it, the render switch (V3) consumes it. Reversible: delete src/graph/ to revert.
 export type { NodeDeps, DepScanCtx, DepNode }                          from './graph/extractDeps'
 export { extractDeps }                                                 from './graph/extractDeps'
+// V2 (shadow-mode): the reactive query-graph engine + config compiler + the shared
+// core node-walker (consolidated here from packages/react so compilePage is arrow-clean;
+// the react target re-exports these). SHADOW-ONLY — nothing renders from the graph yet.
+export type { Equals }                                                 from './graph/engine'
+export { ReactiveGraph, deepEqual }                                    from './graph/engine'
+export type { GraphState, DeriveFn, QueryGraph, CompileOptions }       from './graph/compilePage'
+export { compilePage, depsToSources, diffState, SRC }                  from './graph/compilePage'
+export type { GenericNode, WalkedNode }                                from './graph/nodeWalk'
+export { isNodeObject, collectChildNodes, collectNodesDeep, DATA_CARRYING_KEYS } from './graph/nodeWalk'
+export type { ShadowStep, ShadowTransition, ShadowReport }             from './graph/shadow'
+export { runShadowParity }                                             from './graph/shadow'
 
 // ── Core Resolvers ────────────────────────────────────────────────────
 export type { SpecResolveObserver }                                     from './data/spec'

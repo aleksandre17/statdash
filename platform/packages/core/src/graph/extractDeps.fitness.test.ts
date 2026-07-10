@@ -122,10 +122,14 @@ describe('FF-EXTRACTDEPS-TOTAL — every named ref appears in the dep set', () =
 })
 
 // ── V2 / V3 scaffolds — honest pending (gate steps not yet built) ──────────────
-describe('reactive-graph fitness (SCAFFOLD — lands red/pending for V2–V4)', () => {
-  // FF-GRAPH-PARITY (V2 shadow): compilePage graph rows ≡ legacy resolveNodeRows rows
-  // across the provisioning corpus × perspectives × locales.
-  it.todo('FF-GRAPH-PARITY — shadow-mode graph rows ≡ legacy rows (V2)')
+describe('reactive-graph fitness (SCAFFOLD — lands red/pending for V3–V4)', () => {
+  // FF-GRAPH-PARITY (V2 shadow) is now LIVE — promoted out of this scaffold into
+  // `./shadow.fitness.test.ts` (compilePage → runShadowParity: no-under-fire + value
+  // parity + exact fan-out, plus the two demonstrated divergence findings). Kept here
+  // as a pointer so the scaffold history reads straight.
+  it('FF-GRAPH-PARITY — LIVE in ./shadow.fitness.test.ts (V2 shadow mode)', () => {
+    expect(true).toBe(true)
+  })
   // FF-EXACT-INVALIDATION (V3): writing param P re-evaluates exactly the nodes whose
   // dep-set contains P (counted, not sampled); writing an equal value re-evaluates zero.
   it.todo('FF-EXACT-INVALIDATION — param write invalidates exactly its dependents (V3)')
