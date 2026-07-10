@@ -41,6 +41,82 @@
   letter-spacing: 0.04em;
 }
 
+/* ── Accordion (few groups) — collapsible fieldset with a disclosure legend ──── */
+.insp__group-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--insp-gap-sm, 8px);
+}
+
+.insp__toggle {
+  display: flex;
+  align-items: center;
+  gap: var(--insp-gap-xs, 4px);
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  color: inherit;
+  text-transform: inherit;
+  letter-spacing: inherit;
+  cursor: pointer;
+  text-align: start;
+}
+.insp__toggle::before {
+  content: "";
+  width: 0;
+  height: 0;
+  border-inline-start: 4px solid currentColor;
+  border-block: 4px solid transparent;
+  transition: transform 0.12s ease;
+}
+.insp__group[data-open] .insp__toggle::before {
+  transform: rotate(90deg);
+}
+.insp__toggle:focus-visible {
+  outline: 2px solid var(--insp-focus, #2563eb);
+  outline-offset: 2px;
+  border-radius: var(--insp-radius-sm, 4px);
+}
+
+/* ── Tabs (many groups) — an ARIA tablist over the schema's own groups ────────── */
+.insp__tablist {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--insp-gap-xs, 4px);
+  border-bottom: 1px solid var(--insp-divider, #e2e8f0);
+}
+
+.insp__tab {
+  padding: var(--insp-gap-xs, 4px) var(--insp-gap-sm, 8px);
+  border: 0;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  background: none;
+  font: inherit;
+  font-size: var(--insp-font-sm, 0.8125rem);
+  color: var(--insp-muted, #64748b);
+  cursor: pointer;
+}
+.insp__tab[data-active] {
+  color: var(--insp-focus, #2563eb);
+  border-bottom-color: var(--insp-focus, #2563eb);
+  font-weight: 600;
+}
+.insp__tab:focus-visible {
+  outline: 2px solid var(--insp-focus, #2563eb);
+  outline-offset: 2px;
+  border-radius: var(--insp-radius-sm, 4px);
+}
+
+.insp__tabpanel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--insp-gap-sm, 8px);
+  padding-top: var(--insp-gap-sm, 8px);
+}
+
 .insp-field {
   display: flex;
   flex-direction: column;

@@ -1,4 +1,4 @@
-import { lazy, Suspense, useState } from 'react'
+import { lazy, Suspense, useState, type CSSProperties } from 'react'
 import { Box, Typography, Chip, GlobalStyles } from '@mui/material'
 // Token SSOT — the shell chrome reads @statdash/styles DTCG custom properties
 // (studio.css). Importing it here (not in main.tsx) keeps the token layer in the
@@ -72,6 +72,12 @@ export function StudioShell() {
   const activeLocales = useActiveLocales()
   const [previewLocale, setPreviewLocale] = useState<Locale | null>(null)
   const locale: Locale = previewLocale ?? activeLocales[0] ?? 'ka'
+
+  // Right-dock layout state (Wave 7): width + collapse are owned here so the shell
+  // GRID column resizes/reclaims — a CSS custom property drives the column width and
+  // `data-collapsed` collapses it, letting the canvas grow (no void possible).
+  const [dockCollapsed, setDockCollapsed] = useState(false)
+  const [dockWidth, setDockWidth] = useState(320)
 
   // The live skin: Strata base + the author's themeOverrides on top (overrides win).
   // Applied as custom properties on the DOCUMENT ROOT (`:root:root`) rather than
@@ -160,8 +166,21 @@ export function StudioShell() {
       </Box>
 
       {/* ── Right dock — selection-contextual Inspector ──────────────────── */}
-      <Box component="aside" aria-label={locale === 'en' ? 'Inspector' : 'ინსპექტორი'} className="studio-right-dock">
-        <RightDock controller={controller} locale={locale} />
+      <Box
+        component="aside"
+        aria-label={locale === 'en' ? 'Inspector' : 'ინსპექტორი'}
+        className="studio-right-dock"
+        data-collapsed={dockCollapsed || undefined}
+        style={{ '--studio-dock-w': `${dockWidth}px` } as CSSProperties}
+      >
+        <RightDock
+          controller={controller}
+          locale={locale}
+          collapsed={dockCollapsed}
+          onToggleCollapsed={() => setDockCollapsed((c) => !c)}
+          width={dockWidth}
+          onResize={setDockWidth}
+        />
       </Box>
 
       {/* ── Bottom strip — page tabs + status ────────────────────────────── */}

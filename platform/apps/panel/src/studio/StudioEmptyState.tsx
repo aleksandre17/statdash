@@ -64,9 +64,15 @@ export interface StudioEmptyStateProps {
    * when the host surface has no action to offer — the CTA is then not rendered.
    */
   onAction?: () => void
+  /**
+   * Fill the host's full height and center within it (fill-by-construction). The
+   * right dock passes this so the "nothing selected / no pages" state occupies the
+   * whole content region instead of a short island above a void (FF-RIGHTDOCK-FILLS).
+   */
+  fill?:     boolean
 }
 
-export function StudioEmptyState({ kind, locale, onAction }: StudioEmptyStateProps) {
+export function StudioEmptyState({ kind, locale, onAction, fill = false }: StudioEmptyStateProps) {
   const copy  = COPY[kind]
   const Icon  = copy.icon
   const title = copy.title[locale] ?? copy.title.en
@@ -82,6 +88,7 @@ export function StudioEmptyState({ kind, locale, onAction }: StudioEmptyStatePro
         display: 'flex', flexDirection: 'column', alignItems: 'center',
         justifyContent: 'center', textAlign: 'center', gap: 1,
         color: 'text.disabled', p: 3,
+        ...(fill ? { flex: 1, minHeight: 0, height: '100%' } : null),
       }}
     >
       <Icon sx={{ fontSize: 40 }} />

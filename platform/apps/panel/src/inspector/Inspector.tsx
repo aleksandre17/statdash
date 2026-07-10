@@ -20,7 +20,7 @@
 //  sections, every control labelled (label[htmlFor]), required marked in the
 //  accessible name, validation errors associated via aria-describedby.
 //
-import { useCallback, useMemo } from 'react'
+import { useCallback, useMemo, useState, type KeyboardEvent as ReactKeyboardEvent } from 'react'
 import type { PropField, PropSchema, PropertyGroup, LocaleString } from '@statdash/react/engine'
 import { fieldControlRegistry } from './FieldControlRegistry'
 import { isVisible, getAtPath } from './showWhen'
@@ -72,6 +72,17 @@ function groupFields(
   return out
 }
 
+// ── Group presentation (D9 hybrid — DERIVED, never hardcoded) ─────────────────
+//
+//  The node's contextual sections come from the schema's OWN `group`s (Seam-2 is
+//  untouched — we only *present* what groupFields already computed). Few groups →
+//  a collapsible accordion (all open by default, WCAG disclosure buttons). Many →
+//  a tablist, so a group-rich node does not become an unusable long scroll. A slice
+//  that declares a new group gets a new section/tab for FREE (OCP — no triad here).
+//
+const GROUP_TAB_THRESHOLD = 4 // ≥ this many LABELLED groups → tabs; else accordion.
+const MORE_LABEL: LocaleString = { ka: 'სხვა', en: 'More' } as Record<string, string>
+
 // ── Inspector ───────────────────────────────────────────────────────────────
 
 export interface InspectorProps {
@@ -106,6 +117,15 @@ export function Inspector({ node, onChange, schemaSource = nodeSchemaSource }: I
     () => groupFields(schema, groups, locale),
     [schema, groups, locale],
   )
+
+  // Presentation state (D9): which accordion sections are collapsed (default: none)
+  // and, in tabs mode, the active tab. Kept as view-state — the schema seam is pure.
+  const [collapsed, setCollapsed] = useState<Set<string>>(() => new Set())
+  const [activeTab, setActiveTab] = useState(0)
+
+  const labelledCount = fieldGroups.filter((g) => g.label).length
+  const useTabs       = labelledCount >= GROUP_TAB_THRESHOLD
+  const moreLabel     = resolveLabel(MORE_LABEL, locale, 'More')
 
   const renderField = useCallback(
     (field: PropField) => {
@@ -158,20 +178,101 @@ export function Inspector({ node, onChange, schemaSource = nodeSchemaSource }: I
     )
   }
 
-  return (
-    <div className="insp" data-testid="inspector">
-      {fieldGroups.map((g) =>
-        g.label ? (
-          <fieldset className="insp__group" key={g.key}>
-            <legend className="insp__legend">{g.label}</legend>
-            {g.fields.map(renderField)}
-          </fieldset>
-        ) : (
-          <div className="insp__group insp__group--plain" key={g.key} role="group">
+  // ── Tabs presentation (many groups) — an ARIA tablist over the schema groups ──
+  //  All panels stay MOUNTED (inactive ones `hidden`) so field state never resets
+  //  on tab-switch and every control is addressable — the tabs are pure chrome over
+  //  the same generic renderer.
+  if (useTabs) {
+    const active = Math.min(activeTab, fieldGroups.length - 1)
+    const onTabKey = (e: ReactKeyboardEvent, i: number) => {
+      const last = fieldGroups.length - 1
+      if (e.key === 'ArrowRight' || e.key === 'ArrowDown')      setActiveTab(i === last ? 0 : i + 1)
+      else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp')    setActiveTab(i === 0 ? last : i - 1)
+      else if (e.key === 'Home')                                setActiveTab(0)
+      else if (e.key === 'End')                                 setActiveTab(last)
+      else return
+      e.preventDefault()
+    }
+    return (
+      <div className="insp" data-testid="inspector">
+        <div className="insp__tablist" role="tablist" aria-label="Inspector sections">
+          {fieldGroups.map((g, i) => (
+            <button
+              key={g.key}
+              role="tab"
+              type="button"
+              id={`insp-tab-${i}`}
+              aria-selected={i === active}
+              aria-controls={`insp-panel-${i}`}
+              tabIndex={i === active ? 0 : -1}
+              data-active={i === active || undefined}
+              className="insp__tab"
+              onClick={() => setActiveTab(i)}
+              onKeyDown={(e) => onTabKey(e, i)}
+            >
+              {g.label || moreLabel}
+            </button>
+          ))}
+        </div>
+        {fieldGroups.map((g, i) => (
+          <div
+            key={g.key}
+            role="tabpanel"
+            id={`insp-panel-${i}`}
+            aria-labelledby={`insp-tab-${i}`}
+            hidden={i !== active}
+            className="insp__tabpanel"
+          >
             {g.fields.map(renderField)}
           </div>
-        ),
-      )}
+        ))}
+      </div>
+    )
+  }
+
+  // ── Accordion presentation (few groups) — collapsible fieldsets, open by default.
+  //  <fieldset>/<legend> keeps the WCAG form-grouping semantics; the legend hosts a
+  //  disclosure <button aria-expanded> controlling the body region. The unlabelled
+  //  tail stays a plain group (nothing to collapse).
+  const toggle = (key: string) =>
+    setCollapsed((prev) => {
+      const next = new Set(prev)
+      if (next.has(key)) next.delete(key)
+      else next.add(key)
+      return next
+    })
+
+  return (
+    <div className="insp" data-testid="inspector">
+      {fieldGroups.map((g) => {
+        if (!g.label) {
+          return (
+            <div className="insp__group insp__group--plain" key={g.key} role="group">
+              {g.fields.map(renderField)}
+            </div>
+          )
+        }
+        const open   = !collapsed.has(g.key)
+        const bodyId = `insp-body-${g.key.replace(/[^\w-]/g, '-')}`
+        return (
+          <fieldset className="insp__group" key={g.key} data-open={open || undefined}>
+            <legend className="insp__legend">
+              <button
+                type="button"
+                className="insp__toggle"
+                aria-expanded={open}
+                aria-controls={bodyId}
+                onClick={() => toggle(g.key)}
+              >
+                {g.label}
+              </button>
+            </legend>
+            <div id={bodyId} className="insp__group-body" hidden={!open}>
+              {g.fields.map(renderField)}
+            </div>
+          </fieldset>
+        )
+      })}
     </div>
   )
 }
