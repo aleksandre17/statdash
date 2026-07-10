@@ -1,5 +1,6 @@
-import type { NodeBase, NodeDef, SlotDef, PropSchema } from '@statdash/react/engine'
+import type { NodeBase, NodeDef, SlotDef } from '@statdash/react/engine'
 import type { NodeStyles }                 from '@statdash/styles'
+import { defineSchema, type AssertSchemaCovers, type Expect } from '../../../../schema-contract'
 
 // Transparent layout node — distributes styles to all direct children.
 // styles = base; child view.styles always override.
@@ -10,9 +11,14 @@ export interface WrapNode extends NodeBase {
   children: NodeDef[]
 }
 
-export const WrapSchema: PropSchema = [
+export const WrapSchema = defineSchema([
   { field: 'styles', type: 'object', label: { ka: 'სტილები', en: 'Styles' } },
-]
+])
+
+// FF-SCHEMA-COMPLETE (tier b): 1:1 with editable keys (children slot excluded).
+// `styles` (NodeStyles) is covered top-level as an opaque object; structured
+// per-property authoring is the tier-c backlog.
+export type _WrapCovers = Expect<AssertSchemaCovers<WrapNode, typeof WrapSchema>>
 
 export const WrapSlots: Record<string, SlotDef> = {
   children: {

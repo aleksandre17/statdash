@@ -1,4 +1,5 @@
-import type { NodeBase, PropSchema } from '@statdash/react/engine'
+import type { NodeBase } from '@statdash/react/engine'
+import { defineSchema, type AssertSchemaCovers, type Expect } from '../../../schema-contract'
 
 // ── PerspectiveBarNode — the perspective-axis toggle (VISION #3) ──────────────
 //
@@ -15,9 +16,12 @@ export interface PerspectiveBarNode extends NodeBase {
   key?: string
 }
 
-export const PerspectiveBarSchema: PropSchema = [
+export const PerspectiveBarSchema = defineSchema([
   { field: 'key', type: 'string', label: { ka: 'ღერძის პარამეტრის გასაღები', en: 'Axis Param Key' } },
-]
+])
+
+// FF-SCHEMA-COMPLETE (tier b): 1:1 with editable keys.
+export type _PerspectiveBarCovers = Expect<AssertSchemaCovers<PerspectiveBarNode, typeof PerspectiveBarSchema>>
 
 declare module '@statdash/react/engine' {
   interface NodeTypeMap { 'perspective-bar': PerspectiveBarNode }

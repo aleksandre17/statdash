@@ -548,6 +548,22 @@
           "description": "string field",
           "type": "string"
         },
+        "label": {
+          "title": "Label",
+          "description": "string field",
+          "type": "string"
+        },
+        "color": {
+          "title": "Colour",
+          "description": "color field",
+          "type": "string",
+          "$comment": "color"
+        },
+        "anchor": {
+          "title": "Anchor ID",
+          "description": "string field",
+          "type": "string"
+        },
         "geoJsonUrl": {
           "title": "GeoJSON URL",
           "description": "string field",

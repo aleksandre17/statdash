@@ -1,5 +1,6 @@
-import type { NodeBase, NodeDef, SlotDef, PropertyGroup, PropSchema } from '@statdash/react/engine'
+import type { NodeBase, NodeDef, SlotDef, PropertyGroup } from '@statdash/react/engine'
 import type { ResponsiveVal, LayoutAlign }                 from '@statdash/styles'
+import { defineSchema, type AssertSchemaCovers, type Expect } from '../../../../schema-contract'
 
 export interface StackNode extends NodeBase {
   type:       'stack'
@@ -11,7 +12,7 @@ export interface StackNode extends NodeBase {
   children:   NodeDef[]
 }
 
-export const StackSchema: PropSchema = [
+export const StackSchema = defineSchema([
   {
     field:   'direction',
     type:    'string',
@@ -36,7 +37,10 @@ export const StackSchema: PropSchema = [
       { value: 'end',     label: { ka: 'დასასრული', en: 'End' } },
     ],
   },
-]
+])
+
+// FF-SCHEMA-COMPLETE (tier b): 1:1 with editable keys (children slot excluded).
+export type _StackCovers = Expect<AssertSchemaCovers<StackNode, typeof StackSchema>>
 
 export const StackDefaults: Partial<StackNode> = { direction: 'column' }
 

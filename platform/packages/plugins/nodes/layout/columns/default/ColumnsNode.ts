@@ -1,5 +1,6 @@
-import type { NodeBase, NodeDef, SlotDef, PropertyGroup, PropSchema } from '@statdash/react/engine'
+import type { NodeBase, NodeDef, SlotDef, PropertyGroup } from '@statdash/react/engine'
 import type { ResponsiveVal, LayoutAlign }                 from '@statdash/styles'
+import { defineSchema, type AssertSchemaCovers, type Expect } from '../../../../schema-contract'
 
 export interface ColumnsNode extends NodeBase {
   type:     'columns'
@@ -10,7 +11,7 @@ export interface ColumnsNode extends NodeBase {
   children: NodeDef[]
 }
 
-export const ColumnsSchema: PropSchema = [
+export const ColumnsSchema = defineSchema([
   { field: 'count', type: 'number', label: { ka: 'სვეტები',  en: 'Columns' }, default: 2 },
   { field: 'gap',   type: 'string', label: { ka: 'დაშორება', en: 'Gap' }, default: 'var(--spacing-md)' },
   {
@@ -25,7 +26,10 @@ export const ColumnsSchema: PropSchema = [
       { value: 'end',     label: { ka: 'დასასრული', en: 'End' } },
     ],
   },
-]
+])
+
+// FF-SCHEMA-COMPLETE (tier b): 1:1 with editable keys (children slot excluded).
+export type _ColumnsCovers = Expect<AssertSchemaCovers<ColumnsNode, typeof ColumnsSchema>>
 
 export const ColumnsDefaults: Partial<ColumnsNode> = { count: 2 }
 

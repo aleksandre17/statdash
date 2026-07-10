@@ -32,9 +32,14 @@ describe('Inspector — schema-driven rendering (C1)', () => {
     }
   })
 
-  it('shows an invitation (not a dead panel) for a type without a schema', () => {
+  it('renders the inspector shell (no dead "no schema" panel) for an unregistered type', () => {
+    // Wave 8 (FF-SCHEMA-COMPLETE): the dead-end "No property schema for X yet"
+    // branch is retired — every registered placeable is guaranteed a schema by
+    // construction, so an empty schema can only mean an unregistered type. The
+    // Inspector renders its (empty) shell rather than a friendlier dead message.
     render(<Inspector node={node({ type: 'not-a-real-type' })} onChange={() => {}} />)
-    expect(screen.getByText(/No property schema/i)).toBeInTheDocument()
+    expect(screen.getByTestId('inspector')).toBeInTheDocument()
+    expect(screen.queryByText(/No property schema/i)).not.toBeInTheDocument()
   })
 
   it('renders a LocaleField with one input per active locale for LocaleString fields', () => {

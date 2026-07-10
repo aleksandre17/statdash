@@ -1,4 +1,6 @@
-import type { NodeSliceMeta, PropSchema, PropertyGroup } from '@statdash/react/engine'
+import type { NodeSliceMeta, PropertyGroup } from '@statdash/react/engine'
+import type { FilterBarNode } from './FilterBarNode'
+import { defineSchema, type AssertSchemaCovers, type Expect } from '../../../schema-contract'
 
 // ── FilterBarSchema — the inspector-editable props of a filter-bar node ──
 //
@@ -7,13 +9,18 @@ import type { NodeSliceMeta, PropSchema, PropertyGroup } from '@statdash/react/e
 //  variable list). Its only authored prop is `barIds` — which named bars to
 //  render. Absent ⇒ render all bars. This is an array of bar-id strings.
 //
-export const FilterBarSchema: PropSchema = [
+export const FilterBarSchema = defineSchema([
   {
     field: 'barIds',
     type:  'array',
     label: { ka: 'საჩვენებელი ბარები', en: 'Bars to show' },
   },
-]
+])
+
+// FF-SCHEMA-COMPLETE (tier b): 1:1 with FilterBarNode's editable keys. `barIds`
+// (string[]) is covered top-level as an opaque array; the bar-id picker is the
+// tier-c backlog.
+export type _FilterBarCovers = Expect<AssertSchemaCovers<FilterBarNode, typeof FilterBarSchema>>
 
 export const FilterBarGroups: PropertyGroup[] = [
   { label: { ka: 'ფილტრები', en: 'Filters' }, fields: ['barIds'] },

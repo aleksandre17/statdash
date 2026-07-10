@@ -1,5 +1,6 @@
-import type { NodeBase, PropertyGroup, SlotDef, PropSchema } from '@statdash/react/engine'
+import type { NodeBase, PropertyGroup, SlotDef } from '@statdash/react/engine'
 import type { FeaturedItemSpec }                            from '@statdash/engine'
+import { defineSchema, type AssertSchemaCovers, type Expect } from '../../../schema-contract'
 
 /**
  * featured-slider — a DATA-BOUND headline carousel (AR-40, first consumer of the
@@ -25,11 +26,15 @@ export interface FeaturedSliderNode extends NodeBase {
   preliminaryBadge?: boolean
 }
 
-export const FeaturedSliderSchema: PropSchema = [
+export const FeaturedSliderSchema = defineSchema([
   { field: 'autoplayMs',       type: 'number',  label: { ka: 'ავტოთამაში (ms)', en: 'Autoplay (ms)' }, default: 7000 },
   { field: 'preliminaryBadge', type: 'boolean', label: { ka: 'წინასწარი ნიშანი', en: 'Preliminary badge' }, default: true },
   { field: 'items',            type: 'array',   label: { ka: 'ფიჩერ-ელემენტები', en: 'Featured items' }, required: true },
-]
+])
+
+// FF-SCHEMA-COMPLETE (tier b): 1:1 with editable keys. `items` (FeaturedItemSpec[])
+// is covered top-level; per-item metric-ref authoring is the tier-c backlog.
+export type _FeaturedSliderCovers = Expect<AssertSchemaCovers<FeaturedSliderNode, typeof FeaturedSliderSchema>>
 
 export const FeaturedSliderDefaults: Partial<FeaturedSliderNode> = {
   autoplayMs:       7000,

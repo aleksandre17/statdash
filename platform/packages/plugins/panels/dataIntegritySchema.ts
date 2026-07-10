@@ -19,19 +19,24 @@
 //  Bilingual labels (Law 4 i18n) — a tenant-free catalog fragment, parallel to
 //  each panel's own schema labels.
 //
-import type { PropField } from '@statdash/react/engine'
+import { defineSchema } from '../schema-contract'
 
 /**
  * The data-integrity field(s) a data panel adds to its PropSchema. Spread into
  * the panel's schema array; reference the field name(s) from a PropertyGroup.
+ *
+ * Declared via `defineSchema` so the `preliminary` field NAME survives at the type
+ * level — a panel that spreads this fragment into `defineSchema([...])` keeps the
+ * literal, so `AssertSchemaCovers` (FF-SCHEMA-COMPLETE tier b) sees `preliminary`
+ * as covered. A plain `PropField[]` would widen it to `string` and defeat the gate.
  */
-export const DATA_INTEGRITY_SCHEMA: PropField[] = [
+export const DATA_INTEGRITY_SCHEMA = defineSchema([
   {
     field: 'preliminary',
     type:  'boolean',
     label: { ka: 'წინასწარი მონაცემები', en: 'Preliminary data' },
   },
-]
+])
 
 /** The field names this fragment contributes — for a panel's PropertyGroup.fields. */
 export const DATA_INTEGRITY_FIELDS = ['preliminary'] as const

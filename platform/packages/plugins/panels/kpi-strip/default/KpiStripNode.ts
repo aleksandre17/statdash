@@ -1,5 +1,6 @@
-import type { NodeBase, PropertyGroup, PropSchema } from '@statdash/react/engine'
+import type { NodeBase, PropertyGroup } from '@statdash/react/engine'
 import type { KpiSpec }                 from '@statdash/engine'
+import { defineSchema, type AssertSchemaCovers, type Expect } from '../../../schema-contract'
 
 export interface KpiStripNode extends NodeBase {
   type:  'kpi-strip'
@@ -18,9 +19,13 @@ export interface KpiStripNode extends NodeBase {
 //  nested `itemSchema` (a core PropField widen + a panel array-item resolver) is
 //  the documented fast-follow; both live OUTSIDE this layer's scope (core +
 //  apps/panel), so this schema stays byte-identical for now (additive floor).
-export const KpiStripSchema: PropSchema = [
+export const KpiStripSchema = defineSchema([
   { field: 'items', type: 'array', label: { ka: 'KPI მეტრიკები', en: 'KPI metrics' }, required: true },
-]
+])
+
+// FF-SCHEMA-COMPLETE (tier b): `items` (KpiSpec[]) covered top-level; the per-item
+// governed metric-ref (value.measure) is the tier-c itemSchema backlog (SCHEMA_TODO).
+export type _KpiStripCovers = Expect<AssertSchemaCovers<KpiStripNode, typeof KpiStripSchema>>
 
 export const KpiStripGroups: PropertyGroup[] = [
   { label: { ka: 'მეტრიკები', en: 'Metrics' }, fields: ['items'] },

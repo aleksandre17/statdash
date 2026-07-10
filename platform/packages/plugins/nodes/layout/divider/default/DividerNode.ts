@@ -1,11 +1,12 @@
-import type { NodeBase, PropertyGroup, PropSchema } from '@statdash/react/engine'
+import type { NodeBase, PropertyGroup } from '@statdash/react/engine'
+import { defineSchema, type AssertSchemaCovers, type Expect } from '../../../../schema-contract'
 
 export interface DividerNode extends NodeBase {
   type:     'divider'
   variant?: 'solid' | 'dashed' | 'invisible'
 }
 
-export const DividerSchema: PropSchema = [
+export const DividerSchema = defineSchema([
   {
     field:   'variant',
     type:    'string',
@@ -17,7 +18,12 @@ export const DividerSchema: PropSchema = [
       { value: 'invisible', label: { ka: 'უხილავი',     en: 'Invisible' } },
     ],
   },
-]
+])
+
+// FF-SCHEMA-COMPLETE (tier b): divider's only authored prop `variant` is a
+// NodeBase key (the registry-variant slot), so EditableKeys resolves to none and
+// the assert holds trivially; the schema still authors it via the generic panel.
+export type _DividerCovers = Expect<AssertSchemaCovers<DividerNode, typeof DividerSchema>>
 
 export const DividerDefaults: Partial<DividerNode> = { variant: 'solid' }
 

@@ -1,4 +1,5 @@
-import type { NodeBase, NodeDef, SlotDef, PropSchema } from '@statdash/react/engine'
+import type { NodeBase, NodeDef, SlotDef } from '@statdash/react/engine'
+import { defineSchema, type AssertSchemaCovers, type Expect } from '../../../schema-contract'
 
 // ── RepeatNode — Builder.io RepeatData pattern ───────────────────────────
 //
@@ -21,10 +22,14 @@ export interface RepeatNode extends NodeBase {
   children: NodeDef[]
 }
 
-export const RepeatSchema: PropSchema = [
+export const RepeatSchema = defineSchema([
   { field: 'as',   type: 'string', label: { ka: 'ცვლადის სახელი', en: 'Variable name' }, required: true },
   { field: 'each', type: 'array',  label: { ka: 'სტატიკური სია',  en: 'Static list' } },
-]
+])
+
+// FF-SCHEMA-COMPLETE (tier b): 1:1 with editable keys. `each` (Record[]) is covered
+// top-level; per-item authoring is the tier-c backlog.
+export type _RepeatCovers = Expect<AssertSchemaCovers<RepeatNode, typeof RepeatSchema>>
 
 export const RepeatDefaults: Partial<RepeatNode> = {
   as: 'item',

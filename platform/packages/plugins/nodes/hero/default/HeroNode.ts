@@ -1,4 +1,5 @@
-import type { NodeBase, PropertyGroup, SlotDef, LocaleString, PropSchema } from '@statdash/react/engine'
+import type { NodeBase, PropertyGroup, SlotDef, LocaleString } from '@statdash/react/engine'
+import { defineSchema, type AssertSchemaCovers, type Expect } from '../../../schema-contract'
 
 export interface HeroCardDef {
   id:     string
@@ -16,11 +17,16 @@ export interface HeroNode extends NodeBase {
   cards:     HeroCardDef[]
 }
 
-export const HeroSchema: PropSchema = [
+export const HeroSchema = defineSchema([
   { field: 'title',    type: 'LocaleString', label: { ka: 'სათაური',    en: 'Title' }, required: true },
   { field: 'subtitle', type: 'LocaleString', label: { ka: 'ქვესათაური', en: 'Subtitle' } },
   { field: 'cards',    type: 'array',        label: { ka: 'ბარათები',   en: 'Cards' }, required: true },
-]
+])
+
+// FF-SCHEMA-COMPLETE (tier b): HeroSchema is 1:1 with HeroNode's editable keys.
+// `cards` (HeroCardDef[]) is covered top-level; its per-item authoring is the
+// tier-c itemSchema backlog (SCHEMA_TODO in schema-completeness.fitness.test.ts).
+export type _HeroCovers = Expect<AssertSchemaCovers<HeroNode, typeof HeroSchema>>
 
 // ── HeroDefaults — must be SAVE-GUARD-valid the instant the node is dropped ──
 //

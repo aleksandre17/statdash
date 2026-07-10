@@ -1,5 +1,6 @@
-import type { NodeBase, NodeDef, ViewParams, PropertyGroup, SlotDef, PropSchema } from '@statdash/react/engine'
+import type { NodeBase, NodeDef, ViewParams, PropertyGroup, SlotDef } from '@statdash/react/engine'
 import type { DataSpec, LocaleString }                                 from '@statdash/engine'
+import { defineSchema, type AssertSchemaCovers, type Expect } from '../../../schema-contract'
 
 export interface GeographNode extends NodeBase {
   type:             'geograph'
@@ -40,8 +41,14 @@ export interface GeographNode extends NodeBase {
   maxSelect?:       number
 }
 
-export const GeographSchema: PropSchema = [
+export const GeographSchema = defineSchema([
   { field: 'title',       type: 'string',  label: { ka: 'სათაური',          en: 'Title' }, required: true },
+  // Content props (label/color/anchor) — previously referenced by GeographGroups
+  // but ABSENT from the schema (dead group fields → nothing rendered). Added here
+  // (root-cause, Wave 8 tier b) so the panel authors them, mirroring SectionSchema.
+  { field: 'label',       type: 'string',  label: { ka: 'წარწერა',           en: 'Label' } },
+  { field: 'color',       type: 'color',   label: { ka: 'ფერი',             en: 'Colour' } },
+  { field: 'anchor',      type: 'string',  label: { ka: 'მიმაგრების ID',      en: 'Anchor ID' } },
   { field: 'geoJsonUrl',  type: 'string',  label: { ka: 'GeoJSON URL',       en: 'GeoJSON URL' }, required: true },
   { field: 'paramKey',    type: 'string',  label: { ka: 'პარამეტრის გასაღები', en: 'Param key' }, required: true },
   { field: 'isoField',    type: 'string',  label: { ka: 'ISO ველი',          en: 'ISO field' }, required: true },
@@ -49,7 +56,21 @@ export const GeographSchema: PropSchema = [
   { field: 'unit',        type: 'string',  label: { ka: 'ერთეული',           en: 'Unit' } },
   { field: 'multiSelect', type: 'boolean', label: { ka: 'მრავლობითი არჩევა',   en: 'Multiple select' } },
   { field: 'maxSelect',   type: 'number',  label: { ka: 'მაქს. არჩევანი',      en: 'Max select' }, default: 2 },
-]
+])
+
+// FF-SCHEMA-COMPLETE (tier b): 1:1 with editable keys (id/data/view/children
+// excluded as system/slot). Documented deferrals (SCHEMA_TODO):
+//   labelOverrides — Record<iso, LocaleString>: nested per-region tooltip overrides,
+//                    awaiting the tier-c itemSchema seam (opaque object today).
+//   occupiedIso    — string[]: nested list of occupied-territory ISO codes (tier c).
+//   initialCenter / initialZoom — VESTIGIAL (Leaflet-era viewport hints; the
+//                    declarative SVG choropleth ignores them) → intentionally NOT
+//                    authorable.
+export type _GeographCovers = Expect<AssertSchemaCovers<
+  GeographNode,
+  typeof GeographSchema,
+  'labelOverrides' | 'occupiedIso' | 'initialCenter' | 'initialZoom'
+>>
 
 export const GeographSlots: Record<string, SlotDef> = {
   children: {
@@ -62,7 +83,7 @@ export const GeographSlots: Record<string, SlotDef> = {
 }
 
 export const GeographGroups: PropertyGroup[] = [
-  { label: { ka: 'შიგთავსი',   en: 'Content'  }, fields: ['title', 'label', 'color'] },
+  { label: { ka: 'შიგთავსი',   en: 'Content'  }, fields: ['title', 'label', 'color', 'anchor'] },
   { label: { ka: 'კარტოგრაფია', en: 'Map'      }, fields: ['geoJsonUrl', 'paramKey', 'isoField', 'unit', 'multiSelect', 'maxSelect'] },
 ]
 

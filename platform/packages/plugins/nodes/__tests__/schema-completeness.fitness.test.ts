@@ -31,8 +31,9 @@
 
 import { describe, it, expect } from 'vitest'
 import type {
-  NodeSliceMeta, PanelSliceMeta, PageSliceMeta, ChromeSliceMeta, PropSchema,
+  NodeSliceMeta, PanelSliceMeta, PageSliceMeta, ChromeSliceMeta, PropSchema, PropField,
 } from '@statdash/react/engine/slice-meta'
+import { propSchemaToSubSchema } from '@statdash/react/engine'
 
 // Page-canvas metas all carry `.type` (unlike chrome/control). Narrow the corpus
 // to exactly these three sliceTypes so the fitness can index `.type` directly.
@@ -137,6 +138,145 @@ describe('Constructor C0 — schema completeness (fitness #1)', () => {
     expect(hasNonEmptySchema(chart)).toBe(true)
     expect(hasNonEmptySchema(table)).toBe(true)
     expect(hasNonEmptySchema(kpiStrip)).toBe(true)
+  })
+
+})
+
+// ── Fitness #1 UPGRADED — non-empty → INTERFACE-COMPLETE (Wave 8, tier a) ──────
+//
+//  Non-empty is necessary but not sufficient: a placeable could ship a token
+//  one-field schema and still silently drop props from the Inspector. Tier a
+//  strengthens the runtime gate with two structural oracles the runtime CAN see
+//  (TS interfaces are erased — the compile-time 1:1 half lives beside each schema
+//  as `AssertSchemaCovers`, packages/plugins/schema-contract.ts):
+//
+//    (1) defaults-coverage — every key a meta ships in its runtime `defaults`
+//        (its authored seed) MUST have a schema field. A default with no editable
+//        control is a prop the author can never see or change → an Inspector gap.
+//    (2) JSON-Schema round-trip — the emitted authoring subschema
+//        (propSchemaToSubSchema, the SAME bridge generatePageConfigSchema uses)
+//        MUST expose exactly the schema's field-set: no field silently dropped,
+//        no phantom property invented. This pins the schema↔wire contract lossless.
+//
+//  Together with the compile-time 1:1 assert, this makes an incomplete placeable
+//  FAIL THE BUILD → Inspector.tsx's empty branch is unreachable by construction.
+
+// System / structural keys never authored as a top-level scalar prop (NodeBase +
+// child-slot). Mirrors schema-contract.ts's SystemKeys — kept as a runtime literal
+// set because the type is erased. A default carrying one of these (e.g. section's
+// seeded `view`) is structural, not an authored prop, so it is exempt.
+const SYSTEM_KEYS: ReadonlySet<string> = new Set<string>([
+  'type', 'id', 'variant', 'data', 'view', 'storeKey', 'variants', 'visibleToRoles',
+  'transforms', 'fieldConfig', 'vars', 'dataLinks', 'on', 'children',
+])
+
+/** Top-level segment of a (possibly dot-path) schema field. */
+const topLevel = (field: string): string => field.split('.')[0]
+
+/** The set of top-level field names a meta's schema declares. */
+function schemaTopLevelFields(m: PlaceableMeta): Set<string> {
+  const schema = (m.schema as PropSchema | undefined) ?? []
+  return new Set(schema.map(f => topLevel(f.field)))
+}
+
+describe('Constructor C0 — schema completeness is INTERFACE-COMPLETE (fitness #1, tier a)', () => {
+
+  it('every default key (minus system/slot keys) is covered by a schema field', () => {
+    const offenders: string[] = []
+    for (const m of ALL_METAS.filter(requiresSchema)) {
+      const defaults = (m as { defaults?: Record<string, unknown> }).defaults ?? {}
+      const covered  = schemaTopLevelFields(m)
+      for (const key of Object.keys(defaults)) {
+        if (SYSTEM_KEYS.has(key)) continue
+        if (!covered.has(key)) offenders.push(`${m.type}.${key}`)
+      }
+    }
+    // An authored default with no editable control = a silent Inspector gap.
+    expect(offenders, `defaults with no schema field: ${offenders.join(' | ')}`).toEqual([])
+  })
+
+  it('the JSON-Schema bridge is lossless — emitted property keys === schema field-set', () => {
+    const offenders: string[] = []
+    for (const m of ALL_METAS.filter(requiresSchema)) {
+      const schema     = (m.schema as PropSchema | undefined) ?? []
+      const fieldSet   = new Set(schema.map(f => f.field))
+      const emittedKeys = Object.keys(propSchemaToSubSchema(schema).properties)
+      const emittedSet = new Set(emittedKeys)
+      // dropped: a schema field with no emitted property (the bridge lost it)
+      for (const f of fieldSet) if (!emittedSet.has(f)) offenders.push(`${m.type}: dropped '${f}'`)
+      // phantom: an emitted property with no schema field (the bridge invented it)
+      for (const k of emittedSet) if (!fieldSet.has(k)) offenders.push(`${m.type}: phantom '${k}'`)
+    }
+    expect(offenders, `bridge drift: ${offenders.join(' | ')}`).toEqual([])
+  })
+
+})
+
+// ── Fitness #1c — nested item-schema backlog (Wave 8, tier c forcing function) ─
+//
+//  Tier b's compile-time 1:1 assert (AssertSchemaCovers) proves TOP-LEVEL coverage.
+//  The remaining frontier is DEPTH: an `array`/`object` field is authored today
+//  through a single OPAQUE control — its item's sub-fields have no structured
+//  sub-schema (HeroCardDef's title/color, KpiSpec's metric-ref…). Rendering those
+//  needs the additive `itemSchema` PropField discriminant in packages/react/engine
+//  (D7, owner-gated) — tier c, deliberately NOT built here.
+//
+//  This is the `coverage.fitness` COVERAGE_TODO idiom: every nested container field
+//  is enumerated in SCHEMA_TODO with a one-line rationale, and the test asserts the
+//  live set of nested fields EQUALS the allowlist — so a NEW opaque nested field
+//  cannot slip in silently (must be acknowledged) and a stale entry (once tier-c
+//  gives it an `itemSchema`) is forced out. A visible, shrinking backlog, not a hope.
+
+/** Stable id for a meta in the nested-backlog (page canvas + chrome-with-config). */
+const metaId = (m: PlaceableMeta | ChromeSliceMeta): string =>
+  'type' in m ? m.type : `${m.slot}::${m.key}`
+
+/** A field authored as an opaque nested container awaiting a structured itemSchema. */
+function isOpaqueNested(f: PropField): boolean {
+  // tier-c-ready: once PropField carries `itemSchema`, a field that has one is no
+  // longer opaque and drops out of the backlog automatically.
+  const hasItemSchema = 'itemSchema' in (f as Record<string, unknown>)
+  return (f.type === 'array' || f.type === 'object') && !hasItemSchema
+}
+
+// The honest, shrinking nested-item backlog. Key = `${metaId}.${field}`.
+const SCHEMA_TODO: Readonly<Record<string, string>> = {
+  'hero.cards':                    'HeroCardDef[] — per-card title/sub/color/img/pageBg; needs tier-c itemSchema',
+  'featured-slider.items':         'FeaturedItemSpec[] — metric-ref + coordinate per item; tier-c itemSchema',
+  'stats-carousel.slides':         'StatSlide[] — tab/title + nested StatItem[]; tier-c itemSchema',
+  'links.items':                   'LinkDef[] — label/href/icon per link; tier-c itemSchema',
+  'page-header.crumbs':            '{ label; href }[] — breadcrumb items; tier-c itemSchema',
+  'repeat.each':                   'Record<string,unknown>[] — free-form static rows; tier-c itemSchema',
+  'kpi-strip.items':               'KpiSpec[] — governed per-item metric-ref (M0 follow-up); tier-c itemSchema',
+  'geograph.geoCodeMap':           'Record<iso,dimValue> — opaque geo-code map; tier-c itemSchema',
+  'wrap.styles':                   'NodeStyles — opaque style bag; tier-c itemSchema',
+  'gauge.thresholds':              'FieldConfig thresholds — step list; tier-c itemSchema',
+  'filter-bar.barIds':             'string[] — bar-id list; tier-c enum-ref item picker',
+  'AppHeader::default.socialLinks': 'social-link list; tier-c itemSchema',
+  'AppFooter::default.footerLinks': 'footer-link list; tier-c itemSchema',
+}
+
+describe('Constructor C0 — nested item-schema backlog is visible + non-regressing (fitness #1c)', () => {
+
+  it('every opaque nested field is acknowledged in SCHEMA_TODO (no silent nested gap)', () => {
+    const corpus = [...ALL_METAS, ...CHROME_WITH_CONFIG]
+    const live: string[] = []
+    for (const m of corpus) {
+      const schema = ((m as { schema?: PropSchema }).schema) ?? []
+      for (const f of schema) if (isOpaqueNested(f)) live.push(`${metaId(m as PlaceableMeta)}.${f.field}`)
+    }
+    const todoKeys = new Set(Object.keys(SCHEMA_TODO))
+
+    const unlisted = live.filter(k => !todoKeys.has(k))          // new opaque field, not acknowledged
+    const stale    = [...todoKeys].filter(k => !live.includes(k)) // entry no longer a nested field
+
+    expect(unlisted, `opaque nested fields missing a SCHEMA_TODO rationale: ${unlisted.join(' | ')}`).toEqual([])
+    expect(stale, `stale SCHEMA_TODO entries (field gone or now has itemSchema): ${stale.join(' | ')}`).toEqual([])
+  })
+
+  it('every SCHEMA_TODO entry carries a non-empty rationale', () => {
+    const blank = Object.entries(SCHEMA_TODO).filter(([, why]) => !why.trim()).map(([k]) => k)
+    expect(blank).toEqual([])
   })
 
 })

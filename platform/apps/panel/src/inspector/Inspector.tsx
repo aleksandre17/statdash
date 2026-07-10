@@ -165,16 +165,20 @@ export function Inspector({ node, onChange, schemaSource = nodeSchemaSource }: I
     [node.props, locale, locales, onChange],
   )
 
-  if (schema.length === 0) {
-    // No schema → the type is still inspectable, just with no typed fields yet.
-    // (describeRegistry's contract: a null schema means "raw JSON editor"; here
-    // we surface the open invitation rather than a dead panel.)
-    return (
-      <div className="insp" data-testid="inspector">
-        <p className="insp__empty">
-          No property schema for <code>{node.type}</code> yet.
-        </p>
-      </div>
+  // NB: the "no schema" dead-end panel is GONE by construction (Wave 8,
+  // FF-SCHEMA-COMPLETE). Every placeable node/panel is guaranteed a non-empty,
+  // interface-complete schema by the runtime completeness gate
+  // (schema-completeness.fitness.test.ts) + the compile-time 1:1 asserts beside
+  // each schema (schema-contract.ts). An empty `schema` here can therefore only
+  // mean an UNREGISTERED type was selected — a wiring bug, not a normal state; we
+  // assert it in dev and otherwise fall through to the normal (empty) render
+  // rather than printing a friendlier dead message.
+  if (import.meta.env.DEV && schema.length === 0) {
+    console.assert(
+      false,
+      `[Inspector] no schema for '${node.type}' — an unregistered type reached the ` +
+      `Inspector, or a placeable slipped past FF-SCHEMA-COMPLETE. Register the slice ` +
+      `(nodeRegistry) and give it a PropSchema.`,
     )
   }
 

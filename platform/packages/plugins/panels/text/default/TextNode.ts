@@ -1,5 +1,6 @@
-import type { NodeBase, PropertyGroup, PropSchema } from '@statdash/react/engine'
+import type { NodeBase, PropertyGroup } from '@statdash/react/engine'
 import type { LocaleString }                        from '@statdash/engine'
+import { defineSchema, type AssertSchemaCovers, type Expect } from '../../../schema-contract'
 
 export interface TextNode extends NodeBase {
   type:     'text'
@@ -9,7 +10,7 @@ export interface TextNode extends NodeBase {
   format?:  'markdown' | 'plain' | 'html'
 }
 
-export const TextSchema: PropSchema = [
+export const TextSchema = defineSchema([
   {
     field:    'content',
     type:     'LocaleString',
@@ -27,7 +28,10 @@ export const TextSchema: PropSchema = [
     ],
     default: 'markdown',
   },
-]
+])
+
+// FF-SCHEMA-COMPLETE (tier b): 1:1 with editable keys.
+export type _TextCovers = Expect<AssertSchemaCovers<TextNode, typeof TextSchema>>
 
 // ── TextDefaults — guard-valid the instant the panel is dropped ──────────────
 //

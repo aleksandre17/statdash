@@ -1,5 +1,6 @@
-import type { NodeBase, PropertyGroup, PropSchema } from '@statdash/react/engine'
+import type { NodeBase, PropertyGroup } from '@statdash/react/engine'
 import type { LocaleString }                        from '@statdash/engine'
+import { defineSchema, type AssertSchemaCovers, type Expect } from '../../../schema-contract'
 
 export interface PageHeaderNode extends NodeBase {
   type:    'page-header'
@@ -16,11 +17,15 @@ export interface PageHeaderNode extends NodeBase {
   crumbs?: { label: LocaleString; href?: string }[]
 }
 
-export const PageHeaderSchema: PropSchema = [
+export const PageHeaderSchema = defineSchema([
   { field: 'title',  type: 'string', label: { ka: 'სათაური', en: 'Title' }, required: true },
   { field: 'badge',  type: 'string', label: { ka: 'ბეჯი',    en: 'Badge' } },
   { field: 'crumbs', type: 'array',  label: { ka: 'ნავიგაციის ბილიკი', en: 'Breadcrumbs' } },
-]
+])
+
+// FF-SCHEMA-COMPLETE (tier b): 1:1 with editable keys. `crumbs` ({label;href}[])
+// is covered top-level; per-item authoring is the tier-c backlog.
+export type _PageHeaderCovers = Expect<AssertSchemaCovers<PageHeaderNode, typeof PageHeaderSchema>>
 
 export const PageHeaderGroups: PropertyGroup[] = [
   { label: { ka: 'შიგთავსი', en: 'Content' }, fields: ['title', 'badge', 'crumbs'] },

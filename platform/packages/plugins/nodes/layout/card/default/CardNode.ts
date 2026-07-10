@@ -1,6 +1,7 @@
 import type {
-  NodeBase, NodeDef, SlotDef, LocaleString, PropSchema, PropertyGroup,
+  NodeBase, NodeDef, SlotDef, LocaleString, PropertyGroup,
 } from '@statdash/react/engine'
+import { defineSchema, type AssertSchemaCovers, type Expect } from '../../../../schema-contract'
 
 export interface CardNode extends NodeBase {
   type:      'card'
@@ -25,14 +26,17 @@ export const CardSlots: Record<string, SlotDef> = {
 //  locale-coverage gate). The children slot is structural — edited in the tree,
 //  not the property panel — so it is intentionally absent from the schema.
 //
-export const CardSchema: PropSchema = [
+export const CardSchema = defineSchema([
   {
     field:    'title',
     type:     'LocaleString',
     coverage: 'localized',
     label:    { ka: 'სათაური', en: 'Title' },
   },
-]
+])
+
+// FF-SCHEMA-COMPLETE (tier b): 1:1 with editable keys (children slot excluded).
+export type _CardCovers = Expect<AssertSchemaCovers<CardNode, typeof CardSchema>>
 
 export const CardGroups: PropertyGroup[] = [
   { label: { ka: 'შიგთავსი', en: 'Content' }, fields: ['title'] },

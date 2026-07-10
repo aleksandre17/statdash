@@ -1,5 +1,6 @@
-import type { NodeBase, NodeDef, ViewParams, PropertyGroup, SlotDef, PropSchema } from '@statdash/react/engine'
+import type { NodeBase, NodeDef, ViewParams, PropertyGroup, SlotDef } from '@statdash/react/engine'
 import type { DataSpec, LocaleString }                                  from '@statdash/engine'
+import { defineSchema, type AssertSchemaCovers, type Expect } from '../../../schema-contract'
 
 export interface SectionMethodology {
   /**
@@ -42,7 +43,7 @@ export interface SectionNode extends NodeBase {
   methodology?:  SectionMethodology
 }
 
-export const SectionSchema: PropSchema = [
+export const SectionSchema = defineSchema([
   { field: 'title',        type: 'string', label: { ka: 'სათაური', en: 'Title' }, required: true },
   { field: 'label',        type: 'string', label: { ka: 'წარწერა', en: 'Label' } },
   { field: 'color',        type: 'color',  label: { ka: 'ფერი',    en: 'Colour' } },
@@ -65,7 +66,12 @@ export const SectionSchema: PropSchema = [
   // it re-emits page-config.schema.json (the gen:schema drift coupling). Wiring the
   // Inspector control + regenerating the schema is the AR-37 P4 follow-up. The
   // override still works in hand-/programmatically-authored configs today.
-]
+])
+
+// FF-SCHEMA-COMPLETE (tier b): 1:1 with editable keys (id/data/view/children
+// excluded as system/slot). `methodology` is covered top-level via its dot-path
+// fields; its nested `preliminary` arm is the tier-c backlog (SCHEMA_TODO).
+export type _SectionCovers = Expect<AssertSchemaCovers<SectionNode, typeof SectionSchema>>
 
 export const SectionDefaults: Partial<SectionNode> = {
   view: { toggle: true, defaultOpen: true },

@@ -1,6 +1,7 @@
-import type { NodeBase, PropertyGroup, PropSchema } from '@statdash/react/engine'
+import type { NodeBase, PropertyGroup } from '@statdash/react/engine'
 import type { FieldConfig }                         from '@statdash/engine'
 import { DATA_INTEGRITY_SCHEMA, DATA_INTEGRITY_FIELDS } from '../../dataIntegritySchema'
+import { defineSchema, type AssertSchemaCovers, type Expect } from '../../../schema-contract'
 
 export interface GaugeNode extends NodeBase {
   type: 'gauge'
@@ -22,7 +23,7 @@ export interface GaugeNode extends NodeBase {
   showValue?:   boolean
 }
 
-export const GaugeSchema: PropSchema = [
+export const GaugeSchema = defineSchema([
   {
     field:   'valueField',
     type:    'string',
@@ -53,7 +54,12 @@ export const GaugeSchema: PropSchema = [
     label: { ka: 'ზღვრები', en: 'Thresholds' },
   },
   ...DATA_INTEGRITY_SCHEMA,
-]
+])
+
+// FF-SCHEMA-COMPLETE (tier b): 1:1 with editable keys. `thresholds` (FieldConfig
+// thresholds) is covered top-level as an opaque object; structured per-step
+// authoring is the tier-c backlog. `preliminary` covered via the shared fragment.
+export type _GaugeCovers = Expect<AssertSchemaCovers<GaugeNode, typeof GaugeSchema>>
 
 export const GaugeGroups: PropertyGroup[] = [
   {

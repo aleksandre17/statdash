@@ -1,5 +1,6 @@
-import type { NodeBase, NodeDef, SlotDef, PropertyGroup, PropSchema } from '@statdash/react/engine'
+import type { NodeBase, NodeDef, SlotDef, PropertyGroup } from '@statdash/react/engine'
 import type { ResponsiveVal, LayoutAlign }                 from '@statdash/styles'
+import { defineSchema, type AssertSchemaCovers, type Expect } from '../../../../schema-contract'
 
 // grid-auto-flow vocabulary (the implicit-track placement algorithm).
 export type GridAutoFlow = 'row' | 'column' | 'dense' | 'row dense' | 'column dense'
@@ -48,7 +49,7 @@ const ALIGN_OPTIONS = [
   { value: 'end',     label: { ka: 'დასასრული', en: 'End' } },
 ]
 
-export const GridSchema: PropSchema = [
+export const GridSchema = defineSchema([
   { field: 'templateColumns', type: 'string', label: { ka: 'სვეტების შაბლონი', en: 'Template columns' }, default: 'repeat(auto-fit, minmax(min(100%, 24rem), 1fr))' },
   { field: 'templateRows',    type: 'string', label: { ka: 'რიგების შაბლონი',  en: 'Template rows' } },
   { field: 'templateAreas',   type: 'string', label: { ka: 'არეების შაბლონი',  en: 'Template areas' } },
@@ -68,7 +69,10 @@ export const GridSchema: PropSchema = [
   { field: 'autoRows',    type: 'string', label: { ka: 'ავტო-რიგები',  en: 'Auto rows' } },
   { field: 'align',   type: 'string', label: { ka: 'გასწორება',       en: 'Align' },   default: 'stretch', options: ALIGN_OPTIONS },
   { field: 'justify', type: 'string', label: { ka: 'ჰორ. გასწორება', en: 'Justify' }, default: 'stretch', options: ALIGN_OPTIONS },
-]
+])
+
+// FF-SCHEMA-COMPLETE (tier b): 1:1 with the full CSS-Grid grammar (children slot excluded).
+export type _GridCovers = Expect<AssertSchemaCovers<GridNode, typeof GridSchema>>
 
 export const GridDefaults: Partial<GridNode> = {
   gap: 'var(--spacing-md)',

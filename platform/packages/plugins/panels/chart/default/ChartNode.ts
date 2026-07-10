@@ -1,9 +1,10 @@
-import type { PropertyGroup, DataLinkDef, PropSchema } from '@statdash/react/engine'
+import type { PropertyGroup, DataLinkDef } from '@statdash/react/engine'
 import type { ChartType, LocaleString, CtxScopeRef } from '@statdash/engine'
 import type { ChartDef }         from '@statdash/charts'
 import type { NodeBase }                   from '@statdash/react/engine'
 import type { LocaleFieldConfig, LocaleAxes } from './utils/localeChartDef'
 import { DATA_INTEGRITY_SCHEMA, DATA_INTEGRITY_FIELDS } from '../../dataIntegritySchema'
+import { defineSchema, type AssertSchemaCovers, type Expect } from '../../../schema-contract'
 
 // ── ChartNode — the config-facing chart shape ────────────────────────────
 //
@@ -36,7 +37,7 @@ export type ChartNode =
   /** Explicit "preliminary data" override (Law 9) — signal #1 of resolvePreliminary. */
   & { preliminary?: boolean }
 
-export const ChartSchema: PropSchema = [
+export const ChartSchema = defineSchema([
   {
     field:    'chartType',
     type:     'string',
@@ -74,7 +75,27 @@ export const ChartSchema: PropSchema = [
     label:  { ka: 'მეტრიკა', en: 'Metric' },
   },
   ...DATA_INTEGRITY_SCHEMA,
-]
+])
+
+// FF-SCHEMA-COMPLETE (tier b): ChartNode INTERSECTS the engine render-spec
+// `ChartDef` (Vega-Lite mark+encoding analogue), so its editable surface carries
+// ChartDef's visualisation-refinement fields. Covered top-level today: `chartType`,
+// the governed metric-ref (`data.query.measure`), `preliminary`. The remaining
+// ChartDef-derived keys are the DOCUMENTED authoring backlog (SCHEMA_TODO) — they
+// render today (engine defaults / hand-authored config) but are not yet inspector
+// props. Grouped by why they wait:
+//   • nested objects (need tier-c itemSchema seam): axes, legend, tooltip
+//   • scalar viz-refinements (a wave-7 dock/authoring-surface decision, not a
+//     silent drop): label, centerLabel, height, compact, stacked, distributed,
+//     dataLabels
+// `fieldConfig`/`dataLinks` are NodeBase system keys → excluded (authored via the
+// field-config / data-links paths, not a chart prop).
+export type _ChartCovers = Expect<AssertSchemaCovers<
+  ChartNode,
+  typeof ChartSchema,
+  | 'axes' | 'legend' | 'tooltip'
+  | 'label' | 'centerLabel' | 'height' | 'compact' | 'stacked' | 'distributed' | 'dataLabels'
+>>
 
 export const ChartGroups: PropertyGroup[] = [
   { label: { ka: 'მონაცემები',   en: 'Data'          }, fields: ['data.query.measure'] },

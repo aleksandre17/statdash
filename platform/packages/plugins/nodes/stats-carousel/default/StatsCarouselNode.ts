@@ -1,4 +1,5 @@
-import type { NodeBase, PropertyGroup, SlotDef, LocaleString, PropSchema } from '@statdash/react/engine'
+import type { NodeBase, PropertyGroup, SlotDef, LocaleString } from '@statdash/react/engine'
+import { defineSchema, type AssertSchemaCovers, type Expect } from '../../../schema-contract'
 
 export interface StatItem {
   icon?:       string
@@ -22,10 +23,14 @@ export interface StatsCarouselNode extends NodeBase {
   autoplayMs?: number
 }
 
-export const StatsCarouselSchema: PropSchema = [
+export const StatsCarouselSchema = defineSchema([
   { field: 'autoplayMs', type: 'number', label: { ka: 'ავტოთამაში (ms)', en: 'Autoplay (ms)' }, default: 7000 },
   { field: 'slides',     type: 'array',  label: { ka: 'სლაიდები',        en: 'Slides' }, required: true },
-]
+])
+
+// FF-SCHEMA-COMPLETE (tier b): 1:1 with editable keys. `slides` (StatSlide[]) is
+// covered top-level; per-item authoring is the tier-c backlog.
+export type _StatsCarouselCovers = Expect<AssertSchemaCovers<StatsCarouselNode, typeof StatsCarouselSchema>>
 
 export const StatsCarouselDefaults: Partial<StatsCarouselNode> = {
   autoplayMs: 7000,
