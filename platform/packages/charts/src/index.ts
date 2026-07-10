@@ -37,6 +37,15 @@ export { ChartRegistry, chartRegistry } from './registry'
 // ── Validation (Constructor-facing) ───────────────────────────────────
 export { validateChartDef } from './validate'
 
+// ── ChartEmitter — ChartOutput → SVG (pure, server-usable) ────────────
+//
+//  The second realizer of ChartOutput (the first is the client Apex adapter):
+//  a pure, DOM-free SVG string emitter for export / SSR / thumbnails (Law 9
+//  export-per-section). No React, no ApexCharts, no `window`.
+//
+export { emit, isEmittable, EMITTABLE_TYPES, EMIT_GAPS, EMIT_PALETTE, paletteAt, niceScale } from './emit'
+export type { EmitOptions, NiceScale } from './emit'
+
 // ── Built-in interpreter registration (side effect) ───────────────────
 //
 //  Importing this package registers all 13 built-in interpreters onto
