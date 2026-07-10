@@ -9,6 +9,7 @@ import { VisibilitySection } from '../features/visibility'
 import { PageInspectorPanel } from '../features/page-config'
 import { PerspectivesPane } from '../features/perspectives'
 import { FiltersDrawer } from '../features/filters'
+import { nodeContextEditors } from './nodeContextEditors'
 import { StudioEmptyState } from './StudioEmptyState'
 import type { VisibilityExpr } from '@statdash/engine'
 import type { Locale } from '../types/constructor'
@@ -120,10 +121,21 @@ export function RightDock({ controller, locale, collapsed, onToggleCollapsed, wi
     )
   }
 
+  // A type-specific Element-context augmentation (e.g. filter-bar → its controls,
+  // authored through the filterSchema SSOT). Declarative seam — absent for nodes
+  // fully covered by the generic Inspector. (D7.3 filter-bar control drill bridge.)
+  const ContextEditor = selected ? nodeContextEditors[selected.type] : undefined
+
   const nodePanel = selected && (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
       <Chip size="small" label={selected.type} color="primary" variant="outlined" sx={{ alignSelf: 'flex-start' }} />
       <Inspector node={selected} onChange={patchProp} />
+      {ContextEditor && (
+        <>
+          <Divider />
+          <ContextEditor node={selected} locale={locale} />
+        </>
+      )}
       <Divider />
       <VisibilitySection
         value={(selected.props.view as { visibleWhen?: VisibilityExpr } | undefined)?.visibleWhen}

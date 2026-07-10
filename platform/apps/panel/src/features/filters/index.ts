@@ -6,10 +6,13 @@
 //  its authoring PropSchema — OCP) and the cube-profile discovery (pick-don't-type).
 //
 export { FiltersDrawer } from './FiltersDrawer'
+export { FilterBarControlsBridge } from './FilterBarControlsBridge'
 export { ParamDefEditor } from './ParamDefEditor'
+export { AddControl } from './AddControl'
 export { filterParamSchemaSource } from './filterParamSchemaSource'
+export { useFilterBarAuthoring, type FilterBarAuthoring } from './useFilterBarAuthoring'
 export {
   toBarViews, setBarParams, barParams, paramsToFilters,
-  toParamNode, fromParamNode, type BarView,
+  toParamNode, fromParamNode, moveItem, type BarView,
 } from './filterSchemaModel'
 export { makeParamNode, PARAM_TYPE_OPTIONS } from './paramFactory'

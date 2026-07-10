@@ -26,6 +26,17 @@ export interface BarView {
   params: ParamNode[]
 }
 
+/** Move item at `from` to `to` in a fresh array (bounds-safe; no-op out of range).
+ *  Shared by both filter-control authoring surfaces (Page drawer + node bridge) so
+ *  reorder behaves identically wherever a control list is edited. */
+export function moveItem<T>(arr: T[], from: number, to: number): T[] {
+  if (to < 0 || to >= arr.length) return arr
+  const next = [...arr]
+  const [item] = next.splice(from, 1)
+  next.splice(to, 0, item)
+  return next
+}
+
 /** A ParamDef (map value) + its map key → a self-contained ParamNode. */
 export function toParamNode(key: string, def: ParamDef): ParamNode {
   return { ...def, key } as ParamNode

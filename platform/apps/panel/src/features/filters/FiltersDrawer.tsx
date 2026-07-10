@@ -19,47 +19,23 @@
 //  filters" need. A later slice adds their builders behind the same Inspector seam.
 //
 import {
-  Box, Typography, Paper, IconButton, MenuItem, Select, Divider, Stack, Tooltip,
+  Box, Typography, Paper, IconButton, Divider, Stack, Tooltip,
 } from '@mui/material'
-import AddIcon          from '@mui/icons-material/Add'
 import DeleteIcon       from '@mui/icons-material/Delete'
 import ArrowUpwardIcon  from '@mui/icons-material/ArrowUpward'
 import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward'
 import FilterAltIcon    from '@mui/icons-material/FilterAlt'
-import type { FilterSchemaInput, ParamNode, ParamDefType } from '@statdash/engine'
-import { useConstructorStore, useEffectiveActivePage } from '../../store/constructor.store'
 import { ParamDefEditor } from './ParamDefEditor'
-import { toBarViews, setBarParams } from './filterSchemaModel'
-import { makeParamNode, PARAM_TYPE_OPTIONS } from './paramFactory'
-
-// Move item at `from` to `to` in a fresh array (bounds-safe; no-op if out of range).
-function moveItem<T>(arr: T[], from: number, to: number): T[] {
-  if (to < 0 || to >= arr.length) return arr
-  const next = [...arr]
-  const [item] = next.splice(from, 1)
-  next.splice(to, 0, item)
-  return next
-}
+import { moveItem } from './filterSchemaModel'
+import { makeParamNode } from './paramFactory'
+import { useFilterBarAuthoring } from './useFilterBarAuthoring'
+import { AddControl } from './AddControl'
 
 export function FiltersDrawer() {
-  const page          = useEffectiveActivePage()
-  const updatePage    = useConstructorStore((s) => s.updatePage)
-  const markPageDirty = useConstructorStore((s) => s.markPageDirty)
-
-  const pageId = page?.id ?? null
-  const schema = page?.meta?.filterSchema as FilterSchemaInput | undefined
-  const barViews = toBarViews(schema)
-
-  // Commit a bar's edited control list back into page.meta.filterSchema. The
-  // React Compiler memoizes this; reading page/schema from the render scope is
-  // safe (the component re-renders — and this closure is re-created — on every
-  // store change to the active page).
-  const commitBar = (barId: string, params: ParamNode[]) => {
-    if (!pageId || !page) return
-    const nextSchema = setBarParams(schema, barId, params)
-    updatePage(pageId, { meta: { ...page.meta, filterSchema: nextSchema } })
-    markPageDirty(pageId)
-  }
+  // The ONE filter-control write-through seam (SSOT) — shared with the D7.3
+  // Element-context node bridge, so both surfaces edit page.meta.filterSchema
+  // through the identical reducer path (no second copy, no fork).
+  const { page, barViews, commitBar } = useFilterBarAuthoring()
 
   // Page-scoped: RightDock mounts this only when a page is active and owns the single
   // "no page" empty-state — self-suppress here (no duplicate literal, FF-ONE-EMPTYSTATE).
@@ -135,31 +111,5 @@ export function FiltersDrawer() {
         </Paper>
       ))}
     </Box>
-  )
-}
-
-// ── AddControl — pick a ParamDef type → append a seeded control ────────────────
-//  The type list is the engine SSOT (PARAMDEF_TYPES) — exactly the set Coverage
-//  Fitness #1 enumerates, so every authorable type is addable here.
-function AddControl({ onAdd }: { onAdd: (type: ParamDefType) => void }) {
-  // Selecting a type appends a seeded control and resets the picker to its
-  // placeholder (a controlled empty value) — one gesture, no extra button.
-  return (
-    <Stack direction="row" spacing={1} alignItems="center">
-      <AddIcon fontSize="small" color="action" aria-hidden />
-      <Select
-        size="small"
-        displayEmpty
-        sx={{ minWidth: 200 }}
-        inputProps={{ 'aria-label': 'add control' }}
-        value=""
-        onChange={(e) => { const v = e.target.value as ParamDefType; if (v) onAdd(v) }}
-      >
-        <MenuItem value="" disabled>+ კონტროლის დამატება…</MenuItem>
-        {PARAM_TYPE_OPTIONS.map((t) => (
-          <MenuItem key={t} value={t}>{t}</MenuItem>
-        ))}
-      </Select>
-    </Stack>
   )
 }
