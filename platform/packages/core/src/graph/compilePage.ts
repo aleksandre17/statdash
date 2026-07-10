@@ -140,6 +140,15 @@ export interface CompileOptions<T> {
    * widen (e.g. include kpi-strips by their own spec surface).
    */
   isDataNode?:     (node: DepNode) => boolean
+  /**
+   * The page's AMBIENT OLAP dim-coordinate keys (the active filter dims). A `val`-based
+   * spec reads the WHOLE ambient coordinate (`matchedValues(code, ctx.dims)`), so every
+   * such node subscribes to every ambient `dim:` source (extractDeps' `ambientDims`).
+   * Default: the keys of `initialState.dims` (the page's coordinate shape, stable across
+   * a session). Pass explicitly (e.g. the page's declared filter dims) when the initial
+   * snapshot may not carry every coordinate key.
+   */
+  ambientDims?:    readonly string[]
 }
 
 function defaultIsDataNode(node: DepNode): boolean {
@@ -165,7 +174,14 @@ export function compilePage<T>(
   opts: CompileOptions<T> = {},
 ): QueryGraph<T> {
   const isDataNode = opts.isDataNode ?? defaultIsDataNode
-  const scanCtx: DepScanCtx = opts.perspectiveIds ? { perspectiveIds: opts.perspectiveIds } : {}
+  // Ambient dim-coordinate keys: the caller's explicit list, else the initial state's
+  // dim shape (the page's stable coordinate). Threaded to extractDeps so a val-based
+  // spec subscribes to every active `dim:` source (the ambient read-set — Finding A).
+  const ambientDims = opts.ambientDims ?? (opts.initialState?.dims ? Object.keys(opts.initialState.dims) : undefined)
+  const scanCtx: DepScanCtx = {
+    ...(opts.perspectiveIds ? { perspectiveIds: opts.perspectiveIds } : {}),
+    ...(ambientDims && ambientDims.length ? { ambientDims } : {}),
+  }
 
   const graph   = new ReactiveGraph<T>()
   const nodeIds: string[] = []

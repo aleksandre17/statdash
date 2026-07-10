@@ -112,6 +112,21 @@ export interface DepScanCtx {
    * display (still marks `locale`, coarse on `perspective`).
    */
   perspectiveIds?: readonly string[]
+  /**
+   * The page's AMBIENT OLAP dim-coordinate keys (`ctx.dims` keys — the active filter/
+   * perspective-scoped dimensions). A `val`-based spec (timeseries/growth/row-list/
+   * ratio-list) resolves each cell as an OLAP point-read at the WHOLE ambient coordinate
+   * (`storeVal → _val → matchedValues(code, ctx.dims)`, store-impl/store-filter): the
+   * matching loop iterates EVERY dim in `ctx.dims`, so the cell's value depends on every
+   * active dim, not merely the structural TIME_DIM. Supplied ⇒ those keys are added to
+   * such a spec's `deps.dims` (the precise ambient read-set — the exact coordinate the
+   * matching loop reads, dims-only, never params/vars/stores). Absent ⇒ the model falls
+   * back to TIME_DIM alone (V1 behaviour — the documented ambient-dim under-fire). An
+   * `obs` `query` is NOT included here: its rows are scoped ONLY by `query.filter`
+   * (`matchesFilter` reads the declared filter, never the ambient coordinate), so its
+   * exact dim edges come from `scanObsQuery`. Generic keys (Law 1), never hardcoded names.
+   */
+  ambientDims?:    readonly string[]
 }
 
 /** A renderable's declarative config. Structurally a generic node — extractDeps reads its known slots + sweeps its display fields. */
@@ -166,7 +181,7 @@ export function extractDeps(node: DepNode, ctx: DepScanCtx = {}): NodeDeps {
 
   // 1 · data (DataSpec) — measures, stores, structural dims, encoding/pipe refs
   const data = node['data']
-  if (isSpec(data)) scanSpec(data, acc)
+  if (isSpec(data)) scanSpec(data, acc, ctx.ambientDims)
 
   // 2 · transforms (TransformStep[]) — $ctx/$cl/$d refs + blend store/measures
   const transforms = node['transforms']
@@ -202,8 +217,16 @@ function isSpec(v: unknown): v is DataSpec {
   return isObj(v) && typeof v['type'] === 'string'
 }
 
+// A `val`-based spec reads the WHOLE ambient dim coordinate (matchedValues iterates
+// ctx.dims), so it depends on EVERY active dim — the precise ambient read-set. Adding
+// the ambient keys is idempotent with the structural TIME_DIM the caller already added
+// (TIME_DIM is normally itself an ambient key). Generic, dims-only (Law 1).
+function addAmbient(acc: Acc, ambientDims?: readonly string[]): void {
+  if (ambientDims) for (const d of ambientDims) acc.dims.add(d)
+}
+
 // ── scanSpec — the typed DataSpec dependency scan ─────────────────────────────
-function scanSpec(spec: DataSpec, acc: Acc): void {
+function scanSpec(spec: DataSpec, acc: Acc, ambientDims?: readonly string[]): void {
   // Measures + metric-declared store routing (the middle tier of effectiveStoreKey).
   for (const ref of specMeasureRefs(spec)) {
     acc.measures.add(ref)
@@ -223,16 +246,25 @@ function scanSpec(spec: DataSpec, acc: Acc): void {
     case 'timeseries':
     case 'growth':
       // Time-bound point/series specs: the resolver reads a year range from ctx —
-      // a STRUCTURAL time dependency (declared by spec type, not a closure).
+      // a STRUCTURAL time dependency (declared by spec type, not a closure). Each
+      // enumerated year is a `val` point-read at `{ ...ctx.dims, [TIME_DIM]: y }`, so
+      // the value ALSO depends on every OTHER ambient dim (geo/sector/…): a non-time
+      // dim change re-sums the cell. Record the whole ambient read-set, not just time.
       acc.dims.add(TIME_DIM)
+      addAmbient(acc, ambientDims)
       addTimeBinding(acc, spec.fromDim, spec.toDim, spec.timeDimension)
       break
     case 'row-list':
-      // Each row is a val point-read at the active coordinate ⇒ time-bound.
+      // Each row is a `val` point-read at the active coordinate ⇒ time-bound AND
+      // ambient: `matchedValues(code, ctx.dims)` reads every active dim.
       acc.dims.add(TIME_DIM)
+      addAmbient(acc, ambientDims)
       break
     case 'ratio-list':
+      // Numerator/denominator are `val` reads at the active coordinate — the whole
+      // ambient coordinate, as row-list.
       acc.dims.add(TIME_DIM)
+      addAmbient(acc, ambientDims)
       if (spec.pipe) scanTransforms(spec.pipe, acc)
       break
     case 'transform':
@@ -359,6 +391,16 @@ function sweepRefs(value: unknown, acc: Acc): void {
       case 'dim': {
         const key = (rec['$cl'] ?? rec['$d'])
         if (typeof key === 'string') acc.classifiers.add(key)
+        // A `$d` (DISPLAY) join resolves display attributes that carry per-locale
+        // LocaleStrings: resolveDisplayRef TAGS every object-valued attr (codelist.ts →
+        // tagLocaleString), and the boundary (resolveRowLocales) resolves the tagged
+        // cell to the active locale — so the joined row LABELS change with locale. The
+        // display view exists to carry localized content, so a `$d` join is a locale
+        // dependency. A `$cl` (STRUCTURAL) view never tags (resolveClassifierRef returns
+        // raw entries — a code/parent/hierarchy join is locale-independent), so it does
+        // NOT mark locale: precise, not broad. Keyed on the ref TOKEN (`$d`), never a
+        // dim name (Law 1). This closes the row-label-join under-fire (Finding B).
+        if (typeof rec['$d'] === 'string') acc.locale = true
         break
       }
       case 'row': break // click-time, not a render dep

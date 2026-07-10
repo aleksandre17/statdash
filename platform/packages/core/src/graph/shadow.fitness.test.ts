@@ -15,20 +15,20 @@
 //  cells AND the oracle, so any divergence is attributable to the graph's memo/invalidate
 //  decisions alone (the render body is not forked; react injects the real one at V3).
 //
-//  ── TWO DEMONSTRATED DIVERGENCES (the V2 deliverable — reported, not papered over) ──
-//  Shadow VALUE-parity surfaces two dependency classes that ref-TOTALITY (FF-EXTRACTDEPS-
-//  TOTAL) structurally cannot see — both are the "dependency a static walk cannot see"
-//  class extractDeps' own header flags. They are characterized here (asserted to EXIST)
-//  and escalated: the V3 render-switch is NOT render-safe until extractDeps' dependency
-//  MODEL is widened. See the report / MEMORY for the fix direction.
+//  ── TWO FINDINGS — DISCOVERED IN V2, CLOSED IN V2.5 (exact parity) ──────────────
+//  Shadow VALUE-parity surfaced two dependency classes that ref-TOTALITY (FF-EXTRACTDEPS-
+//  TOTAL) structurally could not see — both the "dependency a static walk cannot see"
+//  class extractDeps' own header flags. V2 characterized them (asserted to EXIST); V2.5
+//  WIDENS the dependency MODEL to close them, so FF-GRAPH-PARITY is now EXACT (the V3
+//  render-switch precondition). The finding blocks below now assert PARITY, not divergence.
 //    A · `val`-based specs (timeseries/growth/row-list/ratio-list) read the WHOLE ambient
-//        `ctx.dims` coordinate (`_val` → `matchedValues`, store-impl.ts:291), so they
-//        implicitly depend on EVERY dim in the active coordinate — but extractDeps records
-//        only TIME_DIM for them. A non-time ambient dim change (geo) changes their value
-//        with NO edge → the graph serves a STALE value (under-fire).
-//    B · A `$d`/`$cl` display-JOIN yields locale-dependent row LABELS (tagged, resolved at
-//        the boundary), but `deps.locale` is set only for localized DISPLAY FIELDS, never
-//        for a row-label join → a locale toggle changes the rows with NO edge (under-fire).
+//        `ctx.dims` coordinate (`_val` → `matchedValues`, store-filter): their value
+//        depends on EVERY active dim, not just TIME_DIM. FIX: extractDeps records the
+//        ambient dim read-set (`DepScanCtx.ambientDims`, threaded by compilePage) into
+//        such a spec's `deps.dims` — a non-time ambient dim change now invalidates exactly.
+//    B · A `$d` display-JOIN yields locale-dependent row LABELS (tagged at resolveDisplayRef,
+//        resolved at the boundary). FIX: a `$d` (display) dim-ref now sets `deps.locale`
+//        (a `$cl` structural ref does not) — a locale toggle now invalidates exactly.
 
 import { describe, it, expect } from 'vitest'
 import { runShadowParity, type ShadowStep } from './shadow'
@@ -181,12 +181,13 @@ describe('FF-GRAPH-PARITY — shadow-mode graph ≡ current path (V2, LIVE)', ()
   })
 })
 
-// ── V2 FINDING A — `val`-based specs under-fire on an ambient (non-time) dim ────
-//  A `timeseries` reads `storeVal` at `atTime(y, ctx)`; `_val` matches the WHOLE
-//  ctx.dims coordinate, so its value depends on ambient `geo`. extractDeps records
-//  only TIME_DIM ⇒ a geo change does NOT invalidate it ⇒ STALE. This is the crux
-//  divergence: shadow VALUE-parity catches what ref-totality cannot.
-describe('V2 FINDING A — val-based spec under-fires on ambient-coordinate change', () => {
+// ── V2.5 FINDING A CLOSED — val-based spec depends on the whole ambient coordinate ─
+//  A `timeseries` reads `storeVal` at `atTime(y, ctx)`; `_val → matchedValues` matches
+//  the WHOLE ctx.dims coordinate, so its value depends on ambient `geo`. V2.5 widens
+//  extractDeps: a val-based spec's `deps.dims` now carries the ambient dim read-set
+//  (`DepScanCtx.ambientDims`, threaded by compilePage from the page's coordinate shape),
+//  so a non-time ambient dim change invalidates it EXACTLY. The former under-fire is gone.
+describe('V2.5 FINDING A CLOSED — val-based spec re-fires on ambient-coordinate change', () => {
   const page = { type: 'page', children: [
     { type: 'chart', id: 'ts', data: { type: 'timeseries', code: 'GVA', years: [2022, 2023] } },
   ] }
@@ -199,18 +200,20 @@ describe('V2 FINDING A — val-based spec under-fires on ambient-coordinate chan
   it('the timeseries VALUE genuinely changes with geo (the oracle sees it)', () => {
     expect(t.changed).toContain('ts')
   })
-  it('DIVERGENCE: the graph does NOT invalidate it — a staleness under-fire (report NOT ok)', () => {
-    expect(t.underFired).toContain('ts')
-    expect(t.valueMismatches).toContain('ts')
-    expect(report.ok).toBe(false)
+  it('PARITY: the ambient geo change invalidates the val-spec — no under-fire, value parity holds', () => {
+    expect(t.invalidated).toContain('ts')
+    expect(t.underFired).toEqual([])
+    expect(t.valueMismatches).toEqual([])
+    expect(report.ok).toBe(true)
   })
 })
 
-// ── V2 FINDING B — a $d row-label join is locale-dependent but not `deps.locale` ──
-//  The `$d` join tags a LocaleString label (steps.ts) resolved per-locale at the
-//  boundary; extractDeps marks classifier:geo but NOT locale (locale is set only for
-//  localized DISPLAY FIELDS). A locale toggle changes the rows with no edge ⇒ under-fire.
-describe('V2 FINDING B — a $d-join label is locale-dependent but unmarked for locale', () => {
+// ── V2.5 FINDING B CLOSED — a $d row-label join now marks `deps.locale` ──────────
+//  The `$d` join resolves display attrs that carry per-locale LocaleStrings (codelist.ts
+//  → tagLocaleString), resolved at the boundary; V2.5 widens extractDeps so a `$d`
+//  (display) dim-ref sets `deps.locale` (a `$cl` structural ref does not). A locale
+//  toggle now invalidates the joined-label cell EXACTLY — the former under-fire is gone.
+describe('V2.5 FINDING B CLOSED — a $d-join label re-fires on a locale toggle', () => {
   const labelStore = new ExternalStore(OBS, {
     classifiers: { geo: [{ code: 'R1' }, { code: 'R2' }] },
     display: {
@@ -236,8 +239,10 @@ describe('V2 FINDING B — a $d-join label is locale-dependent but unmarked for 
   it('the joined labels genuinely change with locale (the oracle sees it)', () => {
     expect(t.changed).toContain('loc')
   })
-  it('DIVERGENCE: the graph does NOT invalidate it on a locale toggle — under-fire', () => {
-    expect(t.underFired).toContain('loc')
-    expect(report.ok).toBe(false)
+  it('PARITY: the locale toggle invalidates the $d-join cell — no under-fire, report ok', () => {
+    expect(t.invalidated).toContain('loc')
+    expect(t.underFired).toEqual([])
+    expect(t.valueMismatches).toEqual([])
+    expect(report.ok).toBe(true)
   })
 })
