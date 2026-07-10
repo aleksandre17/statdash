@@ -1,5 +1,14 @@
 import { useState, useEffect, useCallback, lazy, Suspense } from 'react'
-import { CssBaseline, Box, CircularProgress } from '@mui/material'
+import { CssBaseline, Box, CircularProgress, GlobalStyles } from '@mui/material'
+// ADR-021 — bind MUI to the DTCG token spine. `ThemeProvider` (v6: the stable,
+// CSS-vars-aware provider — `CssVarsProvider` is a deprecated alias of it, removed
+// in v7) mounts the seeded `studioTheme`; `muiAliasVars` re-points MUI's generated
+// `--mui-palette-*` vars at the live DTCG `--color-*`/`--status-*` vars. Mounting
+// the alias at `:root:root` (doubled pseudo = higher specificity, order-independent)
+// makes solid MUI fills — INCLUDING portalled overlays (⌘K, Select menus, Dialogs
+// at document.body) — track live Style-editor edits by pure CSS cascade.
+import { ThemeProvider } from '@mui/material/styles'
+import { studioTheme, muiAliasVars } from './studio/muiTheme'
 import { LoginForm }         from './features/auth/LoginForm'
 import { ToastHost }         from './shared/ToastHost'
 import { SuspenseFallback }  from './shared/SuspenseFallback'
@@ -115,31 +124,37 @@ export function App() {
     if (isAuthenticated()) void startApp()
   }, [startApp])
 
-  // ── Login screen ─────────────────────────────────────────────────────────────
-  if (appState === 'login') {
-    return <LoginForm onSuccess={() => { setAppState('loading'); void startApp() }} />
-  }
-
-  // ── Loading ───────────────────────────────────────────────────────────────────
-  if (appState === 'loading') {
-    return (
+  // ── Screen content (one provider wraps them all) ──────────────────────────────
+  //  login  — the auth form
+  //  loading— the boot spinner
+  //  ready  — the Studio (the only authoring surface; AR-49 M1.3b, wizard retired).
+  //           Lazy so its chunk streams in behind the boot shell; no fallback path,
+  //           so bootSmoke.test is the safety net that it mounts live.
+  const content =
+    appState === 'login' ? (
+      <LoginForm onSuccess={() => { setAppState('loading'); void startApp() }} />
+    ) : appState === 'loading' ? (
       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh' }}>
         <CircularProgress aria-label="Loading constructor" />
       </Box>
+    ) : (
+      <>
+        <CssBaseline />
+        <Suspense fallback={<SuspenseFallback label="Loading studio" />}>
+          <StudioShell />
+        </Suspense>
+        <ToastHost />
+      </>
     )
-  }
 
-  // ── Constructor ───────────────────────────────────────────────────────────────
-  //  The Studio is the only authoring surface (AR-49 M1.3b — wizard retired). It is
-  //  lazy so its chunk streams in behind the boot shell; there is no fallback path,
-  //  so the boot smoke (boot/bootSmoke.test) is the safety net that it mounts live.
+  // One theme provider at the App root wraps login + loading + Studio (ADR-021 §Mount
+  // point) — exactly one CSS-vars scope. The provider never re-renders on a theme
+  // edit: `studioTheme` is a module constant and live edits ride the CSS alias, not React.
   return (
-    <>
-      <CssBaseline />
-      <Suspense fallback={<SuspenseFallback label="Loading studio" />}>
-        <StudioShell />
-      </Suspense>
-      <ToastHost />
-    </>
+    <ThemeProvider theme={studioTheme} defaultMode="light">
+      {/* Part 2 — re-point MUI's brand vars at the live DTCG spine (see muiTheme.ts). */}
+      <GlobalStyles styles={{ ':root:root': muiAliasVars }} />
+      {content}
+    </ThemeProvider>
   )
 }

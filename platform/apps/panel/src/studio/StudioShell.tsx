@@ -1,5 +1,5 @@
 import { lazy, Suspense, useState } from 'react'
-import { Box, Typography, Chip } from '@mui/material'
+import { Box, Typography, Chip, GlobalStyles } from '@mui/material'
 // Token SSOT — the shell chrome reads @statdash/styles DTCG custom properties
 // (studio.css). Importing it here (not in main.tsx) keeps the token layer in the
 // Studio's own lazy chunk, so the default wizard path never loads it (Strangler:
@@ -72,10 +72,15 @@ export function StudioShell() {
   const [previewLocale, setPreviewLocale] = useState<Locale | null>(null)
   const locale: Locale = previewLocale ?? activeLocales[0] ?? 'ka'
 
-  // The live skin: Strata base + the author's themeOverrides on top (overrides
-  // win). Applied as inline custom properties on the shell root — chrome AND the
-  // canvas descend from it, so an edit repaints both on the next render. This is
-  // the whole "rebrand = data" mechanism (Law 2 — data only, no theme code path).
+  // The live skin: Strata base + the author's themeOverrides on top (overrides win).
+  // Applied as custom properties on the DOCUMENT ROOT (`:root:root`) rather than
+  // inline on the shell Box (ADR-021 §3): the shell + canvas still inherit (they are
+  // :root descendants), AND now MUI's portalled overlays — Menu/Select/Dialog/Popover
+  // and the ⌘K palette, which render at document.body OUTSIDE .studio-shell — inherit
+  // Strata + live edits too, so their token-aliased MUI fills (muiTheme.ts part 2)
+  // resolve to Strata instead of the brand-neutral default. Doubled pseudo (`:root:root`)
+  // bumps specificity so this deterministically beats tokens.css `:root` regardless of
+  // stylesheet insertion order. Still pure DATA — no theme code path (Law 2).
   const themeStyle = buildThemeVars(STRATA_PRESET, site.themeOverrides)
 
   // Effective surface under the lens: leaving the Steward lens while Model is the
@@ -97,7 +102,10 @@ export function StudioShell() {
   const exitDataModel = () => setRole('author')
 
   return (
-    <Box className="studio-shell" style={themeStyle}>
+    <>
+      {/* Strata + live edits on the document root → chrome, canvas AND body portals inherit. */}
+      <GlobalStyles styles={{ ':root:root': themeStyle as Record<string, string | number> }} />
+      <Box className="studio-shell">
       <StudioTopBar
         locale={locale}
         locales={PLATFORM_LOCALES}
@@ -171,7 +179,8 @@ export function StudioShell() {
         <Box sx={{ flex: 1 }} />
         <span>{pages.length} {locale === 'en' ? 'pages' : 'გვერდი'}</span>
       </Box>
-    </Box>
+      </Box>
+    </>
   )
 }
 

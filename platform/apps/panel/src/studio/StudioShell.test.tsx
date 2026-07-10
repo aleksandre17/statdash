@@ -148,13 +148,17 @@ describe('StudioShell — surfaces mount via the existing subsystems', () => {
 
 // ── FF-THEME-EDIT-DATA (DOM leg) — an applied themeOverride reaches the cascade ──
 //
-//  themeVars.test proves buildThemeVars maps token DATA → an inline style object.
-//  This proves the LAST mile: StudioShell actually applies that object to the mounted
-//  `.studio-shell` root as CSS custom properties — so the whole "rebrand = data"
-//  cascade (chrome + canvas descend from this root and inherit) is wired, not just the
-//  pure function. Without the `style={themeStyle}` binding this leg goes RED.
-describe('StudioShell — theme overrides land as custom properties on the shell root', () => {
-  it('applies a themeOverride as the expected --css-var on .studio-shell (override beats the Strata base)', () => {
+//  themeVars.test proves buildThemeVars maps token DATA → a style object. This proves
+//  the LAST mile: StudioShell actually emits that object to the cascade as CSS custom
+//  properties — so the whole "rebrand = data" mechanism (chrome + canvas + body
+//  portals all inherit) is wired, not just the pure function.
+//
+//  ADR-021 §3 relocated the mount from an inline `.studio-shell` style to a `:root:root`
+//  <GlobalStyles> block (REQUIRED so MUI portals at document.body inherit Strata). In
+//  jsdom that emits a <style> tag rather than element.style, so we assert against the
+//  emitted stylesheet text — the actual cascade source — not `.studio-shell`.style.
+describe('StudioShell — theme overrides land as custom properties on the document root', () => {
+  it('emits a themeOverride as the expected --css-var at :root (override beats the Strata base)', () => {
     useConstructorStore.getState().updateSite({
       themeOverrides: {
         'color.accent': '#abcdef',          // overrides the Strata azure (#14508C)
@@ -163,12 +167,17 @@ describe('StudioShell — theme overrides land as custom properties on the shell
     })
     render(<StudioShell />)
 
-    const root = document.querySelector('.studio-shell') as HTMLElement
-    expect(root).not.toBeNull()
-    // The author override wins over the Strata preset base.
-    expect(root.style.getPropertyValue('--color-accent')).toBe('#abcdef')
-    expect(root.style.getPropertyValue('--color-accent-secondary')).toBe('#123456')
+    // The GlobalStyles block serializes to one or more <style> tags; join + strip
+    // whitespace so the assertion is insensitive to the serializer's formatting.
+    const css = Array.from(document.querySelectorAll('style'))
+      .map((s) => s.textContent ?? '')
+      .join('\n')
+      .replace(/\s+/g, '')
+
+    // buildThemeVars layers override OVER base, so only the winning value is emitted.
+    expect(css).toContain('--color-accent:#abcdef')
+    expect(css).toContain('--color-accent-secondary:#123456')
     // A token with no override still carries the Strata base value (layering intact).
-    expect(root.style.getPropertyValue('--radius-card')).toBe('10px')
+    expect(css).toContain('--radius-card:10px')
   })
 })
