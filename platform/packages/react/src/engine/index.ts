@@ -77,6 +77,16 @@ export type { ChartRendererProps }                      from './ChartRendererReg
 // ── Dispatch API ──────────────────────────────────────────────────────
 export { renderNode }              from './renderNode'
 
+// ── Residence-promotion flag (ADR-023 · R2 expand) — generic, names no type ──
+//  The Promotion Law (§3.3) graduates a value-band item to a first-class node
+//  type Strangler-style: promoted node built ALONGSIDE the legacy path, this flag
+//  selects the residence. Default OFF; a promotion ships dark until its
+//  FF-PROMOTION-LOSSLESS gate authorizes the one-way contract. Keyed by the
+//  promoted node-type string — the engine hardcodes none (Law 1 / Law 8 / OCP).
+export {
+  enablePromotion, disablePromotion, isPromotionEnabled, withPromotion,
+}                                  from './promotionMode'
+
 // ── Router scroll parity — reset scroll to top (or a cross-page anchor) on
 //  route change, so a soft-nav renders at the same scroll position as a hard
 //  load. Mount once inside the Router. See RouteScrollManager for the why.

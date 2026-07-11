@@ -81,16 +81,27 @@ describe('FF-TWO-RESIDENCES-ONLY — tree band + value band are both live [SCAFF
   })
 })
 
-describe('FF-PROMOTION-LOSSLESS — no promotion leaked into R1 [SCAFFOLD · becomes DOM-parity at R2]', () => {
-  it('kpi-card / hero-card are NOT node types yet (R1 = unify only, no promotion)', () => {
+describe('FF-PROMOTION-LOSSLESS — R2-EXPAND: kpi-card promoted (shadow), DOM-parity gate is REAL', () => {
+  it('the real DOM-parity gate now proves losslessness (this scaffold is superseded)', () => {
+    // R2-EXPAND has landed: `kpi-card` is a REGISTERED runtime node type, built
+    // ALONGSIDE the legacy KpiStripNode.items[] path behind isPromotionEnabled(
+    // 'kpi-card') (Law 7 · Strangler expand). The R1 "no promotion leaked" scaffold
+    // is therefore SUPERSEDED by the real byte-identical DOM-parity gate, which
+    // renders the whole provisioning corpus BOTH ways and compares:
+    //     packages/plugins/panels/kpi-strip/promotion-lossless.fitness.test.tsx
+    //       → FF-PROMOTION-LOSSLESS
+    // That gate — not this one — is the SOLE authorizer of the R2-contract one-way
+    // door (retiring the legacy path). It stays RED-if-broken there.
+
+    // This roster scan asserts the PALETTE boundary (AUTHORING_METAS = the shipped
+    // authoring roster). kpi-card is a SHADOW runtime type and is intentionally NOT
+    // yet in the palette roster — palette exposure lands at R2-contract, once the
+    // DOM-parity gate authorizes retiring the legacy residence. hero-card is R3.
     const registeredTypes = new Set(METAS.map(idOf))
-    // R1 unifies the type system WITHOUT promoting anything. kpi/hero remain in
-    // their current residence (panel with itemSchema / node). When R2-expand
-    // registers `kpi-card`, this scaffold is replaced by the real lossless-DOM
-    // parity gate (migrate(vN) renders DOM-identical over the provisioning corpus).
-    expect(registeredTypes.has('kpi-card')).toBe(false)
-    expect(registeredTypes.has('hero-card')).toBe(false)
-    // The unpromoted originals are still present (boundary intact):
+    expect(registeredTypes.has('kpi-card')).toBe(false)   // shadow only; palette-exposed at R2-contract
+    expect(registeredTypes.has('hero-card')).toBe(false)  // R3
+    // The unpromoted originals are still present (Strangler boundary intact — the
+    // legacy path is NOT removed in the expand phase):
     expect(registeredTypes.has('kpi-strip')).toBe(true)
     expect(registeredTypes.has('hero')).toBe(true)
   })
