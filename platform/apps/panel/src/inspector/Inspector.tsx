@@ -128,9 +128,13 @@ export function Inspector({
     [schema, groups, locale],
   )
 
-  // Presentation state (D9): which accordion sections are collapsed (default: none)
-  // and, in tabs mode, the active tab. Kept as view-state — the schema seam is pure.
-  const [collapsed, setCollapsed] = useState<Set<string>>(() => new Set())
+  // Presentation state (D9): explicit user open/close overrides per accordion group
+  // and, in tabs mode, the active tab. View-state only — the schema seam is pure.
+  // DEFAULT is BOUNDED (ADR-038 presentation): only the FIRST labelled group is open;
+  // the element's primary contract shows, the rest drill in — so the dock FITS instead
+  // of dumping every group expanded. Keyed by group key, so a NEW selection re-defaults
+  // to bounded naturally (stale keys are inert) — no remount needed.
+  const [openOverride, setOpenOverride] = useState<Map<string, boolean>>(() => new Map())
   const [activeTab, setActiveTab] = useState(0)
 
   const labelledCount = fieldGroups.filter((g) => g.label).length
@@ -248,13 +252,14 @@ export function Inspector({
   //  <fieldset>/<legend> keeps the WCAG form-grouping semantics; the legend hosts a
   //  disclosure <button aria-expanded> controlling the body region. The unlabelled
   //  tail stays a plain group (nothing to collapse).
+  // Bounded-first: the first labelled group is open by default; the rest drill in.
+  // A user toggle records an explicit override; every other group follows the default,
+  // so re-selecting a different element re-defaults to bounded without a remount.
+  const firstLabelledKey = fieldGroups.find((g) => g.label)?.key
+  const isGroupOpen = (key: string) =>
+    openOverride.has(key) ? openOverride.get(key)! : key === firstLabelledKey
   const toggle = (key: string) =>
-    setCollapsed((prev) => {
-      const next = new Set(prev)
-      if (next.has(key)) next.delete(key)
-      else next.add(key)
-      return next
-    })
+    setOpenOverride((prev) => new Map(prev).set(key, !isGroupOpen(key)))
 
   return (
     <div className="insp" data-testid="inspector">
@@ -266,7 +271,7 @@ export function Inspector({
             </div>
           )
         }
-        const open   = !collapsed.has(g.key)
+        const open   = isGroupOpen(g.key)
         const bodyId = `${idPrefix}-body-${g.key.replace(/[^\w-]/g, '-')}`
         return (
           <fieldset className="insp__group" key={g.key} data-open={open || undefined}>
