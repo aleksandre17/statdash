@@ -8,6 +8,7 @@
 - [DB Contracts](project_db_contracts.md) — the frontend/engine TS shapes the DB must project verbatim (JSON round-trip), and the subsystem-doc home of each
 - [obs.* vs stats.*](project_obs_vs_stats.md) — TWO cube schemas: applied stats.* (real) vs paper obs.* design doc (never built); extend stats.* additively, harvest obs.* ideas only
 - [DB-gated fixtures](project_db_gated_fixtures.md) — live-DB fitness tests must satisfy V14 LocaleString completeness, V28 published projection, SCD-2 txn-time zero-width windows
+- [Fresh-from-zero interleave (ADR-035)](project_fresh_from_zero_interleave.md) — why uncapped flyway DIES at V33 (V33 asserts ingest-made geo R2..R12); impossibility of an additive-only fix; the migrate/ingest interleave (bringup-fresh.sh); law: no migration may depend on ingest data
 
 ## Model decisions (SDMX rigor)
 - [Classifier parent model](project_classifier_parent_model.md) — parent_code is SAME-dim only; measures FLAT (approach = metadata attr); geo/sector keep real hierarchies

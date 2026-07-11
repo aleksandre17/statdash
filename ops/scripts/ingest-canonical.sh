@@ -64,8 +64,24 @@ CANONICAL_DIR="${CANONICAL_DIR:-/canonical}"
 POLL_INTERVAL=2
 POLL_TIMEOUT=180
 
-DATASETS=(GDP_ANNUAL ACCOUNTS_SEQUENCE REGIONAL_GVA)
+# The datasets to ingest THIS run, in order. Default = all 3 (single-shot bring-up).
+# For the deterministic fresh-from-zero interleave (the V33/V34 migration-ordering fix,
+# ADR-035 + ops/scripts/bringup-fresh.sh) a phase restricts the set, e.g.
+#   INGEST_DATASETS="REGIONAL_GVA ACCOUNTS_SEQUENCE"   # phase A: pre-V33 geo/sector/account members
+#   INGEST_DATASETS="GDP_ANNUAL"                        # phase B: post-V34 4-dim GDP facts
+# Order-preserving. serve/anchor assertions below run ONLY for the selected subset, so a
+# partial phase is still fully self-asserting (never a false failure on an un-ingested set).
+IFS=' ' read -r -a DATASETS <<< "${INGEST_DATASETS:-GDP_ANNUAL ACCOUNTS_SEQUENCE REGIONAL_GVA}"
 declare -A EXPECTED_OBS=( [GDP_ANNUAL]=399 [ACCOUNTS_SEQUENCE]=415 [REGIONAL_GVA]=1665 )
+
+# ── _selected <dataset_code> — is this dataset in the current INGEST_DATASETS set? ──
+# Lets the anchor assertions (which name specific datasets) run only for what was
+# actually ingested this phase. PURE (no network) — safe to source in the unit test.
+_selected() {
+  local want="$1" d
+  for d in "${DATASETS[@]}"; do [[ "$d" == "$want" ]] && return 0; done
+  return 1
+}
 
 # ── job_status <job_id> — echo one job's current FSM status (the gold/silver SSOT) ──
 # One authoritative GET, used to CLASSIFY a publish outcome (converged vs conflict).
@@ -202,22 +218,31 @@ serve_assert() {
 anchor_assert() {
   echo "→ ANCHORS"
   local v
-  # GDP_ANNUAL 2010 GDP-at-current-prices total (geo=GE, approach=_Z) ≈ 22148.65 —
-  # this only resolves if GDP is 4-dim (approach present), i.e. V34 + canonical ingest worked.
-  v="$(curl -fsS "$API_BASE_URL/api/stats/observations?dataset=GDP_ANNUAL&from=2010&to=2010&filter=$(jq -rn --arg x '{"measure":"gross-domestic-product-at-current-prices","approach":"_Z","geo":"GE"}' '$x|@uri')" \
-    | jq -r '.data[0].obs_value // empty')"
-  echo "    GDP_ANNUAL 2010 GDP total = $v  (≈ 22148.65, 4-dim)"
-  awk -v v="$v" 'BEGIN{ if (v=="" || (v-22148.65)^2 > 1) exit 1 }' || { echo "    ✗ GDP 4-dim anchor"; FAIL=1; }
+  # Each anchor runs only if its dataset was ingested THIS phase (_selected), so a
+  # partial interleave phase asserts exactly what it landed — never a false GDP failure
+  # in the REGIONAL/ACCOUNTS-only phase A.
+  if _selected GDP_ANNUAL; then
+    # GDP_ANNUAL 2010 GDP-at-current-prices total (geo=GE, approach=_Z) ≈ 22148.65 —
+    # this only resolves if GDP is 4-dim (approach present), i.e. V34 + canonical ingest worked.
+    v="$(curl -fsS "$API_BASE_URL/api/stats/observations?dataset=GDP_ANNUAL&from=2010&to=2010&filter=$(jq -rn --arg x '{"measure":"gross-domestic-product-at-current-prices","approach":"_Z","geo":"GE"}' '$x|@uri')" \
+      | jq -r '.data[0].obs_value // empty')"
+    echo "    GDP_ANNUAL 2010 GDP total = $v  (≈ 22148.65, 4-dim)"
+    awk -v v="$v" 'BEGIN{ if (v=="" || (v-22148.65)^2 > 1) exit 1 }' || { echo "    ✗ GDP 4-dim anchor"; FAIL=1; }
+  fi
 
-  v="$(curl -fsS "$API_BASE_URL/api/stats/observations?dataset=REGIONAL_GVA&from=2010&to=2010&filter=$(jq -rn --arg x '{"geo":"_T","sector":"_T","measure":"GVA"}' '$x|@uri')" \
-    | jq -r '.data[0].obs_value // empty')"
-  echo "    REGIONAL_GVA _T/_T 2010 GVA = $v  (≈ 22148.65, post-2026-07-03 revision)"
-  awk -v v="$v" 'BEGIN{ if (v=="" || (v-22148.65)^2 > 1) exit 1 }' || { echo "    ✗ REGIONAL anchor"; FAIL=1; }
+  if _selected REGIONAL_GVA; then
+    v="$(curl -fsS "$API_BASE_URL/api/stats/observations?dataset=REGIONAL_GVA&from=2010&to=2010&filter=$(jq -rn --arg x '{"geo":"_T","sector":"_T","measure":"GVA"}' '$x|@uri')" \
+      | jq -r '.data[0].obs_value // empty')"
+    echo "    REGIONAL_GVA _T/_T 2010 GVA = $v  (≈ 22148.65, post-2026-07-03 revision)"
+    awk -v v="$v" 'BEGIN{ if (v=="" || (v-22148.65)^2 > 1) exit 1 }' || { echo "    ✗ REGIONAL anchor"; FAIL=1; }
+  fi
 
-  v="$(curl -fsS "$API_BASE_URL/api/stats/observations?dataset=ACCOUNTS_SEQUENCE&from=2010&to=2010&filter=$(jq -rn --arg x '{"account":"allocation-of-primary-income-account"}' '$x|@uri')" \
-    | jq -r '.data | length')"
-  echo "    ACCOUNTS_SEQUENCE 2010 allocation-of-primary-income rows = $v  (> 0)"
-  [[ "${v:-0}" -gt 0 ]] || { echo "    ✗ ACCOUNTS anchor"; FAIL=1; }
+  if _selected ACCOUNTS_SEQUENCE; then
+    v="$(curl -fsS "$API_BASE_URL/api/stats/observations?dataset=ACCOUNTS_SEQUENCE&from=2010&to=2010&filter=$(jq -rn --arg x '{"account":"allocation-of-primary-income-account"}' '$x|@uri')" \
+      | jq -r '.data | length')"
+    echo "    ACCOUNTS_SEQUENCE 2010 allocation-of-primary-income rows = $v  (> 0)"
+    [[ "${v:-0}" -gt 0 ]] || { echo "    ✗ ACCOUNTS anchor"; FAIL=1; }
+  fi
 }
 
 # ── Main ──────────────────────────────────────────────────────────────────────

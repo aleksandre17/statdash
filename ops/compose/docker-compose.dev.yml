@@ -41,9 +41,13 @@
 # api + geostat + panel). config/site_config/provisioning/bootstrap/auth all live in
 # config.* (present well before V32), so the AR-49 metric-first AUTHORING surface in
 # the panel is fully exercised; the geostat observation cube is empty (map/KPIs render
-# their shell without data). To add the real demo data later, interleave migrate →
-# ingest REGIONAL+ACCOUNTS → migrate V33..V34 → ingest GDP → migrate V35..V38 (an
-# unproven multi-stage bring-up, deliberately OUT of this line's safe scope).
+# their shell without data). To load the real demo data, run the deterministic
+# fresh-from-zero interleave — now a committed, reviewable orchestrator, NOT an ad-hoc
+# guess: ops/scripts/bringup-fresh.sh (ADR-035). It runs migrate -target=32 → ingest
+# REGIONAL+ACCOUNTS → migrate (V33..V38) → ingest GDP, reaching V38 WITH 4-dim GDP data,
+# idempotently. Point it at this line's pg (5458) + api (3011). The single-flyway-step
+# boot below stays green+empty by default (safe boot); bringup-fresh.sh is the opt-in
+# full-data path (needs a container host to run flyway).
 #
 # Boot order (depends_on + healthchecks): pg healthy → flyway 0 → api healthy →
 # geostat/panel start.
