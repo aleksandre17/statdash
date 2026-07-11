@@ -23,31 +23,26 @@
 #   docker-compose -f ops/compose/docker-compose.dev.yml -p statdash-dev down
 #   (NEVER `down -v` — that destroys this line's DB volume; harmless to prod/stg regardless).
 #
-# ── SEED / DATA STRATEGY (decided — see the V33/V34 note below) ────────────────
+# ── SEED / DATA STRATEGY (ADR-035 root-cause fix — fresh uncapped boot works) ──
 # SEED NEUTRALIZED, exactly like staging: flyway mounts ONLY /flyway/sql and
 # -locations names ONLY it → the R__ gold seed never runs → gold starts EMPTY of
-# observations. There is intentionally NO `ingest` one-shot (prod has one; this
-# line omits it) because a FRESH volume cannot deterministically load the canonical
-# data — a known migration-ordering defect:
-#   • V33__demo_classifier_data is a CORRECTIVE migration that stamps hierarchy onto
-#     geo R2..R12 / account / sector members that must ALREADY EXIST — but those are
-#     created by canonical INGEST, which can only run AFTER flyway + a healthy api.
-#     On a fresh DB V33 dies: "expected >=11 regions parented to _T, found 0".
-#   • V34__gdp_dsd_approach_align widens GDP to the canonical 4-dim DSD and must run
-#     BEFORE a GDP ingest — but V33 (< V34) already blocked the run.
-#   So a single-flyway-step fresh boot CANNOT reach V33..V38 with data. The proven
-#   green fresh-boot is staging's: `-target=32` (structure through V32) + empty gold.
-# CONSEQUENCE: this line boots deterministically green and is FULLY LIVE (own db +
-# api + geostat + panel). config/site_config/provisioning/bootstrap/auth all live in
-# config.* (present well before V32), so the AR-49 metric-first AUTHORING surface in
-# the panel is fully exercised; the geostat observation cube is empty (map/KPIs render
-# their shell without data). To load the real demo data, run the deterministic
-# fresh-from-zero interleave — now a committed, reviewable orchestrator, NOT an ad-hoc
-# guess: ops/scripts/bringup-fresh.sh (ADR-035). It runs migrate -target=32 → ingest
-# REGIONAL+ACCOUNTS → migrate (V33..V38) → ingest GDP, reaching V38 WITH 4-dim GDP data,
-# idempotently. Point it at this line's pg (5458) + api (3011). The single-flyway-step
-# boot below stays green+empty by default (safe boot); bringup-fresh.sh is the opt-in
-# full-data path (needs a container host to run flyway).
+# observations. Flyway now runs UNCAPPED (V1→V38): the former `-target=32` defect —
+# a fresh volume dying at V33 — is FIXED by the beforeEachMigrate.sql callback, which
+# seeds the geo/sector/account STRUCTURAL codelist members (SDMX codelists are
+# structure, V7's own law) BEFORE V33. So V33 §7 passes and its §4/§6 corrections
+# land, V34 widens GDP to the canonical 4-dim DSD, V35..V38 apply — a deterministic
+# fresh-from-zero boot to V38. (The old note: V33 died "expected >=11 regions
+# parented to _T, found 0" because R2..R12 were minted only by ingest; the callback
+# moves those members to structure, dissolving both that RAISE and the V37
+# `claimed_at` interleave trap.)
+# CONSEQUENCE: this line boots deterministically green to V38 and is FULLY LIVE (own
+# db + api + geostat + panel) with the AR-49 metric-first AUTHORING surface fully
+# exercised; the observation cube starts EMPTY (map/KPIs render their shell). To load
+# the real demo data, run the now-COLLAPSED bring-up: ops/scripts/bringup-fresh.sh
+# (ADR-035) = `flyway migrate (uncapped) → ingest (all 3 workbooks, additive)`, no
+# -target cap, no ingest split. Point it at this line's pg (5458) + api (3011); the
+# classifier members converge (identical labels ⇒ no SCD-2 churn), facts land, GDP is
+# 4-dim, idempotent. (A future step may fold that ingest into a compose one-shot.)
 #
 # Boot order (depends_on + healthchecks): pg healthy → flyway 0 → api healthy →
 # geostat/panel start.
@@ -82,11 +77,13 @@ services:
       start_period: 30s
     restart: unless-stopped
 
-  # ── Flyway — V1→V32 ONLY (SEED NEUTRALIZED). Runs once, exits 0. ──────────────
-  # -target=32 is LOAD-BEARING on a fresh DB: without it flyway runs V1→V38 and DIES
-  # at V33 (runtime data dependency on canonical ingest — see header). The committed
-  # staging file omits -target and only survives because its DB was migrated
-  # incrementally, not fresh; a fresh dev volume MUST cap at 32.
+  # ── Flyway — V1→V38 UNCAPPED (SEED NEUTRALIZED). Runs once, exits 0. ──────────
+  # The former `-target=32` cap is GONE (ADR-035 root-cause fix): the co-located
+  # beforeEachMigrate.sql callback (auto-discovered from the mounted /flyway/sql
+  # locations) seeds the geo/sector/account STRUCTURAL codelist members before V33,
+  # so a fresh uncapped migrate now reaches V38 clean (V33 §7 passes; §4/§6 land).
+  # The callback is checksum-neutral (not in the version chain) and a no-op on an
+  # already-migrated DB, so this same command is safe on prod/staging.
   flyway:
     image: flyway/flyway:10-alpine
     container_name: statdash-dev-flyway
@@ -95,7 +92,6 @@ services:
       -user=statdash
       -password=dev_throwaway_db_pw
       -locations=filesystem:/flyway/sql
-      -target=32
       -placeholderReplacement=false
       migrate
     volumes:

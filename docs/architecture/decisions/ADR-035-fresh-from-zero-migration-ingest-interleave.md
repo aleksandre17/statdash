@@ -136,6 +136,74 @@ green.
   V33-class corrections into the post-ingest lane (the codified law) so the interleave can
   eventually collapse back to a single `migrate` + single `ingest`.
 
+## Update (2026-07-11) — SUPERSEDED by the `beforeEachMigrate` callback (root cause)
+
+The interleave above (Phases 1-4, `-target=32` + a phase-split ingest) was the
+**route-around** the immutability wall. On re-analysis + a live dev-line proof it is
+replaced by the actual **root-cause fix**, which collapses the bring-up to a single
+uncapped `flyway migrate` + a single additive ingest. The interleave narrative is kept
+above as the historical reasoning; the decision below is now authoritative.
+
+### The precise fresh-boot failure (sharpened)
+
+Only **one** of V33's four §7 assertions is ingest-dependent: `n_geo_regions >= 11`
+(geo `_T`+`R2..R12`). The other three are self-contained (`n_agg`/`n_agg_closing` from
+V33 §2; `n_geo_iso_live=0` from V33 §5b retiring the V5 ISO members). §4 (account order)
+and §6 (sector `parent_code='_T'`) are **UPDATEs that silently no-op when their target
+members are absent** — they do not RAISE, but in a migrate-then-ingest ordering they
+would leave the account/sector corrections **permanently un-applied** (V33 never re-runs).
+
+### The `claimed_at` (V37) trap — why the interleave was itself broken on a truly-fresh DB
+
+`worker.ts::claimNext` issues `SET status='parsing', claimed_at=now()`. `claimed_at` is
+added by **V37** (nullable). Under the interleave's Phase-1 `-target=32`, that column does
+not yet exist, so the Phase-2 claim UPDATE **errors**, the submission never drains, 0
+members are created, and Phase-3's V33 STILL RAISEs. The `-target=32` interleave therefore
+required an ever-growing set of `>V32` worker columns to be pre-applied — doubly broken on
+a genuinely fresh volume. The callback dissolves this: migrate goes **fully to V38 first**
+(so `claimed_at` exists), then a single normal ingest runs.
+
+### The fix: a `beforeEachMigrate.sql` Flyway callback (the one forward-only lever)
+
+All migrations `≤V38` are immutable and any new migration is `≥V39` (runs *after* V33), so
+the ONLY thing that can execute *before* V33 on a fresh single pass — without editing an
+applied migration — is a **Flyway callback**. `ops/postgres/migrations/beforeEachMigrate.sql`
+(co-located → auto-discovered from the `locations` any flyway already points at) idempotently
+seeds the **geo + sector + account structural codelist members** (exact ka/en labels + order
+from `DATA/canonical` CL_GEO/CL_SECTOR/CL_ACCOUNT) before V33. Guards: `to_regclass('stats.classifier')
+IS NOT NULL` (skip pre-V4 passes) and a `parent_code`-column existence check (seed body runs
+ONLY from the pass after V23, so the V23 code_path trigger + V18/V24 acyclicity guard + V14
+locale-completeness trigger are already live). Members are seeded **FLAT** (`parent_code`
+NULL, exactly as the canonical sheets declare them), so there is no parent/code_path
+interdependency at seed time — V33 §5c/§6b then stamp the `_T` roll-up and §4 the account
+order, **exactly as they did on prod after the historical ingest**. Idempotency is
+existence-based (`WHERE NOT EXISTS` on the current member), so it never compares labels,
+never revises, never deletes → a pure no-op on an already-migrated DB.
+
+### Codified law (reinforced)
+
+> **SDMX codelists are STRUCTURE, not ingest data.** A reference-member set that a
+> migration asserts on or corrects must be minted as structure (a migration or the
+> co-located callback), never left to ingest. Only the *observations* keyed on those
+> members are ingest data. V33 violated this by depending on ingest-minted geo/sector/
+> account members; the callback restores the correct SSOT split.
+
+### Checksum / `validate` safety
+
+A callback is **not** a versioned migration → not in `flyway_schema_history` → `flyway
+validate` (which only compares applied migrations to their files) is unaffected and stays
+green on prod/staging. `beforeEachMigrate` runs **only** during `migrate`, and only before a
+migration that is actually being applied — so on a fully-migrated line with no pending
+migration it never executes; when it does (e.g. before a future V39) it is a seed-if-missing
+no-op. Prod/staging cannot be broken by its presence.
+
+### Consequence for the orchestration
+
+`ops/scripts/bringup-fresh.sh` collapses to `flyway migrate (uncapped) → ingest (all 3,
+additive)`; `docker-compose.dev.yml` drops the `-target=32` cap. The ingest converges on the
+pre-seeded members (identical labels ⇒ `ON CONFLICT DO NOTHING`, no SCD-2 churn) and adds
+only facts (incl. 4-dim GDP vs the V34-widened DSD).
+
 ## Verification status
 
 The live boot-proof (fresh TimescaleDB volume → interleave → `V38` + `stats.observation
