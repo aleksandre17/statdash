@@ -1,0 +1,76 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# docker-compose.dev-panel.yml — ISOLATED dev preview of the panel (Constructor).
+#
+# The architecturally-right "server-native panel preview": a FIRST-CLASS, isolated
+# Docker service that builds the panel IMAGE from source on the server (exactly how
+# geostat/api/panel deploy in prod) — replacing the brittle workstation `dev watch`
+# (pwsh+rsync) path. Image-based: the current branch's source is BAKED at build time,
+# so there is zero workstation coupling and the preview is reproducible + reusable.
+#
+#   docker compose -f ops/compose/docker-compose.dev-panel.yml -p statdash-dev-panel \
+#     up -d --build
+#
+# ── ISOLATION (mirrors docker-compose.staging.yml; shares NOTHING with prod) ──────
+#   project        statdash-dev-panel        (≠ statdash-prod, ≠ statdash-stg)
+#   own network    statdash-dev-panel-net    (≠ statdash-net, ≠ statdash-stg-net)
+#   container      statdash-dev-panel        (≠ statdash-panel, ≠ statdash-stg-panel)
+#   image          statdash-panel:dev        (≠ statdash-panel[:latest], :stg)
+#   published      3010                       (≠ prod 3003, ≠ stg 3008)
+# It touches NO prod project/network/volume/container. Tear down freely with:
+#   docker compose -f ops/compose/docker-compose.dev-panel.yml -p statdash-dev-panel down
+#
+# ── API REUSE (single-origin, no CORS) ───────────────────────────────────────────
+# The panel image's baked nginx proxies /api/ → http://statdash-api:3001 and the SPA
+# is built with EMPTY VITE_API_URL → relative /api base (same-origin, no CORS, no
+# baked host/IP — the platform's single-origin topology, ADR adr-deployment-topology).
+# For that baked service name to resolve WITHOUT standing up a new DB/api, this panel
+# ALSO attaches to the existing staging network `statdash-stg-net`, where the staging
+# api publishes the alias `statdash-api`. So /api/... resolves to the STAGING api
+# (statdash-stg-api) — a dev/staging backend, never prod. The panel never joins the
+# prod network `statdash-net`, so it can never reach the prod `statdash-api`.
+# NOTE: this couples the preview's backend to the staging stack being up. If staging
+# is torn down, restart this after a staging bring-up (or point at another dev api).
+# ─────────────────────────────────────────────────────────────────────────────
+
+name: statdash-dev-panel
+
+services:
+  # ── panel (Constructor) SPA + reverse proxy — PUBLISHED on 3010 ───────────────
+  # Built from the current branch source (context = pnpm workspace root platform/).
+  panel:
+    image: statdash-panel:dev
+    container_name: statdash-dev-panel
+    build:
+      context: ../../platform
+      dockerfile: apps/panel/Dockerfile
+      target: production
+      args:
+        # Empty → relative /api/... base (single-origin via baked nginx). Never a host/IP.
+        VITE_API_URL: ""
+    ports:
+      - "${DEV_PANEL_PORT:-3010}:80"
+    networks:
+      # Own network = isolation identity (nothing else joins it).
+      - statdash-dev-panel-net
+      # Reach the staging api by its baked service name `statdash-api` (alias on
+      # statdash-stg-net → statdash-stg-api). Never the prod net.
+      - statdash-stg-net
+    restart: unless-stopped
+    mem_limit: 128m
+    cpus: 0.5
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+networks:
+  statdash-dev-panel-net:
+    name: statdash-dev-panel-net
+  # The staging network already exists (owned by the statdash-stg stack). Declared
+  # external so this file NEVER creates/owns/mutates it — it only attaches to reach
+  # the staging api alias. Prod's statdash-net is deliberately NOT referenced.
+  statdash-stg-net:
+    external: true
+    name: statdash-stg-net
