@@ -28,16 +28,19 @@ describe('CanonicalUpload — front-plane raw-data ingestion (AR-51)', () => {
   beforeEach(() => { mockUpload.mockReset(); mockPublish.mockReset() })
 
   it('upload → STAGED reveals the review→confirm (publish) step', async () => {
-    mockUpload.mockResolvedValue({ jobIds: { facts: 'job-1' } })
+    mockUpload.mockResolvedValue({ datasetCode: 'GDP_ANNUAL', jobIds: [{ kind: 'facts', jobId: 'job-1', status: 'staged' }] })
     render(<CanonicalUpload locale="ka" />)
     selectWorkbook()
     await waitFor(() => expect(screen.getByTestId('canonical-staged')).toBeInTheDocument())
     expect(mockUpload).toHaveBeenCalledOnce()
+    // the review projects the SELF-DECLARED dataset identity + the per-job breakdown
+    expect(screen.getByTestId('canonical-dataset')).toHaveTextContent('GDP_ANNUAL')
+    expect(screen.getByTestId('canonical-jobs')).toHaveTextContent('facts')
     expect(screen.getByTestId('canonical-publish')).toBeInTheDocument()
   })
 
   it('confirm (publish) the staged facts → published (obs live)', async () => {
-    mockUpload.mockResolvedValue({ jobIds: { facts: 'job-1' } })
+    mockUpload.mockResolvedValue({ datasetCode: 'GDP_ANNUAL', jobIds: [{ kind: 'facts', jobId: 'job-1', status: 'staged' }] })
     mockPublish.mockResolvedValue({})
     render(<CanonicalUpload locale="ka" />)
     selectWorkbook()
@@ -48,7 +51,7 @@ describe('CanonicalUpload — front-plane raw-data ingestion (AR-51)', () => {
   })
 
   it('a reference-only upload (no facts job) shows no publish button', async () => {
-    mockUpload.mockResolvedValue({ jobIds: {} })
+    mockUpload.mockResolvedValue({ datasetCode: 'CL_ONLY', jobIds: [{ kind: 'codelists', jobId: 'c-1', status: 'published' }] })
     render(<CanonicalUpload locale="ka" />)
     selectWorkbook()
     await waitFor(() => expect(screen.getByTestId('canonical-staged')).toBeInTheDocument())

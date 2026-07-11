@@ -19,16 +19,25 @@ import type { Locale } from '../../types/constructor'
 type Phase =
   | { k: 'idle' }
   | { k: 'uploading' }
-  | { k: 'staged'; result: CanonicalUploadResult; factsJobId?: string }
+  | { k: 'staged'; result: CanonicalUploadResult }
   | { k: 'publishing' }
   | { k: 'published' }
   | { k: 'error'; message: string }
 
-/** Best-effort read of the staged facts jobId from the 202 `{ jobIds }` envelope. */
-function factsJobIdOf(result: CanonicalUploadResult): string | undefined {
-  const jobIds = result.jobIds as Record<string, unknown> | undefined
-  const facts = jobIds?.facts ?? (result.factsJobId as unknown)
-  return typeof facts === 'string' ? facts : undefined
+/** One staged/published job the upload produced (a `jobIds[]` element of the 202). */
+interface UploadJob { kind?: string; jobId?: string; status?: string }
+
+/** The review the 202 carries: the SELF-DECLARED dataset identity + per-job breakdown
+ *  + the staged facts job (behind the publish gate). A pure projection of the response —
+ *  the panel renders what the source declared; it never parses the format (ADR-040). */
+function reviewOf(result: CanonicalUploadResult): { datasetCode?: string; jobs: UploadJob[]; factsJobId?: string } {
+  const jobs  = Array.isArray(result.jobIds) ? (result.jobIds as UploadJob[]) : []
+  const facts = jobs.find((j) => j?.kind === 'facts')
+  return {
+    datasetCode: typeof result.datasetCode === 'string' ? result.datasetCode : undefined,
+    jobs,
+    factsJobId:  typeof facts?.jobId === 'string' ? facts.jobId : undefined,
+  }
 }
 
 export function CanonicalUpload({ locale }: { locale: Locale }) {
@@ -41,7 +50,7 @@ export function CanonicalUpload({ locale }: { locale: Locale }) {
     try {
       const bytes  = await file.arrayBuffer()
       const result = await uploadCanonical(bytes)
-      setPhase({ k: 'staged', result, factsJobId: factsJobIdOf(result) })
+      setPhase({ k: 'staged', result })
     } catch (e) {
       setPhase({ k: 'error', message: e instanceof Error ? e.message : (en ? 'Upload failed' : 'ატვირთვა ვერ მოხერხდა') })
     }
@@ -96,32 +105,49 @@ export function CanonicalUpload({ locale }: { locale: Locale }) {
         </Box>
       )}
 
-      {phase.k === 'staged' && (
-        <>
-          <Divider />
-          <Alert severity="info" data-testid="canonical-staged">
-            {en
-              ? 'Staged — reference data published, facts awaiting your confirm.'
-              : 'Staged — reference მონაცემები გამოქვეყნდა, facts ელოდება დადასტურებას.'}
-          </Alert>
-          {phase.factsJobId
-            ? (
-              <Button
-                variant="contained"
-                data-testid="canonical-publish"
-                onClick={() => { if (phase.factsJobId) void onPublish(phase.factsJobId) }}
-                sx={{ alignSelf: 'flex-start', textTransform: 'none' }}
-              >
-                {en ? 'Review & publish' : 'გადახედე და გამოაქვეყნე'}
-              </Button>
-            )
-            : (
-              <Typography variant="caption" color="text.secondary">
-                {en ? 'No facts job to publish (reference-only upload).' : 'facts-job არ არის (მხოლოდ reference).'}
+      {phase.k === 'staged' && (() => {
+        const review = reviewOf(phase.result)
+        return (
+          <>
+            <Divider />
+            <Alert severity="info" data-testid="canonical-staged">
+              {en
+                ? 'The source self-declared its structure. Review, then publish.'
+                : 'წყარომ თავად გამოაცხადა თავისი სტრუქტურა. გადახედე და გამოაქვეყნე.'}
+            </Alert>
+            {review.datasetCode && (
+              <Typography variant="body2" data-testid="canonical-dataset">
+                {(en ? 'Dataset: ' : 'დატასეტი: ')}<strong>{review.datasetCode}</strong>
               </Typography>
             )}
-        </>
-      )}
+            {review.jobs.length > 0 && (
+              <Box component="ul" sx={{ m: 0, pl: 2 }} data-testid="canonical-jobs">
+                {review.jobs.map((j, i) => (
+                  <Typography component="li" variant="caption" key={j.jobId ?? i} color="text.secondary">
+                    {(j.kind ?? 'job')} — {(j.status ?? '—')}
+                  </Typography>
+                ))}
+              </Box>
+            )}
+            {review.factsJobId
+              ? (
+                <Button
+                  variant="contained"
+                  data-testid="canonical-publish"
+                  onClick={() => { const id = review.factsJobId; if (id) void onPublish(id) }}
+                  sx={{ alignSelf: 'flex-start', textTransform: 'none' }}
+                >
+                  {en ? 'Review & publish facts' : 'გადახედე და გამოაქვეყნე facts'}
+                </Button>
+              )
+              : (
+                <Typography variant="caption" color="text.secondary">
+                  {en ? 'No facts to publish (reference-only upload).' : 'facts არ არის (მხოლოდ reference).'}
+                </Typography>
+              )}
+          </>
+        )
+      })()}
 
       {phase.k === 'published' && (
         <Alert severity="success" data-testid="canonical-published">
