@@ -49,6 +49,7 @@ export function CanonicalUpload({ locale }: { locale: Locale }) {
   const en = locale === 'en'
   const inputRef = useRef<HTMLInputElement>(null)
   const [phase, setPhase] = useState<Phase>({ k: 'idle' })
+  const [dragActive, setDragActive] = useState(false)
 
   async function onFile(file: File) {
     setPhase({ k: 'uploading' })
@@ -74,12 +75,26 @@ export function CanonicalUpload({ locale }: { locale: Locale }) {
   const busy = phase.k === 'uploading' || phase.k === 'publishing'
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }} data-testid="canonical-upload">
+    <Box
+      data-testid="canonical-upload"
+      onDragOver={(e) => { e.preventDefault(); if (!busy) setDragActive(true) }}
+      onDragLeave={() => setDragActive(false)}
+      onDrop={(e) => {
+        e.preventDefault(); setDragActive(false)
+        const f = e.dataTransfer.files?.[0]; if (f && !busy) void onFile(f)
+      }}
+      sx={{
+        display: 'flex', flexDirection: 'column', gap: 1.5,
+        borderRadius: 1, outlineOffset: 4, transition: 'outline-color 120ms',
+        outline: '2px dashed transparent',
+        outlineColor: dragActive ? 'primary.main' : 'transparent',
+      }}
+    >
       <Typography variant="subtitle2">{en ? 'Onboard data' : 'მონაცემების ატვირთვა'}</Typography>
       <Typography variant="caption" color="text.secondary">
         {en
-          ? 'Upload a canonical workbook — it self-declares its structure (DSD); review, then publish.'
-          : 'ატვირთე კანონიკური workbook — ის თავად აცხადებს სტრუქტურას (DSD); გადახედე და გამოაქვეყნე.'}
+          ? 'Upload (or drop) a canonical workbook — it self-declares its structure (DSD); review, then publish.'
+          : 'ატვირთე (ან ჩააგდე) კანონიკური workbook — ის თავად აცხადებს სტრუქტურას (DSD); გადახედე და გამოაქვეყნე.'}
       </Typography>
 
       <input

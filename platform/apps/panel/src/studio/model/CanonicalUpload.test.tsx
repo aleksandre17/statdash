@@ -69,6 +69,15 @@ describe('CanonicalUpload — front-plane raw-data ingestion (AR-51)', () => {
     await waitFor(() => expect(screen.getByTestId('canonical-version')).toBeInTheDocument())
   })
 
+  it('accepts a DROPPED workbook (drag-drop onboarding — Flatfile/Tableau class)', async () => {
+    mockUpload.mockResolvedValue({ datasetCode: 'GDP_ANNUAL', jobIds: [{ kind: 'facts', jobId: 'job-1', status: 'staged' }] })
+    render(<CanonicalUpload locale="ka" />)
+    const file = new File([new Uint8Array([1, 2, 3])], 'data.xlsx')
+    Object.defineProperty(file, 'arrayBuffer', { value: async () => new ArrayBuffer(3) })
+    fireEvent.drop(screen.getByTestId('canonical-upload'), { dataTransfer: { files: [file] } })
+    await waitFor(() => expect(mockUpload).toHaveBeenCalledOnce())
+  })
+
   it('surfaces an upload error — never a blind failure', async () => {
     mockUpload.mockRejectedValue(new Error('bad workbook'))
     render(<CanonicalUpload locale="ka" />)
