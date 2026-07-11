@@ -30,13 +30,18 @@ interface UploadJob { kind?: string; jobId?: string; status?: string }
 /** The review the 202 carries: the SELF-DECLARED dataset identity + per-job breakdown
  *  + the staged facts job (behind the publish gate). A pure projection of the response —
  *  the panel renders what the source declared; it never parses the format (ADR-040). */
-function reviewOf(result: CanonicalUploadResult): { datasetCode?: string; jobs: UploadJob[]; factsJobId?: string } {
+function reviewOf(result: CanonicalUploadResult): {
+  datasetCode?: string; jobs: UploadJob[]; factsJobId?: string; versioned: boolean
+} {
   const jobs  = Array.isArray(result.jobIds) ? (result.jobIds as UploadJob[]) : []
   const facts = jobs.find((j) => j?.kind === 'facts')
   return {
     datasetCode: typeof result.datasetCode === 'string' ? result.datasetCode : undefined,
     jobs,
     factsJobId:  typeof facts?.jobId === 'string' ? facts.jobId : undefined,
+    // versionMint is present ONLY on a governed, versioned DSD-change (dims added to
+    // the series key) — a statistics-grade governance event the curator must SEE.
+    versioned:   !!result.versionMint && typeof result.versionMint === 'object',
   }
 }
 
@@ -119,6 +124,13 @@ export function CanonicalUpload({ locale }: { locale: Locale }) {
               <Typography variant="body2" data-testid="canonical-dataset">
                 {(en ? 'Dataset: ' : 'დატასეტი: ')}<strong>{review.datasetCode}</strong>
               </Typography>
+            )}
+            {review.versioned && (
+              <Alert severity="warning" data-testid="canonical-version">
+                {en
+                  ? 'A new dataset VERSION was minted (governed DSD change — dimensions added to the series key).'
+                  : 'ახალი დატასეტის ვერსია შეიქმნა (მართული DSD-ცვლილება — განზომილება დაემატა series key-ს).'}
+              </Alert>
             )}
             {review.jobs.length > 0 && (
               <Box component="ul" sx={{ m: 0, pl: 2 }} data-testid="canonical-jobs">

@@ -58,6 +58,17 @@ describe('CanonicalUpload — front-plane raw-data ingestion (AR-51)', () => {
     expect(screen.queryByTestId('canonical-publish')).not.toBeInTheDocument()
   })
 
+  it('surfaces a governed VERSION mint (DSD change) in the review', async () => {
+    mockUpload.mockResolvedValue({
+      datasetCode: 'GDP_ANNUAL',
+      jobIds: [{ kind: 'facts', jobId: 'job-1', status: 'staged' }],
+      versionMint: { version: '2.0' },
+    })
+    render(<CanonicalUpload locale="ka" />)
+    selectWorkbook()
+    await waitFor(() => expect(screen.getByTestId('canonical-version')).toBeInTheDocument())
+  })
+
   it('surfaces an upload error — never a blind failure', async () => {
     mockUpload.mockRejectedValue(new Error('bad workbook'))
     render(<CanonicalUpload locale="ka" />)
