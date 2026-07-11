@@ -70,6 +70,7 @@ export interface ConstructorStore extends ConstructorSession, StudioUiSlice, His
   updateSite:       (patch: Partial<SiteDef>) => void
   reorderNav:       (orderedIds: string[]) => void
   addNavItem:       (item: NavItem) => void
+  updateNavItem:    (id: string, patch: Partial<NavItem>) => void
   removeNavItem:    (id: string) => void
 
   // Chrome authoring (Phase C) — per-slot chrome config + selection
@@ -254,6 +255,18 @@ export const useConstructorStore = create<ConstructorStore>()(
           }),
           false,
           'site/addNavItem',
+        ),
+      updateNavItem: (id, patch) =>
+        set(
+          (s) => ({
+            ...pushHistory(s as ConstructorStore, `Update Nav Item`),
+            site: {
+              ...s.site,
+              nav: s.site.nav.map((n) => (n.id === id ? { ...n, ...patch } : n)),
+            },
+          }),
+          false,
+          'site/updateNavItem',
         ),
       removeNavItem: (id) =>
         set(

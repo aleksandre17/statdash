@@ -130,6 +130,19 @@ const PAGE_LIST_ROW = {
   updated_at: '2026-07-09T00:00:00.000Z',
 }
 
+// One seeded left-bar nav entry, page-backed (fromApiSite keeps page_id != null rows).
+// Gives the Pages&Site surface a real nav entry to SELECT + EDIT in the live proof.
+export const NAV_ENTRY_LABEL = { ka: 'მთავარი', en: 'Home' }
+const NAV_ROW = {
+  id: 'nav-home',
+  parent_id: null,
+  page_id: SEED_PAGE_ID,
+  label: NAV_ENTRY_LABEL,
+  href: null,
+  ord: 0,
+  depth: 0,
+}
+
 const PAGE_DETAIL_ROW = {
   ...PAGE_LIST_ROW,
   config: PAGE_CONFIG,
@@ -202,7 +215,7 @@ export async function mockPanelApi(page: Page): Promise<void> {
       }
       return json(route, { data: SITE })
     }
-    if (p.endsWith('/api/config/nav'))           return json(route, { data: [] })
+    if (p.endsWith('/api/config/nav'))           return json(route, { data: [NAV_ROW] })
     if (p.endsWith('/api/config/pages'))         return json(route, { data: [PAGE_LIST_ROW] })
     if (p.includes('/api/config/pages/'))        return json(route, { data: PAGE_DETAIL_ROW })
 
