@@ -1,0 +1,133 @@
+/* ── SummaryCard — the constant-weight glance card (BEM, token-driven) ────────
+ *
+ *  FF-DOCK-CONSTANT-WEIGHT is enforced HERE: the card is a fixed-height box that
+ *  clamps + ellipsises its content, so a value of any size occupies the SAME dock
+ *  weight. The dock can no longer overflow by construction.
+ */
+
+.summary-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--insp-gap-xs, 4px);
+  padding: var(--insp-gap-sm, 8px) var(--insp-gap-md, 12px);
+  border: 1px solid var(--insp-divider, #e2e8f0);
+  border-radius: var(--insp-radius-sm, 6px);
+  background: var(--insp-badge-bg, #f8fafc);
+  /* Constant weight: two content lines + affordance, never taller. */
+  max-height: 96px;
+  overflow: hidden;
+}
+
+.summary-card__body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0; /* let children ellipsise instead of pushing the card wider */
+}
+
+.summary-card__primary {
+  display: flex;
+  align-items: center;
+  gap: var(--insp-gap-xs, 6px);
+  min-width: 0;
+}
+
+.summary-card__glyph {
+  flex: 0 0 auto;
+  color: var(--insp-muted, #64748b);
+}
+
+.summary-card__primary-text {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 600;
+  font-size: var(--insp-font-sm, 0.8125rem);
+  color: var(--insp-fg, #0f172a);
+}
+
+.summary-card__badge {
+  flex: 0 0 auto;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: var(--insp-chip-bg, #e2e8f0);
+  color: var(--insp-muted, #475569);
+  font-size: var(--insp-font-xs, 0.6875rem);
+  font-weight: 600;
+  text-transform: lowercase;
+  letter-spacing: 0.02em;
+}
+
+.summary-card__secondary {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--insp-font-xs, 0.75rem);
+  color: var(--insp-muted, #64748b);
+}
+
+.summary-card__open {
+  align-self: flex-start;
+  margin-top: 2px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--insp-accent, #2563eb);
+  font: inherit;
+  font-size: var(--insp-font-xs, 0.75rem);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.summary-card__open:hover,
+.summary-card__open:focus-visible {
+  text-decoration: underline;
+}
+
+/* ── RichValueDetail — the escalated full-room read-only detail (W-A terminal) ── */
+.summary-detail {
+  display: flex;
+  flex-direction: column;
+  gap: var(--insp-gap-md, 12px);
+  padding: var(--insp-gap-md, 12px);
+}
+
+.summary-detail__list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--insp-gap-xs, 4px);
+  margin: 0;
+}
+
+.summary-detail__row {
+  display: flex;
+  gap: var(--insp-gap-sm, 8px);
+  padding: var(--insp-gap-xs, 4px) 0;
+  border-bottom: 1px solid var(--insp-divider, #e2e8f0);
+}
+
+.summary-detail__key {
+  flex: 0 0 40%;
+  margin: 0;
+  font-weight: 600;
+  font-size: var(--insp-font-sm, 0.8125rem);
+  color: var(--insp-muted, #475569);
+}
+
+.summary-detail__val {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: var(--insp-font-sm, 0.8125rem);
+  color: var(--insp-fg, #0f172a);
+}
+
+.summary-detail__empty {
+  margin: 0;
+  color: var(--insp-muted, #94a3b8);
+  font-size: var(--insp-font-sm, 0.8125rem);
+}

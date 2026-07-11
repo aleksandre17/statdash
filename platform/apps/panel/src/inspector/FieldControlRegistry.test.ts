@@ -1,10 +1,12 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, afterEach } from 'vitest'
 import type { PropField } from '@statdash/react/engine'
 import { fieldControlRegistry } from './FieldControlRegistry'
 import {
   TextControl, NumberControl, BooleanControl,
   ColorControl, SelectControl, JsonControl,
 } from './controls/primitives'
+import { SummaryCard } from './controls/SummaryCard'
+import { setRawJsonEscape } from './rawJsonEscape'
 import { LocaleField }  from './controls/LocaleField'
 import { EnumRefField } from './controls/EnumRefField'
 import { ArrayOfControl, ObjectControl } from './controls/NestedItemControl'
@@ -12,11 +14,20 @@ import { ArrayOfControl, ObjectControl } from './controls/NestedItemControl'
 const f = (over: Partial<PropField>): PropField =>
   ({ field: 'x', type: 'string', label: 'X', ...over })
 
+// The escape hatch is a module singleton — reset it after every test that flips it.
+afterEach(() => setRawJsonEscape(null))
+
 describe('FieldControlRegistry — built-in coverage', () => {
-  it('has a control for every known PropFieldType', () => {
+  it('has a control for every explicitly-registered PropFieldType', () => {
     for (const t of ['string', 'number', 'boolean', 'color', 'icon',
-                     'LocaleString', 'object', 'array', 'DataSpec', 'ChartDef', 'enum-ref']) {
+                     'LocaleString', 'enum-ref']) {
       expect(fieldControlRegistry.has(t)).toBe(true)
+    }
+  })
+
+  it('rich/opaque types are NOT registered — they resolve to the SummaryCard default', () => {
+    for (const t of ['object', 'array', 'DataSpec', 'ChartDef']) {
+      expect(fieldControlRegistry.has(t)).toBe(false)
     }
   })
 })
@@ -47,15 +58,23 @@ describe('FieldControlRegistry.resolve — precedence (OCP dispatch)', () => {
     expect(fieldControlRegistry.resolve(field)).toBe(SelectControl)
   })
 
-  it('rich/opaque types fall back to the JSON control', () => {
+  it('rich/opaque types resolve to the SummaryCard by DEFAULT (FF-NO-RAW-JSON-DEFAULT)', () => {
+    expect(fieldControlRegistry.resolve(f({ type: 'object' }))).toBe(SummaryCard)
+    expect(fieldControlRegistry.resolve(f({ type: 'array' }))).toBe(SummaryCard)
+    expect(fieldControlRegistry.resolve(f({ type: 'DataSpec' }))).toBe(SummaryCard)
+    expect(fieldControlRegistry.resolve(f({ type: 'ChartDef' }))).toBe(SummaryCard)
+  })
+
+  it('raw-JSON control is reachable ONLY behind the dev escape hatch', () => {
+    setRawJsonEscape(true)
     expect(fieldControlRegistry.resolve(f({ type: 'object' }))).toBe(JsonControl)
     expect(fieldControlRegistry.resolve(f({ type: 'DataSpec' }))).toBe(JsonControl)
   })
 
-  // ── D7.1 — structured nested (itemSchema) precedence ────────────────────────
-  it('array/object WITHOUT itemSchema keep the raw-JSON control (graceful fallback)', () => {
-    expect(fieldControlRegistry.resolve(f({ type: 'array' }))).toBe(JsonControl)
-    expect(fieldControlRegistry.resolve(f({ type: 'object' }))).toBe(JsonControl)
+  // ── D7.1 — structured nested (itemSchema) precedence (unchanged) ────────────
+  it('array/object WITHOUT itemSchema fall to the SummaryCard (not raw JSON)', () => {
+    expect(fieldControlRegistry.resolve(f({ type: 'array' }))).toBe(SummaryCard)
+    expect(fieldControlRegistry.resolve(f({ type: 'object' }))).toBe(SummaryCard)
   })
 
   it('array WITH itemSchema resolves to the ArrayOf nested editor', () => {
@@ -68,8 +87,8 @@ describe('FieldControlRegistry.resolve — precedence (OCP dispatch)', () => {
     expect(fieldControlRegistry.resolve(field)).toBe(ObjectControl)
   })
 
-  it('an unregistered type falls back to the JSON control (no throw)', () => {
-    expect(fieldControlRegistry.resolve(f({ type: 'totally-new' as PropField['type'] }))).toBe(JsonControl)
+  it('an unregistered type falls back to the SummaryCard (no throw, no raw JSON)', () => {
+    expect(fieldControlRegistry.resolve(f({ type: 'totally-new' as PropField['type'] }))).toBe(SummaryCard)
   })
 })
 

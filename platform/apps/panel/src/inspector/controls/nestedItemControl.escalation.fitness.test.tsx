@@ -106,8 +106,9 @@ describe('FF-NO-CRAMMED-DOCK (live) — a workspace item ESCALATES, never drills
     const crumbs = screen.getByRole('navigation', { name: 'Breadcrumb' })
     expect(within(crumbs).getByText('Series')).toBeInTheDocument()
     expect(within(crumbs).getByText('GDP')).toBeInTheDocument()
-    // The item's own fields are now authored here (the rich Query control is present).
-    expect(screen.getByLabelText('Query')).toBeInTheDocument()
+    // The item's own fields are now authored here (the rich Query field is present —
+    // it renders as a constant-weight summary card, §3.1, not a raw-JSON textarea).
+    expect(screen.getByText('Query')).toBeInTheDocument()
   })
 })
 
@@ -131,6 +132,6 @@ describe('FF-OVERFLOW-DETERMINISTIC (II) — form-weight items still dock-drill 
     fireEvent.click(screen.getByRole('button', { name: 'Edit GDP' }))
     // No escalation host → it degrades to the in-dock drill exactly as before.
     expect(screen.getByRole('navigation', { name: 'Breadcrumb' })).toBeInTheDocument()
-    expect(screen.getByLabelText('Query')).toBeInTheDocument()
+    expect(screen.getByText('Query')).toBeInTheDocument()
   })
 })

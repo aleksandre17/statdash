@@ -126,8 +126,9 @@ describe('FF-DOCK-ONE-HEADER-TIER — header is context XOR breadcrumb, never bo
 
   it('the header is a context-XOR-breadcrumb ternary in source (structural mutual exclusion)', () => {
     expect(rightDockSrc).toMatch(/promoted \?/)
-    // The Inspector is composed in the content/body, not the header block.
-    expect(rightDockSrc).toMatch(/<Inspector\b/)
+    // The body is composed from the section grammar (<DockBody> over the section
+    // registry, §3.1), not a hardcoded stack in the header block.
+    expect(rightDockSrc).toMatch(/<DockBody\b/)
   })
 })
 

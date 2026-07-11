@@ -1,20 +1,18 @@
 import { useRef, useState } from 'react'
 import type { KeyboardEvent as ReactKeyboardEvent, PointerEvent as ReactPointerEvent } from 'react'
-import { Box, Typography, Chip, Divider, Button, Tabs, Tab, IconButton, Tooltip } from '@mui/material'
+import { Box, Typography, Button, Tabs, Tab, IconButton, Tooltip } from '@mui/material'
 import DeleteIcon from '@mui/icons-material/Delete'
 import ChevronRightIcon from '@mui/icons-material/ChevronRight'
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft'
-import { Inspector, ChromeInspectorPanel } from '../inspector'
-import { VisibilitySection } from '../features/visibility'
-import { PageInspectorPanel } from '../features/page-config'
-import { PerspectivesPane } from '../features/perspectives'
-import { FiltersDrawer } from '../features/filters'
-import { nodeContextEditors } from './nodeContextEditors'
+import { DockBody, registerBuiltinDockSections } from '../inspector/sections'
 import { StudioEmptyState } from './StudioEmptyState'
 import { BreadcrumbSlotContext, useBreadcrumbHost } from '../inspector/breadcrumbSlot'
-import type { VisibilityExpr } from '@statdash/engine'
 import type { Locale } from '../types/constructor'
 import type { CanvasController } from './useCanvasController'
+
+// The dock body composes from ONE section registry (SPEC §3.1). Register the
+// built-ins on module load — idempotent, so boot/HMR/tests all share one grammar.
+registerBuiltinDockSections()
 
 // ── RightDock — the canonical tri-context inspector dock (AR-49 M4 Wave 7 · SL-1) ─
 //
@@ -73,10 +71,7 @@ export interface RightDockProps {
 }
 
 export function RightDock({ controller, locale, collapsed, onToggleCollapsed, width, onResize }: RightDockProps) {
-  const {
-    selected, pageId, chromeSel,
-    patchProp, setVisibleWhen, deleteSelected, setPreviewPerspectiveId,
-  } = controller
+  const { selected, pageId, chromeSel, deleteSelected } = controller
 
   // The selection key drives the context: element identity or null (→ Page).
   const selKey: string | null = chromeSel
@@ -136,31 +131,6 @@ export function RightDock({ controller, locale, collapsed, onToggleCollapsed, wi
     )
   }
 
-  // A type-specific Element-context augmentation (e.g. filter-bar → its controls,
-  // authored through the filterSchema SSOT). Declarative seam — absent for nodes
-  // fully covered by the generic Inspector. (D7.3 filter-bar control drill bridge.)
-  const ContextEditor = selected ? nodeContextEditors[selected.type] : undefined
-
-  // The element BODY — schema-driven form only; the Delete action lives in the
-  // FOOTER zone (below), so it stays reachable no matter how far the form scrolls.
-  const nodePanel = selected && (
-    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-      <Chip size="small" label={selected.type} color="primary" variant="outlined" sx={{ alignSelf: 'flex-start' }} />
-      <Inspector node={selected} onChange={patchProp} />
-      {ContextEditor && (
-        <>
-          <Divider />
-          <ContextEditor node={selected} locale={locale} />
-        </>
-      )}
-      <Divider />
-      <VisibilitySection
-        value={(selected.props.view as { visibleWhen?: VisibilityExpr } | undefined)?.visibleWhen}
-        onChange={setVisibleWhen}
-      />
-    </Box>
-  )
-
   // FOOTER — element actions. Present only in the element context with a node
   // selected (chrome/page/empty states carry no destructive action here).
   const footer = scope === 'element' && selected && !chromeSel && (
@@ -169,27 +139,20 @@ export function RightDock({ controller, locale, collapsed, onToggleCollapsed, wi
     </Button>
   )
 
-  // ── Content — ONE context, flex-fill (never an island + stacked remainder) ────
+  // ── Content — ONE context, composed from the section grammar (§3.1) ───────────
+  //  The dock body is no longer a hardcoded stack: it is the applicable sections
+  //  from `dockSectionRegistry`, rendered by <DockBody> through one divider grammar.
+  //  Empty states (no page / nothing selected) remain here — they are not sections.
   let content: React.ReactNode
   if (!pageId) {
     // No pages exist → a single guided empty-state that fills the region.
     content = <StudioEmptyState kind="no-pages" locale={locale} fill />
   } else if (scope === 'page') {
-    // Page context — the page-scoped panes live HERE, never stacked beneath a node
-    // Inspector (FF-RIGHTDOCK-CONTEXTUAL). They self-suppress when no page.
-    content = (
-      <Box className="studio-dock__page" sx={{ display: 'flex', flexDirection: 'column' }}>
-        <PageInspectorPanel />
-        <Divider sx={{ my: 1.5 }} />
-        <PerspectivesPane onPreviewChange={setPreviewPerspectiveId} />
-        <Divider sx={{ my: 1.5 }} />
-        <FiltersDrawer locale={locale} />
-      </Box>
-    )
-  } else if (chromeSel) {
-    content = <ChromeInspectorPanel />
-  } else if (selected) {
-    content = nodePanel
+    content = <DockBody ctx={{ scope: 'page', locale, controller }} />
+  } else if (chromeSel || selected) {
+    // Element context — the chrome panel OR the node's schema/context/visibility
+    // sections; the registry's `appliesTo` picks the right set (mutually exclusive).
+    content = <DockBody ctx={{ scope: 'element', locale, controller }} />
   } else {
     // Element context with nothing selected → the single quiet hint, filling the region.
     content = <StudioEmptyState kind="no-selection" locale={locale} fill />

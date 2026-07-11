@@ -154,14 +154,16 @@ describe('FF-NESTED-ITEM-EDITOR — add / remove / reorder from the list', () =>
 })
 
 describe('FF-NESTED-ITEM-EDITOR — graceful fallback (no itemSchema)', () => {
-  it('an array field WITHOUT itemSchema resolves to + renders the raw-JSON control', () => {
+  it('an array field WITHOUT itemSchema resolves to a SummaryCard (never raw JSON)', () => {
     const field: PropField = { field: 'blob', type: 'array', label: 'Blob' }
     const Control = fieldControlRegistry.resolve(field)
     const { container } = render(
       <Control field={field} id="insp-blob" value={[1, 2]} locales={['en']} locale="en" onChange={() => {}} />,
     )
-    // The documented opaque default — a raw-JSON <textarea>, no structured list.
-    expect(container.querySelector('.insp-field__json')).toBeInTheDocument()
+    // The new opaque default (§3.1, FF-NO-RAW-JSON-DEFAULT) — a constant-weight
+    // glance card, NOT a raw-JSON <textarea> and not a structured drill list.
+    expect(container.querySelector('.summary-card')).toBeInTheDocument()
+    expect(container.querySelector('.insp-field__json')).not.toBeInTheDocument()
     expect(container.querySelector('.insp-nested')).not.toBeInTheDocument()
   })
 })

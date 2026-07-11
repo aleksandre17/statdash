@@ -32,13 +32,13 @@
 //  filters" need. A later slice adds their builders behind the same Inspector seam.
 //
 import {
-  Box, Typography, Paper, IconButton, Divider, Stack, Tooltip, Button,
+  Box, Typography, Paper, IconButton, Divider, Stack, Tooltip,
 } from '@mui/material'
 import DeleteIcon       from '@mui/icons-material/Delete'
 import ArrowUpwardIcon  from '@mui/icons-material/ArrowUpward'
 import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward'
 import FilterAltIcon    from '@mui/icons-material/FilterAlt'
-import ChevronRightIcon from '@mui/icons-material/ChevronRight'
+import { SummaryCardView } from '../../inspector/controls/SummaryCard'
 import { ParamDefEditor } from './ParamDefEditor'
 import { moveItem, type BarView } from './filterSchemaModel'
 import { makeParamNode } from './paramFactory'
@@ -79,30 +79,24 @@ export function FiltersDrawer({ locale = 'ka' }: FiltersDrawerProps = {}) {
   // (§3.1 rich sub-document) → focus-view; an empty one stays a light in-dock stub.
   const escalate = escalation && filtersPipelineContainer(barViews) === 'focus-view'
 
-  // In the dock with a workspace pipeline → a compact affordance that hands the full
+  // In the dock with a workspace pipeline → a compact SUMMARY CARD that hands the full
   // body OUT to a focus-view (SELF-BOUND: the body re-sources its own live store state).
+  // This is the SL-5 bespoke affordance RETIRED into the general summary-card grammar
+  // (§3.1) — one visual card idiom for every glance projection in the studio.
   if (escalate) {
     return (
-      <Box data-testid="filters-affordance" sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-        <Stack direction="row" spacing={1} alignItems="center">
-          <FilterAltIcon fontSize="small" />
-          <Typography variant="overline" color="text.secondary">{t('filters', locale)}</Typography>
-        </Stack>
-        <Button
-          variant="outlined"
-          size="small"
-          endIcon={<ChevronRightIcon />}
-          onClick={() => escalation!.escalate({
-            source: 'self-bound',
-            title:  T.filters,
-            render: () => <FiltersDrawerBody />,
-          })}
-          sx={{ justifyContent: 'space-between', textTransform: 'none' }}
-          aria-label={`${t('configure', locale)} ${t('filters', locale)}`}
-        >
-          {barViews.length} {t('bars', locale)} · {controlCount(barViews)} {t('controls', locale)}
-        </Button>
-      </Box>
+      <SummaryCardView
+        glyph={<FilterAltIcon fontSize="small" />}
+        primary={t('filters', locale)}
+        secondary={`${barViews.length} ${t('bars', locale)} · ${controlCount(barViews)} ${t('controls', locale)}`}
+        onOpen={() => escalation!.escalate({
+          source: 'self-bound',
+          title:  T.filters,
+          render: () => <FiltersDrawerBody />,
+        })}
+        openLabel={`${t('configure', locale)} ${t('filters', locale)}`}
+        testId="filters-affordance"
+      />
     )
   }
 
