@@ -24,12 +24,10 @@ import * as Panels    from '@plugins/panels'
 import * as Nodes     from '@plugins/nodes'
 import * as Controls  from '@plugins/controls'
 import { createElement }              from 'react'
-import { registerSlice, middlewareRegistry, enablePromotion } from '@statdash/react/engine'
+import { registerSlice, middlewareRegistry } from '@statdash/react/engine'
 import { perspectiveRegistry }   from '@statdash/engine'
-import type { KpiSpec }          from '@statdash/engine'
 import { registerStoreBuilders } from '@statdash/plugins/datasources'
 import { registerPresentationProjectors } from '@statdash/plugins/presentation'
-import { registerNodeProjector } from './nodeProjection'
 
 let done = false
 
@@ -54,32 +52,6 @@ export function setupCanvasRegistry(): void {
     ...Object.values(Nodes),
     ...Object.values(Controls),
   ].forEach((s) => registerSlice(s as Parameters<typeof registerSlice>[0]))
-
-  // ── ADR-023 · R2 — ACTIVATE the kpi-card promotion (render + authoring) ─────
-  //
-  //  The promotion is authorized: FF-PROMOTION-LOSSLESS proves the promoted
-  //  residence is byte-identical to the legacy items[] path over the whole
-  //  geostat corpus. Activation is an APP-BOOT rollout decision (Law 1 keeps the
-  //  engine flag generic — it names no type; Law 3 keeps the app deciding), in two
-  //  symmetric faces:
-  //    • RENDER — enablePromotion('kpi-card') routes each strip item through the
-  //      first-class renderNode pipeline (the card as a real node, not the buried
-  //      itemSchema value).
-  //    • AUTHORING — a node projector surfaces each strip item as a SELECTABLE,
-  //      EDITABLE card object on the canvas, WITHOUT migrating the stored config
-  //      (items[] stays; the projection reuses the SAME `kpiSpecToCardNode`
-  //      lowering the renderer uses, so the projected card's id matches the
-  //      rendered card's DOM anchor). Edits write back into the strip's items[].
-  //
-  enablePromotion('kpi-card')
-  registerNodeProjector('kpi-strip', {
-    field: 'items',
-    toNode: (item) => {
-      const card = Panels.kpiCard.kpiSpecToCardNode(item as KpiSpec)
-      const { type, id, ...props } = card
-      return { id: id ?? '', type, props }
-    },
-  })
 
   // ── G3.0 — register the SHARED 'stats' store-builder (SSOT) ──────────────
   //

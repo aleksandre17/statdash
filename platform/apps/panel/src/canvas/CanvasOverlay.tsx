@@ -17,7 +17,6 @@ import { nodeRegistry }              from '@statdash/react/engine'
 import type { NodeBase, SlotDef }    from '@statdash/react/engine'
 import { walkNodes }                 from './walkNodes'
 import type { WalkedNode }           from './walkNodes'
-import { projectWalkedNodes }        from './nodeProjection'
 import { hasMetricDrag, readMetricDrag } from '../discovery/metricDrag'
 
 // ── Measured geometry, relative to the canvas root ────────────────────────
@@ -71,10 +70,7 @@ export function CanvasOverlay({
       }
     }
 
-    // Base tree walk + projected value-band children (ADR-023 promotion authoring
-    // twin): a promoted parent's items[] project to selectable card frames. Pure
-    // passthrough when no projector is registered (unchanged pre-activation walk).
-    const walked = projectWalkedNodes(walkNodes(page)).filter((w) => typeof w.node.id === 'string' && w.node.id)
+    const walked = walkNodes(page).filter((w) => typeof w.node.id === 'string' && w.node.id)
     const nextFrames: NodeFrame[] = []
     const nextDrops:  DropFrame[] = []
 

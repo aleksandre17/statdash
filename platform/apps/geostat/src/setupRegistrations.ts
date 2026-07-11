@@ -3,7 +3,7 @@ import * as Pages     from '@plugins/pages'
 import * as Panels    from '@plugins/panels'
 import * as Nodes     from '@plugins/nodes'
 import * as Controls  from '@plugins/controls'
-import { registerSlice, middlewareRegistry, enablePromotion } from '@statdash/react/engine'
+import { registerSlice, middlewareRegistry } from '@statdash/react/engine'
 import { createElement }                     from 'react'
 import { registerPresentationProjectors } from '@statdash/plugins/presentation'
 import { registerFeedbackI18n }  from './i18n/feedback'
@@ -41,13 +41,6 @@ export function setupRegistrations(): void {
     ...Object.values(Nodes),
     ...Object.values(Controls),
   ].forEach(s => registerSlice(s as Parameters<typeof registerSlice>[0]))
-
-  // ── ADR-023 · R2 — the kpi-card promoted residence is now the DEFAULT ───────
-  //  Authorized by FF-PROMOTION-LOSSLESS (byte-identical over the geostat corpus).
-  //  App-boot rollout decision (the engine flag stays generic — Law 1). Each
-  //  kpi-strip item renders through the first-class renderNode pipeline; the DOM is
-  //  byte-identical to the legacy value-band path (the runner is visually unchanged).
-  enablePromotion('kpi-card')
 
   // Gap 10: Middleware — dev node-debug wrapper (AOP, Grafana middleware pattern)
   if (import.meta.env.DEV) {
