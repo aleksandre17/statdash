@@ -1,4 +1,4 @@
-# App stack base — geostat-app (+ panel in Phase 3).
+# App stack base — geostat-app + panel + api (Phase 3: panel wired for kit dev-watch).
 # Requires infra stack running first:
 #   docker compose -f ops/compose/infra/docker-compose.base.yml \
 #                  -f ops/compose/infra/services/postgres.yml \
@@ -15,6 +15,18 @@ services:
     build:
       context: ../../platform
       dockerfile: apps/geostat/Dockerfile
+    networks:
+      - statdash-net
+    mem_limit: 128m
+    cpus: 0.5
+
+  # panel (Constructor) SPA — node-vite; dev target + source-mount via override (Phase 3).
+  panel:
+    image: panel
+    container_name: panel
+    build:
+      context: ../../platform
+      dockerfile: apps/panel/Dockerfile
     networks:
       - statdash-net
     mem_limit: 128m

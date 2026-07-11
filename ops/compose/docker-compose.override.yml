@@ -19,3 +19,23 @@ services:
           target: /app/apps/geostat/src
         - action: rebuild
           path: ../../platform/apps/geostat/package.json
+
+  panel:
+    build:
+      target: development
+    ports:
+      - "${DEPLOY_HOST_PORT:-3014}:5171"
+    volumes:
+      - ../../platform:/app
+      - /app/node_modules
+    environment:
+      VITE_API_URL: ${VITE_API_URL:-}
+    env_file:
+      - ../config/panel/.env.dev
+    develop:
+      watch:
+        - action: sync
+          path: ../../platform/apps/panel/src
+          target: /app/apps/panel/src
+        - action: rebuild
+          path: ../../platform/apps/panel/package.json
