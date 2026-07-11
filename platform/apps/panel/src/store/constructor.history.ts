@@ -3,9 +3,7 @@ import type {
   SiteDef,
   CanvasPage,
   ChromeSelection,
-  StudioSurface,
 } from '../types/constructor'
-import { DEFAULT_STUDIO_SURFACE } from '../types/constructor'
 
 // ── History (undo/redo) ───────────────────────────────────────────────────────
 // Command-pattern: each mutating action pushes a snapshot to undoStack.
@@ -43,14 +41,9 @@ export interface ConstructorSession {
 // ── Studio UI ───────────────────────────────────────────────────────────────
 
 export interface StudioUiSlice {
-  /**
-   * The Studio activity-rail surface currently shown in the left dock (AR-49).
-   * A NON-ordered lens summoned over the always-mounted canvas — it replaced the
-   * retired wizard's ordered `activeStep`/`completedSteps` gating (M1.3b).
-   * Preserved across undo/redo like the other UI-navigation fields (view state,
-   * not an undoable edit).
-   */
-  activeSurface:   StudioSurface
+  // The Studio activity-rail surface is NO LONGER store state — it is URL state
+  // (`/studio/:surface`, the single source of truth; see studio/useStudioRoute.ts).
+  // This slice now carries only the EPHEMERAL selection address (node/item/chrome).
   selectedNodeId:  string | null
   /**
    * The selected VALUE-BAND item within the selected node — a dot-path into that
@@ -64,9 +57,6 @@ export interface StudioUiSlice {
   /** The selected chrome element (Phase C). Mutually exclusive with a node. */
   chromeSelection: ChromeSelection | null
 }
-
-/** The Studio surface the session opens on — re-exported for store init/tests. */
-export const INITIAL_STUDIO_SURFACE = DEFAULT_STUDIO_SURFACE
 
 // ── Initial state ─────────────────────────────────────────────────────────────
 

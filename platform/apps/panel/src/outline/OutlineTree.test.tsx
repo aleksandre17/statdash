@@ -1,9 +1,13 @@
 // ── OutlineTree.test — structural tree, bidirectional selection, a11y (V6) ────
 import { describe, it, expect, beforeEach } from 'vitest'
-import { render, screen, fireEvent } from '@testing-library/react'
+import { screen, fireEvent } from '@testing-library/react'
 import { OutlineTree } from './OutlineTree'
+import { renderRouted } from '../test-support/renderStudio'
 import { useConstructorStore } from '../store/constructor.store'
 import type { CanvasPage } from '../types/constructor'
+
+// OutlineTree navigates surfaces (empty-state CTA → Insert), so it needs a Router.
+const render = (ui: Parameters<typeof renderRouted>[0]) => renderRouted(ui)
 
 const page: CanvasPage = {
   id: 'p1', type: 'inner-page', title: { ka: 'გ', en: 'P' }, slug: 'p',

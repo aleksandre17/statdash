@@ -6,7 +6,8 @@
 //
 import { useConstructorStore } from './constructor.store'
 
-export const useActiveSurface   = () => useConstructorStore((s) => s.activeSurface)
+// `useActiveSurface` now lives in studio/useStudioRoute (the surface is URL state,
+// not store state) — the store no longer holds `activeSurface`.
 export const useDataSources     = () => useConstructorStore((s) => s.dataSources)
 export const useDataSpecs       = () => useConstructorStore((s) => s.dataSpecs)
 export const useSite            = () => useConstructorStore((s) => s.site)

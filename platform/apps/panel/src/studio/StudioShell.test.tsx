@@ -1,9 +1,8 @@
 import { describe, it, expect, beforeEach } from 'vitest'
-import { render, screen, within, fireEvent } from '@testing-library/react'
-import { StudioShell } from './StudioShell'
+import { screen, within, fireEvent } from '@testing-library/react'
+import { renderStudio } from '../test-support/renderStudio'
 import { setupCanvasRegistry } from '../canvas/setupCanvasRegistry'
 import { useConstructorStore } from '../store/constructor.store'
-import { INITIAL_STUDIO_SURFACE } from '../store/constructor.history'
 import { useRoleStore } from './useRole'
 
 // The Studio scaffold: landmarks + a keyboard-reachable rail + the surfaces mount
@@ -13,7 +12,7 @@ import { useRoleStore } from './useRole'
 // heavy real canvas — the a11y/IA scaffold is what M1.2 proves.
 beforeEach(() => {
   setupCanvasRegistry() // idempotent — populates the palettes; keeps mounts crash-free
-  useConstructorStore.setState({ activeSurface: INITIAL_STUDIO_SURFACE, selectedNodeId: null, chromeSelection: null })
+  useConstructorStore.setState({ selectedNodeId: null, chromeSelection: null })
   useConstructorStore.getState().updateSite({ defaultLocale: 'en', activeLocales: ['en'] })
   // Default role lens = author (a fresh session lands here) — reset the persisted
   // preference so each test starts from the documented default (AR-49 M2.0).
@@ -22,7 +21,7 @@ beforeEach(() => {
 
 describe('StudioShell — IA + landmarks (WCAG 2.1 AA)', () => {
   it('renders the five shell landmark regions', () => {
-    render(<StudioShell />)
+    renderStudio()
     expect(screen.getByRole('banner')).toBeInTheDocument()          // top bar
     expect(screen.getByRole('main')).toBeInTheDocument()            // canvas home
     expect(screen.getByRole('contentinfo')).toBeInTheDocument()     // bottom strip
@@ -32,7 +31,7 @@ describe('StudioShell — IA + landmarks (WCAG 2.1 AA)', () => {
   })
 
   it('the canvas is the always-mounted home (main landmark), not gated by a rail step', () => {
-    render(<StudioShell />)
+    renderStudio()
     // Present regardless of which surface is active — no wizard step gates it.
     expect(screen.getByRole('main', { name: 'Canvas' })).toBeInTheDocument()
   })
@@ -40,7 +39,7 @@ describe('StudioShell — IA + landmarks (WCAG 2.1 AA)', () => {
 
 describe('StudioShell — activity rail (summonable surfaces, no waterfall)', () => {
   it('offers Insert/Data/Layers/Pages&Site/Style as keyboard-reachable buttons', () => {
-    render(<StudioShell />)
+    renderStudio()
     const rail = screen.getByRole('navigation', { name: 'Studio surfaces' })
     for (const name of ['Insert', 'Data', 'Layers', 'Pages & Site', 'Style']) {
       // Exact match — 'Data' must NOT also select the always-visible 'Data model' entry.
@@ -50,7 +49,7 @@ describe('StudioShell — activity rail (summonable surfaces, no waterfall)', ()
   })
 
   it('opens on Insert with aria-current, and selecting a surface swaps the dock (no gating)', () => {
-    render(<StudioShell />)
+    renderStudio()
     // Insert is the default surface — its rail button is aria-current and the dock
     // heading reads Insert.
     expect(screen.getByRole('heading', { name: 'Insert' })).toBeInTheDocument()
@@ -60,8 +59,9 @@ describe('StudioShell — activity rail (summonable surfaces, no waterfall)', ()
     // Jump straight to Data — no step must be "completed" first. Exact match so
     // 'Data' does not collide with the always-visible 'Data model' entry.
     fireEvent.click(within(rail).getByRole('button', { name: 'Data' }))
+    // The heading is derived from the URL surface (`/studio/data`) — the rail click
+    // navigated, and the shell re-rendered from the route (the routing round-trip).
     expect(screen.getByRole('heading', { name: 'Data' })).toBeInTheDocument()
-    expect(useConstructorStore.getState().activeSurface).toBe('data')
 
     // And straight to Style from Data — order-free.
     fireEvent.click(within(rail).getByRole('button', { name: 'Style' }))
@@ -78,7 +78,7 @@ describe('StudioShell — activity rail (summonable surfaces, no waterfall)', ()
 //  NEVER escalates the lens. These tests arrange the lens via the preference store.
 describe('StudioShell — the Data-model destination is reachable in every lens (AR-50 M5b)', () => {
   it('the DEFAULT (author) session offers the Data-model rail entry — it is NOT buried', () => {
-    render(<StudioShell />)
+    renderStudio()
     const rail = screen.getByRole('navigation', { name: 'Studio surfaces' })
     // The five compose surfaces AND the always-visible Data-model destination (exact
     // names — 'Data' must not collide with 'Data model').
@@ -88,12 +88,11 @@ describe('StudioShell — the Data-model destination is reachable in every lens 
   })
 
   it('from a DEFAULT author session, selecting Data model opens the READ-ONLY Dictionary (no query cliff)', () => {
-    render(<StudioShell />)
+    renderStudio()
     const rail = screen.getByRole('navigation', { name: 'Studio surfaces' })
     fireEvent.click(within(rail).getByRole('button', { name: /Data model/ }))
 
     // The Data-model FOCUS-VIEW screen opens (rail gone, breadcrumb-back present)…
-    expect(useConstructorStore.getState().activeSurface).toBe('model')
     expect(screen.getByRole('region', { name: 'Data model' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Back' })).toBeInTheDocument()
     // …and the AUTHOR lens is untouched (no escalation) → the read-only Dictionary, NOT
@@ -105,7 +104,7 @@ describe('StudioShell — the Data-model destination is reachable in every lens 
 
   it('the Steward lens opens the SAME destination as the full modeler', () => {
     useRoleStore.setState({ role: 'steward' })
-    render(<StudioShell />)
+    renderStudio()
     const rail = screen.getByRole('navigation', { name: 'Studio surfaces' })
     fireEvent.click(within(rail).getByRole('button', { name: /Data model/ }))
     expect(screen.getByRole('region', { name: 'Data model' })).toBeInTheDocument()
@@ -114,19 +113,18 @@ describe('StudioShell — the Data-model destination is reachable in every lens 
   })
 
   it('the top-bar "Data model" switch is PURE NAVIGATION — it opens the destination without escalating the lens', () => {
-    render(<StudioShell />)
+    renderStudio()
     // The top-bar segment and the rail entry both name "Data model"; drive the banner one.
     const banner = screen.getByRole('banner')
     fireEvent.click(within(banner).getByRole('button', { name: 'Data model' }))
 
     // Navigated to the destination, but the lens stayed author → the read-only Dictionary.
-    expect(useConstructorStore.getState().activeSurface).toBe('model')
     expect(useRoleStore.getState().role).toBe('author')
     expect(screen.getByTestId('data-dictionary')).toBeInTheDocument()
   })
 
   it('the in-place lens toggle opts INTO editing (author→steward) without leaving the destination', () => {
-    render(<StudioShell />)
+    renderStudio()
     fireEvent.click(within(screen.getByRole('navigation', { name: 'Studio surfaces' })).getByRole('button', { name: /Data model/ }))
     // Author landed on the Dictionary; flip the lens toggle to Edit → the modeler.
     expect(screen.getByTestId('data-dictionary')).toBeInTheDocument()
@@ -137,8 +135,7 @@ describe('StudioShell — the Data-model destination is reachable in every lens 
 
   it('breadcrumb-back leaves the Focus-View and returns to the editing shell (lens untouched)', () => {
     useRoleStore.setState({ role: 'steward' })
-    useConstructorStore.setState({ activeSurface: 'model' })
-    render(<StudioShell />)
+    renderStudio('model')
     expect(screen.getByRole('region', { name: 'Data model' })).toBeInTheDocument()
     expect(screen.queryByRole('navigation', { name: 'Studio surfaces' })).toBeNull()
 
@@ -155,7 +152,7 @@ describe('StudioShell — the Data-model destination is reachable in every lens 
 
 describe('StudioShell — surfaces mount via the existing subsystems', () => {
   it('the Data surface mounts the governed Metric Palette', () => {
-    render(<StudioShell />)
+    renderStudio()
     fireEvent.click(within(screen.getByRole('navigation', { name: 'Studio surfaces' })).getByRole('button', { name: 'Data' }))
     // MetricPalette exposes its search box (placeholder "ძებნა…") — proof the real
     // palette mounted (its empty/loading state is fine; population is a boot concern
@@ -183,7 +180,7 @@ describe('StudioShell — theme overrides land as custom properties on the docum
         'color.accent-secondary': '#123456', // a second override
       },
     })
-    render(<StudioShell />)
+    renderStudio()
 
     // The GlobalStyles block serializes to one or more <style> tags; join + strip
     // whitespace so the assertion is insensitive to the serializer's formatting.

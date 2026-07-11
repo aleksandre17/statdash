@@ -34,7 +34,17 @@
 //  consumes NodePageRenderer as-is; no fork.
 //
 import { useState }           from 'react'
-import { MemoryRouter }       from 'react-router-dom'
+import {
+  MemoryRouter,
+  // The invariant-reset seam (v6-sanctioned): the app now mounts a real BrowserRouter
+  // at its root (studio surface routing), so this preview MemoryRouter would otherwise
+  // be an illegal NESTED <Router>. Nulling the location/route context just above it makes
+  // the preview a fully ISOLATED routing island — its in-memory `?perspective=` search
+  // stays OFF the real Studio address bar, exactly as intended (the renderer's filter
+  // permalink must never leak into `/studio/...`).
+  UNSAFE_LocationContext,
+  UNSAFE_RouteContext,
+} from 'react-router-dom'
 import { SiteProvider }       from '@statdash/react'
 import type { NavEntry, ChromeConfig } from '@statdash/react'
 import { NodePageRenderer, AuthoringAnchorContext } from '@statdash/react/engine'
@@ -144,8 +154,14 @@ export function CanvasView({
           initialEntries carries the previewed perspective param (keyed so a preview
           switch remounts FilterProvider → fresh perspectiveState). */}
       <div className="canvas-layer canvas-layer--renderer" aria-hidden="true">
-        <MemoryRouter key={previewEntry} initialEntries={[previewEntry]}>
-          <SiteProvider
+        {/* Reset the router contexts so the preview MemoryRouter is a legal ISOLATED
+            island under the app BrowserRouter (v6 forbids a nested <Router> unless the
+            location context is cleared first). RouteContext is reset too so relative
+            resolution inside the preview never inherits the outer `/studio/...` matches. */}
+        <UNSAFE_LocationContext.Provider value={null as never}>
+          <UNSAFE_RouteContext.Provider value={{ outlet: null, matches: [], isDataRoute: false }}>
+            <MemoryRouter key={previewEntry} initialEntries={[previewEntry]}>
+              <SiteProvider
             stores={stores}
             nav={nav}
             chrome={chrome}
@@ -161,8 +177,10 @@ export function CanvasView({
             <AuthoringAnchorContext.Provider value={true}>
               <NodePageRenderer page={renderedPage} />
             </AuthoringAnchorContext.Provider>
-          </SiteProvider>
-        </MemoryRouter>
+              </SiteProvider>
+            </MemoryRouter>
+          </UNSAFE_RouteContext.Provider>
+        </UNSAFE_LocationContext.Provider>
       </div>
 
       {/* Layer 2 — interaction overlay. */}

@@ -5,7 +5,6 @@ import type {
   SiteDef, NavItem,
   CanvasPage, CanvasNode,
   ChromeSelection,
-  StudioSurface,
 } from '../types/constructor'
 import {
   type ConstructorSession,
@@ -13,7 +12,6 @@ import {
   type HistorySlice,
   type HistoryEntry,
   INITIAL_SESSION,
-  INITIAL_STUDIO_SURFACE,
   snapshot,
   pushHistory,
 } from './constructor.history'
@@ -58,9 +56,6 @@ export interface ConstructorStore extends ConstructorSession, StudioUiSlice, His
    * type. Selecting an item pins its owning node AND the item path together.
    */
   selectItem:     (nodeId: string, path: string) => void
-
-  // Studio activity-rail surface (AR-49) — non-ordered lens, never gated.
-  setSurface:     (surface: StudioSurface) => void
 
   // Data Layer actions
   addDataSource:     (ds: DataSourceDef) => void
@@ -124,7 +119,6 @@ export const useConstructorStore = create<ConstructorStore>()(
       // ── Initial state ──────────────────────────────────────────────────────
       ...INITIAL_SESSION,
       ...INITIAL_LIFECYCLE,
-      activeSurface:    INITIAL_STUDIO_SURFACE,
       selectedNodeId:   null,
       selectedItemPath: null,
       chromeSelection:  null,
@@ -144,11 +138,6 @@ export const useConstructorStore = create<ConstructorStore>()(
       // declared band field, not from any concrete type.
       selectItem: (nodeId, path) =>
         set({ selectedNodeId: nodeId, selectedItemPath: path, chromeSelection: null }, false, 'canvas/selectItem'),
-
-      // Summon a Studio activity-rail surface. Pure view-state (no gating, no
-      // history) — the anti-waterfall: any surface is reachable from any other.
-      setSurface: (surface) =>
-        set({ activeSurface: surface }, false, 'studio/setSurface'),
 
       // ── Data Layer ─────────────────────────────────────────────────────────
       addDataSource: (ds) =>
@@ -363,8 +352,7 @@ export const useConstructorStore = create<ConstructorStore>()(
               redoStack: [...s.redoStack, redoEntry],
               canUndo:   s.undoStack.length > 1,
               canRedo:   true,
-              // Preserve UI state
-              activeSurface:    s.activeSurface,
+              // Preserve UI state (the surface is URL state, untouched by store history)
               selectedNodeId:   s.selectedNodeId,
               selectedItemPath: s.selectedItemPath,
               chromeSelection:  s.chromeSelection,
@@ -385,7 +373,6 @@ export const useConstructorStore = create<ConstructorStore>()(
               redoStack: s.redoStack.slice(0, -1),
               canUndo:   true,
               canRedo:   s.redoStack.length > 1,
-              activeSurface:    s.activeSurface,
               selectedNodeId:   s.selectedNodeId,
               selectedItemPath: s.selectedItemPath,
               chromeSelection:  s.chromeSelection,

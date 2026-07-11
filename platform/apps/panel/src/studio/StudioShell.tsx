@@ -1,4 +1,5 @@
-import { lazy, Suspense, useMemo, useState, type CSSProperties } from 'react'
+import { lazy, Suspense, useEffect, useMemo, useState, type CSSProperties } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { Box, Typography, Chip, GlobalStyles } from '@mui/material'
 // Token SSOT — the shell chrome reads @statdash/styles DTCG custom properties
 // (studio.css). Importing it here (not in main.tsx) keeps the token layer in the
@@ -21,7 +22,8 @@ import { FocusView } from './FocusView'
 import { makeEscalatedTarget, type FocusViewTarget } from './focusViewRegistry'
 import { FocusEscalationContext, type FocusEscalationRequest, type FieldBinding } from '../inspector/focusEscalation'
 import { getAtPath } from '../inspector/showWhen'
-import { useConstructorStore, useActiveSurface, usePages, useActivePageId, useSite } from '../store/constructor.store'
+import { useConstructorStore, usePages, useActivePageId, useSite } from '../store/constructor.store'
+import { useActiveSurface, useSetSurface } from './useStudioRoute'
 import { DEFAULT_STUDIO_SURFACE } from '../types/constructor'
 import { useActiveLocales, PLATFORM_LOCALES } from '../inspector/useActiveLocales'
 import { buildThemeVars } from './themeVars'
@@ -54,8 +56,10 @@ const CommandPalette = lazy(() =>
 //  footer), a keyboard-reachable rail, and an Inspector that appears on selection.
 export function StudioShell() {
   const controller = useCanvasController()
+  // The active surface is DERIVED from the URL (`/studio/:surface`) and `setSurface`
+  // is a real navigation — the URL is the single source of truth (no shadow store flag).
   const activeSurface = useActiveSurface()
-  const setSurface = useConstructorStore((s) => s.setSurface)
+  const setSurface = useSetSurface()
 
   // The role LENS is NOT read here anymore. AR-50 M5b decoupled navigation from
   // identity: entering the Data-model destination is pure navigation (setSurface), and
@@ -67,6 +71,35 @@ export function StudioShell() {
   const setActivePage = useConstructorStore((s) => s.setActivePage)
   const site = useSite()
   const cmdk = useCommandPalette()
+
+  // ── Selected page ↔ `?page=` — a deep-linkable, convergent binding ────────────
+  //  The surface owns the path segment; the selected canvas page rides a query param
+  //  so a pasted `/studio/<surface>?page=<id>` opens that page and Back/Forward restore
+  //  it. The store stays the working SSOT for the page (it is woven through the canvas
+  //  controller, lifecycle, and every setActivePage caller) — this is a two-way binding
+  //  that CONVERGES (each side writes only while they differ, then both no-op), so it
+  //  self-heals rather than drifts. URL→store handles deep-link + Back/Forward; store→URL
+  //  (replace, a within-surface refinement — surfaces are the history spine) mirrors tab
+  //  clicks and boot hydration into the address bar.
+  const [searchParams, setSearchParams] = useSearchParams()
+  const urlPageId = searchParams.get('page')
+  useEffect(() => {
+    if (urlPageId && urlPageId !== activePageId && pages.some((p) => p.id === urlPageId)) {
+      setActivePage(urlPageId)
+    }
+  }, [urlPageId, activePageId, pages, setActivePage])
+  useEffect(() => {
+    if (activePageId && activePageId !== urlPageId) {
+      setSearchParams(
+        (prev) => {
+          const next = new URLSearchParams(prev)
+          next.set('page', activePageId)
+          return next
+        },
+        { replace: true },
+      )
+    }
+  }, [activePageId, urlPageId, setSearchParams])
 
   // Locale: the site's first active locale, with a top-bar PREVIEW override (spec
   // §2.1 "[ka|en]") — ephemeral view state, never persisted, reusing the existing
@@ -112,10 +145,12 @@ export function StudioShell() {
   const enterDataModel = () => setSurface('model')
   const exitDataModel = () => setSurface(DEFAULT_STUDIO_SURFACE)
 
-  // The focus-view route is a SCREEN STATE, not a URL (App.tsx is a state machine, not
-  // a router — see FocusView.tsx / the SL-2 report). The `model` surface is the first
-  // focus-view target, reachable in ANY lens (its body is role-split, not its route).
-  // When active the shell swaps its whole grid for the focus-view screen; back returns.
+  // The `model` surface is now a REAL route (`/studio/model`) — the D-SL-2a deferral
+  // ("route, never a step", realized as screen-state until routing landed) is fulfilled:
+  // the surface is derived from the URL, so the Data-model focus-view is deep-linkable and
+  // Back/Forward moves in/out of it. It is the first focus-view target, reachable in ANY
+  // lens (its body is role-split, not its route). When active the shell swaps its whole
+  // grid for the focus-view screen; back navigates to the default surface.
   const focusViewTargetId = activeSurface === 'model' ? 'data-model' : null
 
   // The escalated focus-view target — built from the pending request + a LIVE binding

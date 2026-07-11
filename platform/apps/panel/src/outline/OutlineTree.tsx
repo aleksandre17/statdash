@@ -29,6 +29,7 @@ import {
   useConstructorStore, useActivePage, useActivePageId, useSelectedNode,
 } from '../store/constructor.store'
 import { nestAccepts } from '../canvas/insertNode'
+import { useSetSurface } from '../studio/useStudioRoute'
 import { StudioEmptyState } from '../studio/StudioEmptyState'
 import { buildOutlineRows, type OutlineRow } from './outlineModel'
 import { OutlineItem } from './OutlineItem'
@@ -43,7 +44,7 @@ export function OutlineTree({ locale = 'ka' }: { locale?: Locale } = {}) {
   const moveNode   = useConstructorStore((s) => s.moveNode)
   const removeNode = useConstructorStore((s) => s.removeNode)
   const markDirty  = useConstructorStore((s) => s.markPageDirty)
-  const setSurface = useConstructorStore((s) => s.setSurface)
+  const setSurface = useSetSurface()
   const sensors    = useDndSensors()
 
   const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(new Set())

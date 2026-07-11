@@ -10,25 +10,26 @@
 //    ModelSurface's only render site is that registry, never the shell directly.
 //
 import { describe, it, expect, beforeEach } from 'vitest'
-import { render, screen, fireEvent } from '@testing-library/react'
-import { StudioShell } from './StudioShell'
+import { screen, fireEvent } from '@testing-library/react'
+import { renderStudio } from '../test-support/renderStudio'
 import { setupCanvasRegistry } from '../canvas/setupCanvasRegistry'
 import { useConstructorStore } from '../store/constructor.store'
 import { useRoleStore } from './useRole'
 import { FOCUS_VIEW_TARGETS, getFocusViewTarget } from './focusViewRegistry'
 
-// Enter the Data-model focus-view: the Steward lens over the `model` surface is the
-// SL-2 route state (StudioShell renders <FocusView> for effectiveSurface === 'model').
+// Enter the Data-model focus-view via its REAL route (`/studio/model`): StudioShell
+// renders <FocusView> for the model surface (derived from the URL). The Steward lens
+// splits the body to the full modeler.
 beforeEach(() => {
   setupCanvasRegistry()
-  useConstructorStore.setState({ activeSurface: 'model', selectedNodeId: null, chromeSelection: null })
+  useConstructorStore.setState({ selectedNodeId: null, chromeSelection: null })
   useConstructorStore.getState().updateSite({ defaultLocale: 'en', activeLocales: ['en'] })
   useRoleStore.setState({ role: 'steward' })
 })
 
 describe('FF-FOCUSVIEW-SEPARATE-ROUTE — the focus-view is a distinct screen, not an overlay', () => {
   it('while active, the editing shell chrome (rail + docks + grid + bottom strip) is GONE', () => {
-    const { container } = render(<StudioShell />)
+    const { container } = renderStudio('model')
     // The focus-view screen is present…
     expect(screen.getByRole('region', { name: 'Data model' })).toBeInTheDocument()
     // …and the whole 4-column editing shell is NOT rendered (a separate route — the
@@ -41,7 +42,7 @@ describe('FF-FOCUSVIEW-SEPARATE-ROUTE — the focus-view is a distinct screen, n
   })
 
   it('breadcrumb-back returns to the editing shell (loss-free — the route is reversible)', () => {
-    render(<StudioShell />)
+    renderStudio('model')
     fireEvent.click(screen.getByRole('button', { name: 'Back' }))
     // The editing shell is restored (the rail is back) and the focus-view screen is gone.
     expect(screen.getByRole('navigation', { name: 'Studio surfaces' })).toBeInTheDocument()
@@ -49,7 +50,7 @@ describe('FF-FOCUSVIEW-SEPARATE-ROUTE — the focus-view is a distinct screen, n
   })
 
   it('focus MOVES into the focus-view on enter (WCAG 2.1 AA · 2.4.3)', () => {
-    render(<StudioShell />)
+    renderStudio('model')
     expect(screen.getByRole('button', { name: 'Back' })).toHaveFocus()
   })
 })
@@ -81,14 +82,14 @@ describe('FF-MODEL-IS-FOCUSVIEW — Model composes the shared shell via the regi
   it('the data-model body renders the read-only Dictionary for AUTHOR and the modeler for STEWARD', () => {
     // Author lens → the read-only Data Dictionary (no modeler, no query cliff).
     useRoleStore.setState({ role: 'author' })
-    const { unmount } = render(<StudioShell />)
+    const { unmount } = renderStudio('model')
     expect(screen.getByTestId('data-dictionary')).toBeInTheDocument()
     expect(screen.queryByText(/Define the governed data model/)).toBeNull()
     unmount()
 
     // Steward lens → the full modeler (the relocated ModelSurface).
     useRoleStore.setState({ role: 'steward' })
-    render(<StudioShell />)
+    renderStudio('model')
     expect(screen.getByText(/Define the governed data model/)).toBeInTheDocument()
     expect(screen.queryByTestId('data-dictionary')).toBeNull()
   })
@@ -96,7 +97,7 @@ describe('FF-MODEL-IS-FOCUSVIEW — Model composes the shared shell via the regi
   it('the Studio shell composes the shared <FocusView> for Model — no fork', () => {
     // The focus-view region + the relocated ModelSurface body inside it prove Model
     // rides the shared shell, not a bespoke takeover.
-    render(<StudioShell />)
+    renderStudio('model')
     const region = screen.getByRole('region', { name: 'Data model' })
     expect(region).toBeInTheDocument()
     expect(screen.getByText(/Define the governed data model/)).toBeInTheDocument()

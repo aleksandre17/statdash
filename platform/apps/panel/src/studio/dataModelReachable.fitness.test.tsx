@@ -14,19 +14,19 @@
 //  Chromium, the assertion jsdom structurally cannot make — is e2e/dataModelReachable.e2e.ts.
 //
 import { describe, it, expect, beforeEach } from 'vitest'
-import { render, screen, within, fireEvent } from '@testing-library/react'
-import { StudioShell } from './StudioShell'
+import { screen, within, fireEvent } from '@testing-library/react'
+import { renderStudio } from '../test-support/renderStudio'
 import { setupCanvasRegistry } from '../canvas/setupCanvasRegistry'
 import { useConstructorStore } from '../store/constructor.store'
-import { INITIAL_STUDIO_SURFACE } from '../store/constructor.history'
 import { useRoleStore } from './useRole'
 import { RAIL_ENTRIES } from './rail'
 
-// The DOCUMENTED default session: a fresh user lands in the author lens on the initial
-// surface. This is the exact state the "built ≠ buried" guard must cover.
+// The DOCUMENTED default session: a fresh user lands in the author lens on the default
+// surface (renderStudio() opens `/studio/insert`). This is the exact state the
+// "built ≠ buried" guard must cover.
 beforeEach(() => {
   setupCanvasRegistry()
-  useConstructorStore.setState({ activeSurface: INITIAL_STUDIO_SURFACE, selectedNodeId: null, chromeSelection: null })
+  useConstructorStore.setState({ selectedNodeId: null, chromeSelection: null })
   useConstructorStore.getState().updateSite({ defaultLocale: 'en', activeLocales: ['en'] })
   useRoleStore.setState({ role: 'author' })
 })
@@ -37,24 +37,23 @@ describe('FF-DATA-REACHABLE — the data model is reachable from a default (auth
     // future role/visibility gate can bury it without tripping this line.
     expect(RAIL_ENTRIES.some((e) => e.id === 'model')).toBe(true)
 
-    render(<StudioShell />)
+    renderStudio()
     const rail = screen.getByRole('navigation', { name: 'Studio surfaces' })
     expect(within(rail).getByRole('button', { name: /Data model/ })).toBeEnabled()
   })
 
   it('ONE click from the default session lands the user IN the data-model destination', () => {
-    render(<StudioShell />)
+    renderStudio()
     const rail = screen.getByRole('navigation', { name: 'Studio surfaces' })
     fireEvent.click(within(rail).getByRole('button', { name: /Data model/ }))
 
     // The destination opened (the focus-view screen with its breadcrumb-back)…
-    expect(useConstructorStore.getState().activeSurface).toBe('model')
     expect(screen.getByRole('region', { name: 'Data model' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Back' })).toBeInTheDocument()
   })
 
   it('the default (author) reach is the READ-ONLY Dictionary — never the raw query modeler', () => {
-    render(<StudioShell />)
+    renderStudio()
     fireEvent.click(within(screen.getByRole('navigation', { name: 'Studio surfaces' })).getByRole('button', { name: /Data model/ }))
 
     // The lens was NOT escalated by navigating (built ≠ buried does not mean
@@ -66,10 +65,9 @@ describe('FF-DATA-REACHABLE — the data model is reachable from a default (auth
   })
 
   it('the top-bar destination switch reaches it too (a second discoverable entry)', () => {
-    render(<StudioShell />)
+    renderStudio()
     const banner = screen.getByRole('banner')
     fireEvent.click(within(banner).getByRole('button', { name: 'Data model' }))
-    expect(useConstructorStore.getState().activeSurface).toBe('model')
     expect(screen.getByTestId('data-dictionary')).toBeInTheDocument()
   })
 })

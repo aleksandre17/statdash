@@ -17,6 +17,7 @@ import type { LocaleString } from '@statdash/engine'
 import {
   useConstructorStore, useActivePage, useActivePageId, useSelectedNode,
 } from '../store/constructor.store'
+import { useSetSurface } from '../studio/useStudioRoute'
 import { makeNode, resolveInsertPlan, planInserts } from '../canvas/insertNode'
 import { insertNeedsContainerHint } from '../canvas/paletteGroupLabels'
 import { useToast } from '../store/notify'
@@ -35,7 +36,7 @@ export function useCommandRunner() {
   const selectNode = useConstructorStore((s) => s.selectNode)
   const removeNode = useConstructorStore((s) => s.removeNode)
   const markDirty  = useConstructorStore((s) => s.markPageDirty)
-  const setSurface = useConstructorStore((s) => s.setSurface)
+  const setSurface = useSetSurface()
   const notify     = useToast()
   const locale     = useActiveLocales()[0] ?? 'ka'
 

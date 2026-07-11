@@ -171,10 +171,15 @@ export interface CanvasPage {
 //  The Studio's activity-rail surfaces. A StudioSurface is a NON-ordered lens
 //  summoned over the always-mounted canvas — nothing gates anything (spec §2.1;
 //  the ordered 3-step wizard it replaced was retired in M1.3b). `model` is the
-//  M2 Steward-role slot: present in the union (the rail renders its LOCKED slot)
-//  but never selectable until M2 fills it.
+//  Steward-role destination (AR-50 M5b: always-visible, role-split content).
 //
-export type StudioSurface = 'insert' | 'data' | 'layers' | 'pages-site' | 'style' | 'model'
+//  ONE canonical list (AR-49 M0 routing): the string-literal type is DERIVED from
+//  this runtime array, so the rail table, the route param validator, and the type
+//  can never drift apart — a new surface is one entry here (OCP). Each id doubles
+//  as the URL path segment (`/studio/<id>`), so the list is also the route table.
+export const STUDIO_SURFACES = ['insert', 'data', 'layers', 'pages-site', 'style', 'model'] as const
+
+export type StudioSurface = (typeof STUDIO_SURFACES)[number]
 
 /** The surface the Studio opens on — Insert (drop a block) is the first affordance. */
 export const DEFAULT_STUDIO_SURFACE: StudioSurface = 'insert'

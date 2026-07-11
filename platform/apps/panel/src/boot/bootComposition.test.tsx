@@ -73,10 +73,14 @@ beforeEach(() => {
       : Promise.resolve({ ok: true, json: async () => ({}) }),
   ) as unknown as typeof fetch)
 
-  // Empty-site seed: a page + English locale + the Data surface active, and NO data
-  // sources (so App boots the real bootstrapCatalog path, not the offline fallback).
+  // Land on the Data surface via the URL (the surface is route state now) so the
+  // MetricPalette mounts once the Studio reaches 'ready'.
+  window.history.replaceState(null, '', '/studio/data')
+
+  // Empty-site seed: a page + English locale, and NO data sources (so App boots the
+  // real bootstrapCatalog path, not the offline fallback).
   useConstructorStore.setState({
-    dataSources: [], activeSurface: 'data', selectedNodeId: null, chromeSelection: null,
+    dataSources: [], selectedNodeId: null, chromeSelection: null,
   })
   const store = useConstructorStore.getState()
   store.updateSite({ defaultLocale: 'en', activeLocales: ['en'] })

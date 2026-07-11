@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, lazy, Suspense } from 'react'
+import { BrowserRouter } from 'react-router-dom'
 import { CssBaseline, Box, CircularProgress, GlobalStyles } from '@mui/material'
 // ADR-021 — bind MUI to the DTCG token spine. `ThemeProvider` (v6: the stable,
 // CSS-vars-aware provider — `CssVarsProvider` is a deprecated alias of it, removed
@@ -18,8 +19,12 @@ import { useConstructorStore } from './store/constructor.store'
 // wizard is retired (Strangler complete). Still lazy so its chunk (incl. the
 // @statdash/styles token CSS the chrome consumes) streams in after the boot shell
 // paints rather than bloating the initial bundle.
-const StudioShell = lazy(() =>
-  import('./studio/StudioShell').then((m) => ({ default: m.StudioShell })),
+// The Studio mounts THROUGH its route table (StudioRoutes → /studio/:surface →
+// StudioShell). Real URL routing (AR-49 M0): the surface + selected page live in the
+// address bar, so Back/Forward and permalinks work. Lazy so the whole Studio chunk
+// (incl. the @statdash/styles token CSS) streams in behind the boot shell.
+const StudioRoutes = lazy(() =>
+  import('./studio/StudioRoutes').then((m) => ({ default: m.StudioRoutes })),
 )
 import { initFromApi } from './store/api-actions'
 import { bootstrapCatalog } from './store/bootstrapCatalog'
@@ -141,7 +146,7 @@ export function App() {
       <>
         <CssBaseline />
         <Suspense fallback={<SuspenseFallback label="Loading studio" />}>
-          <StudioShell />
+          <StudioRoutes />
         </Suspense>
         <ToastHost />
       </>
@@ -150,11 +155,17 @@ export function App() {
   // One theme provider at the App root wraps login + loading + Studio (ADR-021 §Mount
   // point) — exactly one CSS-vars scope. The provider never re-renders on a theme
   // edit: `studioTheme` is a module constant and live edits ride the CSS alias, not React.
+  //
+  // BrowserRouter is the OUTERMOST wrapper (the app owns its router — real URL routing
+  // for the Studio surfaces/pages). The live canvas preview keeps its OWN sandboxed
+  // MemoryRouter (CanvasView) so previewed dashboards never touch the real address bar.
   return (
-    <ThemeProvider theme={studioTheme} defaultMode="light">
-      {/* Part 2 — re-point MUI's brand vars at the live DTCG spine (see muiTheme.ts). */}
-      <GlobalStyles styles={{ ':root:root': muiAliasVars }} />
-      {content}
-    </ThemeProvider>
+    <BrowserRouter>
+      <ThemeProvider theme={studioTheme} defaultMode="light">
+        {/* Part 2 — re-point MUI's brand vars at the live DTCG spine (see muiTheme.ts). */}
+        <GlobalStyles styles={{ ':root:root': muiAliasVars }} />
+        {content}
+      </ThemeProvider>
+    </BrowserRouter>
   )
 }
