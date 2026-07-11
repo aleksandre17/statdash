@@ -204,13 +204,38 @@ additive)`; `docker-compose.dev.yml` drops the `-target=32` cap. The ingest conv
 pre-seeded members (identical labels ⇒ `ON CONFLICT DO NOTHING`, no SCD-2 churn) and adds
 only facts (incl. 4-dim GDP vs the V34-widened DSD).
 
-## Verification status
+## Verification status — LIVE-PROVEN (2026-07-11, `statdash-dev`)
 
-The live boot-proof (fresh TimescaleDB volume → interleave → `V38` + `stats.observation
-> 0`) **requires a container runtime** (the schema needs the `timescaledb` extension +
-hypertables from the `timescaledb-ha` image; vanilla Postgres cannot run V1/V4). The host
-this was authored on has **no Docker/Podman, no local Postgres/TimescaleDB**, and the
-brief forbids touching the server lines. The exact ready-to-run proof commands are in the
-brief report and at the foot of `ops/scripts/bringup-fresh.sh`; the boot-proof must be run
-on a container-capable host (or the server's isolated dev line, if the operator authorizes
-it) before this ADR moves from staged to fully proven.
+The callback fix was proven end-to-end on the isolated dev line (`statdash-dev`,
+`statdash-dev-pg` = `timescale/timescaledb-ha:pg16`), on a **freshly wiped volume**
+(`statdash-dev-pgdata` removed and recreated empty). Prod (`statdash-*`) and staging
+(`statdash-stg-*`) were untouched throughout (before/after `docker ps` uptimes unchanged,
+no restarts).
+
+1. **Fresh uncapped `flyway migrate` → V38, exit 0.** `Successfully applied 38 migrations
+   … now at version v38`. The log shows `Executing SQL callback: beforeEachMigrate` before
+   each migration; V33 (`demo classifier data`) applied cleanly — its §7
+   `n_geo_regions >= 11` passed because the callback seeded the geo structure.
+2. **Structure + V33 corrections verified in-DB:** geo regions parented to `_T` = **11**;
+   geo current = 13 (GE + `_T` + R2..R12); `code_path` materialized `_T.R2`…`_T.R12`
+   (V23 trigger found the seeded `_T`); sector activities parented to `_T` = 9; account
+   `order` metadata stamped = 6; ISO dupes retired (current) = 0; aggregates = 19. This
+   proves seed-flat + V33-stamps-hierarchy works with no seed-time ordering hazard.
+3. **Additive ingest (all 3 workbooks) → `stats.observation` = 2479** (GDP 399 +
+   ACCOUNTS 415 + REGIONAL 1665); 4-dim GDP anchor `2010 GDP total = 22148.65`. All
+   codelists reported `already published … reference/converged` — the ingest **converged**
+   on the seeded members: geo current stayed **13** (no new members minted), duplicate
+   current members = **0**, i.e. identical canonical labels ⇒ `ON CONFLICT DO NOTHING`,
+   no SCD-2 churn.
+4. **Panels render real GDP.** geostat `:3012` + panel `:3013` serve HTTP 200; through the
+   geostat SPA `/api` proxy: `/api/stats/classifiers/geo/tree` returns the hierarchical
+   geo tree and `/api/stats/observations?dataset=GDP_ANNUAL` returns real 4-dim
+   observations (`dim_key {geo, measure, approach}`, values, `contribution_role`).
+5. **Idempotent + checksum-stable.** Re-run `flyway migrate` = `Successfully validated 38
+   migrations` + `Schema is up to date. No migration necessary.` (`validate` GREEN with the
+   callback present; with no pending migration the callback did not even fire — the prod
+   no-op path). Re-run ingest converged; obs stayed 2479, duplicate current members = 0.
+
+The interleave (`-target=32` + phase-split ingest) is retired in favour of this callback;
+`ops/scripts/bringup-fresh.sh` and `ops/compose/docker-compose.dev.yml` are updated
+accordingly.
