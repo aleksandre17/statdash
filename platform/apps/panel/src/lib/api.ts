@@ -83,6 +83,33 @@ export async function requestAt<T>(prefix: string, method: string, path: string,
   return json.data as T
 }
 
+// ── Ingestion transport (AR-51 / ADR-040 — the agnostic ingestion port's client) ─
+//  The canonical upload route accepts RAW `application/octet-stream` (the workbook
+//  bytes), NOT JSON — so this is a sibling of requestAt (same auth / 401 / envelope
+//  path), the ONE HTTP adapter for ingestion (Law 5). It returns 202 with the staged
+//  submission summary; the FACTS stay behind the publish gate (`POST /jobs/:id/publish`
+//  → `publishCanonicalJob` below). The panel never parses the format — the source
+//  self-declares its DSD server-side (ADR-040): the client is format-agnostic.
+export type CanonicalUploadResult = Record<string, unknown>
+
+export async function uploadCanonical(bytes: ArrayBuffer): Promise<CanonicalUploadResult> {
+  const token = getToken()
+  const headers: Record<string, string> = { 'Content-Type': 'application/octet-stream' }
+  if (token !== null) headers['Authorization'] = `Bearer ${token}`
+  const res = await fetch(`${BASE}/api/ingest/canonical`, { method: 'POST', headers, body: bytes })
+  if (res.status === 401) { clearToken(); throw new AuthError(401, 'Session expired — please log in again') }
+  const json = (await res.json()) as Envelope<CanonicalUploadResult>
+  if (!res.ok || json.error) {
+    throw new ApiError(res.status, json.message ?? json.error ?? 'Upload failed')
+  }
+  return json.data as CanonicalUploadResult
+}
+
+/** Publish a STAGED facts job — the curator's confirm step (ADR-040 review→confirm). */
+export async function publishCanonicalJob(jobId: string): Promise<Record<string, unknown>> {
+  return requestAt<Record<string, unknown>>('/api/ingest', 'POST', `/jobs/${encodeURIComponent(jobId)}/publish`)
+}
+
 // ── DB row shapes (snake_case — the wire contract) ──────────────────────────
 
 export interface DataSourceRow {
