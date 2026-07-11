@@ -1,7 +1,9 @@
 # ─────────────────────────────────────────────────────────────────────────────
-# docker-compose.staging.yml — ISOLATED STAGING stack (ADR-0032, "prove" half).
-#
-# DO NOT COMMIT. Throwaway secrets. Tear down after the prove-then-cutover probe.
+# docker-compose.staging.yml — the STAGING tier (pre-prod) of the dev → staging → prod
+# three-tier environment line. Originated as the ADR-0032 "prove-then-cutover" probe; now a
+# PERMANENT, fully-isolated pre-prod MIRROR of prod for release-candidate validation before
+# a prod cutover. Isolated secrets (staging-only; never real prod data / prod runtime).
+# Canonical model + tier purposes: docs/architecture/ENVIRONMENTS.md.
 #
 #   docker-compose -f ops/compose/docker-compose.staging.yml -p statdash-stg up -d
 #
