@@ -159,6 +159,31 @@ const PEER_SINGLETONS = ['react', 'react-dom', 'react-router-dom']
 
 export default defineConfig({
   plugins: [react()],
+  // ── Dev server (vite dev ONLY — ignored by `vite build`, so the production nginx
+  // image is unaffected) ──────────────────────────────────────────────────────────
+  //
+  // Under the image (nginx) panel, nginx proxies `/api/` → the api. The vite dev
+  // server has no nginx, so it must proxy `/api` itself to honour the same-origin
+  // relative-`/api` contract (VITE_API_URL empty). On the isolated dev line the panel
+  // container shares statdash-dev-net with the api, published under the `statdash-api`
+  // alias, so the default target resolves in-network. Override with VITE_DEV_API_PROXY
+  // (e.g. http://localhost:3011) for a local-host dev server.
+  server: {
+    // Config is the SSOT for port/host — the Dockerfile dev CMD forwards
+    // `dev -- --port` through pnpm, and the stray `--` makes vite's cac parser drop the
+    // flags (it binds its default 5173). Driving the port from APP_DEV_PORT here makes
+    // it deterministic regardless of CLI arg-forwarding quirks. APP_DEV_PORT must equal
+    // the PUBLISHED host port so the HMR websocket (default clientPort = page port)
+    // connects straight through.
+    host: true,
+    port: Number(process.env.APP_DEV_PORT) || 5173,
+    proxy: {
+      '/api': {
+        target: process.env.VITE_DEV_API_PROXY ?? 'http://statdash-api:3001',
+        changeOrigin: true,
+      },
+    },
+  },
   build: {
     // ── Vendor chunk splitting (secondary lever; lazy boundaries are primary) ──
     //

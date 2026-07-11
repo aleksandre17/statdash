@@ -180,34 +180,62 @@ services:
       retries: 3
       start_period: 10s
 
-  # ── panel (Constructor / AR-49 authoring) SPA + reverse proxy — PUBLISHED 3013 ─
-  # Supersedes the standalone docker-compose.dev-panel.yml (3010, staging-api-backed):
-  # this panel is backed by THIS line's OWN dev api (statdash-dev-api), not staging's.
+  # ── panel (Constructor / AR-49 authoring) — SOURCE-MOUNTED VITE DEV, LIVE-WATCH ─
+  # PUBLISHED 3013. Backed by THIS line's OWN dev api (statdash-dev-api).
+  #
+  # This is a live-watch dev server (Dockerfile `development` target: `vite dev`), NOT
+  # the static nginx image — a local `apps/panel/src` edit, rsync'd into DEV_PANEL_SRC
+  # on the server, reflects LIVE via vite HMR with NO rebuild. Robust equivalent of the
+  # kit `dev watch` driver (which short-circuits in the MSYS2/Git-Bash shell).
+  #
+  # DESIGN NOTES:
+  #  • Only `apps/panel/src` is bind-mounted (overlaying the image's baked copy). Under
+  #    .npmrc `shamefully-hoist=false` strict pnpm isolation, node_modules live per
+  #    package (root + apps/panel + packages/*); a whole-`/app` mount would shadow the
+  #    nested ones and break resolution. `src/` holds no node_modules, so overlaying it
+  #    is safe and needs no anonymous-volume preservation. packages/* stay baked (edit
+  #    them → add per-package `packages/<x>/src` mounts).
+  #  • APP_DEV_PORT=3013 + publish 3013:3013 → the browser page port == the container
+  #    vite port, so the HMR websocket (default clientPort = page port) connects
+  #    straight through. Mapping 3013:5171 would break HMR (ws → unmapped :5171). The
+  #    port is enforced by vite.config `server.port` (from APP_DEV_PORT) — the Dockerfile
+  #    dev CMD's `dev -- --port` double-dash makes vite's cac drop the flag, so config,
+  #    not the CLI, is the SSOT.
+  #  • CHOKIDAR_USEPOLLING=true → reliable change detection for rsync writes over the
+  #    bind mount (inotify propagation over bind mounts can be flaky).
+  #  • VITE_API_URL "" → relative /api; the vite dev server proxies /api → statdash-api
+  #    (vite.config `server.proxy`), same-origin, so the dev api needs no CORS change.
+  #  • DEV_PANEL_SRC (server-side rsync target) defaults to this worktree's source; the
+  #    watch workflow points it at a dedicated dir (ops/scripts/dev-watch-panel.sh).
   panel:
-    image: statdash-panel:dev
+    image: statdash-panel:dev-watch
     container_name: statdash-dev-panel-full
     build:
       context: ../../platform
       dockerfile: apps/panel/Dockerfile
-      target: production
-      args:
-        VITE_API_URL: ""
+      target: development
+    environment:
+      APP_DEV_PORT: "3013"
+      VITE_API_URL: ""
+      CHOKIDAR_USEPOLLING: "true"
     ports:
-      - "3013:80"
+      - "3013:3013"
+    volumes:
+      - ${DEV_PANEL_SRC:-../../platform/apps/panel/src}:/app/apps/panel/src
     networks:
       - statdash-dev-net
     depends_on:
       api:
         condition: service_healthy
     restart: unless-stopped
-    mem_limit: 128m
-    cpus: 0.5
+    mem_limit: 512m
+    cpus: 1.0
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://127.0.0.1/"]
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:3013/ >/dev/null 2>&1 || exit 1"]
       interval: 30s
       timeout: 5s
       retries: 3
-      start_period: 10s
+      start_period: 40s
 
 networks:
   statdash-dev-net:
