@@ -3,6 +3,7 @@ import { useConstructorStore, useActivePage, useSelectedNode, useChromeSelection
 import { nodeSchemaSource } from '../inspector/schemaSource'
 import { firstMetricField, isMetricBindable, bindMetricToProps } from '../discovery/metricBinding'
 import { setAtPath } from '../inspector/showWhen'
+import { resolveProjectedNode, type ProjectedNode } from '../canvas/nodeProjection'
 import { makeNode } from '../canvas/insertNode'
 import { toNodePageConfig } from '../canvas/canvasPageAdapter'
 import { projectCanvasSiteChrome } from '../canvas/canvasSiteChrome'
@@ -42,7 +43,13 @@ export function useCanvasController() {
   const [previewPerspectiveId, setPreviewPerspectiveId] = useState<string | undefined>(undefined)
 
   const pageId   = page?.id ?? null
-  const selected = page && selectedId ? page.nodes[selectedId] ?? null : null
+  // Selection resolves to a STORED tree node first; failing that, to a PROJECTED
+  // value-band child (a promoted card the strip owns as items[], surfaced as its
+  // own object — ADR-023 authoring twin). The projection carries write-back
+  // provenance (owner node + field + index) so edits route back into items[].
+  const projected: ProjectedNode | undefined =
+    page && selectedId && !page.nodes[selectedId] ? resolveProjectedNode(page, selectedId) : undefined
+  const selected = page && selectedId ? page.nodes[selectedId] ?? projected?.node ?? null : null
   const nodeConfig = page ? toNodePageConfig(page) : null
   const selectedBindable = selected ? isMetricBindable(nodeSchemaSource.getSchema(selected)) : false
 
@@ -79,19 +86,51 @@ export function useCanvasController() {
   )
 
   // Inspector onChange — write one prop on the selected node at its schema dot-path.
+  // A PROJECTED card writes THROUGH to its owner strip's value band: the same
+  // dot-path, re-based onto `items.<index>.<field>` (the card's schema fields are
+  // 1:1 with the value-band item, so the re-base is an identity mapping). No stored
+  // node exists for the card — the write lands on the strip that owns items[].
   const patchProp = useCallback(
     (field: string, value: unknown) => {
-      if (!pageId || !selected) return
+      if (!pageId || !page) return
+      if (projected) {
+        const owner = page.nodes[projected.owner.nodeId]
+        if (!owner) return
+        const path = `${projected.owner.field}.${projected.owner.index}.${field}`
+        updateNode(pageId, owner.id, { props: setAtPath(owner.props, path, value) })
+        markPageDirty(pageId)
+        return
+      }
+      if (!selected) return
       updateNode(pageId, selected.id, { props: setAtPath(selected.props, field, value) })
       markPageDirty(pageId)
     },
-    [pageId, selected, updateNode, markPageDirty],
+    [pageId, page, projected, selected, updateNode, markPageDirty],
   )
 
-  // Node-level view.visibleWhen gate — null clears it (byte-clean round-trip).
+  // Node-level view.visibleWhen gate — null clears it (byte-clean round-trip). A
+  // PROJECTED card's visibility lives in the LEGACY value band as `items.<i>.when`
+  // (the strip's stored residence, not yet migrated) — the projection surfaces it
+  // as `view.visibleWhen` for the editor, so the write is mapped back to `when`.
   const setVisibleWhen = useCallback(
     (next: VisibilityExpr | undefined) => {
-      if (!pageId || !selected) return
+      if (!pageId || !page) return
+      if (projected) {
+        const owner = page.nodes[projected.owner.nodeId]
+        if (!owner) return
+        const base = `${projected.owner.field}.${projected.owner.index}`
+        if (next == null) {
+          const items = (owner.props[projected.owner.field] as Array<Record<string, unknown>>).map((it, i) =>
+            i === projected.owner.index ? (() => { const { when: _drop, ...rest } = it; return rest })() : it,
+          )
+          updateNode(pageId, owner.id, { props: { ...owner.props, [projected.owner.field]: items } })
+        } else {
+          updateNode(pageId, owner.id, { props: setAtPath(owner.props, `${base}.when`, next) })
+        }
+        markPageDirty(pageId)
+        return
+      }
+      if (!selected) return
       if (next == null) {
         const view = { ...(selected.props.view as Record<string, unknown> | undefined) }
         delete view.visibleWhen
@@ -103,15 +142,27 @@ export function useCanvasController() {
       }
       markPageDirty(pageId)
     },
-    [pageId, selected, updateNode, markPageDirty],
+    [pageId, page, projected, selected, updateNode, markPageDirty],
   )
 
+  // Delete a PROJECTED card = splice it out of the owner strip's value band; a
+  // stored node deletes normally. Selection clears in both cases.
   const deleteSelected = useCallback(() => {
-    if (!pageId || !selected) return
+    if (!pageId || !page) return
+    if (projected) {
+      const owner = page.nodes[projected.owner.nodeId]
+      if (!owner) return
+      const items = (owner.props[projected.owner.field] as unknown[]).filter((_it, i) => i !== projected.owner.index)
+      updateNode(pageId, owner.id, { props: { ...owner.props, [projected.owner.field]: items } })
+      markPageDirty(pageId)
+      selectNode(null)
+      return
+    }
+    if (!selected) return
     removeNode(pageId, selected.id)
     markPageDirty(pageId)
     selectNode(null)
-  }, [pageId, selected, removeNode, markPageDirty, selectNode])
+  }, [pageId, page, projected, selected, removeNode, updateNode, markPageDirty, selectNode])
 
   return {
     page, pageId, selected, selectedId, chromeSel, nodeConfig, selectedBindable,

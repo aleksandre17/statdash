@@ -1,6 +1,7 @@
 import type { PanelSliceMeta } from '@statdash/react/engine'
+import { KpiCardSchema, KpiCardGroups } from './KpiCardNode'
 
-// ── kpi-card META — the PROMOTED leaf data panel (ADR-023 · R2 expand) ────────
+// ── kpi-card META — the PROMOTED first-class leaf data panel (ADR-023 · R2) ────
 //
 //  A leaf panel (canHaveChildren:false) rendering ONE KPI metric. Registered like
 //  any other node type (Law 1 / OCP — the engine special-cases nothing); it flows
@@ -11,15 +12,21 @@ import type { PanelSliceMeta } from '@statdash/react/engine'
 //  vocabulary, so no duplicate catalog is shipped (DRY) and the promoted card
 //  resolves BYTE-IDENTICAL trend/aria labels to the legacy strip render.
 //
-//  SHADOW STATUS (R2-expand): registered as a runtime node type behind the
-//  `isPromotionEnabled('kpi-card')` flag, built ALONGSIDE the legacy
-//  KpiStripNode.items[] path (Law 7 · Strangler expand). It is intentionally NOT
-//  yet added to the authoring palette roster (AUTHORING_METAS), and its authoring
-//  `schema`/`groups` (KpiCardNode.KpiCardSchema — defined + compile-time-verified
-//  1:1 with the card's editable keys, ready to wire) are deliberately NOT attached
-//  to this runtime META during shadow: the Inspector/palette AUTHORING surface is
-//  an R2-CONTRACT concern (exposed once FF-PROMOTION-LOSSLESS authorizes retiring
-//  the legacy path). Nothing is removed here; the card RENDERS via the flag only.
+//  ── AUTHORING SURFACE (R2-EXPAND · ACTIVATED) ──────────────────────────────
+//  The card carries its OWN PropSchema + PropertyGroups (KpiCardNode.KpiCardSchema,
+//  compile-time-verified 1:1 with the card's editable keys). Attaching them here
+//  makes `nodeRegistry.getSchema('kpi-card')` return the card's form, so the
+//  Constructor Inspector renders the card as a FIRST-CLASS editable object — its
+//  {label, value, unit, color, trend, …} authored directly, its visibility on the
+//  node facet `view.visibleWhen` (never a value-band `when`). This is the owner's
+//  "everything is its own type" made real: the card is selectable + editable as an
+//  object, not only reachable as a nested item inside the strip's itemSchema.
+//
+//  PALETTE ROSTER (still deferred): the card is intentionally NOT in AUTHORING_METAS
+//  (the draggable palette roster). A standalone card dragged onto a bare page is a
+//  distinct capability (a lone KPI outside a strip grid) that lands with the
+//  items[]→children CONTRACT migration; the object model's activation here is the
+//  render residence + selection/inspection of the strip's cards, not palette drag.
 //
 export const META: PanelSliceMeta = {
   sliceType:       'panel',
@@ -30,5 +37,7 @@ export const META: PanelSliceMeta = {
   category:        'data',
   canHaveChildren: false,
   caps:            ['kpi', 'filterable'],
+  schema:          KpiCardSchema,
+  groups:          KpiCardGroups,
   version:         1,
 }

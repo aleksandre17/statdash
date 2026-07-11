@@ -137,6 +137,14 @@ export function Inspector({
   const useTabs       = labelledCount >= GROUP_TAB_THRESHOLD
   const moreLabel     = resolveLabel(MORE_LABEL, locale, 'More')
 
+  // The root dock Inspector keeps the canonical `data-testid="inspector"`; a NESTED
+  // Inspector (the drill-in item editor + a promoted card's `value`/`trend` object
+  // sub-editors render one per `idPrefix`) scopes its testid by prefix so multiple
+  // Inspectors on one page never collide on `[data-testid="inspector"]` (the latent
+  // collision R2-expand flagged once the kpi-card schema is wired). Same rationale
+  // as the DOM-id `idPrefix` namespace above (WCAG-unique + query-unique).
+  const testId = idPrefix === 'insp' ? 'inspector' : `inspector-${idPrefix}`
+
   const renderField = useCallback(
     (field: PropField) => {
       if (!isVisible(field.showWhen, node.props)) return null
@@ -208,7 +216,7 @@ export function Inspector({
       e.preventDefault()
     }
     return (
-      <div className="insp" data-testid="inspector">
+      <div className="insp" data-testid={testId}>
         <div className="insp__tablist" role="tablist" aria-label="Inspector sections">
           {fieldGroups.map((g, i) => (
             <button
@@ -257,7 +265,7 @@ export function Inspector({
     })
 
   return (
-    <div className="insp" data-testid="inspector">
+    <div className="insp" data-testid={testId}>
       {fieldGroups.map((g) => {
         if (!g.label) {
           return (
