@@ -1,3 +1,9 @@
+# ════ TODAY'S CLOSURE (2026-07-12) — READ FIRST ════
+**:3013 = HEAD `54967d0` — ALL this session's work LIVE + independently verified** (panel Up, no rebuild): BE-1 bounded card selection · bounded-first inspector · **real routing `847a9d7`** (deep-link/back-forward) · **BE-3 in-canvas perspective switch `54967d0`** (preview Annual↔Dynamics on the canvas).
+**Board settled:** DONE = 0056·0057·0060·0061. OPEN (parked, fully spec'd) = 0058 (FF-GROUP-FIELDS-EXIST) · 0059 (accounts-dedup) · 0062 (BE-4 filter items) · 0063 (BE-5 slot nesting) · BE-2 (StyleField/reachability, AR-11).
+**Registry ELEVATED** (`ARCHITECTURE-REGISTRY.md §0`): the BE line reframed as ONE declaration-driven composition engine, benchmarked → **Builder.io `<Blocks>` · Framer · JSON-Forms/RJSF · Composite · homoiconic**, and SURPASS (a new declared sub-structure is authorable for free). Benchmark row-11 (Authoring UX) → Figma/Framer contextual-editing class.
+**NEXT (solo, on-branch, serial, live-verify each):** BE-5 (0063 — the general Composite root: architect ONE seam unifying value-bands + `slots.accepts` children) → BE-4 (0062) → BE-2 (StyleField) → 0058/0059 → undo-redo/draft-diff (benchmark row-11 residual). Deploy = server `git checkout <HEAD>` in `/tmp/statdash-dev-line` (source-mount, no rebuild) via `ssh -F ops/config/ssh/config geostat-deploy`.
+
 # ════ RESUME HANDOFF (2026-07-11, near token limit) — READ THIS FIRST ════
 Continue AS IF UNINTERRUPTED. Branch `feat/ar49-m0-metric-first-authoring` (NOT main). Dev line ONLY: :3013 (`admin`/`dev_admin_pw_123`). **PROD (`statdash-*`) + STAGING (`statdash-stg-*`) UNTOUCHABLE.** Deploy = `docker-compose -f ops/compose/docker-compose.dev.yml -p statdash-dev build+up --no-deps`, packages baked (rebuild) / `apps/panel/src` source-mounted (server `git checkout` in `/tmp/statdash-dev-line`, no rebuild).
 

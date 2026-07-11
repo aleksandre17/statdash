@@ -18,14 +18,22 @@
 > 2. *"can't click a KPI card separately"* → the canvas must select ANY declared element/item generically (incl. value-band `items[]` cards), the RIGHT way (declaration-driven, not the reverted `registerNodeProjector` hand-wire).
 > 3. *"click a KPI → everything comes out on the right, doesn't fit"* → the inspector must be a **bounded projection of the selected element's OWN declared contract**, drilled one at a time — not the whole nested schema expanded (`Inspector` defaults every accordion group open).
 
-| ID | Governed by ADR-038 | Fitness | Status |
-|----|---------------------|---------|--------|
-| **ADR-038** | The Bounded Element Law itself | FF-SCHEMA-COMPLETE (declares) · **FF-NO-EXTERNAL-SPECIAL-CASE** (0057, no hand-wire) · FF-GROUP-FIELDS-EXIST (0058) | **STANDARD ACCEPTED** — trunk (`ObjectMeta`) BUILT; **must reach VERIFIED (live :3013), not just BUILT** |
-| **ADR-039** | **Bounded-Element Selection Projection** (selection = Composite `(node, item-path)`; render/select/inspect = generic projections over the declaration; `BandItemBoundary` render-contract) | **FF-NO-EXTERNAL-SPECIAL-CASE** (0057, GREEN) · FF-PROMOTION-LOSSLESS (anchor inert off-canvas) | **VERIFIED** (Playwright real-bundle `bandItemSelect.e2e.ts`; live :3013 walkthrough) — `ADR-039-bounded-element-selection-projection.md` |
-| **BE-1** | **Generic per-element canvas selection + BOUNDED inspector** (click any element incl. a value-band card → only ITS declared contract) | canvas selects declared items generically; inspector = bounded projection, drill-one-at-a-time | **BUILT + e2e-VERIFIED** (ADR-039) — click a KPI card selects it bounded, dock shows only its contract + FITS; strip drill-in not regressed. Confirm on :3013. |
-| **BE-2** | Surface engine capability in the panel (`expr`/`style`/`core` + json-config functionality reflected as authorable) | every capability in a config = an authorable contract in the panel | OWED — DoD = live on :3013 |
+### The ONE architecture (the full picture — raised to the international class)
+The BE line is not a list of features — it is **ONE declaration-driven composition engine**: every element declares its contract ONCE (`ObjectMeta` schema · `itemSchema` value-bands · `slots.accepts` · the page's perspective axis · filter defs), and **every surface is a generic PROJECTION of that declaration** — canvas selection, the WYSIWYG renderer, the bounded inspector, the perspective switch, (owed) filter selection + slot nesting. Reference class this now meets/surpasses: **Builder.io `<Blocks>`/content-model · Framer component model · JSON-Forms/RJSF schema-driven UI · the Composite (GoF) tree of uniform contracts · the homoiconic ideal (one representation, every surface derived)**. Proof the foundation is framework-grade, not a per-type patchwork: a new declared sub-structure (a new value-band, a new slot, a new axis) becomes selectable/authorable for FREE, no new mechanism.
 
-**Discipline reset (2026-07-11):** every lane's DoD is **VERIFIED on the live panel (:3013)**, not `tsc`-green / unit-green. "BUILT" is not "done"; the owner must SEE it.
+| ID | Governed by ADR-038 | Fitness / seam | Status |
+|----|---------------------|----------------|--------|
+| **ADR-038** | The Bounded Element Law itself (governing) | FF-SCHEMA-COMPLETE · **FF-NO-EXTERNAL-SPECIAL-CASE** (0057 ✅) · FF-GROUP-FIELDS-EXIST (0058, owed) | **STANDARD ACCEPTED**; trunk (`ObjectMeta`) BUILT, proven surface-by-surface |
+| **ADR-039** | Bounded-Element Selection Projection (selection = Composite `(node, item-path)`; `BandItemBoundary` = Builder `<Blocks>` render-contract) | FF-NO-EXTERNAL-SPECIAL-CASE · FF-PROMOTION-LOSSLESS | ✅ **VERIFIED** — `17d30dc` |
+| **BE-1** | Per-element selection of value-band items + bounded item inspector (click a KPI card → only its `itemSchema`) | `bandItems.ts` `bandFieldsOf` (array+itemSchema) | ✅ **VERIFIED** — e2e `bandItemSelect` PASS, LIVE :3013 |
+| **BE-i** | Bounded-first inspector (primary group open, rest drill → the dock FITS) | Inspector accordion default = first labelled group; generic | ✅ **VERIFIED** — `b5c29f9`, LIVE :3013 |
+| **BE-3** | In-canvas perspective switch (preview Annual↔Dynamics) — pure projection of the page's declared axis | CanvasToolbar radiogroup ← `page.perspectives` → `previewPerspectiveId`→router remount | ✅ **VERIFIED** — `54967d0`, `CanvasToolbar.test` 3/3, LIVE :3013 |
+| **RT** | Real URL routing for the Studio (activate-not-shadow) — surfaces/pages deep-linkable | `/studio/:surface`+`?page=`, one SSOT `useStudioRoute` | ✅ **VERIFIED** — `847a9d7`, e2e `studioRouting` 3/3, LIVE :3013 |
+| **BE-4** | Filter items as bounded elements (generalize the band projection to the filter-bar) | filter defs → declared band → SAME `bandItems` projection | **OWED** (card 0062) |
+| **BE-5** | Canvas nest+select children via each element's DECLARED `slots.accepts` — the Composite arm, unify bands + slots under ONE projection | one generic projection over `itemSchema` (bands) AND `slots` (tree children) | **OWED** (card 0063) — the general composition root |
+| **BE-2** | Surface engine capability as authorable: (a) built data-pipe/calc reachable in steward Model mode; (b) **StyleField** (`view.styles` authoring, AR-11 — genuinely unbuilt) | every declared engine capability = an authorable contract | **OWED** (see AR-11) |
+
+**Discipline reset (2026-07-11):** every lane's DoD is **VERIFIED on the live panel (:3013)** (Playwright real-boot + look), not `tsc`/unit-green. "BUILT" ≠ done; the owner must SEE it. **Verified live this session: ADR-039 · BE-1 · BE-i · BE-3 · RT.**
 
 ## A. Responsive · Composition · Style (the current thrust — owner's #1)
 
