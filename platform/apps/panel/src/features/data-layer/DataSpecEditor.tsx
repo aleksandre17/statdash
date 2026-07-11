@@ -13,6 +13,7 @@ import { RatioListEditor } from './editors/RatioListEditor'
 import { RowListEditor } from './editors/rowlist/RowListEditor'
 import { TransformEditor } from './editors/TransformEditor'
 import { PivotEditor } from './editors/PivotEditor'
+import { MetricSpecEditor } from './editors/MetricSpecEditor'
 
 // ── DataSpecEditor — type picker + routes to type-specific editor ─────────────
 //
@@ -47,6 +48,8 @@ function defaultSpec(type: SpecType): DataSpec {
       return { type: 'pivot', rows: [], keyField: '', valueFields: [] }
     case 'transform':
       return { type: 'transform', source: [], steps: [], encoding: { label: 'label' } }
+    case 'metric':
+      return { type: 'metric', metrics: [] }
     default:
       return { type: 'row-list', rows: [] }
   }
@@ -112,6 +115,7 @@ function SpecBody({ value, onChange }: { value: DataSpec; onChange: (spec: DataS
     case 'row-list':   return <RowListEditor    value={value} onChange={onChange} />
     case 'transform':  return <TransformEditor  value={value} onChange={onChange} />
     case 'pivot':      return <PivotEditor      value={value} onChange={onChange} />
+    case 'metric':     return <MetricSpecEditor value={value} onChange={onChange} />
     default:           return <JsonFallback     value={value} onChange={onChange} />
   }
 }

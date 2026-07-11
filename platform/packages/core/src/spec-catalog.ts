@@ -130,4 +130,20 @@ export const SPEC_CATALOG: Record<string, SpecDescriptor> = {
     example: '{ "type": "transform", "source": [...], "steps": [{ "op": "sort", "by": "value", "dir": "desc" }], "encoding": { "x": "label", "y": "value" } }',
   },
 
+  'metric': {
+    label:            { ka: 'მეტრიკა (სემანტიკური)', en: 'Metric (semantic)' },
+    description:      {
+      ka: 'მართული მეტრიკ(ებ)ი × გენერიკ grain (by/time). Metric-first: აირჩიე არსებითი სახელი, არა query. Cube/dbt-SL query-ფორმა, SDMX-ნატიური.',
+      en: 'Governed metric(s) × a generic grain (by/time). Metric-first: pick nouns, not a query. The Cube/dbt-SL query shape, SDMX-native.',
+    },
+    constructorReady: true,
+    fields: [
+      { key: 'metrics', label: { ka: 'მეტრიკები',  en: 'Metrics' }, description: { ka: 'MetricRef[] — მართული მეტრიკ(ებ)ის id-ები (ან raw code). თითო სერია.', en: 'MetricRef[] — governed metric ids (or raw codes). One series each.' }, required: true,  type: 'MetricRef[]' },
+      { key: 'by',      label: { ka: 'დაჯგუფება',   en: 'By (grain)' }, description: { ka: 'string[] — გენერიკ grain-ღერძები (Law 1). ცარიელი ⇒ სკალარი.',       en: 'string[] — generic grain axes (Law 1). Empty ⇒ a scalar per metric.' }, required: false, type: 'string[]' },
+      { key: 'time',    label: { ka: 'დრო',         en: 'Time' }, description: { ka: 'TimeDimensionSpec — პირველკლასიანი დროის grain { dim, range?, granularity? }.', en: 'TimeDimensionSpec — first-class time grain { dim, range?, granularity? }.' }, required: false, type: 'TimeDimensionSpec' },
+      { key: 'where',   label: { ka: 'ფილტრი',      en: 'Where' }, description: { ka: 'Partial<Record<dim, DimVal>> — კოორდინატის დაფიქსირება (Law 1).',        en: 'Partial<Record<dim, DimVal>> — pin the read coordinate (Law 1).' }, required: false, type: 'Partial<Record<string, DimVal>>' },
+    ],
+    example: '{ "type": "metric", "metrics": ["gdp_per_capita"], "time": { "dim": "time" } }',
+  },
+
 }

@@ -52,11 +52,14 @@ const BESPOKE_STEP_FORMS = new Set(['derive', 'lookup', 'sort', 'filter'])
  *   row-list                            — RowListEditor (RowSpec[] via the Inspector)
  *   transform                           — TransformEditor (PipelineBuilder + EncodingEditor)
  *   pivot                               — PivotEditor (friendly rows/keyField/valueFields/colors)
- * Only `custom` (a code-resolver ref) remains JSON-only — PERMANENT.
+ *   metric                              — MetricSpecEditor (AR-50 M-SQ: governed metric picker +
+ *                                         generic by/time grain + where pins → a MetricSpec)
+ * Every discriminant now has a dedicated editor; the `custom`/`fn` escape hatch was
+ * removed from the union wholesale (ENG-16) — nothing falls through to raw JSON.
  */
 const DATASPEC_EDITORS = new Set([
   'query', 'timeseries', 'growth', 'ratio-list',
-  'row-list', 'transform', 'pivot',
+  'row-list', 'transform', 'pivot', 'metric',
 ])
 
 /**
@@ -133,14 +136,13 @@ const COVERAGE_TODO = {
     //   timeseries/growth/ratio-list → dedicated editors
     //   transform → TransformEditor   (PipelineBuilder + EncodingEditor + JSON source)
     //   pivot     → PivotEditor       (friendly rows/keyField/valueFields/colors)
+    //   metric    → MetricSpecEditor  (AR-50 M-SQ-EDITOR: SHIPPED — governed metric picker
+    //                                  reusing the useMetricCatalog registry view + a generic
+    //                                  by/time grain + where pins, emitting a pure MetricSpec)
     //
-    // `metric` (AR-50 M-SQ) — the semantic-query discriminant — is STRUCTURALLY complete
-    // (resolver + extractDeps + warm reqs all green), but its Constructor surface is a
-    // FOLLOW-ON: a metric-first authoring pane that reuses the existing governed-metric
-    // picker (MetricCatalogManager selection) + a by/time grain control, emitting the
-    // pure-data spec. Allowlisted here (roadmap-keyed, not silent drift) until that pane
-    // lands; removing this entry when the editor ships is the forcing function.
-    metric: 'AR-50 M-SQ-EDITOR — metric-picker + by/time grain authoring pane (follow-on)',
+    // The allowlist is EMPTY: every DataSpec discriminant now has a dedicated editor, so a
+    // new un-surfaced type FAILS this gate (no silent drift). `metric` (AR-50 M-SQ) shipped
+    // its authoring pane — the follow-on allowlist entry was REMOVED, the forcing function done.
   },
   paramDefs: {
     // V0 — page-level FilterSchema/ParamDef authoring is DONE. Every ParamDef

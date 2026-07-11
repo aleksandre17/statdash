@@ -19,6 +19,7 @@ export { RowListEditor } from './editors/rowlist/RowListEditor'
 export { RowSpecEditor } from './editors/rowlist/RowSpecEditor'
 export { TransformEditor } from './editors/TransformEditor'
 export { PivotEditor } from './editors/PivotEditor'
+export { MetricSpecEditor } from './editors/MetricSpecEditor'
 
 // V5 — drag-to-bind field wells + Tableau "Show Me" suggested charts.
 export { FieldWells } from './fieldwells/FieldWells'
