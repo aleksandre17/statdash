@@ -25,6 +25,11 @@ export interface CanvasToolbarProps {
   mode:         PreviewMode
   status:       PreviewStatus
   onModeChange: (mode: PreviewMode) => void
+  /** The page's DECLARED perspective axis (Annual/Dynamics…), resolved to labels.
+   *  <2 options ⇒ the switch is hidden. Derived from the page — no per-page special-case. */
+  perspectives?:        ReadonlyArray<{ id: string; label: string }>
+  activePerspectiveId?: string
+  onPerspectiveChange?: (id: string) => void
 }
 
 const MODE_OPTIONS: ReadonlyArray<{ value: PreviewMode; label: string }> = [
@@ -32,9 +37,39 @@ const MODE_OPTIONS: ReadonlyArray<{ value: PreviewMode; label: string }> = [
   { value: 'live',       label: 'ცოცხალი მონაცემები' },
 ]
 
-export function CanvasToolbar({ mode, status, onModeChange }: CanvasToolbarProps) {
+export function CanvasToolbar({
+  mode, status, onModeChange, perspectives, activePerspectiveId, onPerspectiveChange,
+}: CanvasToolbarProps) {
   return (
     <div className="canvas-toolbar" data-testid="canvas-toolbar">
+      {/* In-canvas PERSPECTIVE switch (BE-3) — the author previews Annual↔Dynamics HERE,
+          not buried in the Page dock. Options come from the page's DECLARED axis; hidden
+          when the page has <2 perspectives. Mirrors the runner's perspective-bar. */}
+      {(perspectives?.length ?? 0) >= 2 && onPerspectiveChange && (
+        <div
+          className="canvas-toolbar__modes"
+          role="radiogroup"
+          aria-label="პერსპექტივა"
+          data-testid="canvas-perspective-switch"
+        >
+          {perspectives!.map((opt) => {
+            const active = activePerspectiveId === opt.id
+            return (
+              <button
+                key={opt.id}
+                type="button"
+                role="radio"
+                aria-checked={active}
+                className={`canvas-toolbar__mode${active ? ' canvas-toolbar__mode--active' : ''}`}
+                onClick={() => onPerspectiveChange(opt.id)}
+              >
+                {opt.label}
+              </button>
+            )
+          })}
+        </div>
+      )}
+
       <div
         className="canvas-toolbar__modes"
         role="radiogroup"

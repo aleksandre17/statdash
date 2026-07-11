@@ -107,11 +107,13 @@ export interface CanvasViewProps {
   chromeConfig?: ChromeConfig
   /** Preview locale for chrome content (the top-bar ka|en switch); defaults to ka. */
   locale?:       string
+  /** Set the previewed perspective (the in-canvas Annual↔Dynamics switch → controller). */
+  onPreviewPerspectiveChange?: (id: string) => void
 }
 
 export function CanvasView({
   page, selectedNodeId, selectedItemPath, dragging, previewPerspectiveId,
-  onSelectNode, onSelectItem, onDropNode, onBindMetric,
+  onSelectNode, onSelectItem, onDropNode, onBindMetric, onPreviewPerspectiveChange,
   nav = EMPTY_NAV, chrome = EMPTY_CHROME, chromeConfig, locale,
 }: CanvasViewProps) {
   // Preview mode is canvas view-state — transient and local to this component
@@ -141,6 +143,14 @@ export function CanvasView({
   // derivation SiteRenderer uses (Object.keys(page.perspectives)[0]). Absent preview /
   // no axis ⇒ '/' ⇒ the engine folds to perspectives[0] (the SSOT default).
   const perspectiveKey   = Object.keys(renderedPage.perspectives ?? {})[0]
+  // In-canvas perspective switch (BE-3): the page's DECLARED axis, resolved to ka labels.
+  // Options + active id are pure projections of the page — no per-page special-case.
+  const perspectiveAxis    = (renderedPage.perspectives as Record<string, { perspectives?: Array<{ id: string; label?: Record<string, string> | string }> }> | undefined)?.[perspectiveKey]
+  const perspectiveOptions = (perspectiveAxis?.perspectives ?? []).map((p) => ({
+    id:    p.id,
+    label: typeof p.label === 'string' ? p.label : (p.label?.ka ?? p.label?.en ?? p.id),
+  }))
+  const activePerspectiveId = previewPerspectiveId ?? perspectiveOptions[0]?.id
   const previewEntry      = perspectiveKey && previewPerspectiveId
     ? `/?${encodeURIComponent(perspectiveKey)}=${encodeURIComponent(previewPerspectiveId)}`
     : '/'
@@ -148,7 +158,14 @@ export function CanvasView({
   return (
     <div className={rootClass} data-testid="canvas-root">
       {/* Canvas chrome — preview-mode toggle + fail-soft badge. */}
-      <CanvasToolbar mode={mode} status={status} onModeChange={setMode} />
+      <CanvasToolbar
+        mode={mode}
+        status={status}
+        onModeChange={setMode}
+        perspectives={perspectiveOptions}
+        activePerspectiveId={activePerspectiveId}
+        onPerspectiveChange={onPreviewPerspectiveChange}
+      />
 
       {/* Layer 1 — the real renderer, visually live but non-interactive. The router's
           initialEntries carries the previewed perspective param (keyed so a preview

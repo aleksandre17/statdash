@@ -1,10 +1,11 @@
 ---
 id: "0061"
 title: "BE-3: in-canvas perspective switch — preview Annual↔Dynamics (year↔range) directly on the authoring canvas"
-status: backlog
+status: done
 class: G
 priority: P1
-owner: —
+owner: orchestrator (direct, on-branch)
+resolution: "In-canvas perspective switch added to CanvasToolbar — a pure projection of the page's DECLARED perspective axis (CanvasView derives options from renderedPage.perspectives, resolves ka labels, threads controller.setPreviewPerspectiveId). No per-page special-case; hidden when <2 perspectives. Drives the pre-existing previewPerspectiveId→MemoryRouter-remount→FilterProvider re-render seam. CanvasToolbar.test 3/3, canvas suite 100/0, tsc apps/panel EXIT 0. Live-refreshed to :3013 (real year/range) for end-to-end confirmation."
 implements: authoring parity — the author previews the perspective the runner will switch (owner live-blocker)
 depends_on: []
 links:
