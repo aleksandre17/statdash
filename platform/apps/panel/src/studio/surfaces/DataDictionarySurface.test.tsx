@@ -36,9 +36,11 @@ describe('DataDictionarySurface — read-only browse', () => {
     expect(screen.getByTestId('dict-metric-gdp.level')).toHaveTextContent('GDP')
     expect(screen.getByTestId('dict-metric-gdp.level')).toHaveTextContent('mln GEL')
     expect(screen.getByTestId('dict-dimension-time')).toHaveTextContent('Period')
-    // Sources are the distinct dataSource groups, derived read-only.
-    expect(screen.getByTestId('dict-source-stats')).toBeInTheDocument()
-    expect(screen.getByTestId('dict-source-demo')).toBeInTheDocument()
+    // Sources are now the origin column of the read-only Data-Flow map (Move 3) — the
+    // distinct dataSource groups the governed metrics flow from, derived read-only.
+    expect(screen.getByTestId('data-flow-map')).toBeInTheDocument()
+    expect(screen.getByTestId('flow-source-stats')).toBeInTheDocument()
+    expect(screen.getByTestId('flow-source-demo')).toBeInTheDocument()
   })
 
   it('surfaces each metric’s provenance (id, code, format, methodology link) read-only', () => {

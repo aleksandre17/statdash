@@ -33,7 +33,21 @@ type EditState =
   | { mode: 'new' }
   | { mode: 'edit'; metric: ManifestMetric }
 
-export function MetricCatalogManager({ locale, locales }: { locale: Locale; locales: Locale[] }) {
+/**
+ * A "open this metric for editing" request from the Data-Flow map (Move 3). Carries a
+ * monotonic `token` so a repeat click on the SAME metric id re-triggers the jump, and
+ * so the consumer can tell a fresh request from a re-render. ABSENT ⇒ the manager is
+ * fully self-driven (the M2.2 status quo, byte-identical).
+ */
+export interface MetricOpenRequest { id: string; token: number }
+
+export function MetricCatalogManager({
+  locale, locales, openRequest,
+}: {
+  locale: Locale
+  locales: Locale[]
+  openRequest?: MetricOpenRequest | null
+}) {
   const en = locale === 'en'
   const ensure     = useSemanticCatalogStore((s) => s.ensure)
   const status     = useSemanticCatalogStore((s) => s.status)
@@ -48,6 +62,19 @@ export function MetricCatalogManager({ locale, locales }: { locale: Locale; loca
   const [saving, setSaving] = useState(false)
   const [feedback, setFeedback] = useState<{ severity: 'success' | 'error' | 'warning'; text: string } | null>(null)
   const [deleteGuard, setDeleteGuard] = useState<{ metric: ManifestMetric; pages: string[] } | null>(null)
+
+  // Consume an open request from the flow map (Move 3) with React's render-phase
+  // "adjust state when a prop changes" pattern — NOT an effect (no cascading-render
+  // anti-pattern). `seenToken` remembers the last handled request; when a newer token
+  // arrives AND the authoring catalog is ready, we jump straight into that metric's
+  // editor. If the catalog is not ready yet, `seenToken` stays behind and the jump
+  // fires on the render that turns it ready (handles the async-load race for free).
+  const [seenToken, setSeenToken] = useState(0)
+  if (openRequest && openRequest.token !== seenToken && status === 'ready') {
+    setSeenToken(openRequest.token)
+    const target = metrics.find((m) => m.id === openRequest.id)
+    if (target) { setFeedback(null); setEdit({ mode: 'edit', metric: target }) }
+  }
 
   const existingIds = useMemo(() => metrics.map((m) => m.id), [metrics])
 

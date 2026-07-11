@@ -1,7 +1,8 @@
-import { lazy, Suspense, useEffect, useRef } from 'react'
+import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import { Box, Typography, Divider } from '@mui/material'
 import { SuspenseFallback } from '../../shared/SuspenseFallback'
 import { MetricCatalogManager } from '../model/MetricCatalogManager'
+import { DataFlowMap } from '../model/DataFlowMap'
 import { useActiveLocales } from '../../inspector/useActiveLocales'
 import type { Locale } from '../../types/constructor'
 
@@ -37,6 +38,15 @@ export function ModelSurface({ locale }: { locale: Locale }) {
   const en = locale === 'en'
   const locales = useActiveLocales()
 
+  // The Data-Flow map is the Model stage's HOME (AR-49 M4.3 · Move 3): the pipeline —
+  // source → dataset/spec → metric → used-by — made VISIBLE and prominent, projected
+  // live from the registries (no stored graph). Clicking a metric node is never a dead
+  // end: it opens that metric's editor in the catalog manager below (the map is the
+  // orientation; the existing editors are its detail). The tokened request lets a
+  // repeat click on the SAME metric re-open it (a monotonic counter, not identity).
+  const [openRequest, setOpenRequest] = useState<{ id: string; token: number } | null>(null)
+  const openMetric = (id: string) => setOpenRequest((prev) => ({ id, token: (prev?.token ?? 0) + 1 }))
+
   // Focus lands in the opened surface (WCAG 2.1 AA · 2.4.3 focus order): ModelSurface
   // mounts ONLY when the user opens the Data-model workspace (the top-bar switch or
   // the ⌘K command), so moving focus to this region on mount announces the workspace
@@ -62,8 +72,15 @@ export function ModelSurface({ locale }: { locale: Locale }) {
           : 'აქ განისაზღვრება მართული მონაცემთა მოდელი — მეტრიკები, რომლებითაც ავტორები აწყობენ, და მათ უკან არსებული წყაროები, სპეც-ები და მოთხოვნები.'}
       </Typography>
 
+      {/* Region 0 — the HOME: the Data-Flow map (Move 3). The pipeline made visible —
+          source → dataset/spec → metric → used-by — the orientation for everything
+          below. Interactive: a metric node opens its editor (Region 1) in place. */}
+      <DataFlowMap locale={locale} onOpenMetric={openMetric} />
+
+      <Divider flexItem />
+
       {/* Region 1 — the headline: define/edit the governed metric catalog (M2.2). */}
-      <MetricCatalogManager locale={locale} locales={locales} />
+      <MetricCatalogManager locale={locale} locales={locales} openRequest={openRequest} />
 
       <Divider flexItem />
 

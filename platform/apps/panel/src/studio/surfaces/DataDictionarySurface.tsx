@@ -1,13 +1,13 @@
 import { useEffect, useMemo, useRef, useState, useId } from 'react'
 import { Box, Typography, TextField, InputAdornment, Chip, Divider, Link } from '@mui/material'
 import SearchIcon from '@mui/icons-material/Search'
-import DatasetOutlinedIcon from '@mui/icons-material/DatasetOutlined'
 import HubOutlinedIcon from '@mui/icons-material/HubOutlined'
 import CategoryOutlinedIcon from '@mui/icons-material/CategoryOutlined'
 import type { MetricDef } from '@statdash/engine'
 import type { Locale } from '../../types/constructor'
 import { useMetricCatalog } from '../../discovery/useMetricCatalog'
 import { readCatalogLabel, type CatalogDimension } from '../../discovery/semanticCatalogOptions'
+import { DataFlowMap } from '../model/DataFlowMap'
 
 // ── DataDictionarySurface — the author-lens READ-ONLY data model view (AR-50 M5b) ─
 //
@@ -151,12 +151,6 @@ export function DataDictionarySurface({ locale }: { locale: Locale }) {
   )
 
   const totalMetrics = catalog.status === 'ready' ? Object.keys(catalog.metrics).length : 0
-  // Sources = the distinct dataSource groups the governed metrics live in (Cube.dev
-  // `dataSource` pattern) — the read-only provenance grouping, derived, never authored.
-  const sources = useMemo(
-    () => metricGroups.filter((g) => g.group !== UNGROUPED).map((g) => ({ id: g.group, count: g.rows.length })),
-    [metricGroups],
-  )
 
   const statusHint =
     catalog.status === 'idle'  ? tr('idle', locale)
@@ -201,23 +195,13 @@ export function DataDictionarySurface({ locale }: { locale: Locale }) {
 
       {catalog.status === 'ready' && totalMetrics > 0 && (
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-          {/* ── Sources — the governed dataSource groups (read-only provenance) ── */}
-          {sources.length > 0 && (
-            <Box component="section" aria-label={tr('sources', locale)} sx={{ display: 'flex', flexDirection: 'column', gap: 0.75 }}>
-              <SectionHeading icon={<DatasetOutlinedIcon fontSize="small" />} text={tr('sources', locale)} />
-              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.75 }}>
-                {sources.map((s) => (
-                  <Chip
-                    key={s.id}
-                    size="small"
-                    variant="outlined"
-                    label={`${s.id} · ${s.count} ${tr('metricsIn', locale)}`}
-                    data-testid={`dict-source-${s.id}`}
-                  />
-                ))}
-              </Box>
-            </Box>
-          )}
+          {/* ── Data flow — the pipeline, made visible (AR-49 M4.3 · Move 3) ──────
+              The SAME projection the Steward's Model home renders, in its READ-ONLY
+              lens (no `onOpenMetric`): the non-modeler SEES source → dataset/spec →
+              metric → used-by. This subsumes the old standalone "Sources" chip list
+              (sources are now the flow's origin column) — one pipeline concept, one
+              surface, two lenses (SPEC §3.3). Shares this view's search query. */}
+          <DataFlowMap locale={locale} query={query} />
 
           {/* ── Metrics — grouped by source; each a read-only definition ────────── */}
           <Box component="section" aria-label={tr('metrics', locale)} sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
