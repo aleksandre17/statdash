@@ -1,3 +1,33 @@
+# ════ RESUME HANDOFF (2026-07-11, near token limit) — READ THIS FIRST ════
+Continue AS IF UNINTERRUPTED. Branch `feat/ar49-m0-metric-first-authoring` (NOT main). Dev line ONLY: :3013 (`admin`/`dev_admin_pw_123`). **PROD (`statdash-*`) + STAGING (`statdash-stg-*`) UNTOUCHABLE.** Deploy = `docker-compose -f ops/compose/docker-compose.dev.yml -p statdash-dev build+up --no-deps`, packages baked (rebuild) / `apps/panel/src` source-mounted (server `git checkout` in `/tmp/statdash-dev-line`, no rebuild).
+
+**GOVERNING PRINCIPLE — ADR-038 Bounded Element Law (now §0 of `docs/architecture/ARCHITECTURE-REGISTRY.md`):** every element declares its contract (schema/itemSchema/slots); selection·render·inspector·authoring = GENERIC projections over the declaration, no per-type special-case. **DoD = VERIFIED LIVE on :3013 (Playwright real-boot + look), NOT tsc-green.**
+
+## ✅ DONE this session (all on `feat/ar49-m0…`, pushed to origin)
+- **BE-1 `17d30dc`** — bounded value-band selection: click a KPI **card** → dock shows ONLY its declared contract (ADR-039, declaration-driven, no hand-wire). FF-NO-EXTERNAL-SPECIAL-CASE green. **Independently verified (root tsc EXIT 0 + Playwright real-bundle 1 passed) + LIVE on :3013.**
+- **bounded-first inspector `b5c29f9`** — accordion opens only the primary group, rest drill in → the dock FITS (was: all groups open = wall). 109 tests + tsc green. LIVE on :3013 (source-refreshed).
+- **object-model WIP anti-pattern REMOVED** (0056): untracked `nodeProjection.ts`/`registerNodeProjector` deleted (a43b3c6's tracked part was already superseded); promotion-lossless 8/8. Lawful shadow-promotion stays (ships dark).
+- **CLAUDE.md canonical maps `e29a3e7`** — 3 module CLAUDE.md reorganized (map→laws→deeper), cuts agent over-search.
+- ADR-035 → LIVE-PROVEN (`6f7e913`). CORS fix live on :3013. Deleted merged `chore/hook-suite-hardening` + agent worktrees/branches.
+
+## ✅ routing LANDED `847a9d7` (real react-router, activate-not-shadow) — needs my INDEPENDENT re-verify + :3013 refresh
+Studio surfaces now route: `/studio/:surface` + `?page=<id>`; ONE SSOT (`useStudioRoute.ts` route→surface, `setSurface→navigate`); `activeSurface` removed from store (no dual state); `BrowserRouter` at `App.tsx:154`; canvas preview `MemoryRouter` isolated via `UNSAFE_*Context` reset (v6 nested-router fix, apps-only, arrow respected). Preserved: BE-1, bounded-inspector, role-lens `model` gating, ⌘K, aria-current. Agent gates: panel vitest 776/0 · lint 0 err · `tsc -b apps/panel` + independent root `tsc -b --force` EXIT 0 · Playwright `studioRouting.e2e.ts` **3 passed** (URL change · Back/Forward · deep-link `/studio/style?page=page-gdp`). 18 files, pathspec.
+**NEXT SESSION FIRST:** (1) INDEPENDENT re-verify — nuke `*.tsbuildinfo` + root `npx tsc -b --force` (false-green killer); (2) it's all `apps/panel/src` (source-mounted, packages/react untouched) → a **light :3013 source-refresh** (server `git checkout 847a9d7` in `/tmp/statdash-dev-line`, NO rebuild) makes it live for the owner to click; (3) then start the queue (0061→).
+
+## QUEUE (serialized, one at a time on-branch — NO worktrees; each live-verified). Owner: "work all night."
+1. **0061 BE-3** in-canvas perspective switch (წლიური↔დინამიკა) — mechanism EXISTS (`previewPerspectiveId`), buried in Page→Perspectives; likely a SURFACING fix. VERIFY it re-renders.
+2. **0062 BE-4** filter items → bounded elements (filter-bar's filters aren't a declared band; generalize BE-1's `bandItems.ts`).
+3. **0063 BE-5** canvas nest+select children via each element's DECLARED `slots.accepts` (metas DO declare — `section/meta.ts` has `SectionSlots`; gap = canvas doesn't project slots). **General Composite root — architect ONE seam unifying value-bands (BE-1) + slot children.**
+4. **BE-2**: (a) verify built data-pipe/calc (`PipelineBuilder`/`CalcBuilder`) reachable in steward Model mode; (b) **build StyleField** (style authoring genuinely UNBUILT — AR-11).
+5. **0058** FF-GROUP-FIELDS-EXIST · **0059** accounts-page dedup (render-parity Δ0).
+6. **Housekeeping**: land the 3 unmerged `fix/*` branches into feat + delete (unique bug-fixes: apex redraw, ingest-409, map reproject — DO NOT lose); reconcile agent-memory `.relocated` twins + curation-due.
+
+## ⚠️ UNCOMMITTED at handoff (on disk, held to avoid git-race with routing agent — COMMIT next session)
+`work/items/0056-0063` (board cards) · this HANDOFF · large agent-memory `.md` churn (MEMORY.md updates + `.relocated` twins — hygiene). Board/registry are LEAD-owned — I record them, agents don't.
+
+## DOCTRINES learned this session (saved → `.claude/agent-memory/orchestrator/`, indexed in MEMORY.md)
+worktrees-only-when-truly-parallel · lead-decides-never-asks-tactics (tripwire: no "if you want?" endings) · trunk-over-leaves · route-thinking-to-right-instrument · verification-fit-per-situation · agent-management-discipline (verify-before-brief · exit-fast+ceiling · right-size · lead-instruments mine).
+
 # ════ RESUME HANDOFF (2026-07-03, near context limit) ════
 Read this first, continue AS IF UNINTERRUPTED. Prod = SSH `geostat-deploy` 192.168.1.199, `ops/compose/docker-compose.prod.yml -p statdash-prod`, geostat :3002 / panel :3003. Deploy doctrine + landmines in `.claude/agent-memory/senior-backend-developer/project_live_deploy_mechanism.md`.
 

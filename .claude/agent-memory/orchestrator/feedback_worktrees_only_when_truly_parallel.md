@@ -1,0 +1,11 @@
+---
+name: worktrees-only-when-truly-parallel
+description: Don't reflexively use isolated worktrees/branches — they cost real time (wrong-base hazard, merge-back). Default to working directly on the current branch (serialized/myself); isolate ONLY for genuine unavoidable parallel repo-editing
+metadata:
+  type: feedback
+---
+**Rule:** **serialized work directly on the current branch is the cheap default.** Do NOT reflexively spawn isolated worktrees/branches — they cost real time and add failure modes. Reach for `isolation:"worktree"` ONLY when multiple agents must edit the repo *genuinely in parallel* AND the isolation is worth its overhead.
+
+**Why (2026-07-11):** after the concurrency incident I over-corrected into "always isolate parallel lanes" ([[parallel-isolated-worktrees]]). In practice both worktree agents burned time on a **wrong-base hazard** — the worktree was cut from local `main` (a stale ancestor), not the active feature branch `feat/ar49-m0-metric-first-authoring`, so each had to detect it, reset its ref forward, run gates via the main checkout (worktree had no `node_modules`), then merge a branch back. The owner: *"if it's not necessary, let's avoid these worktrees and branches — we're losing time with that."* The real lesson from the incident was never "always isolate" — it was "don't entangle *concurrent* commits." Serializing (or doing it myself) achieves that with zero worktree overhead.
+
+**How to apply:** (1) Default: work the plan **serially on the current branch** — do it myself or one agent at a time — no worktree, no side-branch. This also fits [[lead-decides-never-asks-tactics]] (often I'm the fastest, cleanest executor with context in hand). (2) Only when I deliberately choose TRUE parallelism (2+ agents editing the repo at once) do I isolate — and then I must brief each agent to **base its worktree off the active feature branch**, not local main, to dodge the wrong-base hazard. (3) If I can serialize instead of parallelize, prefer serialize — the owner values time; worktree/branch ceremony is only justified by unavoidable concurrency. (4) `node_modules`-dependent gates don't exist in a fresh worktree — another reason isolation is costly. Supersedes the over-broad reading of [[parallel-isolated-worktrees]].

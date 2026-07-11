@@ -1,0 +1,11 @@
+---
+name: built-but-buried-audit
+description: Observation duty — proactively audit for CAPABILITIES that are built + unit-green but unreachable/buried in the live tool, not just "does a feature work live"
+metadata:
+  type: feedback
+---
+**Rule:** don't only verify "does this feature work live" — proactively SCAN for whole capabilities that are *built, unit-green, even fitness-"covered", yet effectively unreachable or invisible in the live product*. Built ≠ surfaced ≠ discoverable ≠ used.
+
+**Why (incident, 2026-07-11):** the owner pointed out — with real frustration that I *react, don't observe* — that the whole **query builder + data pipe** (`features/data-layer/`: `DataModelingPanel`, `PipelineBuilder`, `TransformEditor`, `DataSpecEditor`, `FieldWells`, `ShowMe`, Excel ingest, `SourceAuthoringPanel`) is a rich Tableau/PowerBI-class capability that is **deliberately gated behind the `steward` role** (`rail.ts` `{id:'model', stewardOnly:true}`; `useRole` = localStorage pref, **default `author`**; `FF-AUTHOR-NO-QUERY` even RED-guards author surfaces from referencing it). So the panel boots in `author`, the "Data model" rail entry is hidden, and the only path in is a non-prominent top-bar "Model mode" toggle. `coverage.fitness` calls it all "authorable" — but it is **built-and-buried**. The owner had hinted twice ("raw data upload + pipeline assembly not prominent", "nothing should be un-buildable") and I never connected it. He said: "you'll apologize but do the same next time — you don't observe."
+
+**How to apply:** periodically (and before claiming the authoring tool is complete) run a REACHABILITY audit, not just a works-live check: for every built feature/panel/capability, ask "from a fresh default session, can the user actually FIND and REACH this in N obvious clicks?" A capability hidden behind a default-off self-toggled role, an obscure command, or a dead nav slot is a real gap even when every unit + fitness test is green. Distinct from [[panel-live-boot-verification]] (does it work through the real boot) — this is "is it even reachable/surfaced at all." Coverage/fitness green is NOT proof of reachability. Related: the recurring "unit-green ≠ live" theme + the owner's standing demand that I be the one who OBSERVES the system, unprompted, not waits to be told.
