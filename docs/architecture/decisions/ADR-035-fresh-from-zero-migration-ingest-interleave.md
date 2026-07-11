@@ -1,6 +1,6 @@
 # ADR-035 — Fresh-from-zero full-data boot: the migrate/ingest interleave
 
-- Status: Accepted (implementation staged; live boot-proof pending a container host — see "Verification status")
+- Status: Accepted — **LIVE-PROVEN** on `statdash-dev` (2026-07-11: fresh `flyway migrate` → V38 exit 0, additive ingest → `stats.observation` = 2479, idempotent re-run; see "Verification status")
 - Date: 2026-07-11
 - Deciders: data-architect (per mission-command brief), lead
 - Supersedes/relates: ADR-019 (persistent volume), ADR-0031/0032 (canonical ingest as demo-data SSOT, R__ neutralization), the dev/staging `-target=32` workaround
