@@ -1,8 +1,8 @@
 import type { PropertyGroup, DataLinkDef } from '@statdash/react/engine'
 import type { ChartType, LocaleString, CtxScopeRef } from '@statdash/engine'
-import type { ChartDef }         from '@statdash/charts'
+import type { ChartDef, LegendConfig, TooltipConfig } from '@statdash/charts'
 import type { NodeBase }                   from '@statdash/react/engine'
-import type { LocaleFieldConfig, LocaleAxes } from './utils/localeChartDef'
+import type { LocaleFieldConfig, LocaleAxes, LocaleAxisConfig } from './utils/localeChartDef'
 import { DATA_INTEGRITY_SCHEMA, DATA_INTEGRITY_FIELDS } from '../../dataIntegritySchema'
 import { defineSchema, type AssertSchemaCovers, type Expect } from '../../../schema-contract'
 
@@ -36,6 +36,62 @@ export type ChartNode =
   & { dataLinks?: DataLinkDef[] }
   /** Explicit "preliminary data" override (Law 9) — signal #1 of resolvePreliminary. */
   & { preliminary?: boolean }
+
+// ── AxisItemSchema — one axis's editable surface (x / y / y2) ─────────────────
+//  1:1 with the config-facing `LocaleAxisConfig` (engine `AxisConfig` whose `unit`
+//  may be bilingual). Declared BEFORE the schemas that reference it (const init
+//  order), the axis-nesting analogue of gauge's `ThresholdItemSchema`. `unit` is
+//  `coverage:'localized'` — the provisioning authors '%'/'მლნ ₾' as `{ ka, en }`,
+//  resolved at the render boundary (localeChartDef.ts); the Inspector authors it
+//  per-locale. The rest are locale-agnostic scalars.
+export const AxisItemSchema = defineSchema([
+  { field: 'unit',     type: 'LocaleString', coverage: 'localized',
+    label: { ka: 'ერთეული',    en: 'Unit' } },
+  { field: 'decimals', type: 'number', label: { ka: 'ათწილადები', en: 'Decimals' } },
+  { field: 'min',      type: 'number', label: { ka: 'მინიმუმი',   en: 'Min' } },
+  { field: 'max',      type: 'number', label: { ka: 'მაქსიმუმი',  en: 'Max' } },
+  { field: 'hidden',   type: 'boolean', label: { ka: 'ღერძის დამალვა', en: 'Hide axis' } },
+])
+// FF-SCHEMA-COMPLETE depth (tier c): 1:1 with LocaleAxisConfig's editable keys.
+export type _AxisItemCovers = Expect<AssertSchemaCovers<LocaleAxisConfig, typeof AxisItemSchema>>
+
+// ── AxesItemSchema — the {x, y, y2} axis map ─────────────────────────────────
+//  Each axis is itself a structured OBJECT (its own AxisItemSchema) — so the
+//  nested editor drills `Axes › X axis › Unit/Decimals/…` to arbitrary depth, no
+//  opaque leaf (the depth gate in schema-completeness.fitness recurses through it).
+export const AxesItemSchema = defineSchema([
+  { field: 'x',  type: 'object', itemSchema: AxisItemSchema,
+    label: { ka: 'X ღერძი',        en: 'X axis' } },
+  { field: 'y',  type: 'object', itemSchema: AxisItemSchema,
+    label: { ka: 'Y ღერძი',        en: 'Y axis' } },
+  { field: 'y2', type: 'object', itemSchema: AxisItemSchema,
+    label: { ka: 'მეორე Y ღერძი',  en: 'Second Y axis' } },
+])
+// 1:1 with LocaleAxes's editable keys (x / y / y2).
+export type _AxesCovers = Expect<AssertSchemaCovers<LocaleAxes, typeof AxesItemSchema>>
+
+// ── LegendItemSchema / TooltipItemSchema — the legend + tooltip sub-objects ───
+export const LegendItemSchema = defineSchema([
+  { field: 'show',     type: 'boolean', label: { ka: 'ლეგენდის ჩვენება', en: 'Show legend' } },
+  { field: 'position', type: 'string',  label: { ka: 'პოზიცია', en: 'Position' },
+    options: [
+      { value: 'top',    label: { ka: 'ზემოთ',  en: 'Top' } },
+      { value: 'bottom', label: { ka: 'ქვემოთ', en: 'Bottom' } },
+      { value: 'right',  label: { ka: 'მარჯვნივ', en: 'Right' } },
+      { value: 'left',   label: { ka: 'მარცხნივ', en: 'Left' } },
+    ] },
+])
+export type _LegendCovers = Expect<AssertSchemaCovers<LegendConfig, typeof LegendItemSchema>>
+
+export const TooltipItemSchema = defineSchema([
+  { field: 'mode', type: 'string', label: { ka: 'რეჟიმი', en: 'Mode' },
+    options: [
+      { value: 'multi',  label: { ka: 'ერთობლივი', en: 'Shared' } },
+      { value: 'single', label: { ka: 'ცალკეული', en: 'Per-series' } },
+      { value: 'none',   label: { ka: 'გამორთული', en: 'Off' } },
+    ] },
+])
+export type _TooltipCovers = Expect<AssertSchemaCovers<TooltipConfig, typeof TooltipItemSchema>>
 
 export const ChartSchema = defineSchema([
   {
@@ -74,33 +130,52 @@ export const ChartSchema = defineSchema([
     source: 'metrics',
     label:  { ka: 'მეტრიკა', en: 'Metric' },
   },
+  // ── Labels (config-bilingual) ─────────────────────────────────────────────
+  { field: 'label',       type: 'LocaleString', coverage: 'localized',
+    label: { ka: 'სათაური', en: 'Label' } },
+  //  Donut/pie centre caption — shown only when the mark is a donut (showWhen is the
+  //  engine's `lhs === rhs` visibility SSOT; a `{$ctx}` mark ref degrades to hidden).
+  { field: 'centerLabel', type: 'LocaleString', coverage: 'localized',
+    showWhen: "chartType === 'donut'",
+    label: { ka: 'ცენტრის წარწერა', en: 'Centre label' } },
+  // ── Visualisation-refinement scalars ──────────────────────────────────────
+  { field: 'height',      type: 'number', validation: { min: 40 },
+    label: { ka: 'სიმაღლე (px)', en: 'Height (px)' } },
+  { field: 'stacked',     type: 'boolean', label: { ka: 'დაწყობილი', en: 'Stacked' } },
+  { field: 'distributed', type: 'boolean', label: { ka: 'კატეგორიის ფერები', en: 'Colour by category' } },
+  { field: 'dataLabels',  type: 'boolean', label: { ka: 'მნიშვნელობის წარწერები', en: 'Value labels' } },
+  { field: 'compact',     type: 'boolean', label: { ka: 'კომპაქტური', en: 'Compact' } },
+  // ── Nested viz objects (authored item-by-item via the generic nested editor) ─
+  { field: 'axes',    type: 'object', itemSchema: AxesItemSchema,
+    label: { ka: 'ღერძები', en: 'Axes' } },
+  { field: 'legend',  type: 'object', itemSchema: LegendItemSchema,
+    label: { ka: 'ლეგენდა', en: 'Legend' } },
+  { field: 'tooltip', type: 'object', itemSchema: TooltipItemSchema,
+    label: { ka: 'მინიშნება', en: 'Tooltip' } },
   ...DATA_INTEGRITY_SCHEMA,
 ])
 
 // FF-SCHEMA-COMPLETE (tier b): ChartNode INTERSECTS the engine render-spec
 // `ChartDef` (Vega-Lite mark+encoding analogue), so its editable surface carries
-// ChartDef's visualisation-refinement fields. Covered top-level today: `chartType`,
-// the governed metric-ref (`data.query.measure`), `preliminary`. The remaining
-// ChartDef-derived keys are the DOCUMENTED authoring backlog (SCHEMA_TODO) — they
-// render today (engine defaults / hand-authored config) but are not yet inspector
-// props. Grouped by why they wait:
-//   • nested objects (need tier-c itemSchema seam): axes, legend, tooltip
-//   • scalar viz-refinements (a wave-7 dock/authoring-surface decision, not a
-//     silent drop): label, centerLabel, height, compact, stacked, distributed,
-//     dataLabels
-// `fieldConfig`/`dataLinks` are NodeBase system keys → excluded (authored via the
-// field-config / data-links paths, not a chart prop).
-export type _ChartCovers = Expect<AssertSchemaCovers<
-  ChartNode,
-  typeof ChartSchema,
-  | 'axes' | 'legend' | 'tooltip'
-  | 'label' | 'centerLabel' | 'height' | 'compact' | 'stacked' | 'distributed' | 'dataLabels'
->>
+// ChartDef's visualisation-refinement fields. The SCHEMA_TODO backlog is now
+// DRAINED: every editable ChartDef-derived key is a declared inspector field —
+// scalars (chartType, label, centerLabel, height, stacked, distributed, dataLabels,
+// compact), the governed metric-ref (`data.query.measure`), `preliminary`, and the
+// nested objects (axes / legend / tooltip) each carrying a structured `itemSchema`
+// authored via the generic recursive nested editor (D7.1). `fieldConfig`/`dataLinks`
+// are NodeBase system keys → excluded (authored via the field-config / data-links
+// paths, not a chart prop). An EMPTY Todo means: a new ChartDef render input that is
+// not also declared here fails `tsc` — the chart's authorable contract is now
+// self-declaring in full (ADR-038 · FF-ELEMENT-DECLARES-CONTRACT).
+export type _ChartCovers = Expect<AssertSchemaCovers<ChartNode, typeof ChartSchema>>
 
 export const ChartGroups: PropertyGroup[] = [
   { label: { ka: 'მონაცემები',   en: 'Data'          }, fields: ['data.query.measure'] },
-  { label: { ka: 'ვიზუალიზაცია', en: 'Visualisation' }, fields: ['chartType'] },
-  { label: { ka: 'ლეგენდა',      en: 'Legend'          }, fields: ['view.legend', 'view.tooltip'] },
+  { label: { ka: 'ვიზუალიზაცია', en: 'Visualisation' },
+    fields: ['chartType', 'height', 'stacked', 'distributed', 'dataLabels', 'compact'] },
+  { label: { ka: 'წარწერები',    en: 'Labels'        }, fields: ['label', 'centerLabel'] },
+  { label: { ka: 'ღერძები',      en: 'Axes'          }, fields: ['axes'] },
+  { label: { ka: 'ლეგენდა',      en: 'Legend'        }, fields: ['legend', 'tooltip'] },
   { label: { ka: 'მონაცემთა მთლიანობა', en: 'Data integrity' }, fields: [...DATA_INTEGRITY_FIELDS] },
 ]
 

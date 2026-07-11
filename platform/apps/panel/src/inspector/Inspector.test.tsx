@@ -27,7 +27,12 @@ describe('Inspector — schema-driven rendering (C1)', () => {
       const { unmount } = render(
         <Inspector node={node({ type: entry.type, variant: entry.variant })} onChange={() => {}} />,
       )
-      expect(screen.getByTestId('inspector')).toBeInTheDocument()
+      // getAllByTestId, not getByTestId: a type whose schema has a top-level
+      // `object`+itemSchema field (e.g. chart's axes/legend/tooltip) mounts the
+      // GENERIC nested editor, which renders a nested <Inspector> (ObjectFormScreen)
+      // — so several `inspector` panels legitimately coexist. The fitness intent is
+      // "a panel renders", so assert at least one.
+      expect(screen.getAllByTestId('inspector').length).toBeGreaterThan(0)
       unmount()
     }
   })
