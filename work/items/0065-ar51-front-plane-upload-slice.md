@@ -1,10 +1,11 @@
 ---
 id: "0065"
 title: "AR-51 first slice: front-plane raw-data UPLOAD in the Steward Model surface (upload → self-declared DSD review → publish → obs)"
-status: ready
+status: done
 class: M
 priority: P1
-owner: —
+owner: orchestrator (direct, on-branch)
+resolution: "AR-51 front-plane upload vertical COMPLETE + LIVE :3013 (a73e349, 7 increments): lib/api.uploadCanonical (raw octet-stream, Law-5 ingestion sibling) + publishCanonicalJob (gated confirm); studio/model/CanonicalUpload.tsx = upload → self-declared review (dataset identity + per-job breakdown + governed version-mint notice) → publish → obs → onboard-another; drag-and-drop onboarding (Flatfile/Tableau class); format-agnostic (panel never parses). Mounted as ModelSurface front-door. CanonicalUpload.test 6/6, tsc apps/panel + root tsc -b --force EXIT 0, lint 0, live-verified served. Backend reused (canonical route + FSM). FOLLOW-UP (separate milestone): the self-declaring ADAPTER REGISTRY (CSV/SDMX-JSON behind ONE agnostic port, FF-INGEST-PORT-AGNOSTIC/FF-ADAPTER-EMITS-DSD per ADR-040) — non-trivial (needs the multi-format 'canonical' contract designed); + real-workbook e2e."
 implements: AR-51 / ADR-040 (agnostic ingestion port) — the platform's front-door, owner-emphasized
 depends_on: []
 links:
