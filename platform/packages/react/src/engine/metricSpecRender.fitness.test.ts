@@ -102,7 +102,7 @@ describe('FF-METRIC-SPEC-RENDER — a metric DataSpec renders the correct chart 
 
     // interpretChart is the SAME interpreter useChartOutput runs before ApexCharts —
     // ChartOutput.series is exactly what the chart draws. One governed series, per-year.
-    const out = interpretChart({ type: 'bar', height: 300 }, rows, ctx.sectionCtx)
+    const out = interpretChart({ type: 'bar', label: 'GDP per capita', height: 300 }, rows, ctx.sectionCtx)
 
     expect(out.categories).toEqual(['2020', '2021', '2022'])
     expect(out.series).toHaveLength(1)
@@ -126,7 +126,7 @@ describe('FF-METRIC-SPEC-RENDER — a metric DataSpec renders the correct chart 
     // staticStore has no observations → the resolver returns empty rows, the chart an
     // empty series. The author never sees a crash while composing (graceful degradation).
     const rows = resolveNodeRows(node, makeCtx(staticStore))
-    const out  = interpretChart({ type: 'bar', height: 300 }, rows, { dims: {} })
+    const out  = interpretChart({ type: 'bar', label: 'GDP per capita', height: 300 }, rows, { dims: {} })
     expect(out.series.flatMap((s) => s.data)).toEqual([])
   })
 })
