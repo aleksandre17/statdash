@@ -48,6 +48,10 @@ describe('CanonicalUpload — front-plane raw-data ingestion (AR-51)', () => {
     fireEvent.click(screen.getByTestId('canonical-publish'))
     await waitFor(() => expect(screen.getByTestId('canonical-published')).toBeInTheDocument())
     expect(mockPublish).toHaveBeenCalledWith('job-1')
+    // multi-dataset onboarding: after publish, reset to idle to onboard another
+    fireEvent.click(screen.getByTestId('canonical-reset'))
+    expect(screen.queryByTestId('canonical-published')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('canonical-staged')).not.toBeInTheDocument()
   })
 
   it('a reference-only upload (no facts job) shows no publish button', async () => {

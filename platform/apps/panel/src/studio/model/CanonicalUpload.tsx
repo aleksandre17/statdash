@@ -177,13 +177,27 @@ export function CanonicalUpload({ locale }: { locale: Locale }) {
       })()}
 
       {phase.k === 'published' && (
-        <Alert severity="success" data-testid="canonical-published">
-          {en ? 'Published — observations are live.' : 'გამოქვეყნდა — მონაცემები ცოცხალია.'}
-        </Alert>
+        <>
+          <Alert severity="success" data-testid="canonical-published">
+            {en ? 'Published — observations are live.' : 'გამოქვეყნდა — მონაცემები ცოცხალია.'}
+          </Alert>
+          <Button size="small" data-testid="canonical-reset"
+            onClick={() => setPhase({ k: 'idle' })}
+            sx={{ alignSelf: 'flex-start', textTransform: 'none' }}>
+            {en ? 'Onboard another dataset' : 'კიდევ ატვირთე მონაცემები'}
+          </Button>
+        </>
       )}
 
       {phase.k === 'error' && (
-        <Alert severity="error" data-testid="canonical-error">{phase.message}</Alert>
+        <>
+          <Alert severity="error" data-testid="canonical-error">{phase.message}</Alert>
+          <Button size="small" data-testid="canonical-reset"
+            onClick={() => setPhase({ k: 'idle' })}
+            sx={{ alignSelf: 'flex-start', textTransform: 'none' }}>
+            {en ? 'Try again' : 'თავიდან სცადე'}
+          </Button>
+        </>
       )}
     </Box>
   )
