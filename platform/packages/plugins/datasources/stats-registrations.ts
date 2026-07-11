@@ -43,8 +43,15 @@ import { registerHrefStoreBuilder } from './href-registrations'
  * the builder + the M2 capabilities so a source's metadata/test hit exactly the
  * endpoint the live store will.
  */
+// Base for GET /api/stats/observations. Precedence: explicit config.url →
+// VITE_API_STATS_URL → EMPTY (same-origin relative `/api/...`). Empty is the
+// canonical default (mirrors the config client lib/api.ts `?? ''`): the browser
+// hits its OWN origin's `/api`, which nginx/vite proxies to THAT tier's api
+// (`statdash-api` per-network alias) — tier-isolated, no hardcoded host, no CORS.
+// A hardcoded `http://localhost:3001` default was an anti-pattern: from any
+// non-localhost origin (a deployed tier) it points the browser at the wrong host.
 function resolveStatsBase(url: string | undefined): string {
-  return url ?? (import.meta.env.VITE_API_STATS_URL ?? 'http://localhost:3001')
+  return url ?? (import.meta.env.VITE_API_STATS_URL ?? '')
 }
 
 export function  registerStoreBuilders(): void {
@@ -96,7 +103,7 @@ export function  registerStoreBuilders(): void {
   })
 
   registerStoreBuilder('stats', async (config) => {
-    const base        = config.url ?? (import.meta.env.VITE_API_STATS_URL ?? 'http://localhost:3001')
+    const base        = resolveStatsBase(config.url)
     const datasetCode = (config.params?.datasetCode as string) ?? config.id
     const nonTimeDims = (config.params?.nonTimeDims as string[]) ?? []
 
