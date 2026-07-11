@@ -83,6 +83,17 @@
           "required": [
             "type"
           ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "const": "metric"
+            }
+          },
+          "required": [
+            "type"
+          ]
         }
       ]
     },
@@ -1656,6 +1667,231 @@
           "title": "Metric",
           "description": "enum-ref field",
           "type": "string"
+        },
+        "label": {
+          "title": "Label",
+          "description": "LocaleString field",
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "object"
+            }
+          ],
+          "$comment": "LocaleString"
+        },
+        "centerLabel": {
+          "title": "Centre label",
+          "description": "LocaleString field",
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "object"
+            }
+          ],
+          "$comment": "LocaleString"
+        },
+        "height": {
+          "title": "Height (px)",
+          "description": "number field",
+          "type": "number",
+          "minimum": 40
+        },
+        "stacked": {
+          "title": "Stacked",
+          "description": "boolean field",
+          "type": "boolean"
+        },
+        "distributed": {
+          "title": "Colour by category",
+          "description": "boolean field",
+          "type": "boolean"
+        },
+        "dataLabels": {
+          "title": "Value labels",
+          "description": "boolean field",
+          "type": "boolean"
+        },
+        "compact": {
+          "title": "Compact",
+          "description": "boolean field",
+          "type": "boolean"
+        },
+        "axes": {
+          "title": "Axes",
+          "description": "object field",
+          "type": "object",
+          "properties": {
+            "x": {
+              "title": "X axis",
+              "description": "object field",
+              "type": "object",
+              "properties": {
+                "unit": {
+                  "title": "Unit",
+                  "description": "LocaleString field",
+                  "oneOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "object"
+                    }
+                  ],
+                  "$comment": "LocaleString"
+                },
+                "decimals": {
+                  "title": "Decimals",
+                  "description": "number field",
+                  "type": "number"
+                },
+                "min": {
+                  "title": "Min",
+                  "description": "number field",
+                  "type": "number"
+                },
+                "max": {
+                  "title": "Max",
+                  "description": "number field",
+                  "type": "number"
+                },
+                "hidden": {
+                  "title": "Hide axis",
+                  "description": "boolean field",
+                  "type": "boolean"
+                }
+              },
+              "additionalProperties": false
+            },
+            "y": {
+              "title": "Y axis",
+              "description": "object field",
+              "type": "object",
+              "properties": {
+                "unit": {
+                  "title": "Unit",
+                  "description": "LocaleString field",
+                  "oneOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "object"
+                    }
+                  ],
+                  "$comment": "LocaleString"
+                },
+                "decimals": {
+                  "title": "Decimals",
+                  "description": "number field",
+                  "type": "number"
+                },
+                "min": {
+                  "title": "Min",
+                  "description": "number field",
+                  "type": "number"
+                },
+                "max": {
+                  "title": "Max",
+                  "description": "number field",
+                  "type": "number"
+                },
+                "hidden": {
+                  "title": "Hide axis",
+                  "description": "boolean field",
+                  "type": "boolean"
+                }
+              },
+              "additionalProperties": false
+            },
+            "y2": {
+              "title": "Second Y axis",
+              "description": "object field",
+              "type": "object",
+              "properties": {
+                "unit": {
+                  "title": "Unit",
+                  "description": "LocaleString field",
+                  "oneOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "object"
+                    }
+                  ],
+                  "$comment": "LocaleString"
+                },
+                "decimals": {
+                  "title": "Decimals",
+                  "description": "number field",
+                  "type": "number"
+                },
+                "min": {
+                  "title": "Min",
+                  "description": "number field",
+                  "type": "number"
+                },
+                "max": {
+                  "title": "Max",
+                  "description": "number field",
+                  "type": "number"
+                },
+                "hidden": {
+                  "title": "Hide axis",
+                  "description": "boolean field",
+                  "type": "boolean"
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "additionalProperties": false
+        },
+        "legend": {
+          "title": "Legend",
+          "description": "object field",
+          "type": "object",
+          "properties": {
+            "show": {
+              "title": "Show legend",
+              "description": "boolean field",
+              "type": "boolean"
+            },
+            "position": {
+              "title": "Position",
+              "description": "top: Top, bottom: Bottom, right: Right, left: Left",
+              "type": "string",
+              "enum": [
+                "top",
+                "bottom",
+                "right",
+                "left"
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
+        "tooltip": {
+          "title": "Tooltip",
+          "description": "object field",
+          "type": "object",
+          "properties": {
+            "mode": {
+              "title": "Mode",
+              "description": "multi: Shared, single: Per-series, none: Off",
+              "type": "string",
+              "enum": [
+                "multi",
+                "single",
+                "none"
+              ]
+            }
+          },
+          "additionalProperties": false
         },
         "preliminary": {
           "title": "Preliminary data",
