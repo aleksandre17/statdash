@@ -1,0 +1,218 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# docker-compose.dev.yml — the FULL, SELF-CONTAINED DEV LINE (statdash-dev).
+#
+# A third parallel line beside prod (statdash-prod) and staging (statdash-stg) on
+# the SAME host (192.168.1.199), built from the feature branch, sharing NOTHING
+# with either — its OWN infra + api + geostat + panel + db + network + volume +
+# secrets + ports. Unlike docker-compose.dev-panel.yml (a panel-ONLY preview that
+# borrows the STAGING api), this line stands up its OWN api + postgres, so it is a
+# complete line, not a preview.
+#
+#   docker-compose -f ops/compose/docker-compose.dev.yml -p statdash-dev up -d --build
+#
+# ── ISOLATION (mirrors docker-compose.staging.yml; shares NOTHING w/ prod OR stg) ─
+#   project        statdash-dev           (≠ statdash-prod, ≠ statdash-stg, ≠ statdash-dev-panel)
+#   network        statdash-dev-net       (≠ statdash-net, ≠ statdash-stg-net, ≠ statdash-dev-panel-net)
+#   volume         statdash-dev-pgdata    (≠ *-prod-pgdata-v2, ≠ *-stg-pgdata-v2)
+#   containers     statdash-dev-*         (≠ statdash-*, ≠ statdash-stg-*, ≠ statdash-dev-panel)
+#   images         statdash-*:dev         (≠ prod [:latest/untagged], ≠ stg :stg)
+#   published      pg 5458, api 3011, geostat 3012, panel 3013
+#                  (FREE block — host in-use: prod 3002/3003, stg 3007/3008/3009/5457,
+#                   dev-panel 3010; verified read-only before allocation)
+# It touches NO prod/staging project, network, volume, or container. Tear down with:
+#   docker-compose -f ops/compose/docker-compose.dev.yml -p statdash-dev down
+#   (NEVER `down -v` — that destroys this line's DB volume; harmless to prod/stg regardless).
+#
+# ── SEED / DATA STRATEGY (decided — see the V33/V34 note below) ────────────────
+# SEED NEUTRALIZED, exactly like staging: flyway mounts ONLY /flyway/sql and
+# -locations names ONLY it → the R__ gold seed never runs → gold starts EMPTY of
+# observations. There is intentionally NO `ingest` one-shot (prod has one; this
+# line omits it) because a FRESH volume cannot deterministically load the canonical
+# data — a known migration-ordering defect:
+#   • V33__demo_classifier_data is a CORRECTIVE migration that stamps hierarchy onto
+#     geo R2..R12 / account / sector members that must ALREADY EXIST — but those are
+#     created by canonical INGEST, which can only run AFTER flyway + a healthy api.
+#     On a fresh DB V33 dies: "expected >=11 regions parented to _T, found 0".
+#   • V34__gdp_dsd_approach_align widens GDP to the canonical 4-dim DSD and must run
+#     BEFORE a GDP ingest — but V33 (< V34) already blocked the run.
+#   So a single-flyway-step fresh boot CANNOT reach V33..V38 with data. The proven
+#   green fresh-boot is staging's: `-target=32` (structure through V32) + empty gold.
+# CONSEQUENCE: this line boots deterministically green and is FULLY LIVE (own db +
+# api + geostat + panel). config/site_config/provisioning/bootstrap/auth all live in
+# config.* (present well before V32), so the AR-49 metric-first AUTHORING surface in
+# the panel is fully exercised; the geostat observation cube is empty (map/KPIs render
+# their shell without data). To add the real demo data later, interleave migrate →
+# ingest REGIONAL+ACCOUNTS → migrate V33..V34 → ingest GDP → migrate V35..V38 (an
+# unproven multi-stage bring-up, deliberately OUT of this line's safe scope).
+#
+# Boot order (depends_on + healthchecks): pg healthy → flyway 0 → api healthy →
+# geostat/panel start.
+# ─────────────────────────────────────────────────────────────────────────────
+
+name: statdash-dev
+
+services:
+  # ── Dev PostgreSQL — PUBLISHED on 5458 (throwaway; own isolated volume) ────────
+  postgres:
+    image: timescale/timescaledb-ha:pg16
+    container_name: statdash-dev-pg
+    environment:
+      POSTGRES_DB: statdash
+      POSTGRES_USER: statdash
+      # Throwaway dev secret — this line is reversible and never holds real data.
+      POSTGRES_PASSWORD: dev_throwaway_db_pw
+    ports:
+      - "5458:5432"
+    volumes:
+      # Spilo (timescaledb-ha) real data dir = PGDATA=/home/postgres/pgdata/data.
+      # Mount the PGROOT or data lives in the writable layer (recreate = wipe).
+      # Mirrors the prod fix (ADR adr-postgres-persistent-volume).
+      - dev_pgdata:/home/postgres/pgdata
+    networks:
+      - statdash-dev-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U statdash -d statdash"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+
+  # ── Flyway — V1→V32 ONLY (SEED NEUTRALIZED). Runs once, exits 0. ──────────────
+  # -target=32 is LOAD-BEARING on a fresh DB: without it flyway runs V1→V38 and DIES
+  # at V33 (runtime data dependency on canonical ingest — see header). The committed
+  # staging file omits -target and only survives because its DB was migrated
+  # incrementally, not fresh; a fresh dev volume MUST cap at 32.
+  flyway:
+    image: flyway/flyway:10-alpine
+    container_name: statdash-dev-flyway
+    command: >-
+      -url=jdbc:postgresql://postgres:5432/statdash
+      -user=statdash
+      -password=dev_throwaway_db_pw
+      -locations=filesystem:/flyway/sql
+      -target=32
+      -placeholderReplacement=false
+      migrate
+    volumes:
+      - ../postgres/migrations:/flyway/sql:ro
+    networks:
+      - statdash-dev-net
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: on-failure
+
+  # ── API — PUBLISHED on 3011 (throwaway). Built from the branch. ────────────────
+  # Network ALIAS `statdash-api`: the geostat/panel images bake nginx `proxy_pass
+  # http://statdash-api:3001`. The alias makes that baked name resolve to THIS dev
+  # api — but ONLY on statdash-dev-net (never prod/stg nets), so single-origin /api
+  # works with zero image/nginx changes and zero cross-line impact.
+  api:
+    image: statdash-api:dev
+    container_name: statdash-dev-api
+    build:
+      context: ../../platform
+      dockerfile: apps/api/Dockerfile
+    environment:
+      PORT: "3001"
+      HOST: 0.0.0.0
+      NODE_ENV: production
+      # Same-origin via the geostat/panel nginx proxy → CORS off. The direct-3011
+      # curl path is not a browser, needs no CORS. Parity with prod/staging.
+      CORS_ORIGIN: "false"
+      DATABASE_URL: postgres://statdash:dev_throwaway_db_pw@postgres:5432/statdash
+      # Throwaway dev secrets (>=32 / >=8 chars per env.ts fail-fast gates).
+      JWT_SECRET: dev_throwaway_jwt_secret_min_32_chars_xx
+      ADMIN_USERNAME: admin
+      ADMIN_PASSWORD: dev_admin_pw_123
+      EMBED_SECRET: dev_throwaway_embed_secret_min_32_chr_yy
+      PROVISIONING_DIR: ./provisioning
+      PROVISIONING_DRY_RUN: "false"
+    ports:
+      - "3011:3001"
+    networks:
+      statdash-dev-net:
+        aliases:
+          - statdash-api
+    depends_on:
+      postgres:
+        condition: service_healthy
+      flyway:
+        condition: service_completed_successfully
+    restart: unless-stopped
+    mem_limit: 256m
+    cpus: 0.5
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:3001/health | grep -q ok || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+  # ── geostat SPA + reverse proxy — PUBLISHED on 3012. Built from the branch. ────
+  # Built with EMPTY VITE_API_URL / VITE_API_STATS_URL → relative /api base; baked
+  # nginx proxies /api/ → statdash-api:3001, resolved to statdash-dev-api by the alias.
+  geostat:
+    image: statdash-geostat:dev
+    container_name: statdash-dev-geostat
+    build:
+      context: ../../platform
+      dockerfile: apps/geostat/Dockerfile
+      target: production
+      args:
+        VITE_API_URL: ""
+        VITE_API_STATS_URL: ""
+    ports:
+      - "3012:80"
+    networks:
+      - statdash-dev-net
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped
+    mem_limit: 128m
+    cpus: 0.5
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  # ── panel (Constructor / AR-49 authoring) SPA + reverse proxy — PUBLISHED 3013 ─
+  # Supersedes the standalone docker-compose.dev-panel.yml (3010, staging-api-backed):
+  # this panel is backed by THIS line's OWN dev api (statdash-dev-api), not staging's.
+  panel:
+    image: statdash-panel:dev
+    container_name: statdash-dev-panel-full
+    build:
+      context: ../../platform
+      dockerfile: apps/panel/Dockerfile
+      target: production
+      args:
+        VITE_API_URL: ""
+    ports:
+      - "3013:80"
+    networks:
+      - statdash-dev-net
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped
+    mem_limit: 128m
+    cpus: 0.5
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+networks:
+  statdash-dev-net:
+    name: statdash-dev-net
+
+volumes:
+  dev_pgdata:
+    name: statdash-dev-pgdata
