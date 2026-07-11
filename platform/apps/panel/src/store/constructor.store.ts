@@ -51,6 +51,13 @@ import {
 
 export interface ConstructorStore extends ConstructorSession, StudioUiSlice, HistorySlice, LifecycleSlice {
   selectNode:     (id: string | null) => void
+  /**
+   * Select a VALUE-BAND item within a node — the bounded-element selection
+   * (ADR-038). `path` is a dot-path into `node.props` (e.g. `'items.0'`), derived
+   * generically from the node's declared band field; never keyed by a concrete
+   * type. Selecting an item pins its owning node AND the item path together.
+   */
+  selectItem:     (nodeId: string, path: string) => void
 
   // Studio activity-rail surface (AR-49) — non-ordered lens, never gated.
   setSurface:     (surface: StudioSurface) => void
@@ -117,19 +124,26 @@ export const useConstructorStore = create<ConstructorStore>()(
       // ── Initial state ──────────────────────────────────────────────────────
       ...INITIAL_SESSION,
       ...INITIAL_LIFECYCLE,
-      activeSurface:   INITIAL_STUDIO_SURFACE,
-      selectedNodeId:  null,
-      chromeSelection: null,
+      activeSurface:    INITIAL_STUDIO_SURFACE,
+      selectedNodeId:   null,
+      selectedItemPath: null,
+      chromeSelection:  null,
       undoStack:      [],
       redoStack:      [],
       canUndo:        false,
       canRedo:        false,
 
       // ── Selection ──────────────────────────────────────────────────────────
-      // Selecting a node clears any chrome selection (mutual exclusivity — one
-      // Inspector shows one element; least astonishment).
+      // Selecting a node clears any chrome selection AND any drilled band-item path
+      // (mutual exclusivity — one Inspector shows one element; least astonishment).
       selectNode: (id) =>
-        set({ selectedNodeId: id, chromeSelection: null }, false, 'canvas/selectNode'),
+        set({ selectedNodeId: id, selectedItemPath: null, chromeSelection: null }, false, 'canvas/selectNode'),
+
+      // Select a value-band item (ADR-038 bounded element): pin the owning node AND
+      // the item's declared path together. Generic — the path comes from the node's
+      // declared band field, not from any concrete type.
+      selectItem: (nodeId, path) =>
+        set({ selectedNodeId: nodeId, selectedItemPath: path, chromeSelection: null }, false, 'canvas/selectItem'),
 
       // Summon a Studio activity-rail surface. Pure view-state (no gating, no
       // history) — the anti-waterfall: any surface is reachable from any other.
@@ -350,9 +364,10 @@ export const useConstructorStore = create<ConstructorStore>()(
               canUndo:   s.undoStack.length > 1,
               canRedo:   true,
               // Preserve UI state
-              activeSurface:   s.activeSurface,
-              selectedNodeId:  s.selectedNodeId,
-              chromeSelection: s.chromeSelection,
+              activeSurface:    s.activeSurface,
+              selectedNodeId:   s.selectedNodeId,
+              selectedItemPath: s.selectedItemPath,
+              chromeSelection:  s.chromeSelection,
             }
           },
           false,
@@ -370,9 +385,10 @@ export const useConstructorStore = create<ConstructorStore>()(
               redoStack: s.redoStack.slice(0, -1),
               canUndo:   true,
               canRedo:   s.redoStack.length > 1,
-              activeSurface:   s.activeSurface,
-              selectedNodeId:  s.selectedNodeId,
-              chromeSelection: s.chromeSelection,
+              activeSurface:    s.activeSurface,
+              selectedNodeId:   s.selectedNodeId,
+              selectedItemPath: s.selectedItemPath,
+              chromeSelection:  s.chromeSelection,
             }
           },
           false,

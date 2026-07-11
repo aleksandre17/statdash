@@ -71,7 +71,7 @@ export interface RightDockProps {
 }
 
 export function RightDock({ controller, locale, collapsed, onToggleCollapsed, width, onResize }: RightDockProps) {
-  const { selected, pageId, chromeSel, deleteSelected } = controller
+  const { selected, pageId, chromeSel, deleteSelected, selectedItemPath } = controller
 
   // The selection key drives the context: element identity or null (→ Page).
   const selKey: string | null = chromeSel
@@ -131,9 +131,12 @@ export function RightDock({ controller, locale, collapsed, onToggleCollapsed, wi
     )
   }
 
-  // FOOTER — element actions. Present only in the element context with a node
-  // selected (chrome/page/empty states carry no destructive action here).
-  const footer = scope === 'element' && selected && !chromeSel && (
+  // FOOTER — element actions. Present only in the element context with a WHOLE node
+  // selected (chrome/page/empty states carry no destructive action here). Suppressed
+  // while a bounded band item is the active selection: `deleteSelected` acts on the
+  // owning node, so offering "Delete" under a card would misleadingly remove the whole
+  // strip (least astonishment — the footer follows the bounded selection, ADR-038).
+  const footer = scope === 'element' && selected && !chromeSel && !selectedItemPath && (
     <Button size="small" color="error" startIcon={<DeleteIcon />} onClick={deleteSelected}>
       {t('del', locale)}
     </Button>

@@ -37,7 +37,7 @@ import { useState }           from 'react'
 import { MemoryRouter }       from 'react-router-dom'
 import { SiteProvider }       from '@statdash/react'
 import type { NavEntry, ChromeConfig } from '@statdash/react'
-import { NodePageRenderer }   from '@statdash/react/engine'
+import { NodePageRenderer, AuthoringAnchorContext } from '@statdash/react/engine'
 import type { NodePageConfig, ChromeEntry } from '@statdash/react/engine'
 import { CanvasOverlay }      from './CanvasOverlay'
 import { CanvasToolbar }      from './CanvasToolbar'
@@ -59,6 +59,8 @@ export interface CanvasViewProps {
   /** The live NodePageConfig being edited — rendered verbatim by the engine. */
   page:            NodePageConfig
   selectedNodeId?: string
+  /** The selected value-band item path within the selected node (ADR-038). */
+  selectedItemPath?: string
   /** True while a palette item is being dragged — reveals drop zones. */
   dragging?:       boolean
   /**
@@ -71,6 +73,8 @@ export interface CanvasViewProps {
    */
   previewPerspectiveId?: string
   onSelectNode:   (nodeId: string | null) => void
+  /** Select a value-band item (a declared bounded child) instead of the whole node. */
+  onSelectItem?:  (nodeId: string, path: string) => void
   onDropNode:     (parentId: string, slotKey: string, nodeType: string) => void
   /** Reserved for node-to-node moves (drag an existing node into another slot). */
   onMoveNode?:    (nodeId: string, targetParentId: string, targetSlot: string) => void
@@ -96,7 +100,8 @@ export interface CanvasViewProps {
 }
 
 export function CanvasView({
-  page, selectedNodeId, dragging, previewPerspectiveId, onSelectNode, onDropNode, onBindMetric,
+  page, selectedNodeId, selectedItemPath, dragging, previewPerspectiveId,
+  onSelectNode, onSelectItem, onDropNode, onBindMetric,
   nav = EMPTY_NAV, chrome = EMPTY_CHROME, chromeConfig, locale,
 }: CanvasViewProps) {
   // Preview mode is canvas view-state — transient and local to this component
@@ -149,7 +154,13 @@ export function CanvasView({
             locale={locale}
             i18n={CANVAS_I18N}
           >
-            <NodePageRenderer page={renderedPage} />
+            {/* Turn ON the band-item render anchors (ADR-038) — ONLY in the authoring
+                canvas, so a band-owning shell stamps a queryable, layout-inert anchor
+                per declared item for the overlay to frame. Off the canvas the same
+                boundary is a zero-DOM Fragment (byte-identical live output). */}
+            <AuthoringAnchorContext.Provider value={true}>
+              <NodePageRenderer page={renderedPage} />
+            </AuthoringAnchorContext.Provider>
           </SiteProvider>
         </MemoryRouter>
       </div>
@@ -158,8 +169,10 @@ export function CanvasView({
       <CanvasOverlay
         page={page as NodeBase}
         selectedNodeId={selectedNodeId}
+        selectedItemPath={selectedItemPath}
         dragging={dragging}
         onSelect={onSelectNode}
+        onSelectItem={onSelectItem}
         onDrop={onDropNode}
         onBindMetric={onBindMetric}
       />

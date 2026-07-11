@@ -232,6 +232,12 @@ export { LayoutItemProvider, useLayoutItem, mergePlacement } from './layoutItemC
 // ── Wrap style context — distribute NodeStyles from WrapNode to children ──
 export { WrapStyleContext, useWrapStyle } from './wrapStyleContext'
 
+// ── Band-item authoring anchor — the ONE generic render contract a band-owning
+//    shell opts into so the WYSIWYG canvas can frame each declared item (ADR-038).
+//    Inert (zero DOM) off the authoring canvas — byte-identical runtime output. ──
+export { AuthoringAnchorContext, BandItemBoundary, BAND_ITEM_FIELD_ATTR, BAND_ITEM_INDEX_ATTR } from './bandAnchor'
+export type { BandItemBoundaryProps } from './bandAnchor'
+
 // ── Node status — page-scoped data-integrity publish/subscribe (AR-39/AR-40) ──
 export { NodeStatusProvider, useNodeStatusScope, useReportNodeStatus, useNodeStatusAggregate } from './NodeStatusContext'
 export { NodeVisibilityProvider, useNodeVisible } from './NodeStatusContext'

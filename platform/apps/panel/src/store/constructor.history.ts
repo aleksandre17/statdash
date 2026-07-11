@@ -52,6 +52,15 @@ export interface StudioUiSlice {
    */
   activeSurface:   StudioSurface
   selectedNodeId:  string | null
+  /**
+   * The selected VALUE-BAND item within the selected node — a dot-path into that
+   * node's `props` (e.g. `'items.0'`), or null for a whole-node selection. This is
+   * the Composite half of the selection address (ADR-038 Bounded Element Law): an
+   * element that declares a band (`schema` array field carrying `itemSchema`)
+   * exposes each item as a selectable child, addressed generically by (node, path)
+   * — never by a concrete type. Set with `selectItem`; cleared by `selectNode`.
+   */
+  selectedItemPath: string | null
   /** The selected chrome element (Phase C). Mutually exclusive with a node. */
   chromeSelection: ChromeSelection | null
 }

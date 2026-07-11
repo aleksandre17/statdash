@@ -12,7 +12,8 @@
 //  Order values leave gaps (10s) so an app can slot a section BETWEEN built-ins
 //  (e.g. a Data/lineage section, §3.3) without renumbering — OCP.
 //
-import { Box, Chip } from '@mui/material'
+import { Box, Chip, Button, Typography } from '@mui/material'
+import ChevronLeftIcon from '@mui/icons-material/ChevronLeft'
 import type { VisibilityExpr } from '@statdash/engine'
 import { Inspector } from '../Inspector'
 import { ChromeInspectorPanel } from '../ChromeInspectorPanel'
@@ -21,11 +22,41 @@ import { PageInspectorPanel } from '../../features/page-config'
 import { PerspectivesPane } from '../../features/perspectives'
 import { FiltersDrawer } from '../../features/filters'
 import { nodeContextEditors } from '../../studio/nodeContextEditors'
+import { getAtPath } from '../showWhen'
+import { fixedSchemaSource, itemTitle } from '../controls/nestedItemControl.helpers'
+import type { CanvasNode } from '../../types/constructor'
 import { dockSectionRegistry, type DockRenderCtx } from './dockSection'
 
 /** A node (not chrome) is selected in the element context — the shared guard. */
 const nodeSelected = (ctx: DockRenderCtx): boolean =>
   ctx.scope === 'element' && !!ctx.controller.selected && !ctx.controller.chromeSel
+
+/** A WHOLE node is selected (no drilled band item) — the node-scoped sections. */
+const wholeNodeSelected = (ctx: DockRenderCtx): boolean =>
+  nodeSelected(ctx) && !ctx.controller.selectedBand
+
+// ── BandItemHeader — the bounded child's crumb + a one-click return to its owner ──
+//  Keeps the dock oriented (which strip · which card) while the body shows ONLY the
+//  item's own contract. "Back" reselects the owning node (whole-strip authoring),
+//  never disturbing the page or canvas beyond the selection.
+function BandItemHeader(
+  { parentType, title, onBack }: { parentType: string; title: string; onBack: () => void },
+): React.ReactNode {
+  return (
+    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, flexWrap: 'wrap' }}>
+      <Button
+        size="small"
+        onClick={onBack}
+        startIcon={<ChevronLeftIcon fontSize="small" />}
+        sx={{ minWidth: 0, px: 0.75, textTransform: 'none' }}
+      >
+        {parentType}
+      </Button>
+      <Typography variant="body2" color="text.secondary" aria-hidden="true">›</Typography>
+      <Chip size="small" label={title} color="primary" variant="outlined" />
+    </Box>
+  )
+}
 
 let registered = false
 
@@ -36,13 +67,38 @@ export function registerBuiltinDockSections(): void {
 
   dockSectionRegistry
     // ── ELEMENT · schema groups (the generic Inspector + its type chip) ──────────
+    //  ONE section, TWO bounded projections over the SAME generic Inspector — the
+    //  selection ADDRESS decides which declared contract it renders (ADR-038):
+    //    • a whole node   → the node's own PropSchema (via nodeSchemaSource);
+    //    • a value-band item (a declared child) → ONLY that item's own `itemSchema`,
+    //      resolved generically from the node's declaration (selectedBand), written
+    //      through the item write path. Bounded by construction — the strip's other
+    //      cards and the array band never appear, so the dock FITS. No per-type
+    //      branch: the item's schema is its declaration, not a hand-wired form.
     .register({
       id:        'element.schema',
       order:     10,
       appliesTo: (ctx) => nodeSelected(ctx),
       render:    (ctx) => {
-        const { selected, patchProp } = ctx.controller
+        const { selected, selectedBand, patchProp, patchItemProp, selectNode } = ctx.controller
         if (!selected) return null
+
+        if (selectedBand) {
+          const itemObj = (getAtPath(selected.props, selectedBand.path) ?? {}) as Record<string, unknown>
+          const source  = fixedSchemaSource(selectedBand.itemSchema, selectedBand.itemGroups)
+          const idPrefix = `insp-${selectedBand.path.replace(/\./g, '-')}`
+          const title    = itemTitle(itemObj, selectedBand.itemLabel, selectedBand.index, ctx.locale)
+          const itemNode: CanvasNode = {
+            id: `${selected.id}-${selectedBand.path}`, type: 'band-item', props: itemObj, childIds: [],
+          }
+          return (
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+              <BandItemHeader parentType={selected.type} title={title} onBack={() => selectNode(selected.id)} />
+              <Inspector node={itemNode} schemaSource={source} onChange={patchItemProp} idPrefix={idPrefix} />
+            </Box>
+          )
+        }
+
         return (
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
             <Chip size="small" label={selected.type} color="primary" variant="outlined"
@@ -57,7 +113,7 @@ export function registerBuiltinDockSections(): void {
       id:        'element.context',
       order:     20,
       appliesTo: (ctx) =>
-        nodeSelected(ctx) && !!nodeContextEditors[ctx.controller.selected!.type],
+        wholeNodeSelected(ctx) && !!nodeContextEditors[ctx.controller.selected!.type],
       render:    (ctx) => {
         const { selected } = ctx.controller
         const ContextEditor = selected ? nodeContextEditors[selected.type] : undefined
@@ -70,7 +126,7 @@ export function registerBuiltinDockSections(): void {
     .register({
       id:        'element.visibility',
       order:     30,
-      appliesTo: (ctx) => nodeSelected(ctx),
+      appliesTo: (ctx) => wholeNodeSelected(ctx),
       render:    (ctx) => {
         const { selected, setVisibleWhen } = ctx.controller
         if (!selected) return null

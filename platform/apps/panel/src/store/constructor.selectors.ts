@@ -49,8 +49,9 @@ export const useEffectiveActivePage   = () =>
 // surface should read to decide which page renders).
 export const useActivePage   = useEffectiveActivePage
 export const useActivePageId = useEffectiveActivePageId
-export const useSelectedNode    = () => useConstructorStore((s) => s.selectedNodeId)
-export const useChromeSelection = () => useConstructorStore((s) => s.chromeSelection)
+export const useSelectedNode     = () => useConstructorStore((s) => s.selectedNodeId)
+export const useSelectedItemPath = () => useConstructorStore((s) => s.selectedItemPath)
+export const useChromeSelection  = () => useConstructorStore((s) => s.chromeSelection)
 export const useHistory         = () => useConstructorStore((s) => ({ canUndo: s.canUndo, canRedo: s.canRedo, undo: s.undo, redo: s.redo }))
 
 // ── Lifecycle read-side (server FSM mirror + save/publish UI state) ───────────

@@ -191,6 +191,41 @@
   pointer-events: none;
 }
 
+/* ── Per-item selection frame (value-band child element — ADR-038) ─────────
+ * A card / band item hit target, painted ABOVE its parent node frame. Uses a
+ * lighter idle affordance than the node frame so the parent stays legible, and a
+ * distinct inset accent when the bounded child is selected (shape + colour, never
+ * colour-only — WCAG 1.4.1). */
+.canvas-item {
+  position: absolute;
+  pointer-events: auto;
+  cursor: pointer;
+  border: var(--canvas-outline) solid transparent;
+  border-radius: var(--canvas-radius);
+  background: transparent;
+  padding: 0;
+  margin: 0;
+  box-sizing: border-box;
+  transition: border-color 120ms ease, background-color 120ms ease, box-shadow 120ms ease;
+}
+
+.canvas-item:hover {
+  border-color: var(--canvas-accent-soft);
+  background-color: var(--canvas-accent-soft);
+}
+
+.canvas-item:focus-visible {
+  outline: var(--canvas-outline) solid var(--canvas-accent);
+  outline-offset: 2px;
+}
+
+.canvas-item--selected,
+.canvas-item--selected:hover {
+  border-color: var(--canvas-accent);
+  background-color: transparent;
+  box-shadow: inset 0 0 0 1px var(--canvas-accent);
+}
+
 /* ── Drop zones ────────────────────────────────────────────────────────── */
 
 /* Drop zones are invisible until a drag is in progress on the root. */

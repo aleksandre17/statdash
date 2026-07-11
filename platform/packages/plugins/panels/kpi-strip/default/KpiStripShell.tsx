@@ -1,4 +1,4 @@
-import { defineShell, useKpiRows, usePanelTitleBadge, isPromotionEnabled } from '@statdash/react/engine'
+import { defineShell, useKpiRows, usePanelTitleBadge, isPromotionEnabled, BandItemBoundary } from '@statdash/react/engine'
 import type { RenderContext, NodeDef }          from '@statdash/react/engine'
 import { useInject, EMPTY_STATE, useT }         from '@statdash/react'
 import { evalVisibility }                        from '@statdash/engine'
@@ -33,14 +33,20 @@ function KpiStripControl({ def, ctx }: { def: KpiStripNode; ctx: RenderContext }
 
   // Visibility is decided ONCE for layout (count + which cards to lay out) via the
   // SAME `evalVisibility(when, filterParams, perspectiveState)` seam interpretKpis'
-  // `kpiVisible` and renderNode's step-0.5 gate use — so the promoted visible set
-  // is byte-identical to the legacy filtered set (no drift). Legacy path passes the
-  // raw items (useKpiRows filters internally); promoted path pre-filters so the grid
-  // count and the lowered card nodes agree.
-  const visibleItems = isPromoted
-    ? def.items.filter(it =>
-        !it.when || evalVisibility(it.when, ctx.filterParams, ctx.sectionCtx.perspectiveState))
-    : def.items
+  // `kpiVisible` and renderNode's step-0.5 gate use — so the visible set is
+  // byte-identical to interpretKpis' filtered set (no drift), in BOTH residences.
+  //
+  //  Each visible entry keeps its ORIGINAL store index (`def.items[index]`) — the
+  //  band path segment the authoring canvas selects on (ADR-038 · BandItemBoundary).
+  //  Pre-filtering here (not relying on useKpiRows' internal filter) is what makes
+  //  `kpis[i]` ↔ `visible[i]` ↔ the original index a stable 1:1: interpretKpis
+  //  applies the IDENTICAL predicate, so over an already-visible set it is a no-op
+  //  that preserves order (the double-filter is idempotent — behaviour-preserving).
+  const visible = def.items
+    .map((item, index) => ({ item, index }))
+    .filter(({ item }) =>
+      !item.when || evalVisibility(item.when, ctx.filterParams, ctx.sectionCtx.perspectiveState))
+  const visibleItems = visible.map(v => v.item)
 
   // useKpiRows = the async-store-safe KPI read seam (engine). For sync stores it
   // is a memoized interpretKpis; for async stores (caps.sync === false) it warms
@@ -81,7 +87,16 @@ function KpiStripControl({ def, ctx }: { def: KpiStripNode; ctx: RenderContext }
           // markup is the SAME <div class="kpi-card"> the legacy branch produces.
           ? visibleItems.map((item) => ctx.renderNode(kpiSpecToCardNode(item) as NodeDef))
           // LEGACY residence — the strip owns the value band and maps to <KpiCard>.
-          : kpis.map((kpi) => <KpiCard key={kpi.label} {...kpi} trendLabels={trendLabels} metaLabels={metaLabels} />)}
+          // Each card is wrapped in the GENERIC BandItemBoundary keyed by its
+          // ORIGINAL store index, so the authoring canvas can frame + select it as a
+          // bounded element (ADR-038). Off the canvas the boundary is a zero-DOM
+          // Fragment, so this markup is byte-identical to the live site (and to the
+          // promoted residence — FF-PROMOTION-LOSSLESS).
+          : kpis.map((kpi, i) => (
+              <BandItemBoundary key={visible[i]!.item.id ?? kpi.label} field="items" index={visible[i]!.index}>
+                <KpiCard {...kpi} trendLabels={trendLabels} metaLabels={metaLabels} />
+              </BandItemBoundary>
+            ))}
       </div>
     </div>
   )

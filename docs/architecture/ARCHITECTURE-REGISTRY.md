@@ -9,6 +9,24 @@
 
 ---
 
+## 0. GOVERNING LAW — The Bounded Element Law (ADR-038) · the law every lane below obeys
+
+> **Owner-originated, formalized to standard 2026-07-11 (`ADR-038-bounded-element-law.md`).** Every renderable/authorable element — node · panel · chrome · control · **item** — is a **bounded, self-owning unit** that DECLARES its contract (what it accepts, abstractly), hides its internals, and is composed ONLY through that declaration. Every composer / renderer / **authoring surface** recurses GENERICALLY over the declaration — **NEVER an external per-type special-case.** Canon: SRP · Parnas encapsulation · DIP/ISP · Open/Closed · Demeter · Composite · Ports&Adapters/Hexagonal · Bounded Context.
+>
+> **ONE ROOT for the owner's live-panel symptoms (2026-07-11 — "the big change isn't visible in the panel"):**
+> 1. *"authoring doesn't go all the way in"* → an element under-declares its contract, or a composer special-cases → generic recursion can't descend. Fix: every element declares; authoring recurses.
+> 2. *"can't click a KPI card separately"* → the canvas must select ANY declared element/item generically (incl. value-band `items[]` cards), the RIGHT way (declaration-driven, not the reverted `registerNodeProjector` hand-wire).
+> 3. *"click a KPI → everything comes out on the right, doesn't fit"* → the inspector must be a **bounded projection of the selected element's OWN declared contract**, drilled one at a time — not the whole nested schema expanded (`Inspector` defaults every accordion group open).
+
+| ID | Governed by ADR-038 | Fitness | Status |
+|----|---------------------|---------|--------|
+| **ADR-038** | The Bounded Element Law itself | FF-SCHEMA-COMPLETE (declares) · **FF-NO-EXTERNAL-SPECIAL-CASE** (0057, no hand-wire) · FF-GROUP-FIELDS-EXIST (0058) | **STANDARD ACCEPTED** — trunk (`ObjectMeta`) BUILT; **must reach VERIFIED (live :3013), not just BUILT** |
+| **ADR-039** | **Bounded-Element Selection Projection** (selection = Composite `(node, item-path)`; render/select/inspect = generic projections over the declaration; `BandItemBoundary` render-contract) | **FF-NO-EXTERNAL-SPECIAL-CASE** (0057, GREEN) · FF-PROMOTION-LOSSLESS (anchor inert off-canvas) | **VERIFIED** (Playwright real-bundle `bandItemSelect.e2e.ts`; live :3013 walkthrough) — `ADR-039-bounded-element-selection-projection.md` |
+| **BE-1** | **Generic per-element canvas selection + BOUNDED inspector** (click any element incl. a value-band card → only ITS declared contract) | canvas selects declared items generically; inspector = bounded projection, drill-one-at-a-time | **BUILT + e2e-VERIFIED** (ADR-039) — click a KPI card selects it bounded, dock shows only its contract + FITS; strip drill-in not regressed. Confirm on :3013. |
+| **BE-2** | Surface engine capability in the panel (`expr`/`style`/`core` + json-config functionality reflected as authorable) | every capability in a config = an authorable contract in the panel | OWED — DoD = live on :3013 |
+
+**Discipline reset (2026-07-11):** every lane's DoD is **VERIFIED on the live panel (:3013)**, not `tsc`-green / unit-green. "BUILT" is not "done"; the owner must SEE it.
+
 ## A. Responsive · Composition · Style (the current thrust — owner's #1)
 
 > **Governing standard (owner, 2026-07-01): MAXIMUM, not minimum.** The layout system harnesses the FULL power of CSS Grid + Flexbox, exposed as a **JSON grammar of layout**, interpreted by the JS renderer, container-query-driven, per-breakpoint — at the grade of the strongest frameworks/platforms (Builder.io/Plasmic/Framer/Vega/Grid+Flex), with their patterns (registry/OCP, interpreter, responsive-value, composite, design-tokens). Maximum **agnosticism · dynamics · functionality · architecture · concept**, while staying compatible with the existing configs + services (config-is-data, rides NodeStyles/ResponsiveValue/DataStore seams). **The ARCHITECTURE is always maximal + framework-grade; capabilities are activated progressively per real need (YAGNI on population, never on the seams).**

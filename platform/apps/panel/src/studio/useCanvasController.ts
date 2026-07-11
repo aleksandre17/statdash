@@ -1,8 +1,9 @@
 import { useState, useCallback, useMemo } from 'react'
-import { useConstructorStore, useActivePage, useSelectedNode, useChromeSelection, useSite, usePages } from '../store/constructor.store'
+import { useConstructorStore, useActivePage, useSelectedNode, useSelectedItemPath, useChromeSelection, useSite, usePages } from '../store/constructor.store'
 import { nodeSchemaSource } from '../inspector/schemaSource'
 import { firstMetricField, isMetricBindable, bindMetricToProps } from '../discovery/metricBinding'
 import { setAtPath } from '../inspector/showWhen'
+import { bandItemsOf, type BandItemRef } from '../canvas/bandItems'
 import { makeNode } from '../canvas/insertNode'
 import { toNodePageConfig } from '../canvas/canvasPageAdapter'
 import { projectCanvasSiteChrome } from '../canvas/canvasSiteChrome'
@@ -28,10 +29,12 @@ const newNodeId = () => `node-${Math.random().toString(36).slice(2, 9)}`
 export function useCanvasController() {
   const page       = useActivePage()
   const selectedId = useSelectedNode()
+  const selectedItemPath = useSelectedItemPath()
   const chromeSel  = useChromeSelection()
   const site       = useSite()
   const pages      = usePages()
   const selectNode    = useConstructorStore((s) => s.selectNode)
+  const selectItem    = useConstructorStore((s) => s.selectItem)
   const insertNode    = useConstructorStore((s) => s.insertNode)
   const updateNode    = useConstructorStore((s) => s.updateNode)
   const removeNode    = useConstructorStore((s) => s.removeNode)
@@ -45,6 +48,16 @@ export function useCanvasController() {
   const selected = page && selectedId ? page.nodes[selectedId] ?? null : null
   const nodeConfig = page ? toNodePageConfig(page) : null
   const selectedBindable = selected ? isMetricBindable(nodeSchemaSource.getSchema(selected)) : false
+
+  // ── Bounded band-item selection (ADR-038) — DERIVED from the declaration ──────
+  //  When a value-band item is selected, resolve its BandItemRef (its OWN declared
+  //  itemSchema/groups) generically from the node's schema — never a per-type map.
+  //  This is the bounded contract the Inspector projects for the selected card.
+  const selectedBand: BandItemRef | null = useMemo(() => {
+    if (!selected || !selectedItemPath) return null
+    const schema = nodeSchemaSource.getSchema(selected)
+    return bandItemsOf(selected.props, schema).find((b) => b.path === selectedItemPath) ?? null
+  }, [selected, selectedItemPath])
 
   // The canvas's runner-parity chrome inputs (nav/chrome/chromeConfig) — projected
   // from the authoring session so the live canvas rail renders the REAL nav links +
@@ -88,6 +101,22 @@ export function useCanvasController() {
     [pageId, selected, updateNode, markPageDirty],
   )
 
+  // Bounded item onChange — write one subfield of the SELECTED band item, at the
+  // absolute path `<itemPath>.<subfield>` within the owning node's props. The item
+  // Inspector is projected over the item's own itemSchema, so `subfield` is one of
+  // the item's declared fields; the write funnels through the SAME setAtPath +
+  // updateNode seam as a node prop edit (immutable, only the touched branch clones).
+  const patchItemProp = useCallback(
+    (subfield: string, value: unknown) => {
+      if (!pageId || !selected || !selectedItemPath) return
+      updateNode(pageId, selected.id, {
+        props: setAtPath(selected.props, `${selectedItemPath}.${subfield}`, value),
+      })
+      markPageDirty(pageId)
+    },
+    [pageId, selected, selectedItemPath, updateNode, markPageDirty],
+  )
+
   // Node-level view.visibleWhen gate — null clears it (byte-clean round-trip).
   const setVisibleWhen = useCallback(
     (next: VisibilityExpr | undefined) => {
@@ -115,11 +144,14 @@ export function useCanvasController() {
 
   return {
     page, pageId, selected, selectedId, chromeSel, nodeConfig, selectedBindable,
+    // Bounded band-item selection (ADR-038): the drilled item path + its resolved
+    // declared contract + the item write path.
+    selectedItemPath, selectedBand,
     canvasSite,
     dragging, setDragging,
     previewPerspectiveId, setPreviewPerspectiveId,
-    selectNode,
-    bindMetric, handleDrop, patchProp, setVisibleWhen, deleteSelected,
+    selectNode, selectItem,
+    bindMetric, handleDrop, patchProp, patchItemProp, setVisibleWhen, deleteSelected,
   }
 }
 

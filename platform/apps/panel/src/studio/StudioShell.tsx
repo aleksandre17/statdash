@@ -192,9 +192,11 @@ export function StudioShell() {
               <CanvasView
                 page={controller.nodeConfig}
                 selectedNodeId={controller.selectedId ?? undefined}
+                selectedItemPath={controller.selectedItemPath ?? undefined}
                 dragging={controller.dragging}
                 previewPerspectiveId={controller.previewPerspectiveId}
                 onSelectNode={controller.selectNode}
+                onSelectItem={controller.selectItem}
                 onDropNode={controller.handleDrop}
                 onBindMetric={controller.bindMetric}
                 nav={controller.canvasSite.nav}
