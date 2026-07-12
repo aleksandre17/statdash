@@ -15,7 +15,7 @@
 //  The component layer supplies the id factory and the store action; this module
 //  owns the "what shape + where" decision so it cannot drift between surfaces.
 //
-import { nodeRegistry } from '@statdash/react/engine'
+import { nodeRegistry, isNodeContainer } from '@statdash/react/engine'
 import type { CanvasNode, CanvasPage } from '../types/constructor'
 
 /**
@@ -46,27 +46,33 @@ export function makeNode(type: string, id: string, variant?: string): CanvasNode
 
 /**
  * Whether `parentType` is a NODE-TREE drop target at all — the leaf/container
- * discriminant (D-M4.1-A). Reads the already-declared `canHaveChildren` meta: the
- * page root (no parentType) is always a top-level target; a registered node is a
- * target ONLY when its meta pins `canHaveChildren === true`. A LEAF (chart, kpi,
- * hero, filter-bar — `canHaveChildren` false/absent) accepts NO child node, even
- * if it happens to declare an empty `slots` object (hero: `slots:{}`).
+ * discriminant, now DERIVED from the declared parts (ADR-041 Phase 6, `isNodeContainer`):
+ * a node accepts child NODES iff it declares ≥1 `slot`-residence part field. No kind /
+ * flag is read to answer this containment question (FF-DERIVED-CONTAINMENT). The page
+ * root (no parentType) is always a top-level target. A LEAF (chart, hero) declares no
+ * slot part → not a target — even if it declares an empty `slots` object (hero:
+ * `slots:{}` → zero slot parts). A `value`/`sourced` wrapper (kpi-strip items,
+ * filter-bar controls) is a wrapper-by-contract but NOT a node-tree container: its
+ * parts are values/projections, not draggable nodes, so it is correctly not a target.
+ * Byte-identical to the retired `canHaveChildren` read (proven corpus-wide by the
+ * plugins FF-DERIVED-CONTAINMENT gate: `canHaveChildren === true ⟺ declares a slot part`).
  */
 export function isDropTarget(parentType: string | undefined): boolean {
   if (!parentType) return true                       // page root — top-level target
-  return nodeRegistry.getMeta(parentType)?.canHaveChildren === true
+  const meta = nodeRegistry.getMeta(parentType)
+  return meta != null && isNodeContainer(meta)
 }
 
 /**
  * Whether `childType` may be nested under `parentType`. Two questions, both from
- * already-declared meta (D-M4.1-A — no new field, no packages change):
- *   1. Is the parent a drop target at all?  → `canHaveChildren === true` (isDropTarget)
+ * already-declared meta (no new field, no packages change):
+ *   1. Is the parent a drop target at all?  → declares a `slot` part (isDropTarget)
  *   2. Which child types may it hold?        → `slots.accepts` (empty ⇒ any)
  *
  * Previously step 1 was skipped — a slot-less parent returned `true`, conflating
  * "leaf (accepts nothing)" with "open container (accepts anything)" and causing
  * the insert resolver to silently redirect an incompatible insert to page top.
- * Gating on `canHaveChildren` FIRST fixes that silent-fail at the root: a leaf is
+ * Gating on `isDropTarget` FIRST fixes that silent-fail at the root: a leaf is
  * never a nest target, so the palette never offers (and the router never redirects)
  * an incompatible tile. The single SSOT shared by the Outline drag, the palette
  * drop, the ⌘K insert, and the context-aware palette filter (M4.1 Thread A).

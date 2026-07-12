@@ -16,7 +16,7 @@
 //  flag speaks to tree-children, the value part is a different residence.
 //
 import { describe, it, expect } from 'vitest'
-import { partFieldsOf }         from '@statdash/react/engine'
+import { partFieldsOf, isNodeContainer } from '@statdash/react/engine'
 import type { ObjectMeta }      from '@statdash/react/engine'
 import { AUTHORING_METAS }      from '../authoring-metas'
 
@@ -24,8 +24,9 @@ const METAS = AUTHORING_METAS as unknown as ObjectMeta[]
 const idOf  = (m: ObjectMeta & { type?: string; slot?: string; controlType?: string }): string =>
   m.type ?? m.slot ?? m.controlType ?? '<anon>'
 
-const hasSlotPart = (m: ObjectMeta): boolean =>
-  partFieldsOf(m).some((p) => p.residence === 'slot')
+// The SHIPPED node-container predicate (ADR-041 Phase 6): "declares a `slot` part" — the
+// derived, corpus-authoritative replacement for the retired `canHaveChildren` flag-read.
+const hasSlotPart = (m: ObjectMeta): boolean => isNodeContainer(m)
 
 describe('FF-DERIVED-CONTAINMENT — no stored kind CONTRADICTS the declared part fields [§0.5a semantic]', () => {
   it('for EVERY registered META: `canHaveChildren === true` ⟺ it declares a SLOT part', () => {

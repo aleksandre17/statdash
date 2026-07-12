@@ -23,9 +23,8 @@ import { readFileSync, readdirSync, existsSync } from 'node:fs'
 import { resolve, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { partFieldsOf } from './slice-meta'
+import { isWrapper, isNodeContainer } from './slice-meta'
 import type { NodeSliceMeta, PanelSliceMeta } from './slice-meta'
-import type { PartField } from './partPort'
 
 const here = dirname(fileURLToPath(import.meta.url))   // …/packages/react/src/engine
 const read = (f: string): string => readFileSync(resolve(here, f), 'utf8')
@@ -96,24 +95,33 @@ const valueMeta: PanelSliceMeta = { sliceType: 'panel', type: '__dc_value__', ca
 const leafMeta:  PanelSliceMeta = { sliceType: 'panel', type: '__dc_leaf__',  category: 'data',
   schema: [{ field: 'title', type: 'string', label: 't' }] }
 
-// The derived predicate ROOT-2 mandates (formalized as the sole containment answer at
-// Phase 6): reads ONLY the declared part fields — never a kind or a flag.
-const isWrapper = (parts: PartField[]): boolean => parts.length > 0
-
 describe('FF-DERIVED-CONTAINMENT — wrapper/leaf DERIVES from the declared parts, not the kind', () => {
+  // The SHIPPED predicates (ADR-041 Phase 6) are under test here — not a local copy — so
+  // the gate asserts the real containment answer. `isWrapper` reads ONLY the declared part
+  // fields; never a kind or a flag.
   it('a slot-declaring META is a wrapper; a leaf declaring no parts is a leaf', () => {
-    expect(isWrapper(partFieldsOf(slotMeta))).toBe(true)
-    expect(isWrapper(partFieldsOf(leafMeta))).toBe(false)
+    expect(isWrapper(slotMeta)).toBe(true)
+    expect(isWrapper(leafMeta)).toBe(false)
   })
 
   it('a VALUE-declaring leaf-kind is a wrapper BY CONTRACT — the kind flag does not veto it', () => {
     // valueMeta is a `panel` (leaf kind, `canHaveChildren` absent/false) yet declares a
     // value part → wrapper-by-contract. The predicate never reads the kind, so the
     // "leaf kind" does not contradict the "has a part" contract (the kpi-strip case).
-    expect(isWrapper(partFieldsOf(valueMeta))).toBe(true)
+    expect(isWrapper(valueMeta)).toBe(true)
   })
 
-  it('the predicate is a pure function of partFieldsOf — its source names no kind/flag', () => {
+  it('isNodeContainer is the SLOT specialization — a value wrapper is NOT a node-tree container', () => {
+    // The node-tree drop-target answer: only a `slot` part makes an element a container.
+    // slotMeta declares a slot → node container; valueMeta is a wrapper-by-contract (value
+    // part) but NOT a node container (its parts are values, not draggable nodes); a leaf is
+    // neither. This is the derived replacement for the retired `canHaveChildren` flag-read.
+    expect(isNodeContainer(slotMeta)).toBe(true)
+    expect(isNodeContainer(valueMeta)).toBe(false)
+    expect(isNodeContainer(leafMeta)).toBe(false)
+  })
+
+  it('the predicates are pure functions of partFieldsOf — its source names no kind/flag', () => {
     const fn = read('slice-meta.ts').slice(read('slice-meta.ts').indexOf('export function partFieldsOf'))
     expect(fn).not.toMatch(/sliceType/)
     expect(fn).not.toMatch(/canHaveChildren/)

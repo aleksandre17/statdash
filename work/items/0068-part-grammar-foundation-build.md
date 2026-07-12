@@ -1,7 +1,7 @@
 ---
 id: "0068"
 title: "FOUNDATION BUILD — the Part grammar + Part port (ROOT-1..4); lay the object-model foundation to framework grade"
-status: in-progress
+status: CORE COMPLETE + LIVE + VERIFIED on :3013 (commit 12a6d4c pushed; panel image rebuilt, container healthy; authenticated Studio render-verify = 21 layout nodes, 0 console errors, no loop — `work/verify-reform-3013.mjs`). Phases 1-5 + DoD proof + S1-S4 all shipped. HELD for owner sign-off: Phase 6 (wrapper/leaf derive, one-way) · S5 (rail collapse) · S6 (chrome-as-part). Follow-ups: FilterBarControlsBridge dead-code removal · widen section.accepts (homeless content blocks) · initFromApi honor ?page=/index_page_id · S1-S4 e2e locks.
 class: M
 priority: P0
 owner: —

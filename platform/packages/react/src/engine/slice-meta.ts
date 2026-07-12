@@ -181,6 +181,17 @@ import type { VariantSchema } from './variant-meta'
 //
 //  This is the DECLARATION half (what a plugin META writes); the adapter (enumerate
 //  / write) is an app-layer concern (apps/panel) — packages/react stays app-agnostic.
+//
+//  ── De-alias decision (ADR-041 Phase 6 · Delta 3) ──────────────────────────────
+//  The CANONICAL part declaration is the `sourced` `PartField` that `partFieldsOf`
+//  emits; `BandDescriptor` is retained as a thin, documented NODE-LEVEL surface alias
+//  that projects into it (`{ source }` → `{ field: source, residence: 'sourced',
+//  source }`). It is NOT physically relocated onto a field in this phase: the residence
+//  stays node-level (the ONE grandfathered exception FF-RESIDENCE-AT-FIELD allowlists).
+//  Moving it onto a real field — retiring the last node-level residence, hardening
+//  FF-RESIDENCE-AT-FIELD to `[]` — requires a NEW field-level sourced-declaration
+//  surface form plus a filter-bar META migration, which is a REVERSIBLE `expand` step
+//  deliberately kept OUT of this sole one-way containment step (minimal one-way door).
 export interface BandDescriptor {
   /** The id of the registered BandSource adapter that resides/reads/writes this band. */
   source: string
@@ -342,6 +353,48 @@ export type FilterControlMeta = ObjectMeta & {
 }
 
 export type SliceMeta = NodeSliceMeta | PageSliceMeta | PanelSliceMeta | ChromeSliceMeta | FilterControlMeta
+
+// ── isWrapper / isNodeContainer — ROOT-2 wrapper/leaf as a DERIVED predicate (ADR-041 Phase 6) ──
+//
+//  The owner's wrapper-vs-single-element intuition, given its ONE home. The five
+//  disagreeing signals the diagnosis named (the KIND, the containment FLAG, the tree
+//  slots, the props value-band, the sourced band) collapse: wrapper/leaf is now a PURE
+//  function of the DECLARED parts (`partFieldsOf`, the one reading). NO mechanism reads
+//  the KIND or the FLAG to answer a containment question — the hard `[]` gate this
+//  phase lands (FF-DERIVED-CONTAINMENT). Both predicates route through `partFieldsOf`
+//  (declared below; function-hoisted) so there is exactly ONE part enumeration — a
+//  parallel walk here would be a second grammar (FF-ONE-PART-GRAMMAR).
+//
+//  `PartBearingMeta` is the minimal contract they read — the same three fragments
+//  `partFieldsOf` projects — so BOTH an authoring `ObjectMeta` AND the registry's
+//  `StoredMeta` view (which carries `slots`/`schema`/`band` verbatim) are valid inputs
+//  with no cast at the call site (`nodeRegistry.getMeta(...)`).
+type PartBearingMeta = Pick<ObjectMeta, 'slots' | 'schema' | 'band'>
+
+/**
+ * WRAPPER ⇔ the contract declares ≥1 part field (ANY residence); SINGLE ELEMENT
+ * (leaf) ⇔ it declares none. The ONE home for the owner's wrapper/leaf intuition
+ * (ADR-041 ROOT-2) — the sole containment answer after Phase 6. A kpi-strip is a
+ * WRAPPER here (it declares a `value` part) though its KIND is a leaf-panel: kind and
+ * contract are RECONCILED, never read as a containment signal.
+ */
+export function isWrapper(meta: PartBearingMeta): boolean {
+  return partFieldsOf(meta).length > 0
+}
+
+/**
+ * Does this element accept child NODES? — the `slot`-residence specialization of
+ * `isWrapper`. A node-tree drop targets the `slot` residence ONLY: a `value`/`sourced`
+ * wrapper (kpi-strip items, filter-bar controls) is a wrapper-BY-CONTRACT but NOT a
+ * node-tree container — its parts are typed values / external projections, never
+ * draggable node instances. This is the DERIVED replacement for the retired
+ * containment flag-read: the flag was byte-identical to "declares a `slot` part"
+ * (proven over the whole shipped corpus by the plugins-side FF-DERIVED-CONTAINMENT
+ * semantic gate: `canHaveChildren === true ⟺ declares a slot part`).
+ */
+export function isNodeContainer(meta: PartBearingMeta): boolean {
+  return partFieldsOf(meta).some((p) => p.residence === 'slot')
+}
 
 // ── partFieldsOf — ROOT-2: the ONE reading of an element's declared PARTS ────────
 //

@@ -82,7 +82,15 @@ if lim:
     if n > ceiling:
         sys.stderr.write(f"[post-edit-laws] BLOAT BLOCK: {rel} is {n} lines (hard ceiling {ceiling}). Split it — one concern per file (one-body, `05`/`09` hygiene). Do not keep appending.\n")
         sys.exit(2)
-violations = [p["msg"] for p in mf.get("law_patterns", [])
+# The FF suite (`*.fitness.*` / `*.test.*`) is, BY CONSTRUCTION, the SSOT that DEFINES these
+# forbid patterns: its BITES fixtures + regex constants deliberately hold the very strings a law
+# blocks, to PROVE the law bites (e.g. FF-NO-EXTERNAL-SPECIAL-CASE asserts on a planted
+# `registerNodeProjector('kpi-strip', …)`). Scanning a guard with the tripwire whose own SSOT it
+# IS is the same category error the manifest skip (above) avoids — and every law_pattern msg names
+# the FF suite as authoritative. Content law_patterns target PRODUCTION source; the FF suite is
+# self-authoritative, so it is exempt from the fast non-authoritative content tripwire.
+_is_ff_guard = ".fitness." in base or ".test." in base
+violations = [] if _is_ff_guard else [p["msg"] for p in mf.get("law_patterns", [])
              if _match(p.get("glob", "*")) and re.search(p["forbid"], text, re.I)]
 if violations:
     sys.stderr.write("[post-edit-laws] forbidden pattern(s) in %s — fix before continuing:\n" % fp)

@@ -184,9 +184,13 @@ describe('FF-NO-EXTERNAL-SPECIAL-CASE — no per-kind Part-port bridge (ADR-041 
 //  semantic corpus tooth is packages/plugins/…/derivedContainment.)
 const CONTAINMENT_FLAG_READ = /\.canHaveChildren\b/
 
-describe('FF-DERIVED-CONTAINMENT — app tooth: the containment flag-read is grandfathered + shrinking (§0.5a)', () => {
-  const GRANDFATHERED = ['insertNode.ts']   // Phase 6 de-alias → []
-  const BASELINE = 1
+describe('FF-DERIVED-CONTAINMENT — app tooth: the containment flag-read is a HARD [] gate (§0.5a · Phase 6)', () => {
+  // Phase 6 (ONE-WAY) struck the last grandfathered read: `isDropTarget` now DERIVES
+  // node containment from the declared `slot` parts (`isNodeContainer`), so NO app
+  // source reads `canHaveChildren` as a containment mechanism. The allowlist is `[]`
+  // and the baseline is 0 — a zero-tolerance gate. Any NEW flag-read reds the build.
+  const GRANDFATHERED: string[] = []   // Phase 6: struck to [] (was ['insertNode.ts'])
+  const BASELINE = 0
 
   const flagReadFiles = (): string[] =>
     Object.entries(LAYER_SOURCES)
@@ -195,11 +199,11 @@ describe('FF-DERIVED-CONTAINMENT — app tooth: the containment flag-read is gra
       .map(([path]) => path.split('/').pop()!)
       .sort()
 
-  it('only the grandfathered file reads `canHaveChildren` as a containment flag', () => {
+  it('NO app source reads `canHaveChildren` as a containment flag (hard [] gate)', () => {
     expect(flagReadFiles()).toEqual([...GRANDFATHERED].sort())
   })
 
-  it('META: the allowlist can only SHRINK — a GROWN containment read fails the build', () => {
+  it('META: the allowlist is emptied and can only stay empty — a GROWN containment read fails the build', () => {
     expect(GRANDFATHERED.length).toBeLessThanOrEqual(BASELINE)
   })
 
