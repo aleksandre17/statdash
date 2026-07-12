@@ -29,7 +29,7 @@ const rightDockSrc = Object.values(RAW)[0] ?? ''
 
 function stubController(over: Partial<CanvasController>): CanvasController {
   return {
-    page: null, pageId: null, selected: null, selectedId: null, chromeSel: null,
+    page: null, pageId: null, selected: null, selectedId: null,
     nodeConfig: null, selectedBindable: false,
     dragging: false, setDragging: () => {},
     previewPerspectiveId: undefined, setPreviewPerspectiveId: () => {},
