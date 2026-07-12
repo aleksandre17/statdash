@@ -46,17 +46,12 @@ export const PART_INDEX_ATTR   = 'data-part-index'
 export const PART_NODE_ID_ATTR   = 'data-part-node-id'
 export const PART_NODE_TYPE_ATTR = 'data-part-node-type'
 
-// ── Interim chrome anchor (SPEC S4) — canvas-selectable chrome regions ──────────────
-//  Chrome (header / sidebar / footer) is not yet a page-node part (that is S6 —
-//  chrome-as-part of the `site-frame`, riding ADR-041 Ph.6). Until then, the authoring
-//  canvas still needs to SELECT chrome on the canvas (owner P3), so `ChromeSlot` stamps
-//  a layout-inert `display:contents` anchor carrying its (slot, key) — the coordinate
-//  the EXISTING chrome-selection arm (`selectChrome`/`ChromeInspectorPanel`) reads. This
-//  is a SEPARATE, clearly-interim family (NOT the `data-part-*` family) that folds into
-//  the one part anchor when chrome becomes a declared part at S6. Off the canvas
-//  (`AuthoringAnchorContext` false) `ChromeSlot` stamps nothing — byte-identical runtime.
-export const CHROME_SLOT_ATTR = 'data-canvas-chrome-slot'
-export const CHROME_KEY_ATTR  = 'data-canvas-chrome-key'
+// ── S6 fold: chrome is now a declared `sourced` Part of the site-frame ──────────────
+//  The interim S4 chrome anchor family (`data-canvas-chrome-slot`/`-key`) is RETIRED:
+//  `ChromeSlot` stamps the ONE generic `<PartAnchor field={slot} index={0}>` (the
+//  `data-part-*` family below), and chrome selection flows through the ONE `PartAddress`
+//  (`{ nodeId: SITE_FRAME_ID, partPath: chromePartPath(slot) }`) like every other part —
+//  no separate chrome anchor, no `ChromeSelection` arm (ADR-041 R4 · S6).
 
 // ── Back-compat aliases (BE-1 names) — byte-identical to the value/sourced attrs ────
 //  Every consumer reads the attribute through these constants (never a literal), so

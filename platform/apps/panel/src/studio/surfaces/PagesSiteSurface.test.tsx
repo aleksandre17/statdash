@@ -2,13 +2,14 @@ import { describe, it, expect, beforeAll, beforeEach } from 'vitest'
 import { render, screen, fireEvent, within } from '@testing-library/react'
 import { PagesSiteSurface } from './PagesSiteSurface'
 import { setupCanvasRegistry } from '../../canvas/setupCanvasRegistry'
-import { useConstructorStore, chromeSelectionOf } from '../../store/constructor.store'
+import { useConstructorStore } from '../../store/constructor.store'
 import type { NavItem, CanvasPage } from '../../types/constructor'
 
-// The Studio Pages&Site surface — the site's authoring home: identity + navigation
-// + chrome. Proves it mounts, writes the real site slice (updateSite / updateNavItem
-// / removeNavItem), edits a nav entry (label + target), wires "+ add page" to the
-// REAL page-create dialog, and surfaces chrome authoring (ChromePalette → selectChrome).
+// The Studio Pages&Site surface — the site's authoring home: identity + navigation +
+// page creation. Proves it mounts, writes the real site slice (updateSite / updateNavItem
+// / removeNavItem), edits a nav entry (label + target), and wires "+ add page" to the REAL
+// page-create dialog. (S6: chrome is no longer authored from a list here — it is
+// canvas-selectable, so the ChromePalette + its section are retired from this surface.)
 
 const NAV: NavItem = { id: 'nav-1', label: { ka: 'მთავარი', en: 'Home' }, pageId: 'p-1', order: 0 }
 const PAGE: CanvasPage = {
@@ -16,7 +17,6 @@ const PAGE: CanvasPage = {
   nodeIds: [], nodes: {},
 }
 
-// Chrome slots come from the registry — populate it once so ChromePalette lists them.
 beforeAll(() => { setupCanvasRegistry() })
 
 beforeEach(() => {
@@ -24,12 +24,11 @@ beforeEach(() => {
   useConstructorStore.setState({ pages: [PAGE], selection: null })
 })
 
-describe('PagesSiteSurface — site authoring home (identity · nav · chrome)', () => {
-  it('mounts identity + navigation + chrome from the store', () => {
+describe('PagesSiteSurface — site authoring home (identity · nav · pages)', () => {
+  it('mounts identity + navigation from the store', () => {
     render(<PagesSiteSurface />)
     expect(screen.getByText('იდენტობა')).toBeInTheDocument()
     expect(screen.getByText('ნავიგაცია')).toBeInTheDocument()
-    expect(screen.getByText('ჩარჩო')).toBeInTheDocument()
     expect(screen.getByDisplayValue('Seed Site')).toBeInTheDocument()
     expect(screen.getByText('Home')).toBeInTheDocument()
   })
@@ -63,14 +62,6 @@ describe('PagesSiteSurface — site authoring home (identity · nav · chrome)',
     render(<PagesSiteSurface />)
     fireEvent.click(screen.getByRole('button', { name: 'Delete Home' }))
     expect(useConstructorStore.getState().site.nav).toHaveLength(0)
-  })
-
-  it('selecting a chrome element (ChromePalette) opens its authoring via selectChrome', () => {
-    render(<PagesSiteSurface />)
-    const palette = screen.getByTestId('chrome-palette')
-    // Pick the first registered chrome slot → it becomes the chrome selection.
-    fireEvent.click(within(palette).getAllByRole('button')[0])
-    expect(chromeSelectionOf(useConstructorStore.getState().selection)).not.toBeNull()
   })
 
   it('"+ add page" opens the real page-create dialog (not the wizard stub)', async () => {

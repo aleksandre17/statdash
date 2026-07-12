@@ -44,3 +44,31 @@ export const SITE_FRAME_ID = 'site-frame'
 export const SITE_FRAME_META: ObjectMeta = {
   band: { source: 'site-chrome' },
 }
+
+/**
+ * The `partPath` prefix a chrome part takes under the site-frame element. A chrome
+ * region is addressed `{ nodeId: SITE_FRAME_ID, partPath: 'chrome.<slot>' }` — the
+ * `sourced`-residence stable-key convention (ADR-041 Delta 1), where the stable key is
+ * the chrome slot name. This is the ONE place the convention lives; the `chromeParts`
+ * adapter (enumerate/write) and the store's `selectChrome` ergonomic wrapper both build
+ * their address through it, so the grammar can never drift between reader and writer.
+ */
+export const CHROME_PART_PREFIX = 'chrome'
+
+/** Build the `partPath` for a chrome region's Part address (`chrome.<slot>`). */
+export function chromePartPath(slot: string): string {
+  return `${CHROME_PART_PREFIX}.${slot}`
+}
+
+/**
+ * The inverse of {@link chromePartPath}: the chrome slot a `partPath` addresses, or
+ * `null` when the path is not a chrome part (a filter/value part, or malformed). Strict
+ * on the `chrome.` prefix so a non-chrome address is never mis-parsed as a slot.
+ */
+export function chromeSlotOfPartPath(partPath: string | undefined): string | null {
+  if (!partPath) return null
+  const dot = partPath.indexOf('.')
+  if (dot < 0 || partPath.slice(0, dot) !== CHROME_PART_PREFIX) return null
+  const slot = partPath.slice(dot + 1)
+  return slot || null
+}

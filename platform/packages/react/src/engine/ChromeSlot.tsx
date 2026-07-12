@@ -14,13 +14,13 @@
 //  Config is injected via ChromeSlotConfigProvider so the shell reads it
 //  via useSlotConfig() — zero-prop pattern preserved.
 //
-import { createElement, useContext }          from 'react'
+import { createElement }                      from 'react'
 import type { ReactNode }                     from 'react'
 import { useSiteChrome }                      from '../context/SiteContext'
 import { useChromeOverrides }                 from '../context/ChromeOverrideContext'
 import { chromeRegistry, NullChromeSlot }     from './chromeRegistry'
 import { ChromeSlotConfigProvider }           from '../context/ChromeSlotConfigContext'
-import { AuthoringAnchorContext, CHROME_SLOT_ATTR, CHROME_KEY_ATTR } from './partAnchor'
+import { PartAnchor }                          from './partAnchor'
 import type { ChromeEntry }                   from './types'
 
 function pickVariant(e: ChromeEntry | undefined): string | undefined {
@@ -50,21 +50,16 @@ export function ChromeSlot({ slot }: { slot: string }): ReactNode {
   // through to the site-level slot config (Grafana override-chain semantics).
   const config       = pickConfig(pageEntry) ?? pickConfig(siteEntry) ?? {}
   const Shell        = chromeRegistry.get(slot, key) ?? NullChromeSlot
-  const authoring    = useContext(AuthoringAnchorContext)
   const rendered = (
     <ChromeSlotConfigProvider config={config}>
       {createElement(Shell)}
     </ChromeSlotConfigProvider>
   )
-  // SPEC S4 — canvas-selectable chrome. ONLY inside an authoring canvas, wrap the slot
-  // in a layout-INERT (`display:contents`) anchor carrying its (slot, key) coordinate,
-  // mirroring the node/part anchor. The CanvasOverlay measures `[data-canvas-chrome-slot]`
-  // to frame the region; a click dispatches the EXISTING `selectChrome` arm. Off the
-  // canvas (default) it is a bare passthrough — byte-identical runtime output.
-  if (!authoring) return rendered
-  return createElement(
-    'div',
-    { [CHROME_SLOT_ATTR]: slot, [CHROME_KEY_ATTR]: key, style: { display: 'contents' } },
-    rendered,
-  )
+  // S6 — chrome is a declared `sourced` Part of the site-frame. Wrap the rendered slot in
+  // the ONE generic `<PartAnchor field={slot} index={0}>` — keyed by the slot name (no
+  // global ordinal), the SAME anchor every band-owning shell stamps. The CanvasOverlay
+  // frames it by enumerating the site-frame's chrome parts through the port and querying
+  // this anchor; a click selects the ONE `PartAddress` ({ SITE_FRAME_ID, chrome.<slot> }).
+  // PartAnchor is INERT (zero DOM) off the authoring canvas — byte-identical runtime.
+  return <PartAnchor field={slot} index={0}>{rendered}</PartAnchor>
 }

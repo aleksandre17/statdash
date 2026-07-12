@@ -24,11 +24,11 @@
 //
 import { useLayoutEffect, useRef, useState, useCallback } from 'react'
 import {
-  nodeRegistry, chromeRegistry,
+  nodeRegistry,
   PART_FIELD_ATTR, PART_INDEX_ATTR, PART_NODE_ID_ATTR,
-  CHROME_SLOT_ATTR, CHROME_KEY_ATTR,
+  SITE_FRAME_ID, SITE_FRAME_META,
 } from '@statdash/react/engine'
-import type { NodeBase, SlotDef, ObjectMeta } from '@statdash/react/engine'
+import type { NodeBase, SlotDef, ObjectMeta, ChromeSlotConfig, ChromeEntry } from '@statdash/react/engine'
 import type { FilterSchemaInput }    from '@statdash/engine'
 import { walkNodes }                 from './walkNodes'
 import type { WalkedNode }           from './walkNodes'
@@ -44,8 +44,9 @@ interface NodeFrame extends WalkedNode { id: string; rect: Rect }
 interface DropFrame { parentId: string; slotKey: string; slot: SlotDef; rect: Rect }
 /** A selectable value-band item frame — the bounded-element hit target (ADR-038). */
 interface ItemFrame { nodeId: string; path: string; rect: Rect }
-/** A selectable chrome region frame (SPEC S4) — header / sidebar / footer on the canvas. */
-interface ChromeFrame { slot: string; key: string; rect: Rect }
+/** A selectable chrome-region frame (S6) — a `sourced` Part of the site-frame, addressed
+ *  by the ONE `PartAddress` (`{ SITE_FRAME_ID, chrome.<slot> }`) like any other part. */
+interface ChromeFrame { slot: string; path: string; rect: Rect }
 
 export interface CanvasOverlayProps {
   /** The live NodePageConfig the renderer drew — overlay walks the same tree. */
@@ -68,16 +69,14 @@ export interface CanvasOverlayProps {
    */
   onSelectItem?:  (nodeId: string, path: string) => void
   /**
-   * Select a chrome region (header / sidebar / footer) on the canvas (SPEC S4 —
-   * "chrome konfigebi / reach every element"). Generic: the (slot, key) coordinate is
-   * read from the `ChromeSlot` anchor the engine stamps only under the authoring canvas;
-   * the host dispatches the EXISTING `selectChrome` arm → `ChromeInspectorPanel`. Absent
-   * ⇒ chrome frames are not rendered (backward-compatible). Interim until chrome-as-part
-   * (S6) folds chrome into the ONE PartAddress selection.
+   * The site's chrome config map (`site.chrome`, keyed by slot) — the SSOT the
+   * site-frame's `chromeParts` adapter projects. The overlay enumerates the site-frame's
+   * chrome regions through the ONE Part port with this context, then frames each RENDERED
+   * region (S6). Absent ⇒ no chrome frames (isolated mounts stay chrome-free). Chrome
+   * selection dispatches the ONE `onSelectItem(SITE_FRAME_ID, chrome.<slot>)` — no
+   * chrome-specific handler (the `ChromeSelection` arm is retired).
    */
-  onSelectChrome?: (slot: string, key: string) => void
-  /** The currently-selected chrome region, for the selected frame highlight. */
-  selectedChrome?: { slot: string; key: string } | null
+  chrome?:        Record<string, ChromeEntry>
   onDrop:         (parentId: string, slotKey: string, nodeType: string) => void
   /**
    * Bind a governed metric dragged from the Metric Palette onto a node frame
@@ -89,7 +88,7 @@ export interface CanvasOverlayProps {
 
 export function CanvasOverlay({
   page, selectedNodeId, selectedItemPath, dragging = false,
-  onSelect, onSelectItem, onSelectChrome, selectedChrome, onDrop, onBindMetric,
+  onSelect, onSelectItem, chrome, onDrop, onBindMetric,
 }: CanvasOverlayProps) {
   const overlayRef = useRef<HTMLDivElement>(null)
   const [frames, setFrames] = useState<NodeFrame[]>([])
@@ -193,20 +192,31 @@ export function CanvasOverlay({
     frameNode(page)
     for (const w of walkNodes(page)) frameNode(w.node)
 
-    // ── Chrome regions (SPEC S4) — framed from the ChromeSlot anchors the engine
-    //  stamps only under the authoring canvas. Generic: one frame per rendered chrome
-    //  region that is AUTHORABLE (declares a schema — the SAME contract ChromePalette
-    //  offers), so a non-authorable region is never a dead selection. No per-type
-    //  branch: the (slot, key) coordinate is read from the anchor, not a hardcoded list.
+    // ── Chrome regions (S6) — chrome is a `sourced` Part of the SITE-FRAME element.
+    //  Enumerate the site-frame's chrome parts through the ONE Part port (the SAME
+    //  `enumerateParts` every node uses), then frame each region that is actually
+    //  RENDERED — its `<PartAnchor field={slot} index={0}>` (the ONE `data-part-*`
+    //  family) is present in the rail, OUTSIDE any node anchor. Only AUTHORABLE regions
+    //  enumerate (the port's own gate), so a non-authorable region is never a dead
+    //  selection. No per-type branch, no chrome-specific anchor family, no `selectChrome`
+    //  arm: a chrome region is a part addressed by the ONE `PartAddress`.
     const nextChromes: ChromeFrame[] = []
-    if (onSelectChrome) {
-      for (const el of rootEl.querySelectorAll(`[${CHROME_SLOT_ATTR}]`)) {
-        const slot = el.getAttribute(CHROME_SLOT_ATTR) ?? ''
-        const key  = el.getAttribute(CHROME_KEY_ATTR) ?? 'default'
-        if (!slot) continue
-        if ((chromeRegistry.getMeta(slot, key)?.schema?.length ?? 0) === 0) continue // not authorable
+    if (onSelectItem) {
+      // The site chrome SSOT the `site-chrome` sourced adapter projects. Normalise the
+      // ChromeEntry map (string shorthand → { variant }) to the ChromeSlotConfig shape the
+      // port context carries, so variant/config resolution matches what the rail rendered.
+      const chromeCtx: Record<string, ChromeSlotConfig> = {}
+      for (const [slot, entry] of Object.entries(chrome ?? {})) {
+        chromeCtx[slot] = typeof entry === 'string' ? { variant: entry } : entry
+      }
+      for (const part of enumerateParts({}, SITE_FRAME_META, { chrome: chromeCtx }, SITE_FRAME_ID)) {
+        const slot = part.field
+        const el   = rootEl.querySelector(
+          `[${PART_FIELD_ATTR}="${slot}"][${PART_INDEX_ATTR}="${part.index}"]`,
+        )
+        if (!el) continue   // registered + authorable but NOT rendered on this canvas
         const box = el.firstElementChild ?? el
-        nextChromes.push({ slot, key, rect: rel(box) })
+        nextChromes.push({ slot, path: part.address.partPath ?? slot, rect: rel(box) })
       }
     }
 
@@ -214,7 +224,7 @@ export function CanvasOverlay({
     setDrops(nextDrops)
     setItems(nextItems)
     setChromes(nextChromes)
-  }, [page, onSelectItem, onSelectChrome])
+  }, [page, onSelectItem, chrome])
 
   useLayoutEffect(() => {
     measure()
@@ -318,22 +328,24 @@ export function CanvasOverlay({
         )
       })}
 
-      {/* Chrome region frames (SPEC S4) — clicking a header/sidebar/footer selects it
-          on the canvas → the dock projects its contract via the existing chrome arm.
-          Rendered BEFORE drop zones so a drag still reveals slots above chrome. */}
-      {onSelectChrome && chromes.map((c) => {
-        const sel = selectedChrome?.slot === c.slot && selectedChrome?.key === c.key
+      {/* Chrome region frames (S6) — clicking a header/sidebar/footer selects it on the
+          canvas through the ONE part-select (`onSelectItem(SITE_FRAME_ID, chrome.<slot>)`);
+          the dock then projects its registered per-slot schema via the generic
+          `element.schema` section (no chrome-specific arm). Selected iff the ONE selection
+          address names this region. Rendered BEFORE drop zones so a drag reveals slots
+          above chrome. */}
+      {onSelectItem && chromes.map((c) => {
+        const sel = selectedNodeId === SITE_FRAME_ID && selectedItemPath === c.path
         return (
           <button
-            key={`chrome-${c.slot}-${c.key}`}
+            key={`chrome-${c.slot}`}
             type="button"
             className={`canvas-chrome${sel ? ' canvas-chrome--selected' : ''}`}
             data-chrome-slot={c.slot}
-            data-chrome-key={c.key}
             aria-label={`Select chrome ${c.slot}`}
             aria-pressed={sel}
             style={{ left: c.rect.left, top: c.rect.top, width: c.rect.width, height: c.rect.height }}
-            onClick={(e) => { e.stopPropagation(); onSelectChrome(c.slot, c.key) }}
+            onClick={(e) => { e.stopPropagation(); onSelectItem(SITE_FRAME_ID, c.path) }}
           >
             {sel && <span className="canvas-chrome__tag">{c.slot}</span>}
           </button>

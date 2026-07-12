@@ -3,7 +3,6 @@ import type {
   DataSourceDef, NamedDataSpec,
   SiteDef,
   CanvasPage,
-  ChromeSelection,
 } from '../types/constructor'
 
 // ── History (undo/redo) ───────────────────────────────────────────────────────
@@ -39,20 +38,20 @@ export interface ConstructorSession {
   activePageId: string | null
 }
 
-// ── Selection address — ONE completed Composite address (ADR-039 · ADR-041 Ph.3) ─
+// ── Selection address — ONE completed Composite address (ADR-039 · ADR-041 R4) ───
 //
 //  The old selection TRIPLE (`selectedNodeId` · `selectedItemPath` · `chromeSelection`)
-//  collapses to this ONE address (ADR-041 ROOT-3 · Delta 1). A node/item part uses the
-//  engine `PartAddress` `(nodeId, partPath?)`:
-//    • whole node        → `{ nodeId }`                       (partPath undefined)
-//    • value-band item   → `{ nodeId, partPath: 'items.0' }`  (positional — value)
-//    • sourced item      → `{ nodeId, partPath: 'main.year' }`(stable key — sourced/Delta 1)
-//  Chrome is the SITE-FRAME arm (ROM R4 — chrome regions fold into a `slot` part of a
-//  `site-frame` element later; until then chrome keeps its own `{kind,slot,key}` shape,
-//  discriminated by `kind:'chrome'` — a `PartAddress` never carries `kind`). The three
-//  legacy fields are DERIVED reads of THIS one address (constructor.selectors), never
-//  independently settable — that is what FF-ONE-SELECTION-ADDRESS locks.
-export type SelectionAddress = PartAddress | ChromeSelection
+//  collapses to this ONE `PartAddress` (ADR-041 ROOT-3 · Delta 1) — arm count 1. Every
+//  selectable thing is a part addressed `(nodeId, partPath?)`:
+//    • whole node        → `{ nodeId }`                               (partPath undefined)
+//    • value-band item   → `{ nodeId, partPath: 'items.0' }`          (positional — value)
+//    • sourced item      → `{ nodeId, partPath: 'main.year' }`        (stable key — sourced)
+//    • chrome region      → `{ nodeId: SITE_FRAME_ID, partPath: 'chrome.<slot>' }` (S6 —
+//        a `sourced` part of the site-frame; the retired `ChromeSelection` `kind:'chrome'`
+//        arm folded into this ONE address, so chrome is a part like any other).
+//  The two legacy node/item reads are DERIVED projections of THIS one address
+//  (constructor.selectors), never independently settable — FF-ONE-SELECTION-ADDRESS.
+export type SelectionAddress = PartAddress
 
 // ── Studio UI ───────────────────────────────────────────────────────────────
 

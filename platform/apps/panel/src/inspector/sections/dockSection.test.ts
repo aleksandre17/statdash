@@ -14,23 +14,26 @@ registerBuiltinDockSections()
 
 // A minimal controller stub — only the fields the section `appliesTo` guards read.
 const controller = (over: Partial<CanvasController>): CanvasController =>
-  ({ selected: null, chromeSel: null, ...over } as unknown as CanvasController)
+  ({ selected: null, selectedBand: null, ...over } as unknown as CanvasController)
 
 const ctx = (over: Partial<DockRenderCtx>): DockRenderCtx =>
   ({ scope: 'page', locale: 'en', controller: controller({}), ...over } as DockRenderCtx)
 
 describe('dockSectionRegistry — the hardcoded stack is now registered data', () => {
-  it('registers the schema, data, visibility, chrome, and page-pane sections', () => {
+  it('registers the schema, data, visibility, and page-pane sections', () => {
     // SPEC S3: the per-type `element.context` bridge (nodeContextEditors) is deleted —
     // filter controls project generically through `element.schema` (sourcedParts).
     // SPEC S5: metric binding is a CONTEXTUAL section (`element.data`) — re-homed from
     // the retired Data rail surface into the inspector.
+    // S6: the `element.chrome` section is RETIRED — a chrome region is a bounded PART,
+    // projected through the SAME generic `element.schema` section (no chrome-specific dock).
     for (const id of [
-      'element.schema', 'element.data', 'element.visibility', 'element.chrome',
+      'element.schema', 'element.data', 'element.visibility',
       'page.config', 'page.perspectives', 'page.filters',
     ]) {
       expect(dockSectionRegistry.has(id), id).toBe(true)
     }
+    expect(dockSectionRegistry.has('element.chrome')).toBe(false)
   })
 
   it('element.data applies ONLY when the selected element is metric-bindable (S5)', () => {
@@ -53,22 +56,24 @@ describe('dockSectionRegistry — the hardcoded stack is now registered data', (
     expect(ids).toEqual(['page.config', 'page.perspectives', 'page.filters'])
   })
 
-  it('element scope with a node lists schema + visibility (no chrome, no page panes)', () => {
+  it('element scope with a whole node lists schema + visibility (no page panes)', () => {
     const node = { id: 'n1', type: 'chart', props: {} }
     const ids = dockSectionRegistry
       .list(ctx({ scope: 'element', controller: controller({ selected: node as never }) }))
       .map((s) => s.id)
     expect(ids).toContain('element.schema')
     expect(ids).toContain('element.visibility')
-    expect(ids).not.toContain('element.chrome')
     expect(ids.some((i) => i.startsWith('page.'))).toBe(false)
   })
 
-  it('element scope with chrome selected lists ONLY the chrome section (exclusive)', () => {
-    const chromeSel = { slot: 'header', key: 'title' }
+  it('element scope with a bounded PART (chrome region) lists ONLY element.schema (S6)', () => {
+    // A chrome region is a Part owned by the site-frame — no page `selected`, a resolved
+    // `selectedBand`. It projects through the SAME generic `element.schema` section; the
+    // whole-node-only sections (data / visibility) do NOT apply (no chrome-specific dock).
+    const selectedBand = { path: 'chrome.InnerSidebar', ownerId: 'site-frame', ownerSelectable: false }
     const ids = dockSectionRegistry
-      .list(ctx({ scope: 'element', controller: controller({ chromeSel: chromeSel as never }) }))
+      .list(ctx({ scope: 'element', controller: controller({ selectedBand: selectedBand as never }) }))
       .map((s) => s.id)
-    expect(ids).toEqual(['element.chrome'])
+    expect(ids).toEqual(['element.schema'])
   })
 })

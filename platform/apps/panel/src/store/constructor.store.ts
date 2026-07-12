@@ -1,11 +1,11 @@
 import { create } from 'zustand'
 import { subscribeWithSelector, devtools } from 'zustand/middleware'
 import type { PartAddress } from '@statdash/react/engine'
+import { SITE_FRAME_ID, chromePartPath } from '@statdash/react/engine'
 import type {
   DataSourceDef, NamedDataSpec,
   SiteDef, NavItem,
   CanvasPage, CanvasNode,
-  ChromeSelection,
 } from '../types/constructor'
 import {
   type ConstructorSession,
@@ -18,7 +18,6 @@ import {
   pushHistory,
 } from './constructor.history'
 import {
-  selectChromePatch,
   setChromeVariantPatch,
   updateChromeConfigPatch,
 } from './constructor.chrome'
@@ -53,10 +52,10 @@ export interface ConstructorStore extends ConstructorSession, StudioUiSlice, His
   /**
    * Select ONE part by its address — the SINGLE selection entry (ADR-041 ROOT-3).
    * `selectNode`/`selectItem`/`selectChrome` are named ergonomic wrappers that
-   * construct the address for a whole node / a band item / a chrome element; every
-   * selection funnels through this ONE `selection` state, from which the legacy
-   * triple (`selectedNodeId`/`selectedItemPath`/`chromeSelection`) is DERIVED
-   * (constructor.selectors) — never independently set (FF-ONE-SELECTION-ADDRESS).
+   * construct the address for a whole node / a band item / a chrome region; every
+   * selection funnels through this ONE `selection` state, from which the node/item
+   * reads (`selectedNodeId`/`selectedItemPath`) are DERIVED (constructor.selectors) —
+   * never independently set (FF-ONE-SELECTION-ADDRESS).
    */
   select:         (address: SelectionAddress | null) => void
   selectNode:     (id: string | null) => void
@@ -87,8 +86,15 @@ export interface ConstructorStore extends ConstructorSession, StudioUiSlice, His
   updateNavItem:    (id: string, patch: Partial<NavItem>) => void
   removeNavItem:    (id: string) => void
 
-  // Chrome authoring (Phase C) — per-slot chrome config + selection
-  selectChrome:        (sel: ChromeSelection | null) => void
+  // Chrome authoring — per-slot chrome config + selection (S6: chrome is a Part).
+  /**
+   * Select a chrome region by its slot — the ergonomic wrapper over the ONE
+   * `select({ nodeId: SITE_FRAME_ID, partPath: chromePartPath(slot) })` (ADR-041 R4).
+   * `null` clears the selection. Chrome is a `sourced` Part of the site-frame, so this
+   * writes the SAME `PartAddress` grammar as `selectItem`; the dock then projects the
+   * region's registered per-slot schema through the generic `element.schema` section.
+   */
+  selectChrome:        (slot: string | null) => void
   setChromeVariant:    (slot: string, key: string) => void
   updateChromeConfig:  (slot: string, field: string, value: unknown) => void
 
@@ -295,9 +301,17 @@ export const useConstructorStore = create<ConstructorStore>()(
           'site/removeNavItem',
         ),
 
-      // ── Chrome authoring (Phase C) — thin wiring over pure reducers ──────────
-      selectChrome: (sel) =>
-        set((s) => selectChromePatch(s, sel), false, 'chrome/selectChrome'),
+      // ── Chrome authoring (S6) — chrome is a Part; select via the ONE address ──
+      //  The ergonomic wrapper builds the site-frame chrome PartAddress. Because there
+      //  is ONE `selection`, this inherently clears any prior node/item/chrome selection
+      //  (mutual exclusivity by construction). Selection never dirties the site — a first
+      //  EDIT seeds the ChromeSlotConfig (updateChromeConfigPatch), not selection.
+      selectChrome: (slot) =>
+        set(
+          { selection: slot == null ? null : { nodeId: SITE_FRAME_ID, partPath: chromePartPath(slot) } as PartAddress },
+          false,
+          'chrome/selectChrome',
+        ),
       setChromeVariant: (slot, key) =>
         set(
           (s) => ({ ...pushHistory(s as ConstructorStore, `Set chrome variant: ${slot}`), ...setChromeVariantPatch(s, slot, key) }),

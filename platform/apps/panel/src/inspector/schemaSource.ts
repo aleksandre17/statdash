@@ -4,24 +4,20 @@
 //  now it read that schema directly from `nodeRegistry` — coupling the ONE
 //  generic Inspector to ONE slice kind (nodes/panels live in the node registry).
 //
-//  Phase C adds chrome authoring: a CHROME element's schema lives in a DIFFERENT
-//  registry (`chromeRegistry.getMeta(slot,key).schema`). Rather than fork a
-//  chrome-specific inspector (a Law-6 / DRY violation) or teach the Inspector
-//  about every registry (an OCP violation — a new slice kind would edit it), we
-//  INVERT the dependency: the Inspector depends on this small port, and each
-//  caller supplies the source for the kind of element it selected.
+//  A CHROME region's schema lives in a DIFFERENT registry, but chrome is no longer
+//  authored through a forked panel + its own source: S6 folded chrome into the ONE
+//  Part port, so a chrome region's contract is projected as a `sourced` part
+//  (`chromeParts`, resolving `chromeRegistry.getMeta(slot,key).schema`) and rendered
+//  through the generic `element.schema` dock section via `fixedSchemaSource` — the SAME
+//  bounded-part path a filter control takes. So this port now serves the node/panel case;
+//  a future kind is still one new source with the Inspector unchanged (DIP + Strategy).
 //
 //    Inspector(schemaSource) ← nodeSchemaSource    (nodes / panels — the default)
-//                            ← chromeSchemaSource   (chrome slots — Phase C)
+//                            ← fixedSchemaSource    (any bounded PART — value/sourced/chrome)
 //                            ← …any future kind     (one new source, Inspector unchanged)
 //
-//  Dependency Inversion + Strategy: the Inspector owns the rendering policy; the
-//  source owns "where this kind of element's schema comes from". Both the node
-//  and chrome sources return the SAME shape, so the Inspector is identical for
-//  every slice kind — exactly the "one Inspector, all kinds" requirement.
-//
 import type { PropSchema, PropertyGroup } from '@statdash/react/engine'
-import { nodeRegistry, chromeRegistry } from '@statdash/react/engine'
+import { nodeRegistry } from '@statdash/react/engine'
 import type { CanvasNode } from '../types/constructor'
 
 /**
@@ -45,22 +41,4 @@ export const nodeSchemaSource: SchemaSource = {
   getSchema: (node) => nodeRegistry.getSchema(node.type, node.variant) ?? [],
   getGroups: (node) =>
     (nodeRegistry.getMeta(node.type, node.variant)?.groups as PropertyGroup[] | undefined) ?? [],
-}
-
-// ── Chrome source (Phase C — the per-element chrome schema seam) ──────────────
-//
-//  A chrome element is addressed by slot+key (the chromeRegistry's composite
-//  key). We model the selection as a CanvasNode whose `type` carries the slot
-//  and `variant` carries the key, so the SAME Inspector path renders it. The
-//  schema is the chrome slice's OWN per-element PropSchema (ISP: each chrome
-//  element owns its config, never a shared base) declared on its meta.
-//
-//  Chrome metas carry `groups?` for parity with node metas; we read it
-//  defensively so a chrome slice that declares grouping gets it for free.
-//
-export const chromeSchemaSource: SchemaSource = {
-  getSchema: (node) => chromeRegistry.getMeta(node.type, node.variant ?? 'default')?.schema ?? [],
-  getGroups: (node) =>
-    ((chromeRegistry.getMeta(node.type, node.variant ?? 'default') as { groups?: PropertyGroup[] } | undefined)
-      ?.groups) ?? [],
 }

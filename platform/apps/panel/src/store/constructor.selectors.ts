@@ -6,7 +6,6 @@
 //
 import { useConstructorStore } from './constructor.store'
 import type { SelectionAddress } from './constructor.history'
-import type { ChromeSelection } from '../types/constructor'
 
 // `useActiveSurface` now lives in studio/useStudioRoute (the surface is URL state,
 // not store state) — the store no longer holds `activeSurface`.
@@ -52,33 +51,27 @@ export const useEffectiveActivePage   = () =>
 // surface should read to decide which page renders).
 export const useActivePage   = useEffectiveActivePage
 export const useActivePageId = useEffectiveActivePageId
-// ── The selection triple, DERIVED from the ONE address (ADR-041 Ph.3) ─────────
+// ── The selection reads, DERIVED from the ONE address (ADR-041 R4) ────────────
 //
-//  `selectedNodeId` · `selectedItemPath` · `chromeSelection` are no longer three
-//  independent store fields — they are pure projections of the ONE `selection`
-//  address (FF-ONE-SELECTION-ADDRESS). Chrome is discriminated by `kind:'chrome'`
-//  (a `PartAddress` never carries `kind`); a node/item part contributes the nodeId
-//  and (when a part is drilled) the partPath. Each projection returns a primitive or
-//  the SAME object reference, so the derived hooks stay referentially stable.
-export const isChromeSelection = (s: SelectionAddress | null): s is ChromeSelection =>
-  s != null && 'kind' in s && (s as ChromeSelection).kind === 'chrome'
+//  `selectedNodeId` · `selectedItemPath` are no longer independent store fields —
+//  they are pure projections of the ONE `selection` `PartAddress` (FF-ONE-SELECTION-
+//  ADDRESS). A whole-node selection contributes the nodeId; a drilled part adds the
+//  partPath. Chrome is NOT a special case any more: a chrome region is the site-frame's
+//  nodeId + a `chrome.<slot>` partPath, so it flows through these SAME two reads (the
+//  `chromeSelectionOf`/`isChromeSelection` projections are retired with the arm).
+//  Each projection returns a primitive, so the derived hooks stay referentially stable.
 
 /** The owning node of the current selection (a node or a drilled part), else null. */
 export const selectedNodeIdOf = (s: SelectionAddress | null): string | null =>
-  s != null && !isChromeSelection(s) ? s.nodeId : null
+  s != null ? s.nodeId : null
 
-/** The drilled part's `partPath` (positional value / stable-key sourced), else null. */
+/** The drilled part's `partPath` (positional value / stable-key sourced / chrome slot). */
 export const selectedItemPathOf = (s: SelectionAddress | null): string | null =>
-  s != null && !isChromeSelection(s) && s.partPath != null ? s.partPath : null
-
-/** The selected chrome element, else null (mutually exclusive with a node/part). */
-export const chromeSelectionOf = (s: SelectionAddress | null): ChromeSelection | null =>
-  isChromeSelection(s) ? s : null
+  s != null && s.partPath != null ? s.partPath : null
 
 export const useSelection        = () => useConstructorStore((s) => s.selection)
 export const useSelectedNode     = () => useConstructorStore((s) => selectedNodeIdOf(s.selection))
 export const useSelectedItemPath = () => useConstructorStore((s) => selectedItemPathOf(s.selection))
-export const useChromeSelection  = () => useConstructorStore((s) => chromeSelectionOf(s.selection))
 export const useHistory         = () => useConstructorStore((s) => ({ canUndo: s.canUndo, canRedo: s.canRedo, undo: s.undo, redo: s.redo }))
 
 // ── Lifecycle read-side (server FSM mirror + save/publish UI state) ───────────

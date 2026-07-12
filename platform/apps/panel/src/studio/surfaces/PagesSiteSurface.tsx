@@ -1,7 +1,6 @@
 import { lazy, Suspense, useState } from 'react'
-import { Box, Typography } from '@mui/material'
+import { Box } from '@mui/material'
 import { SiteIdentityEditor, NavEditor } from '../../features/site'
-import { ChromePalette } from '../../inspector'
 import { SuspenseFallback } from '../../shared/SuspenseFallback'
 
 // The real page-create dialog (browse/open/create + templates). Lazy so its
@@ -20,11 +19,12 @@ const PageBrowser = lazy(() =>
 //  `notify('coming soon')` stub, "+ add page" here is WIRED to the real page-create
 //  flow (PageBrowser → createPage / createFromTemplate).
 //
-//  Chrome (header / left-bar sidebar / footer) is SITE furniture — it belongs here,
-//  next to identity + nav, NOT in the page-content Insert palette. Selecting a chrome
-//  element (ChromePalette → store.selectChrome) opens its schema-driven editor in the
-//  RightDock (ChromeInspectorPanel), the SAME generic Inspector nodes use. This is the
-//  reachability fix: chrome authoring is now a first-class part of the site surface.
+//  Chrome (header / left-bar sidebar / footer) is SITE furniture, but it is no longer
+//  authored from a LIST here: S6 makes chrome CANVAS-SELECTABLE — clicking a header /
+//  sidebar / footer region on the live canvas selects it (the ONE `PartAddress`) and its
+//  schema-driven editor opens in the RightDock via the generic `element.schema` section,
+//  the SAME path a node/part takes. The `ChromePalette` + `ChromeInspectorPanel` fork is
+//  retired; this surface stays focused on identity + navigation + page creation.
 export function PagesSiteSurface() {
   const [browserOpen, setBrowserOpen] = useState(false)
 
@@ -32,11 +32,6 @@ export function PagesSiteSurface() {
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
       <SiteIdentityEditor />
       <NavEditor onAddPage={() => setBrowserOpen(true)} />
-
-      <Box>
-        <Typography variant="overline" color="text.secondary">ჩარჩო</Typography>
-        <ChromePalette />
-      </Box>
 
       {browserOpen && (
         <Suspense fallback={<SuspenseFallback label="Loading pages" fill={false} />}>

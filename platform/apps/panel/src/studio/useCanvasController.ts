@@ -1,5 +1,5 @@
 import { useState, useCallback, useMemo } from 'react'
-import { useConstructorStore, useActivePage, useSelectedNode, useSelectedItemPath, useChromeSelection, useSite, usePages } from '../store/constructor.store'
+import { useConstructorStore, useActivePage, useSelectedNode, useSelectedItemPath, useSite, usePages } from '../store/constructor.store'
 import { nodeSchemaSource } from '../inspector/schemaSource'
 import { firstMetricField, isMetricBindable, bindMetricToProps } from '../discovery/metricBinding'
 import { setAtPath } from '../inspector/showWhen'
@@ -7,8 +7,8 @@ import { enumerateParts, getPartSource } from '../canvas/bandSource'
 import { resolveInsertPlan, planInserts } from '../canvas/insertNode'
 import { toNodePageConfig } from '../canvas/canvasPageAdapter'
 import { projectCanvasSiteChrome } from '../canvas/canvasSiteChrome'
-import { nodeRegistry } from '@statdash/react/engine'
-import type { PartAddress, PartResidence, ObjectMeta, PropSchema, PropertyGroup } from '@statdash/react/engine'
+import { nodeRegistry, SITE_FRAME_ID, SITE_FRAME_META, CHROME_PART_PREFIX } from '@statdash/react/engine'
+import type { PartAddress, PartResidence, ObjectMeta, PropSchema, PropertyGroup, PartSourceContext } from '@statdash/react/engine'
 import type { VisibilityExpr, FilterSchemaInput } from '@statdash/engine'
 
 /** The selected bounded PART, resolved through the port — the item projection the dock
@@ -28,6 +28,18 @@ interface SelectedPart {
   /** sourced residence: the adapter id (Delta 1), re-resolved for the WRITE. */
   source?:     string
   address:     PartAddress
+  /** The OWNING element's id — a page node, or `SITE_FRAME_ID` for a chrome region.
+   *  Drives the dock crumb's back-target + the item Inspector's id namespace, so the
+   *  dock projection never reaches the (possibly absent) page node directly. */
+  ownerId:     string
+  /** The owning element's crumb label (a page node's type, or the chrome parent token). */
+  ownerLabel:  string
+  /** Whether "Back" reselects the owner as a WHOLE node (a real page node) or DESELECTS
+   *  (the synthetic site-frame has no whole-node authoring surface). */
+  ownerSelectable: boolean
+  /** A pre-resolved crumb title, when the part's title is not on its subject (a chrome
+   *  region's title is its slot name); else undefined → the generic `itemTitle` fallback. */
+  crumbTitle?: string
 }
 
 // ── useCanvasController — the canvas↔store glue, extracted for reuse (AR-49 M1.2)
@@ -51,7 +63,6 @@ export function useCanvasController() {
   const page       = useActivePage()
   const selectedId = useSelectedNode()
   const selectedItemPath = useSelectedItemPath()
-  const chromeSel  = useChromeSelection()
   const site       = useSite()
   const pages      = usePages()
   const selectNode    = useConstructorStore((s) => s.selectNode)
@@ -60,6 +71,7 @@ export function useCanvasController() {
   const insertNodes   = useConstructorStore((s) => s.insertNodes)
   const updateNode    = useConstructorStore((s) => s.updateNode)
   const updatePage    = useConstructorStore((s) => s.updatePage)
+  const updateChromeConfig = useConstructorStore((s) => s.updateChromeConfig)
   const removeNode    = useConstructorStore((s) => s.removeNode)
   const markPageDirty = useConstructorStore((s) => s.markPageDirty)
 
@@ -76,21 +88,41 @@ export function useCanvasController() {
   // denormalised node copy — CLAUDE.md Law 2 / SSOT).
   const filterSchema = page?.meta?.filterSchema as FilterSchemaInput | undefined
 
+  // The ONE Part-source context — the external SSOTs a `sourced` part projects: the
+  // page filter schema (`page-filters`) and the site chrome map (`site-chrome`, S6).
+  // A new sourced consumer adds one field here; the port signature is unchanged (OCP).
+  const partCtx = useMemo<PartSourceContext>(
+    () => ({ filterSchema, chrome: site.chrome }),
+    [filterSchema, site.chrome],
+  )
+
   // ── Bounded part selection (ADR-041) — resolved through the ONE Part port ──────
-  //  When a part (value-band item / filter control) is selected, enumerate the node's
-  //  parts through `enumerateParts` — the ONE port that reads the node's declared
-  //  `PartField`s and routes each to its residence adapter (value/sourced/slot) — and
-  //  pick the one matching the (positional) selection wire. The port carries each
-  //  part's OWN contract + live subject, so the dock projects a bounded element with
-  //  NO per-type branch and NO residence-specific reach. The resolved part also
-  //  carries its residence + STABLE address, through which the edit commits (below).
+  //  When a part (value-band item / filter control / chrome region) is selected,
+  //  enumerate the OWNING element's parts through `enumerateParts` — the ONE port that
+  //  reads its declared `PartField`s and routes each to its residence adapter (value/
+  //  sourced/slot) — and pick the one matching the selection wire. The owning element is
+  //  resolved GENERICALLY: a real page node, OR the synthetic SITE-FRAME (which owns the
+  //  chrome parts and is never in `page.nodes`). The port carries each part's OWN
+  //  contract + live subject, so the dock projects a bounded element with NO per-type
+  //  branch and NO residence-specific reach — a chrome region flows through the EXACT
+  //  same projection as a filter control.
   const selectedBand: SelectedPart | null = useMemo(() => {
-    if (!selected || !selectedItemPath) return null
-    const meta = nodeRegistry.getMeta(selected.type, selected.variant) as ObjectMeta | undefined
-    // Match on the ONE `PartAddress.partPath` — the SAME stable-key address the
-    // selection now stores (positional for value, Delta-1 key for sourced). No
-    // positional re-derivation: the address is the identity (ADR-041 Ph.3).
-    const found = enumerateParts(selected.props, meta, { filterSchema }, selected.id)
+    if (!selectedItemPath || !selectedId) return null
+    // The owning element — a page node, or the site-frame (chrome parts, S6). The
+    // site-frame carries no whole-node authoring surface, so its parts' "Back" deselects.
+    const owner = selected
+      ? {
+          id: selected.id, container: selected.props, label: selected.type, selectable: true,
+          meta: nodeRegistry.getMeta(selected.type, selected.variant) as ObjectMeta | undefined,
+        }
+      : selectedId === SITE_FRAME_ID
+        ? { id: SITE_FRAME_ID, container: {} as Record<string, unknown>, label: CHROME_PART_PREFIX, selectable: false, meta: SITE_FRAME_META }
+        : null
+    if (!owner) return null
+    // Match on the ONE `PartAddress.partPath` — the SAME stable-key address the selection
+    // stores (positional for value, Delta-1 key for sourced/chrome). The address is the
+    // identity (ADR-041 R4); no positional re-derivation.
+    const found = enumerateParts(owner.container, owner.meta, partCtx, owner.id)
       .find((p) => p.address.partPath === selectedItemPath)
     if (!found) return null
     return {
@@ -104,8 +136,14 @@ export function useCanvasController() {
       residence:  found.residence,
       source:     found.source,            // the sourced adapter id (Delta 1) — re-resolved on write
       address:    found.address,           // the ONE STABLE address the write commits through
+      ownerId:    owner.id,
+      ownerLabel: owner.label,
+      ownerSelectable: owner.selectable,
+      // A chrome region's title is its slot name (not on its subject); a page-node part
+      // uses the generic `itemTitle` fallback.
+      crumbTitle: owner.selectable ? undefined : found.field,
     }
-  }, [selected, selectedItemPath, filterSchema])
+  }, [selected, selectedId, selectedItemPath, partCtx])
 
   // The canvas's runner-parity chrome inputs (nav/chrome/chromeConfig) — projected
   // from the authoring session so the live canvas rail renders the REAL nav links +
@@ -163,22 +201,31 @@ export function useCanvasController() {
   // `subfield` is one of its declared fields; the residence adapter returns a residence-
   // tagged mutation the host commits at its true home:
   //   • value band (node-props)  → `updateNode` (immutable, only the touched branch clones);
-  //   • sourced band (filter-schema) → `updatePage({ meta.filterSchema })` via setBarParams
-  //     (the ONE SSOT, no denormalised copy on the node — CLAUDE.md Law 2).
+  //   • sourced band (filter-schema) → `updatePage({ meta.filterSchema })` via setBarParams;
+  //   • chrome region (site-chrome) → `updateChromeConfig` (the site SSOT — no page node
+  //     required, since the site-frame owns the part, not a page node).
+  // No denormalised copy on any node (CLAUDE.md Law 2 / SSOT).
   const patchItemProp = useCallback(
     (subfield: string, value: unknown) => {
-      if (!pageId || !selected || !page || !selectedBand) return
+      if (!selectedBand) return
+      // The value adapter reads the owning node's props to build the merged write; the
+      // sourced/chrome adapters ignore the element (they read ctx / write a keyed SSOT).
       const mut = getPartSource(selectedBand.residence, selectedBand.source)
-        ?.writePart(selected.props, selectedBand.address, subfield, value, { filterSchema })
+        ?.writePart(selected?.props ?? {}, selectedBand.address, subfield, value, partCtx)
       if (!mut) return
       if (mut.target === 'node-props') {
+        if (!pageId || !selected) return
         updateNode(pageId, selected.id, { props: mut.props })
+        markPageDirty(pageId)
       } else if (mut.target === 'filter-schema') {
+        if (!pageId || !page) return
         updatePage(pageId, { meta: { ...page.meta, filterSchema: mut.schema } })
+        markPageDirty(pageId)
+      } else if (mut.target === 'site-chrome') {
+        updateChromeConfig(mut.slot, mut.field, mut.value)
       }
-      markPageDirty(pageId)
     },
-    [pageId, selected, page, selectedBand, filterSchema, updateNode, updatePage, markPageDirty],
+    [pageId, selected, page, selectedBand, partCtx, updateNode, updatePage, updateChromeConfig, markPageDirty],
   )
 
   // Node-level view.visibleWhen gate — null clears it (byte-clean round-trip).
@@ -207,7 +254,7 @@ export function useCanvasController() {
   }, [pageId, selected, removeNode, markPageDirty, selectNode])
 
   return {
-    page, pageId, selected, selectedId, chromeSel, nodeConfig, selectedBindable,
+    page, pageId, selected, selectedId, nodeConfig, selectedBindable,
     // Bounded band-item selection (ADR-038): the drilled item path + its resolved
     // declared contract + the item write path.
     selectedItemPath, selectedBand,

@@ -11,29 +11,16 @@
 //  exclusive with selecting a page node (one Inspector, one element).
 //
 import { setAtPath } from '../inspector/showWhen'
-import type { ConstructorSession, SelectionAddress } from './constructor.history'
-import type { ChromeSelection } from '../types/constructor'
+import type { ConstructorSession } from './constructor.history'
 
-/** Patch type shared by all chrome reducers (a partial session + the ONE selection). */
-type ChromePatch = Partial<ConstructorSession> & {
-  selection?: SelectionAddress | null
-}
+/** Patch type shared by the chrome-config reducers (a partial session). */
+type ChromePatch = Partial<ConstructorSession>
 
-/**
- * Select (or clear) a chrome element. Writing the chrome address into the ONE
- * `selection` inherently clears any node/item selection (mutual exclusivity — one
- * address, one element), and seeds the slot with the selected variant so a first
- * edit writes through to a real ChromeSlotConfig (no null hole).
- */
-export function selectChromePatch(s: ConstructorSession, sel: ChromeSelection | null): ChromePatch {
-  if (sel == null) return { selection: null }
-  return {
-    selection: sel,
-    site: s.site.chrome[sel.slot]
-      ? s.site
-      : { ...s.site, chrome: { ...s.site.chrome, [sel.slot]: { variant: sel.key } } },
-  }
-}
+//  SELECTING a chrome region is no longer a chrome-specific reducer — it is the ONE
+//  `select({ nodeId: SITE_FRAME_ID, partPath: chromePartPath(slot) })` (constructor.store's
+//  `selectChrome` wrapper). No variant-seed on select: selection is ephemeral and never
+//  dirties the site; `updateChromeConfigPatch` below seeds a real ChromeSlotConfig on the
+//  first EDIT (no null hole), so the seed-on-select is unnecessary (S6 fold).
 
 /** Switch a slot's variant, preserving any already-authored per-element config. */
 export function setChromeVariantPatch(s: ConstructorSession, slot: string, key: string): ChromePatch {

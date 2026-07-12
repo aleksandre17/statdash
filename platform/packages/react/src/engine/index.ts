@@ -93,7 +93,12 @@ export type { BandItemRef }        from './bandItems'
 //  {source:'site-chrome'}`); the app-owned `chromeParts` adapter (registered under that
 //  source) enumerates `site.chrome × chromeRegistry`. `SITE_FRAME_ID` names it as the
 //  owning element of chrome parts (`{nodeId: SITE_FRAME_ID, partPath:'chrome.<slot>'}`).
-export { SITE_FRAME_ID, SITE_FRAME_META } from './siteFrame'
+//  `chromePartPath`/`chromeSlotOfPartPath` are the ONE reader/writer of the chrome
+//  Part-address grammar (`chrome.<slot>`), shared by the app's chromeParts adapter and
+//  its `selectChrome` wrapper so the address never drifts between enumerate and select.
+export {
+  SITE_FRAME_ID, SITE_FRAME_META, CHROME_PART_PREFIX, chromePartPath, chromeSlotOfPartPath,
+} from './siteFrame'
 
 // ── Core classes ──────────────────────────────────────────────────────
 export { NodeRegistry, CAPS }                        from './NodeRegistry'
@@ -262,7 +267,6 @@ export { WrapStyleContext, useWrapStyle } from './wrapStyleContext'
 export {
   AuthoringAnchorContext, PartAnchor,
   PART_FIELD_ATTR, PART_INDEX_ATTR, PART_NODE_ID_ATTR, PART_NODE_TYPE_ATTR,
-  CHROME_SLOT_ATTR, CHROME_KEY_ATTR,
   BandItemBoundary, BAND_ITEM_FIELD_ATTR, BAND_ITEM_INDEX_ATTR,
 } from './partAnchor'
 export type { PartAnchorProps, BandItemBoundaryProps } from './partAnchor'

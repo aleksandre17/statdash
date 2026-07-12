@@ -26,6 +26,7 @@ import { getParamSchema } from '@statdash/engine'
 import type { ParamNode } from '@statdash/engine'
 import {
   valueParts, slotParts, partFieldsOf, chromeRegistry, SITE_FRAME_ID,
+  chromePartPath, chromeSlotOfPartPath,
 } from '@statdash/react/engine'
 import type {
   PropSchema, ObjectMeta,
@@ -212,8 +213,10 @@ export const chromeParts: PartSource = {
       if (!schema || schema.length === 0) continue   // only AUTHORABLE regions — never a dead selection
       out.push({
         // STABLE-KEY address (ADR-041 Delta 1): keyed by the slot name (the chrome SSOT
-        // key), NOT a position — a chrome reorder never renumbers a live selection.
-        address:    { nodeId: SITE_FRAME_ID, partPath: `chrome.${slot}` },
+        // key), NOT a position — a chrome reorder never renumbers a live selection. The
+        // `chrome.<slot>` grammar is the engine SSOT (`chromePartPath`), shared with the
+        // store's `selectChrome` so enumerate and select can never drift.
+        address:    { nodeId: SITE_FRAME_ID, partPath: chromePartPath(slot) },
         contract:   schema,
         subject:    (chrome[slot]?.config ?? {}) as Record<string, unknown>,
         residence:  part.residence,
@@ -227,10 +230,10 @@ export const chromeParts: PartSource = {
     return out
   },
   writePart(_element, address, subfield, value, _ctx): PartMutation | null {
-    if (!address.partPath) return null
-    // partPath is `chrome.<slot>` — take the slot after the first dot (the `chrome.` prefix).
-    const dot  = address.partPath.indexOf('.')
-    const slot = dot >= 0 ? address.partPath.slice(dot + 1) : address.partPath
+    // partPath is `chrome.<slot>` — the slot is parsed through the engine SSOT
+    // (`chromeSlotOfPartPath`), which is strict on the `chrome.` prefix so a non-chrome
+    // address never mis-writes. A pathless / non-chrome address resolves to null.
+    const slot = chromeSlotOfPartPath(address.partPath)
     if (!slot) return null
     // A residence-tagged mutation the host commits at its true home (`updateChromeConfig`)
     // — the site SSOT, NO denormalised copy on any node (mirrors the filter-schema write).

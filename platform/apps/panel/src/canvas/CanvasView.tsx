@@ -83,12 +83,10 @@ export interface CanvasViewProps {
    */
   previewPerspectiveId?: string
   onSelectNode:   (nodeId: string | null) => void
-  /** Select a value-band item (a declared bounded child) instead of the whole node. */
+  /** Select a value-band item (a declared bounded child) instead of the whole node.
+   *  A chrome region is also a part — the overlay dispatches this with the site-frame
+   *  id + `chrome.<slot>` path (S6), so no chrome-specific handler is needed. */
   onSelectItem?:  (nodeId: string, path: string) => void
-  /** Select a chrome region (header / sidebar / footer) on the canvas (SPEC S4). */
-  onSelectChrome?: (slot: string, key: string) => void
-  /** The currently-selected chrome region, for the selected frame highlight. */
-  selectedChrome?: { slot: string; key: string } | null
   onDropNode:     (parentId: string, slotKey: string, nodeType: string) => void
   /** Reserved for node-to-node moves (drag an existing node into another slot). */
   onMoveNode?:    (nodeId: string, targetParentId: string, targetSlot: string) => void
@@ -117,7 +115,7 @@ export interface CanvasViewProps {
 
 export function CanvasView({
   page, selectedNodeId, selectedItemPath, dragging, previewPerspectiveId,
-  onSelectNode, onSelectItem, onSelectChrome, selectedChrome, onDropNode, onBindMetric, onPreviewPerspectiveChange,
+  onSelectNode, onSelectItem, onDropNode, onBindMetric, onPreviewPerspectiveChange,
   nav = EMPTY_NAV, chrome = EMPTY_CHROME, chromeConfig, locale,
 }: CanvasViewProps) {
   // Preview mode is canvas view-state — transient and local to this component
@@ -212,8 +210,7 @@ export function CanvasView({
         dragging={dragging}
         onSelect={onSelectNode}
         onSelectItem={onSelectItem}
-        onSelectChrome={onSelectChrome}
-        selectedChrome={selectedChrome}
+        chrome={chrome}
         onDrop={onDropNode}
         onBindMetric={onBindMetric}
       />

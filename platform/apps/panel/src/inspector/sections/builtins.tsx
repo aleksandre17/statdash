@@ -16,7 +16,6 @@ import { Box, Chip, Button, Typography } from '@mui/material'
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft'
 import type { VisibilityExpr } from '@statdash/engine'
 import { Inspector } from '../Inspector'
-import { ChromeInspectorPanel } from '../ChromeInspectorPanel'
 import { MetricPalette } from '../../discovery/MetricPalette'
 import { VisibilitySection } from '../../features/visibility'
 import { PageInspectorPanel } from '../../features/page-config'
@@ -26,9 +25,15 @@ import { fixedSchemaSource, itemTitle } from '../controls/nestedItemControl.help
 import type { CanvasNode } from '../../types/constructor'
 import { dockSectionRegistry, type DockRenderCtx } from './dockSection'
 
-/** A node (not chrome) is selected in the element context — the shared guard. */
+/** A page node is selected in the element context — the shared guard (a chrome region
+ *  has no page `selected`; it is a bounded PART, covered by `partSelected`). */
 const nodeSelected = (ctx: DockRenderCtx): boolean =>
-  ctx.scope === 'element' && !!ctx.controller.selected && !ctx.controller.chromeSel
+  ctx.scope === 'element' && !!ctx.controller.selected
+
+/** A bounded PART is the active selection — a value/filter band item OR a chrome region
+ *  (owned by the site-frame, so no page `selected`). The generic item projection path. */
+const partSelected = (ctx: DockRenderCtx): boolean =>
+  ctx.scope === 'element' && !!ctx.controller.selectedBand
 
 /** A WHOLE node is selected (no drilled band item) — the node-scoped sections. */
 const wholeNodeSelected = (ctx: DockRenderCtx): boolean =>
@@ -77,31 +82,38 @@ export function registerBuiltinDockSections(): void {
     .register({
       id:        'element.schema',
       order:     10,
-      appliesTo: (ctx) => nodeSelected(ctx),
+      appliesTo: (ctx) => nodeSelected(ctx) || partSelected(ctx),
       render:    (ctx) => {
         const { selected, selectedBand, patchProp, patchItemProp, selectNode } = ctx.controller
-        if (!selected) return null
 
         if (selectedBand) {
-          // The item's live object + write both come from the RESOLVED selection (the
-          // node's declared BandSource), not a direct `selected.props` reach — so a
-          // page-owned band (filters) projects from the filterSchema SSOT, and a props
-          // band from node.props, through the SAME bounded projection (ADR-038/039).
+          // The item's live object + write both come from the RESOLVED selection (its
+          // owning element's declared part), not a direct `selected.props` reach — so a
+          // page-owned band (filters) projects from the filterSchema SSOT, a props band
+          // from node.props, and a CHROME region from the site.chrome SSOT, through the
+          // SAME bounded projection (ADR-038/039 · S6). The owning element is carried on
+          // the part (`ownerId`/`ownerLabel`/`ownerSelectable`), so this branch never
+          // reaches the (possibly absent) page node — a chrome region has none.
           const itemObj = selectedBand.itemObject
           const source  = fixedSchemaSource(selectedBand.itemSchema, selectedBand.itemGroups)
           const idPrefix = `insp-${selectedBand.path.replace(/\./g, '-')}`
-          const title    = itemTitle(itemObj, selectedBand.itemLabel, selectedBand.index, ctx.locale)
+          const title    = selectedBand.crumbTitle
+            ?? itemTitle(itemObj, selectedBand.itemLabel, selectedBand.index, ctx.locale)
           const itemNode: CanvasNode = {
-            id: `${selected.id}-${selectedBand.path}`, type: 'band-item', props: itemObj, childIds: [],
+            id: `${selectedBand.ownerId}-${selectedBand.path}`, type: 'band-item', props: itemObj, childIds: [],
           }
+          const onBack = selectedBand.ownerSelectable
+            ? () => selectNode(selectedBand.ownerId)   // reselect the owning page node
+            : () => selectNode(null)                   // site-frame has no whole-node dock → deselect
           return (
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-              <BandItemHeader parentType={selected.type} title={title} onBack={() => selectNode(selected.id)} />
+              <BandItemHeader parentType={selectedBand.ownerLabel} title={title} onBack={onBack} />
               <Inspector node={itemNode} schemaSource={source} onChange={patchItemProp} idPrefix={idPrefix} />
             </Box>
           )
         }
 
+        if (!selected) return null
         return (
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
             <Chip size="small" label={selected.type} color="primary" variant="outlined"
@@ -163,13 +175,6 @@ export function registerBuiltinDockSections(): void {
           />
         )
       },
-    })
-    // ── ELEMENT · chrome (mutually exclusive with the node sections) ─────────────
-    .register({
-      id:        'element.chrome',
-      order:     10,
-      appliesTo: (ctx) => ctx.scope === 'element' && !!ctx.controller.chromeSel,
-      render:    () => <ChromeInspectorPanel />,
     })
     // ── PAGE · config ────────────────────────────────────────────────────────────
     .register({

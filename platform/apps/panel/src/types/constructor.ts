@@ -74,19 +74,14 @@ export interface SiteDef {
   chrome:             Record<string, ChromeSlotConfig>
 }
 
-// ── Chrome selection (Phase C) ──────────────────────────────────────────────
+// ── Chrome selection — FOLDED into the ONE PartAddress (S6) ──────────────────
 //
-//  A chrome element is addressed by slot+key (the chromeRegistry composite key).
-//  The Constructor selects it the same way it selects a page node, then the
-//  Inspector renders its schema via chromeSchemaSource. Selection state is a
-//  discriminated union so the panel knows which schema source + write path to
-//  use without overloading the node-id string.
-//
-export interface ChromeSelection {
-  kind: 'chrome'
-  slot: string
-  key:  string
-}
+//  Chrome is no longer a distinct selection species. A chrome region is a `sourced`
+//  Part of the SITE-FRAME element (ADR-041 R4), selected through the SAME
+//  `PartAddress` grammar as every other part: `{ nodeId: SITE_FRAME_ID, partPath:
+//  chromePartPath(slot) }`. The `ChromeSelection` discriminated arm (`kind:'chrome'`)
+//  is RETIRED — `SelectionAddress` is now the single `PartAddress` (arm count 2→1).
+//  The store's `selectChrome(slot)` wrapper builds that address (constructor.store).
 
 // ── Layer 3: Pages ────────────────────────────────────────────────────────────
 

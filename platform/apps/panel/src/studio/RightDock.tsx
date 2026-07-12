@@ -67,16 +67,15 @@ export interface RightDockProps {
 }
 
 export function RightDock({ controller, locale, collapsed, onToggleCollapsed, width, onResize }: RightDockProps) {
-  const { selected, pageId, chromeSel, deleteSelected, selectedItemPath } = controller
+  const { selected, pageId, deleteSelected, selectedItemPath, selectedBand } = controller
 
-  // The selection key drives the context: element identity or null (→ Page). Scope
-  // is PURELY derived — an element selected shows only its contract; deselecting
-  // (null) returns to Page. No override, no persistent tab (SPEC §3.2 — page-config
-  // never bleeds into an element's surface).
-  const selKey: string | null = chromeSel
-    ? `chrome:${chromeSel.slot}:${chromeSel.key}`
-    : selected?.id ?? null
-  const scope: DockScope = selKey ? 'element' : 'page'
+  // Scope is PURELY derived from the ONE selection — an element selected shows only its
+  // contract; deselecting returns to Page. No override, no persistent tab (SPEC §3.2 —
+  // page-config never bleeds into an element's surface). An element is selected when a
+  // page node is (`selected`) OR a bounded PART is (`selectedBand`) — the latter covers a
+  // chrome region, whose owning site-frame is not a page node (S6: chrome is a Part, no
+  // `chromeSel` species).
+  const scope: DockScope = (selected || selectedBand) ? 'element' : 'page'
 
   // The one-header-tier seam: a drilled nested editor (D7.1b) in the body PROMOTES
   // its breadcrumb up here; while promoted the header shows the breadcrumb XOR the
@@ -118,12 +117,12 @@ export function RightDock({ controller, locale, collapsed, onToggleCollapsed, wi
     )
   }
 
-  // FOOTER — element actions. Present only in the element context with a WHOLE node
-  // selected (chrome/page/empty states carry no destructive action here). Suppressed
-  // while a bounded band item is the active selection: `deleteSelected` acts on the
-  // owning node, so offering "Delete" under a card would misleadingly remove the whole
-  // strip (least astonishment — the footer follows the bounded selection, ADR-038).
-  const footer = scope === 'element' && selected && !chromeSel && !selectedItemPath && (
+  // FOOTER — element actions. Present only in the element context with a WHOLE page node
+  // selected. A bounded part (a band item, or a chrome region — whose `selected` page node
+  // is absent) carries no destructive action here: `deleteSelected` acts on the owning
+  // node, so offering "Delete" under a card/region would misleadingly remove the whole
+  // owner (least astonishment — the footer follows the bounded selection, ADR-038).
+  const footer = scope === 'element' && selected && !selectedItemPath && (
     <Button size="small" color="error" startIcon={<DeleteIcon />} onClick={deleteSelected}>
       {t('del', locale)}
     </Button>
