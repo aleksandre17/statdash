@@ -90,6 +90,78 @@ export function rollupsOf(c: Classifier): ClassifierEntry[] {
   return toIdEntries(c).filter(([id]) => nonLeaf.has(id)).map(([, e]) => e)
 }
 
+// ── Hierarchy reification — member depth / children FROM the parent edges ─────
+//
+//  The SDMX HierarchicalCodelist is the SSOT for a dimension's tree (Law 5); these
+//  helpers REIFY it in CODE space so a governed DimensionHierarchy (data/dimension.ts)
+//  never re-authors member relations. Both classifier forms are unified: array form
+//  carries `parent` as a CODE, record form as a surrogate ID — both resolve to a code.
+
+/** parent-edge graph in CODE space — parentByCode + childrenByCode (both forms). */
+function codeGraph(c: Classifier): {
+  parentByCode:   Map<string, DimVal>
+  childrenByCode: Map<string, DimVal[]>
+} {
+  const codeById = new Map<string, DimVal>()
+  for (const [id, e] of toIdEntries(c)) codeById.set(id, e.code)
+
+  const parentByCode   = new Map<string, DimVal>()
+  const childrenByCode = new Map<string, DimVal[]>()
+  for (const [, e] of toIdEntries(c)) {
+    if (e.parent === undefined) continue
+    // `parent` is a surrogate id (record form) or a code (array form) — resolve to a code.
+    const parentCode = codeById.get(String(e.parent)) ?? e.parent
+    parentByCode.set(String(e.code), parentCode)
+    const arr = childrenByCode.get(String(parentCode)) ?? []
+    arr.push(e.code)
+    childrenByCode.set(String(parentCode), arr)
+  }
+  return { parentByCode, childrenByCode }
+}
+
+/**
+ * childrenOf — the direct children of a member (one drill step down), reified from
+ * the classifier parent edges. Empty for a leaf / unknown code. The self-nested drill
+ * narrowing: descend from a parent to its children.
+ */
+export function childrenOf(c: Classifier, code: DimVal): DimVal[] {
+  return codeGraph(c).childrenByCode.get(String(code)) ?? []
+}
+
+/**
+ * depthOf — a member's LEVEL = its distance from a root (parentless) ancestor
+ * (root = 0), reified from the parent chain. A cycle guard caps traversal. This is
+ * the tier a self-nested hierarchy level maps onto (level index = codelist depth).
+ */
+export function depthOf(c: Classifier, code: DimVal): number {
+  const { parentByCode } = codeGraph(c)
+  let depth = 0
+  let cur   = String(code)
+  const seen = new Set<string>()
+  while (parentByCode.has(cur) && !seen.has(cur)) {
+    seen.add(cur)
+    cur = String(parentByCode.get(cur))
+    depth++
+  }
+  return depth
+}
+
+/**
+ * membersAtDepth — every member code at a given tree DEPTH (0 = roots), reified from
+ * the parent edges. The reified coordinate SET a self-nested drill enumerates at a
+ * level; a flat codelist (no parent edges) reports every code at depth 0.
+ */
+export function membersAtDepth(c: Classifier, depth: number): DimVal[] {
+  const { parentByCode } = codeGraph(c)
+  const depthOfCode = (code: DimVal): number => {
+    let d = 0, cur = String(code)
+    const seen = new Set<string>()
+    while (parentByCode.has(cur) && !seen.has(cur)) { seen.add(cur); cur = String(parentByCode.get(cur)); d++ }
+    return d
+  }
+  return toEntries(c).map((e) => e.code).filter((code) => depthOfCode(code) === depth)
+}
+
 // ── codesOf — sorted distinct codes (utility for derived ranges) ──────
 
 /**

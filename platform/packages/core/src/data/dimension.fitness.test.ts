@@ -75,7 +75,7 @@ function stripComments(src: string): string {
 //  resolver (registry/resolvers.ts) — the files a metric/dimension ref flows through.
 describe('FF-NO-PRIVILEGED-DIM — no hardcoded dimension name in the resolution path', () => {
   const PRIVILEGED_DIM = /(['"])(time|year|geo|region|regionId)\1/
-  const files = ['dimension.ts', 'metric.ts', '../registry/resolvers.ts']
+  const files = ['dimension.ts', 'metric.ts', 'drill.ts', '../registry/resolvers.ts']
 
   for (const f of files) {
     it(`${f} branches on no privileged dimension literal (Law 1)`, () => {

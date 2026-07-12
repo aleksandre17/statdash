@@ -16,6 +16,50 @@
 import type { LocaleString }         from '../i18n/types'
 import type { DimVal }               from '../sdmx'
 
+// ── Dimension hierarchy — the governed DRILL PATH primitive [ADR-034 S4] ─────────
+//
+//  A dimension may declare an ordered DRILL PATH — the coarsest→finest levels a
+//  query/selection can descend, changing the query GRAIN (LookML `drill_fields`,
+//  Cube `hierarchies`, Malloy nesting, MetricFlow entities — adopted whole, Law 4).
+//  THIN by design (the same "no modeling language" line the rest of this file holds):
+//  a level names a GRAIN AXIS (a generic dim code, Law 1) + a governed breadcrumb
+//  label. The actual member parent/child relations are NEVER hand-authored here —
+//  they REIFY from the SDMX DSD codelist `parent` edges at runtime (Law 5: the
+//  codelist stays the SSOT; `data/drill.ts` reads member depth/children FROM it).
+//
+//  TWO forms, ONE declaration (no privileged branch):
+//    • self-nested codelist (geo ▸ region ▸ municipality; NACE/COFOG sector trees) —
+//      every level names the SAME axis; the tiers are DEPTHS in the classifier parent
+//      tree (reified). A drill narrows to a parent's children (a rollup read that the
+//      store already sums over its descendant leaves).
+//    • star / level-per-dim (year ▸ quarter ▸ month as distinct dims) — each level
+//      names a DISTINCT axis; a drill SWAPS the grain axis. Composes natively with the
+//      metric-grain generic axes (grain = by ⊕ time.dim).
+//  The engine derives the drill KIND from whether the axis repeats — never a flag.
+
+/** One tier of a dimension's drill path — a named level over a generic grain axis. */
+export interface HierarchyLevel {
+  /**
+   * The grain axis (dim code) this level groups by — GENERIC (Law 1; may equal the
+   * DimensionDef `code` for a self-nested codelist, or a distinct dim for a star
+   * hierarchy). The engine never branches on a hardcoded axis name.
+   */
+  dim:    string
+  /** Governed bilingual breadcrumb label for this tier (Law 4). Optional. */
+  label?: LocaleString
+}
+
+/**
+ * A declared drill path over a dimension — an ordered set of LEVELS (coarsest root →
+ * finest leaf). A drill descends exactly one level; the metric re-derives at the new
+ * grain through the M2 `metric-grain` algebra (additivity-respecting — a ratio is
+ * re-derived from its `calc`, never summed). Pure data (Law 2), Constructor-authorable.
+ */
+export interface DimensionHierarchy {
+  /** Ordered levels, coarsest → finest. Level index N-1 is the finest (leaf) grain. */
+  levels: HierarchyLevel[]
+}
+
 /**
  * Definition of one governed dimension — the peer of `MetricDef`.
  * Thin curation over the cube-profile dimension; not a modeling language.
@@ -52,6 +96,13 @@ export interface DimensionDef {
    * only narrows what the picker offers.
    */
   members?:       DimVal[]
+  /**
+   * Governed DRILL PATH [ADR-034 S4] — the ordered levels a query/selection may
+   * descend, changing grain. Reifies member parent/child from the SDMX codelist
+   * (Law 5 — never hand-authored). Absent ⇒ no drill path (a flat dimension). Thin,
+   * generic (Law 1), pure data (Law 2). See `data/drill.ts` for the drill seam.
+   */
+  hierarchy?:     DimensionHierarchy
   /** Longer description for the info-affordance. */
   description?:   LocaleString
 }
