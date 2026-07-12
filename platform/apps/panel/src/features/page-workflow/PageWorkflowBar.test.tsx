@@ -38,7 +38,7 @@ const store = () => useConstructorStore.getState()
 function seed(page: CanvasPage, status: 'draft' | 'published' = 'draft') {
   useConstructorStore.setState({
     pages: [page], activePageId: page.id,
-    selectedNodeId: null, chromeSelection: null,
+    selection: null,
     lifecycle: { [page.id]: { status, versionNumber: 1, latestPublished: status === 'published', dirty: false } },
     saveStatus: {}, publishStatus: {},
     undoStack: [], redoStack: [], canUndo: false, canRedo: false,

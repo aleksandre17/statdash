@@ -29,4 +29,5 @@ export type {
   SliceMeta,
   VariantDef,
   VariantSchema,
+  BandDescriptor,
 }                                from '../slice-meta'

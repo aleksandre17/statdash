@@ -66,6 +66,13 @@
       "forbid": "(AKIA[0-9A-Z]{16}|-----BEGIN[ A-Z]*PRIVATE KEY-----|Bearer\\s+[A-Za-z0-9._\\-]{20,}|\\b(?:api[_-]?key|secret|token)\\b\\s*[:=]\\s*['\\\"][A-Za-z0-9+/_\\-]{16,}['\\\"])",
       "msg": "Possible hardcoded secret (AWS AKIA key / PEM private key / Bearer token / high-entropy api_key|secret|token assignment). Secrets never live in source (09/§Security) — move to an env var or vault and rotate the exposed value.",
       "sample_violation": "const k = \"AKIAIOSFODNN7EXAMPLE\";"
+    },
+    {
+      "id": "ADR041-part-grammar-no-bridge",
+      "glob": "platform/apps/panel/src/**",
+      "forbid": "registerPartSource\\(\\s*['\"](?!slot|value|sourced)|\\b(promotionMode|kpiSpecToCardNode|nodeProjection|registerNodeProjector)\\b",
+      "msg": "ADR-041: containment flows through the Part port. Adapters are keyed by RESIDENCE ('slot'|'value'|'sourced'), never by a concrete type — a string-keyed registerPartSource is a per-kind bridge. The promotion/projector modules are retired (D-F2). SSOT = the FF suite (FF-ONE-PART-GRAMMAR/RESIDENCE-AT-FIELD/DERIVED-CONTAINMENT/NO-EXTERNAL-SPECIAL-CASE); this is a fast non-authoritative tripwire.",
+      "sample_violation": "registerPartSource('kpi-strip', src)"
     }
   ],
   "worktree_guard": {

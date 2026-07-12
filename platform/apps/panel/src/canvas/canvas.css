@@ -207,6 +207,55 @@
   pointer-events: none;
 }
 
+/* ── Chrome region frame (header / sidebar / footer — SPEC S4) ─────────────
+ * Site furniture, selectable on the canvas but visually DISTINCT from content
+ * nodes: a dotted idle frame (shape, not colour-only — WCAG 1.4.1) so authors read
+ * it as "chrome, not a block". Selected → the accent frame, like any element. */
+.canvas-chrome {
+  position: absolute;
+  pointer-events: auto;
+  cursor: pointer;
+  border: var(--canvas-outline) dotted transparent;
+  border-radius: var(--canvas-radius);
+  background: transparent;
+  padding: 0;
+  margin: 0;
+  box-sizing: border-box;
+  transition: border-color 120ms ease, background-color 120ms ease;
+}
+
+.canvas-chrome:hover {
+  border-color: var(--canvas-accent-soft);
+  background-color: var(--canvas-accent-soft);
+}
+
+.canvas-chrome:focus-visible {
+  outline: var(--canvas-outline) solid var(--canvas-accent);
+  outline-offset: 2px;
+}
+
+.canvas-chrome--selected,
+.canvas-chrome--selected:hover {
+  border-style: solid;
+  border-color: var(--canvas-accent);
+  background-color: transparent;
+}
+
+.canvas-chrome__tag {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform: translateY(-100%);
+  padding: 0 var(--radius-sm, 4px);
+  font-size: 11px;
+  line-height: 1.6;
+  color: var(--color-text-inverse, #fff);
+  background: var(--canvas-accent);
+  border-radius: var(--canvas-radius) var(--canvas-radius) 0 0;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
 /* ── Per-item selection frame (value-band child element — ADR-038) ─────────
  * A card / band item hit target, painted ABOVE its parent node frame. Uses a
  * lighter idle affordance than the node frame so the parent stays legible, and a

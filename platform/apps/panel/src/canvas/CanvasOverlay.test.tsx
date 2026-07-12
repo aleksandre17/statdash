@@ -53,8 +53,8 @@ describe('CanvasOverlay', () => {
     render(
       <div className="canvas-root">
         <div className="canvas-layer canvas-layer--renderer">
-          <div data-canvas-node-id="page-1"><div>page</div></div>
-          <div data-canvas-node-id="sec-1"><div>section</div></div>
+          <div data-part-node-id="page-1"><div>page</div></div>
+          <div data-part-node-id="sec-1"><div>section</div></div>
         </div>
         <CanvasOverlay
           page={page}
@@ -75,7 +75,7 @@ describe('CanvasOverlay', () => {
     render(
       <div className="canvas-root">
         <div className="canvas-layer canvas-layer--renderer">
-          <div data-canvas-node-id="sec-1"><div>section</div></div>
+          <div data-part-node-id="sec-1"><div>section</div></div>
         </div>
         <CanvasOverlay page={page} onSelect={vi.fn()} onDrop={vi.fn()} />
       </div>,
@@ -89,8 +89,8 @@ describe('CanvasOverlay — metric drag-to-bind (AR-49 M0 item 9)', () => {
     render(
       <div className="canvas-root">
         <div className="canvas-layer canvas-layer--renderer">
-          <div data-canvas-node-id="page-1"><div>page</div></div>
-          <div data-canvas-node-id="sec-1"><div>section</div></div>
+          <div data-part-node-id="page-1"><div>page</div></div>
+          <div data-part-node-id="sec-1"><div>section</div></div>
         </div>
         <CanvasOverlay page={page} onSelect={vi.fn()} onDrop={vi.fn()} onBindMetric={onBindMetric} />
       </div>,

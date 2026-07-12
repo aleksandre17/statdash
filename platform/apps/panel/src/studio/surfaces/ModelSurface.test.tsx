@@ -18,7 +18,7 @@ const SPEC: NamedDataSpec = {
 
 beforeEach(() => {
   setupCanvasRegistry()
-  useConstructorStore.setState({ dataSpecs: [SPEC], selectedNodeId: null })
+  useConstructorStore.setState({ dataSpecs: [SPEC], selection: null })
 })
 
 describe('ModelSurface — the Steward\'s define workspace mounts the relocated modeler (AR-49 M2.1)', () => {

@@ -16,7 +16,7 @@
 //    right-side void by construction.
 //
 import { describe, it, expect, beforeEach } from 'vitest'
-import { render, screen, fireEvent } from '@testing-library/react'
+import { render, screen } from '@testing-library/react'
 import { RightDock } from './RightDock'
 import { setupCanvasRegistry } from '../canvas/setupCanvasRegistry'
 import { useConstructorStore } from '../store/constructor.store'
@@ -67,7 +67,7 @@ function seedPage() {
 beforeEach(() => {
   setupCanvasRegistry() // idempotent — palettes + presentation projectors for pageSchemaSource
   useConstructorStore.getState().updateSite({ defaultLocale: 'en', activeLocales: ['en'] })
-  useConstructorStore.setState({ pages: [], activePageId: null, selectedNodeId: null, chromeSelection: null })
+  useConstructorStore.setState({ pages: [], activePageId: null, selection: null })
 })
 
 // ── FF-RIGHTDOCK-SINGLE-EMPTYSTATE ────────────────────────────────────────────
@@ -85,14 +85,13 @@ describe('FF-RIGHTDOCK-SINGLE-EMPTYSTATE — at most one empty-state', () => {
     expect(container.querySelectorAll('[data-empty-state-kind]')).toHaveLength(0)
   })
 
-  it('Element context with nothing selected → exactly ONE (no-selection), never stacked', () => {
+  it('nothing selected → the Page context (no empty-state stacked): deselect IS the page', () => {
     seedPage()
-    renderDock({ pageId: 'p1', selected: null }) // idle → Page context
-    // Peek the Element tab while nothing is selected → the single quiet hint.
-    fireEvent.click(screen.getByRole('tab', { name: 'Element' }))
-    const states = document.querySelectorAll('[data-empty-state-kind]')
-    expect(states).toHaveLength(1)
-    expect(states[0].getAttribute('data-empty-state-kind')).toBe('no-selection')
+    const { container } = renderDock({ pageId: 'p1', selected: null }) // idle → Page context
+    // S1: no persistent Element|Page switch to peek — nothing selected renders the
+    // Page context directly, so the dock never shows a stacked "nothing here" hole.
+    expect(container.querySelectorAll('[data-empty-state-kind]')).toHaveLength(0)
+    expect(screen.getByTestId('page-inspector')).toBeInTheDocument()
   })
 })
 
@@ -115,11 +114,25 @@ describe('FF-RIGHTDOCK-CONTEXTUAL — page panes only in the Page context', () =
     expect(screen.queryByRole('button', { name: 'Delete' })).toBeNull()
   })
 
-  it('the Page tab keeps page authoring one gesture away while a node is selected', () => {
+  it('S1: no persistent Element|Page switch — page authoring is reached by DESELECTING', () => {
     seedPage()
-    renderDock({ pageId: 'p1', selected: HERO }) // element context
+    // A node selected → ONLY its contract; no page-config tab bleeds in, and there
+    // is no Element|Page tab pair stapled onto the element's header (owner defect #3).
+    const { rerender } = renderDock({ pageId: 'p1', selected: HERO })
     expect(screen.queryByTestId('page-inspector')).toBeNull()
-    fireEvent.click(screen.getByRole('tab', { name: 'Page' }))
+    expect(screen.queryByRole('tab', { name: 'Page' })).toBeNull()
+    expect(screen.queryByRole('tab', { name: 'Element' })).toBeNull()
+    // Deselecting (canvas-background click → selected:null) IS the Page context.
+    rerender(
+      <RightDock
+        controller={stubController({ pageId: 'p1', selected: null })}
+        locale="en"
+        collapsed={false}
+        onToggleCollapsed={() => {}}
+        width={320}
+        onResize={() => {}}
+      />,
+    )
     expect(screen.getByTestId('page-inspector')).toBeInTheDocument()
   })
 })

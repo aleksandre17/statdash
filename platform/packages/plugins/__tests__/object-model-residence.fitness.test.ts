@@ -11,13 +11,15 @@
 //
 //    FF-TWO-RESIDENCES-ONLY   — both residences are live in the corpus; the model
 //                               is not collapsing to one. (SCAFFOLD · hardens R3.)
-//    FF-NO-FACET-REINVENTION  — no VALUE-BAND itemSchema declares a reserved node
-//                               facet (visibility expression). The lone pending
-//                               offender is allow-listed; a NEW one breaks the
-//                               gate; it flips to a HARD gate at R2/R3. (SCAFFOLD.)
-//    FF-PROMOTION-LOSSLESS    — no promotion has silently leaked into R1 (kpi-card
-//                               / hero-card are NOT node types yet). Becomes the
-//                               DOM-parity gate at R2-expand. (SCAFFOLD · R2.)
+//    FF-NO-FACET-REINVENTION  — no VALUE-BAND itemSchema aliases a genuinely
+//                               node-only facet (`visibleToRoles` / RBAC). ADR-041
+//                               settled per-item VISIBILITY (`when`) as a legitimate
+//                               VALUE-residence facet (residence-at-field), so it is
+//                               no longer an offender; the gate holds zero offenders.
+//    FF-ONE-PART-GRAMMAR      — no shadow node type shadows a value band: `kpi-card`
+//                               / `hero-card` are NOT node types (D-F2 retired the
+//                               shadow promotion; the value band is the sole
+//                               residence). Replaces the retired FF-PROMOTION-LOSSLESS.
 //
 import { describe, it, expect } from 'vitest'
 import { AUTHORING_METAS }      from '../authoring-metas'
@@ -38,12 +40,17 @@ const METAS = AUTHORING_METAS as unknown as MetaView[]
 const idOf = (m: MetaView): string => m.type ?? m.slot ?? m.controlType ?? '<anon>'
 
 // ── FF-NO-FACET-REINVENTION ──────────────────────────────────────────────────
-//  Reserved node facets a VALUE-BAND item may not alias. Scoped to the UNAMBIGUOUS
-//  signal — a per-item VISIBILITY EXPRESSION (`view.visibleWhen` is a node facet;
-//  Grafana/Vega value bands never carry per-item visibility). `id`/style are left
-//  to the R3 hard gate (they need the value-vs-facet disambiguation Grafana
-//  fieldConfig legitimately uses).
-const RESERVED_FACET_FIELDS = new Set(['when', 'visibleWhen', 'visibleToRoles'])
+//  Reserved facets a VALUE-BAND item may not alias. ADR-041 (residence-at-field)
+//  SETTLED that per-item visibility (`when` / `view.visibleWhen`) is a LEGITIMATE
+//  facet of the VALUE residence — not a node-only facet: the value residence owns
+//  its own visibility, evaluated on the value-band render path (kpi-strip's `when`,
+//  KpiStripShell + the engine `kpiVisible` SSOT). D-F2 retired the shadow promotion
+//  that once framed value-band visibility as a debt to graduate; so `when` /
+//  `visibleWhen` are REMOVED from the reserved set. What remains genuinely node-only
+//  is per-item RBAC (`visibleToRoles`) — a render-pipeline facet with no value-band
+//  home today (ADR-041 ROOT-4); a value item aliasing it is still the forbidden
+//  reinvention. `id`/style stay to the R3 disambiguation.
+const RESERVED_FACET_FIELDS = new Set(['visibleToRoles'])
 
 /** Collect META identities whose VALUE-BAND (itemSchema) fields alias a reserved facet. */
 function facetReinventingMetas(): string[] {
@@ -58,15 +65,14 @@ function facetReinventingMetas(): string[] {
   return [...offenders].sort()
 }
 
-describe('FF-NO-FACET-REINVENTION — value-band items may not re-invent node facets [SCAFFOLD · hardens R2/R3]', () => {
-  it('the only itemSchema re-inventing a visibility facet is the pending kpi-card promotion', () => {
-    // kpi-strip's KpiItemSchema carries `when` (a visibility expression) — the F2
-    // debt the Promotion Law names: the KPI card has ≥2 node facets (id + when +
-    // own value data) and MUST become a `kpi-card` node (R2). Allow-listed here so
-    // the gate blocks any NEW facet-reinventing item today, and FLIPS to `[]` (a
-    // hard gate) the moment R2 retires the KpiItemSchema.
-    const PENDING_PROMOTION = ['kpi-strip']   // R2-contract: becomes []
-    expect(facetReinventingMetas()).toEqual(PENDING_PROMOTION)
+describe('FF-NO-FACET-REINVENTION — value-band items may not alias a node-only facet [ADR-041]', () => {
+  it('NO value-band item aliases a node-only facet (kpi-strip `when` is now a legitimate value facet)', () => {
+    // ADR-041 D-F2: value-band visibility is a LEGITIMATE facet of the VALUE
+    // residence (residence-at-field), so kpi-strip's KpiItemSchema `when` is NO
+    // LONGER an offender — the shadow-promotion theory that framed it as a debt is
+    // retired. The gate now holds ZERO offenders: no value band aliases a genuinely
+    // node-only facet (`visibleToRoles`). A NEW value item that reinvents RBAC trips.
+    expect(facetReinventingMetas()).toEqual([])
   })
 })
 
@@ -81,27 +87,18 @@ describe('FF-TWO-RESIDENCES-ONLY — tree band + value band are both live [SCAFF
   })
 })
 
-describe('FF-PROMOTION-LOSSLESS — R2-EXPAND: kpi-card promoted (shadow), DOM-parity gate is REAL', () => {
-  it('the real DOM-parity gate now proves losslessness (this scaffold is superseded)', () => {
-    // R2-EXPAND has landed: `kpi-card` is a REGISTERED runtime node type, built
-    // ALONGSIDE the legacy KpiStripNode.items[] path behind isPromotionEnabled(
-    // 'kpi-card') (Law 7 · Strangler expand). The R1 "no promotion leaked" scaffold
-    // is therefore SUPERSEDED by the real byte-identical DOM-parity gate, which
-    // renders the whole provisioning corpus BOTH ways and compares:
-    //     packages/plugins/panels/kpi-strip/promotion-lossless.fitness.test.tsx
-    //       → FF-PROMOTION-LOSSLESS
-    // That gate — not this one — is the SOLE authorizer of the R2-contract one-way
-    // door (retiring the legacy path). It stays RED-if-broken there.
-
-    // This roster scan asserts the PALETTE boundary (AUTHORING_METAS = the shipped
-    // authoring roster). kpi-card is a SHADOW runtime type and is intentionally NOT
-    // yet in the palette roster — palette exposure lands at R2-contract, once the
-    // DOM-parity gate authorizes retiring the legacy residence. hero-card is R3.
+describe('FF-ONE-PART-GRAMMAR — no shadow node type shadows a value band [ADR-041 · D-F2]', () => {
+  it('no `kpi-card` / `hero-card` node type shadows the value-band residence (promotion retired)', () => {
+    // ADR-041 D-F2 RETIRED the shadow promotion machinery: FF-PROMOTION-LOSSLESS is
+    // gone (there is no longer a second residence to prove byte-parity against — the
+    // value band is the SOLE residence for a KPI card). This TIGHTENS FF-ONE-PART-
+    // GRAMMAR: a KPI card is a `value` PartField of kpi-strip's `items`, never a
+    // registered node type shadowing it. `kpi-card` / `hero-card` MUST NOT appear as
+    // node types — the promotion node, its META, and its lowering were deleted.
     const registeredTypes = new Set(METAS.map(idOf))
-    expect(registeredTypes.has('kpi-card')).toBe(false)   // shadow only; palette-exposed at R2-contract
-    expect(registeredTypes.has('hero-card')).toBe(false)  // R3
-    // The unpromoted originals are still present (Strangler boundary intact — the
-    // legacy path is NOT removed in the expand phase):
+    expect(registeredTypes.has('kpi-card')).toBe(false)   // deleted (D-F2) — no shadow residence
+    expect(registeredTypes.has('hero-card')).toBe(false)  // never promoted
+    // The value-band owners are the sole residence — present and unshadowed:
     expect(registeredTypes.has('kpi-strip')).toBe(true)
     expect(registeredTypes.has('hero')).toBe(true)
   })

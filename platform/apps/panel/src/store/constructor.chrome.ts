@@ -11,25 +11,24 @@
 //  exclusive with selecting a page node (one Inspector, one element).
 //
 import { setAtPath } from '../inspector/showWhen'
-import type { ConstructorSession } from './constructor.history'
+import type { ConstructorSession, SelectionAddress } from './constructor.history'
 import type { ChromeSelection } from '../types/constructor'
 
-/** Patch type shared by all chrome reducers (a partial session + UI state). */
+/** Patch type shared by all chrome reducers (a partial session + the ONE selection). */
 type ChromePatch = Partial<ConstructorSession> & {
-  selectedNodeId?:  string | null
-  chromeSelection?: ChromeSelection | null
+  selection?: SelectionAddress | null
 }
 
 /**
- * Select (or clear) a chrome element. Clears node selection (mutual exclusivity)
- * and seeds the slot with the selected variant so a first edit writes through to
- * a real ChromeSlotConfig (no null hole).
+ * Select (or clear) a chrome element. Writing the chrome address into the ONE
+ * `selection` inherently clears any node/item selection (mutual exclusivity — one
+ * address, one element), and seeds the slot with the selected variant so a first
+ * edit writes through to a real ChromeSlotConfig (no null hole).
  */
 export function selectChromePatch(s: ConstructorSession, sel: ChromeSelection | null): ChromePatch {
-  if (sel == null) return { chromeSelection: null }
+  if (sel == null) return { selection: null }
   return {
-    selectedNodeId:  null,
-    chromeSelection: sel,
+    selection: sel,
     site: s.site.chrome[sel.slot]
       ? s.site
       : { ...s.site, chrome: { ...s.site.chrome, [sel.slot]: { variant: sel.key } } },

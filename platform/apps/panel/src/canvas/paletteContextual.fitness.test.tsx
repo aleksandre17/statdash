@@ -14,7 +14,7 @@ import { render, screen } from '@testing-library/react'
 import { setupCanvasRegistry } from './setupCanvasRegistry'
 import { NodePalette }         from './NodePalette'
 import { getPaletteEntries }   from './paletteEntries'
-import { nestAccepts, isDropTarget, resolveInsertPlan } from './insertNode'
+import { nestAccepts, isDropTarget, resolveInsertPlan, pageRootInsertability } from './insertNode'
 import type { CanvasPage } from '../types/constructor'
 
 beforeAll(() => { setupCanvasRegistry() })
@@ -30,6 +30,12 @@ const page: CanvasPage = {
 }
 
 const droppableTypes = () => getPaletteEntries().map((e) => e.type)
+// SPEC S2: the honest page-root set — types the page directly accepts OR that land via
+// the canonical auto-wrap. A homeless content block (blocked) is omitted, not shown.
+const pageRootTypes = () =>
+  getPaletteEntries()
+    .map((e) => e.type)
+    .filter((t) => pageRootInsertability('inner-page', t) !== 'blocked')
 const buttonTypes = () =>
   screen.queryAllByRole('button').map((b) => b.getAttribute('data-node-type'))
 
@@ -79,10 +85,29 @@ describe('FF-PALETTE-CONTEXTUAL — the palette projection', () => {
     }
   })
 
-  it('(c) nothing selected → the full frame-level set (today’s behaviour, unchanged)', () => {
-    render(<NodePalette selectedType={null} />)
+  it('(c) nothing selected → the HONEST page-root set (page-accepts ∪ wrap-reachable), not the whole registry', () => {
+    render(<NodePalette selectedType={null} pageType="inner-page" />)
     const offered = buttonTypes().sort()
-    expect(offered).toEqual([...droppableTypes()].sort())
+    // The blank-page palette offers exactly what can be placed at the page root —
+    // directly (section/…) or via auto-wrap (chart/table/… into a section) — and OMITS
+    // homeless content blocks that would bounce (the "blank page only section" fix).
+    expect(offered).toEqual([...pageRootTypes()].sort())
+    expect(offered).toContain('section')                 // direct
+    expect(offered).toContain('chart')                   // wrap-reachable (page → section → chart)
+    expect(offered).toContain('table')                   // wrap-reachable
+    expect(offered.length).toBeGreaterThan(1)            // never "only a section"
+    // A homeless content block (accepted by neither the page root nor a section) is omitted.
+    expect(offered).not.toContain('hero')
+    // Every offered tile actually resolves to a valid placement (no bouncing tile).
+    for (const t of offered) {
+      expect(resolveInsertPlan(page, null, t!).kind, `tile ${t} is not placeable at page root`)
+        .not.toBe('blocked')
+    }
+  })
+
+  it('(c2) absent pageType → permissive page root (isolated-mount back-compat: whole registry)', () => {
+    render(<NodePalette selectedType={null} />)
+    expect(buttonTypes().sort()).toEqual([...droppableTypes()].sort())
   })
 
   it('(d) leaf selected → NO node tile + the guided Inspector hint (guidance, not a block)', () => {

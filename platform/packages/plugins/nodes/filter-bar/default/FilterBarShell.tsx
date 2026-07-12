@@ -2,7 +2,7 @@ import './filter-bar.css'
 import type { ReactNode }                                    from 'react'
 import { evalWhen, evalVisibility }                          from '@statdash/engine'
 import type { BarNode, ParamNode }                           from '@statdash/engine'
-import { filterControlRegistry, useFiltersContext }          from '@statdash/react/engine'
+import { filterControlRegistry, useFiltersContext, PartAnchor } from '@statdash/react/engine'
 import type { NodeRenderer, RenderContext }                  from '@statdash/react/engine'
 import { useT }                                              from '@statdash/react'
 import type { FilterBarNode }                               from './FilterBarNode'
@@ -60,26 +60,41 @@ function FilterBarControl({ def, ctx }: { def: FilterBarNode; ctx: RenderContext
                   span = []
                 }
               }
-              for (const item of bar.items) {
+              bar.items.forEach((item, itemIndex) => {
                 // Perspective-scoped item visibility [P5.1] — render-only gate, mirrors
                 // node `view.visibleWhen`. Skip the control when its expr is false against
                 // the active perspectiveState. Default resolution is UNAFFECTED (it gates
                 // on the P4.5 ownership seam in useFilterState).
                 if (item.visibleWhen && !evalVisibility(item.visibleWhen, fp, perspectiveState))
-                  continue
+                  return
                 const slice = filterControlRegistry.get(item.type)
-                if (!slice) continue
-                // Non-endpoint controls render exactly as before (byte-identical).
+                if (!slice) return
+                // ── Bounded-part anchor (ADR-041 · the ONE PartAnchor) ──────────────
+                //  Wrap each rendered control in the ONE generic PartAnchor keyed by its
+                //  (bar.id, item index) coordinate — the SAME primitive kpi-strip cards
+                //  use. Layout-inert (display:contents) and ON only inside the
+                //  authoring canvas; a zero-DOM Fragment on the live site, so runtime
+                //  output stays byte-identical. The overlay frames each control by this
+                //  anchor with NO filter-specific marker. The index is the control's true
+                //  position in `bar.items` — it matches the page filterSchema enumeration
+                //  order (toBarViews), so the selected frame maps to the right ParamDef
+                //  even when a hidden/perspective-gated control is skipped from render.
+                // Non-endpoint controls render exactly as before (byte-identical off-canvas
+                // — PartAnchor is a zero-DOM keyed Fragment when not authoring).
                 const role = spanRoleOf(item)
                 if (!role) {
-                  const el = <slice.Shell key={item.key} filterKey={item.key} config={item} />
+                  const el = (
+                    <PartAnchor key={item.key} field={bar.id ?? ''} index={itemIndex}>
+                      <slice.Shell filterKey={item.key} config={item} />
+                    </PartAnchor>
+                  )
                   // A `hidden` param renders nothing (HiddenShell → null), so it must NOT
                   // break a contiguous from→to run: keep it inside the open span buffer
                   // (harmless null) so the two endpoints stay in ONE group even when a
                   // hidden carrier sits between them.
                   if (item.type === 'hidden') (span.length ? span : out).push(el)
                   else { flushSpan(); out.push(el) }
-                  continue
+                  return
                 }
                 // from→to span endpoint — wrap the select in localized connector words
                 // ([lead] <select> [trail]). Empty slots (per locale/role) render nothing,
@@ -89,11 +104,13 @@ function FilterBarControl({ def, ctx }: { def: FilterBarNode; ctx: RenderContext
                 span.push(
                   <span key={item.key} className="filter-span-endpoint" data-span-role={role}>
                     {lead  && <span className="filter-range-word">{lead}</span>}
-                    <slice.Shell filterKey={item.key} config={item} />
+                    <PartAnchor field={bar.id ?? ''} index={itemIndex}>
+                      <slice.Shell filterKey={item.key} config={item} />
+                    </PartAnchor>
                     {trail && <span className="filter-range-word">{trail}</span>}
                   </span>,
                 )
-              }
+              })
               flushSpan()
               return out
             })()}

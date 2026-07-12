@@ -22,6 +22,7 @@ export function InsertSurface({ controller, locale }: { controller: CanvasContro
       <NodePalette
         locale={locale}
         selectedType={controller.selected?.type ?? null}
+        pageType={controller.page?.type ?? null}
         onDragStateChange={controller.setDragging}
       />
     </Box>

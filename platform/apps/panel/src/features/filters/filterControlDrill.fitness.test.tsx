@@ -57,7 +57,7 @@ const TWO_BARS: FilterSchemaInput = {
 } as unknown as FilterSchemaInput
 
 beforeEach(() => {
-  useConstructorStore.setState({ pages: [], activePageId: null, selectedNodeId: null })
+  useConstructorStore.setState({ pages: [], activePageId: null, selection: null })
 })
 
 // ── 1. RESOLVE from barIds ──────────────────────────────────────────────────────

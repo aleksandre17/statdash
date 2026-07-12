@@ -2,7 +2,7 @@ import { describe, it, expect, beforeAll, beforeEach } from 'vitest'
 import { render, screen, fireEvent, within } from '@testing-library/react'
 import { PagesSiteSurface } from './PagesSiteSurface'
 import { setupCanvasRegistry } from '../../canvas/setupCanvasRegistry'
-import { useConstructorStore } from '../../store/constructor.store'
+import { useConstructorStore, chromeSelectionOf } from '../../store/constructor.store'
 import type { NavItem, CanvasPage } from '../../types/constructor'
 
 // The Studio Pages&Site surface — the site's authoring home: identity + navigation
@@ -21,7 +21,7 @@ beforeAll(() => { setupCanvasRegistry() })
 
 beforeEach(() => {
   useConstructorStore.getState().updateSite({ name: 'Seed Site', defaultLocale: 'en', nav: [NAV] })
-  useConstructorStore.setState({ pages: [PAGE], chromeSelection: null, selectedNodeId: null })
+  useConstructorStore.setState({ pages: [PAGE], selection: null })
 })
 
 describe('PagesSiteSurface — site authoring home (identity · nav · chrome)', () => {
@@ -70,7 +70,7 @@ describe('PagesSiteSurface — site authoring home (identity · nav · chrome)',
     const palette = screen.getByTestId('chrome-palette')
     // Pick the first registered chrome slot → it becomes the chrome selection.
     fireEvent.click(within(palette).getAllByRole('button')[0])
-    expect(useConstructorStore.getState().chromeSelection).not.toBeNull()
+    expect(chromeSelectionOf(useConstructorStore.getState().selection)).not.toBeNull()
   })
 
   it('"+ add page" opens the real page-create dialog (not the wizard stub)', async () => {

@@ -4,9 +4,11 @@
 //  tier, killing the "header tab-tier collision" (SPEC-studio-shell-layout §6):
 //
 //  FF-DOCK-ONE-HEADER-TIER — the dock header renders exactly ONE tier at a time: the
-//    context switch (Element | Page) at the top level XOR the drill breadcrumb once
-//    the author has drilled into a nested item (D7.1b promotes it up). Never both
-//    stacked; the schema-group/facet tabs live in the BODY, never the header.
+//    Inspector overline at the top level XOR the drill breadcrumb once the author has
+//    drilled into a nested item (D7.1b promotes it up). Never both stacked; the
+//    schema-group/facet tabs live in the BODY, never the header. (SPEC S1: the
+//    persistent Element|Page context switch is REMOVED — the dock is a pure projection
+//    of the selection, so no page-config tab bleeds into an element's header.)
 //
 //  FF-DOCK-ZONES (extends FF-RIGHTDOCK-FILLS) — the dock is a header/body/footer
 //    contract: the body is the SOLE flex-fill scroll region; header + footer are
@@ -71,17 +73,19 @@ const footer  = (c: HTMLElement) => c.querySelector('.studio-dock__footer') as H
 beforeEach(() => {
   setupCanvasRegistry()
   useConstructorStore.getState().updateSite({ defaultLocale: 'en', activeLocales: ['en'] })
-  useConstructorStore.setState({ pages: [], activePageId: null, selectedNodeId: null, chromeSelection: null })
+  useConstructorStore.setState({ pages: [], activePageId: null, selection: null })
 })
 
 // ── FF-DOCK-ONE-HEADER-TIER ─────────────────────────────────────────────────────
-describe('FF-DOCK-ONE-HEADER-TIER — header is context XOR breadcrumb, never both', () => {
-  it('top level: the header shows the context switch and NO breadcrumb', () => {
+describe('FF-DOCK-ONE-HEADER-TIER — header is overline XOR breadcrumb, never both', () => {
+  it('top level: the header shows the overline tier and NO breadcrumb (S1: no context tabs)', () => {
     seedPage()
     const { container } = renderDock({ pageId: 'p1', selected: HERO })
     const h = header(container)
-    // The context tier is present…
-    expect(within(h).getByRole('tab', { name: 'Element' })).toBeInTheDocument()
+    // The single overline tier is present…
+    expect(within(h).getByText('Inspector')).toBeInTheDocument()
+    // …the removed Element|Page context switch does NOT bleed into the header…
+    expect(within(h).queryByRole('tab')).toBeNull()
     // …and no drill breadcrumb competes in the header.
     expect(h.querySelector('nav[aria-label="Breadcrumb"]')).toBeNull()
   })
@@ -95,24 +99,24 @@ describe('FF-DOCK-ONE-HEADER-TIER — header is context XOR breadcrumb, never bo
     expect(header(container).querySelector('[data-testid="inspector"]')).toBeNull()
   })
 
-  it('drilling a nested item PROMOTES its breadcrumb into the header, replacing the context switch', () => {
+  it('drilling a nested item PROMOTES its breadcrumb into the header, replacing the overline', () => {
     seedPage()
     const { container } = renderDock({ pageId: 'p1', selected: LINKS })
-    // Before drill: the context tabs own the header.
-    expect(within(header(container)).getByRole('tab', { name: 'Element' })).toBeInTheDocument()
+    // Before drill: the overline owns the single header tier (no context tabs, S1).
+    expect(within(header(container)).getByText('Inspector')).toBeInTheDocument()
 
     fireEvent.click(screen.getByRole('button', { name: 'Edit Home' }))
 
     const h = header(container)
     // The breadcrumb now occupies the single header tier…
     expect(h.querySelector('nav[aria-label="Breadcrumb"]')).not.toBeNull()
-    // …the context switch has yielded (mutually exclusive — never stacked)…
-    expect(within(h).queryByRole('tab')).toBeNull()
+    // …the overline has yielded (mutually exclusive — never stacked)…
+    expect(within(h).queryByText('Inspector')).toBeNull()
     // …and it is NOT also rendered in the body (promoted, not duplicated).
     expect(body(container).querySelector('nav[aria-label="Breadcrumb"]')).toBeNull()
   })
 
-  it('navigating back out of the drill returns the context switch to the header', () => {
+  it('navigating back out of the drill returns the overline to the header', () => {
     seedPage()
     const { container } = renderDock({ pageId: 'p1', selected: LINKS })
     fireEvent.click(screen.getByRole('button', { name: 'Edit Home' }))
@@ -121,10 +125,10 @@ describe('FF-DOCK-ONE-HEADER-TIER — header is context XOR breadcrumb, never bo
     fireEvent.click(screen.getByRole('button', { name: 'Links' }))
     const h = header(container)
     expect(h.querySelector('nav[aria-label="Breadcrumb"]')).toBeNull()
-    expect(within(h).getByRole('tab', { name: 'Element' })).toBeInTheDocument()
+    expect(within(h).getByText('Inspector')).toBeInTheDocument()
   })
 
-  it('the header is a context-XOR-breadcrumb ternary in source (structural mutual exclusion)', () => {
+  it('the header is an overline-XOR-breadcrumb ternary in source (structural mutual exclusion)', () => {
     expect(rightDockSrc).toMatch(/promoted \?/)
     // The body is composed from the section grammar (<DockBody> over the section
     // registry, §3.1), not a hardcoded stack in the header block.

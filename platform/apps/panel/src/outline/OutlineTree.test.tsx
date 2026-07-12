@@ -3,7 +3,7 @@ import { describe, it, expect, beforeEach } from 'vitest'
 import { screen, fireEvent } from '@testing-library/react'
 import { OutlineTree } from './OutlineTree'
 import { renderRouted } from '../test-support/renderStudio'
-import { useConstructorStore } from '../store/constructor.store'
+import { useConstructorStore, selectedNodeIdOf } from '../store/constructor.store'
 import type { CanvasPage } from '../types/constructor'
 
 // OutlineTree navigates surfaces (empty-state CTA → Insert), so it needs a Router.
@@ -21,7 +21,8 @@ const page: CanvasPage = {
 
 function seed(selectedNodeId: string | null = null) {
   useConstructorStore.setState({
-    pages: [page], activePageId: 'p1', selectedNodeId, chromeSelection: null,
+    pages: [page], activePageId: 'p1',
+    selection: selectedNodeId == null ? null : { nodeId: selectedNodeId },
     undoStack: [], redoStack: [], canUndo: false, canRedo: false,
   })
 }
@@ -47,7 +48,7 @@ describe('OutlineTree', () => {
   it('clicking a row selects the node in the SHARED store (bidirectional)', () => {
     render(<OutlineTree />)
     fireEvent.click(screen.getByText('Overview'))
-    expect(useConstructorStore.getState().selectedNodeId).toBe('a')
+    expect(selectedNodeIdOf(useConstructorStore.getState().selection)).toBe('a')
   })
 
   it('reflects the store selection back onto the tree (canvas → outline)', () => {

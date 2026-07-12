@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { subscribeWithSelector, devtools } from 'zustand/middleware'
+import type { PartAddress } from '@statdash/react/engine'
 import type {
   DataSourceDef, NamedDataSpec,
   SiteDef, NavItem,
@@ -11,6 +12,7 @@ import {
   type StudioUiSlice,
   type HistorySlice,
   type HistoryEntry,
+  type SelectionAddress,
   INITIAL_SESSION,
   snapshot,
   pushHistory,
@@ -48,12 +50,22 @@ import {
 // ── Full Store ─────────────────────────────────────────────────────────────────
 
 export interface ConstructorStore extends ConstructorSession, StudioUiSlice, HistorySlice, LifecycleSlice {
+  /**
+   * Select ONE part by its address — the SINGLE selection entry (ADR-041 ROOT-3).
+   * `selectNode`/`selectItem`/`selectChrome` are named ergonomic wrappers that
+   * construct the address for a whole node / a band item / a chrome element; every
+   * selection funnels through this ONE `selection` state, from which the legacy
+   * triple (`selectedNodeId`/`selectedItemPath`/`chromeSelection`) is DERIVED
+   * (constructor.selectors) — never independently set (FF-ONE-SELECTION-ADDRESS).
+   */
+  select:         (address: SelectionAddress | null) => void
   selectNode:     (id: string | null) => void
   /**
-   * Select a VALUE-BAND item within a node — the bounded-element selection
-   * (ADR-038). `path` is a dot-path into `node.props` (e.g. `'items.0'`), derived
-   * generically from the node's declared band field; never keyed by a concrete
-   * type. Selecting an item pins its owning node AND the item path together.
+   * Select a bounded PART within a node — the bounded-element selection (ADR-038/
+   * ADR-041). `path` is the part's `PartAddress.partPath`: positional `'items.0'`
+   * for a value band, or the Delta-1 STABLE key `'main.year'` for a sourced (filter)
+   * band. Derived generically from the node's declared PartField; never keyed by a
+   * concrete type. Selecting a part pins its owning node AND the part path together.
    */
   selectItem:     (nodeId: string, path: string) => void
 
@@ -119,25 +131,27 @@ export const useConstructorStore = create<ConstructorStore>()(
       // ── Initial state ──────────────────────────────────────────────────────
       ...INITIAL_SESSION,
       ...INITIAL_LIFECYCLE,
-      selectedNodeId:   null,
-      selectedItemPath: null,
-      chromeSelection:  null,
+      selection:      null,
       undoStack:      [],
       redoStack:      [],
       canUndo:        false,
       canRedo:        false,
 
-      // ── Selection ──────────────────────────────────────────────────────────
-      // Selecting a node clears any chrome selection AND any drilled band-item path
-      // (mutual exclusivity — one Inspector shows one element; least astonishment).
+      // ── Selection — ONE address, three ergonomic constructors (ADR-041 Ph.3) ─
+      //  Every selection writes the ONE `selection` address; the legacy triple is a
+      //  DERIVED read of it (constructor.selectors). Because there is ONE address, a
+      //  new selection inherently clears the prior one — mutual exclusivity by
+      //  construction (one Inspector shows one element; least astonishment).
+      select: (address) =>
+        set({ selection: address }, false, 'canvas/select'),
+      // Whole node — `PartAddress` with no `partPath` (clears item + chrome).
       selectNode: (id) =>
-        set({ selectedNodeId: id, selectedItemPath: null, chromeSelection: null }, false, 'canvas/selectNode'),
-
-      // Select a value-band item (ADR-038 bounded element): pin the owning node AND
-      // the item's declared path together. Generic — the path comes from the node's
-      // declared band field, not from any concrete type.
+        set({ selection: id == null ? null : { nodeId: id } as PartAddress }, false, 'canvas/selectNode'),
+      // A bounded PART (ADR-038/ADR-041): the owning node + the part's `partPath`
+      // (positional for value, Delta-1 stable key for sourced) — the address IS the
+      // pin; no concrete type is consulted.
       selectItem: (nodeId, path) =>
-        set({ selectedNodeId: nodeId, selectedItemPath: path, chromeSelection: null }, false, 'canvas/selectItem'),
+        set({ selection: { nodeId, partPath: path } as PartAddress }, false, 'canvas/selectItem'),
 
       // ── Data Layer ─────────────────────────────────────────────────────────
       addDataSource: (ds) =>
@@ -352,10 +366,9 @@ export const useConstructorStore = create<ConstructorStore>()(
               redoStack: [...s.redoStack, redoEntry],
               canUndo:   s.undoStack.length > 1,
               canRedo:   true,
-              // Preserve UI state (the surface is URL state, untouched by store history)
-              selectedNodeId:   s.selectedNodeId,
-              selectedItemPath: s.selectedItemPath,
-              chromeSelection:  s.chromeSelection,
+              // Preserve the ONE selection address (session UI state — the snapshot
+              // carries only ConstructorSession, so history never disturbs selection).
+              selection: s.selection,
             }
           },
           false,
@@ -373,9 +386,7 @@ export const useConstructorStore = create<ConstructorStore>()(
               redoStack: s.redoStack.slice(0, -1),
               canUndo:   true,
               canRedo:   s.redoStack.length > 1,
-              selectedNodeId:   s.selectedNodeId,
-              selectedItemPath: s.selectedItemPath,
-              chromeSelection:  s.chromeSelection,
+              selection: s.selection,
             }
           },
           false,

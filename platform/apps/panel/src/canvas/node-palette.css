@@ -104,6 +104,15 @@
   color: var(--color-text-secondary, #6b7280);
 }
 
+/* Wrap-insert badge (SPEC S2) — an honest hint that the block lands inside a section
+   (page → section → block). Guidance-by-affordance, never a block. */
+.node-palette__tile-wrap {
+  font-size: 0.6875rem;
+  line-height: 1.2;
+  color: var(--color-text-secondary, #6b7280);
+  font-style: italic;
+}
+
 /* Recommended tiles read as fit-for-data — a subtle accent border. */
 .node-palette__group--recommended .node-palette__tile {
   border-color: var(--color-accent, #005a9c);

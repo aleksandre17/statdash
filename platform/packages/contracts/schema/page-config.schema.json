@@ -2104,6 +2104,58 @@
           "description": "string field",
           "type": "string"
         },
+        "columns": {
+          "title": "Columns",
+          "description": "array field",
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "label": {
+                "title": "Header",
+                "description": "LocaleString field",
+                "oneOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "object"
+                  }
+                ],
+                "$comment": "LocaleString"
+              },
+              "key": {
+                "title": "Source field",
+                "description": "string field",
+                "type": "string"
+              },
+              "format": {
+                "title": "Format",
+                "description": "string field",
+                "type": "string"
+              },
+              "width": {
+                "title": "Width",
+                "description": "string field",
+                "type": "string"
+              },
+              "align": {
+                "title": "Align",
+                "description": "l: Left, r: Right",
+                "type": "string",
+                "enum": [
+                  "l",
+                  "r"
+                ]
+              }
+            },
+            "required": [
+              "label",
+              "key"
+            ],
+            "additionalProperties": false
+          }
+        },
         "preliminary": {
           "title": "Preliminary data",
           "description": "boolean field",

@@ -21,8 +21,10 @@ const ctx = (over: Partial<DockRenderCtx>): DockRenderCtx =>
 
 describe('dockSectionRegistry — the hardcoded stack is now registered data', () => {
   it('registers the visibility, node-context, and page-pane sections', () => {
+    // SPEC S3: the per-type `element.context` bridge (nodeContextEditors) is deleted —
+    // filter controls project generically through `element.schema` (sourcedParts).
     for (const id of [
-      'element.schema', 'element.context', 'element.visibility', 'element.chrome',
+      'element.schema', 'element.visibility', 'element.chrome',
       'page.config', 'page.perspectives', 'page.filters',
     ]) {
       expect(dockSectionRegistry.has(id), id).toBe(true)

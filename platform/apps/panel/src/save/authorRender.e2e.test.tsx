@@ -52,8 +52,7 @@ function startSession(): string {
   useConstructorStore.setState({
     pages: [{ id: pageId, type: 'inner-page', title: { ka: 'მთავარი', en: 'Home' }, slug: 'home', nodeIds: [], nodes: {} }],
     activePageId: pageId,
-    selectedNodeId: null,
-    chromeSelection: null,
+    selection: null,
     undoStack: [], redoStack: [], canUndo: false, canRedo: false,
   })
   return pageId

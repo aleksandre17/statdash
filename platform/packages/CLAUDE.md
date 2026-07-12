@@ -57,3 +57,5 @@ DataSpec → interpretSpec(spec, ctx, store) → DataRow[]
 ## Go deeper
 
 Per-package laws + ✅/❌ patterns → that package's `*.fitness.test.*` + `docs/patterns/`. Architecture decisions → `docs/architecture/decisions/` (ADRs). Visions/registry → `docs/architecture/ARCHITECTURE-REGISTRY.md`. Governing compositional law → **ADR-038 (Bounded Element Law)**.
+
+> **The Part grammar is the ONE containment law (ADR-041, under ADR-038).** Every element's constituents — tree children, value-band items, sourced items, chrome regions — are declared as `PartField`s (**residence on the FIELD, never the node**) and enumerated/written ONLY through the Part port (`enumerateParts`/`writePart`; adapters keyed by **residence**, never by type). Wrapper/leaf is a **derived** predicate (declares ≥1 part field), never a stored kind. Build-forbidden: a NEW containment grammar · a node-level residence · a kind/flag read answering a containment question · a per-kind port adapter. Guards: `FF-ONE-PART-GRAMMAR` · `FF-RESIDENCE-AT-FIELD` · `FF-DERIVED-CONTAINMENT` · `FF-NO-EXTERNAL-SPECIAL-CASE`. Plan: `docs/architecture/proposals/PLAN-part-grammar-strangler-build.md`.

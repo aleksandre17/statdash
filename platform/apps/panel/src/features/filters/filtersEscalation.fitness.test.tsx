@@ -24,7 +24,7 @@ function seed(filterSchema?: FilterSchemaInput) {
     id: 'p1', type: 'inner-page', title: { ka: 'გვ', en: 'Pg' }, slug: 'pg',
     nodeIds: [], nodes: {}, meta: (filterSchema ? { filterSchema } : {}) as PageMeta,
   }
-  useConstructorStore.setState({ pages: [page], activePageId: 'p1', selectedNodeId: null })
+  useConstructorStore.setState({ pages: [page], activePageId: 'p1', selection: null })
 }
 
 const ONE_BAR: FilterSchemaInput = {
@@ -36,7 +36,7 @@ function withHost(host: FocusEscalation | null, ui: React.ReactNode) {
 }
 
 beforeEach(() => {
-  useConstructorStore.setState({ pages: [], activePageId: null, selectedNodeId: null })
+  useConstructorStore.setState({ pages: [], activePageId: null, selection: null })
 })
 
 describe('FF-NO-CRAMMED-DOCK (filters) — a populated pipeline ESCALATES, never stacks in-dock', () => {

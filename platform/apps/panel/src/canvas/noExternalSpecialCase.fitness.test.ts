@@ -21,8 +21,8 @@
 //  — so the Vitest-4 workspace-root injection hazard does not apply.
 //
 import { describe, it, expect, beforeAll } from 'vitest'
-import { nodeRegistry } from '@statdash/react/engine'
-import type { PropSchema } from '@statdash/react/engine'
+import { nodeRegistry, partFieldsOf } from '@statdash/react/engine'
+import type { PropSchema, ObjectMeta } from '@statdash/react/engine'
 import { setupCanvasRegistry } from './setupCanvasRegistry'
 import { bandFieldsOf, bandItemsOf } from './bandItems'
 
@@ -36,6 +36,7 @@ const GENERIC_SOURCES = import.meta.glob(
     './CanvasOverlay.tsx',
     './CanvasView.tsx',
     './bandItems.ts',
+    './bandSource.ts',
     '../studio/useCanvasController.ts',
     '../inspector/sections/builtins.tsx',
     '../inspector/Inspector.tsx',
@@ -121,5 +122,90 @@ describe('FF-NO-EXTERNAL-SPECIAL-CASE — generic layers hold no per-type wire (
     const bands = bandFieldsOf(schema!)
     expect(bands.length).toBeGreaterThanOrEqual(1)
     expect(bands.every((f) => Array.isArray(f.itemSchema) && f.itemSchema.length > 0)).toBe(true)
+  })
+})
+
+// ══ ADR-041 Phase 1.5 — THE FENCE (§0.5b) · the per-kind-bridge tooth ═════════════
+//
+//  ROOT-3 adapters are keyed by RESIDENCE ('slot'|'value'|'sourced' — a closed set),
+//  NEVER by a concrete node type. A `registerPartSource('kpi-strip', …)` is the exact
+//  new per-kind bridge this architecture must refuse — the Part-port analogue of the
+//  reverted `registerNodeProjector('kpi-strip', …)`. This clause forbids it BEFORE the
+//  adapters land (Phase 2), so the port cannot be re-opened as a per-type registry.
+//
+//  A source keyed by anything that is NOT one of the three residence literals. The
+//  negative-lookahead lets `registerPartSource('slot'|'value'|'sourced', …)` pass and
+//  trips on any concrete TYPE literal.
+const PER_KIND_BRIDGE = /registerPartSource\(\s*['"](?!slot|value|sourced)/
+
+describe('FF-NO-EXTERNAL-SPECIAL-CASE — no per-kind Part-port bridge (ADR-041 §0.5b)', () => {
+  it('no authoring-layer source registers a Part source keyed by a concrete TYPE', () => {
+    const offenders = Object.entries(LAYER_SOURCES)
+      .filter(([path]) => !path.includes('.test.') && !path.includes('.fitness.'))
+      .filter(([, src]) => PER_KIND_BRIDGE.test(stripComments(src)))
+      .map(([path]) => path)
+    expect(offenders).toEqual([])
+  })
+
+  it('BITES: a type-keyed registration IS caught; a residence-keyed one is allowed', () => {
+    expect(PER_KIND_BRIDGE.test("registerPartSource('kpi-strip', src)")).toBe(true)   // per-kind bridge — banned
+    expect(PER_KIND_BRIDGE.test("registerPartSource('slot', slotParts)")).toBe(false) // residence-keyed — allowed
+    expect(PER_KIND_BRIDGE.test("registerPartSource('value', valueParts)")).toBe(false)
+    expect(PER_KIND_BRIDGE.test("registerPartSource('sourced', sourcedParts)")).toBe(false)
+  })
+
+  // ── POSITIVE — the port derivation special-cases NO type name ──────────────────
+  it('partFieldsOf over a name-free declaration yields the SAME shape as over the real kpi-strip', () => {
+    // A synthetic value-band with NO recognizable type name…
+    const synthetic: ObjectMeta = {
+      schema: [{ field: 'rows', type: 'array', label: 'R', itemSchema: [{ field: 'x', type: 'string', label: 'X' }] }],
+    }
+    // …and the REAL registered kpi-strip META (its declaration, resolved by name only
+    // to fetch it — the derivation below never sees the name).
+    const real = nodeRegistry.getMeta('kpi-strip') as unknown as ObjectMeta
+    expect(real).toBeTruthy()
+
+    const shape = (m: ObjectMeta): string[] => partFieldsOf(m).map((p) => p.residence).sort()
+    // Identical residence shape → the port derives from the DECLARATION, not the type:
+    expect(shape(synthetic)).toEqual(['value'])
+    expect(shape(real)).toEqual(['value'])
+    expect(shape(real)).toEqual(shape(synthetic))
+  })
+})
+
+// ══ ADR-041 Phase 1.5 — THE FENCE · FF-DERIVED-CONTAINMENT (app tooth, §0.5a) ═════
+//
+//  The `canHaveChildren` FLAG may not be READ as a containment MECHANISM in the
+//  authoring layer. Exactly ONE legacy read is grandfathered — `isDropTarget` in
+//  `insertNode.ts` (`getMeta(t)?.canHaveChildren === true`) — on a SHRINKING allowlist
+//  that Phase 6 strikes to `[]` (replaced by `isWrapper(meta) = partFieldsOf(meta).
+//  length > 0`, restricted to slot residence). Any NEW app containment flag-read reds
+//  the build from here. (The engine tooth is packages/react/…/derivedContainment; the
+//  semantic corpus tooth is packages/plugins/…/derivedContainment.)
+const CONTAINMENT_FLAG_READ = /\.canHaveChildren\b/
+
+describe('FF-DERIVED-CONTAINMENT — app tooth: the containment flag-read is grandfathered + shrinking (§0.5a)', () => {
+  const GRANDFATHERED = ['insertNode.ts']   // Phase 6 de-alias → []
+  const BASELINE = 1
+
+  const flagReadFiles = (): string[] =>
+    Object.entries(LAYER_SOURCES)
+      .filter(([path]) => !path.includes('.test.') && !path.includes('.fitness.'))
+      .filter(([, src]) => CONTAINMENT_FLAG_READ.test(stripComments(src)))
+      .map(([path]) => path.split('/').pop()!)
+      .sort()
+
+  it('only the grandfathered file reads `canHaveChildren` as a containment flag', () => {
+    expect(flagReadFiles()).toEqual([...GRANDFATHERED].sort())
+  })
+
+  it('META: the allowlist can only SHRINK — a GROWN containment read fails the build', () => {
+    expect(GRANDFATHERED.length).toBeLessThanOrEqual(BASELINE)
+  })
+
+  it('BITES: a planted NEW containment flag-read IS caught; a declaration is not', () => {
+    expect(CONTAINMENT_FLAG_READ.test(stripComments(
+      "if (nodeRegistry.getMeta(t)?.canHaveChildren === true) drop(child)"))).toBe(true)
+    expect(CONTAINMENT_FLAG_READ.test(stripComments("canHaveChildren: false"))).toBe(false)
   })
 })

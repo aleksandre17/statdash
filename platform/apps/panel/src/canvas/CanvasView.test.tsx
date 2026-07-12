@@ -52,7 +52,7 @@ describe('CanvasView', () => {
   //  SSOT the live renderer reads drives the canvas. A section gated
   //  `view.visibleWhen: perspective-is(range)` is present ONLY when the range
   //  preview is active — the author SEES the selected perspective rendered.
-  //  The canvas-node-anchor middleware stamps data-canvas-node-id on every node,
+  //  The canvas-node-anchor middleware stamps data-part-node-id on every node,
   //  so a gated section's anchor presence/absence is the visible-state oracle.
   const perspectivePage = {
     // container-page renders children.rendered directly (no sidebar chrome), so the
@@ -81,7 +81,7 @@ describe('CanvasView', () => {
   } as unknown as NodePageConfig
 
   const anchor = (id: string) =>
-    document.querySelector(`[data-canvas-node-id="${id}"]`)
+    document.querySelector(`[data-part-node-id="${id}"]`)
 
   it('defaults to perspectives[0]: a range-gated node is hidden with no preview', () => {
     render(

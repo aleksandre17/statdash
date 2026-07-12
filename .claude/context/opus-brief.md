@@ -1,5 +1,7 @@
 # Opus Brief — durable resume state
 
+> **⛔ ROOT LAW FIRST (containment = ADR-041, ACCEPTED 2026-07-12).** Before ANY authoring/containment/object-model work, read `docs/architecture/decisions/ADR-041-part-grammar-and-part-port.md` + `docs/architecture/proposals/PLAN-part-grammar-strangler-build.md`. ONE Part grammar · one Part port · residence-at-field · wrapper/leaf derived. **Never add a per-kind bridge or a fifth containment grammar — the FF ratchets (FF-ONE-PART-GRAMMAR/RESIDENCE-AT-FIELD/DERIVED-CONTAINMENT) will red the build.** A new kind is a DECLARATION. Build status: port-first, phased (cards 0067→0068); BE-4 (0062) held uncommitted → re-homes as the first `sourced` adapter.
+
 ## Current State (2026-07-08)
 
 **Render-parity epic — DONE, LIVE, MERGED (2026-07-02).** Every chart/table/KPI renders "data as it was" (correct pre-regression values) via clean architecture, proven Δ0.000 through the real pipeline and verified live on prod (Playwright vs :3002). Detail archived in `docs/architecture/proposals/SPEC-render-pipeline-target*.md` + the parity harness under `platform/apps/geostat/src/data/`.

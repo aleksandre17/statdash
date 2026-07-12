@@ -26,7 +26,7 @@ function Harness() {
 
 beforeEach(() => {
   setupCanvasRegistry()
-  useConstructorStore.setState({ dataSpecs: [SPEC], selectedNodeId: null })
+  useConstructorStore.setState({ dataSpecs: [SPEC], selection: null })
 })
 
 describe('DataSurface — governed Metric Palette only, no query editor (AR-49 M2.1)', () => {

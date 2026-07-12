@@ -21,8 +21,6 @@ import { VisibilitySection } from '../../features/visibility'
 import { PageInspectorPanel } from '../../features/page-config'
 import { PerspectivesPane } from '../../features/perspectives'
 import { FiltersDrawer } from '../../features/filters'
-import { nodeContextEditors } from '../../studio/nodeContextEditors'
-import { getAtPath } from '../showWhen'
 import { fixedSchemaSource, itemTitle } from '../controls/nestedItemControl.helpers'
 import type { CanvasNode } from '../../types/constructor'
 import { dockSectionRegistry, type DockRenderCtx } from './dockSection'
@@ -84,7 +82,11 @@ export function registerBuiltinDockSections(): void {
         if (!selected) return null
 
         if (selectedBand) {
-          const itemObj = (getAtPath(selected.props, selectedBand.path) ?? {}) as Record<string, unknown>
+          // The item's live object + write both come from the RESOLVED selection (the
+          // node's declared BandSource), not a direct `selected.props` reach — so a
+          // page-owned band (filters) projects from the filterSchema SSOT, and a props
+          // band from node.props, through the SAME bounded projection (ADR-038/039).
+          const itemObj = selectedBand.itemObject
           const source  = fixedSchemaSource(selectedBand.itemSchema, selectedBand.itemGroups)
           const idPrefix = `insp-${selectedBand.path.replace(/\./g, '-')}`
           const title    = itemTitle(itemObj, selectedBand.itemLabel, selectedBand.index, ctx.locale)
@@ -108,21 +110,13 @@ export function registerBuiltinDockSections(): void {
         )
       },
     })
-    // ── ELEMENT · node-context bridge (e.g. filter-bar → its controls, D7.3) ──────
-    .register({
-      id:        'element.context',
-      order:     20,
-      appliesTo: (ctx) =>
-        wholeNodeSelected(ctx) && !!nodeContextEditors[ctx.controller.selected!.type],
-      render:    (ctx) => {
-        const { selected } = ctx.controller
-        const ContextEditor = selected ? nodeContextEditors[selected.type] : undefined
-        return ContextEditor && selected
-          ? <ContextEditor node={selected} locale={ctx.locale} />
-          : null
-      },
-    })
     // ── ELEMENT · visibility (re-registered, no longer hardcoded) ────────────────
+    //  NOTE (SPEC S3): the per-type `element.context` bridge (nodeContextEditors —
+    //  the `filter-bar` → FilterBarControlsBridge type-keyed map) is DELETED. It was
+    //  the ADR-038 anti-pattern (a type-keyed map reaching into an element's internals
+    //  from outside the generic dock). Filter controls are now `sourcedParts` (ADR-041):
+    //  enumerated by the port, selected on the canvas, and projected by `element.schema`
+    //  like any other part — no per-type dock branch. The dock names NO concrete type.
     .register({
       id:        'element.visibility',
       order:     30,

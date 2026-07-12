@@ -3,11 +3,30 @@ import { useConstructorStore, useActivePage, useSelectedNode, useSelectedItemPat
 import { nodeSchemaSource } from '../inspector/schemaSource'
 import { firstMetricField, isMetricBindable, bindMetricToProps } from '../discovery/metricBinding'
 import { setAtPath } from '../inspector/showWhen'
-import { bandItemsOf, type BandItemRef } from '../canvas/bandItems'
-import { makeNode } from '../canvas/insertNode'
+import { enumerateParts, getPartSource } from '../canvas/bandSource'
+import { resolveInsertPlan, planInserts } from '../canvas/insertNode'
 import { toNodePageConfig } from '../canvas/canvasPageAdapter'
 import { projectCanvasSiteChrome } from '../canvas/canvasSiteChrome'
-import type { VisibilityExpr } from '@statdash/engine'
+import { nodeRegistry } from '@statdash/react/engine'
+import type { PartAddress, PartResidence, ObjectMeta, PropSchema, PropertyGroup } from '@statdash/react/engine'
+import type { VisibilityExpr, FilterSchemaInput } from '@statdash/engine'
+
+/** The selected bounded PART, resolved through the port — the item projection the dock
+ *  renders (its own contract + live subject + crumb coordinates), plus the residence +
+ *  the ONE STABLE `PartAddress` the port write commits through (ADR-041 Ph.3). */
+interface SelectedPart {
+  field:       string
+  index:       number
+  /** The part's `PartAddress.partPath` — the session selection wire (stable for sourced). */
+  path:        string
+  itemSchema:  PropSchema
+  itemGroups:  PropertyGroup[]
+  itemLabel?:  string
+  /** The part's live value object — the bounded subject the Inspector edits. */
+  itemObject:  Record<string, unknown>
+  residence:   PartResidence
+  address:     PartAddress
+}
 
 // ── useCanvasController — the canvas↔store glue, extracted for reuse (AR-49 M1.2)
 //
@@ -35,8 +54,10 @@ export function useCanvasController() {
   const pages      = usePages()
   const selectNode    = useConstructorStore((s) => s.selectNode)
   const selectItem    = useConstructorStore((s) => s.selectItem)
-  const insertNode    = useConstructorStore((s) => s.insertNode)
+  const selectChrome  = useConstructorStore((s) => s.selectChrome)
+  const insertNodes   = useConstructorStore((s) => s.insertNodes)
   const updateNode    = useConstructorStore((s) => s.updateNode)
+  const updatePage    = useConstructorStore((s) => s.updatePage)
   const removeNode    = useConstructorStore((s) => s.removeNode)
   const markPageDirty = useConstructorStore((s) => s.markPageDirty)
 
@@ -49,15 +70,39 @@ export function useCanvasController() {
   const nodeConfig = page ? toNodePageConfig(page) : null
   const selectedBindable = selected ? isMetricBindable(nodeSchemaSource.getSchema(selected)) : false
 
-  // ── Bounded band-item selection (ADR-038) — DERIVED from the declaration ──────
-  //  When a value-band item is selected, resolve its BandItemRef (its OWN declared
-  //  itemSchema/groups) generically from the node's schema — never a per-type map.
-  //  This is the bounded contract the Inspector projects for the selected card.
-  const selectedBand: BandItemRef | null = useMemo(() => {
+  // The page-owned filter SSOT (a page-owned band source reads/writes it, never a
+  // denormalised node copy — CLAUDE.md Law 2 / SSOT).
+  const filterSchema = page?.meta?.filterSchema as FilterSchemaInput | undefined
+
+  // ── Bounded part selection (ADR-041) — resolved through the ONE Part port ──────
+  //  When a part (value-band item / filter control) is selected, enumerate the node's
+  //  parts through `enumerateParts` — the ONE port that reads the node's declared
+  //  `PartField`s and routes each to its residence adapter (value/sourced/slot) — and
+  //  pick the one matching the (positional) selection wire. The port carries each
+  //  part's OWN contract + live subject, so the dock projects a bounded element with
+  //  NO per-type branch and NO residence-specific reach. The resolved part also
+  //  carries its residence + STABLE address, through which the edit commits (below).
+  const selectedBand: SelectedPart | null = useMemo(() => {
     if (!selected || !selectedItemPath) return null
-    const schema = nodeSchemaSource.getSchema(selected)
-    return bandItemsOf(selected.props, schema).find((b) => b.path === selectedItemPath) ?? null
-  }, [selected, selectedItemPath])
+    const meta = nodeRegistry.getMeta(selected.type, selected.variant) as ObjectMeta | undefined
+    // Match on the ONE `PartAddress.partPath` — the SAME stable-key address the
+    // selection now stores (positional for value, Delta-1 key for sourced). No
+    // positional re-derivation: the address is the identity (ADR-041 Ph.3).
+    const found = enumerateParts(selected.props, meta, { filterSchema }, selected.id)
+      .find((p) => p.address.partPath === selectedItemPath)
+    if (!found) return null
+    return {
+      field:      found.field,
+      index:      found.index,
+      path:       found.address.partPath ?? selectedItemPath,
+      itemSchema: found.contract,
+      itemGroups: found.itemGroups ?? [],
+      itemLabel:  found.itemLabel,
+      itemObject: found.subject,
+      residence:  found.residence,
+      address:    found.address,           // the ONE STABLE address the write commits through
+    }
+  }, [selected, selectedItemPath, filterSchema])
 
   // The canvas's runner-parity chrome inputs (nav/chrome/chromeConfig) — projected
   // from the authoring session so the live canvas rail renders the REAL nav links +
@@ -79,16 +124,25 @@ export function useCanvasController() {
     [pageId, page, updateNode, markPageDirty, selectNode],
   )
 
-  // Palette drop → new node into a container's slot (parentId === pageId ⇒ top-level).
+  // Palette drop → resolve through the SAME insert path every surface uses (⌘K /
+  // slash / outline share `resolveInsertPlan` + `planInserts`, insertNode.ts). So a
+  // palette drop onto the page root AUTO-WRAPS (page → section → type) exactly like a
+  // command insert — closing the "blank page only section" gap (SPEC S2): the honest
+  // palette offers wrap-reachable tiles and this makes them actually land. The drop
+  // target IS the insertion container: a real container node nests directly; the page
+  // root (parentId === pageId, not in page.nodes) resolves to direct-page or the
+  // canonical wrap. A 'blocked' plan compiles to zero ops — never an invalid tree.
   const handleDrop = useCallback(
     (parentId: string, _slotKey: string, nodeType: string) => {
       if (!pageId || !page) return
-      const node = makeNode(nodeType, newNodeId())
-      insertNode(pageId, node, parentId)
+      const container = parentId === pageId ? null : parentId
+      const ops = planInserts(resolveInsertPlan(page, container, nodeType), nodeType, newNodeId)
+      if (ops.length === 0) return
+      insertNodes(pageId, ops)
       markPageDirty(pageId)
-      selectNode(node.id)
+      selectNode(ops[ops.length - 1].node.id) // select the inserted leaf, not the wrapper
     },
-    [pageId, page, insertNode, markPageDirty, selectNode],
+    [pageId, page, insertNodes, markPageDirty, selectNode],
   )
 
   // Inspector onChange — write one prop on the selected node at its schema dot-path.
@@ -101,20 +155,27 @@ export function useCanvasController() {
     [pageId, selected, updateNode, markPageDirty],
   )
 
-  // Bounded item onChange — write one subfield of the SELECTED band item, at the
-  // absolute path `<itemPath>.<subfield>` within the owning node's props. The item
-  // Inspector is projected over the item's own itemSchema, so `subfield` is one of
-  // the item's declared fields; the write funnels through the SAME setAtPath +
-  // updateNode seam as a node prop edit (immutable, only the touched branch clones).
+  // Bounded part onChange — write one subfield of the SELECTED part, RESIDENCE-ROUTED
+  // through the port. The item Inspector is projected over the part's own contract, so
+  // `subfield` is one of its declared fields; the residence adapter returns a residence-
+  // tagged mutation the host commits at its true home:
+  //   • value band (node-props)  → `updateNode` (immutable, only the touched branch clones);
+  //   • sourced band (filter-schema) → `updatePage({ meta.filterSchema })` via setBarParams
+  //     (the ONE SSOT, no denormalised copy on the node — CLAUDE.md Law 2).
   const patchItemProp = useCallback(
     (subfield: string, value: unknown) => {
-      if (!pageId || !selected || !selectedItemPath) return
-      updateNode(pageId, selected.id, {
-        props: setAtPath(selected.props, `${selectedItemPath}.${subfield}`, value),
-      })
+      if (!pageId || !selected || !page || !selectedBand) return
+      const mut = getPartSource(selectedBand.residence)
+        ?.writePart(selected.props, selectedBand.address, subfield, value, { filterSchema })
+      if (!mut) return
+      if (mut.target === 'node-props') {
+        updateNode(pageId, selected.id, { props: mut.props })
+      } else if (mut.target === 'filter-schema') {
+        updatePage(pageId, { meta: { ...page.meta, filterSchema: mut.schema } })
+      }
       markPageDirty(pageId)
     },
-    [pageId, selected, selectedItemPath, updateNode, markPageDirty],
+    [pageId, selected, page, selectedBand, filterSchema, updateNode, updatePage, markPageDirty],
   )
 
   // Node-level view.visibleWhen gate — null clears it (byte-clean round-trip).
@@ -150,7 +211,7 @@ export function useCanvasController() {
     canvasSite,
     dragging, setDragging,
     previewPerspectiveId, setPreviewPerspectiveId,
-    selectNode, selectItem,
+    selectNode, selectItem, selectChrome,
     bindMetric, handleDrop, patchProp, patchItemProp, setVisibleWhen, deleteSelected,
   }
 }

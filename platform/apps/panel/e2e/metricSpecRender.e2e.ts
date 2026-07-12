@@ -71,7 +71,7 @@ test('a chart bound to a `metric` DataSpec renders in the real bundle — no whi
   //  (the anchor the canvas stamps on every rendered node) proves the REAL renderNode →
   //  resolveNodeRows → MetricResolver path executed for a `metric` DataSpec without a
   //  throw. jsdom cannot prove this (0-rect layout + no real bundle); the browser does.
-  await expect(page.locator(`[data-canvas-node-id="${METRIC_CHART_NODE_ID}"]`))
+  await expect(page.locator(`[data-part-node-id="${METRIC_CHART_NODE_ID}"]`))
     .toBeVisible({ timeout: 60_000 })
 
   // ── SAFE — the beforeEach pageerror guard asserts no uncaught error fired during the

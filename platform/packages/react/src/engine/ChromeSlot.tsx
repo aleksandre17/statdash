@@ -14,12 +14,13 @@
 //  Config is injected via ChromeSlotConfigProvider so the shell reads it
 //  via useSlotConfig() — zero-prop pattern preserved.
 //
-import { createElement }                      from 'react'
+import { createElement, useContext }          from 'react'
 import type { ReactNode }                     from 'react'
 import { useSiteChrome }                      from '../context/SiteContext'
 import { useChromeOverrides }                 from '../context/ChromeOverrideContext'
 import { chromeRegistry, NullChromeSlot }     from './chromeRegistry'
 import { ChromeSlotConfigProvider }           from '../context/ChromeSlotConfigContext'
+import { AuthoringAnchorContext, CHROME_SLOT_ATTR, CHROME_KEY_ATTR } from './partAnchor'
 import type { ChromeEntry }                   from './types'
 
 function pickVariant(e: ChromeEntry | undefined): string | undefined {
@@ -49,9 +50,21 @@ export function ChromeSlot({ slot }: { slot: string }): ReactNode {
   // through to the site-level slot config (Grafana override-chain semantics).
   const config       = pickConfig(pageEntry) ?? pickConfig(siteEntry) ?? {}
   const Shell        = chromeRegistry.get(slot, key) ?? NullChromeSlot
-  return (
+  const authoring    = useContext(AuthoringAnchorContext)
+  const rendered = (
     <ChromeSlotConfigProvider config={config}>
       {createElement(Shell)}
     </ChromeSlotConfigProvider>
+  )
+  // SPEC S4 — canvas-selectable chrome. ONLY inside an authoring canvas, wrap the slot
+  // in a layout-INERT (`display:contents`) anchor carrying its (slot, key) coordinate,
+  // mirroring the node/part anchor. The CanvasOverlay measures `[data-canvas-chrome-slot]`
+  // to frame the region; a click dispatches the EXISTING `selectChrome` arm. Off the
+  // canvas (default) it is a bare passthrough — byte-identical runtime output.
+  if (!authoring) return rendered
+  return createElement(
+    'div',
+    { [CHROME_SLOT_ATTR]: slot, [CHROME_KEY_ATTR]: key, style: { display: 'contents' } },
+    rendered,
   )
 }

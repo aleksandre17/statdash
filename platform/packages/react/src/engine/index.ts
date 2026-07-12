@@ -37,6 +37,7 @@ export type {
   ChromeEntry,
   FilterControlMeta,
   SliceMeta,
+  BandDescriptor,
   SlotDef,
   PropertyGroup,
   ValidationError,
@@ -66,6 +67,25 @@ export type {
 }                                  from './types'
 export { VIEW_DEFAULTS }           from './types'
 
+// ── Part port (ADR-041 · ROOT-3) + the unified PartField reading (ROOT-2) ──
+//  The ONE containment primitive: an element declares its constituents as
+//  `PartField`s (residence on the FIELD), enumerated/written through the port.
+//  `partFieldsOf(meta)` is the single reading that projects all three fragments
+//  (slots · value-band · sourced band) into one list. Adapters land Phase 2.
+export type {
+  PartResidence, PartField, PartAddress, EnumeratedPart, PartMutation,
+  PartSource, PartSourceContext,
+}                                  from './partPort'
+export { partFieldsOf }            from './slice-meta'
+// ── Part-port residence adapters (ADR-041 · Phase 2) — engine, app-agnostic ──
+//  `valueParts` / `slotParts` are two of the three residence adapters; the third
+//  (`sourced`) lives with the app-owned filterSchema SSOT (apps/panel), registered
+//  under the SAME residence-keyed port. `bandItemsOf`/`bandFieldsOf` are the pure
+//  value-band reading (BE-1), promoted engine-side as `valueParts`' kernel.
+export { valueParts, slotParts }   from './partSources'
+export { bandFieldsOf, bandItemsOf } from './bandItems'
+export type { BandItemRef }        from './bandItems'
+
 // ── Core classes ──────────────────────────────────────────────────────
 export { NodeRegistry, CAPS }                        from './NodeRegistry'
 export type { RegistryManifest, NodeCap, Cap }       from './NodeRegistry'
@@ -76,16 +96,6 @@ export type { ChartRendererProps }                      from './ChartRendererReg
 
 // ── Dispatch API ──────────────────────────────────────────────────────
 export { renderNode }              from './renderNode'
-
-// ── Residence-promotion flag (ADR-023 · R2 expand) — generic, names no type ──
-//  The Promotion Law (§3.3) graduates a value-band item to a first-class node
-//  type Strangler-style: promoted node built ALONGSIDE the legacy path, this flag
-//  selects the residence. Default OFF; a promotion ships dark until its
-//  FF-PROMOTION-LOSSLESS gate authorizes the one-way contract. Keyed by the
-//  promoted node-type string — the engine hardcodes none (Law 1 / Law 8 / OCP).
-export {
-  enablePromotion, disablePromotion, isPromotionEnabled, withPromotion,
-}                                  from './promotionMode'
 
 // ── Router scroll parity — reset scroll to top (or a cross-page anchor) on
 //  route change, so a soft-nav renders at the same scroll position as a hard
@@ -232,11 +242,19 @@ export { LayoutItemProvider, useLayoutItem, mergePlacement } from './layoutItemC
 // ── Wrap style context — distribute NodeStyles from WrapNode to children ──
 export { WrapStyleContext, useWrapStyle } from './wrapStyleContext'
 
-// ── Band-item authoring anchor — the ONE generic render contract a band-owning
-//    shell opts into so the WYSIWYG canvas can frame each declared item (ADR-038).
-//    Inert (zero DOM) off the authoring canvas — byte-identical runtime output. ──
-export { AuthoringAnchorContext, BandItemBoundary, BAND_ITEM_FIELD_ATTR, BAND_ITEM_INDEX_ATTR } from './bandAnchor'
-export type { BandItemBoundaryProps } from './bandAnchor'
+// ── Part authoring anchor — the ONE generic render contract a part-owning shell opts
+//    into so the WYSIWYG canvas can frame each declared part (ADR-041 Phase 4). ONE
+//    `<PartAnchor>` + ONE `data-part-*` family covers value/sourced band items AND slot
+//    children (the canvas node-anchor merges into it). Inert (zero DOM) off the
+//    authoring canvas — byte-identical runtime output. `BandItemBoundary` /
+//    `BAND_ITEM_*` stay exported as byte-identical BE-1 aliases. ──
+export {
+  AuthoringAnchorContext, PartAnchor,
+  PART_FIELD_ATTR, PART_INDEX_ATTR, PART_NODE_ID_ATTR, PART_NODE_TYPE_ATTR,
+  CHROME_SLOT_ATTR, CHROME_KEY_ATTR,
+  BandItemBoundary, BAND_ITEM_FIELD_ATTR, BAND_ITEM_INDEX_ATTR,
+} from './partAnchor'
+export type { PartAnchorProps, BandItemBoundaryProps } from './partAnchor'
 
 // ── Node status — page-scoped data-integrity publish/subscribe (AR-39/AR-40) ──
 export { NodeStatusProvider, useNodeStatusScope, useReportNodeStatus, useNodeStatusAggregate } from './NodeStatusContext'

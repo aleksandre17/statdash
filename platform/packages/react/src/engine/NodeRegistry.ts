@@ -39,7 +39,7 @@ type ErrorFallbackFn  = (props: { node: NodeBase; error: Error }) => ReactNode
 // Re-exported here so existing `import { NodeCap } from './NodeRegistry'` keeps working.
 export type { NodeCap, Cap } from './slice-meta'
 export { CAPS }              from './slice-meta'
-import type { NodeCap, NavContribution } from './slice-meta'
+import type { NodeCap, NavContribution, BandDescriptor } from './slice-meta'
 import { DEFAULT_NAV_CONTRIBUTION }      from './slice-meta'
 
 interface StoredMeta extends Record<string, unknown> {
@@ -60,6 +60,8 @@ interface StoredMeta extends Record<string, unknown> {
   caps?:            NodeCap[]
   /** Descriptor for reading this node's nav section (when caps includes 'nav-contributor'). */
   navContribution?: NavContribution
+  /** Declared value-band residence (ADR-038/039) — the registered BandSource id, or absent for the default props band. */
+  band?:            BandDescriptor
 }
 
 export class NodeRegistry {
@@ -91,6 +93,8 @@ export class NodeRegistry {
       caps?:            NodeCap[]
       /** Descriptor for reading this node's nav section (when caps includes 'nav-contributor'). */
       navContribution?: NavContribution
+      /** Declared value-band residence (ADR-038/039) — the registered BandSource id. */
+      band?:            BandDescriptor
       validate?:        ValidateFn
       migrate?:         MigrateFn
       errorFallback?:   ErrorFallbackFn

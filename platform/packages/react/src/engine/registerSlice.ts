@@ -108,6 +108,9 @@ export function registerSlice(mod: RegistrableSlice): void {
       slots:           'slots' in m ? m.slots : undefined,
       caps:            'caps'  in m ? m.caps  : undefined,
       navContribution: 'navContribution' in m ? m.navContribution : undefined,
+      // Declared value-band residence (ADR-038/039) — forwarded so the authoring
+      // canvas can resolve a node's BandSource generically from its META.
+      band:            'band'  in m ? m.band  : undefined,
       groups:          m.groups,
       validate:        s.validate,
       migrate:         s.migrate,

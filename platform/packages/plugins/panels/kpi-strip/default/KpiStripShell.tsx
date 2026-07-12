@@ -1,9 +1,8 @@
-import { defineShell, useKpiRows, usePanelTitleBadge, isPromotionEnabled, BandItemBoundary } from '@statdash/react/engine'
-import type { RenderContext, NodeDef }          from '@statdash/react/engine'
+import { defineShell, useKpiRows, usePanelTitleBadge, PartAnchor } from '@statdash/react/engine'
+import type { RenderContext }                    from '@statdash/react/engine'
 import { useInject, EMPTY_STATE, useT }         from '@statdash/react'
 import { evalVisibility }                        from '@statdash/engine'
 import type { KpiStripNode }                   from './KpiStripNode'
-import { kpiSpecToCardNode }                    from '../card/kpiSpecToCardNode'
 import KpiCard                                  from './components/KpiCard'
 
 export const KpiStripShell = defineShell<KpiStripNode>({
@@ -21,23 +20,21 @@ function KpiStripControl({ def, ctx }: { def: KpiStripNode; ctx: RenderContext }
   // the leaf stays pure/presentational, never hardcoding a language (AR-37 P1).
   const metaLabels = { methodology: t('methodology') }
 
-  // ── ADR-023 · R2 EXPAND — residence flag (Law 7 · Strangler expand) ────────
-  //  Two residences coexist; the flag selects. LEGACY (default): the strip owns
-  //  the KpiSpec[] value band and maps to <KpiCard> directly (below). PROMOTED
-  //  (isPromotionEnabled('kpi-card')): each item graduates to a first-class
-  //  `kpi-card` NODE rendered through the renderNode pipeline. The wrapper markup
-  //  (title badge · count-aware grid) is SHARED — only the child residence differs —
-  //  so the two paths emit BYTE-IDENTICAL DOM (FF-PROMOTION-LOSSLESS). Nothing here
-  //  removes or bends the legacy path; it stays fully live until R2-contract.
-  const isPromoted = isPromotionEnabled('kpi-card')
-
+  // ── ADR-041 · D-F2 — the value band is the SOLE residence ──────────────────
+  //  The KPI card is a `value` PartField of the strip's `items` (ADR-041 ROOT-2),
+  //  never a promoted node type: the shadow `kpi-card` promotion residence is
+  //  RETIRED (D-F2). Per-item visibility — the ONE genuine render-facet promotion
+  //  ever carried — stays on THIS value-band render path via each item's declared
+  //  `when` (residence-at-field: the value residence owns its own visibility facet),
+  //  never a second node residence.
+  //
   // Visibility is decided ONCE for layout (count + which cards to lay out) via the
   // SAME `evalVisibility(when, filterParams, perspectiveState)` seam interpretKpis'
-  // `kpiVisible` and renderNode's step-0.5 gate use — so the visible set is
-  // byte-identical to interpretKpis' filtered set (no drift), in BOTH residences.
+  // `kpiVisible` engine SSOT uses — so the visible set is byte-identical to
+  // interpretKpis' filtered set (no drift).
   //
   //  Each visible entry keeps its ORIGINAL store index (`def.items[index]`) — the
-  //  band path segment the authoring canvas selects on (ADR-038 · BandItemBoundary).
+  //  band path segment the authoring canvas selects on (ADR-041 · PartAnchor).
   //  Pre-filtering here (not relying on useKpiRows' internal filter) is what makes
   //  `kpis[i]` ↔ `visible[i]` ↔ the original index a stable 1:1: interpretKpis
   //  applies the IDENTICAL predicate, so over an already-visible set it is a no-op
@@ -52,9 +49,8 @@ function KpiStripControl({ def, ctx }: { def: KpiStripNode; ctx: RenderContext }
   // is a memoized interpretKpis; for async stores (caps.sync === false) it warms
   // every requirement the KPIs read — INCLUDING the year-1 comparison period of a
   // 'yoy' — then suspends until warm, so querySync is never cold. NodeErrorBoundary
-  // (renderNode) catches a rejected warm. Feeds the SHARED wrapper (count +
-  // preliminary fold) in BOTH residences; the promoted path additionally re-resolves
-  // per card inside each KpiCardShell (per-card isolation — SPEC §3.3).
+  // (renderNode) catches a rejected warm. Feeds the wrapper (count + preliminary
+  // fold) and the per-item <KpiCard> maps of the value band.
   const kpis = useKpiRows(visibleItems, ctx)
 
   // ── AR-40 — publish the strip's TRUE preliminary truth to the page scope ───
@@ -80,23 +76,18 @@ function KpiStripControl({ def, ctx }: { def: KpiStripNode; ctx: RenderContext }
           DIVIDES the KPI count at every width (no stranded orphan). data-kpi-count
           is pure data passthrough — the column ladder lives in kpi.css (Law 2). */}
       <div className="kpi-strip__grid" data-kpi-count={String(kpis.length)}>
-        {isPromoted
-          // PROMOTED residence — each visible item is a first-class kpi-card NODE
-          // rendered through the recursive engine seam (ctx.renderNode). renderNode
-          // wraps each in Suspense/ErrorBoundary/Fragment (zero DOM), so the emitted
-          // markup is the SAME <div class="kpi-card"> the legacy branch produces.
-          ? visibleItems.map((item) => ctx.renderNode(kpiSpecToCardNode(item) as NodeDef))
-          // LEGACY residence — the strip owns the value band and maps to <KpiCard>.
-          // Each card is wrapped in the GENERIC BandItemBoundary keyed by its
-          // ORIGINAL store index, so the authoring canvas can frame + select it as a
-          // bounded element (ADR-038). Off the canvas the boundary is a zero-DOM
-          // Fragment, so this markup is byte-identical to the live site (and to the
-          // promoted residence — FF-PROMOTION-LOSSLESS).
-          : kpis.map((kpi, i) => (
-              <BandItemBoundary key={visible[i]!.item.id ?? kpi.label} field="items" index={visible[i]!.index}>
-                <KpiCard {...kpi} trendLabels={trendLabels} metaLabels={metaLabels} />
-              </BandItemBoundary>
-            ))}
+        {/* The value band is the SOLE residence (ADR-041 D-F2). The strip owns the
+            KpiSpec[] value band and maps each visible item to <KpiCard>. Each card is
+            wrapped in the GENERIC PartAnchor keyed by its ORIGINAL store index (the
+            value-band `(field, index)` coordinate), so the authoring canvas can frame +
+            select it as a bounded part (ADR-041 · the ONE anchor). Off the canvas the
+            anchor is a zero-DOM Fragment, so this markup is byte-identical to the live
+            site. */}
+        {kpis.map((kpi, i) => (
+          <PartAnchor key={visible[i]!.item.id ?? kpi.label} field="items" index={visible[i]!.index}>
+            <KpiCard {...kpi} trendLabels={trendLabels} metaLabels={metaLabels} />
+          </PartAnchor>
+        ))}
       </div>
     </div>
   )

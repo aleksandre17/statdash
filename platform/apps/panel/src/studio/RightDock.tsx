@@ -1,6 +1,6 @@
-import { useRef, useState } from 'react'
+import { useRef } from 'react'
 import type { KeyboardEvent as ReactKeyboardEvent, PointerEvent as ReactPointerEvent } from 'react'
-import { Box, Typography, Button, Tabs, Tab, IconButton, Tooltip } from '@mui/material'
+import { Box, Typography, Button, IconButton, Tooltip } from '@mui/material'
 import DeleteIcon from '@mui/icons-material/Delete'
 import ChevronRightIcon from '@mui/icons-material/ChevronRight'
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft'
@@ -14,34 +14,32 @@ import type { CanvasController } from './useCanvasController'
 // built-ins on module load — idempotent, so boot/HMR/tests all share one grammar.
 registerBuiltinDockSections()
 
-// ── RightDock — the canonical tri-context inspector dock (AR-49 M4 Wave 7 · SL-1) ─
+// ── RightDock — the purely-contextual inspector dock (SPEC-studio-ia-canonical S1) ─
 //
-//  The dock shows exactly ONE context, chosen by the active selection (owner idea 5:
-//  "always show exactly what the active selection is"):
-//    • an ELEMENT is selected (node or chrome) → its schema-driven Inspector fills
-//      the dock — and ONLY it (no page panes padding a void beneath);
-//    • nothing selected → the PAGE context (page config · perspectives · filters),
-//      which is the idle default (no-worse-than-now: page authoring stays visible);
+//  The dock is a PURE PROJECTION of the ONE active selection address (SPEC §3.2 —
+//  the Figma/Framer law: show the selection's contract and nothing else):
+//    • an ELEMENT is selected (node / part / chrome) → ONLY its own declared
+//      contract fills the dock — never a page-config tab stapled alongside;
+//    • NOTHING selected → the PAGE context (page config · perspectives · filters).
+//      Page authoring is reached by DESELECTING (canvas-background click, already
+//      `onSelect(null)`), not by a persistent tab — so page-config never bleeds
+//      into an element's surface (the owner's "right dock shows page-config out of
+//      place" defect, resolved by removing the persistent Element|Page switch);
 //    • no page exists → a single guided empty-state.
-//  A persistent "Page" tab keeps page-scope authoring one gesture away even while a
-//  node is selected (D8 tri-context; the "no worse than now" guardrail).
 //
 //  ── The 3-zone contract (SL-1 — one header tier, never a collision) ───────────
 //  The dock is a HEADER / BODY / FOOTER structure (SPEC-studio-shell-layout §6):
-//    • HEADER — exactly ONE tier: the context switch (Element | Page) at the top
-//      level, REPLACED BY the drill breadcrumb when the author has drilled into a
-//      nested item (D7.1b promotes it here via DockHeaderSlot). Mutually exclusive —
-//      never both stacked. The schema-group/facet tabs do NOT live here.
+//    • HEADER — exactly ONE tier: an Inspector overline, REPLACED BY the drill
+//      breadcrumb when the author has drilled into a nested item (D7.1b promotes it
+//      here via the breadcrumb slot). Mutually exclusive — never both stacked.
 //    • BODY — the sole flex-fill scroll region: the facet-grouped Inspector (its
 //      group accordion/tabs, M4 §2.11) + the active form, or a single guided
 //      empty-state. Fill-by-construction so a short form never strands a void.
 //    • FOOTER — the element actions (Delete), a fixed tier that stays reachable
 //      regardless of how far the body scrolls.
 //
-//  Scope is DERIVED from selection: selecting an element switches to the element
-//  context; deselecting (incl. canvas-background click, already `onSelect(null)`)
-//  returns to the Page context. The "Page" tab is a manual peek that does not
-//  disturb the canvas selection.
+//  Scope is DERIVED from selection — no manual override, no peek tab: selecting an
+//  element switches to the element context; deselecting returns to the Page context.
 
 const DOCK_MIN_W = 240
 const DOCK_MAX_W = 560
@@ -50,8 +48,6 @@ const clampWidth = (w: number) => Math.max(DOCK_MIN_W, Math.min(DOCK_MAX_W, w))
 type DockScope = 'element' | 'page'
 
 const T = {
-  element:  { en: 'Element',           ka: 'ელემენტი' },
-  page:     { en: 'Page',              ka: 'გვერდი' },
   collapse: { en: 'Collapse inspector', ka: 'ინსპექტორის ჩაკეცვა' },
   expand:   { en: 'Expand inspector',   ka: 'ინსპექტორის გაშლა' },
   resize:   { en: 'Resize inspector',   ka: 'ინსპექტორის ზომის შეცვლა' },
@@ -73,27 +69,18 @@ export interface RightDockProps {
 export function RightDock({ controller, locale, collapsed, onToggleCollapsed, width, onResize }: RightDockProps) {
   const { selected, pageId, chromeSel, deleteSelected, selectedItemPath } = controller
 
-  // The selection key drives the context: element identity or null (→ Page).
+  // The selection key drives the context: element identity or null (→ Page). Scope
+  // is PURELY derived — an element selected shows only its contract; deselecting
+  // (null) returns to Page. No override, no persistent tab (SPEC §3.2 — page-config
+  // never bleeds into an element's surface).
   const selKey: string | null = chromeSel
     ? `chrome:${chromeSel.slot}:${chromeSel.key}`
     : selected?.id ?? null
-
-  // Scope is DERIVED from selection, with a manual override that survives until the
-  // selection changes (React's "adjust state during render" idiom — no effect). So
-  // selecting an element shows the element context; deselecting returns to Page; and
-  // clicking the "Page" tab peeks page-scope without disturbing the canvas selection.
-  const [scopeOverride, setScopeOverride] = useState<DockScope | null>(null)
-  const [prevSelKey, setPrevSelKey] = useState(selKey)
-  if (selKey !== prevSelKey) {
-    setPrevSelKey(selKey)
-    setScopeOverride(null) // selection changed → follow the selection again
-  }
-  const scope: DockScope = scopeOverride ?? (selKey ? 'element' : 'page')
-  const setScope = setScopeOverride
+  const scope: DockScope = selKey ? 'element' : 'page'
 
   // The one-header-tier seam: a drilled nested editor (D7.1b) in the body PROMOTES
   // its breadcrumb up here; while promoted the header shows the breadcrumb XOR the
-  // context switch — never both. Absent a drill, `promoted` is null → context switch.
+  // Inspector overline — never both. Absent a drill, `promoted` is null → overline.
   const { slot: breadcrumbSlot, promoted } = useBreadcrumbHost()
 
   // ── Resize (pointer-drag on the left edge + keyboard on the separator) ────────
@@ -143,22 +130,21 @@ export function RightDock({ controller, locale, collapsed, onToggleCollapsed, wi
   )
 
   // ── Content — ONE context, composed from the section grammar (§3.1) ───────────
-  //  The dock body is no longer a hardcoded stack: it is the applicable sections
-  //  from `dockSectionRegistry`, rendered by <DockBody> through one divider grammar.
-  //  Empty states (no page / nothing selected) remain here — they are not sections.
+  //  The dock body is the applicable sections from `dockSectionRegistry`, rendered
+  //  by <DockBody> through one divider grammar. The empty state (no page) is not a
+  //  section. Element scope implies a live selection (selKey ⟹ selected || chrome),
+  //  so the "nothing selected" hole is unrepresentable — deselecting IS the Page
+  //  context, never a void.
   let content: React.ReactNode
   if (!pageId) {
     // No pages exist → a single guided empty-state that fills the region.
     content = <StudioEmptyState kind="no-pages" locale={locale} fill />
   } else if (scope === 'page') {
     content = <DockBody ctx={{ scope: 'page', locale, controller }} />
-  } else if (chromeSel || selected) {
+  } else {
     // Element context — the chrome panel OR the node's schema/context/visibility
     // sections; the registry's `appliesTo` picks the right set (mutually exclusive).
     content = <DockBody ctx={{ scope: 'element', locale, controller }} />
-  } else {
-    // Element context with nothing selected → the single quiet hint, filling the region.
-    content = <StudioEmptyState kind="no-selection" locale={locale} fill />
   }
 
   return (
@@ -179,22 +165,11 @@ export function RightDock({ controller, locale, collapsed, onToggleCollapsed, wi
         onKeyDown={onResizeKey}
       />
 
-      {/* HEADER — exactly ONE tier: the promoted drill breadcrumb XOR the context
-          switch (never both stacked). The collapse control is chrome, not a tier. */}
+      {/* HEADER — exactly ONE tier: the promoted drill breadcrumb XOR the Inspector
+          overline (never both stacked). The collapse control is chrome, not a tier. */}
       <Box className="studio-dock__header">
         {promoted ? (
           <Box className="studio-dock__header-crumbs">{promoted}</Box>
-        ) : pageId ? (
-          <Tabs
-            value={scope}
-            onChange={(_, v: DockScope) => setScope(v)}
-            variant="fullWidth"
-            aria-label={t('overline', locale)}
-            sx={{ minHeight: 36, flex: 1 }}
-          >
-            <Tab value="element" label={t('element', locale)} sx={{ minHeight: 36, py: 0 }} />
-            <Tab value="page"    label={t('page', locale)}    sx={{ minHeight: 36, py: 0 }} />
-          </Tabs>
         ) : (
           <Typography variant="overline" color="text.secondary" sx={{ flex: 1 }}>
             {t('overline', locale)}
@@ -207,8 +182,8 @@ export function RightDock({ controller, locale, collapsed, onToggleCollapsed, wi
         </Tooltip>
       </Box>
 
-      {/* BODY — the sole flex-fill scroll region. The DockHeaderContext provider
-          lets a drilled nested editor promote its breadcrumb up into the header. */}
+      {/* BODY — the sole flex-fill scroll region. The breadcrumb slot provider lets a
+          drilled nested editor promote its breadcrumb up into the header. */}
       <BreadcrumbSlotContext.Provider value={breadcrumbSlot}>
         <Box className="studio-dock__content" data-testid="dock-content">
           {content}

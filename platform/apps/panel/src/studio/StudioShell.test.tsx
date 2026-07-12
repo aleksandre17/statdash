@@ -12,7 +12,7 @@ import { useRoleStore } from './useRole'
 // heavy real canvas — the a11y/IA scaffold is what M1.2 proves.
 beforeEach(() => {
   setupCanvasRegistry() // idempotent — populates the palettes; keeps mounts crash-free
-  useConstructorStore.setState({ selectedNodeId: null, chromeSelection: null })
+  useConstructorStore.setState({ selection: null })
   useConstructorStore.getState().updateSite({ defaultLocale: 'en', activeLocales: ['en'] })
   // Default role lens = author (a fresh session lands here) — reset the persisted
   // preference so each test starts from the documented default (AR-49 M2.0).

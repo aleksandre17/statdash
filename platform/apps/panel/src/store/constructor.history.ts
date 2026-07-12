@@ -1,3 +1,4 @@
+import type { PartAddress } from '@statdash/react/engine'
 import type {
   DataSourceDef, NamedDataSpec,
   SiteDef,
@@ -38,24 +39,29 @@ export interface ConstructorSession {
   activePageId: string | null
 }
 
+// ── Selection address — ONE completed Composite address (ADR-039 · ADR-041 Ph.3) ─
+//
+//  The old selection TRIPLE (`selectedNodeId` · `selectedItemPath` · `chromeSelection`)
+//  collapses to this ONE address (ADR-041 ROOT-3 · Delta 1). A node/item part uses the
+//  engine `PartAddress` `(nodeId, partPath?)`:
+//    • whole node        → `{ nodeId }`                       (partPath undefined)
+//    • value-band item   → `{ nodeId, partPath: 'items.0' }`  (positional — value)
+//    • sourced item      → `{ nodeId, partPath: 'main.year' }`(stable key — sourced/Delta 1)
+//  Chrome is the SITE-FRAME arm (ROM R4 — chrome regions fold into a `slot` part of a
+//  `site-frame` element later; until then chrome keeps its own `{kind,slot,key}` shape,
+//  discriminated by `kind:'chrome'` — a `PartAddress` never carries `kind`). The three
+//  legacy fields are DERIVED reads of THIS one address (constructor.selectors), never
+//  independently settable — that is what FF-ONE-SELECTION-ADDRESS locks.
+export type SelectionAddress = PartAddress | ChromeSelection
+
 // ── Studio UI ───────────────────────────────────────────────────────────────
 
 export interface StudioUiSlice {
   // The Studio activity-rail surface is NO LONGER store state — it is URL state
   // (`/studio/:surface`, the single source of truth; see studio/useStudioRoute.ts).
-  // This slice now carries only the EPHEMERAL selection address (node/item/chrome).
-  selectedNodeId:  string | null
-  /**
-   * The selected VALUE-BAND item within the selected node — a dot-path into that
-   * node's `props` (e.g. `'items.0'`), or null for a whole-node selection. This is
-   * the Composite half of the selection address (ADR-038 Bounded Element Law): an
-   * element that declares a band (`schema` array field carrying `itemSchema`)
-   * exposes each item as a selectable child, addressed generically by (node, path)
-   * — never by a concrete type. Set with `selectItem`; cleared by `selectNode`.
-   */
-  selectedItemPath: string | null
-  /** The selected chrome element (Phase C). Mutually exclusive with a node. */
-  chromeSelection: ChromeSelection | null
+  // This slice now carries only the EPHEMERAL selection address (node/item/chrome),
+  // collapsed to ONE `SelectionAddress` (the selection triple is derived from it).
+  selection: SelectionAddress | null
 }
 
 // ── Initial state ─────────────────────────────────────────────────────────────

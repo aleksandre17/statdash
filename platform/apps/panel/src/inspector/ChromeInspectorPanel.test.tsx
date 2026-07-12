@@ -8,7 +8,7 @@
 import { describe, it, expect, beforeAll, beforeEach, afterEach } from 'vitest'
 import { render, screen, fireEvent, cleanup } from '@testing-library/react'
 import { setupCanvasRegistry } from '../canvas/setupCanvasRegistry'
-import { useConstructorStore } from '../store/constructor.store'
+import { useConstructorStore, selectedNodeIdOf, chromeSelectionOf } from '../store/constructor.store'
 import { ChromeInspectorPanel } from './ChromeInspectorPanel'
 import { chromeSchemaSource } from './schemaSource'
 import type { CanvasNode } from '../types/constructor'
@@ -20,8 +20,7 @@ const store = () => useConstructorStore.getState()
 
 beforeEach(() => {
   useConstructorStore.setState({
-    chromeSelection: null,
-    selectedNodeId: null,
+    selection: null,
     site: { ...store().site, chrome: {} },
     undoStack: [], redoStack: [], canUndo: false, canRedo: false,
   })
@@ -73,7 +72,7 @@ describe('ChromeInspectorPanel — generic Inspector reuse for chrome', () => {
   it('selecting chrome clears node selection (mutual exclusivity)', () => {
     store().selectNode('some-node')
     store().selectChrome({ kind: 'chrome', slot: 'InnerSidebar', key: 'default' })
-    expect(store().selectedNodeId).toBeNull()
-    expect(store().chromeSelection).toMatchObject({ slot: 'InnerSidebar', key: 'default' })
+    expect(selectedNodeIdOf(store().selection)).toBeNull()
+    expect(chromeSelectionOf(store().selection)).toMatchObject({ slot: 'InnerSidebar', key: 'default' })
   })
 })

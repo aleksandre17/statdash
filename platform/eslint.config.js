@@ -218,6 +218,10 @@ export default defineConfig([
             group: ['react-admin', 'react-admin/*'],
             message: 'react-admin is retired from the panel (AR-49 M1.1, FF-NO-REACT-ADMIN). Use the panel\'s own `notify` port (store/notify.ts) for toasts; config CRUD goes through store/api-actions → lib/api.',
           },
+          {
+            group: ['**/promotionMode', '**/kpi-strip/card', '**/kpi-strip/card/**', '**/nodeProjection'],
+            message: 'ADR-041 D-F2: the KPI-card shadow promotion + node-projector are retired. Containment is the Part port; a KPI card is a value-band part. Do not re-create these modules.',
+          },
         ],
       }],
     },

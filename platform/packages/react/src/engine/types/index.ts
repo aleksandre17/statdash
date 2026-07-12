@@ -59,6 +59,7 @@ export type {
   SliceMeta,
   VariantDef,
   VariantSchema,
+  BandDescriptor,
 }                                from './slice'
 
 // ── CoreNodeDef source types + pipeline/display types (from @statdash/engine) ──

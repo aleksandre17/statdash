@@ -84,6 +84,30 @@ export function nestAccepts(parentType: string | undefined, childType: string): 
 }
 
 /**
+ * Whether — and HOW — `type` can be placed at the PAGE ROOT (nothing selected), the
+ * palette's honest insertion context for a blank page (SPEC S2 / §3.3). The page-root
+ * palette must offer exactly `page-accepts ∪ canonical-wrap-reachable`, DECLARED from
+ * the slot `accepts` contracts (never hardcoded to `section`):
+ *   'direct' — the page's own root slots accept the type (section / repeat / …);
+ *   'wrap'   — the page accepts the canonical container AND that container accepts the
+ *              type (page → section → type, the auto-wrap `resolveInsertPlan` applies);
+ *   'blocked'— neither: the type has no single-step home at the page root (a homeless
+ *              content block), so the palette honestly omits it (it is reachable once a
+ *              container is added — guidance-by-affordance, never a bouncing tile).
+ * Pure over TYPES (no page tree), so the palette can classify every registry entry.
+ * An absent `pageType` degrades to the permissive page-root (`nestAccepts(undefined)`),
+ * preserving isolated-mount behaviour.
+ */
+export function pageRootInsertability(
+  pageType: string | undefined,
+  type: string,
+): 'direct' | 'wrap' | 'blocked' {
+  if (nestAccepts(pageType, type)) return 'direct'
+  if (nestAccepts(pageType, AUTOWRAP_CONTAINER) && nestAccepts(AUTOWRAP_CONTAINER, type)) return 'wrap'
+  return 'blocked'
+}
+
+/**
  * How a newly-inserted `type` lands given the current selection (FF-INSERT-NEVER-
  * CLIFF). A discriminated union so the illegal "insert into a parent that rejects
  * it" state is unrepresentable — every plan is a VALID placement or an explicit

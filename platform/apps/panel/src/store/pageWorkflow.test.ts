@@ -47,8 +47,7 @@ function resetStore(page: CanvasPage, activeLocales: string[] = []) {
   useConstructorStore.setState({
     pages: [page],
     activePageId: page.id,
-    selectedNodeId: null,
-    chromeSelection: null,
+    selection: null,
     lifecycle: {}, saveStatus: {}, publishStatus: {},
     undoStack: [], redoStack: [], canUndo: false, canRedo: false,
     site: { ...useConstructorStore.getState().site, defaultLocale: 'ka', activeLocales },

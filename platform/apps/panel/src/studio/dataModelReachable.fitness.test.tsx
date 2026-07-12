@@ -26,7 +26,7 @@ import { RAIL_ENTRIES } from './rail'
 // "built ≠ buried" guard must cover.
 beforeEach(() => {
   setupCanvasRegistry()
-  useConstructorStore.setState({ selectedNodeId: null, chromeSelection: null })
+  useConstructorStore.setState({ selection: null })
   useConstructorStore.getState().updateSite({ defaultLocale: 'en', activeLocales: ['en'] })
   useRoleStore.setState({ role: 'author' })
 })

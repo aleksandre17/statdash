@@ -11,3 +11,4 @@
 7. **Architecture leads, code follows.** When new architecture conflicts with legacy code, the code migrates to the pattern (Strangler-Fig) — never bend the architecture to violations.
 8. **Platform-level thinking (M-5).** After the minimal solution, ask "what makes this a reusable, Constructor-ready capability?" — open for extension (new discriminant = new capability, interface unchanged), balanced by YAGNI.
 9. **Accessibility + data integrity** (ONS/IMF/Eurostat): WCAG 2.1 AA, preliminary/last-updated/methodology badges, export per section, URL = permalink.
+10. **One containment grammar (ADR-041).** Constituents are declared `PartField`s with residence-at-field, reached only through the Part port. A new element kind is a **declaration**, never a new bridge/grammar. (Extends the Bounded-Element law ADR-038; the four historical grammars are being unified — never add a fifth.)

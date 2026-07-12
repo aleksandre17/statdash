@@ -243,6 +243,8 @@ export function StudioShell() {
                 previewPerspectiveId={controller.previewPerspectiveId}
                 onSelectNode={controller.selectNode}
                 onSelectItem={controller.selectItem}
+                onSelectChrome={(slot, key) => controller.selectChrome({ kind: 'chrome', slot, key })}
+                selectedChrome={controller.chromeSel}
                 onDropNode={controller.handleDrop}
                 onBindMetric={controller.bindMetric}
                 onPreviewPerspectiveChange={controller.setPreviewPerspectiveId}

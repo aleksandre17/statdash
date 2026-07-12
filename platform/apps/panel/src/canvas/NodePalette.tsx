@@ -30,7 +30,7 @@ import { getPaletteEntries, getGroupedPaletteEntries }  from './paletteEntries'
 import type { PaletteEntry, PaletteGroup }              from './paletteEntries'
 import { paletteGroupHeading, PALETTE_LEAF_HINT }       from './paletteGroupLabels'
 import { renderPaletteIcon }                            from './paletteIcons'
-import { nestAccepts, isDropTarget }                    from './insertNode'
+import { nestAccepts, isDropTarget, pageRootInsertability } from './insertNode'
 import { useActiveProfile }                             from '../discovery/useActiveProfile'
 import { gatePaletteEntries }                           from '../discovery/capabilityGate'
 import { suggestPanels }                                from '../discovery/suggestPanels'
@@ -49,28 +49,44 @@ export interface NodePaletteProps {
    * always reachable by selecting a compatible container or clearing the selection.
    */
   selectedType?: string | null
+  /**
+   * The active page's ROOT type (e.g. `inner-page`) — the insertion context when
+   * NOTHING is selected (SPEC S2). Lets the palette offer exactly the page-root's
+   * honest insertable set (`page-accepts ∪ wrap-reachable`) instead of the whole
+   * registry, so a blank page never shows a tile that would bounce. Absent ⇒ the
+   * permissive page-root (unchanged isolated-mount behaviour).
+   */
+  pageType?: string | null
   onDragStateChange?: (dragging: boolean) => void
 }
 
 function PaletteItem({
   entry,
   locale,
+  wrap = false,
   onDragStateChange,
 }: {
   entry: PaletteEntry
   locale: Locale
+  /** True when this tile lands via auto-wrap (page → section → type) — badged so the
+   *  affordance is honest (guidance-by-affordance; the drop still succeeds). */
+  wrap?: boolean
   onDragStateChange?: (dragging: boolean) => void
 }) {
   const name = resolveLocaleString(entry.label, locale, 'en') || entry.type
   const desc = entry.description ? resolveLocaleString(entry.description, locale, 'en') : ''
+  const wrapHint = locale === 'en' ? 'adds inside a section' : 'დაემატება სექციაში'
 
   return (
     <button
       type="button"
       className="node-palette__tile"
       data-node-type={entry.type}
+      data-wrap={wrap || undefined}
       draggable
-      aria-label={locale === 'en' ? `Add ${name}` : `დამატება: ${name}`}
+      aria-label={
+        (locale === 'en' ? `Add ${name}` : `დამატება: ${name}`) + (wrap ? ` (${wrapHint})` : '')
+      }
       onDragStart={(e) => {
         e.dataTransfer.setData('nodeType', entry.type)
         e.dataTransfer.effectAllowed = 'copy'
@@ -84,22 +100,38 @@ function PaletteItem({
       <span className="node-palette__tile-text">
         <span className="node-palette__tile-name">{name}</span>
         {desc && <span className="node-palette__tile-desc">{desc}</span>}
+        {wrap && <span className="node-palette__tile-wrap">{wrapHint}</span>}
       </span>
     </button>
   )
 }
 
-export function NodePalette({ locale = 'ka', selectedType, onDragStateChange }: NodePaletteProps) {
+export function NodePalette({ locale = 'ka', selectedType, pageType, onDragStateChange }: NodePaletteProps) {
   const active = useActiveProfile()
 
-  // Context-aware narrowing (M4.1 Thread A). A container selected → keep only the
-  // types it can hold (nestAccepts, the SAME predicate the insert router uses, so a
-  // palette-offered tile is guaranteed to nest where shown — no silent redirect).
-  // Nothing selected → nestAccepts(undefined, …) is true for all (the full set).
+  // Context-aware narrowing (M4.1 Thread A + SPEC S2). Two insertion contexts:
+  //   • a CONTAINER selected → keep only the types it can hold directly (nestAccepts,
+  //     the SAME predicate the insert router uses, so an offered tile nests where shown);
+  //   • NOTHING selected → the PAGE ROOT: offer exactly `page-accepts ∪ wrap-reachable`
+  //     (pageRootInsertability), so a blank page shows every block a section can hold —
+  //     directly or via auto-wrap — and NEVER a homeless tile that would bounce. This is
+  //     the fix for the owner's "blank page: can only add a section": the honest set is
+  //     wider (charts/tables/… now land via wrap) AND truthful (un-droppable blocks
+  //     omitted), all DECLARED from the slot `accepts` contracts.
   const leaf = selectedType != null && !isDropTarget(selectedType)
   const acceptsInSelection = useMemo(
-    () => (t: string) => nestAccepts(selectedType ?? undefined, t),
-    [selectedType],
+    () => (t: string) =>
+      selectedType != null
+        ? nestAccepts(selectedType, t)
+        : pageRootInsertability(pageType ?? undefined, t) !== 'blocked',
+    [selectedType, pageType],
+  )
+  // A tile that lands via auto-wrap (page → section → type) — badged so the affordance
+  // is honest. Only meaningful at the page root (nothing selected).
+  const isWrapTile = useMemo(
+    () => (t: string) =>
+      selectedType == null && pageRootInsertability(pageType ?? undefined, t) === 'wrap',
+    [selectedType, pageType],
   )
 
   // Gate the capability groups against the active profile (C3), then narrow to the
@@ -140,7 +172,7 @@ export function NodePalette({ locale = 'ka', selectedType, onDragStateChange }: 
         <ul className="node-palette__group-list">
           {recommended.map((entry) => (
             <li key={entry.type}>
-              <PaletteItem entry={entry} locale={locale} onDragStateChange={onDragStateChange} />
+              <PaletteItem entry={entry} locale={locale} wrap={isWrapTile(entry.type)} onDragStateChange={onDragStateChange} />
             </li>
           ))}
         </ul>
@@ -179,7 +211,7 @@ export function NodePalette({ locale = 'ka', selectedType, onDragStateChange }: 
               <ul className="node-palette__group-list">
                 {group.entries.map((entry) => (
                   <li key={entry.type}>
-                    <PaletteItem entry={entry} locale={locale} onDragStateChange={onDragStateChange} />
+                    <PaletteItem entry={entry} locale={locale} wrap={isWrapTile(entry.type)} onDragStateChange={onDragStateChange} />
                   </li>
                 ))}
               </ul>
@@ -196,7 +228,7 @@ export function NodePalette({ locale = 'ka', selectedType, onDragStateChange }: 
     <ul className="node-palette" data-testid="node-palette" aria-label="Node palette">
       {flat.map((entry) => (
         <li key={entry.type}>
-          <PaletteItem entry={entry} locale={locale} onDragStateChange={onDragStateChange} />
+          <PaletteItem entry={entry} locale={locale} wrap={isWrapTile(entry.type)} onDragStateChange={onDragStateChange} />
         </li>
       ))}
     </ul>

@@ -65,6 +65,16 @@ export const META: NodeSliceMeta = {
   schema:    FilterBarSchema,
   groups:    FilterBarGroups,
   caps:      [],
+  // ── Declared value-band residence (ADR-038/039 · BE-4) ──────────────────────
+  //  A filter-bar's selectable ITEMS (the individual controls) are NOT on this
+  //  node — they live in the page-owned `filterSchema` SSOT, discriminated by
+  //  each control's `ParamDef.type`. So this node DECLARES the `page-filters`
+  //  BandSource (registered in apps/panel), which enumerates the projected bars
+  //  via the shipped `toBarViews`, resolves each item's authoring schema via the
+  //  engine `getParamSchema(type)`, and writes through the `setBarParams` reducer
+  //  — ZERO SSOT fork, no denormalised copy on the node. The authoring canvas
+  //  resolves the source generically; it never special-cases `type === 'filter-bar'`.
+  band:      { source: 'page-filters' },
   version:   1,
   // Registered under the 'filter-bar' namespace (registerSlice → useT('filter-bar')),
   // so FilterBarShell resolves the from→to connector words for the active locale.

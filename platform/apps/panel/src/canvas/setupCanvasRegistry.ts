@@ -24,7 +24,7 @@ import * as Panels    from '@plugins/panels'
 import * as Nodes     from '@plugins/nodes'
 import * as Controls  from '@plugins/controls'
 import { createElement }              from 'react'
-import { registerSlice, middlewareRegistry } from '@statdash/react/engine'
+import { registerSlice, middlewareRegistry, PART_NODE_ID_ATTR, PART_NODE_TYPE_ATTR } from '@statdash/react/engine'
 import { perspectiveRegistry }   from '@statdash/engine'
 import { registerStoreBuilders } from '@statdash/plugins/datasources'
 import { registerPresentationProjectors } from '@statdash/plugins/presentation'
@@ -76,7 +76,14 @@ export function setupCanvasRegistry(): void {
   //  The CanvasOverlay positions its selection frames + drop zones by reading
   //  the rendered DOM. It needs a stable, queryable anchor per node. Rather
   //  than fork NodePageRenderer, we wrap every rendered node with a
-  //  display:contents element carrying data-canvas-node-id / -type.
+  //  display:contents element carrying the ONE `data-part-*` node-anchor family.
+  //
+  //  ADR-041 Phase 4 — the anchor merge: the node anchor is a `slot`/whole-node
+  //  PART anchor, stamped with the SAME `PART_NODE_ID_ATTR`/`PART_NODE_TYPE_ATTR`
+  //  a slot child carries. So the overlay measures node anchors AND part anchors
+  //  through ONE `data-part-*` query family (the two measurement paths merged),
+  //  and a slot child (a whole node) is framed through the Part port by the very
+  //  anchor this middleware stamps.
   //
   //  `display: contents` keeps the wrapper visually inert (it contributes no
   //  box), so node layout is identical to the live site — only the overlay
@@ -91,8 +98,8 @@ export function setupCanvasRegistry(): void {
         : createElement(
             'div',
             {
-              'data-canvas-node-id':   node.id ?? '',
-              'data-canvas-node-type': node.type,
+              [PART_NODE_ID_ATTR]:   node.id ?? '',
+              [PART_NODE_TYPE_ATTR]: node.type,
               style: { display: 'contents' },
             },
             el,

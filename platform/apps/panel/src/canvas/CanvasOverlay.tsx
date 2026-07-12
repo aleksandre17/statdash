@@ -5,19 +5,35 @@
 //  positions one frame per node and one drop zone per registered SlotDef.
 //
 //  Positioning: the canvas-anchor middleware (setupCanvasRegistry) stamps each
-//  rendered node with `data-canvas-node-id`. The overlay measures those anchors
-//  via getBoundingClientRect() relative to the canvas root, so frames track the
-//  real rendered geometry without the engine knowing the editor exists.
+//  rendered node with the ONE `data-part-*` node-anchor family (PART_NODE_ID_ATTR).
+//  The overlay measures those anchors via getBoundingClientRect() relative to the
+//  canvas root, so frames track the real rendered geometry without the engine
+//  knowing the editor exists.
+//
+//  ADR-041 Phase 4 — the anchor merge + slotParts wiring: node anchors AND value/
+//  sourced band-item anchors share ONE `data-part-*` query family, so the overlay
+//  measures both through a single path. And the node-frame TREE is now derived by
+//  RECURSING the ONE Part port (`enumerateParts`): a slot part is a whole child node
+//  framed through the port (its merged node anchor), value/sourced parts become item
+//  frames. A transitional `walkNodes` pass is retained as a fallback so no node loses
+//  its frame (Strangler EXPAND — byte-identical frame set; the walk is removed in a
+//  later contract phase).
 //
 //  Slot taxonomy: drop zones come straight from nodeRegistry.getSlots(type) —
 //  the SlotDef.accepts list IS the drag-accept contract. No new fields invented.
 //
 import { useLayoutEffect, useRef, useState, useCallback } from 'react'
-import { nodeRegistry, BAND_ITEM_FIELD_ATTR, BAND_ITEM_INDEX_ATTR } from '@statdash/react/engine'
-import type { NodeBase, SlotDef }    from '@statdash/react/engine'
+import {
+  nodeRegistry, chromeRegistry,
+  PART_FIELD_ATTR, PART_INDEX_ATTR, PART_NODE_ID_ATTR,
+  CHROME_SLOT_ATTR, CHROME_KEY_ATTR,
+} from '@statdash/react/engine'
+import type { NodeBase, SlotDef, ObjectMeta } from '@statdash/react/engine'
+import type { FilterSchemaInput }    from '@statdash/engine'
 import { walkNodes }                 from './walkNodes'
 import type { WalkedNode }           from './walkNodes'
-import { bandFieldsOf }              from './bandItems'
+import { enumerateParts }            from './bandSource'
+import { AUTOWRAP_CONTAINER, nestAccepts } from './insertNode'
 import { hasMetricDrag, readMetricDrag } from '../discovery/metricDrag'
 
 // ── Measured geometry, relative to the canvas root ────────────────────────
@@ -28,6 +44,8 @@ interface NodeFrame extends WalkedNode { id: string; rect: Rect }
 interface DropFrame { parentId: string; slotKey: string; slot: SlotDef; rect: Rect }
 /** A selectable value-band item frame — the bounded-element hit target (ADR-038). */
 interface ItemFrame { nodeId: string; path: string; rect: Rect }
+/** A selectable chrome region frame (SPEC S4) — header / sidebar / footer on the canvas. */
+interface ChromeFrame { slot: string; key: string; rect: Rect }
 
 export interface CanvasOverlayProps {
   /** The live NodePageConfig the renderer drew — overlay walks the same tree. */
@@ -49,6 +67,17 @@ export interface CanvasOverlayProps {
    * (ADR-038). Absent ⇒ item frames are not rendered (backward-compatible).
    */
   onSelectItem?:  (nodeId: string, path: string) => void
+  /**
+   * Select a chrome region (header / sidebar / footer) on the canvas (SPEC S4 —
+   * "chrome konfigebi / reach every element"). Generic: the (slot, key) coordinate is
+   * read from the `ChromeSlot` anchor the engine stamps only under the authoring canvas;
+   * the host dispatches the EXISTING `selectChrome` arm → `ChromeInspectorPanel`. Absent
+   * ⇒ chrome frames are not rendered (backward-compatible). Interim until chrome-as-part
+   * (S6) folds chrome into the ONE PartAddress selection.
+   */
+  onSelectChrome?: (slot: string, key: string) => void
+  /** The currently-selected chrome region, for the selected frame highlight. */
+  selectedChrome?: { slot: string; key: string } | null
   onDrop:         (parentId: string, slotKey: string, nodeType: string) => void
   /**
    * Bind a governed metric dragged from the Metric Palette onto a node frame
@@ -59,12 +88,14 @@ export interface CanvasOverlayProps {
 }
 
 export function CanvasOverlay({
-  page, selectedNodeId, selectedItemPath, dragging = false, onSelect, onSelectItem, onDrop, onBindMetric,
+  page, selectedNodeId, selectedItemPath, dragging = false,
+  onSelect, onSelectItem, onSelectChrome, selectedChrome, onDrop, onBindMetric,
 }: CanvasOverlayProps) {
   const overlayRef = useRef<HTMLDivElement>(null)
   const [frames, setFrames] = useState<NodeFrame[]>([])
   const [drops,  setDrops]  = useState<DropFrame[]>([])
   const [items,  setItems]  = useState<ItemFrame[]>([])
+  const [chromes, setChromes] = useState<ChromeFrame[]>([])
   const [overSlot, setOverSlot] = useState<string | null>(null)
   // The node frame a metric drag is currently hovering (highlight target).
   const [metricOverId, setMetricOverId] = useState<string | null>(null)
@@ -87,56 +118,103 @@ export function CanvasOverlay({
       }
     }
 
-    const walked = walkNodes(page).filter((w) => typeof w.node.id === 'string' && w.node.id)
+    // The page-owned filter SSOT rides on the SAME rendered NodePageConfig the canvas
+    // draws (projected from page.meta by toNodePageConfig), so a page-owned band source
+    // enumerates from the EXACT object that produced the rendered controls — the overlay
+    // frames can never drift from what the renderer laid out.
+    const filterSchema = (page as unknown as { filterSchema?: FilterSchemaInput }).filterSchema
+
     const nextFrames: NodeFrame[] = []
     const nextDrops:  DropFrame[] = []
     const nextItems:  ItemFrame[] = []
+    const framed = new Set<string>()
 
-    for (const w of walked) {
-      const id = w.node.id as string
-      const anchor = rootEl.querySelector(`[data-canvas-node-id="${id}"]`)
-      // display:contents anchor has no box — measure its first element child.
+    // Frame ONE node through its merged `data-part-*` node anchor, then RECURSE into
+    // its declared parts via the ONE Part port. This is the declaration-driven,
+    // kind-free frame derivation (FF-DERIVED-CONTAINMENT): the overlay never reads a
+    // node's KIND to decide what it contains — it enumerates the parts the node's
+    // contract declares and routes each to its residence adapter (slot / value /
+    // sourced), never a per-type branch (FF-NO-EXTERNAL-SPECIAL-CASE / FF-ONE-PART-
+    // GRAMMAR). A slot part IS a whole child node → framed through the port by THIS
+    // recursion (its own merged node anchor). A value/sourced part carries its anchor
+    // coordinate `(field,index)` — matching the anchor the part-owning shell stamped
+    // (PartAnchor) — AND its ONE `PartAddress.partPath` (positional for value, the
+    // Delta-1 STABLE key for sourced), which becomes the selection wire.
+    const frameNode = (node: NodeBase) => {
+      const id = typeof node.id === 'string' ? node.id : ''
+      if (!id || framed.has(id)) return
+      framed.add(id)
+
+      const type    = node.type
+      const variant = (node as { variant?: string }).variant ?? 'default'
+
+      const anchor = rootEl.querySelector(`[${PART_NODE_ID_ATTR}="${id}"]`)
+      // display:contents anchor has no box — measure its first element child. Absent an
+      // anchor (a node not rendered — hidden / perspective-gated) contributes nothing.
       const box = anchor?.firstElementChild ?? anchor
-      if (!box) continue
+      if (!box) return
       const rect = rel(box)
-      nextFrames.push({ ...w, id, rect })
+      nextFrames.push({ node, type, variant, id, rect })
 
-      const slots = nodeRegistry.getSlots(w.type, w.variant)
+      const slots = nodeRegistry.getSlots(type, variant)
       if (slots) {
         for (const [slotKey, slot] of Object.entries(slots)) {
           nextDrops.push({ parentId: id, slotKey, slot, rect })
         }
       }
 
-      // ── Value-band items — declaration-driven selectable children (ADR-038) ────
-      //  For each band field the node DECLARES (array + itemSchema), measure the
-      //  per-item anchor the band-owning shell stamped (BandItemBoundary). Keyed by
-      //  the DECLARATION + the generic anchor attributes — never by a concrete type.
-      //  Absent an anchor (a shell that has not opted into the render contract, or an
-      //  item not laid out) contributes nothing — no crash, no guess.
-      if (onSelectItem && anchor) {
-        const schema = nodeRegistry.getSchema(w.type, w.variant)
-        if (schema) {
-          for (const f of bandFieldsOf(schema)) {
-            const arr = (w.node as unknown as Record<string, unknown>)[f.field]
-            if (!Array.isArray(arr)) continue
-            arr.forEach((_it, index) => {
-              const itemAnchor = anchor.querySelector(
-                `[${BAND_ITEM_FIELD_ATTR}="${f.field}"][${BAND_ITEM_INDEX_ATTR}="${index}"]`,
-              )
-              const ibox = itemAnchor?.firstElementChild ?? itemAnchor
-              if (!ibox) return
-              nextItems.push({ nodeId: id, path: `${f.field}.${index}`, rect: rel(ibox) })
-            })
-          }
+      if (!anchor) return
+      const meta = nodeRegistry.getMeta(type, variant) as ObjectMeta | undefined
+      const container = node as unknown as Record<string, unknown>
+      for (const part of enumerateParts(container, meta, { filterSchema }, id)) {
+        if (part.residence === 'slot') {
+          // Slot part — a whole child node, framed THROUGH the port by this recursion.
+          frameNode(part.subject as unknown as NodeBase)
+          continue
         }
+        if (!onSelectItem) continue
+        const partPath = part.address.partPath
+        if (partPath == null) continue
+        const itemAnchor = anchor.querySelector(
+          `[${PART_FIELD_ATTR}="${part.field}"][${PART_INDEX_ATTR}="${part.index}"]`,
+        )
+        const ibox = itemAnchor?.firstElementChild ?? itemAnchor
+        if (!ibox) continue
+        nextItems.push({ nodeId: id, path: partPath, rect: rel(ibox) })
+      }
+    }
+
+    // Port-driven from the page root, then a transitional `walkNodes` fallback frames
+    // any node the port did not reach (a child outside its parent slot's `accepts`, or
+    // a node-bearing field not yet declared as a slot). The `framed` set dedupes, so
+    // the frame SET stays byte-identical to the walk while slot children now flow
+    // through the port (Strangler EXPAND — the walk is the strangled remnant, removed
+    // in a later contract phase once every container child is a declared slot part).
+    frameNode(page)
+    for (const w of walkNodes(page)) frameNode(w.node)
+
+    // ── Chrome regions (SPEC S4) — framed from the ChromeSlot anchors the engine
+    //  stamps only under the authoring canvas. Generic: one frame per rendered chrome
+    //  region that is AUTHORABLE (declares a schema — the SAME contract ChromePalette
+    //  offers), so a non-authorable region is never a dead selection. No per-type
+    //  branch: the (slot, key) coordinate is read from the anchor, not a hardcoded list.
+    const nextChromes: ChromeFrame[] = []
+    if (onSelectChrome) {
+      for (const el of rootEl.querySelectorAll(`[${CHROME_SLOT_ATTR}]`)) {
+        const slot = el.getAttribute(CHROME_SLOT_ATTR) ?? ''
+        const key  = el.getAttribute(CHROME_KEY_ATTR) ?? 'default'
+        if (!slot) continue
+        if ((chromeRegistry.getMeta(slot, key)?.schema?.length ?? 0) === 0) continue // not authorable
+        const box = el.firstElementChild ?? el
+        nextChromes.push({ slot, key, rect: rel(box) })
       }
     }
 
     setFrames(nextFrames)
     setDrops(nextDrops)
     setItems(nextItems)
-  }, [page, onSelectItem])
+    setChromes(nextChromes)
+  }, [page, onSelectItem, onSelectChrome])
 
   useLayoutEffect(() => {
     measure()
@@ -153,7 +231,16 @@ export function CanvasOverlay({
     setOverSlot(null)
     const nodeType = e.dataTransfer.getData('nodeType')
     if (!nodeType) return
-    if (d.slot.accepts && d.slot.accepts.length > 0 && !d.slot.accepts.includes(nodeType)) return
+    // Accept a drop the slot takes DIRECTLY, OR one reachable via the canonical
+    // auto-wrap (the slot accepts a `section` and the section accepts the type) — so a
+    // chart dropped on the page-root main slot lands via page → section → chart (SPEC
+    // S2). The host's `resolveInsertPlan` performs the actual direct-vs-wrap decision;
+    // this gate only stops a drop no single-step insert could satisfy. Empty accepts ⇒
+    // an open container that takes anything (unchanged).
+    const accepts = d.slot.accepts
+    const direct  = !accepts || accepts.length === 0 || accepts.includes(nodeType)
+    const wrap    = !!accepts && accepts.includes(AUTOWRAP_CONTAINER) && nestAccepts(AUTOWRAP_CONTAINER, nodeType)
+    if (!direct && !wrap) return
     onDrop(d.parentId, d.slotKey, nodeType)
   }
 
@@ -228,6 +315,28 @@ export function CanvasOverlay({
             style={{ left: it.rect.left, top: it.rect.top, width: it.rect.width, height: it.rect.height }}
             onClick={(e) => { e.stopPropagation(); onSelectItem(it.nodeId, it.path) }}
           />
+        )
+      })}
+
+      {/* Chrome region frames (SPEC S4) — clicking a header/sidebar/footer selects it
+          on the canvas → the dock projects its contract via the existing chrome arm.
+          Rendered BEFORE drop zones so a drag still reveals slots above chrome. */}
+      {onSelectChrome && chromes.map((c) => {
+        const sel = selectedChrome?.slot === c.slot && selectedChrome?.key === c.key
+        return (
+          <button
+            key={`chrome-${c.slot}-${c.key}`}
+            type="button"
+            className={`canvas-chrome${sel ? ' canvas-chrome--selected' : ''}`}
+            data-chrome-slot={c.slot}
+            data-chrome-key={c.key}
+            aria-label={`Select chrome ${c.slot}`}
+            aria-pressed={sel}
+            style={{ left: c.rect.left, top: c.rect.top, width: c.rect.width, height: c.rect.height }}
+            onClick={(e) => { e.stopPropagation(); onSelectChrome(c.slot, c.key) }}
+          >
+            {sel && <span className="canvas-chrome__tag">{c.slot}</span>}
+          </button>
         )
       })}
 

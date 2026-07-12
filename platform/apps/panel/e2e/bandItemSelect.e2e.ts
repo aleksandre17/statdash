@@ -72,7 +72,10 @@ test('clicking a single KPI card selects it as a BOUNDED element — the dock sh
   await expect(page.locator('.studio-shell')).toBeVisible()
 
   // The canvas renders the strip; the overlay stamps one per-item frame per declared
-  // band item (BandItemBoundary → data-canvas-item-*, measured by CanvasOverlay).
+  // band item (PartAnchor → data-part-field/index, measured by CanvasOverlay),
+  // addressed by the item's ONE PartAddress.partPath — for a VALUE band that is the
+  // POSITIONAL `${field}.${index}` (ADR-041 Delta 1: value parts stay positional), so
+  // the selector is byte-identical after the Phase-3 collapse onto the port.
   const card1 = page.locator('[data-item-path="items.1"]')
   await expect(card1).toBeVisible({ timeout: 60_000 })
 

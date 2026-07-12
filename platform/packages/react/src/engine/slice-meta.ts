@@ -17,6 +17,7 @@
 //    ValidationError — per-node validation result
 //
 import type { LocaleString } from '@statdash/engine'
+import type { PartField } from './partPort'
 
 // ── SliceCategory — typed palette grouping discriminant ───────────────
 //
@@ -166,6 +167,25 @@ import type { PropSchema } from '@statdash/engine'
 export type { VariantDef, VariantSchema } from './variant-meta'
 import type { VariantSchema } from './variant-meta'
 
+// ── BandDescriptor — a node's DECLARED value-band residence (ADR-038/039) ──────
+//
+//  The Bounded Element Law makes each declared value-band ITEM a selectable,
+//  authorable element. BE-1's homogeneous props band (kpi-strip `items[]`, values
+//  in `node.props`) is the DEFAULT residence and needs no descriptor. A node whose
+//  band lives ELSEWHERE — e.g. the filter-bar, whose items live in the page-owned
+//  `filterSchema` SSOT, discriminated by `ParamDef.type` — DECLARES that residence
+//  here by naming a registered BandSource adapter. The authoring canvas resolves
+//  the named source and projects generically; it NEVER special-cases the node type
+//  (FF-NO-EXTERNAL-SPECIAL-CASE). A new externally-sourced band = one descriptor +
+//  one registered adapter, the selection/overlay/inspector machinery unchanged (OCP).
+//
+//  This is the DECLARATION half (what a plugin META writes); the adapter (enumerate
+//  / write) is an app-layer concern (apps/panel) — packages/react stays app-agnostic.
+export interface BandDescriptor {
+  /** The id of the registered BandSource adapter that resides/reads/writes this band. */
+  source: string
+}
+
 // ── ObjectMeta — the ONE type system (ADR-023 · kind-as-facet) ────────
 //
 //  "One Type System, One Tree, Two Residences." Every registrable object —
@@ -215,6 +235,15 @@ export interface ObjectMeta {
   variants?:        VariantSchema
   /** How this node's nav section is read (when caps includes `nav-contributor`). */
   navContribution?: NavContribution
+  /**
+   * Declared value-band residence (ADR-038/039). Absent ⇒ the DEFAULT homogeneous
+   * props band (BE-1): the node's own `schema` array-fields-with-`itemSchema`, values
+   * in `node.props`. Present ⇒ the named registered BandSource adapter enumerates /
+   * reads / writes this node's band from wherever it truly lives (e.g. the page
+   * `filterSchema` SSOT for a filter-bar). Type-neutral: the canvas resolves the
+   * declared source, never the concrete node type (FF-NO-EXTERNAL-SPECIAL-CASE).
+   */
+  band?:            BandDescriptor
   version?:         number
   i18n?:            Record<string, Record<string, string>>
 }
@@ -313,3 +342,80 @@ export type FilterControlMeta = ObjectMeta & {
 }
 
 export type SliceMeta = NodeSliceMeta | PageSliceMeta | PanelSliceMeta | ChromeSliceMeta | FilterControlMeta
+
+// ── partFieldsOf — ROOT-2: the ONE reading of an element's declared PARTS ────────
+//
+//  ADR-041 Phase 1. The unified derivation that reads ALL THREE containment
+//  fragments of an `ObjectMeta` into ONE `PartField[]` — the single answer to
+//  "what are this element's parts?" that the four grammars used to answer four
+//  ways. Residence is read from the FRAGMENT (the FIELD), never from the node kind
+//  (`sliceType`/`canHaveChildren`) — the residence-at-field law (FF-RESIDENCE-AT-
+//  FIELD). The three surface forms it projects — `SlotDef`, value-`PropField`
+//  (`array` + `itemSchema`), `BandDescriptor` — stay EXACTLY as today; this reads
+//  over them, it does not change them.
+//
+//    slots    (SlotDef)                       → residence 'slot'    (node instances, accepts-gated)
+//    schema   (array PropField + itemSchema)  → residence 'value'   (typed values on node.props — BE-1 `bandFieldsOf` predicate, verbatim)
+//    band     (BandDescriptor)                → residence 'sourced' (projection of an external SSOT, resolved by the named adapter)
+//
+//  Pure over the declaration — no per-type branch, so a NEW part-bearing element is
+//  discovered with zero code (OCP · DIP). Wrapper/leaf falls out as a derived
+//  predicate: WRAPPER ⇔ `partFieldsOf(meta).length > 0` (formalized in Phase 6).
+//
+export function partFieldsOf(meta: ObjectMeta): PartField[] {
+  const parts: PartField[] = []
+
+  // slot residence — the SlotDef tree-band fragment (Builder.io slots).
+  if (meta.slots) {
+    for (const slot of Object.values(meta.slots)) {
+      parts.push({
+        field:     slot.field,
+        residence: 'slot',
+        label:     slot.label,
+        accepts:   slot.accepts,
+        multi:     slot.multi,
+        min:       slot.min,
+        max:       slot.max,
+      })
+    }
+  }
+
+  // value residence — homogeneous props value-band: a schema `array` field carrying
+  // an `itemSchema` (ADR-022). Predicate byte-identical to BE-1 `bandFieldsOf`, so
+  // an OPAQUE array (no itemSchema, e.g. filter-bar `barIds`) is NOT a part.
+  if (meta.schema) {
+    for (const f of meta.schema) {
+      if (f.type === 'array' && Array.isArray(f.itemSchema)) {
+        parts.push({
+          field:      f.field,
+          residence:  'value',
+          label:      f.label,
+          itemSchema: f.itemSchema,
+          itemGroups: f.itemGroups,
+          itemLabel:  f.itemLabel,
+          multi:      true,
+        })
+      }
+    }
+  }
+
+  // sourced residence — a band whose items live in an EXTERNAL SSOT (e.g. the page
+  // `filterSchema`), enumerated/written by the registered adapter named in `source`.
+  // ADR-041 Delta 1 (the sourced address convention, decided at zero consumers):
+  // `field` is the declaring-field ADDRESS handle, `source` is the ADAPTER id. While
+  // the band is node-level (Phases 1–5, ONE band per node) the handle COINCIDES with
+  // `source` (`'page-filters'`); at Phase 6 the band moves onto a real field and
+  // `field` gets its own name while `source` keeps naming the same adapter — a rename
+  // behind the same grammar slot. The per-part addresses are STABLE keys (dynamic
+  // barIds / control keys), emitted as `EnumeratedPart.key` by the `sourcedParts`
+  // adapter at enumeration time (Phase 2) → `PartAddress.partPath = ${field}.${key}`.
+  if (meta.band) {
+    parts.push({
+      field:     meta.band.source,
+      residence: 'sourced',
+      source:    meta.band.source,
+    })
+  }
+
+  return parts
+}

@@ -80,7 +80,7 @@ beforeEach(() => {
   // Empty-site seed: a page + English locale, and NO data sources (so App boots the
   // real bootstrapCatalog path, not the offline fallback).
   useConstructorStore.setState({
-    dataSources: [], selectedNodeId: null, chromeSelection: null,
+    dataSources: [], selection: null,
   })
   const store = useConstructorStore.getState()
   store.updateSite({ defaultLocale: 'en', activeLocales: ['en'] })

@@ -50,6 +50,9 @@ const BARS = [
 // wiring survives); a hidden renders nothing (as HiddenShell does).
 vi.mock('@statdash/react/engine', () => ({
   useFiltersContext: () => ({ bars: BARS }),
+  // Off the authoring canvas PartAnchor is a zero-DOM passthrough (a Fragment),
+  // so the mock mirrors that: the span-group DOM stays byte-identical to pre-BE-4.
+  PartAnchor: ({ children }: { children: React.ReactNode }) => children,
   filterControlRegistry: {
     get: (type: string) =>
       type === 'hidden'
