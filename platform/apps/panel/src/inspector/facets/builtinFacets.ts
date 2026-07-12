@@ -12,8 +12,9 @@ import { facetRegistry, CAPS } from '@statdash/react/engine'
 import type { LocaleString, ObjectMeta } from '@statdash/react/engine'
 import { chromeStructuralContract, CHROME_STRUCTURAL_LABELS } from './chromeFacetModel'
 
-const STYLE_LABEL: LocaleString = { ka: 'სტილი', en: 'Style' }
-const DATA_LABEL:  LocaleString = { ka: 'მონაცემები', en: 'Data' }
+const STYLE_LABEL:  LocaleString = { ka: 'სტილი', en: 'Style' }
+const DATA_LABEL:   LocaleString = { ka: 'მონაცემები', en: 'Data' }
+const EVENTS_LABEL: LocaleString = { ka: 'ინტერაქციები', en: 'Interactions' }
 
 let registered = false
 
@@ -54,6 +55,26 @@ export function registerBuiltinFacets(): void {
     label:       DATA_LABEL,
     appliesWhen: (meta) => !!meta.caps?.includes(CAPS.DATA_BINDABLE),
     contract:    () => [{ field: 'data', type: 'data-pipeline', label: DATA_LABEL }],
+  })
+
+  // ── EVENTS (Gap 2) — per-element `on: NodeEventHandler[]` interaction authoring ──
+  //  Opt-in by the declared `interactive` cap (a signal, not a type read — Law 1), so
+  //  ANY interaction-capable element — chart/table/kpi/map — projects an
+  //  `element.facet.events` dock section, NOT a concrete type (FF-NO-EXTERNAL-SPECIAL-
+  //  CASE stays green). The contract is a single `type:'events'` field the dock dispatches
+  //  to EventsField via FieldControlRegistry: a trigger/action list editor over the SAME
+  //  declared NodeAction grammar (filter/highlight/drill) AR-42 built. `readPath:'on'` is
+  //  where the facet lives on the config; the runner interprets `node.on` through the
+  //  existing `useNodeInteractions`/`applySelection` spine (build → declare → runs — the
+  //  authored value is a valid interpretable spec, zero new runtime). Order 50 — after
+  //  style (40); interactions are the last, most-advanced facet in the element dock.
+  facetRegistry.register({
+    id:          'events',
+    order:       50,
+    readPath:    'on',
+    label:       EVENTS_LABEL,
+    appliesWhen: (meta) => !!meta.caps?.includes(CAPS.INTERACTIVE),
+    contract:    () => [{ field: 'on', type: 'events', label: EVENTS_LABEL }],
   })
 
   // ── CHROME (Gap 1) — the site-frame's chrome regions as a FULL structural facet ──

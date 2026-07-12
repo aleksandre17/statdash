@@ -33,6 +33,7 @@ import { LocaleField }  from './controls/LocaleField'
 import { EnumRefField } from './controls/EnumRefField'
 import { StyleField }   from './controls/StyleField'
 import { DataFacetField } from './controls/DataFacetField'
+import { EventsField }   from './controls/EventsField'
 import { ArrayOfControl, ObjectControl } from './controls/NestedItemControl'
 
 /**
@@ -142,6 +143,12 @@ export const fieldControlRegistry: FieldControlRegistry = new FieldControlRegist
   // from the 'DataSpec' type (which stays a read-only SummaryCard glance, step 6) — this
   // dedicated facet type is the AUTHORING surface, opted into by the `data-bindable` cap.
   .register('data-pipeline', DataFacetField)
+  // EVENTS facet control — per-element `on: NodeEventHandler[]` authoring (PropFieldType
+  // 'events'). The dock's generic Events section resolves its `contract` field to this
+  // rich control: a trigger/action list editor over the declared NodeAction grammar
+  // (filter/highlight/drill). Opted into by the `interactive` cap; writes the SAME
+  // interpretable spec `useNodeInteractions` consumes (build → declare → runs).
+  .register('events',        EventsField)
   // rich/opaque types (object · array · DataSpec · ChartDef) are DELIBERATELY not
   // registered here — they fall to the SummaryCard default (resolve() step 6), a
   // constant-weight glance card. Raw JSON is a dev escape only (FF-NO-RAW-JSON-DEFAULT).

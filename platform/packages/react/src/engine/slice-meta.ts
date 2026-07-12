@@ -78,6 +78,7 @@ export type NodeCap =
   | 'flow'
   | 'styleable'
   | 'data-bindable'
+  | 'interactive'
   | (string & {})
 
 /**
@@ -142,6 +143,21 @@ export const CAPS = {
    * authors a raw query/transform/derive/calc pipeline with or without a governed metric.
    */
   DATA_BINDABLE: 'data-bindable',
+  /**
+   * FACET opt-in — the element exposes the universal EVENTS facet (its `on:
+   * NodeEventHandler[]` interaction handlers are authorable in place). The declared
+   * signal the generic Facet axis reads (`FacetDescriptor.appliesWhen`, ./facet) to
+   * project an `element.facet.events` dock section on ANY interaction-capable element
+   * — a chart/table/kpi/map whose shell EMITS gestures (point:click/row:click/
+   * selection:change) that the `useNodeInteractions` spine folds into actions — NEVER
+   * a concrete-type read (Law 1 · FF-NO-EXTERNAL-SPECIAL-CASE). Distinct from the
+   * behavioural `filterable` cap ("responds to filter-context changes"): this is the
+   * AUTHORING opt-in, the peer of `styleable`/`data-bindable`, so an element declares
+   * it can EMIT authorable gestures without overloading the filter-response cap. The
+   * facet authors the declared `NodeEventHandler[]`/`NodeAction` grammar (filter/
+   * highlight/drill) — pure data, the SAME spec `useNodeInteractions` interprets.
+   */
+  INTERACTIVE: 'interactive',
 } as const satisfies Record<string, NodeCap>
 
 /** Narrow type: one of the standard capability token strings. */

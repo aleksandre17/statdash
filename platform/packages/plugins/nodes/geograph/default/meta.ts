@@ -12,7 +12,9 @@ export const META: NodeSliceMeta = {
   groups:          GeographGroups,
   canHaveChildren: true,
   // `flow` (placement capability): a geograph is flow content, admissible in a section.
-  caps:            ['collapsible', 'filterable', 'view-toggle', 'nav-contributor', 'flow'],
+  // `interactive`: opt into the universal EVENTS facet — the map emits selection:change
+  // gestures the `on[]`/NodeAction spine folds (element.facet.events over `on`).
+  caps:            ['collapsible', 'filterable', 'view-toggle', 'nav-contributor', 'flow', 'interactive'],
   version:         1,
   i18n: {
     ka: {

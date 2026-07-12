@@ -156,6 +156,11 @@ const FIELD_RENDERERS: Record<PropFieldType, FieldRenderer> = {
   // JSON (Law 3 — the metric palette + spec editors need the panel's discovery APIs);
   // the panel's Inspector dispatches this type to DataFacetField via FieldControlRegistry.
   'data-pipeline': jsonInput,
+  // events: a rich `on: NodeEventHandler[]` facet. The engine-level form degrades to
+  // JSON (Law 3 — the trigger/action editors need the panel's discovery APIs for the
+  // dimension/filter-param pickers); the panel's Inspector dispatches this type to
+  // EventsField via FieldControlRegistry.
+  events:       jsonInput,
   // enum-ref: options come from a runtime catalog (field.source) the engine can
   // NOT resolve (Law 3 — the panel resolves it against its discovery APIs). At
   // the engine level we degrade to a free-text input for the ref value; a field

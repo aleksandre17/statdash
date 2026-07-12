@@ -124,6 +124,60 @@ describe('FF-FACET-PROJECTED — a declared facet is a generic dock projection',
     }
   })
 
+  // ── EVENTS facet (Gap 2) — per-element `on[]` interaction authoring falls out ──────
+  it('the EVENTS facet is registered with a contract over `on` (falls out generically)', () => {
+    expect(facetRegistry.has('events')).toBe(true)
+    const events = facetRegistry.list().find((f) => f.id === 'events')!
+    expect(events.readPath).toBe('on')
+    // The contract is a PropSchema fragment carrying a `type:'events'` field (dispatched
+    // to EventsField by FieldControlRegistry: the trigger/action list editor over the
+    // declared NodeAction grammar) — genericity in the DISPATCH, not a per-type form.
+    const schema = events.contract({} as ObjectMeta)
+    expect(schema).toHaveLength(1)
+    expect(schema[0]).toMatchObject({ field: 'on', type: 'events' })
+  })
+
+  it('the EVENTS facet appliesWhen reads the `interactive` cap, never a concrete type (Law 1)', () => {
+    const events = facetRegistry.list().find((f) => f.id === 'events')!
+    expect(events.appliesWhen({ caps: ['interactive'] } as ObjectMeta)).toBe(true)
+    // A DIFFERENT declared cap (even the behavioural `filterable`) does NOT opt in — the
+    // predicate is over the dedicated AUTHORING cap, not overloaded onto behaviour caps.
+    expect(events.appliesWhen({ caps: ['filterable'] } as ObjectMeta)).toBe(false)
+    expect(events.appliesWhen({ caps: ['data-bindable'] } as ObjectMeta)).toBe(false)
+    expect(events.appliesWhen({} as ObjectMeta)).toBe(false)
+    // Naming a concrete type but NOT the cap is not special-cased to true.
+    expect(events.appliesWhen({ type: 'chart', caps: [] } as unknown as ObjectMeta)).toBe(false)
+  })
+
+  it('an interactive element gets element.facet.events; a non-interactive one does not', () => {
+    expect(dockSectionRegistry.has('element.facet.events')).toBe(true)
+
+    // A chart declares `interactive` → the Events section applies.
+    const chart = { id: 'c1', type: 'chart', props: {} }
+    const chartIds = dockSectionRegistry
+      .list(elementCtx({ selected: chart as never }))
+      .map((s) => s.id)
+    expect(chartIds).toContain('element.facet.events')
+
+    // A filter-bar is NOT interactive → no Events section (the Figma law: only the
+    // selection's OWN declared contract). Proves it is not type-blind-universal.
+    const filterBar = { id: 'f1', type: 'filter-bar', props: {} }
+    const fbIds = dockSectionRegistry
+      .list(elementCtx({ selected: filterBar as never }))
+      .map((s) => s.id)
+    expect(fbIds).not.toContain('element.facet.events')
+  })
+
+  it('the real registered interaction-capable metas carry the interactive opt-in', () => {
+    // The CONSUMER proof: the declaration the generic EVENTS facet reads is present on the
+    // real interaction-capable elements (chart/table/kpi-strip/geograph — those whose
+    // shells EMIT gestures), so the Events section falls out for each.
+    for (const type of ['chart', 'table', 'kpi-strip', 'geograph']) {
+      const meta = nodeRegistry.getMeta(type) as unknown as ObjectMeta
+      expect(meta?.caps, type).toContain('interactive')
+    }
+  })
+
   it('a value/filter PART with NO element meta gets no node-facet section (facets hidden during drill)', () => {
     // A positional band item carries an itemSchema, not an ObjectMeta (partMeta undefined),
     // so the STYLE/DATA facets stay hidden during a value-band drill — unchanged behaviour.
@@ -133,6 +187,7 @@ describe('FF-FACET-PROJECTED — a declared facet is a generic dock projection',
       .map((s) => s.id)
     expect(ids).not.toContain('element.facet.style')
     expect(ids).not.toContain('element.facet.data')
+    expect(ids).not.toContain('element.facet.events')
     expect(ids).not.toContain('element.facet.chrome')
   })
 

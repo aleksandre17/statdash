@@ -215,6 +215,12 @@ function typeDescriptor(type: PropField['type']): Partial<JsonSchemaProperty> {
       // an authored per-element pipeline; the DataSpec discriminant/shape is enforced
       // at the authoring boundary (DataFacetField → DataSpecEditor), not this type.
       return { type: 'object', $comment: 'DataSpec' }
+    case 'events':
+      // an element's `on: NodeEventHandler[]` — validated as an ARRAY so saveGuard
+      // accepts an authored interaction list; the NodeEventHandler/NodeAction shape is
+      // enforced at the authoring boundary (EventsField over the declared grammar) and
+      // by the engine's `useNodeInteractions` interpreter, not this structural type.
+      return { type: 'array', $comment: 'NodeEventHandler[]' }
     default:
       return { type: 'string' }
   }

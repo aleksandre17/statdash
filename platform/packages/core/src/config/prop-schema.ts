@@ -35,6 +35,7 @@ export type PropFieldType =
   | 'enum-ref'      // value drawn from a runtime catalog — options resolved via `source`
   | 'style'         // a NodeStyles object — token-constrained style authoring (StyleField)
   | 'data-pipeline' // an element's `data: DataSpec` — projected metric-bind ⊕ pipe editor (DataFacetField)
+  | 'events'        // an element's `on: NodeEventHandler[]` — declarative interaction authoring (EventsField)
 
 // ── PropFieldSource — runtime catalog an 'enum-ref' field draws options from ──
 //

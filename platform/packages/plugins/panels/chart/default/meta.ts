@@ -14,6 +14,8 @@ export const META: PanelSliceMeta = {
   // `flow` (placement capability): a chart is flow content, admissible in a section.
   // `styleable`: opt into the universal STYLE facet (element.style over view.styles).
   // `data-bindable`: opt into the universal DATA facet (element.facet.data over `data`).
-  caps:            ['export', 'collapsible', 'filterable', 'view-toggle', 'flow', 'styleable', 'data-bindable'],
+  // `interactive`: opt into the universal EVENTS facet — the chart emits point:click
+  // gestures the `on[]`/NodeAction spine folds (element.facet.events over `on`).
+  caps:            ['export', 'collapsible', 'filterable', 'view-toggle', 'flow', 'styleable', 'data-bindable', 'interactive'],
   version:         1,
 }
