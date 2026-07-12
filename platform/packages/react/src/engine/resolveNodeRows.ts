@@ -15,6 +15,7 @@
 import { interpretSpec, staticStore, CachedStore, applyEncoding, resolveEncodingRefs, resolvePipeRefs, storeVal, applyPipeline, specDataSource, resolveLocaleString, isTaggedLocaleString } from '@statdash/engine'
 import type { DataRow, DataStore, EncodingSpec, EngineRow, PipelineContext, RawRow, DataSpec, TransformStep, DimVal } from '@statdash/engine'
 import type { NodeBase, RenderContext }                                                     from './types'
+import { resolveDrill }                                                                     from './resolveDrill'
 
 // ── effectiveStoreKey — the metric→store precedence [M1] ──────────────
 //
@@ -198,7 +199,13 @@ export function resolveNodeRows(node: NodeBase, ctx: RenderContext): DataRow[] {
     const dataSpec  = dataPipe0?.length
       ? { ...node.data, pipe: resolvePipeRefs(dataPipe0, { dims: ctx.sectionCtx.dims, vars: ctx.vars }) }
       : node.data
-    const rawRows = resolveRowLocales(
+    // AR-42 P2 (DRILL-DOWN): a metric-spec node that declares a `drill` action and has an
+    // ACTIVE drill param re-renders at the drilled hierarchy level via the evalMetricDrill
+    // seam (additivity-correct) INSTEAD of interpreting the base spec. undefined ⇒ not
+    // drilled (no action / no active param / non-metric spec / flat dim) ⇒ the base path is
+    // byte-identical. The drilled rows flow into the SAME encoding / transform / locale tail.
+    const drilled = resolveDrill(node, ctx)
+    const rawRows = drilled ?? resolveRowLocales(
       interpretSpec(dataSpec, ctx.sectionCtx, store) as unknown as DataRow[],
       ctx.locale,
     )

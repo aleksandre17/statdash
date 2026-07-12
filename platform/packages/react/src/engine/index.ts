@@ -169,16 +169,18 @@ export { useFeaturedRows }         from './useFeaturedRows'
 //  No shell wires selection itself (FF-XF-ONE-WRITE-POINT).
 export { useNodeInteractions, resolveActionField } from './useNodeInteractions'
 export type { NodeInteractions }   from './useNodeInteractions'
-export { SELECTION_WRITE_ACTIONS } from './node-events'
+export { SELECTION_WRITE_ACTIONS, drillParamKey } from './node-events'
 export type {
   NodeEventTrigger,
   NodeEventHandler,
   NodeAction,
   FilterAction,
   HighlightAction,
+  DrillAction,
   ActionField,
   SelectionMode,
 }                                  from './node-events'
+export { resolveDrill }            from './resolveDrill'
 
 // ── Shell UI hooks — app-agnostic, reusable by ANY shell ──────────────────
 //  useCollapsible — disclosure state + header a11y/keyboard contract (accordion,

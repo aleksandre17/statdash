@@ -38,6 +38,8 @@ const APPLY_SELECTION = P('../../core/src/data/applySelection.ts')
 
 // ── Consumer/emitter evidence sites (the render layer) ──────────────────────
 const USE_NODE_INTERACTIONS = P('../../react/src/engine/useNodeInteractions.ts')
+const RESOLVE_DRILL         = P('../../react/src/engine/resolveDrill.ts')
+const RESOLVE_NODE_ROWS     = P('../../react/src/engine/resolveNodeRows.ts')
 const USE_CHART_INTERACTIONS = P('../panels/chart/default/useChartInteractions.ts')
 const USE_CHART_OUTPUT       = P('../panels/chart/default/useChartOutput.ts')
 const TABLE_SHELL            = P('../panels/table/default/TableShell.tsx')
@@ -100,6 +102,19 @@ const ACTION_CONSUMERS: Record<string, Entry> = {
       [TABLE_SHELL, 'SELECTION_WRITE_ACTIONS'],
       [USE_CHART_OUTPUT, 'resolveEmphasis'],
       [EMIT_CARTESIAN, 'emphasis'],
+    ],
+  },
+  // A drill action writes a drill-state param (the target hierarchy level) through the
+  // SAME applySelection/CommandBus write point (drillParamKey SSOT, selectionWrite in
+  // useNodeInteractions). Its render Consumer: resolveDrill re-renders a metric-spec node
+  // at the drilled grain via the core evalMetricDrill seam (additivity-correct), wired into
+  // the row path in resolveNodeRows.
+  drill: {
+    consumer: 'resolveDrill → evalMetricDrill (drilled metric grain), wired in resolveNodeRows',
+    evidence: [
+      [USE_NODE_INTERACTIONS, 'drillParamKey'],
+      [RESOLVE_DRILL, 'evalMetricDrill'],
+      [RESOLVE_NODE_ROWS, 'resolveDrill'],
     ],
   },
 }

@@ -40,7 +40,13 @@ function TableControl({
   //  arm — not `filter` alone — is what finally gives a declared `type:'highlight'`
   //  a live render Consumer (AR-42 render-boundary completion; FF-ACTION-ARM-CONSUMED).
   const { emit } = useNodeInteractions(def, ctx)
-  const selectAction = def.on?.flatMap((h) => h.actions).find((a) => SELECTION_WRITE_ACTIONS.has(a.type))
+  // A table row-selection writes a clicked ROW FIELD into a `key` param (filter /
+  // highlight). The `drill` selection-write arm has no `key` (it writes a hierarchy
+  // level, not a row value) and is not a table row-selection — narrow to the key-bearing
+  // arms so `.key` is sound and a drill arm never mis-reads as a row selection.
+  const selectAction = def.on?.flatMap((h) => h.actions).find(
+    (a): a is Extract<typeof a, { key: unknown }> => SELECTION_WRITE_ACTIONS.has(a.type) && 'key' in a,
+  )
   const onRowSelect = selectAction
     ? (row: DataRow) => emit('row:click', row as unknown as Record<string, unknown>)
     : undefined

@@ -26,8 +26,8 @@ import { applySelection, resolveRef } from '@statdash/engine'
 import type { DimVal, RefServices } from '@statdash/engine'
 import type { RenderContext } from './types'
 import type { NodeBase }      from './types'
-import type { NodeEventTrigger, FilterAction, ActionField } from './node-events'
-import { SELECTION_WRITE_ACTIONS } from './node-events'
+import type { NodeEventTrigger, FilterAction, ActionField, NodeAction } from './node-events'
+import { SELECTION_WRITE_ACTIONS, drillParamKey } from './node-events'
 
 // ── resolveActionField — lower a state-bindable action field (AR-36/AR-38 §4.1) ──
 //
@@ -50,6 +50,34 @@ export function resolveActionField(
   // $ctx → dims, else $ref → vars — the one dispatcher, no second read path.
   const resolved = resolveRef(v, services) ?? resolveRef({ $ref: v.$ctx }, services)
   return resolved == null ? undefined : String(resolved)
+}
+
+// ── selectionWrite — a SELECTION-WRITE arm's (key, value, mode) for THIS gesture ──
+//
+//  Each selection-write arm DECLARES how it sources its param write; this ONE resolver
+//  reads that declaration so the emit loop stays a generic mechanism over the arms (no
+//  per-type branch in the fold spine — Bounded-Element / OCP). Returns the fold inputs,
+//  or `undefined` when the arm cannot resolve a write for this gesture (skipped, no write):
+//    • filter / highlight — the value is a clicked ROW FIELD (`fromField ?? key`); the
+//      target param is `key`. Both may be `{ $ctx }` refs (lowered via resolveActionField).
+//    • drill              — the value is the declared `toLevel` LITERAL; the target param
+//      is `param ?? drillParamKey(dimension)`, always a `replace` fold (drill/roll-up toggle).
+function selectionWrite(
+  action:   NodeAction,
+  row:      Record<string, unknown>,
+  services: RefServices,
+): { key: string; value: string; mode: FilterAction['mode']; max?: number } | undefined {
+  if (action.type === 'drill') {
+    const key = resolveActionField(action.param, services) ?? drillParamKey(action.dimension)
+    return { key, value: String(action.toLevel), mode: 'replace' }
+  }
+  // filter / highlight — same row-field write shape (distinguished only downstream).
+  const key = resolveActionField(action.key, services)
+  if (!key) return undefined                                    // unresolved param → no write
+  const field = resolveActionField(action.fromField, services) ?? key
+  const raw   = row[field]
+  if (raw === undefined || raw === null) return undefined       // no value → no write
+  return { key, value: String(raw), mode: action.mode, max: action.max }
 }
 
 export interface NodeInteractions {
@@ -90,12 +118,9 @@ export function useNodeInteractions(def: NodeBase, ctx: RenderContext): NodeInte
         if (handler.event !== trigger) continue
         for (const action of handler.actions) {
           if (!SELECTION_WRITE_ACTIONS.has(action.type)) continue
-          const key = resolveActionField(action.key, services)
-          if (!key) continue                                        // unresolved param → no write
-          const field = resolveActionField(action.fromField, services) ?? key
-          const raw   = row[field]
-          if (raw === undefined || raw === null) continue           // no value → no write
-          fold(key, String(raw), action.mode, action.max)
+          const w = selectionWrite(action, row, services)
+          if (!w) continue                                          // arm resolved no write
+          fold(w.key, w.value, w.mode, w.max)
         }
       }
 

@@ -82,20 +82,60 @@ export interface HighlightAction {
 }
 
 /**
- * Extensible discriminated union of all declarative action types (OCP — a new arm is
- * a new capability, the interpreter unchanged). `filter` and `highlight` are the two
- * SELECTION-WRITE arms today: both fold a row value into a param through the one
- * `applySelection`/CommandBus spine, distinguished only by how the target Consumer
- * reads the param (query filter vs encoding condition).
+ * Action (AR-42 P2 — DRILL-DOWN): descend a governed dimension HIERARCHY. The gesture
+ * writes a DRILL-STATE param (the target level along `dimension`'s `DimensionHierarchy`)
+ * through the SAME `applySelection`/CommandBus spine as `filter`/`highlight` — the only
+ * difference is the WRITE VALUE SOURCE (a declared `toLevel` literal, not a clicked row
+ * field) and the downstream Consumer (the metric re-renders at the drilled grain via the
+ * `evalMetricDrill` seam — additivity-correct: base measures sum descendant leaves, a
+ * ratio re-derives, FF-NO-SUM-OF-RATIO). Emits the `DrillTarget { dimension, level }` the
+ * core `data/drill.ts` seam lowers. Law 1: `dimension` is a generic DimensionDef id, never
+ * a privileged-dim literal in code; Law 2: pure data.
+ *
+ * A `replace`-mode fold gives free drill/roll-up toggle: the first click writes `toLevel`;
+ * a re-click on the SAME level clears the param (rolls back to the metric spec's own grain).
  */
-export type NodeAction = FilterAction | HighlightAction
+export interface DrillAction {
+  type:      'drill'
+  /** The DimensionDef id (registry key) whose governed hierarchy to descend (Law 1). */
+  dimension: string
+  /** Target hierarchy level index (0 = coarsest root; e.g. 1 = one level down). */
+  toLevel:   number
+  /**
+   * The drill-state param key written by the gesture and read by the Consumer. Optional —
+   * defaults to the `drillParamKey(dimension)` SSOT so the writer and the render Consumer
+   * derive the SAME key (never a hand-copied literal). May be a `{ $ctx }` ref (state-bound).
+   */
+  param?:    ActionField
+}
+
+/**
+ * drillParamKey — the SSOT drill-state param key for a dimension. A private, namespaced
+ * key (`__drill:<dim>`) so a drill's grain state never collides with a query filter param
+ * for the same dim. Parameterized by the DECLARED dimension (no privileged-dim literal,
+ * Law 1). Shared by the writer (`useNodeInteractions`) and the render Consumer
+ * (`resolveDrill`) so a drilled param is written and read through ONE key derivation.
+ */
+export function drillParamKey(dimension: string): string {
+  return `__drill:${dimension}`
+}
+
+/**
+ * Extensible discriminated union of all declarative action types (OCP — a new arm is
+ * a new capability, the interpreter unchanged). `filter`, `highlight` and `drill` are the
+ * three SELECTION-WRITE arms today: each folds a value into a param through the one
+ * `applySelection`/CommandBus spine, distinguished only by the write-value SOURCE (a
+ * clicked row field vs a declared drill level) and how the Consumer reads the param
+ * (query filter · encoding condition · drilled metric grain).
+ */
+export type NodeAction = FilterAction | HighlightAction | DrillAction
 
 /**
  * The action types that WRITE a selection param through the `applySelection`/CommandBus
  * spine (as opposed to, e.g., a future navigate arm). A new selection-write arm joins by
  * membership here — a declaration, not an interpreter branch (FF-ACTION-UNION-OCP).
  */
-export const SELECTION_WRITE_ACTIONS = new Set<NodeAction['type']>(['filter', 'highlight'])
+export const SELECTION_WRITE_ACTIONS = new Set<NodeAction['type']>(['filter', 'highlight', 'drill'])
 
 /** Maps one trigger event to one or more actions. */
 export interface NodeEventHandler {
