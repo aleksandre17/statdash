@@ -161,6 +161,11 @@ const FIELD_RENDERERS: Record<PropFieldType, FieldRenderer> = {
   // dimension/filter-param pickers); the panel's Inspector dispatches this type to
   // EventsField via FieldControlRegistry.
   events:       jsonInput,
+  // visibility: a rich `view.visibleWhen: VisibilityExpr` facet. The engine-level form
+  // degrades to JSON (Law 3 — the condition builder needs the panel's ParamDef / cube-
+  // member discovery for its leaf pickers); the panel's Inspector dispatches this type
+  // to VisibilityField via FieldControlRegistry.
+  visibility:   jsonInput,
   // enum-ref: options come from a runtime catalog (field.source) the engine can
   // NOT resolve (Law 3 — the panel resolves it against its discovery APIs). At
   // the engine level we degrade to a free-text input for the ref value; a field

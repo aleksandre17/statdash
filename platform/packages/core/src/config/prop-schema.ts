@@ -36,6 +36,7 @@ export type PropFieldType =
   | 'style'         // a NodeStyles object — token-constrained style authoring (StyleField)
   | 'data-pipeline' // an element's `data: DataSpec` — projected metric-bind ⊕ pipe editor (DataFacetField)
   | 'events'        // an element's `on: NodeEventHandler[]` — declarative interaction authoring (EventsField)
+  | 'visibility'    // an element's `view.visibleWhen: VisibilityExpr` — conditional-visibility authoring (VisibilityField)
 
 // ── PropFieldSource — runtime catalog an 'enum-ref' field draws options from ──
 //

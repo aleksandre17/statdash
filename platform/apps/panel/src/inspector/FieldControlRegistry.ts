@@ -34,6 +34,7 @@ import { EnumRefField } from './controls/EnumRefField'
 import { StyleField }   from './controls/StyleField'
 import { DataFacetField } from './controls/DataFacetField'
 import { EventsField }   from './controls/EventsField'
+import { VisibilityField } from './controls/VisibilityField'
 import { ArrayOfControl, ObjectControl } from './controls/NestedItemControl'
 
 /**
@@ -149,6 +150,13 @@ export const fieldControlRegistry: FieldControlRegistry = new FieldControlRegist
   // (filter/highlight/drill). Opted into by the `interactive` cap; writes the SAME
   // interpretable spec `useNodeInteractions` consumes (build → declare → runs).
   .register('events',        EventsField)
+  // VISIBILITY facet control — per-element `view.visibleWhen: VisibilityExpr` authoring
+  // (PropFieldType 'visibility'). The dock's generic Visibility section resolves its
+  // `contract` field to this rich control: the recursive show-when condition builder over
+  // the declared VisibilityExpr grammar (eq/neq/in/isset/perspective-*/and/or/not). Applies
+  // to ANY renderable element (universal facet); writes the SAME interpretable expr
+  // `renderNode`/`evalVisibility` consumes at render (build → declare → runs, zero new runtime).
+  .register('visibility',    VisibilityField)
   // rich/opaque types (object · array · DataSpec · ChartDef) are DELIBERATELY not
   // registered here — they fall to the SummaryCard default (resolve() step 6), a
   // constant-weight glance card. Raw JSON is a dev escape only (FF-NO-RAW-JSON-DEFAULT).

@@ -178,6 +178,69 @@ describe('FF-FACET-PROJECTED — a declared facet is a generic dock projection',
     }
   })
 
+  // ── VISIBILITY facet (Gap 2, interaction half) — the UNIVERSAL show-when facet ──────
+  it('the VISIBILITY facet is registered with a contract over `view.visibleWhen` (falls out generically)', () => {
+    expect(facetRegistry.has('visibility')).toBe(true)
+    const vis = facetRegistry.list().find((f) => f.id === 'visibility')!
+    expect(vis.readPath).toBe('view.visibleWhen')
+    // The contract is a PropSchema fragment carrying a `type:'visibility'` field (dispatched
+    // to VisibilityField by FieldControlRegistry: the recursive show-when condition builder) —
+    // genericity in the DISPATCH, not a per-type visibility form.
+    const schema = vis.contract({} as ObjectMeta)
+    expect(schema).toHaveLength(1)
+    expect(schema[0]).toMatchObject({ field: 'view.visibleWhen', type: 'visibility' })
+  })
+
+  it('the VISIBILITY facet is UNIVERSAL — applies to any renderable element, never a chrome slot (Law 1)', () => {
+    const vis = facetRegistry.list().find((f) => f.id === 'visibility')!
+    // Unlike the opt-in caps, visibility is universal: ANY renderable page node opts in by
+    // DECLARATION absence-of-slot (the INVERSE of the chrome facet's `slot` predicate) — never
+    // a concrete type read. A bare meta, a styleable meta, a data meta → all applicable.
+    expect(vis.appliesWhen({} as ObjectMeta)).toBe(true)
+    expect(vis.appliesWhen({ caps: ['styleable'] } as ObjectMeta)).toBe(true)
+    expect(vis.appliesWhen({ caps: ['data-bindable'] } as ObjectMeta)).toBe(true)
+    expect(vis.appliesWhen({ type: 'chart', caps: [] } as unknown as ObjectMeta)).toBe(true)
+    // …but NOT a chrome-slot part meta (its write lane is structural, not `view.visibleWhen`).
+    expect(vis.appliesWhen({ slot: 'AppHeader' } as unknown as ObjectMeta)).toBe(false)
+  })
+
+  it('any whole node gets element.facet.visibility; a chrome region does not', () => {
+    expect(dockSectionRegistry.has('element.facet.visibility')).toBe(true)
+
+    // A chart (whole page node, no `slot`) → the Visibility section applies.
+    const chart = { id: 'c1', type: 'chart', props: {} }
+    const chartIds = dockSectionRegistry
+      .list(elementCtx({ selected: chart as never }))
+      .map((s) => s.id)
+    expect(chartIds).toContain('element.facet.visibility')
+
+    // A filter-bar (also a whole node, no `slot`) → visibility applies too (universal — it is
+    // NOT gated on an opt-in cap, unlike style/data/events, which a filter-bar lacks).
+    const filterBar = { id: 'f1', type: 'filter-bar', props: {} }
+    const fbIds = dockSectionRegistry
+      .list(elementCtx({ selected: filterBar as never }))
+      .map((s) => s.id)
+    expect(fbIds).toContain('element.facet.visibility')
+
+    // A chrome region PART (its meta declares `slot`) → visibility does NOT bleed onto it.
+    const partMeta = chromeRegistry.getMeta('AppHeader', 'default') as unknown as ObjectMeta
+    const chromeBand = { path: 'chrome.AppHeader', ownerId: 'site-frame', source: 'site-chrome', field: 'AppHeader', partMeta }
+    const chromeIds = dockSectionRegistry
+      .list(elementCtx({ selectedBand: chromeBand as never }))
+      .map((s) => s.id)
+    expect(chromeIds).not.toContain('element.facet.visibility')
+  })
+
+  it('all SIX facet dimensions are covered — style·data·events·visibility·chrome project; content is the schema axis', () => {
+    // The five FACET-axis descriptors (content is the CONSTITUENT axis — `element.schema`).
+    for (const id of ['style', 'data', 'events', 'visibility', 'chrome']) {
+      expect(facetRegistry.has(id), id).toBe(true)
+      expect(dockSectionRegistry.has(`element.facet.${id}`), id).toBe(true)
+    }
+    // Content = the part/schema projection (not a FacetDescriptor) — the sixth dimension.
+    expect(dockSectionRegistry.has('element.schema')).toBe(true)
+  })
+
   it('a value/filter PART with NO element meta gets no node-facet section (facets hidden during drill)', () => {
     // A positional band item carries an itemSchema, not an ObjectMeta (partMeta undefined),
     // so the STYLE/DATA facets stay hidden during a value-band drill — unchanged behaviour.
@@ -189,6 +252,9 @@ describe('FF-FACET-PROJECTED — a declared facet is a generic dock projection',
     expect(ids).not.toContain('element.facet.data')
     expect(ids).not.toContain('element.facet.events')
     expect(ids).not.toContain('element.facet.chrome')
+    // …and visibility too: a positional item exposes no element meta, so the universal
+    // visibility facet also stays hidden during a value-band drill (meta undefined).
+    expect(ids).not.toContain('element.facet.visibility')
   })
 
   // ── CHROME facet (Gap 1) — the full chrome contract falls out generically ──────

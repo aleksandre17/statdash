@@ -221,6 +221,12 @@ function typeDescriptor(type: PropField['type']): Partial<JsonSchemaProperty> {
       // enforced at the authoring boundary (EventsField over the declared grammar) and
       // by the engine's `useNodeInteractions` interpreter, not this structural type.
       return { type: 'array', $comment: 'NodeEventHandler[]' }
+    case 'visibility':
+      // an element's `view.visibleWhen: VisibilityExpr` — validated as an object so
+      // saveGuard accepts an authored show-when condition; the VisibilityExpr union
+      // shape is enforced at the authoring boundary (VisibilityField → VisibilityBuilder)
+      // and by the engine's `evalVisibility` interpreter, not this structural type.
+      return { type: 'object', $comment: 'VisibilityExpr' }
     default:
       return { type: 'string' }
   }

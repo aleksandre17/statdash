@@ -9,7 +9,11 @@ import { describe, it, expect } from 'vitest'
 import type { CanvasController } from '../../studio/useCanvasController'
 import { dockSectionRegistry, type DockRenderCtx } from './dockSection'
 import { registerBuiltinDockSections } from './builtins'
+import { setupCanvasRegistry } from '../../canvas/setupCanvasRegistry'
 
+// Real plugin metas (chart carries styleable/data-bindable/interactive; no `slot`) so the
+// FACET sections resolve their applicability by the SELECTED element's declared meta.
+setupCanvasRegistry()
 registerBuiltinDockSections()
 
 // A minimal controller stub — only the fields the section `appliesTo` guards read.
@@ -29,12 +33,16 @@ describe('dockSectionRegistry — the hardcoded stack is now registered data', (
     // section is a FACET projection, the peer of `element.facet.style` (Slice 1).
     // S6: the `element.chrome` section is RETIRED — a chrome region is a bounded PART,
     // projected through the SAME generic `element.schema` section (no chrome-specific dock).
+    // SPEC-deep-authorability-completion (Gap 2): the hand-wired `element.visibility` is
+    // likewise folded into the generic VISIBILITY facet (`element.facet.visibility`).
     for (const id of [
-      'element.schema', 'element.facet.data', 'element.visibility',
+      'element.schema', 'element.facet.data', 'element.facet.visibility',
       'page.config', 'page.perspectives', 'page.filters',
     ]) {
       expect(dockSectionRegistry.has(id), id).toBe(true)
     }
+    // The hand-wired `element.visibility` section is GONE — folded into the facet.
+    expect(dockSectionRegistry.has('element.visibility')).toBe(false)
     expect(dockSectionRegistry.has('element.chrome')).toBe(false)
     // The hand-wired `element.data` section is GONE — folded into the facet (no parallel
     // surface, SPEC reconciliation). Its applicability-by-declaration is proven, with real
@@ -47,13 +55,13 @@ describe('dockSectionRegistry — the hardcoded stack is now registered data', (
     expect(ids).toEqual(['page.config', 'page.perspectives', 'page.filters'])
   })
 
-  it('element scope with a whole node lists schema + visibility (no page panes)', () => {
+  it('element scope with a whole node lists schema + the visibility facet (no page panes)', () => {
     const node = { id: 'n1', type: 'chart', props: {} }
     const ids = dockSectionRegistry
       .list(ctx({ scope: 'element', controller: controller({ selected: node as never }) }))
       .map((s) => s.id)
     expect(ids).toContain('element.schema')
-    expect(ids).toContain('element.visibility')
+    expect(ids).toContain('element.facet.visibility')
     expect(ids.some((i) => i.startsWith('page.'))).toBe(false)
   })
 

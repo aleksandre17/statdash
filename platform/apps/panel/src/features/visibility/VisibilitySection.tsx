@@ -28,9 +28,16 @@ export interface VisibilitySectionProps {
    * this to a `view.visibleWhen` dot-path patch (or a delete when undefined).
    */
   onChange: (next: VisibilityExpr | undefined) => void
+  /**
+   * Render the section's own "ჩვენების პირობა" overline heading. Default `true`
+   * (self-contained surface, e.g. the ParamDefEditor's filter-scoping section).
+   * The VISIBILITY facet passes `false`: the generic Inspector already renders the
+   * facet's field label as the single heading, so a second overline is redundant (DRY).
+   */
+  heading?: boolean
 }
 
-export function VisibilitySection({ value, onChange }: VisibilitySectionProps) {
+export function VisibilitySection({ value, onChange, heading = true }: VisibilitySectionProps) {
   const enabled = value != null
 
   const toggle = (on: boolean) => {
@@ -40,10 +47,12 @@ export function VisibilitySection({ value, onChange }: VisibilitySectionProps) {
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }} data-testid="visibility-section">
-      <Stack direction="row" spacing={1} alignItems="center">
-        <VisibilityIcon fontSize="small" color="action" />
-        <Typography variant="overline" color="text.secondary">ჩვენების პირობა</Typography>
-      </Stack>
+      {heading && (
+        <Stack direction="row" spacing={1} alignItems="center">
+          <VisibilityIcon fontSize="small" color="action" />
+          <Typography variant="overline" color="text.secondary">ჩვენების პირობა</Typography>
+        </Stack>
+      )}
 
       <FormControlLabel
         control={<Switch size="small" checked={enabled}

@@ -12,9 +12,10 @@ import { facetRegistry, CAPS } from '@statdash/react/engine'
 import type { LocaleString, ObjectMeta } from '@statdash/react/engine'
 import { chromeStructuralContract, CHROME_STRUCTURAL_LABELS } from './chromeFacetModel'
 
-const STYLE_LABEL:  LocaleString = { ka: 'სტილი', en: 'Style' }
-const DATA_LABEL:   LocaleString = { ka: 'მონაცემები', en: 'Data' }
-const EVENTS_LABEL: LocaleString = { ka: 'ინტერაქციები', en: 'Interactions' }
+const STYLE_LABEL:      LocaleString = { ka: 'სტილი', en: 'Style' }
+const DATA_LABEL:       LocaleString = { ka: 'მონაცემები', en: 'Data' }
+const EVENTS_LABEL:     LocaleString = { ka: 'ინტერაქციები', en: 'Interactions' }
+const VISIBILITY_LABEL: LocaleString = { ka: 'ხილვადობა', en: 'Visibility' }
 
 let registered = false
 
@@ -75,6 +76,30 @@ export function registerBuiltinFacets(): void {
     label:       EVENTS_LABEL,
     appliesWhen: (meta) => !!meta.caps?.includes(CAPS.INTERACTIVE),
     contract:    () => [{ field: 'on', type: 'events', label: EVENTS_LABEL }],
+  })
+
+  // ── VISIBILITY (Gap 2, interaction half) — per-element `view.visibleWhen` authoring ─
+  //  The UNIVERSAL facet: EVERY renderable element can carry a conditional-visibility
+  //  gate (`view.visibleWhen: VisibilityExpr`), so — unlike the opt-in `styleable`/
+  //  `data-bindable`/`interactive` caps — this facet applies broadly. `appliesWhen` is
+  //  DECLARED, not a type list (Law 1 · FF-NO-EXTERNAL-SPECIAL-CASE stays green): it reads
+  //  the `slot` DISCRIMINANT — the INVERSE of the chrome facet's predicate — so it projects
+  //  onto any element that is NOT a chrome region (i.e. any renderable page node: chart/
+  //  section/table/kpi/hero/…), never a chrome-slot part (whose write lane is structural,
+  //  not `view.visibleWhen`). The contract is a single `type:'visibility'` field the dock
+  //  dispatches to VisibilityField via FieldControlRegistry: the recursive show-when
+  //  condition builder over the declared VisibilityExpr grammar. `readPath:'view.visibleWhen'`
+  //  is where the facet lives on the config; `renderNode` already evaluates it via
+  //  `evalVisibility` (build → declare → runs — the authored value is a valid interpretable
+  //  spec, zero new runtime). Order 30 — the slot the retired hand-wired `element.visibility`
+  //  section held (folded into this facet, the peer of how DATA folded `element.data`).
+  facetRegistry.register({
+    id:          'visibility',
+    order:       30,
+    readPath:    'view.visibleWhen',
+    label:       VISIBILITY_LABEL,
+    appliesWhen: (meta) => typeof (meta as { slot?: unknown }).slot !== 'string',
+    contract:    () => [{ field: 'view.visibleWhen', type: 'visibility', label: VISIBILITY_LABEL }],
   })
 
   // ── CHROME (Gap 1) — the site-frame's chrome regions as a FULL structural facet ──

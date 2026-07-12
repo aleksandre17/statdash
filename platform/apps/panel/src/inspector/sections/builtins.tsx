@@ -14,11 +14,9 @@
 //
 import { Box, Chip, Button, Typography } from '@mui/material'
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft'
-import type { VisibilityExpr } from '@statdash/engine'
 import { nodeRegistry, facetRegistry, SITE_FRAME_ID } from '@statdash/react/engine'
 import type { ObjectMeta } from '@statdash/react/engine'
 import { Inspector } from '../Inspector'
-import { VisibilitySection } from '../../features/visibility'
 import { PageInspectorPanel } from '../../features/page-config'
 import { PerspectivesPane } from '../../features/perspectives'
 import { FiltersDrawer } from '../../features/filters'
@@ -37,10 +35,6 @@ const nodeSelected = (ctx: DockRenderCtx): boolean =>
  *  (owned by the site-frame, so no page `selected`). The generic item projection path. */
 const partSelected = (ctx: DockRenderCtx): boolean =>
   ctx.scope === 'element' && !!ctx.controller.selectedBand
-
-/** A WHOLE node is selected (no drilled band item) — the node-scoped sections. */
-const wholeNodeSelected = (ctx: DockRenderCtx): boolean =>
-  nodeSelected(ctx) && !ctx.controller.selectedBand
 
 // ── BandItemHeader — the bounded child's crumb + a one-click return to its owner ──
 //  Keeps the dock oriented (which strip · which card) while the body shows ONLY the
@@ -139,28 +133,19 @@ export function registerBuiltinDockSections(): void {
     //  palette ⊕ the DataSpec pipe editor (metric-optional, pipe-over-governed), so the
     //  Data surface is BOTH governed-bind AND in-place pipeline authoring — the facet-axis
     //  peer of `element.schema`, no per-type dock branch. Nothing about RightDock changes.
-    // ── ELEMENT · visibility (re-registered, no longer hardcoded) ────────────────
-    //  NOTE (SPEC S3): the per-type `element.context` bridge (nodeContextEditors —
-    //  the `filter-bar` → FilterBarControlsBridge type-keyed map) is DELETED. It was
-    //  the ADR-038 anti-pattern (a type-keyed map reaching into an element's internals
-    //  from outside the generic dock). Filter controls are now `sourcedParts` (ADR-041):
-    //  enumerated by the port, selected on the canvas, and projected by `element.schema`
-    //  like any other part — no per-type dock branch. The dock names NO concrete type.
-    .register({
-      id:        'element.visibility',
-      order:     30,
-      appliesTo: (ctx) => wholeNodeSelected(ctx),
-      render:    (ctx) => {
-        const { selected, setVisibleWhen } = ctx.controller
-        if (!selected) return null
-        return (
-          <VisibilitySection
-            value={(selected.props.view as { visibleWhen?: VisibilityExpr } | undefined)?.visibleWhen}
-            onChange={setVisibleWhen}
-          />
-        )
-      },
-    })
+    // ── ELEMENT · visibility — RE-HOMED as a FACET projection (element.facet.visibility) ─
+    //  SPEC-deep-authorability-completion (Gap 2, interaction half): the `view.visibleWhen`
+    //  show-when builder is no longer a hand-wired section here — it is now the generic
+    //  VISIBILITY facet (`registerFacetSections` derives `element.facet.visibility` from the
+    //  `visibility` FacetDescriptor, which applies to any renderable element). That section
+    //  projects the SAME recursive VisibilitySection builder through the facet axis, the peer
+    //  of how the DATA facet folded the old `element.data` metric-bind. Nothing about RightDock
+    //  changes; the retired `setVisibleWhen` write lane is left orphaned (a follow-up cleanup).
+    //  NOTE (SPEC S3): the per-type `element.context` bridge (nodeContextEditors — the
+    //  `filter-bar` → FilterBarControlsBridge type-keyed map) is DELETED. It was the ADR-038
+    //  anti-pattern (a type-keyed map reaching into an element's internals from outside the
+    //  generic dock). Filter controls are now `sourcedParts` (ADR-041): enumerated by the port,
+    //  selected on the canvas, and projected by `element.schema` like any other part.
     // ── PAGE · config ────────────────────────────────────────────────────────────
     .register({
       id:        'page.config',
