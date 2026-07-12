@@ -72,22 +72,24 @@ export function StudioShell() {
   const site = useSite()
   const cmdk = useCommandPalette()
 
-  // ── Selected page ↔ `?page=` — a deep-linkable, convergent binding ────────────
+  // ── Selected page ↔ `?page=` — deep-linkable, SINGLE-WRITER binding ───────────
   //  The surface owns the path segment; the selected canvas page rides a query param
   //  so a pasted `/studio/<surface>?page=<id>` opens that page and Back/Forward restore
-  //  it. The store stays the working SSOT for the page (it is woven through the canvas
-  //  controller, lifecycle, and every setActivePage caller) — this is a two-way binding
-  //  that CONVERGES (each side writes only while they differ, then both no-op), so it
-  //  self-heals rather than drifts. URL→store handles deep-link + Back/Forward; store→URL
-  //  (replace, a within-surface refinement — surfaces are the history spine) mirrors tab
-  //  clicks and boot hydration into the address bar.
+  //  it. The STORE is the sole SSOT (woven through the canvas controller, lifecycle, and
+  //  every setActivePage caller); the URL is a one-way PROJECTION of it (Effect B, below).
+  //  Effect A applies genuine URL events (deep-link, Back/Forward) into the store — and
+  //  deliberately does NOT depend on / guard against `activePageId`. An earlier two-way
+  //  form did, which let a store change re-trigger Effect A and REVERT itself; against
+  //  Effect B the two sides then swapped forever (the infinite page-nav loop). setActivePage
+  //  is idempotent (zustand bails on an identical value), so Effect A re-running after
+  //  Effect B settles the URL is a no-op — the binding reaches a fixpoint.
   const [searchParams, setSearchParams] = useSearchParams()
   const urlPageId = searchParams.get('page')
   useEffect(() => {
-    if (urlPageId && urlPageId !== activePageId && pages.some((p) => p.id === urlPageId)) {
+    if (urlPageId && pages.some((p) => p.id === urlPageId)) {
       setActivePage(urlPageId)
     }
-  }, [urlPageId, activePageId, pages, setActivePage])
+  }, [urlPageId, pages, setActivePage])
   useEffect(() => {
     if (activePageId && activePageId !== urlPageId) {
       setSearchParams(
