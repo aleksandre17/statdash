@@ -148,6 +148,10 @@ const FIELD_RENDERERS: Record<PropFieldType, FieldRenderer> = {
   array:        jsonInput,
   DataSpec:     jsonInput,
   ChartDef:     jsonInput,
+  // style: a rich NodeStyles object. The engine-level form degrades to JSON (Law 3 —
+  // token pickers need the panel's TOKENS_CATALOG); the panel's Inspector dispatches
+  // this type to the token-constrained StyleField via FieldControlRegistry.
+  style:        jsonInput,
   // enum-ref: options come from a runtime catalog (field.source) the engine can
   // NOT resolve (Law 3 — the panel resolves it against its discovery APIs). At
   // the engine level we degrade to a free-text input for the ref value; a field
