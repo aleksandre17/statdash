@@ -129,6 +129,72 @@ describe('useNodeInteractions — FF-XF-SELECT-WRITES', () => {
     })
   })
 
+  // ── AR-42 P1 — the additive union arms (HighlightAction · interval:brush) ────
+  //  Both ride the EXACT same applySelection/CommandBus spine as FilterAction — no
+  //  second interaction plane (FF-XF-ONE-WRITE-POINT). A highlight styles a Consumer
+  //  without scoping a query (the param it writes is read by an encoding condition,
+  //  never query.filter); an interval:brush folds a [lo,hi] range through the new
+  //  applySelection `interval` mode into a range param.
+  describe('AR-42 P1 — highlight arm rides the one write point', () => {
+    it('a row:hover highlight reaches the ONE write point (filter:set, transient param)', () => {
+      const def = {
+        type: 'chart',
+        on: [{ event: 'row:hover', actions: [{ type: 'highlight', key: 'hl_sector', fromField: 'sector' }] }],
+      } as unknown as NodeBase
+      const { ctx, dispatch } = mockCtx()
+      const { result } = renderHook(() => useNodeInteractions(def, ctx))
+
+      result.current.emit('row:hover', { sector: 'A' })
+      expect(dispatch).toHaveBeenCalledWith({ type: 'filter:set', key: 'hl_sector', value: 'A' })
+    })
+
+    it('a filter + a highlight on one gesture dispatch atomically through the SAME spine', () => {
+      const def = {
+        type: 'chart',
+        on: [{ event: 'point:click', actions: [
+          { type: 'filter',    key: 'sector', fromField: 'sector' },
+          { type: 'highlight', key: 'hl_geo', fromField: 'geo'    },
+        ] }],
+      } as unknown as NodeBase
+      const { ctx, dispatch } = mockCtx()
+      const { result } = renderHook(() => useNodeInteractions(def, ctx))
+
+      result.current.emit('point:click', { sector: 'A', geo: 'R2' })
+      expect(dispatch).toHaveBeenCalledWith({ type: 'filter:setMany', values: { sector: 'A', hl_geo: 'R2' } })
+    })
+  })
+
+  describe('AR-42 P1 — interval:brush folds a [lo,hi] range', () => {
+    it('a brush emits a normalized range param (min,max) via the interval mode', () => {
+      const def = {
+        type: 'chart',
+        on: [{ event: 'interval:brush', actions: [
+          { type: 'filter', key: 'year', fromField: 'range', mode: 'interval' },
+        ] }],
+      } as unknown as NodeBase
+      const { ctx, dispatch } = mockCtx()
+      const { result } = renderHook(() => useNodeInteractions(def, ctx))
+
+      // The brush surface hands the two bounds (any order) as the encoded field value.
+      result.current.emit('interval:brush', { range: '2020,2010' })
+      expect(dispatch).toHaveBeenCalledWith({ type: 'filter:set', key: 'year', value: '2010,2020' })
+    })
+
+    it('a degenerate/empty brush clears the range param', () => {
+      const def = {
+        type: 'chart',
+        on: [{ event: 'interval:brush', actions: [
+          { type: 'filter', key: 'year', fromField: 'range', mode: 'interval' },
+        ] }],
+      } as unknown as NodeBase
+      const { ctx, dispatch } = mockCtx({ filterParams: { year: '2010,2020' } })
+      const { result } = renderHook(() => useNodeInteractions(def, ctx))
+
+      result.current.emit('interval:brush', { range: '' })
+      expect(dispatch).toHaveBeenCalledWith({ type: 'filter:set', key: 'year', value: '' })
+    })
+  })
+
   it('is inert when no handler matches the trigger (no write)', () => {
     const def = {
       type: 'table',

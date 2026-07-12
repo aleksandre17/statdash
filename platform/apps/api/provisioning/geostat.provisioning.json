@@ -4844,68 +4844,15 @@
             "op": "if",
             "then": "some"
           },
-          "_xDim": {
-            "op": "if",
-            "cond": { "op": "nin", "left": { "$ctx": "sector" }, "right": ["", "_T"] },
-            "then": "geoLabel",
-            "else": {
-              "op": "if",
-              "cond": { "op": "ne", "left": { "$ctx": "region" }, "right": "" },
-              "then": "sectorLabel",
-              "else": "geoLabel"
-            }
-          },
-          "_seriesDim": {
-            "op": "if",
-            "cond": { "op": "nin", "left": { "$ctx": "sector" }, "right": ["", "_T"] },
-            "then": "sectorLabel",
-            "else": {
-              "op": "if",
-              "cond": { "op": "ne", "left": { "$ctx": "region" }, "right": "" },
-              "then": "geoLabel",
-              "else": ""
-            }
-          },
           "_selKey": "region",
-          "_mark": {
-            "op": "if",
-            "cond": { "op": "or", "exprs": [
-              { "op": "nin", "left": { "$ctx": "sector" }, "right": ["", "_T"] },
-              { "op": "ne", "left": { "$ctx": "region" }, "right": "" }
-            ] },
-            "then": "bar",
-            "else": "donut"
-          },
-          "_byDims": {
-            "op": "if",
-            "cond": { "op": "or", "exprs": [
-              { "op": "nin", "left": { "$ctx": "sector" }, "right": ["", "_T"] },
-              { "op": "ne", "left": { "$ctx": "region" }, "right": "" }
-            ] },
-            "then": "sector,geo,time",
-            "else": "geo"
-          },
-          "_sortBy": {
-            "op": "if",
-            "cond": { "op": "nin", "left": { "$ctx": "sector" }, "right": ["", "_T"] },
-            "then": "value",
-            "else": {
-              "op": "if",
-              "cond": { "op": "ne", "left": { "$ctx": "region" }, "right": "" },
-              "then": "sectorOrder",
-              "else": "value"
-            }
-          },
-          "_sortDir": {
-            "op": "if",
-            "cond": { "op": "nin", "left": { "$ctx": "sector" }, "right": ["", "_T"] },
-            "then": "desc",
-            "else": {
-              "op": "if",
-              "cond": { "op": "ne", "left": { "$ctx": "region" }, "right": "" },
-              "then": "asc",
-              "else": "desc"
-            }
+          "_directional": {
+            "op": "directional",
+            "focus": "sector",
+            "co": "geo",
+            "priority": ["sector", "region"],
+            "emit": "axis",
+            "grain": ["time"],
+            "unselected": ["", "_T"]
           },
           "_regionTitle": {
             "by": "region",

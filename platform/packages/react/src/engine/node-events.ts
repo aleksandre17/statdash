@@ -11,8 +11,14 @@
 
 import type { SelectionMode, CtxScopeRef } from '@statdash/engine'
 
-/** The triggering interaction on a data node. */
-export type NodeEventTrigger = 'point:click' | 'row:click' | 'row:hover' | 'selection:change'
+/**
+ * The triggering interaction on a data node.
+ *   `interval:brush` (AR-42 P1) — a drag-select over a continuous axis emits a
+ *   `[lo,hi]` RANGE (folded via `applySelection` `interval` mode → a range param),
+ *   the range peer of the point/row gestures. Additive; all others unchanged.
+ */
+export type NodeEventTrigger =
+  | 'point:click' | 'row:click' | 'row:hover' | 'selection:change' | 'interval:brush'
 
 /** Re-export the pure reducer's mode enum as the grammar's SSOT (no drift). */
 export type { SelectionMode }
@@ -55,8 +61,41 @@ export interface FilterAction {
   max?:      number
 }
 
-/** Extensible union of all declarative action types. */
-export type NodeAction = FilterAction
+/**
+ * Action (AR-42 P1): write a TRANSIENT highlight param that a Consumer reads in an
+ * encoding *condition* to STYLE without re-querying (linked highlighting) — never a
+ * query filter, so no requery. It folds through the SAME `applySelection` reducer and
+ * the SAME CommandBus write point as `FilterAction` (FF-XF-ONE-WRITE-POINT); the ONLY
+ * difference is downstream — a query reads a filter param, an encoding condition reads
+ * a highlight param. Same write shape (`key`/`fromField`/`mode`) → one interpreter path.
+ */
+export interface HighlightAction {
+  type:      'highlight'
+  /** The highlight param key to write, OR a `{ $ctx: key }` ref that rotates with state. */
+  key:       ActionField
+  /** Row field whose value is written to the highlight param (defaults to `key`). */
+  fromField?: ActionField
+  /** Selection semantics — folded by `applySelection` (default 'replace': hover-highlight one). */
+  mode?:     SelectionMode
+  /** Cap for `toggle` accumulation (multi-highlight cap). */
+  max?:      number
+}
+
+/**
+ * Extensible discriminated union of all declarative action types (OCP — a new arm is
+ * a new capability, the interpreter unchanged). `filter` and `highlight` are the two
+ * SELECTION-WRITE arms today: both fold a row value into a param through the one
+ * `applySelection`/CommandBus spine, distinguished only by how the target Consumer
+ * reads the param (query filter vs encoding condition).
+ */
+export type NodeAction = FilterAction | HighlightAction
+
+/**
+ * The action types that WRITE a selection param through the `applySelection`/CommandBus
+ * spine (as opposed to, e.g., a future navigate arm). A new selection-write arm joins by
+ * membership here — a declaration, not an interpreter branch (FF-ACTION-UNION-OCP).
+ */
+export const SELECTION_WRITE_ACTIONS = new Set<NodeAction['type']>(['filter', 'highlight'])
 
 /** Maps one trigger event to one or more actions. */
 export interface NodeEventHandler {

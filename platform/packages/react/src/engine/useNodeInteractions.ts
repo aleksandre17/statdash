@@ -27,6 +27,7 @@ import type { DimVal, RefServices } from '@statdash/engine'
 import type { RenderContext } from './types'
 import type { NodeBase }      from './types'
 import type { NodeEventTrigger, FilterAction, ActionField } from './node-events'
+import { SELECTION_WRITE_ACTIONS } from './node-events'
 
 // ── resolveActionField — lower a state-bindable action field (AR-36/AR-38 §4.1) ──
 //
@@ -80,12 +81,15 @@ export function useNodeInteractions(def: NodeBase, ctx: RenderContext): NodeInte
         writes[key] = applySelection(mode ?? 'replace', current, value, max)
       }
 
-      // 1. Declarative on[] handlers (the promoted port). `key`/`fromField` may be
-      //    state-bound refs — lowered here through the one dispatcher (AR-36/AR-38).
+      // 1. Declarative on[] handlers (the promoted port). Every SELECTION-WRITE arm
+      //    (filter · highlight — AR-42 P1) folds through THIS one path: a highlight
+      //    writes a transient param a Consumer styles from (no requery), a filter
+      //    scopes a query — same write, distinguished only downstream. `key`/`fromField`
+      //    may be state-bound refs — lowered through the one dispatcher (AR-36/AR-38).
       for (const handler of on ?? []) {
         if (handler.event !== trigger) continue
         for (const action of handler.actions) {
-          if (action.type !== 'filter') continue
+          if (!SELECTION_WRITE_ACTIONS.has(action.type)) continue
           const key = resolveActionField(action.key, services)
           if (!key) continue                                        // unresolved param → no write
           const field = resolveActionField(action.fromField, services) ?? key

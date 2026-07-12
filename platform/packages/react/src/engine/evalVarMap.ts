@@ -15,6 +15,7 @@
 import { evalExpr, isDimVal }               from '@statdash/expr'
 import type { ExprScope, ExprVal, DimVal }  from '@statdash/expr'
 import type { VarMap }                      from '@statdash/engine'
+import { resolveMultiVar }                  from '@statdash/engine'
 import type { RenderContext }               from './types'
 
 export function evalVarMap(
@@ -40,6 +41,18 @@ export function evalVarMap(
 
   const result: Record<string, unknown> = {}
   for (const [k, expr] of Object.entries(vars)) {
+    // Multi-var op (AR-42 `op:'directional'`): one declared var → MANY named outputs
+    // SPREAD into the derived scope, so the existing `{$ctx:_xDim}` … consumers resolve
+    // unchanged. The op discriminant stays in core (resolveMultiVar); null ⇒ ordinary
+    // single-value expr (fall through to evalExpr). The container key `k` is not emitted.
+    const emitted = resolveMultiVar(expr, scope.dims as Record<string, DimVal>)
+    if (emitted) {
+      for (const [ek, ev] of Object.entries(emitted)) {
+        result[ek]        = ev
+        scope.derived[ek] = ev
+      }
+      continue
+    }
     const value = evalExpr(expr as unknown as ExprVal, scope)
     result[k]   = value
     if (isDimVal(value)) scope.derived[k] = value

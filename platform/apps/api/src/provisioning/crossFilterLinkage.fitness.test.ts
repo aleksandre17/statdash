@@ -254,36 +254,28 @@ describe('regional cross-filter linkage web (committed provisioning)', () => {
   //  {$ctx:region} AND {$ctx:sector} with a SECTOR-PRIORITY tiebreaker. See
   //  work/DESIGN-directional-sector-crossfilter.md.
 
-  // Minimal faithful mirror of @statdash/expr (packages/expr/src/ops) for the ops the
-  // composition derives use. Inlined (not imported) to keep this node-env structural
-  // suite engine-free; OP_WHITELIST below fails if a derive introduces an unmodelled op.
-  const OP_WHITELIST = new Set(['if', 'nin', 'in', 'ne', 'eq', 'or', 'and', 'not'])
-  function evalDerive(e: unknown, dims: Record<string, string>): unknown {
-    if (e === null || typeof e !== 'object') return e            // DimVal literal
-    const o = e as Json
-    if ('$ctx' in o)     return dims[o.$ctx as string] ?? null   // ExprRef ($ctx)
-    if ('$literal' in o) return o.$literal
-    const ev = (x: unknown) => evalDerive(x, dims)
-    switch (o.op) {
-      case 'ne':  return ev(o.left) !== ev(o.right)
-      case 'eq':  return ev(o.left) === ev(o.right)
-      case 'nin': return (o.right as unknown[]).every((r) => ev(r) !== ev(o.left))
-      case 'in':  return (o.right as unknown[]).some((r) => ev(r) === ev(o.left))
-      case 'or':  return (o.exprs as unknown[]).some((x) => Boolean(ev(x)))
-      case 'and': return (o.exprs as unknown[]).every((x) => Boolean(ev(x)))
-      case 'not': return !ev(o.expr)
-      case 'if':  return ev(o.cond) ? ev(o.then) : (o.else !== undefined ? ev(o.else) : null)
-      default: throw new Error(`derive uses op '${String(o.op)}' not modelled by this fitness mirror`)
+  // Faithful inlined mirror of resolveDirectional (packages/core/src/data/directional.ts)
+  // — keeps this node-env committed-artifact suite engine-free (no dist dependency), as
+  // the old evalDerive expr-mirror did. The LAW is now proven byte-identical to the six
+  // (retired) op:if derives by the CORE parity fitness (directional.fitness.test.ts);
+  // THIS gate proves the committed provisioning WIRES that op with the right focus/co/
+  // priority/grain — a hand-edit to the _directional var that breaks a cell fails here.
+  interface DirSpec { op: string; focus: string; co: string; priority: string[]; grain?: string[]; unselected?: string[] }
+  function resolveDir(spec: DirSpec, dims: Record<string, string>): Record<string, string> {
+    const f = spec.focus, c = spec.co
+    const [fp, cp] = spec.priority
+    const un = spec.unselected ?? ['']
+    const grain = spec.grain ?? []
+    const active = (k: string) => !un.includes(dims[k] ?? '')
+    const fA = active(fp), cA = active(cp), bar = fA || cA
+    return {
+      _seriesDim: fA ? `${f}Label` : cA ? `${c}Label` : '',
+      _xDim:      fA ? `${c}Label` : cA ? `${f}Label` : `${c}Label`,
+      _mark:      bar ? 'bar' : 'donut',
+      _byDims:    bar ? [f, c, ...grain].join(',') : c,
+      _sortBy:    fA ? 'value' : cA ? `${f}Order` : 'value',
+      _sortDir:   fA ? 'desc'  : cA ? 'asc'        : 'desc',
     }
-  }
-  // Collect every op used anywhere in a derive expr (whitelist guard).
-  function opsIn(e: unknown, acc: Set<string>): Set<string> {
-    if (e && typeof e === 'object') {
-      const o = e as Json
-      if (typeof o.op === 'string') acc.add(o.op)
-      for (const v of Object.values(o)) opsIn(v, acc)
-    }
-    return acc
   }
 
   const DERIVES = ['_xDim', '_seriesDim', '_mark', '_byDims', '_sortBy', '_sortDir'] as const
@@ -301,27 +293,25 @@ describe('regional cross-filter linkage web (committed provisioning)', () => {
     D: { _xDim: 'geoLabel',    _seriesDim: 'sectorLabel', _mark: 'bar',  _byDims: 'sector,geo,time', _sortBy: 'value',       _sortDir: 'desc' },
   }
 
-  // FF-DIRECTIONAL-TRUTH-TABLE — the 4-state derive matrix is asserted end-to-end;
-  // a change to any derive that breaks a cell fails here.
-  it('FF-DIRECTIONAL-TRUTH-TABLE: the six derives resolve the A/B/C/D acceptance spine', () => {
-    for (const d of DERIVES) {
-      const expr = pageVar(regional.config, d)
-      expect(expr, `derive ${d} exists`).toBeDefined()
-      // whitelist guard: keeps the inlined mirror honest as the derive grammar evolves
-      for (const op of opsIn(expr, new Set())) expect(OP_WHITELIST.has(op), `derive ${d} op '${op}' modelled`).toBe(true)
-      for (const [s, dims] of Object.entries(STATES)) {
-        expect(evalDerive(expr, dims), `state ${s} · ${d}`).toBe(EXPECT[s][d])
-      }
+  // FF-DIRECTIONAL-TRUTH-TABLE — the ONE op:directional var (the six op:if derives,
+  // retired — AR-42 P2) resolves the 4-state matrix end-to-end; a hand-edit to the
+  // _directional spec that breaks a cell fails here.
+  it('FF-DIRECTIONAL-TRUTH-TABLE: the ONE op:directional var resolves the A/B/C/D acceptance spine', () => {
+    const spec = pageVar(regional.config, '_directional') as DirSpec | undefined
+    expect(spec, 'the _directional var exists').toBeDefined()
+    expect(spec!.op, 'the directional op').toBe('directional')
+    for (const [s, dims] of Object.entries(STATES)) {
+      const out = resolveDir(spec!, dims)
+      for (const d of DERIVES) expect(out[d], `state ${s} · ${d}`).toBe(EXPECT[s][d])
     }
   })
 
   // FF-DIRECTIONAL-TRUTH-TABLE (robustness) — a leftover/stray sector='_T' must count as
-  // UNSELECTED (the nin ['','_T'] guard), never as an active sector selection.
+  // UNSELECTED (the page-declared unselected sentinel set), never an active selection.
   it('FF-DIRECTIONAL-TRUTH-TABLE: sector="_T" is treated as unselected (sentinel-robust)', () => {
-    for (const d of DERIVES) {
-      const expr = pageVar(regional.config, d)
-      expect(evalDerive(expr, { region: '', sector: '_T' }), `_T≡none · ${d}`).toBe(EXPECT.A[d])
-    }
+    const spec = pageVar(regional.config, '_directional') as DirSpec
+    const out = resolveDir(spec, { region: '', sector: '_T' })
+    for (const d of DERIVES) expect(out[d], `_T≡none · ${d}`).toBe(EXPECT.A[d])
   })
 
   // FF-SECTOR-COMPOUND-FILTER — the composition query narrows to the selected sector while
@@ -365,14 +355,20 @@ describe('regional cross-filter linkage web (committed provisioning)', () => {
       'KPI-path sector refs keep default:_T').toBeGreaterThanOrEqual(10)
   })
 
-  // FF-SECTOR-DERIVE-AGNOSTIC — extends FF-PIVOT-AGNOSTIC: the derives express the rotation
-  // as pure declarative exprs over {$ctx:region}/{$ctx:sector} (no function, no getRows/fn
-  // escape hatch), so the resolver path stays dimension-blind (Law 1/2).
-  it('FF-SECTOR-DERIVE-AGNOSTIC: the sector derives are pure declarative exprs (no code)', () => {
-    for (const d of DERIVES) {
-      const json = JSON.stringify(pageVar(regional.config, d))
-      expect(json, `${d} references sector via $ctx`).toContain('"$ctx":"sector"')
-      expect(/getRows|=>|"fn"|function/.test(json), `${d} carries no function/fn escape`).toBe(false)
-    }
+  // FF-SECTOR-DERIVE-AGNOSTIC — extends FF-PIVOT-AGNOSTIC: the directional relation is
+  // ONE declared, dimension-blind op (its dims/params live in focus/co/priority as data,
+  // no function/getRows/fn escape hatch), and the six hand-authored op:if derives are
+  // RETIRED (the Strangler delete — special-case → declaration).
+  it('FF-SECTOR-DERIVE-AGNOSTIC: the directional relation is ONE declared, dim-blind op (no code)', () => {
+    const spec = pageVar(regional.config, '_directional') as DirSpec
+    expect(spec, 'the _directional var exists').toBeDefined()
+    expect(spec.focus).toBe('sector')
+    expect(spec.co).toBe('geo')
+    expect(spec.priority).toEqual(['sector', 'region'])
+    const json = JSON.stringify(spec)
+    expect(/getRows|=>|"fn"|function/.test(json), 'directional carries no function/fn escape').toBe(false)
+    // the six hand-authored op:if derives are retired — the special-case is gone.
+    for (const d of DERIVES)
+      expect(pageVar(regional.config, d), `hand-authored derive ${d} retired`).toBeUndefined()
   })
 })

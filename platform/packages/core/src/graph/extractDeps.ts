@@ -440,6 +440,13 @@ function sweepRefs(value: unknown, acc: Acc): void {
 function sweepExprRefs(value: unknown, acc: Acc): void {
   if (value === null || typeof value !== 'object') return
   const rec = value as Record<string, unknown>
+  // A multi-var op (AR-42 `op:'directional'`) reads its SELECTION PARAMS through the
+  // declared `priority` keys — plain-string tokens, not `$ctx` refs — so record them
+  // as params here (else the shadow graph under-fires on a directional var). Generic
+  // keys (Law 1); the outputs feed encoding/pipe `$ctx` consumers (dualCtx, elsewhere).
+  if (rec['op'] === 'directional' && Array.isArray(rec['priority'])) {
+    for (const p of rec['priority']) if (typeof p === 'string') acc.params.add(p)
+  }
   if (typeof rec['$ctx']     === 'string') acc.params.add(rec['$ctx'] as string)
   if (typeof rec['$derived'] === 'string') acc.vars.add(rec['$derived'] as string)
   if (typeof rec['$ref']     === 'string') acc.vars.add(rec['$ref'] as string)

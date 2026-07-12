@@ -311,8 +311,15 @@ export { interpretSpec, extractRequirements, setSpecResolveObserver }  from './d
 // (useNodeRows) fetches under this IDENTICAL query so warm-key ≡ read-key.
 export { queryReadObs }                                                 from './registry/resolvers'
 export { desugar }                                                      from './data/desugar'
-export { applySelection }                                               from './data/applySelection'
+export { applySelection, splitRangeValue }                              from './data/applySelection'
 export type { SelectionMode }                                           from './data/applySelection'
+// ── Directional cross-filter-pivot LAW [AR-42 P2] — the six AR-38 derives, once ──
+//  ONE declared, dimension-blind relation (`{op:'directional', focus, co, priority,
+//  emit:'axis'}`) that RETURNS the encoding-axis assignment the six hand-authored
+//  `op:if` derives produced. resolveMultiVar is the evalVarMap front-door: a var whose
+//  expr emits MULTIPLE named outputs (spread into the derived scope), else null.
+export type { DirectionalSpec, DirectionalAxis }                        from './data/directional'
+export { resolveDirectional, resolveMultiVar, isDirectionalSpec }       from './data/directional'
 export { splitMultiValue }                                              from './data/store-filter'
 export { interpretKpis, extractKpiRequirements }                        from './data/kpi'
 export type { KpiSpec, KpiValueSpec, KpiTrendSpec, DimFilter, DimFilterRef } from './data/kpi'

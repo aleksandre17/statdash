@@ -78,6 +78,9 @@ export type { PlatformEventMap, EventType } from '../../events/events'
 export type {
   NodeEventTrigger,
   FilterAction,
+  HighlightAction,
   NodeAction,
+  ActionField,
   NodeEventHandler,
 }                                from '../node-events'
+export { SELECTION_WRITE_ACTIONS } from '../node-events'
