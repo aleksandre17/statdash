@@ -9,7 +9,7 @@
 //      derivation loop, the dock, RightDock) is unchanged — a new section falls out.
 //
 import { describe, it, expect, beforeAll } from 'vitest'
-import { facetRegistry, nodeRegistry } from '@statdash/react/engine'
+import { facetRegistry, nodeRegistry, chromeRegistry } from '@statdash/react/engine'
 import type { ObjectMeta } from '@statdash/react/engine'
 import type { CanvasController } from '../studio/useCanvasController'
 import { dockSectionRegistry, type DockRenderCtx } from './sections/dockSection'
@@ -124,12 +124,64 @@ describe('FF-FACET-PROJECTED — a declared facet is a generic dock projection',
     }
   })
 
-  it('the facet section does NOT apply to a bounded PART (whole-element facet, MVP)', () => {
-    const selectedBand = { path: 'chrome.InnerSidebar', ownerId: 'site-frame', ownerSelectable: false }
+  it('a value/filter PART with NO element meta gets no node-facet section (facets hidden during drill)', () => {
+    // A positional band item carries an itemSchema, not an ObjectMeta (partMeta undefined),
+    // so the STYLE/DATA facets stay hidden during a value-band drill — unchanged behaviour.
+    const selectedBand = { path: 'items.0', ownerId: 'kpi-1', ownerSelectable: true }
     const ids = dockSectionRegistry
       .list(elementCtx({ selectedBand: selectedBand as never }))
       .map((s) => s.id)
     expect(ids).not.toContain('element.facet.style')
+    expect(ids).not.toContain('element.facet.data')
+    expect(ids).not.toContain('element.facet.chrome')
+  })
+
+  // ── CHROME facet (Gap 1) — the full chrome contract falls out generically ──────
+  it('the CHROME facet is registered; its contract projects variant/region/order (structural)', () => {
+    expect(facetRegistry.has('chrome')).toBe(true)
+    const chrome = facetRegistry.list().find((f) => f.id === 'chrome')!
+    expect(chrome.readPath).toBe('')   // the structural fields live at the ChromeSlotConfig top level
+    // The contract is resolved from the DECLARED slot (AppHeader), listing the slot's
+    // registered variants as options — genericity in the DISPATCH (select/number controls).
+    const schema = chrome.contract({ slot: 'AppHeader' } as unknown as ObjectMeta)
+    expect(schema.map((f) => f.field)).toEqual(['variant', 'region', 'order'])
+    const variantField = schema.find((f) => f.field === 'variant')!
+    expect((variantField.options?.length ?? 0)).toBeGreaterThan(0)   // resolved from chromeRegistry.listVariants
+  })
+
+  it('the CHROME facet appliesWhen reads the DECLARED `slot` field, never a concrete type (Law 1)', () => {
+    const chrome = facetRegistry.list().find((f) => f.id === 'chrome')!
+    // A ChromeSliceMeta declares `slot` → applies. A node/panel meta does not → does not.
+    expect(chrome.appliesWhen({ slot: 'AppHeader' } as unknown as ObjectMeta)).toBe(true)
+    expect(chrome.appliesWhen({ caps: ['styleable'] } as ObjectMeta)).toBe(false)
+    expect(chrome.appliesWhen({} as ObjectMeta)).toBe(false)
+    // Naming a concrete type but declaring no `slot` is not special-cased to true.
+    expect(chrome.appliesWhen({ type: 'chart', caps: ['data-bindable'] } as unknown as ObjectMeta)).toBe(false)
+  })
+
+  it('a selected chrome REGION part gets element.facet.chrome; a whole node does not', () => {
+    expect(dockSectionRegistry.has('element.facet.chrome')).toBe(true)
+
+    // A chrome region PART carries its own element META (the ChromeSliceMeta) on
+    // `selectedBand.partMeta` → the chrome facet section applies (variant/region/order).
+    const partMeta = chromeRegistry.getMeta('AppHeader', 'default') as unknown as ObjectMeta
+    expect(partMeta).toBeTruthy()
+    const chromeBand = { path: 'chrome.AppHeader', ownerId: 'site-frame', source: 'site-chrome', field: 'AppHeader', partMeta }
+    const chromeIds = dockSectionRegistry
+      .list(elementCtx({ selectedBand: chromeBand as never }))
+      .map((s) => s.id)
+    expect(chromeIds).toContain('element.facet.chrome')
+    // …and the STYLE/DATA node facets do NOT bleed onto a chrome region (its meta lacks
+    // those caps) — the Figma law: only the selection's OWN declared contract.
+    expect(chromeIds).not.toContain('element.facet.style')
+    expect(chromeIds).not.toContain('element.facet.data')
+
+    // A whole chart node does NOT get the chrome facet (its meta declares no `slot`).
+    const chart = { id: 'c1', type: 'chart', props: {} }
+    const chartIds = dockSectionRegistry
+      .list(elementCtx({ selected: chart as never }))
+      .map((s) => s.id)
+    expect(chartIds).not.toContain('element.facet.chrome')
   })
 
   it('OCP — a SECOND facet = one descriptor + re-derive; the mechanism is unchanged', () => {

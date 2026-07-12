@@ -4,6 +4,7 @@ import { Box, Typography, Button, IconButton, Tooltip } from '@mui/material'
 import DeleteIcon from '@mui/icons-material/Delete'
 import ChevronRightIcon from '@mui/icons-material/ChevronRight'
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft'
+import { SITE_FRAME_ID } from '@statdash/react/engine'
 import { DockBody, registerBuiltinDockSections } from '../inspector/sections'
 import { StudioEmptyState } from './StudioEmptyState'
 import { BreadcrumbSlotContext, useBreadcrumbHost } from '../inspector/breadcrumbSlot'
@@ -67,7 +68,7 @@ export interface RightDockProps {
 }
 
 export function RightDock({ controller, locale, collapsed, onToggleCollapsed, width, onResize }: RightDockProps) {
-  const { selected, pageId, deleteSelected, selectedItemPath, selectedBand } = controller
+  const { selected, pageId, deleteSelected, selectedItemPath, selectedBand, selectedId } = controller
 
   // Scope is PURELY derived from the ONE selection — an element selected shows only its
   // contract; deselecting returns to Page. No override, no persistent tab (SPEC §3.2 —
@@ -75,7 +76,12 @@ export function RightDock({ controller, locale, collapsed, onToggleCollapsed, wi
   // page node is (`selected`) OR a bounded PART is (`selectedBand`) — the latter covers a
   // chrome region, whose owning site-frame is not a page node (S6: chrome is a Part, no
   // `chromeSel` species).
-  const scope: DockScope = (selected || selectedBand) ? 'element' : 'page'
+  //  The site-frame is a reachable WHOLE element (D-CH1) even though it is not a page node
+  //  (`selected` is null for it) and has no drilled part — its selection is the synthetic
+  //  SITE_FRAME_ID. It resolves to the element scope so its chrome-composition inspector
+  //  shows (not the page context).
+  const scope: DockScope =
+    (selected || selectedBand || selectedId === SITE_FRAME_ID) ? 'element' : 'page'
 
   // The one-header-tier seam: a drilled nested editor (D7.1b) in the body PROMOTES
   // its breadcrumb up here; while promoted the header shows the breadcrumb XOR the

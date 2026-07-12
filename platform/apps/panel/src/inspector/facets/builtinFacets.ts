@@ -9,7 +9,8 @@
 //  MORE register() calls — the dock-section derivation (builtins) is unchanged (OCP).
 //
 import { facetRegistry, CAPS } from '@statdash/react/engine'
-import type { LocaleString } from '@statdash/react/engine'
+import type { LocaleString, ObjectMeta } from '@statdash/react/engine'
+import { chromeStructuralContract, CHROME_STRUCTURAL_LABELS } from './chromeFacetModel'
 
 const STYLE_LABEL: LocaleString = { ka: 'სტილი', en: 'Style' }
 const DATA_LABEL:  LocaleString = { ka: 'მონაცემები', en: 'Data' }
@@ -53,5 +54,26 @@ export function registerBuiltinFacets(): void {
     label:       DATA_LABEL,
     appliesWhen: (meta) => !!meta.caps?.includes(CAPS.DATA_BINDABLE),
     contract:    () => [{ field: 'data', type: 'data-pipeline', label: DATA_LABEL }],
+  })
+
+  // ── CHROME (Gap 1) — the site-frame's chrome regions as a FULL structural facet ──
+  //  Post-S6 a chrome region is a `sourced` Part of the synthetic site-frame; selecting
+  //  it already projects the variant's own `config` schema through `element.schema`. This
+  //  facet completes the contract: it projects the STRUCTURAL facets `variant` · `region`
+  //  · `order` (the `ChromeSlotConfig` top level) that lived outside any authorable
+  //  surface. Opt-in by the DECLARED chrome field `slot` (only a `ChromeSliceMeta` carries
+  //  it) — a declared-FIELD predicate, NEVER a concrete-type literal (Law 1 · FF-NO-
+  //  EXTERNAL-SPECIAL-CASE stays green), the peer of style's `styleable` cap. `contract`
+  //  reads `meta.slot` to resolve the slot's registered variants (`chromeStructuralContract`),
+  //  so a new chrome variant is offered by REGISTERING it (OCP — the picker is never edited).
+  //  `readPath:''` — the fields live at the ChromeSlotConfig top level; the structural write
+  //  lane (`updateChromeSlotField`) commits them, distinct from `config` (`updateChromeConfig`).
+  facetRegistry.register({
+    id:          'chrome',
+    order:       15,
+    readPath:    '',
+    label:       CHROME_STRUCTURAL_LABELS.facet,
+    appliesWhen: (meta) => typeof (meta as { slot?: unknown }).slot === 'string',
+    contract:    (meta: ObjectMeta) => chromeStructuralContract((meta as { slot?: string }).slot ?? ''),
   })
 }

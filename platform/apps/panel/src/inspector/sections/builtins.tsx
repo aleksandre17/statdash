@@ -15,13 +15,14 @@
 import { Box, Chip, Button, Typography } from '@mui/material'
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft'
 import type { VisibilityExpr } from '@statdash/engine'
-import { nodeRegistry, facetRegistry } from '@statdash/react/engine'
+import { nodeRegistry, facetRegistry, SITE_FRAME_ID } from '@statdash/react/engine'
 import type { ObjectMeta } from '@statdash/react/engine'
 import { Inspector } from '../Inspector'
 import { VisibilitySection } from '../../features/visibility'
 import { PageInspectorPanel } from '../../features/page-config'
 import { PerspectivesPane } from '../../features/perspectives'
 import { FiltersDrawer } from '../../features/filters'
+import { ChromeCompositionPanel } from '../../features/chrome'
 import { fixedSchemaSource, itemTitle } from '../controls/nestedItemControl.helpers'
 import { registerBuiltinFacets } from '../facets/builtinFacets'
 import type { CanvasNode } from '../../types/constructor'
@@ -183,6 +184,22 @@ export function registerBuiltinDockSections(): void {
       appliesTo: (ctx) => ctx.scope === 'page',
       render:    (ctx) => <FiltersDrawer locale={ctx.locale} />,
     })
+    // ── ELEMENT · site-frame chrome COMPOSITION (Gap 1 · D-CH1) ────────────────────
+    //  The synthetic site-frame is a reachable WHOLE element: selecting it (a chrome
+    //  region's "Back") opens this composition inspector — the SET of chrome regions
+    //  (enable/disable via variant, region, order), the home the per-region facet lacked.
+    //  Fires ONLY on the site-frame whole selection (no page node, no drilled part), so it
+    //  never collides with a page-node inspector. Reuses the SAME store actions (no fork).
+    .register({
+      id:        'element.chrome-composition',
+      order:     10,
+      appliesTo: (ctx) =>
+        ctx.scope === 'element'
+        && ctx.controller.selectedId === SITE_FRAME_ID
+        && !ctx.controller.selected
+        && !ctx.controller.selectedBand,
+      render:    (ctx) => <ChromeCompositionPanel locale={ctx.locale} controller={ctx.controller} />,
+    })
 }
 
 // ── registerFacetSections — the generic FACET-axis projection (ADR-041 sibling) ──
@@ -205,21 +222,35 @@ export function registerFacetSections(): void {
       id:        `element.facet.${facet.id}`,
       order:     facet.order,
       appliesTo: (ctx) => {
-        if (!wholeNodeSelected(ctx)) return false
-        const sel = ctx.controller.selected
-        if (!sel) return false
-        const meta = nodeRegistry.getMeta(sel.type, sel.variant) as ObjectMeta | undefined
+        const meta = selectedElementMeta(ctx)
         return !!meta && facet.appliesWhen(meta)
       },
       render: (ctx) => {
-        const { selected, patchProp } = ctx.controller
-        if (!selected) return null
-        const meta = nodeRegistry.getMeta(selected.type, selected.variant) as ObjectMeta | undefined
+        const meta = selectedElementMeta(ctx)
         if (!meta) return null
         // The facet's `contract` field carries the section label; the generic Inspector
         // renders it as the section heading + dispatches the field to its facet control
-        // (STYLE → StyleField). No overline — the field label is the single heading (DRY).
+        // (STYLE → StyleField, chrome variant/region → SelectControl). No overline — the
+        // field label is the single heading (DRY). The projection is bounded to the
+        // SELECTED element — a whole page node (write → node props) OR a bounded chrome
+        // region PART (write → the chrome structural lane), the SAME generic Inspector.
         const schema = facet.contract(meta)
+        const band   = ctx.controller.selectedBand
+        if (band?.partMeta) {
+          const facetNode: CanvasNode = {
+            id: `${band.ownerId}-facet-${facet.id}`, type: 'facet', props: band.slotConfig ?? {}, childIds: [],
+          }
+          return (
+            <Inspector
+              node={facetNode}
+              schemaSource={fixedSchemaSource(schema, [])}
+              onChange={ctx.controller.patchChromeStructural}
+              idPrefix={`insp-facet-${facet.id}`}
+            />
+          )
+        }
+        const { selected, patchProp } = ctx.controller
+        if (!selected) return null
         return (
           <Inspector
             node={selected}
@@ -231,4 +262,21 @@ export function registerFacetSections(): void {
       },
     })
   }
+}
+
+// ── selectedElementMeta — the DECLARED meta of the selected bounded element ───────
+//
+//  The facet axis projects over the selected ELEMENT's declaration (ADR-038). That
+//  element is EITHER a whole page node (its `nodeRegistry` meta) OR a bounded PART that
+//  carries its own element meta — a chrome region's `ChromeSliceMeta` (surfaced on
+//  `selectedBand.partMeta`). A positional value/filter part carries NO element meta (its
+//  contract is an `itemSchema`, projected by `element.schema`) → undefined here, so the
+//  facet sections stay hidden during a value-band drill, exactly as before this extension.
+//  The derivation names NO concrete type — it reads whichever declaration the selection
+//  exposes (Law 1 · FF-NO-EXTERNAL-SPECIAL-CASE stays green).
+function selectedElementMeta(ctx: DockRenderCtx): ObjectMeta | undefined {
+  const { selected, selectedBand } = ctx.controller
+  if (selectedBand) return selectedBand.partMeta
+  if (selected) return nodeRegistry.getMeta(selected.type, selected.variant) as ObjectMeta | undefined
+  return undefined
 }

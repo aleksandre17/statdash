@@ -33,6 +33,31 @@ export function setChromeVariantPatch(s: ConstructorSession, slot: string, key: 
 }
 
 /**
+ * Write ONE TOP-LEVEL field of a slot's ChromeSlotConfig — the STRUCTURAL facets
+ * (`variant` · `region` · `order`), distinct from the per-instance `config` bag
+ * `updateChromeConfigPatch` touches. This is the chrome facet's write home: selecting a
+ * chrome region projects its variant/placement (the structural facet axis) ALONGSIDE the
+ * variant's own config schema; a structural edit merges at the ChromeSlotConfig top level
+ * (preserving `config`), a config edit merges under `config`. Seeds a 'default' variant
+ * when the slot has no entry yet (no null hole), the SAME seed `updateChromeConfigPatch`
+ * uses — one SSOT shape (`site.chrome[slot]`), two residence-tagged write lanes.
+ */
+export function setChromeSlotFieldPatch(
+  s: ConstructorSession,
+  slot: string,
+  field: string,
+  value: unknown,
+): ChromePatch {
+  const existing = s.site.chrome[slot] ?? { variant: 'default' }
+  return {
+    site: {
+      ...s.site,
+      chrome: { ...s.site.chrome, [slot]: { ...existing, [field]: value } },
+    },
+  }
+}
+
+/**
  * Write ONE field on a slot's per-element config (merges into chrome[slot].config
  * — the shape ChromeSlot injects into the shell). Seeds a 'default' variant when
  * the slot has no entry yet. `field` is the schema field's dot-path (read by the

@@ -20,6 +20,7 @@ import {
 import {
   setChromeVariantPatch,
   updateChromeConfigPatch,
+  setChromeSlotFieldPatch,
 } from './constructor.chrome'
 import {
   type LifecycleSlice,
@@ -97,6 +98,12 @@ export interface ConstructorStore extends ConstructorSession, StudioUiSlice, His
   selectChrome:        (slot: string | null) => void
   setChromeVariant:    (slot: string, key: string) => void
   updateChromeConfig:  (slot: string, field: string, value: unknown) => void
+  /**
+   * Write ONE TOP-LEVEL ChromeSlotConfig field (`variant` · `region` · `order`) — the
+   * chrome facet's STRUCTURAL write lane, distinct from `updateChromeConfig` (the per-
+   * instance `config` bag). One SSOT shape, two residence-tagged lanes (S6 · chrome facet).
+   */
+  updateChromeSlotField: (slot: string, field: string, value: unknown) => void
 
   // Page Layer actions
   addPage:          (page: CanvasPage) => void
@@ -323,6 +330,12 @@ export const useConstructorStore = create<ConstructorStore>()(
           (s) => ({ ...pushHistory(s as ConstructorStore, `Edit chrome: ${slot}`), ...updateChromeConfigPatch(s, slot, field, value) }),
           false,
           'chrome/updateConfig',
+        ),
+      updateChromeSlotField: (slot, field, value) =>
+        set(
+          (s) => ({ ...pushHistory(s as ConstructorStore, `Edit chrome ${field}: ${slot}`), ...setChromeSlotFieldPatch(s, slot, field, value) }),
+          false,
+          'chrome/updateSlotField',
         ),
 
       // ── Page Layer — thin wiring over pure reducers (constructor.pages) ──────

@@ -7,8 +7,9 @@ import { enumerateParts, getPartSource } from '../canvas/bandSource'
 import { resolveInsertPlan, planInserts } from '../canvas/insertNode'
 import { toNodePageConfig } from '../canvas/canvasPageAdapter'
 import { projectCanvasSiteChrome } from '../canvas/canvasSiteChrome'
-import { nodeRegistry, SITE_FRAME_ID, SITE_FRAME_META, CHROME_PART_PREFIX } from '@statdash/react/engine'
+import { nodeRegistry, chromeRegistry, SITE_FRAME_ID, SITE_FRAME_META, CHROME_PART_PREFIX } from '@statdash/react/engine'
 import type { PartAddress, PartResidence, ObjectMeta, PropSchema, PropertyGroup, PartSourceContext } from '@statdash/react/engine'
+import { CHROME_STRUCTURAL_FIELDS } from '../inspector/facets/chromeFacetModel'
 import type { VisibilityExpr, FilterSchemaInput } from '@statdash/engine'
 
 /** The selected bounded PART, resolved through the port — the item projection the dock
@@ -40,6 +41,15 @@ interface SelectedPart {
   /** A pre-resolved crumb title, when the part's title is not on its subject (a chrome
    *  region's title is its slot name); else undefined → the generic `itemTitle` fallback. */
   crumbTitle?: string
+  /** The part's own declared ELEMENT META, when it HAS one (a chrome region → its
+   *  `ChromeSliceMeta`). The FACET axis reads it to project the part's universal facets
+   *  (chrome → variant/region/order). A positional value/filter part carries none (its
+   *  contract is an `itemSchema`, projected by `element.schema`) → the facets stay hidden
+   *  during a value-band drill, exactly as before this facet extension. */
+  partMeta?:   ObjectMeta
+  /** The part's STRUCTURAL subject — the `ChromeSlotConfig` top level (`variant`/`region`/
+   *  `order`) a chrome region's facet edits, distinct from `itemObject` (its `config` bag). */
+  slotConfig?: Record<string, unknown>
 }
 
 // ── useCanvasController — the canvas↔store glue, extracted for reuse (AR-49 M1.2)
@@ -72,6 +82,7 @@ export function useCanvasController() {
   const updateNode    = useConstructorStore((s) => s.updateNode)
   const updatePage    = useConstructorStore((s) => s.updatePage)
   const updateChromeConfig = useConstructorStore((s) => s.updateChromeConfig)
+  const updateChromeSlotField = useConstructorStore((s) => s.updateChromeSlotField)
   const removeNode    = useConstructorStore((s) => s.removeNode)
   const markPageDirty = useConstructorStore((s) => s.markPageDirty)
 
@@ -116,7 +127,10 @@ export function useCanvasController() {
           meta: nodeRegistry.getMeta(selected.type, selected.variant) as ObjectMeta | undefined,
         }
       : selectedId === SITE_FRAME_ID
-        ? { id: SITE_FRAME_ID, container: {} as Record<string, unknown>, label: CHROME_PART_PREFIX, selectable: false, meta: SITE_FRAME_META }
+        // The site-frame is now a REACHABLE whole element (D-CH1): its parts' "Back"
+        // reselects it (selectable: true) → the chrome-composition inspector, where the
+        // WHOLE set of regions (enable/variant/order) is managed — not just per-region config.
+        ? { id: SITE_FRAME_ID, container: {} as Record<string, unknown>, label: CHROME_PART_PREFIX, selectable: true, meta: SITE_FRAME_META }
         : null
     if (!owner) return null
     // Match on the ONE `PartAddress.partPath` — the SAME stable-key address the selection
@@ -125,6 +139,17 @@ export function useCanvasController() {
     const found = enumerateParts(owner.container, owner.meta, partCtx, owner.id)
       .find((p) => p.address.partPath === selectedItemPath)
     if (!found) return null
+    // A chrome region carries its OWN element META (the ChromeSliceMeta for the resolved
+    // variant) + its structural subject (the ChromeSlotConfig top level) — the FACET-axis
+    // inputs. A positional value/filter part carries neither (source ≠ 'site-chrome').
+    const isChrome  = found.source === 'site-chrome'
+    const slotEntry = isChrome
+      ? (site.chrome[found.field] as unknown as Record<string, unknown> | undefined)
+      : undefined
+    const variant   = (slotEntry?.variant as string | undefined) ?? 'default'
+    const partMeta  = isChrome
+      ? (chromeRegistry.getMeta(found.field, variant) as ObjectMeta | undefined)
+      : undefined
     return {
       field:      found.field,
       index:      found.index,
@@ -141,9 +166,11 @@ export function useCanvasController() {
       ownerSelectable: owner.selectable,
       // A chrome region's title is its slot name (not on its subject); a page-node part
       // uses the generic `itemTitle` fallback.
-      crumbTitle: owner.selectable ? undefined : found.field,
+      crumbTitle: isChrome ? found.field : undefined,
+      partMeta,
+      slotConfig: isChrome ? (slotEntry ?? {}) : undefined,
     }
-  }, [selected, selectedId, selectedItemPath, partCtx])
+  }, [selected, selectedId, selectedItemPath, site.chrome, partCtx])
 
   // The canvas's runner-parity chrome inputs (nav/chrome/chromeConfig) — projected
   // from the authoring session so the live canvas rail renders the REAL nav links +
@@ -228,6 +255,22 @@ export function useCanvasController() {
     [pageId, selected, page, selectedBand, partCtx, updateNode, updatePage, updateChromeConfig, markPageDirty],
   )
 
+  // Chrome STRUCTURAL facet onChange — write one top-level ChromeSlotConfig field
+  // (`variant`/`region`/`order`) of the SELECTED chrome region, through the structural
+  // write lane (`updateChromeSlotField` → the site SSOT). This is the FACET-axis peer of
+  // `patchItemProp` (which writes the region's `config` bag): a chrome region's full
+  // contract = its config (element.schema) ⊕ its structural facets (element.facet.chrome),
+  // two residence-tagged lanes over the ONE `site.chrome[slot]` shape (no denormalised
+  // node copy). Guarded to a chrome region declaring a structural field (never a mis-write).
+  const patchChromeStructural = useCallback(
+    (field: string, value: unknown) => {
+      if (!selectedBand || selectedBand.source !== 'site-chrome') return
+      if (!CHROME_STRUCTURAL_FIELDS.has(field)) return
+      updateChromeSlotField(selectedBand.field, field, value)
+    },
+    [selectedBand, updateChromeSlotField],
+  )
+
   // Node-level view.visibleWhen gate — null clears it (byte-clean round-trip).
   const setVisibleWhen = useCallback(
     (next: VisibilityExpr | undefined) => {
@@ -262,7 +305,7 @@ export function useCanvasController() {
     dragging, setDragging,
     previewPerspectiveId, setPreviewPerspectiveId,
     selectNode, selectItem, selectChrome,
-    bindMetric, handleDrop, patchProp, patchItemProp, setVisibleWhen, deleteSelected,
+    bindMetric, handleDrop, patchProp, patchItemProp, patchChromeStructural, setVisibleWhen, deleteSelected,
   }
 }
 
