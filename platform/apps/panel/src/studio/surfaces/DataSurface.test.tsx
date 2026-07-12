@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import { render, screen } from '@testing-library/react'
+import { MemoryRouter } from 'react-router-dom'
 import { DataSurface } from './DataSurface'
 import { useCanvasController } from '../useCanvasController'
 import { setupCanvasRegistry } from '../../canvas/setupCanvasRegistry'
@@ -20,7 +21,7 @@ const SPEC: NamedDataSpec = {
 // Minimal harness — the real canvas controller (reads the store, no network).
 function Harness() {
   const controller = useCanvasController()
-  return <DataSurface controller={controller} locale="ka" />
+  return <MemoryRouter><DataSurface controller={controller} locale="ka" /></MemoryRouter>
 }
 
 beforeEach(() => {
