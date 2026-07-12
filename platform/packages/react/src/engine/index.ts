@@ -88,6 +88,12 @@ export { partFieldsOf, isWrapper, isNodeContainer, slotAdmits } from './slice-me
 export { valueParts, slotParts }   from './partSources'
 export { bandFieldsOf, bandItemsOf } from './bandItems'
 export type { BandItemRef }        from './bandItems'
+// ── FACET axis (ADR-041 sibling) — universal capabilities as projectable contracts ──
+//  The orthogonal peer of the Part port: `inspect = projectParts ⊕ projectFacets`.
+//  Data-only registry (app registers built-in facets WITH labels; packages/react is
+//  locale-agnostic). A new facet = one register() call; the dock is unchanged (OCP).
+export { facetRegistry }           from './facet'
+export type { FacetDescriptor, FacetRegistry } from './facet'
 // ── Site-frame element (ADR-041 R4 · S6) — chrome regions as a `sourced` band ──
 //  The site frame DECLARES its chrome regions as ONE sourced PartField (`band:
 //  {source:'site-chrome'}`); the app-owned `chromeParts` adapter (registered under that

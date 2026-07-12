@@ -12,6 +12,7 @@ export const META: PanelSliceMeta = {
   groups:          ChartGroups,
   canHaveChildren: false,
   // `flow` (placement capability): a chart is flow content, admissible in a section.
-  caps:            ['export', 'collapsible', 'filterable', 'view-toggle', 'flow'],
+  // `styleable`: opt into the universal STYLE facet (element.style over view.styles).
+  caps:            ['export', 'collapsible', 'filterable', 'view-toggle', 'flow', 'styleable'],
   version:         1,
 }

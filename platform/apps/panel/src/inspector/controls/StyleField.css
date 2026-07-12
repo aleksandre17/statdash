@@ -1,0 +1,56 @@
+/* ── StyleField — grouped token-picker style editor (BEM, design-token-driven) ─── */
+
+.insp-style {
+  display: flex;
+  flex-direction: column;
+  gap: var(--insp-gap-sm, 8px);
+}
+
+.insp-style__group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--insp-gap-xs, 4px);
+  margin: 0;
+  padding: var(--insp-gap-xs, 4px) 0 0;
+  border: 0;
+  border-top: 1px solid var(--insp-border, #e2e8f0);
+}
+
+.insp-style__legend {
+  padding: 0;
+  font-size: var(--insp-font-xs, 0.6875rem);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--insp-badge-fg, #475569);
+}
+
+.insp-style__row {
+  display: flex;
+  align-items: center;
+  gap: var(--insp-gap-xs, 4px);
+}
+
+.insp-style__label {
+  flex: 0 0 40%;
+  min-width: 0;
+  font-size: var(--insp-font-sm, 0.8125rem);
+}
+
+.insp-style__controls {
+  flex: 1 1 auto;
+  display: flex;
+  align-items: center;
+  gap: var(--insp-gap-xs, 4px);
+  min-width: 0;
+}
+
+.insp-style__token {
+  flex: 1 1 60%;
+  min-width: 0;
+}
+
+.insp-style__raw {
+  flex: 1 1 40%;
+  min-width: 0;
+}

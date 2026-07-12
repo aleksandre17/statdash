@@ -55,6 +55,7 @@ import {
   dimensionOptions as dimensionCatalogOptions,
   isSemanticSource,
 } from '../../discovery/semanticCatalogOptions'
+import { tokenOptions, isTokenSource } from '../../discovery/tokenCatalogOptions'
 
 /** One resolved option. label is already resolved to the active locale. */
 interface ResolvedOption { value: string; label: string }
@@ -163,6 +164,15 @@ export function EnumRefField({ field, id, value, locale, siblingValues, onChange
   const { options, hint } = useMemo<{ options: ResolvedOption[]; hint: string }>(() => {
     if (!sourceKey) return { options: [], hint: 'no source declared' }
 
+    // ── Design-token source ('tokens') — the dormant seam, now activated ────────
+    //  Resolved from the SELF-DESCRIBING TOKENS_CATALOG (static — no store/profile),
+    //  optionally constrained to the field's `tokenGroup`. Option value = the token's
+    //  cssVar (the serialized style value), so a picked token round-trips by identity.
+    if (isTokenSource(sourceKey)) {
+      const opts = tokenOptions(field.tokenGroup, locale)
+      return { options: opts, hint: field.tokenGroup ? `no ${field.tokenGroup} tokens` : 'no tokens available' }
+    }
+
     // ── Semantic-catalog sources (AR-49 M0 — governed metric/dimension ids) ──
     //  Structurally identical to the cube branch: gate on the catalog being
     //  'ready', then resolve through the SAME pure option resolvers the palette
@@ -194,7 +204,7 @@ export function EnumRefField({ field, id, value, locale, siblingValues, onChange
     // ── Session-store sources ──────────────────────────────────────────────
     const resolver = STORE_SOURCES[sourceKey]
     return { options: resolver ? resolver(store, locale) : [], hint: `no "${sourceKey}" available` }
-  }, [sourceKey, store, locale, active, catalog, memberDim])
+  }, [sourceKey, store, locale, active, catalog, memberDim, field.tokenGroup])
 
   return (
     <select

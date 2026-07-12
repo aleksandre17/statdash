@@ -76,6 +76,7 @@ export type NodeCap =
   | 'nav-contributor'
   | 'nav-transparent'
   | 'flow'
+  | 'styleable'
   | (string & {})
 
 /**
@@ -119,6 +120,15 @@ export const CAPS = {
    * "WHERE may I be placed", not "what can I do" — the capability-accepts grammar.
    */
   FLOW: 'flow',
+  /**
+   * FACET opt-in — the element exposes the universal STYLE facet (its `view.styles`
+   * are token-authorable in the inspector). The declared signal the generic Facet
+   * axis reads (`FacetDescriptor.appliesWhen`, ./facet) to project an `element.style`
+   * dock section — NEVER a concrete-type read (Law 1 · FF-NO-EXTERNAL-SPECIAL-CASE).
+   * Opt-in by declaration keeps the base thin (no per-element facet form; the STYLE
+   * contract is declared ONCE at the platform in the facet registry).
+   */
+  STYLEABLE: 'styleable',
 } as const satisfies Record<string, NodeCap>
 
 /** Narrow type: one of the standard capability token strings. */

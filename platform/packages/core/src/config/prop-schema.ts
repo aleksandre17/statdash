@@ -33,6 +33,7 @@ export type PropFieldType =
   | 'color'         // CSS color picker
   | 'icon'          // icon-picker
   | 'enum-ref'      // value drawn from a runtime catalog — options resolved via `source`
+  | 'style'         // a NodeStyles object — token-constrained style authoring (StyleField)
 
 // ── PropFieldSource — runtime catalog an 'enum-ref' field draws options from ──
 //
@@ -114,6 +115,17 @@ export interface PropField {
    * The engine only declares the kind of ref; the panel binds it (Law 3).
    */
   source?:     PropFieldSource
+  /**
+   * For a `source: 'tokens'` enum-ref (and each per-property picker a `'style'`
+   * field composes): the design-token GROUP the picker is constrained to — e.g. a
+   * `padding` picker draws `group:'spacing'`, a `color` picker `group:'color'`. The
+   * panel filters `TOKENS_CATALOG` by this group (Tailwind constraint discipline —
+   * a finite, on-scale, `[data-tenant]`-themeable option set). A kept-open string:
+   * the engine names the group; the panel binds it against the styles catalog
+   * (Law 3), so no `TokenGroup` import leaks into core. Ignored unless the field
+   * resolves tokens.
+   */
+  tokenGroup?: string
   /**
    * For a `'cube.members'` enum-ref ONLY: the sibling field whose value names the
    * dimension whose members this field draws from (the member list is scoped to a

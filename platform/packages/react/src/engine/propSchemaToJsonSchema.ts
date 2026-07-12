@@ -205,6 +205,11 @@ function typeDescriptor(type: PropField['type']): Partial<JsonSchemaProperty> {
       return { type: 'object', $comment: 'DataSpec' }
     case 'ChartDef':
       return { type: 'object', $comment: 'ChartDef' }
+    case 'style':
+      // a NodeStyles object (responsive style-prop object) — validated as an object
+      // so saveGuard accepts authored `view.styles`; the token constraint is enforced
+      // at the authoring boundary (StyleField), not the JSON-schema type.
+      return { type: 'object', $comment: 'NodeStyles' }
     default:
       return { type: 'string' }
   }

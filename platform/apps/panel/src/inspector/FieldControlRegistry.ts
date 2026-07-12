@@ -31,6 +31,7 @@ import { SummaryCard } from './controls/SummaryCard'
 import { isRawJsonEscapeEnabled } from './rawJsonEscape'
 import { LocaleField }  from './controls/LocaleField'
 import { EnumRefField } from './controls/EnumRefField'
+import { StyleField }   from './controls/StyleField'
 import { ArrayOfControl, ObjectControl } from './controls/NestedItemControl'
 
 /**
@@ -130,6 +131,10 @@ export const fieldControlRegistry: FieldControlRegistry = new FieldControlRegist
   .register('LocaleString', LocaleField)
   // data-driven enum (engine 'enum-ref' lands in parallel; key registered now)
   .register('enum-ref',     EnumRefField)
+  // STYLE facet control — token-constrained NodeStyles editor (PropFieldType 'style').
+  // The first FACET dispatched through this registry: the dock's generic Style section
+  // resolves its `contract` field to this rich control (genericity in the DISPATCH).
+  .register('style',        StyleField)
   // rich/opaque types (object · array · DataSpec · ChartDef) are DELIBERATELY not
   // registered here — they fall to the SummaryCard default (resolve() step 6), a
   // constant-weight glance card. Raw JSON is a dev escape only (FF-NO-RAW-JSON-DEFAULT).

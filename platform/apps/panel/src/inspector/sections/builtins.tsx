@@ -15,6 +15,8 @@
 import { Box, Chip, Button, Typography } from '@mui/material'
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft'
 import type { VisibilityExpr } from '@statdash/engine'
+import { nodeRegistry, facetRegistry } from '@statdash/react/engine'
+import type { ObjectMeta } from '@statdash/react/engine'
 import { Inspector } from '../Inspector'
 import { MetricPalette } from '../../discovery/MetricPalette'
 import { VisibilitySection } from '../../features/visibility'
@@ -22,6 +24,7 @@ import { PageInspectorPanel } from '../../features/page-config'
 import { PerspectivesPane } from '../../features/perspectives'
 import { FiltersDrawer } from '../../features/filters'
 import { fixedSchemaSource, itemTitle } from '../controls/nestedItemControl.helpers'
+import { registerBuiltinFacets } from '../facets/builtinFacets'
 import type { CanvasNode } from '../../types/constructor'
 import { dockSectionRegistry, type DockRenderCtx } from './dockSection'
 
@@ -68,6 +71,11 @@ let registered = false
 export function registerBuiltinDockSections(): void {
   if (registered) return
   registered = true
+
+  // Register the platform's built-in FACETS first, then derive one generic dock
+  // section per facet (the facet-axis projection — see registerFacetSections).
+  registerBuiltinFacets()
+  registerFacetSections()
 
   dockSectionRegistry
     // ── ELEMENT · schema groups (the generic Inspector + its type chip) ──────────
@@ -199,4 +207,52 @@ export function registerBuiltinDockSections(): void {
       appliesTo: (ctx) => ctx.scope === 'page',
       render:    (ctx) => <FiltersDrawer locale={ctx.locale} />,
     })
+}
+
+// ── registerFacetSections — the generic FACET-axis projection (ADR-041 sibling) ──
+//
+//  Derives ONE dock section per registered facet — the facet-axis peer of the Part
+//  port's `element.schema`. Each derived section is GENERIC:
+//    • APPLICABILITY = the facet's `appliesWhen` over the selected element's DECLARED
+//      META (its `caps`/fields), resolved via `nodeRegistry.getMeta` — NEVER a concrete
+//      `node.type` read (Law 1 · FF-NO-EXTERNAL-SPECIAL-CASE stays green).
+//    • BODY = the facet's `contract` (a PropSchema) projected through the SAME generic
+//      Inspector + FieldControlRegistry the part axis uses; a RICH facet (STYLE →
+//      `type:'style'` → StyleField) dispatches to a rich control. Writes route through
+//      `patchProp` at the facet's readPath (`view.styles`), composing with undo/redo.
+//  A NEW facet = one register() call in builtinFacets; THIS function and the dock are
+//  unchanged (OCP) — the facet-axis peer of "a new part = one PartField". Exported so
+//  the OCP fitness can register a second facet and re-derive (idempotent by section id).
+export function registerFacetSections(): void {
+  for (const facet of facetRegistry.list()) {
+    dockSectionRegistry.register({
+      id:        `element.facet.${facet.id}`,
+      order:     facet.order,
+      appliesTo: (ctx) => {
+        if (!wholeNodeSelected(ctx)) return false
+        const sel = ctx.controller.selected
+        if (!sel) return false
+        const meta = nodeRegistry.getMeta(sel.type, sel.variant) as ObjectMeta | undefined
+        return !!meta && facet.appliesWhen(meta)
+      },
+      render: (ctx) => {
+        const { selected, patchProp } = ctx.controller
+        if (!selected) return null
+        const meta = nodeRegistry.getMeta(selected.type, selected.variant) as ObjectMeta | undefined
+        if (!meta) return null
+        // The facet's `contract` field carries the section label; the generic Inspector
+        // renders it as the section heading + dispatches the field to its facet control
+        // (STYLE → StyleField). No overline — the field label is the single heading (DRY).
+        const schema = facet.contract(meta)
+        return (
+          <Inspector
+            node={selected}
+            schemaSource={fixedSchemaSource(schema, [])}
+            onChange={patchProp}
+            idPrefix={`insp-facet-${facet.id}`}
+          />
+        )
+      },
+    })
+  }
 }

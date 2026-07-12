@@ -12,6 +12,7 @@ export const META: PanelSliceMeta = {
   groups:          TableGroups,
   canHaveChildren: false,
   // `flow` (placement capability): a table is flow content, admissible in a section.
-  caps:            ['export', 'collapsible', 'filterable', 'flow'],
+  // `styleable`: opt into the universal STYLE facet (element.style over view.styles).
+  caps:            ['export', 'collapsible', 'filterable', 'flow', 'styleable'],
   version:         1,
 }
