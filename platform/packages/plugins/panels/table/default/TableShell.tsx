@@ -1,5 +1,6 @@
 import { useState, useEffect }          from 'react'
 import { defineShell, useNodeTemplate, useNodeInteractions, resolveActionField } from '@statdash/react/engine'
+import { SELECTION_WRITE_ACTIONS }        from '@statdash/react/engine'
 import { usePanelTitleBadge }             from '@statdash/react/engine'
 import type { RenderContext }             from '@statdash/react/engine'
 import type { BodyStyleAttrs, ViewParams } from '@statdash/react/engine'
@@ -24,13 +25,22 @@ function TableControl({
 
   const titleBadge = usePanelTitleBadge(ctx, def, 'table')
 
-  // ── Cross-filter row-select — gated on a declared on[] handler ──────────
+  // ── Cross-filter / highlight row-select — gated on a declared on[] handler ──
   //  A table row is a selection gesture ONLY when the node declares `on`.
   //  Without it the table renders exactly as before (no interactive affordance,
   //  no a11y regression — FF-XF-OPT-OUT / FF-XF-A11Y). The gesture routes through
   //  the SAME shared adapter the chart and map use (one write point).
+  //
+  //  The detected action is ANY selection-write arm — `filter` OR `highlight`
+  //  (SELECTION_WRITE_ACTIONS, the SSOT Set the write point folds through). Both
+  //  fold a row value into a param via the same applySelection/CommandBus spine;
+  //  they differ ONLY downstream — a `filter` param scopes the query (requery), a
+  //  `highlight` param is TRANSIENT and read HERE for the selected-row style with
+  //  NO requery (linked highlighting, permalink-encoded). Detecting the union
+  //  arm — not `filter` alone — is what finally gives a declared `type:'highlight'`
+  //  a live render Consumer (AR-42 render-boundary completion; FF-ACTION-ARM-CONSUMED).
   const { emit } = useNodeInteractions(def, ctx)
-  const selectAction = def.on?.flatMap((h) => h.actions).find((a) => a.type === 'filter')
+  const selectAction = def.on?.flatMap((h) => h.actions).find((a) => SELECTION_WRITE_ACTIONS.has(a.type))
   const onRowSelect = selectAction
     ? (row: DataRow) => emit('row:click', row as unknown as Record<string, unknown>)
     : undefined

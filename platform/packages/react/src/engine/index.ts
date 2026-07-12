@@ -158,11 +158,13 @@ export { useFeaturedRows }         from './useFeaturedRows'
 //  No shell wires selection itself (FF-XF-ONE-WRITE-POINT).
 export { useNodeInteractions, resolveActionField } from './useNodeInteractions'
 export type { NodeInteractions }   from './useNodeInteractions'
+export { SELECTION_WRITE_ACTIONS } from './node-events'
 export type {
   NodeEventTrigger,
   NodeEventHandler,
   NodeAction,
   FilterAction,
+  HighlightAction,
   ActionField,
   SelectionMode,
 }                                  from './node-events'

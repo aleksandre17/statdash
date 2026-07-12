@@ -1660,6 +1660,7 @@
                     }
                   ],
                   "encoding": {
+                    "id": "measure",
                     "label": "label",
                     "value": "value",
                     "color": "color",
@@ -1700,6 +1701,14 @@
                       },
                       {
                         "type": "table",
+                        "on": [
+                          {
+                            "event": "row:click",
+                            "actions": [
+                              { "type": "highlight", "key": "_hl", "fromField": "id", "mode": "replace" }
+                            ]
+                          }
+                        ],
                         "colLabel": {
                           "ka": "სექტორი",
                           "en": "Sector"

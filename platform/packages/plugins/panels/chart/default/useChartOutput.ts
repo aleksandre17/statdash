@@ -1,12 +1,39 @@
 import { useMemo }              from 'react'
 import { interpretChart }        from '@statdash/charts'
-import { resolveRef }            from '@statdash/engine'
-import { resolveNodeTemplate }   from '@statdash/react/engine'
+import { resolveRef, splitMultiValue } from '@statdash/engine'
+import { resolveNodeTemplate, resolveActionField } from '@statdash/react/engine'
 import type { ChartType, RefServices, LocaleString } from '@statdash/engine'
 import type { RenderContext }    from '@statdash/react/engine'
 import type { ChartOutput }      from '@statdash/charts'
 import type { ChartNode }        from './ChartNode'
 import { resolveChartDefLocale } from './utils/localeChartDef'
+
+// ── resolveEmphasis (AR-42) — a `highlight` action's param → an emphasis set ──
+//
+//  The READ peer of the node's `highlight` write, exactly as TableShell derives
+//  `selectedIds` from its selection action (same param = SSOT, Law 1). A chart that
+//  declares a `type:'highlight'` action reads that param HERE and lowers it to the
+//  neutral `ChartOutput.emphasis` category set the realizer dims from — no requery
+//  (the param is transient, not a query dim). No highlight action, or an empty
+//  param → `undefined` → the output is byte-identical (bare = unchanged, Postel).
+//
+//  The emphasis set is the param OR-set (`splitMultiValue`); it matches
+//  `output.categories` directly, so a bar-by-category chart whose highlight
+//  `fromField` is the category field emphasizes the clicked category. Mapping a
+//  non-category `fromField` value → its category is an additive follow-up (the
+//  channel is category-keyed; a value→category resolver joins without a new arm).
+function resolveEmphasis(
+  def:          ChartNode,
+  filterParams: RenderContext['filterParams'],
+  services:     RefServices,
+): readonly string[] | undefined {
+  const hl = def.on?.flatMap((h) => h.actions).find((a) => a.type === 'highlight')
+  if (!hl) return undefined
+  const key = resolveActionField(hl.key, services)
+  if (!key) return undefined
+  const set = splitMultiValue(String(filterParams[key] ?? ''))
+  return set.length ? set : undefined
+}
 
 // AR-36 P3 — resolve a state-bound MARK. `chartType` may be a `{ $ctx: key }` ref
 // (donut ⇄ bar rotating with the selection); lower it to the concrete ChartType via
@@ -63,7 +90,7 @@ export function useChartOutput(ctx: RenderContext, def: ChartNode): ChartOutput 
       ? def
       : { ...def, chartType: resolveChartType(def.chartType, { dims: sectionCtx.dims, vars: ctx.vars ?? {} }) }
     const base = resolveChartDefLocale(markedDef, ctx.fieldConfig, resolve)
-    return interpretChart(
+    const out = interpretChart(
       {
         ...base,
         ...(legend  != null ? { legend:  viewLegend(legend)  } : {}),
@@ -72,6 +99,11 @@ export function useChartOutput(ctx: RenderContext, def: ChartNode): ChartOutput 
       rows,
       sectionCtx,
     )
+    // Emphasis (AR-42) — attach the resolved condition-on-selection category set.
+    // Recomputes with ctx.filterParams (a highlight click), NOT with the rows (no
+    // requery); byte-identical when the node declares no highlight action.
+    const emphasis = resolveEmphasis(def, ctx.filterParams, { dims: sectionCtx.dims, vars: ctx.vars ?? {} })
+    return emphasis ? { ...out, emphasis } : out
   }, [def, ctx.fieldConfig, ctx.vars, ctx.filterParams, legend, tooltip, ctx.rows, sectionCtx])
 }
 

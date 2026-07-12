@@ -149,6 +149,21 @@ export interface ChartOutput {
    * without an authored colour list.
    */
   readonly seriesColorByIndex?: boolean
+  /**
+   * EMPHASIS channel (AR-42 — the encoding-grammar peer of a linked-highlight
+   * selection). The RESOLVED "condition on selection": the set of emphasized
+   * CATEGORY keys. When present and NON-EMPTY, a realizer renders marks at a
+   * category IN the set at full strength and marks at every OTHER category
+   * DIMMED (reduced opacity) — the Vega-Lite `opacity: condition-on-param`
+   * pattern, resolved to a category set at the render boundary (a `highlight`
+   * action's param, read in `useChartOutput`). Absent or EMPTY → every mark
+   * full opacity, byte-identical (Postel: bare = unchanged). Neutral by
+   * construction: a category-key SET, never a param name or filter reference —
+   * ChartOutput stays realizer- and dimension-agnostic (Law 1/4). Consumed by
+   * the SVG realizer (`emitCartesian`); the live ApexCharts realizer's per-mark
+   * opacity parity is the tracked follow-up (see FF-ACTION-ARM-CONSUMED).
+   */
+  readonly emphasis?: readonly string[]
 }
 
 export interface ChartSeries {

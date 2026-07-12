@@ -189,6 +189,19 @@ export function emitCartesian(output: ChartOutput, opts: EmitOptions = {}): stri
 
   const zeroPix = valPix(0, false)
 
+  // ── Emphasis channel (AR-42) — the resolved condition-on-selection ──────────
+  //  When a NON-EMPTY emphasis set is present, marks at a category OUTSIDE the set
+  //  dim to DIM_OPACITY; marks INSIDE the set stay full. Bar-category emphasis is
+  //  the well-defined case (each bar sits at one category); a spanning line/area
+  //  stroke has no single category, so only its per-category markers dim. With no
+  //  emphasis set, `catDimmed` is always false → NO opacity attr is emitted → the
+  //  SVG is byte-identical to the pre-AR-42 output (Postel).
+  const emphasis   = output.emphasis
+  const hasEmph    = !!emphasis && emphasis.length > 0
+  const DIM_OPACITY = 0.28
+  const catDimmed  = (ci: number): boolean => hasEmph && !emphasis!.includes(categories[ci]!)
+  const dimAttr    = (ci: number): Record<string, number> => (catDimmed(ci) ? { 'fill-opacity': DIM_OPACITY } : {})
+
   // ── Assemble body ───────────────────────────────────────────────────────
   const parts: string[] = []
 
@@ -298,7 +311,7 @@ export function emitCartesian(output: ChartOutput, opts: EmitOptions = {}): stri
         const rect = horizontal
           ? { x: Math.min(pBase, pTop), y: catStart(ci) + offset, width: Math.abs(pTop - pBase), height: subW, fill: color }
           : { x: catStart(ci) + offset, y: Math.min(pBase, pTop), width: subW, height: Math.abs(pTop - pBase), fill: color }
-        markParts.push(el('rect', { ...rect, rx: 2, 'data-series': series[si]?.name }))
+        markParts.push(el('rect', { ...rect, rx: 2, ...dimAttr(ci), 'data-series': series[si]?.name }))
       })
       if (!stacked) g++
     }
@@ -318,7 +331,7 @@ export function emitCartesian(output: ChartOutput, opts: EmitOptions = {}): stri
       const vp = valPix(v, useY2For(si))
       const cx = horizontal ? vp : catCenter(ci)
       const cy = horizontal ? catCenter(ci) : vp
-      markParts.push(el('circle', { cx, cy, r: MARKER_R, fill: color, stroke: SURFACE, 'stroke-width': 1.5 }))
+      markParts.push(el('circle', { cx, cy, r: MARKER_R, fill: color, stroke: SURFACE, 'stroke-width': 1.5, ...dimAttr(ci) }))
     })
   }
 
@@ -343,14 +356,14 @@ export function emitCartesian(output: ChartOutput, opts: EmitOptions = {}): stri
           const gpos = barIdx.indexOf(si)
           const offset = (band - usable) / 2 + (stacked ? 0 : gpos * subW)
           if (horizontal) {
-            labelParts.push(text(pt.formatted, { x: vp + 4, y: catStart(ci) + offset + subW / 2 + FS / 3, 'text-anchor': 'start', 'font-size': FS, fill: INK, 'font-family': fontFamily }))
+            labelParts.push(text(pt.formatted, { x: vp + 4, y: catStart(ci) + offset + subW / 2 + FS / 3, 'text-anchor': 'start', 'font-size': FS, fill: INK, 'font-family': fontFamily, ...dimAttr(ci) }))
           } else {
-            labelParts.push(text(pt.formatted, { x: catStart(ci) + offset + subW / 2, y: Math.min(vp, zeroPix) - 4, 'text-anchor': 'middle', 'font-size': FS, fill: INK, 'font-family': fontFamily }))
+            labelParts.push(text(pt.formatted, { x: catStart(ci) + offset + subW / 2, y: Math.min(vp, zeroPix) - 4, 'text-anchor': 'middle', 'font-size': FS, fill: INK, 'font-family': fontFamily, ...dimAttr(ci) }))
           }
         } else {
           const cx = horizontal ? vp : catCenter(ci)
           const cy = horizontal ? catCenter(ci) : vp
-          labelParts.push(text(pt.formatted, { x: cx, y: cy - 8, 'text-anchor': 'middle', 'font-size': FS, fill: INK, 'font-family': fontFamily }))
+          labelParts.push(text(pt.formatted, { x: cx, y: cy - 8, 'text-anchor': 'middle', 'font-size': FS, fill: INK, 'font-family': fontFamily, ...dimAttr(ci) }))
         }
       })
     })
