@@ -50,6 +50,16 @@ export type SliceCategory = 'page' | 'data' | 'layout' | 'content' | 'filter'
 //    'kpi'         — node renders KPI metrics
 //    'nav-contributor'  — node contributes a section to the page nav (id/title/navMode)
 //    'nav-transparent'  — real-DOM container the nav extractor descends through
+//    'flow'             — PLACEMENT capability (content-category grammar): flow content
+//
+//  ── Two flavours of cap (one array, two intents) ──────────────────────────────
+//  Most tokens above are BEHAVIOURAL — "what can this element DO" (export, collapse,
+//  render a chart). `flow` is a PLACEMENT capability — "what KIND of content am I, i.e.
+//  WHERE may I be placed" — the HTML5 content-category model (WHATWG §3.2.5): an element
+//  DECLARES the content categories it belongs to; a container declares its content model
+//  (which categories it admits, via `SlotDef.acceptsCaps`). This is the substrate the
+//  capability-accepts grammar (`slotAdmits`) reads — a NEW content block is placeable by
+//  DECLARING `flow`, with ZERO edit to the container (OCP · FF-CAPABILITY-ACCEPTS).
 //
 export type NodeCap =
   | 'export'
@@ -65,6 +75,7 @@ export type NodeCap =
   | 'kpi'
   | 'nav-contributor'
   | 'nav-transparent'
+  | 'flow'
   | (string & {})
 
 /**
@@ -101,6 +112,13 @@ export const CAPS = {
   NAV_CONTRIBUTOR: 'nav-contributor',
   /** Real-DOM container the nav extractor descends through (distinct from render `transparent`). */
   NAV_TRANSPARENT: 'nav-transparent',
+  /**
+   * PLACEMENT capability — the element is FLOW CONTENT (HTML5 content-category model):
+   * a page-content block admissible in any generic content region (a section, a layout
+   * container). Declared by content blocks; read by a slot's `acceptsCaps`. Answers
+   * "WHERE may I be placed", not "what can I do" — the capability-accepts grammar.
+   */
+  FLOW: 'flow',
 } as const satisfies Record<string, NodeCap>
 
 /** Narrow type: one of the standard capability token strings. */
@@ -121,10 +139,51 @@ import type { NavContribution } from './nav-contribution'
 export interface SlotDef {
   field:    string             // node field name: 'children' | 'items'
   label:    LocaleString
-  accepts?: string[]           // allowed node types; empty = any
+  /**
+   * IDENTITY content model — the allowed node TYPES (a concrete allow-list; empty ⇒ any).
+   * The original, still-valid mechanism (Strangler) for genuinely type-specific slots
+   * (a map's detail = a `table`; a page's sticky bar = `filter-bar`/`perspective-bar`).
+   */
+  accepts?: string[]
+  /**
+   * CAPABILITY content model — the content CATEGORIES this slot admits (HTML5 content-
+   * model grammar). A candidate child is admitted iff its declared `caps` intersect this
+   * set. Prefer this over `accepts` for open content regions (a section admits any `flow`
+   * block): a NEW block becomes placeable by DECLARING the category, with ZERO edit here
+   * (OCP). `accepts` and `acceptsCaps` compose as a DISJUNCTION (see `slotAdmits`); a slot
+   * declaring NEITHER is an open container (admits any child).
+   */
+  acceptsCaps?: string[]
   multi:    boolean
   min?:     number
   max?:     number
+}
+
+// ── slotAdmits — the ONE capability-based placement predicate (HTML5 content model) ──
+//
+//  The composition grammar's single reading: does a slot admit a candidate child? A
+//  slot's content model is declared as EITHER a concrete type allow-list (`accepts`), a
+//  capability set (`acceptsCaps` — the content-category grammar), or BOTH (a disjunction).
+//  A child is admitted iff its `type` ∈ accepts OR its declared `caps` intersect
+//  acceptsCaps. A slot declaring NEITHER is an OPEN container (admits any child) —
+//  byte-identical to the pre-capability `!slot.accepts` behaviour (Strangler-safe).
+//
+//  Pure over the DECLARATION: takes the child's already-resolved `caps` (no registry
+//  dependency), so the SAME predicate serves every consumer — the drop/palette gate
+//  (`nestAccepts`), the render-time guard (`renderNode` slot-placement), and the
+//  composite-integrity invariant. ONE grammar, one reading (FF-CAPABILITY-ACCEPTS). A new
+//  content block is placeable by declaring its category; the container is never edited.
+//
+export function slotAdmits(
+  slot:  Pick<SlotDef, 'accepts' | 'acceptsCaps'>,
+  child: { type: string; caps?: readonly string[] },
+): boolean {
+  const hasTypeList = (slot.accepts?.length     ?? 0) > 0
+  const hasCapSet   = (slot.acceptsCaps?.length ?? 0) > 0
+  if (!hasTypeList && !hasCapSet) return true                              // open container → any
+  if (hasTypeList && slot.accepts!.includes(child.type)) return true       // identity match
+  if (hasCapSet && slot.acceptsCaps!.some((c) => child.caps?.includes(c))) return true  // capability match
+  return false
 }
 
 // ── PropertyGroup — Constructor property panel grouping (Retool/Appsmith) ──
@@ -422,13 +481,14 @@ export function partFieldsOf(meta: ObjectMeta): PartField[] {
   if (meta.slots) {
     for (const slot of Object.values(meta.slots)) {
       parts.push({
-        field:     slot.field,
-        residence: 'slot',
-        label:     slot.label,
-        accepts:   slot.accepts,
-        multi:     slot.multi,
-        min:       slot.min,
-        max:       slot.max,
+        field:       slot.field,
+        residence:   'slot',
+        label:       slot.label,
+        accepts:     slot.accepts,
+        acceptsCaps: slot.acceptsCaps,
+        multi:       slot.multi,
+        min:         slot.min,
+        max:         slot.max,
       })
     }
   }

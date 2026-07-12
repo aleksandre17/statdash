@@ -81,7 +81,18 @@ export const SectionSlots: Record<string, SlotDef> = {
   children: {
     field:   'children',
     label:   { ka: 'შიგთავსი', en: 'Content' },
-    accepts: ['chart', 'table', 'kpi-strip', 'columns', 'grid', 'wrap', 'geograph'],
+    // ── Capability content model (HTML5 content-model grammar, ADR-041 / composition) ──
+    //  A section is a generic page-content region: it admits any FLOW CONTENT block —
+    //  declared by the block via `caps: ['flow']`, NOT enumerated here. This retires the
+    //  former hardcoded type list (`chart · table · kpi-strip · columns · grid · wrap ·
+    //  geograph`), which left hero/text/links/card/divider/spacer/stack "homeless" (the
+    //  owner's "blank page only holds a section"). A NEW content block is now placeable by
+    //  DECLARING `flow` alone — zero edit to this slot (OCP · FF-CAPABILITY-ACCEPTS). It
+    //  admits everything the old list did (each of those blocks declares `flow`) PLUS the
+    //  formerly-homeless content blocks + gauge; page-level structure (page-header,
+    //  filter-bar, perspective-bar, section, repeat) does NOT declare `flow`, so it stays
+    //  correctly excluded.
+    acceptsCaps: ['flow'],
     multi:   true,
   },
 }

@@ -12,6 +12,8 @@ export const META: NodeSliceMeta = {
   groups:          CardGroups,
   slots:           CardSlots,
   canHaveChildren: true,
-  caps:            [],
+  // `flow` — placement capability: a card is flow content (admissible in a section) AND
+  // an open container itself (its slot admits any child).
+  caps:            ['flow'],
   version:         1,
 }

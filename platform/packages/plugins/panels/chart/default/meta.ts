@@ -11,6 +11,7 @@ export const META: PanelSliceMeta = {
   schema:          ChartSchema,
   groups:          ChartGroups,
   canHaveChildren: false,
-  caps:            ['export', 'collapsible', 'filterable', 'view-toggle'],
+  // `flow` (placement capability): a chart is flow content, admissible in a section.
+  caps:            ['export', 'collapsible', 'filterable', 'view-toggle', 'flow'],
   version:         1,
 }

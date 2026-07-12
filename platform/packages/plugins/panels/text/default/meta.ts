@@ -12,6 +12,7 @@ export const META: PanelSliceMeta = {
   defaults:        TextDefaults,
   groups:          TextGroups,
   canHaveChildren: false,
-  caps:            [] as const,
+  // `flow` — placement capability: a text panel is flow content, admissible in a section.
+  caps:            ['flow'] as const,
   version:         1,
 }

@@ -11,7 +11,8 @@ export const META: NodeSliceMeta = {
   slots:           GeographSlots,
   groups:          GeographGroups,
   canHaveChildren: true,
-  caps:            ['collapsible', 'filterable', 'view-toggle', 'nav-contributor'],
+  // `flow` (placement capability): a geograph is flow content, admissible in a section.
+  caps:            ['collapsible', 'filterable', 'view-toggle', 'nav-contributor', 'flow'],
   version:         1,
   i18n: {
     ka: {

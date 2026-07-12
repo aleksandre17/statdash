@@ -13,7 +13,9 @@ export const META: NodeSliceMeta = {
   slots:           HeroSlots,
   groups:          HeroGroups,
   canHaveChildren: false,
-  caps:            [],
+  // `flow` — placement capability (content-category grammar): hero is flow content,
+  // admissible in any generic content region (a section). See ADR-041 / composition.
+  caps:            ['flow'],
   version:         1,
   i18n: {
     ka: { view: 'ნახვა', prev: 'წინა',  next: 'შემდეგი' },

@@ -12,6 +12,7 @@ export const META: NodeSliceMeta = {
   defaults:        SpacerDefaults,
   groups:          SpacerGroups,
   canHaveChildren: false,
-  caps:            [],
+  // `flow` — placement capability: a spacer is flow content (admissible in a section).
+  caps:            ['flow'],
   version:         1,
 }

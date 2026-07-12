@@ -11,6 +11,7 @@ export const META: PanelSliceMeta = {
   schema:          TableSchema,
   groups:          TableGroups,
   canHaveChildren: false,
-  caps:            ['export', 'collapsible', 'filterable'],
+  // `flow` (placement capability): a table is flow content, admissible in a section.
+  caps:            ['export', 'collapsible', 'filterable', 'flow'],
   version:         1,
 }

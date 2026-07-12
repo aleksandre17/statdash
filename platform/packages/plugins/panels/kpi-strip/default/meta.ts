@@ -11,7 +11,8 @@ export const META: PanelSliceMeta = {
   schema:          KpiStripSchema,
   groups:          KpiStripGroups,
   canHaveChildren: false,
-  caps:            ['filterable'],
+  // `flow` (placement capability): a kpi-strip is flow content, admissible in a section.
+  caps:            ['filterable', 'flow'],
   version:         1,
   i18n: {
     ka: {

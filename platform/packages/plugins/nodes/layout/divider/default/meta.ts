@@ -12,6 +12,7 @@ export const META: NodeSliceMeta = {
   defaults:        DividerDefaults,
   groups:          DividerGroups,
   canHaveChildren: false,
-  caps:            [],
+  // `flow` — placement capability: a divider is flow content (admissible in a section).
+  caps:            ['flow'],
   version:         1,
 }

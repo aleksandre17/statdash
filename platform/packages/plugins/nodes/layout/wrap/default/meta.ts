@@ -12,6 +12,7 @@ export const META: NodeSliceMeta = {
   slots:           WrapSlots,
   transparent:     true,
   canHaveChildren: true,
-  caps:            [],
+  // `flow` — placement capability: a wrap is flow content (admissible in a section).
+  caps:            ['flow'],
   version:         1,
 }

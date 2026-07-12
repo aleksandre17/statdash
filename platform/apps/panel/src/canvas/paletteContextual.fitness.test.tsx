@@ -47,13 +47,14 @@ describe('FF-PALETTE-CONTEXTUAL — the leaf/container discriminant (D-M4.1-A)',
     expect(isDropTarget(undefined)).toBe(true)      // page root — top-level target
   })
 
-  it('nestAccepts honours the container accept-set and refuses every leaf', () => {
-    // section declares accepts: chart/table/kpi-strip/columns/grid/wrap/geograph
-    expect(nestAccepts('section', 'chart')).toBe(true)
-    expect(nestAccepts('section', 'table')).toBe(true)
-    expect(nestAccepts('section', 'hero')).toBe(false)      // not in section's accepts
-    expect(nestAccepts('section', 'filter-bar')).toBe(false)
-    // a leaf accepts NOTHING (the silent-fail fix — was permissive before)
+  it('nestAccepts honours the container CONTENT MODEL (capability grammar) and refuses every leaf', () => {
+    // section admits any `flow` block, BY DECLARATION — not a hardcoded type list.
+    expect(nestAccepts('section', 'chart')).toBe(true)         // flow content
+    expect(nestAccepts('section', 'table')).toBe(true)         // flow content
+    expect(nestAccepts('section', 'hero')).toBe(true)          // flow content (formerly homeless)
+    expect(nestAccepts('section', 'filter-bar')).toBe(false)   // page structure — not flow
+    expect(nestAccepts('section', 'page-header')).toBe(false)  // page structure — not flow
+    // a leaf admits NOTHING (the silent-fail fix — was permissive before)
     expect(nestAccepts('hero', 'chart')).toBe(false)
     expect(nestAccepts('filter-bar', 'chart')).toBe(false)
   })
@@ -67,12 +68,13 @@ describe('FF-PALETTE-CONTEXTUAL — the palette projection', () => {
     for (const t of offered) {
       expect(nestAccepts('section', t!), `offered incompatible tile: ${t}`).toBe(true)
     }
-    // concretely: data/layout children in, leaves + self out.
+    // concretely: any `flow` block in (data/layout/content), page-structure + self out.
     expect(offered).toContain('chart')
     expect(offered).toContain('table')
-    expect(offered).not.toContain('hero')
-    expect(offered).not.toContain('filter-bar')
-    expect(offered).not.toContain('section')
+    expect(offered).toContain('hero')          // flow content — now admitted (capability grammar)
+    expect(offered).not.toContain('filter-bar')  // page structure — not flow
+    expect(offered).not.toContain('page-header') // page structure — not flow
+    expect(offered).not.toContain('section')     // section is not flow → not self-nestable
   })
 
   it('(b) every offered tile actually nests into the selection (no silent redirect)', () => {
@@ -95,9 +97,11 @@ describe('FF-PALETTE-CONTEXTUAL — the palette projection', () => {
     expect(offered).toContain('section')                 // direct
     expect(offered).toContain('chart')                   // wrap-reachable (page → section → chart)
     expect(offered).toContain('table')                   // wrap-reachable
+    expect(offered).toContain('hero')                    // wrap-reachable (page → section → hero) — the fix
     expect(offered.length).toBeGreaterThan(1)            // never "only a section"
-    // A homeless content block (accepted by neither the page root nor a section) is omitted.
-    expect(offered).not.toContain('hero')
+    // A block admitted by NEITHER the page root NOR a section (not `flow`, not page-structure)
+    // is still honestly omitted — the grammar is a real filter, not "everything is placeable".
+    expect(offered).not.toContain('featured-slider')
     // Every offered tile actually resolves to a valid placement (no bouncing tile).
     for (const t of offered) {
       expect(resolveInsertPlan(page, null, t!).kind, `tile ${t} is not placeable at page root`)

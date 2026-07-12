@@ -69,8 +69,15 @@ export interface PartField {
   /** WHERE this field's parts reside — declared on the FIELD, never the node (FF-RESIDENCE-AT-FIELD). */
   residence:  PartResidence
   label?:     LocaleString
-  /** slot residence: the registered node types this field accepts (drop-gate; empty ⇒ any). */
+  /** slot residence: the registered node types this field accepts (identity drop-gate; empty ⇒ any). */
   accepts?:   string[]
+  /**
+   * slot residence: the content CATEGORIES this field admits (capability drop-gate, HTML5
+   * content-model grammar). A child is admissible iff its declared `caps` intersect this
+   * set OR its `type` ∈ `accepts` (disjunction — see `slotAdmits`). Projected verbatim
+   * from `SlotDef.acceptsCaps` so the port carries the full composition contract.
+   */
+  acceptsCaps?: string[]
   /** value/sourced residence: the per-part contract when homogeneous (a `PropField.itemSchema`). */
   itemSchema?: PropSchema
   /** value residence: the item's declared property grouping (accordion sections), if any. */

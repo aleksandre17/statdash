@@ -79,7 +79,7 @@ export type {
 //  `isWrapper` (ADR-041 Phase 6) is the ONE derived wrapper/leaf predicate (WRAPPER ⇔
 //  declares ≥1 part field); `isNodeContainer` its `slot`-residence specialization (the
 //  node-tree drop-target answer). No consumer reads the KIND/FLAG for containment.
-export { partFieldsOf, isWrapper, isNodeContainer } from './slice-meta'
+export { partFieldsOf, isWrapper, isNodeContainer, slotAdmits } from './slice-meta'
 // ── Part-port residence adapters (ADR-041 · Phase 2) — engine, app-agnostic ──
 //  `valueParts` / `slotParts` are two of the three residence adapters; the third
 //  (`sourced`) lives with the app-owned filterSchema SSOT (apps/panel), registered

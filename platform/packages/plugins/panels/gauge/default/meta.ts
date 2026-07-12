@@ -11,6 +11,7 @@ export const META: PanelSliceMeta = {
   schema:          GaugeSchema,
   groups:          GaugeGroups,
   canHaveChildren: false,
-  caps:            ['filterable'],
+  // `flow` (placement capability): a gauge is flow content, admissible in a section.
+  caps:            ['filterable', 'flow'],
   version:         1,
 }

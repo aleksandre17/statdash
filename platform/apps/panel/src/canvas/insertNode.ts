@@ -15,7 +15,7 @@
 //  The component layer supplies the id factory and the store action; this module
 //  owns the "what shape + where" decision so it cannot drift between surfaces.
 //
-import { nodeRegistry, isNodeContainer } from '@statdash/react/engine'
+import { nodeRegistry, isNodeContainer, slotAdmits } from '@statdash/react/engine'
 import type { CanvasNode, CanvasPage } from '../types/constructor'
 
 /**
@@ -67,7 +67,14 @@ export function isDropTarget(parentType: string | undefined): boolean {
  * Whether `childType` may be nested under `parentType`. Two questions, both from
  * already-declared meta (no new field, no packages change):
  *   1. Is the parent a drop target at all?  → declares a `slot` part (isDropTarget)
- *   2. Which child types may it hold?        → `slots.accepts` (empty ⇒ any)
+ *   2. Which child types may it hold?        → the slot's DECLARED content model
+ *      (`slotAdmits`: identity `accepts` ∪ capability `acceptsCaps`; empty ⇒ any)
+ *
+ * Step 2 is the capability-accepts grammar (HTML5 content model): a section admits any
+ * child DECLARING the `flow` capability, never a hardcoded type list — so a NEW content
+ * block is placeable by declaration alone (OCP · FF-CAPABILITY-ACCEPTS). The child's caps
+ * are resolved from ITS registered meta, so this reads both sides of the contract from the
+ * registry (no per-type branch).
  *
  * Previously step 1 was skipped — a slot-less parent returned `true`, conflating
  * "leaf (accepts nothing)" with "open container (accepts anything)" and causing
@@ -84,9 +91,11 @@ export function nestAccepts(parentType: string | undefined, childType: string): 
   if (!slots) return true                            // open container (no explicit slots) → any
   const defs = Object.values(slots)
   if (defs.length === 0) return true
-  // Accept if ANY slot accepts the type (a node has at most one children list in
-  // the flat model; the union of slot accepts is the effective contract).
-  return defs.some((slot) => !slot.accepts || slot.accepts.length === 0 || slot.accepts.includes(childType))
+  // Accept if ANY slot admits the type (a node has at most one children list in the flat
+  // model; the union of slot content-models is the effective contract). Capability-aware:
+  // a slot may gate by identity (`accepts`), by content-category (`acceptsCaps`), or both.
+  const childCaps = nodeRegistry.getCaps(childType)
+  return defs.some((slot) => slotAdmits(slot, { type: childType, caps: childCaps }))
 }
 
 /**

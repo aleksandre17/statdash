@@ -122,10 +122,18 @@ describe('FF-INSERT-NEVER-CLIFF — the plan is always valid or an explicit hint
   })
 
   it('a blocked type (no single wrapper) exists and is surfaced as a hint, not a silent drop', () => {
-    // hero: not page-acceptable, and section does not accept it either → blocked.
+    // featured-slider: not page-acceptable, AND not `flow` content → a section rejects it
+    // too → genuinely blocked (no single wrapper). (hero, formerly the example here, is now
+    // `flow` content → auto-wraps page → section → hero — the capability-accepts fix.)
     const page = basePage()
-    const plan = resolveInsertPlan(page, null, 'hero')
+    const plan = resolveInsertPlan(page, null, 'featured-slider')
     expect(plan.kind).toBe('blocked')
-    expect(planInserts(plan, 'hero', ids())).toHaveLength(0)
+    expect(planInserts(plan, 'featured-slider', ids())).toHaveLength(0)
+  })
+
+  it('a formerly-homeless content block (hero) now auto-wraps page → section → hero (capability-accepts)', () => {
+    const page = basePage()
+    expect(resolveInsertPlan(page, null, 'hero'))
+      .toEqual({ kind: 'wrap', wrapperType: AUTOWRAP_CONTAINER, parentId: 'p1' })
   })
 })

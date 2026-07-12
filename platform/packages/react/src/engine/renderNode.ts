@@ -34,6 +34,7 @@ import { WrapStyleContext }              from './wrapStyleContext'
 import { middlewareRegistry }            from './middleware/registry'
 import { evalVarMap }                    from './evalVarMap'
 import { makeLazyRendered }              from './lazyRendered'
+import { slotAdmits }                    from './slice-meta'
 
 type U = NodeBase & Record<string, unknown>
 
@@ -118,15 +119,24 @@ function warnSlotPlacement(
   const primary =
     Object.values(slots).find(s => s.field === 'children') ??
     Object.values(slots).find(s => s.field === 'items')
-  if (!primary?.accepts || primary.accepts.length === 0) return
-  if (primary.accepts.includes(childType)) return
+  if (!primary) return
+  // Capability-accepts grammar: admit by identity (`accepts`) OR content-category
+  // (`acceptsCaps` ∩ the child's declared caps). An open slot (neither declared) admits
+  // any child → slotAdmits returns true → no warning. Only a RESTRICTED slot rejecting the
+  // child reaches the diagnostic below (the child still renders — Postel's Law).
+  const childCaps = nodeRegistry.getCaps(childType)
+  if (slotAdmits(primary, { type: childType, caps: childCaps })) return
 
+  const model = [
+    ...(primary.accepts ?? []),
+    ...(primary.acceptsCaps ?? []).map(c => `cap:${c}`),
+  ].join(', ')
   emitDiagnostic(diagWarning(
     'slot-placement',
     `Node type '${childType}' is not accepted by '${parentType}' slot '${primary.field}' ` +
-    `(accepts: ${primary.accepts.join(', ')}). Rendering anyway.`,
+    `(admits: ${model}). Rendering anyway.`,
     { path: `${parentType}.${primary.field}[${childKey}]`,
-      context: { parentType, parentVariant, childType, accepts: primary.accepts } },
+      context: { parentType, parentVariant, childType, accepts: primary.accepts, acceptsCaps: primary.acceptsCaps } },
   ))
 }
 

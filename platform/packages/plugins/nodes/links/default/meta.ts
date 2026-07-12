@@ -9,6 +9,7 @@ export const META: NodeSliceMeta = {
   category:        'content',
   schema:          LinksSchema,
   canHaveChildren: false,
-  caps:            [],
+  // `flow` — placement capability: links is flow content (admissible in a section).
+  caps:            ['flow'],
   version:         1,
 }

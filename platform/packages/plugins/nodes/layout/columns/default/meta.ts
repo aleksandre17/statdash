@@ -17,6 +17,7 @@ export const META: NodeSliceMeta = {
   // nav extractor traverses its children so sections nested in a columns grid
   // still appear in the page nav. Absorbed from the retired `row` primitive when
   // the two grid families converged to one (DESIGN-responsive-composition §3.2).
-  caps:            ['nav-transparent'],
+  // `flow` (placement capability): columns is flow content, admissible in a section.
+  caps:            ['nav-transparent', 'flow'],
   version:         1,
 }

@@ -207,8 +207,8 @@ describe('Structural nodes declare empty caps', () => {
     expect(reg.getCaps('filter-bar')).toEqual([])
   })
 
-  it('wrap has no caps', () => {
-    expect(reg.getCaps('wrap')).toEqual([])
+  it('wrap declares the `flow` placement capability (flow content, admissible in a section)', () => {
+    expect(reg.getCaps('wrap')).toEqual(['flow'])
   })
 })
 
@@ -218,7 +218,8 @@ describe('nav capabilities are declared in META, not hardcoded in navUtils', () 
   it('columns is a nav-transparent container (descend-for-nav, distinct from render transparent)', () => {
     // Absorbed from the retired `row` primitive on the row→columns convergence:
     // sections nested in a columns grid must still surface in the page nav.
-    expect(reg.getCaps('columns')).toEqual(['nav-transparent'])
+    // `flow` added: columns is also flow content (admissible in a section).
+    expect(reg.getCaps('columns')).toEqual(['nav-transparent', 'flow'])
   })
 
   it('section + geograph are nav contributors', () => {

@@ -15,6 +15,7 @@ export const META: NodeSliceMeta = {
   canHaveChildren: true,
   // `nav-transparent` (descend-for-nav): sections nested in a 12-col grid still
   // surface in the page nav — same container contract as columns/row.
-  caps:            ['nav-transparent'],
+  // `flow` (placement capability): a grid is flow content, admissible in a section.
+  caps:            ['nav-transparent', 'flow'],
   version:         1,
 }
