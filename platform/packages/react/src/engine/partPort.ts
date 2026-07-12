@@ -24,6 +24,7 @@
 //  unified reading they all project into.
 //
 import type { PropSchema, LocaleString, FilterSchemaInput, PropertyGroup } from '@statdash/engine'
+import type { ChromeSlotConfig } from './slice-meta'
 
 // ── PartResidence — WHERE an element's parts live (closed set, extensible) ───────
 //
@@ -130,6 +131,15 @@ export interface EnumeratedPart {
    * single coordinate Phase 3's selection-triple collapses onto for a filter control.
    */
   key?:      string
+  /**
+   * sourced residence: the id of the registered `sourced` adapter that produced this part
+   * (ADR-041 Delta 1 — `source` is the ADAPTER id). Carried through so the host resolves
+   * the SAME adapter for the WRITE (`getPartSource('sourced', source)`) without re-reading
+   * the owning element's declaration — the `sourced` residence is now MULTI-consumer
+   * (`'page-filters'` filters · `'site-chrome'` chrome), so the residence alone no longer
+   * identifies the adapter. `value`/`slot` parts leave it undefined (residence suffices).
+   */
+  source?:   string
   /** Dot-path to the label field for the dock crumb, if declared. */
   itemLabel?: string
   /** The part's declared property grouping (accordion sections) — value residence, or []. */
@@ -147,6 +157,11 @@ export interface EnumeratedPart {
 export type PartMutation =
   | { target: 'node-props';    props:    Record<string, unknown> }
   | { target: 'filter-schema'; schema:   FilterSchemaInput }
+  // site-chrome residence (S6 · sourced source='site-chrome') — one field on a chrome
+  // slot's per-slot config in the site SSOT (`site.chrome[slot].config`), committed by
+  // the host through `updateChromeConfig(slot, field, value)`. Tagged by residence-source,
+  // never by a chrome slot type — the SAME closed-mutation discipline as filter-schema.
+  | { target: 'site-chrome';   slot: string; field: string; value: unknown }
   | { target: 'node-children'; children: unknown[] }   // slot residence — lands with slotParts
 
 // ── PartSource — ROOT-3: the ONE port every mechanism recurses over ──────────────
@@ -178,7 +193,19 @@ export interface PartSource {
 }
 
 // ── PartSourceContext — the external SSOT a sourced part projects (page-owned) ────
+//
+//  A `sourced` adapter reads the part's items from an EXTERNAL SSOT carried here (never
+//  a denormalised copy on the owning element). ONE context, N sourced SSOTs — each
+//  sourced adapter reads only the field it owns (`page-filters` → `filterSchema`,
+//  `site-chrome` → `chrome`), so a new sourced consumer adds ONE field, the port
+//  signature unchanged for existing adapters (OCP).
 export interface PartSourceContext {
-  /** The active page's filter schema (SSOT a `sourced` filter part projects). */
+  /** The active page's filter schema (SSOT the `page-filters` sourced adapter projects). */
   filterSchema?: FilterSchemaInput
+  /**
+   * The site's chrome config map (SSOT the `site-chrome` sourced adapter projects — S6).
+   * Keyed by chrome slot; each entry carries the slot's variant + its per-slot `config`
+   * (the bounded subject the chrome part's Inspector edits). Mirrors `SiteManifest.chrome`.
+   */
+  chrome?:       Record<string, ChromeSlotConfig>
 }

@@ -25,6 +25,8 @@ interface SelectedPart {
   /** The part's live value object — the bounded subject the Inspector edits. */
   itemObject:  Record<string, unknown>
   residence:   PartResidence
+  /** sourced residence: the adapter id (Delta 1), re-resolved for the WRITE. */
+  source?:     string
   address:     PartAddress
 }
 
@@ -100,6 +102,7 @@ export function useCanvasController() {
       itemLabel:  found.itemLabel,
       itemObject: found.subject,
       residence:  found.residence,
+      source:     found.source,            // the sourced adapter id (Delta 1) — re-resolved on write
       address:    found.address,           // the ONE STABLE address the write commits through
     }
   }, [selected, selectedItemPath, filterSchema])
@@ -165,7 +168,7 @@ export function useCanvasController() {
   const patchItemProp = useCallback(
     (subfield: string, value: unknown) => {
       if (!pageId || !selected || !page || !selectedBand) return
-      const mut = getPartSource(selectedBand.residence)
+      const mut = getPartSource(selectedBand.residence, selectedBand.source)
         ?.writePart(selected.props, selectedBand.address, subfield, value, { filterSchema })
       if (!mut) return
       if (mut.target === 'node-props') {

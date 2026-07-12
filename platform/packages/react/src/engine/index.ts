@@ -88,6 +88,12 @@ export { partFieldsOf, isWrapper, isNodeContainer, slotAdmits } from './slice-me
 export { valueParts, slotParts }   from './partSources'
 export { bandFieldsOf, bandItemsOf } from './bandItems'
 export type { BandItemRef }        from './bandItems'
+// ── Site-frame element (ADR-041 R4 · S6) — chrome regions as a `sourced` band ──
+//  The site frame DECLARES its chrome regions as ONE sourced PartField (`band:
+//  {source:'site-chrome'}`); the app-owned `chromeParts` adapter (registered under that
+//  source) enumerates `site.chrome × chromeRegistry`. `SITE_FRAME_ID` names it as the
+//  owning element of chrome parts (`{nodeId: SITE_FRAME_ID, partPath:'chrome.<slot>'}`).
+export { SITE_FRAME_ID, SITE_FRAME_META } from './siteFrame'
 
 // ── Core classes ──────────────────────────────────────────────────────
 export { NodeRegistry, CAPS }                        from './NodeRegistry'

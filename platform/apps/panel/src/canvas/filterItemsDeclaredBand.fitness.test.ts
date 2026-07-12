@@ -64,9 +64,11 @@ describe('FF-FILTER-ITEMS-DECLARED-BAND — filters are a declared, SSOT-faithfu
   it('(a) the filter-bar META DECLARES a sourced band; the port resolves it by RESIDENCE', () => {
     const meta = nodeRegistry.getMeta('filter-bar')
     expect(meta?.band?.source).toBe('page-filters')
-    // The port is keyed by RESIDENCE, never by a concrete type — the sourced adapter
-    // is `sourcedParts`, the default homogeneous (value) band is the engine `valueParts`.
-    expect(getPartSource('sourced')).toBe(sourcedParts)
+    // The port resolves each part by its residence — the MULTI-consumer `sourced` residence
+    // by its SOURCE id (Delta 1: 'page-filters' → the filter adapter `sourcedParts`), the
+    // positional `value` residence by residence alone (the engine `valueParts`). Keying by
+    // the declared source id (NOT a node type) is what keeps this per-type-free.
+    expect(getPartSource('sourced', 'page-filters')).toBe(sourcedParts)
     expect(getPartSource('value')).toBe(valueParts)
   })
 
