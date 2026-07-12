@@ -115,6 +115,22 @@
   pointer-events: none;
 }
 
+/* P0 (reform 0066) — the rendered section's chart↔table view-toggle is OPERABLE in
+ * the authoring canvas: the author previews both views live. It opts back into
+ * pointer-events AND lifts above the selection overlay (z-index) so a click OPERATES
+ * it (setActiveRole flips the view in-preview) instead of being swallowed by the
+ * overlay's select frame. Other section clicks still select. This is the reform
+ * pattern — a declared-interactive rendered control becomes operable on the authoring
+ * surface (Figma: a selected element's own controls are directly operable). */
+.canvas-layer--renderer .section__view-toggle {
+  position: relative;
+  z-index: 3;
+  pointer-events: auto;
+}
+.canvas-layer--renderer .section__view-toggle .section__view-btn {
+  pointer-events: auto;
+}
+
 /* Layer 2 — overlay. The layer itself is transparent to pointer events; only
  * its interactive children (.canvas-node, .canvas-dropzone) opt back in. */
 .canvas-overlay {
