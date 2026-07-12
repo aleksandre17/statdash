@@ -3,9 +3,10 @@
 //  The gate the owner hit repeatedly on the live panel: "chrome functionality STILL
 //  not visible anywhere" + "STILL can't touch the left-bar navigations." Proven where
 //  jsdom cannot — the REAL Vite bundle in Chromium, a DEFAULT session:
-//    1. CHROME is reachable + selectable: the Pages&Site surface carries a Chrome
-//       section (ChromePalette); picking a chrome element opens its schema-driven
-//       editor in the RightDock (the SAME generic Inspector nodes use).
+//    1. CHROME is reachable + selectable ON THE CANVAS (S6 fold): chrome is a Part of the
+//       site-frame — clicking the rendered InnerSidebar region on the live home canvas
+//       selects the ONE PartAddress, and its schema-driven editor opens in the RightDock
+//       (the SAME generic Inspector nodes use — no palette, no forked chrome panel).
 //    2. The LEFT-BAR NAV is deep-editable: a nav entry's label is editable inline
 //       (updateNavItem), and the edit REFLECTS live — the entry row AND the canvas's
 //       InnerSidebar rail repaint the new label (WYSIWYG, projectCanvasSiteChrome).
@@ -30,20 +31,22 @@ test('chrome + left-bar nav are authorable from the Studio (deep-authorability)'
   await expect(page.getByRole('banner')).toBeVisible({ timeout: 60_000 })
   await expect(page.locator('.studio-shell')).toBeVisible()
 
-  // ── REACH — open the site authoring home (identity · nav · chrome) ────────────
-  const rail = page.getByRole('navigation', { name: 'Studio surfaces' })
-  await rail.getByRole('button', { name: 'Pages & Site' }).click()
-
-  // ── CHROME is VISIBLE + SELECTABLE (the "not visible anywhere" closer) ────────
-  //  Chrome is site furniture — it lives here, next to identity + nav (correct IA),
-  //  not buried in the page-content Insert palette.
-  const palette = page.getByTestId('chrome-palette')
-  await expect(palette).toBeVisible()
-  // Picking a registered chrome element selects it → its editor opens in the RightDock.
-  await palette.getByRole('button').first().click()
-  await expect(page.getByTestId('chrome-inspector')).toBeVisible()
-  // It is the SAME generic Inspector (no forked chrome UI) — schema-driven fields.
+  // ── CHROME is VISIBLE + SELECTABLE ON THE CANVAS (the "not visible anywhere" closer) ─
+  //  S6: chrome is a Part of the site-frame — no palette, no forked panel. The home canvas
+  //  renders the REAL InnerSidebar rail; clicking its region selects the ONE PartAddress
+  //  ({ site-frame, chrome.InnerSidebar }) and opens its schema-driven editor in the
+  //  RightDock — the SAME generic Inspector nodes use.
+  const chromeFrame = page.locator('.canvas-chrome[data-chrome-slot="InnerSidebar"]')
+  await expect(chromeFrame).toBeVisible({ timeout: 30_000 })
+  await chromeFrame.click()
+  // Its editor opens in the RightDock — the SAME generic Inspector (schema-driven fields),
+  // projected through the ONE `element.schema` dock section (no chrome-specific dock).
   await expect(page.getByTestId('inspector')).toBeVisible()
+
+  // ── REACH — open the site authoring home (identity · nav) from the TOP BAR (SPEC S5:
+  //  Pages & Site is demoted off the rail to a top-bar-summoned surface; it renders in the
+  //  left dock, the canvas + RightDock stay visible). ──
+  await page.getByRole('banner').getByRole('button', { name: 'Pages & Site' }).click()
 
   // ── LEFT-BAR NAV is DEEP-EDITABLE (the "can't touch the nav" closer) ──────────
   //  The entry is present (its Edit affordance's a11y name derives from the live label).

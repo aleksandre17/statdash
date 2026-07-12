@@ -210,6 +210,11 @@ function typeDescriptor(type: PropField['type']): Partial<JsonSchemaProperty> {
       // so saveGuard accepts authored `view.styles`; the token constraint is enforced
       // at the authoring boundary (StyleField), not the JSON-schema type.
       return { type: 'object', $comment: 'NodeStyles' }
+    case 'data-pipeline':
+      // an element's `data: DataSpec` — validated as an object so saveGuard accepts
+      // an authored per-element pipeline; the DataSpec discriminant/shape is enforced
+      // at the authoring boundary (DataFacetField → DataSpecEditor), not this type.
+      return { type: 'object', $comment: 'DataSpec' }
     default:
       return { type: 'string' }
   }

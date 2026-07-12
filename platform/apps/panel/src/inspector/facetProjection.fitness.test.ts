@@ -71,6 +71,59 @@ describe('FF-FACET-PROJECTED — a declared facet is a generic dock projection',
     expect(fbIds).not.toContain('element.facet.style')
   })
 
+  it('the DATA facet is registered with a contract over `data` (Gap 3 — falls out generically)', () => {
+    expect(facetRegistry.has('data')).toBe(true)
+    const data = facetRegistry.list().find((f) => f.id === 'data')!
+    expect(data.readPath).toBe('data')
+    // The contract is a PropSchema fragment carrying a `type:'data-pipeline'` field
+    // (dispatched to DataFacetField by FieldControlRegistry: metric-bind ⊕ pipe editor) —
+    // genericity in the DISPATCH, not a per-type Data form.
+    const schema = data.contract({} as ObjectMeta)
+    expect(schema).toHaveLength(1)
+    expect(schema[0]).toMatchObject({ field: 'data', type: 'data-pipeline' })
+  })
+
+  it('the DATA facet appliesWhen reads the `data-bindable` cap, never a concrete type (Law 1)', () => {
+    const data = facetRegistry.list().find((f) => f.id === 'data')!
+    expect(data.appliesWhen({ caps: ['data-bindable'] } as ObjectMeta)).toBe(true)
+    // A DIFFERENT declared cap (even the behavioural `data` cap) does NOT opt in — the
+    // predicate is over the dedicated AUTHORING cap, not overloaded onto palette caps.
+    expect(data.appliesWhen({ caps: ['data'] } as ObjectMeta)).toBe(false)
+    expect(data.appliesWhen({ caps: ['styleable'] } as ObjectMeta)).toBe(false)
+    expect(data.appliesWhen({} as ObjectMeta)).toBe(false)
+    // Naming a concrete type but NOT the cap is not special-cased to true.
+    expect(data.appliesWhen({ type: 'chart', caps: [] } as unknown as ObjectMeta)).toBe(false)
+  })
+
+  it('a data-bindable element gets element.facet.data; a non-data element does not', () => {
+    expect(dockSectionRegistry.has('element.facet.data')).toBe(true)
+
+    // A chart declares `data-bindable` → the Data section applies (any data-bindable
+    // element, not just a metric-declaring one — metric-optional).
+    const chart = { id: 'c1', type: 'chart', props: {} }
+    const chartIds = dockSectionRegistry
+      .list(elementCtx({ selected: chart as never }))
+      .map((s) => s.id)
+    expect(chartIds).toContain('element.facet.data')
+
+    // A filter-bar is NOT data-bindable → no Data section (the Figma law: only the
+    // selection's OWN declared contract). Proves it is not type-blind-universal.
+    const filterBar = { id: 'f1', type: 'filter-bar', props: {} }
+    const fbIds = dockSectionRegistry
+      .list(elementCtx({ selected: filterBar as never }))
+      .map((s) => s.id)
+    expect(fbIds).not.toContain('element.facet.data')
+  })
+
+  it('the real registered data-panel metas carry the data-bindable opt-in', () => {
+    // The CONSUMER proof: the declaration the generic DATA facet reads is present on the
+    // real data panels (chart/table/kpi-strip) — so the Data section falls out for each.
+    for (const type of ['chart', 'table', 'kpi-strip']) {
+      const meta = nodeRegistry.getMeta(type) as unknown as ObjectMeta
+      expect(meta?.caps, type).toContain('data-bindable')
+    }
+  })
+
   it('the facet section does NOT apply to a bounded PART (whole-element facet, MVP)', () => {
     const selectedBand = { path: 'chrome.InnerSidebar', ownerId: 'site-frame', ownerSelectable: false }
     const ids = dockSectionRegistry

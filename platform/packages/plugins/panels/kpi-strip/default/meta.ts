@@ -13,7 +13,8 @@ export const META: PanelSliceMeta = {
   canHaveChildren: false,
   // `flow` (placement capability): a kpi-strip is flow content, admissible in a section.
   // `styleable`: opt into the universal STYLE facet (element.style over view.styles).
-  caps:            ['filterable', 'flow', 'styleable'],
+  // `data-bindable`: opt into the universal DATA facet (element.facet.data over `data`).
+  caps:            ['filterable', 'flow', 'styleable', 'data-bindable'],
   version:         1,
   i18n: {
     ka: {

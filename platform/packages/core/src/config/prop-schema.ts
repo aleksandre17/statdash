@@ -34,6 +34,7 @@ export type PropFieldType =
   | 'icon'          // icon-picker
   | 'enum-ref'      // value drawn from a runtime catalog — options resolved via `source`
   | 'style'         // a NodeStyles object — token-constrained style authoring (StyleField)
+  | 'data-pipeline' // an element's `data: DataSpec` — projected metric-bind ⊕ pipe editor (DataFacetField)
 
 // ── PropFieldSource — runtime catalog an 'enum-ref' field draws options from ──
 //

@@ -32,6 +32,7 @@ import { isRawJsonEscapeEnabled } from './rawJsonEscape'
 import { LocaleField }  from './controls/LocaleField'
 import { EnumRefField } from './controls/EnumRefField'
 import { StyleField }   from './controls/StyleField'
+import { DataFacetField } from './controls/DataFacetField'
 import { ArrayOfControl, ObjectControl } from './controls/NestedItemControl'
 
 /**
@@ -135,6 +136,12 @@ export const fieldControlRegistry: FieldControlRegistry = new FieldControlRegist
   // The first FACET dispatched through this registry: the dock's generic Style section
   // resolves its `contract` field to this rich control (genericity in the DISPATCH).
   .register('style',        StyleField)
+  // DATA facet control — per-element `data: DataSpec` authoring (PropFieldType
+  // 'data-pipeline'). The dock's generic Data section resolves its `contract` field to
+  // this rich control: governed metric-bind ⊕ the (lazy) DataSpec pipe editor. Distinct
+  // from the 'DataSpec' type (which stays a read-only SummaryCard glance, step 6) — this
+  // dedicated facet type is the AUTHORING surface, opted into by the `data-bindable` cap.
+  .register('data-pipeline', DataFacetField)
   // rich/opaque types (object · array · DataSpec · ChartDef) are DELIBERATELY not
   // registered here — they fall to the SummaryCard default (resolve() step 6), a
   // constant-weight glance card. Raw JSON is a dev escape only (FF-NO-RAW-JSON-DEFAULT).

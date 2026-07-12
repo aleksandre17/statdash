@@ -23,32 +23,23 @@ describe('dockSectionRegistry — the hardcoded stack is now registered data', (
   it('registers the schema, data, visibility, and page-pane sections', () => {
     // SPEC S3: the per-type `element.context` bridge (nodeContextEditors) is deleted —
     // filter controls project generically through `element.schema` (sourcedParts).
-    // SPEC S5: metric binding is a CONTEXTUAL section (`element.data`) — re-homed from
-    // the retired Data rail surface into the inspector.
+    // SPEC-deep-authorability-completion (Gap 3): metric-bind is no longer the hand-wired
+    // `element.data` — it is folded into the generic DATA facet (`element.facet.data`),
+    // derived from the `data` FacetDescriptor by registerFacetSections. So the Data
+    // section is a FACET projection, the peer of `element.facet.style` (Slice 1).
     // S6: the `element.chrome` section is RETIRED — a chrome region is a bounded PART,
     // projected through the SAME generic `element.schema` section (no chrome-specific dock).
     for (const id of [
-      'element.schema', 'element.data', 'element.visibility',
+      'element.schema', 'element.facet.data', 'element.visibility',
       'page.config', 'page.perspectives', 'page.filters',
     ]) {
       expect(dockSectionRegistry.has(id), id).toBe(true)
     }
     expect(dockSectionRegistry.has('element.chrome')).toBe(false)
-  })
-
-  it('element.data applies ONLY when the selected element is metric-bindable (S5)', () => {
-    const node = { id: 'n1', type: 'chart', props: {} }
-    // A non-bindable selection → no Data section (the Figma law: only the selection's
-    // own declared contract).
-    const notBindable = dockSectionRegistry
-      .list(ctx({ scope: 'element', controller: controller({ selected: node as never, selectedBindable: false as never }) }))
-      .map((s) => s.id)
-    expect(notBindable).not.toContain('element.data')
-    // A data-bound selection → the Data section (the governed Metric Palette) appears.
-    const bindable = dockSectionRegistry
-      .list(ctx({ scope: 'element', controller: controller({ selected: node as never, selectedBindable: true as never }) }))
-      .map((s) => s.id)
-    expect(bindable).toContain('element.data')
+    // The hand-wired `element.data` section is GONE — folded into the facet (no parallel
+    // surface, SPEC reconciliation). Its applicability-by-declaration is proven, with real
+    // metas, in facetProjection.fitness (FF-FACET-PROJECTED, the DATA-facet leg).
+    expect(dockSectionRegistry.has('element.data')).toBe(false)
   })
 
   it('page scope lists exactly the page sections, in order', () => {

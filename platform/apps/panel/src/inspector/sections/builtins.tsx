@@ -18,7 +18,6 @@ import type { VisibilityExpr } from '@statdash/engine'
 import { nodeRegistry, facetRegistry } from '@statdash/react/engine'
 import type { ObjectMeta } from '@statdash/react/engine'
 import { Inspector } from '../Inspector'
-import { MetricPalette } from '../../discovery/MetricPalette'
 import { VisibilitySection } from '../../features/visibility'
 import { PageInspectorPanel } from '../../features/page-config'
 import { PerspectivesPane } from '../../features/perspectives'
@@ -131,37 +130,14 @@ export function registerBuiltinDockSections(): void {
         )
       },
     })
-    // ── ELEMENT · data (the governed metric bind — re-homed from the Data surface) ─
-    //  SPEC-studio-ia-canonical S5: metric binding is no longer a peer rail surface —
-    //  it is a CONTEXTUAL section of the inspector, shown ONLY when the selected element
-    //  DECLARES a metric field (`selectedBindable`, derived from its PropSchema). A
-    //  data-bound element (chart/kpi) selected → its Data section offers the governed
-    //  Metric Palette (bind-by-noun); a non-bindable element shows no Data section (the
-    //  Figma law — only the selection's own contract). Zero per-type code: the section
-    //  applies by a DECLARED facet, and binds through the SAME onBind/bindMetric write
-    //  the Data surface used (Strangler re-home — the palette is MOUNTED, not rewritten).
-    .register({
-      id:        'element.data',
-      order:     20,
-      appliesTo: (ctx) => wholeNodeSelected(ctx) && ctx.controller.selectedBindable,
-      render:    (ctx) => {
-        const { selectedId, bindMetric } = ctx.controller
-        const en = ctx.locale === 'en'
-        return (
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-            <Typography variant="overline" color="text.secondary">
-              {en ? 'Data' : 'მონაცემები'}
-            </Typography>
-            <MetricPalette
-              locale={ctx.locale}
-              canBind
-              bindHint={en ? 'Pick a metric to bind this element' : 'აირჩიეთ მეტრიკა ამ ელემენტის მისაბმელად'}
-              onBind={(metricId) => { if (selectedId) bindMetric(selectedId, metricId) }}
-            />
-          </Box>
-        )
-      },
-    })
+    // ── ELEMENT · data — RE-HOMED as a FACET projection (element.facet.data) ────────
+    //  SPEC-deep-authorability-completion (Gap 3): the governed metric-bind is no longer
+    //  a hand-wired section here — it is now ONE MODE of the generic DATA facet
+    //  (`registerFacetSections` derives `element.facet.data` from the `data` FacetDescriptor
+    //  opted into by the `data-bindable` cap). That section projects the metric-bind
+    //  palette ⊕ the DataSpec pipe editor (metric-optional, pipe-over-governed), so the
+    //  Data surface is BOTH governed-bind AND in-place pipeline authoring — the facet-axis
+    //  peer of `element.schema`, no per-type dock branch. Nothing about RightDock changes.
     // ── ELEMENT · visibility (re-registered, no longer hardcoded) ────────────────
     //  NOTE (SPEC S3): the per-type `element.context` bridge (nodeContextEditors —
     //  the `filter-bar` → FilterBarControlsBridge type-keyed map) is DELETED. It was

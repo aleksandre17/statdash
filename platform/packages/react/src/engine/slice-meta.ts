@@ -77,6 +77,7 @@ export type NodeCap =
   | 'nav-transparent'
   | 'flow'
   | 'styleable'
+  | 'data-bindable'
   | (string & {})
 
 /**
@@ -129,6 +130,18 @@ export const CAPS = {
    * contract is declared ONCE at the platform in the facet registry).
    */
   STYLEABLE: 'styleable',
+  /**
+   * FACET opt-in — the element exposes the universal DATA facet (its `data: DataSpec`
+   * pipeline is authorable in place). The declared signal the generic Facet axis reads
+   * (`FacetDescriptor.appliesWhen`, ./facet) to project an `element.facet.data` dock
+   * section on ANY data-bindable element — chart/table/kpi/… — NEVER a concrete-type
+   * read (Law 1 · FF-NO-EXTERNAL-SPECIAL-CASE). Distinct from the behavioural `data`
+   * cap ("renders a data payload"): this is the AUTHORING opt-in, the peer of
+   * `styleable`, so a data element can opt into in-place pipeline authoring without the
+   * cap being overloaded onto palette/placement queries. Metric-optional: the facet
+   * authors a raw query/transform/derive/calc pipeline with or without a governed metric.
+   */
+  DATA_BINDABLE: 'data-bindable',
 } as const satisfies Record<string, NodeCap>
 
 /** Narrow type: one of the standard capability token strings. */

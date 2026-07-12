@@ -27,7 +27,7 @@
 //
 import { test, expect } from '@playwright/test'
 import {
-  mockPanelApi, seedAuthToken, GOVERNED_CATALOG, STEWARD_DATASET, STEWARD_PROFILE, AUTHORED_METRIC,
+  mockPanelApi, seedAuthToken, GOVERNED_CATALOG, STEWARD_DATASET, STEWARD_PROFILE, AUTHORED_METRIC, CHART_NODE_ID,
 } from './support/mockApi'
 
 test.beforeEach(async ({ page }) => {
@@ -110,14 +110,16 @@ test('steward authors a governed metric in-tool → the author sees it in the pa
   //  in the palette (PUT /api/config/site succeeded, catalog re-registered live).
   await expect(page.getByText(`Saved "${AUTHORED_METRIC.id}"`)).toBeVisible()
 
-  // ── 6. AUTHOR-SEES — breadcrumb-back to the compose shell, open Data, find it ─
+  // ── 6. AUTHOR-SEES — breadcrumb-back to the compose shell, select a data-bound
+  //  block, find the authored metric in the Inspector's Data section ─────────────
   //  The data-model screen is a separate focus-view; a breadcrumb-back returns to the
-  //  editing shell (loss-free). The Data surface then reveals the palette — the
-  //  authored metric is a first-class governed noun there regardless of lens.
+  //  editing shell (loss-free). SPEC S5: the MetricPalette is now a CONTEXTUAL section
+  //  of the right Inspector — selecting the seeded chart reveals it, and the authored
+  //  metric is a first-class governed noun there regardless of lens.
   await page.getByRole('button', { name: 'Back' }).click()
   await expect(page.locator('.studio-shell')).toBeVisible()
-  const rail = page.getByRole('navigation', { name: 'Studio surfaces' })
-  await rail.getByRole('button', { name: 'Data', exact: true }).click()
+  await page.getByRole('navigation', { name: 'Studio surfaces' }).getByRole('button', { name: 'Layers' }).click()
+  await page.locator(`[data-outline-id="${CHART_NODE_ID}"]`).click()
 
   const palette = page.getByTestId('metric-palette')
   await expect(palette).toBeVisible()

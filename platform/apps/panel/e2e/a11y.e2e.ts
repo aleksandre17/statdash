@@ -12,7 +12,7 @@
 //  The moment that dep resolves, this spec runs the scan as a hard gate.
 //
 import { test, expect } from '@playwright/test'
-import { mockPanelApi, seedAuthToken } from './support/mockApi'
+import { mockPanelApi, seedAuthToken, CHART_NODE_ID } from './support/mockApi'
 
 // Load @axe-core/playwright if present; return null (→ skip) when it is not.
 async function loadAxeBuilder(): Promise<unknown | null> {
@@ -35,7 +35,10 @@ test('the booted Studio shell has no serious/critical WCAG 2.1 AA violations', a
 
   await page.goto('/')
   await expect(page.getByRole('banner')).toBeVisible({ timeout: 60_000 })
-  await page.getByRole('navigation', { name: 'Studio surfaces' }).getByRole('button', { name: 'Data', exact: true }).click()
+  // Select a data-bound block so the Inspector's contextual Data section (the
+  // MetricPalette, SPEC S5) is part of the scanned surface — a richer a11y target.
+  await page.getByRole('navigation', { name: 'Studio surfaces' }).getByRole('button', { name: 'Layers' }).click()
+  await page.locator(`[data-outline-id="${CHART_NODE_ID}"]`).click()
   await expect(page.getByTestId('metric-palette')).toBeVisible()
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamically-loaded optional dep

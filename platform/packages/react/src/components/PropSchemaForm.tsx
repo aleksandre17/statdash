@@ -152,6 +152,10 @@ const FIELD_RENDERERS: Record<PropFieldType, FieldRenderer> = {
   // token pickers need the panel's TOKENS_CATALOG); the panel's Inspector dispatches
   // this type to the token-constrained StyleField via FieldControlRegistry.
   style:        jsonInput,
+  // data-pipeline: a rich `data: DataSpec` facet. The engine-level form degrades to
+  // JSON (Law 3 — the metric palette + spec editors need the panel's discovery APIs);
+  // the panel's Inspector dispatches this type to DataFacetField via FieldControlRegistry.
+  'data-pipeline': jsonInput,
   // enum-ref: options come from a runtime catalog (field.source) the engine can
   // NOT resolve (Law 3 — the panel resolves it against its discovery APIs). At
   // the engine level we degrade to a free-text input for the ref value; a field

@@ -48,16 +48,22 @@ test('boots to the Studio with a populated governed MetricPalette, and binds a m
   // The app actually painted content (not a white screen / bare #root).
   await expect(page.locator('.studio-shell')).toBeVisible()
 
-  // ── 2. PALETTE (populated with REAL governed nouns) ──────────────────────────
-  //  Default surface is Insert; summon the Data surface (English rail — site seeded
-  //  en) to reveal the MetricPalette.
-  await page.getByRole('navigation', { name: 'Studio surfaces' }).getByRole('button', { name: 'Data', exact: true }).click()
+  // ── 2. SELECT the bindable chart → the Inspector's contextual Data section mounts
+  //  the MetricPalette (SPEC S5: metric binding re-homed from a peer surface into the
+  //  right Inspector — the governed catalog is offered ONLY when a data-bound element
+  //  is selected). Select the chart via the Layers outline (role=tree over the store).
+  await page.getByRole('navigation', { name: 'Studio surfaces' }).getByRole('button', { name: 'Layers' }).click()
+  await page.locator(`[data-outline-id="${CHART_NODE_ID}"]`).click()
 
+  //  The Inspector materializes for the selected chart — the selection took.
+  const inspector = page.getByRole('complementary', { name: 'Inspector' })
+  await expect(inspector.getByText('chart', { exact: true })).toBeVisible()
+
+  // ── 3. PALETTE (populated with REAL governed nouns), inside the Inspector ─────
+  //  The governed tiles prove the catalog boot (bootstrapCatalog → describeApp)
+  //  populated the registry the palette reads.
   const palette = page.getByTestId('metric-palette')
   await expect(palette).toBeVisible()
-
-  // The governed tile is present with its REAL en label — proof the catalog boot
-  // (bootstrapCatalog → describeApp) populated the registry the palette reads.
   const gdpTile = page.getByTestId('metric-tile-gdp.current')
   await expect(gdpTile).toBeVisible()
   await expect(gdpTile).toContainText('GDP at current prices')
@@ -67,36 +73,22 @@ test('boots to the Studio with a populated governed MetricPalette, and binds a m
   // The whole governed set is registered.
   await expect(page.locator('[data-testid^="metric-tile-"]')).toHaveCount(GOVERNED_CATALOG.metrics.length)
 
-  // ── 3. BIND (the measure write) ──────────────────────────────────────────────
-  //  Before a bindable block is selected, a click cannot bind — the palette
-  //  announces the hint (its polite status region), and NO bind occurs.
-  await gdpTile.click()
-  await expect(page.getByRole('status')).toContainText('აირჩიეთ') // "select a block…"
-
-  //  Select the chart block via the Layers outline (role=tree over the store).
-  await page.getByRole('button', { name: 'Layers' }).click()
-  await page.locator(`[data-outline-id="${CHART_NODE_ID}"]`).click()
-
-  //  The Inspector materializes for the selected chart — the selection took.
-  const inspector = page.getByRole('complementary', { name: 'Inspector' })
-  await expect(inspector.getByText('chart', { exact: true })).toBeVisible()
-
-  //  Back on the Data surface the block is now bindable: the tile advertises the
-  //  bind affordance (canBind), and the metric select starts UNbound.
-  await page.getByRole('navigation', { name: 'Studio surfaces' }).getByRole('button', { name: 'Data', exact: true }).click()
-  const boundGdpTile = page.getByTestId('metric-tile-gdp.current')
-  await expect(boundGdpTile).toHaveAttribute('aria-label', /GDP at current prices.*(bind|მისაბმელად)/i)
+  //  The selected chart is bindable: the tile advertises the bind affordance (canBind),
+  //  and the Inspector's Metric select starts UNbound.
+  await expect(gdpTile).toHaveAttribute('aria-label', /GDP at current prices.*(bind|მისაბმელად)/i)
   const metricField = inspector.getByRole('combobox', { name: /Metric|მეტრიკა/ })
   await expect(metricField).toHaveValue('')
 
-  //  Bind: click the governed tile → onBind → bindMetric → the chart's
-  //  `data.query.measure` write. Two independent proofs of the write:
+  // ── 4. BIND (the measure write) — click the governed tile → onBind → bindMetric →
+  //  the chart's `data.query.measure` write. Two independent proofs of the write:
   //   (a) the palette announces the successful bind with the metric label, and
   //   (b) the Inspector's Metric select now holds the governed metric-id — the
   //       config actually changed (byte-identical to hand-authoring the metric).
-  await boundGdpTile.click()
-  await expect(page.getByRole('status')).toContainText('მეტრიკა მიბმულია') // "metric bound:"
-  await expect(page.getByRole('status')).toContainText('GDP at current prices')
+  await gdpTile.click()
+  // Scope the announcement to the palette's own live region — in the Inspector context
+  // other aria-live regions coexist, so `page.getByRole('status')` is ambiguous.
+  await expect(palette.getByRole('status')).toContainText('მეტრიკა მიბმულია') // "metric bound:"
+  await expect(palette.getByRole('status')).toContainText('GDP at current prices')
   await expect(metricField).toHaveValue('gdp.current')
 })
 
