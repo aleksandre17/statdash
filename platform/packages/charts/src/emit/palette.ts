@@ -7,38 +7,41 @@
 //    • spacer (waterfall) → transparent
 //    • per-point thresholdColor always wins (handled at the mark site)
 //
-//  WHY the palette is baked as literals here (not read from --chart-color-N):
-//  the render layer resolves the palette via `cssVar('--chart-color-N', …)`
-//  against the LIVE theme cascade. The emitter is pure and SERVER-SIDE — there
-//  is no DOM, no cascade, no `var()` to resolve (Law 3: charts must not import
-//  @statdash/styles). So it bakes the canonical LIGHT-mode swatches, which are
-//  exactly the `cssVar` FALLBACKS the render layer itself uses under SSR/jsdom.
-//  This is the same rule `colors.ts` already applies to DEFAULT_SERIES_COLOR:
-//  the neutral format cannot hold a `var()`, so a literal seed is emitted.
-//
-//  SSOT: packages/styles/src/css/tokens.css `--chart-color-1…10` (light theme).
-//  A server export is theme-agnostic by definition (light baseline); a themed
-//  export would re-parameterise `emit()` with a resolved palette — an OCP seam
-//  left open, not a silent divergence.
+//  WHY each entry references a token (not a bare literal): the categorical
+//  palette IS a design-token set — `--chart-color-1…10` in the SSOT
+//  (packages/styles/src/css/tokens.css). The emitter writes SVG presentation
+//  attributes where CSS `var()` is invalid, so it resolves each token through
+//  the charts-local `cssVar('--chart-color-N', <light fallback>)`: theme-aware
+//  where a cascade exists, the canonical LIGHT-mode value under server/SSR emit.
+//  The literals below are ONLY the token FALLBACKS — byte-identical to the
+//  tokens.css light theme — kept next to their token so a drift is visible and
+//  the FF-TOKEN-ONLY cohesion gate is satisfied (a bare hex would fail; a
+//  cssVar-paired fallback is the sanctioned home). Law 3 stays intact: charts
+//  does NOT import @statdash/styles — the value SSOT is still single, only the
+//  tiny resolver is charts-local (see ./cssVar).
 //
 
 import { DEFAULT_SERIES_COLOR } from '../colors'
+import { cssVar } from './cssVar'
 import type { ChartOutput } from '../types'
 
 const SPACER = '__spacer__'
 
-/** Canonical light-mode categorical palette (mirror of --chart-color-1…10). */
+/**
+ * Categorical palette — the `--chart-color-1…10` token set, resolved for the
+ * emit path (theme-aware in a browser cascade; light-mode fallback under SSR).
+ */
 export const EMIT_PALETTE: readonly string[] = [
-  '#005a9c', // 1  blue
-  '#e8710a', // 2  orange
-  '#1b9e77', // 3  teal-green
-  '#d81b60', // 4  magenta
-  '#7b3294', // 5  purple
-  '#a17d00', // 6  mustard
-  '#2b8dac', // 7  sky
-  '#984ea3', // 8  violet
-  '#5a9518', // 9  olive
-  '#8c564b', // 10 brown
+  cssVar('--chart-color-1',  '#005a9c'), // 1  blue
+  cssVar('--chart-color-2',  '#e8710a'), // 2  orange
+  cssVar('--chart-color-3',  '#1b9e77'), // 3  teal-green
+  cssVar('--chart-color-4',  '#d81b60'), // 4  magenta
+  cssVar('--chart-color-5',  '#7b3294'), // 5  purple
+  cssVar('--chart-color-6',  '#a17d00'), // 6  mustard
+  cssVar('--chart-color-7',  '#2b8dac'), // 7  sky
+  cssVar('--chart-color-8',  '#984ea3'), // 8  violet
+  cssVar('--chart-color-9',  '#5a9518'), // 9  olive
+  cssVar('--chart-color-10', '#8c564b'), // 10 brown
 ]
 
 /** i-th categorical colour, wrapping — mirror of styles `chartColorAt`. */

@@ -22,7 +22,10 @@ const here     = dirname(fileURLToPath(import.meta.url))
 const provPath = resolvePath(here, '../../../apps/api/provisioning/geostat.provisioning.json')
 const prov: any = JSON.parse(readFileSync(provPath, 'utf8'))
 
-const regional: any = prov.pages.find((p: any) => p.config?.vars?._xDim && p.config?.vars?._seriesDim)
+// Locate the directional cross-filter page by its CANONICAL vars (AR-42): the six
+// `_xDim/_seriesDim/…` derives were collapsed into ONE declared `_directional` op —
+// find by `_directional` + `_selKey` (the state-bound key this suite validates).
+const regional: any = prov.pages.find((p: any) => p.config?.vars?._directional && p.config?.vars?._selKey)
 
 // Recursively collect every node carrying a `{$ctx:_selKey}` cross-filter key.
 function collectSelKeyHandlers(node: any, out: any[] = []): any[] {

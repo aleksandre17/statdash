@@ -17,6 +17,7 @@ import { emitCartesian } from './cartesian'
 import type { EmitOptions } from './cartesian'
 import { isEmittable, EMIT_GAPS } from './coverage'
 import { svgDoc, el, text, elC, esc } from './svg'
+import { cssVar } from './cssVar'
 
 export type { EmitOptions } from './cartesian'
 
@@ -32,10 +33,15 @@ function a11y(output: ChartOutput): string {
 function placeholder(output: ChartOutput, opts: EmitOptions, note: string): string {
   const width  = opts.width ?? 760
   const height = opts.height ?? (output.height ?? 300)
+  // Chrome colours resolve via the charts-local cssVar (var() is invalid in SVG
+  // attrs): theme-aware in a browser cascade, light-mode SSOT fallback on server.
+  const surface = cssVar('--color-surface',     '#ffffff')
+  const frame   = cssVar('--color-chart-frame', '#E0EBE8')
+  const muted   = cssVar('--color-text-muted',  '#5A6B7D')
   const body =
     a11y(output)
-    + el('rect', { x: 0.5, y: 0.5, width: width - 1, height: height - 1, fill: '#ffffff', stroke: '#E0EBE8', 'stroke-width': 1, rx: 4 })
-    + text(note, { x: width / 2, y: height / 2, 'text-anchor': 'middle', 'font-size': 13, fill: '#6B7B8D', 'font-family': opts.fontFamily ?? 'system-ui, sans-serif' })
+    + el('rect', { x: 0.5, y: 0.5, width: width - 1, height: height - 1, fill: surface, stroke: frame, 'stroke-width': 1, rx: 4 })
+    + text(note, { x: width / 2, y: height / 2, 'text-anchor': 'middle', 'font-size': 13, fill: muted, 'font-family': opts.fontFamily ?? 'system-ui, sans-serif' })
   return svgDoc(width, height, {
     'data-chart-type': output.type,
     'data-chart-gap':  isEmittable(output.type) ? undefined : output.type,

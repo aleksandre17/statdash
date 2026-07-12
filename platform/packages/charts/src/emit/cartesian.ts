@@ -22,6 +22,7 @@ import { svgDoc, group, el, text, num, elC } from './svg'
 import { niceScale, linear } from './scale'
 import { axisFormatter } from './format'
 import { resolveSeriesColors, markColor } from './palette'
+import { cssVar } from './cssVar'
 
 export interface EmitOptions {
   /** Canvas width in px (default 760). The client sizes to a live container we
@@ -34,14 +35,6 @@ export interface EmitOptions {
   /** Font family for text (default system stack, matching the live foreColor font). */
   fontFamily?: string
 }
-
-// ── Chrome literals — mirror the cssVar() FALLBACKS the live chart uses ──
-//  (Law 3: charts must not import @statdash/styles; a server SVG has no CSS
-//  cascade, so the light-theme fallbacks are the deterministic baseline.)
-const FRAME  = '#E0EBE8' // --color-chart-frame  (axis border + ticks)
-const GRID   = '#F0F5F3' // --color-chart-grid   (gridlines)
-const MUTED  = '#6B7B8D' // --color-text-muted   (axis labels)
-const INK    = '#4A5568' // --color-text-secondary (data labels + legend)
 
 const FS         = 12    // FS_SM analogue — fixed (no window.innerWidth server-side)
 const CHAR_W     = 0.6   // rough advance width factor for label-gutter sizing
@@ -102,6 +95,17 @@ export function emitCartesian(output: ChartOutput, opts: EmitOptions = {}): stri
   const locale     = opts.locale
   const fontFamily = opts.fontFamily ?? 'system-ui, sans-serif'
   const n          = categories.length
+
+  // ── Chrome colours — semantic tokens resolved to SVG-attr literals ──────
+  //  var() is invalid in an SVG presentation attr, so each token routes through
+  //  the charts-local cssVar: theme-aware where a cascade exists (browser
+  //  export), the canonical light-mode SSOT fallback under server/SSR emit —
+  //  keeping the pure export deterministic + DOM-free (Law 3: no styles import).
+  const FRAME   = cssVar('--color-chart-frame',    '#E0EBE8') // axis border + ticks
+  const GRID    = cssVar('--color-chart-grid',     '#F0F5F3') // gridlines
+  const MUTED   = cssVar('--color-text-muted',     '#5A6B7D') // axis labels
+  const INK     = cssVar('--color-text-secondary', '#4A5568') // data labels + legend
+  const SURFACE = cssVar('--color-surface',        '#ffffff') // marker halo
 
   const width  = opts.width ?? DEFAULT_W
   const height = opts.height
@@ -314,7 +318,7 @@ export function emitCartesian(output: ChartOutput, opts: EmitOptions = {}): stri
       const vp = valPix(v, useY2For(si))
       const cx = horizontal ? vp : catCenter(ci)
       const cy = horizontal ? catCenter(ci) : vp
-      markParts.push(el('circle', { cx, cy, r: MARKER_R, fill: color, stroke: '#ffffff', 'stroke-width': 1.5 }))
+      markParts.push(el('circle', { cx, cy, r: MARKER_R, fill: color, stroke: SURFACE, 'stroke-width': 1.5 }))
     })
   }
 
