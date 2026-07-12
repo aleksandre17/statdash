@@ -14,6 +14,7 @@ describe('StudioTopBar — locale + brand/theme regions filled (AR-49 M1.4)', ()
     onLocaleChange: vi.fn(),
     onOpenCommand: vi.fn(),
     onOpenStyle: vi.fn(),
+    onOpenSite: vi.fn(),
   }
 
   it('renders the locale preview switcher and changes locale on click', () => {
@@ -23,11 +24,18 @@ describe('StudioTopBar — locale + brand/theme regions filled (AR-49 M1.4)', ()
     expect(onLocaleChange).toHaveBeenCalledWith('ka')
   })
 
-  it('renders the brand/theme access button and opens the Style surface', () => {
+  it('renders the brand/theme access button and opens the Theme workspace', () => {
     const onOpenStyle = vi.fn()
     render(<StudioTopBar {...base} onOpenStyle={onOpenStyle} />)
     fireEvent.click(screen.getByRole('button', { name: 'Brand & theme' }))
     expect(onOpenStyle).toHaveBeenCalled()
+  })
+
+  it('renders the Pages & Site access button and summons the Site workspace (SPEC S5)', () => {
+    const onOpenSite = vi.fn()
+    render(<StudioTopBar {...base} onOpenSite={onOpenSite} />)
+    fireEvent.click(screen.getByRole('button', { name: 'Pages & Site' }))
+    expect(onOpenSite).toHaveBeenCalled()
   })
 })
 
@@ -49,6 +57,7 @@ describe('StudioTopBar — workspace navigation switch (AR-50 M5b)', () => {
     onLocaleChange: vi.fn(),
     onOpenCommand: vi.fn(),
     onOpenStyle: vi.fn(),
+    onOpenSite: vi.fn(),
   }
 
   it('offers keyboard-reachable Compose + Data model segments (native buttons)', () => {

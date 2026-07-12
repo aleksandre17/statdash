@@ -35,7 +35,7 @@ import { App } from '../App'
 import { useConstructorStore } from '../store/constructor.store'
 import { useMetricCatalogStore } from '../discovery/metricCatalog.store'
 import { setToken, logout } from '../lib/auth'
-import type { CanvasPage } from '../types/constructor'
+import type { CanvasNode, CanvasPage } from '../types/constructor'
 
 // ── The governed catalog the mocked /api/bootstrap serves ──────────────────────
 //  A faithful subset of apps/api/provisioning/geostat.provisioning.json's site_config
@@ -55,10 +55,15 @@ const GOVERNED_CATALOG = {
   ],
 }
 
-// A minimal empty page — enough to mount the always-home canvas against the
-// boot-populated registry (the empty-new-site guarantee) without heavy content.
+// A minimal page holding ONE metric-bindable node (a chart — its top-level
+// `data.query.measure` is an `enum-ref` over `metrics`, so isMetricBindable is true).
+// SPEC S5 re-homed metric binding from a peer rail surface to a CONTEXTUAL section of
+// the right Inspector: the MetricPalette mounts when a data-bound element is SELECTED,
+// so the composition proof selects this node (below) to surface it.
+const BINDABLE_NODE: CanvasNode = { id: 'c1', type: 'chart', props: {}, childIds: [] }
 const SEED_PAGE: CanvasPage = {
-  id: 'p1', type: 'inner-page', title: { ka: 'ტესტი', en: 'Test' }, slug: 'test', nodeIds: [], nodes: {},
+  id: 'p1', type: 'inner-page', title: { ka: 'ტესტი', en: 'Test' }, slug: 'test',
+  nodeIds: [BINDABLE_NODE.id], nodes: { [BINDABLE_NODE.id]: BINDABLE_NODE },
 }
 
 // Deferred /api/bootstrap response — resolved by the test to drive the ordering proof.
@@ -73,14 +78,15 @@ beforeEach(() => {
       : Promise.resolve({ ok: true, json: async () => ({}) }),
   ) as unknown as typeof fetch)
 
-  // Land on the Data surface via the URL (the surface is route state now) so the
-  // MetricPalette mounts once the Studio reaches 'ready'.
-  window.history.replaceState(null, '', '/studio/data')
+  // Land on the default Compose surface (Add) — the MetricPalette is no longer a peer
+  // surface; it mounts in the right Inspector once the bindable node is selected (below).
+  window.history.replaceState(null, '', '/studio/insert')
 
-  // Empty-site seed: a page + English locale, and NO data sources (so App boots the
-  // real bootstrapCatalog path, not the offline fallback).
+  // Empty-site seed: a page (with the bindable node) + English locale, and NO data
+  // sources (so App boots the real bootstrapCatalog path, not the offline fallback).
+  // Select the node so the Inspector's contextual Data section mounts the MetricPalette.
   useConstructorStore.setState({
-    dataSources: [], selection: null,
+    dataSources: [], selection: { nodeId: BINDABLE_NODE.id },
   })
   const store = useConstructorStore.getState()
   store.updateSite({ defaultLocale: 'en', activeLocales: ['en'] })
@@ -133,8 +139,9 @@ describe('panel boot composition — real App → real bootstrapCatalog → popu
 
     // ── The composition end-to-end: StudioShell mounts (its lazy chunk transforms
     //    the whole subsystem graph on first import — generous timeout), and the REAL
-    //    MetricPalette on the Data surface renders the REAL governed nouns from the
-    //    boot-populated describeApp() registry. ──
+    //    MetricPalette in the Inspector's contextual Data section (the selected bindable
+    //    node) renders the REAL governed nouns from the boot-populated describeApp()
+    //    registry. ──
     const tile = await screen.findByTestId('metric-tile-gdp.current', {}, { timeout: 20000 })
     expect(tile).toBeInTheDocument()
     expect(tile).toHaveTextContent('GDP at current prices') // en label — site locale seeded 'en'

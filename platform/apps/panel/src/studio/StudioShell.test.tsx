@@ -37,37 +37,34 @@ describe('StudioShell — IA + landmarks (WCAG 2.1 AA)', () => {
   })
 })
 
-describe('StudioShell — activity rail (summonable surfaces, no waterfall)', () => {
-  it('offers Insert/Data/Layers/Pages&Site/Style as keyboard-reachable buttons', () => {
+describe('StudioShell — the Left Navigator (canonical two panes, SPEC S5)', () => {
+  it('offers exactly the two Navigator panes (Add | Layers) — the demoted surfaces are OFF the rail', () => {
     renderStudio()
     const rail = screen.getByRole('navigation', { name: 'Studio surfaces' })
-    for (const name of ['Insert', 'Data', 'Layers', 'Pages & Site', 'Style']) {
-      // Exact match — 'Data' must NOT also select the always-visible 'Data model' entry.
-      const btn = within(rail).getByRole('button', { name })
-      expect(btn).toBeEnabled()
+    for (const name of ['Add', 'Layers']) {
+      expect(within(rail).getByRole('button', { name })).toBeEnabled()
+    }
+    // The former peer surfaces are DEMOTED — Data (→ inspector), Style/Pages&Site/Data
+    // model (→ top-bar workspaces) are no longer rail destinations.
+    for (const name of ['Data', 'Style', 'Pages & Site', 'Data model']) {
+      expect(within(rail).queryByRole('button', { name })).toBeNull()
     }
   })
 
-  it('opens on Insert with aria-current, and selecting a surface swaps the dock (no gating)', () => {
+  it('opens on Add with aria-current, and swapping to Layers is order-free (no gating)', () => {
     renderStudio()
-    // Insert is the default surface — its rail button is aria-current and the dock
-    // heading reads Insert.
-    expect(screen.getByRole('heading', { name: 'Insert' })).toBeInTheDocument()
+    // Add (id `insert`) is the default surface — its rail button is aria-current and the
+    // dock heading reads Add.
+    expect(screen.getByRole('heading', { name: 'Add' })).toBeInTheDocument()
     const rail = screen.getByRole('navigation', { name: 'Studio surfaces' })
-    expect(within(rail).getByRole('button', { name: 'Insert' })).toHaveAttribute('aria-current', 'true')
+    expect(within(rail).getByRole('button', { name: 'Add' })).toHaveAttribute('aria-current', 'true')
 
-    // Jump straight to Data — no step must be "completed" first. Exact match so
-    // 'Data' does not collide with the always-visible 'Data model' entry.
-    fireEvent.click(within(rail).getByRole('button', { name: 'Data' }))
-    // The heading is derived from the URL surface (`/studio/data`) — the rail click
-    // navigated, and the shell re-rendered from the route (the routing round-trip).
-    expect(screen.getByRole('heading', { name: 'Data' })).toBeInTheDocument()
-
-    // And straight to Style from Data — order-free.
-    fireEvent.click(within(rail).getByRole('button', { name: 'Style' }))
-    expect(screen.getByRole('heading', { name: 'Style' })).toBeInTheDocument()
+    // Jump straight to Layers — the heading is derived from the URL surface
+    // (`/studio/layers`): the rail click navigated and the shell re-rendered from the
+    // route (the routing round-trip).
+    fireEvent.click(within(rail).getByRole('button', { name: 'Layers' }))
+    expect(screen.getByRole('heading', { name: 'Layers' })).toBeInTheDocument()
   })
-
 })
 
 // ── Data model — a first-class, always-reachable destination (AR-50 M5b) ──────
@@ -76,21 +73,18 @@ describe('StudioShell — activity rail (summonable surfaces, no waterfall)', ()
 //  role gate), and the role lens splits only its CONTENT (author→read-only Dictionary,
 //  steward→modeler). Navigation is decoupled from identity — opening the destination
 //  NEVER escalates the lens. These tests arrange the lens via the preference store.
-describe('StudioShell — the Data-model destination is reachable in every lens (AR-50 M5b)', () => {
-  it('the DEFAULT (author) session offers the Data-model rail entry — it is NOT buried', () => {
+describe('StudioShell — the Data-model workspace is reachable in every lens (AR-50 M5b · SPEC S5)', () => {
+  it('the DEFAULT (author) session offers the Data-model destination on the TOP BAR (demoted off the rail)', () => {
     renderStudio()
-    const rail = screen.getByRole('navigation', { name: 'Studio surfaces' })
-    // The five compose surfaces AND the always-visible Data-model destination (exact
-    // names — 'Data' must not collide with 'Data model').
-    for (const name of ['Insert', 'Data', 'Layers', 'Pages & Site', 'Style', 'Data model']) {
-      expect(within(rail).getByRole('button', { name })).toBeEnabled()
-    }
+    // SPEC S5: Data model is a top-bar-summoned workspace now, not a rail entry.
+    const banner = screen.getByRole('banner')
+    expect(within(banner).getByRole('button', { name: 'Data model' })).toBeEnabled()
   })
 
-  it('from a DEFAULT author session, selecting Data model opens the READ-ONLY Dictionary (no query cliff)', () => {
+  it('from a DEFAULT author session, opening Data model shows the READ-ONLY Dictionary (no query cliff)', () => {
     renderStudio()
-    const rail = screen.getByRole('navigation', { name: 'Studio surfaces' })
-    fireEvent.click(within(rail).getByRole('button', { name: /Data model/ }))
+    const banner = screen.getByRole('banner')
+    fireEvent.click(within(banner).getByRole('button', { name: 'Data model' }))
 
     // The Data-model FOCUS-VIEW screen opens (rail gone, breadcrumb-back present)…
     expect(screen.getByRole('region', { name: 'Data model' })).toBeInTheDocument()
@@ -105,8 +99,8 @@ describe('StudioShell — the Data-model destination is reachable in every lens 
   it('the Steward lens opens the SAME destination as the full modeler', () => {
     useRoleStore.setState({ role: 'steward' })
     renderStudio()
-    const rail = screen.getByRole('navigation', { name: 'Studio surfaces' })
-    fireEvent.click(within(rail).getByRole('button', { name: /Data model/ }))
+    const banner = screen.getByRole('banner')
+    fireEvent.click(within(banner).getByRole('button', { name: 'Data model' }))
     expect(screen.getByRole('region', { name: 'Data model' })).toBeInTheDocument()
     expect(screen.getByText(/Define the governed data model/)).toBeInTheDocument()
     expect(screen.queryByTestId('data-dictionary')).toBeNull()
@@ -114,7 +108,6 @@ describe('StudioShell — the Data-model destination is reachable in every lens 
 
   it('the top-bar "Data model" switch is PURE NAVIGATION — it opens the destination without escalating the lens', () => {
     renderStudio()
-    // The top-bar segment and the rail entry both name "Data model"; drive the banner one.
     const banner = screen.getByRole('banner')
     fireEvent.click(within(banner).getByRole('button', { name: 'Data model' }))
 
@@ -125,7 +118,7 @@ describe('StudioShell — the Data-model destination is reachable in every lens 
 
   it('the in-place lens toggle opts INTO editing (author→steward) without leaving the destination', () => {
     renderStudio()
-    fireEvent.click(within(screen.getByRole('navigation', { name: 'Studio surfaces' })).getByRole('button', { name: /Data model/ }))
+    fireEvent.click(within(screen.getByRole('banner')).getByRole('button', { name: 'Data model' }))
     // Author landed on the Dictionary; flip the lens toggle to Edit → the modeler.
     expect(screen.getByTestId('data-dictionary')).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: /Edit \(Steward\)/ }))
@@ -143,21 +136,42 @@ describe('StudioShell — the Data-model destination is reachable in every lens 
     // independent of identity, so the lens is NOT reset by leaving.
     fireEvent.click(screen.getByRole('button', { name: 'Back' }))
     expect(useRoleStore.getState().role).toBe('steward')
-    expect(screen.getByRole('heading', { name: 'Insert' })).toBeInTheDocument()
-    // The Data-model rail entry is present again in the restored shell (always visible).
+    expect(screen.getByRole('heading', { name: 'Add' })).toBeInTheDocument()
+    // The restored shell shows the two Navigator panes again.
     const rail = screen.getByRole('navigation', { name: 'Studio surfaces' })
-    expect(within(rail).getByRole('button', { name: /Data model/ })).toBeEnabled()
+    expect(within(rail).getByRole('button', { name: 'Add' })).toBeEnabled()
   })
 })
 
-describe('StudioShell — surfaces mount via the existing subsystems', () => {
-  it('the Data surface mounts the governed Metric Palette', () => {
+describe('StudioShell — Theme + Site are top-bar-summoned surfaces, OFF the rail (SPEC S5)', () => {
+  it('the top bar summons the Theme (brand) surface into the left dock — canvas stays visible', () => {
     renderStudio()
-    fireEvent.click(within(screen.getByRole('navigation', { name: 'Studio surfaces' })).getByRole('button', { name: 'Data' }))
-    // MetricPalette exposes its search box (placeholder "ძებნა…") — proof the real
-    // palette mounted (its empty/loading state is fine; population is a boot concern
-    // proven elsewhere in bootSmoke).
-    expect(screen.getByPlaceholderText('ძებნა…')).toBeInTheDocument()
+    // Neither is a rail entry…
+    const rail = screen.getByRole('navigation', { name: 'Studio surfaces' })
+    expect(within(rail).queryByRole('button', { name: 'Brand & theme' })).toBeNull()
+    // …but the top-bar button summons it: the dock heading reads Brand & theme, and the
+    // editing shell (rail + canvas) REMAINS (deliberately NOT full-screen — the live
+    // canvas repaints as tokens change).
+    fireEvent.click(within(screen.getByRole('banner')).getByRole('button', { name: 'Brand & theme' }))
+    expect(screen.getByRole('heading', { name: 'Brand & theme' })).toBeInTheDocument()
+    expect(screen.getByRole('navigation', { name: 'Studio surfaces' })).toBeInTheDocument()
+    expect(screen.getByRole('main', { name: 'Canvas' })).toBeInTheDocument()
+  })
+
+  it('the top bar summons the Site (pages & site) surface into the left dock', () => {
+    renderStudio()
+    fireEvent.click(within(screen.getByRole('banner')).getByRole('button', { name: 'Pages & Site' }))
+    expect(screen.getByRole('heading', { name: 'Pages & Site' })).toBeInTheDocument()
+    expect(screen.getByRole('navigation', { name: 'Studio surfaces' })).toBeInTheDocument()
+  })
+})
+
+describe('StudioShell — the Add pane carries the onboard-data front door (AR-51, re-homed)', () => {
+  it('the default (Add) surface exposes the raw-data onboarding CTA', () => {
+    renderStudio()
+    // AR-51's front-door re-homed from the retired Data surface into the always-visible
+    // Add pane — reachable before any block exists on a blank page.
+    expect(screen.getByTestId('onboard-data-cta')).toBeInTheDocument()
   })
 })
 

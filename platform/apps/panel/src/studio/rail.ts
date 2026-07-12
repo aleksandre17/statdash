@@ -1,26 +1,23 @@
 import type { ComponentType } from 'react'
 import type { SvgIconProps } from '@mui/material'
 import AddBoxOutlinedIcon from '@mui/icons-material/AddBoxOutlined'
-import DatasetOutlinedIcon from '@mui/icons-material/DatasetOutlined'
 import LayersOutlinedIcon from '@mui/icons-material/LayersOutlined'
-import WebOutlinedIcon from '@mui/icons-material/WebOutlined'
-import PaletteOutlinedIcon from '@mui/icons-material/PaletteOutlined'
-import HubOutlinedIcon from '@mui/icons-material/HubOutlined'
 import type { StudioSurface } from '../types/constructor'
 
-// ── Activity-rail registry (AR-49 M1.2 · AR-50 M5b data-model first-class) ─────
+// ── Left Navigator registry (SPEC-studio-ia-canonical S5 — the canonical two panes) ─
 //
-//  The five compose surfaces + the Data-model destination. This is a data table, not
-//  a switch: the rail renders from it and StudioShell dispatches the left-dock content
-//  from it, so adding a surface is one row + one case (OCP).
+//  The left Navigator is TWO panes only (Webflow's exact factoring): Add (the block
+//  palette) and Layers (the outline tree) — the two "where things live" panes over
+//  the always-mounted canvas. This is a data table, not a switch: the rail renders
+//  from it and StudioShell dispatches the left-dock content from it (OCP).
 //
-//  ── No visibility gate — the data model is reachable by EVERYONE (AR-50 M5b) ───
-//  The Data-model entry is ALWAYS visible (the G6 "built ≠ buried" fix): the whole
-//  data-model capability used to be gated behind the Steward lens and was unreachable
-//  from a default author session. Role now splits the destination's CONTENT (author →
-//  read-only Data Dictionary, steward → the full modeler — DataModelBody), NOT its
-//  visibility. So the rail is a flat, always-visible list; the role lens never hides a
-//  destination (FF-ROLE-IS-LENS / FF-DATA-REACHABLE).
+//  ── S5: the six-peer rail collapsed ───────────────────────────────────────────
+//  Insert+Layers ARE the navigator; the former peer surfaces are re-homed, never
+//  removed (§3.1): Data (metric bind) → a contextual section of the right Inspector;
+//  Theme (Style), Site (Pages & Site) and Data model → TOP-BAR-summoned project
+//  workspaces (project-scope, not per-element navigation — so they leave this rail).
+//  "Where things live" is now one rule: you author what you selected on the right,
+//  find/add on the left, and open project settings from the top bar.
 
 export interface RailEntry {
   id:     StudioSurface
@@ -30,14 +27,22 @@ export interface RailEntry {
 }
 
 export const RAIL_ENTRIES: readonly RailEntry[] = [
-  { id: 'insert',     label: { ka: 'ჩასმა',        en: 'Insert' },       icon: AddBoxOutlinedIcon },
-  { id: 'data',       label: { ka: 'მონაცემები',   en: 'Data' },         icon: DatasetOutlinedIcon },
-  { id: 'layers',     label: { ka: 'შრეები',       en: 'Layers' },       icon: LayersOutlinedIcon },
-  { id: 'pages-site', label: { ka: 'გვერდები/საიტი', en: 'Pages & Site' }, icon: WebOutlinedIcon },
-  { id: 'style',      label: { ka: 'სტილი',        en: 'Style' },        icon: PaletteOutlinedIcon },
-  { id: 'model',      label: { ka: 'მონაცემთა მოდელი', en: 'Data model' }, icon: HubOutlinedIcon },
+  { id: 'insert', label: { ka: 'დამატება', en: 'Add' },    icon: AddBoxOutlinedIcon },
+  { id: 'layers', label: { ka: 'შრეები',   en: 'Layers' }, icon: LayersOutlinedIcon },
 ] as const
 
-/** The heading shown atop each left-dock surface (bilingual). */
-export const SURFACE_HEADINGS: Record<StudioSurface, { ka: string; en: string }> =
-  Object.fromEntries(RAIL_ENTRIES.map((e) => [e.id, e.label])) as Record<StudioSurface, { ka: string; en: string }>
+// ── Left-dock headings (bilingual) — the aside title + landmark name ────────────
+//  Covers EVERY surface the left dock can render: the two rail panes (Add · Layers)
+//  PLUS the top-bar-summoned Theme (Style) + Site (Pages & Site) surfaces, which are
+//  off the rail but still render in the dock (SPEC S5). `model` re-homes onto the
+//  full-screen FocusView (its title comes from the focus-view registry), so its entry
+//  is a harmless placeholder for type-completeness — the dock heading is never shown
+//  for it. Kept explicit (not derived from RAIL_ENTRIES) so a non-rail dock surface
+//  still has a visible heading + a named complementary landmark (WCAG 2.1 AA).
+export const SURFACE_HEADINGS: Record<StudioSurface, { ka: string; en: string }> = {
+  'insert':     { ka: 'დამატება',        en: 'Add' },
+  'layers':     { ka: 'შრეები',          en: 'Layers' },
+  'style':      { ka: 'ბრენდი და თემა',  en: 'Brand & theme' },
+  'pages-site': { ka: 'გვერდები და საიტი', en: 'Pages & Site' },
+  'model':      { ka: 'მონაცემთა მოდელი', en: 'Data model' },
+}

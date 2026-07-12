@@ -14,12 +14,11 @@ import { StudioEmptyState } from './StudioEmptyState'
 import { SURFACE_HEADINGS } from './rail'
 import { useCanvasController } from './useCanvasController'
 import { InsertSurface } from './surfaces/InsertSurface'
-import { DataSurface } from './surfaces/DataSurface'
 import { LayersSurface } from './surfaces/LayersSurface'
 import { PagesSiteSurface } from './surfaces/PagesSiteSurface'
 import { StyleSurface } from './surfaces/StyleSurface'
 import { FocusView } from './FocusView'
-import { makeEscalatedTarget, type FocusViewTarget } from './focusViewRegistry'
+import { makeEscalatedTarget, type FocusViewTarget, type FocusViewTargetId } from './focusViewRegistry'
 import { FocusEscalationContext, type FocusEscalationRequest, type FieldBinding } from '../inspector/focusEscalation'
 import { getAtPath } from '../inspector/showWhen'
 import { useConstructorStore, usePages, useActivePageId, useSite } from '../store/constructor.store'
@@ -41,6 +40,18 @@ const CanvasView = lazy(() =>
 const CommandPalette = lazy(() =>
   import('../command/CommandPalette').then((m) => ({ default: m.CommandPalette })),
 )
+
+// ── The full-screen workspace surfaces (SPEC-studio-ia-canonical S5) ────────────
+//  A surface that re-homes onto the full-screen FocusView (in place of the editing
+//  grid) rather than the left dock. Data model is the sole one: browsing/modeling the
+//  data model needs no canvas, so it takes over the screen (unchanged since SL-2).
+//  Theme + Site are ALSO demoted off the rail (SPEC S5) but stay left-dock surfaces
+//  summoned from the top bar — deliberately NOT full-screen, so the live canvas stays
+//  visible while a rebrand / nav edit repaints it (the "rebrand = data" payoff). This
+//  map is the OCP seam: a future canvas-less workspace is one row + one registry target.
+const WORKSPACE_SURFACES: Partial<Record<StudioSurface, FocusViewTargetId>> = {
+  model: 'data-model',
+}
 
 // ── StudioShell — the AR-49 Studio (canvas-always-home + activity rail) ────────
 //
@@ -154,15 +165,19 @@ export function StudioShell() {
   // (DataModelBody splits the body by lens). Leaving returns to the default compose
   // surface, loss-free, the lens untouched. Navigation and identity are independent.
   const enterDataModel = () => setSurface('model')
-  const exitDataModel = () => setSurface(DEFAULT_STUDIO_SURFACE)
+  // Leave ANY project workspace (Data model · Theme · Site) → back to the default
+  // Compose surface (rail + canvas + inspector). One exit, loss-free (shell state
+  // persists), shared by every workspace's breadcrumb-back and the top-bar toggle.
+  const exitWorkspace = () => setSurface(DEFAULT_STUDIO_SURFACE)
+  const openSite = () => setSurface('pages-site')
 
-  // The `model` surface is now a REAL route (`/studio/model`) — the D-SL-2a deferral
-  // ("route, never a step", realized as screen-state until routing landed) is fulfilled:
-  // the surface is derived from the URL, so the Data-model focus-view is deep-linkable and
-  // Back/Forward moves in/out of it. It is the first focus-view target, reachable in ANY
-  // lens (its body is role-split, not its route). When active the shell swaps its whole
-  // grid for the focus-view screen; back navigates to the default surface.
-  const focusViewTargetId = activeSurface === 'model' ? 'data-model' : null
+  // A project WORKSPACE surface (`model` · `style` · `pages-site`) resolves to its
+  // focus-view target (SPEC S5): each is a REAL route (`/studio/<surface>`), so the
+  // workspace is deep-linkable and Back/Forward moves in/out of it. When one is active
+  // the shell swaps its whole grid for the full-screen focus-view; a Compose pane
+  // (Add | Layers) leaves this null and renders in the left dock. Data-model's body is
+  // role-split (reachable in ANY lens); Theme/Site are project-scope editors.
+  const focusViewTargetId = WORKSPACE_SURFACES[activeSurface] ?? null
 
   // The escalated focus-view target — built from the pending request + a LIVE binding
   // to the subject's root field on the selected node (value re-read each render, writes
@@ -208,7 +223,7 @@ export function StudioShell() {
         // ── FOCUS-VIEW screen — a SEPARATE route the workspace subject navigated to.
         //  The rail + docks + canvas grid are gone (not the primary chrome here — §3.4 /
         //  FF-FOCUSVIEW-SEPARATE-ROUTE); a breadcrumb-back returns to the editing shell.
-        <FocusView targetId={focusViewTargetId} locale={locale} onBack={exitDataModel} />
+        <FocusView targetId={focusViewTargetId} locale={locale} onBack={exitWorkspace} />
       ) : (
       <Box className="studio-shell">
       <StudioTopBar
@@ -216,10 +231,11 @@ export function StudioShell() {
         locales={PLATFORM_LOCALES}
         dataModelActive={activeSurface === 'model'}
         onOpenDataModel={enterDataModel}
-        onExitDataModel={exitDataModel}
+        onExitDataModel={exitWorkspace}
         onLocaleChange={setPreviewLocale}
         onOpenCommand={() => cmdk.setOpen(true)}
         onOpenStyle={() => setSurface('style')}
+        onOpenSite={openSite}
       />
 
       <ActivityRail active={activeSurface} onSelect={setSurface} locale={locale} />
@@ -312,21 +328,19 @@ export function StudioShell() {
   )
 }
 
-// Left-dock surface dispatch (OCP — one case per rail entry). `model` is never a
-// left-dock surface: it re-homed onto the FOCUS-VIEW screen (SL-2), reachable in ANY
-// lens (AR-50 M5b) — when activeSurface is `model`, StudioShell renders <FocusView>
-// in place of the whole grid, so renderSurface is never reached for it.
+// Left-dock surface dispatch (SPEC S5). The RAIL lists only the two Navigator panes
+// (Add | Layers); the project-scope Theme (`style`) + Site (`pages-site`) surfaces are
+// DEMOTED off the rail but still render HERE, in the left dock, summoned from the top
+// bar (so the live canvas + inspector stay visible while editing project settings).
+// `model` is never reached here — it re-homes onto the full-screen <FocusView>
+// (WORKSPACE_SURFACES). Data binding is no longer a pane — it is a contextual section
+// of the right Inspector (reached by selecting a data-bound element).
 function renderSurface(surface: StudioSurface, controller: ReturnType<typeof useCanvasController>, locale: Locale) {
   switch (surface) {
     case 'insert':     return <InsertSurface controller={controller} locale={locale} />
-    case 'data':       return <DataSurface controller={controller} locale={locale} />
     case 'layers':     return <LayersSurface locale={locale} />
-    case 'pages-site': return <PagesSiteSurface />
     case 'style':      return <StyleSurface locale={locale} />
-    // `model` is no longer a left-dock surface — the Data-model destination re-homed
-    // onto the FOCUS-VIEW screen (SL-2). When activeSurface is `model`, StudioShell
-    // renders <FocusView> in place of the whole grid, so renderSurface is never
-    // reached for it — FocusView is the container, DataModelBody its role-split body.
+    case 'pages-site': return <PagesSiteSurface />
     default:           return null
   }
 }

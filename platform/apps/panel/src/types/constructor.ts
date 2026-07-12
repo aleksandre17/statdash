@@ -166,18 +166,21 @@ export interface CanvasPage {
   meta?:    PageMeta
 }
 
-// ── Studio shell (AR-49) ─────────────────────────────────────────────────────
+// ── Studio surfaces — the URL route table (AR-49 M0 · SPEC-studio-ia-canonical S5) ─
 //
-//  The Studio's activity-rail surfaces. A StudioSurface is a NON-ordered lens
-//  summoned over the always-mounted canvas — nothing gates anything (spec §2.1;
-//  the ordered 3-step wizard it replaced was retired in M1.3b). `model` is the
-//  Steward-role destination (AR-50 M5b: always-visible, role-split content).
-//
-//  ONE canonical list (AR-49 M0 routing): the string-literal type is DERIVED from
-//  this runtime array, so the rail table, the route param validator, and the type
-//  can never drift apart — a new surface is one entry here (OCP). Each id doubles
-//  as the URL path segment (`/studio/<id>`), so the list is also the route table.
-export const STUDIO_SURFACES = ['insert', 'data', 'layers', 'pages-site', 'style', 'model'] as const
+//  A StudioSurface is a route segment (`/studio/<id>`), NOT a peer navigation
+//  destination. After the S5 rail collapse there are TWO kinds of surface behind
+//  the one scheme, but the URL/type stays ONE derived list (a new surface is one
+//  entry — OCP; the route validator + string type can never drift):
+//    • Compose panes — `insert` (Add) · `layers` (Layers): the left Navigator's two
+//      panes, swapped over the always-mounted canvas (nothing gates anything).
+//    • Project workspaces — `pages-site` (Site) · `style` (Theme) · `model` (Data
+//      model): DEMOTED from the rail to TOP-BAR-summoned, full-screen focus-view
+//      destinations (project-scope, not per-element navigation). Still real routes,
+//      so each stays deep-linkable and Back/Forward moves in/out of it.
+//  (`data` was retired as a surface — metric binding is now a contextual section of
+//  the right Inspector, reached by SELECTING a data-bound element, SPEC §3.1.)
+export const STUDIO_SURFACES = ['insert', 'layers', 'pages-site', 'style', 'model'] as const
 
 export type StudioSurface = (typeof STUDIO_SURFACES)[number]
 

@@ -19,7 +19,7 @@ import { renderStudio } from '../test-support/renderStudio'
 import { setupCanvasRegistry } from '../canvas/setupCanvasRegistry'
 import { useConstructorStore } from '../store/constructor.store'
 import { useRoleStore } from './useRole'
-import { RAIL_ENTRIES } from './rail'
+import { FOCUS_VIEW_TARGETS } from './focusViewRegistry'
 
 // The DOCUMENTED default session: a fresh user lands in the author lens on the default
 // surface (renderStudio() opens `/studio/insert`). This is the exact state the
@@ -32,20 +32,22 @@ beforeEach(() => {
 })
 
 describe('FF-DATA-REACHABLE — the data model is reachable from a default (author) session', () => {
-  it('the Data-model destination is an always-visible rail entry (not gated by the lens)', () => {
-    // Encoded structurally too: the destination exists in the flat rail table, so no
-    // future role/visibility gate can bury it without tripping this line.
-    expect(RAIL_ENTRIES.some((e) => e.id === 'model')).toBe(true)
+  it('the Data-model destination is an always-visible, non-role-gated top-bar workspace', () => {
+    // SPEC S5: the destination was DEMOTED off the rail to a top-bar-summoned project
+    // workspace. Encoded structurally: it is a registered focus-view target (a reachable
+    // destination), so no future role/visibility gate can bury it without tripping this…
+    expect(Object.keys(FOCUS_VIEW_TARGETS)).toContain('data-model')
 
+    // …and from the DEFAULT session the top-bar switch to it is present + enabled.
     renderStudio()
-    const rail = screen.getByRole('navigation', { name: 'Studio surfaces' })
-    expect(within(rail).getByRole('button', { name: /Data model/ })).toBeEnabled()
+    const banner = screen.getByRole('banner')
+    expect(within(banner).getByRole('button', { name: 'Data model' })).toBeEnabled()
   })
 
   it('ONE click from the default session lands the user IN the data-model destination', () => {
     renderStudio()
-    const rail = screen.getByRole('navigation', { name: 'Studio surfaces' })
-    fireEvent.click(within(rail).getByRole('button', { name: /Data model/ }))
+    const banner = screen.getByRole('banner')
+    fireEvent.click(within(banner).getByRole('button', { name: 'Data model' }))
 
     // The destination opened (the focus-view screen with its breadcrumb-back)…
     expect(screen.getByRole('region', { name: 'Data model' })).toBeInTheDocument()
@@ -54,7 +56,7 @@ describe('FF-DATA-REACHABLE — the data model is reachable from a default (auth
 
   it('the default (author) reach is the READ-ONLY Dictionary — never the raw query modeler', () => {
     renderStudio()
-    fireEvent.click(within(screen.getByRole('navigation', { name: 'Studio surfaces' })).getByRole('button', { name: /Data model/ }))
+    fireEvent.click(within(screen.getByRole('banner')).getByRole('button', { name: 'Data model' }))
 
     // The lens was NOT escalated by navigating (built ≠ buried does not mean
     // "expose the query cliff") — the author sees the governed Data Dictionary…
@@ -64,10 +66,11 @@ describe('FF-DATA-REACHABLE — the data model is reachable from a default (auth
     expect(screen.queryByText(/Define the governed data model/)).toBeNull()
   })
 
-  it('the top-bar destination switch reaches it too (a second discoverable entry)', () => {
-    renderStudio()
-    const banner = screen.getByRole('banner')
-    fireEvent.click(within(banner).getByRole('button', { name: 'Data model' }))
+  it('the ⌘K / deep-link route reaches it too (a second discoverable entry)', () => {
+    // The `/studio/model` route is the deep-link/command entry (useCommandRunner opens
+    // it) — a second obvious path to the same destination, still author-lens read-only.
+    renderStudio('model')
+    expect(screen.getByRole('region', { name: 'Data model' })).toBeInTheDocument()
     expect(screen.getByTestId('data-dictionary')).toBeInTheDocument()
   })
 })

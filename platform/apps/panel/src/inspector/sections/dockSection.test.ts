@@ -20,15 +20,32 @@ const ctx = (over: Partial<DockRenderCtx>): DockRenderCtx =>
   ({ scope: 'page', locale: 'en', controller: controller({}), ...over } as DockRenderCtx)
 
 describe('dockSectionRegistry — the hardcoded stack is now registered data', () => {
-  it('registers the visibility, node-context, and page-pane sections', () => {
+  it('registers the schema, data, visibility, chrome, and page-pane sections', () => {
     // SPEC S3: the per-type `element.context` bridge (nodeContextEditors) is deleted —
     // filter controls project generically through `element.schema` (sourcedParts).
+    // SPEC S5: metric binding is a CONTEXTUAL section (`element.data`) — re-homed from
+    // the retired Data rail surface into the inspector.
     for (const id of [
-      'element.schema', 'element.visibility', 'element.chrome',
+      'element.schema', 'element.data', 'element.visibility', 'element.chrome',
       'page.config', 'page.perspectives', 'page.filters',
     ]) {
       expect(dockSectionRegistry.has(id), id).toBe(true)
     }
+  })
+
+  it('element.data applies ONLY when the selected element is metric-bindable (S5)', () => {
+    const node = { id: 'n1', type: 'chart', props: {} }
+    // A non-bindable selection → no Data section (the Figma law: only the selection's
+    // own declared contract).
+    const notBindable = dockSectionRegistry
+      .list(ctx({ scope: 'element', controller: controller({ selected: node as never, selectedBindable: false as never }) }))
+      .map((s) => s.id)
+    expect(notBindable).not.toContain('element.data')
+    // A data-bound selection → the Data section (the governed Metric Palette) appears.
+    const bindable = dockSectionRegistry
+      .list(ctx({ scope: 'element', controller: controller({ selected: node as never, selectedBindable: true as never }) }))
+      .map((s) => s.id)
+    expect(bindable).toContain('element.data')
   })
 
   it('page scope lists exactly the page sections, in order', () => {

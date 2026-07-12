@@ -19,6 +19,7 @@
 //
 import { describe, it, expect } from 'vitest'
 import { RAIL_ENTRIES } from './rail'
+import { FOCUS_VIEW_TARGETS } from './focusViewRegistry'
 
 // All Studio sources as raw text (Vite ?raw) — browser-graph typed (the panel
 // tsconfig excludes @types/node), no filesystem dependency.
@@ -65,14 +66,17 @@ describe('FF-ROLE-IS-LENS — role read only through the useRole() seam', () => 
     expect(offenders).toEqual([])
   })
 
-  it('the role lens splits CONTENT, not VISIBILITY — the rail is a flat, always-visible list', () => {
+  it('the role lens splits CONTENT, not VISIBILITY — no destination is role-gated', () => {
     // No RailEntry carries a role/visibility gate (the `stewardOnly` field is gone):
-    // every destination, including `model`, is always visible regardless of the lens.
+    // every navigation destination is always visible regardless of the lens.
     for (const entry of RAIL_ENTRIES) {
       expect(entry).not.toHaveProperty('stewardOnly')
     }
-    // The data-model destination is present in the flat rail (reachable in any lens).
-    expect(RAIL_ENTRIES.some((e) => e.id === 'model')).toBe(true)
+    // SPEC S5: the Data-model destination was DEMOTED off the rail to a top-bar-summoned
+    // project workspace — a registered focus-view target, reachable in ANY lens (the top
+    // bar summons it unconditionally; the lens only splits its BODY, asserted below).
+    // "Built ≠ buried" now holds via the workspace, not a rail entry.
+    expect(Object.keys(FOCUS_VIEW_TARGETS)).toContain('data-model')
   })
 
   it('the data-model destination splits its BODY by the lens value (content, not access)', () => {

@@ -2,6 +2,7 @@ import { Box, Typography, Button, MenuItem, Select, IconButton, Tooltip, ToggleB
 import SearchIcon from '@mui/icons-material/Search'
 import LogoutIcon from '@mui/icons-material/Logout'
 import PaletteOutlinedIcon from '@mui/icons-material/PaletteOutlined'
+import WebOutlinedIcon from '@mui/icons-material/WebOutlined'
 import SchemaOutlinedIcon from '@mui/icons-material/SchemaOutlined'
 import DashboardCustomizeOutlinedIcon from '@mui/icons-material/DashboardCustomizeOutlined'
 import { PageWorkflowBar } from '../features/page-workflow'
@@ -37,11 +38,13 @@ export interface StudioTopBarProps {
   onExitDataModel: () => void
   onLocaleChange: (locale: Locale) => void
   onOpenCommand:  () => void
-  /** Summon the Style surface (brand-token editor). */
+  /** Summon the Theme workspace (brand-token editor) — a project-scope destination. */
   onOpenStyle:    () => void
+  /** Summon the Site workspace (identity · navigation · pages) — a project-scope destination. */
+  onOpenSite:     () => void
 }
 
-export function StudioTopBar({ locale, locales, dataModelActive, onOpenDataModel, onExitDataModel, onLocaleChange, onOpenCommand, onOpenStyle }: StudioTopBarProps) {
+export function StudioTopBar({ locale, locales, dataModelActive, onOpenDataModel, onExitDataModel, onLocaleChange, onOpenCommand, onOpenStyle, onOpenSite }: StudioTopBarProps) {
   const pages        = usePages()
   const activePageId = useActivePageId()
   const setActivePage = useConstructorStore((s) => s.setActivePage)
@@ -119,7 +122,16 @@ export function StudioTopBar({ locale, locales, dataModelActive, onOpenDataModel
         </Tooltip>
       </ToggleButtonGroup>
 
-      {/* ── Brand / theme access (reserved region, spec §2.1) → Style editor ── */}
+      {/* ── Project workspaces (SPEC S5) — summoned from the top bar, not the rail ──
+          Theme (brand tokens) + Site (identity · nav · pages) are project-scope, so
+          they open as full-screen workspaces from here rather than sitting as peers of
+          per-element navigation. Data model is the segmented switch above (the primary
+          "build" destination); these two are icon affordances alongside it. */}
+      <Tooltip title={locale === 'en' ? 'Pages & Site' : 'გვერდები და საიტი'}>
+        <IconButton onClick={onOpenSite} size="small" aria-label={locale === 'en' ? 'Pages & Site' : 'გვერდები და საიტი'}>
+          <WebOutlinedIcon fontSize="small" />
+        </IconButton>
+      </Tooltip>
       <Tooltip title={locale === 'en' ? 'Brand & theme' : 'ბრენდი და თემა'}>
         <IconButton onClick={onOpenStyle} size="small" aria-label={locale === 'en' ? 'Brand & theme' : 'ბრენდი და თემა'}>
           <PaletteOutlinedIcon fontSize="small" />
