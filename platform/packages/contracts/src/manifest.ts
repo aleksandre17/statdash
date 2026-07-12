@@ -147,6 +147,33 @@ export interface ManifestMetric {
 }
 
 /**
+ * Wire shape of ONE tier of a dimension's governed DRILL PATH [ADR-034 S4] — the
+ * zero-dep mirror of engine `HierarchyLevel`. `dim` is the GENERIC grain axis this
+ * level groups by (Law 1 — may equal the DimensionDef `code` for a self-nested
+ * codelist, or a distinct dim for a star hierarchy; the engine never branches on a
+ * hardcoded axis name). `label` is an OPTIONAL bilingual breadcrumb (LocaleString
+ * map, Law 4). Member parent/child relations are NEVER carried here — they REIFY
+ * from the SDMX codelist at runtime (Law 5); a level names only axis + label.
+ */
+export interface ManifestHierarchyLevel {
+  dim:    string
+  label?: Record<string, string>
+}
+
+/**
+ * Wire shape of a dimension's declared DRILL PATH [ADR-034 S4] — the zero-dep mirror
+ * of engine `DimensionHierarchy`. An ordered set of LEVELS (coarsest root → finest
+ * leaf); the runner refines this opaque blob into engine `DimensionHierarchy` at the
+ * registerManifestDimensions boot seam exactly as it refines `code`/`calc` on a
+ * metric. Pure data (Law 2) — a tree, never a function — so it survives the JSON
+ * round-trip. REIFIED from the codelist `parent_code` depth at manifest build (Law 5);
+ * the level COUNT is the codelist tree depth, never hand-authored.
+ */
+export interface ManifestDimensionHierarchy {
+  levels: ManifestHierarchyLevel[]
+}
+
+/**
  * Named dimension descriptor — the wire shape of one entry in a tenant's
  * semantic layer, the PEER of `ManifestMetric` (Law 1: dimensions are equal
  * citizens of the semantic layer, not a metric afterthought). Same delivery
@@ -183,6 +210,16 @@ export interface ManifestDimension {
   defaultMember?: string | number | boolean | null
   /** Optional curation whitelist — a SUBSET-reference into the profile's members, never the SSOT (Law 5). */
   members?:       (string | number | boolean | null)[]
+  /**
+   * Governed DRILL PATH [ADR-034 S4] — the ordered levels a query/selection may
+   * descend, changing grain. REIFIED at manifest build from the codelist `parent_code`
+   * depth (Law 5 — never hand-authored): a dim with any parent edges gets one level
+   * per tree depth (coarsest→finest); a FLAT dim carries no hierarchy (absent). The
+   * runner refines this into engine `DimensionDef.hierarchy` at registerManifest-
+   * Dimensions so `getDimension(id).hierarchy` lights up the drill seam. Additive /
+   * backward-compatible — absent ⇒ the un-hierarchied (flat) status quo, byte-identical.
+   */
+  hierarchy?:     ManifestDimensionHierarchy
   /** Longer bilingual description for the info-affordance (LocaleString). */
   description?:   Record<string, string>
 }

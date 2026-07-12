@@ -75,6 +75,7 @@ export type { DimVal, CtxRef, FilterValue, NeRef, NeCtxRef, Observation, ObsQuer
 export type { AttrVal, ClassifierEntry, Classifier, ClassifierRef, ClassifierView,
               DisplayMap, DisplayRef, DimRef, DataBundle } from './sdmx'
 export { codelistOf, itemsOf, leavesOf, rollupsOf, codesOf,
+         childrenOf, depthOf, membersAtDepth,
          isClassifierRef, isDisplayRef, isDimRef,
          resolveClassifierRef, resolveDisplayRef, resolveDimRef } from './data/codelist'
 
@@ -352,9 +353,16 @@ export { evalCalcAtGrain, evalMeasureAtGrain, guardNoSumOfRatio, rollupForAxis, 
 //  (governed label / conceptRole / default / whitelist) over the cube-profile
 //  dimension; members resolve FROM the DSD at runtime (Law 5), never copied here.
 //  Delivered exactly like metrics (registerDimensions ← manifest.dimensions).
-export type { DimensionDef }    from './data/dimension'
+export type { DimensionDef, DimensionHierarchy, HierarchyLevel } from './data/dimension'
 export { registerDimension, registerDimensions, getDimension, listDimensions,
          listDimensionDefs }    from './data/dimension'
+// ── Dimension-hierarchy drill seam [ADR-034 S4] — the AR-40/50 ⟷ AR-42 bridge ──
+//  A declared drill (DrillTarget) along a governed hierarchy, lowered onto the M2
+//  measure-at-grain SSOT: additivity-respecting re-aggregation, member set REIFIED
+//  from the SDMX codelist parent edges (Law 5). No new query path — composes
+//  evalMeasureAtGrain per reified coordinate. Generic axis (Law 1), declarative (Law 2).
+export type { DrillTarget }     from './data/drill'
+export { drillAxis, reifyLevelMembers, evalMetricDrill, reifyHierarchy } from './data/drill'
 // ── manifest → registry boot seam — the wire→engine refinement, one platform SSOT ──
 //  registerManifestMetrics/registerManifestDimensions refine the zero-dep wire
 //  shapes (ManifestMetric/ManifestDimension) into MetricDef/DimensionDef and prime

@@ -83,6 +83,14 @@ export function registerManifestDimensions(dimensions: ManifestDimension[] | und
       ...(d.conceptRole   !== undefined ? { conceptRole:   d.conceptRole }   : {}),
       ...(d.defaultMember !== undefined ? { defaultMember: d.defaultMember } : {}),
       ...(d.members       !== undefined ? { members:       d.members }       : {}),
+      // Governed DRILL PATH [ADR-034 S4] — the wire mirror (ManifestDimensionHierarchy)
+      // is structurally the engine's DimensionHierarchy (levels of { dim, label? });
+      // its `label` is a Record<string,string> ⊆ LocaleString, so it refines onto
+      // DimensionDef.hierarchy with NO cast. THREADING this is the last mile that lights
+      // up getDimension(id).hierarchy → the drill seam (evalMetricDrill / resolveDrill).
+      // Reified at manifest build from the codelist parent depth (Law 5); absent ⇒ a
+      // flat dimension (byte-identical, no drill path).
+      ...(d.hierarchy     !== undefined ? { hierarchy:     d.hierarchy }     : {}),
       ...(d.description   !== undefined ? { description:   d.description }    : {}),
     }
   }

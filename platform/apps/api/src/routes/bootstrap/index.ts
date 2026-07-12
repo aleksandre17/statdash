@@ -31,7 +31,7 @@
 //  contract's ManifestDatasource — assignable without a cast.
 
 import type { FastifyPluginAsync } from 'fastify'
-import type { SiteManifestContract } from '@statdash/contracts'
+import type { SiteManifestContract, ManifestDimension, ManifestDimensionHierarchy } from '@statdash/contracts'
 import {
   migratePageConfig,
   CURRENT_SCHEMA_VERSION,
@@ -163,6 +163,54 @@ async function loadCategories(app: App): Promise<ManifestCategory[] | undefined>
   }))
 }
 
+// ── dimension-hierarchy reification (ADR-034 S4 — the DRILL last-mile) ───────────
+//
+//  REIFY each governed dimension's DRILL PATH from the codelist SSOT (Law 5 — never
+//  hand-authored), so a `drill` action on a metric chart lights up WITHOUT re-
+//  provisioning the dimensions blob. The tree DEPTH is read straight off the
+//  stats.classifier LTREE `code_path` (materialized by trg_classifier_code_path,
+//  ADR-0023): nlevel(code_path) = a member's 1-based tier, so MAX(nlevel) per dim is
+//  the number of drill LEVELS (a root member is nlevel 1). A dim with any parent_code
+//  edges has MAX(nlevel) ≥ 2 → a hierarchy; a FLAT dim (every member a root, nlevel 1)
+//  is EXCLUDED by the HAVING → carries no hierarchy (byte-identical, no drill path).
+//
+//  This is the server-side twin of engine `reifyHierarchy` (packages/core/data/drill.ts,
+//  MAX depth via membersAtDepth) — the api cannot import core across the arrow (Law 3),
+//  so it reifies the SAME fact (codelist tree depth) at the DB. Returns dim_code →
+//  level count; a self-nested drill's levels all name the same axis (the dim code), so
+//  the runner's registerManifestDimensions → getDimension(id).hierarchy needs only the
+//  count + axis. Graceful when stats.classifier is absent (⇒ empty map, no enrichment).
+async function loadDimensionHierarchies(app: App): Promise<Map<string, number>> {
+  if (!(await relationExists(app.pg, 'stats.classifier'))) return new Map()
+  const { rows } = await app.pg.query<{ dim_code: string; depth: number }>(
+    `SELECT dim_code, MAX(nlevel(code_path))::int AS depth
+       FROM stats.classifier
+      WHERE is_current = true AND code_path IS NOT NULL
+      GROUP BY dim_code
+     HAVING MAX(nlevel(code_path)) >= 2`,
+  )
+  return new Map(rows.map((r) => [r.dim_code, r.depth]))
+}
+
+/**
+ * Enrich a governed dimension with its reified drill path. Matches the dimension's
+ * `code` (the underlying cube/SDMX dim, = stats.classifier.dim_code) against the
+ * reified depth map; a self-nested codelist's levels each name that same axis (Law 1),
+ * so N tiers ⇒ N levels of `{ dim: code }` (label-less — the governed per-tier
+ * breadcrumbs are optional; the drill needs only the axis). A dim with no hierarchy
+ * entry passes through UNTOUCHED (byte-identical). Never overwrites an already-present
+ * hierarchy (an explicitly authored path wins — Postel).
+ */
+function withHierarchy(d: ManifestDimension, depths: Map<string, number>): ManifestDimension {
+  if (d.hierarchy !== undefined) return d
+  const depth = depths.get(d.code)
+  if (depth === undefined || depth < 2) return d
+  const hierarchy: ManifestDimensionHierarchy = {
+    levels: Array.from({ length: depth }, () => ({ dim: d.code })),
+  }
+  return { ...d, hierarchy }
+}
+
 export const bootstrapRoutes: FastifyPluginAsync = async (app) => {
   // GET / — the one atomic boot read. No auth (delivery surface).
   app.get('/', async (req, reply) => {
@@ -191,7 +239,7 @@ export const bootstrapRoutes: FastifyPluginAsync = async (app) => {
 
     // 2) Compose the reads. Independent SELECTs → run concurrently. categoriesRes
     //    is the optional ADR SDMX-P1-C theme tree (undefined when V29 is absent).
-    const [pagesRes, navRes, siteRes, sourcesRes, categories] = await Promise.all([
+    const [pagesRes, navRes, siteRes, sourcesRes, categories, dimHierarchies] = await Promise.all([
       // PUBLISHED versions only. The partial index idx_page_version_published
       // backs this hot read. We pull the config blob of the published version of
       // every non-archived page.
@@ -227,6 +275,9 @@ export const bootstrapRoutes: FastifyPluginAsync = async (app) => {
       ),
       // ADR SDMX-P1-C — optional theme tree (undefined when V29 not applied here).
       loadCategories(app),
+      // ADR-034 S4 — codelist tree depth per dim (the DRILL last-mile). Empty map
+      // when stats.classifier is absent (graceful — no enrichment, byte-identical).
+      loadDimensionHierarchies(app),
     ])
 
     // 3) Pages: forward-migrate each, key by the renderer page id (config.id).
@@ -303,7 +354,12 @@ export const bootstrapRoutes: FastifyPluginAsync = async (app) => {
     // is read directly (not via pick) and never reported in `missing`.
     const dimensionsBlobRaw = site[SITE_KEY.dimensions]
     const dimensions = Array.isArray(dimensionsBlobRaw)
-      ? (dimensionsBlobRaw as SiteManifestContract['dimensions'])
+      // ADR-034 S4 — REIFY each governed dimension's drill path from the codelist
+      // depth (Law 5), so a `drill` action lights up without re-authoring the blob. A
+      // flat dim / a dim absent from the depth map passes through untouched (byte-
+      // identical). The projection is here at manifest BUILD (reads stats.classifier
+      // live), so an api restart makes a drill live with NO re-provision of pages.
+      ? (dimensionsBlobRaw as ManifestDimension[]).map((d) => withHierarchy(d, dimHierarchies))
       : undefined
 
     if (missing.length > 0) {

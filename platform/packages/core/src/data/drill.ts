@@ -24,13 +24,47 @@
 //  Law 2 declarative (DrillTarget is pure data); arrow-clean (core → data only).
 //
 
-import type { DimensionDef, HierarchyLevel } from './dimension'
+import type { DimensionDef, DimensionHierarchy, HierarchyLevel } from './dimension'
 import type { EngineRow }        from './encoding'
 import type { SectionContext }   from '../core/context'
 import type { DataStore }        from './store'
 import type { Classifier, DimVal } from '../sdmx'
 import { membersAtDepth }        from './codelist'
 import { evalMeasureAtGrain }    from './metric-grain'
+
+/**
+ * reifyHierarchy — DERIVE a `DimensionHierarchy` from a codelist's parent-edge DEPTH
+ * (Law 5 — the codelist is the SSOT; the levels are NOT hand-authored). This is the
+ * PROJECTION half of the drill: a self-nested axis with `parent` edges yields one
+ * level per tree depth (coarsest root → finest leaf), each naming the SAME generic
+ * axis (Law 1); a FLAT codelist (no parent edges → a single depth) yields `undefined`
+ * (no drill path — a flat dimension stays flat, byte-identical). The level COUNT is
+ * the reified tree depth, never a hand-authored number.
+ *
+ * The in-memory TWIN of the api bootstrap's server-side projection
+ * (`MAX(nlevel(code_path))` over `stats.classifier`) — both reify the SAME fact (the
+ * codelist tree depth) from the ONE SSOT, each in its own layer (SQL at the DB, this
+ * in core; the api cannot import core across the arrow). Optional `labels` supply the
+ * governed per-tier breadcrumbs (Law 4) when the caller has them; absent ⇒ label-less
+ * levels (the drill still works — `reifyLevelMembers`/`drillAxis` need only `dim`).
+ */
+export function reifyHierarchy(
+  classifier: Classifier | undefined,
+  axis:       string,
+  labels?:    (HierarchyLevel['label'])[],
+): DimensionHierarchy | undefined {
+  if (!classifier) return undefined
+  // Deepest tree depth carrying any member — membersAtDepth(0) = roots (always
+  // present for a non-empty codelist); a flat codelist has NO member at depth ≥ 1.
+  let maxDepth = 0
+  while (membersAtDepth(classifier, maxDepth + 1).length > 0) maxDepth++
+  if (maxDepth === 0) return undefined   // flat → no drill path
+  const levels: HierarchyLevel[] = Array.from({ length: maxDepth + 1 }, (_v, i) => {
+    const label = labels?.[i]
+    return label !== undefined ? { dim: axis, label } : { dim: axis }
+  })
+  return { levels }
+}
 
 /**
  * A declared drill along a governed hierarchy — the AR-42 selection/interaction
