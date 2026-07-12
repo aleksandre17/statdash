@@ -90,8 +90,17 @@ export function StudioShell() {
       setActivePage(urlPageId)
     }
   }, [urlPageId, pages, setActivePage])
+  // Effect B (store -> URL): a ONE-WAY projection + boot INITIALIZER only. It must NEVER
+  // clobber a URL that already names a VALID page. On a fresh boot/deep-link the hydrated
+  // store page (initFromApi seeds pages[0] = most-recently-updated, ORDER BY updated_at DESC)
+  // may NOT match ?page=<id>; without this guard B keeps asserting the store's stale value
+  // onto the URL while A chases it back — the two swap forever (the boot loop, exempt only
+  // for whichever page is currently most-recently-edited). Precedence: a valid URL deep-link
+  // WINS (A reconciles store<-URL, B stands down); only an absent/invalid param lets B
+  // initialize URL<-store.
   useEffect(() => {
-    if (activePageId && activePageId !== urlPageId) {
+    const urlNamesValidPage = !!urlPageId && pages.some((p) => p.id === urlPageId)
+    if (activePageId && activePageId !== urlPageId && !urlNamesValidPage) {
       setSearchParams(
         (prev) => {
           const next = new URLSearchParams(prev)
@@ -101,7 +110,7 @@ export function StudioShell() {
         { replace: true },
       )
     }
-  }, [activePageId, urlPageId, setSearchParams])
+  }, [activePageId, urlPageId, pages, setSearchParams])
 
   // Locale: the site's first active locale, with a top-bar PREVIEW override (spec
   // §2.1 "[ka|en]") — ephemeral view state, never persisted, reusing the existing
