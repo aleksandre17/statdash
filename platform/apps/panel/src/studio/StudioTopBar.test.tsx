@@ -31,10 +31,14 @@ describe('StudioTopBar — locale + brand/theme regions filled (AR-49 M1.4)', ()
     expect(onOpenStyle).toHaveBeenCalled()
   })
 
-  it('renders the Pages & Site access button and summons the Site workspace (SPEC S5)', () => {
+  it('renders a LABELED Site & chrome entry (discoverable) and summons the Site workspace (SPEC S5)', () => {
     const onOpenSite = vi.fn()
     render(<StudioTopBar {...base} onOpenSite={onOpenSite} />)
-    fireEvent.click(screen.getByRole('button', { name: 'Pages & Site' }))
+    // Discoverability: a VISIBLE text label (not an icon-only button) naming chrome, so the
+    // owner can find the way into the site furniture (identity · nav · header/footer).
+    const siteBtn = screen.getByRole('button', { name: 'Site & chrome' })
+    expect(siteBtn).toHaveTextContent('Site & chrome')
+    fireEvent.click(siteBtn)
     expect(onOpenSite).toHaveBeenCalled()
   })
 })

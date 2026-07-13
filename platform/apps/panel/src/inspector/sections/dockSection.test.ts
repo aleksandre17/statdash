@@ -11,8 +11,9 @@ import { dockSectionRegistry, type DockRenderCtx } from './dockSection'
 import { registerBuiltinDockSections } from './builtins'
 import { setupCanvasRegistry } from '../../canvas/setupCanvasRegistry'
 
-// Real plugin metas (chart carries styleable/data-bindable/interactive; no `slot`) so the
-// FACET sections resolve their applicability by the SELECTED element's declared meta.
+// Real plugin metas (chart carries data-bindable/interactive; STYLE/VISIBILITY are
+// universal off the no-`slot` discriminant) so the FACET sections resolve their
+// applicability by the SELECTED element's declared meta.
 setupCanvasRegistry()
 registerBuiltinDockSections()
 

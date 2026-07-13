@@ -160,7 +160,7 @@ describe('StudioShell — Theme + Site are top-bar-summoned surfaces, OFF the ra
 
   it('the top bar summons the Site (pages & site) surface into the left dock', () => {
     renderStudio()
-    fireEvent.click(within(screen.getByRole('banner')).getByRole('button', { name: 'Pages & Site' }))
+    fireEvent.click(within(screen.getByRole('banner')).getByRole('button', { name: 'Site & chrome' }))
     expect(screen.getByRole('heading', { name: 'Pages & Site' })).toBeInTheDocument()
     expect(screen.getByRole('navigation', { name: 'Studio surfaces' })).toBeInTheDocument()
   })

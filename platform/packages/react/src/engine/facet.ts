@@ -49,8 +49,9 @@ export interface FacetDescriptor {
   id:          string
   /**
    * TRUE when this facet belongs on the given element — read a declared CAP or FIELD,
-   * NEVER a concrete `meta.type` literal (Law 1). E.g. STYLE ⇐ `caps:['styleable']`;
-   * a later DATA facet ⇐ declares a `DataSpec` field / `caps:['data']`.
+   * NEVER a concrete `meta.type` literal (Law 1). E.g. UNIVERSAL facets (STYLE,
+   * VISIBILITY) ⇐ the `slot`-discriminant (any non-chrome node); DATA ⇐ `caps:['data-
+   * bindable']`; EVENTS ⇐ `caps:['interactive']`; CHROME ⇐ the declared `slot` field.
    */
   appliesWhen: (meta: ObjectMeta) => boolean
   /**

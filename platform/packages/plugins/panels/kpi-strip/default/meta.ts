@@ -12,11 +12,11 @@ export const META: PanelSliceMeta = {
   groups:          KpiStripGroups,
   canHaveChildren: false,
   // `flow` (placement capability): a kpi-strip is flow content, admissible in a section.
-  // `styleable`: opt into the universal STYLE facet (element.style over view.styles).
+  // STYLE + VISIBILITY are UNIVERSAL facets (every renderable node — no cap needed).
   // `data-bindable`: opt into the universal DATA facet (element.facet.data over `data`).
   // `interactive`: opt into the universal EVENTS facet — a kpi tile emits point:click
   // gestures the `on[]`/NodeAction spine folds (element.facet.events over `on`).
-  caps:            ['filterable', 'flow', 'styleable', 'data-bindable', 'interactive'],
+  caps:            ['filterable', 'flow', 'data-bindable', 'interactive'],
   version:         1,
   i18n: {
     ka: {

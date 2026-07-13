@@ -25,15 +25,24 @@ export function registerBuiltinFacets(): void {
   registered = true
 
   // ── STYLE (Gap 4) — whole-element token-constrained `view.styles` authoring ──────
-  //  Opt-in by the declared `styleable` cap (a signal, not a type read — Law 1). The
-  //  contract is a single `type:'style'` field the dock dispatches to StyleField via
+  //  UNIVERSAL, the peer of VISIBILITY: EVERY renderable element can carry `view.styles`
+  //  (Webflow styles anything). This is not an opt-in — the render path ALREADY applies
+  //  it universally: `defineShell` calls `applyViewStyles(def.view)` for EVERY shell,
+  //  regardless of any cap. Gating the AUTHORING behind a `styleable` cap while the
+  //  RUNTIME honours styles universally was an authoring gap (the inspector could not set
+  //  what the renderer would render). So `appliesWhen` reads the SAME `slot`-DISCRIMINANT
+  //  predicate as visibility — the INVERSE of the chrome facet — a declared-FIELD read,
+  //  NEVER a concrete `meta.type` literal (Law 1 · FF-NO-EXTERNAL-SPECIAL-CASE stays
+  //  green): it projects onto any renderable page node (chart/section/table/kpi/hero/
+  //  filter-bar/links/…) and NEVER a chrome-slot part (whose write lane is structural).
+  //  The contract is a single `type:'style'` field the dock dispatches to StyleField via
   //  FieldControlRegistry; `resolveStyle`/`applyNodeStyles` renders `view.styles` live.
   facetRegistry.register({
     id:          'style',
     order:       40,
     readPath:    'view.styles',
     label:       STYLE_LABEL,
-    appliesWhen: (meta) => !!meta.caps?.includes(CAPS.STYLEABLE),
+    appliesWhen: (meta) => typeof (meta as { slot?: unknown }).slot !== 'string',
     contract:    () => [{ field: 'view.styles', type: 'style', label: STYLE_LABEL }],
   })
 

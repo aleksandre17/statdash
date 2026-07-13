@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeAll } from 'vitest'
-import { render, screen, within } from '@testing-library/react'
+import { render, screen, within, fireEvent } from '@testing-library/react'
+import { SITE_FRAME_ID, chromePartPath, PART_FIELD_ATTR } from '@statdash/react/engine'
 import { CanvasView } from './CanvasView'
 import { projectCanvasSiteChrome } from './canvasSiteChrome'
 import { setupCanvasRegistry } from './setupCanvasRegistry'
@@ -98,5 +99,63 @@ describe('FF-CANVAS-CHROME-FAITHFUL — rendered rail', () => {
     expect(sidebar).not.toBeNull()
     // No authored links — this is exactly the "broken mystery left bar" the seam fixes.
     expect(screen.queryByText('GDP Overview')).toBeNull()
+  })
+})
+
+// ── FF-CANVAS-APP-CHROME — the canvas paints the whole app SHELL, not just page content ──
+//
+//  The render-gap the owner hit: the canvas showed ONLY page content — no header / footer
+//  around it — because CanvasView mounted <NodePageRenderer> WITHOUT the runner's AppChrome
+//  orchestrator (which paints the top/bottom/… chrome regions). This pins the fix: the
+//  canvas now wraps the page in AppChrome (the SAME component the runner's LocaleGuard
+//  uses), so the app-shell chrome renders AROUND the page — AND is CANVAS-SELECTABLE
+//  (ChromeRegion stamps the ONE part anchor), so the owner can click a header / footer to
+//  author it, exactly like the InnerSidebar. Renders even with EMPTY site.chrome (resolve-
+//  Chrome mounts every registered slot at its default variant — fail-soft).
+describe('FF-CANVAS-APP-CHROME — the app shell renders + is selectable in the canvas', () => {
+  const withOverlay = (props: Partial<React.ComponentProps<typeof CanvasView>> = {}) =>
+    render(
+      <CanvasView
+        page={page}
+        onSelectNode={vi.fn()}
+        onDropNode={vi.fn()}
+        onSelectItem={vi.fn()}
+        {...props}
+      />,
+    )
+
+  it('renders the app-shell chrome (AppChrome) around the page — header + footer regions', () => {
+    withOverlay()
+    // The runner's shell root (AppChrome) now wraps the page: the top region carries the
+    // AppHeader, the bottom region the AppFooter. Present even with no authored site.chrome.
+    expect(document.querySelector('.app-shell')).not.toBeNull()
+    expect(document.querySelector('.chrome-region--top')).not.toBeNull()
+    expect(document.querySelector('.chrome-region--bottom')).not.toBeNull()
+  })
+
+  it('stamps the ONE generic part anchor on app-chrome regions (ChromeRegion → selectable)', () => {
+    withOverlay()
+    // Header + footer carry the SAME `data-part-field` anchor the InnerSidebar does — the
+    // overlay frames them through the ONE Part port. (Under the authoring canvas only.)
+    expect(document.querySelector(`[${PART_FIELD_ATTR}="AppHeader"]`)).not.toBeNull()
+    expect(document.querySelector(`[${PART_FIELD_ATTR}="AppFooter"]`)).not.toBeNull()
+  })
+
+  it('the overlay frames the header + footer as clickable chrome selections', () => {
+    withOverlay()
+    // The CanvasOverlay enumerates the site-frame's chrome parts and frames each RENDERED,
+    // authorable region — header, footer AND the page-embedded sidebar.
+    expect(document.querySelector('.canvas-chrome[data-chrome-slot="AppHeader"]')).not.toBeNull()
+    expect(document.querySelector('.canvas-chrome[data-chrome-slot="AppFooter"]')).not.toBeNull()
+    expect(document.querySelector('.canvas-chrome[data-chrome-slot="InnerSidebar"]')).not.toBeNull()
+  })
+
+  it('clicking the header frame selects the ONE PartAddress (site-frame + chrome.AppHeader)', () => {
+    const onSelectItem = vi.fn()
+    withOverlay({ onSelectItem })
+    const headerFrame = document.querySelector('.canvas-chrome[data-chrome-slot="AppHeader"]')!
+    fireEvent.click(headerFrame)
+    // The chrome click funnels through the ONE part-select — no chrome-specific handler.
+    expect(onSelectItem).toHaveBeenCalledWith(SITE_FRAME_ID, chromePartPath('AppHeader'))
   })
 })

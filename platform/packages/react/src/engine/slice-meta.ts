@@ -76,7 +76,6 @@ export type NodeCap =
   | 'nav-contributor'
   | 'nav-transparent'
   | 'flow'
-  | 'styleable'
   | 'data-bindable'
   | 'interactive'
   | (string & {})
@@ -122,24 +121,19 @@ export const CAPS = {
    * "WHERE may I be placed", not "what can I do" — the capability-accepts grammar.
    */
   FLOW: 'flow',
-  /**
-   * FACET opt-in — the element exposes the universal STYLE facet (its `view.styles`
-   * are token-authorable in the inspector). The declared signal the generic Facet
-   * axis reads (`FacetDescriptor.appliesWhen`, ./facet) to project an `element.style`
-   * dock section — NEVER a concrete-type read (Law 1 · FF-NO-EXTERNAL-SPECIAL-CASE).
-   * Opt-in by declaration keeps the base thin (no per-element facet form; the STYLE
-   * contract is declared ONCE at the platform in the facet registry).
-   */
-  STYLEABLE: 'styleable',
+  // NOTE: STYLE is NOT a cap — it is a UNIVERSAL facet (the peer of VISIBILITY). Every
+  // renderable element can carry `view.styles`; the render path applies them universally
+  // (`defineShell`→`applyViewStyles`), so the STYLE facet's `appliesWhen` reads the
+  // `slot`-discriminant (any non-chrome node), NOT an opt-in cap. See builtinFacets.ts.
   /**
    * FACET opt-in — the element exposes the universal DATA facet (its `data: DataSpec`
    * pipeline is authorable in place). The declared signal the generic Facet axis reads
    * (`FacetDescriptor.appliesWhen`, ./facet) to project an `element.facet.data` dock
    * section on ANY data-bindable element — chart/table/kpi/… — NEVER a concrete-type
    * read (Law 1 · FF-NO-EXTERNAL-SPECIAL-CASE). Distinct from the behavioural `data`
-   * cap ("renders a data payload"): this is the AUTHORING opt-in, the peer of
-   * `styleable`, so a data element can opt into in-place pipeline authoring without the
-   * cap being overloaded onto palette/placement queries. Metric-optional: the facet
+   * cap ("renders a data payload"): this is the AUTHORING opt-in (the peer of the
+   * `interactive` events cap), so a data element can opt into in-place pipeline authoring
+   * without the cap being overloaded onto palette/placement queries. Metric-optional: the facet
    * authors a raw query/transform/derive/calc pipeline with or without a governed metric.
    */
   DATA_BINDABLE: 'data-bindable',
@@ -152,7 +146,7 @@ export const CAPS = {
    * selection:change) that the `useNodeInteractions` spine folds into actions — NEVER
    * a concrete-type read (Law 1 · FF-NO-EXTERNAL-SPECIAL-CASE). Distinct from the
    * behavioural `filterable` cap ("responds to filter-context changes"): this is the
-   * AUTHORING opt-in, the peer of `styleable`/`data-bindable`, so an element declares
+   * AUTHORING opt-in, the peer of `data-bindable`, so an element declares
    * it can EMIT authorable gestures without overloading the filter-response cap. The
    * facet authors the declared `NodeEventHandler[]`/`NodeAction` grammar (filter/
    * highlight/drill) — pure data, the SAME spec `useNodeInteractions` interprets.

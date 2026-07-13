@@ -54,6 +54,7 @@ export function ChromeCompositionPanel(
           return (
             <Box
               key={slot}
+              data-testid={`chrome-row-${slot}`}
               sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap',
                     p: 1, border: '1px solid', borderColor: 'divider', borderRadius: 1 }}
             >

@@ -31,10 +31,9 @@ export const META: NodeSliceMeta = {
       label:   { ka: 'აქცენტი', en: 'Emphasis' },
     },
   },
-  // `styleable`: opt into the universal STYLE facet — the inspector projects an
-  // `element.style` section over this element's `view.styles` (a declared signal the
-  // generic facet axis reads, never a per-type wire).
-  caps:            ['collapsible', 'methodology', 'nav-contributor', 'styleable'],
+  // STYLE + VISIBILITY are UNIVERSAL facets (every renderable node projects them off the
+  // `slot`-discriminant, no cap needed) — so a section is styleable without an opt-in.
+  caps:            ['collapsible', 'methodology', 'nav-contributor'],
   version:         1,
   i18n: {
     // Data-integrity labels moved to the page-header namespace (AR-40): the ONE

@@ -49,6 +49,12 @@ import { SiteProvider }       from '@statdash/react'
 import type { NavEntry, ChromeConfig } from '@statdash/react'
 import { NodePageRenderer, AuthoringAnchorContext } from '@statdash/react/engine'
 import type { NodePageConfig, ChromeEntry } from '@statdash/react/engine'
+// The SAME 4-region chrome orchestrator the runner wraps every page in
+// (apps/geostat LocaleGuard: <AppChrome><NodePageRenderer/></AppChrome>). Reused, NOT
+// forked (Law 6/7) — so the authoring canvas paints the EXACT app shell the live site
+// does (header/banner/footer + the region layout), the Webflow "full page incl. shell"
+// model. Arrow-legal (apps → plugins).
+import AppChrome              from '@plugins/chrome/AppChrome'
 import { CanvasOverlay }      from './CanvasOverlay'
 import { CanvasToolbar }      from './CanvasToolbar'
 import { useLivePreviewStores, type PreviewMode } from './useLivePreviewStores'
@@ -194,7 +200,19 @@ export function CanvasView({
                 per declared item for the overlay to frame. Off the canvas the same
                 boundary is a zero-DOM Fragment (byte-identical live output). */}
             <AuthoringAnchorContext.Provider value={true}>
-              <NodePageRenderer page={renderedPage} />
+              {/* WYSIWYG parity — the canvas renders the app SHELL, not just page content.
+                  Wrapping the page in AppChrome (the runner's own orchestrator) paints the
+                  header · footer · banner regions AROUND the page, so the owner SEES and
+                  can select the whole chrome, exactly like the live site (and like Webflow
+                  shows the full page). The regions render even when `site.chrome` is empty:
+                  resolveChrome mounts EVERY registered slot at its default variant (fail-
+                  soft), so the declared chrome is always present + authorable.
+                  We deliberately do NOT provide a FrameProvider — usePageFrame() then
+                  defaults to 'default' (chrome VISIBLE). The 'canvas' frame would HIDE
+                  chrome (its original edit-mode intent); the Webflow model wants it shown. */}
+              <AppChrome>
+                <NodePageRenderer page={renderedPage} />
+              </AppChrome>
             </AuthoringAnchorContext.Provider>
               </SiteProvider>
             </MemoryRouter>

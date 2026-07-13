@@ -338,7 +338,7 @@ function renderSurface(surface: StudioSurface, controller: ReturnType<typeof use
     case 'insert':     return <InsertSurface controller={controller} locale={locale} />
     case 'layers':     return <LayersSurface locale={locale} />
     case 'style':      return <StyleSurface locale={locale} />
-    case 'pages-site': return <PagesSiteSurface />
+    case 'pages-site': return <PagesSiteSurface controller={controller} locale={locale} />
     default:           return null
   }
 }

@@ -123,14 +123,30 @@ export function StudioTopBar({ locale, locales, dataModelActive, onOpenDataModel
       </ToggleButtonGroup>
 
       {/* ── Project workspaces (SPEC S5) — summoned from the top bar, not the rail ──
-          Theme (brand tokens) + Site (identity · nav · pages) are project-scope, so
-          they open as full-screen workspaces from here rather than sitting as peers of
-          per-element navigation. Data model is the segmented switch above (the primary
-          "build" destination); these two are icon affordances alongside it. */}
-      <Tooltip title={locale === 'en' ? 'Pages & Site' : 'გვერდები და საიტი'}>
-        <IconButton onClick={onOpenSite} size="small" aria-label={locale === 'en' ? 'Pages & Site' : 'გვერდები და საიტი'}>
-          <WebOutlinedIcon fontSize="small" />
-        </IconButton>
+          Theme (brand tokens) + Site (identity · nav · pages · chrome) are project-scope,
+          so they open as workspaces from here rather than sitting as peers of per-element
+          navigation. Data model is the segmented switch above (the primary "build"
+          destination); these are affordances alongside it.
+
+          The Site entry carries a VISIBLE text label naming CHROME — the discoverability
+          fix: an icon-only "Site" is un-findable (a UI probe found no site/chrome/header
+          label). This is the CANONICAL, always-visible way into the whole-site furniture
+          (identity · navigation · the chrome composition: header/footer/sidebar
+          enable/swap), the twin of clicking a chrome region on the canvas. */}
+      <Tooltip title={locale === 'en'
+        ? 'Site & chrome — identity, navigation, header / footer / sidebar'
+        : 'საიტი და ჩარჩო — იდენტობა, ნავიგაცია, ჰედერი / ფუტერი / გვერდითი პანელი'}>
+        <Button
+          onClick={onOpenSite}
+          size="small"
+          variant="text"
+          color="inherit"
+          startIcon={<WebOutlinedIcon fontSize="small" />}
+          aria-label={locale === 'en' ? 'Site & chrome' : 'საიტი და ჩარჩო'}
+          sx={{ textTransform: 'none' }}
+        >
+          {locale === 'en' ? 'Site & chrome' : 'საიტი და ჩარჩო'}
+        </Button>
       </Tooltip>
       <Tooltip title={locale === 'en' ? 'Brand & theme' : 'ბრენდი და თემა'}>
         <IconButton onClick={onOpenStyle} size="small" aria-label={locale === 'en' ? 'Brand & theme' : 'ბრენდი და თემა'}>

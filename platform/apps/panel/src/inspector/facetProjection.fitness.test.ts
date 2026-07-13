@@ -3,8 +3,9 @@
 //  The facet-axis peer of FF-NO-EXTERNAL-SPECIAL-CASE / the Part port's completeness
 //  gate. Proves that a DECLARED facet yields a GENERIC dock section with:
 //    • APPLICABILITY driven by the element's DECLARATION (a `caps` token), NEVER a
-//      concrete `node.type` literal (Law 1) — the STYLE facet applies to a styleable
-//      element and NOT to a same-typed element that lacks the cap.
+//      concrete `node.type` literal (Law 1) — the DATA facet applies to a data-bindable
+//      element and NOT to a same-typed one lacking the cap; the UNIVERSAL STYLE facet
+//      applies to ANY non-chrome node (the peer of VISIBILITY) and NEVER a chrome region.
 //    • OCP: a SECOND facet = one FacetDescriptor + re-derive; the mechanism (the
 //      derivation loop, the dock, RightDock) is unchanged — a new section falls out.
 //
@@ -18,7 +19,7 @@ import { registerBuiltinFacets } from './facets/builtinFacets'
 import { setupCanvasRegistry } from '../canvas/setupCanvasRegistry'
 
 beforeAll(() => {
-  setupCanvasRegistry()      // real plugin metas (chart/section carry the styleable cap)
+  setupCanvasRegistry()      // real plugin metas (STYLE/VISIBILITY are universal — no cap)
   registerBuiltinFacets()
   registerBuiltinDockSections()
 })
@@ -41,34 +42,40 @@ describe('FF-FACET-PROJECTED — a declared facet is a generic dock projection',
     expect(schema[0]).toMatchObject({ field: 'view.styles', type: 'style' })
   })
 
-  it('appliesWhen reads a DECLARED cap, never a concrete type (Law 1)', () => {
+  it('STYLE is UNIVERSAL — applies to any renderable node off the slot-discriminant, never a chrome slot or a type literal (Law 1)', () => {
     const style = facetRegistry.list().find((f) => f.id === 'style')!
-    // Opted-in by the cap → applies. Same-shaped meta WITHOUT the cap → does not.
-    expect(style.appliesWhen({ caps: ['styleable'] } as ObjectMeta)).toBe(true)
-    expect(style.appliesWhen({ caps: ['flow'] } as ObjectMeta)).toBe(false)
-    expect(style.appliesWhen({} as ObjectMeta)).toBe(false)
-    // A meta that names a concrete TYPE but does NOT declare the cap is NOT special-cased
-    // to true — the predicate is over the cap, not the type name.
-    expect(style.appliesWhen({ type: 'section', caps: [] } as unknown as ObjectMeta)).toBe(false)
+    // Peer of VISIBILITY: every renderable page node can carry `view.styles` (the render
+    // path applies them universally via defineShell→applyViewStyles). So a bare meta, a
+    // data meta, a flow meta → all applicable; a chrome-slot part → NOT (structural lane).
+    expect(style.appliesWhen({} as ObjectMeta)).toBe(true)
+    expect(style.appliesWhen({ caps: ['flow'] } as ObjectMeta)).toBe(true)
+    expect(style.appliesWhen({ caps: ['data-bindable'] } as ObjectMeta)).toBe(true)
+    // A meta naming a concrete TYPE is not special-cased either way — applicability is the
+    // universal slot-discriminant, not the type name.
+    expect(style.appliesWhen({ type: 'section', caps: [] } as unknown as ObjectMeta)).toBe(true)
+    // …but NOT a chrome-slot part meta (its write lane is structural, not `view.styles`).
+    expect(style.appliesWhen({ slot: 'AppHeader' } as unknown as ObjectMeta)).toBe(false)
   })
 
-  it('a styleable element gets the element.facet.style dock section; a non-styleable one does not', () => {
+  it('any non-chrome node gets the element.facet.style dock section (universal); a chrome region does not', () => {
     expect(dockSectionRegistry.has('element.facet.style')).toBe(true)
 
-    // A chart declares `styleable` → the Style section applies.
+    // A chart (renderable node, no `slot`) → the Style section applies.
     const chart = { id: 'c1', type: 'chart', props: {} }
     const chartIds = dockSectionRegistry
       .list(elementCtx({ selected: chart as never }))
       .map((s) => s.id)
     expect(chartIds).toContain('element.facet.style')
 
-    // A filter-bar does NOT declare `styleable` → no Style section (the Figma law: only
-    // the selection's OWN declared contract). Proves it is not type-blind-universal.
+    // A filter-bar (also a renderable node, no opt-in caps) → Style applies too (UNIVERSAL,
+    // the peer of visibility — every renderable element is styleable, Webflow-style). This
+    // is the thin-inspector fix: a filter-bar/links/page-header now has Style + Visibility.
     const filterBar = { id: 'f1', type: 'filter-bar', props: {} }
     const fbIds = dockSectionRegistry
       .list(elementCtx({ selected: filterBar as never }))
       .map((s) => s.id)
-    expect(fbIds).not.toContain('element.facet.style')
+    expect(fbIds).toContain('element.facet.style')
+    expect(fbIds).toContain('element.facet.visibility')
   })
 
   it('the DATA facet is registered with a contract over `data` (Gap 3 — falls out generically)', () => {
@@ -116,9 +123,10 @@ describe('FF-FACET-PROJECTED — a declared facet is a generic dock projection',
   })
 
   it('the real registered data-panel metas carry the data-bindable opt-in', () => {
-    // The CONSUMER proof: the declaration the generic DATA facet reads is present on the
-    // real data panels (chart/table/kpi-strip) — so the Data section falls out for each.
-    for (const type of ['chart', 'table', 'kpi-strip']) {
+    // The CONSUMER proof: the declaration the generic DATA facet reads is present on EVERY
+    // real element that declares a `data: DataSpec` — chart/table/kpi-strip AND geograph
+    // (a data-driven choropleth) — so the Data section falls out for each.
+    for (const type of ['chart', 'table', 'kpi-strip', 'geograph']) {
       const meta = nodeRegistry.getMeta(type) as unknown as ObjectMeta
       expect(meta?.caps, type).toContain('data-bindable')
     }
@@ -329,12 +337,20 @@ describe('FF-FACET-PROJECTED — a declared facet is a generic dock projection',
     expect(ids).toContain('element.facet.style')
   })
 
-  it('the real registered chart/section metas carry the styleable opt-in', () => {
-    // The CONSUMER proof (the one place concrete names appear): the declaration the
-    // generic facet axis reads is actually present on the real elements.
-    for (const type of ['chart', 'section', 'table', 'kpi-strip']) {
+  it('STYLE is universal over the real registered metas — no styleable cap, no chrome bleed', () => {
+    // The CONSUMER proof: STYLE is NOT an opt-in cap (retired) — it falls out for EVERY
+    // real renderable node off the slot-discriminant, INCLUDING ones that declare no
+    // authoring caps at all (filter-bar/links/page-header — the thin-inspector fix).
+    const style = facetRegistry.list().find((f) => f.id === 'style')!
+    for (const type of ['chart', 'section', 'table', 'kpi-strip', 'filter-bar', 'links', 'page-header', 'perspective-bar']) {
       const meta = nodeRegistry.getMeta(type) as unknown as ObjectMeta
-      expect(meta?.caps, type).toContain('styleable')
+      expect(meta, type).toBeTruthy()
+      expect(style.appliesWhen(meta), type).toBe(true)
+      // And no vestigial `styleable` cap remains on any real meta.
+      expect(meta?.caps ?? [], type).not.toContain('styleable')
     }
+    // …but a chrome region (declares `slot`) is excluded — structural write lane.
+    const chromeMeta = chromeRegistry.getMeta('AppHeader', 'default') as unknown as ObjectMeta
+    expect(style.appliesWhen(chromeMeta)).toBe(false)
   })
 })
