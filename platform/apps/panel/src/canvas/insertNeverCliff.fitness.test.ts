@@ -16,7 +16,6 @@ import { setupCanvasRegistry } from './setupCanvasRegistry'
 import { getPaletteEntries } from './paletteEntries'
 import {
   resolveInsertPlan, planInserts, nestAccepts,
-  AUTOWRAP_CONTAINER,
 } from './insertNode'
 import { insertNodesPatch } from '../store/constructor.pages'
 import type { CanvasPage } from '../types/constructor'
@@ -105,10 +104,12 @@ describe('FF-INSERT-NEVER-CLIFF — the plan is always valid or an explicit hint
     })
   }
 
-  it('the canonical page-level auto-wrap is page → section → type for a data panel', () => {
+  it('a data panel drops DIRECTLY on the page — section de-privileged (ADR-042 D3)', () => {
     const page = basePage()
+    // The page content slot admits the `flow` capability (acceptsCaps) → a chart is a DIRECT
+    // child, never force-wrapped in a section. Section is one option, not the forced wrapper.
     const plan = resolveInsertPlan(page, null, 'chart')
-    expect(plan).toEqual({ kind: 'wrap', wrapperType: AUTOWRAP_CONTAINER, parentId: 'p1' })
+    expect(plan).toEqual({ kind: 'direct', parentId: 'p1' })
   })
 
   it('a directly page-acceptable type is a flat top-level insert (no needless wrap)', () => {
@@ -124,16 +125,16 @@ describe('FF-INSERT-NEVER-CLIFF — the plan is always valid or an explicit hint
   it('a blocked type (no single wrapper) exists and is surfaced as a hint, not a silent drop', () => {
     // featured-slider: not page-acceptable, AND not `flow` content → a section rejects it
     // too → genuinely blocked (no single wrapper). (hero, formerly the example here, is now
-    // `flow` content → auto-wraps page → section → hero — the capability-accepts fix.)
+    // `flow` content → drops DIRECTLY on the page — the section de-privilege, ADR-042 D3.)
     const page = basePage()
     const plan = resolveInsertPlan(page, null, 'featured-slider')
     expect(plan.kind).toBe('blocked')
     expect(planInserts(plan, 'featured-slider', ids())).toHaveLength(0)
   })
 
-  it('a formerly-homeless content block (hero) now auto-wraps page → section → hero (capability-accepts)', () => {
+  it('a flow content block (hero) drops DIRECTLY on the page — no forced section (ADR-042 D3)', () => {
     const page = basePage()
     expect(resolveInsertPlan(page, null, 'hero'))
-      .toEqual({ kind: 'wrap', wrapperType: AUTOWRAP_CONTAINER, parentId: 'p1' })
+      .toEqual({ kind: 'direct', parentId: 'p1' })
   })
 })
