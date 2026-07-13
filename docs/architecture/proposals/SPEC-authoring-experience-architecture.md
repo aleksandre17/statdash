@@ -231,3 +231,71 @@ Invariants honored: Law 1 (no type in any projection), Law 2 (structure is data 
 **Symptoms → impossible-by-construction (the map):** nesting jams → ONE `PlacementPlan` (no local heuristic to mis-guess); no drag-to-move → `placePart` projected onto every surface (`FF-MANIPULATE-EVERY-SURFACE`); tables unreachable → renderer-emitted anchors (`FF-EVERY-PART-ANCHORED`, corpus `[]`); chrome not manipulable → the `site-chrome` structural adapter (same `placePart`); thin inspectors → `projectParts ⊕ projectFacets` (`FF-EVERY-DECLARED-FACET-PROJECTED`); management is hard → the coherent Triprojection over one transport (`FF-AUTHORING-TRIPROJECTION`).
 
 **The phased path + first slice.** **Slice 0** (enabler, no UX): add `placePart` + `PlacementPlan`, refactor the existing insert AND outline-move onto it byte-identically (Strangler expand; spawns **ADR-042**, owner GO). **Slice 1 (the recommended first FELT slice):** canvas drag-to-move/reorder/re-nest for slot parts on ONE dnd-kit transport, retiring native DnD — closing "no drag-to-move" and "nesting jams" together, and absorbing the in-flight drag-drop fix; proven by a Playwright leg that drags a panel on the canvas and asserts the tree is byte-identical to the same move in the navigator. Then **S2** renderer-emitted anchors (tables reachable), **S3** value/sourced/chrome structural adapters (chrome manipulable; OCP proof), **S4** the Facet/Inspect completion (thin inspectors closed), **S5** the convergence sweep + the `FF-AUTHORING-TRIPROJECTION` coherence gate. The three in-flight fixes fold in as slices of this one path — chrome-in-canvas (S6 select done; S3 manipulate), tables/facet-universality (S2 reach + S4 facets), drag-drop (S0–S1) — never as separate patches.
+
+---
+
+## 9. ADR-042 definitive build plan — reconciled to the LIVE code state (supersedes §4 sequencing)
+
+> **Status:** BUILD PLAN, lead-authorized under **ADR-042** (ACCEPTED). This section is the authoritative sequence the lead drives. It reconciles §4 with the actual tree: the **Inspect/Facet axis is already BUILT** (`facetRegistry` + `registerFacetSections` + `StyleField`/`DataFacetField`/`EventsField`/`VisibilityField` + `ChromeCompositionPanel`), so §4's Slice 4 is largely done and re-scopes to a **presentation** slice; and two owner rot-items §4 under-named — **section-de-privilege** and **data-isolation** — become first-class named slices. Every slice is Strangler `expand`, shippable, **gesture-provable by a real Playwright leg**, reversible except the one flagged one-way step.
+
+### 9.0 Live-state ledger (verify-before-build — the docs were ahead of and behind the code)
+
+| Capability | SPEC status | LIVE code status (verified 2026-07-13) |
+|---|---|---|
+| Part port `enumerateParts`/`writePart` | done | ✅ shipped (`partPort.ts`), ADR-041 Ph.1–6 landed |
+| `placePart` / `PlacementPlan` / `resolvePlacementPlan` | "the missing primitive" | ❌ **not built** — the real first work |
+| Canvas drag transport | "native HTML5, to retire" | ⚠️ still native `dataTransfer` (`CanvasOverlay.tsx`, `NodePalette.tsx`); navigator on dnd-kit |
+| Facet axis (Inspect) | "half-built / designed" | ✅ **BUILT** — `facetRegistry` STYLE·DATA·EVENTS·VISIBILITY·CHROME; generic `registerFacetSections`; bounded-first `Inspector.tsx` |
+| Dock IA (facet presentation) | not addressed | ⚠️ facet sections **stacked vertically** → the "overwhelming" rot (D4) |
+| Section-de-privilege | §3.1 (owner brief), not in §4 | ❌ `inner-page` `accepts:['section','repeat','page-header']` + `AUTOWRAP_CONTAINER='section'` literal live |
+| Data isolation / bounded context | Slice 4 partial | ⚠️ DATA facet built (bind ⊕ pipe); but `data:DataSpec` still **inlined per element**; no reference-by-handle boundary |
+| Renderer-emitted anchors (tables) | Slice 2 | ❌ still per-shell stamping; `table` shell stamps none |
+
+### 9.1 The slice sequence (the 5 rot-items → slices)
+
+**Slice 0 — the Placement seam** *(ADR-042 D2 · enabler · additive · reversible)*
+Add `placePart` to `PartSource` + three residence adapters (slot→`moveNode`/`insertNodes`/`removeNode`; value→`node-props` splice via `updateNode`; sourced→`filter-schema`/`site-chrome`). Add `PlacementPlan` (`insert|reorder|reparent|remove`) + `resolvePlacementPlan` (widen `resolveInsertPlan`). Refactor palette-insert and `OutlineTree.handleDragEnd` onto it — byte-identical.
+- **Playwright leg:** existing insert + outline-reorder e2e stay green through the seam (regression proof).
+- **Fitness:** `FF-ONE-PLACEMENT-GRAMMAR`, `FF-PLACEMENT-RESIDENCE-ROUTED`, `FF-PLACEMENT-PLAN-TOTAL`.
+
+**Slice 1 — canvas drag-to-move / reorder / re-nest (slot parts) on ONE transport** *(rot-item 5 core + "no move"/"nesting jams" · the recommended FIRST FELT slice)*
+Canvas node frames become dnd-kit draggables/droppables; `onDragEnd → resolvePlacementPlan → placePart`. Add the empty-container placeholder droppable + insertion line (`SPEC-canvas-manipulation` Cause A/D). **Flip palette-drop onto dnd-kit, retire native `dataTransfer`** — the ⚠️ **one-way step (owner GO before the native-path delete)**.
+- **Playwright leg:** drag a panel to reorder on the canvas; drag a panel INTO another container; **assert the resulting tree is byte-identical to the same move performed in the navigator** (the two-surfaces-one-model proof).
+- **Fitness:** `FF-MANIPULATE-EVERY-SURFACE`, `FF-ONE-DRAG-TRANSPORT`, `FF-EMPTY-CONTAINER-DROPPABLE`.
+
+**Slice 2 — section-de-privilege** *(rot-item 1 · ADR-042 D3 · real META + resolver change · reversible)*
+Introduce `CAPS.LAYOUT`; layout containers (`section`,`grid`,`columns`,`stack`,`repeat`) declare it; `inner-page` content slot → `acceptsCaps:['layout']` (drop the identity `accepts` list); retire `AUTOWRAP_CONTAINER='section'` → `resolveWrapper(pageMeta, childType)` derives the wrapper from declared capability (auto-wrap only for a page-illegal leaf).
+- **Playwright leg:** on a blank page, drag a **grid** from the palette to the page root → it lands **directly** at page top (NOT wrapped in a section); then drop a chart into the grid.
+- **Fitness:** `FF-NO-PRIVILEGED-CONTAINER` (+ `FF-CAPABILITY-ACCEPTS` stays green).
+
+**Slice 3 — renderer-emitted anchors (reach guarantee)** *("tables unreachable" · ADR-042 D2 · reversible)*
+Move `PartAnchor` stamping into the generic renderer's part walk; delete per-shell stamping.
+- **Playwright leg:** select a `table` on the canvas, then drill to select a column part — both resolve to a `PartAddress` and open the dock.
+- **Fitness:** `FF-EVERY-PART-ANCHORED` (corpus `[]` gate).
+
+**Slice 4 — value/sourced/chrome structural manipulation** *(rot-item 4 chrome-manipulate · OCP proof · reversible)*
+Reorder kpi cards (value), filter controls (sourced), chrome regions (site-chrome) via the SAME `placePart` — new residence adapters, declarations only, no resolver/transport edit.
+- **Playwright leg:** drag a kpi card to reorder within its strip on the canvas; reorder two chrome regions.
+- **Fitness:** `FF-PLACEMENT-OCP` (a new residence adapter needs no resolver/transport edit).
+
+**Slice 5 — inspector dock-IA reconception** *(rot-item 2 · ADR-042 D4 · mostly presentation projection · reversible)*
+Project the built facet sections as a **derived facet tab-bar** (Content · Style · Data · Interactions · Visibility) from `facetRegistry` order + `appliesWhen` — one facet visible at a time; keep `Inspector.tsx`'s progressive disclosure within. **No facet-model rebuild** (the model is canonical and shipped).
+- **Playwright leg:** select an element → the dock shows facet tabs; switching to Style shows only the Style facet; the tab set is exactly the applicable facets, no per-type hand-wire.
+- **Fitness:** `FF-DOCK-IS-FACET-PROJECTION`.
+
+**Slice 6 — data-layer isolation** *(rot-item 3 · ADR-042 D5 · real boundary decision · owner gate D-DA1)*
+Enforce reference-by-governed-handle: the element binds a metric/dataset id through the semantic layer + `DataStore` port; the per-element DATA facet is scoped to bind ⊕ author-safe last-mile; a clear "define a source" affordance routes raw-source definition into the bounded data context (steward). Add a point-of-use lineage summary card so the pipe is legible on any element.
+- **Playwright leg:** bind a governed metric to a chart via the Data facet (no raw query authorable in the author lens); a lineage card shows source → transform → element; the "define a source" CTA opens the steward data context, not an inline raw-query editor.
+- **Fitness:** `FF-DATA-BOUNDED`, `FF-GOVERNANCE-LENS-PRESERVED` (+ `FF-AUTHOR-NO-QUERY` stays green).
+
+**Slice 7 — convergence sweep + the coherence gate** *(rot-item 5 close · reversible)*
+Delete the outline's inline heuristic remnants, the native-DnD remnants, the `walkNodes` overlay fallback (every part now anchored). Land the coupling/anti-pattern guards as hard `[]` gates.
+- **Fitness (the standard, machine-held):** `FF-AUTHORING-TRIPROJECTION` (corpus coherence), `FF-DISPATCH-NOT-BRANCH`, `FF-NO-CROSS-LAYER-DEP` (eslint arrow, already live) — all `[]`.
+
+### 9.2 Sequencing rationale
+
+Felt-impact-first, dependency-honest: **S0** is the enabler nothing else can skip; **S1** is the loudest owner pain (no move / jams) and proves the port on the felt surface; **S2** (section-de-privilege) is small, high-visibility, and independent of the transport; **S3** unblocks the parts **S4** then manipulates; **S5** (inspector IA) and **S6** (data isolation) ride the already-built facet axis and are independent of manipulation (parallelizable after S0); **S7** closes the coherence gate once every axis derives from the model. The one-way step is isolated to **S1's transport delete** (owner GO); every other slice is `expand`-only and revertible.
+
+### 9.3 The reference-grade bar (end state)
+
+A new element or capability is a **declaration** — a `PartField` (Select/Manipulate), a `FacetDescriptor` (Inspect), or a residence adapter — and its full authorability (reach · inspect · style · data · events · place/move) **falls out**, the UX unchanged, loosely-coupled + SOLID by construction. Every slice is benchmarked to the reference class (Webflow/Framer/Figma/Builder.io: one drag engine, one legality predicate, one structural op, a fixed set of facet projections, a bounded data model referenced by handle) and each holds its invariant as an executable fitness function — the machine-held standard, not review vigilance.
