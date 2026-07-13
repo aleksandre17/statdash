@@ -16,6 +16,7 @@
 //  owns the "what shape + where" decision so it cannot drift between surfaces.
 //
 import { nodeRegistry, isNodeContainer, slotAdmits } from '@statdash/react/engine'
+import type { PlacementOp, PartInsertOp } from '@statdash/react/engine'
 import type { CanvasNode, CanvasPage } from '../types/constructor'
 
 /**
@@ -218,4 +219,111 @@ export function planInserts(
     { node: wrapper, parentId: plan.parentId },
     { node: child,   parentId: wrapper.id },
   ]
+}
+
+// ── PlacementPlan — ONE structural-placement resolver (ADR-042 D2 · generalizes InsertPlan) ──
+//
+//  `InsertPlan` models "how does a NEW type land" (direct / wrap / blocked). `PlacementPlan`
+//  widens it to cover EVERY structural gesture — insert (from the palette) AND move (of an
+//  existing node) — so both share ONE resolver and ONE legality path (the ONE `slotAdmits`,
+//  via `nestAccepts`). The Outline's Candidate-A/B nest-vs-reorder GUESS is retired: it becomes
+//  a RESOLVED, tested plan, byte-identical to the logic it replaces, now shared with every
+//  surface (§2.3). `resolvePlacementPlan(page, source?, target, type)` = `resolveInsertPlan`
+//  widened: `source` absent ⇒ insert; `source` present ⇒ move (reorder within a container /
+//  reparent across containers). Every branch is registry-validated → an invalid tree is
+//  unrepresentable (a plan is a valid placement or an explicit `blocked` hint).
+//
+export type PlacementPlan =
+  | { kind: 'direct';   parentId: string }                       // insert: nest straight in (page/container)
+  | { kind: 'wrap';     wrapperType: string; parentId: string }  // insert-never-cliff (page → section → t)
+  | { kind: 'reorder';  parentId: string; index?: number }       // move: same-container reorder
+  | { kind: 'reparent'; parentId: string; index?: number }       // move: into a different container
+  | { kind: 'blocked';  reason: string }
+
+/** The container id that currently holds `nodeId` — the page id for a top-level node, else
+ *  the parent node whose `childIds` include it. Mirrors `buildOutlineRows`' `parentId`
+ *  assignment (structural, collapse-independent), so a page-derived move plan is byte-
+ *  identical to the row-derived heuristic it replaces. */
+function parentContainerId(page: CanvasPage, nodeId: string): string {
+  if (page.nodeIds.includes(nodeId)) return page.id
+  return Object.values(page.nodes).find((n) => n.childIds.includes(nodeId))?.id ?? page.id
+}
+
+/** A container's node type (undefined for the page root) — the accept-contract lookup key. */
+function containerType(page: CanvasPage, parentId: string): string | undefined {
+  return parentId === page.id ? undefined : page.nodes[parentId]?.type
+}
+
+/** A container's ordered child-id list (the page top-level, or a node's `childIds`). */
+function containerChildOrder(page: CanvasPage, parentId: string): string[] {
+  return parentId === page.id ? page.nodeIds : (page.nodes[parentId]?.childIds ?? [])
+}
+
+/**
+ * Resolve HOW a part lands. `source` absent ⇒ an INSERT of a new `type` (delegates to the
+ * KEPT `resolveInsertPlan`, byte-identical — so every insert fitness stays green). `source`
+ * present ⇒ a MOVE of the existing node `source`, reproducing the Outline's Candidate-A/B
+ * resolution as a resolved plan:
+ *   A — nest INTO `target` when it is an accepting, NON-EMPTY container the source isn't
+ *       already parented by → reparent at index 0 (an empty container is not an outline
+ *       nest-target today; that quirk is preserved and closed by the Slice-1 placeholder).
+ *   B — else a sibling reorder/reparent within `target`'s container, with the same
+ *       drop-below index adjustment the heuristic applied.
+ */
+export function resolvePlacementPlan(
+  page:     CanvasPage,
+  source:   string | null | undefined,
+  target:   string | null | undefined,
+  type:     string,
+): PlacementPlan {
+  // INSERT — no source node: the KEPT insert resolver (direct / wrap / blocked), verbatim.
+  if (!source) return resolveInsertPlan(page, target, type)
+
+  // MOVE — an existing node. `target` is the drop-target row's node id.
+  if (!target) return { kind: 'blocked', reason: 'no-target' }
+  const overNode = page.nodes[target]
+  if (!overNode) return { kind: 'blocked', reason: 'no-target' }
+  const targetParentId = parentContainerId(page, target)
+
+  // Candidate A — nest INTO the target (an accepting, non-empty container the source isn't in).
+  if (nestAccepts(overNode.type, type) && overNode.childIds.length > 0 && targetParentId !== source) {
+    return { kind: 'reparent', parentId: target, index: 0 }
+  }
+  // Candidate B — sibling reorder within the target's container (same drop-below adjustment).
+  if (nestAccepts(containerType(page, targetParentId), type)) {
+    const siblings = containerChildOrder(page, targetParentId)
+    const fromIdx  = siblings.indexOf(source)
+    let   toIdx    = siblings.indexOf(target)
+    if (fromIdx !== -1 && fromIdx < toIdx) toIdx -= 1
+    const index = toIdx < 0 ? undefined : toIdx
+    return parentContainerId(page, source) === targetParentId
+      ? { kind: 'reorder',  parentId: targetParentId, index }
+      : { kind: 'reparent', parentId: targetParentId, index }
+  }
+  return { kind: 'blocked', reason: 'nest-rejected' }
+}
+
+/**
+ * Compile a resolved `PlacementPlan` into the ONE `PlacementOp` the slot residence's
+ * `placePart` commits — the structural-gesture peer of `planInserts`. An INSERT plan
+ * (direct / wrap) compiles through `planInserts` (byte-identical node build + id sequence),
+ * a MOVE plan (reorder / reparent) into a `move` op over the existing `source`. A `blocked`
+ * plan compiles to null (the caller surfaces the guided hint). Opts carry the insert inputs
+ * (`type` + id factory + variant) OR the move subject (`source`).
+ */
+export function planPlacement(
+  plan: PlacementPlan,
+  opts: { type?: string; makeId?: () => string; variant?: string; source?: string },
+): PlacementOp | null {
+  if (plan.kind === 'blocked') return null
+  if (plan.kind === 'direct' || plan.kind === 'wrap') {
+    if (!opts.type || !opts.makeId) return null
+    const ops = planInserts(plan, opts.type, opts.makeId, opts.variant)
+    // The port treats a node as an OPAQUE record (as `writePart` treats `element`); the
+    // concrete CanvasNode rides through verbatim, re-typed at the commit boundary (placeNode).
+    return ops.length === 0 ? null : { kind: 'insert', ops: ops as unknown as PartInsertOp[] }
+  }
+  // reorder / reparent — a move of the existing source node into `parentId` at `index`.
+  if (!opts.source) return null
+  return { kind: 'move', nodeId: opts.source, parentId: plan.parentId, index: plan.index }
 }

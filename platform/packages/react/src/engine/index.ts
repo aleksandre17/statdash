@@ -75,6 +75,10 @@ export { VIEW_DEFAULTS }           from './types'
 export type {
   PartResidence, PartField, PartAddress, EnumeratedPart, PartMutation,
   PartSource, PartSourceContext,
+  // ADR-042 D2 — the Placement port (structural sibling of writePart): the resolved
+  // structural gesture (`PlacementOp` / `PartInsertOp`) and its slot-residence commit
+  // subset (`NodeChildrenOp`), residence-routed through `placePart`.
+  PlacementOp, PartInsertOp, NodeChildrenOp,
 }                                  from './partPort'
 //  `isWrapper` (ADR-041 Phase 6) is the ONE derived wrapper/leaf predicate (WRAPPER ⇔
 //  declares ≥1 part field); `isNodeContainer` its `slot`-residence specialization (the

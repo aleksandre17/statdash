@@ -4,7 +4,8 @@ import { nodeSchemaSource } from '../inspector/schemaSource'
 import { firstMetricField, isMetricBindable, bindMetricToProps } from '../discovery/metricBinding'
 import { setAtPath } from '../inspector/showWhen'
 import { enumerateParts, getPartSource } from '../canvas/bandSource'
-import { resolveInsertPlan, planInserts } from '../canvas/insertNode'
+import { resolvePlacementPlan, planPlacement } from '../canvas/insertNode'
+import { placeSlotPart } from '../canvas/placeNode'
 import { toNodePageConfig } from '../canvas/canvasPageAdapter'
 import { projectCanvasSiteChrome } from '../canvas/canvasSiteChrome'
 import { nodeRegistry, chromeRegistry, SITE_FRAME_ID, SITE_FRAME_META, CHROME_PART_PREFIX } from '@statdash/react/engine'
@@ -79,6 +80,7 @@ export function useCanvasController() {
   const selectItem    = useConstructorStore((s) => s.selectItem)
   const selectChrome  = useConstructorStore((s) => s.selectChrome)
   const insertNodes   = useConstructorStore((s) => s.insertNodes)
+  const moveNode      = useConstructorStore((s) => s.moveNode)
   const updateNode    = useConstructorStore((s) => s.updateNode)
   const updatePage    = useConstructorStore((s) => s.updatePage)
   const updateChromeConfig = useConstructorStore((s) => s.updateChromeConfig)
@@ -204,13 +206,16 @@ export function useCanvasController() {
     (parentId: string, _slotKey: string, nodeType: string) => {
       if (!pageId || !page) return
       const container = parentId === pageId ? null : parentId
-      const ops = planInserts(resolveInsertPlan(page, container, nodeType), nodeType, newNodeId)
-      if (ops.length === 0) return
-      insertNodes(pageId, ops)
+      // ONE placement grammar: resolve the plan, compile the op, commit through placePart
+      // (the slot-residence structural port). Byte-identical to the old resolveInsertPlan
+      // → planInserts → insertNodes path — the seam, not a behaviour change (Slice 0).
+      const op = planPlacement(resolvePlacementPlan(page, null, container, nodeType), { type: nodeType, makeId: newNodeId })
+      if (!op) return
+      const insertedId = placeSlotPart(pageId, op, { insertNodes, moveNode, removeNode })
       markPageDirty(pageId)
-      selectNode(ops[ops.length - 1].node.id) // select the inserted leaf, not the wrapper
+      if (insertedId) selectNode(insertedId) // select the inserted leaf, not the wrapper
     },
-    [pageId, page, insertNodes, markPageDirty, selectNode],
+    [pageId, page, insertNodes, moveNode, removeNode, markPageDirty, selectNode],
   )
 
   // Inspector onChange — write one prop on the selected node at its schema dot-path.

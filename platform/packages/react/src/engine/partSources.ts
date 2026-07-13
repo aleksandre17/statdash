@@ -33,6 +33,16 @@ const R_SLOT:  PartResidence = 'slot'
 const asRecord = (v: unknown): Record<string, unknown> =>
   (v && typeof v === 'object' ? v : {}) as Record<string, unknown>
 
+/** Move the array member at `from` to `to`, immutably (out-of-range ⇒ unchanged). */
+function reorderArray<T>(arr: readonly T[], from: number, to: number): T[] {
+  if (from < 0 || from >= arr.length) return [...arr]
+  const next = [...arr]
+  const [item] = next.splice(from, 1)
+  const at = to < 0 ? 0 : to > next.length ? next.length : to
+  next.splice(at, 0, item)
+  return next
+}
+
 // ── valueParts — the homogeneous props value-band (BE-1 bandItemsOf, promoted) ────
 //
 //  Reads the declared value-band field off the container (`node.props` for the
@@ -72,6 +82,17 @@ export const valueParts: PartSource = {
       props:  setAtPath(element, `${address.partPath}.${subfield}`, value) as Record<string, unknown>,
     }
   },
+  // STRUCTURAL sibling (ADR-042 D2): a value-band reorder is an in-place array splice on
+  // `element[field]`, committed via the SAME `node-props` mutation `writePart` returns (so
+  // the host's ONE commit switch needs no new arm). Slot/keyed verbs are not this residence's
+  // (a value part IS a positional array member) → null. Additive; a value-reorder gesture
+  // (kpi-card drag) wires to it in a later slice — the port is complete now (OCP).
+  placePart(element, op, _ctx): PartMutation | null {
+    if (op.kind !== 'reorder') return null
+    const arr = element[op.field]
+    if (!Array.isArray(arr)) return null
+    return { target: 'node-props', props: { ...element, [op.field]: reorderArray(arr, op.from, op.index) } }
+  },
 }
 
 // ── slotParts — the tree-band (SlotDef) residence, accepts-gated ──────────────────
@@ -104,10 +125,20 @@ export const slotParts: PartSource = {
     })
     return out
   },
-  // Slot writes are structural (a tree mutation), committed through the tree reducer
-  // via the `node-children` target — wired when a slot part becomes editable (a later
-  // phase). No slot part is inspector-edited in Phase 2, so this is inert today.
+  // A slot part's SCALAR edit is not a distinct write — a slot part IS a child node, edited
+  // as a whole node through the normal node path. Structural edits go through `placePart`.
   writePart(): PartMutation | null {
     return null
+  },
+  // STRUCTURAL sibling (ADR-042 D2): the slot residence's structural verbs — insert / move /
+  // remove a child NODE — tagged onto the `node-children` mutation the host commits through
+  // its tree reducers (`insertNodes` / `moveNode` / `removeNode`, keyed by `op.kind`). The
+  // adapter is thin BY DESIGN: the tree ALGEBRA lives in the store reducers (the SSOT), so
+  // this is the residence-ROUTING seam, not a second tree mechanism — every structural node
+  // edit now flows through the ONE port (FF-ONE-PLACEMENT-GRAMMAR). A value/keyed `reorder`
+  // is not this residence's verb → null.
+  placePart(_element, op, _ctx): PartMutation | null {
+    if (op.kind === 'reorder') return null
+    return { target: 'node-children', op }
   },
 }

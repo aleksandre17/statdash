@@ -181,6 +181,29 @@ export const sourcedParts: PartSource = {
     )
     return { target: 'filter-schema', schema: setBarParams(schema, barId, nextParams) }
   },
+  // STRUCTURAL sibling (ADR-042 D2): reorder filter controls within a bar — a positional
+  // splice of `view.params`, committed via the SAME `filter-schema` mutation `writePart`
+  // returns (`setBarParams`, the SSOT reducer — no denormalised node copy). `op.field` is the
+  // barId; `from`/`index` are positions within that bar. Additive; a control-reorder gesture
+  // wires to it in a later slice. Non-reorder verbs are not this residence's → null.
+  placePart(_element, op, ctx): PartMutation | null {
+    if (op.kind !== 'reorder') return null
+    const schema = ctx.filterSchema
+    if (!schema) return null
+    const view = toBarViews(schema).find((v) => v.id === op.field)
+    if (!view) return null
+    return { target: 'filter-schema', schema: setBarParams(schema, op.field, reorderParams(view.params, op.from, op.index)) }
+  },
+}
+
+/** Move the param at `from` to `index`, immutably (out-of-range ⇒ unchanged). */
+function reorderParams(params: readonly ParamNode[], from: number, index: number): ParamNode[] {
+  if (from < 0 || from >= params.length) return [...params]
+  const next = [...params]
+  const [item] = next.splice(from, 1)
+  const at = index < 0 ? 0 : index > next.length ? next.length : index
+  next.splice(at, 0, item)
+  return next
 }
 
 // ── chromeParts — the site-owned chrome band (S6 · sourced source='site-chrome') ──
@@ -238,6 +261,16 @@ export const chromeParts: PartSource = {
     // A residence-tagged mutation the host commits at its true home (`updateChromeConfig`)
     // — the site SSOT, NO denormalised copy on any node (mirrors the filter-schema write).
     return { target: 'site-chrome', slot, field: subfield, value }
+  },
+  // STRUCTURAL sibling (ADR-042 D2): reorder a chrome region — chrome ordering is the slot's
+  // `order` field, so a reorder writes the moved slot's order to the target position, via the
+  // SAME `site-chrome` mutation the host commits (`updateChromeSlotField`). `op.field` is the
+  // slot name; `op.index` the target order. MINIMAL by design (Slice 0): the full multi-region
+  // reindex is the Slice-4-wired verb — this keeps the sourced/chrome residence structurally
+  // complete (every residence implements placePart) without an unresolved tree. Non-reorder → null.
+  placePart(_element, op, _ctx): PartMutation | null {
+    if (op.kind !== 'reorder') return null
+    return { target: 'site-chrome', slot: op.field, field: 'order', value: op.index }
   },
 }
 

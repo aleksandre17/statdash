@@ -28,7 +28,8 @@ import { useDndSensors } from '../shared/dnd/useDndSensors'
 import {
   useConstructorStore, useActivePage, useActivePageId, useSelectedNode,
 } from '../store/constructor.store'
-import { nestAccepts } from '../canvas/insertNode'
+import { resolvePlacementPlan, planPlacement } from '../canvas/insertNode'
+import { placeSlotPart } from '../canvas/placeNode'
 import { useSetSurface } from '../studio/useStudioRoute'
 import { StudioEmptyState } from '../studio/StudioEmptyState'
 import { buildOutlineRows, type OutlineRow } from './outlineModel'
@@ -41,6 +42,7 @@ export function OutlineTree({ locale = 'ka' }: { locale?: Locale } = {}) {
   const pageId     = useActivePageId()
   const selectedId = useSelectedNode()
   const selectNode = useConstructorStore((s) => s.selectNode)
+  const insertNodes = useConstructorStore((s) => s.insertNodes)
   const moveNode   = useConstructorStore((s) => s.moveNode)
   const removeNode = useConstructorStore((s) => s.removeNode)
   const markDirty  = useConstructorStore((s) => s.markPageDirty)
@@ -73,14 +75,13 @@ export function OutlineTree({ locale = 'ka' }: { locale?: Locale } = {}) {
     if (selectedId === id) selectNode(null)
   }, [pageId, removeNode, markDirty, selectedId, selectNode])
 
-  // ── Drag-end: translate a sortable drop into a (parentId, index) store move ──
+  // ── Drag-end: resolve the drop into ONE placement plan, commit through the port ──
   //
-  //  Default behaviour (Principle of Least Astonishment): a drop places the
-  //  dragged node as a SIBLING of the drop target, in the target's container, at
-  //  the target's position. Re-nest "into" a container happens when the target is
-  //  itself an empty/accepting container row dropped onto directly — kept simple:
-  //  we nest into the target when it accepts the type AND the drag crosses INTO
-  //  it (target is a container the dragged node isn't already a sibling within).
+  //  The nest-vs-reorder decision is no longer a local heuristic: it is `resolvePlacementPlan`
+  //  (source present ⇒ move), the SAME resolved plan the canvas surface uses, gated by the ONE
+  //  `slotAdmits` — then compiled to a `PlacementOp` and committed through `placeSlotPart` (the
+  //  slot-residence structural port). Byte-identical to the retired Candidate-A/B logic; the
+  //  navigator and canvas now speak ONE placement grammar (ADR-042 D2, Slice 0).
   //
   const handleDragEnd = useCallback((e: DragEndEvent) => {
     setDragId(null)
@@ -90,39 +91,13 @@ export function OutlineTree({ locale = 'ka' }: { locale?: Locale } = {}) {
     if (!overId || overId === activeId) return
 
     const dragged = page.nodes[activeId]
-    const target  = rows.find((r) => r.id === overId)
-    if (!dragged || !target) return
+    if (!dragged) return
 
-    // Candidate A — nest INTO the target (target is an accepting container).
-    if (nestAccepts(target.type, dragged.type) && page.nodes[overId]?.childIds != null) {
-      const isContainer = page.nodes[overId].childIds.length > 0 || target.hasChildren
-      // Only auto-nest when the target genuinely models children AND the drop is a
-      // cross-container move; otherwise treat as a sibling reorder (below).
-      if (isContainer && target.parentId !== activeId) {
-        moveNode(pageId, activeId, overId, 0)
-        markDirty(pageId)
-        return
-      }
-    }
-
-    // Candidate B — sibling reorder within the target's container.
-    if (nestAccepts(parentTypeOf(target.parentId), dragged.type)) {
-      const siblings = containerOrder(target.parentId)
-      const fromIdx  = siblings.indexOf(activeId)
-      let toIdx      = siblings.indexOf(overId)
-      // Dropping below the current position shifts the index down by one after detach.
-      if (fromIdx !== -1 && fromIdx < toIdx) toIdx -= 1
-      moveNode(pageId, activeId, target.parentId, toIdx < 0 ? undefined : toIdx)
-      markDirty(pageId)
-    }
-
-    function parentTypeOf(parentId: string): string | undefined {
-      return parentId === page!.id ? undefined : page!.nodes[parentId]?.type
-    }
-    function containerOrder(parentId: string): string[] {
-      return parentId === page!.id ? page!.nodeIds : (page!.nodes[parentId]?.childIds ?? [])
-    }
-  }, [page, pageId, rows, moveNode, markDirty])
+    const op = planPlacement(resolvePlacementPlan(page, activeId, overId, dragged.type), { source: activeId })
+    if (!op) return
+    placeSlotPart(pageId, op, { insertNodes, moveNode, removeNode })
+    markDirty(pageId)
+  }, [page, pageId, insertNodes, moveNode, removeNode, markDirty])
 
   // ── Roving arrow-key navigation (WAI-ARIA tree pattern) ────────────────────
   const focusRow = useCallback((id: string | null) => {

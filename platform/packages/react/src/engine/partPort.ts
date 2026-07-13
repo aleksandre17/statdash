@@ -146,11 +146,44 @@ export interface EnumeratedPart {
   itemGroups?: PropertyGroup[]
 }
 
+// ── PlacementOp — ROOT-3: the resolved STRUCTURAL gesture (ADR-042 D2) ────────────
+//
+//  The input to `placePart` — `writePart`'s structural sibling. A single closed set of
+//  structural verbs (insert / move / remove / reorder), each addressed in its residence's
+//  OWN coordinate system, mirroring `EnumeratedPart`'s established address asymmetry
+//  (ADR-041 Delta 1): a `slot` part by NODE IDENTITY (its own id / a parent id — a slot
+//  part IS a node); a `value` / `sourced` part by (FIELD, index) within its band. Each
+//  residence adapter interprets the verbs it owns and returns null for the rest — the
+//  dispatch is by RESIDENCE (`getPartSource(residence)`), never by a node type (Law 1).
+//
+export interface PartInsertOp {
+  /** The built part destined for a slot container — node shape OPAQUE at the port (the
+   *  app supplies a concrete `CanvasNode`; the port treats it as a record, as `writePart`
+   *  treats `element`). Committed verbatim through the host's tree reducer (`insertNodes`). */
+  node:     Record<string, unknown>
+  /** The container id the node links under (a node id, or the page id for a top-level part). */
+  parentId: string
+  index?:   number
+}
+
+export type PlacementOp =
+  // slot residence — node-tree structural verbs (committed via the tree reducers).
+  | { kind: 'insert'; ops: ReadonlyArray<PartInsertOp> }                   // build + link new part(s)
+  | { kind: 'move';   nodeId: string; parentId: string; index?: number }   // move an existing slot part
+  | { kind: 'remove'; nodeId: string }                                     // unlink a slot part
+  // value / sourced residence — reorder a band part in place (field-addressed).
+  | { kind: 'reorder'; field: string; from: number; index: number }
+
+// The slot-residence verbs a `node-children` mutation carries — the exact subset of
+// `PlacementOp` the tree reducers commit (Extract keeps it DRY, no second op type).
+export type NodeChildrenOp = Extract<PlacementOp, { kind: 'insert' | 'move' | 'remove' }>
+
 // ── PartMutation — the residence-tagged write (BandMutation, KEPT verbatim) ───────
 //
 //  The host applies each mutation through the matching store action — `node-props`
 //  via `updateNode`, `filter-schema` via `updatePage({ meta.filterSchema })`, and
-//  (slot residence, later phase) `node-children` via the tree reducer. Tagged by
+//  `node-children` (slot residence, ADR-042 D2) via the tree reducers (`insertNodes` /
+//  `moveNode` / `removeNode`, keyed by the carried `NodeChildrenOp.kind`). Tagged by
 //  RESIDENCE — a small, closed architectural set — never by node type, so a new
 //  source reusing an existing residence needs no host change (OCP).
 //
@@ -162,7 +195,9 @@ export type PartMutation =
   // the host through `updateChromeConfig(slot, field, value)`. Tagged by residence-source,
   // never by a chrome slot type — the SAME closed-mutation discipline as filter-schema.
   | { target: 'site-chrome';   slot: string; field: string; value: unknown }
-  | { target: 'node-children'; children: unknown[] }   // slot residence — lands with slotParts
+  // slot residence (ADR-042 D2) — a structural tree edit, committed at the host's ONE
+  // placement-commit site via `insertNodes` / `moveNode` / `removeNode` (keyed by `op.kind`).
+  | { target: 'node-children'; op: NodeChildrenOp }
 
 // ── PartSource — ROOT-3: the ONE port every mechanism recurses over ──────────────
 //
@@ -189,6 +224,20 @@ export interface PartSource {
     subfield: string,
     value:    unknown,
     ctx:      PartSourceContext,
+  ): PartMutation | null
+  /**
+   * Commit ONE STRUCTURAL edit — place / move / remove / reorder a part — as a residence-
+   * tagged mutation (ADR-042 D2: `writePart`'s structural sibling). `enumerateParts` proved
+   * read-projection; `writePart` proved scalar-write-projection; `placePart` is structural-
+   * write-projection — so every structural edit flows through the ONE port, residence-routed,
+   * never a bespoke tree mutation outside it (FF-ONE-PLACEMENT-GRAMMAR). Returns null for a
+   * verb this residence does not own (residence-routed — the caller resolves the adapter by
+   * residence, never by node type).
+   */
+  placePart(
+    element: Record<string, unknown>,
+    op:      PlacementOp,
+    ctx:     PartSourceContext,
   ): PartMutation | null
 }
 

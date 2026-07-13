@@ -18,7 +18,8 @@ import {
   useConstructorStore, useActivePage, useActivePageId, useSelectedNode,
 } from '../store/constructor.store'
 import { useSetSurface } from '../studio/useStudioRoute'
-import { makeNode, resolveInsertPlan, planInserts } from '../canvas/insertNode'
+import { makeNode, resolvePlacementPlan, planPlacement } from '../canvas/insertNode'
+import { placeSlotPart } from '../canvas/placeNode'
 import { insertNeedsContainerHint } from '../canvas/paletteGroupLabels'
 import { useToast } from '../store/notify'
 import { useActiveLocales } from '../inspector/useActiveLocales'
@@ -33,6 +34,7 @@ export function useCommandRunner() {
   const selectedId = useSelectedNode()
   const insertNodes = useConstructorStore((s) => s.insertNodes)
   const insertNode = useConstructorStore((s) => s.insertNode)
+  const moveNode   = useConstructorStore((s) => s.moveNode)
   const selectNode = useConstructorStore((s) => s.selectNode)
   const removeNode = useConstructorStore((s) => s.removeNode)
   const markDirty  = useConstructorStore((s) => s.markPageDirty)
@@ -53,12 +55,11 @@ export function useCommandRunner() {
     if (!page || !pageId) return
 
     if (cmd.kind === 'insert' && cmd.nodeType) {
-      // Single insert SSOT: resolve HOW the type lands (direct / auto-wrap / hint),
-      // then compile to ordered ops applied as ONE undoable action. Byte-identical
-      // to every other surface that shares planInserts (the V6 invariant).
-      const plan = resolveInsertPlan(page, selectedId, cmd.nodeType)
-      const ops  = planInserts(plan, cmd.nodeType, newNodeId)
-      if (ops.length === 0) {
+      // Single insert SSOT: resolve HOW the type lands (direct / auto-wrap / hint), then
+      // compile + commit through the ONE placement grammar (resolvePlacementPlan → placePart).
+      // Byte-identical to every other surface (the V6 invariant), now via the slot port (S0).
+      const op = planPlacement(resolvePlacementPlan(page, null, selectedId, cmd.nodeType), { type: cmd.nodeType, makeId: newNodeId })
+      if (!op) {
         // Blocked — no single unambiguous wrapper. Guide, never silently no-op.
         const rawLabel = nodeRegistry.getMeta(cmd.nodeType)?.label   // registry label (unknown)
         const label = typeof rawLabel === 'string' || (rawLabel != null && typeof rawLabel === 'object')
@@ -67,9 +68,9 @@ export function useCommandRunner() {
         notify(insertNeedsContainerHint(label, locale), { type: 'info' })
         return
       }
-      insertNodes(pageId, ops)
+      const insertedId = placeSlotPart(pageId, op, { insertNodes, moveNode, removeNode })
       markDirty(pageId)
-      selectNode(ops[ops.length - 1].node.id)   // select the inserted node (child, not the wrapper)
+      if (insertedId) selectNode(insertedId)   // select the inserted node (child, not the wrapper)
       return
     }
 
@@ -102,5 +103,5 @@ export function useCommandRunner() {
       markDirty(pageId)
       selectNode(clone.id)
     }
-  }, [page, pageId, selectedId, insertNodes, insertNode, selectNode, removeNode, markDirty, setSurface, notify, locale])
+  }, [page, pageId, selectedId, insertNodes, insertNode, moveNode, selectNode, removeNode, markDirty, setSurface, notify, locale])
 }
