@@ -2,8 +2,12 @@ import { useRef } from 'react'
 import type { KeyboardEvent as ReactKeyboardEvent, PointerEvent as ReactPointerEvent } from 'react'
 import { Box, Typography, Button, IconButton, Tooltip } from '@mui/material'
 import DeleteIcon from '@mui/icons-material/Delete'
-import ChevronRightIcon from '@mui/icons-material/ChevronRight'
-import ChevronLeftIcon from '@mui/icons-material/ChevronLeft'
+// Double-chevrons are the conventional, unambiguous collapse/expand-PANEL affordance
+// (Ant sider / VS Code / Figma side panels) — distinct from a single disclosure caret
+// (▸/▾) which reads as a section toggle beside the "Inspector" label. » collapses the
+// right dock toward its edge; « expands it back out (L2).
+import KeyboardDoubleArrowRightIcon from '@mui/icons-material/KeyboardDoubleArrowRight'
+import KeyboardDoubleArrowLeftIcon from '@mui/icons-material/KeyboardDoubleArrowLeft'
 import { SITE_FRAME_ID } from '@statdash/react/engine'
 import { DockBody, registerBuiltinDockSections } from '../inspector/sections'
 import { useRole } from './useRole'
@@ -128,7 +132,7 @@ export function RightDock({ controller, locale, collapsed, onToggleCollapsed, wi
       <Box className="studio-dock studio-dock--collapsed">
         <Tooltip title={t('expand', locale)} placement="left">
           <IconButton size="small" aria-label={t('expand', locale)} onClick={onToggleCollapsed}>
-            <ChevronLeftIcon fontSize="small" />
+            <KeyboardDoubleArrowLeftIcon fontSize="small" />
           </IconButton>
         </Tooltip>
       </Box>
@@ -199,7 +203,7 @@ export function RightDock({ controller, locale, collapsed, onToggleCollapsed, wi
         )}
         <Tooltip title={t('collapse', locale)} placement="left">
           <IconButton size="small" aria-label={t('collapse', locale)} onClick={onToggleCollapsed}>
-            <ChevronRightIcon fontSize="small" />
+            <KeyboardDoubleArrowRightIcon fontSize="small" />
           </IconButton>
         </Tooltip>
       </Box>
