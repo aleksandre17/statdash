@@ -56,14 +56,19 @@ const ALIGN_OPTIONS = [
 // string on the compose surface. Not `system`: it stays authorable behind the
 // author⇄steward toggle, not un-authorable forever. Every grid field is `layout`
 // concern (the REFINE canon — content·data·style·layout·behavior).
+// The three TEMPLATE props + `columns` are RESPONSIVE-capable (the render layer already
+// lowers each `ResponsiveVal` to the per-breakpoint container-query cascade — resolveGrid
+// → layout.css `@container`). The `responsive` flag opts them into the inspector's
+// per-breakpoint authoring MODE (Builder.io/Framer); the affordance is projected
+// generically by the ONE value-authoring control — zero per-type wiring (Law 8).
 export const GridSchema = defineSchema([
-  { field: 'columns',         type: 'number', label: { ka: 'სვეტები', en: 'Columns' }, concern: 'layout' },
+  { field: 'columns',         type: 'number', label: { ka: 'სვეტები', en: 'Columns' }, concern: 'layout', responsive: true },
   { field: 'gap',             type: 'string', label: { ka: 'დაშორება', en: 'Gap' }, default: 'var(--spacing-md)', concern: 'layout' },
   { field: 'align',   type: 'string', label: { ka: 'გასწორება',       en: 'Align' },   default: 'stretch', options: ALIGN_OPTIONS, concern: 'layout' },
   { field: 'justify', type: 'string', label: { ka: 'ჰორ. გასწორება', en: 'Justify' }, default: 'stretch', options: ALIGN_OPTIONS, concern: 'layout' },
-  { field: 'templateColumns', type: 'string', label: { ka: 'სვეტების შაბლონი', en: 'Template columns' }, default: 'repeat(auto-fit, minmax(min(100%, 24rem), 1fr))', plane: 'steward', concern: 'layout' },
-  { field: 'templateRows',    type: 'string', label: { ka: 'რიგების შაბლონი',  en: 'Template rows' }, plane: 'steward', concern: 'layout' },
-  { field: 'templateAreas',   type: 'string', label: { ka: 'არეების შაბლონი',  en: 'Template areas' }, plane: 'steward', concern: 'layout' },
+  { field: 'templateColumns', type: 'string', label: { ka: 'სვეტების შაბლონი', en: 'Template columns' }, default: 'repeat(auto-fit, minmax(min(100%, 24rem), 1fr))', plane: 'steward', concern: 'layout', responsive: true },
+  { field: 'templateRows',    type: 'string', label: { ka: 'რიგების შაბლონი',  en: 'Template rows' }, plane: 'steward', concern: 'layout', responsive: true },
+  { field: 'templateAreas',   type: 'string', label: { ka: 'არეების შაბლონი',  en: 'Template areas' }, plane: 'steward', concern: 'layout', responsive: true },
   {
     field: 'autoFlow', type: 'string', label: { ka: 'ავტო-დინება', en: 'Auto flow' }, default: 'row', plane: 'steward', concern: 'layout',
     options: [
