@@ -73,6 +73,8 @@ describe('PagesSiteSurface — site authoring home (identity · nav · pages)', 
   it('"+ add page" opens the real page-create dialog (not the wizard stub)', async () => {
     renderSurface()
     fireEvent.click(screen.getByRole('button', { name: '+ გვერდის დამატება' }))
+    // Chrome strings are now bilingual (Law 4), driven by the site's active locale;
+    // this store seeds defaultLocale 'en' (line 29), so the dialog renders English.
     expect(await screen.findByRole('dialog', { name: 'Pages' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /From template/ })).toBeInTheDocument()
   })

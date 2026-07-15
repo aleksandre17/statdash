@@ -18,19 +18,49 @@ import { openPage, createPage } from '../../store/api-actions'
 import { DEFAULT_PAGE_TYPE } from '../../canvas/canvasPageAdapter'
 import { PageStatusBadge } from './PageStatusBadge'
 import { TemplateGallery } from '../templates'
+import { useActiveLocales } from '../../inspector/useActiveLocales'
+import type { Locale } from '../../types/constructor'
 
 export interface PageBrowserProps {
   open:    boolean
   onClose: () => void
 }
 
+// Bilingual chrome strings (Law 4 — `ka` is the panel's primary authoring locale,
+// following the local-map + t() pattern the studio chrome uses (RightDock/FocusView)).
+const T = {
+  pages:        { ka: 'გვერდები',                                 en: 'Pages' },
+  noPages:      { ka: 'ჯერ გვერდი არ არის — შექმენით ერთი დასაწყებად.', en: 'No pages yet — create one to start.' },
+  fromTemplate: { ka: 'შაბლონიდან',                               en: 'From template' },
+  blankPage:    { ka: 'ცარიელი გვერდი',                           en: 'Blank page' },
+  titleKa:      { ka: 'სათაური (ka)',                             en: 'Title (ka)' },
+  titleEn:      { ka: 'სათაური (en)',                             en: 'Title (en)' },
+  newTitleKa:   { ka: 'ახალი გვერდის სათაური (ka)',               en: 'New page title (ka)' },
+  newTitleEn:   { ka: 'ახალი გვერდის სათაური (en)',               en: 'New page title (en)' },
+  create:       { ka: 'შექმნა',                                   en: 'Create' },
+  cancel:       { ka: 'გაუქმება',                                 en: 'Cancel' },
+  close:        { ka: 'დახურვა',                                  en: 'Close' },
+  titleReq:     { ka: 'სათაური (ka) სავალდებულოა',                en: 'Title (ka) is required' },
+  slugErr:      { ka: 'სათაურიდან სწორი slug ვერ გამოვიდა',       en: 'Could not derive a valid slug from the title' },
+  createFailed: { ka: 'შექმნა ვერ მოხერხდა',                      en: 'Create failed' },
+} as const
+const t = (k: keyof typeof T, locale: Locale) => T[k][locale] ?? T[k].en
+
 // Derive a url-safe slug from a free-text title (server requires ^[a-z0-9-]+$).
 function slugify(text: string): string {
   return text.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
 }
 
+// Display a page path with exactly ONE leading slash — a stored slug may or may not
+// already carry one, so `/${slug}` double-slashed ('//regional') for some rows and
+// stayed single ('/landing') for others. Normalize both to a single '/'.
+function pagePath(slug: string): string {
+  return '/' + slug.replace(/^\/+/, '')
+}
+
 export function PageBrowser({ open, onClose }: PageBrowserProps) {
   const pages     = usePages()
+  const locale    = useActiveLocales()[0] ?? 'ka'
   const lifecycle = useConstructorStore((s) => s.lifecycle)
   const [creating, setCreating] = useState(false)
   const [titleKa,  setTitleKa]  = useState('')
@@ -47,9 +77,9 @@ export function PageBrowser({ open, onClose }: PageBrowserProps) {
   }
 
   const handleCreate = async () => {
-    if (!titleKa.trim()) { setError('Title (ka) is required'); return }
+    if (!titleKa.trim()) { setError(t('titleReq', locale)); return }
     const slug = slugify(titleEn || titleKa)
-    if (!slug) { setError('Could not derive a valid slug from the title'); return }
+    if (!slug) { setError(t('slugErr', locale)); return }
     setBusy(true)
     setError(null)
     try {
@@ -66,7 +96,7 @@ export function PageBrowser({ open, onClose }: PageBrowserProps) {
       setTitleKa(''); setTitleEn(''); setCreating(false)
       onClose()
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Create failed')
+      setError(e instanceof Error ? e.message : t('createFailed', locale))
     } finally {
       setBusy(false)
     }
@@ -74,15 +104,15 @@ export function PageBrowser({ open, onClose }: PageBrowserProps) {
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth aria-labelledby="page-browser-title">
-      <DialogTitle id="page-browser-title">Pages</DialogTitle>
+      <DialogTitle id="page-browser-title">{t('pages', locale)}</DialogTitle>
       <DialogContent dividers>
         {pages.length === 0 ? (
-          <Box sx={{ py: 2, color: 'text.secondary' }}>No pages yet — create one to start.</Box>
+          <Box sx={{ py: 2, color: 'text.secondary' }}>{t('noPages', locale)}</Box>
         ) : (
           <List dense data-testid="page-browser-list">
             {pages.map((p) => (
               <ListItemButton key={p.id} onClick={() => handleOpen(p.id)} disabled={busy} data-testid={`page-row-${p.id}`}>
-                <ListItemText primary={p.title.ka || p.slug} secondary={`/${p.slug}`} />
+                <ListItemText primary={p.title[locale] || p.title.ka || p.slug} secondary={pagePath(p.slug)} />
                 <PageStatusBadge lifecycle={lifecycle[p.id] ?? null} />
               </ListItemButton>
             ))}
@@ -98,29 +128,29 @@ export function PageBrowser({ open, onClose }: PageBrowserProps) {
               variant="contained" startIcon={<WidgetsIcon />}
               onClick={() => setGallery(true)} data-testid="template-gallery-open"
             >
-              From template
+              {t('fromTemplate', locale)}
             </Button>
             {/* Blank page — the escape hatch for an author who wants an empty canvas. */}
             <Button startIcon={<AddIcon />} onClick={() => { setCreating(true); setError(null) }} data-testid="new-page-toggle">
-              Blank page
+              {t('blankPage', locale)}
             </Button>
           </Stack>
         ) : (
           <Stack spacing={2} data-testid="new-page-form">
-            <TextField label="Title (ka)" value={titleKa} size="small" required
-              onChange={(e) => setTitleKa(e.target.value)} inputProps={{ 'aria-label': 'New page title (ka)' }} />
-            <TextField label="Title (en)" value={titleEn} size="small"
-              onChange={(e) => setTitleEn(e.target.value)} inputProps={{ 'aria-label': 'New page title (en)' }} />
+            <TextField label={t('titleKa', locale)} value={titleKa} size="small" required
+              onChange={(e) => setTitleKa(e.target.value)} inputProps={{ 'aria-label': t('newTitleKa', locale) }} />
+            <TextField label={t('titleEn', locale)} value={titleEn} size="small"
+              onChange={(e) => setTitleEn(e.target.value)} inputProps={{ 'aria-label': t('newTitleEn', locale) }} />
             {error && <Alert severity="error">{error}</Alert>}
             <Stack direction="row" spacing={1}>
-              <Button variant="contained" onClick={handleCreate} disabled={busy} data-testid="create-page-confirm">Create</Button>
-              <Button onClick={() => { setCreating(false); setError(null) }} disabled={busy}>Cancel</Button>
+              <Button variant="contained" onClick={handleCreate} disabled={busy} data-testid="create-page-confirm">{t('create', locale)}</Button>
+              <Button onClick={() => { setCreating(false); setError(null) }} disabled={busy}>{t('cancel', locale)}</Button>
             </Stack>
           </Stack>
         )}
       </DialogContent>
       <DialogActions>
-        <Button onClick={onClose}>Close</Button>
+        <Button onClick={onClose}>{t('close', locale)}</Button>
       </DialogActions>
 
       {/* Templates-first gallery — picking/generating a page closes both dialogs
