@@ -109,9 +109,9 @@ export function deriveContext(output: ChartOutput, locale?: string): CartesianCo
     ? output.dataLabels
     : traits.dataLabelsByDefault && !stacked
 
-  // hbar value-axis headroom for out-of-bar end-labels when the value SCALE is
-  // hidden (R6) — root cause + rule live in hbarValueAxisMax (base.ts).
-  const hbarValueMax = hbarValueAxisMax(horizontal, apexXHidden, showDataLabels, axes.y.max, series)
+  // hbar value-axis headroom for out-of-bar end-labels (hidden OR visible scale) —
+  // root cause + rule live in hbarValueAxisMax (base.ts).
+  const hbarValueMax = hbarValueAxisMax(horizontal, showDataLabels, axes.y.max, series)
 
   // Resolve the render discriminants: fill/stroke baselines upgrade to their
   // stacked-area variant at runtime; markers gate on the `unstacked` rule.

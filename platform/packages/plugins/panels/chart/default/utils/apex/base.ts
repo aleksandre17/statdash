@@ -321,29 +321,42 @@ export function horizontalBarFillPct(output: ChartOutput): number {
 // ── Horizontal value-axis headroom (out-of-bar end-labels) ─────────────
 //
 //  Root cause: an hbar prints each bar's value label OUTSIDE the bar end
-//  (dataLabels position:'top' + offsetX). While the value SCALE is visible,
-//  ApexCharts' nice-scale rounds the max UP, leaving room for that label. Once
-//  the scale is HIDDEN (axes.y.hidden — R6 hid the x axis on the regional
-//  comparison hbar), Apex instead auto-fits the range flush to the data max, so
-//  the longest bar reaches the plot's right edge and its label ("42 982.6")
-//  shears to "982.6" + forces a horizontal overflow/scroll. Pixel padding can't
-//  cover a label whose width scales with the value — reserve the room in the
-//  SCALE itself so the bar ends before the edge.
+//  (dataLabels position:'top' + offsetX). The label's width scales with the
+//  value, so the LONGEST bar's label overhangs the plot's right edge — and it
+//  clips there whether the value scale is HIDDEN (Apex auto-fits the range flush
+//  to the data max) or VISIBLE (Apex's nice-scale headroom is only a few percent
+//  — far short of a multi-digit label like "983" for Tbilisi, which shears).
+//  Grid padding (grid.ts) cannot cover a label whose width scales with the value
+//  and is clipped at the PLOT area, so reserve the room in the SCALE itself: end
+//  the longest bar before the edge, leaving the label inside the plot.
 //
-//  Applied ONLY when: horizontal + value axis hidden + labels shown + no explicit
-//  max authored (an authored max is deliberate → respected untouched). Returns the
-//  authored max otherwise (undefined ⇒ Apex auto-scale, unchanged behaviour).
+//  Applied when: horizontal + labels shown + no explicit max authored (an authored
+//  max is deliberate → respected untouched). Axis visibility is IRRELEVANT — the
+//  end-label needs bar-end room either way. The headroom is rounded UP to a nice
+//  scale so a VISIBLE axis keeps clean, round tick labels (not an arbitrary max).
+//  Returns the authored max otherwise (undefined ⇒ Apex auto-scale, unchanged).
 //
-const HBAR_VALUE_HEADROOM = 1.18   // ~18% scale headroom past the data max
+const HBAR_VALUE_HEADROOM = 1.10   // ≥10% past the data max, then nice-rounded up
+
+// A 1-2-5-ish "nice" ladder — round a raw headroom value UP to the next clean
+// scale so the resulting axis max yields round tick labels on a visible axis.
+const NICE_STEPS = [1, 1.2, 1.5, 2, 2.5, 3, 4, 5, 6, 8, 10] as const
+
+function niceCeil(v: number): number {
+  if (v <= 0) return v
+  const mag  = Math.pow(10, Math.floor(Math.log10(v)))
+  const norm = v / mag
+  const step = NICE_STEPS.find((s) => s >= norm - 1e-9) ?? 10
+  return step * mag
+}
 
 export function hbarValueAxisMax(
   horizontal:      boolean,
-  valueAxisHidden: boolean,
   showDataLabels:  boolean,
   authoredMax:     number | undefined,
   series:          readonly ChartSeries[],
 ): number | undefined {
-  if (!horizontal || !valueAxisHidden || !showDataLabels || authoredMax != null) return authoredMax
+  if (!horizontal || !showDataLabels || authoredMax != null) return authoredMax
   const dataMax = Math.max(0, ...series.flatMap((s) => s.data.map((pt) => pt.value ?? 0)))
-  return dataMax > 0 ? dataMax * HBAR_VALUE_HEADROOM : authoredMax
+  return dataMax > 0 ? niceCeil(dataMax * HBAR_VALUE_HEADROOM) : authoredMax
 }

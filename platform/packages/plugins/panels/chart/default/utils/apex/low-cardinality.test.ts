@@ -169,32 +169,42 @@ describe('DEFECT#4 — bar thickness capped in px at low cardinality (no fat str
   })
 })
 
-// ── hbar value-label headroom + no residual axis (R6 follow-up) ─────────────────
+// ── hbar value-label headroom + no residual axis (R6 follow-up + B3 fix) ─────────
 //
-//  When the value SCALE is hidden on a horizontal bar (axes.y.hidden — R6), the
-//  per-bar value labels sit OUTSIDE the bar end. Without headroom the longest bar
-//  runs flush to the plot edge and its label ("42 982.6") shears + overflows. The
-//  fix reserves headroom in the SCALE (hbarValueAxisMax) so the label fits, and the
-//  hidden axis leaves NO residual scale/border/ticks/labels behind.
+//  A horizontal bar prints each bar's value label OUTSIDE the bar end. Without
+//  headroom the LONGEST bar runs flush to the plot edge and its label shears +
+//  overflows — whether the value scale is HIDDEN (Apex auto-fits flush to the data
+//  max — the original "42 982.6" R6 case) or VISIBLE (Apex's nice-scale headroom is
+//  only a few percent — the "983"/Tbilisi B3 clip). The fix reserves headroom in
+//  the SCALE (hbarValueAxisMax) so the label fits, nice-rounded so a visible axis
+//  keeps clean ticks; a hidden axis additionally leaves NO residual chrome behind.
 //
-describe('hbar value-label headroom when the value axis is hidden', () => {
+describe('hbar value-label headroom (hidden OR visible value axis)', () => {
   const hiddenY: AxisOutput = { hidden: true }
   const bigSeries: ChartSeries = series('GDP', '#005a9c', [42982.6, 12000, 8000, 5000])
+  const b3Series:  ChartSeries = series('Regions', '#005a9c', [983, 640, 420, 180]) // the audited "983"/Tbilisi case
 
   it('reserves scale headroom past the data max (label cannot shear at the edge)', () => {
-    const max = hbarValueAxisMax(true, true, true, undefined, [bigSeries])
+    const max = hbarValueAxisMax(true, true, undefined, [bigSeries])
     expect(max).toBeDefined()
     expect(max!).toBeGreaterThan(42982.6)   // the longest bar ends BEFORE the plot edge
   })
 
-  it('respects an explicitly authored max (author intent wins)', () => {
-    expect(hbarValueAxisMax(true, true, true, 50000, [bigSeries])).toBe(50000)
+  it('reserves headroom on a VISIBLE value axis too (B3 — the "983" clip)', () => {
+    const max = hbarValueAxisMax(true, true, undefined, [b3Series])
+    expect(max).toBeDefined()
+    expect(max!).toBeGreaterThan(983)       // longest bar ends before the edge; label fits
+    // nice-rounded so the visible axis keeps clean ticks (not an arbitrary 983*k)
+    expect(max).toBe(1200)                  // niceCeil(983 * 1.10 = 1081.3) → 1200
   })
 
-  it('is inert unless horizontal + value-axis-hidden + data-labels', () => {
-    expect(hbarValueAxisMax(false, true,  true,  undefined, [bigSeries])).toBeUndefined() // vertical
-    expect(hbarValueAxisMax(true,  false, true,  undefined, [bigSeries])).toBeUndefined() // axis visible
-    expect(hbarValueAxisMax(true,  true,  false, undefined, [bigSeries])).toBeUndefined() // no labels
+  it('respects an explicitly authored max (author intent wins)', () => {
+    expect(hbarValueAxisMax(true, true, 50000, [bigSeries])).toBe(50000)
+  })
+
+  it('is inert unless horizontal + data-labels (axis visibility is irrelevant)', () => {
+    expect(hbarValueAxisMax(false, true,  undefined, [bigSeries])).toBeUndefined() // vertical
+    expect(hbarValueAxisMax(true,  false, undefined, [bigSeries])).toBeUndefined() // no labels
   })
 
   it('buildCartesian: hidden-value hbar gets a headroom max AND no residual axis', () => {
@@ -218,5 +228,20 @@ describe('hbar value-label headroom when the value axis is hidden', () => {
     expect((opts.grid as { xaxis?: { lines?: { show?: boolean } } }).xaxis?.lines?.show).toBe(false)
     // per-bar value labels stay ON (R6 hides the scale, keeps the labels)
     expect(opts.dataLabels?.enabled).toBe(true)
+  })
+
+  it('buildCartesian: VISIBLE-value hbar also gets the headroom max (B3 regression guard)', () => {
+    const opts = buildCartesian(out({
+      type: 'hbar', horizontal: true,
+      categories: ['Tbilisi', 'Adjara', 'Imereti', 'Kakheti'],
+      series: [b3Series],
+      axes: { x: {}, y: {}, y2: undefined },   // value axis VISIBLE (not hidden)
+      dataLabels: true,
+    }))
+    const xaxis = opts.xaxis as { max?: number; labels?: { show?: boolean } }
+    // the "983" bar ends before the plot edge; its outside label fits (nice max)
+    expect(xaxis.max).toBe(1200)
+    // the visible scale keeps its labels (headroom is orthogonal to axis chrome)
+    expect(xaxis.labels?.show).not.toBe(false)
   })
 })
