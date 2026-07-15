@@ -53,6 +53,7 @@ import { useMetricCatalog } from '../../discovery/useMetricCatalog'
 import {
   metricOptions,
   dimensionOptions as dimensionCatalogOptions,
+  governedDimensionLabels,
   isSemanticSource,
 } from '../../discovery/semanticCatalogOptions'
 import { tokenOptions, isTokenSource } from '../../discovery/tokenCatalogOptions'
@@ -196,7 +197,15 @@ export function EnumRefField({ field, id, value, locale, siblingValues, onChange
       const profile = active.profile
       let cubeOpts: CubeOption[] = []
       if (sourceKey === 'cube.measures')   cubeOpts = measureOptions(profile, locale)
-      if (sourceKey === 'cube.dimensions') cubeOpts = dimensionOptions(profile)
+      if (sourceKey === 'cube.dimensions') {
+        // Resolve raw cube dimension codes to their GOVERNED bilingual labels
+        // (Law 4) when the semantic catalog governs them — never echo the raw
+        // code+conceptRole to the author (AR-52: no plumbing tokens).
+        const resolveLabel = catalog.status === 'ready'
+          ? governedDimensionLabels(catalog.dimensions, locale)
+          : undefined
+        cubeOpts = dimensionOptions(profile, resolveLabel)
+      }
       if (sourceKey === 'cube.members')    cubeOpts = memberDim ? memberOptions(profile, memberDim, locale) : []
       return { options: cubeOpts, hint: `no ${sourceKey} available` }
     }

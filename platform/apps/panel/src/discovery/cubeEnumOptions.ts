@@ -46,14 +46,21 @@ export function measureOptions(profile: CubeProfile, locale: Locale): CubeOption
 }
 
 /**
- * Dimension-code options from the profile. The label is the dimension code
- * itself (dimensions carry no LocaleString label on the profile bundle); the
- * conceptRole is appended as a hint when present (e.g. "region (geo)").
+ * Dimension-code options from the profile. The label resolves to the GOVERNED
+ * bilingual dimension label when the semantic catalog governs this code
+ * (`resolveGovernedLabel`, Law 4 i18n); otherwise it falls back to the bare
+ * dimension code (never blank). The raw SDMX `conceptRole` is deliberately NOT
+ * echoed to the author — it is a plumbing token (AR-52: no plumbing surfaced to
+ * authors), and "measure (measure)" / "time (time)" is pure noise. Law 1: every
+ * dimension resolves through the SAME generic path, none is special-cased.
  */
-export function dimensionOptions(profile: CubeProfile): CubeOption[] {
+export function dimensionOptions(
+  profile: CubeProfile,
+  resolveGovernedLabel?: (code: string) => string | undefined,
+): CubeOption[] {
   return (profile.dimensions ?? []).map((d) => ({
     value: d.code,
-    label: d.conceptRole ? `${d.code} (${d.conceptRole})` : d.code,
+    label: resolveGovernedLabel?.(d.code) ?? d.code,
   }))
 }
 

@@ -36,10 +36,26 @@ describe('cubeEnumOptions', () => {
     expect(measureOptions(profile, 'en')).toEqual([{ value: 'GDP', label: 'GDP' }])
   })
 
-  it('dimensionOptions appends the concept role as a hint', () => {
+  it('dimensionOptions drops the raw conceptRole echo — bare code with no resolver', () => {
     const opts = dimensionOptions(profile)
-    expect(opts).toContainEqual({ value: 'REGION', label: 'REGION (geo)' })
-    expect(opts).toContainEqual({ value: 'TIME', label: 'TIME (time)' })
+    // No "(geo)" / "(time)" plumbing echo surfaced to the author (AR-52).
+    expect(opts).toContainEqual({ value: 'REGION', label: 'REGION' })
+    expect(opts).toContainEqual({ value: 'TIME', label: 'TIME' })
+  })
+
+  it('dimensionOptions resolves the GOVERNED bilingual label when a resolver governs the code', () => {
+    const resolve = (code: string) =>
+      ({ REGION: 'რეგიონი', TIME: 'დრო' } as Record<string, string>)[code]
+    const opts = dimensionOptions(profile, resolve)
+    expect(opts).toContainEqual({ value: 'REGION', label: 'რეგიონი' })
+    expect(opts).toContainEqual({ value: 'TIME', label: 'დრო' })
+  })
+
+  it('dimensionOptions falls back to the bare code when the resolver does not govern it', () => {
+    const resolve = (code: string) => (code === 'REGION' ? 'რეგიონი' : undefined)
+    const opts = dimensionOptions(profile, resolve)
+    expect(opts).toContainEqual({ value: 'REGION', label: 'რეგიონი' })
+    expect(opts).toContainEqual({ value: 'TIME', label: 'TIME' }) // never blank
   })
 
   it('memberOptions resolves members of the chosen dimension, locale-aware', () => {

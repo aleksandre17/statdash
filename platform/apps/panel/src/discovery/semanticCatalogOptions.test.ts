@@ -7,7 +7,7 @@
 //
 import { describe, it, expect } from 'vitest'
 import {
-  metricOptions, dimensionOptions, isSemanticSource, readCatalogLabel,
+  metricOptions, dimensionOptions, governedDimensionLabels, isSemanticSource, readCatalogLabel,
   type CatalogDimension,
 } from './semanticCatalogOptions'
 import type { MetricDef } from '@statdash/engine'
@@ -34,6 +34,23 @@ const dimensions: Record<string, CatalogDimension> = {
   region: { code: 'REGION', label: { en: 'Region', ka: 'რეგიონი' }, conceptRole: 'geo' },
   sector: { code: 'NACE2',  label: { en: 'Sector', ka: 'სექტორი'  }, conceptRole: 'sector' },
 }
+
+describe('semanticCatalogOptions — governedDimensionLabels (P3: cube code → governed bilingual label)', () => {
+  it('resolves a cube dimension code to its governed bilingual label, locale-aware', () => {
+    const resolve = governedDimensionLabels(dimensions, 'ka')
+    expect(resolve('REGION')).toBe('რეგიონი')
+    expect(resolve('NACE2')).toBe('სექტორი')
+    expect(governedDimensionLabels(dimensions, 'en')('NACE2')).toBe('Sector')
+  })
+
+  it('returns undefined for a code the catalog does not govern (caller falls back to the code)', () => {
+    expect(governedDimensionLabels(dimensions, 'en')('TIME')).toBeUndefined()
+  })
+
+  it('is empty-safe for an empty catalog', () => {
+    expect(governedDimensionLabels({}, 'en')('REGION')).toBeUndefined()
+  })
+})
 
 describe('semanticCatalogOptions — metricOptions', () => {
   it('resolves metric-ids with a governed label + unit hint, locale-aware', () => {

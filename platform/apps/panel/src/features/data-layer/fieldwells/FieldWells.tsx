@@ -22,6 +22,8 @@ import type { DataSpec, EncodingSpec, ObsQuery } from '@statdash/engine'
 import { channelField } from '@statdash/engine'
 import { useDndSensors } from '../../../shared/dnd/useDndSensors'
 import { useActiveProfile } from '../../../discovery/useActiveProfile'
+import { useMetricCatalog } from '../../../discovery/useMetricCatalog'
+import { governedDimensionLabels } from '../../../discovery/semanticCatalogOptions'
 import { useSite } from '../../../store/constructor.store'
 import { fieldChips, type FieldChip } from './fieldChips'
 import {
@@ -49,14 +51,23 @@ const ENCODING_WELL_LABELS: ReadonlyArray<{ well: EncodingWell; label: string; r
 
 export function FieldWells({ value, onChange }: FieldWellsProps) {
   const active  = useActiveProfile()
+  const catalog = useMetricCatalog()
   const locale  = useSite().defaultLocale
   const sensors = useDndSensors()
 
   const [pickedCode, setPickedCode] = useState<string | null>(null)
 
   const chips = useMemo<FieldChip[]>(
-    () => (active.status === 'ready' ? fieldChips(active.profile, locale) : []),
-    [active, locale],
+    () => {
+      if (active.status !== 'ready') return []
+      // Governed bilingual dimension labels (Law 4) when the catalog governs the
+      // code — the chip reads as a governed noun, never the raw code+conceptRole.
+      const resolveLabel = catalog.status === 'ready'
+        ? governedDimensionLabels(catalog.dimensions, locale)
+        : undefined
+      return fieldChips(active.profile, locale, resolveLabel)
+    },
+    [active, catalog, locale],
   )
   const pickedChip = chips.find((c) => c.code === pickedCode) ?? null
 

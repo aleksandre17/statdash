@@ -49,8 +49,16 @@ export interface FieldChip {
  * `temporal`; every other dimension derives `nominal` (the renderer default).
  * Pure + total: an absent/degenerate profile yields [] (the palette shows its
  * empty state, never throws).
+ *
+ * `resolveGovernedLabel` (optional) resolves a dimension's raw cube code to its
+ * governed bilingual label (Law 4) so a chip reads as a governed noun, never the
+ * raw code+conceptRole echo — built by the caller from the semantic catalog.
  */
-export function fieldChips(profile: CubeProfile, locale: Locale): FieldChip[] {
+export function fieldChips(
+  profile: CubeProfile,
+  locale: Locale,
+  resolveGovernedLabel?: (code: string) => string | undefined,
+): FieldChip[] {
   const measures: FieldChip[] = measureOptions(profile, locale).map((o) => ({
     code:  o.value,
     label: o.label,
@@ -59,7 +67,7 @@ export function fieldChips(profile: CubeProfile, locale: Locale): FieldChip[] {
   }))
 
   const byCode = new Map((profile.dimensions ?? []).map((d) => [d.code, d]))
-  const dimensions: FieldChip[] = dimensionOptions(profile).map((o) => {
+  const dimensions: FieldChip[] = dimensionOptions(profile, resolveGovernedLabel).map((o) => {
     const dim = byCode.get(o.value)
     const fieldType = dim?.isTime ? 'time' : 'string'
     return {

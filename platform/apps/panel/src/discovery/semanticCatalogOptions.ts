@@ -112,6 +112,27 @@ export function dimensionOptions(
     }))
 }
 
+/**
+ * Build a cube-dimension-code → GOVERNED bilingual label resolver from the catalog.
+ * The cube profile carries only a thin code for its dimensions; the governed label
+ * lives in the semantic catalog, keyed by registry id but carrying the underlying
+ * cube `code`. This inverts the catalog to `code → label(locale)` so the cube-profile
+ * pickers (EnumRefField `cube.dimensions`, the field-well chips) can show the author a
+ * governed noun instead of the raw SDMX code+conceptRole echo (Law 4). Unknown code ⇒
+ * `undefined` (the caller falls back to the bare code — never blank). Law 1: generic
+ * over every dimension, none special-cased.
+ */
+export function governedDimensionLabels(
+  dimensions: Record<string, CatalogDimension>,
+  locale:     Locale,
+): (code: string) => string | undefined {
+  const byCode = new Map<string, string>()
+  for (const def of Object.values(dimensions)) {
+    if (!byCode.has(def.code)) byCode.set(def.code, readCatalogLabel(def.label, locale, def.code))
+  }
+  return (code) => byCode.get(code)
+}
+
 /** The governed-catalog PropFieldSource discriminants this module resolves (spec §2.1). */
 export const SEMANTIC_SOURCES = ['metrics', 'dimensions'] as const
 export type SemanticSource = typeof SEMANTIC_SOURCES[number]
