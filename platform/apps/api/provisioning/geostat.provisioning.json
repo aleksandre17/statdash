@@ -4990,6 +4990,20 @@
       }
     },
     {
+      "key": "themeOverrides",
+      "value": {
+        "color.accent": "#0080BE",
+        "color.accent-hover": "#006A9E",
+        "color.accent-muted": "#E6F3FA",
+        "color.accent-bg": "#EEF3F4",
+        "color.accent-secondary": "#00A896",
+        "color.accent-chip-border": "#CCE8F5",
+        "color.heading-display": "#0d3b66",
+        "color.trend-positive": "#217d72",
+        "color.trend-negative": "#d3421d"
+      }
+    },
+    {
       "key": "i18n",
       "value": {
         "catalog": {

@@ -247,6 +247,20 @@ export interface SiteManifestContract {
   chromeConfig: JsonRecord
   /** Locale configuration. Inner shape = I18nConfig (renderer-owned). */
   i18n:         JsonRecord
+  /**
+   * The site's PORTABLE BRAND — a flat `tokenKey → CSS value` override map
+   * (TOKENS_CATALOG keys, e.g. `'color.accent' → '#0080BE'`), the delivery mirror
+   * of the Constructor's `SiteDef.themeOverrides`. This is the Law-5 fix: a tenant's
+   * brand travels as CONFIG DATA the api projects out of `site_config.themeOverrides`,
+   * NOT baked into an app's `[data-tenant]` CSS. Both the runner (applyThemeOverrides
+   * at boot) and the Constructor canvas apply the SAME map through the SAME
+   * `@statdash/styles` mechanism, so the canvas renders the published brand faithfully
+   * ("the canvas never lies"). Absent/empty ⇒ the brand-neutral platform default
+   * (byte-identical to the pre-brand-channel site — Postel). Pure data (Law 2): a flat
+   * value map, never a theme function; the tokenKey↔CSS-var mapping lives in the
+   * renderer's token catalog, never here.
+   */
+  themeOverrides?: Record<string, string>
   /** Connected datasource descriptors. */
   datasources?: ManifestDatasource[]
   /**

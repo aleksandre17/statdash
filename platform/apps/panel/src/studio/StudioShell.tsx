@@ -156,6 +156,15 @@ export function StudioShell() {
   // stylesheet insertion order. Still pure DATA — no theme code path (Law 2).
   const themeStyle = buildThemeVars(STRATA_PRESET, site.themeOverrides)
 
+  // The CANVAS wears the previewed SITE's OWN brand — `site.themeOverrides` alone,
+  // WITHOUT the Strata tool skin — applied on the canvas root. This is the same map
+  // (and the same @statdash/styles transform) the runner applies to
+  // `manifest.themeOverrides`, so the canvas paints the published brand faithfully
+  // rather than the surrounding tool's identity ("the canvas never lies"). A
+  // brand-less site ⇒ an empty map ⇒ the canvas shows the brand-neutral platform
+  // default, exactly as the runner would.
+  const canvasThemeStyle = buildThemeVars(site.themeOverrides) as CSSProperties
+
   const heading = SURFACE_HEADINGS[activeSurface]?.[locale] ?? ''
 
   // Enter / leave the Data-model destination — PURE NAVIGATION (AR-50 M5b). Entering
@@ -265,6 +274,7 @@ export function StudioShell() {
                 chrome={controller.canvasSite.chrome}
                 chromeConfig={controller.canvasSite.chromeConfig}
                 locale={locale}
+                themeVars={canvasThemeStyle}
               />
             </Suspense>
           )

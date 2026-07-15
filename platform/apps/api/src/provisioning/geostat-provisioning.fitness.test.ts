@@ -53,11 +53,25 @@ describe('committed geostat provisioning artifact (ADR-0026 Phase B)', () => {
     }
   })
 
-  it('carries the 7 site_config keys (decision 1 + the semantic-layer metrics + dimensions catalog)', () => {
+  it('carries the 8 site_config keys (decision 1 + semantic-layer metrics/dimensions + the portable brand)', () => {
     const keys = artifact.siteConfig.map((s) => s.key).sort()
     expect(keys).toEqual(
-      ['chrome', 'chrome_config', 'dimensions', 'i18n', 'index_page_id', 'metrics', 'nav'].sort(),
+      // `themeOverrides` = the portable BRAND (Law-5): the accent family the runner
+      // used to bake into `[data-tenant="geostat"]` CSS now travels as config data.
+      ['chrome', 'chrome_config', 'dimensions', 'i18n', 'index_page_id', 'metrics', 'nav', 'themeOverrides'].sort(),
     )
+  })
+
+  it('the themeOverrides brand carries the GeoStat accent as portable config (not baked app CSS)', () => {
+    const theme = artifact.siteConfig.find((s) => s.key === 'themeOverrides')?.value as
+      | Record<string, string>
+      | undefined
+    expect(theme).toBeDefined()
+    // The published GeoStat blue, as a TOKENS_CATALOG key → CSS value (Law 2 data).
+    expect(theme?.['color.accent']).toBe('#0080BE')
+    // Every value is a plain CSS string (Postel — the bootstrap projects only a
+    // string-valued record; a malformed entry degrades to no brand, never a broken rule).
+    for (const v of Object.values(theme ?? {})) expect(typeof v).toBe('string')
   })
 
   it('index_page_id points at a provisioned page id (the renderer index route resolves)', () => {

@@ -33,7 +33,7 @@
 //  Law 3: CanvasView lives in apps/panel — the engine stays app-agnostic. It
 //  consumes NodePageRenderer as-is; no fork.
 //
-import { useState }           from 'react'
+import { useState, type CSSProperties } from 'react'
 import {
   MemoryRouter,
   // The invariant-reset seam (v6-sanctioned): the app now mounts a real BrowserRouter
@@ -115,12 +115,22 @@ export interface CanvasViewProps {
   chromeConfig?: ChromeConfig
   /** Preview locale for chrome content (the top-bar ka|en switch); defaults to ka. */
   locale?:       string
+  /**
+   * The previewed SITE's own brand as applied CSS custom properties — the panel's
+   * `buildThemeVars(site.themeOverrides)`, the SAME map+transform the runner applies
+   * to `manifest.themeOverrides` (@statdash/styles.applyThemeOverrides). Set on the
+   * canvas ROOT so the previewed site's brand (accent family, header/sidebar/footer)
+   * paints TRUE — the site's theme, NOT the surrounding Studio tool's Strata skin
+   * ("the canvas never lies"). Absent ⇒ the canvas inherits the ambient theme
+   * (isolated mounts / a brand-less site), byte-identical to pre-seam.
+   */
+  themeVars?:    CSSProperties
 }
 
 export function CanvasView({
   page, selectedNodeId, selectedItemPath, dragging, previewPerspectiveId,
   onSelectNode, onSelectItem, onDropNode, onBindMetric,
-  nav = EMPTY_NAV, chrome = EMPTY_CHROME, chromeConfig, locale,
+  nav = EMPTY_NAV, chrome = EMPTY_CHROME, chromeConfig, locale, themeVars,
 }: CanvasViewProps) {
   // Preview mode is canvas view-state — transient and local to this component
   // (the same pattern as `dragging`; there is no persisted canvas-view-state slice
@@ -164,7 +174,7 @@ export function CanvasView({
     : '/'
 
   return (
-    <div className={rootClass} data-testid="canvas-root">
+    <div className={rootClass} data-testid="canvas-root" style={themeVars}>
       {/* Canvas chrome — preview-mode toggle + fail-soft badge. */}
       <CanvasToolbar
         mode={mode}

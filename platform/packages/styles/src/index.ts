@@ -89,6 +89,17 @@ export type { StyleIssue }       from './utils/validate'
 // ── CSS codegen (SSR · Constructor preview · debugging) ───────────────
 export { toCSSVars, toDataAttrs, toStyleString } from './utils/codegen'
 
+// ── Brand theme overrides — tokenKey→value map → applied custom properties ──
+//  The ONE mechanism the Constructor canvas AND the runner app share to apply a
+//  site's portable brand (SiteManifest.themeOverrides / SiteDef.themeOverrides).
+export {
+  cssVarName,
+  buildThemeVars,
+  themeOverridesCss,
+  applyThemeOverrides,
+  THEME_OVERRIDES_STYLE_ID,
+} from './utils/themeVars'
+
 // ── Design tokens (TS constants → CSS var() references) ──────────────
 export {
   SPACING,

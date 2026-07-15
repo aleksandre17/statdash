@@ -1,5 +1,6 @@
 import { useState, useEffect, lazy, Suspense } from 'react'
 import { AppErrorBoundary }         from '@statdash/react'
+import { applyThemeOverrides }      from '@statdash/styles'
 import { bootstrapSite }            from '@/data/site-manifest'
 import type { SiteBootstrap }       from '@/data/site-manifest'
 import { registerFormatters }       from '@/i18n/formatters'
@@ -76,6 +77,15 @@ export default function App() {
       // perspective-bar derives its options from each page's authored
       // `page.perspectives` axis (PerspectiveContext), not from a site registry.
       registerFormatters(boot.manifest.i18n.locales)
+      // Portable BRAND (Law-5, ADR-0026 §2 "runtime-injected"): apply the manifest's
+      // themeOverrides — a flat tokenKey→CSS-value map — as a `:root` custom-property
+      // rule BEFORE the first page renders, so the published brand flows from config
+      // rather than baked `[data-tenant]` CSS. Dark-SAFE: applyThemeOverrides emits a
+      // single-`:root` (specificity 0,1,0) rule that LOSES to `[data-theme="dark"]`
+      // (0,2,0), so a light-tuned brand never freezes the dark cascade. Absent/empty ⇒
+      // no rule (the brand-neutral platform default). STRANGLER: the baked tenant CSS
+      // still ships as the proven fallback; this is the forward path that retires it.
+      applyThemeOverrides(boot.manifest.themeOverrides)
       // Tenant UI-chrome translations (ADR-019): pour manifest.i18n.catalog into
       // i18next before the first render, so generic framework chrome (the
       // `feedback` namespace — EmptyState / ExportBar / permalink) resolves in the

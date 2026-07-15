@@ -112,6 +112,11 @@ const SITE_KEY = {
   // (registerManifestDimensions). Same delivery channel/pattern as 'metrics'; stored
   // verbatim as a site_config 'dimensions' key, read directly (array, like nav).
   dimensions:   'dimensions',
+  // Portable BRAND (Law-5 fix): a flat `tokenKey → CSS value` override map the
+  // Constructor authors (SiteDef.themeOverrides) and the runner applies at boot
+  // (applyThemeOverrides). The SAME key the panel reads/writes via config/site, so an
+  // author's rebrand reaches the published site without re-baking any app CSS.
+  themeOverrides: 'themeOverrides',
 } as const
 
 // ── Row shapes (server-internal; never leaked) ────────────────────────────────
@@ -352,6 +357,19 @@ export const bootstrapRoutes: FastifyPluginAsync = async (app) => {
     // shape (the engine's DimensionDef does). An absent key is the raw-cube-member
     // status quo (omit ⇒ runner registers nothing), NOT a Phase-B seeding gap, so it
     // is read directly (not via pick) and never reported in `missing`.
+    // themeOverrides: the portable BRAND blob (a flat tokenKey → CSS value map). Read
+    // directly (not via pick) — an absent key is the brand-neutral platform default,
+    // NOT a Phase-B seeding gap, so it must not be reported in `missing`. A
+    // string-valued record only (Postel — a malformed value degrades to no brand,
+    // never a broken :root rule). Omitted from the manifest when absent/empty so a
+    // brand-less site is byte-identical to the pre-brand-channel manifest.
+    const themeOverridesRaw = site[SITE_KEY.themeOverrides]
+    const themeOverrides =
+      isObject(themeOverridesRaw) &&
+      Object.values(themeOverridesRaw).every((v) => typeof v === 'string')
+        ? (themeOverridesRaw as Record<string, string>)
+        : undefined
+
     const dimensionsBlobRaw = site[SITE_KEY.dimensions]
     const dimensions = Array.isArray(dimensionsBlobRaw)
       // ADR-034 S4 — REIFY each governed dimension's drill path from the codelist
@@ -400,6 +418,10 @@ export const bootstrapRoutes: FastifyPluginAsync = async (app) => {
       // 'dimensions' key is present (else omitted; a runner that registers no
       // governed dimensions is byte-identical to the raw-cube-member status quo).
       ...(dimensions !== undefined ? { dimensions } : {}),
+      // Portable brand (Law-5) — included only when the 'themeOverrides' key is
+      // present (else omitted; a runner that applies no overrides renders the
+      // brand-neutral platform default — byte-identical to the pre-brand-channel site).
+      ...(themeOverrides !== undefined ? { themeOverrides } : {}),
       // ADR SDMX-P1-C — included only when V29 yielded a tree (else the key is
       // absent and a consumer that does not know it is unaffected — Postel).
       ...(categories !== undefined ? { categories } : {}),
