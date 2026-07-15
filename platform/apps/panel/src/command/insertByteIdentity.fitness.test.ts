@@ -54,18 +54,21 @@ describe('byte-identical insert (V6 invariant)', () => {
     }
   })
 
-  it('FF-INSERT-NEVER-CLIFF — a page-unacceptable type auto-wraps into a valid tree', () => {
-    // chart is not directly page-acceptable, but section accepts it → page → section → chart.
+  it('FF-INSERT-NEVER-CLIFF — every type finds a valid home; a flow block lands directly (ADR-042 D3)', () => {
+    // ADR-042 D3 (commit 0ffbb81) de-privileged `section`: the page admits any `flow`
+    // block DIRECTLY. So a chart — historically auto-wrapped page → section → chart —
+    // now lands FLAT on the page (no needless wrapper). The invariant this guards is
+    // unchanged: an insert NEVER cliffs; it always resolves to a valid, registry-legal
+    // placement. What changed is the MECHANISM — direct acceptance replaces the wrap.
     const cfg = insertVia('chart') as unknown as {
-      type: string; children?: Array<{ type: string; children?: Array<{ type: string }> }>
+      type: string; children?: Array<{ type: string }>
     }
     // The serialized root carries the page's OWN kind (not a privileged literal).
     expect(cfg.type).toBe(emptyPage().type)
-    expect(cfg.children?.[0]?.type).toBe('section')
-    expect(cfg.children?.[0]?.children?.[0]?.type).toBe('chart')
-    // The wrap is registry-legal at every level (no invented/invalid nest).
-    expect(nestAccepts(emptyPage().type, 'section')).toBe(true)
-    expect(nestAccepts('section', 'chart')).toBe(true)
+    // Direct placement — page → chart, no section wrap (D3).
+    expect(cfg.children?.[0]?.type).toBe('chart')
+    // The placement is registry-legal — the page genuinely accepts the flow block.
+    expect(nestAccepts(emptyPage().type, 'chart')).toBe(true)
   })
 
   it('a directly page-acceptable type inserts flat at top level (no needless wrap)', () => {
