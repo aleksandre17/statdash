@@ -31,8 +31,10 @@ import { bootstrapCatalog } from './store/bootstrapCatalog'
 import { MOCK_SOURCES, MOCK_SPECS, MOCK_SITE, MOCK_PAGE } from './store/mock-data'
 import { isAuthenticated, AuthError } from './lib/auth'
 // Boot-time control registration: surface rich FieldControls the registry can't
-// own without a cycle (value-mapping rule-list editor). Side-effect import.
+// own without a cycle (value-mapping rule-list editor · thresholds step-list editor).
+// Side-effect import.
 import './inspector/controls/value-mapping/register'
+import './inspector/controls/thresholds/register'
 
 // ── App state machine ─────────────────────────────────────────────────────────
 //  idle       — initial; checking auth
