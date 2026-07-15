@@ -21,9 +21,9 @@ test('the data pipeline is VISIBLE as a flow map — read-only for the author, i
   await page.goto('/')
   await expect(page.getByRole('banner')).toBeVisible({ timeout: 60_000 })
 
-  // ── REACH — one click to the always-visible Data-model workspace (top bar, S5) ─
-  await page.getByRole('banner')
-    .getByRole('button', { name: 'Data model' }).click()
+  // ── REACH — one click to the always-visible Data mode (rail-mode #1, relay Step 1) ─
+  await page.getByRole('navigation', { name: 'Studio surfaces' })
+    .getByRole('button', { name: 'Data', exact: true }).click()
   await expect(page.getByTestId('data-dictionary')).toBeVisible()
 
   // ── AUTHOR SEES THE FLOW — the read-only flow map is present + legible ────────

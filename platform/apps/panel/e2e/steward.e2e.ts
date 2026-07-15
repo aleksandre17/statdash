@@ -11,9 +11,9 @@
 //
 //  The loop, end to end (AR-50 M5b: navigation decoupled from identity):
 //    1. BOOT      — author lens, the Studio mounts (no white-screen / boot-order crash).
-//    2. OPEN      — ONE click on the top-bar "Data model" destination switch → NAVIGATES
-//                   to the always-reachable data-model screen WITHOUT escalating the
-//                   lens: the author lands on the READ-ONLY Data Dictionary.
+//    2. OPEN      — ONE click on the rail's "Data" mode (relay Step 1 front door) →
+//                   NAVIGATES to the always-reachable data-model screen WITHOUT
+//                   escalating the lens: the author lands on the READ-ONLY Data Dictionary.
 //    3. EDIT      — flip the in-place lens toggle to "Edit (Steward)" → the modeler's
 //                   MetricCatalogManager (headline region) renders.
 //    4. AUTHOR    — New metric → PICK dataset + measure (assert the unit PRE-FILLS from
@@ -45,18 +45,12 @@ test('steward authors a governed metric in-tool → the author sees it in the pa
   await expect(page.getByRole('banner')).toBeVisible({ timeout: 60_000 })
   await expect(page.locator('.studio-shell')).toBeVisible()
 
-  // ── 2. OPEN — ONE click on the "Data model" destination switch ───────────────
-  //  The segmented switch NAMES the destination and reflects which SCREEN is active.
-  //  Before the jump Compose is the active screen. A single click on "Data model"
-  //  NAVIGATES to the always-reachable data-model destination WITHOUT escalating the
-  //  lens — the author lands on the READ-ONLY Data Dictionary (the built ≠ buried fix;
-  //  the raw query cliff stays off the author path).
-  const banner    = page.getByRole('banner')
-  const composeSeg = banner.getByRole('button', { name: 'Compose' })
-  const modelSeg   = banner.getByRole('button', { name: 'Data model' })
-  await expect(composeSeg).toHaveAttribute('aria-pressed', 'true')
-  await expect(modelSeg).toHaveAttribute('aria-pressed', 'false')
-  await modelSeg.click()
+  // ── 2. OPEN — ONE click on the rail's "Data" mode (the front door) ───────────
+  //  Data is rail-mode #1. A single click NAVIGATES to the always-reachable data-model
+  //  destination WITHOUT escalating the lens — the author lands on the READ-ONLY Data
+  //  Dictionary (the built ≠ buried fix; the raw query cliff stays off the author path).
+  const rail     = page.getByRole('navigation', { name: 'Studio surfaces' })
+  await rail.getByRole('button', { name: 'Data', exact: true }).click()
   // The destination opened as the READ-ONLY Dictionary (author lens, not the modeler).
   await expect(page.getByTestId('data-dictionary')).toBeVisible()
   await expect(page.getByTestId('dict-metric-gdp.current')).toBeVisible()

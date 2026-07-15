@@ -7,7 +7,7 @@
 //    • browser Back/Forward move between panes (real history entries);
 //    • a pasted deep-link URL opens that surface — and `?page=<id>` opens that page;
 //    • the `model` destination is a real route (`/studio/model`) — the focus-view is
-//      deep-linkable (summoned from the top bar, SPEC S5), and Back leaves it.
+//      deep-linkable (summoned from the rail's Data mode, relay Step 1), and Back leaves it.
 //  It drives the same governed API stub (e2e/support/mockApi.ts) the boot/steward
 //  proofs use, so all the panel e2e legs assert one truth.
 //
@@ -47,13 +47,13 @@ test('the Navigator pane is real URL state — click, deep-link, and Back/Forwar
   await expect(page.getByRole('heading', { name: 'Layers', exact: true })).toBeVisible()
 })
 
-test('the Data-model focus-view is a real, deep-linkable route (/studio/model) summoned from the top bar, and Back leaves it', async ({ page }) => {
+test('the Data-model focus-view is a real, deep-linkable route (/studio/model) summoned from the rail, and Back leaves it', async ({ page }) => {
   await page.goto('/')
   await expect(page.getByRole('banner')).toBeVisible({ timeout: 60_000 })
   const rail = page.getByRole('navigation', { name: 'Studio surfaces' })
 
-  // Enter the Data-model destination from the TOP BAR (SPEC S5 — demoted off the rail).
-  await page.getByRole('banner').getByRole('button', { name: 'Data model' }).click()
+  // Enter the Data-model destination from the RAIL's Data mode (relay Step 1 — the front door).
+  await rail.getByRole('button', { name: 'Data', exact: true }).click()
   await expect(page).toHaveURL(/\/studio\/model/)
   await expect(page.getByRole('region', { name: 'Data model' })).toBeVisible()
   await expect(rail).toBeHidden() // the focus-view is a separate screen (rail not primary)
@@ -75,25 +75,26 @@ test('a pasted deep-link opens the surface directly; ?page= opens that page', as
   await expect(page.getByRole('tab', { name: 'GDP', selected: true })).toBeVisible()
 })
 
-test('Theme + Site are top-bar-summoned surfaces OFF the rail (SPEC S5), deep-linkable and reversible', async ({ page }) => {
+test('Site + Style are rail modes (relay Step 1) rendering in the left dock, deep-linkable and reversible', async ({ page }) => {
   await page.goto('/')
   await expect(page.getByRole('banner')).toBeVisible({ timeout: 60_000 })
 
   const rail = page.getByRole('navigation', { name: 'Studio surfaces' })
-  // The rail carries ONLY the two Navigator panes — Theme/Site are not on it.
-  await expect(rail.getByRole('button', { name: 'Add', exact: true })).toBeVisible()
-  await expect(rail.getByRole('button', { name: 'Layers', exact: true })).toBeVisible()
+  // The rail is ONE ordered mode list — Data · Add · Layers · Site · Style.
+  for (const name of ['Data', 'Add', 'Layers', 'Site', 'Style']) {
+    await expect(rail.getByRole('button', { name, exact: true })).toBeVisible()
+  }
 
-  // Theme — summoned from the top bar into the dock; the editing shell (rail + canvas)
-  // stays visible (live-repaint payoff), and Back returns to the prior surface.
-  await page.getByRole('banner').getByRole('button', { name: 'Brand & theme' }).click()
+  // Style — a rail mode rendering in the dock; the editing shell (rail + canvas) stays
+  // visible (live-repaint payoff), and Back returns to the prior surface.
+  await rail.getByRole('button', { name: 'Style', exact: true }).click()
   await expect(page).toHaveURL(/\/studio\/style/)
-  await expect(page.getByRole('heading', { name: 'Brand & theme', exact: true })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Style', exact: true })).toBeVisible()
   await expect(rail).toBeVisible()
   await page.goBack()
   await expect(page).toHaveURL(/\/studio\/insert/)
 
-  // Site — the second project surface, likewise deep-linkable.
+  // Site — the second project mode, likewise deep-linkable.
   await page.goto('/studio/pages-site')
-  await expect(page.getByRole('heading', { name: 'Pages & Site', exact: true })).toBeVisible({ timeout: 60_000 })
+  await expect(page.getByRole('heading', { name: 'Site', exact: true })).toBeVisible({ timeout: 60_000 })
 })

@@ -72,10 +72,10 @@ describe('FF-ROLE-IS-LENS — role read only through the useRole() seam', () => 
     for (const entry of RAIL_ENTRIES) {
       expect(entry).not.toHaveProperty('stewardOnly')
     }
-    // SPEC S5: the Data-model destination was DEMOTED off the rail to a top-bar-summoned
-    // project workspace — a registered focus-view target, reachable in ANY lens (the top
-    // bar summons it unconditionally; the lens only splits its BODY, asserted below).
-    // "Built ≠ buried" now holds via the workspace, not a rail entry.
+    // Relay Step 1: the Data-model destination is rail-mode #1 (Data) AND a registered
+    // focus-view target — reachable in ANY lens (the rail lists it unconditionally; the
+    // lens only splits its BODY, asserted below). "Built ≠ buried" holds via the rail
+    // front door routing to the settled full-screen destination.
     expect(Object.keys(FOCUS_VIEW_TARGETS)).toContain('data-model')
   })
 

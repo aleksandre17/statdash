@@ -1,78 +1,57 @@
-import { Box, Typography, Button, MenuItem, Select, IconButton, Tooltip, ToggleButton, ToggleButtonGroup } from '@mui/material'
+import { Box, Typography, Button, IconButton, Tooltip, ToggleButton, ToggleButtonGroup } from '@mui/material'
 import SearchIcon from '@mui/icons-material/Search'
 import LogoutIcon from '@mui/icons-material/Logout'
-import PaletteOutlinedIcon from '@mui/icons-material/PaletteOutlined'
-import WebOutlinedIcon from '@mui/icons-material/WebOutlined'
-import SchemaOutlinedIcon from '@mui/icons-material/SchemaOutlined'
-import DashboardCustomizeOutlinedIcon from '@mui/icons-material/DashboardCustomizeOutlined'
 import { PageWorkflowBar } from '../features/page-workflow'
-import { useConstructorStore, usePages, useActivePageId } from '../store/constructor.store'
+import { usePages, useActivePageId } from '../store/constructor.store'
 import { logout } from '../lib/auth'
 import type { Locale } from '../types/constructor'
 
-// ── StudioTopBar — persistent global-context bar (Framer IA) ──────────────────
+// ── StudioTopBar — global context + the PUBLISH terminal (relay Step 1) ─────────
 //
-//  Owns the shell's global context: product wordmark (the Strata seam), the page
-//  switcher, the ⌘K omnibar entry, the draft→publish workflow (relocated from
-//  PageStep), and logout. A <header role="banner"> landmark (WCAG 2.1 AA).
+//  Stripped to GLOBAL context only (BLUEPRINT-panel-canonical-relay §1): the wordmark,
+//  a read-only `project ▸ page` breadcrumb, the locale preview, ⌘K, and — top-right —
+//  the lifecycle terminal (`PageWorkflowBar`: Save · Publish · History), the reference-
+//  class "ship it" corner (MOMENT 4). The scattered doors that used to crowd this bar
+//  are RETIRED to their ONE home (LAW C / FF-ONE-HOME-PER-CAPABILITY): the Compose⇄Data
+//  switch, the "Site & chrome" button and the "Brand & theme" icon are now rail modes;
+//  the page `Select` is gone (page-nav lives in the bottom tabs — ONE home). The
+//  breadcrumb is NON-interactive context, not a second page-nav door.
 //
-//  M1.4 fills the reserved locale/theme regions (spec §2.1): a locale PREVIEW
-//  switcher (drives the whole shell's language live via the caller's ephemeral
-//  override) and a brand/theme access button that summons the Style surface (the
-//  writable brand-token editor). Colours come from the token layer (studio.css) —
-//  no brand literal here (FF-CHROME-TOKEN-DRIVEN).
+//  A <header role="banner"> landmark (WCAG 2.1 AA). Colours come from the token layer
+//  (studio.css) — no brand literal here (FF-CHROME-TOKEN-DRIVEN).
 export interface StudioTopBarProps {
   locale:         Locale
   /** Selectable locales for the preview switcher. */
   locales:        readonly Locale[]
-  /** Whether the Data-model destination is the active screen (NAVIGATION, not role). */
-  dataModelActive: boolean
-  /**
-   * Enter the Data-model destination — PURE NAVIGATION (AR-50 M5b): opens the
-   * Data-model screen WITHOUT touching the role lens, so the user lands on the
-   * role-appropriate content (author → read-only Data Dictionary). Composed by
-   * StudioShell; the top bar never touches the role source (FF-ROLE-IS-LENS).
-   */
-  onOpenDataModel: () => void
-  /** Leave the Data-model destination — return to the Compose surface (lens untouched). */
-  onExitDataModel: () => void
   onLocaleChange: (locale: Locale) => void
   onOpenCommand:  () => void
-  /** Summon the Theme workspace (brand-token editor) — a project-scope destination. */
-  onOpenStyle:    () => void
-  /** Summon the Site workspace (identity · navigation · pages) — a project-scope destination. */
-  onOpenSite:     () => void
 }
 
-export function StudioTopBar({ locale, locales, dataModelActive, onOpenDataModel, onExitDataModel, onLocaleChange, onOpenCommand, onOpenStyle, onOpenSite }: StudioTopBarProps) {
+export function StudioTopBar({ locale, locales, onLocaleChange, onOpenCommand }: StudioTopBarProps) {
   const pages        = usePages()
   const activePageId = useActivePageId()
-  const setActivePage = useConstructorStore((s) => s.setActivePage)
-  const en = locale === 'en'
+  const activePage   = pages.find((p) => p.id === activePageId)
+  const pageTitle    = activePage ? (activePage.title[locale] || activePage.title.ka || activePage.id) : null
 
   const handleLogout = () => { logout(); window.location.reload() }
 
   return (
     <Box component="header" role="banner" className="studio-topbar">
-      <Typography className="studio-wordmark" component="span">Strata</Typography>
+      {/* ── Global context — wordmark + read-only project ▸ page breadcrumb ──── */}
+      <Box className="studio-topbar__brand" sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 0 }}>
+        <Typography className="studio-wordmark" component="span">Strata</Typography>
+        {pageTitle && (
+          <>
+            <Typography component="span" aria-hidden="true" className="studio-topbar__crumb-sep" sx={{ opacity: 0.5 }}>›</Typography>
+            <Typography component="span" className="studio-topbar__crumb" noWrap sx={{ minWidth: 0 }}>{pageTitle}</Typography>
+          </>
+        )}
+      </Box>
 
-      <Select
-        size="small"
-        value={activePageId ?? ''}
-        onChange={(e) => setActivePage(e.target.value || null)}
-        displayEmpty
-        aria-label={locale === 'en' ? 'Active page' : 'აქტიური გვერდი'}
-        sx={{ minWidth: 180 }}
-      >
-        {pages.length === 0 && <MenuItem value="" disabled>{locale === 'en' ? 'No pages' : 'გვერდები არ არის'}</MenuItem>}
-        {pages.map((p) => (
-          <MenuItem key={p.id} value={p.id}>{p.title[locale] || p.title.ka || p.id}</MenuItem>
-        ))}
-      </Select>
+      {/* Spacer — pushes the ship-it cluster to the terminal top-right. */}
+      <Box sx={{ flex: 1, minWidth: 16 }} />
 
-      <Box sx={{ flex: 1, minWidth: 16 }}><PageWorkflowBar /></Box>
-
-      {/* ── Locale preview switcher (reserved region, spec §2.1) ──────────── */}
+      {/* ── Locale preview switcher (global view context) ─────────────────────── */}
       <ToggleButtonGroup
         exclusive
         size="small"
@@ -85,78 +64,12 @@ export function StudioTopBar({ locale, locales, dataModelActive, onOpenDataModel
         ))}
       </ToggleButtonGroup>
 
-      {/* ── Workspace switch — Compose ⇄ Data model (Framer/Webflow IA) ─────────
-          A segmented NAVIGATION switch (the Framer/Webflow "design ⇄ build" pattern):
-          the active screen is the selected segment, and picking the other is a SINGLE
-          intentful action. Choosing "Data model" navigates to the always-reachable
-          Data-model destination (AR-50 M5b) — WITHOUT touching the role lens, so the
-          user lands on the role-appropriate content (author → read-only Dictionary,
-          steward → modeler); "Compose" returns to the editing surface. It NAMES the
-          destination and reflects NAVIGATION, never the internal "role lens". This is
-          one of several always-visible entries to the destination (the rail entry is
-          the first-class one). MUI ToggleButtons are native <button aria-pressed> →
-          keyboard-reachable, bilingual accessible names (WCAG 2.1 AA · 4.1.2). NOT a
-          security control — it only re-projects screens over the SAME document. */}
-      <ToggleButtonGroup
-        exclusive
-        size="small"
-        value={dataModelActive ? 'model' : 'compose'}
-        onChange={(_, v: 'compose' | 'model' | null) => {
-          if (v === 'model') onOpenDataModel()
-          else if (v === 'compose') onExitDataModel()
-        }}
-        aria-label={en ? 'Workspace' : 'სამუშაო სივრცე'}
-        className="studio-mode-switch"
-      >
-        <Tooltip title={en ? 'Compose pages with governed metrics' : 'გვერდების აწყობა მართული მეტრიკებით'}>
-          <ToggleButton value="compose" aria-label={en ? 'Compose' : 'კომპოზიცია'}>
-            <DashboardCustomizeOutlinedIcon fontSize="small" sx={{ mr: 0.5 }} />
-            {en ? 'Compose' : 'კომპოზიცია'}
-          </ToggleButton>
-        </Tooltip>
-        <Tooltip title={en ? 'Browse & define metrics and the data model' : 'მეტრიკებისა და მონაცემთა მოდელის დათვალიერება/განსაზღვრა'}>
-          <ToggleButton value="model" aria-label={en ? 'Data model' : 'მონაცემთა მოდელი'}>
-            <SchemaOutlinedIcon fontSize="small" sx={{ mr: 0.5 }} />
-            {en ? 'Data model' : 'მონაცემთა მოდელი'}
-          </ToggleButton>
-        </Tooltip>
-      </ToggleButtonGroup>
-
-      {/* ── Project workspaces (SPEC S5) — summoned from the top bar, not the rail ──
-          Theme (brand tokens) + Site (identity · nav · pages · chrome) are project-scope,
-          so they open as workspaces from here rather than sitting as peers of per-element
-          navigation. Data model is the segmented switch above (the primary "build"
-          destination); these are affordances alongside it.
-
-          The Site entry carries a VISIBLE text label naming CHROME — the discoverability
-          fix: an icon-only "Site" is un-findable (a UI probe found no site/chrome/header
-          label). This is the CANONICAL, always-visible way into the whole-site furniture
-          (identity · navigation · the chrome composition: header/footer/sidebar
-          enable/swap), the twin of clicking a chrome region on the canvas. */}
-      <Tooltip title={locale === 'en'
-        ? 'Site & chrome — identity, navigation, header / footer / sidebar'
-        : 'საიტი და ჩარჩო — იდენტობა, ნავიგაცია, ჰედერი / ფუტერი / გვერდითი პანელი'}>
-        <Button
-          onClick={onOpenSite}
-          size="small"
-          variant="text"
-          color="inherit"
-          startIcon={<WebOutlinedIcon fontSize="small" />}
-          aria-label={locale === 'en' ? 'Site & chrome' : 'საიტი და ჩარჩო'}
-          sx={{ textTransform: 'none' }}
-        >
-          {locale === 'en' ? 'Site & chrome' : 'საიტი და ჩარჩო'}
-        </Button>
-      </Tooltip>
-      <Tooltip title={locale === 'en' ? 'Brand & theme' : 'ბრენდი და თემა'}>
-        <IconButton onClick={onOpenStyle} size="small" aria-label={locale === 'en' ? 'Brand & theme' : 'ბრენდი და თემა'}>
-          <PaletteOutlinedIcon fontSize="small" />
-        </IconButton>
-      </Tooltip>
-
       <Button size="small" variant="outlined" startIcon={<SearchIcon />} onClick={onOpenCommand}>
         ⌘K
       </Button>
+
+      {/* ── PUBLISH terminal (MOMENT 4) — the lifecycle "ship it" corner ──────── */}
+      <PageWorkflowBar />
 
       <Tooltip title={locale === 'en' ? 'Logout' : 'გასვლა'}>
         <IconButton onClick={handleLogout} size="small" aria-label={locale === 'en' ? 'Logout' : 'გასვლა'}>

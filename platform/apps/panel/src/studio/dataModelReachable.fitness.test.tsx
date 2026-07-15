@@ -31,23 +31,26 @@ beforeEach(() => {
   useRoleStore.setState({ role: 'author' })
 })
 
+// Relay Step 1: the destination re-homed to the rail as mode #1 (Data). It stays a
+// registered focus-view target (the settled full-screen destination); only the ENTRY
+// moved from the top bar to the rail. Reach it from the rail's Data button.
+const railData = () =>
+  within(screen.getByRole('navigation', { name: 'Studio surfaces' })).getByRole('button', { name: 'Data' })
+
 describe('FF-DATA-REACHABLE — the data model is reachable from a default (author) session', () => {
-  it('the Data-model destination is an always-visible, non-role-gated top-bar workspace', () => {
-    // SPEC S5: the destination was DEMOTED off the rail to a top-bar-summoned project
-    // workspace. Encoded structurally: it is a registered focus-view target (a reachable
+  it('the Data-model destination is an always-visible, non-role-gated rail mode (the front door)', () => {
+    // Encoded structurally: it is a registered focus-view target (a reachable
     // destination), so no future role/visibility gate can bury it without tripping this…
     expect(Object.keys(FOCUS_VIEW_TARGETS)).toContain('data-model')
 
-    // …and from the DEFAULT session the top-bar switch to it is present + enabled.
+    // …and from the DEFAULT session the rail Data mode is present + enabled.
     renderStudio()
-    const banner = screen.getByRole('banner')
-    expect(within(banner).getByRole('button', { name: 'Data model' })).toBeEnabled()
+    expect(railData()).toBeEnabled()
   })
 
   it('ONE click from the default session lands the user IN the data-model destination', () => {
     renderStudio()
-    const banner = screen.getByRole('banner')
-    fireEvent.click(within(banner).getByRole('button', { name: 'Data model' }))
+    fireEvent.click(railData())
 
     // The destination opened (the focus-view screen with its breadcrumb-back)…
     expect(screen.getByRole('region', { name: 'Data model' })).toBeInTheDocument()
@@ -56,7 +59,7 @@ describe('FF-DATA-REACHABLE — the data model is reachable from a default (auth
 
   it('the default (author) reach is the READ-ONLY Dictionary — never the raw query modeler', () => {
     renderStudio()
-    fireEvent.click(within(screen.getByRole('banner')).getByRole('button', { name: 'Data model' }))
+    fireEvent.click(railData())
 
     // The lens was NOT escalated by navigating (built ≠ buried does not mean
     // "expose the query cliff") — the author sees the governed Data Dictionary…

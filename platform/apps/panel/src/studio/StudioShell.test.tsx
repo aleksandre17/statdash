@@ -37,18 +37,17 @@ describe('StudioShell — IA + landmarks (WCAG 2.1 AA)', () => {
   })
 })
 
-describe('StudioShell — the Left Navigator (canonical two panes, SPEC S5)', () => {
-  it('offers exactly the two Navigator panes (Add | Layers) — the demoted surfaces are OFF the rail', () => {
+describe('StudioShell — the four-moment mode rail (relay Step 1)', () => {
+  it('offers ONE ordered mode list — Data · Add · Layers · Site · Style, Data first (the front door)', () => {
     renderStudio()
     const rail = screen.getByRole('navigation', { name: 'Studio surfaces' })
-    for (const name of ['Add', 'Layers']) {
+    // Every moment is now ONE rail mode (LAW C) — no scattered top-bar doors.
+    for (const name of ['Data', 'Add', 'Layers', 'Site', 'Style']) {
       expect(within(rail).getByRole('button', { name })).toBeEnabled()
     }
-    // The former peer surfaces are DEMOTED — Data (→ inspector), Style/Pages&Site/Data
-    // model (→ top-bar workspaces) are no longer rail destinations.
-    for (const name of ['Data', 'Style', 'Pages & Site', 'Data model']) {
-      expect(within(rail).queryByRole('button', { name })).toBeNull()
-    }
+    // Data is the FIRST entry — the reference-class "data source first" front door.
+    const buttons = within(rail).getAllByRole('button')
+    expect(buttons[0]).toHaveAccessibleName('Data')
   })
 
   it('opens on Add with aria-current, and swapping to Layers is order-free (no gating)', () => {
@@ -67,24 +66,25 @@ describe('StudioShell — the Left Navigator (canonical two panes, SPEC S5)', ()
   })
 })
 
-// ── Data model — a first-class, always-reachable destination (AR-50 M5b) ──────
+// ── Data — the rail front-door destination (relay Step 1 · AR-50 M5b) ─────────
 //
-//  The G6 "built ≠ buried" fix: the Data-model destination is ALWAYS in the rail (no
-//  role gate), and the role lens splits only its CONTENT (author→read-only Dictionary,
-//  steward→modeler). Navigation is decoupled from identity — opening the destination
-//  NEVER escalates the lens. These tests arrange the lens via the preference store.
-describe('StudioShell — the Data-model workspace is reachable in every lens (AR-50 M5b · SPEC S5)', () => {
-  it('the DEFAULT (author) session offers the Data-model destination on the TOP BAR (demoted off the rail)', () => {
+//  The G6 "built ≠ buried" fix, re-homed to the rail: Data is rail-mode #1 (no role
+//  gate), and clicking it routes to the settled full-screen Focus-View (owner §3.4 /
+//  FF-MODEL-IS-FOCUSVIEW). The role lens splits only its CONTENT (author→read-only
+//  Dictionary, steward→modeler); navigation is decoupled from identity — opening the
+//  destination NEVER escalates the lens. These tests arrange the lens via the store.
+const railData = () =>
+  within(screen.getByRole('navigation', { name: 'Studio surfaces' })).getByRole('button', { name: 'Data' })
+
+describe('StudioShell — Data is the rail front door, reachable in every lens (relay Step 1)', () => {
+  it('the DEFAULT (author) session offers Data as rail-mode #1', () => {
     renderStudio()
-    // SPEC S5: Data model is a top-bar-summoned workspace now, not a rail entry.
-    const banner = screen.getByRole('banner')
-    expect(within(banner).getByRole('button', { name: 'Data model' })).toBeEnabled()
+    expect(railData()).toBeEnabled()
   })
 
-  it('from a DEFAULT author session, opening Data model shows the READ-ONLY Dictionary (no query cliff)', () => {
+  it('from a DEFAULT author session, opening Data shows the READ-ONLY Dictionary (no query cliff)', () => {
     renderStudio()
-    const banner = screen.getByRole('banner')
-    fireEvent.click(within(banner).getByRole('button', { name: 'Data model' }))
+    fireEvent.click(railData())
 
     // The Data-model FOCUS-VIEW screen opens (rail gone, breadcrumb-back present)…
     expect(screen.getByRole('region', { name: 'Data model' })).toBeInTheDocument()
@@ -99,17 +99,15 @@ describe('StudioShell — the Data-model workspace is reachable in every lens (A
   it('the Steward lens opens the SAME destination as the full modeler', () => {
     useRoleStore.setState({ role: 'steward' })
     renderStudio()
-    const banner = screen.getByRole('banner')
-    fireEvent.click(within(banner).getByRole('button', { name: 'Data model' }))
+    fireEvent.click(railData())
     expect(screen.getByRole('region', { name: 'Data model' })).toBeInTheDocument()
     expect(screen.getByText(/Define the governed data model/)).toBeInTheDocument()
     expect(screen.queryByTestId('data-dictionary')).toBeNull()
   })
 
-  it('the top-bar "Data model" switch is PURE NAVIGATION — it opens the destination without escalating the lens', () => {
+  it('the rail Data mode is PURE NAVIGATION — it opens the destination without escalating the lens', () => {
     renderStudio()
-    const banner = screen.getByRole('banner')
-    fireEvent.click(within(banner).getByRole('button', { name: 'Data model' }))
+    fireEvent.click(railData())
 
     // Navigated to the destination, but the lens stayed author → the read-only Dictionary.
     expect(useRoleStore.getState().role).toBe('author')
@@ -118,7 +116,7 @@ describe('StudioShell — the Data-model workspace is reachable in every lens (A
 
   it('the in-place lens toggle opts INTO editing (author→steward) without leaving the destination', () => {
     renderStudio()
-    fireEvent.click(within(screen.getByRole('banner')).getByRole('button', { name: 'Data model' }))
+    fireEvent.click(railData())
     // Author landed on the Dictionary; flip the lens toggle to Edit → the modeler.
     expect(screen.getByTestId('data-dictionary')).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: /Edit \(Steward\)/ }))
@@ -143,25 +141,23 @@ describe('StudioShell — the Data-model workspace is reachable in every lens (A
   })
 })
 
-describe('StudioShell — Theme + Site are top-bar-summoned surfaces, OFF the rail (SPEC S5)', () => {
-  it('the top bar summons the Theme (brand) surface into the left dock — canvas stays visible', () => {
+describe('StudioShell — Site + Style are rail modes rendering in the left dock (relay Step 1)', () => {
+  it('the rail Style mode opens the brand surface in the left dock — canvas stays visible', () => {
     renderStudio()
-    // Neither is a rail entry…
     const rail = screen.getByRole('navigation', { name: 'Studio surfaces' })
-    expect(within(rail).queryByRole('button', { name: 'Brand & theme' })).toBeNull()
-    // …but the top-bar button summons it: the dock heading reads Brand & theme, and the
-    // editing shell (rail + canvas) REMAINS (deliberately NOT full-screen — the live
-    // canvas repaints as tokens change).
-    fireEvent.click(within(screen.getByRole('banner')).getByRole('button', { name: 'Brand & theme' }))
-    expect(screen.getByRole('heading', { name: 'Brand & theme' })).toBeInTheDocument()
+    fireEvent.click(within(rail).getByRole('button', { name: 'Style' }))
+    // The dock heading reads Style, and the editing shell (rail + live canvas) REMAINS
+    // (deliberately NOT full-screen — the live canvas repaints as tokens change).
+    expect(screen.getByRole('heading', { name: 'Style' })).toBeInTheDocument()
     expect(screen.getByRole('navigation', { name: 'Studio surfaces' })).toBeInTheDocument()
     expect(screen.getByRole('main', { name: 'Canvas' })).toBeInTheDocument()
   })
 
-  it('the top bar summons the Site (pages & site) surface into the left dock', () => {
+  it('the rail Site mode opens the pages & site surface in the left dock', () => {
     renderStudio()
-    fireEvent.click(within(screen.getByRole('banner')).getByRole('button', { name: 'Site & chrome' }))
-    expect(screen.getByRole('heading', { name: 'Pages & Site' })).toBeInTheDocument()
+    const rail = screen.getByRole('navigation', { name: 'Studio surfaces' })
+    fireEvent.click(within(rail).getByRole('button', { name: 'Site' }))
+    expect(screen.getByRole('heading', { name: 'Site' })).toBeInTheDocument()
     expect(screen.getByRole('navigation', { name: 'Studio surfaces' })).toBeInTheDocument()
   })
 })

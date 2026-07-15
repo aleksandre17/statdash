@@ -63,8 +63,8 @@ surface the boot path touches, via Playwright route interception
   `data.query.measure` config write (Inspector + live-region proofs); plus the direct
   live-canvas render proof.
 - **`steward.e2e.ts`** — the **M2.2 headline** (in-tool metric authoring), end to end:
-  boot in the **author** lens → flip the top-bar **Model mode** toggle to the
-  **steward** lens (the Model rail slot unlocks) → open **Model** → **New metric** →
+  boot in the **author** lens → open the rail's **Data** mode → flip the in-place
+  **Edit (Steward)** lens toggle → **New metric** →
   PICK dataset + measure (assert the **unit pre-fills** from the cube's resolved
   unit) → set a slug-legal id + a bilingual **governed** label + a display format →
   **Create** → assert save success → flip back to the **author** lens → open **Data**

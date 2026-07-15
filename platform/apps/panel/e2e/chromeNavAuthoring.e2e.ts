@@ -8,8 +8,8 @@
 //       the page-embedded InnerSidebar rail. Clicking any rendered region on the live home
 //       canvas selects the ONE PartAddress, and its schema-driven editor opens in the
 //       RightDock (the SAME generic Inspector nodes use — no palette, no forked chrome
-//       panel). PLUS the labeled "Site & chrome" top-bar entry opens the whole-set
-//       composition (enable/disable/swap each region) — the second, discoverable way in.
+//       panel). PLUS the rail's "Site" mode opens the whole-set composition
+//       (enable/disable/swap each region) — the second, discoverable way in.
 //    2. The LEFT-BAR NAV is deep-editable: a nav entry's label is editable inline
 //       (updateNavItem), and the edit REFLECTS live — the entry row AND the canvas's
 //       InnerSidebar rail repaint the new label (WYSIWYG, projectCanvasSiteChrome).
@@ -58,11 +58,11 @@ test('chrome + left-bar nav are authorable from the Studio (deep-authorability)'
   await sidebarFrame.click()
   await expect(page.getByTestId('inspector').first()).toBeVisible()
 
-  // ── REACH — open the site authoring home from the LABELED top-bar entry (the second,
-  //  discoverable way in). SPEC S5: Site is a top-bar-summoned surface; the entry now
-  //  carries a VISIBLE "Site & chrome" label (the icon-only button was un-findable). It
-  //  renders in the left dock — canvas + RightDock stay visible. ──
-  await page.getByRole('banner').getByRole('button', { name: 'Site & chrome' }).click()
+  // ── REACH — open the site authoring home from the rail's Site mode (the second,
+  //  discoverable way in). Relay Step 1: Site is a rail mode rendering in the left dock —
+  //  canvas + RightDock stay visible. ──
+  await page.getByRole('navigation', { name: 'Studio surfaces' })
+    .getByRole('button', { name: 'Site', exact: true }).click()
 
   // ── The WHOLE-CHROME-SET composition is reachable DIRECTLY here (not via region+Back) ──
   //  Enable/disable/swap every region's variant from ONE panel — incl. regions switched OFF

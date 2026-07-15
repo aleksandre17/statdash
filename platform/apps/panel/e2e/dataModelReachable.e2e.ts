@@ -24,10 +24,11 @@ test('a DEFAULT (author) session reaches the data model in one click — as the 
   await expect(page.getByRole('banner')).toBeVisible({ timeout: 60_000 })
   await expect(page.locator('.studio-shell')).toBeVisible()
 
-  // ── REACH — the Data-model destination is a first-class, always-visible TOP-BAR
-  //  workspace (SPEC S5: demoted off the rail, summoned from the top bar, NOT gated
-  //  behind a preference toggle). ONE click opens it.
-  await page.getByRole('banner').getByRole('button', { name: 'Data model' }).click()
+  // ── REACH — the Data-model destination is a first-class, always-visible RAIL mode
+  //  (relay Step 1: Data is rail-mode #1, the front door, NOT gated behind a preference
+  //  toggle). ONE click opens it.
+  await page.getByRole('navigation', { name: 'Studio surfaces' })
+    .getByRole('button', { name: 'Data', exact: true }).click()
 
   // ── LAND — the data-model screen opened as the READ-ONLY Dictionary (author lens
   //  was NOT escalated), populated with the REAL governed nouns.

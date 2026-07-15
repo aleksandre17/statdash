@@ -167,18 +167,12 @@ export function StudioShell() {
 
   const heading = SURFACE_HEADINGS[activeSurface]?.[locale] ?? ''
 
-  // Enter / leave the Data-model destination — PURE NAVIGATION (AR-50 M5b). Entering
-  // is one intentful action shared by every entry point (the always-visible rail
-  // entry, the top-bar switch, the ⌘K command); it sets the `model` surface and NEVER
-  // touches the role lens, so an author lands on the read-only Data Dictionary
-  // (DataModelBody splits the body by lens). Leaving returns to the default compose
-  // surface, loss-free, the lens untouched. Navigation and identity are independent.
-  const enterDataModel = () => setSurface('model')
-  // Leave ANY project workspace (Data model · Theme · Site) → back to the default
-  // Compose surface (rail + canvas + inspector). One exit, loss-free (shell state
-  // persists), shared by every workspace's breadcrumb-back and the top-bar toggle.
+  // Leave the Data-model Focus-View → back to the default Compose surface (rail +
+  // canvas + inspector). One exit, loss-free (shell state persists) — the Focus-View's
+  // breadcrumb-back. Entering is now the rail's Data mode (setSurface('model') via
+  // onSelect) — PURE NAVIGATION (AR-50 M5b): it never touches the role lens, so an
+  // author lands on the read-only Data Dictionary (DataModelBody splits by lens).
   const exitWorkspace = () => setSurface(DEFAULT_STUDIO_SURFACE)
-  const openSite = () => setSurface('pages-site')
 
   // A project WORKSPACE surface (`model` · `style` · `pages-site`) resolves to its
   // focus-view target (SPEC S5): each is a REAL route (`/studio/<surface>`), so the
@@ -238,13 +232,8 @@ export function StudioShell() {
       <StudioTopBar
         locale={locale}
         locales={PLATFORM_LOCALES}
-        dataModelActive={activeSurface === 'model'}
-        onOpenDataModel={enterDataModel}
-        onExitDataModel={exitWorkspace}
         onLocaleChange={setPreviewLocale}
         onOpenCommand={() => cmdk.setOpen(true)}
-        onOpenStyle={() => setSurface('style')}
-        onOpenSite={openSite}
       />
 
       <ActivityRail active={activeSurface} onSelect={setSurface} locale={locale} />
