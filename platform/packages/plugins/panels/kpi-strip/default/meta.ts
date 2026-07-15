@@ -22,10 +22,15 @@ export const META: PanelSliceMeta = {
     ka: {
       'trend-up': 'მზარდი:', 'trend-down': 'კლებადი:', 'trend-flat': 'სტაბილური:',
       'methodology': 'მეთოდოლოგია',
+      // Honest UNBOUND state (Canon C2) — never a fake 0; an affordance to bind (J4).
+      'unbound-title': 'აუბმელი მაჩვენებელი',
+      'unbound-hint':  'აირჩიე მეტრიკა',
     },
     en: {
       'trend-up': 'Up:', 'trend-down': 'Down:', 'trend-flat': 'Flat:',
       'methodology': 'Methodology',
+      'unbound-title': 'Unbound metric',
+      'unbound-hint':  'Choose a metric',
     },
   },
 }

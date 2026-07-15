@@ -97,6 +97,51 @@
   transform: translateY(-2px);
 }
 
+/* ── Honest UNBOUND state (W1 · Canon C2) ──────────────────────────────────
+ *  A KPI tile whose measure was never chosen renders THIS instead of a fake 0.
+ *  Read as "not the real thing, and a place to bind": a dashed muted frame + a
+ *  distinct affordance, never colour-only (WCAG 1.4.1). Same box as .kpi-card so
+ *  the count-aware grid never reflows between bound and unbound tiles. */
+.kpi-card--unbound {
+  border-style: dashed;
+  border-color: var(--color-border-strong, var(--color-border));
+  background: color-mix(in srgb, var(--color-text-faint) 5%, var(--color-surface));
+  box-shadow: none;
+  justify-content: flex-start;
+  gap: 0.625rem;
+}
+/* No accent top-bar on an unbound tile — the coloured rule reads as "live data". */
+.kpi-card--unbound::after { content: none; }
+.kpi-card--unbound:hover { box-shadow: none; transform: none; }
+
+.kpi-unbound {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  color: var(--color-text-muted, var(--color-text-faint));
+  min-height: 2.4rem;
+}
+.kpi-unbound__icon {
+  display: inline-flex;
+  flex-shrink: 0;
+  color: var(--color-text-faint);
+}
+.kpi-unbound__text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.0625rem;
+  min-width: 0;
+}
+.kpi-unbound__title {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+.kpi-unbound__hint {
+  font-size: 0.6875rem;
+  color: var(--color-text-faint);
+}
+
 /* ── Header row — label + metadata badges ────────────────────────────── */
 .kpi-header {
   display: flex;
