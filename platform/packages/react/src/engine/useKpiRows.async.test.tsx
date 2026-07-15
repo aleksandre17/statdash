@@ -186,6 +186,37 @@ describe('useKpiRows — async store warms BOTH periods of a yoy KPI', () => {
     expect(urls.some(u => u.includes('geo'))).toBe(false)
   })
 
+  it('a REBUILT store (new generation, same key/dims) re-warms — the KPI shows the new value, not the stale one', async () => {
+    // The canvas rebuilds its live store map on a session/source change → a NEW
+    // ApiStore generation (cold cache) under the SAME store key. The module-level
+    // KPI promise cache is keyed by req-fingerprint ⊕ locale ⊕ pageStoreKey ⊕
+    // storeGenId; the LAST axis is what makes the rebuilt generation re-warm instead
+    // of replaying the prior generation's resolved (possibly poisoned) promise.
+    const POINT_KPI: KpiSpec = {
+      id: 'gdp', label: 'GDP', unit: 'mln', color: '#000',
+      value: { type: 'point', measure: 'GDP', format: 'mln_gel' },
+    }
+    const node: NodeBase = { type: 'kpi-async', items: [POINT_KPI] } as unknown as NodeBase
+
+    // Generation 1 → 100.
+    vi.mocked(fetch).mockImplementation(async () =>
+      okResponse([{ time_period: '2025', dim_key: {}, obs_value: 100, obs_status: 'A', obs_attribute: {} }]),
+    )
+    let result!: ReturnType<typeof render>
+    await act(async () => { result = render(renderNode(node, makeCtx(makeLiveStore())) as React.ReactElement) })
+    expect(result.getByTestId('kpi-0').textContent).toBe('100|')
+    cleanup()
+
+    // Generation 2 → 200: a brand-new store instance, SAME 'main' key + dims. Pre-fix
+    // the KPI reused the gen-1 promise (100 forever); post-fix it re-warms → 200.
+    vi.mocked(fetch).mockImplementation(async () =>
+      okResponse([{ time_period: '2025', dim_key: {}, obs_value: 200, obs_status: 'A', obs_attribute: {} }]),
+    )
+    await act(async () => { result = render(renderNode(node, makeCtx(makeLiveStore())) as React.ReactElement) })
+    expect(result.queryByText('Failed to load component')).toBeNull()
+    expect(result.getByTestId('kpi-0').textContent).toBe('200|')
+  })
+
   it('a duplicated concurrent queryAsync for the same key reuses ONE in-flight promise', async () => {
     // One pending Response — both concurrent calls must share it (no second fetch).
     let resolveFetch!: (r: Response) => void

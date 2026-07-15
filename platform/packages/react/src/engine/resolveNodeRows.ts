@@ -52,6 +52,41 @@ export function effectiveStoreKey(node: Pick<NodeBase, 'storeKey' | 'data'>): st
 // instead of opening up CachedStore.source. Not part of the public store API.
 export const _storeCache = new WeakMap<DataStore, CachedStore>()
 
+// ── storeGenId — the STORE-INSTANCE axis of async cache identity (G3 fix) ─────
+//
+//  The async row/KPI caches (useNodeRows._promiseCache, useKpiRows._promiseCache)
+//  are MODULE-LEVEL and keyed by recipe/req ⊕ data-state ⊕ store-KEY. On the runtime
+//  runner that key is complete — the store map is built ONCE at boot and never
+//  changes. But the authoring canvas builds its live store map REACTIVELY
+//  (useLivePreviewStores) and REBUILDS it whenever the session sources / canBuildLive
+//  change (a constructor-store mutation, a profile re-fetch, a mode toggle) — minting
+//  a NEW ApiStore GENERATION with a COLD cache under the SAME key. Keyed only by the
+//  store-key STRING, a node whose entry was warmed against the PRIOR generation reuses
+//  that resolved promise verbatim: it serves the old generation's rows, or — if that
+//  warm had transiently ERRORED — a PERMANENTLY poisoned rejection, against the new
+//  cold store that is never re-warmed. Nodes whose data-state happened to move get a
+//  fresh key and warm correctly. That split is the owner's "some switch, some don't —
+//  at some moment it switches, then it doesn't": the outcome depends on whether a
+//  node's cache key collided across the generation swap. (Same-cube rebuilds hide it
+//  for VALUE correctness — both generations fetch identical numbers — so it surfaces
+//  as a stuck empty/error, not a wrong number; hence KPIs "looked fine".)
+//
+//  Fix (cache-identity completeness — the SAME law that folded pageStoreKey into the
+//  key): fold a stable per-store-INSTANCE generation id into every async cache key. A
+//  WeakMap assigns an incrementing id on first sight of each RESOLVED store; a stable
+//  store keeps its id (BYTE-IDENTICAL steady state — the runner and an un-rebuilt
+//  canvas are unchanged), while a rebuilt store gets a fresh id ⇒ a fresh warm against
+//  its own cold cache, healing any stale/poisoned prior-generation entry. WeakMap ⇒ a
+//  discarded generation is GC-eligible (no leak). Shared here (next to resolveStore /
+//  _storeCache) so both async hooks fold the SAME id for the SAME resolved instance.
+const _storeGenId = new WeakMap<DataStore, number>()
+let   _storeGenSeq = 0
+export function storeGenId(store: DataStore): number {
+  let id = _storeGenId.get(store)
+  if (id === undefined) { id = ++_storeGenSeq; _storeGenId.set(store, id) }
+  return id
+}
+
 export function resolveStore(ctx: Pick<RenderContext, 'stores' | 'pageStoreKey'>): DataStore {
   const key = ctx.pageStoreKey ?? 'default'
   const raw = ctx.stores[key] ?? ctx.stores[Object.keys(ctx.stores)[0]] ?? staticStore

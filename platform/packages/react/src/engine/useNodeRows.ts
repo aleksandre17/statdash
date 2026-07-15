@@ -32,7 +32,7 @@ import { use, useMemo }                         from 'react'
 import type { DataRow, DataSpec, QueryResult, Requirement } from '@statdash/engine'
 import { extractRequirements, queryReadObs }      from '@statdash/engine'
 import type { NodeBase, RenderContext }          from './types'
-import { resolveNodeRows, resolveStore }         from './resolveNodeRows'
+import { resolveNodeRows, resolveStore, storeGenId } from './resolveNodeRows'
 import { specDimKey }                            from './specDimKey'
 
 // ── Promise cache — keyed on specDimKey (N34c) ────────────────────────────
@@ -141,7 +141,11 @@ export function useNodeRows(node: NodeBase, ctx: RenderContext): DataRow[] {
     () => nodeRecipeKey(node.data, node.transforms),
     [node.data, node.transforms],
   )
-  const cacheKey = recipeKey + '' + depKey + '' + (ctx.pageStoreKey ?? 'default')
+  // The FOURTH axis: the resolved store INSTANCE (its generation id). recipe ⊕
+  // data-state ⊕ store-KEY ⊕ store-INSTANCE — a rebuilt live store (new cold ApiStore
+  // under the same key) gets a fresh key ⇒ its own warm, never the prior generation's
+  // stale/poisoned promise. Steady state (stable store) ⇒ same id ⇒ byte-identical key.
+  const cacheKey = recipeKey + '' + depKey + '' + (ctx.pageStoreKey ?? 'default') + '' + storeGenId(store)
 
   const syncRows = useMemo(
     () => (isSync ? resolveNodeRows(node, ctx) : null),
@@ -236,6 +240,18 @@ export function useNodeRows(node: NodeBase, ctx: RenderContext): DataRow[] {
       // Cache is warm — the sync engine path now reads it without throwing.
       return resolveNodeRows(node, ctx)
     })
+
+    // NOTE on REJECTION (a transiently-failed warm): the rejected promise is retained,
+    // NOT evicted. Evicting on settle-rejected causes React's Suspense to AUTO-retry the
+    // suspended subtree, which re-creates the promise and re-fetches — an unbounded storm
+    // that never reaches NodeErrorBoundary (proven: a persistent-failure warm loops
+    // forever). Retaining the rejection lets use() re-throw it to the boundary ONCE, which
+    // then STOPS re-rendering the subtree (error fallback shown) — storm-free. Recovery is
+    // by cache MISS: a store rebuild (new storeGenId, above), a filter/perspective change
+    // (new depKey), or a full reload. A poisoned key that heals ONLY on those — never on
+    // the NodeErrorBoundary Retry button, which re-reads the same rejected promise — is a
+    // known residual gap in the async-retry model (see the return packet); closing it
+    // needs a deliberate error-boundary ↔ promise-cache invalidation seam, not this cache.
 
     // Evict oldest entry on overflow (LRU approximation — Map insertion order)
     if (_promiseCache.size >= CACHE_MAX) {

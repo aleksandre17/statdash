@@ -27,7 +27,7 @@ import { interpretKpis, extractKpiRequirements }     from '@statdash/engine'
 import type { KpiSpec, QueryResult, Requirement }    from '@statdash/engine'
 import type { KpiDef }                               from '@statdash/engine'
 import type { RenderContext }                        from './types'
-import { resolveStore }                              from './resolveNodeRows'
+import { resolveStore, storeGenId }                  from './resolveNodeRows'
 
 // ── Promise cache — keyed on the KPI requirement fingerprint ──────────────
 //
@@ -109,7 +109,14 @@ export function useKpiRows(specs: KpiSpec[], ctx: RenderContext): KpiDef[] {
   // sync fast-lane already re-fires (SiteRenderer memoizes sectionCtx with locale in its dep, so
   // its ref changes on toggle → syncKpis re-runs); this makes the async path agree. Keys on the
   // locale VALUE, never a literal (Law 1). Route-load path unchanged (locale steady ⇒ same key).
+  // Fold the resolved store-INSTANCE generation id (+ pageStoreKey) into the key —
+  // the SAME cache-identity completion useNodeRows carries. A canvas store rebuild
+  // mints a new cold generation under the same key; without the instance axis a KPI
+  // strip warmed against the prior generation reuses that promise (a stale or
+  // transiently-poisoned resolution) against the new cold store. Steady state (stable
+  // store) ⇒ same id ⇒ byte-identical key (the runner is unchanged).
   const depKey = kpiDepKey(reqs, specs, sectionCtx.dims) + '' + (ctx.locale ?? '')
+               + '' + (ctx.pageStoreKey ?? 'default') + '' + storeGenId(store)
 
   if (!_promiseCache.has(depKey)) {
     // Bind queryAsync — it reads `this` (CachedStore.queryAsync → this.source); a
