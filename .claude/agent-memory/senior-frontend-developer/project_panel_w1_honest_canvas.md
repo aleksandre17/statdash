@@ -1,0 +1,23 @@
+---
+name: project-panel-w1-honest-canvas
+description: AR-52 Wave 1 "Honest Canvas" — what shipped (live-default, honest unbound KPI, perspective dedup), the deploy split, and the roots of the deferred token/chrome/no-data seams
+metadata:
+  type: project
+---
+
+AR-52 Wave 1 (Canon C2 "the canvas never lies"), branch feat/ar49-m0-metric-first-authoring. Owner-delegated. What holds now:
+
+**SHIPPED + gated + committed:**
+- **Live-by-default** — `CanvasView` mode `useState('live')` (was 'structural'). Structural is an explicit opt-out with an honest **veil** (`.canvas-veil`, diagonal hatch + label pill "ცოცხალი მონაცემები გამორთულია; მაჩვენებლები არ არის რეალური", `data-testid=canvas-structural-veil`, gated `mode==='structural'`). Live fail-soft unchanged (no cube/API → structural + badge).
+- **One perspective control (G9)** — removed the CanvasToolbar perspective radiogroup (was a duplicate of the page's own perspective-bar node). The perspective PREVIEW SSOT is `previewPerspectiveId`, driven by the dock `PerspectivesPane` (via `inspector/sections/builtins.tsx` → `controller.setPreviewPerspectiveId`), NOT the toolbar. CanvasView still seeds the MemoryRouter from `previewPerspectiveId`. The in-page perspective-bar renders as faithful (aria-hidden) content.
+- **Honest UNBOUND KPI (G2)** — `packages/plugins/panels/kpi-strip/default/kpiBinding.ts::isKpiSpecBound` (STATIC predicate over KpiSpec.value discriminants, mirrors core resolveValue reads). `KpiStripShell` partitions visible items bound/unbound BEFORE `useKpiRows` (unbound never hits storeVal('') → no fake 0, no empty-code warm); unbound → `KpiUnboundCard` (honest affordance, door to J4). i18n keys `unbound-title`/`unbound-hint` in kpi-strip `meta.ts`. Gate `FF-CANVAS-NEVER-LIES` (apps/panel/src/canvas/canvasNeverLies.fitness.test.tsx) proven RED pre-fix (unbound→"0"), GREEN after.
+
+**DEPLOY SPLIT (load-bearing):** the :3013 dev line src-mounts ONLY `apps/panel/src` (tar-over-ssh → HMR). So **panel changes reach :3013 live; packages/* (plugins/react/core) changes DO NOT — they need a container image rebuild.** W1's live-default+veil+dedup are LIVE-PROVEN on :3013 (probe `work/probe-w1-honest-canvas.mjs`: liveDefault true, hasNonZeroKpi true, no toolbar perspective switch, veil text correct, 0 console errors; shots `work/authoring-truth/w1/`). The honest UNBOUND KPI is a PLUGINS change → NOT on :3013 (probe `unboundAffordances:0`) until an image rebuild. See [[live-proof-3013]].
+
+**DEFERRED — reported to lead as core/design seams (NOT built), with roots:**
+- **Token leak `{spanFrom}/{spanTo}/{time}` (outcome 3):** the canvas doesn't resolve the page's FILTER-PARAM DEFAULTS (year-select / Tier-3 `{from:'options'}` span params) even in live mode, so `resolveTemplate` (core/config/template.ts L~74) ECHOES `{key}` for the unresolved dim. Two fix seams: (a) make the canvas resolve filter defaults (root, better — tokens become real values), (b) core resolveTemplate honest-placeholder instead of echoing braces (the veil). Both are core/deep.
+- **Chrome faithful (outcome 4):** structure renders (AppChrome + `.app-shell` + regions; existing `canvasChromeFaithful.fitness` green) and chrome component CSS + tokens load. The gap is NOT Tailwind (chrome shells are self-styled BEM). Roots: (1) the site BRAND/accent is compiled into the geostat APP (`apps/geostat/src/shared/styles/index.css` `[data-tenant="geostat"]` + `document.documentElement.dataset.tenant`), NOT the portable site config — so the canvas (config-only) can't render the brand → neutral accent. Fix = brand in manifest/site config (the ADR §2 "runtime-injected from manifest.theme" direction) + canvas applies `site.themeOverrides`/data-theme scoped. (2) panel loads only `@statdash/styles/css/index.css` (tokens), not the `@statdash/react` styles barrel (chrome-region.css overlay layer — minor). Needs LIVE browser verification (couldn't run in-session). `FF-CHROME-FAITHFUL` deferred with the fix.
+- **No-data honest state (outcome 2 second half):** distinguishing a BOUND-but-no-observation read from a true 0 needs a `packages/core` seam — `storeVal` returning `number|null` + `KpiDef.state:'ok'|'no-data'|'error'` so interpret returns a declared state, not a number. DESIGNED, awaiting lead routing (the empty chart-section box, G1, is the same no-data/filter-resolution family).
+
+**PRE-EXISTING RED (not mine):** `apps/panel/src/command/insertByteIdentity.fitness.test.ts` FF-INSERT-NEVER-CLIFF asserts chart wraps in a section, but HEAD commit 0ffbb81 (ADR-042 D3 "page admits any flow block directly") made chart directly page-acceptable → inserts flat. Stale test from the section-de-privilege work; flag to that owner. Bar = "no NEW failures".
+</content>
