@@ -11,6 +11,10 @@
 //    • no-pages     — the tool has no pages yet → a Create-page CTA (primary path).
 //    • page-blank   — a page is active but empty → an Insert CTA (add the first block).
 //    • no-selection — a node-inspector with nothing selected → ONE quiet hint (no CTA).
+//    • site-context — a project-scope surface (Site / Style) owns the LEFT dock, so the
+//                     right inspector's default page tree would double the authoring
+//                     context → ONE quiet hint pointing to the left panel (AR-52: one
+//                     clear authoring focus; Least Astonishment). No CTA.
 //
 //  Accessibility (WCAG 2.1 AA, Law 9): the region carries an accessible name; the CTA
 //  is a real <button> with a bilingual accessible name; the quiet hint is plain text
@@ -21,10 +25,11 @@ import AddIcon from '@mui/icons-material/Add'
 import ViewModuleIcon from '@mui/icons-material/ViewModule'
 import PostAddIcon from '@mui/icons-material/PostAdd'
 import DescriptionOutlinedIcon from '@mui/icons-material/DescriptionOutlined'
+import TuneOutlinedIcon from '@mui/icons-material/TuneOutlined'
 import type { SvgIconComponent } from '@mui/icons-material'
 import type { Locale } from '../types/constructor'
 
-export type StudioEmptyStateKind = 'no-pages' | 'page-blank' | 'no-selection'
+export type StudioEmptyStateKind = 'no-pages' | 'page-blank' | 'no-selection' | 'site-context'
 
 interface EmptyStateCopy {
   icon:      SvgIconComponent
@@ -53,6 +58,15 @@ const COPY: Record<StudioEmptyStateKind, EmptyStateCopy> = {
     title:  { en: 'Nothing selected',        ka: 'არაფერია არჩეული' },
     body:   { en: 'Select an element to edit its properties.', ka: 'აირჩიეთ ელემენტი მისი პარამეტრების რედაქტირებისთვის.' },
     // No action — the node inspector's empty state is a quiet hint, not a CTA.
+  },
+  'site-context': {
+    icon:   TuneOutlinedIcon,
+    title:  { en: 'Editing site settings',   ka: 'საიტის პარამეტრების რედაქტირება' },
+    body:   {
+      en: 'Site-wide controls are in the left panel. Select an element on the canvas to inspect it here.',
+      ka: 'საიტის პარამეტრები მარცხენა პანელშია. აირჩიეთ ელემენტი ტილოზე, რომ აქ დაათვალიეროთ.',
+    },
+    // No action — a quiet orientation hint; the authoring focus is the left dock.
   },
 }
 

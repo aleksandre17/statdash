@@ -40,10 +40,10 @@ describe('FF-ONE-EMPTYSTATE — the empty-state copy lives in exactly one compon
     expect(owners[0]).toMatch(/StudioEmptyState\.tsx$/)
   })
 
-  it('that one component defines all three discriminated kinds', () => {
+  it('that one component defines all discriminated kinds', () => {
     const owner = SOURCES.find(([p]) => p.endsWith('StudioEmptyState.tsx'))
     expect(owner).toBeDefined()
-    for (const kind of ['no-pages', 'page-blank', 'no-selection']) {
+    for (const kind of ['no-pages', 'page-blank', 'no-selection', 'site-context']) {
       expect(owner![1]).toContain(kind)
     }
   })

@@ -137,6 +137,55 @@ describe('FF-RIGHTDOCK-CONTEXTUAL — page panes only in the Page context', () =
   })
 })
 
+// ── P5 — no doubled context in project-scope (Site / Style) surfaces ───────────
+describe('P5 — Site/Style surfaces do not double the authoring context', () => {
+  it('siteContext + nothing selected → a quiet orientation hint, NOT the page tree', () => {
+    seedPage()
+    const { container } = render(
+      <RightDock
+        controller={stubController({ pageId: 'p1', selected: null })}
+        locale="en"
+        collapsed={false}
+        onToggleCollapsed={() => {}}
+        width={320}
+        onResize={() => {}}
+        siteContext
+      />,
+    )
+    // The page-config tree is suppressed (the left dock owns the authoring focus)…
+    expect(screen.queryByTestId('page-inspector')).toBeNull()
+    // …replaced by exactly ONE quiet hint pointing at the left panel.
+    const states = container.querySelectorAll('[data-empty-state-kind]')
+    expect(states).toHaveLength(1)
+    expect(states[0].getAttribute('data-empty-state-kind')).toBe('site-context')
+  })
+
+  it('siteContext but a node IS selected → the element inspector still wins (deliberate selection)', () => {
+    seedPage()
+    render(
+      <RightDock
+        controller={stubController({ pageId: 'p1', selected: HERO })}
+        locale="en"
+        collapsed={false}
+        onToggleCollapsed={() => {}}
+        width={320}
+        onResize={() => {}}
+        siteContext
+      />,
+    )
+    // A deliberate element selection is honoured even in a project-scope surface —
+    // no site-context hint, the node's own contract fills the dock.
+    expect(screen.queryByTestId('[data-empty-state-kind="site-context"]')).toBeNull()
+    expect(screen.getByRole('button', { name: 'Delete' })).toBeInTheDocument()
+  })
+
+  it('no siteContext (Compose) + nothing selected → the page tree, unchanged', () => {
+    seedPage()
+    renderDock({ pageId: 'p1', selected: null })
+    expect(screen.getByTestId('page-inspector')).toBeInTheDocument()
+  })
+})
+
 // ── FF-RIGHTDOCK-FILLS ────────────────────────────────────────────────────────
 describe('FF-RIGHTDOCK-FILLS — flex-fill content region, no fixed-height island', () => {
   it('renders exactly ONE content region (all content flows through it)', () => {

@@ -66,9 +66,17 @@ export interface RightDockProps {
   /** Current dock width (px) — owned by StudioShell so the grid column resizes. */
   width:              number
   onResize:           (next: number) => void
+  /**
+   * True when a PROJECT-SCOPE surface (Site / Style) owns the LEFT dock. In that
+   * authoring context the right inspector's default page tree would DOUBLE the
+   * context (two competing "what am I editing?" surfaces), so with nothing selected
+   * the dock shows a quiet orientation hint instead — one clear authoring focus
+   * (AR-52 · Least Astonishment). A deliberate element selection still wins.
+   */
+  siteContext?:       boolean
 }
 
-export function RightDock({ controller, locale, collapsed, onToggleCollapsed, width, onResize }: RightDockProps) {
+export function RightDock({ controller, locale, collapsed, onToggleCollapsed, width, onResize, siteContext = false }: RightDockProps) {
   const { selected, pageId, deleteSelected, selectedItemPath, selectedBand, selectedId } = controller
   // The active audience lens (root Law 11) — passed into every dock ctx so facet
   // sections filter by plane (a steward facet hides from the author dock).
@@ -148,6 +156,11 @@ export function RightDock({ controller, locale, collapsed, onToggleCollapsed, wi
   if (!pageId) {
     // No pages exist → a single guided empty-state that fills the region.
     content = <StudioEmptyState kind="no-pages" locale={locale} fill />
+  } else if (scope === 'page' && siteContext) {
+    // A project-scope surface (Site / Style) owns the left dock — showing the page
+    // tree here too would double the authoring context. One quiet orientation hint
+    // instead; a deliberate element selection still switches to the element scope.
+    content = <StudioEmptyState kind="site-context" locale={locale} fill />
   } else if (scope === 'page') {
     content = <DockBody ctx={{ scope: 'page', locale, controller, role }} />
   } else {

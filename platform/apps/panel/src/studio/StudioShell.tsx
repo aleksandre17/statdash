@@ -295,6 +295,9 @@ export function StudioShell() {
             onToggleCollapsed={() => setDockCollapsed((c) => !c)}
             width={dockWidth}
             onResize={setDockWidth}
+            // Site / Style surfaces own the left dock (project-scope authoring). Signal
+            // it so the right inspector doesn't double the context with the page tree.
+            siteContext={activeSurface === 'style' || activeSurface === 'pages-site'}
           />
         </FocusEscalationContext.Provider>
       </Box>
