@@ -20,6 +20,13 @@ export interface OutlineRow {
   variant?:  string
   /** Human label for the row — node's title-ish prop, else the registry label, else the type. */
   label:     string
+  /**
+   * A secondary line that DISTINGUISHES structurally-identical siblings — the node's
+   * primary bound measure (two Tables that render different metrics are no longer
+   * indistinguishable "Table" rows). Absent when the node binds no measure. Generic
+   * (Law 1): the query's measure, never a privileged dimension.
+   */
+  subtitle?: string
   /** 1-based nesting depth (top-level = 1) → aria-level. */
   depth:     number
   /** Parent container id (the page id for top-level rows). */
@@ -50,6 +57,23 @@ function rowLabel(node: CanvasNode): string {
 }
 
 /**
+ * The node's primary bound measure — a disambiguating secondary line for the outline.
+ * Reads the canonical bind location (`props.data.query.measure`, where the Inspector /
+ * Metric-Palette / DATA facet all write). Generic (Law 1): a query's measure is not a
+ * privileged dimension. Absent when the node carries no query DataSpec / no measure.
+ */
+function rowSubtitle(node: CanvasNode): string | undefined {
+  const data = node.props.data as { type?: string; query?: { measure?: unknown } } | undefined
+  if (!data || data.type !== 'query') return undefined
+  const measure = data.query?.measure
+  if (Array.isArray(measure)) {
+    const parts = measure.filter((m): m is string => typeof m === 'string' && m.length > 0)
+    return parts.length > 0 ? parts.join(', ') : undefined
+  }
+  return typeof measure === 'string' && measure.length > 0 ? measure : undefined
+}
+
+/**
  * Flatten the page hierarchy into ordered, depth-stamped Outline rows.
  * `collapsed` is the set of node ids whose subtrees are hidden — their rows are
  * still emitted (so the toggle shows) but their descendants are pruned.
@@ -70,6 +94,7 @@ export function buildOutlineRows(
         type:        node.type,
         variant:     node.variant,
         label:       rowLabel(node),
+        subtitle:    rowSubtitle(node),
         depth,
         parentId,
         posInSet:    i + 1,

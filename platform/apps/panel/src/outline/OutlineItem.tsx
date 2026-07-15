@@ -84,7 +84,15 @@ export function OutlineItem({
         <span className="outline__toggle outline__toggle--leaf" aria-hidden="true" />
       )}
 
-      <span className="outline__label">{row.label}</span>
+      {/* Label + a disambiguating subtitle in a min-width:0 text column, so a long
+          label ellipsizes (recoverable via the native tooltip) and structurally
+          identical siblings (two Tables) are told apart by what each one binds. */}
+      <span className="outline__text">
+        <span className="outline__label" title={row.label}>{row.label}</span>
+        {row.subtitle && (
+          <span className="outline__subtitle" title={row.subtitle}>{row.subtitle}</span>
+        )}
+      </span>
       {/* The type chip is informative only when the label differs from it
           (a titled node) — otherwise it would just echo the label. */}
       {row.label !== row.type && <span className="outline__type">{row.type}</span>}

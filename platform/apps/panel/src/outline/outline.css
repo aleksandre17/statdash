@@ -67,11 +67,30 @@
   cursor: default;
 }
 
-.outline__label {
+/* The text column carries the flex-grow + min-width:0 so its children ellipsize
+   instead of forcing the row wider than the dock. */
+.outline__text {
   flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  line-height: 1.25;
+}
+
+.outline__label {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* The disambiguating secondary line — the node's bound measure, muted + ellipsized. */
+.outline__subtitle {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 10px;
+  color: var(--color-text-secondary, #5f6368);
+  opacity: 0.8;
 }
 
 .outline__type {
