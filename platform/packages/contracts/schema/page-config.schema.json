@@ -2020,6 +2020,11 @@
                 "type": "string",
                 "$comment": "color"
               },
+              "thresholds": {
+                "title": "Conditional formatting",
+                "description": "thresholds field",
+                "type": "string"
+              },
               "when": {
                 "title": "Visibility",
                 "description": "object field",

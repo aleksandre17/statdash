@@ -61,6 +61,11 @@ export const KpiItemSchema = defineSchema([
   { field: 'value',          type: 'object',       concern: 'data',     label: { ka: 'მნიშვნელობა', en: 'Value' }, itemSchema: KpiValueItemSchema },
   { field: 'unit',           type: 'LocaleString', concern: 'content',  label: { ka: 'ერთეული', en: 'Unit' }, coverage: 'localized' },
   { field: 'color',          type: 'color',        concern: 'style',    label: { ka: 'ფერი', en: 'Colour' } },
+  // Conditional formatting — an ordered ThresholdStep[] driving the value's colour ⊕
+  // glyph by numeric breakpoint (Grafana thresholds). A rich 'thresholds' PropFieldType
+  // → the ThresholdField step-list editor (registered in apps/panel, out of the arrow).
+  // concern:'style' (a presentation facet) · plane:'author' (a first-class author gesture).
+  { field: 'thresholds',     type: 'thresholds',   concern: 'style',    label: { ka: 'პირობითი ფორმატირება', en: 'Conditional formatting' } },
   // Per-item conditional visibility (a VisibilityExpr: op · perspective). `plane:'steward'`:
   // advanced conditional logic behind the steward lens, not author-default (root Law 11).
   { field: 'when',           type: 'object',       concern: 'behavior', label: { ka: 'ხილვადობა', en: 'Visibility' }, plane: 'steward' },

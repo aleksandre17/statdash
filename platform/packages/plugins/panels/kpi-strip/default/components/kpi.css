@@ -232,6 +232,13 @@
      equal-width numerals). Matches the data-table numeric cells. */
   font-variant-numeric: tabular-nums;
 }
+/* Threshold directional glyph — inherits the value's (possibly threshold-coloured)
+   colour, sits just before the number with a hair of space. Decorative (aria-hidden);
+   the sr-only state label carries the meaning (WCAG 1.4.1 — never colour-only). */
+.kpi-value-glyph {
+  margin-inline-end: 0.15em;
+  font-weight: 700;
+}
 .kpi-unit {
   font-size: 0.8125rem;
   color: var(--color-text-faint);

@@ -166,6 +166,11 @@ const FIELD_RENDERERS: Record<PropFieldType, FieldRenderer> = {
   // member discovery for its leaf pickers); the panel's Inspector dispatches this type
   // to VisibilityField via FieldControlRegistry.
   visibility:   jsonInput,
+  // thresholds: a rich `ValueThresholdStep[]` facet (numeric conditional formatting).
+  // The engine-level form degrades to JSON (Law 3 — the token picker needs the panel's
+  // TOKENS_CATALOG); the panel's Inspector dispatches this type to the ThresholdField
+  // step-list editor via FieldControlRegistry.
+  thresholds:   jsonInput,
   // enum-ref: options come from a runtime catalog (field.source) the engine can
   // NOT resolve (Law 3 — the panel resolves it against its discovery APIs). At
   // the engine level we degrade to a free-text input for the ref value; a field
