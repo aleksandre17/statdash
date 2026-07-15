@@ -42,7 +42,8 @@
     "@statdash/engine": "workspace:*",
     "@statdash/charts": "workspace:*",
     "@statdash/styles": "workspace:*",
-    "@statdash/expr": "workspace:*"
+    "@statdash/expr": "workspace:*",
+    "radix-ui": "catalog:"
   },
   "devDependencies": {
     "tsx": "catalog:"

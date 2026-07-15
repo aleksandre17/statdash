@@ -99,6 +99,10 @@ export { default as CascadeSelect }      from './components/filters/CascadeSelec
 
 // ── Shared UI primitives ──────────────────────────────────────────────
 export { LINK_ICONS, InfoIcon, ChevronIcon } from './components/icons'
+// ── Owned component foundation (Radix behavior + DTCG-token CSS) ──────
+//  Agnostic, reusable compound components. A second tenant restyles them
+//  free via the token spine. First surface: `Select` (the MUI exit).
+export { Select } from './components/ui/select/Select'
 // ── Layout primitives ─────────────────────────────────────────────────
 export { PanelLayout, PANEL_LAYOUT }         from './components/PanelLayout'
 export type { PanelLayoutProps, PanelViewToggle } from './components/PanelLayout'

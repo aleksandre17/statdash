@@ -24,9 +24,10 @@
 //  out (the next whole array). WCAG 2.1 AA: labelled selects, keyboard-reachable buttons.
 //
 import { useState } from 'react'
-import { Box, Button, IconButton, MenuItem, Select, Typography, Paper, Divider } from '@mui/material'
+import { Box, Button, IconButton, Typography, Paper, Divider } from '@mui/material'
 import AddIcon from '@mui/icons-material/Add'
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline'
+import { Select } from '@statdash/react'
 import type { NodeEventHandler, NodeEventTrigger, NodeAction } from '@statdash/react/engine'
 import type { FieldControlProps } from '../fieldControl.types'
 import { Inspector } from '../Inspector'
@@ -71,18 +72,21 @@ export function EventsField({ id, value, locale, onChange }: FieldControlProps) 
             <Typography variant="caption" color="text.secondary" sx={{ minWidth: 44 }}>
               {en ? 'When' : 'როცა'}
             </Typography>
-            <Select
-              size="small"
+            <Select.Root
               value={handler.event}
-              aria-label={en ? 'Trigger gesture' : 'ჟესტი'}
-              onChange={(e) =>
-                onChange(setHandlerTrigger(handlers, hIndex, e.target.value as NodeEventTrigger))}
-              sx={{ flex: 1 }}
+              onValueChange={(v) =>
+                onChange(setHandlerTrigger(handlers, hIndex, v as NodeEventTrigger))}
             >
-              {NODE_EVENT_TRIGGERS.map((t) => (
-                <MenuItem key={t} value={t}>{readLocale(TRIGGER_LABELS[t], locale)}</MenuItem>
-              ))}
-            </Select>
+              <Select.Trigger
+                aria-label={en ? 'Trigger gesture' : 'ჟესტი'}
+                style={{ flex: 1 }}
+              />
+              <Select.Content>
+                {NODE_EVENT_TRIGGERS.map((t) => (
+                  <Select.Item key={t} value={t}>{readLocale(TRIGGER_LABELS[t], locale)}</Select.Item>
+                ))}
+              </Select.Content>
+            </Select.Root>
             <IconButton
               size="small"
               aria-label={en ? 'Remove handler' : 'ჰენდლერის წაშლა'}
@@ -112,18 +116,21 @@ export function EventsField({ id, value, locale, onChange }: FieldControlProps) 
                   <Typography variant="caption" color="text.secondary" sx={{ minWidth: 44 }}>
                     {en ? 'Do' : 'გააკეთე'}
                   </Typography>
-                  <Select
-                    size="small"
+                  <Select.Root
                     value={action.type}
-                    aria-label={en ? 'Action type' : 'ქმედების ტიპი'}
-                    onChange={(e) =>
-                      onChange(setActionType(handlers, hIndex, aIndex, e.target.value as NodeAction['type']))}
-                    sx={{ flex: 1 }}
+                    onValueChange={(v) =>
+                      onChange(setActionType(handlers, hIndex, aIndex, v as NodeAction['type']))}
                   >
-                    {NODE_ACTION_TYPES.map((t) => (
-                      <MenuItem key={t} value={t}>{readLocale(ACTION_ARM_LABELS[t], locale)}</MenuItem>
-                    ))}
-                  </Select>
+                    <Select.Trigger
+                      aria-label={en ? 'Action type' : 'ქმედების ტიპი'}
+                      style={{ flex: 1 }}
+                    />
+                    <Select.Content>
+                      {NODE_ACTION_TYPES.map((t) => (
+                        <Select.Item key={t} value={t}>{readLocale(ACTION_ARM_LABELS[t], locale)}</Select.Item>
+                      ))}
+                    </Select.Content>
+                  </Select.Root>
                   <IconButton
                     size="small"
                     aria-label={en ? 'Remove action' : 'ქმედების წაშლა'}
@@ -159,17 +166,20 @@ export function EventsField({ id, value, locale, onChange }: FieldControlProps) 
 
       {/* ── Add-handler row — pick a trigger, add ───────────────────────────── */}
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-        <Select
-          size="small"
+        <Select.Root
           value={addTrigger}
-          aria-label={en ? 'New handler trigger' : 'ახალი ჰენდლერის ჟესტი'}
-          onChange={(e) => setAddTrigger(e.target.value as NodeEventTrigger)}
-          sx={{ flex: 1 }}
+          onValueChange={(v) => setAddTrigger(v as NodeEventTrigger)}
         >
-          {NODE_EVENT_TRIGGERS.map((t) => (
-            <MenuItem key={t} value={t}>{readLocale(TRIGGER_LABELS[t], locale)}</MenuItem>
-          ))}
-        </Select>
+          <Select.Trigger
+            aria-label={en ? 'New handler trigger' : 'ახალი ჰენდლერის ჟესტი'}
+            style={{ flex: 1 }}
+          />
+          <Select.Content>
+            {NODE_EVENT_TRIGGERS.map((t) => (
+              <Select.Item key={t} value={t}>{readLocale(TRIGGER_LABELS[t], locale)}</Select.Item>
+            ))}
+          </Select.Content>
+        </Select.Root>
         <Button
           size="small"
           variant="outlined"

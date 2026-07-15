@@ -1,0 +1,191 @@
+/* ================================================================
+   Select — owned Radix surface paint (FOUNDATION pattern)
+   ----------------------------------------------------------------
+   Rules (FF-RADIX-TOKEN-ONLY):
+     • Every value is a DTCG token var(--…) — NO hex, rgb(), hsl(),
+       named color, or px color. (Structural px for borders/sizing is
+       fine; COLOR is always a token.)
+     • State comes from Radix as data-attributes ([data-state],
+       [data-highlighted], [data-disabled], [data-placeholder]) — we
+       never track open/hover/selected in React just to style it.
+     • Lives in `@layer components` so it never fights emotion/MUI,
+       which inject unlayered at document level and target .Mui* —
+       different elements, no cascade race.
+   Benchmark: Radix Primitives + shadcn/ui Select.
+   ================================================================ */
+@layer components {
+  /* ── Trigger — the closed control ──────────────────────────────── */
+  .ui-select__trigger {
+    display: inline-flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--spacing-sm);
+    width: 100%;
+    box-sizing: border-box;
+    min-height: 2rem;
+    padding: var(--spacing-xs) var(--spacing-sm);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-surface);
+    color: var(--color-text-primary);
+    font: inherit;
+    font-size: var(--font-size-sm);
+    line-height: 1.4;
+    text-align: start;
+    cursor: pointer;
+    appearance: none;
+    transition:
+      border-color var(--duration-fast) var(--easing-ease-out),
+      box-shadow var(--duration-fast) var(--easing-ease-out),
+      background-color var(--duration-fast) var(--easing-ease-out);
+  }
+
+  .ui-select__trigger:hover {
+    border-color: var(--color-border-interactive);
+    background: var(--color-surface-raised);
+  }
+
+  /* Radix keeps the trigger a real button — focus-visible drives the ring. */
+  .ui-select__trigger:focus-visible {
+    outline: none;
+    border-color: var(--color-accent);
+    box-shadow: var(--shadow-focus);
+  }
+
+  .ui-select__trigger[data-state='open'] {
+    border-color: var(--color-accent);
+  }
+
+  .ui-select__trigger[data-disabled] {
+    cursor: not-allowed;
+    opacity: 0.55;
+    background: var(--color-surface-sunken);
+  }
+
+  /* Placeholder tone (Radix stamps [data-placeholder] on the value slot). */
+  .ui-select__trigger[data-placeholder] {
+    color: var(--color-text-muted);
+  }
+
+  /* ── Chevron — rotates open, tracks font-size via em ───────────── */
+  .ui-select__icon {
+    display: inline-flex;
+    align-items: center;
+    flex-shrink: 0;
+    margin-inline-start: var(--spacing-xs);
+    font-size: 1.05em;
+    color: var(--color-text-muted);
+    transition: transform var(--duration-fast) var(--easing-ease-out);
+  }
+
+  .ui-select__trigger[data-state='open'] .ui-select__icon {
+    transform: rotate(180deg);
+    color: var(--color-accent);
+  }
+
+  /* ── Content — the portalled listbox surface ───────────────────── */
+  .ui-select__content {
+    overflow: hidden;
+    box-sizing: border-box;
+    min-width: var(--radix-select-trigger-width);
+    max-height: var(--radix-select-content-available-height);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+    color: var(--color-text-primary);
+    box-shadow: var(--shadow-overlay);
+    /* Portalled to <body>; the shared z-scale token places it on the dropdown
+       layer (coordinated stacking, not a raced magic number). NOTE: MUI still
+       runs on its own 1300+ z-scale during coexistence — harmless for the
+       inspector dock (no MUI overlay competes here); when a Radix dropdown must
+       later overlay a MUI portal, alias MUI's zIndex theme onto this scale. */
+    z-index: var(--z-dropdown);
+  }
+
+  .ui-select__viewport {
+    box-sizing: border-box;
+    padding: var(--spacing-xs);
+  }
+
+  /* ── Item — one option ─────────────────────────────────────────── */
+  .ui-select__item {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    box-sizing: border-box;
+    min-height: 1.9rem;
+    padding: var(--spacing-xs) var(--spacing-sm);
+    /* Reserve the indicator column so text never reflows on select. */
+    padding-inline-end: calc(var(--spacing-md) + var(--spacing-sm));
+    border-radius: var(--radius-sm);
+    font-size: var(--font-size-sm);
+    line-height: 1.4;
+    color: var(--color-text-primary);
+    cursor: pointer;
+    user-select: none;
+    outline: none;
+    transition:
+      background-color var(--duration-fast) var(--easing-ease-out),
+      color var(--duration-fast) var(--easing-ease-out);
+  }
+
+  /* Radix drives the active row via [data-highlighted] (pointer OR keyboard —
+     the roving-tabindex highlight), so hover + arrow-key land on one style. */
+  .ui-select__item[data-highlighted] {
+    background: var(--color-accent-bg);
+    color: var(--color-accent-hover);
+  }
+
+  .ui-select__item[data-state='checked'] {
+    font-weight: 500;
+  }
+
+  .ui-select__item[data-disabled] {
+    color: var(--color-text-faint);
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+
+  /* ── Selected check — right-aligned indicator column ───────────── */
+  .ui-select__indicator {
+    position: absolute;
+    inset-inline-end: var(--spacing-sm);
+    display: inline-flex;
+    align-items: center;
+    font-size: 1.05em;
+    color: var(--color-accent);
+  }
+
+  /* ── Scroll affordances (long lists) ───────────────────────────── */
+  .ui-select__scroll {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: var(--spacing-lg);
+    background: var(--color-surface);
+    color: var(--color-text-muted);
+    cursor: default;
+  }
+
+  /* ── Open/close motion — subtle fade + zoom + directional slide,
+        keyed on Radix data-state/data-side. Honors reduced-motion. ─ */
+  @media (prefers-reduced-motion: no-preference) {
+    .ui-select__content[data-state='open'] {
+      animation: ui-select-in var(--duration-fast) var(--easing-ease-out);
+    }
+    .ui-select__content[data-state='closed'] {
+      animation: ui-select-out var(--duration-fast) var(--easing-ease-out);
+    }
+  }
+
+  @keyframes ui-select-in {
+    from { opacity: 0; transform: translateY(-2px) scale(0.98); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+  }
+
+  @keyframes ui-select-out {
+    from { opacity: 1; transform: translateY(0) scale(1); }
+    to   { opacity: 0; transform: translateY(-2px) scale(0.98); }
+  }
+}

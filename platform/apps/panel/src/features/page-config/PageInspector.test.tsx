@@ -74,11 +74,18 @@ describe('PageInspectorPanel — authors page config through the generic Inspect
     expect(screen.queryByText(/No property schema/i)).toBeNull()
   })
 
-  it('authoring frame writes into page.meta.frame', () => {
+  it('authoring frame writes into page.meta.frame', async () => {
     seedPage()
     render(<PageInspectorPanel />)
-    const select = document.getElementById('insp-frame') as HTMLSelectElement
-    fireEvent.change(select, { target: { value: 'landing' } })
+    // `frame` is now an owned Radix Select (MUI exit, wave 0071): the control with
+    // id=insp-frame is the trigger button, not a native <select>. Drive it the way
+    // a keyboard user does — open the listbox, then pick the option. (Locale-robust
+    // option name: the label resolves to site.defaultLocale.)
+    const trigger = document.getElementById('insp-frame') as HTMLButtonElement
+    trigger.focus()
+    fireEvent.keyDown(trigger, { key: 'ArrowDown' })
+    const option = await screen.findByRole('option', { name: /Landing|სადესანტო/ })
+    fireEvent.click(option)
     const page = useConstructorStore.getState().pages[0]
     expect(page.meta?.frame).toBe('landing')
   })
