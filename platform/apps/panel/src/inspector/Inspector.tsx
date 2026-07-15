@@ -23,7 +23,7 @@
 import { useCallback, useMemo, useState, type KeyboardEvent as ReactKeyboardEvent } from 'react'
 import type { PropField, PropSchema, PropertyGroup, LocaleString } from '@statdash/react/engine'
 import { fieldControlRegistry } from './FieldControlRegistry'
-import { BindableControl } from './controls/BindableControl'
+import { ValueAuthoringControl } from './controls/ValueAuthoringControl'
 import { isVisible, getAtPath } from './showWhen'
 import { validateField } from './validateField'
 import { useActiveLocales } from './useActiveLocales'
@@ -168,7 +168,7 @@ export function Inspector({
             {field.required && <span className="insp-field__sr"> (required)</span>}
           </label>
           <div className="insp-field__control" aria-describedby={errId}>
-            <BindableControl
+            <ValueAuthoringControl
               Control={Control}
               field={field}
               id={id}
