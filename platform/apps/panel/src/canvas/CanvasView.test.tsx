@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeAll } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { render, screen, fireEvent } from '@testing-library/react'
 import { CanvasView } from './CanvasView'
 import { setupCanvasRegistry } from './setupCanvasRegistry'
 import type { NodePageConfig } from '@statdash/react/engine'
@@ -31,6 +31,24 @@ describe('CanvasView', () => {
     )
     expect(screen.getByTestId('canvas-root')).toBeInTheDocument()
     expect(screen.getByTestId('canvas-overlay')).toBeInTheDocument()
+  })
+
+  // ── W1 · Canon C2 — live is the default; structural wears an honest veil ──────
+  it('defaults to LIVE mode with no "preview off" veil (the canvas never lies)', () => {
+    render(<CanvasView page={page} onSelectNode={vi.fn()} onDropNode={vi.fn()} />)
+    // Live radio is the active mode…
+    expect(screen.getByRole('radio', { name: 'ცოცხალი მონაცემები' })).toHaveAttribute('aria-checked', 'true')
+    // …and the structural veil is absent (no fake-value declaration when live).
+    expect(screen.queryByTestId('canvas-structural-veil')).not.toBeInTheDocument()
+  })
+
+  it('opting into structural mode raises the honest "preview off" veil', () => {
+    render(<CanvasView page={page} onSelectNode={vi.fn()} onDropNode={vi.fn()} />)
+    fireEvent.click(screen.getByRole('radio', { name: 'სტრუქტურა' }))
+    const veil = screen.getByTestId('canvas-structural-veil')
+    expect(veil).toBeInTheDocument()
+    // The signal is TEXT, not colour-only (Law 9): the honest words are present.
+    expect(veil.textContent).toMatch(/ცოცხალი მონაცემები გამორთულია/)
   })
 
   it('marks the root as dragging when the dragging prop is set', () => {

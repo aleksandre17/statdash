@@ -1,54 +1,44 @@
-// ── CanvasToolbar.test — the in-canvas perspective switch (BE-3 / 0061) ─────────
+// ── CanvasToolbar.test — the preview-mode toggle (W1 · Canon C2) ───────────────
 //
-//  The switch is a PURE PROJECTION of the page's DECLARED perspective axis: given
-//  the options + the active id + a callback, it renders one radio per declared
-//  perspective, marks the active, and reports the chosen DECLARED id. No per-page
-//  special-case; hidden when the page declares <2 perspectives. (The end-to-end
-//  re-render — previewPerspectiveId → MemoryRouter remount → FilterProvider — is the
-//  pre-existing wiring CanvasView already owns; here we lock the surfaced control.)
+//  The toolbar is a PURE PROJECTION of (mode, status): a live|structural radiogroup
+//  (live leads — it is the default reality of the canvas) plus a fail-soft badge when
+//  live was requested but is unavailable. Perspective is NOT switched here anymore
+//  (W1 · G9) — the page's own perspective-bar node is the faithful control; a second
+//  tab-bar in this chrome duplicated it. This suite locks BOTH: the mode contract AND
+//  the ABSENCE of the removed perspective switch.
 //
 import { describe, it, expect, vi } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
 import { CanvasToolbar } from './CanvasToolbar'
 
-const PERSPECTIVES = [
-  { id: 'year',  label: 'წლიური' },
-  { id: 'range', label: 'დინამიკა' },
-]
-
-describe('CanvasToolbar — in-canvas perspective switch (BE-3)', () => {
-  it('renders one radio per declared perspective and marks the active one', () => {
-    render(
-      <CanvasToolbar
-        mode="structural" status="structural" onModeChange={vi.fn()}
-        perspectives={PERSPECTIVES} activePerspectiveId="year" onPerspectiveChange={vi.fn()}
-      />,
-    )
-    expect(screen.getByTestId('canvas-perspective-switch')).toBeInTheDocument()
-    expect(screen.getByRole('radio', { name: 'წლიური' })).toHaveAttribute('aria-checked', 'true')
-    expect(screen.getByRole('radio', { name: 'დინამიკა' })).toHaveAttribute('aria-checked', 'false')
+describe('CanvasToolbar — preview-mode toggle (C2)', () => {
+  it('renders a live|structural radiogroup and marks the active mode', () => {
+    render(<CanvasToolbar mode="live" status="live" onModeChange={vi.fn()} />)
+    const group = screen.getByRole('radiogroup', { name: 'გადახედვის რეჟიმი' })
+    expect(group).toBeInTheDocument()
+    expect(screen.getByRole('radio', { name: 'ცოცხალი მონაცემები' })).toHaveAttribute('aria-checked', 'true')
+    expect(screen.getByRole('radio', { name: 'სტრუქტურა' })).toHaveAttribute('aria-checked', 'false')
   })
 
-  it('clicking a perspective reports its DECLARED id', () => {
-    const onChange = vi.fn()
-    render(
-      <CanvasToolbar
-        mode="structural" status="structural" onModeChange={vi.fn()}
-        perspectives={PERSPECTIVES} activePerspectiveId="year" onPerspectiveChange={onChange}
-      />,
-    )
-    fireEvent.click(screen.getByRole('radio', { name: 'დინამიკა' }))
-    expect(onChange).toHaveBeenCalledWith('range')
+  it('clicking a mode reports it', () => {
+    const onModeChange = vi.fn()
+    render(<CanvasToolbar mode="live" status="live" onModeChange={onModeChange} />)
+    fireEvent.click(screen.getByRole('radio', { name: 'სტრუქტურა' }))
+    expect(onModeChange).toHaveBeenCalledWith('structural')
   })
 
-  it('hides the switch when the page declares fewer than 2 perspectives', () => {
-    render(
-      <CanvasToolbar
-        mode="structural" status="structural" onModeChange={vi.fn()}
-        perspectives={[{ id: 'year', label: 'წლიური' }]}
-        activePerspectiveId="year" onPerspectiveChange={vi.fn()}
-      />,
-    )
+  it('shows the fail-soft badge ONLY when live is unavailable', () => {
+    const { rerender } = render(<CanvasToolbar mode="live" status="live" onModeChange={vi.fn()} />)
+    expect(screen.queryByTestId('canvas-live-unavailable')).not.toBeInTheDocument()
+
+    rerender(<CanvasToolbar mode="live" status="unavailable" onModeChange={vi.fn()} />)
+    expect(screen.getByTestId('canvas-live-unavailable')).toBeInTheDocument()
+  })
+
+  it('carries NO perspective switch — the page perspective-bar node is the one control (G9)', () => {
+    render(<CanvasToolbar mode="live" status="live" onModeChange={vi.fn()} />)
     expect(screen.queryByTestId('canvas-perspective-switch')).not.toBeInTheDocument()
+    // Exactly one radiogroup (the mode toggle) — no duplicate perspective radiogroup.
+    expect(screen.getAllByRole('radiogroup')).toHaveLength(1)
   })
 })

@@ -261,7 +261,6 @@ export function StudioShell() {
                 onSelectItem={controller.selectItem}
                 onDropNode={controller.handleDrop}
                 onBindMetric={controller.bindMetric}
-                onPreviewPerspectiveChange={controller.setPreviewPerspectiveId}
                 nav={controller.canvasSite.nav}
                 chrome={controller.canvasSite.chrome}
                 chromeConfig={controller.canvasSite.chromeConfig}

@@ -1,14 +1,23 @@
-// ── CanvasToolbar — preview-mode control + fail-soft badge (G3.1) ─────────────
+// ── CanvasToolbar — preview-mode control + fail-soft badge (W1 · C2) ───────────
 //
 //  The small chrome above the WYSIWYG canvas. Two responsibilities:
-//    1. A structural | live segmented toggle (the author opts into live data).
+//    1. A live | structural segmented toggle. LIVE is the DEFAULT (the canvas never
+//       lies — Canon C2): real data paints by default; STRUCTURAL is an explicit
+//       opt-out perf mode that the veil (CanvasView) declares honestly so its empty
+//       shells are never mistaken for real values.
 //    2. A non-blocking badge when live was requested but is unavailable
 //       (no cube-bound source / profile error / API unreachable) — the canvas
-//       keeps rendering the structural preview underneath.
+//       keeps rendering the structural preview underneath, HONESTLY veiled.
+//
+//  Perspective is NOT switched here anymore (W1 · G9): a page's own perspective-bar
+//  node renders faithfully ON the canvas as content, and the perspective PREVIEW is
+//  authored/switched in the dock Perspectives pane (the P-final SSOT). A second
+//  perspective tab-bar in this chrome duplicated the page's own bar side-by-side and
+//  confused the surface — it is removed so there is ONE perspective model.
 //
 //  Accessibility (WCAG 2.1 AA / WAI-ARIA):
-//    • The toggle is a `radiogroup` of two `radio` buttons (single-choice) — full
-//      keyboard operability, screen-reader announces the selected mode.
+//    • The mode toggle is a `radiogroup` of two `radio` buttons (single-choice) —
+//      full keyboard operability, screen-reader announces the selected mode.
 //    • The badge is a `status` live-region with an icon + TEXT (no color-only
 //      signal): the "unavailable" meaning is carried by words, not just hue.
 //
@@ -25,51 +34,18 @@ export interface CanvasToolbarProps {
   mode:         PreviewMode
   status:       PreviewStatus
   onModeChange: (mode: PreviewMode) => void
-  /** The page's DECLARED perspective axis (Annual/Dynamics…), resolved to labels.
-   *  <2 options ⇒ the switch is hidden. Derived from the page — no per-page special-case. */
-  perspectives?:        ReadonlyArray<{ id: string; label: string }>
-  activePerspectiveId?: string
-  onPerspectiveChange?: (id: string) => void
 }
 
+// Live leads — it is the default reality of the canvas (C2). Structural follows as
+// the explicit opt-out.
 const MODE_OPTIONS: ReadonlyArray<{ value: PreviewMode; label: string }> = [
-  { value: 'structural', label: 'სტრუქტურა' },
   { value: 'live',       label: 'ცოცხალი მონაცემები' },
+  { value: 'structural', label: 'სტრუქტურა' },
 ]
 
-export function CanvasToolbar({
-  mode, status, onModeChange, perspectives, activePerspectiveId, onPerspectiveChange,
-}: CanvasToolbarProps) {
+export function CanvasToolbar({ mode, status, onModeChange }: CanvasToolbarProps) {
   return (
     <div className="canvas-toolbar" data-testid="canvas-toolbar">
-      {/* In-canvas PERSPECTIVE switch (BE-3) — the author previews Annual↔Dynamics HERE,
-          not buried in the Page dock. Options come from the page's DECLARED axis; hidden
-          when the page has <2 perspectives. Mirrors the runner's perspective-bar. */}
-      {(perspectives?.length ?? 0) >= 2 && onPerspectiveChange && (
-        <div
-          className="canvas-toolbar__modes"
-          role="radiogroup"
-          aria-label="პერსპექტივა"
-          data-testid="canvas-perspective-switch"
-        >
-          {perspectives!.map((opt) => {
-            const active = activePerspectiveId === opt.id
-            return (
-              <button
-                key={opt.id}
-                type="button"
-                role="radio"
-                aria-checked={active}
-                className={`canvas-toolbar__mode${active ? ' canvas-toolbar__mode--active' : ''}`}
-                onClick={() => onPerspectiveChange(opt.id)}
-              >
-                {opt.label}
-              </button>
-            )
-          })}
-        </div>
-      )}
-
       <div
         className="canvas-toolbar__modes"
         role="radiogroup"

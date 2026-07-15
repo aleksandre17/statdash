@@ -115,19 +115,24 @@ export interface CanvasViewProps {
   chromeConfig?: ChromeConfig
   /** Preview locale for chrome content (the top-bar ka|en switch); defaults to ka. */
   locale?:       string
-  /** Set the previewed perspective (the in-canvas Annual↔Dynamics switch → controller). */
-  onPreviewPerspectiveChange?: (id: string) => void
 }
 
 export function CanvasView({
   page, selectedNodeId, selectedItemPath, dragging, previewPerspectiveId,
-  onSelectNode, onSelectItem, onDropNode, onBindMetric, onPreviewPerspectiveChange,
+  onSelectNode, onSelectItem, onDropNode, onBindMetric,
   nav = EMPTY_NAV, chrome = EMPTY_CHROME, chromeConfig, locale,
 }: CanvasViewProps) {
   // Preview mode is canvas view-state — transient and local to this component
   // (the same pattern as `dragging`; there is no persisted canvas-view-state slice
-  // in the constructor store). Default 'structural': the canvas opens zero-fetch.
-  const [mode, setMode] = useState<PreviewMode>('structural')
+  // in the constructor store).
+  //
+  // W1 · Canon C2 — LIVE is the DEFAULT: the canvas never lies. Real data paints by
+  // default so the author sees the truth of the page; 'structural' survives ONLY as
+  // an explicit opt-out perf mode, and when chosen the canvas wears a visible veil
+  // (below) declaring "preview off — values are not real", so its empty/zero shells
+  // can never be mistaken for real observations. (Live is fail-soft: no cube-bound
+  // source / API down degrades to the structural map with the 'unavailable' badge.)
+  const [mode, setMode] = useState<PreviewMode>('live')
 
   // Resolve the store map for the requested mode. Structural ≡ pre-G3 static map
   // (byte-identical). Live builds through the shared 'stats' builder and degrades
@@ -149,17 +154,12 @@ export function CanvasView({
   // usePerspectiveContext.current), so the canvas needs no engine prop: setting the
   // initial entry IS the wiring. The param key is the page's axis key — the SAME
   // derivation SiteRenderer uses (Object.keys(page.perspectives)[0]). Absent preview /
-  // no axis ⇒ '/' ⇒ the engine folds to perspectives[0] (the SSOT default).
-  const perspectiveKey   = Object.keys(renderedPage.perspectives ?? {})[0]
-  // In-canvas perspective switch (BE-3): the page's DECLARED axis, resolved to ka labels.
-  // Options + active id are pure projections of the page — no per-page special-case.
-  const perspectiveAxis    = (renderedPage.perspectives as Record<string, { perspectives?: Array<{ id: string; label?: Record<string, string> | string }> }> | undefined)?.[perspectiveKey]
-  const perspectiveOptions = (perspectiveAxis?.perspectives ?? []).map((p) => ({
-    id:    p.id,
-    label: typeof p.label === 'string' ? p.label : (p.label?.ka ?? p.label?.en ?? p.id),
-  }))
-  const activePerspectiveId = previewPerspectiveId ?? perspectiveOptions[0]?.id
-  const previewEntry      = perspectiveKey && previewPerspectiveId
+  // no axis ⇒ '/' ⇒ the engine folds to perspectives[0] (the SSOT default). The
+  // previewed id is driven by the dock Perspectives pane (the P-final SSOT) — the
+  // canvas paints the page's OWN perspective-bar node faithfully as content (W1 · G9);
+  // there is no second perspective switch in the canvas chrome.
+  const perspectiveKey = Object.keys(renderedPage.perspectives ?? {})[0]
+  const previewEntry   = perspectiveKey && previewPerspectiveId
     ? `/?${encodeURIComponent(perspectiveKey)}=${encodeURIComponent(previewPerspectiveId)}`
     : '/'
 
@@ -170,10 +170,21 @@ export function CanvasView({
         mode={mode}
         status={status}
         onModeChange={setMode}
-        perspectives={perspectiveOptions}
-        activePerspectiveId={activePerspectiveId}
-        onPerspectiveChange={onPreviewPerspectiveChange}
       />
+
+      {/* W1 · Canon C2 — the honest "preview off" veil. Structural mode is an explicit
+          opt-out that paints empty/zero shells; the veil declares that plainly (icon +
+          TEXT, never colour-only — Law 9) so the author can never mistake a structural
+          shell for a real observation. Layer-inert (pointer-events:none) so selection +
+          editing keep working underneath; only present in the opt-out mode. */}
+      {mode === 'structural' && (
+        <div className="canvas-veil" data-testid="canvas-structural-veil">
+          <span className="canvas-veil__label" role="note">
+            <span className="canvas-veil__icon" aria-hidden="true">◑</span>
+            სტრუქტურული რეჟიმი — ცოცხალი მონაცემები გამორთულია; მაჩვენებლები არ არის რეალური
+          </span>
+        </div>
+      )}
 
       {/* Layer 1 — the real renderer, visually live but non-interactive. The router's
           initialEntries carries the previewed perspective param (keyed so a preview

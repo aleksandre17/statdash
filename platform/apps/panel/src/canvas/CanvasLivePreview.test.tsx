@@ -1,8 +1,10 @@
-// ── CanvasLivePreview.test — G3.1 structural | live preview + fail-soft ──────
+// ── CanvasLivePreview.test — live-default preview + fail-soft (W1 · Canon C2) ──
 //
 //  Three guarantees:
-//    (a) structural (default) renders via the empty staticStore exactly as before
-//        — no buildStoreManifest call, no badge (byte-identical preview path).
+//    (a) LIVE is the DEFAULT (C2 — the canvas never lies): the canvas opens in live
+//        mode with no structural "preview off" veil. With no cube-bound source it
+//        fails soft to the honest badge (never a silent structural zero paraded as
+//        real).
 //    (b) live builds the store map from a cube-bound descriptor through the shared
 //        builder; the renderer receives the LIVE (non-empty) store.
 //    (c) fail-soft: a cube-bound source whose profile errors (or whose build
@@ -78,12 +80,20 @@ const renderCanvas = () =>
   render(<CanvasView page={page} onSelectNode={vi.fn()} onDropNode={vi.fn()} />)
 
 describe('CanvasView — G3.1 live preview', () => {
-  it('(a) structural is the default — no manifest build, no badge', () => {
+  it('(a) LIVE is the default — no structural veil; no source ⇒ honest badge, no silent fake', async () => {
     renderCanvas()
     expect(screen.getByTestId('canvas-toolbar')).toBeInTheDocument()
-    // Default mode = structural → the live builder is never invoked.
+    // Live is the active mode → the "preview off" veil is ABSENT (the canvas is not
+    // declaring structural fakes; it is trying to show truth).
+    expect(screen.getByRole('radio', { name: 'ცოცხალი მონაცემები' })).toHaveAttribute('aria-checked', 'true')
+    expect(screen.queryByTestId('canvas-structural-veil')).not.toBeInTheDocument()
+    // No cube-bound source (dataSources: []) → deriveLiveDescriptors [] → the builder
+    // is never invoked AND live degrades to the honest 'unavailable' badge (fail-soft),
+    // rather than silently painting structural zeros as if they were real.
     expect(buildStoreManifest).not.toHaveBeenCalled()
-    expect(screen.queryByTestId('canvas-live-unavailable')).not.toBeInTheDocument()
+    await waitFor(() =>
+      expect(screen.getByTestId('canvas-live-unavailable')).toBeInTheDocument(),
+    )
   })
 
   it('(b) live builds the store map from a cube-bound descriptor', async () => {
