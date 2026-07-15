@@ -108,9 +108,10 @@ describe('CanvasView — G3.1 live preview', () => {
     fireEvent.click(screen.getByRole('radio', { name: 'ცოცხალი მონაცემები' }))
 
     await waitFor(() => expect(buildStoreManifest).toHaveBeenCalledTimes(1))
-    // Built from the first-cube-bound descriptor (kind 'stats', keyed default).
+    // Built as a 'stats' descriptor keyed by the source NAME (the storeKey page
+    // nodes reference), config forwarded verbatim — parity with the runner.
     expect(buildStoreManifest).toHaveBeenCalledWith([
-      { id: 'default', kind: 'stats', url: 'http://api', params: { datasetCode: 'GDP', nonTimeDims: ['measure'] } },
+      { id: 'Stats', kind: 'stats', url: 'http://api', params: { datasetCode: 'GDP', nonTimeDims: ['measure'] } },
     ])
     // Live mounted → NOT showing the unavailable badge.
     await waitFor(() =>
