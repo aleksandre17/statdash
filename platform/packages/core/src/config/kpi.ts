@@ -36,4 +36,15 @@ export interface KpiDef {
   note?:           string
   /** URL to methodology or metadata page — renders as an info-icon link. */
   methodologyUrl?: string
+  // ── Threshold-resolved presentation (conditional formatting) ─────────────────
+  //  Populated by interpretKpi ONLY for a genuine `ok` value that matched a step of
+  //  the card's `thresholds` (Law 8 additive · Law 11 honest — a non-ok state never
+  //  reaches here, so a fabricated 0 is never coloured). All three are elided when no
+  //  threshold matched, so a card without conditional formatting is byte-identical.
+  /** Semantic-token KEY for the VALUE colour (resolved to CSS by the KpiCard via the token spine). */
+  valueToken?:     string
+  /** Directional glyph rendered beside the value — the non-colour a11y signal (WCAG 1.4.1). */
+  valueGlyph?:     'up' | 'down' | 'flat'
+  /** Matched-step state label (resolved to the active locale) — the accessible name for the colour. */
+  valueStateLabel?: string
 }

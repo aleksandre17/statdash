@@ -138,6 +138,15 @@ export type {
 //  bilingual authoring schema lives in the panel (apps/panel), not here.
 export type { ValueMapping, ValueMappingMatch, ValueMappingResult } from './config/value-mapping'
 export { applyValueMap }                                            from './config/value-mapping'
+// ── ValueThresholds — declarative numeric-breakpoint → presentation (token-bound) ─
+//  The ORDERED-NUMERIC sibling of value mappings: a monotonic step function over one
+//  numeric axis (a value takes the HIGHEST breakpoint it reaches). Token-bound (same
+//  no-literal-colour discipline); `resolveValueThreshold` is the pure resolver, HONEST
+//  — a no-data/masked/non-finite value resolves to null (never colour a fabricated
+//  number). Named `ValueThreshold` to disambiguate from the LEGACY chart FieldConfig
+//  `Threshold` (literal-hex, line ~118) — convergence to one grammar is flagged debt.
+export type { ValueThreshold, ValueThresholdStep, ValueThresholdResult } from './config/threshold'
+export { resolveValueThreshold }                                         from './config/threshold'
 // ── timeDimension — first-class time normalization seam [ADR R5] ──────
 export { resolveTimeDimension, clampToBounds, effectiveBounds, effectiveYears } from './core/time-dimension'
 export type { NormalizedTime, LegacyTimeSpec }                          from './core/time-dimension'

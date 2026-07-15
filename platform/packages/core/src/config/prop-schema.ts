@@ -77,6 +77,7 @@ export type PropFieldType =
   | 'data-pipeline' // an element's `data: DataSpec` — projected metric-bind ⊕ pipe editor (DataFacetField)
   | 'events'        // an element's `on: NodeEventHandler[]` — declarative interaction authoring (EventsField)
   | 'visibility'    // an element's `view.visibleWhen: VisibilityExpr` — conditional-visibility authoring (VisibilityField)
+  | 'thresholds'    // an ordered ThresholdStep[] — numeric conditional-formatting authoring (ThresholdField)
 
 // ── PropFieldSource — runtime catalog an 'enum-ref' field draws options from ──
 //

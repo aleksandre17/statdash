@@ -20,6 +20,7 @@ import type { KpiDef }           from '../config/kpi'
 import { getFormatter }          from './transform'
 import { resolveTemplate }       from '../config/template'
 import { evalVisibility }        from '../config/visibility'
+import { resolveValueThreshold } from '../config/threshold'
 import type {
   ObsRef, KpiValueSpec, KpiTrendSpec, KpiSpec,
 } from './kpi-spec'
@@ -102,6 +103,13 @@ interface KpiValueResult {
   formatted: string
   state:     ValueState
   status?:   ObsStatus
+  /**
+   * The raw numeric value BEFORE formatting — the input to conditional-formatting
+   * (threshold) resolution. Carried internally only; interpretKpi uses it iff the
+   * state is `ok` (a no-data/masked value's number is meaningless, so thresholds are
+   * never resolved against it — Law 11). NOT surfaced on KpiDef.
+   */
+  numeric:   number
 }
 
 /** Greppable diagnostic code for a CAGR whose baseline is 0/falsy (PL-4). */
@@ -136,7 +144,8 @@ function resolveValue(spec: KpiValueSpec, ctx: SectionContext, store: DataStore)
       const t    = resolveTime(spec.time, c)
       const cell = readMeasureCell(store, spec.measure, atTime(t, c))
       const n    = cell.value ?? 0
-      return { formatted: getFormatter(spec.format)(spec.abs ? Math.abs(n) : n), state: cell.state, status: cell.status }
+      const shown = spec.abs ? Math.abs(n) : n
+      return { formatted: getFormatter(spec.format)(shown), state: cell.state, status: cell.status, numeric: shown }
     }
     case 'yoy': {
       const c     = withFilter(ctx, metricFilter(spec.measure, spec.filter))
@@ -147,7 +156,7 @@ function resolveValue(spec: KpiValueSpec, ctx: SectionContext, store: DataStore)
       const prev  = prevC.value ?? 0
       const pct   = prev ? (cur / prev - 1) * 100 : 0
       // A YoY has no data when the CURRENT period does (nothing to compare).
-      return { formatted: getFormatter('sign_pct')(pct), state: deriveState([curC, prevC], curC.state) }
+      return { formatted: getFormatter('sign_pct')(pct), state: deriveState([curC, prevC], curC.state), numeric: pct }
     }
     case 'cagr': {
       const c      = withFilter(ctx, metricFilter(spec.measure, spec.filter))
@@ -161,7 +170,7 @@ function resolveValue(spec: KpiValueSpec, ctx: SectionContext, store: DataStore)
       const n      = vFrom && to > from ? ((vTo / vFrom) ** (1 / (to - from)) - 1) * 100 : 0
       // CAGR needs BOTH endpoints — no data if either is empty.
       const nd     = vFromC.state === 'no-data' || vToC.state === 'no-data'
-      return { formatted: fmtKpiPct(n), state: deriveState([vFromC, vToC], nd ? 'no-data' : 'ok') }
+      return { formatted: fmtKpiPct(n), state: deriveState([vFromC, vToC], nd ? 'no-data' : 'ok'), numeric: n }
     }
     case 'mean': {
       // Arithmetic mean Σ v(t)/N over the INCLUSIVE window [from,to] — the proper
@@ -181,7 +190,7 @@ function resolveValue(spec: KpiValueSpec, ctx: SectionContext, store: DataStore)
       const avg = n ? sum / n : 0
       // A window mean has no data only when EVERY year in it is empty.
       const nd  = cells.length > 0 && cells.every((x) => x.state === 'no-data')
-      return { formatted: (spec.format ? getFormatter(spec.format) : fmtKpiPct)(avg), state: deriveState(cells, nd ? 'no-data' : 'ok') }
+      return { formatted: (spec.format ? getFormatter(spec.format) : fmtKpiPct)(avg), state: deriveState(cells, nd ? 'no-data' : 'ok'), numeric: avg }
     }
     case 'share': {
       const getRefCell = (ref: ObsRef): Cell => {
@@ -194,7 +203,8 @@ function resolveValue(spec: KpiValueSpec, ctx: SectionContext, store: DataStore)
       const dv   = denC.value ?? 0
       // A share is undefined when either side is empty.
       const nd   = numC.state === 'no-data' || denC.state === 'no-data'
-      return { formatted: fmtKpiPct(dv ? (nv / dv) * 100 : 0), state: deriveState([numC, denC], nd ? 'no-data' : 'ok') }
+      const pct  = dv ? (nv / dv) * 100 : 0
+      return { formatted: fmtKpiPct(pct), state: deriveState([numC, denC], nd ? 'no-data' : 'ok'), numeric: pct }
     }
     case 'expr': {
       const c     = withFilter(ctx, spec.filter)
@@ -210,7 +220,7 @@ function resolveValue(spec: KpiValueSpec, ctx: SectionContext, store: DataStore)
         ? vals[0] - vals.slice(1).reduce((a, b) => a + b, 0)
         : vals.reduce((a, b) => a + b, 0)
       const nd    = cells.length > 0 && cells.every((x) => x.state === 'no-data')
-      return { formatted: getFormatter(spec.format)(n), state: deriveState(cells, nd ? 'no-data' : 'ok') }
+      return { formatted: getFormatter(spec.format)(n), state: deriveState(cells, nd ? 'no-data' : 'ok'), numeric: n }
     }
     case 'metric': {
       // Evaluate the named calc metric at the pinned period. Absent `format` ⇒
@@ -225,6 +235,7 @@ function resolveValue(spec: KpiValueSpec, ctx: SectionContext, store: DataStore)
       return {
         formatted: (spec.format ? getFormatter(spec.format) : fmtKpiPct)(n),
         state:     v === null || v === undefined ? 'no-data' : 'ok',
+        numeric:   n,
       }
     }
   }
@@ -313,6 +324,16 @@ export function interpretKpi(
   const value          = resolveValue(spec.value, ctx, store)
   const trend          = spec.trend ? resolveTrend(spec.trend, ctx, store) : null
 
+  // ── Conditional formatting (Law 8 additive · Law 11 honest) ──────────────────
+  //  Resolve the value's thresholds ONLY for a genuine `ok` value — a no-data / masked
+  //  / unbound state renders its declared affordance (a KpiStateCard, not a KpiCard),
+  //  so a threshold never colours a fabricated number. `resolveThreshold` is itself
+  //  honest (a non-finite numeric ⇒ null), so this is belt-and-suspenders. Absent
+  //  thresholds ⇒ null ⇒ every field below is elided (byte-identical KpiDef).
+  const threshold      = value.state === 'ok'
+    ? resolveValueThreshold(value.numeric, spec.thresholds)
+    : null
+
   // Every display field funnels through resolveTemplate — which collapses the
   // LocaleString carrier to the active locale (ctx.locale, generic) THEN template-
   // expands against ctx.dims. label/unit/trendSub are all i18n carriers; resolving
@@ -338,6 +359,12 @@ export function interpretKpi(
     preliminary:     spec.preliminary === true || valueIsPreliminary(spec.value, ctx, store),
     note:            spec.note,
     methodologyUrl:  spec.methodologyUrl,
+    // Threshold-resolved presentation (elided when no step matched). `valueStateLabel`
+    // funnels through resolveTemplate — the SAME locale-collapse boundary label/unit use
+    // — so a raw { ka, en } bag never reaches the KpiCard child.
+    valueToken:      threshold?.token,
+    valueGlyph:      threshold?.glyph,
+    valueStateLabel: threshold?.state ? resolveTemplate(threshold.state, ctx) : undefined,
   }
 }
 

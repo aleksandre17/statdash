@@ -17,6 +17,7 @@
 import type { CtxRef, DimVal }   from '../sdmx'
 import type { LocaleString }     from '../i18n/types'
 import type { VisibilityExpr }   from '../config/visibility'
+import type { ValueThreshold }   from '../config/threshold'
 
 export type FormatKey = 'mln_gel' | 'sign_pct' | 'pct' | 'decimal1' | 'decimal2'
 
@@ -135,4 +136,14 @@ export interface KpiSpec {
   note?:           string
   /** URL to methodology or metadata page — renders as an info-icon link on the card. */
   methodologyUrl?: string
+  /**
+   * OPTIONAL conditional formatting — an ordered set of numeric breakpoints that drive
+   * the value's PRESENTATION (colour token ⊕ directional glyph ⊕ state label). The
+   * numeric-range sibling of a value mapping: the resolved VALUE takes the presentation
+   * of the highest breakpoint it reaches (Grafana thresholds). ADDITIVE (Law 8): absent
+   * ⇒ the value renders exactly as before (reference-identical). HONEST (Law 11): a
+   * no-data / masked / unbound card renders its declared affordance and NO threshold is
+   * applied — thresholds colour a real value only, never a fabricated 0.
+   */
+  thresholds?:     ValueThreshold
 }
