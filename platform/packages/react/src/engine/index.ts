@@ -38,6 +38,7 @@ export type {
   FilterControlMeta,
   SliceMeta,
   BandDescriptor,
+  CapabilityRequirement,
   SlotDef,
   PropertyGroup,
   ValidationError,

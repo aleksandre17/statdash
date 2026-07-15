@@ -13,7 +13,7 @@
 //  such caps) under "content". A new slice lands in its group by declaring ONE field.
 //
 import { nodeRegistry } from '@statdash/react/engine'
-import type { LocaleString, NodeCap } from '@statdash/react/engine'
+import type { LocaleString, NodeCap, CapabilityRequirement } from '@statdash/react/engine'
 import { PALETTE_GROUP_LABELS } from './paletteGroupLabels'
 
 export interface PaletteEntry {
@@ -37,6 +37,12 @@ export interface PaletteEntry {
   category?: string
   /** Capability tokens declared by this slice (defensive copy from registry). */
   caps:      NodeCap[]
+  /**
+   * DECLARED data-capability requirement (Law 1) — the prerequisite the capability
+   * gate reads (e.g. `{ conceptRole: 'geo' }` for a map). Absent ⇒ no requirement
+   * beyond the baseline. Read generically by `capabilityGate`; NEVER a node-type sniff.
+   */
+  requires?: CapabilityRequirement
 }
 
 /** Ordered palette group — rendered as a labelled section in the palette. */
@@ -70,6 +76,7 @@ export function getPaletteEntries(): PaletteEntry[] {
     if (seen.has(entry.type)) continue     // one palette row per type
     seen.add(entry.type)
     const description = (entry as { description?: LocaleString }).description
+    const requires = (entry as { requires?: CapabilityRequirement }).requires
     out.push({
       type:        entry.type,
       variant:     entry.variant,
@@ -78,6 +85,7 @@ export function getPaletteEntries(): PaletteEntry[] {
       ...(description !== undefined ? { description } : {}),
       category:    entry.category as string | undefined,
       caps:        nodeRegistry.getCaps(entry.type, entry.variant),
+      ...(requires !== undefined ? { requires } : {}),
     })
   }
   return out

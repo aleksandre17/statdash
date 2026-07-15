@@ -18,6 +18,11 @@ export const META: NodeSliceMeta = {
   // `interactive`: opt into the universal EVENTS facet — the map emits selection:change
   // gestures the `on[]`/NodeAction spine folds (element.facet.events over `on`).
   caps:            ['collapsible', 'filterable', 'view-toggle', 'nav-contributor', 'flow', 'data-bindable', 'interactive'],
+  // DECLARED data-capability requirement (Law 1): a choropleth needs a dimension
+  // carrying the SDMX geo concept role. The Constructor capability gate reads THIS
+  // declaration — it no longer sniffs `type === 'map'`/`'geo'`. A dataset with no
+  // geo-role dimension gates this element out; declaring the role is all it takes.
+  requires:        { conceptRole: 'geo' },
   version:         1,
   i18n: {
     ka: {

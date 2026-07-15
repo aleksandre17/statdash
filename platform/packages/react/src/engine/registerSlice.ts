@@ -111,6 +111,10 @@ export function registerSlice(mod: RegistrableSlice): void {
       // Declared value-band residence (ADR-038/039) — forwarded so the authoring
       // canvas can resolve a node's BandSource generically from its META.
       band:            'band'  in m ? m.band  : undefined,
+      // Declared data-capability requirement (Law 1) — forwarded so the Constructor
+      // capability gate reads the DECLARED prerequisite (e.g. a geo concept role),
+      // never a node-type sniff.
+      requires:        'requires' in m ? m.requires : undefined,
       groups:          m.groups,
       validate:        s.validate,
       migrate:         s.migrate,

@@ -12,15 +12,20 @@
 //      (layout/content panels need no dataset).
 //    - A data-bound entry (declares CAPS.DATA, or chart/kpi caps) → kept ONLY
 //      when the profile is ready AND has ≥1 measure (you cannot render a metric
-//      with no measure). Geo panels additionally need a geo-role dimension.
+//      with no measure). An entry that DECLARES a data requirement (e.g. a map
+//      declaring `requires.conceptRole`) additionally needs a dimension carrying
+//      that DECLARED concept role.
 //    - When NO profile is available (no dataset bound / loading / error) → the
 //      gate is OPEN (all entries kept). Gating is an ENHANCEMENT, never a
 //      blocker: an unavailable profile must not empty the palette (graceful
 //      degradation — verify-gate).
 //
-//  Law 1: data-binding capability is read from declared caps + concept roles,
-//  never from a hardcoded panel-type list (a new data panel that declares 'data'
-//  is gated automatically; a new layout type that doesn't is not).
+//  Law 1 (no privileged dimensions): the gate decides from DECLARED fields only —
+//  the entry's `caps` (data-binding) and its DECLARED `requires.conceptRole` (the
+//  role prerequisite). It NEVER sniffs a node type (`type === 'map'`) or hardcodes a
+//  dimension name. The required role is matched generically against each dimension's
+//  DECLARED `conceptRole` (an SDMX concept role on the DATA, not the dimension code),
+//  so a second tenant declaring a different geo role passes the same gate zero-code.
 //
 import type { CubeProfile } from '../lib/cubeApi'
 import type { PaletteEntry } from '../canvas/paletteEntries'
@@ -29,24 +34,21 @@ import type { ActiveProfile } from './useActiveProfile'
 // Caps that mark an entry as DATA-BOUND (needs a dataset to render anything).
 const DATA_CAPS = new Set(['data', 'chart', 'kpi', 'filterable'])
 
-const GEO_ROLE = 'geo'
-
 /** True when an entry declares any data-binding capability. */
 export function isDataBound(entry: PaletteEntry): boolean {
   return entry.caps.some((c) => DATA_CAPS.has(c))
-}
-
-/** True when an entry is (heuristically) a geo/map panel needing a geo axis. */
-function needsGeo(entry: PaletteEntry): boolean {
-  return entry.type === 'map' || entry.type.includes('geo') || entry.caps.includes('map')
 }
 
 /** True when a ready profile can support a given data-bound entry. */
 function profileSupports(entry: PaletteEntry, profile: CubeProfile): boolean {
   const hasMeasure = (profile.measures ?? []).length > 0
   if (!hasMeasure) return false
-  if (needsGeo(entry)) {
-    return (profile.dimensions ?? []).some((d) => d.conceptRole === GEO_ROLE)
+  // DECLARED concept-role prerequisite (Law 1) — an entry that declares
+  // `requires.conceptRole` is kept only when some profile dimension carries that
+  // exact DECLARED role. Absent ⇒ no role prerequisite. Zero node-type sniff.
+  const requiredRole = entry.requires?.conceptRole
+  if (requiredRole != null) {
+    return (profile.dimensions ?? []).some((d) => d.conceptRole === requiredRole)
   }
   return true
 }

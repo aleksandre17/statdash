@@ -30,4 +30,5 @@ export type {
   VariantDef,
   VariantSchema,
   BandDescriptor,
+  CapabilityRequirement,
 }                                from '../slice-meta'

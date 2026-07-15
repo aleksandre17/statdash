@@ -289,6 +289,12 @@ export interface BandDescriptor {
   source: string
 }
 
+// CapabilityRequirement (the DECLARED data prerequisite the Constructor gate reads,
+// Law 1) is its own cohesive concern — see ./capability-requirement.ts. Re-exported
+// here so it travels with the slice-taxonomy public surface (ObjectMeta.requires).
+export type { CapabilityRequirement } from './capability-requirement'
+import type { CapabilityRequirement } from './capability-requirement'
+
 // ── ObjectMeta — the ONE type system (ADR-023 · kind-as-facet) ────────
 //
 //  "One Type System, One Tree, Two Residences." Every registrable object —
@@ -347,6 +353,15 @@ export interface ObjectMeta {
    * declared source, never the concrete node type (FF-NO-EXTERNAL-SPECIAL-CASE).
    */
   band?:            BandDescriptor
+  /**
+   * Declared data-capability requirement (Law 1). Absent ⇒ no data prerequisite
+   * beyond the baseline "has ≥1 measure" the gate applies to every data-bound
+   * element. Present ⇒ the Constructor capability gate keeps this element only when
+   * the active dataset profile satisfies it (e.g. `{ conceptRole: 'geo' }` needs a
+   * geo-role dimension). Read GENERICALLY from this declaration — never by sniffing
+   * the concrete node type (FF-NO-PRIVILEGED-NODE).
+   */
+  requires?:        CapabilityRequirement
   version?:         number
   i18n?:            Record<string, Record<string, string>>
 }

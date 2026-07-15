@@ -39,7 +39,7 @@ type ErrorFallbackFn  = (props: { node: NodeBase; error: Error }) => ReactNode
 // Re-exported here so existing `import { NodeCap } from './NodeRegistry'` keeps working.
 export type { NodeCap, Cap } from './slice-meta'
 export { CAPS }              from './slice-meta'
-import type { NodeCap, NavContribution, BandDescriptor } from './slice-meta'
+import type { NodeCap, NavContribution, BandDescriptor, CapabilityRequirement } from './slice-meta'
 import { DEFAULT_NAV_CONTRIBUTION }      from './slice-meta'
 
 interface StoredMeta extends Record<string, unknown> {
@@ -62,6 +62,8 @@ interface StoredMeta extends Record<string, unknown> {
   navContribution?: NavContribution
   /** Declared value-band residence (ADR-038/039) — the registered BandSource id, or absent for the default props band. */
   band?:            BandDescriptor
+  /** Declared data-capability requirement (Law 1) — the DECLARED prerequisite the Constructor gate reads (e.g. a geo concept role), never a node-type sniff. */
+  requires?:        CapabilityRequirement
 }
 
 export class NodeRegistry {
@@ -95,6 +97,8 @@ export class NodeRegistry {
       navContribution?: NavContribution
       /** Declared value-band residence (ADR-038/039) — the registered BandSource id. */
       band?:            BandDescriptor
+      /** Declared data-capability requirement (Law 1) — the DECLARED prerequisite the Constructor gate reads, never a node-type sniff. */
+      requires?:        CapabilityRequirement
       validate?:        ValidateFn
       migrate?:         MigrateFn
       errorFallback?:   ErrorFallbackFn

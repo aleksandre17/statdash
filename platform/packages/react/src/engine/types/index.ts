@@ -60,6 +60,7 @@ export type {
   VariantDef,
   VariantSchema,
   BandDescriptor,
+  CapabilityRequirement,
 }                                from './slice'
 
 // ── CoreNodeDef source types + pipeline/display types (from @statdash/engine) ──
