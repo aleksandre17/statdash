@@ -46,6 +46,7 @@ export type {
   PropFieldSource,
   PropFieldOption,
   PropFieldValidation,
+  AudiencePlane,
   PropField,
   PropSchema,
   VariantDef,

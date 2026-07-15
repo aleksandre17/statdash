@@ -28,6 +28,7 @@ import { validateField } from './validateField'
 import { useActiveLocales } from './useActiveLocales'
 import { useSite } from '../store/constructor.store'
 import { nodeSchemaSource, type SchemaSource } from './schemaSource'
+import { useVisiblePlanes, filterSchemaByPlanes } from './plane'
 import type { CanvasNode, Locale } from '../types/constructor'
 import './Inspector.css'
 
@@ -113,10 +114,16 @@ export function Inspector({
   const site    = useSite()
   const locales = useActiveLocales()
   const locale  = site.defaultLocale
+  const planes  = useVisiblePlanes()
 
+  // PLANE projection (root Law 11 · ADR-043): filter the declared schema to the fields
+  // visible under the active audience lens BEFORE grouping/rendering, so plumbing
+  // (`plane:'system'`) never reaches the author dock and an all-hidden group drops out
+  // (groupFields skips empty groups). The ONE field-level plane chokepoint — every
+  // render path (page root, node, nested-item Inspector) funnels through here.
   const schema = useMemo(
-    () => schemaSource.getSchema(node),
-    [schemaSource, node],
+    () => filterSchemaByPlanes(schemaSource.getSchema(node), planes),
+    [schemaSource, node, planes],
   )
   const groups = useMemo(
     () => schemaSource.getGroups(node),

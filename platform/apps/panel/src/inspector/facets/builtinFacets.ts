@@ -102,11 +102,16 @@ export function registerBuiltinFacets(): void {
   //  `evalVisibility` (build → declare → runs — the authored value is a valid interpretable
   //  spec, zero new runtime). Order 30 — the slot the retired hand-wired `element.visibility`
   //  section held (folded into this facet, the peer of how DATA folded `element.data`).
+  //  PLANE (root Law 11 · ADR-043): conditional visibility is an ADVANCED, steward-plane
+  //  concern (`op · perspective` show-when logic) — the author composes; the steward gates.
+  //  `plane:'steward'` so this facet section is hidden from the author dock and reachable
+  //  only behind the steward lens (the peer of how the raw `dim→value` coordinate is `system`).
   facetRegistry.register({
     id:          'visibility',
     order:       30,
     readPath:    'view.visibleWhen',
     label:       VISIBILITY_LABEL,
+    plane:       'steward',
     appliesWhen: (meta) => typeof (meta as { slot?: unknown }).slot !== 'string',
     contract:    () => [{ field: 'view.visibleWhen', type: 'visibility', label: VISIBILITY_LABEL }],
   })

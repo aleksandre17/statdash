@@ -57,11 +57,13 @@ export function genericSummary(value: unknown, field: PropField, locale: Locale)
     return { primary: label, secondary: countPhrase(value.length, 'item', 'items'), badges: ['array'] }
   }
   if (isRecord(value)) {
+    // Craft: the glance shows the SHAPE (a field count), never a raw-key dump
+    // (`by · op · prefix · source` — the screenshot-04 disease). The keys belong in the
+    // themed StructuredValueView tree reached via "Open", not inline as opaque text.
     const keys = Object.keys(value)
-    const preview = keys.slice(0, 4).join(' · ')
     return {
       primary:   label,
-      secondary: keys.length ? `${countPhrase(keys.length, 'field', 'fields')} · ${preview}` : 'empty',
+      secondary: keys.length ? countPhrase(keys.length, 'field', 'fields') : 'empty',
       badges:    ['object'],
     }
   }

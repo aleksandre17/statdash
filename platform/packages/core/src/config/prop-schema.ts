@@ -20,6 +20,24 @@
 //
 import type { LocaleString } from '../i18n/types'
 
+// ── AudiencePlane — the DECLARED audience a field / facet is projected to ─────────
+//
+//  The Authoring Canon's "projection with a plane" (root Law 11 · ADR-043): every
+//  authorable field carries the audience it belongs to. The Constructor projects a
+//  field ONLY to its declared audience, filtered by the active role lens:
+//    • 'author'  — the non-programmer composing pages (the DEFAULT; absent ⇒ author,
+//                  so every legacy field stays author-visible, unmigrated).
+//    • 'steward' — the governed-model curator; sees author + steward behind the lens
+//                  (advanced controls: e.g. conditional visibility).
+//    • 'system'  — plumbing (a derive-graph `vars`, a raw `dim→value` coordinate, a
+//                  derived breadcrumb spec). Projected to NO ONE by default — never on
+//                  the author plane; reachable only under an explicit system lens.
+//  The invariant is machine-held (FF-NO-UNPROJECTED-DECLARED-FIELD): a `system` field
+//  MUST NOT render on the author plane. Additive + OCP — a field with no `plane` is
+//  byte-identical to before (author-visible).
+//
+export type AudiencePlane = 'author' | 'steward' | 'system'
+
 // ── PropFieldType — primitive and rich value types in a PropField ─────
 export type PropFieldType =
   | 'string'        // plain text
@@ -109,6 +127,16 @@ export interface PropField {
   label:       LocaleString
   default?:    unknown
   required?:   boolean
+  /**
+   * The DECLARED audience this field is projected to (root Law 11 · ADR-043). Absent
+   * ⇒ `'author'` (the field shows on the author plane — every legacy field, unmigrated).
+   * `'steward'` ⇒ an advanced control shown only behind the steward lens; `'system'`
+   * ⇒ plumbing (a derive-graph, a raw `dim→value` coordinate, a derived breadcrumb
+   * spec), projected to no one by default. The Constructor filters by the active lens
+   * (`planesForRole`); FF-NO-UNPROJECTED-DECLARED-FIELD forbids a `system` field
+   * rendering on the author plane.
+   */
+  plane?:      AudiencePlane
   /** Allowed values for string fields; Constructor renders a select. */
   options?:    PropFieldOption[]
   /**

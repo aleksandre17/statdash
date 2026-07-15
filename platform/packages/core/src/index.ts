@@ -181,7 +181,7 @@ import './config/rowspec-schemas' // side-effect: register the built-in RowSpec 
 //  react/slice-meta re-exports these, so existing import sites are unchanged.
 export type {
   PropFieldType, PropFieldSource, PropFieldOption, PropFieldValidation,
-  PropField, PropSchema, PropertyGroup,
+  PropField, PropSchema, PropertyGroup, AudiencePlane,
 }                                           from './config/prop-schema'
 export type { LinkIconKey, LinkDef }        from './config/links'
 export { evalVisibility }                   from './config/visibility'

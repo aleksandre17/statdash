@@ -36,7 +36,7 @@
 //  facets WITH their localized labels and derives one dock section per facet from
 //  `facetRegistry.list()`, mounting each `contract` through the generic Inspector.
 //
-import type { LocaleString, PropSchema } from '@statdash/engine'
+import type { AudiencePlane, LocaleString, PropSchema } from '@statdash/engine'
 import type { ObjectMeta } from './slice-meta'
 
 /**
@@ -70,6 +70,14 @@ export interface FacetDescriptor {
   label:       LocaleString
   /** Ascending order among facet sections in the dock (lower renders first). */
   order:       number
+  /**
+   * The DECLARED audience this whole facet section is projected to (root Law 11 ·
+   * ADR-043) — the facet-level peer of `PropField.plane`. Absent ⇒ `'author'`.
+   * `'steward'` ⇒ shown only behind the steward lens (e.g. the advanced VISIBILITY
+   * facet); `'system'` ⇒ projected to no one by default. The dock filters facet
+   * sections by the active lens, so a non-author facet never renders in the author dock.
+   */
+  plane?:      AudiencePlane
 }
 
 class FacetRegistryImpl {

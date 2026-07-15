@@ -58,7 +58,9 @@ export const FeaturedItemSchema = defineSchema([
   { field: 'color',    type: 'color',        label: { ka: 'აქცენტის ფერი', en: 'Accent colour' } },
   { field: 'trendSub', type: 'LocaleString', label: { ka: 'ტრენდის წარწერა', en: 'Trend caption' }, coverage: 'localized' },
   { field: 'time',     type: 'number',       label: { ka: 'წელი', en: 'Year' } },
-  { field: 'at',       type: 'object',       label: { ka: 'კოორდინატი (dim→value)', en: 'Coordinate (dim→value)' } },
+  // Raw `dim→value` coordinate — plumbing behind the governed bind. `plane:'system'`
+  // so it never renders on the author plane (root Law 11 · ADR-043).
+  { field: 'at',       type: 'object',       label: { ka: 'კოორდინატი (dim→value)', en: 'Coordinate (dim→value)' }, plane: 'system' },
   { field: 'trend',    type: 'object',       label: { ka: 'ტრენდი', en: 'Trend' } },
 ])
 

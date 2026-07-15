@@ -41,7 +41,10 @@ export const KpiValueItemSchema = defineSchema([
       { value: 'decimal2', label: { ka: 'ათწილადი (0.00)', en: 'Decimal 0.00'} },
     ],
   },
-  { field: 'filter', type: 'object', label: { ka: 'კოორდინატი (dim→value)', en: 'Coordinate (dim→value)' } },
+  // The raw `dim→value` coordinate — a free-form DimFilter. `plane:'system'`: the
+  // author binds a GOVERNED metric (`measure`), never a raw dimension coordinate; the
+  // coordinate is plumbing behind the metric (root Law 11 · ADR-043).
+  { field: 'filter', type: 'object', label: { ka: 'კოორდინატი (dim→value)', en: 'Coordinate (dim→value)' }, plane: 'system' },
 ])
 
 // ── KpiItemSchema — the per-KPI nested schema; recurses into `value` ─────────
@@ -54,7 +57,9 @@ export const KpiItemSchema = defineSchema([
   { field: 'value',          type: 'object',       label: { ka: 'მნიშვნელობა', en: 'Value' }, itemSchema: KpiValueItemSchema },
   { field: 'unit',           type: 'LocaleString', label: { ka: 'ერთეული', en: 'Unit' }, coverage: 'localized' },
   { field: 'color',          type: 'color',        label: { ka: 'ფერი', en: 'Colour' } },
-  { field: 'when',           type: 'object',       label: { ka: 'ხილვადობა', en: 'Visibility' } },
+  // Per-item conditional visibility (a VisibilityExpr: op · perspective). `plane:'steward'`:
+  // advanced conditional logic behind the steward lens, not author-default (root Law 11).
+  { field: 'when',           type: 'object',       label: { ka: 'ხილვადობა', en: 'Visibility' }, plane: 'steward' },
   { field: 'trend',          type: 'object',       label: { ka: 'ტრენდი', en: 'Trend' } },
   { field: 'trendSub',       type: 'LocaleString', label: { ka: 'ტრენდის წარწერა', en: 'Trend caption' }, coverage: 'localized' },
   { field: 'preliminary',    type: 'boolean',      label: { ka: 'წინასწარი', en: 'Preliminary' } },

@@ -40,8 +40,12 @@ export const crumbsProjector: PresentationProjector<VarExpr, Crumb[]> = {
 
   // Label is the en-only baseline (Law 3 — no first-tenant `ka` content in a
   // reusable library; tenant locales arrive via the manifest i18n catalog).
+  // `plane:'system'`: the breadcrumb trail is a DERIVED data-driven VarExpr
+  // (op:'breadcrumbs' → by · op · prefix · source), not hand-authoring — plumbing.
+  // It projects to no one on the author plane (root Law 11 · ADR-043); the trail is
+  // computed from the page's nav model, never typed as a raw object in the inspector.
   schema: () => [
-    { field: 'crumbs', type: 'array', label: { en: 'Breadcrumbs' } },
+    { field: 'crumbs', type: 'array', label: { en: 'Breadcrumbs' }, plane: 'system' },
   ],
 
   evaluate(raw, evalExpr) {

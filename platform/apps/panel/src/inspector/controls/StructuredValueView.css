@@ -1,0 +1,109 @@
+/* ── StructuredValueView — the token-themed JSON/config tree (reference-class) ──────
+ *
+ *  Binds every react-json-view-lite style slot to the inspector's `--insp-*` DTCG
+ *  tokens, so a structured value renders in the SAME visual language as the dock
+ *  (Stripe/Retool code-value palette) — never a foreign skin, never a raw text dump.
+ *  Value-type colours are their own tokens with tasteful, dark-safe fallbacks.
+ */
+
+.sv-json-frame {
+  max-height: 340px;
+  overflow: auto;
+  padding: var(--insp-gap-sm, 8px) var(--insp-gap-md, 12px);
+  border: 1px solid var(--insp-divider, #e2e8f0);
+  border-radius: var(--insp-radius-sm, 6px);
+  background: var(--insp-badge-bg, #f8fafc);
+}
+
+.sv-json,
+.sv-json__row {
+  font-family: var(--insp-font-mono, ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace);
+  font-size: var(--insp-font-xs, 0.75rem);
+  line-height: 1.7;
+}
+
+.sv-json__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px;
+}
+
+/* Nested levels: a subtle guide rail + indent (the tree's spine). */
+.sv-json__children {
+  margin-left: 10px;
+  padding-left: 10px;
+  border-left: 1px solid var(--insp-divider, #e6ebf2);
+}
+
+/* Keys */
+.sv-json__label {
+  color: var(--insp-fg, #0f172a);
+  font-weight: 600;
+}
+.sv-json__label--clickable {
+  cursor: pointer;
+  border-radius: 3px;
+}
+.sv-json__label--clickable:hover {
+  background: var(--insp-chip-bg, #e2e8f0);
+}
+
+/* Punctuation — quiet, so the data reads first (Clarity over cleverness, ONS). */
+.sv-json__punctuation {
+  color: var(--insp-muted, #94a3b8);
+}
+
+/* Values — a restrained, semantic palette (dark-safe fallbacks). */
+.sv-json__value {
+  font-variant-numeric: tabular-nums;
+}
+.sv-json__string    { color: var(--insp-code-string,  #0a7c5a); }
+.sv-json__number    { color: var(--insp-code-number,  #2563eb); }
+.sv-json__boolean   { color: var(--insp-code-boolean, #9333ea); font-weight: 600; }
+.sv-json__null,
+.sv-json__undefined { color: var(--insp-muted, #94a3b8); font-style: italic; }
+.sv-json__other     { color: var(--insp-fg, #0f172a); }
+
+/* Expand / collapse triangles (we own the glyphs — the stock CSS is not imported). */
+.sv-json__icon {
+  cursor: pointer;
+  color: var(--insp-accent, #2563eb);
+  user-select: none;
+  display: inline-block;
+  width: 1em;
+  text-align: center;
+}
+.sv-json__icon--expand::after   { content: "\25B8"; }  /* ▸ */
+.sv-json__icon--collapse::after { content: "\25BE"; }  /* ▾ */
+
+/* Collapsed node — a clear, clickable ellipsis affordance (drill-in). */
+.sv-json__collapsed {
+  cursor: pointer;
+  padding: 0 4px;
+  color: var(--insp-muted, #64748b);
+  border-radius: 3px;
+}
+.sv-json__collapsed:hover {
+  background: var(--insp-chip-bg, #e2e8f0);
+  color: var(--insp-fg, #0f172a);
+}
+
+/* ── Designed empty state — never a bare "—"/"not set" dead-end (craft bar) ────── */
+.sv-json--empty {
+  display: flex;
+  align-items: center;
+  gap: var(--insp-gap-sm, 8px);
+  padding: var(--insp-gap-md, 12px);
+  border: 1px dashed var(--insp-divider, #cbd5e1);
+  border-radius: var(--insp-radius-sm, 6px);
+  color: var(--insp-muted, #94a3b8);
+}
+.sv-json__empty-glyph {
+  font-family: var(--insp-font-mono, ui-monospace, monospace);
+  font-size: var(--insp-font-sm, 0.8125rem);
+  opacity: 0.7;
+}
+.sv-json__empty-text {
+  font-size: var(--insp-font-sm, 0.8125rem);
+}

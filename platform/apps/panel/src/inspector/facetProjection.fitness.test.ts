@@ -13,6 +13,7 @@ import { describe, it, expect, beforeAll } from 'vitest'
 import { facetRegistry, nodeRegistry, chromeRegistry } from '@statdash/react/engine'
 import type { ObjectMeta } from '@statdash/react/engine'
 import type { CanvasController } from '../studio/useCanvasController'
+import type { Role } from '../studio/useRole'
 import { dockSectionRegistry, type DockRenderCtx } from './sections/dockSection'
 import { registerBuiltinDockSections, registerFacetSections } from './sections/builtins'
 import { registerBuiltinFacets } from './facets/builtinFacets'
@@ -27,8 +28,11 @@ beforeAll(() => {
 const controller = (over: Partial<CanvasController>): CanvasController =>
   ({ selected: null, selectedBand: null, ...over } as unknown as CanvasController)
 
-const elementCtx = (over: Partial<CanvasController>): DockRenderCtx =>
-  ({ scope: 'element', locale: 'en', controller: controller(over) } as DockRenderCtx)
+// Default lens is STEWARD here so the (steward-plane) VISIBILITY facet stays projected
+// in these axis-completeness tests — plane-filtering itself is proven in
+// planeProjection.fitness.test.ts. Author-plane facets show under both lenses.
+const elementCtx = (over: Partial<CanvasController>, role: Role = 'steward'): DockRenderCtx =>
+  ({ scope: 'element', locale: 'en', controller: controller(over), role } as DockRenderCtx)
 
 describe('FF-FACET-PROJECTED — a declared facet is a generic dock projection', () => {
   it('the STYLE facet is registered with a contract over view.styles', () => {

@@ -6,6 +6,7 @@ import ChevronRightIcon from '@mui/icons-material/ChevronRight'
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft'
 import { SITE_FRAME_ID } from '@statdash/react/engine'
 import { DockBody, registerBuiltinDockSections } from '../inspector/sections'
+import { useRole } from './useRole'
 import { StudioEmptyState } from './StudioEmptyState'
 import { BreadcrumbSlotContext, useBreadcrumbHost } from '../inspector/breadcrumbSlot'
 import type { Locale } from '../types/constructor'
@@ -69,6 +70,9 @@ export interface RightDockProps {
 
 export function RightDock({ controller, locale, collapsed, onToggleCollapsed, width, onResize }: RightDockProps) {
   const { selected, pageId, deleteSelected, selectedItemPath, selectedBand, selectedId } = controller
+  // The active audience lens (root Law 11) — passed into every dock ctx so facet
+  // sections filter by plane (a steward facet hides from the author dock).
+  const role = useRole()
 
   // Scope is PURELY derived from the ONE selection — an element selected shows only its
   // contract; deselecting returns to Page. No override, no persistent tab (SPEC §3.2 —
@@ -145,11 +149,11 @@ export function RightDock({ controller, locale, collapsed, onToggleCollapsed, wi
     // No pages exist → a single guided empty-state that fills the region.
     content = <StudioEmptyState kind="no-pages" locale={locale} fill />
   } else if (scope === 'page') {
-    content = <DockBody ctx={{ scope: 'page', locale, controller }} />
+    content = <DockBody ctx={{ scope: 'page', locale, controller, role }} />
   } else {
     // Element context — the chrome panel OR the node's schema/context/visibility
     // sections; the registry's `appliesTo` picks the right set (mutually exclusive).
-    content = <DockBody ctx={{ scope: 'element', locale, controller }} />
+    content = <DockBody ctx={{ scope: 'element', locale, controller, role }} />
   }
 
   return (

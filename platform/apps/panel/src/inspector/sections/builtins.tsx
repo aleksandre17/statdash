@@ -23,6 +23,7 @@ import { FiltersDrawer } from '../../features/filters'
 import { ChromeCompositionPanel } from '../../features/chrome'
 import { fixedSchemaSource, itemTitle } from '../controls/nestedItemControl.helpers'
 import { registerBuiltinFacets } from '../facets/builtinFacets'
+import { planesForRole, isPlaneVisible } from '../plane'
 import type { CanvasNode } from '../../types/constructor'
 import { dockSectionRegistry, type DockRenderCtx } from './dockSection'
 
@@ -207,6 +208,10 @@ export function registerFacetSections(): void {
       id:        `element.facet.${facet.id}`,
       order:     facet.order,
       appliesTo: (ctx) => {
+        // PLANE (root Law 11 · ADR-043): a non-author facet (e.g. VISIBILITY, `steward`)
+        // never renders in the author dock — the facet-level peer of the Inspector's
+        // field-level plane filter. `ctx.role` absent ⇒ author lens (safe default).
+        if (!isPlaneVisible(facet.plane, planesForRole(ctx.role))) return false
         const meta = selectedElementMeta(ctx)
         return !!meta && facet.appliesWhen(meta)
       },

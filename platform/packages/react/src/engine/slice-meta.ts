@@ -249,7 +249,7 @@ export interface ValidationError {
 //
 export type {
   PropFieldType, PropFieldSource, PropFieldOption, PropFieldValidation,
-  PropField, PropSchema,
+  PropField, PropSchema, AudiencePlane,
 } from '@statdash/engine'
 import type { PropSchema } from '@statdash/engine'
 

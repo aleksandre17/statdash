@@ -62,9 +62,11 @@ export function pageSchema(): PropSchema {
     // NOT a raw JSON field here — the named-ordered-list pane replaces the object
     // sub-editor (Power BI bookmark-pane IA, schema-driven scope fields).
     //
-    // Generic page-scoped derived variables (zero reserved keys — Law 1). The
-    // object JSON sub-editor, exactly like node `vars`.
-    { field: 'vars',      type: 'object', label: { ka: 'ცვლადები',       en: 'Variables' } },
+    // Generic page-scoped derived VARIABLES — the page's derive-graph (`_selKey`,
+    // `regionObj`, `_direct…`). This is PLUMBING, not authoring: `plane:'system'` so
+    // it never renders on the author plane (root Law 11 · ADR-043). Reachable only
+    // under a system lens; the author binds governed nouns, never a derive-graph.
+    { field: 'vars',      type: 'object', label: { ka: 'ცვლადები',       en: 'Variables' }, plane: 'system' },
   ]
 }
 

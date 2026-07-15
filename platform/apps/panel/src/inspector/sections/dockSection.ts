@@ -18,6 +18,7 @@
 import type { ReactNode } from 'react'
 import type { Locale } from '../../types/constructor'
 import type { CanvasController } from '../../studio/useCanvasController'
+import type { Role } from '../../studio/useRole'
 
 /** The scope a dock body is composed for — mirrors the RightDock DockScope. */
 export type DockSectionScope = 'element' | 'page'
@@ -28,6 +29,13 @@ export interface DockRenderCtx {
   scope:      DockSectionScope
   locale:     Locale
   controller: CanvasController
+  /**
+   * The active AUDIENCE lens (root Law 11 · ADR-043) — sections filter their
+   * projection by it (a `plane:'steward'` facet hides from the author dock). Optional:
+   * absent ⇒ the author lens (the safe default, so a test ctx that omits it sees only
+   * the author plane). RightDock populates it from `useRole`.
+   */
+  role?:      Role
 }
 
 /** A dock body section — declared data, resolved generically by RightDock. */

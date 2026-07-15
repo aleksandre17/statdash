@@ -29,6 +29,7 @@ import { summarize } from '../summarize'
 import { useFocusEscalation } from '../focusEscalation'
 import { isRawJsonEscapeEnabled } from '../rawJsonEscape'
 import { readLocale, type LocaleStringValue } from '../localeString'
+import { StructuredValueView } from './StructuredValueView'
 import { JsonControl } from './primitives'
 import './SummaryCard.css'
 
@@ -94,29 +95,12 @@ function RichValueDetail({ field, value, onChange }: {
   value: unknown
   onChange: (next: unknown) => void
 }) {
-  const entries: Array<[string, unknown]> =
-    Array.isArray(value)
-      ? value.map((v, i) => [String(i), v])
-      : value != null && typeof value === 'object'
-        ? Object.entries(value as Record<string, unknown>)
-        : []
-
   return (
     <div className="summary-detail" data-testid="summary-detail">
-      {entries.length > 0 ? (
-        <dl className="summary-detail__list">
-          {entries.map(([k, v]) => (
-            <div key={k} className="summary-detail__row">
-              <dt className="summary-detail__key">{k}</dt>
-              <dd className="summary-detail__val">
-                {v != null && typeof v === 'object' ? '{…}' : String(v)}
-              </dd>
-            </div>
-          ))}
-        </dl>
-      ) : (
-        <p className="summary-detail__empty">not set</p>
-      )}
+      {/* The value's STRUCTURE as a reference-class, token-themed, collapsible tree —
+          legible, drill-in, never a raw `{…}` text dump. Read-only: structured EDITING
+          is the Stage / Chart Studio; this is the truthful W-A viewer of what it IS. */}
+      <StructuredValueView value={value} />
 
       {isRawJsonEscapeEnabled() && (
         <div className="summary-detail__raw">

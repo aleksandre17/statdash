@@ -56,14 +56,25 @@ describe('dockSectionRegistry — the hardcoded stack is now registered data', (
     expect(ids).toEqual(['page.config', 'page.perspectives', 'page.filters'])
   })
 
-  it('element scope with a whole node lists schema + the visibility facet (no page panes)', () => {
+  it('element scope with a whole node lists schema + author facets (no page panes)', () => {
+    // PLANE (root Law 11): under the AUTHOR lens the whole-node dock shows the schema +
+    // author-plane facets (style), but NOT the steward-plane VISIBILITY facet — the
+    // author never sees the advanced show-when plumbing. Full plane proof lives in
+    // planeProjection.fitness.test.ts.
     const node = { id: 'n1', type: 'chart', props: {} }
-    const ids = dockSectionRegistry
-      .list(ctx({ scope: 'element', controller: controller({ selected: node as never }) }))
+    const authorIds = dockSectionRegistry
+      .list(ctx({ scope: 'element', controller: controller({ selected: node as never }), role: 'author' }))
       .map((s) => s.id)
-    expect(ids).toContain('element.schema')
-    expect(ids).toContain('element.facet.visibility')
-    expect(ids.some((i) => i.startsWith('page.'))).toBe(false)
+    expect(authorIds).toContain('element.schema')
+    expect(authorIds).toContain('element.facet.style')
+    expect(authorIds).not.toContain('element.facet.visibility')
+    expect(authorIds.some((i) => i.startsWith('page.'))).toBe(false)
+
+    // The steward lens additionally reveals the (steward-plane) VISIBILITY facet.
+    const stewardIds = dockSectionRegistry
+      .list(ctx({ scope: 'element', controller: controller({ selected: node as never }), role: 'steward' }))
+      .map((s) => s.id)
+    expect(stewardIds).toContain('element.facet.visibility')
   })
 
   it('element scope with a bounded PART (chrome region) lists ONLY element.schema (S6)', () => {
