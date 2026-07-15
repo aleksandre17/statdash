@@ -134,6 +134,42 @@
   max-width: 280px;
 }
 
+/* ── Binding honest state — a bound prop that errored / hit no-data (Law 11) ──
+   The declared honest placeholder a node renders when a `$bind` expression is
+   malformed/threw (error) or resolved to no-data at the current context. Meaning is
+   carried by ICON + TEXT, never colour alone (WCAG 2.1 AA / Law 9). Layout matches the
+   panel-level feedback shapes so a bound node never looks broken — just honestly empty. */
+.node-binding-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+  padding: 1.5rem 1rem;
+  text-align: center;
+  border: 1px dashed var(--color-border);
+  border-radius: 0.5rem;
+  color: var(--color-text-faint);
+}
+.node-binding-state__icon  { font-size: 1.5rem; line-height: 1; }
+.node-binding-state__title {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  margin: 0;
+}
+.node-binding-state__detail {
+  font-size: 0.75rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  color: var(--color-text-faint);
+  overflow-wrap: anywhere;
+}
+.node-binding-state--error {
+  border-color: var(--color-error-border);
+  color: var(--color-error-text-soft);
+}
+.node-binding-state--error .node-binding-state__title { color: var(--color-error-text); }
+
 /* ── Export menu — compact download icon + format dropdown ─────────────
    Replaces the former `.export-bar` (one button per format) toolbar: ONE icon
    button opens a WAI-ARIA menu of the registered formats. A host (the section

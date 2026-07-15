@@ -22,8 +22,9 @@
 //
 
 import { createElement, Fragment, Suspense, type ReactNode } from 'react'
-import { evalVisibility, mergeScope, emitDiagnostic, diagWarning } from '@statdash/engine'
-import type { ScopeOverride, DataRow }   from '@statdash/engine'
+import { evalVisibility, mergeScope, emitDiagnostic, diagWarning, resolveBindings } from '@statdash/engine'
+import type { ScopeOverride, DataRow, BindingDiagnostic } from '@statdash/engine'
+import type { ExprScope, ExprRow, DimVal } from '@statdash/expr'
 import type { NodeDef, RenderContext, ChildrenArg, NodeBase, SlotChildren, VarMap } from './types'
 import { nodeRegistry }                  from './register-all'
 import { skeletonRegistry }              from './skeletonRegistry'
@@ -72,6 +73,64 @@ function renderValidationErrors(
     ...errs.map((e, i) =>
       createElement('p', { key: i, className: 'node-error__body' }, `${e.field}: ${e.message}`)
     ),
+  )
+}
+
+// ── binding seam helper: build the ExprScope a $bind prop resolves against ──
+//
+//  Mirrors evalVarMap's scope assembly (the SAME live surface node-level vars read):
+//    dims    — the author's filter selections   → `{ $ctx: key }` / a bare identifier
+//    derived — page + node vars                 → `{ $derived: key }`
+//    rows    — the node's resolved DataRow[]     → collection ops / `$row`
+//    ctx     — store classifiers/display + locale for domain-registered ops
+//  Law 1: generic Record scope — no privileged dimension names.
+//
+function buildBindScope(ctx: RenderContext, rows: DataRow[]): ExprScope {
+  const pageStore =
+    ctx.stores[ctx.pageStoreKey ?? ''] ?? Object.values(ctx.stores)[0] ?? null
+  return {
+    dims:    ctx.filterParams as Record<string, DimVal>,
+    derived: { ...(ctx.vars as Record<string, DimVal>) },
+    rows:    rows as unknown as ExprRow[],
+    ctx: {
+      classifiers: (pageStore as { classifiers?: unknown } | null)?.classifiers,
+      display:     (pageStore as { display?: unknown } | null)?.display,
+      raw:         ctx.filterParams as Record<string, string>,
+      locale:      ctx.locale,
+      fallback:    ctx.fallbackLocale,
+    },
+  }
+}
+
+// ── binding seam helper: the DECLARED honest state of a failed binding (Law 11) ──
+//
+//  Mirrors renderValidationErrors: when a bound prop cannot show its intended value —
+//  the expr is malformed/threw (`error`) or resolved to no-data at the current context
+//  (`no-data`) — the node renders THIS honest placeholder instead of a fabricated value
+//  or a silent blank ("the canvas never lies"). Meaning is carried by ICON + TEXT, never
+//  colour alone (WCAG 2.1 AA / Law 9); `data-binding-state` is the queryable hook. Error
+//  detail is surfaced so a broken authored expr is never silently swallowed.
+//
+function renderBindingState(diags: BindingDiagnostic[], node: NodeBase): ReactNode {
+  const hasError = diags.some(d => d.state === 'error')
+  const state    = hasError ? 'error' : 'no-data'
+  const title    = hasError ? 'Binding error' : 'No data'
+  return createElement(
+    'div',
+    {
+      className: `node-binding-state node-binding-state--${state}`,
+      role: 'note',
+      'data-binding-state': state,
+      'aria-label': `${node.type}: ${title}`,
+    },
+    createElement('span', { className: 'node-binding-state__icon', 'aria-hidden': 'true' }, hasError ? '⚠' : '—'),
+    createElement('span', { className: 'node-binding-state__title' }, title),
+    ...(hasError
+      ? diags
+          .filter(d => d.message)
+          .map((d, i) =>
+            createElement('span', { key: i, className: 'node-binding-state__detail' }, `${d.path}: ${d.message}`))
+      : []),
   )
 }
 
@@ -287,13 +346,33 @@ export function renderNode(node: NodeBase, ctx: RenderContext): ReactNode {
       ctxN = { ...ctxN, vars: { ...ctxN.vars, ...nodeVars } }
     }
 
+    // 2.7. Dynamic property bindings (⚡ / `{{ }}`) — resolve this node's OWN authorable
+    //  props ($bind expr-strings) against the live scope (filter params · vars · rows), so
+    //  a bound prop renders its COMPUTED value. ONE structural seam for EVERY prop (OCP —
+    //  new bindable prop = zero code here). Additive: a node with no $bind is reference-
+    //  identical (resolveBindings returns the same object → no downstream churn). Child
+    //  nodes are SKIPPED — each resolves its own bindings through its own render pass; `vars`
+    //  / `fieldConfig` are engine plumbing, not authorable props, so they're skipped too.
+    //  Law 2: the binding is a serializable expr-string; @statdash/expr is the ONLY evaluator.
+    const bound  = resolveBindings(migrated, buildBindScope(ctxN, rows), {
+      skipKeys: ['children', 'items', 'vars', 'fieldConfig'],
+    })
+    const rnode  = bound.value as NodeBase & U
+
+    // Law 11 — "the canvas never lies": a binding that errored (broken expr) or hit no-data
+    //  at the current context becomes a DECLARED honest state, never a fabricated value or a
+    //  silent blank. Mirrors the validation-error path above (fail honest, not silent).
+    if (bound.diagnostics.length > 0) {
+      return renderBindingState(bound.diagnostics, rnode)
+    }
+
     // 3. Propagate view + cascade fieldConfig + inject rows
-    const nodeFc = (migrated as U)['fieldConfig'] as import('@statdash/engine').FieldConfig | undefined
+    const nodeFc = (rnode as U)['fieldConfig'] as import('@statdash/engine').FieldConfig | undefined
     ctxN = {
       ...ctxN,
       rows,
-      ...(migrated.view  ? { view:        migrated.view  } : {}),
-      ...(nodeFc         ? { fieldConfig: nodeFc         } : {}),
+      ...(rnode.view  ? { view:        rnode.view  } : {}),
+      ...(nodeFc      ? { fieldConfig: nodeFc       } : {}),
     }
 
     // 4. Shell lookup — zero branching on type
@@ -311,8 +390,8 @@ export function renderNode(node: NodeBase, ctx: RenderContext): ReactNode {
     //    Populated from SlotDef registry (getSlots). Each slot uses its own
     //    lazy cache. Shells opt-in via children.slots['name'].renderChild(i).
     //
-    const raw: NodeBase[] = (migrated as U)['children'] as NodeBase[]
-      ?? (migrated as U)['items']    as NodeBase[]
+    const raw: NodeBase[] = (rnode as U)['children'] as NodeBase[]
+      ?? (rnode as U)['items']    as NodeBase[]
       ?? []
 
     // Expand transparent wrapper nodes into a flat list of { node, styles }
@@ -361,7 +440,7 @@ export function renderNode(node: NodeBase, ctx: RenderContext): ReactNode {
     const slots: Record<string, SlotChildren> = {}
     if (slotDefs) {
       for (const [slotName, slotDef] of Object.entries(slotDefs)) {
-        const slotRaw  = (migrated as U)[slotDef.field]
+        const slotRaw  = (rnode as U)[slotDef.field]
         const slotItems: NodeBase[] = Array.isArray(slotRaw) ? slotRaw as NodeBase[]
                                     : slotRaw ? [slotRaw as NodeBase] : []
         slots[slotName] = makeSlotChildren(slotItems, ctxN)
@@ -386,7 +465,7 @@ export function renderNode(node: NodeBase, ctx: RenderContext): ReactNode {
       createElement(NodeErrorBoundary, {
         node:     migrated,
         fallback: errorFallback,
-        children: shell(migrated as NodeDef, ctxN, childrenArg),
+        children: shell(rnode as NodeDef, ctxN, childrenArg),
       }),
     )
 

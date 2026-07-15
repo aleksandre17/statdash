@@ -156,6 +156,10 @@ export type { PropSchemaFormProps, FieldRenderProps } from '../components/PropSc
 //  Constructor (apps/panel) consumes them via @statdash/react/engine and never
 //  forks a second copy. (DESIGN-authoring-schema-ssot §4 P1.)
 export { getAtPath, setAtPath, evalShowWhen } from '@statdash/engine'
+// dynamic property binding — the resolver + guard (used by the Inspector's ⚡ preview)
+export { isBinding, resolveBinding, resolveBindings } from '@statdash/engine'
+// dynamic property binding — the additive literal-OR-expression value model (types)
+export type { Binding, BindState, BindResolution, BindingDiagnostic } from '@statdash/engine'
 export { resolveNodeRows, resolveStore } from './resolveNodeRows'
 export { resolvePreliminary }      from './resolvePreliminary'
 // ── Panel title-badge seam — the reusable PANEL_TITLE_BADGE ritual ────────

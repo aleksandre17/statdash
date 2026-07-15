@@ -184,6 +184,13 @@ export type {
   PropField, PropSchema, PropertyGroup, AudiencePlane, FieldConcern,
 }                                           from './config/prop-schema'
 export type { LinkIconKey, LinkDef }        from './config/links'
+// ── Dynamic property binding — literal-OR-expression scalar props (⚡ / `{{ }}`) ──
+//  The additive value model: any authorable scalar may be `{ $bind: "<expr>" }`, a
+//  serializable expr-string (Law 2) the render pipeline resolves at ONE structural
+//  seam against the live scope (filter params · vars · rows). Additive + OCP (Law 8):
+//  a prop with no binding is byte-identical. Honest tri-state (Law 11): ok/no-data/error.
+export type { Binding, BindState, BindResolution, BindingDiagnostic, ResolveBindingsResult } from './config/binding'
+export { isBinding, resolveBinding, resolveBindings }                                        from './config/binding'
 export { evalVisibility }                   from './config/visibility'
 export { resolveTemplate }                  from './config/template'
 export type { PerspectiveCarrier }          from './config/template'
