@@ -29,6 +29,7 @@
 //  rest of apps/panel, e.g. PageStep). Kept inline alongside the other ka chrome.
 //
 import type { PreviewMode, PreviewStatus } from './useLivePreviewStores'
+import { BreakpointSwitcher } from '../studio/BreakpointSwitcher'
 
 /** The canvas theme-PREVIEW mode — a Studio view-state, NOT authored config. */
 export type ThemePreview = 'light' | 'dark'
@@ -62,6 +63,11 @@ export function CanvasToolbar({
 }: CanvasToolbarProps) {
   return (
     <div className="canvas-toolbar" data-testid="canvas-toolbar">
+      {/* Active-breakpoint switcher — the Builder.io / Framer control. Picking a
+          breakpoint retargets per-breakpoint authoring AND constrains the canvas
+          preview width so the page reflows live via the container-query cascade. */}
+      <BreakpointSwitcher />
+
       <div
         className="canvas-toolbar__modes"
         role="radiogroup"

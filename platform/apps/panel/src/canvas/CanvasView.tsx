@@ -59,6 +59,7 @@ import { CanvasOverlay }      from './CanvasOverlay'
 import { CanvasToolbar }      from './CanvasToolbar'
 import { useLivePreviewStores, type PreviewMode } from './useLivePreviewStores'
 import { useDebouncedLivePage } from './useDebouncedLivePage'
+import { useActiveBreakpoint, previewWidthFor } from '../studio/activeBreakpoint'
 import type { NodeBase }      from '@statdash/react/engine'
 import './canvas.css'
 
@@ -170,6 +171,15 @@ export function CanvasView({
 
   const rootClass = `canvas-root scroll-fancy${dragging ? ' canvas-root--dragging' : ''}`
 
+  // ── Per-breakpoint PREVIEW width (Builder.io/Framer) — the second projection of the
+  //  active-breakpoint state. Constraining the RENDERER layer to the chosen breakpoint's
+  //  width lands the page's layout containers inside that band, so the EXISTING
+  //  container-query cascade (layout.css `@container`) reflows the page to what that
+  //  breakpoint shows — WYSIWYG, "the canvas never lies". `default` ⇒ no cap (full-bleed,
+  //  byte-identical to pre-slice). No provider (isolated mounts) ⇒ 'default' ⇒ no cap.
+  const { bp } = useActiveBreakpoint()
+  const previewW = previewWidthFor(bp)
+
   // Perspective PREVIEW — seed the canvas router URL with the active axis param so the
   // live renderer switches perspective. The renderer's perspectiveState SSOT derives
   // entirely from the URL filter param (FilterProvider reads location.search on mount →
@@ -189,7 +199,12 @@ export function CanvasView({
     <div
       className={rootClass}
       data-testid="canvas-root"
-      style={themeVars}
+      // Preview-width var (consumed by canvas.css when data-preview-bp is set) is merged
+      // onto the theme vars so the previewed brand still applies.
+      style={previewW ? { ...themeVars, '--canvas-preview-w': `${previewW}px` } as CSSProperties : themeVars}
+      // The active preview breakpoint — present only when the base is NOT selected, so
+      // canvas.css caps the renderer width and the container-query cascade reflows.
+      data-preview-bp={bp !== 'default' ? bp : undefined}
       // The ONE sanctioned dark scope (tokens.css). `light` leaves the attribute OFF so
       // the base `:root` tokens / the site brand paint unchanged (default). Set to dark,
       // the page + its AppChrome resolve the DTCG dark tokens for this subtree only.

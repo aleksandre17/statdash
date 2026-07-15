@@ -169,6 +169,19 @@
   pointer-events: none;
 }
 
+/* Per-breakpoint PREVIEW (Builder.io/Framer) — when the author selects a non-base
+ * breakpoint, cap the renderer to that band's width (a centred device frame). The
+ * page's layout containers land inside the band, so the EXISTING container-query
+ * cascade (layout.css `@container`) reflows the page to what the breakpoint shows.
+ * The overlay measures the real (narrowed, centred) node rects, so selection frames
+ * follow. `default` leaves no attribute ⇒ full-bleed, byte-identical to pre-slice. */
+.canvas-root[data-preview-bp] .canvas-layer--renderer {
+  max-width: var(--canvas-preview-w);
+  margin-inline: auto;
+  box-shadow: 0 0 0 1px var(--canvas-accent-soft);
+  transition: max-width 160ms ease;
+}
+
 /* P0 (reform 0066) — the rendered section's chart↔table view-toggle is OPERABLE in
  * the authoring canvas: the author previews both views live. It opts back into
  * pointer-events AND lifts above the selection overlay (z-index) so a click OPERATES

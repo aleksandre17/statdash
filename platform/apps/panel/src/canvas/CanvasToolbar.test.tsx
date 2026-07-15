@@ -45,9 +45,10 @@ describe('CanvasToolbar — preview-mode toggle (C2)', () => {
   it('carries NO perspective switch — the page perspective-bar node is the one control (G9)', () => {
     render(<CanvasToolbar {...props()} />)
     expect(screen.queryByTestId('canvas-perspective-switch')).not.toBeInTheDocument()
-    // Two radiogroups now: the preview-MODE toggle + the theme-PREVIEW toggle — and no
-    // third (removed) perspective radiogroup.
-    expect(screen.getAllByRole('radiogroup')).toHaveLength(2)
+    // Three radiogroups now: the active-BREAKPOINT switcher (Builder.io/Framer) + the
+    // preview-MODE toggle + the theme-PREVIEW toggle — and NO (removed) perspective one.
+    expect(screen.getByTestId('breakpoint-switcher')).toBeInTheDocument()
+    expect(screen.getAllByRole('radiogroup')).toHaveLength(3)
   })
 })
 

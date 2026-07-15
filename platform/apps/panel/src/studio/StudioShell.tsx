@@ -18,6 +18,7 @@ import { LayersSurface } from './surfaces/LayersSurface'
 import { PagesSiteSurface } from './surfaces/PagesSiteSurface'
 import { StyleSurface } from './surfaces/StyleSurface'
 import { FocusView } from './FocusView'
+import { ActiveBreakpointProvider } from './activeBreakpoint'
 import { makeEscalatedTarget, type FocusViewTarget, type FocusViewTargetId } from './focusViewRegistry'
 import { FocusEscalationContext, type FocusEscalationRequest, type FieldBinding } from '../inspector/focusEscalation'
 import { getAtPath } from '../inspector/showWhen'
@@ -204,7 +205,7 @@ export function StudioShell() {
   }, [escalation, selectedNode, patchProp])
 
   return (
-    <>
+    <ActiveBreakpointProvider>
       {/* Strata + live edits on the document root → chrome, canvas AND body portals inherit.
           Emitted for BOTH screens (shell + focus-view) so the focus-view inherits the skin. */}
       <GlobalStyles styles={{ ':root:root': themeStyle as Record<string, string | number> }} />
@@ -323,7 +324,7 @@ export function StudioShell() {
       </Box>
       </Box>
       )}
-    </>
+    </ActiveBreakpointProvider>
   )
 }
 
