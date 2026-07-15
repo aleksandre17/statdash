@@ -9,6 +9,9 @@
 
 import type { DataStore, Requirement } from './store'
 import { storeVal }              from './store'
+import type { Cell, ValueState } from './cell'
+import { storeCell, okCell, noDataCell, unboundCell, maskedCell } from './cell'
+import type { ObsStatus }        from '../core/provenance'
 import { resolveMeasureRef }     from './metric'
 import { resolveMetricValue, calcMetricRequirements } from './metric-calc'
 import type { SectionContext }   from '../core/context'
@@ -59,6 +62,48 @@ function readMeasure(store: DataStore, measure: string, ctx: SectionContext): nu
   return sum
 }
 
+// ── readMeasureCell — the HONEST (state-carrying) sibling of readMeasure (W1) ──
+//
+//  Reads a measure ref as a Cell (value + honest state) through the SAME
+//  resolveMeasureRef seam readMeasure uses, so the NUMBER is byte-identical to
+//  readMeasure for every `ok` cell (the OLAP sum over the ref's codes) and the STATE
+//  is the distinction the bare sum cannot carry (no-data / unbound / masked). A no-data
+//  component contributes 0 (byte-identical to readMeasure's `storeVal ?? 0`). An empty
+//  ref → unbound; EVERY component no-data → no-data. Suppression is contagious: a
+//  confidential ('c') component masks the aggregate (SDMX secondary suppression — a sum
+//  that includes a suppressed cell may itself disclose it).
+function readMeasureCell(store: DataStore, measure: string, ctx: SectionContext): Cell {
+  const codes = resolveMeasureRef(measure).codes
+  if (codes.length === 0) return unboundCell()
+  let sum    = 0
+  let anyOk  = false
+  let status: ObsStatus | undefined
+  for (const code of codes) {
+    const cell = storeCell(store, code, ctx)
+    if (cell.state === 'masked')  return maskedCell()
+    if (cell.state === 'unbound') return unboundCell()
+    if (cell.state === 'ok') { sum += cell.value ?? 0; anyOk = true; status ??= cell.status }
+    // 'no-data' → contributes 0 (byte-identical to readMeasure's storeVal ?? 0)
+  }
+  return anyOk ? okCell(sum, status) : noDataCell()
+}
+
+// The honest state of a value COMPUTED from several reads. `masked` is contagious — a
+// figure derived from a confidential input cannot be published. Otherwise `primary`:
+// each formula decides what "no data" means for it (a YoY has none when the CURRENT
+// period does; a window mean when EVERY year does; a ratio when either side does).
+function deriveState(reads: Cell[], primary: ValueState): ValueState {
+  return reads.some((r) => r.state === 'masked') ? 'masked' : primary
+}
+
+// The resolved KPI value — the formatted string PLUS its honest state (the seam that
+// lets interpretKpi stop emitting a fabricated `0` for no-data / unbound / masked).
+interface KpiValueResult {
+  formatted: string
+  state:     ValueState
+  status?:   ObsStatus
+}
+
 /** Greppable diagnostic code for a CAGR whose baseline is 0/falsy (PL-4). */
 export const KPI_CAGR_ZERO_BASELINE = 'KPI_CAGR_ZERO_BASELINE'
 
@@ -79,76 +124,108 @@ function cagrZeroBaseline(measure: string, from: number, to: number): void {
 
 // ── Value computation ─────────────────────────────────────────────────
 
-function resolveValue(spec: KpiValueSpec, ctx: SectionContext, store: DataStore): string {
+//  Returns the formatted string AND its honest state. Every numeric formula is
+//  BYTE-IDENTICAL to pre-seam (the `ok` value is unchanged — the read now flows
+//  through readMeasureCell, whose `.value ?? 0` reproduces readMeasure exactly); the
+//  ADDITIVE part is `state`, so a no-data / unbound / masked cell is no longer
+//  rendered as a fabricated number (the origin of "the canvas lies").
+function resolveValue(spec: KpiValueSpec, ctx: SectionContext, store: DataStore): KpiValueResult {
   switch (spec.type) {
     case 'point': {
-      const c = withFilter(ctx, metricFilter(spec.measure, spec.filter))
-      const t = resolveTime(spec.time, c)
-      const n = readMeasure(store, spec.measure, atTime(t, c))
-      return getFormatter(spec.format)(spec.abs ? Math.abs(n) : n)
-    }
-    case 'yoy': {
       const c    = withFilter(ctx, metricFilter(spec.measure, spec.filter))
       const t    = resolveTime(spec.time, c)
-      const cur  = readMeasure(store, spec.measure, atTime(t, c))
-      const prev = readMeasure(store, spec.measure, atTime(t - 1, c))
-      const pct  = prev ? (cur / prev - 1) * 100 : 0
-      return getFormatter('sign_pct')(pct)
+      const cell = readMeasureCell(store, spec.measure, atTime(t, c))
+      const n    = cell.value ?? 0
+      return { formatted: getFormatter(spec.format)(spec.abs ? Math.abs(n) : n), state: cell.state, status: cell.status }
+    }
+    case 'yoy': {
+      const c     = withFilter(ctx, metricFilter(spec.measure, spec.filter))
+      const t     = resolveTime(spec.time, c)
+      const curC  = readMeasureCell(store, spec.measure, atTime(t, c))
+      const prevC = readMeasureCell(store, spec.measure, atTime(t - 1, c))
+      const cur   = curC.value ?? 0
+      const prev  = prevC.value ?? 0
+      const pct   = prev ? (cur / prev - 1) * 100 : 0
+      // A YoY has no data when the CURRENT period does (nothing to compare).
+      return { formatted: getFormatter('sign_pct')(pct), state: deriveState([curC, prevC], curC.state) }
     }
     case 'cagr': {
-      const c     = withFilter(ctx, metricFilter(spec.measure, spec.filter))
-      const from  = resolveTime(spec.from, c)
-      const to    = resolveTime(spec.to, c)
-      const vFrom = readMeasure(store, spec.measure, atTime(from, c))
-      const vTo   = readMeasure(store, spec.measure, atTime(to, c))
+      const c      = withFilter(ctx, metricFilter(spec.measure, spec.filter))
+      const from   = resolveTime(spec.from, c)
+      const to     = resolveTime(spec.to, c)
+      const vFromC = readMeasureCell(store, spec.measure, atTime(from, c))
+      const vToC   = readMeasureCell(store, spec.measure, atTime(to, c))
+      const vFrom  = vFromC.value ?? 0
+      const vTo    = vToC.value ?? 0
       if (to > from && !vFrom) cagrZeroBaseline(spec.measure, from, to)   // PL-4 — fail loud, not silent 0
-      const n     = vFrom && to > from ? ((vTo / vFrom) ** (1 / (to - from)) - 1) * 100 : 0
-      return fmtKpiPct(n)
+      const n      = vFrom && to > from ? ((vTo / vFrom) ** (1 / (to - from)) - 1) * 100 : 0
+      // CAGR needs BOTH endpoints — no data if either is empty.
+      const nd     = vFromC.state === 'no-data' || vToC.state === 'no-data'
+      return { formatted: fmtKpiPct(n), state: deriveState([vFromC, vToC], nd ? 'no-data' : 'ok') }
     }
     case 'mean': {
       // Arithmetic mean Σ v(t)/N over the INCLUSIVE window [from,to] — the proper
       // reducer for a RATE series (each year's rate read at its pinned coordinate,
       // GENERICALLY via atTime). Absent `format` ⇒ fmtKpiPct (byte-identical to the
       // share/metric default); a rate card supplies 'sign_pct' to keep the sign.
-      const c   = withFilter(ctx, metricFilter(spec.measure, spec.filter))
-      const lo  = Math.min(resolveTime(spec.from, c), resolveTime(spec.to, c))
-      const hi  = Math.max(resolveTime(spec.from, c), resolveTime(spec.to, c))
+      const c     = withFilter(ctx, metricFilter(spec.measure, spec.filter))
+      const lo    = Math.min(resolveTime(spec.from, c), resolveTime(spec.to, c))
+      const hi    = Math.max(resolveTime(spec.from, c), resolveTime(spec.to, c))
+      const cells: Cell[] = []
       let sum = 0
       let n   = 0
-      for (let t = lo; t <= hi; t++) { sum += readMeasure(store, spec.measure, atTime(t, c)); n++ }
+      for (let t = lo; t <= hi; t++) {
+        const cell = readMeasureCell(store, spec.measure, atTime(t, c))
+        cells.push(cell); sum += cell.value ?? 0; n++
+      }
       const avg = n ? sum / n : 0
-      return (spec.format ? getFormatter(spec.format) : fmtKpiPct)(avg)
+      // A window mean has no data only when EVERY year in it is empty.
+      const nd  = cells.length > 0 && cells.every((x) => x.state === 'no-data')
+      return { formatted: (spec.format ? getFormatter(spec.format) : fmtKpiPct)(avg), state: deriveState(cells, nd ? 'no-data' : 'ok') }
     }
     case 'share': {
-      const getRef = (ref: ObsRef): number => {
+      const getRefCell = (ref: ObsRef): Cell => {
         const rc = withFilter(ctx, metricFilter(ref.measure, ref.filter))
-        return readMeasure(store, ref.measure, atTime(resolveTime(ref.time, rc), rc))
+        return readMeasureCell(store, ref.measure, atTime(resolveTime(ref.time, rc), rc))
       }
-      const n = getRef(spec.num)
-      const d = getRef(spec.denom)
-      return fmtKpiPct(d ? (n / d) * 100 : 0)
+      const numC = getRefCell(spec.num)
+      const denC = getRefCell(spec.denom)
+      const nv   = numC.value ?? 0
+      const dv   = denC.value ?? 0
+      // A share is undefined when either side is empty.
+      const nd   = numC.state === 'no-data' || denC.state === 'no-data'
+      return { formatted: fmtKpiPct(dv ? (nv / dv) * 100 : 0), state: deriveState([numC, denC], nd ? 'no-data' : 'ok') }
     }
     case 'expr': {
-      const c    = withFilter(ctx, spec.filter)
-      const t    = resolveTime(spec.time, c)
+      const c     = withFilter(ctx, spec.filter)
+      const t     = resolveTime(spec.time, c)
       // Each code reads at ITS OWN governed coordinate — a metric-id code folds its
       // default dims (metricFilter), a raw code returns spec.filter untouched (so a
       // raw-code expr stays byte-identical). The time pin is shared (metric dims never
       // touch the time axis, Law 1).
-      const vals = spec.codes.map((code) =>
-        readMeasure(store, code, atTime(t, withFilter(ctx, metricFilter(code, spec.filter)))))
-      const n    = spec.op === 'subtract'
+      const cells = spec.codes.map((code) =>
+        readMeasureCell(store, code, atTime(t, withFilter(ctx, metricFilter(code, spec.filter)))))
+      const vals  = cells.map((x) => x.value ?? 0)
+      const n     = spec.op === 'subtract'
         ? vals[0] - vals.slice(1).reduce((a, b) => a + b, 0)
         : vals.reduce((a, b) => a + b, 0)
-      return getFormatter(spec.format)(n)
+      const nd    = cells.length > 0 && cells.every((x) => x.state === 'no-data')
+      return { formatted: getFormatter(spec.format)(n), state: deriveState(cells, nd ? 'no-data' : 'ok') }
     }
     case 'metric': {
-      // Evaluate the named calc metric at the pinned period. `?? 0` mirrors the
-      // legacy ratio guard (a non-calc/missing ref or null expr ⇒ 0). Absent
-      // `format` ⇒ fmtKpiPct — the SAME formatter `share` uses (byte-identical).
+      // Evaluate the named calc metric at the pinned period. Absent `format` ⇒
+      // fmtKpiPct — the SAME formatter `share` uses (byte-identical). A metric that
+      // resolves to null (missing ref / null expr) is NO-DATA — the legacy `?? 0`
+      // fabricated a zero here (the exact lie). Masked composition through a calc
+      // metric's inputs is deferred to provenance-composition (PM-4); this wave a
+      // metric value is ok | no-data.
       const t = resolveTime(spec.time, ctx)
-      const v = resolveMetricValue(spec.metric, atTime(t, ctx), store) ?? 0
-      return (spec.format ? getFormatter(spec.format) : fmtKpiPct)(v)
+      const v = resolveMetricValue(spec.metric, atTime(t, ctx), store)
+      const n = v ?? 0
+      return {
+        formatted: (spec.format ? getFormatter(spec.format) : fmtKpiPct)(n),
+        state:     v === null || v === undefined ? 'no-data' : 'ok',
+      }
     }
   }
 }
@@ -233,7 +310,7 @@ export function interpretKpi(
   ctx:   SectionContext,
   store: DataStore,
 ): KpiDef {
-  const formattedValue = resolveValue(spec.value, ctx, store)
+  const value          = resolveValue(spec.value, ctx, store)
   const trend          = spec.trend ? resolveTrend(spec.trend, ctx, store) : null
 
   // Every display field funnels through resolveTemplate — which collapses the
@@ -242,7 +319,11 @@ export function interpretKpi(
   // them at this ONE boundary keeps a raw { ka, en } bag from reaching the KpiCard.
   return {
     label:           resolveTemplate(spec.label, ctx),
-    value:           formattedValue,
+    value:           value.formatted,
+    // Honest state (AR-52 / Law 11). `ok` is elided (⟺ absent) so every value-bearing
+    // KpiDef stays byte-identical to pre-seam; a non-`ok` state tells the renderer the
+    // `value` string is a placeholder — render the declared affordance, not a fake 0.
+    state:           value.state === 'ok' ? undefined : value.state,
     // Unit is OPTIONAL — absent for a self-describing (percent) value. Resolve only
     // when authored; else undefined (KpiCard guards `{unit && …}`), NEVER pass
     // undefined into resolveTemplate (its carrier collapse would throw).

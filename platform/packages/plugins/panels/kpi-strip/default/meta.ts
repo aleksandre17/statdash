@@ -25,12 +25,23 @@ export const META: PanelSliceMeta = {
       // Honest UNBOUND state (Canon C2) — never a fake 0; an affordance to bind (J4).
       'unbound-title': 'აუბმელი მაჩვენებელი',
       'unbound-hint':  'აირჩიე მეტრიკა',
+      // Honest INTERPRET-DERIVED states (AR-52 · Law 11) — never a fabricated 0.
+      // no-data: the spec IS bound but the store has no observation at the coordinate.
+      'no-data-title': 'მონაცემი არ არის',
+      'no-data-hint':  'ამ კოორდინატისთვის დაკვირვება არ მოიძებნა',
+      // masked: SDMX OBS_STATUS 'c' — confidential, the value must NOT be published.
+      'masked-title':  'კონფიდენციალური',
+      'masked-hint':   'მნიშვნელობა დაფარულია',
     },
     en: {
       'trend-up': 'Up:', 'trend-down': 'Down:', 'trend-flat': 'Flat:',
       'methodology': 'Methodology',
       'unbound-title': 'Unbound metric',
       'unbound-hint':  'Choose a metric',
+      'no-data-title': 'No data',
+      'no-data-hint':  'No observation for this coordinate',
+      'masked-title':  'Confidential',
+      'masked-hint':   'Value withheld',
     },
   },
 }

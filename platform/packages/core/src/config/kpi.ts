@@ -6,9 +6,20 @@
 //  Separation: KpiSpec (what to compute) lives in data/kpi.ts.
 //              KpiDef (computed result) lives here — it's a view type.
 //
+import type { ValueState } from '../data/cell'
+
 export interface KpiDef {
   label:           string
   value:           string
+  /**
+   * The honest state of `value` (AR-52 / Law 11). Absent ⟺ `'ok'` (a real value,
+   * incl. a genuine 0) — every stored KpiDef is byte-identical to pre-seam. A
+   * non-`ok` state ('no-data' | 'unbound' | 'masked' | 'loading' | 'error') means
+   * `value` is a placeholder the renderer MUST NOT show as a number — it renders the
+   * declared honest affordance instead, so the canvas never lies (an unbound / empty /
+   * suppressed cell is never a fabricated `0`).
+   */
+  state?:          ValueState
   unit?:           string
   /**
    * Trend DIRECTION — 'up'/'down'/'flat' are true rises/falls (glyph + coloured);

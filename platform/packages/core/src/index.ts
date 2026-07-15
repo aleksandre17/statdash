@@ -236,6 +236,9 @@ export { evalCondition, evalWhen, evalValidatorPredicate, validators,
 export type { DataStore, Requirement, StoreQuery, StoreCaps,
               QueryResult, ResultMeta, Unsubscribe, GrainLevel, RollupOp } from './data/store'
 export { staticStore, storeVal, storeValAt, storeObs, storeSchema, runBatch, asyncFromSync } from './data/store'
+// ── The honest value envelope — AR-52 / Law 11 (the canvas never lies) ─────────
+export type { Cell, ValueState }                                       from './data/cell'
+export { storeCell, obsAtCoord, obsStatusOf }                          from './data/cell'
 export { rollupValues }                                                from './data/grain'
 export type { ExternalStoreOptions }                                   from './data/store-impl'
 export { ExternalStore, CachedStore }                                  from './data/store-impl'

@@ -17,11 +17,12 @@
 //  client-side, so a warm slice carrying sibling measures/periods narrows to the cell
 //  the KPI displays. Generic over dims (Law 1 — no year/measure literal).
 
-import type { DataStore, Observation } from './store'
-import { storeObs }                    from './store'
+import type { Observation }            from './store'
+import type { DataStore }              from './store'
+import { obsAtCoord }                  from './cell'
 import { resolveMeasureRef }           from './metric'
 import type { SectionContext }         from '../core/context'
-import { atTime, MEASURE_DIM }         from '../core/context'
+import { atTime }                      from '../core/context'
 import type { KpiValueSpec }           from './kpi-spec'
 import { resolveTime, withFilter }     from './kpi-coord'
 
@@ -39,31 +40,15 @@ function obsIsPreliminary(o: Observation): boolean {
 
 /**
  * Status-aware point read: does ANY observation at (measure × c.dims) carry
- * OBS_STATUS 'p'? The read mirrors `storeVal(store, measure, c)` but inspects status.
- * Scopes the returned rows to the coordinate client-side (measure + every concrete
- * dim in c.dims) — a warm slice that carries sibling measures/periods is narrowed to
- * the exact cell the KPI displays. Defensive `try/catch → false`: status detection is
- * best-effort and must NEVER crash the kpi-strip (the warm===render invariant).
+ * OBS_STATUS 'p'? Scans the SAME coordinate slice `storeCell` reads (obsAtCoord —
+ * measure + every concrete dim in c.dims), the ONE SSOT so a cell's state and its
+ * preliminary badge derive from the identical observations (no drift). Defensive by
+ * construction: obsAtCoord returns `null` when the obs read throws (a cold slice) —
+ * status detection is best-effort and must NEVER crash the kpi-strip (warm===render).
  */
 function coordIsPreliminary(store: DataStore, measure: string, c: SectionContext): boolean {
-  let obs: Observation[]
-  try {
-    obs = storeObs(store, { measure }, c)
-  } catch {
-    return false
-  }
-  for (const o of obs) {
-    const r = o as Record<string, unknown>
-    if (String(r[MEASURE_DIM] ?? measure) !== measure) continue
-    let atCoord = true
-    for (const [dim, val] of Object.entries(c.dims)) {
-      if (val === '' || val === null || val === undefined) continue
-      const ov = r[dim]
-      if (ov !== undefined && String(ov) !== String(val)) { atCoord = false; break }
-    }
-    if (atCoord && obsIsPreliminary(o)) return true
-  }
-  return false
+  const obs = obsAtCoord(store, measure, c)
+  return obs !== null && obs.some(obsIsPreliminary)
 }
 
 /**

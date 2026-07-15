@@ -6,6 +6,8 @@ import { evalVisibility, resolveLocaleString }   from '@statdash/engine'
 import type { KpiStripNode }                   from './KpiStripNode'
 import KpiCard                                  from './components/KpiCard'
 import KpiUnboundCard                           from './components/KpiUnboundCard'
+import KpiStateCard                             from './components/KpiStateCard'
+import type { KpiHonestState }                 from './components/KpiStateCard'
 import { isKpiSpecBound }                        from './kpiBinding'
 
 export const KpiStripShell = defineShell<KpiStripNode>({
@@ -22,6 +24,18 @@ function KpiStripControl({ def, ctx }: { def: KpiStripNode; ctx: RenderContext }
   // preliminary signal is now consolidated to ONE page-level indicator (AR-40);
   // the leaf stays pure/presentational, never hardcoding a language (AR-37 P1).
   const metaLabels = { methodology: t('methodology') }
+
+  // ── AR-52 · Law 11 — localized honest-state copy for interpret-derived states ──
+  //  A BOUND card the interpreter resolves to a non-`ok` state (no observation at the
+  //  coordinate, or a suppressed cell) renders a KpiStateCard with THIS localized copy
+  //  instead of a fabricated number. loading/error never arise on the sync interpret
+  //  path (async is handled upstream by useKpiRows' suspend) but carry a safe fallback.
+  const stateCopy: Record<KpiHonestState, { title: string; hint: string }> = {
+    'no-data': { title: t('no-data-title'), hint: t('no-data-hint') },
+    masked:    { title: t('masked-title'),  hint: t('masked-hint')  },
+    loading:   { title: t('no-data-title'), hint: t('no-data-hint') },
+    error:     { title: t('no-data-title'), hint: t('no-data-hint') },
+  }
 
   // ── ADR-041 · D-F2 — the value band is the SOLE residence ──────────────────
   //  The KPI card is a `value` PartField of the strip's `items` (ADR-041 ROOT-2),
@@ -117,6 +131,16 @@ function KpiStripControl({ def, ctx }: { def: KpiStripNode; ctx: RenderContext }
           )
           if (isKpiSpecBound(v.item)) {
             const kpi = boundKpis[bi++]!
+            // Honest interpret-derived state (Law 11): a bound card whose coordinate has
+            // no observation ('no-data') or is confidential ('masked') renders the
+            // DECLARED affordance, never the placeholder value string (a fabricated 0).
+            // `state` absent ⟺ 'ok' → the real KpiCard.
+            if (kpi.state && kpi.state !== 'ok') {
+              const s = kpi.state as KpiHonestState
+              return anchor(
+                <KpiStateCard state={s} label={kpi.label} title={stateCopy[s].title} hint={stateCopy[s].hint} />,
+              )
+            }
             return anchor(<KpiCard {...kpi} trendLabels={trendLabels} metaLabels={metaLabels} />)
           }
           // Unbound — the card's own label (locale-collapsed, NOT template-expanded, so

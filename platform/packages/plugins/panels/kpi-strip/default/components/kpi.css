@@ -142,6 +142,26 @@
   color: var(--color-text-faint);
 }
 
+/* ── Honest INTERPRET-DERIVED states (AR-52 · Law 11) ──────────────────────
+ *  A BOUND KPI tile the interpreter resolves to a non-ok state renders THIS
+ *  (reusing the .kpi-unbound inner layout) instead of a fabricated number:
+ *    no-data — the coordinate has no observation (bound, but empty)
+ *    masked  — SDMX OBS_STATUS 'c', confidential (value withheld)
+ *  Distinct from the dashed UNBOUND affordance ("never chosen"): a state tile is a
+ *  real, bound card that simply has no publishable number. Same box as .kpi-card so
+ *  the count-aware grid never reflows between ok / no-data / masked tiles. */
+.kpi-card--state {
+  background: color-mix(in srgb, var(--color-text-faint) 4%, var(--color-surface));
+  box-shadow: none;
+  justify-content: flex-start;
+  gap: 0.625rem;
+}
+.kpi-card--state::after { content: none; }
+.kpi-card--state:hover { box-shadow: none; transform: none; }
+/* masked reads as a withheld/confidential cell — a warning-toned lock icon; the glyph
+ * + text carry the meaning, never colour alone (WCAG 1.4.1). */
+.kpi-card--masked .kpi-unbound__icon { color: var(--color-warning, var(--color-text-muted)); }
+
 /* ── Header row — label + metadata badges ────────────────────────────── */
 .kpi-header {
   display: flex;
