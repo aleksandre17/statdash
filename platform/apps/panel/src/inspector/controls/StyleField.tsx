@@ -25,6 +25,10 @@ import {
 } from './styleFieldModel'
 import './StyleField.css'
 
+// Neutral, localized placeholder for the raw-escape input — never the literal
+// `var(--…) / 12px` CSS syntax (P1: the token picker is the affordance).
+const RAW_VALUE_HINT = { ka: 'მორგებული მნიშვნელობა', en: 'Custom value' }
+
 export function StyleField({ id, value, locale, onChange }: FieldControlProps) {
   const styles = value as NodeStyles | undefined
 
@@ -90,7 +94,10 @@ function StyleRow({
           type="text"
           aria-label={`${label} (raw value)`}
           className="insp-field__input insp-style__raw"
-          placeholder="var(--…) / 12px"
+          // The token SELECT above is the affordance; this is the governed escape
+          // hatch. Never teach raw `var(--…)` syntax to the author (P1) — a neutral,
+          // localized hint instead.
+          placeholder={readLocale(RAW_VALUE_HINT, locale)}
           value={current}
           onChange={(e) => onWrite(e.target.value.trim() || undefined)}
         />

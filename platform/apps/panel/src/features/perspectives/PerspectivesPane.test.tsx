@@ -93,7 +93,9 @@ describe('PerspectivesPane — authors the page perspective axis', () => {
     seedPage(axisFixture)
     render(<PerspectivesPane />)
     const rangeRow = screen.getByTestId('perspective-row-range')
-    fireEvent.click(within(rangeRow).getByLabelText('move up'))
+    // aria-label is now locale-consistent with the Georgian tooltip (Law 4); the
+    // test store resolves the primary locale to 'ka'.
+    fireEvent.click(within(rangeRow).getByLabelText('ზემოთ გადატანა'))
     const by = useConstructorStore.getState().pages[0].meta?.perspectives as PerspectivesByParam
     expect(by.perspective.perspectives[0].id).toBe('range')
   })

@@ -146,7 +146,7 @@ function AxisEditor({
     <Paper variant="outlined" sx={{ p: 1.5, display: 'flex', flexDirection: 'column', gap: 1.5 }}
            data-testid={`perspective-axis-${param}`}>
       <Stack direction="row" spacing={1} alignItems="center">
-        <Typography variant="subtitle2">URL param:</Typography>
+        <Typography variant="subtitle2">{{ ka: 'URL პარამეტრი:', en: 'URL param:' }[locale] ?? 'URL param:'}</Typography>
         <Chip size="small" label={param} variant="outlined" />
       </Stack>
 
@@ -163,7 +163,7 @@ function AxisEditor({
             )}
             <Tooltip title="ზემოთ">
               <span>
-                <IconButton size="small" aria-label="move up" disabled={i === 0}
+                <IconButton size="small" aria-label={{ ka: 'ზემოთ გადატანა', en: 'move up' }[locale] ?? 'move up'} disabled={i === 0}
                   onClick={() => onCommit(movePerspective(perspectives, i, i - 1))}>
                   <ArrowUpwardIcon fontSize="inherit" />
                 </IconButton>
@@ -171,14 +171,14 @@ function AxisEditor({
             </Tooltip>
             <Tooltip title="ქვემოთ">
               <span>
-                <IconButton size="small" aria-label="move down" disabled={i === perspectives.length - 1}
+                <IconButton size="small" aria-label={{ ka: 'ქვემოთ გადატანა', en: 'move down' }[locale] ?? 'move down'} disabled={i === perspectives.length - 1}
                   onClick={() => onCommit(movePerspective(perspectives, i, i + 1))}>
                   <ArrowDownwardIcon fontSize="inherit" />
                 </IconButton>
               </span>
             </Tooltip>
             <Tooltip title="წაშლა">
-              <IconButton size="small" color="error" aria-label="remove perspective"
+              <IconButton size="small" color="error" aria-label={{ ka: 'პერსპექტივის წაშლა', en: 'remove perspective' }[locale] ?? 'remove perspective'}
                 onClick={() => onCommit(perspectives.filter((_, j) => j !== i))}>
                 <DeleteIcon fontSize="inherit" />
               </IconButton>
