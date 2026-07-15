@@ -24,7 +24,10 @@ COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
 # Workspace package manifests must exist before a --frozen-lockfile filtered install.
 COPY packages/ ./packages/
 COPY apps/panel/package.json ./apps/panel/
-RUN pnpm install --frozen-lockfile --filter ./apps/panel...
+# The panel imports @statdash/* via Vite ALIAS to packages/*/src (not a package.json dep edge),
+# so packages' own deps (e.g. radix-ui in @statdash/react) are NOT in apps/panel's closure.
+# Install the packages too, or their runtime deps are missing at Vite dev resolve time.
+RUN pnpm install --frozen-lockfile --filter ./apps/panel... --filter "./packages/**"
 
 # ─── Stage 3: development (vite dev server, source-mounted by compose override) ─
 FROM deps AS development
