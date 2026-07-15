@@ -1,10 +1,10 @@
 import { useMemo }              from 'react'
-import { interpretChart }        from '@statdash/charts'
+import { interpretChart, placeholderOutput } from '@statdash/charts'
 import { resolveRef, splitMultiValue } from '@statdash/engine'
 import { resolveNodeTemplate, resolveActionField } from '@statdash/react/engine'
 import type { ChartType, RefServices, LocaleString } from '@statdash/engine'
 import type { RenderContext }    from '@statdash/react/engine'
-import type { ChartOutput }      from '@statdash/charts'
+import type { ChartOutput, ChartDef } from '@statdash/charts'
 import type { ChartNode }        from './ChartNode'
 import { resolveChartDefLocale } from './utils/localeChartDef'
 
@@ -78,6 +78,21 @@ export function useChartOutput(ctx: RenderContext, def: ChartNode): ChartOutput 
 
   return useMemo(() => {
     const rows = ctx.rows ?? []
+    // ── No rows → nothing to interpret (AR-52 W1 · Canon C2 "the canvas never lies") ──
+    //  An UNBOUND chart (no `chartType`/`data` chosen yet — the freshly-dropped block)
+    //  or a bound-but-no-observation chart has no marks to build. Interpreting it here
+    //  used to THROW (resolveChartType reads `.$ctx` off an undefined chartType; an
+    //  interpreter can trip on a half-authored encoding), and the throw hit the node
+    //  error boundary → an empty box: a SILENT-BLANK lie (not a fake number, but not a
+    //  declared state either). Short-circuit to a benign placeholder output so the shell
+    //  falls through to its DECLARED no-data state (`<EmptyState/>`, gated on the same
+    //  `!ctx.rows?.length`); this output is never rendered when rows are empty, so the
+    //  visible result is byte-identical for a well-formed empty chart and honest for an
+    //  unbound one. (No over-reach into typed-row veiling — PM-4, deferred.)
+    if (rows.length === 0) {
+      const safeType: ChartType = typeof def.chartType === 'string' ? def.chartType : 'bar'
+      return placeholderOutput({ type: safeType } as ChartDef)
+    }
     // Canonical display-text resolver — the ONE primitive every template funnels through
     // (useNodeTemplate's param contract: node/repeat vars + filter params over ctx.dims).
     // resolveNodeTemplate is pure, so it lives inside the memo (deps stay on its inputs,

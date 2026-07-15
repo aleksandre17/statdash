@@ -9,6 +9,26 @@ import type { LocaleString }   from '../i18n/types'
 import { resolveLocaleString } from '../i18n/types'
 import { activePerspective }   from './perspective-state'
 
+// ── UNRESOLVED_TOKEN — the honest placeholder for a `{key}` with no value ──────
+//
+//  When a template var cannot be resolved (the ctx dim / extra is absent), the
+//  primitive renders the platform's MISSING-VALUE glyph (em-dash '—', the same
+//  convention field-config `nullDisplay` and the tables use), NEVER the raw
+//  plumbing braces `{key}`.
+//
+//  WHY (AR-52 W1 · Canon C2 "the canvas never lies", FF-CANVAS-NEVER-LIES): raw
+//  `{spanFrom}` reaching a reader is a plumbing leak — a data-integrity breach on
+//  a published page AND in the authoring canvas. This makes "no `{token}` text
+//  reaches a user" a GUARANTEED invariant of the ONE primitive every display
+//  template funnels through, in EVERY store state (structural preview, the live-
+//  loading window, a fail-soft unavailable cube) — not a best-effort that holds
+//  only when the data extent happens to be present. On the live/published path a
+//  var that CARRIES a value resolves as before (byte-identical); the placeholder
+//  fires only where the old code would have leaked braces. Genuine config typos
+//  are caught upstream by the config-lint fitness tests (config-label-completeness),
+//  not by echoing plumbing to the reader at runtime.
+const UNRESOLVED_TOKEN = '—'
+
 // ── resolveTemplate ───────────────────────────────────────────────────
 //
 //  Resolve a template against SectionContext, in TWO declarative steps:
@@ -72,7 +92,8 @@ export function resolveTemplate(
   const str = resolveCarrier(tpl, ctx, locale, fallback)
   return str.replace(/\{(\w+)\}/g, (_, key) => {
     const raw = extras && key in extras ? extras[key] : ctx.dims[key]
-    if (raw === undefined || raw === null) return `{${key}}`
+    // Honest placeholder — never echo raw plumbing braces to a reader (Canon C2).
+    if (raw === undefined || raw === null) return UNRESOLVED_TOKEN
     // A substituted var value may ITSELF be a LocaleString (a bilingual repeat var,
     // e.g. `account_label` injected by RepeatShell) — resolve it to the active locale,
     // never String()-flatten it to "[object Object]". A plain object that isn't a
