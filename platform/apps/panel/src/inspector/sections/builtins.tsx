@@ -23,7 +23,9 @@ import { FiltersDrawer } from '../../features/filters'
 import { ChromeCompositionPanel } from '../../features/chrome'
 import { fixedSchemaSource, itemTitle } from '../controls/nestedItemControl.helpers'
 import { registerBuiltinFacets } from '../facets/builtinFacets'
-import { planesForRole, isPlaneVisible } from '../plane'
+import { planesForRole, isPlaneVisible, filterSchemaByPlanes } from '../plane'
+import { bucketByConcern } from '../concern'
+import { ConcernGroups } from '../ConcernGroups'
 import type { CanvasNode } from '../../types/constructor'
 import { dockSectionRegistry, type DockRenderCtx } from './dockSection'
 
@@ -98,7 +100,6 @@ export function registerBuiltinDockSections(): void {
           // the part (`ownerId`/`ownerLabel`/`ownerSelectable`), so this branch never
           // reaches the (possibly absent) page node — a chrome region has none.
           const itemObj = selectedBand.itemObject
-          const source  = fixedSchemaSource(selectedBand.itemSchema, selectedBand.itemGroups)
           const idPrefix = `insp-${selectedBand.path.replace(/\./g, '-')}`
           const title    = selectedBand.crumbTitle
             ?? itemTitle(itemObj, selectedBand.itemLabel, selectedBand.index, ctx.locale)
@@ -108,10 +109,24 @@ export function registerBuiltinDockSections(): void {
           const onBack = selectedBand.ownerSelectable
             ? () => selectNode(selectedBand.ownerId)   // reselect the owning page node
             : () => selectNode(null)                   // site-frame has no whole-node dock → deselect
+          // Concern-group the DRILLED part (root Law 11) — the SAME spine the whole node
+          // uses, so selecting a KPI card / column / chrome region reads as calm + grouped
+          // as the whole-node dock, never a flat re-mush. Plane-filter FIRST so an author
+          // never meets an empty plumbing-only concern box; the item declares its own part
+          // itemGroups no longer (concern IS the grouping now).
+          const visible = filterSchemaByPlanes(selectedBand.itemSchema, planesForRole(ctx.role))
+          const buckets = bucketByConcern(visible, [])
           return (
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
               <BandItemHeader parentType={selectedBand.ownerLabel} title={title} onBack={onBack} />
-              <Inspector node={itemNode} schemaSource={source} onChange={patchItemProp} idPrefix={idPrefix} />
+              <ConcernGroups buckets={buckets} locale={ctx.locale} idBase={idPrefix} renderBucket={(b) => (
+                <Inspector
+                  node={itemNode}
+                  schemaSource={fixedSchemaSource(b.fields, [])}
+                  onChange={patchItemProp}
+                  idPrefix={idPrefix}
+                />
+              )} />
             </Box>
           )
         }

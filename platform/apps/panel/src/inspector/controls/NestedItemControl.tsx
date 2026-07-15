@@ -51,6 +51,9 @@ import type { PropSchema, PropertyGroup, PropField } from '@statdash/react/engin
 import type { FieldControlProps } from '../fieldControl.types'
 import type { CanvasNode, Locale } from '../../types/constructor'
 import { Inspector } from '../Inspector'
+import { ConcernGroups } from '../ConcernGroups'
+import { bucketByConcern } from '../concern'
+import { useVisiblePlanes, filterSchemaByPlanes } from '../plane'
 import { JsonControl } from './primitives'
 // Pure helpers (dot-path grammar + label/summary/seed), extracted for one-body hygiene.
 import {
@@ -341,9 +344,9 @@ function DrillEditor(
             rootValue={value}
             dotPath={deepest.dotPath}
             schema={deepest.schema}
-            groups={deepest.groups}
             depth={activeCrumbs.length}
             idPrefix={pathToId(id, deepest.dotPath)}
+            locale={locale}
             onEmitRoot={emitRoot}
             onDrill={drill}
           />
@@ -508,26 +511,30 @@ function ArrayListScreen({
   )
 }
 
-// ── ObjectFormScreen — one object level authored by the generic Inspector ─────
+// ── ObjectFormScreen — one object level, CONCERN-GROUPED (root Law 11) ─────────
 //
-//  Scalar fields render inline; nested array/object sub-fields resolve (via the
-//  registry) to ArrayOfControl/ObjectControl which, seeing the DrillContext,
-//  render as drill rows. So this screen shows ONLY this level's own fields, and
-//  drilling deeper replaces the screen entirely.
+//  This level's own fields are split into the SAME CONTENT·DATA·STYLE·LAYOUT·
+//  BEHAVIOR spine the whole node uses (`ConcernGroups`), so a DRILLED part — a KPI
+//  card, a chart axis, a table column — reads as calm and grouped as the whole-node
+//  dock, never a flat re-mush (the owner's REFINE law extended to the drill path).
+//  Scalar fields render inline; a nested array/object sub-field resolves (via the
+//  registry) to ArrayOfControl/ObjectControl which, seeing the ONE DrillContext that
+//  wraps every concern, renders as a drill row on the unified breadcrumb. So this
+//  screen shows ONLY this level's own fields, grouped by concern, and drilling deeper
+//  replaces the screen entirely.
 //
 function ObjectFormScreen({
-  rootValue, dotPath, schema, groups, depth, idPrefix, onEmitRoot, onDrill,
+  rootValue, dotPath, schema, depth, idPrefix, locale, onEmitRoot, onDrill,
 }: {
   rootValue:  unknown
   dotPath:    string
   schema:     PropSchema
-  groups:     PropertyGroup[]
   depth:      number
   idPrefix:   string
+  locale:     Locale
   onEmitRoot: (next: unknown) => void
   onDrill:    (field: PropField, title: string) => void
 }): ReactNode {
-  const source = useMemo(() => fixedSchemaSource(schema, groups), [schema, groups])
   const obj = (readAt(rootValue, dotPath) ?? {}) as Record<string, unknown>
   const node: CanvasNode = { id: idPrefix, type: 'nested-item', props: obj, childIds: [] }
   const ctx  = useMemo<DrillHandle>(
@@ -535,15 +542,24 @@ function ObjectFormScreen({
     [dotPath, depth, onDrill],
   )
 
+  // Plane-filter FIRST (mirrors the whole-node path) so a concern holding only plumbing
+  // (`plane:'system'`) drops instead of rendering an empty labelled box; then bucket the
+  // visible fields by their declared concern. Facets are node-level, so none here ([]).
+  const planes  = useVisiblePlanes()
+  const visible = useMemo(() => filterSchemaByPlanes(schema, planes), [schema, planes])
+  const buckets = useMemo(() => bucketByConcern(visible, []), [visible])
+
   return (
     <DrillContext.Provider value={ctx}>
-      <Inspector
-        node={node}
-        schemaSource={source}
-        idPrefix={idPrefix}
-        onChange={(subfield, next) =>
-          onEmitRoot(writeAt(rootValue, joinPath(dotPath, subfield), next))}
-      />
+      <ConcernGroups buckets={buckets} locale={locale} idBase={idPrefix} renderBucket={(b) => (
+        <Inspector
+          node={node}
+          schemaSource={fixedSchemaSource(b.fields, [])}
+          idPrefix={idPrefix}
+          onChange={(subfield, next) =>
+            onEmitRoot(writeAt(rootValue, joinPath(dotPath, subfield), next))}
+        />
+      )} />
     </DrillContext.Provider>
   )
 }

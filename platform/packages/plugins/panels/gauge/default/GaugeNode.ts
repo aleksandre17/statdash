@@ -28,9 +28,9 @@ export interface GaugeNode extends NodeBase {
 //  or cleared), `color`, optional `label`. Declared BEFORE GaugeSchema (const
 //  init order) since GaugeSchema references it.
 export const ThresholdItemSchema = defineSchema([
-  { field: 'value', type: 'number', label: { ka: 'ზღვრის მნიშვნელობა', en: 'Threshold value' } },
-  { field: 'color', type: 'color',  label: { ka: 'ფერი',              en: 'Colour' }, required: true },
-  { field: 'label', type: 'string', label: { ka: 'წარწერა',           en: 'Label' } },
+  { field: 'value', type: 'number', concern: 'data',    label: { ka: 'ზღვრის მნიშვნელობა', en: 'Threshold value' } },
+  { field: 'color', type: 'color',  concern: 'style',   label: { ka: 'ფერი',              en: 'Colour' }, required: true },
+  { field: 'label', type: 'string', concern: 'content', label: { ka: 'წარწერა',           en: 'Label' } },
 ])
 
 // FF-SCHEMA-COMPLETE depth (tier c): 1:1 with Threshold's editable keys.

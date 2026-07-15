@@ -27,17 +27,15 @@
 //  keep the existing flat section path (DockBody) — a bounded, reversible Strangler
 //  increment; the part-drill concern grouping is a flagged follow-up.
 //
-import { useMemo, useState } from 'react'
+import { useMemo } from 'react'
 import type { FacetDescriptor, ObjectMeta, LocaleString } from '@statdash/react/engine'
 import { nodeRegistry } from '@statdash/react/engine'
 import { Inspector } from './Inspector'
 import { nodeSchemaSource } from './schemaSource'
 import { fixedSchemaSource } from './controls/nestedItemControl.helpers'
 import { planesForRole, filterSchemaByPlanes } from './plane'
-import {
-  CONCERN_ORDER, CONCERN_LABELS, CONCERN_OPEN_BY_DEFAULT,
-  bucketByConcern, applicableFacets, type FieldConcern,
-} from './concern'
+import { bucketByConcern, applicableFacets } from './concern'
+import { ConcernGroups } from './ConcernGroups'
 import { readLocale } from './localeString'
 import type { CanvasController } from '../studio/useCanvasController'
 import type { Role } from '../studio/useRole'
@@ -47,45 +45,6 @@ import './ConcernGroupedInspector.css'
 // ── Label resolution (active-locale, pure) ────────────────────────────────────────
 function label(ls: LocaleString, locale: Locale, fallback = ''): string {
   return readLocale(ls as never, locale) || fallback
-}
-
-// ── ConcernGroup — one collapsible, token-themed concern section (WCAG disclosure) ─
-//
-//  A <fieldset>/<legend> keeps the form-grouping semantics; the legend hosts a
-//  disclosure <button aria-expanded> controlling the body region (the SAME proven
-//  accordion grammar the Inspector uses, on the global DTCG token spine — calm, not
-//  MUI soup). Open-state is view-only; a user toggle overrides the concern default.
-//
-function ConcernGroup(
-  { concern, heading, open, onToggle, idBase, children }: {
-    concern:  FieldConcern
-    heading:  string
-    open:     boolean
-    onToggle: () => void
-    idBase:   string
-    children: React.ReactNode
-  },
-): React.ReactElement {
-  const bodyId = `${idBase}-body`
-  return (
-    <fieldset className="concern-group" data-concern={concern} data-open={open || undefined}>
-      <legend className="concern-group__legend">
-        <button
-          type="button"
-          className="concern-group__toggle"
-          aria-expanded={open}
-          aria-controls={bodyId}
-          onClick={onToggle}
-        >
-          <span className="concern-group__caret" aria-hidden="true" />
-          <span className="concern-group__name">{heading}</span>
-        </button>
-      </legend>
-      <div id={bodyId} className="concern-group__body" hidden={!open}>
-        {children}
-      </div>
-    </fieldset>
-  )
 }
 
 // ── The one facet render (whole-node) — the generic Inspector over the facet contract ─
@@ -131,14 +90,6 @@ export function ConcernGroupedInspector(
   const facets = useMemo(() => (meta ? applicableFacets(meta, role) : []), [meta, role])
   const buckets = useMemo(() => bucketByConcern(schema, facets), [schema, facets])
 
-  // Progressive disclosure — the concern default (CONTENT + DATA open) with a per-group
-  // user override. Keyed by concern so re-selecting a different element re-defaults.
-  const [openOverride, setOpenOverride] = useState<Map<FieldConcern, boolean>>(() => new Map())
-  const isOpen = (c: FieldConcern) =>
-    openOverride.has(c) ? openOverride.get(c)! : CONCERN_OPEN_BY_DEFAULT.has(c)
-  const toggle = (c: FieldConcern) =>
-    setOpenOverride((prev) => new Map(prev).set(c, !isOpen(c)))
-
   const elementName = meta ? label(meta.label as LocaleString, locale, node.type) : node.type
 
   return (
@@ -148,45 +99,34 @@ export function ConcernGroupedInspector(
         <span className="concern-dock__eyebrow">{elementName}</span>
       </div>
 
-      {CONCERN_ORDER.map((concern) => {
-        const b = buckets.get(concern)
-        // Empty concern self-drops — never a blank labelled box (the owner's law).
-        if (!b || (b.fields.length === 0 && b.facets.length === 0)) return null
-
-        const idBase = `concern-${concern}`
-        return (
-          <ConcernGroup
-            key={concern}
-            concern={concern}
-            heading={label(CONCERN_LABELS[concern], locale)}
-            open={isOpen(concern)}
-            onToggle={() => toggle(concern)}
-            idBase={idBase}
-          >
-            {/* The node's own fields of this concern — a plain field list (no nested
-                accordion; the concern group IS the section). */}
-            {b.fields.length > 0 && (
-              <Inspector
-                node={node}
-                schemaSource={fixedSchemaSource(b.fields, [])}
-                onChange={patchProp}
-                idPrefix={`insp-${concern}`}
-              />
-            )}
-            {/* The universal facets of this concern — each a rich control (StyleField,
-                the DataFacet pipeline, EventsField) via the SAME generic Inspector. */}
-            {meta && b.facets.map((facet) => (
-              <FacetControl
-                key={facet.id}
-                facet={facet}
-                meta={meta}
-                node={node}
-                patchProp={patchProp}
-              />
-            ))}
-          </ConcernGroup>
-        )
-      })}
+      {/* The whole-node concern spine (shared with the drilled part/item path). Each
+          concern's body = the node's own fields (a plain list) THEN its universal
+          facets (rich controls), both through the SAME generic Inspector/facet path. */}
+      <ConcernGroups buckets={buckets} locale={locale} idBase="concern" renderBucket={(b, concern) => (
+        <>
+          {/* The node's own fields of this concern — a plain field list (no nested
+              accordion; the concern group IS the section). */}
+          {b.fields.length > 0 && (
+            <Inspector
+              node={node}
+              schemaSource={fixedSchemaSource(b.fields, [])}
+              onChange={patchProp}
+              idPrefix={`insp-${concern}`}
+            />
+          )}
+          {/* The universal facets of this concern — each a rich control (StyleField,
+              the DataFacet pipeline, EventsField) via the SAME generic Inspector. */}
+          {meta && b.facets.map((facet) => (
+            <FacetControl
+              key={facet.id}
+              facet={facet}
+              meta={meta}
+              node={node}
+              patchProp={patchProp}
+            />
+          ))}
+        </>
+      )} />
     </div>
   )
 }

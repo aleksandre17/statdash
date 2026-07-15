@@ -131,3 +131,80 @@ describe('FF-CONCERN-GROUPED — an empty concern self-drops', () => {
     expect(!layout || (layout.fields.length === 0 && layout.facets.length === 0)).toBe(true)
   })
 })
+
+// ── The DRILLED part/item path is concern-grouped too (root Law 11 · AR-52 canon) ──
+//
+//  The whole-node dock is grouped; so must be a DRILLED part — a KPI card, a chart
+//  axis, a table column, any nested item. The part-drill inspector (element.schema's
+//  band branch + NestedItemControl's ObjectFormScreen) buckets a field's `itemSchema`
+//  by the SAME declared concern. This half of the gate sweeps EVERY itemSchema
+//  reachable from EVERY registered node and asserts:
+//    • every item field lands in EXACTLY ONE concern in the taxonomy — no orphan on
+//      ANY selection (the flat re-mush on drill is now unrepresentable);
+//    • the reference drilled item types (kpi item · chart axis · table column · gauge
+//      threshold) DISTRIBUTE across multiple concerns (organized, not mushed).
+//
+/** Every itemSchema reachable from a schema (recursing through nested itemSchemas). */
+function collectItemSchemas(schema: PropSchema, acc: PropSchema[] = []): PropSchema[] {
+  for (const f of schema) {
+    if (f.itemSchema) {
+      acc.push(f.itemSchema)
+      collectItemSchemas(f.itemSchema, acc)
+    }
+  }
+  return acc
+}
+
+/** The itemSchema of a named nested field on a node's schema (drill helper). */
+function itemSchemaOf(type: string, field: string): PropSchema | undefined {
+  return (nodeRegistry.getSchema(type) ?? []).find((f) => f.field === field)?.itemSchema
+}
+
+describe('FF-CONCERN-GROUPED — the DRILLED part/item path is concern-grouped too', () => {
+  it('no item field of ANY registered node escapes the taxonomy (no orphan on drill)', () => {
+    for (const type of nodeRegistry.types()) {
+      for (const item of collectItemSchemas(nodeRegistry.getSchema(type) ?? [])) {
+        for (const f of item) {
+          expect(CONCERNS.has(concernOfField(f)), `${type} item.${f.field} → ${concernOfField(f)}`)
+            .toBe(true)
+        }
+      }
+    }
+  })
+
+  it('the reference drilled item types DISTRIBUTE across multiple concerns (not mushed)', () => {
+    // A KPI card item spans CONTENT (label) · DATA (value) · STYLE (colour) · BEHAVIOR (when).
+    const kpiItem = itemSchemaOf('kpi-strip', 'items')!
+    const kpiConcerns = new Set(kpiItem.map(concernOfField))
+    for (const c of ['content', 'data', 'style', 'behavior'] as FieldConcern[]) {
+      expect(kpiConcerns.has(c), `kpi item missing ${c}`).toBe(true)
+    }
+    // A table column spans CONTENT (label) · DATA (key) · STYLE (format/align) · LAYOUT (width).
+    const column = itemSchemaOf('table', 'columns')!
+    const colConcerns = new Set(column.map(concernOfField))
+    for (const c of ['content', 'data', 'style', 'layout'] as FieldConcern[]) {
+      expect(colConcerns.has(c), `table column missing ${c}`).toBe(true)
+    }
+    // A chart axis (Axes › X/Y) spans multiple concerns (CONTENT caption + STYLE scale).
+    const axes = itemSchemaOf('chart', 'axes')!
+    const axis = axes.find((f) => f.field === 'x')?.itemSchema
+    expect(axis, 'chart axes.x has an itemSchema').toBeTruthy()
+    expect(new Set(axis!.map(concernOfField)).size, 'chart axis is organized').toBeGreaterThan(1)
+    // A gauge threshold step spans CONTENT · DATA · STYLE.
+    const threshold = itemSchemaOf('gauge', 'thresholds')!
+    expect(new Set(threshold.map(concernOfField)).size, 'gauge threshold is organized')
+      .toBeGreaterThan(1)
+  })
+
+  it('a drilled item buckets cleanly by concern (the render input the part-drill reads)', () => {
+    // The exact derivation ObjectFormScreen / element.schema feed to ConcernGroups: no
+    // facets (item-level), split purely by declared field concern, empties absent.
+    const kpiItem = itemSchemaOf('kpi-strip', 'items')!
+    const buckets = bucketByConcern(kpiItem, [])
+    expect(buckets.get('content')?.fields.some((f) => f.field === 'label')).toBe(true)
+    expect(buckets.get('data')?.fields.some((f) => f.field === 'value')).toBe(true)
+    expect(buckets.get('style')?.fields.some((f) => f.field === 'color')).toBe(true)
+    // No facet ever enters an item bucket (facets are a whole-node capability).
+    for (const c of CONCERN_ORDER) expect(buckets.get(c)?.facets ?? []).toHaveLength(0)
+  })
+})

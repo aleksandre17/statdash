@@ -44,13 +44,16 @@ export type ChartNode =
 //  `coverage:'localized'` — the provisioning authors '%'/'მლნ ₾' as `{ ka, en }`,
 //  resolved at the render boundary (localeChartDef.ts); the Inspector authors it
 //  per-locale. The rest are locale-agnostic scalars.
+//  Concern tags (root Law 11): the axis caption is CONTENT (text shown); scale +
+//  formatting + hide are STYLE refinements — so a drilled `Axes › X axis` reads as a
+//  calm concern-grouped surface, not a flat scalar dump.
 export const AxisItemSchema = defineSchema([
-  { field: 'unit',     type: 'LocaleString', coverage: 'localized',
+  { field: 'unit',     type: 'LocaleString', coverage: 'localized', concern: 'content',
     label: { ka: 'ერთეული',    en: 'Unit' } },
-  { field: 'decimals', type: 'number', label: { ka: 'ათწილადები', en: 'Decimals' } },
-  { field: 'min',      type: 'number', label: { ka: 'მინიმუმი',   en: 'Min' } },
-  { field: 'max',      type: 'number', label: { ka: 'მაქსიმუმი',  en: 'Max' } },
-  { field: 'hidden',   type: 'boolean', label: { ka: 'ღერძის დამალვა', en: 'Hide axis' } },
+  { field: 'decimals', type: 'number', concern: 'style', label: { ka: 'ათწილადები', en: 'Decimals' } },
+  { field: 'min',      type: 'number', concern: 'style', label: { ka: 'მინიმუმი',   en: 'Min' } },
+  { field: 'max',      type: 'number', concern: 'style', label: { ka: 'მაქსიმუმი',  en: 'Max' } },
+  { field: 'hidden',   type: 'boolean', concern: 'style', label: { ka: 'ღერძის დამალვა', en: 'Hide axis' } },
 ])
 // FF-SCHEMA-COMPLETE depth (tier c): 1:1 with LocaleAxisConfig's editable keys.
 export type _AxisItemCovers = Expect<AssertSchemaCovers<LocaleAxisConfig, typeof AxisItemSchema>>
@@ -60,11 +63,11 @@ export type _AxisItemCovers = Expect<AssertSchemaCovers<LocaleAxisConfig, typeof
 //  nested editor drills `Axes › X axis › Unit/Decimals/…` to arbitrary depth, no
 //  opaque leaf (the depth gate in schema-completeness.fitness recurses through it).
 export const AxesItemSchema = defineSchema([
-  { field: 'x',  type: 'object', itemSchema: AxisItemSchema,
+  { field: 'x',  type: 'object', itemSchema: AxisItemSchema, concern: 'style',
     label: { ka: 'X ღერძი',        en: 'X axis' } },
-  { field: 'y',  type: 'object', itemSchema: AxisItemSchema,
+  { field: 'y',  type: 'object', itemSchema: AxisItemSchema, concern: 'style',
     label: { ka: 'Y ღერძი',        en: 'Y axis' } },
-  { field: 'y2', type: 'object', itemSchema: AxisItemSchema,
+  { field: 'y2', type: 'object', itemSchema: AxisItemSchema, concern: 'style',
     label: { ka: 'მეორე Y ღერძი',  en: 'Second Y axis' } },
 ])
 // 1:1 with LocaleAxes's editable keys (x / y / y2).
@@ -72,8 +75,8 @@ export type _AxesCovers = Expect<AssertSchemaCovers<LocaleAxes, typeof AxesItemS
 
 // ── LegendItemSchema / TooltipItemSchema — the legend + tooltip sub-objects ───
 export const LegendItemSchema = defineSchema([
-  { field: 'show',     type: 'boolean', label: { ka: 'ლეგენდის ჩვენება', en: 'Show legend' } },
-  { field: 'position', type: 'string',  label: { ka: 'პოზიცია', en: 'Position' },
+  { field: 'show',     type: 'boolean', concern: 'style', label: { ka: 'ლეგენდის ჩვენება', en: 'Show legend' } },
+  { field: 'position', type: 'string',  concern: 'style', label: { ka: 'პოზიცია', en: 'Position' },
     options: [
       { value: 'top',    label: { ka: 'ზემოთ',  en: 'Top' } },
       { value: 'bottom', label: { ka: 'ქვემოთ', en: 'Bottom' } },
@@ -84,7 +87,7 @@ export const LegendItemSchema = defineSchema([
 export type _LegendCovers = Expect<AssertSchemaCovers<LegendConfig, typeof LegendItemSchema>>
 
 export const TooltipItemSchema = defineSchema([
-  { field: 'mode', type: 'string', label: { ka: 'რეჟიმი', en: 'Mode' },
+  { field: 'mode', type: 'string', concern: 'style', label: { ka: 'რეჟიმი', en: 'Mode' },
     options: [
       { value: 'multi',  label: { ka: 'ერთობლივი', en: 'Shared' } },
       { value: 'single', label: { ka: 'ცალკეული', en: 'Per-series' } },
