@@ -49,14 +49,23 @@ const ALIGN_OPTIONS = [
   { value: 'end',     label: { ka: 'დასასრული', en: 'End' } },
 ]
 
+// The AUTHOR plane sees a friendly `columns` + `gap` abstraction (+ alignment). The
+// raw CSS-Grid track syntax (templateColumns/Rows/Areas, auto-flow/cols/rows) is a
+// legitimate but ADVANCED capability — projected to the STEWARD lens (root Law 11 ·
+// AR-52 "no plumbing tokens on the author plane"), never a raw `var()`/`repeat()`
+// string on the compose surface. Not `system`: it stays authorable behind the
+// author⇄steward toggle, not un-authorable forever. Every grid field is `layout`
+// concern (the REFINE canon — content·data·style·layout·behavior).
 export const GridSchema = defineSchema([
-  { field: 'templateColumns', type: 'string', label: { ka: 'სვეტების შაბლონი', en: 'Template columns' }, default: 'repeat(auto-fit, minmax(min(100%, 24rem), 1fr))' },
-  { field: 'templateRows',    type: 'string', label: { ka: 'რიგების შაბლონი',  en: 'Template rows' } },
-  { field: 'templateAreas',   type: 'string', label: { ka: 'არეების შაბლონი',  en: 'Template areas' } },
-  { field: 'columns',         type: 'number', label: { ka: 'სვეტები',          en: 'Columns (shorthand)' } },
-  { field: 'gap',             type: 'string', label: { ka: 'დაშორება',         en: 'Gap' }, default: 'var(--spacing-md)' },
+  { field: 'columns',         type: 'number', label: { ka: 'სვეტები', en: 'Columns' }, concern: 'layout' },
+  { field: 'gap',             type: 'string', label: { ka: 'დაშორება', en: 'Gap' }, default: 'var(--spacing-md)', concern: 'layout' },
+  { field: 'align',   type: 'string', label: { ka: 'გასწორება',       en: 'Align' },   default: 'stretch', options: ALIGN_OPTIONS, concern: 'layout' },
+  { field: 'justify', type: 'string', label: { ka: 'ჰორ. გასწორება', en: 'Justify' }, default: 'stretch', options: ALIGN_OPTIONS, concern: 'layout' },
+  { field: 'templateColumns', type: 'string', label: { ka: 'სვეტების შაბლონი', en: 'Template columns' }, default: 'repeat(auto-fit, minmax(min(100%, 24rem), 1fr))', plane: 'steward', concern: 'layout' },
+  { field: 'templateRows',    type: 'string', label: { ka: 'რიგების შაბლონი',  en: 'Template rows' }, plane: 'steward', concern: 'layout' },
+  { field: 'templateAreas',   type: 'string', label: { ka: 'არეების შაბლონი',  en: 'Template areas' }, plane: 'steward', concern: 'layout' },
   {
-    field: 'autoFlow', type: 'string', label: { ka: 'ავტო-დინება', en: 'Auto flow' }, default: 'row',
+    field: 'autoFlow', type: 'string', label: { ka: 'ავტო-დინება', en: 'Auto flow' }, default: 'row', plane: 'steward', concern: 'layout',
     options: [
       { value: 'row',          label: { ka: 'რიგი',        en: 'Row' } },
       { value: 'column',       label: { ka: 'სვეტი',       en: 'Column' } },
@@ -65,10 +74,8 @@ export const GridSchema = defineSchema([
       { value: 'column dense', label: { ka: 'სვეტი მკვრივი', en: 'Column dense' } },
     ],
   },
-  { field: 'autoColumns', type: 'string', label: { ka: 'ავტო-სვეტები', en: 'Auto columns' } },
-  { field: 'autoRows',    type: 'string', label: { ka: 'ავტო-რიგები',  en: 'Auto rows' } },
-  { field: 'align',   type: 'string', label: { ka: 'გასწორება',       en: 'Align' },   default: 'stretch', options: ALIGN_OPTIONS },
-  { field: 'justify', type: 'string', label: { ka: 'ჰორ. გასწორება', en: 'Justify' }, default: 'stretch', options: ALIGN_OPTIONS },
+  { field: 'autoColumns', type: 'string', label: { ka: 'ავტო-სვეტები', en: 'Auto columns' }, plane: 'steward', concern: 'layout' },
+  { field: 'autoRows',    type: 'string', label: { ka: 'ავტო-რიგები',  en: 'Auto rows' }, plane: 'steward', concern: 'layout' },
 ])
 
 // FF-SCHEMA-COMPLETE (tier b): 1:1 with the full CSS-Grid grammar (children slot excluded).

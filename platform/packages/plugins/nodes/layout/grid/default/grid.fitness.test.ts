@@ -30,6 +30,28 @@ describe('FF-GRID-MAXIMAL — capability surface (schema-introspectable palette)
   })
 })
 
+describe('FF-GRID-AUTHOR-PLANE — raw track syntax is steward-only (AR-52 Law 11)', () => {
+  const byField = new Map(GridSchema.map(f => [f.field, f]))
+
+  it('the friendly abstraction (columns/gap/align/justify) stays on the author plane', () => {
+    for (const f of ['columns', 'gap', 'align', 'justify']) {
+      // author plane = plane absent or 'author' (both project to the non-programmer).
+      expect(byField.get(f)?.plane ?? 'author').toBe('author')
+    }
+  })
+
+  it('the raw CSS-Grid track syntax is projected to the STEWARD lens, off the author plane', () => {
+    for (const f of ['templateColumns', 'templateRows', 'templateAreas',
+                     'autoFlow', 'autoColumns', 'autoRows']) {
+      expect(byField.get(f)?.plane, `${f} is raw CSS plumbing — must be behind steward, never the author compose surface`).toBe('steward')
+    }
+  })
+
+  it('every grid field declares the LAYOUT concern (REFINE grouping)', () => {
+    for (const f of GridSchema) expect(f.concern).toBe('layout')
+  })
+})
+
 describe('FF-GRID-MAXIMAL — interpreter (resolveGrid lowers spec → CSS)', () => {
   it('a FLAT template goes inline (the intrinsic auto-fit reflow form) with no flag', () => {
     const tc = 'repeat(auto-fit, minmax(min(100%, 24rem), 1fr))'
