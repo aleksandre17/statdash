@@ -32,9 +32,12 @@ import { defineSchema } from '../schema-contract'
  */
 export const DATA_INTEGRITY_SCHEMA = defineSchema([
   {
-    field: 'preliminary',
-    type:  'boolean',
-    label: { ka: 'წინასწარი მონაცემები', en: 'Preliminary data' },
+    field:   'preliminary',
+    type:    'boolean',
+    // Data-integrity provenance is a DATA concern (the REFINE canon): it describes the
+    // MEANING/trust of the numbers, not their look — so it groups with the metric bind.
+    concern: 'data',
+    label:   { ka: 'წინასწარი მონაცემები', en: 'Preliminary data' },
   },
 ])
 

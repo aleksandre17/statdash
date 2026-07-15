@@ -25,12 +25,12 @@ export interface TableNode extends TableConfig, NodeBase {
 //  (ValueMapping[]) — stay a documented compile-Todo, not surfaced as opaque runtime
 //  fields: the per-item editor stays scalar-only (no OPAQUE_BY_DESIGN debt incurred).
 export const ColumnItemSchema = defineSchema([
-  { field: 'label',  type: 'LocaleString', label: { ka: 'სათაური', en: 'Header' }, coverage: 'localized', required: true },
-  { field: 'key',    type: 'string',       label: { ka: 'ველის გასაღები', en: 'Source field' }, required: true },
-  { field: 'format', type: 'string',       label: { ka: 'ფორმატი', en: 'Format' } },
-  { field: 'width',  type: 'string',       label: { ka: 'სიგანე', en: 'Width' } },
+  { field: 'label',  type: 'LocaleString', concern: 'content', label: { ka: 'სათაური', en: 'Header' }, coverage: 'localized', required: true },
+  { field: 'key',    type: 'string',       concern: 'data',    label: { ka: 'ველის გასაღები', en: 'Source field' }, required: true },
+  { field: 'format', type: 'string',       concern: 'style',   label: { ka: 'ფორმატი', en: 'Format' } },
+  { field: 'width',  type: 'string',       concern: 'layout',  label: { ka: 'სიგანე', en: 'Width' } },
   {
-    field: 'align', type: 'string', label: { ka: 'სწორება', en: 'Align' },
+    field: 'align', type: 'string', concern: 'style', label: { ka: 'სწორება', en: 'Align' },
     options: [
       { value: 'l', label: { ka: 'მარცხნივ', en: 'Left'  } },
       { value: 'r', label: { ka: 'მარჯვნივ', en: 'Right' } },
@@ -43,9 +43,9 @@ export const ColumnItemSchema = defineSchema([
 export type _ColumnCovers = Expect<AssertSchemaCovers<ColumnDef, typeof ColumnItemSchema, 'bar' | 'valueMappings'>>
 
 export const TableSchema = defineSchema([
-  { field: 'colLabel', type: 'string', label: { ka: 'სვეტის სათაური', en: 'Column header' } },
+  { field: 'colLabel', type: 'string', concern: 'content', label: { ka: 'სვეტის სათაური', en: 'Column header' } },
   {
-    field: 'columns', type: 'array', label: { ka: 'სვეტები', en: 'Columns' },
+    field: 'columns', type: 'array', concern: 'content', label: { ka: 'სვეტები', en: 'Columns' },
     itemSchema: ColumnItemSchema, itemLabel: 'label',
   },
   ...DATA_INTEGRITY_SCHEMA,

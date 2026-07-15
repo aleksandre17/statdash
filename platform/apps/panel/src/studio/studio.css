@@ -131,6 +131,22 @@
   padding: var(--spacing-md);
 }
 
+/* ── Dock body — the section stack (token'd; the calm surface, not MUI `css-0`). The
+   whole-node branch renders one concern-grouped surface; the part/page branch stacks
+   registry sections joined by a token'd hairline rule (replaces the MUI <Divider>). */
+.studio-dock__sections {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+.studio-dock__rule {
+  width: 100%;
+  height: 0;
+  margin: 0;
+  border: 0;
+  border-top: var(--border-width-thin) solid var(--color-border-subtle);
+}
+
 /* FOOTER — a fixed action tier (Delete); stays reachable however far the body
    scrolls. Absent when the active context has nothing to act on. */
 .studio-dock__footer {

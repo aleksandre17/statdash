@@ -97,6 +97,7 @@ export const ChartSchema = defineSchema([
   {
     field:    'chartType',
     type:     'string',
+    concern:  'style',
     label:    { ka: 'დიაგრამის ტიპი', en: 'Chart type' },
     required: true,
     options:  [
@@ -125,32 +126,33 @@ export const ChartSchema = defineSchema([
   //  `data`, so its own measure is legitimately absent — marking it required
   //  would flag every section-fed chart in validateNodeConfig (additive floor).
   {
-    field:  'data.query.measure',
-    type:   'enum-ref',
-    source: 'metrics',
-    label:  { ka: 'მეტრიკა', en: 'Metric' },
+    field:   'data.query.measure',
+    type:    'enum-ref',
+    source:  'metrics',
+    concern: 'data',
+    label:   { ka: 'მეტრიკა', en: 'Metric' },
   },
-  // ── Labels (config-bilingual) ─────────────────────────────────────────────
-  { field: 'label',       type: 'LocaleString', coverage: 'localized',
+  // ── Labels (config-bilingual) — CONTENT (what the chart says) ──────────────
+  { field: 'label',       type: 'LocaleString', coverage: 'localized', concern: 'content',
     label: { ka: 'სათაური', en: 'Label' } },
   //  Donut/pie centre caption — shown only when the mark is a donut (showWhen is the
   //  engine's `lhs === rhs` visibility SSOT; a `{$ctx}` mark ref degrades to hidden).
-  { field: 'centerLabel', type: 'LocaleString', coverage: 'localized',
+  { field: 'centerLabel', type: 'LocaleString', coverage: 'localized', concern: 'content',
     showWhen: "chartType === 'donut'",
     label: { ka: 'ცენტრის წარწერა', en: 'Centre label' } },
-  // ── Visualisation-refinement scalars ──────────────────────────────────────
-  { field: 'height',      type: 'number', validation: { min: 40 },
+  // ── Visualisation-refinement scalars — STYLE (how it looks); height = LAYOUT ─
+  { field: 'height',      type: 'number', validation: { min: 40 }, concern: 'layout',
     label: { ka: 'სიმაღლე (px)', en: 'Height (px)' } },
-  { field: 'stacked',     type: 'boolean', label: { ka: 'დაწყობილი', en: 'Stacked' } },
-  { field: 'distributed', type: 'boolean', label: { ka: 'კატეგორიის ფერები', en: 'Colour by category' } },
-  { field: 'dataLabels',  type: 'boolean', label: { ka: 'მნიშვნელობის წარწერები', en: 'Value labels' } },
-  { field: 'compact',     type: 'boolean', label: { ka: 'კომპაქტური', en: 'Compact' } },
+  { field: 'stacked',     type: 'boolean', concern: 'style', label: { ka: 'დაწყობილი', en: 'Stacked' } },
+  { field: 'distributed', type: 'boolean', concern: 'style', label: { ka: 'კატეგორიის ფერები', en: 'Colour by category' } },
+  { field: 'dataLabels',  type: 'boolean', concern: 'style', label: { ka: 'მნიშვნელობის წარწერები', en: 'Value labels' } },
+  { field: 'compact',     type: 'boolean', concern: 'style', label: { ka: 'კომპაქტური', en: 'Compact' } },
   // ── Nested viz objects (authored item-by-item via the generic nested editor) ─
-  { field: 'axes',    type: 'object', itemSchema: AxesItemSchema,
+  { field: 'axes',    type: 'object', itemSchema: AxesItemSchema, concern: 'style',
     label: { ka: 'ღერძები', en: 'Axes' } },
-  { field: 'legend',  type: 'object', itemSchema: LegendItemSchema,
+  { field: 'legend',  type: 'object', itemSchema: LegendItemSchema, concern: 'style',
     label: { ka: 'ლეგენდა', en: 'Legend' } },
-  { field: 'tooltip', type: 'object', itemSchema: TooltipItemSchema,
+  { field: 'tooltip', type: 'object', itemSchema: TooltipItemSchema, concern: 'style',
     label: { ka: 'მინიშნება', en: 'Tooltip' } },
   ...DATA_INTEGRITY_SCHEMA,
 ])

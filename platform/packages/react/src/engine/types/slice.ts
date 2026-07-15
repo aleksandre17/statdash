@@ -17,6 +17,7 @@ export type {
   PropFieldOption,
   PropFieldValidation,
   AudiencePlane,
+  FieldConcern,
   PropField,
   PropSchema,
   ObjectMeta,

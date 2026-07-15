@@ -42,20 +42,22 @@ export interface GeographNode extends NodeBase {
 }
 
 export const GeographSchema = defineSchema([
-  { field: 'title',       type: 'string',  label: { ka: 'სათაური',          en: 'Title' }, required: true },
+  { field: 'title',       type: 'string',  concern: 'content', label: { ka: 'სათაური',          en: 'Title' }, required: true },
   // Content props (label/color/anchor) — previously referenced by GeographGroups
   // but ABSENT from the schema (dead group fields → nothing rendered). Added here
   // (root-cause, Wave 8 tier b) so the panel authors them, mirroring SectionSchema.
-  { field: 'label',       type: 'string',  label: { ka: 'წარწერა',           en: 'Label' } },
-  { field: 'color',       type: 'color',   label: { ka: 'ფერი',             en: 'Colour' } },
-  { field: 'anchor',      type: 'string',  label: { ka: 'მიმაგრების ID',      en: 'Anchor ID' } },
-  { field: 'geoJsonUrl',  type: 'string',  label: { ka: 'GeoJSON URL',       en: 'GeoJSON URL' }, required: true },
-  { field: 'paramKey',    type: 'string',  label: { ka: 'პარამეტრის გასაღები', en: 'Param key' }, required: true },
-  { field: 'isoField',    type: 'string',  label: { ka: 'ISO ველი',          en: 'ISO field' }, required: true },
-  { field: 'geoCodeMap',  type: 'object',  label: { ka: 'გეო-კოდების რუკა',    en: 'Geo code map' }, required: true },
-  { field: 'unit',        type: 'string',  label: { ka: 'ერთეული',           en: 'Unit' } },
-  { field: 'multiSelect', type: 'boolean', label: { ka: 'მრავლობითი არჩევა',   en: 'Multiple select' } },
-  { field: 'maxSelect',   type: 'number',  label: { ka: 'მაქს. არჩევანი',      en: 'Max select' }, default: 2 },
+  { field: 'label',       type: 'string',  concern: 'content',  label: { ka: 'წარწერა',           en: 'Label' } },
+  { field: 'color',       type: 'color',   concern: 'style',    label: { ka: 'ფერი',             en: 'Colour' } },
+  { field: 'anchor',      type: 'string',  concern: 'layout',   label: { ka: 'მიმაგრების ID',      en: 'Anchor ID' } },
+  // Cartography = DATA (what the map MEANS: its source geometry + coordinate binding).
+  { field: 'geoJsonUrl',  type: 'string',  concern: 'data',     label: { ka: 'GeoJSON URL',       en: 'GeoJSON URL' }, required: true },
+  { field: 'paramKey',    type: 'string',  concern: 'data',     label: { ka: 'პარამეტრის გასაღები', en: 'Param key' }, required: true },
+  { field: 'isoField',    type: 'string',  concern: 'data',     label: { ka: 'ISO ველი',          en: 'ISO field' }, required: true },
+  { field: 'geoCodeMap',  type: 'object',  concern: 'data',     label: { ka: 'გეო-კოდების რუკა',    en: 'Geo code map' }, required: true },
+  { field: 'unit',        type: 'string',  concern: 'content',  label: { ka: 'ერთეული',           en: 'Unit' } },
+  // Selection interaction = BEHAVIOR (how the map ACTS when the reader picks regions).
+  { field: 'multiSelect', type: 'boolean', concern: 'behavior', label: { ka: 'მრავლობითი არჩევა',   en: 'Multiple select' } },
+  { field: 'maxSelect',   type: 'number',  concern: 'behavior', label: { ka: 'მაქს. არჩევანი',      en: 'Max select' }, default: 2 },
 ])
 
 // FF-SCHEMA-COMPLETE (tier b): 1:1 with editable keys (id/data/view/children

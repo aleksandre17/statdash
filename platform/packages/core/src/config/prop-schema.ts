@@ -38,6 +38,28 @@ import type { LocaleString } from '../i18n/types'
 //
 export type AudiencePlane = 'author' | 'steward' | 'system'
 
+// ── FieldConcern — the DECLARED CONCERN a field belongs to (the REFINE canon) ─────
+//
+//  The Authoring Canon's REFINE moment (root Law 11 · the inspector by concern-groups):
+//  every authorable field declares WHICH concern it serves, and the Constructor's
+//  inspector organizes the whole surface into a fixed, canonical concern taxonomy —
+//  ONE group per concern, in ONE order, so "you can tell what means what, where" (the
+//  owner's crisis mandate — no more flat, tangled property dump). The five concerns,
+//  in canonical render order:
+//    • 'content'  — what it SAYS: labels, titles, captions, the text a reader sees.
+//    • 'data'     — what it MEANS: the governed metric bind, the pipeline, source fields.
+//    • 'style'    — how it LOOKS: format, colour, size scalars, the visual refinement.
+//    • 'layout'   — where it SITS: placement, span, alignment, structural composition.
+//    • 'behavior' — how it ACTS: interactions, conditional visibility, selection.
+//  This is a PRESENTATION grouping hint (the sibling of `group`, which is likewise an
+//  inspector-only concept carried here on the field declaration) — the ENGINE never
+//  interprets it; only the inspector groups by it. Absent ⇒ `'content'` (the safe
+//  default: an untagged field is legible under CONTENT, never lost/mushed). Additive
+//  + OCP — a field with no `concern` is byte-identical to before; a NEW field lands in
+//  its declared concern automatically, no inspector change (Law 8 / FF-CONCERN-GROUPED).
+//
+export type FieldConcern = 'content' | 'data' | 'style' | 'layout' | 'behavior'
+
 // ── PropFieldType — primitive and rich value types in a PropField ─────
 export type PropFieldType =
   | 'string'        // plain text
@@ -173,6 +195,16 @@ export interface PropField {
   showWhen?:   string
   /** References a PropertyGroup label; field is placed in that accordion section. */
   group?:      string
+  /**
+   * The DECLARED CONCERN this field serves (the REFINE canon — root Law 11). The
+   * inspector organizes the whole element surface into the canonical concern taxonomy
+   * (content · data · style · layout · behavior), one collapsible group per concern in
+   * canonical order. Absent ⇒ `'content'` (the safe default — an untagged field stays
+   * legible under CONTENT, never lost). A PRESENTATION hint (sibling of `group`); the
+   * engine never reads it. FF-CONCERN-GROUPED forbids an ungrouped orphan on the author
+   * plane. Additive + OCP — a new field lands in its declared concern with no dock change.
+   */
+  concern?:    FieldConcern
   /**
    * Coverage contract for the field's value. `'localized'` marks a field whose
    * value must be a complete `LocaleString` over ALL active locales — the
