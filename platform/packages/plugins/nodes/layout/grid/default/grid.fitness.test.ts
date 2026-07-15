@@ -15,11 +15,16 @@ import { readFileSync }         from 'node:fs'
 import { fileURLToPath }        from 'node:url'
 import { dirname, join }        from 'node:path'
 import { resolveGrid }          from '@statdash/styles'
+import type { PropField }       from '@statdash/react/engine'
 import { GridSchema }           from './GridNode'
 
 const here      = dirname(fileURLToPath(import.meta.url))
 const layoutCss = readFileSync(join(here, '..', '..', 'layout.css'), 'utf8')
-const fields    = new Set(GridSchema.map(f => f.field))
+// Introspect the schema as the generic PropField vocabulary it is (defineSchema
+// narrows to literals for coverage-asserts; this test reads .field/.plane/.concern
+// across the union, which needs the widened PropField view).
+const schema: readonly PropField[] = GridSchema
+const fields    = new Set(schema.map(f => f.field))
 
 describe('FF-GRID-MAXIMAL — capability surface (schema-introspectable palette)', () => {
   it('the schema declares the full CSS-Grid vocabulary', () => {
@@ -31,7 +36,7 @@ describe('FF-GRID-MAXIMAL — capability surface (schema-introspectable palette)
 })
 
 describe('FF-GRID-AUTHOR-PLANE — raw track syntax is steward-only (AR-52 Law 11)', () => {
-  const byField = new Map(GridSchema.map(f => [f.field, f]))
+  const byField = new Map(schema.map(f => [f.field, f]))
 
   it('the friendly abstraction (columns/gap/align/justify) stays on the author plane', () => {
     for (const f of ['columns', 'gap', 'align', 'justify']) {
@@ -48,7 +53,7 @@ describe('FF-GRID-AUTHOR-PLANE — raw track syntax is steward-only (AR-52 Law 1
   })
 
   it('every grid field declares the LAYOUT concern (REFINE grouping)', () => {
-    for (const f of GridSchema) expect(f.concern).toBe('layout')
+    for (const f of schema) expect(f.concern).toBe('layout')
   })
 })
 
