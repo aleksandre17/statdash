@@ -51,6 +51,24 @@ describe('CanvasView', () => {
     expect(veil.textContent).toMatch(/ცოცხალი მონაცემები გამორთულია/)
   })
 
+  // ── P7 — dark-mode canvas PREVIEW (reuses the [data-theme] mechanism) ─────────
+  it('defaults to LIGHT preview: no data-theme on the canvas root (base tokens paint)', () => {
+    render(<CanvasView page={page} onSelectNode={vi.fn()} onDropNode={vi.fn()} />)
+    // Light leaves the attribute OFF so the :root base / site brand paint unchanged.
+    expect(screen.getByTestId('canvas-root')).not.toHaveAttribute('data-theme')
+  })
+
+  it('toggling the Studio dark-preview sets data-theme="dark" on the canvas root ONLY', () => {
+    render(<CanvasView page={page} onSelectNode={vi.fn()} onDropNode={vi.fn()} />)
+    // The Studio theme-preview control (distinct from any authored AppHeader toggle)…
+    fireEvent.click(screen.getByRole('radio', { name: /მუქი/ }))
+    // …flips the ONE sanctioned dark scope on the canvas root — no parallel path.
+    expect(screen.getByTestId('canvas-root')).toHaveAttribute('data-theme', 'dark')
+    // Back to light removes it (returns to the base/brand tokens).
+    fireEvent.click(screen.getByRole('radio', { name: /ნათელი/ }))
+    expect(screen.getByTestId('canvas-root')).not.toHaveAttribute('data-theme')
+  })
+
   it('marks the root as dragging when the dragging prop is set', () => {
     render(
       <CanvasView

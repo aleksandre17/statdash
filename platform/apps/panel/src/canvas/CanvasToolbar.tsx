@@ -30,10 +30,16 @@
 //
 import type { PreviewMode, PreviewStatus } from './useLivePreviewStores'
 
+/** The canvas theme-PREVIEW mode — a Studio view-state, NOT authored config. */
+export type ThemePreview = 'light' | 'dark'
+
 export interface CanvasToolbarProps {
   mode:         PreviewMode
   status:       PreviewStatus
   onModeChange: (mode: PreviewMode) => void
+  /** The Studio dark-preview state (distinct from the page's authored AppHeader toggle). */
+  themePreview:         ThemePreview
+  onThemePreviewChange: (theme: ThemePreview) => void
 }
 
 // Live leads — it is the default reality of the canvas (C2). Structural follows as
@@ -43,7 +49,17 @@ const MODE_OPTIONS: ReadonlyArray<{ value: PreviewMode; label: string }> = [
   { value: 'structural', label: 'სტრუქტურა' },
 ]
 
-export function CanvasToolbar({ mode, status, onModeChange }: CanvasToolbarProps) {
+// The theme-preview options — a Studio control (light | dark), icon + text (never
+// colour/icon alone — Law 9). Distinct from the page's authored sun/moon chrome: this
+// previews the tool's render, it does not edit the page.
+const THEME_OPTIONS: ReadonlyArray<{ value: ThemePreview; label: string; icon: string }> = [
+  { value: 'light', label: 'ნათელი', icon: '☀' },
+  { value: 'dark',  label: 'მუქი',   icon: '☾' },
+]
+
+export function CanvasToolbar({
+  mode, status, onModeChange, themePreview, onThemePreviewChange,
+}: CanvasToolbarProps) {
   return (
     <div className="canvas-toolbar" data-testid="canvas-toolbar">
       <div
@@ -62,6 +78,32 @@ export function CanvasToolbar({ mode, status, onModeChange }: CanvasToolbarProps
               className={`canvas-toolbar__mode${active ? ' canvas-toolbar__mode--active' : ''}`}
               onClick={() => onModeChange(opt.value)}
             >
+              {opt.label}
+            </button>
+          )
+        })}
+      </div>
+
+      {/* Theme PREVIEW — see the page in light / dark without editing the config. A
+          Studio control, not the authored AppHeader toggle (which is page content). */}
+      <div
+        className="canvas-toolbar__modes"
+        role="radiogroup"
+        aria-label="გადახედვის თემა"
+        data-testid="canvas-theme-preview"
+      >
+        {THEME_OPTIONS.map((opt) => {
+          const active = themePreview === opt.value
+          return (
+            <button
+              key={opt.value}
+              type="button"
+              role="radio"
+              aria-checked={active}
+              className={`canvas-toolbar__mode${active ? ' canvas-toolbar__mode--active' : ''}`}
+              onClick={() => onThemePreviewChange(opt.value)}
+            >
+              <span aria-hidden="true" className="canvas-toolbar__mode-icon">{opt.icon}</span>
               {opt.label}
             </button>
           )

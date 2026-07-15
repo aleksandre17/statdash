@@ -144,6 +144,18 @@ export function CanvasView({
   // source / API down degrades to the structural map with the 'unavailable' badge.)
   const [mode, setMode] = useState<PreviewMode>('live')
 
+  // ── Dark-mode canvas PREVIEW (Studio-level, distinct from authored chrome) ─────
+  //  A Studio control that lets the author see the page in dark WITHOUT touching the
+  //  authored config: the page's own AppHeader sun/moon is CONTENT (clicking it selects
+  //  the header), so it can never preview the tool's own render. This toggle reuses the
+  //  ONE sanctioned dark mechanism — `data-theme="dark"` on the canvas root — the exact
+  //  attribute the runner/tenant sets on <html> (tokens.css). Because the site brand
+  //  (`themeVars`) is applied INLINE on this SAME root, brand-set tokens still win and
+  //  the unbranded rest goes dark — byte-identical to how the runner composes brand+dark
+  //  (no parallel theming path). View-state local + transient (like `mode`), default
+  //  light so the canvas opens exactly as before.
+  const [themePreview, setThemePreview] = useState<'light' | 'dark'>('light')
+
   // Resolve the store map for the requested mode. Structural ≡ pre-G3 static map
   // (byte-identical). Live builds through the shared 'stats' builder and degrades
   // to the static map (status 'unavailable') on any failure — never throws.
@@ -174,12 +186,22 @@ export function CanvasView({
     : '/'
 
   return (
-    <div className={rootClass} data-testid="canvas-root" style={themeVars}>
-      {/* Canvas chrome — preview-mode toggle + fail-soft badge. */}
+    <div
+      className={rootClass}
+      data-testid="canvas-root"
+      style={themeVars}
+      // The ONE sanctioned dark scope (tokens.css). `light` leaves the attribute OFF so
+      // the base `:root` tokens / the site brand paint unchanged (default). Set to dark,
+      // the page + its AppChrome resolve the DTCG dark tokens for this subtree only.
+      data-theme={themePreview === 'dark' ? 'dark' : undefined}
+    >
+      {/* Canvas chrome — preview-mode toggle + theme-preview toggle + fail-soft badge. */}
       <CanvasToolbar
         mode={mode}
         status={status}
         onModeChange={setMode}
+        themePreview={themePreview}
+        onThemePreviewChange={setThemePreview}
       />
 
       {/* W1 · Canon C2 — the honest "preview off" veil. Structural mode is an explicit

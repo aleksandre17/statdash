@@ -73,6 +73,12 @@
   border-left: 1px solid var(--canvas-accent-soft);
 }
 
+/* Theme-preview glyph — a small leading icon (☀ / ☾) beside its text label. */
+.canvas-toolbar__mode-icon {
+  margin-inline-end: 4px;
+  font-size: 12px;
+}
+
 .canvas-toolbar__mode:hover {
   background: var(--canvas-accent-soft);
 }
