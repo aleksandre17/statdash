@@ -33,16 +33,26 @@ export const BREAKPOINT_KEYS_NON_DEFAULT = ['2xl', 'xl', 'lg', 'md', 'sm', 'xs']
 
 export function resolveResponsive<T>(val: ResponsiveVal<T> | undefined): ResolvedResponsive<T> {
   if (val === undefined) return {}
-  if (
-    val !== null &&
-    typeof val === 'object' &&
-    !Array.isArray(val) &&
-    !isFluidValue(val as unknown as StyleValue) &&
-    BREAKPOINT_KEYS.some(k => k in (val as object))
-  ) {
+  if (isResponsiveObject(val)) {
     return val as ResolvedResponsive<T>
   }
   return { default: val as T }
+}
+
+// True when a value is in per-breakpoint OBJECT form — a plain object carrying at
+// least one breakpoint key (`default`/`xs`/…/`2xl`), and NOT a FluidValue. The SSOT
+// predicate the resolver AND the authoring layer share to classify a value's shape:
+// the inspector uses it to decide whether a prop is currently in "responsive" mode
+// (distinct from a flat literal or a `{ $bind }` binding, which carries no breakpoint
+// key so is never mistaken for responsive). Array is excluded (never a breakpoint map).
+export function isResponsiveObject(val: unknown): boolean {
+  return (
+    val !== null &&
+    typeof val === 'object' &&
+    !Array.isArray(val) &&
+    !isFluidValue(val as StyleValue) &&
+    BREAKPOINT_KEYS.some(k => k in (val as object))
+  )
 }
 
 // Convert StyleValue to a CSS string.

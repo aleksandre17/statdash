@@ -24,9 +24,13 @@ export type {
 // ── Core helpers ──────────────────────────────────────────────────────
 export {
   resolveResponsive,
+  isResponsiveObject,
   parseStyleValue,
   isFluidValue,
   isAspectRatio,
+  BREAKPOINT_KEYS,
+  BREAKPOINT_KEYS_CASCADE,
+  BREAKPOINT_KEYS_NON_DEFAULT,
 } from './resolve'
 
 // ── Resolvers — config → DOM attrs (spread directly on elements) ──────

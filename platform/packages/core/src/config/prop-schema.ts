@@ -216,6 +216,22 @@ export interface PropField {
    */
   coverage?:   'localized'
   /**
+   * RESPONSIVE-CAPABLE (per-breakpoint authoring — Builder.io/Framer idiom). Marks a
+   * field whose value may be authored as a `ResponsiveVal<T>` — a per-breakpoint map
+   * (`{ default, md, lg, … }`, pure DATA — Law 2) that the render layer already lowers
+   * to the container-query cascade (`resolveResponsive` / `resolveGrid`). Present ⇒ the
+   * inspector's ONE value-authoring control offers the "responsive" MODE (edit this
+   * prop's value AT the active breakpoint), composably beside literal / bound. Absent ⇒
+   * the field is a single, breakpoint-agnostic value — byte-identical to today (Law 8 /
+   * OCP: a new per-breakpoint capability = a populated optional flag; PropField, the
+   * registry, and the Inspector interfaces are UNCHANGED). Orthogonal to `type` (a
+   * `number`/`string`/`color` field can be responsive) and to binding (each breakpoint
+   * entry may itself be a literal OR a `{ $bind }` — the render seam resolves bindings
+   * INSIDE a responsive object). An unset breakpoint HONESTLY inherits the next-larger
+   * set value (Law 11), exactly as the CSS `var()` fallback chain does — never fabricated.
+   */
+  responsive?: boolean
+  /**
    * NESTED-ITEM SCHEMA (D7 — deep authorability, ADR-022). The PropSchema of each
    * ITEM (when `type === 'array'`) or of the object's fields (when
    * `type === 'object'`). Present ⇒ the field is a STRUCTURED nested container,
