@@ -1255,24 +1255,8 @@
     "node_grid__default": {
       "type": "object",
       "properties": {
-        "templateColumns": {
-          "title": "Template columns",
-          "description": "string field",
-          "default": "repeat(auto-fit, minmax(min(100%, 24rem), 1fr))",
-          "type": "string"
-        },
-        "templateRows": {
-          "title": "Template rows",
-          "description": "string field",
-          "type": "string"
-        },
-        "templateAreas": {
-          "title": "Template areas",
-          "description": "string field",
-          "type": "string"
-        },
         "columns": {
-          "title": "Columns (shorthand)",
+          "title": "Columns",
           "description": "number field",
           "type": "number"
         },
@@ -1280,29 +1264,6 @@
           "title": "Gap",
           "description": "string field",
           "default": "var(--spacing-md)",
-          "type": "string"
-        },
-        "autoFlow": {
-          "title": "Auto flow",
-          "description": "row: Row, column: Column, dense: Dense, row dense: Row dense, column dense: Column dense",
-          "default": "row",
-          "type": "string",
-          "enum": [
-            "row",
-            "column",
-            "dense",
-            "row dense",
-            "column dense"
-          ]
-        },
-        "autoColumns": {
-          "title": "Auto columns",
-          "description": "string field",
-          "type": "string"
-        },
-        "autoRows": {
-          "title": "Auto rows",
-          "description": "string field",
           "type": "string"
         },
         "align": {
@@ -1328,6 +1289,45 @@
             "center",
             "end"
           ]
+        },
+        "templateColumns": {
+          "title": "Template columns",
+          "description": "string field",
+          "default": "repeat(auto-fit, minmax(min(100%, 24rem), 1fr))",
+          "type": "string"
+        },
+        "templateRows": {
+          "title": "Template rows",
+          "description": "string field",
+          "type": "string"
+        },
+        "templateAreas": {
+          "title": "Template areas",
+          "description": "string field",
+          "type": "string"
+        },
+        "autoFlow": {
+          "title": "Auto flow",
+          "description": "row: Row, column: Column, dense: Dense, row dense: Row dense, column dense: Column dense",
+          "default": "row",
+          "type": "string",
+          "enum": [
+            "row",
+            "column",
+            "dense",
+            "row dense",
+            "column dense"
+          ]
+        },
+        "autoColumns": {
+          "title": "Auto columns",
+          "description": "string field",
+          "type": "string"
+        },
+        "autoRows": {
+          "title": "Auto rows",
+          "description": "string field",
+          "type": "string"
         },
         "type": {
           "const": "grid"

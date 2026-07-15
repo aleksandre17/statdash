@@ -27,10 +27,12 @@ const PAGE_COLOR_VAR = '--sc'
 export const colorProjector: PresentationProjector<VarExpr | string, string> = {
   key: 'color',
 
-  // Label is the en-only baseline (Law 3 — no first-tenant `ka` content in a
-  // reusable library; tenant locales arrive via the manifest i18n catalog).
+  // Bilingual platform label (Law 4). `ka` is the platform base UI locale here —
+  // NOT first-tenant content — matching every node schema's label (KpiStrip /
+  // Geograph / Section / Hero all carry `{ ka: 'ფერი', en: 'Colour' }`). A single
+  // en-only label was the odd one out that surfaced English amid the Georgian dock.
   schema: () => [
-    { field: 'color', type: 'color', label: { en: 'Page color' } },
+    { field: 'color', type: 'color', label: { ka: 'გვერდის ფერი', en: 'Page color' } },
   ],
 
   evaluate(raw, evalExpr) {
