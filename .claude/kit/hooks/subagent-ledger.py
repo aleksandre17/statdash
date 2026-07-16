@@ -1,11 +1,16 @@
 #!/usr/bin/env python3
 """SubagentStop — per-run ledger: requested vs VERIFIED model + tokens (owner, 2026-07-08).
 
-Closes two observability gaps in one mechanism:
+Closes three observability gaps in one mechanism:
   1. requested != verified model — LAUNCH lines are written by the lead at spawn
      (model-requested); this hook writes the RUN line from the agent's own transcript
      (model-actual = ground truth, the '"model":"claude-…"' fields of its assistant turns).
   2. per-run token detail — out-tokens summed from the transcript's usage records.
+  3. INPUT/context burn (owner, 2026-07-17: "agents jump to 150-200k while the lead
+     would spend half") — first-in (spawn cost), peak-ctx (max context any API call
+     re-billed), calls (API-call count; every call re-sends the whole context).
+     peak-ctx > CTX_BURN_LIMIT stamps '⚠ CTX-BURN' — grounding gulps or unbatched
+     turn-churn; the packet doctrine (strategy/12) or the brief was violated.
 
 Ledger: .claude/session/token-log.md, one RUN line per agent transcript (deduped by run id).
 Drift alarm: if a RUN's model family has NO LAUNCH line requesting that family today,
@@ -21,6 +26,33 @@ except (AttributeError, ValueError):
     pass
 
 RECENT_S = 1800  # fallback scan window: transcripts touched in the last 30 min
+CTX_BURN_LIMIT = 120_000  # peak context above this = burn defect (measured norm: 60-90k)
+
+
+def _usage_stats(txt):
+    """(first_in, peak_ctx, calls, out_tok) from a JSONL transcript's usage records.
+
+    Input cost of an API call = input + cache_creation + cache_read tokens (the whole
+    context is re-sent every call; cache discounts price, not context size)."""
+    first_in, peak, calls, out = None, 0, 0, 0
+    for line in txt.splitlines():
+        try:
+            obj = json.loads(line)
+        except Exception:
+            continue
+        msg = obj.get("message")
+        u = (msg.get("usage") if isinstance(msg, dict) else None) or obj.get("usage")
+        if not isinstance(u, dict):
+            continue
+        tot_in = (u.get("input_tokens", 0) + u.get("cache_creation_input_tokens", 0)
+                  + u.get("cache_read_input_tokens", 0))
+        if tot_in:
+            calls += 1
+            if first_in is None:
+                first_in = tot_in
+            peak = max(peak, tot_in)
+        out += u.get("output_tokens", 0) or 0
+    return first_in or 0, peak, calls, out
 
 
 def _candidates(root):
@@ -46,9 +78,12 @@ def _candidates(root):
     out, now = [], time.time()
     for sd in subdirs:
         try:
+            # Window: recent enough to be this stop's run, but SETTLED (>60s quiet) —
+            # an in-flight sibling's transcript must not be ledgered mid-run (the
+            # run-id dedupe would freeze a partial record).
             out += [os.path.join(sd, f) for f in os.listdir(sd)
                     if f.startswith("agent-") and f.endswith(".jsonl")
-                    and now - os.path.getmtime(os.path.join(sd, f)) < RECENT_S]
+                    and 60 < now - os.path.getmtime(os.path.join(sd, f)) < RECENT_S]
         except Exception:
             continue
     return out
@@ -80,9 +115,12 @@ def main():
         if not models:
             continue
         model = max(set(models), key=models.count)            # majority = the run's engine
-        out_tok = sum(int(x) for x in re.findall(r'"output_tokens":\s*(\d+)', txt))
+        first_in, peak_ctx, calls, out_tok = _usage_stats(txt)
         line = (f"[{today} {time.strftime('%H:%M')}] RUN run={run_id} "
-                f"model-actual={model} msgs={len(models)} out-tokens={out_tok}")
+                f"model-actual={model} calls={calls} first-in={first_in} "
+                f"peak-ctx={peak_ctx} out-tokens={out_tok}")
+        if peak_ctx > CTX_BURN_LIMIT:
+            line += f"  ⚠ CTX-BURN: peak {peak_ctx} > {CTX_BURN_LIMIT} — audit the brief/packet"
         m = re.match(r"claude-([a-z]+)", model)
         if m and req_fams and m.group(1) not in req_fams:
             line += f"  ⚠ MODEL-VERIFY: no LAUNCH today requested '{m.group(1)}'"

@@ -1,6 +1,8 @@
 # Memory Index
 
 ## Auto-relocated (memory-home-guard — reconcile into a topic section)
+- [token burn audit](project_token_burn_audit.md) — 2026-07-17: spawn=16-24k, burn is IN-RUN (peaks 60-213k, turn-churn 125-246 calls); ledger now shows first-in/peak-ctx/calls + CTX-BURN; routing threshold in strategy/06
+- [use MCP instruments](feedback_use_mcp_instruments.md) — owner 2026-07-16: practice MCP/plugin adoption (playwright MCP over hand-rolled probes); /mcp check at session start; kit rule now INDEX-mapped
 - [canon DoD incidents](feedback_canon_dod_incidents.md) — the 4 concrete session slips (Wave-8 false-green, nested all-expanded, chrome live-gap, PAGE_ROOT_TYPE hardcode) behind the agnostic DoD gate
 - [green-gate panel typecheck](feedback_green_gate_panel_typecheck.md) — gate MUST include `pnpm lint` + `tsc -b apps/panel`; root typecheck is geostat-only
 - [gate render suite on data changes](feedback_gate_render_suite_on_data_changes.md) — config/data changes gating the CONSUMING app's render suite, not just own units
@@ -26,10 +28,17 @@
 - [global + loose coupling](feedback_global_loose_coupling.md) — work GLOBALLY (root, not element-by-element) · loose coupling everywhere (arch+UI) · manage continuously when owner away · per Fable
 - [verification-fit per situation](feedback_verification_fit_per_situation.md) — choosing the KIND of proof is judgment: live-UX→Playwright/look at :3013 · logic→unit · invariant→FF · data→parity; wrong/worthless test = false-green, sometimes SKIP the test and just LOOK
 - [route thinking to the right instrument](feedback_plan_on_board_and_docs_dynamically.md) — senior-lead doctrine: use the FULL instrument set dynamically — work/ board · ADRs · ARCHITECTURE-REGISTRY · BENCHMARK-REFERENCE-PLATFORMS · plan/ · audit/ · knowledge/ · patterns/ · memory — plan then execute faithfully, keep instruments current; never rigid, never scattered
+- [craft + completeness bar](feedback_craft_completeness_bar.md) — every surface must clear the reference-class CRAFT bar (beautiful, complete, nothing raw/weak), not just architecture; see+close the thousand small gaps unprompted; craft is part of DONE
+- [decide principled, never ask](feedback_decide_principled_never_ask.md) — if best/needed/standard/SOLID/right-pattern → DECIDE+DRIVE, don't ask greenlight; fear-of-big-change + bending-to-legacy (Law 7) are failure modes; escalate only TRUE one-way doors
+- [WIP=1, finish before start](feedback_wip1_finish_before_start.md) — finish ONE thing end-to-end (built→gated→deployed→SHOWN) before the next; owner feedback QUEUES, never abandons-restarts; many starts + nothing finished = cardinal failure
+- [right-size the cheap tier](feedback_right_size_cheap_tier.md) — route SAFE mechanical/templated work (scripts, bulk sweeps, fixtures, relocations) to junior/Haiku/Sonnet to save cost; never judgment; senior-sets-pattern→junior-replicates for bulk
 - [circle-break root study](feedback_circle_break_root_study.md) — owner senses "we're circling" → STOP leaf-grinding → first-principles READ-ONLY root study benchmarked vs canonical platforms → lay root concepts → owner picks direction; "from scratch" = framework-grade foundation via Strangler, not repo-wipe
 - [harness overhaul](project_harness_overhaul_2026_07_15.md) — context-packet doctrine (strategy/12) · governor charter · duty orders ×13 · kit purity · memory consolidation · guard cwd-bug fixed; agent load-burn root = grounding reads, cure = packets
 - [authoring canon program](project_authoring_canon_program.md) — AR-52 circle-break (2026-07-15): substrate holds, canon+WIP is the disease; C1–C4; waves 0071–0075 WIP=1; owner doors pending
+- [capability injection pipeline (2026-07-16)](project_capability_injection_pipeline.md) — owner standing mandate: continuously inject reference-class capabilities (Builder/Retool/Grafana/Form.io) we lack; ranked backlog; dynamic-binding in flight; symbols GATED behind composition-root
+- [framework-grade verdict (2026-07-16)](project_framework_grade_verdict.md) — owner: still NOT platform/framework grade in ALL seven layers (code/ui/core/concepts/arch/laws/grammar); root = dashboard-wants-framework vs framework-first; freeze holds, awaiting his door
 - [framework+platform verdict](project_framework_platform_verdict.md) — two-lens deep review (2026-07-15): PARTIAL/converging, NOT circling; object-model loop ENDED; residual circle = (1) CI/gate OFF (owner door), (2) two un-named meta-laws (now Proposed ADRs)
+- [framework bones exist](project_framework_bones_exist.md) — DI/IoC (`engine/di/`), plugin registry, `plugins/pages` all EXIST but under-leveraged/invisible; disease is ADOPTION not absence; panel ~90% re-homing not teardown; never teardown-panic
 - [dist resolution hygiene](project_dist_resolution_hygiene.md) — packages boot from dist/ (untracked); a packages/* source change white-screens the live app until `pnpm -r ...build`; tsc-green ≠ dist-fresh
 - [authoring reconception](project_authoring_reconception.md) — owner-mandated bold reconception of panel (UI+func+concept+arch); vision leads, existing adapts; dislikes 3-step wizard
 - [landing slider = featured (yellow)](project_landing_slider_featured.md) — slider built FROM yellow-highlighted source cells via semantic layer; authoring-only signal
@@ -39,5 +48,5 @@
 - [MT decision deferred](project_mt_deferred.md) — owner deferred multi-tenancy; perfect single-tenant first; preserve the tenant_id seam, don't build MT
 - [infra pattern](project_infra_pattern.md) — two-stack Docker Compose: infra/ separate from app; geostat-chat-ai is the reference
 - [types.ts ceiling](project_types_ts_ceiling.md) — engine/react types.ts near the 400-line hard ceiling; decompose before adding fields
-- [session state + UI priorities](project_session_state_ui_priorities.md) — owner's CURRENT stack (2026-07-11): data sound → dedup → pipelines-visible → right-side fix; NOT AI/vintage; 2 agents running (object-model activate, Fable UI benchmark); CORS/localhost anti-pattern fixed
 - [object-model foundation reform](project_object_model_foundation.md) — THE root fix (0067 diagnosis→0068 build): Part grammar + engine Part port ends the BE-1..BE-4 leaf-bridge circle; residence-at-field, wrapper=derived, retire shadow-promotion (D-F2), port-first (D-F3); Strangler, zero config migration
+- [no external special-case (self)](feedback_no_external_special_case_self.md) — lead's own fixes obey ADR-038: per-type branches only at the type's declared core seam (toCtxValue beside autoParse); owner reads diffs

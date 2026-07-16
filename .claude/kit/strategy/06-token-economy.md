@@ -53,3 +53,16 @@ Use the loading map in `.claude/kit/INDEX.md`. Default-load only:
 - Plus the strategy file(s) the brief explicitly requires
 
 If the brief lists 4+ strategy files, the task is probably too large — split it.
+
+---
+
+## Measured burn anatomy (audited 2026-07-17 — owner escalation)
+
+Ground truth from real transcripts (`token-log.md` RUN lines now carry it):
+- **Spawn fixed cost ≈ 16–24k input** (harness + tools + def + MEMORY.md + CLAUDE.md + packet). Unavoidable per agent; ~0 for the lead doing it inline.
+- **The burn is IN-RUN, not at spawn:** peaks 60k→213k, driven by (a) wholesale reads of heavy files (a 57KB memory map ≈ 15k tokens; a 32KB kit file ≈ 9k), (b) **turn-churn** — 125–246 API calls per run, each re-sending the whole context (cache discounts price, never context size or the lost-in-the-middle dilution).
+
+### Binding budgets (enforced by the `⚠ CTX-BURN` ledger alarm at 120k)
+- **Peak-context norm ≈ 80k** for a standard run; crossing 120k = a defect of the brief (too broad), the packet (too thin), or the agent's read discipline — audit which, then fix the SOURCE.
+- **Routing threshold:** work the lead can finish in **≲15 tool calls on knowledge it already holds** stays with the lead — a spawn's fixed cost + inevitable re-grounding beats no delegation only ABOVE that line. (Judgment-density still routes UP regardless — a cheap wrong decision is the most expensive token sink of all.)
+- **Turn budget:** batch independent reads/searches in ONE turn; an agent averaging >60 API calls without a proportional deliverable is churning, not thinking.
