@@ -43,6 +43,7 @@ describe('VisibilityExpr — round-trip (all ops)', () => {
   it('neq',      () => expectRoundTrip(leaf2))
   it('in',       () => expectRoundTrip<VisibilityExpr>({ op: 'in',    param: 'geo',  values: ['GE', 'AM'] }))
   it('isset',    () => expectRoundTrip<VisibilityExpr>({ op: 'isset', param: 'breakdown' }))
+  it('count-gt', () => expectRoundTrip<VisibilityExpr>({ op: 'count-gt', param: 'geo', n: 1 }))
   it('and',      () => expectRoundTrip<VisibilityExpr>({ op: 'and',   exprs: [leaf, leaf2] }))
   it('or',       () => expectRoundTrip<VisibilityExpr>({ op: 'or',    exprs: [leaf, { op: 'isset', param: 'breakdown' }] }))
   it('not',      () => expectRoundTrip<VisibilityExpr>({ op: 'not',   expr: leaf }))

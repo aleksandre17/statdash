@@ -14,7 +14,7 @@ import type { VisibilityExpr } from '@statdash/engine'
 
 /** The selectable VisibilityExpr ops, grouped for the builder's pickers. */
 export const VISIBILITY_LEAF_OPS = [
-  'eq', 'neq', 'in', 'isset',
+  'eq', 'neq', 'in', 'isset', 'count-gt',
   'perspective-is', 'perspective-in', 'perspective-not',
 ] as const
 export const VISIBILITY_COMPOSITE_OPS = ['and', 'or', 'not'] as const
@@ -37,6 +37,8 @@ export function makeVisibilityExpr(op: VisibilityOpId): VisibilityExpr {
     case 'neq':      return { op: 'neq', param: '', is: null }
     case 'in':       return { op: 'in',  param: '', values: [] }
     case 'isset':    return { op: 'isset', param: '' }
+    // n:1 seeds the common "more than one selected" condition (author-adjustable).
+    case 'count-gt': return { op: 'count-gt', param: '', n: 1 }
     case 'perspective-is':  return { op: 'perspective-is',  perspective: '' }
     case 'perspective-not': return { op: 'perspective-not', perspective: '' }
     case 'perspective-in':  return { op: 'perspective-in',  perspectives: [] }

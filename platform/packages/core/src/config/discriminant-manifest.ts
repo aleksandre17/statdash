@@ -52,7 +52,7 @@ void _paramDefExact
 
 // ── VisibilityExpr.op ─────────────────────────────────────────────────
 export const VISIBILITY_OPS = [
-  'eq', 'neq', 'in', 'isset', 'and', 'or', 'not',
+  'eq', 'neq', 'in', 'isset', 'count-gt', 'and', 'or', 'not',
   'perspective-is', 'perspective-in', 'perspective-not',
 ] as const satisfies readonly Discriminants<VisibilityExpr, 'op'>[]
 

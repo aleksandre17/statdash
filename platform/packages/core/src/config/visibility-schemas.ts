@@ -76,6 +76,16 @@ export const issetSchema: PropSchema = [
   paramField,
 ]
 
+// ── count-gt — selection-cardinality leaf: { param, n } ───────────────────────
+//  True when the param's OR-set selection holds MORE than `n` members (a
+//  multi-select CSV/array; unset ⇒ 0). `n` is a plain number field — e.g. n=1
+//  reads "more than one selected".
+export const countGtSchema: PropSchema = [
+  paramField,
+  { field: 'n', type: 'number', required: true,
+    label: bi('მეტია ვიდრე (n)', 'More than (n)') },
+]
+
 // ── perspective-is / perspective-not — the CANONICAL perspective leaves ───────
 //  `perspective` binds to the registered perspective set (the 'perspectives'
 //  source, fed by perspectiveRegistry.list()) — pick-don't-type. Same generic
@@ -104,6 +114,7 @@ registerVisibilityLeafSchema('eq',              eqSchema)
 registerVisibilityLeafSchema('neq',             neqSchema)
 registerVisibilityLeafSchema('in',              inSchema)
 registerVisibilityLeafSchema('isset',           issetSchema)
+registerVisibilityLeafSchema('count-gt',        countGtSchema)
 // Canonical perspective-* leaves — the perspective-axis visibility gate.
 registerVisibilityLeafSchema('perspective-is',  perspectiveIsSchema)
 registerVisibilityLeafSchema('perspective-not', perspectiveNotSchema)

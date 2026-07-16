@@ -37,6 +37,7 @@ const OP_LABELS: Record<VisibilityOpId, string> = {
   'neq':      'param ≠ value',
   'in':       'param in […]',
   'isset':    'param is set',
+  'count-gt': 'selection count > n',
   'perspective-is':  'perspective is',
   'perspective-in':  'perspective in […]',
   'perspective-not': 'perspective is not',

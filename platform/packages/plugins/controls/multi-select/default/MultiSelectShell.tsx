@@ -1,5 +1,13 @@
-import { useFilter, useResolveLocaleSafe }        from '@statdash/react'
-import type { ParamMultiSelectNode }              from '@statdash/engine'
+// ── MultiSelectShell — the multi-select filter control, on the owned surface ──
+//
+//  Renders the `multi-select` ParamDef through the OWNED `MultiSelect` compound
+//  (packages/react ui foundation: Radix menu CheckboxItems + DTCG-token paint +
+//  chip summary) — replacing the bare checkbox fieldset. The wire contract is
+//  unchanged: the filter state carries the ctx CSV OR-set convention
+//  ('C,F' — splitMultiValue SSOT), split/joined ONLY here at the edge.
+//
+import { useFilter, useResolveLocaleSafe, MultiSelect } from '@statdash/react'
+import type { ParamMultiSelectNode }                    from '@statdash/engine'
 
 export function MultiSelectShell({ filterKey, config }: { filterKey: string; config: ParamMultiSelectNode }) {
   const { state, set } = useFilter()
@@ -10,26 +18,35 @@ export function MultiSelectShell({ filterKey, config }: { filterKey: string; con
   const current = raw ? raw.split(',').filter(Boolean) : []
 
   const options = config.options.type === 'static' ? config.options.items : []
-
-  const toggle = (val: string) => {
-    const next = current.includes(val)
-      ? current.filter(v => v !== val)
-      : [...current, val]
-    set(filterKey, next.join(','))
+  const labelOf = (v: string) => {
+    const opt = options.find((o) => String(o.value) === v)
+    return opt ? t(opt.label) : v
   }
 
   return (
-    <fieldset className="filter-control__multiselect">
-      <legend className="sr-only">{t(config.label)}</legend>
-      {options.map(opt => {
-        const v = String(opt.value)
-        return (
-          <label key={v} className="filter-control__checkbox-label">
-            <input type="checkbox" checked={current.includes(v)} onChange={() => toggle(v)} />
-            {t(opt.label)}
-          </label>
-        )
-      })}
-    </fieldset>
+    <MultiSelect.Root
+      values={current}
+      onValuesChange={(next) => set(filterKey, next.join(','))}
+    >
+      <MultiSelect.Trigger
+        className="filter-control__multiselect"
+        aria-label={t(config.label)}
+        placeholder={t(config.label)}
+      >
+        {current.map((v) => (
+          <MultiSelect.Chip key={v}>{labelOf(v)}</MultiSelect.Chip>
+        ))}
+      </MultiSelect.Trigger>
+      <MultiSelect.Content>
+        {options.map((opt) => {
+          const v = String(opt.value)
+          return (
+            <MultiSelect.Item key={v} value={v}>
+              {t(opt.label)}
+            </MultiSelect.Item>
+          )
+        })}
+      </MultiSelect.Content>
+    </MultiSelect.Root>
   )
 }

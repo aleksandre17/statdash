@@ -382,7 +382,7 @@ function scanTransforms(steps: readonly TransformStep[], acc: Acc): void {
 // ── scanVisibility — VisibilityExpr params + perspective axes ─────────────────
 function scanVisibility(expr: VisibilityExpr, acc: Acc): void {
   switch (expr.op) {
-    case 'eq': case 'neq': case 'in': case 'isset':
+    case 'eq': case 'neq': case 'in': case 'isset': case 'count-gt':
       acc.params.add(expr.param); break
     case 'and': case 'or':
       for (const e of expr.exprs) scanVisibility(e, acc); break

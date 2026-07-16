@@ -14,7 +14,7 @@ import {
 } from '../index'
 
 const LEAF_OPS      = [
-  'eq', 'neq', 'in', 'isset',
+  'eq', 'neq', 'in', 'isset', 'count-gt',
   'perspective-is', 'perspective-in', 'perspective-not',
 ] as const
 const COMPOSITE_OPS = ['and', 'or', 'not'] as const
@@ -46,7 +46,7 @@ describe('visibility-schemas — VisibilityExpr authoring surfaces (V4)', () => 
   })
 
   it('param-valued leaves pick their param from the authored filters (Law 2)', () => {
-    for (const op of ['eq', 'neq', 'in', 'isset'] as const) {
+    for (const op of ['eq', 'neq', 'in', 'isset', 'count-gt'] as const) {
       const schema = getVisibilityLeafSchema(op)!
       const paramField = schema.find((f) => f.field === 'param')
       expect(paramField, `${op}.param must exist`).toBeTruthy()

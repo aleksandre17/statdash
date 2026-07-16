@@ -7,6 +7,7 @@
 //
 
 import type { DimVal } from '../sdmx'
+import { splitMultiValue } from '../data/store-filter'
 import { activePerspective } from './perspective-state'
 
 /**
@@ -33,6 +34,13 @@ export type VisibilityExpr =
   | { op: 'neq';      param: string; is: DimVal | null }
   | { op: 'in';       param: string; values: DimVal[]  }
   | { op: 'isset';    param: string }
+  // Selection-cardinality leaf: true when the param's OR-set holds MORE than `n`
+  // members. A multi-select param carries either a CSV OR-set string ('R2,R3' —
+  // the ctx convention, splitMultiValue is the SSOT decode) or an already-decoded
+  // string[] (the typed filter-eval shape); both count identically. Unset/empty ⇒ 0.
+  // Generic + dimension-agnostic (Law 1: the param is data) — e.g. "≥2 regions
+  // picked" = { op:'count-gt', param:'geo', n:1 }, composable via and/or/not.
+  | { op: 'count-gt'; param: string; n: number }
   | { op: 'and';      exprs: VisibilityExpr[] }
   | { op: 'or';       exprs: VisibilityExpr[] }
   | { op: 'not';      expr:  VisibilityExpr  }
@@ -72,6 +80,13 @@ export function evalVisibility(
     case 'neq':      return (fr[expr.param] ?? null) !== expr.is
     case 'in':       return expr.values.includes(fr[expr.param] as (typeof expr.values)[0])
     case 'isset':    { const v = fr[expr.param]; return v !== undefined && v !== null && v !== '' }
+    case 'count-gt': {
+      const v = fr[expr.param]
+      const count = Array.isArray(v) ? v.length
+        : typeof v === 'string' && v !== '' ? splitMultiValue(v).length
+        : 0
+      return count > expr.n
+    }
     case 'and':      return expr.exprs.every((e) => evalVisibility(e, fr, perspectiveState))
     case 'or':       return expr.exprs.some((e)  => evalVisibility(e, fr, perspectiveState))
     case 'not':      return !evalVisibility(expr.expr, fr, perspectiveState)
