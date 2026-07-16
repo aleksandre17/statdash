@@ -74,6 +74,19 @@ export interface ChartDef {
   palette?: ChartPalette
   /** Show value labels on top of bars. Default: true for bar/hbar. */
   dataLabels?: boolean
+  /**
+   * Declare an x-range navigation affordance for a LONG time-dynamics chart: a
+   * slim range-slider (brush) strip under the plot lets the viewer window a
+   * sub-range of a many-year series (dataZoom/navigator idiom — ECharts dataZoom,
+   * Highstock navigator). Declarative INTENT only (Law 2): config says "this
+   * series is long enough to warrant windowing"; the renderer decides the
+   * realization (the Apex adapter draws a synced brush companion). Inert on
+   * horizontal / non-cartesian marks and on a short series (the adapter shows no
+   * strip when there is nothing to window — the canvas never lies). A new
+   * realization (native zoom, a custom scrubber) is a render-layer change, this
+   * contract unchanged (Law 8).
+   */
+  rangeSlider?: boolean
   /** Text shown below the center value in donut charts (e.g. 'მშპ'). */
   centerLabel?: string
 }
@@ -170,6 +183,15 @@ export interface ChartOutput {
    * resolve the name → token ramp at their boundary.
    */
   readonly palette?: ChartPalette
+  /**
+   * Mirror of ChartDef.rangeSlider — the neutral "this series is x-range
+   * navigable" intent. When true AND the realizer supports it (vertical
+   * cartesian, enough categories), a range-slider brush strip renders under the
+   * plot. Absent ⇒ no strip (byte-identical to the prior output). Neutral by
+   * construction: a boolean INTENT, never an Apex/realizer option — the render
+   * layer owns the mechanism (Law 1/4).
+   */
+  readonly rangeSlider?: boolean
   /**
    * EMPHASIS channel (AR-42 — the encoding-grammar peer of a linked-highlight
    * selection). The RESOLVED "condition on selection": the set of emphasized

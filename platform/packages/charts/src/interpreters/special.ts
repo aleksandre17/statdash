@@ -96,6 +96,9 @@ class ComboInterpreter implements ChartInterpreter {
       legend: buildLegend(def, series.length),
       tooltip: buildTooltip(def, true),
       annotations: [],
+      // x-range navigation intent (a long GDP dynamics combo declares it). Passthrough
+      // only — omitted when absent so the output stays byte-identical (Postel / Law 8).
+      ...(def.rangeSlider ? { rangeSlider: true } : {}),
     }
   }
 }

@@ -54,6 +54,9 @@ class BarInterpreter implements ChartInterpreter {
       ...(def.distributed && series.length === 1 ? { distributed: true } : {}),
       ...(series.length > 1 && !anyExplicitSeriesColor ? { seriesColorByIndex: true } : {}),
       ...(def.palette ? { palette: def.palette } : {}),
+      // x-range navigation intent passes through untouched (line/area inherit via
+      // the spread below). Absent ⇒ omitted → byte-identical output (Postel).
+      ...(def.rangeSlider ? { rangeSlider: true } : {}),
     }
   }
 }
