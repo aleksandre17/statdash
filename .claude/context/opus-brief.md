@@ -1,27 +1,20 @@
 # Opus Brief — durable resume state
 
-> **⛔ ROOT LAW FIRST (containment = ADR-041, ACCEPTED 2026-07-12).** Before ANY authoring/containment/object-model work, read `docs/architecture/decisions/ADR-041-part-grammar-and-part-port.md` + `docs/architecture/proposals/PLAN-part-grammar-strangler-build.md`. ONE Part grammar · one Part port · residence-at-field · wrapper/leaf derived. **Never add a per-kind bridge or a fifth containment grammar — the FF ratchets (FF-ONE-PART-GRAMMAR/RESIDENCE-AT-FIELD/DERIVED-CONTAINMENT) will red the build.** A new kind is a DECLARATION. Build status: port-first, phased (cards 0067→0068); BE-4 (0062) held uncommitted → re-homes as the first `sourced` adapter.
+> **⛔ ROOT LAWS FIRST.** Containment = ADR-041 (one Part grammar · one port · residence-at-field). Authoring = ADR-042 (Triprojection: Select/Inspect/Manipulate over the one Part model). Product canon = **CLAUDE.md Law 11** (Data first · canvas never lies · projection with a plane · a journey is the unit of done). FF ratchets red the build on violations. A new kind is a DECLARATION, never a bridge.
 
-## Current State (2026-07-08)
+## Current State (2026-07-17)
 
-**Render-parity epic — DONE, LIVE, MERGED (2026-07-02).** Every chart/table/KPI renders "data as it was" (correct pre-regression values) via clean architecture, proven Δ0.000 through the real pipeline and verified live on prod (Playwright vs :3002). Detail archived in `docs/architecture/proposals/SPEC-render-pipeline-target*.md` + the parity harness under `platform/apps/geostat/src/data/`.
-
-**Post-parity work landed on `main`:**
-- AR-45 chart decomposition — `cartesian` build.ts is a thin assembler; responsive/grid/chrome/axes/marks/data-labels extracted; seam locked by `cartesian-decomposition.fitness`.
-- Featured preliminary badge (config-gated, default on); regional hbar full-number x-axis; provisioning GDP-methodology PDF repoint.
-
-**This session (2026-07-08) — `.claude` harness hardening:**
-1. Recovered a phantom working-tree wipe of `platform/packages` (451 files, ~41k lines) — restored from HEAD (HEAD was intact; working-tree-only loss).
-2. **Hook-suite hardening — 12 findings**, on branch `chore/hook-suite-hardening` (committed + pushed; PR pending manual open, `gh` not authed). Highlights: mass-deletion/working-tree-loss guard (Tier A session-boundary + Tier B pre-bash, WARN-only, `_worktree.py`); selftest now targets the LIVE manifest (was falsely green on a stale Java template) → 24/24; `memory-home-guard` 2394ms→29ms (81×); secret-scan law; eslint = single SSOT for the dependency arrow (**ADR-0033**).
-3. **Claude-harness economy audit → applied**: removed stale/contradictory "always-Opus" memory entries (silent-Opus hazard), de-duplicated model-per-task doctrine, pinned `model` floors on judgment agent defs (opus) + explorer (sonnet), refreshed this brief.
-
-## NEXT (resume here)
-- Open/merge the `chore/hook-suite-hardening` PR when the owner approves.
-- Then the parked **innovation initiatives** ([[proactive-innovation-mandate]]): (1) Grammar of Interaction / cross-filter, (2) formal semantic/metrics layer (Cube/Malloy/LookML class), (3) data lineage/provenance surface — register in `docs/architecture/ARCHITECTURE-REGISTRY.md`, architect-design the owner's pick, sign-off, build.
+**ACTIVE: card `work/items/0078` — portal review-notes batch (owner's docx), branch `fix/portal-review-notes-2026-07-10`.** Owner verdict round-3 (2026-07-17): substance landed, but the interaction surfaces fail the CRAFT bar — "მოგწონს ლეფტ ბარი? … საშინელებაა (dark multi-select)". Owner handed full ownership for the session: EVERY docx note at best-concept grade.
+- LIVE on dev :3012: bundle `index-5TgkzNSQ.js` (R1+R2 fixes deployed 07-17; the prior session built images but never recreated containers — check the CONTAINER, not the image). Slide-2 (B5G) codes cleaned in dev DB.
+- **Seed provenance root fix committed `9766092`:** governed-catalog merge (metrics/dimensions) now three-way (kubectl last-applied concept) via system-plane `provisioning_seed_hashes` ledger — a provisioning label fix reaches steward-untouched entries. The (B5G) incident class is closed at the root.
+- **Craft wave in flight (senior-frontend, opus):** rail overlay elevation/truncation · multi-select popover light+dark · clipped year select · brush navigator craft · GDP dynamics gray→sequential. After return: converged gate → geostat(+api) dev rebuild → full live walk light+dark (walk instrument: `work/portal-walk/walk-r3.mjs`) → show owner. Prod only on his word.
+- **Token-burn audit landed `5489634`** (owner escalation): spawn=16-24k, burn is in-run (turn-churn); ledger now shows first-in/peak-ctx/calls + CTX-BURN>120k; strategy/06 has measured budgets + lead-keeps-it threshold. Debt: sfd memory dir (556KB/86 files, 57KB map) + engine-specialist (60 files) curation due.
+- **Walk-coverage lessons (do not repeat):** carousel = iterate ALL slides (slide-2 false PASS); lazy pages need scroll + tab-switch before probing; SVG tick innerText flaky — screenshots are the proof of record.
+- Paused strata: AR-52 W1 remainder · AR-53 · Stage-0 CI (owner doors pending, see ROADMAP-zero-to-hero.md). Known P0 truths hold (ci.yml dead, 18 DB-gated suites, `c` masking, config↔stats FK void, stale RED insertByteIdentity.fitness).
 
 ## STANDING rules (binding)
-- **green-gate: PARSE THE LOG (`Tests N failed`), NOT exit code** — `pnpm test` returns 0 even when vitest fails. Include `pnpm lint` + `tsc -b apps/panel` in the converged gate.
-- **MODEL ROUTING** — agent defs stay model-agnostic EXCEPT the invariant-tier extremes: apex design/QC (`chief-engineer`, `architect`, `platform-architect`) pin an `opus` floor + `junior-executor` pins `haiku`. Middle tiers carry NO pin — the orchestrator routes per-call by decision-density and must NEVER mis-route. Bias to Opus for substantive/real-engineering/judgment work; Sonnet/Haiku only for genuinely trivial mechanical; when unsure → Opus (owner: economy secondary to quality). SUPERSEDES the old "always Opus" rule.
-- **Proactive-innovation mandate** ([[proactive-innovation-mandate]]) — be initiator; register visions in `ARCHITECTURE-REGISTRY.md`; design via architect + owner sign-off before building.
-- **Owner granted autonomy** for en-route improvements (within DoD, no degradation); principled refusal even against the owner when a directive would degrade the project.
-- chart==table asserted ONLY for same-section dual-view; different panels may have different data pipes.
+- **Context packets (`kit/strategy/12-context-packets.md`):** the lead grounds once; agents get stamped packets, return packets flow back; no heavy doc assigned wholesale; economy from logistics, NEVER from quality.
+- **green-gate: PARSE the vitest log (`Tests N failed`), never exit codes.** Converged gate = vitest + lint + `tsc -b apps/panel`; rebuild dist when `packages/*` touched.
+- **Git hygiene:** working tree may carry the OWNER'S deletions — stage explicitly, NEVER `git add -A`.
+- **Model routing:** apex defs pin opus; middles routed per-call by decision-density; when unsure → the stronger mind.
+- **Journeys J1–J6 are the DoD unit** — jsdom/unit green alone never closes a wave.

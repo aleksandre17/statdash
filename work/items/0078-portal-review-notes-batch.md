@@ -1,0 +1,48 @@
+# 0078 — Portal review notes batch (owner's 2026-07-10 docx, 13 items)
+
+**Source of truth:** `portalistvis_10.07.2026.docx` (18 paragraphs, images in `portal-notes-media/`; paragraph→image map re-derivable from the docx rels — P14→image19 etc.).
+**Branch:** `fix/portal-review-notes-2026-07-10` · **Status:** built + locally gated (vitest 3621 pass / lint 0 err / tsc panel clean) · dev-tier deploy in flight · live walk pending.
+
+## Note → fix map (paragraph numbers from the docx)
+
+| # | Owner's note (condensed) | Fix | Commit(s) | Live-walk check |
+|---|---|---|---|---|
+| P1 | Geostat logo covers the caption; portal title centered + sharper color | chrome: centered/bolder title | `bb3ab69` | title centered, logo not overlapping |
+| P2 | Landing slider: remove the codes in parentheses | strip SDMX codes from KPI labels | `0e99a63` | slider labels code-free |
+| P3–4 | Sidebar should collapse, expand on hover (more room for charts) | collapsible hover-expand sidebar | `bb3ab69` | hover expands, charts gain width |
+| P5–9 | Donuts + GDP/regional dynamics bars + regional comparison: one-hue (sequential) palette | `ChartDef.palette:'sequential'` → `--chart-seq-N` blue ramp (styles SSOT, light+dark) | `0fef9b1` `4b6aec6` `0e99a63` | donuts/bars single-hue everywhere |
+| P10 | Legends cut off; fonts too small in places | raised axis/legend font floors + wrapping labels | `0fef9b1` | legends fully visible |
+| P11 | Donut leader lines squiggly | straight leader before any curve | `0fef9b1` | leaders straight |
+| P12–13 | Range slider on the dynamics charts | `ChartDef.rangeSlider` → Apex brush companion; wired on sna-hero-range, gdp-dynamics, sector-history | `4b6aec6` `fd96fd8` `2c7c269` | **brush→main sync on category axis — options-proven only, the lead's live check** |
+| P14 | GDP 2010–2024 chart: retitle to "მთლიანი შიდა პროდუქტის წლიური დინამიკა" + drop axis K + tooltip w/o series-name row (image19) | retitle · fmtNum full numbers · single-series tooltip suppression | `0e99a63` `0fef9b1` | all three on the GDP historical chart |
+| P15 | Accounts dynamics: negative axis floor over-deep | data-driven `niceFloor` (stacked cumulative extent) replaces Apex auto −50K | `0fef9b1` | floor hugs the data |
+| P16 | Axis "K" everywhere — remove | `yFormatter` → `fmtNum(val,0)` "80 000" | `0fef9b1` | no K suffixes |
+| P17 | Regional dynamics: no bars before 2015, 2015 empty | **root ×2:** obs wire limit rode the route default 1000 (cube = 1650) → `OBS_WIRE_LIMIT=10000` + truncation = pre-filter WIRE fact · `_T` totals materialized | `41487db` `59fecbb` | bars 2010–2024; **watch the 2025 tail** (time codelist has 2025, REGIONAL_GVA doesn't — `pick:last` may select an empty year for year-driven views; chart categories derive from rows so bars are likely fine; KPI/year-select is the risk surface) |
+| P18 | Regional sectoral-structure chart title wrong | retitle | `0e99a63` | title correct |
+
+## Live walk results (dev :3012, 2026-07-16 — screenshots in `work/portal-walk/`)
+- ✅ P1 (title centered, logo clear) · P2 (no codes) · P3–4 (icon-rail sidebar) · P5–9 (sequential blues everywhere) · P10 (legends/fonts) · P14-tooltip + full numbers · P15-behavior (niceFloor: −6.3 data → −8 floor on GDP real-growth) · P16 (no K) · **P17 CLOSED** (regional dynamics 2010→2024 full, no empty 2025, honest KPIs).
+- ❌ **P12 live regression:** all three `rangeSlider` charts render BLANK live (`ReferenceError: ApexCharts is not defined` + `Maximum call stack size exceeded`); prod renders them (no brush) clean. Options-level fitness was green — the apex jsdom blindspot, verbatim. Fix routed to senior-frontend-developer (root-cause + live-bundle proof + guard). The P14 chart is one of the three blanks — re-verify title/axis after the fix.
+- ⚠ `/ka/accounts` blank on BOTH tiers — pre-existing, NOT this batch → card 0079.
+
+## Owner's live review — round 2 (2026-07-16, on :3012)
+- **R2-1 sidebar:** not flush left (measured: collapsed rail x=45, 45px gutter) + hover-expand RESIZES layout (h1 dx=+137 — "texts dance"). Canonical fix: flush rail + OVERLAY expansion (no reflow). → routed (senior-frontend-developer #2).
+- **R2-2 multi-select:** categories duplicated in the sector multi-select (/ka/regional). Root-cause at the options SOURCE. → routed (same agent).
+- **R2-3 legends — OWNER VERDICT (verbatim, 2026-07-16):** "არ მინდა მარჯვნივ. როგორც იყო ისე დატოვე, ლამაზად იყო; ახლა კიდევ ფონტიც ამოვარდა — ლეგენდების ფონტი სხვადასხვაა." → **REVERT the legend layout part of `0fef9b1` to the pre-batch look** (bottom placement, the original aesthetic — NOT right-side, NOT the wrapping rework); make legend font size ONE consistent token across all charts (today they differ chart-to-chart). The original P10 ask (legend fully visible, font not too small) must be met by the MINIMAL change inside the old layout — never a re-layout. Evidence: `work/portal-walk/03-gdp.png`. **QUEUED behind the brush-crash agent** — same chart seam (`utils/apex/**` + chart.css), collision forbidden. Route immediately when it returns.
+- **R2-5 landing slide-2 codes (owner: "ლენდინგ გვერდის შენიშვნაც არაა გასწორებული"):** CONFIRMED — P2 was only PARTIALLY fixed. `0e99a63` cleaned classifier-driven surfaces, but the four slide-2 KPI titles carry the code literally in provisioning label strings: (B5G)(B6G)(B8G)(B9). The lead's first walk checked only the visible slide-1 (carousel renders one slide at a time — a walk-coverage lesson: iterate ALL slides). **FIXED by the lead `280b42e`** (8 label strings ka+en, config-data root; classifier labels were already clean; api tests 363 pass). ⚠ Provisioning is baked into the api image → the batched redeploy MUST include the api image + re-provision (expect `page_version` bumps).
+- **R2-4 inner-page margins (owner):** "inner-page-ზეც რაღაც margin-ები გაჩნდა და შეავიწროვა მარჯვენა ნაწილი." Lead measured: content column starts x=179, cards end ~x=1600 @1680 viewport; wrapper itself is full-width. Compare against prod :3002 and restore the intended content width — content must GAIN width from the rail fix (flush + overlay), not lose it. Token-bound spacing, no magic numbers. **To fold into the sidebar agent's follow-up if its return packet doesn't already cover it** (the first relay attempt failed — went to a context-less agent that correctly self-terminated).
+
+## Remaining to close (DoD = walked live on dev geostat :3012, shown to the owner)
+1. ~~Dev-tier deploy~~ DONE (geostat `36605cb991c2` bundle `index-DYJwCPa6.js`, api, panel; anchors clean).
+2. ~~Brush live-crash fix~~ **LANDED `079524b`** — root: apexcharts@3.54.1 brush resolves the bare UMD global (`ApexCharts.getChartByID`) + `window.Apex._chartInstances` registry poisons every later chart's config-clone (cyclic ctx → stack overflow) + category brush is 1-based and needs `tickPlacement:'on'`. Live-bundle proven (3 charts render, drag narrows 16→10 ticks, zero pageerrors); guard e2e `apps/geostat/e2e/rangeSliderBrush.e2e.ts` (offline API fixtures). **Strategic flag registered:** the true root is the apexcharts ≥4 upgrade (react-apexcharts already peers on it) — the quarantine becomes inert then; blocked offline today.
+3. ~~R2-3 legends revert+unify~~ LANDED `f4c0608` (ONE token `--chart-legend-font-size`, verified live = 12px everywhere).
+4. ~~R2-1 sidebar + R2-2 multi-select + R2-4 width~~ LANDED `2334d65` `01d101d` (geometry/logic level — see R3 craft verdict below).
+5. ~~R2 batch redeploy~~ DONE 2026-07-17: prior session built images but never RECREATED containers (lesson: verify the container's bundle, not the image tag); recreate shipped bundle `index-5TgkzNSQ.js` + api.
+
+## Round 3 (2026-07-17) — owner CRAFT verdict + the slide-2 root
+- **Owner (verbatim):** „მოგწონს ლეფტ ბარი? მოგწონს მულტი სელექტი? მოგწონს ჩარტის წლების გადამრთველი სლაიდერი? … ნახე დარკში მულტი სელექტი? საშინელებაა" — geometry/logic pass, CRAFT fails. Owner leaving; standing order: every docx note at best-concept grade.
+- **R3 walk instrument:** `work/portal-walk/walk-r3.mjs` + `r3-*.png` (scroll + tab-switch + ALL-slides lessons baked in). Verified live: rail flush x=0, no-reflow h1 179→179, legends one 12px token, no K, P17 2010–2024 full, R2-2 nine unique sectors, P14 title on dynamics tab.
+- **R3-1 slide-2 codes STILL LIVE (false PASS unmasked):** carousel renders one slide — the r2 text-scan never saw slide 2. Labels come from the **site_config `metrics` catalog** (semantic layer), NOT page config; `280b42e` fixed provisioning but `mergeCatalogById` (existing-id-wins) stranded it. **Dev DB cleaned (SQL) — slide 2 verified code-free live**; ROOT FIX committed **`9766092`**: seed-provenance three-way merge (`provisioning_seed_hashes` system ledger, kubectl last-applied concept) + contract suite (11) + loader e2e; api 375 pass. Staging/prod need the same one-time SQL touch on deploy (pre-provenance divergence stays conservative).
+- **R3-2 CRAFT WAVE (senior-frontend, opus, in flight):** rail overlay = same-plane white sheet (no elevation, truncated „ეროვნული ანგარი…", cut footer) · multi-select = full-width featureless slab both themes, dark = „საშინელება", no checkboxes/count · year select clipped „20…" · brush navigator = thin pale strip, invisible handles, microscopic years · **GDP dynamics charts GRAY** (sequential palette never reached them; regional dynamics IS blue). Evidence: `r3-02b`, `r3-03b`, `r3-06`, `r3-02c` PNGs.
+6. After craft wave: converged gate → geostat(+api if provisioning touched) rebuild → recreate → **full live walk light+dark, ALL notes** → show the owner.
+7. Prod (:3002) only on the owner's word (incl. the one-time metrics-catalog SQL touch).
