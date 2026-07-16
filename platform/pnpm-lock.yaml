@@ -267,6 +267,9 @@ importers:
       i18next:
         specifier: ^23.10.0
         version: 23.16.8
+      radix-ui:
+        specifier: 'catalog:'
+        version: 1.6.2(@types/react-dom@19.2.3(@types/react@19.2.17))(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
       react:
         specifier: 'catalog:'
         version: 19.2.7
@@ -324,6 +327,9 @@ importers:
       i18next:
         specifier: ^23.10.0
         version: 23.16.8
+      radix-ui:
+        specifier: 'catalog:'
+        version: 1.6.2(@types/react-dom@19.2.3(@types/react@19.2.17))(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
       react:
         specifier: 'catalog:'
         version: 19.2.7
@@ -447,9 +453,6 @@ importers:
       i18next:
         specifier: '>=23.0.0'
         version: 23.16.8
-      radix-ui:
-        specifier: 'catalog:'
-        version: 1.6.2(@types/react-dom@19.2.3(@types/react@19.2.17))(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
       react:
         specifier: '>=18'
         version: 19.2.7
@@ -460,6 +463,9 @@ importers:
         specifier: '>=6'
         version: 7.17.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
     devDependencies:
+      radix-ui:
+        specifier: 'catalog:'
+        version: 1.6.2(@types/react-dom@19.2.3(@types/react@19.2.17))(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
       tsx:
         specifier: 'catalog:'
         version: 4.22.4

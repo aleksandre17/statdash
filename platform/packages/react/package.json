@@ -32,7 +32,8 @@
     "react": ">=18",
     "react-dom": ">=18",
     "react-router-dom": ">=6",
-    "i18next": ">=23.0.0"
+    "i18next": ">=23.0.0",
+    "radix-ui": ">=1.6"
   },
   "peerDependenciesMeta": {
     "i18next": { "optional": true }
@@ -42,10 +43,10 @@
     "@statdash/engine": "workspace:*",
     "@statdash/charts": "workspace:*",
     "@statdash/styles": "workspace:*",
-    "@statdash/expr": "workspace:*",
-    "radix-ui": "catalog:"
+    "@statdash/expr": "workspace:*"
   },
   "devDependencies": {
+    "radix-ui": "catalog:",
     "tsx": "catalog:"
   }
 }

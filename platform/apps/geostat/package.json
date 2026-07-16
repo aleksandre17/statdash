@@ -25,6 +25,7 @@
     "react-apexcharts": "^1.4.1",
     "react-dom":        "catalog:",
     "react-i18next": "^14.1.0",
+    "radix-ui": "catalog:",
     "react-router-dom": "catalog:"
   }
 }

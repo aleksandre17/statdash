@@ -31,6 +31,7 @@
     "react-apexcharts": "^1.4.1",
     "react-dom": "catalog:",
     "react-json-view-lite": "^2.5.0",
+    "radix-ui": "catalog:",
     "react-router-dom": "catalog:",
     "zustand": "catalog:"
   },
