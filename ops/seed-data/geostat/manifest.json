@@ -5,7 +5,7 @@
     "facts": {
       "ACCOUNTS_SEQUENCE": 279,
       "GDP_ANNUAL": 367,
-      "REGIONAL_GVA": 1485
+      "REGIONAL_GVA": 1650
     }
   },
   "datasets": [
@@ -40,7 +40,7 @@
       "datasetCode": "REGIONAL_GVA",
       "kind": "facts",
       "path": "facts/REGIONAL_GVA.bundle.json",
-      "rowCount": 1485
+      "rowCount": 1650
     }
   ],
   "generatedAt": "2026-06-23T09:05:25.471Z",

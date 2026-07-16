@@ -16334,6 +16334,1821 @@
       "obsValue": 837.61,
       "rowIndex": 1484,
       "timePeriod": "2024"
+    },
+    {
+      "dimKey": {
+        "geo": "adjara",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 1404.75,
+      "rowIndex": 1485,
+      "timePeriod": "2010"
+    },
+    {
+      "dimKey": {
+        "geo": "adjara",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 1710.59,
+      "rowIndex": 1486,
+      "timePeriod": "2011"
+    },
+    {
+      "dimKey": {
+        "geo": "adjara",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 2223.39,
+      "rowIndex": 1487,
+      "timePeriod": "2012"
+    },
+    {
+      "dimKey": {
+        "geo": "adjara",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 2232.26,
+      "rowIndex": 1488,
+      "timePeriod": "2013"
+    },
+    {
+      "dimKey": {
+        "geo": "adjara",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 2325.13,
+      "rowIndex": 1489,
+      "timePeriod": "2014"
+    },
+    {
+      "dimKey": {
+        "geo": "adjara",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 2815.93,
+      "rowIndex": 1490,
+      "timePeriod": "2015"
+    },
+    {
+      "dimKey": {
+        "geo": "adjara",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 3078.44,
+      "rowIndex": 1491,
+      "timePeriod": "2016"
+    },
+    {
+      "dimKey": {
+        "geo": "adjara",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 3120.96,
+      "rowIndex": 1492,
+      "timePeriod": "2017"
+    },
+    {
+      "dimKey": {
+        "geo": "adjara",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 3579.64,
+      "rowIndex": 1493,
+      "timePeriod": "2018"
+    },
+    {
+      "dimKey": {
+        "geo": "adjara",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 4405.95,
+      "rowIndex": 1494,
+      "timePeriod": "2019"
+    },
+    {
+      "dimKey": {
+        "geo": "adjara",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 3822.5,
+      "rowIndex": 1495,
+      "timePeriod": "2020"
+    },
+    {
+      "dimKey": {
+        "geo": "adjara",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 4864.98,
+      "rowIndex": 1496,
+      "timePeriod": "2021"
+    },
+    {
+      "dimKey": {
+        "geo": "adjara",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 5990.62,
+      "rowIndex": 1497,
+      "timePeriod": "2022"
+    },
+    {
+      "dimKey": {
+        "geo": "adjara",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 6683.35,
+      "rowIndex": 1498,
+      "timePeriod": "2023"
+    },
+    {
+      "dimKey": {
+        "geo": "adjara",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 7516.25,
+      "rowIndex": 1499,
+      "timePeriod": "2024"
+    },
+    {
+      "dimKey": {
+        "geo": "guria",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 359.49,
+      "rowIndex": 1500,
+      "timePeriod": "2010"
+    },
+    {
+      "dimKey": {
+        "geo": "guria",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 417.89,
+      "rowIndex": 1501,
+      "timePeriod": "2011"
+    },
+    {
+      "dimKey": {
+        "geo": "guria",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 477.44,
+      "rowIndex": 1502,
+      "timePeriod": "2012"
+    },
+    {
+      "dimKey": {
+        "geo": "guria",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 546.5,
+      "rowIndex": 1503,
+      "timePeriod": "2013"
+    },
+    {
+      "dimKey": {
+        "geo": "guria",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 544.14,
+      "rowIndex": 1504,
+      "timePeriod": "2014"
+    },
+    {
+      "dimKey": {
+        "geo": "guria",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 584.87,
+      "rowIndex": 1505,
+      "timePeriod": "2015"
+    },
+    {
+      "dimKey": {
+        "geo": "guria",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 620.47,
+      "rowIndex": 1506,
+      "timePeriod": "2016"
+    },
+    {
+      "dimKey": {
+        "geo": "guria",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 656.79,
+      "rowIndex": 1507,
+      "timePeriod": "2017"
+    },
+    {
+      "dimKey": {
+        "geo": "guria",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 667.09,
+      "rowIndex": 1508,
+      "timePeriod": "2018"
+    },
+    {
+      "dimKey": {
+        "geo": "guria",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 734.6,
+      "rowIndex": 1509,
+      "timePeriod": "2019"
+    },
+    {
+      "dimKey": {
+        "geo": "guria",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 697.19,
+      "rowIndex": 1510,
+      "timePeriod": "2020"
+    },
+    {
+      "dimKey": {
+        "geo": "guria",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 927.08,
+      "rowIndex": 1511,
+      "timePeriod": "2021"
+    },
+    {
+      "dimKey": {
+        "geo": "guria",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 1071.96,
+      "rowIndex": 1512,
+      "timePeriod": "2022"
+    },
+    {
+      "dimKey": {
+        "geo": "guria",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 1212.79,
+      "rowIndex": 1513,
+      "timePeriod": "2023"
+    },
+    {
+      "dimKey": {
+        "geo": "guria",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 1357.39,
+      "rowIndex": 1514,
+      "timePeriod": "2024"
+    },
+    {
+      "dimKey": {
+        "geo": "imereti",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 1728.66,
+      "rowIndex": 1515,
+      "timePeriod": "2010"
+    },
+    {
+      "dimKey": {
+        "geo": "imereti",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 1987.53,
+      "rowIndex": 1516,
+      "timePeriod": "2011"
+    },
+    {
+      "dimKey": {
+        "geo": "imereti",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 2200.02,
+      "rowIndex": 1517,
+      "timePeriod": "2012"
+    },
+    {
+      "dimKey": {
+        "geo": "imereti",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 2136.89,
+      "rowIndex": 1518,
+      "timePeriod": "2013"
+    },
+    {
+      "dimKey": {
+        "geo": "imereti",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 2265.07,
+      "rowIndex": 1519,
+      "timePeriod": "2014"
+    },
+    {
+      "dimKey": {
+        "geo": "imereti",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 2916,
+      "rowIndex": 1520,
+      "timePeriod": "2015"
+    },
+    {
+      "dimKey": {
+        "geo": "imereti",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 2652.96,
+      "rowIndex": 1521,
+      "timePeriod": "2016"
+    },
+    {
+      "dimKey": {
+        "geo": "imereti",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 3307.79,
+      "rowIndex": 1522,
+      "timePeriod": "2017"
+    },
+    {
+      "dimKey": {
+        "geo": "imereti",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 3698.11,
+      "rowIndex": 1523,
+      "timePeriod": "2018"
+    },
+    {
+      "dimKey": {
+        "geo": "imereti",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 3747.28,
+      "rowIndex": 1524,
+      "timePeriod": "2019"
+    },
+    {
+      "dimKey": {
+        "geo": "imereti",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 3731.23,
+      "rowIndex": 1525,
+      "timePeriod": "2020"
+    },
+    {
+      "dimKey": {
+        "geo": "imereti",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 4741.75,
+      "rowIndex": 1526,
+      "timePeriod": "2021"
+    },
+    {
+      "dimKey": {
+        "geo": "imereti",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 5704.49,
+      "rowIndex": 1527,
+      "timePeriod": "2022"
+    },
+    {
+      "dimKey": {
+        "geo": "imereti",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 5518.89,
+      "rowIndex": 1528,
+      "timePeriod": "2023"
+    },
+    {
+      "dimKey": {
+        "geo": "imereti",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 6270.61,
+      "rowIndex": 1529,
+      "timePeriod": "2024"
+    },
+    {
+      "dimKey": {
+        "geo": "kakheti",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 830.44,
+      "rowIndex": 1530,
+      "timePeriod": "2010"
+    },
+    {
+      "dimKey": {
+        "geo": "kakheti",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 1003.06,
+      "rowIndex": 1531,
+      "timePeriod": "2011"
+    },
+    {
+      "dimKey": {
+        "geo": "kakheti",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 1071.33,
+      "rowIndex": 1532,
+      "timePeriod": "2012"
+    },
+    {
+      "dimKey": {
+        "geo": "kakheti",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 1369.39,
+      "rowIndex": 1533,
+      "timePeriod": "2013"
+    },
+    {
+      "dimKey": {
+        "geo": "kakheti",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 1546.09,
+      "rowIndex": 1534,
+      "timePeriod": "2014"
+    },
+    {
+      "dimKey": {
+        "geo": "kakheti",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 1535.87,
+      "rowIndex": 1535,
+      "timePeriod": "2015"
+    },
+    {
+      "dimKey": {
+        "geo": "kakheti",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 1661.57,
+      "rowIndex": 1536,
+      "timePeriod": "2016"
+    },
+    {
+      "dimKey": {
+        "geo": "kakheti",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 2001.63,
+      "rowIndex": 1537,
+      "timePeriod": "2017"
+    },
+    {
+      "dimKey": {
+        "geo": "kakheti",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 2144.66,
+      "rowIndex": 1538,
+      "timePeriod": "2018"
+    },
+    {
+      "dimKey": {
+        "geo": "kakheti",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 2311.55,
+      "rowIndex": 1539,
+      "timePeriod": "2019"
+    },
+    {
+      "dimKey": {
+        "geo": "kakheti",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 2229.15,
+      "rowIndex": 1540,
+      "timePeriod": "2020"
+    },
+    {
+      "dimKey": {
+        "geo": "kakheti",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 2890.65,
+      "rowIndex": 1541,
+      "timePeriod": "2021"
+    },
+    {
+      "dimKey": {
+        "geo": "kakheti",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 3230.35,
+      "rowIndex": 1542,
+      "timePeriod": "2022"
+    },
+    {
+      "dimKey": {
+        "geo": "kakheti",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 3537.99,
+      "rowIndex": 1543,
+      "timePeriod": "2023"
+    },
+    {
+      "dimKey": {
+        "geo": "kakheti",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 4038.45,
+      "rowIndex": 1544,
+      "timePeriod": "2024"
+    },
+    {
+      "dimKey": {
+        "geo": "kvemo_kartli",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 1655.06,
+      "rowIndex": 1545,
+      "timePeriod": "2010"
+    },
+    {
+      "dimKey": {
+        "geo": "kvemo_kartli",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 1908.08,
+      "rowIndex": 1546,
+      "timePeriod": "2011"
+    },
+    {
+      "dimKey": {
+        "geo": "kvemo_kartli",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 1870.89,
+      "rowIndex": 1547,
+      "timePeriod": "2012"
+    },
+    {
+      "dimKey": {
+        "geo": "kvemo_kartli",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 1846.54,
+      "rowIndex": 1548,
+      "timePeriod": "2013"
+    },
+    {
+      "dimKey": {
+        "geo": "kvemo_kartli",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 2060.88,
+      "rowIndex": 1549,
+      "timePeriod": "2014"
+    },
+    {
+      "dimKey": {
+        "geo": "kvemo_kartli",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 2143.44,
+      "rowIndex": 1550,
+      "timePeriod": "2015"
+    },
+    {
+      "dimKey": {
+        "geo": "kvemo_kartli",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 2245.21,
+      "rowIndex": 1551,
+      "timePeriod": "2016"
+    },
+    {
+      "dimKey": {
+        "geo": "kvemo_kartli",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 3030.89,
+      "rowIndex": 1552,
+      "timePeriod": "2017"
+    },
+    {
+      "dimKey": {
+        "geo": "kvemo_kartli",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 3076.6,
+      "rowIndex": 1553,
+      "timePeriod": "2018"
+    },
+    {
+      "dimKey": {
+        "geo": "kvemo_kartli",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 3250.2,
+      "rowIndex": 1554,
+      "timePeriod": "2019"
+    },
+    {
+      "dimKey": {
+        "geo": "kvemo_kartli",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 3528.85,
+      "rowIndex": 1555,
+      "timePeriod": "2020"
+    },
+    {
+      "dimKey": {
+        "geo": "kvemo_kartli",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 4496.42,
+      "rowIndex": 1556,
+      "timePeriod": "2021"
+    },
+    {
+      "dimKey": {
+        "geo": "kvemo_kartli",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 5486.48,
+      "rowIndex": 1557,
+      "timePeriod": "2022"
+    },
+    {
+      "dimKey": {
+        "geo": "kvemo_kartli",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 5280.1,
+      "rowIndex": 1558,
+      "timePeriod": "2023"
+    },
+    {
+      "dimKey": {
+        "geo": "kvemo_kartli",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 5778.67,
+      "rowIndex": 1559,
+      "timePeriod": "2024"
+    },
+    {
+      "dimKey": {
+        "geo": "mtskheta",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 340.06,
+      "rowIndex": 1560,
+      "timePeriod": "2010"
+    },
+    {
+      "dimKey": {
+        "geo": "mtskheta",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 409.85,
+      "rowIndex": 1561,
+      "timePeriod": "2011"
+    },
+    {
+      "dimKey": {
+        "geo": "mtskheta",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 531.37,
+      "rowIndex": 1562,
+      "timePeriod": "2012"
+    },
+    {
+      "dimKey": {
+        "geo": "mtskheta",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 535.7,
+      "rowIndex": 1563,
+      "timePeriod": "2013"
+    },
+    {
+      "dimKey": {
+        "geo": "mtskheta",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 677.82,
+      "rowIndex": 1564,
+      "timePeriod": "2014"
+    },
+    {
+      "dimKey": {
+        "geo": "mtskheta",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 765.44,
+      "rowIndex": 1565,
+      "timePeriod": "2015"
+    },
+    {
+      "dimKey": {
+        "geo": "mtskheta",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 693.67,
+      "rowIndex": 1566,
+      "timePeriod": "2016"
+    },
+    {
+      "dimKey": {
+        "geo": "mtskheta",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 818.38,
+      "rowIndex": 1567,
+      "timePeriod": "2017"
+    },
+    {
+      "dimKey": {
+        "geo": "mtskheta",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 946.39,
+      "rowIndex": 1568,
+      "timePeriod": "2018"
+    },
+    {
+      "dimKey": {
+        "geo": "mtskheta",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 1042.05,
+      "rowIndex": 1569,
+      "timePeriod": "2019"
+    },
+    {
+      "dimKey": {
+        "geo": "mtskheta",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 1122.93,
+      "rowIndex": 1570,
+      "timePeriod": "2020"
+    },
+    {
+      "dimKey": {
+        "geo": "mtskheta",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 1279.11,
+      "rowIndex": 1571,
+      "timePeriod": "2021"
+    },
+    {
+      "dimKey": {
+        "geo": "mtskheta",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 1582.8,
+      "rowIndex": 1572,
+      "timePeriod": "2022"
+    },
+    {
+      "dimKey": {
+        "geo": "mtskheta",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 1909.58,
+      "rowIndex": 1573,
+      "timePeriod": "2023"
+    },
+    {
+      "dimKey": {
+        "geo": "mtskheta",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 2216.18,
+      "rowIndex": 1574,
+      "timePeriod": "2024"
+    },
+    {
+      "dimKey": {
+        "geo": "racha",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 101.35,
+      "rowIndex": 1575,
+      "timePeriod": "2010"
+    },
+    {
+      "dimKey": {
+        "geo": "racha",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 109.57,
+      "rowIndex": 1576,
+      "timePeriod": "2011"
+    },
+    {
+      "dimKey": {
+        "geo": "racha",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 127.01,
+      "rowIndex": 1577,
+      "timePeriod": "2012"
+    },
+    {
+      "dimKey": {
+        "geo": "racha",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 130.46,
+      "rowIndex": 1578,
+      "timePeriod": "2013"
+    },
+    {
+      "dimKey": {
+        "geo": "racha",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 138.59,
+      "rowIndex": 1579,
+      "timePeriod": "2014"
+    },
+    {
+      "dimKey": {
+        "geo": "racha",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 159.14,
+      "rowIndex": 1580,
+      "timePeriod": "2015"
+    },
+    {
+      "dimKey": {
+        "geo": "racha",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 159.97,
+      "rowIndex": 1581,
+      "timePeriod": "2016"
+    },
+    {
+      "dimKey": {
+        "geo": "racha",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 181.47,
+      "rowIndex": 1582,
+      "timePeriod": "2017"
+    },
+    {
+      "dimKey": {
+        "geo": "racha",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 216.19,
+      "rowIndex": 1583,
+      "timePeriod": "2018"
+    },
+    {
+      "dimKey": {
+        "geo": "racha",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 266.66,
+      "rowIndex": 1584,
+      "timePeriod": "2019"
+    },
+    {
+      "dimKey": {
+        "geo": "racha",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 258.25,
+      "rowIndex": 1585,
+      "timePeriod": "2020"
+    },
+    {
+      "dimKey": {
+        "geo": "racha",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 312.68,
+      "rowIndex": 1586,
+      "timePeriod": "2021"
+    },
+    {
+      "dimKey": {
+        "geo": "racha",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 382.04,
+      "rowIndex": 1587,
+      "timePeriod": "2022"
+    },
+    {
+      "dimKey": {
+        "geo": "racha",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 416.32,
+      "rowIndex": 1588,
+      "timePeriod": "2023"
+    },
+    {
+      "dimKey": {
+        "geo": "racha",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 476.75,
+      "rowIndex": 1589,
+      "timePeriod": "2024"
+    },
+    {
+      "dimKey": {
+        "geo": "samegrelo",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 1290.58,
+      "rowIndex": 1590,
+      "timePeriod": "2010"
+    },
+    {
+      "dimKey": {
+        "geo": "samegrelo",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 1460.79,
+      "rowIndex": 1591,
+      "timePeriod": "2011"
+    },
+    {
+      "dimKey": {
+        "geo": "samegrelo",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 1423.76,
+      "rowIndex": 1592,
+      "timePeriod": "2012"
+    },
+    {
+      "dimKey": {
+        "geo": "samegrelo",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 1708.26,
+      "rowIndex": 1593,
+      "timePeriod": "2013"
+    },
+    {
+      "dimKey": {
+        "geo": "samegrelo",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 1737.22,
+      "rowIndex": 1594,
+      "timePeriod": "2014"
+    },
+    {
+      "dimKey": {
+        "geo": "samegrelo",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 1893.07,
+      "rowIndex": 1595,
+      "timePeriod": "2015"
+    },
+    {
+      "dimKey": {
+        "geo": "samegrelo",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 1880.02,
+      "rowIndex": 1596,
+      "timePeriod": "2016"
+    },
+    {
+      "dimKey": {
+        "geo": "samegrelo",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 2055.28,
+      "rowIndex": 1597,
+      "timePeriod": "2017"
+    },
+    {
+      "dimKey": {
+        "geo": "samegrelo",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 2061.38,
+      "rowIndex": 1598,
+      "timePeriod": "2018"
+    },
+    {
+      "dimKey": {
+        "geo": "samegrelo",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 2494.41,
+      "rowIndex": 1599,
+      "timePeriod": "2019"
+    },
+    {
+      "dimKey": {
+        "geo": "samegrelo",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 2780.76,
+      "rowIndex": 1600,
+      "timePeriod": "2020"
+    },
+    {
+      "dimKey": {
+        "geo": "samegrelo",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 3010.76,
+      "rowIndex": 1601,
+      "timePeriod": "2021"
+    },
+    {
+      "dimKey": {
+        "geo": "samegrelo",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 3331.33,
+      "rowIndex": 1602,
+      "timePeriod": "2022"
+    },
+    {
+      "dimKey": {
+        "geo": "samegrelo",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 3828.7,
+      "rowIndex": 1603,
+      "timePeriod": "2023"
+    },
+    {
+      "dimKey": {
+        "geo": "samegrelo",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 4441.83,
+      "rowIndex": 1604,
+      "timePeriod": "2024"
+    },
+    {
+      "dimKey": {
+        "geo": "samtskhe",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 696.05,
+      "rowIndex": 1605,
+      "timePeriod": "2010"
+    },
+    {
+      "dimKey": {
+        "geo": "samtskhe",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 764.18,
+      "rowIndex": 1606,
+      "timePeriod": "2011"
+    },
+    {
+      "dimKey": {
+        "geo": "samtskhe",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 772.45,
+      "rowIndex": 1607,
+      "timePeriod": "2012"
+    },
+    {
+      "dimKey": {
+        "geo": "samtskhe",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 953.61,
+      "rowIndex": 1608,
+      "timePeriod": "2013"
+    },
+    {
+      "dimKey": {
+        "geo": "samtskhe",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 1118.11,
+      "rowIndex": 1609,
+      "timePeriod": "2014"
+    },
+    {
+      "dimKey": {
+        "geo": "samtskhe",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 924.34,
+      "rowIndex": 1610,
+      "timePeriod": "2015"
+    },
+    {
+      "dimKey": {
+        "geo": "samtskhe",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 1057.88,
+      "rowIndex": 1611,
+      "timePeriod": "2016"
+    },
+    {
+      "dimKey": {
+        "geo": "samtskhe",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 1158.81,
+      "rowIndex": 1612,
+      "timePeriod": "2017"
+    },
+    {
+      "dimKey": {
+        "geo": "samtskhe",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 1262.05,
+      "rowIndex": 1613,
+      "timePeriod": "2018"
+    },
+    {
+      "dimKey": {
+        "geo": "samtskhe",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 1464.8,
+      "rowIndex": 1614,
+      "timePeriod": "2019"
+    },
+    {
+      "dimKey": {
+        "geo": "samtskhe",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 1536.83,
+      "rowIndex": 1615,
+      "timePeriod": "2020"
+    },
+    {
+      "dimKey": {
+        "geo": "samtskhe",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 1840.15,
+      "rowIndex": 1616,
+      "timePeriod": "2021"
+    },
+    {
+      "dimKey": {
+        "geo": "samtskhe",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 1898.56,
+      "rowIndex": 1617,
+      "timePeriod": "2022"
+    },
+    {
+      "dimKey": {
+        "geo": "samtskhe",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 2030.98,
+      "rowIndex": 1618,
+      "timePeriod": "2023"
+    },
+    {
+      "dimKey": {
+        "geo": "samtskhe",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 2485.76,
+      "rowIndex": 1619,
+      "timePeriod": "2024"
+    },
+    {
+      "dimKey": {
+        "geo": "shida_kartli",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 802.16,
+      "rowIndex": 1620,
+      "timePeriod": "2010"
+    },
+    {
+      "dimKey": {
+        "geo": "shida_kartli",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 1039.92,
+      "rowIndex": 1621,
+      "timePeriod": "2011"
+    },
+    {
+      "dimKey": {
+        "geo": "shida_kartli",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 1224.99,
+      "rowIndex": 1622,
+      "timePeriod": "2012"
+    },
+    {
+      "dimKey": {
+        "geo": "shida_kartli",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 1346.01,
+      "rowIndex": 1623,
+      "timePeriod": "2013"
+    },
+    {
+      "dimKey": {
+        "geo": "shida_kartli",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 1513.67,
+      "rowIndex": 1624,
+      "timePeriod": "2014"
+    },
+    {
+      "dimKey": {
+        "geo": "shida_kartli",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 1450.49,
+      "rowIndex": 1625,
+      "timePeriod": "2015"
+    },
+    {
+      "dimKey": {
+        "geo": "shida_kartli",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 1421.56,
+      "rowIndex": 1626,
+      "timePeriod": "2016"
+    },
+    {
+      "dimKey": {
+        "geo": "shida_kartli",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 1201.16,
+      "rowIndex": 1627,
+      "timePeriod": "2017"
+    },
+    {
+      "dimKey": {
+        "geo": "shida_kartli",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 1579.36,
+      "rowIndex": 1628,
+      "timePeriod": "2018"
+    },
+    {
+      "dimKey": {
+        "geo": "shida_kartli",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 1753.72,
+      "rowIndex": 1629,
+      "timePeriod": "2019"
+    },
+    {
+      "dimKey": {
+        "geo": "shida_kartli",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 1990.56,
+      "rowIndex": 1630,
+      "timePeriod": "2020"
+    },
+    {
+      "dimKey": {
+        "geo": "shida_kartli",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 2153.33,
+      "rowIndex": 1631,
+      "timePeriod": "2021"
+    },
+    {
+      "dimKey": {
+        "geo": "shida_kartli",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 2546.8,
+      "rowIndex": 1632,
+      "timePeriod": "2022"
+    },
+    {
+      "dimKey": {
+        "geo": "shida_kartli",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 2850.71,
+      "rowIndex": 1633,
+      "timePeriod": "2023"
+    },
+    {
+      "dimKey": {
+        "geo": "shida_kartli",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 3414.91,
+      "rowIndex": 1634,
+      "timePeriod": "2024"
+    },
+    {
+      "dimKey": {
+        "geo": "tbilisi",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 10324.25,
+      "rowIndex": 1635,
+      "timePeriod": "2010"
+    },
+    {
+      "dimKey": {
+        "geo": "tbilisi",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 12321.88,
+      "rowIndex": 1636,
+      "timePeriod": "2011"
+    },
+    {
+      "dimKey": {
+        "geo": "tbilisi",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 12872.25,
+      "rowIndex": 1637,
+      "timePeriod": "2012"
+    },
+    {
+      "dimKey": {
+        "geo": "tbilisi",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 13129.58,
+      "rowIndex": 1638,
+      "timePeriod": "2013"
+    },
+    {
+      "dimKey": {
+        "geo": "tbilisi",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 14155.4,
+      "rowIndex": 1639,
+      "timePeriod": "2014"
+    },
+    {
+      "dimKey": {
+        "geo": "tbilisi",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 15456.99,
+      "rowIndex": 1640,
+      "timePeriod": "2015"
+    },
+    {
+      "dimKey": {
+        "geo": "tbilisi",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 16636.01,
+      "rowIndex": 1641,
+      "timePeriod": "2016"
+    },
+    {
+      "dimKey": {
+        "geo": "tbilisi",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 18230.94,
+      "rowIndex": 1642,
+      "timePeriod": "2017"
+    },
+    {
+      "dimKey": {
+        "geo": "tbilisi",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 20160.49,
+      "rowIndex": 1643,
+      "timePeriod": "2018"
+    },
+    {
+      "dimKey": {
+        "geo": "tbilisi",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 22010.72,
+      "rowIndex": 1644,
+      "timePeriod": "2019"
+    },
+    {
+      "dimKey": {
+        "geo": "tbilisi",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 21755.22,
+      "rowIndex": 1645,
+      "timePeriod": "2020"
+    },
+    {
+      "dimKey": {
+        "geo": "tbilisi",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 26309.15,
+      "rowIndex": 1646,
+      "timePeriod": "2021"
+    },
+    {
+      "dimKey": {
+        "geo": "tbilisi",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 32171.12,
+      "rowIndex": 1647,
+      "timePeriod": "2022"
+    },
+    {
+      "dimKey": {
+        "geo": "tbilisi",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 37059.54,
+      "rowIndex": 1648,
+      "timePeriod": "2023"
+    },
+    {
+      "dimKey": {
+        "geo": "tbilisi",
+        "measure": "GVA",
+        "sector": "_T"
+      },
+      "obsStatus": "A",
+      "obsValue": 42982.57,
+      "rowIndex": 1649,
+      "timePeriod": "2024"
     }
   ]
 }
