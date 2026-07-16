@@ -12,7 +12,7 @@
 //
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { ApiStore }                                         from '../store-api'
+import { ApiStore, OBS_WIRE_LIMIT }                         from '../store-api'
 import type { RawObsRow }                                  from '../store-api'
 import type { SectionContext }                             from '../../core/context'
 import type { StoreQuery }                                 from '../store'
@@ -84,7 +84,10 @@ describe('ApiStore.queryAsync', () => {
     expect(calledUrl.searchParams.get('dataset')).toBe(DATASET_CODE)
     expect(calledUrl.searchParams.get('from')).toBe('2023')
     expect(calledUrl.searchParams.get('to')).toBe('2023')
-    expect(calledUrl.searchParams.get('limit')).toBe('1000')
+    // Wire limit = the route's schema ceiling (OBS_WIRE_LIMIT), never the old
+    // 1000 default — that default silently truncated any cube past it (the
+    // regional 1650-obs cube lost 2010–2014). SSOT: the exported constant.
+    expect(calledUrl.searchParams.get('limit')).toBe(String(OBS_WIRE_LIMIT))
 
     const filter = JSON.parse(calledUrl.searchParams.get('filter') ?? '{}')
     expect(filter['geo']).toBe('GE')

@@ -8,7 +8,11 @@
 //    - DI mapper (mapRow) keeps engine app-agnostic: callers supply the
 //      RawObsRow → Row projection; engine never touches app field names.
 //    - nonTimeDims drives which ctx.dims keys go into the filter param.
-//    - limit defaults to 1000; truncated flag is set when rows === limit.
+//    - wire limit defaults to the route's MAX (OBS_WIRE_LIMIT = 10000, its
+//      schema ceiling) — the route's own default (1000) silently truncated any
+//      cube past it (the regional 1650-obs cube lost 2010–2014). `truncated`
+//      is a WIRE fact: raw response length >= wire limit, recorded pre-filter
+//      and carried in the cache entry — never re-derived from filtered counts.
 //
 //  Ports & Adapters: this class IS the adapter boundary — mapRow is the
 //  only place raw server shapes touch engine Row types.
@@ -54,6 +58,17 @@ export interface RawObsRow {
 // extractRequirements both import it so the warm/read-key invariant (GAP 4) rests
 // on ONE definition, never two copies that can drift.
 
+/**
+ * Default wire `limit` for GET /api/stats/observations — the route's schema
+ * ceiling (`z.coerce.number().max(10000)`), NOT its default (1000). The store
+ * fetches broad slices and filters client-side, so any cube larger than the
+ * wire limit was silently cut (the "regional dynamics starts at 2015" defect:
+ * 1650 obs vs a 1000-row wire). A cube beyond 10000 trips the honest
+ * `truncated` meta instead of a silent partial render; true cursor pagination
+ * is the platform follow-up (dev line).
+ */
+export const OBS_WIRE_LIMIT = 10000
+
 
 // ── ApiStore ─────────────────────────────────────────────────────────
 
@@ -77,7 +92,7 @@ export class ApiStore implements DataStore {
   // can find an already-cached SUPERSET slice (a slice whose params constrain a
   // superset of the read's rows) and resolve the value from it by filter+sum — the
   // SAME matching ExternalStore uses (matchedValues). See resolvePointRead below.
-  private readonly _cache = new Map<string, { rows: EngineRow[]; expiresAt: number; params: Record<string, string> }>()
+  private readonly _cache = new Map<string, { rows: EngineRow[]; expiresAt: number; params: Record<string, string>; truncated?: boolean }>()
   private readonly _eTags = new Map<string, string>()
   private readonly ttlMs: number
 
@@ -154,7 +169,7 @@ export class ApiStore implements DataStore {
       return {
         state: 'done',
         data:  cached.rows,
-        meta:  { totalRows: cached.rows.length, truncated: false, source: 'api', cacheHit: true },
+        meta:  { totalRows: cached.rows.length, truncated: cached.truncated ?? false, source: 'api', cacheHit: true },
       }
     }
 
@@ -183,7 +198,7 @@ export class ApiStore implements DataStore {
       return {
         state: 'done',
         data:  cached.rows,
-        meta:  { totalRows: cached.rows.length, truncated: false, source: 'api', cacheHit: true },
+        meta:  { totalRows: cached.rows.length, truncated: cached.truncated ?? false, source: 'api', cacheHit: true },
       }
     }
 
@@ -198,18 +213,22 @@ export class ApiStore implements DataStore {
 
     // Parse, map, client-filter (the wire-inexpressible operators), order, cache.
     const json    = await res.json() as { data: RawObsRow[] }
-    const limit   = Number(params['limit'] ?? 1000)
+    const limit   = Number(params['limit'] ?? OBS_WIRE_LIMIT)
+    // Truncation is a WIRE fact: compare the RAW response against the wire limit
+    // BEFORE client filtering (a filtered count vs limit was a false-negative —
+    // raw 1000 → filtered 700 → "not truncated" while five years were missing).
+    const truncated = json.data.length >= limit
     const rows    = json.data.map(raw => this.mapRow(raw))
     const filtered = this.applyClientFilter(rows, q, ctx)
     const ordered = this.applyOrderBy(filtered, q)
 
-    this._cache.set(cacheKey, { rows: ordered, expiresAt: Date.now() + this.ttlMs, params })
+    this._cache.set(cacheKey, { rows: ordered, expiresAt: Date.now() + this.ttlMs, params, truncated })
     return {
       state: 'done',
       data:  ordered,
       meta:  {
         totalRows: ordered.length,
-        truncated: ordered.length === limit,
+        truncated,
         source:    'api',
         cacheHit:  false,
       },
@@ -226,12 +245,13 @@ export class ApiStore implements DataStore {
     const cacheKey = this.cacheKeyFor(q, ctx)
     const cached   = this._cache.get(cacheKey)
     if (cached) {
-      const limit = (q as { limit?: number }).limit ?? 1000
       return {
         rows: cached.rows,
         meta: {
           totalRows: cached.rows.length,
-          truncated: cached.rows.length === limit,
+          // The WIRE fact recorded at fetch time — never re-derived from the
+          // post-filter row count (that comparison was a false-negative).
+          truncated: cached.truncated ?? false,
           source:    'api',
           cacheHit:  true,
         },
@@ -315,7 +335,13 @@ export class ApiStore implements DataStore {
     const filter = buildObsFilterParam(q, ctx, this.nonTimeDims)
     if (filter !== undefined) params['filter'] = filter
 
-    params['limit'] = String((q as { limit?: number }).limit ?? 1000)
+    // Wire limit — the route's MAX (10000), not its default (1000). The store
+    // fetches broad slices and filters client-side ($ne etc.), so a cube larger
+    // than the wire limit was SILENTLY TRUNCATED (the regional 1650-obs cube
+    // lost 2010–2014 — "starts at 2015"). 10000 is the route's schema ceiling;
+    // a cube beyond it trips the honest `truncated` flag below (never a silent
+    // partial render). True cursor pagination is the platform follow-up.
+    params['limit'] = String((q as { limit?: number }).limit ?? OBS_WIRE_LIMIT)
     return params
   }
 
