@@ -127,7 +127,9 @@ export function buildBrushOptions(
 ): ApexOptions {
   const { categories } = output
   const n      = categories.length
-  const accent = cssVar('--chart-color-1', '#005a9c')
+  // Match the sequential ramp anchor the main dynamics charts paint (--chart-seq-5),
+  // so the navigator reads as a muted echo of the same series, not a foreign hue.
+  const accent = cssVar('--chart-seq-5', '#0080be')
   const muted  = cssVar('--color-text-muted', '#6B7B8D')
 
   return {
@@ -148,7 +150,16 @@ export function buildBrushOptions(
       // categories ONE-BASED: x = 1..n, labels via `labels[floor(val) - 1]`.
       // Brush selection and the target's x-window both speak that domain, so
       // full range is [1, n] — a 0-based [0, n-1] is off-domain on both ends.
-      selection:  { enabled: true, xaxis: { min: 1, max: Math.max(1, n) } },
+      //
+      // The selection window is the draggable navigator handle — a tinted accent
+      // fill inside an accent border, so the window (and its grabbable edges) read
+      // clearly against the muted area shape (Highcharts / ONS navigator reference).
+      selection:  {
+        enabled: true,
+        fill:    { color: accent, opacity: 0.10 },
+        stroke:  { width: 1, color: accent, opacity: 0.6, dashArray: 0 },
+        xaxis:   { min: 1, max: Math.max(1, n) },
+      },
       // A navigator is chrome, not a data surface — no animation churn on redraw.
       animations: { enabled: false },
     },
@@ -163,7 +174,7 @@ export function buildBrushOptions(
     xaxis: {
       type:       'category',
       categories: [...categories],
-      labels:     { show: true, style: { fontSize: '10px', colors: muted }, hideOverlappingLabels: true },
+      labels:     { show: true, style: { fontSize: '11px', colors: muted }, hideOverlappingLabels: true },
       axisTicks:  { show: false },
       axisBorder: { show: false },
       tooltip:    { enabled: false },

@@ -31,6 +31,14 @@ export function MultiSelectShell({ filterKey, config }: { filterKey: string; con
     return opt ? t(opt.label) : v
   }
 
+  // Cap the trigger summary to a couple of chips + a "+N" overflow token, so a
+  // large selection stays on ONE line (the fixed-height sticky bar can't grow to
+  // hold a wrapping chip run). "+N" is locale-neutral — no i18n catalog entry
+  // needed. The full selection is always visible in the open list (checked rows).
+  const MAX_TRIGGER_CHIPS = 2
+  const shownChips    = current.slice(0, MAX_TRIGGER_CHIPS)
+  const overflowCount = current.length - shownChips.length
+
   return (
     <MultiSelect.Root
       values={current}
@@ -41,9 +49,12 @@ export function MultiSelectShell({ filterKey, config }: { filterKey: string; con
         aria-label={t(config.label)}
         placeholder={config.emptyLabel !== undefined ? t(config.emptyLabel) : t(config.label)}
       >
-        {current.map((v) => (
+        {shownChips.map((v) => (
           <MultiSelect.Chip key={v}>{labelOf(v)}</MultiSelect.Chip>
         ))}
+        {overflowCount > 0 && (
+          <MultiSelect.Chip className="ui-multiselect__chip--count">+{overflowCount}</MultiSelect.Chip>
+        )}
       </MultiSelect.Trigger>
       <MultiSelect.Content>
         {options.map((opt) => {

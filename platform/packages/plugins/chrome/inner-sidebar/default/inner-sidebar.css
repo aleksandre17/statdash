@@ -289,7 +289,10 @@
   .inner-sidebar:hover,
   .inner-sidebar:focus-within {
     width: 260px;
-    box-shadow: 4px 0 18px rgba(0, 0, 0, 0.06);
+    /* Directional overlay elevation (token, theme-adaptive) — the expanded panel
+       reads as a floating layer over the content band in BOTH themes, never the
+       flat same-plane sheet the prior near-invisible 0.06 shadow produced. */
+    box-shadow: var(--shadow-rail);
   }
 
   /* Collapsed (not hovered / not focused): icons only. Labels return the instant

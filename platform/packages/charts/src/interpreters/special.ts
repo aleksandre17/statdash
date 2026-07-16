@@ -90,12 +90,26 @@ class ComboInterpreter implements ChartInterpreter {
       }
     })
 
+    // Same color-resolution contract as BarInterpreter (information expert): a combo
+    // with NO explicit per-series colour must paint from the platform palette, not
+    // fall to the neutral no-colour seed. Root cause of the "grey GDP dynamics"
+    // defect — a single-series `palette:"sequential"` combo dropped its palette here
+    // and rendered DEFAULT_SERIES_COLOR grey. These three flags are byte-identical to
+    // the bar contract, so the render/emit layers resolve combo colours identically.
+    const anyExplicitSeriesColor = seriesKeys.some((name) => !!grouped.get(name)![0]?.color)
+
     return {
       type: 'combo', height: def.height, categories, series,
       axes: buildAxes(def), stacked: false, horizontal: false,
       legend: buildLegend(def, series.length),
       tooltip: buildTooltip(def, true),
       annotations: [],
+      // Categorical color-by-category only applies to a lone series (mirror of bar).
+      ...(def.distributed && series.length === 1 ? { distributed: true } : {}),
+      ...(series.length > 1 && !anyExplicitSeriesColor ? { seriesColorByIndex: true } : {}),
+      // Named palette (e.g. "sequential") passes through so the render/emit colour
+      // resolvers paint the intended ramp instead of the neutral seed.
+      ...(def.palette ? { palette: def.palette } : {}),
       // x-range navigation intent (a long GDP dynamics combo declares it). Passthrough
       // only — omitted when absent so the output stays byte-identical (Postel / Law 8).
       ...(def.rangeSlider ? { rangeSlider: true } : {}),

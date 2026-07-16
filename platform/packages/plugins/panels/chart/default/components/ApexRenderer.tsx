@@ -113,7 +113,7 @@ export function ApexRenderer({ output, onDataHover, onDataLeave, onDataClick }: 
               height="100%"
             />
           </div>
-          <div style={{ flex: '0 0 auto', height: SLIDER_HEIGHT }}>
+          <div className="chart-brush-rail" style={{ flex: '0 0 auto', height: SLIDER_HEIGHT }}>
             <ReactApexChart
               key={`${chartKey}-brush`}
               options={buildBrushOptions(output, { mainId, brushId, fontFamily })}

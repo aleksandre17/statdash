@@ -78,6 +78,38 @@
   box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-accent) 12%, transparent);
 }
 
+/* Year select — a 4-digit value that must NEVER clip. Content-sized and
+   non-shrinking, so a crowded sticky bar can't collapse it to "20…" (the defect:
+   the shared .filter-select min-width:0 let a greedy neighbour squeeze it to
+   near-zero). Later source than .filter-select → wins at equal specificity. */
+.filter-control__year-select {
+  flex-shrink: 0;
+  width: auto;
+  min-width: fit-content;
+  max-width: none;
+}
+
+/* ── Multi-select trigger — content-sized in the filter bar ───────────────────
+   The owned .ui-multiselect__trigger defaults to width:100% (correct for a form
+   field that fills its container). In the sticky filter bar that made the trigger
+   eat the whole row — and since the popover's min-width = trigger width, the
+   dropdown opened edge-to-edge as a featureless full-bar slab (owner: „საშინელებაა").
+   Here it sizes to its content and caps, so the popover opens sized to the trigger.
+   Unlayered → beats the @layer sd-components base without a specificity fight. */
+.filter-control__multiselect {
+  width: auto;
+  min-width: 9rem;
+  max-width: min(100%, var(--size-container-narrow));
+  flex-shrink: 0;
+}
+/* Keep the trigger summary on ONE line inside the fixed-height bar — the shell
+   caps the visible chips and appends a "+N" overflow token, so the value never
+   wraps the bar taller than its row. */
+.filter-control__multiselect .ui-multiselect__value {
+  flex-wrap: nowrap;
+  overflow: hidden;
+}
+
 .filter-chip {
   display: inline-flex;
   align-items: center;

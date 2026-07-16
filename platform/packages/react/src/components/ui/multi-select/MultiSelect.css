@@ -86,6 +86,16 @@
     text-overflow: ellipsis;
   }
 
+  /* Overflow count token ("+N") — a muted, non-labelled sibling of the value
+     chips (a consumer caps the visible chips and appends this). Neutral surface,
+     not the accent, so it reads as a summary count rather than another value. */
+  .ui-multiselect__chip.ui-multiselect__chip--count {
+    background: var(--color-surface-sunken, var(--color-surface-raised));
+    color: var(--color-text-muted);
+    font-variant-numeric: tabular-nums;
+    flex-shrink: 0;
+  }
+
   /* ── Chevron — rotates open, tracks font-size via em ───────────── */
   .ui-multiselect__icon {
     display: inline-flex;

@@ -120,6 +120,23 @@
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08) !important;
 }
 
+/* ── Range-slider brush rail ─────────────────────────────────────────────
+   The navigator strip beneath a long time-dynamics chart (ApexRenderer stacks
+   it as a fixed-height sibling). A hairline separator + breathing room sets it
+   apart from the main plot as its own chrome band (Highcharts / ONS navigator
+   reference), and the selection window reads as a grabbable handle. */
+.chart-brush-rail {
+  margin-top:  0.25rem;
+  padding-top: 0.375rem;
+  border-top:  1px solid var(--color-border-subtle);
+}
+/* The draggable brush window + its resize edges — a move/resize affordance so it
+   reads as a navigator handle, not a static tint. (Fill/stroke come from the Apex
+   selection options; this only carries the cursor Apex does not set inline.) */
+.chart-brush-rail .apexcharts-selection-rect {
+  cursor: move;
+}
+
 /* Legend font uniformity (owner verdict R2-3 + original note P10): every Apex
    legend renders at THE one token size. The builders already feed the same
    token into the ApexCharts option (so Apex's own legend measurement agrees);

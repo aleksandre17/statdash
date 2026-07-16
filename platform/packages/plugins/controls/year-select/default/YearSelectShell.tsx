@@ -16,7 +16,7 @@ export function YearSelectShell({ filterKey, config }: { filterKey: string; conf
 
   return (
     <select
-      className="filter-select filter-control__select"
+      className="filter-select filter-control__select filter-control__year-select"
       value={current}
       onChange={e => set(filterKey, e.target.value)}
       aria-label={config.label ? resolveLabel(config.label) : 'Year'}

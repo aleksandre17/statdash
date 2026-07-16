@@ -137,6 +137,9 @@
   --shadow-xl:      0 12px 40px rgba(0, 0, 0, 0.18);
   --shadow-inset:   inset 0 1px 2px rgba(0, 0, 0, 0.08);
   --shadow-focus:   0 0 0 3px rgba(0, 90, 156, 0.40);   /* accessible focus ring */
+  /* Directional (rightward) elevation for a left rail expanding OVER content —
+     an overlay that reads as a floating layer, never a same-plane sheet. */
+  --shadow-rail:    6px 0 28px rgba(0, 0, 0, 0.10);
 
   /* ── Transitions (shorthand — kept for back-compat) ─────────── */
   --transition-fast:   all 0.1s ease;
@@ -558,6 +561,7 @@
     --shadow-overlay: 0 4px 24px rgba(0, 0, 0, 0.65);
     --shadow-xl:      0 12px 40px rgba(0, 0, 0, 0.70);
     --shadow-inset:   inset 0 1px 2px rgba(0, 0, 0, 0.50);
+    --shadow-rail:    6px 0 28px rgba(0, 0, 0, 0.62);
 
     /* ── Completing the semantic layer in dark (FF-DARK-COMPLETE) ──────────
        Every Tier-2 role the shells consume gets an explicit dark value so no
@@ -706,6 +710,7 @@
   --shadow-overlay: 0 4px 24px rgba(0, 0, 0, 0.65);
   --shadow-xl:      0 12px 40px rgba(0, 0, 0, 0.70);
   --shadow-inset:   inset 0 1px 2px rgba(0, 0, 0, 0.50);
+  --shadow-rail:    6px 0 28px rgba(0, 0, 0, 0.62);
 
   /* ── Completing the semantic layer in dark (FF-DARK-COMPLETE) ────────────
      Byte-identical to the @media (prefers-color-scheme: dark) additions above
