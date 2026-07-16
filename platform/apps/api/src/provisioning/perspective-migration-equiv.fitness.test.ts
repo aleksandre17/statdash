@@ -173,10 +173,15 @@ function deriveCtx(
   const { dims: raw } = resolveDefaults(defaultParams as never, state, getOptions as never)
 
   // context.dims projection — autoParse + drop empties (the hook's regularDims).
+  // MIRRORS useFilterState: a multi-select's ctx value is its raw CSV OR-set
+  // (store-filter SSOT) — '' drops ⇒ dim absent; the typed string[] never
+  // reaches ctx (an empty array would read as the match-NOTHING OR-set).
   const regularDims: Record<string, DimVal> = {}
   for (const [dk, pk] of Object.entries(schema.context?.dims ?? {})) {
     const def = flat.find((p) => p.key === pk)?.def
-    const parsed = def ? autoParse(def as never, raw[pk] ?? '') : raw[pk]
+    const parsed = def?.type === 'multi-select'
+      ? (raw[pk] ?? '')
+      : def ? autoParse(def as never, raw[pk] ?? '') : raw[pk]
     if (parsed !== '' && parsed !== undefined) regularDims[dk] = parsed as DimVal
   }
 

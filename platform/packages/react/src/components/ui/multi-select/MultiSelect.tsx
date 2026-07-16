@@ -12,7 +12,7 @@
 //  Content/Item/Chip`, never `radix-ui`.
 //
 //  Home is `packages/react` (the app-agnostic React adapter), NOT a shell/app —
-//  any tenant (geostat filter bar, panel inspector, runner chrome) reuses and
+//  any tenant (a filter bar, the panel inspector, runner chrome) reuses and
 //  restyles it for free. Radix is a legitimate dependency of this layer.
 //
 //  Contract: controlled — `values: string[]` in, `onValuesChange(next)` out.

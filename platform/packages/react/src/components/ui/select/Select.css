@@ -2,9 +2,9 @@
    Select — owned Radix surface paint (FOUNDATION pattern)
    ----------------------------------------------------------------
    Rules (FF-RADIX-TOKEN-ONLY):
-     • Every value is a DTCG token var(--…) — NO hex, rgb(), hsl(),
-       named color, or px color. (Structural px for borders/sizing is
-       fine; COLOR is always a token.)
+     • Every value is a DTCG token var(--…) — no raw hex or color-
+       function literals, no named colors. (Structural px for borders/
+       sizing is fine; COLOR is always a token.)
      • State comes from Radix as data-attributes ([data-state],
        [data-highlighted], [data-disabled], [data-placeholder]) — we
        never track open/hover/selected in React just to style it.

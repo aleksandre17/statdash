@@ -335,9 +335,11 @@ describe('regional cross-filter linkage web (committed provisioning)', () => {
   // default:'_T' (KPI-path aggregate pin) — never bare (which would wildcard+double-count the
   // _T total against its leaves), and the sector PARAM no longer defaults to '_T'.
   it('FF-DIM-SENTINEL-SYMMETRY: sector param defaults to "" and every filter sector ref is guarded', () => {
-    // the sector select param defaults to '' (peer with region), not '_T'
+    // the sector param (select → multi-select, portal review batch) defaults to ''
+    // (peer with region), not '_T'; label renamed სექტორი→დარგები with the switch
     const sectorParam = find(regional.config, (n) =>
-      n.type === 'select' && typeof n.label === 'object' && JSON.stringify(n.label).includes('სექტორ'))
+      (n.type === 'select' || n.type === 'multi-select') &&
+      typeof n.label === 'object' && /სექტორ|დარგ/.test(JSON.stringify(n.label)))
     expect(sectorParam?.default, 'sector param default flipped _T→""').toBe('')
     // filter-position sector refs only (value of a `sector:` slot) — excludes derive expr leaves
     const sectorRefs = findAll(regional.config, (n) =>
