@@ -221,6 +221,9 @@ export type ParamMultiSelect = ParamMeta & {
   type:    'multi-select'
   label:   string
   options: OptionsSource
+  /** Placeholder when NOTHING is selected — the "all / no filter" semantics
+   *  (mirrors ParamSelect.emptyLabel; an empty OR-set means no filtering). */
+  emptyLabel?: string
 }
 
 /**

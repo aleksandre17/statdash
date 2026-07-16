@@ -4118,6 +4118,16 @@
                   "subtitle": {
                     "ka": "{time} წელი, მლნ ლარი",
                     "en": "{time}, GEL mn"
+                  },
+                  "visibleWhen": {
+                    "op": "not",
+                    "expr": {
+                      "op": "and",
+                      "exprs": [
+                        { "op": "isset", "param": "region" },
+                        { "op": "isset", "param": "sector" }
+                      ]
+                    }
                   }
                 }
               }
@@ -4604,8 +4614,8 @@
                     "en": "All"
                   },
                   "label": {
-                    "ka": "სექტორი:",
-                    "en": "Sector:"
+                    "ka": "დარგები:",
+                    "en": "Sectors:"
                   },
                   "options": {
                     "items": {
@@ -4630,7 +4640,7 @@
                     "type": "inline",
                     "valueField": "code"
                   },
-                  "type": "select",
+                  "type": "multi-select",
                   "visibleWhen": {
                     "op": "perspective-not",
                     "perspective": "range"

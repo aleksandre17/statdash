@@ -114,6 +114,7 @@ export const multiSelectSchema: PropSchema = [
   labelField,
   { field: 'options', type: 'object', required: true,
     label: bi('პარამეტრების წყარო (static/query/api)', 'Options source (static/query/api)') },
+  { field: 'emptyLabel', type: 'string', label: bi('ცარიელი არჩევანის წარწერა („ყველა“)', 'Empty-selection label ("All")') },
   { field: 'default', type: 'string', label: bi('ნაგულისხმევი ("a,b,c")', 'Default ("a,b,c")') },
 ]
 
