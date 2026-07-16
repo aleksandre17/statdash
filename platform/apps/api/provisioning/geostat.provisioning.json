@@ -5267,8 +5267,8 @@
           "id": "accounts.gni",
           "code": "B5G",
           "label": {
-            "ka": "მთლიანი ეროვნული შემოსავალი (B5G)",
-            "en": "Gross National Income (B5G)"
+            "ka": "მთლიანი ეროვნული შემოსავალი",
+            "en": "Gross National Income"
           },
           "unit": {
             "ka": "მლნ ₾",
@@ -5281,8 +5281,8 @@
           "id": "accounts.disposableIncome",
           "code": "B6G",
           "label": {
-            "ka": "მთლიანი განკარგვადი შემოსავალი (B6G)",
-            "en": "Gross Disposable Income (B6G)"
+            "ka": "მთლიანი განკარგვადი შემოსავალი",
+            "en": "Gross Disposable Income"
           },
           "unit": {
             "ka": "მლნ ₾",
@@ -5295,8 +5295,8 @@
           "id": "accounts.savings",
           "code": "B8G",
           "label": {
-            "ka": "მთლიანი დანაზოგი (B8G)",
-            "en": "Gross Saving (B8G)"
+            "ka": "მთლიანი დანაზოგი",
+            "en": "Gross Saving"
           },
           "unit": {
             "ka": "მლნ ₾",
@@ -5309,8 +5309,8 @@
           "id": "accounts.netLending",
           "code": "B9",
           "label": {
-            "ka": "წმინდა დაკრედიტება/სესხება (B9)",
-            "en": "Net lending/borrowing (B9)"
+            "ka": "წმინდა დაკრედიტება/სესხება",
+            "en": "Net lending/borrowing"
           },
           "unit": {
             "ka": "მლნ ₾",
