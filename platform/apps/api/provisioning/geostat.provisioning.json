@@ -41,8 +41,8 @@
                 "color": "#4ECDC4",
                 "id": "b5g",
                 "label": {
-                  "ka": "მთლიანი ეროვნული შემოსავალი (B5G)",
-                  "en": "Gross National Income (B5G)"
+                  "ka": "მთლიანი ეროვნული შემოსავალი",
+                  "en": "Gross National Income"
                 },
                 "when": {
                   "op": "perspective-is",
@@ -78,8 +78,8 @@
                 "color": "#7B6CF6",
                 "id": "b6g",
                 "label": {
-                  "ka": "მთლიანი განკარგვადი შემოსავალი (B6G)",
-                  "en": "Gross Disposable Income (B6G)"
+                  "ka": "მთლიანი განკარგვადი შემოსავალი",
+                  "en": "Gross Disposable Income"
                 },
                 "when": {
                   "op": "perspective-is",
@@ -115,8 +115,8 @@
                 "color": "#F4A261",
                 "id": "b8g",
                 "label": {
-                  "ka": "მთლიანი დანაზოგი (B8G)",
-                  "en": "Gross Saving (B8G)"
+                  "ka": "მთლიანი დანაზოგი",
+                  "en": "Gross Saving"
                 },
                 "when": {
                   "op": "perspective-is",
@@ -152,8 +152,8 @@
                 "color": "#E76F51",
                 "id": "b9-year",
                 "label": {
-                  "ka": "წმინდა დაკრედიტება/სესხება (B9)",
-                  "en": "Net lending/borrowing (B9)"
+                  "ka": "წმინდა დაკრედიტება/სესხება",
+                  "en": "Net lending/borrowing"
                 },
                 "when": {
                   "op": "perspective-is",
@@ -320,8 +320,8 @@
                 "color": "#E76F51",
                 "id": "b9",
                 "label": {
-                  "ka": "წმინდა დაკრედიტება/სესხება  (B9)",
-                  "en": "Net lending/borrowing  (B9)"
+                  "ka": "წმინდა დაკრედიტება/სესხება",
+                  "en": "Net lending/borrowing"
                 },
                 "when": {
                   "op": "perspective-is",
@@ -1683,6 +1683,7 @@
                       {
                         "type": "chart",
                         "chartType": "donut",
+                        "palette": "sequential",
                         "centerLabel": {
                           "ka": "მშპ",
                           "en": "GDP"
@@ -1921,8 +1922,8 @@
                 "id": "gdp-dynamics",
                 "color": "#0080BE",
                 "title": {
-                  "ka": "მშპ ისტორიული დინამიკა",
-                  "en": "GDP historical dynamics"
+                  "ka": "მთლიანი შიდა პროდუქტის წლიური დინამიკა",
+                  "en": "Gross Domestic Product — annual dynamics"
                 },
                 "view": {
                   "subtitle": {
@@ -1970,6 +1971,7 @@
                       {
                         "type": "chart",
                         "chartType": "combo",
+                        "palette": "sequential",
                         "fieldConfig": {
                           "unit": {
                             "ka": "მლნ ₾",
@@ -1977,8 +1979,8 @@
                           }
                         },
                         "label": {
-                          "ka": "მშპ ისტორიული დინამიკა",
-                          "en": "GDP historical dynamics"
+                          "ka": "მთლიანი შიდა პროდუქტის წლიური დინამიკა",
+                          "en": "Gross Domestic Product — annual dynamics"
                         },
                         "view": {
                           "role": "chart",
@@ -2355,6 +2357,7 @@
                       {
                         "type": "chart",
                         "chartType": "donut",
+                        "palette": "sequential",
                         "centerLabel": {
                           "ka": "ჯამი",
                           "en": "Total"
@@ -2479,6 +2482,7 @@
                       {
                         "type": "chart",
                         "chartType": "bar",
+                        "palette": "sequential",
                         "fieldConfig": {
                           "unit": {
                             "ka": "%",
@@ -3751,6 +3755,7 @@
                       "en": "GDP"
                     },
                     "chartType": { "$ctx": "_mark" },
+                    "palette": "sequential",
                     "stacked": true,
                     "on": [
                       {
@@ -3947,6 +3952,7 @@
                   {
                     "chartType": "hbar",
                     "distributed": true,
+                    "palette": "sequential",
                     "axes": {
                       "y": {
                         "hidden": false,
@@ -4279,6 +4285,7 @@
                   {
                     "chartType": "bar",
                     "dataLabels": false,
+                    "palette": "sequential",
                     "fieldConfig": {
                       "unit": {
                         "ka": "მლნ ₾",
@@ -4508,8 +4515,8 @@
                 },
                 "id": "sector-history",
                 "title": {
-                  "ka": "სექტორული სტრუქტურა — ისტორიული დინამიკა",
-                  "en": "Sectoral structure — historical dynamics"
+                  "ka": "დარგობრივი სტრუქტურა — ისტორიული დინამიკა",
+                  "en": "Industry structure — historical dynamics"
                 },
                 "type": "section",
                 "view": {
@@ -5126,8 +5133,8 @@
             {
               "anchor": "sectors",
               "label": {
-                "ka": "სექტორული სტრუქტურა",
-                "en": "Sectoral structure"
+                "ka": "დარგობრივი სტრუქტურა",
+                "en": "Industry structure"
               }
             },
             {

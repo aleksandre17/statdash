@@ -111,8 +111,8 @@ const SPEC = {
   },
   accounts: {
     yearKpis: {
-      ka: ['მთლიანი ეროვნული შემოსავალი (B5G)', 'მთლიანი განკარგვადი შემოსავალი (B6G)', 'მთლიანი დანაზოგი (B8G)'],
-      en: ['Gross National Income (B5G)', 'Gross Disposable Income (B6G)', 'Gross Saving (B8G)'],
+      ka: ['მთლიანი ეროვნული შემოსავალი', 'მთლიანი განკარგვადი შემოსავალი', 'მთლიანი დანაზოგი'],
+      en: ['Gross National Income', 'Gross Disposable Income', 'Gross Saving'],
     },
     rangeKpis: {
       ka: ['შრომის წილი დამატებულ ღირებულებაში', 'გამოშვება — საშუალო წლიური ზრდა'],
