@@ -38,6 +38,7 @@ class PieInterpreter implements ChartInterpreter {
       ...(def.dataLabels !== undefined ? { dataLabels: def.dataLabels } : {}),
       ...(totalRow !== undefined ? { total: totalRow.value } : {}),
       ...(def.centerLabel ? { centerLabel: def.centerLabel } : {}),
+      ...(def.palette ? { palette: def.palette } : {}),
     }
   }
 }

@@ -9,8 +9,8 @@ import { cssVar } from '@statdash/styles'
 const fmtDonutCenter = (n: number) => fmtNum(n, 0)
 
 export function buildPie(output: ChartOutput, fontFamily?: string): ApexOptions {
-  const FS_SM = scaledPx(0.70, 10, 12)
-  const FS_MD = scaledPx(0.80, 11, 12)
+  const FS_SM = scaledPx(0.72, 11, 13)
+  const FS_MD = scaledPx(0.82, 12, 14)
   // Engine produces pie/donut with a single series whose data points = slices.
   const slices   = output.series[0]?.data ?? []
   const values   = slices.map((pt) => pt.value)

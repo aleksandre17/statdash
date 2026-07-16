@@ -62,11 +62,24 @@ export interface ChartDef {
    * No-op for multi-series charts (series already carry their own colours).
    */
   distributed?: boolean
+  /**
+   * Which platform palette paints the categorical/by-index/donut hues.
+   *   'categorical' (default) — the max-separation --chart-color-N set.
+   *   'sequential'            — the ordered single-hue blue ramp (--chart-seq-N),
+   *                             for parts-of-a-whole charts (donut / share bars).
+   * Declarative (Law 2) + reusable (Law 8): a new palette = one more token ramp
+   * + resolver, this contract unchanged. Inert where series carry explicit
+   * semantic colours (those are meaning and still win).
+   */
+  palette?: ChartPalette
   /** Show value labels on top of bars. Default: true for bar/hbar. */
   dataLabels?: boolean
   /** Text shown below the center value in donut charts (e.g. 'მშპ'). */
   centerLabel?: string
 }
+
+/** Named platform palette a chart paints its categorical hues from. */
+export type ChartPalette = 'categorical' | 'sequential'
 
 // ── Axis configuration ────────────────────────────────────────────────
 
@@ -149,6 +162,14 @@ export interface ChartOutput {
    * without an authored colour list.
    */
   readonly seriesColorByIndex?: boolean
+  /**
+   * Named palette the render layer resolves the categorical/by-index/donut hues
+   * from (mirror of ChartDef.palette). Absent ⇒ 'categorical' (byte-identical to
+   * the prior behaviour). Neutral: a palette NAME, never resolved colours — the
+   * output stays theme- and renderer-agnostic (Law 1/4); the render/emit layers
+   * resolve the name → token ramp at their boundary.
+   */
+  readonly palette?: ChartPalette
   /**
    * EMPHASIS channel (AR-42 — the encoding-grammar peer of a linked-highlight
    * selection). The RESOLVED "condition on selection": the set of emphasized

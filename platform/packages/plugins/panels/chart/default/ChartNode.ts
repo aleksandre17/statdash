@@ -148,6 +148,11 @@ export const ChartSchema = defineSchema([
     label: { ka: 'სიმაღლე (px)', en: 'Height (px)' } },
   { field: 'stacked',     type: 'boolean', concern: 'style', label: { ka: 'დაწყობილი', en: 'Stacked' } },
   { field: 'distributed', type: 'boolean', concern: 'style', label: { ka: 'კატეგორიის ფერები', en: 'Colour by category' } },
+  { field: 'palette', type: 'string', concern: 'style', label: { ka: 'ფერთა პალიტრა', en: 'Palette' },
+    options: [
+      { value: 'categorical', label: { ka: 'კატეგორიული', en: 'Categorical' } },
+      { value: 'sequential',  label: { ka: 'ერთი ფერის (ლურჯი)', en: 'Sequential (single-hue)' } },
+    ] },
   { field: 'dataLabels',  type: 'boolean', concern: 'style', label: { ka: 'მნიშვნელობის წარწერები', en: 'Value labels' } },
   { field: 'compact',     type: 'boolean', concern: 'style', label: { ka: 'კომპაქტური', en: 'Compact' } },
   // ── Nested viz objects (authored item-by-item via the generic nested editor) ─
@@ -177,7 +182,7 @@ export type _ChartCovers = Expect<AssertSchemaCovers<ChartNode, typeof ChartSche
 export const ChartGroups: PropertyGroup[] = [
   { label: { ka: 'მონაცემები',   en: 'Data'          }, fields: ['data.query.measure'] },
   { label: { ka: 'ვიზუალიზაცია', en: 'Visualisation' },
-    fields: ['chartType', 'height', 'stacked', 'distributed', 'dataLabels', 'compact'] },
+    fields: ['chartType', 'height', 'stacked', 'distributed', 'palette', 'dataLabels', 'compact'] },
   { label: { ka: 'წარწერები',    en: 'Labels'        }, fields: ['label', 'centerLabel'] },
   { label: { ka: 'ღერძები',      en: 'Axes'          }, fields: ['axes'] },
   { label: { ka: 'ლეგენდა',      en: 'Legend'        }, fields: ['legend', 'tooltip'] },

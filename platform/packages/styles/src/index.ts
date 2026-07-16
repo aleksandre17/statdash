@@ -75,7 +75,7 @@ export { px, ratio, fluid, spacing } from './utils/helpers'
 
 // ── Token resolution (computed value for SVG-attr / JS-parsed fills) ──
 export { cssVar } from './utils/cssVar'
-export { chartPalette, chartColorAt, CHART_PALETTE_SIZE } from './utils/palette'
+export { chartPalette, chartColorAt, CHART_PALETTE_SIZE, chartSequential, chartSequentialSample, CHART_SEQUENTIAL_SIZE } from './utils/palette'
 export { sequentialRamp, quantileColors } from './utils/choropleth'
 export { tokenCssVar, tokenColorLiteral, isRegisteredColorToken } from './utils/tokenColor'
 

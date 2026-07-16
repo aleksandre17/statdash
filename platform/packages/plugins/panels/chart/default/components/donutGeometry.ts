@@ -8,7 +8,7 @@
 
 import type { ChartOutput } from '@statdash/charts'
 import { fmtNum } from '@statdash/engine'
-import { cssVar, chartPalette } from '@statdash/styles'
+import { cssVar, chartPalette, chartSequentialSample } from '@statdash/styles'
 
 const W = 500, H = 300, CX = 250, CY = 150
 const R = 100, RI = 65
@@ -130,6 +130,29 @@ function buildLeader(
   const dist = Math.hypot(ex - sx, ey - sy)
   const arm = Math.max(15, Math.min(dist * 0.38, 50))
   const endDir = ex > CX ? 1 : -1
+
+  // ── Straight leader FIRST (portal notes item 6: straighten the callout lines) ──
+  //  A clean straight segment from the slice edge to the label anchor is the
+  //  Datawrapper/Observable donut-leader standard and reads far cleaner than a
+  //  curved Bézier. Take it whenever it clears the ring, the placed label boxes,
+  //  and every prior leader; only fall through to the curved pushes when a
+  //  straight line would collide (dense / high-cardinality donuts).
+  {
+    const pts: Pt[] = [[sx, sy], [ex, ey]]
+    const oob = pts.some(([x, y]) => x < X0 || x > X1 || y < Y0 || y > Y1)
+    const hitsDonut = () => {
+      // sample the segment against the inner-donut clear radius
+      for (let t = 0; t <= 1; t += 0.1) {
+        const x = sx + (ex - sx) * t, y = sy + (ey - sy) * t
+        if (Math.hypot(x - CX, y - CY) < R + 2) return true
+      }
+      return false
+    }
+    if (!oob && !hitsDonut() && !polyHitsBoxes(pts, boxes) && !routes.some(r => polysCross(pts, r))) {
+      const d = `M${f(sx)},${f(sy)} L${f(ex)},${f(ey)}`
+      return { d, pts, ok: true }
+    }
+  }
 
   // Try pushes: 0, then outward, then inward
   const pushes = [0, 10, 20, 35, 50, -10, -20, -35]
@@ -307,9 +330,16 @@ export function build(output: ChartOutput, showNames: boolean) {
   // a plain single-measure donut), distribute the platform's categorical palette
   // so slices are distinguishable instead of collapsing to one muted grey. When
   // rows DO carry distinct semantic colors (threshold encoding), respect them.
+  // A `palette: "sequential"` chart reads as ONE quantity split into ordered
+  // classes → paint every slice from the single-hue blue ramp (sampled so N
+  // slices span the whole light→dark reading), overriding any per-row semantic
+  // colour. Otherwise the historical rule holds: distribute the categorical
+  // palette when the series carries ≤1 distinct threshold colour, else respect
+  // the per-slice semantic colours.
+  const sequential = output.palette === 'sequential'
   const distinct   = new Set(pts.map(p => p.thresholdColor).filter(Boolean))
   const distribute = distinct.size <= 1
-  const palette    = chartPalette()
+  const palette    = sequential ? chartSequentialSample(pts.length) : chartPalette()
 
   let ang = -Math.PI / 2
   const slices: Slice[] = [], entries: Parameters<typeof placeAll>[0] = []
@@ -317,9 +347,11 @@ export function build(output: ChartOutput, showNames: boolean) {
     const pct = pt.value / tot
     const sw = Math.max(pct * 2 * Math.PI - PAD, 0.001)
     const s = ang + PAD / 2, e = s + sw; ang = e + PAD / 2
-    const color = distribute
-      ? palette[i % palette.length]!
-      : (pt.thresholdColor ?? cssVar('--color-text-muted', '#6B7B8D'))
+    const color = sequential
+      ? palette[i]!
+      : distribute
+        ? palette[i % palette.length]!
+        : (pt.thresholdColor ?? cssVar('--color-text-muted', '#6B7B8D'))
     const mid = (s + e) / 2
     slices.push({ path: sliceArc(s, e), mid, color, pct, name: cats[i] ?? '', formatted: pt.formatted })
     if (pct > 0) entries.push({ idx: i, angle: mid, pct, color, pctText: isPct ? pt.formatted : fmtV(pt.value), name: cats[i] ?? '' })

@@ -416,6 +416,22 @@
   --chart-color-9:  #5a9518;  /* olive — AR: darkened from #66a61e (2.98:1 on white, failed 3:1; now 3.65:1) */
   --chart-color-10: #8c564b;  /* brown */
 
+  /* Sequential single-hue blue ramp (light→dark), for parts-of-a-whole
+     charts (donut / share bars) where ONE quantity is split into ordered
+     categories — the reviewer-requested "დაახლოებით მსგავს ფერებში" look.
+     Anchored on the portal accent (--chart-color-1 family / #0080BE); every
+     step is clearly visible on a white card (no near-white first class) and
+     the luminance steps stay large enough for adjacent-slice separation
+     (WCAG 1.4.11 graphics contrast). Selected declaratively per chart via
+     `palette: "sequential"`; resolved through utils/palette.ts. */
+  --chart-seq-1: #cfe8f5;
+  --chart-seq-2: #a6d3ec;
+  --chart-seq-3: #6fb7de;
+  --chart-seq-4: #3f9bd0;
+  --chart-seq-5: #0080be;
+  --chart-seq-6: #005f8f;
+  --chart-seq-7: #003f60;
+
   /* ── Z-index scale ──────────────────────────────────────────── */
   --z-base:         0;
   --z-raised:       10;
@@ -510,6 +526,16 @@
     --chart-color-8:  #c78fd0;
     --chart-color-9:  #9bd64a;
     --chart-color-10: #c39288;
+
+    /* Sequential blue ramp — lifted for readability on dark surfaces
+       (mirror of the light ramp above; same ordered light→dark reading). */
+    --chart-seq-1: #12405f;
+    --chart-seq-2: #1a5c85;
+    --chart-seq-3: #2b7fac;
+    --chart-seq-4: #3f9bd0;
+    --chart-seq-5: #5cb3e2;
+    --chart-seq-6: #86caed;
+    --chart-seq-7: #b3e0f7;
 
     /* Focus ring tuned to the dark accent */
     --shadow-focus:   0 0 0 3px rgba(74, 163, 224, 0.50);
@@ -651,6 +677,15 @@
   --chart-color-8:  #c78fd0;
   --chart-color-9:  #9bd64a;
   --chart-color-10: #c39288;
+
+  /* Sequential blue ramp — byte-identical to the @media dark block (FF-DARK-COMPLETE). */
+  --chart-seq-1: #12405f;
+  --chart-seq-2: #1a5c85;
+  --chart-seq-3: #2b7fac;
+  --chart-seq-4: #3f9bd0;
+  --chart-seq-5: #5cb3e2;
+  --chart-seq-6: #86caed;
+  --chart-seq-7: #b3e0f7;
 
   --shadow-focus:   0 0 0 3px rgba(74, 163, 224, 0.50);
 

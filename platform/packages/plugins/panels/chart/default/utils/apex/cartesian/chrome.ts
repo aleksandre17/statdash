@@ -24,6 +24,13 @@ export function buildLegend(output: ChartOutput, ctx: CartesianContext, fontFami
 export function buildTooltip(output: ChartOutput, ctx: CartesianContext): ApexTooltip {
   const { horizontal } = output
   const { formatted, seriesMode } = ctx
+  // A single-series chart's tooltip series-name row is pure redundancy (it repeats
+  // the chart's own title) — reviewer directive (portal notes item 8c): on hover show
+  // ONLY the value + unit, no series text. ApexCharts prints the series name via
+  // `y.title.formatter`; returning '' drops it. Multi-series tooltips keep the name
+  // (it disambiguates which series a value belongs to). Generic: gated on series
+  // count, never a per-chart identity.
+  const singleSeries = output.series.filter((s) => s.name !== '__spacer__').length <= 1
   return {
     ...BASE.tooltip,
     enabled:   output.tooltip.show,
@@ -36,6 +43,7 @@ export function buildTooltip(output: ChartOutput, ctx: CartesianContext): ApexTo
     y: {
       formatter: (_val, opts) =>
           formatted[opts.seriesIndex]?.[opts.dataPointIndex] ?? String(_val),
+      ...(singleSeries ? { title: { formatter: () => '' } } : {}),
     },
   }
 }

@@ -18,7 +18,7 @@ import { cssVar } from '@statdash/styles'
 /** Value axis (+ opposite y2 when present). hbar's left axis is categorical. */
 export function buildValueAxis(output: ChartOutput, ctx: CartesianContext): ApexYAxis | ApexYAxis[] {
   const { axes, horizontal } = output
-  const { apexYHidden, FS_SM, yFmt, y2Fmt, hasY2, isStackedArea, yMax, zeroBaselineAxis } = ctx
+  const { apexYHidden, FS_SM, yFmt, y2Fmt, hasY2, isStackedArea, yMax, yMinFloor, zeroBaselineAxis } = ctx
 
   const yAxisBase: ApexYAxis = apexYHidden
       ? { show: false }
@@ -31,7 +31,7 @@ export function buildValueAxis(output: ChartOutput, ctx: CartesianContext): Apex
           style:     { fontSize: FS_SM, colors: cssVar('--color-text-muted', '#6B7B8D') },
           formatter: yFmt,
         },
-        min:            zeroBaselineAxis ? 0 : axes.y.min,
+        min:            zeroBaselineAxis ? 0 : (axes.y.min ?? yMinFloor),
         max:            isStackedArea ? yMax : axes.y.max,
         forceNiceScale: isStackedArea ? false : (zeroBaselineAxis ? true : undefined),
       }
@@ -55,13 +55,13 @@ export function buildValueAxis(output: ChartOutput, ctx: CartesianContext): Apex
 /** Category axis. hbar's bottom axis carries the numeric value scale instead. */
 export function buildCategoryAxis(output: ChartOutput, ctx: CartesianContext): ApexXAxis {
   const { axes, categories, horizontal } = output
-  const { apexXHidden, FS_SM, yFmt, hbarValueMax } = ctx
+  const { apexXHidden, FS_SM, yFmt, hbarValueMax, yMinFloor } = ctx
 
   return {
     // hbar: xaxis is the value axis (bottom) — numeric formatter + no categories.
     // vbar: xaxis is the category axis (bottom) — string categories + no formatter.
     ...(horizontal ? {} : { categories: [...categories] }),
-    ...(horizontal ? { min: axes.y.min, max: hbarValueMax } : {}),
+    ...(horizontal ? { min: axes.y.min ?? yMinFloor, max: hbarValueMax } : {}),
     labels: apexXHidden
         ? { show: false }
         : horizontal

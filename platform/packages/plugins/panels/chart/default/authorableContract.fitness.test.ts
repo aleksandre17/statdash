@@ -34,6 +34,7 @@ const EXPECTED: Record<string, PropField['type']> = {
   height:               'number',
   stacked:              'boolean',
   distributed:          'boolean',
+  palette:              'string',      // options → SelectControl (categorical | sequential)
   dataLabels:           'boolean',
   compact:              'boolean',
   axes:                 'object',       // itemSchema → ObjectControl (drill-in)

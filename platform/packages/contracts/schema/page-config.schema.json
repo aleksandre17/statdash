@@ -1710,6 +1710,15 @@
           "description": "boolean field",
           "type": "boolean"
         },
+        "palette": {
+          "title": "Palette",
+          "description": "categorical: Categorical, sequential: Sequential (single-hue)",
+          "type": "string",
+          "enum": [
+            "categorical",
+            "sequential"
+          ]
+        },
         "dataLabels": {
           "title": "Value labels",
           "description": "boolean field",

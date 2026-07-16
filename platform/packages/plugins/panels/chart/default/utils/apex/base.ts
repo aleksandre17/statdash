@@ -6,7 +6,7 @@
 
 import type { ApexOptions } from 'apexcharts'
 import type { ChartSeries, ChartOutput } from '@statdash/charts'
-import { fmtNum, compact }               from '@statdash/engine'
+import { fmtNum }                         from '@statdash/engine'
 import { cssVar, prefersReducedMotion }  from '@statdash/styles'
 
 // ── Shared base config ─────────────────────────────────────────────────
@@ -126,14 +126,20 @@ export const BASE: ApexOptions = {
  * Build a Y-axis label formatter that appends a unit string.
  *
  * `decimals` fixed → `fmtNum(val, decimals)` (a rate axis wants `10, 5, 0, -5`).
- * `decimals` undefined → the core `compact` SSOT (`88.4K` / `88,4 ათ.`), locale-aware
- * and monotonic. This replaces the old lossy `fmtNum(val/1000,0)+' 000'` hack that
- * fabricated "88 000" from 88 425.6 and collapsed adjacent ticks (C1 / FF-FORMAT-SSOT).
+ * `decimals` undefined → `fmtNum(val, 0)` — the FULL, space-grouped number
+ * ("80 000", "120 000"), NOT the `K`/`M` compact abbreviation. Reviewer directive
+ * (portal notes item 10): axis ticks read as complete localized numbers with space
+ * thousands-grouping, never "80K". Applied ONCE here, so every cartesian value axis
+ * (yFmt / y2Fmt) inherits it. `fmtNum` does NOT divide (the old lossy `/1000+' 000'`
+ * hack did) — it rounds the tick to whole units and groups, so Apex's already-nice
+ * round ticks (0 · 20 000 · 40 000 …) stay monotonic and never collapse. `locale`
+ * is retained in the signature (grouping char is locale-neutral U+00A0 here) so a
+ * future locale-specific grouping is a one-line change, no call-site churn.
  */
-export function yFormatter(unit?: string, decimals?: number, locale?: string): (val: number) => string {
+export function yFormatter(unit?: string, decimals?: number, _locale?: string): (val: number) => string {
   return (val: number) => {
     if (val === undefined || val === null) return ''
-    const n = typeof decimals === 'number' ? fmtNum(val, decimals) : compact(val, locale)
+    const n = fmtNum(val, typeof decimals === 'number' ? decimals : 0)
     return unit ? `${n} ${unit}` : n
   }
 }
@@ -348,6 +354,20 @@ function niceCeil(v: number): number {
   const norm = v / mag
   const step = NICE_STEPS.find((s) => s >= norm - 1e-9) ?? 10
   return step * mag
+}
+
+/**
+ * Nice FLOOR for a negative axis extent — rounds a negative value DOWN (further
+ * from zero) to the same 1-2-5 "nice" ladder niceCeil uses, mirrored across zero.
+ * niceFloor(-18 000) → -20 000; niceFloor(-2 836) → -3 000; v ≥ 0 → 0.
+ *
+ * Portal notes item 9 root cause: a stacked/bar chart whose negatives are small
+ * (≈ -20K) let ApexCharts auto-pick a far-too-generous floor (-50K), wasting half
+ * the plot. Fitting the axis floor to the data's ACTUAL negative extent — nice-
+ * rounded so ticks stay clean — is the data-driven fix (never a hardcoded -20).
+ */
+export function niceFloor(v: number): number {
+  return v >= 0 ? 0 : -niceCeil(-v)
 }
 
 export function hbarValueAxisMax(

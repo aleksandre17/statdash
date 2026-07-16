@@ -53,6 +53,7 @@ class BarInterpreter implements ChartInterpreter {
       // chart already distinguishes bars by series colour, so the flag is inert there.
       ...(def.distributed && series.length === 1 ? { distributed: true } : {}),
       ...(series.length > 1 && !anyExplicitSeriesColor ? { seriesColorByIndex: true } : {}),
+      ...(def.palette ? { palette: def.palette } : {}),
     }
   }
 }

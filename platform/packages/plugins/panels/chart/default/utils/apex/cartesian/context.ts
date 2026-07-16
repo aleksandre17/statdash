@@ -11,7 +11,7 @@
 //
 
 import type { ChartOutput } from '@statdash/charts'
-import { yFormatter, collectFormatted, scaledPx, verticalBarFillPct, horizontalBarFillPct, hbarValueAxisMax } from '../base'
+import { yFormatter, collectFormatted, scaledPx, verticalBarFillPct, horizontalBarFillPct, hbarValueAxisMax, niceFloor } from '../base'
 import { FAMILY_TRAITS, familyOf } from './families'
 import type { CartesianFamily, FillMode, StrokeMode, SeriesMode } from './families'
 
@@ -36,6 +36,9 @@ export interface CartesianContext {
   readonly y2Fmt:         (val: number) => string
   /** Stacked-area running max — drives BOTH yaxis.max and the annotation line. */
   readonly yMax:          number | undefined
+  /** Data-fitted nice floor for a NEGATIVE-extent value axis (undefined ⇒ no
+   *  authored min needed / no negatives / an explicit min was authored). */
+  readonly yMinFloor:     number | undefined
   /** Bar fill percent (with `%`) — absolute-thickness cap resolved in base.ts. */
   readonly barFill:       string
   /** ApexCharts host chart type (combo→line, bar-family→bar, else passthrough). */
@@ -96,6 +99,22 @@ export function deriveContext(output: ChartOutput, locale?: string): CartesianCo
       : null
   const yMax = stackedMax ?? undefined
 
+  // Data-driven negative-axis floor (portal notes item 9). When the value axis
+  // carries negatives and NO explicit min was authored, fit the floor to the
+  // actual negative extent (nice-rounded), instead of letting ApexCharts pick a
+  // far-too-generous auto floor. Orientation-neutral: for a horizontal bar the
+  // value extent still lives in the (numeric) series data. For a STACKED chart the
+  // floor is the most-negative CUMULATIVE stack (negatives sum downward), else the
+  // most-negative single value. Zero-baseline axes (line/area) are pinned to 0 and
+  // never take a floor.
+  const negFloorRaw = !traits.zeroBaselineAxis && axes.y.min == null
+    ? (stacked
+        ? Math.min(0, ...categories.map((_, i) =>
+            series.reduce((sum, s) => { const v = s.data[i]?.value ?? 0; return v < 0 ? sum + v : sum }, 0)))
+        : Math.min(0, ...series.flatMap((s) => s.data.map((p) => p.value ?? 0))))
+    : 0
+  const yMinFloor = negFloorRaw < 0 ? niceFloor(negFloorRaw) : undefined
+
   // Bar sizing — % of per-category slot, derived from an ABSOLUTE thickness cap
   // (base.ts). Horizontal caps against the exact owned height; vertical against
   // the estimated plot width (Law 1/4).
@@ -122,13 +141,14 @@ export function deriveContext(output: ChartOutput, locale?: string): CartesianCo
   return {
     family,
     formatted: collectFormatted(series),
-    FS_XS: scaledPx(0.60, 9,  11),
-    FS_SM: scaledPx(0.70, 10, 12),
-    FS_MD: scaledPx(0.80, 11, 12),
+    // Font floors raised for a readable axis/legend baseline (portal notes item 5).
+    FS_XS: scaledPx(0.62, 10, 12),
+    FS_SM: scaledPx(0.72, 11, 13),
+    FS_MD: scaledPx(0.82, 12, 14),
     isWaterfall, isCombo, hasY2, isStackedArea,
     apexXHidden, apexYHidden,
     yFmt, y2Fmt,
-    yMax, barFill, apexType, showDataLabels, hbarValueMax,
+    yMax, yMinFloor, barFill, apexType, showDataLabels, hbarValueMax,
     seriesMode: traits.seriesMode, fillMode, strokeMode, showMarkers,
     forcesStacked: traits.forcesStacked,
     zeroBaselineAxis: traits.zeroBaselineAxis,
