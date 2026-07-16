@@ -354,17 +354,31 @@ describe('runProvisioning', () => {
     })
   })
 
-  it('does NOT overwrite a steward-edited metric that shares a provisioning id (existing wins — the accepted trade-off)', async () => {
+  it('does NOT overwrite a steward-edited metric that shares a provisioning id (hash mismatch transfers ownership to the steward)', async () => {
     await withDir({ 'site.json': catalogManifest([A]) }, async (dir) => {
       await runProvisioning(pg, { dir, logger: silent })
-      // Steward edits A's label in-tool (same id).
+      // Steward edits A's label in-tool (same id) — its hash no longer matches the seed ledger.
       const editedA = { ...A, label: { en: 'GDP (steward-renamed)' } }
-      pg.siteConfig[0].value = [editedA]
+      pg.siteConfig.find((r: { key: string }) => r.key === 'metrics')!.value = [editedA]
 
-      // Re-provision with the original A: its id is present ⇒ NOT re-applied.
+      // Re-provision with the original A: the steward owns the id now ⇒ NOT re-applied.
       const report = await runProvisioning(pg, { dir, logger: silent })
       expect(report.results).toEqual([{ kind: 'siteConfig', key: 'metrics', outcome: 'unchanged' }])
-      expect(pg.siteConfig[0].value).toEqual([editedA])      // steward edit preserved
+      expect(pg.siteConfig.find((r: { key: string }) => r.key === 'metrics')!.value).toEqual([editedA])
+    })
+  })
+
+  it('a provisioning UPDATE to an untouched entry APPLIES on re-provision (seed provenance — the 0078 (B5G) incident class)', async () => {
+    await withDir({ 'site.json': catalogManifest([A]) }, async (dir) => {
+      await runProvisioning(pg, { dir, logger: silent })
+
+      // The provisioning file fixes A's label; the steward never touched A.
+      const fixedA = { ...A, label: { en: 'GDP (fixed label)' } }
+      await writeFile(join(dir, 'site.json'), catalogManifest([fixedA]), 'utf8')
+      const report = await runProvisioning(pg, { dir, logger: silent })
+
+      expect(report.results).toEqual([{ kind: 'siteConfig', key: 'metrics', outcome: 'updated' }])
+      expect(pg.siteConfig.find((r: { key: string }) => r.key === 'metrics')!.value).toEqual([fixedA])
     })
   })
 

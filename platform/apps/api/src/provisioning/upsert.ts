@@ -10,7 +10,7 @@ import type {
   PageProvision, NavItemProvision, SiteConfigProvision,
   ContentConstraintProvision, ContentConstraintMemberProvision,
 } from './types.js'
-import { jsonEqual, errMsg, isObject } from './util.js'
+import { jsonEqual, canonicalHash, errMsg, isObject } from './util.js'
 
 // ── Governed-catalog keys — steward-authorable in-tool (AR-49 M2.2) ───────────
 //
@@ -19,48 +19,103 @@ import { jsonEqual, errMsg, isObject } from './util.js'
 // (`PUT /api/config/site`) writes authored entries into the SAME site_config keys
 // provisioning seeds. So for these two keys provisioning must NOT replace the value
 // wholesale — a re-provision would wipe every steward-authored metric/dimension.
-// Instead it MERGES per entry-id: stored entries are kept verbatim, provisioned
-// entries seed ONLY when their id is genuinely absent.
+// Instead it MERGES per entry-id with SEED PROVENANCE (the kubectl last-applied /
+// three-way-merge concept, replacing the earlier "existing id always wins" rule
+// after it stranded a provisioning label fix — the 0078 P2 (B5G) incident):
 //
-// Accepted trade-off (documented, SPEC §4.3 / §14.4): because provisioning-owned
-// and steward-owned entries share one JSON map keyed by id, a provisioning UPDATE
-// to an entry whose id already exists in the DB will NOT apply while that id is
-// present (existing wins). That is acceptable for the single-tenant seed-then-author
-// model; per-entry provenance/versioning (which would let provisioning and stewards
-// co-own an id) is the later relational-table concern (AR-47). Every OTHER
-// site_config key keeps wholesale last-write-wins replace, unchanged.
+//   · provisioning records a content hash of every entry IT wrote, in the
+//     system-plane site_config key `provisioning_seed_hashes` (Law 11: system
+//     fields are projected to no one — bootstrap serves only named keys, so the
+//     catalog values themselves stay free of plumbing);
+//   · on re-provision, an id whose stored entry still hashes to its recorded
+//     seed hash is provisioning-owned → the provisioned UPDATE applies;
+//   · any hash mismatch means the steward touched it → steward owns the id
+//     from then on (the seed hash is dropped), the stored entry is kept verbatim;
+//   · entries with no recorded hash are presumed steward's (conservative for
+//     pre-provenance deployments), except the lossless bridge: stored ≡ provisioned
+//     adopts the id into provenance without changing content.
+//
+// Per-entry relational provenance/versioning stays the AR-47 concern; this ledger
+// is its single-tenant interim. Every OTHER site_config key keeps wholesale
+// last-write-wins replace, unchanged.
 const GOVERNED_CATALOG_KEYS = new Set(['metrics', 'dimensions'])
+
+/** System-plane ledger key — never provisioned from files, never served by bootstrap. */
+export const SEED_STATE_KEY = 'provisioning_seed_hashes'
 
 /** Entry identity for the per-id catalog merge. Metrics and dimensions both key on `id`. */
 function catalogId(entry: unknown): string | undefined {
   return isObject(entry) && typeof entry.id === 'string' ? entry.id : undefined
 }
 
+/** Per-catalog slice of the seed ledger, tolerant of a malformed stored value. */
+function seedSlice(ledger: unknown, key: string): Record<string, string> {
+  if (!isObject(ledger)) return {}
+  const slice = ledger[key]
+  if (!isObject(slice)) return {}
+  const out: Record<string, string> = {}
+  for (const [id, h] of Object.entries(slice)) if (typeof h === 'string') out[id] = h
+  return out
+}
+
 /**
- * Per-id union of a governed catalog (metrics/dimensions). Every STORED entry is
- * preserved verbatim — a steward-authored entry, or a prior seed a steward may have
- * edited, always SURVIVES. Each PROVISIONED entry is appended only when its id is
- * absent from the stored set; an id already present is left as-is (existing wins —
- * the documented trade-off above). Returns the merged array, or `null` when the two
- * values are not BOTH arrays, so the caller can refuse to clobber an unmergeable
- * (possibly steward-authored) value rather than guess a data-loss-prone default.
+ * Provenance-aware per-id merge of a governed catalog (metrics/dimensions).
+ * Ownership per id (see doctrine above): recorded-hash match → provisioning owns,
+ * update applies in place (stable order); mismatch or no record → steward owns,
+ * stored survives verbatim; absent id → seeded (appended). Stored entries the file
+ * no longer ships are never deleted (file omission ≠ retirement). Returns the
+ * merged array + the next ledger slice, or `null` when the two values are not
+ * BOTH arrays, so the caller refuses to clobber an unmergeable value.
  */
-function mergeCatalogById(stored: unknown, provisioned: unknown): unknown[] | null {
+export function mergeCatalogById(
+  stored: unknown,
+  provisioned: unknown,
+  seedHashes: Record<string, string> = {},
+): { merged: unknown[]; nextHashes: Record<string, string> } | null {
   if (!Array.isArray(stored) || !Array.isArray(provisioned)) return null
-  const seen = new Set<string>()
-  for (const e of stored) {
-    const id = catalogId(e)
-    if (id !== undefined) seen.add(id)
-  }
-  const merged = [...stored]
+  const provisionedById = new Map<string, unknown>()
   for (const e of provisioned) {
     const id = catalogId(e)
-    // Seed only genuinely-absent ids. An id-less provisioned entry is malformed
-    // (governed catalog entries are id-bearing by contract — config-cube-contract);
-    // it is skipped rather than appended, so a re-provision stays idempotent.
-    if (id !== undefined && !seen.has(id)) merged.push(e)
+    // An id-less provisioned entry is malformed (governed catalog entries are
+    // id-bearing by contract — config-cube-contract); skipped for idempotency.
+    if (id !== undefined) provisionedById.set(id, e)
   }
-  return merged
+
+  const nextHashes: Record<string, string> = {}
+  const seenStored = new Set<string>()
+  const merged = stored.map((s) => {
+    const id = catalogId(s)
+    if (id === undefined || !provisionedById.has(id)) {
+      // Steward-authored, or provisioning-owned but no longer shipped — keep, and
+      // carry a still-valid ownership record forward (content unchanged ⇔ hash holds).
+      if (id !== undefined && seedHashes[id] === canonicalHash(s)) nextHashes[id] = seedHashes[id]
+      if (id !== undefined) seenStored.add(id)
+      return s
+    }
+    seenStored.add(id)
+    const p = provisionedById.get(id)
+    const storedHash = canonicalHash(s)
+    if (seedHashes[id] === storedHash) {
+      // Provisioning still owns this id → the file's update applies (in place).
+      nextHashes[id] = canonicalHash(p)
+      return p
+    }
+    if (seedHashes[id] === undefined && jsonEqual(s, p)) {
+      // Pre-provenance bridge: identical content adopts the id, losslessly.
+      nextHashes[id] = storedHash
+      return s
+    }
+    // Hash mismatch (or unknown + diverged): the steward owns this id now.
+    return s
+  })
+
+  for (const [id, e] of provisionedById) {
+    if (!seenStored.has(id)) {
+      merged.push(e)
+      nextHashes[id] = canonicalHash(e)
+    }
+  }
+  return { merged, nextHashes }
 }
 
 // Re-exported so consumers keep a single import surface (./upsert.js) across the
@@ -250,6 +305,12 @@ export async function upsertNavItem(pg: PgPool, nav: NavItemProvision, ctx: Appl
  */
 export async function upsertSiteConfig(pg: PgPool, entry: SiteConfigProvision, ctx: ApplyCtx): Promise<ResourceResult> {
   const key = entry.key
+  if (key === SEED_STATE_KEY) {
+    // The provenance ledger is provisioning's OWN bookkeeping — a file shipping it
+    // would clobber ownership records (and it is system-plane, Law 11). Refuse.
+    ctx.log.warn({ key }, 'provisioning: the seed-provenance ledger key cannot be provisioned from files — skipped')
+    return { kind: 'siteConfig', key, outcome: 'skipped', reason: 'reserved system key' }
+  }
   if (ctx.dryRun) {
     ctx.log.info({ key }, 'provisioning[dry-run]: would upsert site config')
     return { kind: 'siteConfig', key, outcome: 'skipped', reason: 'dry-run' }
@@ -265,38 +326,59 @@ export async function upsertSiteConfig(pg: PgPool, entry: SiteConfigProvision, c
     )
 
     // The value to persist. For a governed-catalog key with an existing value we
-    // MERGE per entry-id (steward-authored entries survive); every other key — and
-    // the fresh-seed (create) path — writes the provisioned value verbatim.
+    // MERGE per entry-id with seed provenance (steward-authored entries survive,
+    // provisioning-owned entries update); every other key — and the fresh-seed
+    // (create) path — writes the provisioned value verbatim.
     let valueToWrite: unknown = entry.value
+    let nextLedger: Record<string, unknown> | null = null
     let outcome: UpsertOutcome
-    if (existing[0]) {
-      const current = existing[0].value
-      if (GOVERNED_CATALOG_KEYS.has(key)) {
-        const merged = mergeCatalogById(current, entry.value)
-        if (merged === null) {
-          // Not both arrays: refuse to overwrite a possibly steward-authored catalog
-          // with an unmergeable value. Additive + safe — skip and report, never destroy.
-          await client.query('ROLLBACK')
-          ctx.log.warn({ key }, 'provisioning: governed catalog value not mergeable (not both arrays) — skipped to avoid data loss')
-          return { kind: 'siteConfig', key, outcome: 'skipped', reason: 'catalog value not mergeable (not both arrays)' }
-        }
-        valueToWrite = merged
+    if (GOVERNED_CATALOG_KEYS.has(key)) {
+      // Read the provenance ledger under the same tx (FOR UPDATE serializes
+      // concurrent boots); the merged slice is written back below with the value.
+      const { rows: ledgerRows } = await client.query<{ value: unknown }>(
+        `SELECT value FROM config.site_config WHERE key = $1 FOR UPDATE`,
+        [SEED_STATE_KEY],
+      )
+      const ledger = ledgerRows[0]?.value
+      const seedHashes = seedSlice(ledger, key)
+      const result = mergeCatalogById(existing[0] ? existing[0].value : [], entry.value, seedHashes)
+      if (result === null) {
+        // Not both arrays: refuse to overwrite a possibly steward-authored catalog
+        // with an unmergeable value. Additive + safe — skip and report, never destroy.
+        await client.query('ROLLBACK')
+        ctx.log.warn({ key }, 'provisioning: governed catalog value not mergeable (not both arrays) — skipped to avoid data loss')
+        return { kind: 'siteConfig', key, outcome: 'skipped', reason: 'catalog value not mergeable (not both arrays)' }
       }
-      if (jsonEqual(current, valueToWrite)) {
-        await client.query('COMMIT')
-        ctx.log.info({ key, outcome: 'unchanged' }, 'provisioning: site config')
-        return { kind: 'siteConfig', key, outcome: 'unchanged' }
+      valueToWrite = result.merged
+      if (!jsonEqual(seedHashes, result.nextHashes)) {
+        nextLedger = { ...(isObject(ledger) ? ledger : {}), [key]: result.nextHashes }
       }
-      outcome = 'updated'
-    } else {
-      outcome = 'created'
+    }
+    const valueUnchanged = existing[0] !== undefined && jsonEqual(existing[0].value, valueToWrite)
+    if (valueUnchanged && nextLedger === null) {
+      await client.query('COMMIT')
+      ctx.log.info({ key, outcome: 'unchanged' }, 'provisioning: site config')
+      return { kind: 'siteConfig', key, outcome: 'unchanged' }
+    }
+    outcome = existing[0] ? (valueUnchanged ? 'unchanged' : 'updated') : 'created'
+
+    if (!valueUnchanged) {
+      await client.query(
+        `INSERT INTO config.site_config (key, value) VALUES ($1, $2::jsonb)
+           ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value`,
+        [key, JSON.stringify(valueToWrite)],
+      )
     }
 
-    await client.query(
-      `INSERT INTO config.site_config (key, value) VALUES ($1, $2::jsonb)
-         ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value`,
-      [key, JSON.stringify(valueToWrite)],
-    )
+    if (nextLedger !== null) {
+      // The ledger moves in the SAME transaction — a catalog value and its
+      // ownership records never drift apart.
+      await client.query(
+        `INSERT INTO config.site_config (key, value) VALUES ($1, $2::jsonb)
+           ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value`,
+        [SEED_STATE_KEY, JSON.stringify(nextLedger)],
+      )
+    }
 
     await client.query('COMMIT')
     ctx.log.info({ key, outcome }, 'provisioning: site config')

@@ -3,6 +3,7 @@
 // detection. Pure functions: trivially unit-testable, shared by parse + upsert.
 
 import { isAbsolute, resolve } from 'node:path'
+import { createHash } from 'node:crypto'
 import type { ConnectionStatus, LocaleString, PageProvision } from './types.js'
 
 export function resolveDir(dir: string): string {
@@ -48,6 +49,16 @@ export function errMsg(err: unknown): string {
 /** True when a and b serialize identically with keys sorted (order-insensitive). */
 export function jsonEqual(a: unknown, b: unknown): boolean {
   return canonical(a) === canonical(b)
+}
+
+/**
+ * Content-address of a JSON value: sha256 over its canonical (key-sorted) form.
+ * The provisioning seed-provenance ledger keys on this (kubectl last-applied
+ * three-way-merge concept): hash(stored) === recorded seed hash ⇔ the steward
+ * never touched the entry since provisioning last wrote it.
+ */
+export function canonicalHash(v: unknown): string {
+  return createHash('sha256').update(canonical(v)).digest('hex')
 }
 
 function canonical(v: unknown): string {
