@@ -39,6 +39,6 @@ export type { FilterDerive, DeriveContext,
 export { evalFilterDerive,
          setFilterDeriveObserver }                    from './filter-derive'
 
-export { autoParse, isVisible, isEnabled,
+export { autoParse, toCtxValue, isVisible, isEnabled,
          validateField, resolveDefaults,
          validateCascadeValues }                      from './filter-eval'

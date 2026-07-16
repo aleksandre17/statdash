@@ -243,7 +243,7 @@ export type {
   FilterDeriveObserver,
 }                                                                        from './config/filter'
 export { evalCondition, evalWhen, evalValidatorPredicate, validators,
-         autoParse, isVisible, isEnabled,
+         autoParse, toCtxValue, isVisible, isEnabled,
          validateField, applyCrossValidation,
          evalFilterDerive, setFilterDeriveObserver,
          resolveDefaults, validateCascadeValues }                        from './config/filter'

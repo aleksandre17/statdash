@@ -12,7 +12,7 @@ import { useFilter }                     from '../context/FilterContext'
 import type { SectionContext, DimVal } from '@statdash/engine'
 import type { FilterSchemaInput }                from '@statdash/engine'
 import type { DataStore }                        from '@statdash/engine'
-import { autoParse, resolveDefaults, LEGACY_MODE_PARAM } from '@statdash/engine'
+import { toCtxValue, resolveDefaults, LEGACY_MODE_PARAM } from '@statdash/engine'
 import { resolveYears, resolveOptions }          from '@statdash/engine'
 import type { ParamDef, ParamCascadeNode, CascadeNode } from '@statdash/engine'
 import type { ParamYearSelect, ParamSelect, ParamMultiSelect, ParamHidden } from '@statdash/engine'
@@ -197,15 +197,10 @@ export function useFilterState(
           Object.entries(context.dims)
             .map(([dk, pk]) => {
               const paramDef = flatParams.find(p => p.key === pk)?.def
-              // A multi-select's TYPED value is string[] (autoParse), but ctx.dims
-              // carries the CSV OR-set convention (store-filter splitMultiValue
-              // SSOT: 'R2,R3'); its raw URL value IS that CSV — pass it through.
-              // Empty selection ⇒ '' ⇒ dropped below ⇒ dim absent = no filtering
-              // (an empty array would survive the ''-filter and read as the
-              // match-NOTHING OR-set — the regional zero-rows regression).
-              const parsed = paramDef?.type === 'multi-select'
-                ? raw[pk]
-                : paramDef ? autoParse(paramDef, raw[pk]) : raw[pk]
+              // toCtxValue — the engine's ONE per-type wire-fold seam (autoParse's
+              // dual, co-located with the ParamDef union): this hook stays a
+              // generic projection, no per-type branching here (ADR-038).
+              const parsed = paramDef ? toCtxValue(paramDef, raw[pk]) : raw[pk]
               return [dk, parsed as DimVal]
             })
             .filter(([, v]) => v !== '' && v !== undefined),

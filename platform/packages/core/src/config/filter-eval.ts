@@ -36,6 +36,30 @@ export function autoParse(def: ParamDef, raw: string): unknown {
   }
 }
 
+/**
+ * Fold a param's raw URL value into its ctx.dims WIRE scalar — autoParse's dual.
+ *
+ * autoParse answers "what does the UI/typed surface see"; toCtxValue answers
+ * "what does SectionContext carry". They are the SAME declared seam (the ONE
+ * per-type discrimination site, co-located with the ParamDef union — ADR-038:
+ * consumers stay generic projections, never an external per-type special-case).
+ *
+ * multi-select: ctx carries the CSV OR-set convention (store-filter
+ * splitMultiValue SSOT — 'R2,R3'); the raw URL value IS that CSV, so it passes
+ * through untouched. '' (empty selection) is returned as-is — the caller drops
+ * empties, so an empty OR-set means "dim absent = no filtering", never the
+ * match-NOTHING empty array.
+ *
+ * Every other type folds via its typed value (byte-identical to the historical
+ * behaviour). A NEW param type declares its wire fold HERE — one body.
+ */
+export function toCtxValue(def: ParamDef, raw: string): DimVal {
+  switch (def.type) {
+    case 'multi-select': return raw
+    default:             return autoParse(def, raw) as DimVal
+  }
+}
+
 /** True if the param should be rendered (not hidden, showWhen passes). */
 export function isVisible(def: ParamDef, state: Record<string, string>): boolean {
   if (def.type === 'hidden') return false
