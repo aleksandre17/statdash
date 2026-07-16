@@ -162,6 +162,45 @@ export function membersAtDepth(c: Classifier, depth: number): DimVal[] {
   return toEntries(c).map((e) => e.code).filter((code) => depthOfCode(code) === depth)
 }
 
+// ── constrainClassifier — SDMX CubeRegion scoping of a codelist ─────────
+//
+//  A per-dataset store must expose only the members that belong to ITS cube
+//  (SDMX ContentConstraint / CubeRegion semantics, ADR-0027) — a dim-code is a
+//  SHARED vocabulary axis, so the global codelist for a dim may hold members
+//  from several datasets' vocabularies. This constrains a classifier to a
+//  member subset while preserving:
+//    • the classifier FORM (array in → array out, record in → record out),
+//    • the original member ORDER,
+//    • hierarchy INTEGRITY — every ANCESTOR of a kept member is kept, so
+//      parent edges never dangle and roll-up reads (childrenOf/depthOf) stay
+//      coherent.
+//  Generic over dim codes and both classifier forms (Law 1). Pure.
+
+export function constrainClassifier(
+  c:       Classifier,
+  members: ReadonlySet<string>,
+): Classifier {
+  const { parentByCode } = codeGraph(c)
+
+  // Transitive keep-set: the members plus every ancestor on their parent chains.
+  const keep = new Set<string>()
+  for (const code of members) {
+    let cur: string | undefined = String(code)
+    const seen = new Set<string>()
+    while (cur !== undefined && !seen.has(cur)) {
+      seen.add(cur)
+      keep.add(cur)
+      const parent = parentByCode.get(cur)
+      cur = parent === undefined ? undefined : String(parent)
+    }
+  }
+
+  if (Array.isArray(c)) return c.filter((e) => keep.has(String(e.code)))
+  return Object.fromEntries(
+    Object.entries(c).filter(([, e]) => keep.has(String(e.code))),
+  )
+}
+
 // ── codesOf — sorted distinct codes (utility for derived ranges) ──────
 
 /**

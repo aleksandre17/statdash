@@ -125,7 +125,7 @@ export function  registerStoreBuilders(): void {
       new Set([...(declaredClassifierDims ?? nonTimeDims), ...nonTimeDims]),
     )
 
-    const [{ fetchDimClassifiers, fromStatsObsRow, fetchDatasetMeta, fetchCubeProfile }, { buildDisplayOverlay }, { ApiStore, CachedStore, TIME_DIM, withMetricProvenance, listMetrics }] =
+    const [{ fetchDimClassifiers, fromStatsObsRow, fetchDatasetMeta, fetchCubeProfile }, { buildDisplayOverlay }, { ApiStore, CachedStore, TIME_DIM, withMetricProvenance, listMetrics, constrainClassifier }] =
       await Promise.all([
         import('./stats-api'),
         import('./stats-display'),
@@ -184,6 +184,43 @@ export function  registerStoreBuilders(): void {
       // PREFER the explicit period list (ascending) so quarterly/gapped series are
       // exact — code IS the value the inline {$cl:'time'} ref + year-select read.
       classifiers[timeDimKey] = periods.map((code) => ({ code }))
+    }
+
+    // ── Cube-region scoping of the WIRE-dim classifiers (ADR-0027 / SDMX) ──────
+    //  The classifier endpoint is dim-GLOBAL: a dim code is a shared vocabulary
+    //  axis, so its codelist may carry members belonging to OTHER datasets'
+    //  vocabularies (the live defect: REGIONAL_GVA's sector filter listed 18
+    //  members — its own 9+_T PLUS a second, foreign sector vocabulary — so the
+    //  multi-select showed every category twice). A store REPRESENTS ONE dataset;
+    //  its `$cl`/`$d` views must expose only the members of ITS cube. We scope
+    //  each wire dim to the realised member set of the dataset's ACTUAL region
+    //  (the same V26 SSOT the timeCoverage fold above already applies to the time
+    //  dim — one principle, every axis), keeping hierarchy ancestors so roll-up
+    //  edges never dangle.
+    //
+    //  Guards (fail-open, mirrors every profile read above):
+    //    • region unavailable / degraded profile → unscoped classifier;
+    //    • a wire dim with NO realised codes (e.g. an empty fresh cube) →
+    //      unscoped classifier (never nuke the filter options to []);
+    //    • ONLY nonTimeDims are scoped — auxiliary classifiers (classifierDims
+    //      beyond the wire dims, e.g. the accounts `aggregates` join) are not
+    //      cube axes and carry no region coordinates.
+    const combos = profile?.actualRegion?.available ? profile.actualRegion.combinations ?? [] : []
+    if (combos.length > 0) {
+      const realizedByDim = new Map<string, Set<string>>()
+      for (const combo of combos) {
+        for (const [dim, code] of Object.entries(combo.dimKey ?? {})) {
+          let set = realizedByDim.get(dim)
+          if (!set) { set = new Set<string>(); realizedByDim.set(dim, set) }
+          set.add(String(code))
+        }
+      }
+      for (const dim of nonTimeDims) {
+        const realized = realizedByDim.get(dim)
+        if (realized && realized.size > 0 && classifiers[dim]) {
+          classifiers[dim] = constrainClassifier(classifiers[dim], realized)
+        }
+      }
     }
 
     // P2-3 — dataset-level provenance, read once at build time alongside the

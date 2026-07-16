@@ -116,6 +116,20 @@ export interface StatsCubeProfileRow {
    * source ⇒ `{ min:null, max:null, periods:[] }` (all-years render, never 400).
    */
   timeCoverage: { min: string | null; max: string | null; periods: string[] }
+  /**
+   * The dataset's REALISED cube region (V26 cube_actual_region, ADR-0027) —
+   * mirrors the route's ActualRegion. The store-builder derives each wire dim's
+   * realised member set from `combinations[].dimKey` and CONSTRAINS that dim's
+   * classifier to it (SDMX CubeRegion semantics): a dim code is a SHARED
+   * vocabulary axis, so the dim-global classifier may carry members of OTHER
+   * datasets' vocabularies — a per-dataset store must not surface them as its
+   * own (they duplicated the sector filter options). `available:false` /
+   * `combinations:null` degrades to the unscoped classifier (fail-open).
+   */
+  actualRegion: {
+    available:    boolean
+    combinations: { dimKey: Record<string, string> }[] | null
+  }
 }
 
 

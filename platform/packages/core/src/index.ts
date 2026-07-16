@@ -75,7 +75,7 @@ export type { DimVal, CtxRef, FilterValue, NeRef, NeCtxRef, Observation, ObsQuer
 export type { AttrVal, ClassifierEntry, Classifier, ClassifierRef, ClassifierView,
               DisplayMap, DisplayRef, DimRef, DataBundle } from './sdmx'
 export { codelistOf, itemsOf, leavesOf, rollupsOf, codesOf,
-         childrenOf, depthOf, membersAtDepth,
+         childrenOf, depthOf, membersAtDepth, constrainClassifier,
          isClassifierRef, isDisplayRef, isDimRef,
          resolveClassifierRef, resolveDisplayRef, resolveDimRef } from './data/codelist'
 
