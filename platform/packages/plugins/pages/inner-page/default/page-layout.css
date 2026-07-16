@@ -24,16 +24,11 @@
   .inner-page[data-layout="sidebar"] { flex-direction: column; }
 }
 
-/* Ultrawide balance (≥ 2xl): the page-content is capped at --page-measure, so on
-   very wide monitors the rail+content unit would otherwise pin to the left edge
-   with a large void on the right. Centre the unit instead — the rail stays
-   adjacent to its content (margin-inline:0 preserved) and the inner-page's own
-   surface still fills the viewport, so the side margins are uniform, not a
-   two-tone frame. Inert below ~1540px (content flex-grows to fill → no free
-   space to distribute), so common widths keep the edge-anchored rail. */
-@media (min-width: 1536px) {           /* = --bp-2xl */
-  .inner-page[data-layout="sidebar"] { justify-content: center; }
-}
+/* Ultrawide balance (≥ 2xl) — see the rule after the sidebar margin-reset below.
+   (The former `justify-content: center` here centred the RAIL+content pair,
+   floating the rail off the viewport edge — the portal-review-round-2 "left bar
+   not flush" defect. The rail is chrome: it pins to the edge at every width,
+   like the VS Code / Grafana rails; only the CONTENT re-centres on ultrawide.) */
 
 /* full-width: no sidebar, more generous gutters — still bounded by the shared
    --page-measure so ultrawide never over-stretches (was max-width:none). */
@@ -89,6 +84,16 @@
    never over-stretches. (Grafana-class app-shell convention.) */
 .inner-page[data-layout="sidebar"] > .page-content {
   margin-inline: 0;
+}
+
+/* Ultrawide balance (≥ 2xl): the page-content is capped at --page-measure, so on
+   very wide monitors it would otherwise pin against the rail with a large void on
+   the right. Re-centre the CONTENT ONLY in the space beside the rail (auto
+   margins absorb the flex free space) — the rail itself stays flush at the
+   viewport edge at every width (it is app chrome, never part of the measure).
+   Inert below ~1540px (content flex-grows to fill → no free space to absorb). */
+@media (min-width: 1536px) {           /* = --bp-2xl */
+  .inner-page[data-layout="sidebar"] > .page-content { margin-inline: auto; }
 }
 
 /* ── Links footer ─────────────────────────────────────────────── */

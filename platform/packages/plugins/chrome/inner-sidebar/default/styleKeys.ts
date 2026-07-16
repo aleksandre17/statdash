@@ -9,6 +9,9 @@
 //
 
 export const SIDEBAR = {
+  /** Layout cell — the flex child the page composes against; its width NEVER
+   *  changes on hover (the panel expands OVER content as an overlay). */
+  cell:         'inner-sidebar-cell',
   root:         'inner-sidebar',
   brand:        'sidebar-brand',
   brandText:    'sidebar-brand-text',

@@ -7,16 +7,34 @@
   --inner-sidebar-w: 260px;
 }
 
-/* ── Sidebar container ──────────────────────────────────────────── */
+/* ── Sidebar container — CELL + PANEL split ─────────────────────────
+   The rail is TWO boxes with two distinct concerns (the drawer-cell pattern:
+   MUI permanent drawer, VS Code activity bar, Grafana nav rail):
 
-.inner-sidebar {
+     .inner-sidebar-cell — the LAYOUT allocation. The flex child the page
+       composes against. Its width is the ONLY width page layout ever sees,
+       and it NEVER changes on hover — so the hover-expansion below cannot
+       reflow content (the owner's "texts dance" defect: the old single-box
+       rail transitioned its own in-flow width, resizing the layout).
+
+     .inner-sidebar — the VISUAL surface, absolutely positioned over its
+       cell. On wide desktop it expands past the cell as an OVERLAY
+       (elevated, shadowed) — never as layout. */
+
+.inner-sidebar-cell {
   width: var(--inner-sidebar-w);
   flex-shrink: 0;
-  background: var(--color-surface);
-  border-right: 1px solid var(--color-border);
   position: sticky;
   top: var(--app-header-h, 5rem);
   height: calc(100vh - var(--app-header-h, 5rem));
+}
+
+.inner-sidebar {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: var(--inner-sidebar-w);
+  background: var(--color-surface);
+  border-right: 1px solid var(--color-border);
   overflow-y: auto;
   overflow-x: hidden;
   display: flex;
@@ -249,16 +267,24 @@
    the width back, and reveal the full labelled nav on demand. `:hover` expands
    for pointer users; `:focus-within` expands for KEYBOARD users (WCAG 2.4.7 —
    tabbing into any nav item opens the rail, so every control regains its visible
-   label the moment it is reached). Content reflow is smooth (width transition)
-   and does NOT redraw charts — the ApexCharts host runs redrawOnParentResize:false
-   (see apex/base.ts). Below 1280 the rail becomes a horizontal tab bar (rules
-   further down), so this desktop-only behaviour never fights the mobile layout. */
+   label the moment it is reached).
+
+   OVERLAY, not layout (portal review round 2 — "content dances"): only the
+   PANEL's width transitions; the cell — the flex child page layout composes
+   against — stays at the collapsed width. The expanded panel floats OVER the
+   content (elevated + shadow), so content geometry is IDENTICAL collapsed vs
+   expanded (dx = 0). VS Code / Grafana rail convention. Below 1280 the rail
+   becomes a horizontal tab bar (rules further down), so this desktop-only
+   behaviour never fights the mobile layout. */
 @media (min-width: 1281px) {
   :root { --inner-sidebar-w: 78px; }
 
   .inner-sidebar {
-    width: var(--inner-sidebar-w);
-    transition: width 0.22s ease;
+    /* Above the page's own sticky chrome (page-header z-30 / filter-bar z-29),
+       below the app header (z-50) — the expanded overlay must slide over the
+       content band, never under its sticky bars. */
+    z-index: 40;
+    transition: width 0.22s ease, box-shadow 0.22s ease;
   }
   .inner-sidebar:hover,
   .inner-sidebar:focus-within {
@@ -302,6 +328,13 @@
 @media (max-width: 1280px) {
   :root { --inner-sidebar-w: 100%; }
 
+  /* The cell/panel split is a wide-desktop concern — in tab-bar mode both
+     boxes collapse back into normal flow. */
+  .inner-sidebar-cell {
+    position: static;
+    width: 100%;
+    height: auto;
+  }
   .inner-sidebar {
     position: static;
     width: 100%;
