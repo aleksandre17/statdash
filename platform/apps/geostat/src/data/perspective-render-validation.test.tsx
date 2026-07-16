@@ -132,9 +132,14 @@ const SPEC = {
       en: ['Gross Value Added', 'Annual growth (year on year)', 'Share in GDP', 'Average nominal growth'],
     },
     // RANGE strip: 4 window KPIs bound to the user-selected fromYear/toYear span.
+    // The {fromYear}/{toYear} title tokens resolve to em-dash here (empty staticStore
+    // has no time dims — the HONEST unresolved state, same convention the year-strip
+    // span comment above documents; live they resolve to e.g. 2010/2024). The from/to
+    // pair therefore shares ONE rendered title "… — —", asserted once; the other two
+    // are asserted by their token-free prefixes (same yardstick style as yearKpis).
     rangeKpis: {
-      ka: ['დამატებული ღირებულება — საშუალო წლიური ზრდა', 'დამატებული ღირებულება — {toYear}', 'დამატებული ღირებულება — {fromYear}', 'საშუალო წლიური ზრდა ({fromYear}–{toYear})'],
-      en: ['Value added — average annual growth', 'Value added — {toYear}', 'Value added — {fromYear}', 'Average annual growth ({fromYear}–{toYear})'],
+      ka: ['დამატებული ღირებულება — საშუალო წლიური ზრდა', 'დამატებული ღირებულება — —', 'საშუალო წლიური ზრდა ('],
+      en: ['Value added — average annual growth', 'Value added — —', 'Average annual growth ('],
     },
   },
 } as const
