@@ -9,12 +9,15 @@ import type { CartesianContext } from './context'
 import { BASE } from '../base'
 import { cssVar } from '@statdash/styles'
 
-export function buildLegend(output: ChartOutput, ctx: CartesianContext, fontFamily?: string): ApexLegend {
+export function buildLegend(output: ChartOutput, _ctx: CartesianContext, fontFamily?: string): ApexLegend {
   return {
     show:       output.legend.show,
     position:   output.legend.position ?? 'bottom',
     fontFamily: fontFamily ?? 'system-ui, sans-serif',
-    fontSize:   ctx.FS_MD,
+    // ONE legend size across ALL charts (owner verdict R2-3) — the shared token,
+    // never the per-chart scaled FS_* ladder (that ladder made legends visibly
+    // differ chart-to-chart). chart.css mirrors the same token as the invariant.
+    fontSize:   cssVar('--chart-legend-font-size', '12px'),
     labels:     { colors: cssVar('--color-text-secondary', '#4A5568') },
     markers:    { size: 6 },
     itemMargin: { horizontal: 12 },

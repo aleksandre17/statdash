@@ -14,7 +14,6 @@ export function buildHBarDiverging(output: ChartOutput, fontFamily?: string, loc
   const { series, axes } = output
   const FS_XS = scaledPx(0.60, 9,  11)
   const FS_SM = scaledPx(0.70, 10, 12)
-  const FS_MD = scaledPx(0.80, 11, 12)
   const groups    = output.groups ?? []
   const categories = [...output.categories]
   const formatted = collectFormatted(series)
@@ -79,7 +78,8 @@ export function buildHBarDiverging(output: ChartOutput, fontFamily?: string, loc
       show:       output.legend.show,
       position:   output.legend.position ?? 'bottom',
       fontFamily: fontFamily ?? 'system-ui, sans-serif',
-      fontSize:   FS_MD,
+      // ONE legend size across ALL charts (owner verdict R2-3) — the shared token.
+      fontSize:   cssVar('--chart-legend-font-size', '12px'),
       labels:     { colors: cssVar('--color-text-secondary', '#4A5568') },
       markers:    { size: 6 },
       itemMargin: { horizontal: 12 },

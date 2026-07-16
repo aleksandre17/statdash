@@ -45,7 +45,9 @@ export function buildResponsive(output: ChartOutput, ctx: CartesianContext): Ape
         ...(showDataLabels && !horizontal ? { dataLabels: { offsetY: -14 } } : {}),
         xaxis:  { labels: { style: { fontSize: '10px' } } },
         yaxis:  yaxisFont('10px'),
-        legend: { fontSize: '10px', itemMargin: { horizontal: 8 } },
+        // legend fontSize never overridden per breakpoint — --chart-legend-font-size
+        // is the ONE size for every chart's legend (owner verdict R2-3).
+        legend: { itemMargin: { horizontal: 8 } },
         grid:   { padding: gridPadding(output, ctx, 'md') },
       },
     },
@@ -62,7 +64,7 @@ export function buildResponsive(output: ChartOutput, ctx: CartesianContext): Ape
         ...(showDataLabels && !horizontal ? { dataLabels: { offsetY: -10 } } : {}),
         xaxis:  horizontal ? {} : { labels: { maxHeight: 70, style: { fontSize: '9px' } } },
         yaxis:  yaxisFont('9px'),
-        legend: { fontSize: '10px', itemMargin: { horizontal: 6 } },
+        legend: { itemMargin: { horizontal: 6 } },
         grid:   { padding: gridPadding(output, ctx, 'sm') },
       },
     },

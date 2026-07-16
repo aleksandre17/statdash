@@ -365,7 +365,8 @@ export default function HBarDivergingChart({ output }: { output: ChartOutput }) 
           {series.map(s => (
             <div key={s.name} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
               <div style={{ width: 14, height: 14, background: s.color, borderRadius: 2, flexShrink: 0 }} />
-              <span style={{ fontSize: 12, color: 'var(--color-text-secondary)' }}>{s.name}</span>
+              {/* ONE legend size across ALL charts (owner verdict R2-3) — the shared token. */}
+              <span style={{ fontSize: 'var(--chart-legend-font-size, 12px)', color: 'var(--color-text-secondary)' }}>{s.name}</span>
             </div>
           ))}
         </div>

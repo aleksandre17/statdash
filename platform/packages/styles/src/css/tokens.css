@@ -432,6 +432,17 @@
   --chart-seq-6: #005f8f;
   --chart-seq-7: #003f60;
 
+  /* ── Chart legend type ──────────────────────────────────────────
+     THE one legend font size — every chart's legend (Apex cartesian /
+     pie / hbar-diverging, the custom DonutChart + HBarDiverging DOM
+     legends) reads THIS token and nothing else, so legends never differ
+     chart-to-chart (owner verdict R2-3, 2026-07-16). 12px = the readable
+     floor of the owner's original note P10 (matches --font-size-xs).
+     Literal px (not a rem alias): builders resolve it via cssVar() into
+     ApexCharts option strings, where a literal keeps Apex's legend
+     measurement identical to the rendered size. */
+  --chart-legend-font-size: 12px;
+
   /* ── Z-index scale ──────────────────────────────────────────── */
   --z-base:         0;
   --z-raised:       10;

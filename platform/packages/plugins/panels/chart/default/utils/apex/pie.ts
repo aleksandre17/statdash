@@ -10,7 +10,6 @@ const fmtDonutCenter = (n: number) => fmtNum(n, 0)
 
 export function buildPie(output: ChartOutput, fontFamily?: string): ApexOptions {
   const FS_SM = scaledPx(0.72, 11, 13)
-  const FS_MD = scaledPx(0.82, 12, 14)
   // Engine produces pie/donut with a single series whose data points = slices.
   const slices   = output.series[0]?.data ?? []
   const values   = slices.map((pt) => pt.value)
@@ -80,7 +79,8 @@ export function buildPie(output: ChartOutput, fontFamily?: string): ApexOptions 
       show:       true,
       position:   output.legend.position ?? 'bottom',
       fontFamily: fontFamily ?? 'system-ui, sans-serif',
-      fontSize:   FS_MD,
+      // ONE legend size across ALL charts (owner verdict R2-3) — the shared token.
+      fontSize:   cssVar('--chart-legend-font-size', '12px'),
       labels:     { colors: cssVar('--color-text-secondary', '#4A5568') },
       markers:    { size: 6 },
       itemMargin: { horizontal: 12 },
@@ -112,7 +112,8 @@ export function buildPie(output: ChartOutput, fontFamily?: string): ApexOptions 
             },
           },
           dataLabels: { style: { fontSize: '10px' } },
-          legend: { fontSize: '10px', itemMargin: { horizontal: 8 } },
+          // legend fontSize never overridden per breakpoint — the token is the ONE size.
+          legend: { itemMargin: { horizontal: 8 } },
         },
       },
       {
@@ -126,7 +127,7 @@ export function buildPie(output: ChartOutput, fontFamily?: string): ApexOptions 
             },
           },
           dataLabels: { style: { fontSize: '9px' } },
-          legend: { fontSize: '10px', itemMargin: { horizontal: 6 } },
+          legend: { itemMargin: { horizontal: 6 } },
         },
       },
       {

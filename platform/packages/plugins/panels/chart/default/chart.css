@@ -66,43 +66,40 @@
 
 .donut-legend__item {
   display:     flex;
-  align-items: flex-start;
-  gap:         6px;
-  min-width:   0;
-  /* Reviewer (portal notes item 5): show the FULL category name — wrap, never
-     ellipsize. A generous cap keeps one very long name from spanning the whole
-     row while the label wraps to a second line inside it (below). */
-  max-width:   26ch;
+  align-items: center;
+  gap:         5px;
+  min-width:   0;          /* allow the label to shrink + ellipsis */
+  max-width:   16ch;       /* cap so one long name can't span a whole row */
   transition:  opacity 0.15s;
 }
 
 .donut-legend__swatch {
-  width:         9px;
-  height:        9px;
+  width:         8px;
+  height:        8px;
   border-radius: 50%;
   flex-shrink:   0;
-  margin-top:    3px;       /* align to first text line when the label wraps */
 }
 
 .donut-legend__label {
-  font-size:     12px;      /* raised 10 → 12 for a readable baseline (item 5) */
+  /* Owner verdict R2-3: the ONE legend size token — never a local value.
+     (P10 "font too small" is satisfied by the token's floor, inside the
+     original single-line ellipsis layout — no wrapping, no re-layout.) */
+  font-size:     var(--chart-legend-font-size, 12px);
   color:         var(--color-text-secondary);
-  line-height:   1.35;
-  /* Full label: wrap onto a second line instead of ellipsis truncation. */
-  white-space:   normal;
-  overflow-wrap: anywhere;
+  line-height:   1.3;
+  white-space:   nowrap;
+  overflow:      hidden;
+  text-overflow: ellipsis;
 }
 
 @media (max-width: 768px) {
   .donut-legend       { gap: 3px 10px; padding: 3px 6px 5px; }
-  .donut-legend__item { max-width: 20ch; gap: 5px; }
-  .donut-legend__label { font-size: 11px; }
+  .donut-legend__item { max-width: 12ch; gap: 4px; }
 }
 
 @media (max-width: 480px) {
   .donut-legend       { gap: 2px 8px; }
-  .donut-legend__item { max-width: 16ch; }
-  .donut-legend__label { font-size: 10px; }
+  .donut-legend__item { max-width: 10ch; }
 }
 
 /* ── ApexCharts chrome overrides ────────────────────────────────────────
@@ -123,15 +120,13 @@
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08) !important;
 }
 
-/* Legend legibility (portal notes item 5): ApexCharts hard-caps legend text at
-   a small size + can clip a long series name. Raise the floor to a readable
-   baseline and let a long label show in full (Apex sets max-width inline on the
-   text span — override it) rather than shear. Structural chrome of the chart
-   plugin, so it lives here. */
+/* Legend font uniformity (owner verdict R2-3 + original note P10): every Apex
+   legend renders at THE one token size. The builders already feed the same
+   token into the ApexCharts option (so Apex's own legend measurement agrees);
+   this !important rule is the hard invariant that beats Apex's inline styles
+   and any future breakpoint override, so legends can never drift apart
+   chart-to-chart again. Layout (single line, Apex's own truncation) is stock —
+   the wrapping/full-label experiment is reverted. */
 .apexcharts-legend-text {
-  font-size:  12px !important;
-  max-width:  none !important;
-  overflow:   visible !important;
-  text-overflow: clip !important;
-  white-space: normal !important;
+  font-size: var(--chart-legend-font-size, 12px) !important;
 }
