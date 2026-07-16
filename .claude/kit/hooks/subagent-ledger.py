@@ -25,7 +25,11 @@ try:
 except (AttributeError, ValueError):
     pass
 
-RECENT_S = 1800  # fallback scan window: transcripts touched in the last 30 min
+# Fallback scan window. A finished agent is ledgered by the NEXT hook event (its
+# own SubagentStop sees a <60s-fresh file and defers) — with a short window the
+# session's LAST agent was lost across a session gap. Run-id dedupe makes a wide
+# window safe; SessionStart also runs this hook to sweep the previous session.
+RECENT_S = 86400
 CTX_BURN_LIMIT = 120_000  # peak context above this = burn defect (measured norm: 60-90k)
 
 
