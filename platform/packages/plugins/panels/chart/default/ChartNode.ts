@@ -155,6 +155,10 @@ export const ChartSchema = defineSchema([
     ] },
   { field: 'dataLabels',  type: 'boolean', concern: 'style', label: { ka: 'მნიშვნელობის წარწერები', en: 'Value labels' } },
   { field: 'compact',     type: 'boolean', concern: 'style', label: { ka: 'კომპაქტური', en: 'Compact' } },
+  // Range-slider (brush) navigator under a long time-dynamics chart — STYLE (a
+  // viewing affordance, not data). Inert on horizontal / short series (renderer
+  // gate); a bare boolean intent, the adapter owns the realization (Law 2/8).
+  { field: 'rangeSlider', type: 'boolean', concern: 'style', label: { ka: 'დიაპაზონის ცოცია', en: 'Range slider' } },
   // ── Nested viz objects (authored item-by-item via the generic nested editor) ─
   { field: 'axes',    type: 'object', itemSchema: AxesItemSchema, concern: 'style',
     label: { ka: 'ღერძები', en: 'Axes' } },
@@ -170,7 +174,7 @@ export const ChartSchema = defineSchema([
 // ChartDef's visualisation-refinement fields. The SCHEMA_TODO backlog is now
 // DRAINED: every editable ChartDef-derived key is a declared inspector field —
 // scalars (chartType, label, centerLabel, height, stacked, distributed, dataLabels,
-// compact), the governed metric-ref (`data.query.measure`), `preliminary`, and the
+// compact, rangeSlider), the governed metric-ref (`data.query.measure`), `preliminary`, and the
 // nested objects (axes / legend / tooltip) each carrying a structured `itemSchema`
 // authored via the generic recursive nested editor (D7.1). `fieldConfig`/`dataLinks`
 // are NodeBase system keys → excluded (authored via the field-config / data-links
@@ -182,7 +186,7 @@ export type _ChartCovers = Expect<AssertSchemaCovers<ChartNode, typeof ChartSche
 export const ChartGroups: PropertyGroup[] = [
   { label: { ka: 'მონაცემები',   en: 'Data'          }, fields: ['data.query.measure'] },
   { label: { ka: 'ვიზუალიზაცია', en: 'Visualisation' },
-    fields: ['chartType', 'height', 'stacked', 'distributed', 'palette', 'dataLabels', 'compact'] },
+    fields: ['chartType', 'height', 'stacked', 'distributed', 'palette', 'dataLabels', 'compact', 'rangeSlider'] },
   { label: { ka: 'წარწერები',    en: 'Labels'        }, fields: ['label', 'centerLabel'] },
   { label: { ka: 'ღერძები',      en: 'Axes'          }, fields: ['axes'] },
   { label: { ka: 'ლეგენდა',      en: 'Legend'        }, fields: ['legend', 'tooltip'] },

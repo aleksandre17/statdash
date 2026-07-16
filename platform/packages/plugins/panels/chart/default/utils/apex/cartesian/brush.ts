@@ -1,0 +1,120 @@
+// ── Range-slider brush companion (ChartDef.rangeSlider realization) ────────
+//
+//  The reviewer asked for a dataZoom/navigator strip under the long time-dynamics
+//  charts (a real range slider, not just toolbar zoom). ApexCharts realizes this
+//  as a BRUSH chart: a slim second instance whose drag-selection drives the main
+//  chart's visible x-window (chart.brush.target + chart.selection). This module
+//  owns that realization — the ONLY place that knows a "range slider" is an Apex
+//  brush; the neutral ChartOutput carries just the boolean intent (Law 1/4).
+//
+//  Why a companion and not native chart.zoom: native x-zoom is a drag-on-the-plot
+//  + toolbar gesture with no PERSISTENT strip — the reviewer's screenshot is a
+//  standing navigator rail. The brush companion is that rail.
+//
+//  Honest degrade (the canvas never lies): the strip renders ONLY for a vertical
+//  cartesian series long enough to warrant windowing (shouldRenderSlider). A
+//  horizontal bar (categories run down the fixed height) and a short series get
+//  NO strip — an affordance that could not navigate is never drawn.
+//
+
+import type { ApexOptions } from 'apexcharts'
+import type { ChartOutput } from '@statdash/charts'
+import { cssVar } from '@statdash/styles'
+import { BASE } from '../base'
+
+const SPACER = '__spacer__'
+
+/** Height (px) of the slim brush rail under the main plot. */
+export const SLIDER_HEIGHT = 96
+
+/**
+ * Minimum category count before a range slider earns its chrome. A slider under
+ * a handful of bars adds a rail with nothing to window — honest floor: only a
+ * genuinely long series (≈ a decade of years) gets the navigator.
+ */
+export const SLIDER_MIN_CATEGORIES = 8
+
+/**
+ * Whether a range-slider brush strip should render for this output.
+ *
+ * Gate (all required): the intent is declared (`rangeSlider`), the mark is a
+ * VERTICAL cartesian (a bottom x-slider is meaningless under a horizontal bar,
+ * whose categories run down the height), and there are enough categories to
+ * window. Absent any of these → no strip, main chart renders unchanged.
+ */
+export function shouldRenderSlider(output: ChartOutput): boolean {
+  return output.rangeSlider === true
+    && !output.horizontal
+    && output.categories.length >= SLIDER_MIN_CATEGORIES
+}
+
+/**
+ * Sanitize a React `useId()` value (contains `:`) into an ApexCharts-safe chart
+ * id. Apex keys its global instance registry AND some DOM nodes by this id, so a
+ * bare `:r0:` risks a broken selector — strip to alphanumerics.
+ */
+export function sliderChartId(uid: string, role: 'main' | 'brush'): string {
+  return `chart-${role}-${uid.replace(/[^a-zA-Z0-9]/g, '')}`
+}
+
+/**
+ * One representative navigator shape: the per-category SUM of the (non-spacer)
+ * series. A single-series chart reflects itself; a stacked/multi-series chart
+ * shows its overall trend as one muted area, so the rail reads as "the shape of
+ * the whole series" rather than a cramped mini-stack.
+ */
+export function navSeriesData(output: ChartOutput): number[] {
+  const { categories, series } = output
+  return categories.map((_, ci) =>
+    series.reduce((sum, s) => sum + (s.name === SPACER ? 0 : (s.data[ci]?.value ?? 0)), 0))
+}
+
+/**
+ * Build the slim brush companion's ApexOptions. Its selection drives the main
+ * chart (`brush.target = mainId`); the default selection is the FULL range, so
+ * first paint hides nothing (the handles sit at both ends — Least Astonishment)
+ * and the viewer narrows from there. Category x-axis → numeric index domain.
+ */
+export function buildBrushOptions(
+  output: ChartOutput,
+  opts: { mainId: string; brushId: string; fontFamily?: string },
+): ApexOptions {
+  const { categories } = output
+  const n      = categories.length
+  const accent = cssVar('--chart-color-1', '#005a9c')
+  const muted  = cssVar('--color-text-muted', '#6B7B8D')
+
+  return {
+    ...BASE,
+    chart: {
+      ...BASE.chart,
+      id:         opts.brushId,
+      type:       'area',
+      height:     SLIDER_HEIGHT,
+      fontFamily: opts.fontFamily ?? 'system-ui, sans-serif',
+      toolbar:    { show: false },
+      // The navigator link: this rail's drag-selection sets the target's x-window.
+      brush:      { enabled: true, target: opts.mainId, autoScaleYaxis: true },
+      selection:  { enabled: true, xaxis: { min: 0, max: Math.max(0, n - 1) } },
+      // A navigator is chrome, not a data surface — no animation churn on redraw.
+      animations: { enabled: false },
+    },
+    series:     [{ name: '__nav__', data: navSeriesData(output) }],
+    colors:     [accent],
+    fill:       { type: 'gradient', gradient: { opacityFrom: 0.5, opacityTo: 0.12 } },
+    stroke:     { width: 1.5, curve: 'smooth' },
+    dataLabels: { enabled: false },
+    legend:     { show: false },
+    tooltip:    { enabled: false },
+    grid:       { show: false, padding: { left: 8, right: 8, top: 0, bottom: 0 } },
+    xaxis: {
+      type:       'category',
+      categories: [...categories],
+      labels:     { show: true, style: { fontSize: '10px', colors: muted }, hideOverlappingLabels: true },
+      axisTicks:  { show: false },
+      axisBorder: { show: false },
+      tooltip:    { enabled: false },
+    },
+    yaxis: { show: false },
+  }
+}

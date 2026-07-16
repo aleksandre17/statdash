@@ -37,6 +37,7 @@ const EXPECTED: Record<string, PropField['type']> = {
   palette:              'string',      // options → SelectControl (categorical | sequential)
   dataLabels:           'boolean',
   compact:              'boolean',
+  rangeSlider:          'boolean',      // x-range navigator (brush) intent
   axes:                 'object',       // itemSchema → ObjectControl (drill-in)
   legend:               'object',
   tooltip:              'object',

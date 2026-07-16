@@ -18,8 +18,13 @@ import { buildResponsive } from './responsive'
  * · waterfall · combo). Derives the cross-cutting context once, then composes
  * the pure slice-builders into the options literal — no family conditional lives
  * here; each slice switches on a resolved discriminant off `ctx`.
+ *
+ * `chartId` — set ONLY when a range-slider brush companion targets this chart
+ * (ApexRenderer passes the sanitized main id). It is the sole hook the brush's
+ * `brush.target` links to; absent (the default) ⇒ no `chart.id` key is emitted,
+ * so the options stay byte-identical to the pre-rangeSlider output (no drift).
  */
-export function buildCartesian(output: ChartOutput, fontFamily?: string, locale?: string): ApexOptions {
+export function buildCartesian(output: ChartOutput, fontFamily?: string, locale?: string, chartId?: string): ApexOptions {
   const { stacked } = output
   const ctx = deriveContext(output, locale)
 
@@ -31,6 +36,7 @@ export function buildCartesian(output: ChartOutput, fontFamily?: string, locale?
       height:     '100%',
       stacked:    stacked || ctx.forcesStacked,
       fontFamily: fontFamily ?? 'system-ui, sans-serif',
+      ...(chartId ? { id: chartId } : {}),
     },
     grid:        buildGrid(output, ctx),
     series:      buildSeries(output, ctx),

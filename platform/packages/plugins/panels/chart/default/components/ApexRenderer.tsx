@@ -1,9 +1,11 @@
+import { useId }                   from 'react'
 import ReactApexChart              from 'react-apexcharts'
 import { useContainerVisible, useNodeVisible } from '@statdash/react/engine'
 import type { ChartRendererProps } from '@statdash/react/engine'
 import { useLocale }               from '@statdash/react'
 import { toApexOptions }           from '../utils/toApexOptions'
 import { categoricalChartHeight }  from '../utils/apex/base'
+import { shouldRenderSlider, buildBrushOptions, navSeriesData, sliderChartId, SLIDER_HEIGHT } from '../utils/apex/cartesian/brush'
 
 function apexChartType(type: string): 'bar' | 'line' | 'pie' | 'area' {
   if (type === 'hbar' || type === 'waterfall' || type === 'contribution') return 'bar'
@@ -46,12 +48,21 @@ export function ApexRenderer({ output, onDataHover, onDataLeave, onDataClick }: 
   //  real box with the latest data (`key={chartKey}`).
   const { ref: hostRef, visible: boxVisible } = useContainerVisible<HTMLDivElement>()
   const nodeVisible = useNodeVisible()
+  // Stable per-instance id → the sanitized main/brush chart ids a range-slider
+  // brush companion links by (hooks run unconditionally, before any early return).
+  const uid = useId()
   const shown = nodeVisible && boxVisible
   if (output.series.length === 0) return null
   const fontFamily = typeof window !== 'undefined'
     ? (getComputedStyle(document.documentElement).getPropertyValue('--font-family-base').trim() || 'system-ui, sans-serif')
     : 'system-ui, sans-serif'
-  const base     = toApexOptions(output, fontFamily, locale)
+  // Range-slider brush: a long vertical time-dynamics chart declares `rangeSlider`
+  // (ChartOutput). When it qualifies (shouldRenderSlider), the main chart takes a
+  // stable id and a slim brush companion renders beneath it, linked by that id.
+  const sliderOn = shouldRenderSlider(output)
+  const mainId   = sliderChartId(uid, 'main')
+  const brushId  = sliderChartId(uid, 'brush')
+  const base     = toApexOptions(output, fontFamily, locale, sliderOn ? mainId : undefined)
   const chartKey = output.series.map(s => s.data.map(d => d.value).join(',')).join(';')
 
   // Merge event handlers into options.chart.events without mutating base object
@@ -78,9 +89,42 @@ export function ApexRenderer({ output, onDataHover, onDataLeave, onDataClick }: 
     },
   }
 
+  // The host div (with the box-measuring ref) is ALWAYS rendered so `shown` can
+  // flip once it is laid out — the footprint must exist before the chart mounts
+  // (measurement is never circular). Slider path stacks the main plot + a
+  // fixed-height brush rail (flex column); non-slider path is the single
+  // container-filling chart, unchanged (flag-absent render stays byte-identical).
+  const sliderLayout = sliderOn
+    ? { width: '100%', height: '100%', display: 'flex', flexDirection: 'column' as const }
+    : { width: '100%', height: '100%' }
+
   return (
-    <div ref={hostRef} style={{ width: '100%', height: '100%' }}>
-      {shown && (
+    <div ref={hostRef} style={sliderLayout}>
+      {shown && sliderOn && (
+        <>
+          {/* Main plot renders FIRST so ApexCharts registers it before the brush's
+              `brush.target` lookup runs. */}
+          <div style={{ flex: '1 1 auto', minHeight: 0 }}>
+            <ReactApexChart
+              key={chartKey}
+              options={options}
+              series={options.series as ApexAxisChartSeries | number[]}
+              type={apexChartType(output.type)}
+              height="100%"
+            />
+          </div>
+          <div style={{ flex: '0 0 auto', height: SLIDER_HEIGHT }}>
+            <ReactApexChart
+              key={`${chartKey}-brush`}
+              options={buildBrushOptions(output, { mainId, brushId, fontFamily })}
+              series={[{ name: '__nav__', data: navSeriesData(output) }] as ApexAxisChartSeries}
+              type="area"
+              height={SLIDER_HEIGHT}
+            />
+          </div>
+        </>
+      )}
+      {shown && !sliderOn && (
         <ReactApexChart
           key={chartKey}
           options={options}

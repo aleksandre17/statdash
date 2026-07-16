@@ -1729,6 +1729,11 @@
           "description": "boolean field",
           "type": "boolean"
         },
+        "rangeSlider": {
+          "title": "Range slider",
+          "description": "boolean field",
+          "type": "boolean"
+        },
         "axes": {
           "title": "Axes",
           "description": "object field",

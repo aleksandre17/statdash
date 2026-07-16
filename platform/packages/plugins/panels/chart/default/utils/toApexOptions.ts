@@ -26,7 +26,7 @@ import { buildHBarDiverging } from './apex/hbar-diverging'
  * The ONLY translation point between engine and ApexCharts.
  * Input is 100% renderer-agnostic. Output is ApexCharts-specific.
  */
-export function toApexOptions(output: ChartOutput, fontFamily?: string, locale?: string): ApexOptions {
+export function toApexOptions(output: ChartOutput, fontFamily?: string, locale?: string, chartId?: string): ApexOptions {
   switch (output.type) {
     case 'pie':
     case 'donut':
@@ -38,7 +38,7 @@ export function toApexOptions(output: ChartOutput, fontFamily?: string, locale?:
     case 'area':
     case 'waterfall':
     case 'combo':
-      return buildCartesian(output, fontFamily, locale)
+      return buildCartesian(output, fontFamily, locale, chartId)
 
     case 'contribution':
       return buildContribution(output, fontFamily, locale)
