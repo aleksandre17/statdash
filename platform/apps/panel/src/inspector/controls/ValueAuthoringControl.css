@@ -75,6 +75,7 @@
 .insp-bind__preview--live  { color: var(--sd-accent, #4f46e5); }
 .insp-bind__preview--error { color: var(--sd-danger, #b91c1c); }
 .insp-bind__preview--empty { color: var(--sd-text-muted, #6b7280); }
+.insp-bind__preview--unknown { color: var(--sd-warning, #b45309); font-style: italic; }
 
 /* ── Responsive (per-breakpoint) editor ─────────────────────────────────────── */
 

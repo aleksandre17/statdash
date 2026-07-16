@@ -1,0 +1,67 @@
+/* ── ExprAutocompleteInput — the schema-aware binding editor combobox ── */
+
+.insp-expr-ac {
+  position: relative;
+}
+
+.insp-expr-ac__input {
+  width: 100%;
+}
+
+.insp-expr-ac__list {
+  position: absolute;
+  z-index: 40;
+  top: calc(100% + 2px);
+  inset-inline: 0;
+  margin: 0;
+  padding: 4px;
+  list-style: none;
+  max-height: 220px;
+  overflow-y: auto;
+  border: 1px solid var(--sd-border, #d0d3d9);
+  border-radius: 8px;
+  background: var(--sd-surface, #fff);
+  box-shadow: 0 8px 24px rgb(0 0 0 / 12%);
+}
+
+.insp-expr-ac__opt {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--sd-text, #111827);
+}
+
+.insp-expr-ac__opt.is-active {
+  background: color-mix(in srgb, var(--sd-accent, #4f46e5) 12%, transparent);
+}
+
+.insp-expr-ac__label {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.insp-expr-ac__kind {
+  flex: 0 0 auto;
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: var(--sd-surface-muted, #eef0f4);
+  color: var(--sd-text-muted, #6b7280);
+}
+
+/* Family colour cues — meaning is ALSO carried by the text badge (WCAG, never colour-only). */
+.insp-expr-ac__kind--metric    { background: color-mix(in srgb, var(--sd-accent, #4f46e5) 16%, transparent); color: var(--sd-accent, #4f46e5); }
+.insp-expr-ac__kind--dimension { background: color-mix(in srgb, #0e7490 16%, transparent); color: #0e7490; }
+.insp-expr-ac__kind--param     { background: color-mix(in srgb, #15803d 16%, transparent); color: #15803d; }
+.insp-expr-ac__kind--var       { background: color-mix(in srgb, #b45309 16%, transparent); color: #b45309; }
+.insp-expr-ac__kind--op        { background: var(--sd-surface-muted, #eef0f4); color: var(--sd-text-muted, #6b7280); }

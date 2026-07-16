@@ -23,12 +23,15 @@
 //  "inherited" annotation, never fabricated. A bound expr that resolves to no-data/error
 //  is surfaced by the preview, never a fake value.
 //
-import { useMemo } from 'react'
+import { useId, useMemo } from 'react'
 import { isBinding, resolveBinding } from '@statdash/react/engine'
 import type { Binding } from '@statdash/react/engine'
 import { isResponsiveObject, BREAKPOINT_KEYS_CASCADE } from '@statdash/styles'
 import type { FieldControl, FieldControlProps } from '../fieldControl.types'
 import { useActiveBreakpoint } from '../../studio/activeBreakpoint'
+import { ExprAutocompleteInput } from './binding/ExprAutocompleteInput'
+import { useBindVocabulary } from './binding/useBindVocabulary'
+import { unknownRefs } from './binding/bindSuggestions'
 import './ValueAuthoringControl.css'
 
 // The scalar types a value may be BOUND for. The value MODEL generalizes to every type
@@ -125,7 +128,7 @@ export function ValueAuthoringControl({ Control, allowResponsive = true, ...prop
           {perBp
             ? <ResponsiveEditor Control={Control} {...props} />
             : bound
-              ? <BindEditor id={props.id} value={value as Binding} onChange={onChange} />
+              ? <BindEditor id={props.id} value={value as Binding} locale={props.locale} onChange={onChange} />
               : <Control {...props} />}
         </div>
         <div className="insp-va__modes">
@@ -232,38 +235,62 @@ function ResponsiveEditor({ Control, ...props }: ValueAuthoringControlProps) {
   )
 }
 
-// ── BindEditor — the expr editor + live-evaluated preview (the ⚡ / `{{ }}` body) ──
+// ── BindEditor — the schema-aware expr editor + live preview (the ⚡ / `{{ }}` body) ──
+//
+//  The Retool-class body: an accessible autocomplete over the GOVERNED vocabulary
+//  (metrics · dimensions · in-scope params/vars · operators), a live-evaluated
+//  result, and a friendly unknown-ref hint — all layered over the SAME serializable
+//  `{ $bind: string }` value (no seam/model change; an author who types a valid expr
+//  by hand is unaffected). The vocabulary + honest live preview reuse the engine's
+//  own catalogs + resolveBinding — no second catalog, no second evaluator.
+//
 function BindEditor({
   id,
   value,
+  locale,
   onChange,
 }: {
   id:       string
   value:    Binding
+  locale:   FieldControlProps['locale']
   onChange: (next: Binding) => void
 }) {
   const expr    = value.$bind
+  const hintId  = useId()
   const preview = useMemo(() => previewBinding(expr), [expr])
+
+  const { vocabulary, knownRefs } = useBindVocabulary(locale)
+  // Gentle pre-save flag: identifiers the author typed that aren't a known ref. Only
+  // surfaced when the expr otherwise PARSES (an error already tells the fuller story).
+  const unknown = useMemo(
+    () => (preview.kind === 'error' ? [] : unknownRefs(expr, knownRefs)),
+    [expr, knownRefs, preview.kind],
+  )
 
   return (
     <div className="insp-bind__editor">
-      <input
+      <ExprAutocompleteInput
         id={id}
-        className="insp-bind__expr"
-        type="text"
         value={expr}
-        spellCheck={false}
-        autoComplete="off"
-        placeholder="expression — e.g. year"
-        onChange={(e) => onChange({ $bind: e.target.value })}
+        onChange={(next) => onChange({ $bind: next })}
+        vocabulary={vocabulary}
+        aria-describedby={hintId}
       />
       <p
+        id={hintId}
         className={`insp-bind__preview insp-bind__preview--${preview.kind}`}
         role="status"
         aria-live="polite"
       >
         {preview.text}
       </p>
+      {unknown.length > 0 && (
+        <p className="insp-bind__preview insp-bind__preview--unknown" role="status" aria-live="polite">
+          {unknown.length === 1
+            ? `‘${unknown[0]}’ — უცნობი მიმართვა (resolves live if it exists on the canvas)`
+            : `უცნობი მიმართვები: ${unknown.map((u) => `‘${u}’`).join(', ')}`}
+        </p>
+      )}
     </div>
   )
 }
