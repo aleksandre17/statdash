@@ -17,10 +17,56 @@
 //  NO strip — an affordance that could not navigate is never drawn.
 //
 
+import ApexCharts from 'apexcharts'
 import type { ApexOptions } from 'apexcharts'
 import type { ChartOutput } from '@statdash/charts'
 import { cssVar } from '@statdash/styles'
 import { BASE } from '../base'
+
+// ── ESM global-seam bootstrap (module side-effect, ONCE for the bundle) ────
+//
+//  Two apexcharts@3.54.1 defects surface the moment a brush pairing renders in
+//  a Vite ESM bundle (live-verified on the geostat prod bundle, 2026-07-16 —
+//  the three blank rangeSlider cards). Both are neutralized HERE, at the one
+//  module that owns the brush realization — never per chart:
+//
+//  (1) `ReferenceError: ApexCharts is not defined` — the brush link is written
+//      against the UMD global, not the ESM export: `setupBrushHandler` resolves
+//      `chart.brush.target` via the BARE identifier `ApexCharts.getChartByID`
+//      (src/modules/Core.js:571,586). No such global exists in an ESM bundle,
+//      so the brush chart's render() rejects. Publishing the imported class is
+//      sound because it is the SAME module instance react-apexcharts renders
+//      with — the registry getChartByID reads is the one our charts fill.
+//
+//  (2) `RangeError: Maximum call stack size exceeded` on every chart mounted
+//      AFTER an id-carrying chart — the id-registration poison. `render()`
+//      registers any chart declaring `chart.id` into `Apex._chartInstances`
+//      (apexcharts.js:53-62), where `Apex` is `window.Apex` — the SAME object
+//      apex treats as the user's global-options cascade and deep-merges into
+//      every subsequent chart's config (settings/Config.js:105
+//      `Utils.extend(newDefaults, window.Apex)`). The registry rides into that
+//      merged config, and the new chart's `initialConfig` deep-clone then walks
+//      a live chart INSTANCE (cyclic `ctx`) until the stack dies. Pre-creating
+//      the registry NON-ENUMERABLE keeps it fully functional (registration
+//      pushes to it, getChartByID reads it directly) while the Object.keys/
+//      Object.assign-based merge+clone no longer see it — the poisoning
+//      mechanism itself is disarmed, not its symptoms. (Strategic fix: an
+//      apexcharts upgrade that moves the registry off `window.Apex`.)
+declare global {
+  interface Window {
+    ApexCharts?: typeof ApexCharts
+    Apex?: Record<string, unknown>
+  }
+}
+if (typeof window !== 'undefined') {
+  const apexGlobal = (window.Apex ??= {})
+  if (!Object.getOwnPropertyDescriptor(apexGlobal, '_chartInstances')) {
+    Object.defineProperty(apexGlobal, '_chartInstances', {
+      value: [], writable: true, enumerable: false, configurable: true,
+    })
+  }
+  window.ApexCharts ??= ApexCharts
+}
 
 const SPACER = '__spacer__'
 
@@ -95,7 +141,14 @@ export function buildBrushOptions(
       toolbar:    { show: false },
       // The navigator link: this rail's drag-selection sets the target's x-window.
       brush:      { enabled: true, target: opts.mainId, autoScaleYaxis: true },
-      selection:  { enabled: true, xaxis: { min: 0, max: Math.max(0, n - 1) } },
+      // Full range on first paint. DOMAIN: apex brush officially supports only
+      // numeric/datetime x-axes — a category axis participates by apex's OWN
+      // conversion (Config.checkForCatToNumericXAxis → convertCatToNumericXaxis,
+      // which runs for zoomable marks with tickPlacement 'on'), indexing the
+      // categories ONE-BASED: x = 1..n, labels via `labels[floor(val) - 1]`.
+      // Brush selection and the target's x-window both speak that domain, so
+      // full range is [1, n] — a 0-based [0, n-1] is off-domain on both ends.
+      selection:  { enabled: true, xaxis: { min: 1, max: Math.max(1, n) } },
       // A navigator is chrome, not a data surface — no animation churn on redraw.
       animations: { enabled: false },
     },

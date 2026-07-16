@@ -41,7 +41,13 @@ export function buildCartesian(output: ChartOutput, fontFamily?: string, locale?
     grid:        buildGrid(output, ctx),
     series:      buildSeries(output, ctx),
     colors:      buildColors(output),
-    xaxis:       buildCategoryAxis(output, ctx),
+    // Slider-linked mains must join apex's converted-numeric category domain:
+    // tickPlacement 'on' lets Config.checkForCatToNumericXAxis convert a BAR's
+    // category x-axis to numeric 1..n (line/area already default to 'on'), which
+    // is what makes the brush's x-window (xaxis.min/max updates) actually apply —
+    // apex cannot window a category axis left at bar's default 'between'.
+    // Absent chartId (no slider) ⇒ key not emitted ⇒ options byte-identical.
+    xaxis:       { ...buildCategoryAxis(output, ctx), ...(chartId ? { tickPlacement: 'on' as const } : {}) },
     yaxis:       buildValueAxis(output, ctx),
     plotOptions: buildBarPlotOptions(output, ctx),
     dataLabels:  buildDataLabels(output, ctx),

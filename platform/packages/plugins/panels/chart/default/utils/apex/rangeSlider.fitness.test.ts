@@ -74,6 +74,14 @@ describe('rangeSlider — main chart takes the linking id', () => {
     expect(opts.chart?.id).toBe(mainId)
   })
 
+  it('joins the converted-numeric domain: threaded id ⇒ xaxis.tickPlacement "on"', () => {
+    // Apex can only window (xaxis.min/max) a category axis it has CONVERTED to
+    // numeric 1..n — bar's default tickPlacement 'between' blocks the conversion,
+    // so a brush against such a main silently cannot drive it (live defect class).
+    const opts = toApexOptions(longOutput({ rangeSlider: true }), undefined, 'en', 'chart-main-x')
+    expect((opts.xaxis as { tickPlacement?: string }).tickPlacement).toBe('on')
+  })
+
   it('sliderChartId strips useId() colons to an Apex-safe id', () => {
     expect(sliderChartId(':r7:', 'main')).toBe('chart-main-r7')
     expect(sliderChartId(':r7:', 'brush')).toBe('chart-brush-r7')
@@ -92,8 +100,10 @@ describe('rangeSlider — brush companion wiring', () => {
     expect(chart.brush?.enabled).toBe(true)
     expect(chart.brush?.target).toBe(mainId)
     expect(chart.selection?.enabled).toBe(true)
-    // full range on first paint (nothing hidden): [0, n-1]
-    expect(chart.selection?.xaxis).toEqual({ min: 0, max: out.categories.length - 1 })
+    // Full range on first paint (nothing hidden). Apex's category→numeric
+    // conversion indexes categories ONE-BASED (labels[floor(val) - 1]), so the
+    // full-range selection is [1, n] — [0, n-1] is off-domain on both ends.
+    expect(chart.selection?.xaxis).toEqual({ min: 1, max: out.categories.length })
   })
 
   it('is a chromeless navigator (no toolbar / legend / tooltip / data labels)', () => {
@@ -105,6 +115,28 @@ describe('rangeSlider — brush companion wiring', () => {
 
   it('navigator shape = per-category sum of the non-spacer series', () => {
     expect(navSeriesData(out)).toEqual(out.series[0]!.data.map((d) => d.value))
+  })
+})
+
+describe('rangeSlider — ESM global seam (brush.ts module side-effect)', () => {
+  // apexcharts' brush link resolves its target through the UMD global
+  // (`ApexCharts.getChartByID`, Core.js setupBrushHandler) — absent in an ESM
+  // bundle unless published. Importing brush.ts (done above) must have run the
+  // one-time bootstrap; these pin the two live-crash killers (2026-07-16).
+  it('publishes the apexcharts class to window.ApexCharts (UMD brush link)', () => {
+    expect(typeof (window as { ApexCharts?: unknown }).ApexCharts).toBe('function')
+  })
+
+  it('quarantines the instance registry: window.Apex._chartInstances exists but is NON-ENUMERABLE', () => {
+    // Enumerable, it rides Config's deep-merge of window.Apex into every later
+    // chart's config, whose initialConfig clone then walks a live chart instance
+    // (cyclic ctx) → RangeError. Non-enumerable = functional but merge-invisible.
+    const apex = (window as { Apex?: Record<string, unknown> }).Apex
+    expect(apex).toBeDefined()
+    const desc = Object.getOwnPropertyDescriptor(apex, '_chartInstances')
+    expect(desc).toBeDefined()
+    expect(desc?.enumerable).toBe(false)
+    expect(Object.keys(apex!)).not.toContain('_chartInstances')
   })
 })
 

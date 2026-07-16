@@ -285,6 +285,10 @@ importers:
       react-router-dom:
         specifier: 'catalog:'
         version: 6.30.4(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+    devDependencies:
+      '@playwright/test':
+        specifier: 1.61.1
+        version: 1.61.1
 
   apps/panel:
     dependencies:
@@ -432,6 +436,9 @@ importers:
       ajv:
         specifier: 'catalog:'
         version: 8.20.0
+      apexcharts:
+        specifier: 3.54.1
+        version: 3.54.1
 
   packages/react:
     dependencies:

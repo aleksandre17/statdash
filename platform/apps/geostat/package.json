@@ -4,28 +4,32 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev":        "vite",
-    "dev:stats":  "cross-env VITE_STORE_MODE=stats vite",
-    "build":      "tsc -b && vite build",
-    "build:stats":"tsc -b && cross-env VITE_STORE_MODE=stats vite build",
-    "preview":    "vite preview"
+    "dev": "vite",
+    "dev:stats": "cross-env VITE_STORE_MODE=stats vite",
+    "build": "tsc -b && vite build",
+    "build:stats": "tsc -b && cross-env VITE_STORE_MODE=stats vite build",
+    "preview": "vite preview",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "@statdash/contracts": "workspace:*",
-    "@statdash/engine":  "workspace:*",
-    "@statdash/react":   "workspace:*",
+    "@statdash/engine": "workspace:*",
+    "@statdash/expr": "workspace:*",
     "@statdash/plugins": "workspace:*",
-    "@statdash/expr":    "workspace:*",
-    "@statdash/styles":  "workspace:*",
+    "@statdash/react": "workspace:*",
+    "@statdash/styles": "workspace:*",
     "@types/d3-geo": "^3.1.0",
     "apexcharts": "^3.45.0",
     "d3-geo": "^3.1.1",
     "i18next": "^23.10.0",
-    "react":            "catalog:",
-    "react-apexcharts": "^1.4.1",
-    "react-dom":        "catalog:",
-    "react-i18next": "^14.1.0",
     "radix-ui": "catalog:",
+    "react": "catalog:",
+    "react-apexcharts": "^1.4.1",
+    "react-dom": "catalog:",
+    "react-i18next": "^14.1.0",
     "react-router-dom": "catalog:"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.61.1"
   }
 }

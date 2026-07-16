@@ -6,31 +6,33 @@
   "private": true,
   "exports": {
     "./catalog": {
-      "source":  "./catalog.ts",
-      "types":   "./dist/catalog.d.ts",
-      "import":  "./dist/catalog.js",
+      "source": "./catalog.ts",
+      "types": "./dist/catalog.d.ts",
+      "import": "./dist/catalog.js",
       "default": "./dist/catalog.js"
     },
     "./registry": {
-      "source":  "./registry.ts",
-      "types":   "./dist/registry.d.ts",
-      "import":  "./dist/registry.js",
+      "source": "./registry.ts",
+      "types": "./dist/registry.d.ts",
+      "import": "./dist/registry.js",
       "default": "./dist/registry.js"
     },
     "./datasources": {
-      "source":  "./datasources/index.ts",
-      "types":   "./dist/datasources/index.d.ts",
-      "import":  "./dist/datasources/index.js",
+      "source": "./datasources/index.ts",
+      "types": "./dist/datasources/index.d.ts",
+      "import": "./dist/datasources/index.js",
       "default": "./dist/datasources/index.js"
     },
     "./presentation": {
-      "source":  "./presentation/index.ts",
-      "types":   "./dist/presentation/index.d.ts",
-      "import":  "./dist/presentation/index.js",
+      "source": "./presentation/index.ts",
+      "types": "./dist/presentation/index.d.ts",
+      "import": "./dist/presentation/index.js",
       "default": "./dist/presentation/index.js"
     }
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsup"
   },
@@ -38,24 +40,29 @@
     "access": "public"
   },
   "dependencies": {
-    "@statdash/engine": "workspace:*",
-    "@statdash/react":  "workspace:*",
     "@statdash/charts": "workspace:*",
+    "@statdash/engine": "workspace:*",
+    "@statdash/react": "workspace:*",
     "@statdash/styles": "workspace:*"
   },
   "devDependencies": {
     "@types/d3-geo": "^3.1.0",
-    "ajv": "catalog:"
+    "ajv": "catalog:",
+    "apexcharts": "3.54.1"
   },
   "peerDependencies": {
+    "d3-geo": ">=3",
     "react": ">=18",
-    "react-dom": ">=18",
-    "react-router-dom": ">=6",
     "react-apexcharts": ">=1.4.0",
-    "d3-geo": ">=3"
+    "react-dom": ">=18",
+    "react-router-dom": ">=6"
   },
   "peerDependenciesMeta": {
-    "react-apexcharts": { "optional": true },
-    "d3-geo": { "optional": true }
+    "react-apexcharts": {
+      "optional": true
+    },
+    "d3-geo": {
+      "optional": true
+    }
   }
 }
