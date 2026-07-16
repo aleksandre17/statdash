@@ -331,7 +331,6 @@ export async function upsertSiteConfig(pg: PgPool, entry: SiteConfigProvision, c
     // (create) path — writes the provisioned value verbatim.
     let valueToWrite: unknown = entry.value
     let nextLedger: Record<string, unknown> | null = null
-    let outcome: UpsertOutcome
     if (GOVERNED_CATALOG_KEYS.has(key)) {
       // Read the provenance ledger under the same tx (FOR UPDATE serializes
       // concurrent boots); the merged slice is written back below with the value.
@@ -360,7 +359,7 @@ export async function upsertSiteConfig(pg: PgPool, entry: SiteConfigProvision, c
       ctx.log.info({ key, outcome: 'unchanged' }, 'provisioning: site config')
       return { kind: 'siteConfig', key, outcome: 'unchanged' }
     }
-    outcome = existing[0] ? (valueUnchanged ? 'unchanged' : 'updated') : 'created'
+    const outcome: UpsertOutcome = existing[0] ? (valueUnchanged ? 'unchanged' : 'updated') : 'created'
 
     if (!valueUnchanged) {
       await client.query(
