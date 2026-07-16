@@ -197,10 +197,18 @@ export function useFilterState(
           Object.entries(context.dims)
             .map(([dk, pk]) => {
               const paramDef = flatParams.find(p => p.key === pk)?.def
-              const parsed   = paramDef ? autoParse(paramDef, raw[pk]) : raw[pk]
+              // A multi-select's TYPED value is string[] (autoParse), but ctx.dims
+              // carries the CSV OR-set convention (store-filter splitMultiValue
+              // SSOT: 'R2,R3'); its raw URL value IS that CSV — pass it through.
+              // Empty selection ⇒ '' ⇒ dropped below ⇒ dim absent = no filtering
+              // (an empty array would survive the ''-filter and read as the
+              // match-NOTHING OR-set — the regional zero-rows regression).
+              const parsed = paramDef?.type === 'multi-select'
+                ? raw[pk]
+                : paramDef ? autoParse(paramDef, raw[pk]) : raw[pk]
               return [dk, parsed as DimVal]
             })
-            .filter(([, v]) => v !== ''),
+            .filter(([, v]) => v !== '' && v !== undefined),
         )
       : {}
     return {
