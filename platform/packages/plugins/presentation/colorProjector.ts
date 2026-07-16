@@ -27,12 +27,15 @@ const PAGE_COLOR_VAR = '--sc'
 export const colorProjector: PresentationProjector<VarExpr | string, string> = {
   key: 'color',
 
-  // Bilingual platform label (Law 4). `ka` is the platform base UI locale here —
-  // NOT first-tenant content — matching every node schema's label (KpiStrip /
-  // Geograph / Section / Hero all carry `{ ka: 'ფერი', en: 'Colour' }`). A single
-  // en-only label was the odd one out that surfaced English amid the Georgian dock.
+  // Neutral platform label. A presentation projector is library LOGIC code, not a
+  // catalog-class descriptor (*Node.ts / meta.ts / *-schemas.ts), so it must stay
+  // tenant-content-free (Law 3; FF no-tenant-content forbids Georgian script here).
+  // The Georgian display for this label belongs in the panel i18n surface, not baked
+  // in the library. ARCHITECT-FLAG: decide whether a PresentationProjector.schema()
+  // should be recognized as catalog-class (peer of node-schema labels) — until then,
+  // en-neutral keeps the gate honest.
   schema: () => [
-    { field: 'color', type: 'color', label: { ka: 'გვერდის ფერი', en: 'Page color' } },
+    { field: 'color', type: 'color', label: { en: 'Page color' } },
   ],
 
   evaluate(raw, evalExpr) {
