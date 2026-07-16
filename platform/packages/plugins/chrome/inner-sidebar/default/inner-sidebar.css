@@ -244,6 +244,42 @@
   line-height: 1.5;
 }
 
+/* ── Wide desktop: collapsible rail that expands on hover / focus ──────
+   Reviewer (portal notes item 3): default to a slim icon rail so charts get
+   the width back, and reveal the full labelled nav on demand. `:hover` expands
+   for pointer users; `:focus-within` expands for KEYBOARD users (WCAG 2.4.7 —
+   tabbing into any nav item opens the rail, so every control regains its visible
+   label the moment it is reached). Content reflow is smooth (width transition)
+   and does NOT redraw charts — the ApexCharts host runs redrawOnParentResize:false
+   (see apex/base.ts). Below 1280 the rail becomes a horizontal tab bar (rules
+   further down), so this desktop-only behaviour never fights the mobile layout. */
+@media (min-width: 1281px) {
+  :root { --inner-sidebar-w: 78px; }
+
+  .inner-sidebar {
+    width: var(--inner-sidebar-w);
+    transition: width 0.22s ease;
+  }
+  .inner-sidebar:hover,
+  .inner-sidebar:focus-within {
+    width: 260px;
+    box-shadow: 4px 0 18px rgba(0, 0, 0, 0.06);
+  }
+
+  /* Collapsed (not hovered / not focused): icons only. Labels return the instant
+     the rail expands — including on keyboard focus — so a reached control always
+     has its visible name. */
+  .inner-sidebar:not(:hover):not(:focus-within) .sidebar-section-label,
+  .inner-sidebar:not(:hover):not(:focus-within) .sidebar-nav-label,
+  .inner-sidebar:not(:hover):not(:focus-within) .sidebar-chevron,
+  .inner-sidebar:not(:hover):not(:focus-within) .sidebar-sub,
+  .inner-sidebar:not(:hover):not(:focus-within) .sidebar-footer,
+  .inner-sidebar:not(:hover):not(:focus-within) .sidebar-brand-text { display: none; }
+
+  .inner-sidebar:not(:hover):not(:focus-within) .sidebar-nav-item { justify-content: center; padding: 0.625rem; }
+  .inner-sidebar:not(:hover):not(:focus-within) .sidebar-brand    { justify-content: center; }
+}
+
 /* ── Responsive ─────────────────────────────────────────────────── */
 
 /* Icon-only at medium widths */

@@ -33,11 +33,18 @@
 .hero__title {
   font-family: var(--font-family-display);
   font-size: clamp(2rem, 4vw, 3.125rem);
+  /* Reviewer (portal notes item 1): sharper/bolder title, not a washed-out pale
+     gray-blue. Pin a strong heading weight + the deep display-navy token, and
+     CENTER the title. `white-space: nowrap` is dropped so the long Georgian
+     title WRAPS instead of running wide under the header logo (the overlap the
+     reviewer flagged); extra top clearance keeps it clear of the header band. */
+  font-weight: 700;
   color: var(--color-heading-display);
+  text-align: center;
   line-height: 1.15;
-  margin-top: clamp(0.75rem, 1.75vw, 1.5rem);
+  margin-top: clamp(1.25rem, 2.5vw, 2.25rem);
   margin-bottom: clamp(1.5rem, 3vw, 2.75rem);
-  white-space: nowrap;
+  text-wrap: balance;
 }
 
 .hero__subtitle {
