@@ -8,12 +8,12 @@
      • State comes from Radix as data-attributes ([data-state],
        [data-highlighted], [data-disabled], [data-placeholder]) — we
        never track open/hover/selected in React just to style it.
-     • Lives in `@layer components` so it never fights emotion/MUI,
+     • Lives in `@layer sd-components` so it never fights emotion/MUI,
        which inject unlayered at document level and target .Mui* —
        different elements, no cascade race.
    Benchmark: Radix Primitives + shadcn/ui Select.
    ================================================================ */
-@layer components {
+@layer sd-components {
   /* ── Trigger — the closed control ──────────────────────────────── */
   .ui-select__trigger {
     display: inline-flex;

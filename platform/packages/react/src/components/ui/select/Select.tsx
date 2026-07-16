@@ -4,7 +4,9 @@
 //  a compound API. The primitive (`radix-ui` → `@radix-ui/react-select`) supplies
 //  the WAI-ARIA listbox behavior we must never re-implement (roving tabindex,
 //  `aria-activedescendant`, typeahead, focus trap/return, escape/outside-dismiss);
-//  our CSS (Select.css, `@layer components`, tokens only) supplies the paint; and
+//  our CSS (Select.css, `@layer sd-components` — a non-Tailwind-reserved layer
+//  name, so a Tailwind-postcss consumer app never hijacks it — tokens only)
+//  supplies the paint; and
 //  this compound API is our MUI-free surface — consumers see `Select.Root/Trigger/
 //  Content/Item`, never `radix-ui`. This is a BOUNDED ELEMENT (ADR-038) at the
 //  component scale: it hides which primitive it wraps.

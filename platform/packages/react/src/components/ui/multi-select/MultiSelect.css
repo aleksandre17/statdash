@@ -5,10 +5,10 @@
      • every color-bearing value is a DTCG token var(--…);
      • state comes from Radix data-attributes ([data-state],
        [data-highlighted], [data-disabled], [data-placeholder]);
-     • lives in `@layer components`.
+     • lives in `@layer sd-components`.
    Benchmark: Radix Primitives + shadcn/ui multi-select pattern.
    ================================================================ */
-@layer components {
+@layer sd-components {
   /* ── Trigger — the closed control ──────────────────────────────── */
   .ui-multiselect__trigger {
     display: inline-flex;
