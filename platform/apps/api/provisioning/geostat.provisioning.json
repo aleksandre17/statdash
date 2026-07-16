@@ -856,6 +856,7 @@
                       "ka": "P1 · B1G · B5G · B6G · B8G · B9 — სრული ჯაჭვი",
                       "en": "P1 · B1G · B5G · B6G · B8G · B9 — full sequence"
                     },
+                    "rangeSlider": true,
                     "stacked": true,
                     "type": "chart",
                     "view": {
@@ -1972,6 +1973,7 @@
                         "type": "chart",
                         "chartType": "combo",
                         "palette": "sequential",
+                        "rangeSlider": true,
                         "fieldConfig": {
                           "unit": {
                             "ka": "მლნ ₾",
@@ -4421,6 +4423,7 @@
                 "children": [
                   {
                     "chartType": "area",
+                    "rangeSlider": true,
                     "on": [
                       {
                         "event": "point:click",
