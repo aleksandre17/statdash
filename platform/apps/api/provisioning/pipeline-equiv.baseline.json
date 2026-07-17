@@ -1,0 +1,855 @@
+{
+  "_meta": {
+    "note": "FF-PIPELINE-EQUIV baseline (ADR-046 / SPEC §8, wave W-P0). The store-read contract (extractRequirements) of every corpus DataSpec, per canonical context. W-P4 desugars the legacy discriminants into `pipeline` and re-runs this harness; a byte-identical result gates the W-P5 default-emission flip. Regenerate with UPDATE_BASELINE=1 and REVIEW every diff — an unexpected change is an equivalence break.",
+    "artifact": "provisioning/geostat.provisioning.json",
+    "contexts": {
+      "year": {
+        "account": "_CANON_account",
+        "approach": "_CANON_approach",
+        "geo": "_CANON_geo",
+        "measure": "_CANON_measure",
+        "sector": "_CANON_sector",
+        "side": "_CANON_side",
+        "time": 2020
+      },
+      "range": {
+        "account": "_CANON_account",
+        "approach": "_CANON_approach",
+        "geo": "_CANON_geo",
+        "measure": "_CANON_measure",
+        "sector": "_CANON_sector",
+        "side": "_CANON_side",
+        "time": 0
+      }
+    },
+    "specCount": 18
+  },
+  "specs": [
+    {
+      "key": "$.pages[0].config.children[4].children[0].children[0].data",
+      "discriminant": "query",
+      "requirements": {
+        "year": [
+          {
+            "code": "*",
+            "dims": {
+              "account": "_CANON_account",
+              "approach": "_CANON_approach",
+              "geo": "_CANON_geo",
+              "measure": "_CANON_measure",
+              "sector": "_CANON_sector",
+              "side": "_CANON_side",
+              "time": 2020
+            }
+          }
+        ],
+        "range": [
+          {
+            "code": "*",
+            "dims": {
+              "account": "_CANON_account",
+              "approach": "_CANON_approach",
+              "geo": "_CANON_geo",
+              "measure": "_CANON_measure",
+              "sector": "_CANON_sector",
+              "side": "_CANON_side",
+              "time": 0
+            }
+          }
+        ]
+      }
+    },
+    {
+      "key": "$.pages[0].config.children[4].children[0].children[1].data",
+      "discriminant": "query",
+      "requirements": {
+        "year": [
+          {
+            "code": "*",
+            "dims": {
+              "account": "_CANON_account",
+              "approach": "_CANON_approach",
+              "geo": "_CANON_geo",
+              "measure": "_CANON_measure",
+              "sector": "_CANON_sector",
+              "side": "_CANON_side",
+              "time": 2020
+            }
+          }
+        ],
+        "range": [
+          {
+            "code": "*",
+            "dims": {
+              "account": "_CANON_account",
+              "approach": "_CANON_approach",
+              "geo": "_CANON_geo",
+              "measure": "_CANON_measure",
+              "sector": "_CANON_sector",
+              "side": "_CANON_side",
+              "time": 0
+            }
+          }
+        ]
+      }
+    },
+    {
+      "key": "$.pages[0].config.children[5].children[0].children[0].data",
+      "discriminant": "query",
+      "requirements": {
+        "year": [
+          {
+            "code": "B1G",
+            "dims": {
+              "account": "_CANON_account",
+              "approach": "_CANON_approach",
+              "geo": "_CANON_geo",
+              "measure": "_CANON_measure",
+              "sector": "_CANON_sector",
+              "side": "_CANON_side",
+              "time": 2020
+            }
+          },
+          {
+            "code": "B5G",
+            "dims": {
+              "account": "_CANON_account",
+              "approach": "_CANON_approach",
+              "geo": "_CANON_geo",
+              "measure": "_CANON_measure",
+              "sector": "_CANON_sector",
+              "side": "_CANON_side",
+              "time": 2020
+            }
+          },
+          {
+            "code": "B6G",
+            "dims": {
+              "account": "_CANON_account",
+              "approach": "_CANON_approach",
+              "geo": "_CANON_geo",
+              "measure": "_CANON_measure",
+              "sector": "_CANON_sector",
+              "side": "_CANON_side",
+              "time": 2020
+            }
+          },
+          {
+            "code": "B8G",
+            "dims": {
+              "account": "_CANON_account",
+              "approach": "_CANON_approach",
+              "geo": "_CANON_geo",
+              "measure": "_CANON_measure",
+              "sector": "_CANON_sector",
+              "side": "_CANON_side",
+              "time": 2020
+            }
+          },
+          {
+            "code": "B9",
+            "dims": {
+              "account": "_CANON_account",
+              "approach": "_CANON_approach",
+              "geo": "_CANON_geo",
+              "measure": "_CANON_measure",
+              "sector": "_CANON_sector",
+              "side": "_CANON_side",
+              "time": 2020
+            }
+          },
+          {
+            "code": "P1",
+            "dims": {
+              "account": "_CANON_account",
+              "approach": "_CANON_approach",
+              "geo": "_CANON_geo",
+              "measure": "_CANON_measure",
+              "sector": "_CANON_sector",
+              "side": "_CANON_side",
+              "time": 2020
+            }
+          }
+        ],
+        "range": [
+          {
+            "code": "B1G",
+            "dims": {
+              "account": "_CANON_account",
+              "approach": "_CANON_approach",
+              "geo": "_CANON_geo",
+              "measure": "_CANON_measure",
+              "sector": "_CANON_sector",
+              "side": "_CANON_side",
+              "time": 0
+            }
+          },
+          {
+            "code": "B5G",
+            "dims": {
+              "account": "_CANON_account",
+              "approach": "_CANON_approach",
+              "geo": "_CANON_geo",
+              "measure": "_CANON_measure",
+              "sector": "_CANON_sector",
+              "side": "_CANON_side",
+              "time": 0
+            }
+          },
+          {
+            "code": "B6G",
+            "dims": {
+              "account": "_CANON_account",
+              "approach": "_CANON_approach",
+              "geo": "_CANON_geo",
+              "measure": "_CANON_measure",
+              "sector": "_CANON_sector",
+              "side": "_CANON_side",
+              "time": 0
+            }
+          },
+          {
+            "code": "B8G",
+            "dims": {
+              "account": "_CANON_account",
+              "approach": "_CANON_approach",
+              "geo": "_CANON_geo",
+              "measure": "_CANON_measure",
+              "sector": "_CANON_sector",
+              "side": "_CANON_side",
+              "time": 0
+            }
+          },
+          {
+            "code": "B9",
+            "dims": {
+              "account": "_CANON_account",
+              "approach": "_CANON_approach",
+              "geo": "_CANON_geo",
+              "measure": "_CANON_measure",
+              "sector": "_CANON_sector",
+              "side": "_CANON_side",
+              "time": 0
+            }
+          },
+          {
+            "code": "P1",
+            "dims": {
+              "account": "_CANON_account",
+              "approach": "_CANON_approach",
+              "geo": "_CANON_geo",
+              "measure": "_CANON_measure",
+              "sector": "_CANON_sector",
+              "side": "_CANON_side",
+              "time": 0
+            }
+          }
+        ]
+      }
+    },
+    {
+      "key": "$.pages[0].config.children[5].children[0].children[1].data",
+      "discriminant": "query",
+      "requirements": {
+        "year": [
+          {
+            "code": "B1G",
+            "dims": {
+              "account": "_CANON_account",
+              "approach": "_CANON_approach",
+              "geo": "_CANON_geo",
+              "measure": "_CANON_measure",
+              "sector": "_CANON_sector",
+              "side": "_CANON_side",
+              "time": 2020
+            }
+          },
+          {
+            "code": "B5G",
+            "dims": {
+              "account": "_CANON_account",
+              "approach": "_CANON_approach",
+              "geo": "_CANON_geo",
+              "measure": "_CANON_measure",
+              "sector": "_CANON_sector",
+              "side": "_CANON_side",
+              "time": 2020
+            }
+          },
+          {
+            "code": "B6G",
+            "dims": {
+              "account": "_CANON_account",
+              "approach": "_CANON_approach",
+              "geo": "_CANON_geo",
+              "measure": "_CANON_measure",
+              "sector": "_CANON_sector",
+              "side": "_CANON_side",
+              "time": 2020
+            }
+          },
+          {
+            "code": "B8G",
+            "dims": {
+              "account": "_CANON_account",
+              "approach": "_CANON_approach",
+              "geo": "_CANON_geo",
+              "measure": "_CANON_measure",
+              "sector": "_CANON_sector",
+              "side": "_CANON_side",
+              "time": 2020
+            }
+          },
+          {
+            "code": "B9",
+            "dims": {
+              "account": "_CANON_account",
+              "approach": "_CANON_approach",
+              "geo": "_CANON_geo",
+              "measure": "_CANON_measure",
+              "sector": "_CANON_sector",
+              "side": "_CANON_side",
+              "time": 2020
+            }
+          },
+          {
+            "code": "P1",
+            "dims": {
+              "account": "_CANON_account",
+              "approach": "_CANON_approach",
+              "geo": "_CANON_geo",
+              "measure": "_CANON_measure",
+              "sector": "_CANON_sector",
+              "side": "_CANON_side",
+              "time": 2020
+            }
+          }
+        ],
+        "range": [
+          {
+            "code": "B1G",
+            "dims": {
+              "account": "_CANON_account",
+              "approach": "_CANON_approach",
+              "geo": "_CANON_geo",
+              "measure": "_CANON_measure",
+              "sector": "_CANON_sector",
+              "side": "_CANON_side",
+              "time": 0
+            }
+          },
+          {
+            "code": "B5G",
+            "dims": {
+              "account": "_CANON_account",
+              "approach": "_CANON_approach",
+              "geo": "_CANON_geo",
+              "measure": "_CANON_measure",
+              "sector": "_CANON_sector",
+              "side": "_CANON_side",
+              "time": 0
+            }
+          },
+          {
+            "code": "B6G",
+            "dims": {
+              "account": "_CANON_account",
+              "approach": "_CANON_approach",
+              "geo": "_CANON_geo",
+              "measure": "_CANON_measure",
+              "sector": "_CANON_sector",
+              "side": "_CANON_side",
+              "time": 0
+            }
+          },
+          {
+            "code": "B8G",
+            "dims": {
+              "account": "_CANON_account",
+              "approach": "_CANON_approach",
+              "geo": "_CANON_geo",
+              "measure": "_CANON_measure",
+              "sector": "_CANON_sector",
+              "side": "_CANON_side",
+              "time": 0
+            }
+          },
+          {
+            "code": "B9",
+            "dims": {
+              "account": "_CANON_account",
+              "approach": "_CANON_approach",
+              "geo": "_CANON_geo",
+              "measure": "_CANON_measure",
+              "sector": "_CANON_sector",
+              "side": "_CANON_side",
+              "time": 0
+            }
+          },
+          {
+            "code": "P1",
+            "dims": {
+              "account": "_CANON_account",
+              "approach": "_CANON_approach",
+              "geo": "_CANON_geo",
+              "measure": "_CANON_measure",
+              "sector": "_CANON_sector",
+              "side": "_CANON_side",
+              "time": 0
+            }
+          }
+        ]
+      }
+    },
+    {
+      "key": "$.pages[1].config.children[4].children[0].data",
+      "discriminant": "query",
+      "requirements": {
+        "year": [
+          {
+            "code": "*",
+            "dims": {
+              "account": "_CANON_account",
+              "approach": "PROD",
+              "geo": "GE",
+              "measure": "_CANON_measure",
+              "sector": "_CANON_sector",
+              "side": "_CANON_side",
+              "time": 2020
+            }
+          }
+        ],
+        "range": [
+          {
+            "code": "*",
+            "dims": {
+              "account": "_CANON_account",
+              "approach": "PROD",
+              "geo": "GE",
+              "measure": "_CANON_measure",
+              "sector": "_CANON_sector",
+              "side": "_CANON_side",
+              "time": 0
+            }
+          }
+        ]
+      }
+    },
+    {
+      "key": "$.pages[1].config.children[4].children[1].data",
+      "discriminant": "query",
+      "requirements": {
+        "year": [
+          {
+            "code": "*",
+            "dims": {
+              "account": "_CANON_account",
+              "approach": "EXP",
+              "geo": "GE",
+              "measure": "_CANON_measure",
+              "sector": "_CANON_sector",
+              "side": "_CANON_side",
+              "time": 2020
+            }
+          }
+        ],
+        "range": [
+          {
+            "code": "*",
+            "dims": {
+              "account": "_CANON_account",
+              "approach": "EXP",
+              "geo": "GE",
+              "measure": "_CANON_measure",
+              "sector": "_CANON_sector",
+              "side": "_CANON_side",
+              "time": 0
+            }
+          }
+        ]
+      }
+    },
+    {
+      "key": "$.pages[1].config.children[5].children[0].data",
+      "discriminant": "query",
+      "requirements": {
+        "year": [
+          {
+            "code": "gross-domestic-product-at-current-prices",
+            "dims": {
+              "account": "_CANON_account",
+              "approach": "_Z",
+              "geo": "GE",
+              "measure": "_CANON_measure",
+              "sector": "_CANON_sector",
+              "side": "_CANON_side",
+              "time": 2020
+            }
+          }
+        ],
+        "range": [
+          {
+            "code": "gross-domestic-product-at-current-prices",
+            "dims": {
+              "account": "_CANON_account",
+              "approach": "_Z",
+              "geo": "GE",
+              "measure": "_CANON_measure",
+              "sector": "_CANON_sector",
+              "side": "_CANON_side",
+              "time": 0
+            }
+          }
+        ]
+      }
+    },
+    {
+      "key": "$.pages[1].config.children[5].children[1].data",
+      "discriminant": "query",
+      "requirements": {
+        "year": [
+          {
+            "code": "gdp-per-capita-usd",
+            "dims": {
+              "account": "_CANON_account",
+              "approach": "_Z",
+              "geo": "GE",
+              "measure": "_CANON_measure",
+              "sector": "_CANON_sector",
+              "side": "_CANON_side",
+              "time": 2020
+            }
+          }
+        ],
+        "range": [
+          {
+            "code": "gdp-per-capita-usd",
+            "dims": {
+              "account": "_CANON_account",
+              "approach": "_Z",
+              "geo": "GE",
+              "measure": "_CANON_measure",
+              "sector": "_CANON_sector",
+              "side": "_CANON_side",
+              "time": 0
+            }
+          }
+        ]
+      }
+    },
+    {
+      "key": "$.pages[1].config.children[6].children[0].data",
+      "discriminant": "query",
+      "requirements": {
+        "year": [
+          {
+            "code": "*",
+            "dims": {
+              "account": "_CANON_account",
+              "approach": "INC",
+              "geo": "GE",
+              "measure": "_CANON_measure",
+              "sector": "_CANON_sector",
+              "side": "_CANON_side",
+              "time": 2020
+            }
+          }
+        ],
+        "range": [
+          {
+            "code": "*",
+            "dims": {
+              "account": "_CANON_account",
+              "approach": "INC",
+              "geo": "GE",
+              "measure": "_CANON_measure",
+              "sector": "_CANON_sector",
+              "side": "_CANON_side",
+              "time": 0
+            }
+          }
+        ]
+      }
+    },
+    {
+      "key": "$.pages[1].config.children[6].children[1].data",
+      "discriminant": "query",
+      "requirements": {
+        "year": [
+          {
+            "code": "*",
+            "dims": {
+              "account": "_CANON_account",
+              "approach": "GFCF",
+              "geo": "GE",
+              "measure": "_CANON_measure",
+              "sector": "_CANON_sector",
+              "side": "_CANON_side",
+              "time": 2020
+            }
+          }
+        ],
+        "range": [
+          {
+            "code": "*",
+            "dims": {
+              "account": "_CANON_account",
+              "approach": "GFCF",
+              "geo": "GE",
+              "measure": "_CANON_measure",
+              "sector": "_CANON_sector",
+              "side": "_CANON_side",
+              "time": 0
+            }
+          }
+        ]
+      }
+    },
+    {
+      "key": "$.pages[1].config.children[7].children[0].data",
+      "discriminant": "query",
+      "requirements": {
+        "year": [
+          {
+            "code": "real-gdp-growth-rates",
+            "dims": {
+              "account": "_CANON_account",
+              "approach": "_Z",
+              "geo": "GE",
+              "measure": "_CANON_measure",
+              "sector": "_CANON_sector",
+              "side": "_CANON_side",
+              "time": 2020
+            }
+          }
+        ],
+        "range": [
+          {
+            "code": "real-gdp-growth-rates",
+            "dims": {
+              "account": "_CANON_account",
+              "approach": "_Z",
+              "geo": "GE",
+              "measure": "_CANON_measure",
+              "sector": "_CANON_sector",
+              "side": "_CANON_side",
+              "time": 0
+            }
+          }
+        ]
+      }
+    },
+    {
+      "key": "$.pages[1].config.children[7].children[1].data",
+      "discriminant": "query",
+      "requirements": {
+        "year": [
+          {
+            "code": "*",
+            "dims": {
+              "account": "_CANON_account",
+              "approach": "_Z",
+              "geo": "GE",
+              "measure": "non-observed-economy-share",
+              "sector": "_CANON_sector",
+              "side": "_CANON_side",
+              "time": 2020
+            }
+          }
+        ],
+        "range": [
+          {
+            "code": "*",
+            "dims": {
+              "account": "_CANON_account",
+              "approach": "_Z",
+              "geo": "GE",
+              "measure": "non-observed-economy-share",
+              "sector": "_CANON_sector",
+              "side": "_CANON_side",
+              "time": 0
+            }
+          }
+        ]
+      }
+    },
+    {
+      "key": "$.pages[3].config.children[4].children[0].data",
+      "discriminant": "query",
+      "requirements": {
+        "year": [
+          {
+            "code": "GVA",
+            "dims": {
+              "account": "_CANON_account",
+              "approach": "_CANON_approach",
+              "geo": "_CANON_geo",
+              "measure": "_CANON_measure",
+              "sector": "_CANON_sector",
+              "side": "_CANON_side",
+              "time": 2020
+            }
+          }
+        ],
+        "range": [
+          {
+            "code": "GVA",
+            "dims": {
+              "account": "_CANON_account",
+              "approach": "_CANON_approach",
+              "geo": "_CANON_geo",
+              "measure": "_CANON_measure",
+              "sector": "_CANON_sector",
+              "side": "_CANON_side",
+              "time": 0
+            }
+          }
+        ]
+      }
+    },
+    {
+      "key": "$.pages[3].config.children[4].children[1].data",
+      "discriminant": "query",
+      "requirements": {
+        "year": [
+          {
+            "code": "GVA",
+            "dims": {
+              "account": "_CANON_account",
+              "approach": "_CANON_approach",
+              "geo": "_CANON_geo",
+              "measure": "_CANON_measure",
+              "sector": "_CANON_sector",
+              "side": "_CANON_side",
+              "time": 2020
+            }
+          }
+        ],
+        "range": [
+          {
+            "code": "GVA",
+            "dims": {
+              "account": "_CANON_account",
+              "approach": "_CANON_approach",
+              "geo": "_CANON_geo",
+              "measure": "_CANON_measure",
+              "sector": "_CANON_sector",
+              "side": "_CANON_side",
+              "time": 0
+            }
+          }
+        ]
+      }
+    },
+    {
+      "key": "$.pages[3].config.children[5].children[0].data",
+      "discriminant": "query",
+      "requirements": {
+        "year": [
+          {
+            "code": "GVA",
+            "dims": {
+              "account": "_CANON_account",
+              "approach": "_CANON_approach",
+              "geo": "_CANON_geo",
+              "measure": "_CANON_measure",
+              "sector": "_CANON_sector",
+              "side": "_CANON_side",
+              "time": 2020
+            }
+          }
+        ],
+        "range": [
+          {
+            "code": "GVA",
+            "dims": {
+              "account": "_CANON_account",
+              "approach": "_CANON_approach",
+              "geo": "_CANON_geo",
+              "measure": "_CANON_measure",
+              "sector": "_CANON_sector",
+              "side": "_CANON_side",
+              "time": 0
+            }
+          }
+        ]
+      }
+    },
+    {
+      "key": "$.pages[3].config.children[6].children[0].data",
+      "discriminant": "query",
+      "requirements": {
+        "year": [],
+        "range": []
+      }
+    },
+    {
+      "key": "$.pages[3].config.children[6].children[1].data",
+      "discriminant": "query",
+      "requirements": {
+        "year": [
+          {
+            "code": "GVA",
+            "dims": {
+              "account": "_CANON_account",
+              "approach": "_CANON_approach",
+              "geo": "_CANON_geo",
+              "measure": "_CANON_measure",
+              "sector": "_CANON_sector",
+              "side": "_CANON_side",
+              "time": 2020
+            }
+          }
+        ],
+        "range": [
+          {
+            "code": "GVA",
+            "dims": {
+              "account": "_CANON_account",
+              "approach": "_CANON_approach",
+              "geo": "_CANON_geo",
+              "measure": "_CANON_measure",
+              "sector": "_CANON_sector",
+              "side": "_CANON_side",
+              "time": 0
+            }
+          }
+        ]
+      }
+    },
+    {
+      "key": "$.pages[3].config.children[7].children[0].data",
+      "discriminant": "query",
+      "requirements": {
+        "year": [
+          {
+            "code": "GVA",
+            "dims": {
+              "account": "_CANON_account",
+              "approach": "_CANON_approach",
+              "geo": "_CANON_geo",
+              "measure": "_CANON_measure",
+              "sector": "_CANON_sector",
+              "side": "_CANON_side",
+              "time": 2020
+            }
+          }
+        ],
+        "range": [
+          {
+            "code": "GVA",
+            "dims": {
+              "account": "_CANON_account",
+              "approach": "_CANON_approach",
+              "geo": "_CANON_geo",
+              "measure": "_CANON_measure",
+              "sector": "_CANON_sector",
+              "side": "_CANON_side",
+              "time": 0
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

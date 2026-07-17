@@ -22,6 +22,25 @@
 // new dim is covered the moment it is declared in `dataSources[].config`.
 //
 // Needs no DATABASE_URL: reads the committed artifact + workbooks off disk.
+//
+// ── ENGINE-REAL FILTER SEMANTICS (folded fix, 0083 cluster · ADR-046 W-P0) ────
+//  This guard mirrors the engine's TWO distinct measure paths, which do NOT treat
+//  a value the same way:
+//    • a spec's TOP-LEVEL `measure` field is RESOLVED through the metric catalog
+//      (resolveMeasureRef) → a governed metric-id is valid there; and
+//    • a value inside an explicit `filter:{…}` block is a LITERAL dimension pin —
+//      `matchesFilter` / store-filter.ts NEVER resolves it through the catalog.
+//  So a governed metric-id placed as a `filter.<dim>` LITERAL never equals any
+//  observation's stored raw code → 0 rows (the exact b544819 regression: a naive
+//  metric-id migration text-substituted a metric-id into a self-referential
+//  filter.measure key). The prior version of CHECK 2 resolved EVERY filter.measure
+//  through the catalog ("mirrors resolveMeasureRef") — a validation-time generosity
+//  the runtime does not share, which let b544819 through green. This guard now
+//  resolves ONLY the folded top-level measure and asserts every explicit filter
+//  literal is engine-real (a raw code, never a governed metric-id — CHECK 4).
+//  NOTE: whether the ENGINE should be extended to resolve metric-ids inside
+//  `filter.<measureDim>` uniformly is DEFERRED to W-P4 (ADR-046) — this guard does
+//  not pre-empt that decision; it enforces today's runtime truth.
 
 import { describe, it, expect, beforeAll } from 'vitest'
 import { readFileSync } from 'node:fs'
@@ -143,6 +162,11 @@ interface ObsSite {
   wildcardDims: Set<string>
   // dims bound to a ctx-ref ({$ctx}) — runtime-pinned, treated as satisfying the pin
   ctxDims: Set<string>
+  // dims whose pin came from an EXPLICIT filter:{} block (engine treats these as
+  // LITERALS — matchesFilter never resolves them through the catalog). A pin folded
+  // in from the spec's top-level `measure` field is NOT here (the engine resolves
+  // that one via resolveMeasureRef). Drives CHECK 4 + CHECK 2's resolution split.
+  literalDims: Set<string>
 }
 
 const isPlainObject = (v: unknown): v is Record<string, unknown> =>
@@ -161,10 +185,18 @@ const isWildcard = (v: unknown): boolean => v === '' || v === null || v === '*'
  * try to look up the literal `{$ne:…}` object as a member). A NeCtxRef also
  * carries `$ctx`, so it counts as ctx-bound (satisfies single-value pinning).
  */
-function classifyFilter(filter: Record<string, unknown>): Pick<ObsSite, 'filter' | 'wildcardDims' | 'ctxDims'> {
+// `explicitKeys` = the dim keys that came from the spec's own `filter:{}` block
+// (BEFORE the top-level `measure` field was folded in). A pinned dim is an engine
+// LITERAL iff its key is in that set — the folded top-level measure is resolved by
+// the engine and so is deliberately excluded from `literalDims`.
+function classifyFilter(
+  filter:       Record<string, unknown>,
+  explicitKeys: Set<string>,
+): Pick<ObsSite, 'filter' | 'wildcardDims' | 'ctxDims' | 'literalDims'> {
   const pinned: Record<string, unknown> = {}
   const wildcardDims = new Set<string>()
   const ctxDims = new Set<string>()
+  const literalDims = new Set<string>()
   for (const [dim, val] of Object.entries(filter)) {
     if (dim === TIME_DIM) continue
     if (isCtxRef(val)) { ctxDims.add(dim); continue }   // covers NeCtxRef ({$ctx,$ne}) too
@@ -172,8 +204,9 @@ function classifyFilter(filter: Record<string, unknown>): Pick<ObsSite, 'filter'
     if (isWildcard(val)) { wildcardDims.add(dim); continue }
     // Array = multi-value SDMX key selection (OR within dim) — each member is a code.
     pinned[dim] = val
+    if (explicitKeys.has(dim)) literalDims.add(dim)   // an explicit filter pin ⇒ engine literal
   }
-  return { filter: pinned, wildcardDims, ctxDims }
+  return { filter: pinned, wildcardDims, ctxDims, literalDims }
 }
 
 /**
@@ -184,9 +217,10 @@ function classifyFilter(filter: Record<string, unknown>): Pick<ObsSite, 'filter'
  */
 function obsFromSpec(spec: Record<string, unknown>, where: string): ObsSite | null {
   if (typeof spec.measure !== 'string') return null  // static trend / share have no top-level measure
-  const filterRaw = isPlainObject(spec.filter) ? { ...spec.filter } : {}
-  if (filterRaw.measure === undefined) filterRaw.measure = spec.measure
-  return { kind: 'single', where, ...classifyFilter(filterRaw) }
+  const explicit  = isPlainObject(spec.filter) ? spec.filter : {}
+  const filterRaw = { ...explicit }
+  if (filterRaw.measure === undefined) filterRaw.measure = spec.measure  // folded top-level ⇒ NOT literal
+  return { kind: 'single', where, ...classifyFilter(filterRaw, new Set(Object.keys(explicit))) }
 }
 
 /** Recursively collect every ObsSite reachable in a page config subtree. */
@@ -218,9 +252,10 @@ function collectObsSites(node: unknown, path: string, out: ObsSite[]): void {
           }
           const denom = value.denom
           if (isPlainObject(denom) && typeof denom.measure === 'string') {
-            const filterRaw = isPlainObject(denom.filter) ? { ...denom.filter } : {}
-            if (filterRaw.measure === undefined) filterRaw.measure = denom.measure
-            out.push({ kind: 'query', where: `kpi '${id}'.value.denom`, ...classifyFilter(filterRaw) })
+            const explicit  = isPlainObject(denom.filter) ? denom.filter : {}
+            const filterRaw = { ...explicit }
+            if (filterRaw.measure === undefined) filterRaw.measure = denom.measure  // folded ⇒ NOT literal
+            out.push({ kind: 'query', where: `kpi '${id}'.value.denom`, ...classifyFilter(filterRaw, new Set(Object.keys(explicit))) })
           }
         } else {
           const o = obsFromSpec(value, `kpi '${id}'.value`)
@@ -239,13 +274,15 @@ function collectObsSites(node: unknown, path: string, out: ObsSite[]): void {
   // ── DataSpec query — section/panel data binding (fan-out tier) ──────────────
   if (node.type === 'query' && isPlainObject(node.query)) {
     const q = node.query as Record<string, unknown>
-    const filterRaw = isPlainObject(q.filter) ? { ...q.filter } : {}
+    const explicit  = isPlainObject(q.filter) ? q.filter : {}
+    const filterRaw: Record<string, unknown> = { ...explicit }
     // `query.measure` is a reference to the `measure` dim (string code | code[] | '*').
     // Fold it into the filter so its codes get the same existence check. '*' = wildcard.
+    // Folded ⇒ NOT a literal (the engine resolves the top-level measure ref).
     if (q.measure !== undefined && filterRaw.measure === undefined && q.measure !== '*') {
       filterRaw.measure = q.measure
     }
-    const c = classifyFilter(filterRaw)
+    const c = classifyFilter(filterRaw, new Set(Object.keys(explicit)))
     out.push({ kind: 'query', where: `${path}.query`, ...c })
   }
 
@@ -308,10 +345,13 @@ describe('config↔cube contract (every page DataSpec references data that exist
             continue
           }
           const rawCodes = Array.isArray(val) ? val.map(String) : [String(val)]
-          // On the `measure` dim, a pin MAY be a metric-id (post-migration): resolve
-          // it through the catalog to its underlying DSD code(s) before the existence
-          // check (mirrors the engine's resolveMeasureRef). Other dims pass through.
-          const codes = dim === MEASURE_DIM
+          // Resolve through the catalog ONLY the folded top-level `measure` ref (the
+          // engine's resolveMeasureRef path). An EXPLICIT filter literal — including
+          // filter.measure — is passed through UNCHANGED, because the runtime
+          // (matchesFilter / store-filter.ts) never resolves filter values (engine-real
+          // semantics; the b544819 hole). CHECK 4 asserts such a literal is never a
+          // governed metric-id; here it is existence-checked as the raw code it must be.
+          const codes = dim === MEASURE_DIM && !site.literalDims.has(dim)
             ? rawCodes.flatMap((c) => resolveMeasureCodes(c, metricCatalog))
             : rawCodes
           for (const code of codes) {
@@ -323,6 +363,39 @@ describe('config↔cube contract (every page DataSpec references data that exist
       }
     }
     expect(violations, `dangling code references:\n${violations.join('\n')}`).toEqual([])
+  })
+
+  // CHECK 4 (engine-real filter literals) — no explicit `filter.<dim>` pin is a
+  // governed metric-id. The runtime treats filter values as LITERAL dimension pins
+  // (matchesFilter / store-filter.ts never resolves them through the metric
+  // catalog), so a metric-id here equals no observation's raw code → 0 rows silently
+  // (the b544819 regression class). A measure is pinned via the spec's TOP-LEVEL
+  // `measure` field (which the engine DOES resolve), never via a filter literal.
+  it('no explicit filter literal is a governed metric-id (engine treats filter values as literals)', () => {
+    const violations: string[] = []
+    for (const page of artifact.pages) {
+      const dsd = pageDataset.get(page.slug)
+      if (!dsd) continue
+      const sites: ObsSite[] = []
+      collectObsSites(page.config.children, `page '${page.slug}'`, sites)
+      for (const site of sites) {
+        for (const dim of site.literalDims) {
+          const val = site.filter[dim]
+          const codes = Array.isArray(val) ? val.map(String) : [String(val)]
+          for (const code of codes) {
+            if (metricCatalog.has(code)) {
+              violations.push(
+                `${page.slug} · ${site.where}: filter.${dim}='${code}' is a governed metric-id used as a `
+                + `LITERAL filter pin — the engine (matchesFilter) never resolves filter values, so it pins to `
+                + `an id no observation carries → 0 rows. Use the raw DSD code, or pin the measure via the `
+                + `spec's top-level 'measure' field (which IS resolved through the catalog).`,
+              )
+            }
+          }
+        }
+      }
+    }
+    expect(violations, `metric-ids used as filter literals:\n${violations.join('\n')}`).toEqual([])
   })
 
   // CHECK 1 (pinning) — single-value contexts MUST pin every non-time dim.

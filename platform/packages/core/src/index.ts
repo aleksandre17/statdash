@@ -110,9 +110,10 @@ export { applyPipeline, applyStep, resolvePipeRefs, getFormatter, FORMATTERS, fm
 // Transform-step registry — the Constructor's transform-op catalog (listTransformOps)
 // + the plugin extension seam (registerTransformStep). Built-in ops registered via
 // the './data/transform' side-effect above.
-export type { StepFn }                                                  from './data/transform/step-registry'
+export type { StepFn, StepCategory }                                    from './data/transform/step-registry'
 export { registerTransformStep, getTransformStep, listTransformOps,
-         getTransformStepSchema, listTransformOpSchemas }              from './data/transform/step-registry'
+         getTransformStepSchema, listTransformOpSchemas,
+         getTransformStepCategory, listUncategorizedOps }              from './data/transform/step-registry'
 
 // ── FieldConfig — Grafana-equivalent display configuration ────────────
 export type { Threshold, ColorMode, FieldOverride, FieldConfig }        from './field/config'
