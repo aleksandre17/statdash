@@ -1,7 +1,12 @@
 .hero {
   position: relative;
   overflow: hidden;
-  flex: 0 0 auto;
+  /* The hero is the landing composition's FLEXIBLE band: it absorbs the free
+     viewport height, and the fr air-rows below share it proportionally. */
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
   padding-left: clamp(0.8rem, 2.5vw, 2rem);
   padding-right: clamp(0.8rem, 2.5vw, 2rem);
 }
@@ -25,10 +30,26 @@
 .hero__container {
   position: relative;
   max-width: 1280px;
+  width: 100%;
   margin: 0 auto;
-  padding: clamp(0.9rem, 2vh, 1.75rem) 0
-    calc(var(--landing-carousel-overlap) + 2rem);
+  /* ── Proportional space distribution (owner, round 13) ────────────────
+     The grown hero space is SHARED by the heading and the cards through
+     fr AIR ROWS — the reference-grade fluid solution (CSS Grid fr): free
+     height splits 2fr above the heading : 3fr between heading and cards,
+     at EVERY viewport, with minmax() floors so tight screens never crush
+     the breathing to zero. No fixed heights, nothing static — content
+     grows, air shrinks, proportions hold. */
+  flex: 1;
+  display: grid;
+  grid-template-rows:
+    minmax(var(--spacing-md, 1rem), 2fr)
+    auto
+    minmax(var(--spacing-lg, 1.5rem), 3fr)
+    auto;
+  padding: 0 0 calc(var(--landing-carousel-overlap) + 2rem);
 }
+
+.hero__heading > :last-child { margin-bottom: 0; }
 
 .hero__title {
   font-family: var(--font-family-display);
@@ -42,8 +63,10 @@
   color: var(--color-heading-display);
   text-align: center;
   line-height: 1.15;
-  margin-top: clamp(1.25rem, 2.5vw, 2.25rem);
-  margin-bottom: clamp(1.5rem, 3vw, 2.75rem);
+  /* Vertical rhythm now comes from the container's fr air-rows — the title
+     keeps only its inner spacing toward an optional subtitle. */
+  margin-top: 0;
+  margin-bottom: 0;
   text-wrap: balance;
 }
 
