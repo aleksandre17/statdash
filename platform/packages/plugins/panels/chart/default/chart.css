@@ -16,6 +16,16 @@
  * stretched by an equal-height sibling — instead of a percentage that silently
  * collapses when any ancestor's height is `auto` (the vertical-bar frozen-176 bug).
  * height:100% is retained as the fallback for a block/non-flex parent context. */
+/* Apex parks a HIDDEN y-axis tooltip container inside every canvas
+   (.apexcharts-yaxistooltip, ~10px tall, absolutely positioned at the axis
+   edge) — it pokes past the panel's client box and raises a phantom 2-4px
+   scrollbar on charts that otherwise fit EXACTLY (the last head of the
+   round-10..12 sliver hydra; height-shaving could never converge because the
+   tooltip tracks the axis). Hidden until apex ACTIVATES it on hover — the
+   feature is intact, the phantom layout contribution is gone. */
+.chart-wrap .apexcharts-yaxistooltip:not(.apexcharts-active),
+.chart-wrap .apexcharts-xaxistooltip:not(.apexcharts-active) { display: none; }
+
 /* Apex mounts its <svg> as an INLINE element — inline layout reserves a
    ~6px baseline-descender strip BELOW it, so a chart that exactly fits its
    box still overflows by that strip and raises a scrollbar over nothing
