@@ -41,6 +41,7 @@
 - [Measure-ref seam](reference_measure_ref_seam.md) — resolveMeasureRef (ADR R1) is the SSOT distinguishing raw code vs registered metric-id; never call getMetric directly
 - [Metric-store binding](reference_metric_store_binding.md) — MetricDef.dataSource (Cube pattern) → specDataSource → react effectiveStoreKey precedence
 - [Calc-metric seam](reference_calc_metric_seam.md) — MetricDef.calc declarative measure-algebra via expr; resolveMetricValue/calcMetricRequirements; KpiValueSpec 'metric' variant
+- [Relative-coord seam (ADR-045)](reference_relative_coord_seam.md) — `{$prev:n}` MDX-Lag over ordered members; honest first-period edge (resolveMetricValue→null); obs-scan member enum + time-unbounded warm makes it live-viable w/o a store-port change
 - [Hierarchy drill seam](reference_hierarchy_drill_seam.md) — ADR-034 §8 S4: DimensionDef.hierarchy + data/drill.ts; reifies codelist parent edges; composes evalMeasureAtGrain (no metric-grain change); AR-42 bridge
 - [KPI visibility surface](reference_kpi_visibility_surface.md) — kpiVisible evaluates `when` against filterParams (not ctx.dims), same surface renderNode uses
 - [Ref-dispatch SSOT](reference_ref_dispatch_ssot.md) — resolveRef (ADR R4) is the ONE dispatcher for every $-ref; ctx/param/row/var/dim scopes; expr's ExprRef is a separate lower-layer concern
@@ -61,3 +62,4 @@
 - [Semantic-layer proposals](ref_semantic_layer_proposals.md) — where the erosion catalog + AR-50 design studies + ADR-034 live
 - [AR-50 semantic layer](project_ar50_semantic_layer.md) — build sequence, the ⛔ growth/ratio-list one-way-door, M2 landed (87aea32)
 - [reversible-expansion parity](feedback_reversible_expansion_parity.md) — prove a core generalization safe via byte-identical parity of the narrow path; single-dialect + arrow + Law-1 grain are hard gates
+- [Pipeline W-P0 (ADR-046)](project_pipeline_wp0.md) — LANDED: FF-PIPELINE-EQUIV = requirements-not-rows baseline (store-agnostic, gates W-P5 flip) + FF-VERB-COVERAGE inventory pin + inert category seam + 3 pending gates + b544819 folded fix (filter literals ≠ metric-ids)

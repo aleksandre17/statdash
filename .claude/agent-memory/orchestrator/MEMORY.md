@@ -1,5 +1,7 @@
 # Memory Index
 
+- [Fable apex routing](feedback_fable_apex_routing.md) — owner 2026-07-17: Fable-lead > Opus; apex-conceptual work → fable (self or model:"fable" agents); Opus = standard senior tier; apex drafts get the lead's personal elevation
+
 ## Auto-relocated (memory-home-guard — reconcile into a topic section)
 - [token burn audit](project_token_burn_audit.md) — 2026-07-17: spawn=16-24k, burn is IN-RUN (peaks 60-213k, turn-churn 125-246 calls); ledger now shows first-in/peak-ctx/calls + CTX-BURN; routing threshold in strategy/06
 - [use MCP instruments](feedback_use_mcp_instruments.md) — owner 2026-07-16: practice MCP/plugin adoption (playwright MCP over hand-rolled probes); /mcp check at session start; kit rule now INDEX-mapped
