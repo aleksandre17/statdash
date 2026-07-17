@@ -1,7 +1,7 @@
 ---
 id: "0082"
 title: "QUERY AS A VISIBLE PIPELINE + THE RAW-DATA HOME — simple at full power, once and for all"
-status: DESIGN (2026-07-17, owner directive verbatim; platform-architect concepting; build waves follow owner's blessing)
+status: GO (owner-blessed 2026-07-17 verbatim «ნდობას გიცხადებ, გააკეთე»; ADR-046 ACCEPTED; SPEC final incl. lead's §9 elevation; waves W-P0…W-P6 fire serially per WIP=1 — first build wave starts when the integrity cluster (data-truth) lands)
 class: M
 priority: P0
 owner: lead → platform-architect (design) → build agents (waves)
