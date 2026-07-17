@@ -198,14 +198,19 @@ function useScrollSliverFit(
     // re-measure and ACCUMULATE until clean or the one-row cap is reached.
     // Every step strictly shrinks the chart; termination by construction.
     if (!active || delta >= FIT_TOLERANCE_PX) return
-    const id = requestAnimationFrame(() => {
+    const measure = () => {
       let el: HTMLElement | null = hostRef.current
       while (el && el.scrollHeight <= el.clientHeight + 1) el = el.parentElement
       if (!el) return
       const over = el.scrollHeight - el.clientHeight
       if (over > 0 && delta + over <= FIT_TOLERANCE_PX) setFit({ key: resetKey, delta: delta + over })
-    })
-    return () => cancelAnimationFrame(id)
+    }
+    // TWO probes per arm: the paint frame, and a settle pass — ApexCharts lays
+    // its legend/toolbar ASYNCHRONOUSLY after mount, so the residual overflow
+    // can appear after every synchronous measurement has already run.
+    const id = requestAnimationFrame(measure)
+    const settle = window.setTimeout(measure, 220)
+    return () => { cancelAnimationFrame(id); window.clearTimeout(settle) }
   }, [hostRef, active, delta, resetKey])
   return delta
 }
