@@ -1941,8 +1941,7 @@
                     "measure": "gdp.current",
                     "filter": {
                       "geo": "GE",
-                      "approach": "_Z",
-                      "measure": "gdp.current"
+                      "approach": "_Z"
                     }
                   },
                   "fromDim": "fromYear",
@@ -2051,8 +2050,7 @@
                     "measure": "gdp.perCapita",
                     "filter": {
                       "geo": "GE",
-                      "approach": "_Z",
-                      "measure": "gdp.perCapita"
+                      "approach": "_Z"
                     }
                   },
                   "fromDim": "fromYear",
@@ -2455,8 +2453,7 @@
                     "measure": "gdp.realGrowth",
                     "filter": {
                       "geo": "GE",
-                      "approach": "_Z",
-                      "measure": "gdp.realGrowth"
+                      "approach": "_Z"
                     }
                   },
                   "fromDim": "fromYear",
@@ -3332,7 +3329,6 @@
                 "trend": {
                   "filter": {
                     "geo": { "$ctx": "geo", "$ne": "_T" },
-                    "measure": "regional.gva",
                     "sector": { "$ctx": "sector", "default": "_T" }
                   },
                   "measure": "regional.gva",
@@ -3349,7 +3345,6 @@
                 "value": {
                   "filter": {
                     "geo": { "$ctx": "geo", "$ne": "_T" },
-                    "measure": "regional.gva",
                     "sector": { "$ctx": "sector", "default": "_T" }
                   },
                   "format": "mln_gel",
@@ -3371,7 +3366,6 @@
                 "value": {
                   "filter": {
                     "geo": { "$ctx": "geo", "$ne": "_T" },
-                    "measure": "regional.gva",
                     "sector": { "$ctx": "sector", "default": "_T" }
                   },
                   "measure": "regional.gva",
@@ -3397,7 +3391,6 @@
                   "denom": {
                     "filter": {
                       "geo": { "$ne": "_T" },
-                      "measure": "regional.gva",
                       "sector": { "$ctx": "sector", "default": "_T" }
                     },
                     "measure": "regional.gva"
@@ -3405,7 +3398,6 @@
                   "num": {
                     "filter": {
                       "geo": { "$ctx": "geo", "$ne": "_T" },
-                      "measure": "regional.gva",
                       "sector": { "$ctx": "sector", "default": "_T" }
                     },
                     "measure": "regional.gva"
@@ -3431,7 +3423,6 @@
                 "value": {
                   "filter": {
                     "geo": { "$ctx": "geo", "$ne": "_T" },
-                    "measure": "regional.gva",
                     "sector": { "$ctx": "sector", "default": "_T" }
                   },
                   "from": {
@@ -3462,7 +3453,6 @@
                 "value": {
                   "filter": {
                     "geo": { "$ctx": "geo", "$ne": "_T" },
-                    "measure": "regional.gva",
                     "sector": { "$ctx": "sector", "default": "_T" }
                   },
                   "from": {
@@ -3489,7 +3479,6 @@
                 "trend": {
                   "filter": {
                     "geo": { "$ctx": "geo", "$ne": "_T" },
-                    "measure": "regional.gva",
                     "sector": { "$ctx": "sector", "default": "_T" }
                   },
                   "measure": "regional.gva",
@@ -3509,7 +3498,6 @@
                 "value": {
                   "filter": {
                     "geo": { "$ctx": "geo", "$ne": "_T" },
-                    "measure": "regional.gva",
                     "sector": { "$ctx": "sector", "default": "_T" }
                   },
                   "format": "mln_gel",
@@ -3550,7 +3538,6 @@
                 "value": {
                   "filter": {
                     "geo": { "$ctx": "geo", "$ne": "_T" },
-                    "measure": "regional.gva",
                     "sector": { "$ctx": "sector", "default": "_T" }
                   },
                   "format": "mln_gel",
@@ -3579,7 +3566,6 @@
                 "value": {
                   "filter": {
                     "geo": { "$ctx": "geo", "$ne": "_T" },
-                    "measure": "regional.gva",
                     "sector": { "$ctx": "sector", "default": "_T" }
                   },
                   "from": {
@@ -3688,7 +3674,6 @@
                       "geo": {
                         "$ne": "_T"
                       },
-                      "measure": "regional.gva",
                       "sector": {
                         "$ne": "_T",
                         "$ctx": "sector"
@@ -3901,7 +3886,6 @@
                         "$ctx": "geo",
                         "$ne": "_T"
                       },
-                      "measure": "regional.gva",
                       "sector": {
                         "$ne": "_T",
                         "$ctx": "sector"
@@ -4102,7 +4086,6 @@
                         "$ctx": "geo",
                         "$ne": "_T"
                       },
-                      "measure": "regional.gva",
                       "sector": {
                         "$ne": "_T",
                         "$ctx": "sector"
@@ -4233,7 +4216,6 @@
                       "geo": {
                         "$ne": "_T"
                       },
-                      "measure": "regional.gva",
                       "sector": {
                         "$ne": "_T",
                         "$ctx": "sector"
@@ -4378,7 +4360,6 @@
                       "geo": {
                         "$ctx": "geo"
                       },
-                      "measure": "regional.gva",
                       "sector": {
                         "$ne": "_T",
                         "$ctx": "sector"
@@ -4522,7 +4503,6 @@
                       "geo": {
                         "$ctx": "geo"
                       },
-                      "measure": "regional.gva",
                       "sector": {
                         "$ne": "_T"
                       }

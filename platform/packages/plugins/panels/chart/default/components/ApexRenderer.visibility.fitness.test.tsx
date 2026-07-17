@@ -58,14 +58,13 @@ function setLaidOut(el: HTMLElement, laidOut: boolean): void {
   Object.defineProperty(el, 'offsetParent', { value: laidOut ? document.body : null, configurable: true })
 }
 
-function makeOutput(): ChartOutput {
+function makeOutput(
+  data: ChartOutput['series'][number]['data'] = [{ value: 10, formatted: '10' }, { value: 20, formatted: '20' }],
+): ChartOutput {
   const y: AxisOutput = { unit: undefined, decimals: undefined }
   return {
     type: 'bar', categories: ['A', 'B'],
-    series: [{
-      name: 'S', color: '#00A896',
-      data: [{ value: 10, formatted: '10' }, { value: 20, formatted: '20' }],
-    }],
+    series: [{ name: 'S', color: '#00A896', data }],
     axes: { x: {}, y, y2: undefined },
     stacked: false, horizontal: false,
     legend: { show: true }, tooltip: { show: true }, annotations: [],
@@ -127,8 +126,7 @@ describe('ApexRenderer — visibility gate', () => {
     expect(queryByTestId('apex-mounted')).not.toBeNull()
 
     // …and FROZEN: new data arriving while hidden must not reach the chart.
-    const changed = makeOutput()
-    changed.series[0]!.data = [{ value: 99, formatted: '99' }, { value: 1, formatted: '1' }]
+    const changed = makeOutput([{ value: 99, formatted: '99' }, { value: 1, formatted: '1' }])
     rerender(<ApexRenderer output={changed} />)
     // Apex-format series (numbers) — assert on the serialized payload.
     expect(JSON.stringify((mounts.at(-1) as { series: unknown }).series)).not.toContain('99')
@@ -210,8 +208,7 @@ describe('ApexRenderer — declarative visibility gate (NodeVisibilityProvider)'
     act(() => FakeResizeObserver.instances.at(-1)?.trigger())
     expect(queryByTestId('apex-mounted')).not.toBeNull()
 
-    const changed = makeOutput()
-    changed.series[0]!.data = [{ value: 77, formatted: '77' }, { value: 2, formatted: '2' }]
+    const changed = makeOutput([{ value: 77, formatted: '77' }, { value: 2, formatted: '2' }])
     rerender(
       <NodeVisibilityProvider visible={false}>
         <ApexRenderer output={changed} />
