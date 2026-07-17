@@ -1,9 +1,16 @@
 # docs/architecture — Reference Corpus
 
-> The currency-checked design corpus (consolidated from the former `refactor-plane/`, 2026-06-02).
-> **Authority:** the *live* truth is `docs/plan/` (current map · target · roadmap). This corpus is **reference** — the deep "how each subsystem works" + canonical code patterns + decisions. On conflict, `docs/plan/` wins.
+> **Authority chain (current, 2026-07-15):**
+> 1. **`ROADMAP-zero-to-hero.md`** — THE master plan (stages, waves, the hero checklist). On any conflict about direction, it wins.
+> 2. **`ARCHITECTURE-REGISTRY.md`** — the vision/initiative SSOT (every AR-* with lifecycle status; nothing is lost).
+> 3. **`decisions/`** — ADRs, binding once ACCEPTED.
+> 4. **`proposals/`** — designs in flight: SPEC (target design) · STUDY (grounded investigation) · CONCEPT (synthesis) · DESIGN/PLAN (build path). A proposal binds only via an ADR or a registry status.
+> 5. **`audit/`** — ground-truth studies of what IS (e.g. the `DEEP-2026-07-15-*` five-lens expedition).
+> 6. This corpus below (`subsystems/`, `examples/`, …) — deep reference on how things work; currency-checked but **descriptive, never authoritative over 1–3.**
 >
-> Folders: `subsystems/` (deep design) · `examples/` (code patterns) · `decisions/` (why) · `future/` (Phase-2 planning) · `packages/` + `types/` (per-package notes + type snapshot).
+> ⚠️ `docs/plan/` is a HISTORICAL register (pre-ROADMAP era) — superseded by `ROADMAP-zero-to-hero.md`; kept for archaeology only.
+>
+> Folders: `subsystems/` (deep design) · `examples/` (code patterns) · `decisions/` (why) · `proposals/` (designs) · `audit/` (ground truth) · `future/` (Phase-2 planning) · `packages/` + `types/` (per-package notes + type snapshot).
 
 ---
 

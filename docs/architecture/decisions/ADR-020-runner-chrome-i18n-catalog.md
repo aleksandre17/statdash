@@ -6,7 +6,7 @@ authors: senior-frontend
 extends: ADR-017 (geostat de-tenant Phase C), ADR-0026 (bootstrap runner), AR-37 (i18n leak-proof gates)
 ---
 
-# ADR-019 — Runner-chrome i18n via the manifest i18n catalog
+# ADR-020 — Runner-chrome i18n via the manifest i18n catalog
 
 **Status:** Accepted (implemented on `feat/runner-chrome-i18n`).
 

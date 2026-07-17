@@ -1,0 +1,101 @@
+# DEEP EXPEDITION — the Config-Platform / Authoring concept lens
+
+**Study:** one of five parallel read-only concept studies (owner directive 2026-07-15 — "go into the depths, come out with the highest-structure, highest-concept plan; SEE WHAT IS NOT VISIBLE"). This is the **declarative config-platform** lens. Above the product-defect layer (that is `STUDY-authoring-canon-circle-break.md`, today's live-probed truth, which I take as given and do not re-litigate).
+**Author:** platform-architect (Opus). **Method:** first-principles read of the live substrate — `partPort.ts`, `facet.ts`, `prop-schema.ts`, `constructor.ts`, `PresentationProjector.ts`, `propSchemaToJsonSchema.ts`, `starterTemplates.ts`/`generatePage.ts`, `provenance.ts`/`reference-metadata.ts`/`deriveProvenance.ts` — against ADR-038/041/042, the NORTH-STAR, and the AR-40/49/50 semantic canon. Read-only; my sole write is this file.
+**Boundary honored:** W1 is editing panel/react/plugins live — I touched no code.
+
+---
+
+## 1. The core concept, at its maximal form (one sentence)
+
+> **The platform is a *homoiconic declarative instrument for official statistics*: ONE declared object model over the Part substrate whose declaration is complete enough to carry not just an element's STRUCTURE but its MEANING (metric · dimension · grain · unit), its CONDITION (state), its AUDIENCE (plane) and its PROVENANCE — so that *every* surface (render · select · inspect · manipulate · validate · publish · and — the untaken one — EXPLAIN/CITE) is a generic projection of that declaration, and a new capability is a single declaration, the machinery unchanged.**
+
+The concept is real and largely built on its editing axes. Its *most powerful* form is not "every editing surface is a projection" (that is ~60% true and AR-52 is finishing it). It is the claim that **the declaration is a rich-enough model of statistical MEANING that even the surfaces which make a number *trustworthy* — the explaining, narrating, and citing surfaces — fall out as projections.** That is the half of the concept nobody has reached for, and it is exactly the half that is the product's reason to exist for a national statistics office.
+
+---
+
+## 2. THE INVISIBLE — findings not yet named
+
+**I1 — The declaration models an element's IDENTITY, but not its CONDITION or its AUDIENCE. These are two missing orthogonal axes, and they are the single concept-level root under three separate product defects.**
+The Part/Facet contract answers "what IS this element / what does it contain / what capabilities does it expose." It has no vocabulary for **STATE** (unbound / no-data / error / loading) or **PLANE** (author / steward / system). The STUDY's F1 ("the canvas lies — fake 0s, empty boxes, `{spanFrom}` leaks"), F2 ("the inspector leaks `vars`/`_xDim`/`presentation.crumbs` — the system plane — to authors"), and owner-#4 ("objects don't declare their contracts properly") are *the same gap seen from three surfaces*: the declaration says shape, never condition or audience. Law 11 C2/C3 (blessed today) name the *symptoms* as product law; the *architectural* statement is: `contract = shape ⊥ state ⊥ plane` and only `shape` is declared. `PropField` has `type` but no `plane`; there is no `StateContract` anywhere. This is invisible because both axes are handled today by ad-hoc render logic and stacked-form leakage, never by a declared, projected contract.
+
+**I2 — The single most under-exploited projection is the EXPLAIN projection, and its raw material is already declared and already projecting — to the wrong (only) consumer.** Provenance is a first-class declared axis (`core/provenance.ts`, `contracts/reference-metadata.ts` = SIMS, `contracts/view-snapshot.ts`) and it *already* projects — but only into **export** (`deriveProvenance.ts` → csv/xlsx footers, AR-48). There is **zero reader-facing projection**: no `schema.org`/JSON-LD `Dataset`, no narrated "how to read this / what this number means / where it came from" surface, no citation block, and the a11y path is a *hand-built* `ChartDataTable` component — not a narrative projected from the semantic+provenance declaration. Every projection the platform has taken is an EDITING or RENDERING surface; **not one is an EXPLAINING surface.** For a generic page-builder that is fine — Builder.io has nothing to explain. For an NSO instrument, the explaining surface *is the credibility*, and it is the one projection of the already-declared model that has never been built.
+
+**I3 — `describeApp()` is already ~90% a published SDK by accident; its "VISION" status (AR-46) understates how close it is.** It is JSON-serializable by invariant, carries a `CONTRACT_VERSION` SemVer with a documented MAJOR/MINOR/PATCH bump policy over the *capability surface*, is fitness-locked against silent axis/capability removal, and already *generates the page-config JSON Schema the API serves* (`propSchemaToJsonSchema.ts`). That is a versioned, machine-checked, externally-shaped capability contract — the hard part of an SDK. The homoiconic claim ("one declaration → every surface") is real *inside the monorepo* and stops exactly at its edge. What is missing is small and nameable: an engine-compat range, the residence/facet/spec **adapter registration** exposed as an external seam, and a scaffold. The gap between "internal registry" and "public SDK" is far narrower than the roadmap implies.
+
+**I4 — Templates are treated as static fixtures, yet the platform already contains the machinery to PROJECT a page from the semantic layer.** `starterTemplates.ts` = three hand-authored `NodePageConfig` fixtures. But `generatePage.ts` is a genuine projection: cube profile → `suggestPanels` → a bound, valid page. The invisible finding: **the platform can already project a whole page from a declared data model, but calls the projected thing "generate" and the fixture thing "template," and only ships the fixtures.** The unclaimed move is to make a *template a declaration that binds governed nouns* (metric-ref/dimension-ref) so the SAME template rebinds to any agency's semantic layer — and a "collection over a governed dimension" (N2) projects one template across every member (self-building regional profiles). That is the Webflow-CMS-collection / Figma-component-instance idea, which no statistics tool ships, and the projection engine for it is 80% present.
+
+**I5 — There is real DEAD grammar and real declared-but-unprojectable grammar, and both quietly falsify the "every surface is a projection" claim.**
+- *Declared, but no authorable projection (leaks raw):* `vars` (the AR-36/42 derive graph), `presentation.crumbs`, and every `[object] N fields → Open` escape hatch (STUDY G4). The grammar EXISTS and the renderer consumes it; the *authoring* projection does not, so it falls back to a raw-JSON control — a projection hole wearing a UI.
+- *Declared vocabulary with thin/absent consumer (dead grammar):* `dimension-ref` vocabulary is laid but `resolveDimensionRef` lowering is not built ("vocabulary laid, no lowering yet"); `DimensionDef` curation is thin (members still resolve from the DSD); `agg` on `MetricDef` was inert until AR-50 M2 began consuming it. Honesty demands each declared field be *either projected or retired* — a field that is neither is the config-platform equivalent of dead code, and it is invisible precisely because the type-checker is happy with it.
+
+**I6 — The homoiconic ideal silently assumes projection is FREE; at the scale the EXPLAIN and INTERACTION projections will bring, it is not.** `enumerateParts` + overlay recursion is O(nodes × depth) per selection/render (NORTH-STAR gap #1; `partPort.perf.fitness.test.ts` now exists — good). But the deeper invisible point is conceptual: the platform has projections for *every capability except its own cost*. There is no declared cost model, no budget, no projection of the instrument's own health *through* the instrument (NORTH-STAR gap #4 — "the instrument measuring itself"). Adding the EXPLAIN projection (which walks the whole tree to narrate it) and the AR-42 interaction projection (which re-enumerates on every gesture) both multiply the unmeasured cost.
+
+**I7 — The concept has FOUR facets named (structure/semantics/behavior/provenance — NORTH-STAR) but the substrate has only made TWO of them first-class projections; the platform is *carrying* semantics and provenance as data without *projecting* them as authorable/explorable/explainable contracts.** Structure (ADR-041) and the facet-editing axis (ADR-042 D4) are the built projections. Semantics (AR-40/50) lives as data consumed by the renderer but its authoring is a *separate app surface* (Model mode), not a projection of the same element declaration; provenance is data consumed by export, not a projection at all. The "one model, four facets, every surface a projection" claim is, honestly, "one model, two projected facets, two data-only facets." Closing that is the same act as I1 and I2 — the missing axes (state/plane) and the missing projection (explain) are how semantics and provenance become *projected* rather than merely *carried*.
+
+---
+
+## 3. The honest projection-coverage census (claimed vs real)
+
+Claim (ADR-038/041/042 + NORTH-STAR): *"one declared model, every surface a generic projection; a new capability = one declaration."*
+
+| Surface | Projected from the declaration? | Honest status |
+|---|---|---|
+| **Render** (SiteRenderer / interpret) | Yes | ✅ REAL — the founding projection |
+| **Select** (CanvasOverlay ← `enumerateParts`) | Yes | ✅ REAL (ADR-041, one `PartAddress`) |
+| **Validate** (`validateConfig` + save-guard round-trip) | Yes | ✅ REAL |
+| **JSON Schema / API** (`propSchemaToJsonSchema` ← `describeApp`) | Yes | ✅ REAL — versioned, generated |
+| **Palette** (`describeRegistry`) | Yes | ✅ REAL |
+| **Presentation** (`PresentationProjector` registry) | Yes | ✅ REAL — clean OCP visitor |
+| **Migration** (per-node version+migrate) | Yes | ✅ REAL |
+| **Inspect** (`facetRegistry` ⊕ `element.schema`) | Model yes; presentation no | ⚠️ PARTIAL — model canonical, D4 tab-bar unbuilt; stacks as a wall; raw-JSON + system-plane leaks (G4/G5) |
+| **Manipulate** (`placePart`) | Interface yes; canvas no | 🔨 PARTIAL — Slice 0 landed; canvas move unbuilt; two transports coexist |
+| **Chrome** (S6 sourced parts) | Select yes; faithful/manipulate no | ⚠️ PARTIAL — reachable ≠ faithful; D6 manipulate unbuilt |
+| **STATE** (unbound/no-data/error/loading) | — | ❌ NOT DECLARED (Law 11 C2 names it; no `StateContract`) |
+| **PLANE** (author/steward/system) | — | ❌ NOT DECLARED (Law 11 C3 names it; `PropField.plane` absent) |
+| **Templates** | Fixtures hand-authored; `generatePage` IS a projection | ⚠️ SPLIT — projection machinery exists, shipped as static fixtures |
+| **Semantics authoring** | Carried as data; authored in a separate Model app | ⚠️ CARRIED-NOT-PROJECTED (not a projection of the element declaration) |
+| **Provenance surface** (reader-facing) | Declared; projects only to export | ❌ NOT PROJECTED to a reader (no JSON-LD/narrative/citation) |
+| **EXPLAIN / a11y-narrative / cite** | — | ❌ UNTAKEN — the highest-leverage missing projection |
+| **External SDK** (`describeApp` as a public contract) | Internal only | ❌ NOT PUBLISHED (AR-46; ~90% there) |
+
+**Honest count:** 7 surfaces genuinely projected, 5 partial/split, ~4 named-but-unbuilt or untaken. **"Every surface is a projection" is ≈ 55–60% real today.** AR-52's five waves take the editing surfaces to ~85%. The remaining 15% — state, plane, explain, published-contract — is where the *concept's maximal power* lives, and none of it is in flight.
+
+---
+
+## 4. POWER MOVES — ranked by leverage
+
+> All four are NEW axes/projections **on the held substrate** — never a re-foundation (the substrate is proven; re-opening it would be the circle). They sit ABOVE AR-52: AR-52 finishes the editing projections; these claim the concept's unclaimed half. Sequencing note: PM-A depends on AR-52 W2/W3 having populated the semantic + plane axes.
+
+**PM-A · The EXPLAIN projection — turn the one declaration into a cited, narrated, provenance-carrying artifact. [HIGHEST]**
+*What it unlocks:* the "statistics-grade" half of AR-49's unclaimed quadrant stops being a *claim* and becomes a *surface*. Four projections of the same declared model, no new authoring: (1) `schema.org` `Dataset` JSON-LD from the metric/dimension/provenance declaration (rides AR-28 R1 SEO scaffolding); (2) an a11y **narrative** projected from semantics+data (screen-reader "GDP rose 3.2% to 701 825 mln ₾ (preliminary)"), replacing the hand-built `ChartDataTable`; (3) a **provenance/methodology popover** projecting `reference-metadata.ts`/`provenance.ts` at the point of the number (AR-43's fragment, generalized); (4) a **reproducible citation permalink** — `view-snapshot.ts` pinned as a cited artifact (config-as-cited-artifact). *Un-copyable because:* the builder class (Builder/Plasmic/Puck) has no semantics or provenance to explain; the BI class (Looker/PowerBI) is not non-programmer-authored-and-agency-grade; the NSO-dissemination tools (Eurostat/ONS) are not config-driven builders. The intersection — *a number that, on any surface, narrates its own meaning and cites its own provenance because both are declared* — is empty in the market. *Cost:* M — mostly projection over already-declared data; the dependency is that the semantic (AR-40/50) and provenance axes are populated on the corpus (which AR-52 W2's corpus migration delivers). *YAGNI:* real — this is the product's differentiator for an NSO, not speculation. *One-way?* No — additive projections; each ships independently.
+
+**PM-B · Declare the two missing axes — STATE and PLANE — as orthogonal, projectable contracts on every element. [HIGH]**
+*What it unlocks:* collapses STUDY F1 + F2 + owner-#4 into ONE architectural act, and turns Law 11 C2/C3 from product aspiration into declared contract. `PropField.plane?: 'author'|'steward'|'system'` (additive, default author, OCP) → the dock projects by plane (system hidden, steward behind the lens); a per-element `StateContract` declaring honest states → the canvas *renders declared states* generically (never a fabricated 0, never a silent blank, never a `{token}` leak). Both are pure projections of a new declared axis — the exact homoiconic move, applied to condition and audience instead of structure. This is also how **semantics and provenance become *projected* rather than merely *carried*** (I7): the plane axis is what lets the steward/author/reader each get their own projection of the same semantic declaration. *Cost:* M — two additive contract fields + generic dock/canvas projection; no new subsystem. *YAGNI:* real (owner blessed the symptoms as Law 11 today). *One-way?* No. *Overlap:* AR-52 W1/W3 build the *product* fixes; PM-B is the *concept-level generalization* that makes them a declared axis, not per-surface logic — do PM-B's `plane`/`StateContract` as the contract W1/W3 project from, so the waves land the axis, not a one-off.
+
+**PM-C · Publish `describeApp` as an external declaration SDK (`@statdash/declare`). [HIGH, gated]**
+*What it unlocks:* the homoiconic ideal crosses the monorepo boundary — a third party (or a second agency, or the Constructor itself) ships a node/spec/metric/facet/residence-adapter *without touching the engine*. "Ship capabilities, not one-offs" becomes true *externally*. The contract is already versioned, serializable, JSON-Schema-generating, and fitness-locked (I3); the move is to formalize the adapter-registration surface + an engine-compat range + a scaffold, and hold it with a compat gate. *Cost:* M–L — packages-crossing, contract-hardening; the discipline (SemVer bump policy) already exists. *YAGNI:* **gated** — needs a real second consumer (a second agency or an external plugin author). Do not build the public surface speculatively; harden the *internal* seam now so the external one is a formalization, not a rewrite. *One-way?* Partially — a published contract is a commitment; SemVer + the fitness-locked axis set mitigate. *Refuse:* any runtime code-injection plugin model — config stays data (Law 2); the SDK is schema+registration only.
+
+**PM-D · Templates and reusable symbols become PROJECTIONS of the semantic layer, not fixtures. [MEDIUM, gated]**
+*What it unlocks:* a template is a declaration that binds *governed nouns* (metric-ref/dimension-ref), so the SAME template rebinds to any agency's semantic layer; a "collection over a governed dimension" (N2) projects one template across every member → self-building regional/sector profiles (N1+N2). This is the Figma-instance / Webflow-CMS-collection move, absent from every statistics tool; `generatePage.ts` proves 80% of the projection engine exists. *Cost:* M. *YAGNI:* **gated** on N1/N2 having a real consumer (the maximal-orthogonality discipline: defer until a second binding target exists). *One-way?* No.
+
+*(Deliberately not a fifth move: the "close dead/unprojectable grammar" work from I5 is real but is a **fitness-function**, not a power move — see §5. It belongs as a machine gate, not a roadmap epic.)*
+
+---
+
+## 5. What to refuse
+
+1. **Refuse a separate docs/narrative/citation SUBSYSTEM beside the projection machinery.** The EXPLAIN projection (PM-A) must be a *projection of the one declaration*, sharing the registry/port/visitor pattern — never a parallel pipeline with its own reader of the config. A second authority forks and rots exactly like the two-drag-transport split the STUDY indicts. One model, another projection — not another engine.
+2. **Refuse making the SDK a runtime code-injection model.** Config stays data (Law 2). `@statdash/declare` is schema + registration + compat only; behavior lives in the engine/registry.
+3. **Refuse dissolving the plane/governance lens to make data "simpler."** (STUDY refusal #4, upheld.) PM-B *declares* the plane so the projection can hide the right things; it does not remove the steward boundary. The lens is the Looker/PowerBI canon and the reason published numbers are trustworthy.
+4. **Refuse another object-model reform.** (STUDY refusal #1, upheld.) The substrate HOLDS — the probe proved it. Every power move here is a NEW AXIS or NEW PROJECTION on the held Part/Facet substrate; none re-opens ADR-041/042. Re-founding would *be* the circle.
+5. **Refuse building PM-C/PM-D speculatively.** Both are gated on a real second consumer (external plugin author / second agency for C; a second binding target for D). Harden the internal seams now; formalize the external surface only when the consumer is real (maximal-orthogonality: defer until a real consumer exists).
+6. **Refuse a declared field that is neither projected nor plane-marked `system`.** Make I5 a *machine gate*, not a cleanup project: a fitness function that RED-lights any `PropField` with no authorable projection AND no `plane:'system'`. This turns the "every surface is a projection" claim from an aspiration into an enforced invariant — the evolutionary-architecture discipline the platform already lives by. (Proposed: `FF-NO-UNPROJECTED-DECLARED-FIELD`.)
+
+---
+
+## 6. The one thesis, defended
+
+**The platform's core concept is the homoiconic declarative instrument, and it is under-exploited not on its editing surfaces (those are ~60% projected and being finished) but on its MEANING surfaces.** The declaration is treated as an *editing contract* (shape) when the concept's maximal form requires it to be a *meaning contract* (shape ⊥ state ⊥ plane ⊥ provenance). The two missing axes (PM-B) and the one untaken projection (PM-A) are the same insight from two angles: **the declaration already carries enough about what a statistic MEANS and where it CAME FROM that the surfaces which make a number *trustworthy* — narrate it, cite it, explain it to a screen reader, hide the steward's plumbing from the author — should all fall out as projections, and today none of them do.** That is the un-copyable quadrant (statistics-grade AND non-programmer-authorable), made into surfaces instead of a claim. Everything else — the SDK, the semantic templates — is leverage on top of that; the substrate stays exactly as ADR-041/042 built it.
+
+*— platform-architect, deep expedition, 2026-07-15*

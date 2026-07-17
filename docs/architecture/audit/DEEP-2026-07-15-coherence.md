@@ -1,0 +1,92 @@
+# DEEP EXPEDITION — the WHOLE-SYSTEM COHERENCE lens
+
+**Author:** chief-engineer (read-only study, 1 of 5). **Date:** 2026-07-15.
+**Question:** where does the platform contradict itself, and what invisible cross-cutting truth would a ruthless principal engineer name that no single-discipline lens sees?
+**Method:** live-tree read + grep census against the registry, the board, CLAUDE.md, the FF suite, the contract chain, and CI. Everything below is cited to file:line as it stands today. I touched no code (W1 is editing panel/react in flight — noted, not judged).
+
+**Verdict up front.** The object model holds (the lead's STUDY is right, and I confirmed the substrate: ADR-038/041 gates are real and bite). The circle the owner feels is not architecture — but the STUDY under-names ONE thing, and it is the largest coherence defect in the repo: **the platform has no executing verification. Every "green," every "VERIFIED", every "2826/0 fail" in the registry is a manual `pnpm test` run by an agent on one workstation at one moment. The single CI workflow is stale (wrong package scope) and self-admittedly never run. A statistics platform whose product law is "the canvas never lies" cannot verify its own truth automatically.** This is the meta-root under F6 (DoD=gate-green): the gates themselves are not continuously evaluated, so "gate-green" was never even the floor it claimed to be.
+
+---
+
+## 1. CLAIM-vs-IS drift ledger (highest blast-radius first)
+
+| # | Registry/board CLAIM | IS (live tree) | Evidence | Risk |
+|---|----------------------|----------------|----------|------|
+| **D1** | Green gates prove the system: "gate green (2826/0 fail)", 30+ "BUILT/VERIFIED" rows lean on CI-grade assurance | **There is no executing CI.** `.github/workflows/ci.yml` header line 42–44: *"⚠ NOT YET EXECUTED — authored… but never run in CI."* Its api steps filter `@geostat/api` (typecheck/seed/verify-parity/tsx) — that package name **no longer exists** (Phase-5 rename → `@statdash/api`). Filters match nothing. | `ci.yml:158,250,268,289` vs `apps/api/package.json:2` `"@statdash/api"`; grep `@geostat/api` in package.json → none | **CRITICAL** — all regression protection is manual |
+| **D2** | DB-gated contract suites are a real gate (bootstrap-parity, scd2, verify-parity) | They `describe.skip` unless `DATABASE_URL` is set; the ONLY place it is set is the never-run CI (D1). **These 18 suites have therefore never executed** in any automated gate. | `ci.yml:31–34`; 18 files skip on `DATABASE_URL` (grep). The wire contract (committed provisioning JSON === DB bootstrap projection) is dark. | **CRITICAL** — a wire/projection change passes every *executed* gate silently |
+| **D3** | Playwright e2e is the DoD ("VERIFIED live :3013" on ADR-039/BE-1/BE-i/BE-3/RT, M1/M2) | 12 e2e specs exist (`apps/panel/e2e/*.e2e.ts`) but are **not in CI** (only `test:e2e` npm scripts, no workflow runs them). Every "VERIFIED live" verdict is a one-time manual agent run; registry itself repeats "Deploy-time live-verification pending… Playwright not offline-runnable." | `ci.yml` has no playwright job; `apps/panel/package.json:11–13` | **HIGH** — live verdicts are unreproducible; nothing re-checks boot/steward/routing on change |
+| **D4** | Metric-first authoring is BUILT (AR-40 DONE+LIVE, AR-49 M0–M2 BUILT, AR-50 partly built) | The **shipped page corpus references zero metrics.** `metric-ref`/`"metric":` count in `apps/api/provisioning/geostat.provisioning.json` = **0**. AR-40 P0 made raw-code and metric-id resolve *byte-identically*, so the corpus still ships raw codes; the semantic layer has a runtime but no congregation on real pages. | grep `metric-ref\|"metric":` in provisioning json → 0; STUDY G8/F3 | **HIGH** — the single largest "cathedral without a congregation" |
+| **D5** | `FF-DATA-BOUNDED` guards the data canon (STUDY F3 treats it as intent) | **It does not exist.** No file, no gate. There is no fitness anywhere asserting a bindable element on a live page carries a governed handle. | grep `DATA-BOUNDED\|dataBounded` → none | **HIGH** — the C1 canon ("data first") has no machine floor |
+| **D6** | `no-capability-without-consumer` kills adoption-debt "again" (the meta-fitness) | It guards **only three engine-tier families** (DataSpec discriminants, perspective scope-keys, MetricDefs) and part C *explicitly defers* config-reference adoption "one tier out to the provisioning gate" — but **no provisioning gate asserts corpus metric adoption** (D4). App-tier orphans (orphaned authoring UI) are invisible to it. | `no-capability-without-consumer.fitness.test.ts:14–19,106–107` | **MED-HIGH** — the anti-debt gate has a hole exactly where the biggest debt lives |
+| **D7** | ADR-038 win: the per-type filter bridge was removed | The *external special-case* was correctly deleted from the generic dock (`builtins.tsx:144–148`), BUT the `FilterBarControlsBridge` component still ships — exported (`features/filters/index.ts:9`), fitness-tested (`filterControlDrill.fitness.test.tsx`), **never mounted** (only `<FilterBarControlsBridge` usage is its own test). Dead stratum kept green by its own gate. | grep `<FilterBarControlsBridge` → test-only | **MED** — the G10 dead-code class, generalized below |
+| **D8** | ADR-0026 runner: "2nd tenant renders zero-code = definition of done" | Phase C is `📋 NEXT` (unbuilt). The de-tenanting north-star — the runner's entire reason — has never been proven with a real 2nd tenant; `second-tenant.fitness.test.tsx` is a synthetic stand-in. | board `render-pipeline`/Phase C row | **MED** — a keystone claim unvalidated |
+| **D9** | BOARD.md is authoritative for state | BOARD.md line 3–7 disavows itself ("lagged reality repeatedly; trust the code"). SSOT is split across BOARD.md → `work/OVERNIGHT-2.md` → `ARCHITECTURE-REGISTRY.md` → `STUDY-…` → 6 `HUNT-*` inventories. Five status vocabularies coexist. | BOARD.md:3–7; registry §Standing hunts | **MED** — no single readable truth of "what is done" |
+| **D10** | (Positive — verified TRUE) 304/If-None-Match was dead code (my prior memory #2); PageDataSnapshot was DRY-duped (board P0-2) | Both **now fixed.** `store-api.ts:161–197` reaches the 304 branch for a stale-but-held slice; `snapshot-store.ts:12` aliases the contracts `SnapshotEnvelope`. Contract-type drift is LOW. | cited | — (memory updated) |
+
+---
+
+## 2. THE INVISIBLE — cross-cutting findings no single lens sees
+
+**I1 · The verification stack is a stage set, not a machine.** (D1+D2+D3, the disease under F6.) The repo has ~223 source fitness files — many genuinely biting (`noExternalSpecialCase` is exemplary: strips comments, scans real sources, has explicit "BITES" cases, positive+negative teeth). But a fitness function that is not in a *continuously evaluated* gate is documentation, not a fitness function (Ford/Parsons: the defining property is *automated, continual* evaluation). Ours are triggered by agent goodwill. The one CI file is stale AND never-run. So the whole "gate-green DoD" the STUDY (F6) critiques was never even the floor it named — a red suite on `main` would surface only when the next agent happens to run `pnpm test`. **The owner's felt "we start architectures and they don't come out" has a mechanical cause nobody has named: nothing holds the line while attention moves on.** WIP=1 + journey-DoD (the STUDY's cure) will *also* not "come out" unless a gate re-runs it. Journey FFs that live only as local Playwright runs are D3 again with more steps.
+
+**I2 · "BUILT" means "ran once on a laptop," and the registry treats that as durable.** Every M0/M1/M2 row says "committed on `feat/ar49-…` (NOT pushed — owner)" and "Deploy-time live-verification pending." The branch has never been pushed, CI has never run, the DB suites have never executed, the e2e is manual. The registry's `VERIFIED` vocabulary (server real-browser / real-DB proven) is applied to evidence that is, in fact, one agent's transcript. This is not dishonesty — it is a **provenance gap in our own process**: we hold data to SDMX provenance standards (vintage, revision, methodology) while our *engineering* claims carry no reproducible provenance at all. The platform violates, internally, the exact integrity principle it sells.
+
+**I3 · The corpus is the untested tenant.** (D4.) Every semantic/metric/perspective capability is proven on synthetic schemas inside FFs and on agent-authored probe pages — never on `geostat.provisioning.json`, the one tenant that actually ships. `config-cube-contract.fitness.test.ts` guards the corpus for under-pinning (good, real), but *nothing* asserts the corpus adopts the governed layer it is claimed to run on. The Strangler's second half (migrate the corpus, retire the old way) never ran for AR-40/49/50 — so the semantic spine is simultaneously "BUILT/LIVE" and unadopted. The lead's W2 names this; the coherence point is that **it is the same shape as D7/D8/I1: a mechanism shipped and gate-locked, with the adoption half deferred into invisibility.** That is the platform's dominant failure *mode*, not five separate incidents.
+
+**I4 · The dead-code class is "orphan + its own fitness = green forever."** (D7 generalized.) `FilterBarControlsBridge` is exported and tested but unmounted; its fitness test renders it directly, so the test passes and the component looks alive. `no-capability-without-consumer` cannot see it (engine-tier only, D6). This is a *self-sealing* debt: the artifact that should flag death (the FF) is the thing keeping it alive. There is no meta-gate answering "is this exported symbol / this FF-covered component reachable from a real mount?" The class is small today (one confirmed) but the mechanism that would let it grow is fully present.
+
+**I5 · Truth is scattered across five overlapping registers with five status vocabularies.** (D9.) BOARD.md (disavowed) · OVERNIGHT-2.md · ARCHITECTURE-REGISTRY.md (145 lines, the real SSOT) · the STUDY · 6 HUNT-* inventories · per-agent memories. `VISION/DESIGNED/BUILT/VERIFIED/DEFERRED/SUPERSEDED` (registry) vs `✅/🔨/📋/🟡` (board) vs "BUILT-not-pushed" (rows). No projection derives one from another — they drift independently, which is *itself* a Bounded-Element-law violation applied to our own documentation: many sources of truth for one shape (project state), no single declaration projected to each surface. The board already lied once (STUDY caught chrome/model-surface gaps); the structure guarantees it will again.
+
+**I6 · The one thing we hold to a higher standard than our leaders — provenance — we do not apply to config or to ourselves.** AR-43 (data lineage) is still PROPOSED; AR-47 (config draft→publish→audit FSM) is PROPOSED. So a number traces to SDMX vintage (built), but an authored *config change* has no review gate, no diff, no rollback, and an *engineering claim* has no reproducible run. For an NSO product this is inverted risk: the credibility surface (who changed this dashboard, on what evidence) is the ungoverned one.
+
+---
+
+## 3. Fitness-ecology verdict + canonical target
+
+**Verdict: strong specimens, no ecology.** The *individual* gates are, in places, reference-grade (the ADR-038/041 suite — `noExternalSpecialCase`, `derivedContainment`, `no-capability-without-consumer` — is better than most production monorepos: comment-stripping, real-source scans, explicit non-vacuity "BITES" assertions, shrinking-deferred-list discipline). But an *ecology* requires four properties this suite lacks:
+
+1. **Continuous evaluation.** (Missing — I1.) FFs that never run are theatre. This is the #1 fix, ahead of any new gate.
+2. **Coverage of the coverage.** (Missing — D6, I4.) `noExternalSpecialCase` scans a *hardcoded 8-file allowlist* (`GENERIC_SOURCES`); a new generic-layer file is unguarded until someone edits the list. No meta-gate asserts the allowlist is complete, or that every exported symbol/FF-covered component is reachable from a real mount, or that every registered capability is referenced by the shipping corpus.
+3. **Non-redundant, non-contradictory partition.** The perspective family alone has 11 `perspective-*.fitness.test.ts` (p1/p2/p45/p52/axis/binding/available/effects/metric-swap/migration-equiv/…) — likely overlap; two `derivedContainment` files in react + plugins. Nobody owns "is this partition still coherent?"
+4. **Executable spec of the product law.** C1/C2 (Law 11) have *no* gate (`FF-CANVAS-NEVER-LIES`, `FF-DATA-BOUNDED`, `FF-PLANE-PROJECTION`, `FF-JOURNEY-*` are all proposed/absent). A law without a gate is a wish (self-policing-mandate memory).
+
+**Canonical target (Ford/Parsons evolutionary-architecture grade):**
+- **Tier 0 — the gate runs.** Fix `ci.yml` scope (`@geostat`→`@statdash`), push the branch, make the DB-gated + e2e suites execute on push/PR. Until this lands, *no other fitness work has value.*
+- **Tier 1 — atomic FFs** (what we have): unit/structural invariants, comment-stripped, non-vacuous. Keep; audit for redundancy (perspective family).
+- **Tier 2 — holistic FFs**: the journey walks (J1–J6) against the real stack, in CI, as the wave-closing gates. This is the STUDY's W-program, but *only* real if Tier 0 exists.
+- **Tier 3 — meta-FFs**: (a) allowlist-completeness (every generic-layer file is scanned); (b) reachability (no exported/FF-covered component unmounted — kills I4); (c) corpus-adoption (every registered capability is referenced by the shipping tenant OR on a named shrinking deferred-list — closes D6's hole and makes D4 a build failure); (d) one-truth projection (status derives, not drifts — I5).
+
+---
+
+## 4. POWER MOVES (ranked by leverage)
+
+**P1 · Resurrect the gate before building any new one.** Fix `ci.yml`'s `@geostat/api`→`@statdash/api` filters and stale script names; push the branch; make the 18 DB-gated suites + the 12 e2e specs execute on push/PR. **Leverage: total.** This converts ~223 documentation-FFs into an actual ecology and every future "BUILT" into a reproducible claim. It is the mechanical cure for "architectures that don't come out" — a gate holds the line while attention moves on. Nothing else on this list is real without it. (Cost: hours, not weeks — the workflow is 90% written; it needs the rename sweep the rest of the repo already had, D1.)
+
+**P2 · Make corpus adoption a build failure (close the F3/D4/D6 hole at the gate, not just the wave).** Add the missing meta-FF: every registered MetricDef / declared capability must be referenced by `geostat.provisioning.json` OR sit on a named, shrinking deferred-list — and `FF-DATA-BOUNDED` on the corpus (bindable element ⇒ governed handle). This turns the STUDY's W2 from "a wave we intend to walk" into "a red build until the corpus migrates." **Leverage: high** — it is the one move that structurally forbids the platform's dominant failure mode (I3: ship mechanism, defer adoption into invisibility).
+
+**P3 · Collapse the five truth-registers to one projected SSOT.** Pick the registry as the single declaration; make BOARD.md and the HUNT-* inventories *projections* (or delete them — see below). One status vocabulary. A stale-detection FF (a `BUILT` row with no green gate reference is invalid). **Leverage: high** — it is the same Bounded-Element law applied to our own documentation, and it is what lets the owner ever *read* one honest state (I5, I2).
+
+**P4 · Install the reachability meta-FF and pay the delete-list (below) with it.** One gate: no exported symbol / FF-covered component is unmounted from a real entry point. Kills the I4 self-sealing class and justifies the deletions. **Leverage: medium**, compounding.
+
+**P5 · Govern the config artifact (pull AR-47 forward one notch).** Even a thin draft→publish audit + diff closes I6 for authored changes before non-devs author (Phase 2). **Leverage: medium**, but rising sharply the moment W5/publish lands.
+
+### DELETE-LIST (carrying cost > worth — delete wholesale, gated by P4)
+- **`FilterBarControlsBridge` + `filterControlDrill.fitness.test.tsx`** — unmounted orphan kept alive by its own gate (D7). Controls are now `sourcedParts` per ADR-041 (`builtins.tsx:146–148`). Delete both; the STUDY already parks this in W4.
+- **`walkNodes` fallback** — transitional, flagged G10; delete with W4.
+- **The stale `ci.yml` as written** — do not "keep and ignore"; either fix (P1) or delete. A never-run workflow referencing dead package names is worse than none (false assurance — kit-false-green memory).
+- **Candidate, needs one probe before deletion: the perspective FF cluster** (11 files) — audit for redundant coverage; likely 3–4 can fold. Do NOT delete blind.
+- **Do NOT delete:** the ADR-038/041 gate suite (reference-grade), the contracts package (real SSOT, drift is low), the DB-gated suites (they are *unrun*, not *wrong* — P1 makes them valuable).
+
+---
+
+## 5. What to REFUSE
+
+1. **Refuse to accept any "green/BUILT/VERIFIED" as evidence until P1 lands.** A gate no one has seen reach its assertion is not evidence; a never-run CI referencing dead package names is *false-green*, worse than no gate (self-policing-mandate + kit-false-green memory). This applies to the peer studies too: if a sibling lens cites "2826/0 fail," that number was produced manually and proves nothing about `main`.
+2. **Refuse a 6th wave / 13th stratum that opens before Tier-0 CI exists.** The STUDY's WIP=1 is correct, but its journey-DoD is unenforceable without an executing gate — building W1..W5 on manual verification reproduces F6 with nicer names.
+3. **Refuse to mark AR-40/49/50 "done" while corpus `metric-ref` count is 0** (D4). Mechanism-shipped ≠ adopted; the registry rows should read BUILT-UNADOPTED until P2 bites.
+4. **Refuse another object-model reform** (agreeing with the STUDY §5) — the substrate is proven; re-opening it *is* the circle.
+5. **Refuse to let BOARD.md/registry/HUNT-* keep drifting as independent truths** (I5). Every architectural claim that lives in only one register, un-projected, is the next thing that lies.
+
+---
+
+*Coherence lens complete. The substrate is sound and the individual gates are, in places, world-class — but they run in a manual process with a stale, never-executed CI, and the platform's dominant failure mode is "ship the mechanism, defer adoption into invisibility." The highest-leverage act in the entire five-lens expedition is not a new architecture: it is making the gates we already have actually run, then making adoption (of the corpus, of the capabilities, of the journeys) a red build instead of a deferred note.*
