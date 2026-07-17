@@ -75,8 +75,18 @@ async function journeyDefine() {
 async function journeyBind() {
   await page.goto(BASE + '/studio/insert', { waitUntil: 'networkidle', timeout: 60000 }).catch(() => {})
   await page.waitForTimeout(4000)
-  // Select a bindable element on the live canvas (a chart carries a top-level metric-ref).
-  const el = page.locator('[data-node-type="chart"], .canvas-node').first()
+  // Select a bindable element on the LIVE CANVAS (`CanvasOverlay.tsx` renders one
+  // `.canvas-node[data-node-id][data-node-type]` focus-frame button per canvas node,
+  // scoped inside `[data-testid="canvas-overlay"]`). The unscoped `[data-node-type=
+  // "chart"], .canvas-node` selector this probe used to carry is AMBIGUOUS: the left
+  // rail's insertion NodePalette (`ბლოკები`) ALSO stamps `data-node-type="chart"` on
+  // its OWN tile button (`NodePalette.tsx` — "insert a chart block", a completely
+  // different affordance) and sits EARLIER in DOM order, so `.first()` silently
+  // grabbed the palette tile instead of a real canvas element — a no-op click, J4
+  // never walked (root cause: probe gesture, not a product gap — the live bind path
+  // works end-to-end once the correct element is targeted; verified via
+  // debug-j4-bound.png during the 0072-w2 investigation).
+  const el = page.locator('[data-testid="canvas-overlay"] .canvas-node[data-node-type="chart"]').first()
   if (await el.count()) { await el.click().catch(() => {}); await page.waitForTimeout(1500) }
   const palette = await page.locator('[data-testid="metric-palette"]').count()
   const tile    = page.locator('[data-testid^="metric-tile-"]').first()
@@ -85,8 +95,11 @@ async function journeyBind() {
     const id = await tile.getAttribute('data-metric-id')
     await tile.click().catch(() => {})
     await page.waitForTimeout(1200)
-    bound = Boolean(id)
-    log('J4', { palette: palette > 0, boundMetricId: id })
+    // Confirm the bind LANDED (not just that a click fired): MetricPalette's aria-live
+    // status region announces "მეტრიკა მიბმულია: <label>" on a successful onBind.
+    const announcement = await page.locator('[role="status"][aria-live="polite"]').first().textContent().catch(() => '')
+    bound = Boolean(id) && /მიბმულია/.test(announcement ?? '')
+    log('J4', { palette: palette > 0, boundMetricId: id, bound, announcement })
   } else {
     log('J4', { palette: palette > 0, note: 'no bindable element selected / palette empty' })
   }
@@ -98,5 +111,5 @@ await login()
 await journeyOnboard()
 await journeyDefine()
 await journeyBind()
-log('done', { consoleErrors: errors.slice(0, 12) })
+log('done', { consoleErrors: errors })
 await browser.close()

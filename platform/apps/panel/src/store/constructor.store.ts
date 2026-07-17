@@ -76,6 +76,8 @@ export interface ConstructorStore extends ConstructorSession, StudioUiSlice, His
   removeDataSource:  (id: string) => void
   reorderDataSources: (orderedIds: string[]) => void
   addDataSpec:       (spec: NamedDataSpec) => void
+  /** Idempotent HYDRATE — replaces the whole data-specs collection (boot load, not a user edit). */
+  setDataSpecs:      (specs: NamedDataSpec[]) => void
   updateDataSpec:    (id: string, patch: Partial<NamedDataSpec>) => void
   removeDataSpec:    (id: string) => void
   reorderDataSpecs:  (orderedIds: string[]) => void
@@ -221,6 +223,16 @@ export const useConstructorStore = create<ConstructorStore>()(
           false,
           'data/addDataSpec',
         ),
+      // Replace the whole specs list with the server's authoritative set — the boot
+      // HYDRATE path (initFromApi), mirroring setDataSources/setPages. addDataSpec is
+      // a blind append and is correct for a user's "add spec" action; hydrate is
+      // loading the SAME server-side set and must be idempotent under a re-run (e.g.
+      // React StrictMode's double-invoked boot effect racing the async initFromApi
+      // past the synchronous "already hydrated" guard) — a REPLACE, never an append,
+      // so re-running it can never duplicate a spec id (duplicate React keys in the
+      // Data-modeling panel's spec list).
+      setDataSpecs: (specs) =>
+        set({ dataSpecs: specs }, false, 'data/setDataSpecs'),
       updateDataSpec: (id, patch) =>
         set(
           (s) => ({

@@ -89,14 +89,16 @@ export async function initFromApi(): Promise<boolean> {
     )
 
     const store = useConstructorStore.getState()
-    sources.forEach((r) => store.addDataSource(fromApiDataSource(r)))
-    specs.forEach((r) => store.addDataSpec(fromApiDataSpec(r)))
-    store.updateSite(fromApiSite(siteMap, navRows))
-    // Hydrate is an authoritative REPLACE of the pages collection (setPages), never
-    // an incremental append (addPage) — idempotent under a re-run of this whole
+    // Hydrate is an authoritative REPLACE of the sources/specs/pages collections
+    // (setDataSources/setDataSpecs/setPages), never an incremental append
+    // (addDataSource/addDataSpec/addPage) — idempotent under a re-run of this whole
     // function (React StrictMode's double-invoked boot effect, or a re-init after
-    // re-login), so it can never duplicate a page id / duplicate a React key in the
-    // page tablist or top-bar page Select. See store/constructor.pages.ts setPagesPatch.
+    // re-login), so it can never duplicate a source/spec/page id / duplicate a React
+    // key in the Data-modeling panel's lists or the page tablist / top-bar page
+    // Select. See store/constructor.pages.ts setPagesPatch (the pattern this mirrors).
+    store.setDataSources(sources.map(fromApiDataSource))
+    store.setDataSpecs(specs.map(fromApiDataSpec))
+    store.updateSite(fromApiSite(siteMap, navRows))
     store.setPages(pageDetails.map(fromApiPage))
     pageDetails.forEach((p) => {
       // Reflect the server FSM for each loaded page (status + published flag).
