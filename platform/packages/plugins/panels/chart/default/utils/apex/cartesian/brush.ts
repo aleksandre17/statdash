@@ -70,8 +70,12 @@ if (typeof window !== 'undefined') {
 
 const SPACER = '__spacer__'
 
-/** Height (px) of the slim brush rail under the main plot. */
-export const SLIDER_HEIGHT = 96
+/** Height (px) of the slim brush rail under the main plot. 64 = a ~34px
+ *  grabbable strip + the 11px year-label row (Highcharts navigator norm).
+ *  The prior 96 left a tall plotless zone above the area shape — dead height
+ *  the MAIN plot reclaims through its flex:1 sibling (owner, 2026-07-17:
+ *  „სლაიდერის გამო სივრცე რჩება სიმაღლეში"). */
+export const SLIDER_HEIGHT = 64
 
 /**
  * Minimum category count before a range slider earns its chrome. A slider under

@@ -223,3 +223,17 @@
     to   { opacity: 0; transform: translateY(-2px) scale(0.98); }
   }
 }
+
+/* ── Portalled-surface contract (UNLAYERED, deliberately) ─────────────────
+   The content portals to <body>, where a consuming app's UNLAYERED resets
+   (Tailwind preflight: `* { border: 0 solid }`) beat ANY @layer rule in the
+   cascade — the layered border above computed to 0px in production, so the
+   dark popover read as a borderless black slab (owner note, 2026-07-17).
+   Precedent: the filter-bar trigger fix defends the same way. The raised
+   surface tone separates the floating layer from the page in dark (Material
+   elevated-surface convention); light rides the same token pair. Everything
+   else (spacing, items, motion) STAYS in @layer sd-components above. */
+.ui-multiselect__content {
+  border: 1px solid var(--color-border);
+  background: var(--color-surface-raised, var(--color-surface));
+}

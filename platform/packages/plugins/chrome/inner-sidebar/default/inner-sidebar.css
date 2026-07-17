@@ -279,10 +279,21 @@
 @media (min-width: 1281px) {
   :root { --inner-sidebar-w: 78px; }
 
+  .inner-sidebar-cell {
+    /* THE CELL is position:sticky → it creates the stacking context the aside
+       lives in, so the aside's z-40 below was TRAPPED inside it: with the cell
+       itself at z:auto, the page's sticky chrome (filter-bar z-29, page-header
+       z-30) painted ABOVE the whole cell — the expanded panel slid UNDER the
+       year select and tabs ("the menu goes INTO the layout", owner 2026-07-17).
+       The overlay rank belongs on the stacking-context OWNER: above the page
+       chrome (30), below the app header (50). */
+    z-index: 40;
+  }
+
   .inner-sidebar {
     /* Above the page's own sticky chrome (page-header z-30 / filter-bar z-29),
-       below the app header (z-50) — the expanded overlay must slide over the
-       content band, never under its sticky bars. */
+       below the app header (z-50) — effective only because the CELL above
+       carries the same rank in the page-root stacking context. */
     z-index: 40;
     transition: width 0.22s ease, box-shadow 0.22s ease;
   }
