@@ -1,0 +1,12 @@
+// one-off verification probe: regional KPI cards fill on region-click (post filter-fix)
+import { chromium } from '@playwright/test'
+const b = await chromium.launch(); const p = await b.newPage()
+const errs = []; p.on('pageerror', e => errs.push(String(e).slice(0,90)))
+await p.goto('http://192.168.1.199:3012/ka/regional', { waitUntil: 'networkidle', timeout: 60000 })
+await p.waitForTimeout(2500)
+const before = await p.locator('.kpi-card').allInnerTexts()
+const region = p.locator('svg path[d]:not([d="M0 0"])').nth(3)
+await region.click({ force: true }); await p.waitForTimeout(2500)
+const after = await p.locator('.kpi-card').allInnerTexts()
+console.log(JSON.stringify({ before: before.slice(0,4), after: after.slice(0,4), errs }, null, 1))
+await b.close()
