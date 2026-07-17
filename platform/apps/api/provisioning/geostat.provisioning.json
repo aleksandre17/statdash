@@ -53,7 +53,7 @@
                     "account": "allocation-of-primary-income-account",
                     "side": "U"
                   },
-                  "measure": "B5G",
+                  "measure": "accounts.gni",
                   "type": "yoy"
                 },
                 "trendSub": {
@@ -70,7 +70,7 @@
                     "side": "U"
                   },
                   "format": "mln_gel",
-                  "measure": "B5G",
+                  "measure": "accounts.gni",
                   "type": "point"
                 }
               },
@@ -90,7 +90,7 @@
                     "account": "secondary-distribution-of-income-account",
                     "side": "U"
                   },
-                  "measure": "B6G",
+                  "measure": "accounts.disposableIncome",
                   "type": "yoy"
                 },
                 "trendSub": {
@@ -107,7 +107,7 @@
                     "side": "U"
                   },
                   "format": "mln_gel",
-                  "measure": "B6G",
+                  "measure": "accounts.disposableIncome",
                   "type": "point"
                 }
               },
@@ -127,7 +127,7 @@
                     "account": "use-of-disposable-income-account",
                     "side": "U"
                   },
-                  "measure": "B8G",
+                  "measure": "accounts.savings",
                   "type": "yoy"
                 },
                 "trendSub": {
@@ -144,7 +144,7 @@
                     "side": "U"
                   },
                   "format": "mln_gel",
-                  "measure": "B8G",
+                  "measure": "accounts.savings",
                   "type": "point"
                 }
               },
@@ -164,7 +164,7 @@
                     "account": "capital-account",
                     "side": "U"
                   },
-                  "measure": "B9",
+                  "measure": "accounts.netLending",
                   "type": "yoy"
                 },
                 "trendSub": {
@@ -181,7 +181,7 @@
                     "side": "U"
                   },
                   "format": "mln_gel",
-                  "measure": "B9",
+                  "measure": "accounts.netLending",
                   "type": "point"
                 }
               },
@@ -204,7 +204,7 @@
                   "from": {
                     "$ctx": "fromYear"
                   },
-                  "measure": "B1G",
+                  "measure": "accounts.gdp",
                   "to": {
                     "$ctx": "toYear"
                   },
@@ -226,7 +226,7 @@
                   "from": {
                     "$ctx": "fromYear"
                   },
-                  "measure": "B1G",
+                  "measure": "accounts.gdp",
                   "to": {
                     "$ctx": "toYear"
                   },
@@ -252,7 +252,7 @@
                   "from": {
                     "$ctx": "fromYear"
                   },
-                  "measure": "P1",
+                  "measure": "accounts.output",
                   "to": {
                     "$ctx": "toYear"
                   },
@@ -274,7 +274,7 @@
                   "from": {
                     "$ctx": "fromYear"
                   },
-                  "measure": "P1",
+                  "measure": "accounts.output",
                   "to": {
                     "$ctx": "toYear"
                   },
@@ -347,7 +347,7 @@
                     "side": "U"
                   },
                   "format": "mln_gel",
-                  "measure": "B9",
+                  "measure": "accounts.netLending",
                   "time": {
                     "$ctx": "toYear"
                   },
@@ -1324,7 +1324,7 @@
                 "value": {
                   "type": "point",
                   "format": "sign_pct",
-                  "measure": "real-gdp-growth-rates",
+                  "measure": "gdp.realGrowth",
                   "filter": {
                     "geo": "GE",
                     "approach": "_Z"
@@ -1361,7 +1361,7 @@
                 "value": {
                   "type": "point",
                   "format": "decimal1",
-                  "measure": "gdp-per-capita-usd",
+                  "measure": "gdp.perCapita",
                   "filter": {
                     "geo": "GE",
                     "approach": "_Z"
@@ -1369,7 +1369,7 @@
                 },
                 "trend": {
                   "type": "yoy",
-                  "measure": "gdp-per-capita-usd",
+                  "measure": "gdp.perCapita",
                   "filter": {
                     "geo": "GE",
                     "approach": "_Z"
@@ -1430,7 +1430,7 @@
                 },
                 "value": {
                   "type": "cagr",
-                  "measure": "gross-domestic-product-at-current-prices",
+                  "measure": "gdp.current",
                   "from": {
                     "$ctx": "fromYear"
                   },
@@ -1444,7 +1444,7 @@
                 },
                 "trend": {
                   "type": "cagr",
-                  "measure": "gross-domestic-product-at-current-prices",
+                  "measure": "gdp.current",
                   "from": {
                     "$ctx": "fromYear"
                   },
@@ -1478,7 +1478,7 @@
                 },
                 "value": {
                   "type": "cagr",
-                  "measure": "gdp-per-capita-usd",
+                  "measure": "gdp.perCapita",
                   "from": {
                     "$ctx": "fromYear"
                   },
@@ -1492,7 +1492,7 @@
                 },
                 "trend": {
                   "type": "cagr",
-                  "measure": "gdp-per-capita-usd",
+                  "measure": "gdp.perCapita",
                   "from": {
                     "$ctx": "fromYear"
                   },
@@ -1527,7 +1527,7 @@
                 "value": {
                   "type": "point",
                   "format": "mln_gel",
-                  "measure": "gross-domestic-product-at-current-prices",
+                  "measure": "gdp.current",
                   "time": {
                     "$ctx": "toYear"
                   },
@@ -1538,7 +1538,7 @@
                 },
                 "trend": {
                   "type": "yoy",
-                  "measure": "gross-domestic-product-at-current-prices",
+                  "measure": "gdp.current",
                   "time": {
                     "$ctx": "toYear"
                   },
@@ -1942,7 +1942,7 @@
                     "filter": {
                       "geo": "GE",
                       "approach": "_Z",
-                      "measure": "gross-domestic-product-at-current-prices"
+                      "measure": "gdp.current"
                     }
                   },
                   "fromDim": "fromYear",
@@ -2052,7 +2052,7 @@
                     "filter": {
                       "geo": "GE",
                       "approach": "_Z",
-                      "measure": "gdp-per-capita-usd"
+                      "measure": "gdp.perCapita"
                     }
                   },
                   "fromDim": "fromYear",
@@ -2456,7 +2456,7 @@
                     "filter": {
                       "geo": "GE",
                       "approach": "_Z",
-                      "measure": "real-gdp-growth-rates"
+                      "measure": "gdp.realGrowth"
                     }
                   },
                   "fromDim": "fromYear",
@@ -3332,10 +3332,10 @@
                 "trend": {
                   "filter": {
                     "geo": { "$ctx": "geo", "$ne": "_T" },
-                    "measure": "GVA",
+                    "measure": "regional.gva",
                     "sector": { "$ctx": "sector", "default": "_T" }
                   },
-                  "measure": "GVA",
+                  "measure": "regional.gva",
                   "type": "yoy"
                 },
                 "trendSub": {
@@ -3349,11 +3349,11 @@
                 "value": {
                   "filter": {
                     "geo": { "$ctx": "geo", "$ne": "_T" },
-                    "measure": "GVA",
+                    "measure": "regional.gva",
                     "sector": { "$ctx": "sector", "default": "_T" }
                   },
                   "format": "mln_gel",
-                  "measure": "GVA",
+                  "measure": "regional.gva",
                   "type": "point"
                 }
               },
@@ -3371,10 +3371,10 @@
                 "value": {
                   "filter": {
                     "geo": { "$ctx": "geo", "$ne": "_T" },
-                    "measure": "GVA",
+                    "measure": "regional.gva",
                     "sector": { "$ctx": "sector", "default": "_T" }
                   },
-                  "measure": "GVA",
+                  "measure": "regional.gva",
                   "type": "yoy"
                 }
               },
@@ -3397,18 +3397,18 @@
                   "denom": {
                     "filter": {
                       "geo": { "$ne": "_T" },
-                      "measure": "GVA",
+                      "measure": "regional.gva",
                       "sector": { "$ctx": "sector", "default": "_T" }
                     },
-                    "measure": "GVA"
+                    "measure": "regional.gva"
                   },
                   "num": {
                     "filter": {
                       "geo": { "$ctx": "geo", "$ne": "_T" },
-                      "measure": "GVA",
+                      "measure": "regional.gva",
                       "sector": { "$ctx": "sector", "default": "_T" }
                     },
-                    "measure": "GVA"
+                    "measure": "regional.gva"
                   },
                   "type": "share"
                 }
@@ -3431,13 +3431,13 @@
                 "value": {
                   "filter": {
                     "geo": { "$ctx": "geo", "$ne": "_T" },
-                    "measure": "GVA",
+                    "measure": "regional.gva",
                     "sector": { "$ctx": "sector", "default": "_T" }
                   },
                   "from": {
                     "$ctx": "spanFrom"
                   },
-                  "measure": "GVA",
+                  "measure": "regional.gva",
                   "to": {
                     "$ctx": "spanTo"
                   },
@@ -3462,13 +3462,13 @@
                 "value": {
                   "filter": {
                     "geo": { "$ctx": "geo", "$ne": "_T" },
-                    "measure": "GVA",
+                    "measure": "regional.gva",
                     "sector": { "$ctx": "sector", "default": "_T" }
                   },
                   "from": {
                     "$ctx": "fromYear"
                   },
-                  "measure": "GVA",
+                  "measure": "regional.gva",
                   "to": {
                     "$ctx": "toYear"
                   },
@@ -3489,10 +3489,10 @@
                 "trend": {
                   "filter": {
                     "geo": { "$ctx": "geo", "$ne": "_T" },
-                    "measure": "GVA",
+                    "measure": "regional.gva",
                     "sector": { "$ctx": "sector", "default": "_T" }
                   },
-                  "measure": "GVA",
+                  "measure": "regional.gva",
                   "time": {
                     "$ctx": "toYear"
                   },
@@ -3509,11 +3509,11 @@
                 "value": {
                   "filter": {
                     "geo": { "$ctx": "geo", "$ne": "_T" },
-                    "measure": "GVA",
+                    "measure": "regional.gva",
                     "sector": { "$ctx": "sector", "default": "_T" }
                   },
                   "format": "mln_gel",
-                  "measure": "GVA",
+                  "measure": "regional.gva",
                   "time": {
                     "$ctx": "toYear"
                   },
@@ -3550,11 +3550,11 @@
                 "value": {
                   "filter": {
                     "geo": { "$ctx": "geo", "$ne": "_T" },
-                    "measure": "GVA",
+                    "measure": "regional.gva",
                     "sector": { "$ctx": "sector", "default": "_T" }
                   },
                   "format": "mln_gel",
-                  "measure": "GVA",
+                  "measure": "regional.gva",
                   "time": {
                     "$ctx": "fromYear"
                   },
@@ -3579,13 +3579,13 @@
                 "value": {
                   "filter": {
                     "geo": { "$ctx": "geo", "$ne": "_T" },
-                    "measure": "GVA",
+                    "measure": "regional.gva",
                     "sector": { "$ctx": "sector", "default": "_T" }
                   },
                   "from": {
                     "$ctx": "fromYear"
                   },
-                  "measure": "GVA",
+                  "measure": "regional.gva",
                   "to": {
                     "$ctx": "toYear"
                   },
@@ -3688,7 +3688,7 @@
                       "geo": {
                         "$ne": "_T"
                       },
-                      "measure": "GVA",
+                      "measure": "regional.gva",
                       "sector": {
                         "$ne": "_T",
                         "$ctx": "sector"
@@ -3901,7 +3901,7 @@
                         "$ctx": "geo",
                         "$ne": "_T"
                       },
-                      "measure": "GVA",
+                      "measure": "regional.gva",
                       "sector": {
                         "$ne": "_T",
                         "$ctx": "sector"
@@ -4102,7 +4102,7 @@
                         "$ctx": "geo",
                         "$ne": "_T"
                       },
-                      "measure": "GVA",
+                      "measure": "regional.gva",
                       "sector": {
                         "$ne": "_T",
                         "$ctx": "sector"
@@ -4233,7 +4233,7 @@
                       "geo": {
                         "$ne": "_T"
                       },
-                      "measure": "GVA",
+                      "measure": "regional.gva",
                       "sector": {
                         "$ne": "_T",
                         "$ctx": "sector"
@@ -4378,7 +4378,7 @@
                       "geo": {
                         "$ctx": "geo"
                       },
-                      "measure": "GVA",
+                      "measure": "regional.gva",
                       "sector": {
                         "$ne": "_T",
                         "$ctx": "sector"
@@ -4522,7 +4522,7 @@
                       "geo": {
                         "$ctx": "geo"
                       },
-                      "measure": "GVA",
+                      "measure": "regional.gva",
                       "sector": {
                         "$ne": "_T"
                       }
