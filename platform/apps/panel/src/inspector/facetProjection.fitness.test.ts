@@ -128,12 +128,32 @@ describe('FF-FACET-PROJECTED — a declared facet is a generic dock projection',
 
   it('the real registered data-panel metas carry the data-bindable opt-in', () => {
     // The CONSUMER proof: the declaration the generic DATA facet reads is present on EVERY
-    // real element that declares a `data: DataSpec` — chart/table/kpi-strip AND geograph
-    // (a data-driven choropleth) — so the Data section falls out for each.
-    for (const type of ['chart', 'table', 'kpi-strip', 'geograph']) {
+    // real element that declares a top-level `data: DataSpec` AND reads `ctx.rows` from
+    // it — chart/table AND geograph (a data-driven choropleth) — so the Data section
+    // falls out for each.
+    for (const type of ['chart', 'table', 'geograph']) {
       const meta = nodeRegistry.getMeta(type) as unknown as ObjectMeta
       expect(meta?.caps, type).toContain('data-bindable')
     }
+  })
+
+  // ── WORK-0083 root-cause regression (see kpi-strip's storeRoutingIntegrity
+  //  .fitness.test.ts for the full trace) — a kpi-strip has NO top-level `data`
+  //  field (its contract is `items: KpiSpec[]`, each with its OWN governed
+  //  `value.measure`) and its shell never reads `ctx.rows`. Declaring
+  //  `data-bindable` anyway mounted the generic Data facet, whose bind wrote a
+  //  STRAY `node.data` that `effectiveStoreKey` (renderNode.ts) then used to
+  //  reroute the WHOLE strip's store — corrupting every sibling KPI card's read
+  //  to the wrong dataset. This element must never re-declare the cap.
+  it('kpi-strip does NOT carry data-bindable (it has no data-facet-readable `data` field)', () => {
+    const meta = nodeRegistry.getMeta('kpi-strip') as unknown as ObjectMeta
+    expect(meta?.caps).not.toContain('data-bindable')
+
+    const kpiStrip = { id: 'k1', type: 'kpi-strip', props: {} }
+    const kpiIds = dockSectionRegistry
+      .list(elementCtx({ selected: kpiStrip as never }))
+      .map((s) => s.id)
+    expect(kpiIds).not.toContain('element.facet.data')
   })
 
   // ── EVENTS facet (Gap 2) — per-element `on[]` interaction authoring falls out ──────

@@ -13,10 +13,28 @@ export const META: PanelSliceMeta = {
   canHaveChildren: false,
   // `flow` (placement capability): a kpi-strip is flow content, admissible in a section.
   // STYLE + VISIBILITY are UNIVERSAL facets (every renderable node — no cap needed).
-  // `data-bindable`: opt into the universal DATA facet (element.facet.data over `data`).
   // `interactive`: opt into the universal EVENTS facet — a kpi tile emits point:click
   // gestures the `on[]`/NodeAction spine folds (element.facet.events over `on`).
-  caps:            ['filterable', 'flow', 'data-bindable', 'interactive'],
+  //
+  // NOT `data-bindable` (WORK-0083 root-fix — was a copy-paste artefact from chart/
+  // table/geograph's meta.ts). A kpi-strip has NO `data: DataSpec` field in its own
+  // contract (KpiStripSchema = `items: KpiSpec[]` only) and its shell never reads
+  // `ctx.rows` (KpiStripShell.tsx: "does NOT consume ctx.rows / useNodeRows — it
+  // reads the store through interpretKpis, an entirely separate read surface").
+  // Declaring `data-bindable` anyway mounted the generic Inspector Data facet
+  // (DataFacetField/MetricPalette) for a kpi-strip selection, and binding a metric
+  // there wrote a STRAY `node.data` the shell never renders — but `effectiveStoreKey`
+  // (renderNode.ts) DOES generically walk any node's `.data` for its metric's
+  // `dataSource` and overrides `ctx.pageStoreKey` for the WHOLE node. A stray bind
+  // of a different-dataSource metric (e.g. a 'gdp' metric onto the regional page's
+  // kpi-strip) silently rerouted EVERY sibling KPI item (still carrying their own
+  // correct raw codes) through the WRONG store → 0 rows → honest "no observation for
+  // this coordinate" on every card (WORK-0083's "wrong coordinate"). The kpi-strip's
+  // REAL, correct per-item bind surface already exists: each item's OWN governed
+  // `value.measure` (KpiValueItemSchema, `type:'enum-ref', source:'metrics'`),
+  // authored through the per-item Inspector drill (ADR-041 value-band Part grammar)
+  // — never a node-level `data` facet.
+  caps:            ['filterable', 'flow', 'interactive'],
   version:         1,
   i18n: {
     ka: {
