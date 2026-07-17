@@ -45,9 +45,14 @@ export interface PipelineBuilderProps {
    *  Optional so the builder still works standalone (no grid). */
   selectedStep?: number
   onSelectStep?: (index: number) => void
+  /** Replace the default flat op dropdown with a custom add-step surface (W-P3: the
+   *  workbench passes the 7-verb palette here). Receives the SAME `addStep(op)` the
+   *  builder uses internally (keeps the uid array in sync). When absent, the default
+   *  `AddStepControl` renders — so the LEGACY editors are untouched (Strangler). */
+  renderAddStep?: (addStep: (op: string) => void) => React.ReactNode
 }
 
-export function PipelineBuilder({ value, onChange, selectedStep, onSelectStep }: PipelineBuilderProps) {
+export function PipelineBuilder({ value, onChange, selectedStep, onSelectStep, renderAddStep }: PipelineBuilderProps) {
   const sensors = useDndSensors()
 
   // Stable drag ids — one per step, kept length-synced with `value`. Held in
@@ -113,7 +118,7 @@ export function PipelineBuilder({ value, onChange, selectedStep, onSelectStep }:
         </SortableContext>
       </DndContext>
 
-      <AddStepControl onAdd={addStep} />
+      {renderAddStep ? renderAddStep(addStep) : <AddStepControl onAdd={addStep} />}
     </Box>
   )
 }

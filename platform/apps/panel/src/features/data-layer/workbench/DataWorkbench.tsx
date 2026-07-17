@@ -36,6 +36,7 @@ import { PipelineBuilder } from '../editors/query/PipelineBuilder'
 import { PipelineStepGrid } from '../pipeline-preview/PipelineStepGrid'
 import { AS_OF_SOURCE } from '../pipeline-preview/pipelinePreview'
 import { GeneratedQueryPane } from './GeneratedQueryPane'
+import { VerbPalette } from './VerbPalette'
 import { useActiveLocales } from '../../../inspector/useActiveLocales'
 import type { Locale } from '../../../types/constructor'
 import './workbench.css'
@@ -103,6 +104,7 @@ export function DataWorkbench({ value, onChange }: DataWorkbenchProps) {
           onChange={setPipe}
           selectedStep={asOfStep}
           onSelectStep={setAsOfStep}
+          renderAddStep={(addStep) => <VerbPalette onAdd={addStep} />}
         />
       </Box>
 

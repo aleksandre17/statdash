@@ -16,3 +16,5 @@ export {
 export type { CappedRows, GridCell, GridCellState } from './pipelinePreview'
 export { buildColumnLabels } from './columnLabels'
 export type { ColumnLabelResolver } from './columnLabels'
+export { buildMemberLabels, rawMemberLabels, SDMX_TOTAL } from './memberLabels'
+export type { MemberLabelResolver } from './memberLabels'

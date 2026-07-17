@@ -9,14 +9,24 @@
 //
 import type { DataSpec } from '@statdash/engine'
 import { useMetricCatalog } from '../../../discovery/useMetricCatalog'
+import { useActiveProfile, profileOrNull } from '../../../discovery/useActiveProfile'
 import { useActiveLocales } from '../../../inspector/useActiveLocales'
+import { useRole } from '../../../studio/useRole'
 import type { Locale } from '../../../types/constructor'
 import { usePipelineSourceRows } from './usePipelineSourceRows'
 import { deriveStepRows, capRows, deriveColumns, AS_OF_SOURCE } from './pipelinePreview'
 import { buildColumnLabels, type ColumnLabelResolver } from './columnLabels'
+import { buildMemberLabels, rawMemberLabels, type MemberLabelResolver } from './memberLabels'
 import { PipelineDataGrid } from './PipelineDataGrid'
 
 type QuerySpec = Extract<DataSpec, { type: 'query' }>
+
+/** SDMX plumbing echoes hidden from the AUTHOR plane (SPEC §3.4 — no plumbing tokens):
+ *  `measure` is the flow-code column that duplicates the metric label (the value column
+ *  already carries it — dedupe), `obsStatus` is data-quality provenance for the steward.
+ *  The steward plane sees them RAW. Law 1: named by their reserved obs-column keys, not
+ *  by any business dimension. */
+const AUTHOR_HIDDEN_FIELDS = new Set(['measure', 'obsStatus'])
 
 export interface PipelineStepGridProps {
   spec:     QuerySpec
@@ -29,6 +39,8 @@ export function PipelineStepGrid({ spec, asOfStep }: PipelineStepGridProps) {
   const locale = (useActiveLocales()[0] ?? 'ka') as Locale
   const en = locale === 'en'
   const catalog = useMetricCatalog()
+  const profile = profileOrNull(useActiveProfile())
+  const role = useRole()
   const source = usePipelineSourceRows(spec)
 
   const pipe = spec.pipe ?? []
@@ -48,8 +60,13 @@ export function PipelineStepGrid({ spec, asOfStep }: PipelineStepGridProps) {
     derivationError = true
   }
   const capped   = capRows(stepRows)
-  const columns  = deriveColumns(capped.rows)
   const status   = source.status === 'ok' && derivationError ? 'error' : source.status
+
+  // The author plane hides the SDMX plumbing echoes (measure dedup + obsStatus); the
+  // steward plane keeps every column. Law 11: an author never sees a raw flow code.
+  const isAuthor = role !== 'steward'
+  const columns  = deriveColumns(capped.rows)
+    .filter((c) => !(isAuthor && AUTHOR_HIDDEN_FIELDS.has(c)))
 
   const columnLabel: ColumnLabelResolver = catalog.status !== 'ready'
     ? (field: string) => field
@@ -59,6 +76,12 @@ export function PipelineStepGrid({ spec, asOfStep }: PipelineStepGridProps) {
         query:      spec.query,
         locale,
       })
+
+  // The CELL resolver: governed member labels in the author plane (adjara→აჭარა, _T→
+  // Total), raw codes in the steward plane / before the profile is ready.
+  const cellLabel: MemberLabelResolver = isAuthor && profile
+    ? buildMemberLabels(profile, locale)
+    : rawMemberLabels
 
   const metricName = columnLabel('value')
   const caption = asOfStep <= AS_OF_SOURCE
@@ -73,6 +96,7 @@ export function PipelineStepGrid({ spec, asOfStep }: PipelineStepGridProps) {
       capped={capped.capped}
       columns={columns}
       columnLabel={columnLabel}
+      cellLabel={cellLabel}
       caption={caption}
       locale={locale}
     />

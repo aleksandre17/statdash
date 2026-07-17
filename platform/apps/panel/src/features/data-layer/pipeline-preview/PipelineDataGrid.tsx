@@ -14,6 +14,8 @@ import { Box, Typography } from '@mui/material'
 import type { EngineRow } from '@statdash/engine'
 import { toGridCell } from './pipelinePreview'
 import type { ColumnLabelResolver } from './columnLabels'
+import type { MemberLabelResolver } from './memberLabels'
+import { rawMemberLabels } from './memberLabels'
 import type { PreviewStatus } from './usePipelineSourceRows'
 
 export interface PipelineDataGridProps {
@@ -25,13 +27,16 @@ export interface PipelineDataGridProps {
   capped:      boolean
   columns:     string[]
   columnLabel: ColumnLabelResolver
+  /** Resolve a CELL's raw member code to its governed label (author plane); identity in
+   *  the steward plane / before the catalog is ready. Defaults to the raw passthrough. */
+  cellLabel?:  MemberLabelResolver
   /** The current step's name — the table <caption> (SPEC §3.5). */
   caption:     string
   locale:      string
 }
 
 export function PipelineDataGrid({
-  status, rows, total, capped, columns, columnLabel, caption, locale,
+  status, rows, total, capped, columns, columnLabel, cellLabel = rawMemberLabels, caption, locale,
 }: PipelineDataGridProps) {
   const en = locale === 'en'
 
@@ -103,7 +108,9 @@ export function PipelineDataGrid({
             {rows.map((row, ri) => (
               <tr key={ri}>
                 {columns.map((c) => {
-                  const cell = toGridCell(row[c] as never, locale)
+                  // Resolve the raw member code to its governed label FIRST (author plane),
+                  // then apply the honest-cell grammar (no-data '—', genuine 0, etc.).
+                  const cell = toGridCell(cellLabel(c, row[c] as never) as never, locale)
                   return (
                     <td key={c} data-cell-state={cell.state}>
                       {cell.state === 'no-data'

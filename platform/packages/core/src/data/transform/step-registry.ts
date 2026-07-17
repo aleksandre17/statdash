@@ -37,6 +37,15 @@ export type StepCategory =
   | 'combine'    // bring in another source
   | 'sort'       // order rows
 
+/**
+ * The seven verbs in canonical author-facing order (Get first — the source head).
+ * The palette / "+add step" menu / rail iterate THIS order; each verb's concrete ops
+ * are `getOpsInCategory(verb)` — a projection, never a hand-list (ADR-046 · SPEC §1.2).
+ */
+export const STEP_CATEGORIES: readonly StepCategory[] = [
+  'get', 'filter', 'aggregate', 'derive', 'reshape', 'combine', 'sort',
+] as const
+
 const _registry   = new Map<string, StepFn>()
 const _schemas    = new Map<string, PropSchema>()
 const _categories = new Map<string, StepCategory>()
@@ -101,11 +110,41 @@ export function getTransformStepCategory(op: string): StepCategory | undefined {
 
 /**
  * Sorted list of registered ops that carry NO `category` yet — the shrinking
- * COVERAGE_TODO the 7-verb palette closes at W-P3. Today this is the whole
- * inventory (the seam is un-assigned by design); `FF-VERB-COVERAGE` asserts it
- * shrinks to `[]` once categories land, so a NEW op added without a category
- * decision surfaces here loudly (SPEC §1.2).
+ * COVERAGE_TODO the 7-verb palette closes at W-P3. Since W-P3 assigns every
+ * built-in op its category, this is `[]` for the built-in inventory; `FF-VERB-
+ * COVERAGE` asserts it stays `[]`, so a NEW op added without a category decision
+ * surfaces here loudly (SPEC §1.2).
  */
 export function listUncategorizedOps(): string[] {
   return [..._registry.keys()].filter((op) => !_categories.has(op)).sort()
+}
+
+/**
+ * The registered ops projecting into a given verb category, sorted — the SSOT
+ * behind the 7-verb palette (ADR-046 · SPEC §1.2). The palette is a PROJECTION of
+ * these `category` declarations: an op declares its verb once (at registration), and
+ * the author-facing palette/rail/"+add step" are VIEWS of that field — never a hand
+ * list. An empty result means no op backs that verb yet (e.g. `get` until W-P4
+ * registers `source`); the palette renders such a verb as non-insertable, honestly.
+ */
+export function getOpsInCategory(category: StepCategory): string[] {
+  return [..._categories.entries()]
+    .filter(([, cat]) => cat === category)
+    .map(([op]) => op)
+    .sort()
+}
+
+/**
+ * The full `category → ops` projection (every categorized op, grouped by verb in the
+ * canonical `STEP_CATEGORIES` order). The whole-palette SSOT: a total projection when
+ * `listUncategorizedOps()` is `[]` (FF-VERB-COVERAGE). Verbs with no backing op yet
+ * (e.g. `get`) map to `[]`.
+ */
+export function listOpsByCategory(): Record<StepCategory, string[]> {
+  const out = Object.fromEntries(
+    STEP_CATEGORIES.map((c) => [c, [] as string[]]),
+  ) as Record<StepCategory, string[]>
+  for (const [op, cat] of _categories.entries()) out[cat].push(op)
+  for (const c of STEP_CATEGORIES) out[c].sort()
+  return out
 }

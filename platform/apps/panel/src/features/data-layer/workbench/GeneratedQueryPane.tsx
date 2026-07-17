@@ -62,6 +62,16 @@ export function GeneratedQueryPane({ spec, locale }: GeneratedQueryPaneProps) {
         {en ? 'Generated query' : 'გენერირებული query'}
       </Typography>
 
+      {/* Empty — no metric bound and no steps: an honest hint, never a vestigial
+          "Get: (pick a metric)" one-liner (SPEC §9 / Law 11). */}
+      {steps.length === 0 && (
+        <Typography variant="body2" color="text.secondary" data-testid="gq-empty">
+          {en
+            ? 'Bind a governed metric to begin — the query will build here as you add steps.'
+            : 'დასაწყებად მიაბით მართული მეტრიკა — query აქ აიწყობა ნაბიჯების დამატებისას.'}
+        </Typography>
+      )}
+
       {/* AUTHOR plane — the friendly governed declarative rendering (read-only). */}
       <Box
         component="ol"

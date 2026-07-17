@@ -113,7 +113,8 @@ export { applyPipeline, applyStep, resolvePipeRefs, getFormatter, FORMATTERS, fm
 export type { StepFn, StepCategory }                                    from './data/transform/step-registry'
 export { registerTransformStep, getTransformStep, listTransformOps,
          getTransformStepSchema, listTransformOpSchemas,
-         getTransformStepCategory, listUncategorizedOps }              from './data/transform/step-registry'
+         getTransformStepCategory, listUncategorizedOps,
+         STEP_CATEGORIES, getOpsInCategory, listOpsByCategory }         from './data/transform/step-registry'
 
 // ── FieldConfig — Grafana-equivalent display configuration ────────────
 export type { Threshold, ColorMode, FieldOverride, FieldConfig }        from './field/config'

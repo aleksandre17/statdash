@@ -19,42 +19,17 @@ import type { DataSpec, ObsQuery, TransformStep } from '@statdash/engine'
 import { queryReadObs } from '@statdash/engine'
 import type { ColumnLabelResolver } from '../pipeline-preview/columnLabels'
 import type { Locale } from '../../../types/constructor'
+import { verbLabelForOp } from './verbProjection'
 
 type QuerySpec = Extract<DataSpec, { type: 'query' }>
 
-// ── The friendly verb label per op (author-readable, bilingual) ─────────────────
+// ── The friendly verb label per op — a PROJECTION of the registry `category` ─────
 //
 //  The generated-query pane shows a READABLE verb, never the raw op tag (E4: a
-//  "friendly declarative rendering"). This is a LOCAL display map, NOT the W-P3
-//  category projection over the op registry (that goes live in W-P3, driven from the
-//  engine SSOT). Fallback = the op name itself (honest — the true op, never a blank).
-const VERB_LABELS: Record<string, { ka: string; en: string }> = {
-  source:    { ka: 'წყარო',        en: 'Get' },
-  filter:    { ka: 'ფილტრი',       en: 'Filter' },
-  aggregate: { ka: 'აგრეგაცია',    en: 'Aggregate' },
-  reduce:    { ka: 'აგრეგაცია',    en: 'Aggregate' },
-  rollup:    { ka: 'აგრეგაცია',    en: 'Aggregate' },
-  group:     { ka: 'დაჯგუფება',    en: 'Group' },
-  derive:    { ka: 'გამოთვლა',     en: 'Derive' },
-  addField:  { ka: 'გამოთვლა',     en: 'Derive' },
-  template:  { ka: 'გამოთვლა',     en: 'Derive' },
-  concat:    { ka: 'გამოთვლა',     en: 'Derive' },
-  cast:      { ka: 'გამოთვლა',     en: 'Derive' },
-  window:    { ka: 'გამოთვლა',     en: 'Derive' },
-  melt:      { ka: 'გარდაქმნა',    en: 'Reshape' },
-  pivot:     { ka: 'გარდაქმნა',    en: 'Reshape' },
-  select:    { ka: 'სვეტების არჩევა', en: 'Select columns' },
-  rename:    { ka: 'გადარქმევა',   en: 'Rename' },
-  lookup:    { ka: 'შერწყმა',      en: 'Combine' },
-  join:      { ka: 'შერწყმა',      en: 'Combine' },
-  blend:     { ka: 'შერწყმა',      en: 'Combine' },
-  sort:      { ka: 'დახარისხება',  en: 'Sort' },
-}
-
-function verbLabel(op: string, locale: Locale): string {
-  const v = VERB_LABELS[op]
-  return v ? (v[locale] ?? v.en) : op
-}
+//  "friendly declarative rendering"). W-P3 (pre-note #2): this is no longer a local
+//  hand map — the verb is DERIVED from the op's registry `category` (the SSOT) via
+//  `verbLabelForOp`, so the pane's verbs and the "+add step" palette speak the SAME
+//  seven verbs by construction. Fallback = the op name itself (honest, never a blank).
 
 // The governed-noun extraction speaks only FIELD NAMES, never member VALUES — so a
 // filter's raw member code (e.g. a region code) is NEVER surfaced in the author plane
@@ -140,8 +115,15 @@ export function describeAuthorSteps(
   const en = locale === 'en'
   const out: AuthorStep[] = []
 
-  // ── Head: the Get read ────────────────────────────────────────────────────────
   const measures = readMeasures(spec.query.measure)
+  const pipe = spec.pipe ?? []
+
+  // No metric bound AND no steps → there is no query to describe yet. Return an EMPTY
+  // rendering (the pane shows an honest "bind a metric" hint) rather than a vestigial
+  // "Get: (pick a metric)" one-liner floating with nothing under it (SPEC §9 / Law 11).
+  if (measures.length === 0 && pipe.length === 0) return out
+
+  // ── Head: the Get read — the metric + the governed grain nouns (year, pinned dims) ──
   // The bound metric's governed label = the value column's governed header (the SAME
   // resolution the grid uses: `resolve('value')`), never the raw metric-id string.
   const metricLabel = measures.length > 0 ? resolve('value') : ''
@@ -151,8 +133,8 @@ export function describeAuthorSteps(
   out.push({ op: 'source', verb: getVerb, nouns: grainDims(spec.query).map(resolve) })
 
   // ── Tail: the pure transform verbs ────────────────────────────────────────────
-  for (const step of spec.pipe ?? []) {
-    out.push({ op: step.op, verb: verbLabel(step.op, locale), nouns: stepFieldNouns(step, resolve) })
+  for (const step of pipe) {
+    out.push({ op: step.op, verb: verbLabelForOp(step.op, locale), nouns: stepFieldNouns(step, resolve) })
   }
   return out
 }

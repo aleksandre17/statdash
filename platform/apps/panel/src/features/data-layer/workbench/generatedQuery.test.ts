@@ -71,12 +71,22 @@ describe('describeAuthorSteps — the GOVERNED author rendering (FF-AUTHOR-NO-QU
     expect(deriveStep.nouns).toEqual(['value_growth']) // as: a NEW derived field, honest name
   })
 
-  it('an unbound Get (no metric) declares an honest "pick a metric" prompt, not a raw blank', () => {
-    const unbound = describeAuthorSteps(
+  it('a truly-empty spec (no metric, no steps) renders NOTHING — no vestigial Get one-liner', () => {
+    // SPEC §9 / Law 11: an empty pipe must not paint a lonely "Get: (pick a metric)"
+    // line with nothing under it. The pane renders an honest bind hint instead.
+    const empty = describeAuthorSteps(
       { type: 'query', query: { measure: [] }, pipe: [], encoding: { label: 'label' } },
       (f) => f, 'en',
     )
-    expect(unbound[0].verb).toBe('Get: (pick a metric)')
+    expect(empty).toEqual([])
+  })
+
+  it('an unbound Get WITH steps still declares an honest "pick a metric" Get prompt', () => {
+    const withSteps = describeAuthorSteps(
+      { type: 'query', query: { measure: [] }, pipe: [{ op: 'sort', by: 'value', dir: 'asc' } as never], encoding: { label: 'label' } },
+      (f) => f, 'en',
+    )
+    expect(withSteps[0].verb).toBe('Get: (pick a metric)')
   })
 
   it('is bilingual — Georgian verbs when locale=ka', () => {
