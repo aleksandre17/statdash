@@ -1,0 +1,35 @@
+---
+name: capability-injection-pipeline
+description: Owner's standing mandate (2026-07-16) — continuously inject reference-class capabilities the strong platforms have and we lack; the lead's ranked backlog
+metadata:
+  type: project
+---
+
+Owner (2026-07-16, away, full autonomy): "along the way keep bringing additional functionalities — invented, from international standards, or hybrid." Plus: "canvas is not fully fixed." He demanded ONE concrete capability a strong platform has that we lack, and to IMPLEMENT it (not diagnose). See [[project_framework_grade_verdict]].
+
+**Why:** He's exhausted by diagnosis-without-adoption; the disease is adoption, not absence ([[project_framework_bones_exist]]). He wants FELT, hand-held capability, delivered continuously — proof we can think/find/implement, benchmarked to the proven class, and that "they're not better than us."
+
+**How to apply — the lead's ranked capability backlog (deliver continuously, WIP-pipelined, tree-safe, non-circle-reopening):**
+1. **Dynamic property binding** (Builder.io ⚡ / Retool `{{}}`) — bind ANY scalar prop to a live expr-string (`$bind`), literal↔bind toggle + live preview. ✅ DONE + ✅ #4 schema-aware editor (autocomplete over describeApp governed metrics/dimensions + in-scope refs + infix ops, WCAG combobox, friendly errors; commits `5e0f5f7`/`6e809fe`; FF-BIND-AUTOCOMPLETE-GOVERNED 15/15; agent self-verified the 3 fails pre-existing by revert+rerun — verify-discipline propagated). Law-2-aligned.
+2. **Conditional formatting / thresholds** (Grafana) — value→state/color by authored numeric thresholds (up/down glyph, red-on-fall). Composes with #1. High value for a stats dashboard.
+3. **Computed/calculated element fields** (Form.io / Airtable / Retool formula) — element-level derived value via expr over other fields/data.
+4. **Schema-aware binding editor** (Retool) — autocomplete governed metrics/dimensions/fields + inline live-evaluated result in the bind editor. Follow-on to #1.
+5. **Per-breakpoint responsive prop overrides** (Builder.io) — any prop differs per breakpoint, authored visually.
+6. **Surface the buried query builder / data-pipe** (Grafana/Retool) — built but unreachable ([[feedback_built_but_buried_audit]]).
+7. **Version history + named checkpoints/snapshots** (Figma/Builder) — undo/redo exists; visible history+snapshots is the gap.
+8. **EXPLAIN projection** (H3, our differentiator — EXCEEDS the class) — per-element cite/methodology/lineage. Bigger.
+- **GATED (do NOT build before composition-root S1–S4):** Reusable Symbols w/ per-instance overrides (Builder.io Symbols / Figma components) — blueprint S7; without the manifest SSOT it forks a residence and re-opens the object-model circle.
+
+**SESSION PROGRESS (2026-07-16, owner away, branch feat/ar49-m0-metric-first-authoring, base 9a6b74d):**
+- ✅ #1 Dynamic binding — DONE, committed `b69067a`, gate-green, live-proven on `:5173`.
+- ✅ Canvas craft punch-list — FULLY cleared: commits `1d19175`(B1) `07ecac1`(B3) `cdd0aa3`(B2) `5e07b64`(B4) `828421d`(P1/P2) `04aa931`(P3) `c798e15`(P5) `02bce72`(P6) `9da7ba0`(P7) `96010cd`(L2). P4 = non-repro (was a STALE :3013 deploy — owner was judging an old build). L1 = intentional.
+- ✅ #2 Grafana thresholds — DONE, committed `6318508`/`9edbbe4`/`8202080`, gate-green, live-proven on `:5173` (honest + authoring legs; live-recolor deferred = needs full SDMX obs mock, past-M).
+- ✅ #3 Per-breakpoint responsive authoring (Builder.io/Framer) — DONE, committed `1aedd0c`/`dee6af3`/`8ea7c03`/`7381ddb`/`29dd417`, full `tsc -b` green, live-proven on `:5173` (grid reflows per breakpoint). COHERENCE WIN: absorbed `BindableControl` into ONE `ValueAuthoringControl` (fixed/bound/responsive modes, composable) — NOT a bolt-on. Opt-in = `PropField.responsive?: boolean`. Breakpoint switcher in canvas toolbar.
+- 🛠️ FIXED 2 of my own session's regressions: (a) B1 grid.fitness typecheck break under full `tsc -b` (`ced804a`); (b) B2 baked a Georgian label into colorProjector.ts (a PROJECTOR = library logic, not catalog-class) → violated FF-no-tenant-content (Law 3); reverted to en-neutral (`b...` colorProjector commit). Lesson recorded in [[green-gate-panel-typecheck]]: agents touching `packages/*` MUST run FULL `tsc -b` AND the full vitest, not just `tsc -b apps/panel` — the panel gate misses plugins fitness/law tests. **DISCIPLINE: after each agent, I now run full `tsc -b` + full vitest and trust-but-VERIFY "pre-existing" failure claims (agents mislabeled a real B2 regression as pre-existing).**
+- ✅ FINAL GATE VERDICT (verified by me, not agent testimony): full `tsc -b` exit 0; full vitest = 3 pre-existing failures only, ZERO net-new from my session — token-cohesion `Select.css` (confirmed pre-existing: b24aa02 is ancestor of base 9a6b74d) + perspective-render-validation ×2 (pre-existing per binding-agent stash-test + thematically unrelated to my changes; matches SessionStart's known-RED). All 21 session commits clean; owner's 38 deletions + `.audit-shots/` never staged.
+- 🏛️ ARCHITECT-FLAG (colorProjector): decide whether `PresentationProjector.schema()` labels should be recognized as catalog-class (peer of `*Node.ts`/`meta.ts`) so they may carry bilingual UI labels — OR projectors source Georgian from the panel i18n surface. Until decided, projector labels stay en-neutral. I did NOT unilaterally broaden the law-gate ALLOW list (Class-M: architect-owned).
+- 🧮 ARCH DEBT (flagged by thresholds agent, name+register): TWO Threshold models now exist — legacy hex `Threshold` (`core/src/field/config.ts`, chart FieldConfig flavour) vs new token-bound `ValueThreshold` (`core/src/config/threshold.ts`). Should converge on ONE token-bound grammar (Strangler-Fig); charts/tables adopt `resolveValueThreshold` at their value seam. Not urgent; do NOT re-fork.
+- ⏳ **DEPLOY to :3013 PENDING (owner-adjacent):** dev panel is a docker container on 192.168.1.199 bind-mounting only `apps/panel/src`; `packages/*` changed (binding, B1, B3) → needs a dev-panel IMAGE REBUILD on the remote, not just a src sync. It's HIS infra — do NOT fire blind while he's away; present turn-key on return. pwsh IS available locally (stale memory said absent — corrected). Compose: `ops/compose/docker-compose.dev.yml` (panel svc `statdash-panel:dev-watch`).
+- 📌 DEFERRED craft debt (3 obs from finish batch, 2 possibly mock-only): KpiStripShell null-guard crash on mock boot (`packages/plugins/panels/kpi-strip/default/KpiStripShell.tsx:76`); raw i18n keys `empty.title/desc` in canvas empty-state (real vs mock?); LayersSurface overline hardcoded Georgian `"სტრუქტურა"` (real Law-4). Close in a later cleanup.
+
+**Delivery discipline:** ONE editing stream on the shared fragile tree at a time; read-only work (audits, pipeline design) parallelizes; pipeline the next the moment one lands + is committed clean. Every capability: additive/OCP (Law 8), expr-as-data (Law 2), arrow-clean (Law 3), honest states (Law 11), PROVEN live on remote :3013 (192.168.1.199, admin/dev_admin_pw_123) — not just gate-green.

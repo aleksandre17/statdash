@@ -1,13 +1,34 @@
-# Platform-Architect Memory Index
+# Memory Index
 
-## Project
+## Auto-relocated (memory-home-guard — reconcile into a topic section)
 - [Time-mode decision](project_time_mode_decision.md) — orthogonal-axis law (selection ⊥ grain ⊥ dim); grain deferred behind D-GRAIN on data grounds
 - [Responsive composition model](project_responsive_composition_model.md) — A+B = ONE grammar (structure ⊥ style); resolveStyle merge + 3-boundary @layer; layout-node SSOT; retire row + bespoke page div
 - [Framework-grade style system](project_framework_grade_style_system.md) — token-constrained + part-aware NodeStyles; StyleField Constructor authoring; extends Z's cascade; reject Tailwind-classes-in-config
 - [Grid maximal grammar](project_grid_maximal_grammar.md) — AR-5: `grid` node = full CSS-Grid JSON (resolveGrid dual-route + @container cascade); wraps KEPT (distributed-style toggle band, not weak layout)
 - [Cross-filter capability](project_cross_filter_capability.md) — Grammar of Interaction; READ side + store `=ANY` + KPI reactivity already work; missing = general WRITE adapter for the dead `on[]` port (geograph one-off). Spec: work/DESIGN-cross-filter-interaction.md
+- [Grammar of Interaction (AR-42)](project_grammar_of_interaction.md) — interaction = declared relation between Parts (ADR-041); 3 primitives not 4 (Param+Selection+Reference, Link=sugar); generalize AR-38 via `op:directional`; rec P1+P2, AR-40 precedes/landed, AR-41 orthogonal
 - [Governed Canvas vision](project_governed_canvas_vision.md) — AR-49 authoring-reconception umbrella (metric-first canvas; define-vs-curate as a ROLE); sequences AR-40/10/11/4/46/47/48; M0=semantic layer+Metric Palette
 - [Benchmark corpus](project_benchmark_corpus.md) — I OWN work/BENCHMARK-REFERENCE-PLATFORMS.md (capability SSOT vs reference class); consult+refresh at every Leader's Scan; first scan → AR-46/47/48
-
-## Feedback — design doctrine
+- [Shell placement law](project_shell_placement_law.md) — AR-49 M4.2: cramped dock = missing LAW; place(scope×derived-weight)→closed containers; escalation makes cram unrepresentable; focus-view generalizes Model mode; unifies deep-auth §4/D7.1b
+- [Object-model canon](project_object_model_canon.md) — SSOT: One Type System, One Tree, Two Residences + Promotion Law; R0–R5 migration; D7 reframed not superseded; SL-series unpaused
+- [Root-concept foundation](project_root_concept_foundation.md) — 0067 verdict: MIS-FACTORED + missing Part grammar/port; wrapper-vs-leaf = derived predicate; D-F1/2/3 pending owner
+- [Studio IA canonical](project_studio_ia_canonical.md) — Fable ROOT-2 spec: contextual right-dock + generic palette + chrome-on-canvas as port projections; migration S1-S6 (S5/S6 owner sign-off)
+- [Rendering-architecture canon](project_rendering_architecture_canon.md) — Grammar → config-compiled Reactive Query Graph → Realizers; V0–V6; V3 contract = one-way door; ChartEmitter V5
+- [M4 IA Canonical](project_m4_ia_canonical.md) — AR-49 M4 spec: Guided-Canvas doctrine, four owner ideas, apps-only exception (D7), "compose/extend don't reinvent" seam rules
+- [Deep authorability spec](project_deep_authorability.md) — maximal deep-authorability target: D7 `itemSchema` seam + two-seam root cause + owner gates
+- [Deep authorability COMPLETION](project_deep_authorability_completion.md) — reform 0066 P3: the FACET axis is ADR-041's unbuilt sibling; 4 gaps = 1 root (facets are TS structure, not projectable contract); StyleField = first slice
+- [AR-50 semantic elevation](project_data_semantic_study.md) — reconciled to ONE canonical ADR-034 + ONE SPEC (fable); D-AR50-1/2/3 fixed; M5/M5b/M2 BUILT, M-SQ in flight; only ⛔ = M-SQ contract phase
+- [Vintage foundation verdict](project_vintage_foundation_verdict.md) — SOUND not rotten (bitemporal store + as-of overlay already BUILT); vintage = bitemporal PORT coord not dim_key; R1/R2 integrity gates fix-first; ADR-036 + SPEC-vintage-revision-dimension
+- [Authoring experience architecture](project_authoring_experience_architecture.md) — THE unifying authoring-UX SPEC; root = Manipulate is the unbuilt 3rd projection of the Part model (Select/Inspect/Manipulate); fix = Placement port (placePart, structural sibling of writePart) + ONE transport + PlacementPlan; substrate HOLDS → ADR-042
 - [Maximal = orthogonality](feedback_maximal_orthogonality.md) — "maximal decoupling" = independent axes authored once, not axis-count; defer a capability until a real consumer exists
+- [ADR-038 trunk state](project_adr038_trunk_state.md) — Bounded-Element trunk ALREADY BUILT (ObjectMeta + itemSchema recursion + FF-SCHEMA-COMPLETE); value-band-node-promotion is the anti-pattern to REVERT; SPEC-worldclass-authoring-ui.md = authoring SSOT
+- [Bounded-element selection (BE-1/ADR-039)](project_bounded_element_selection.md) — BUILT+e2e-VERIFIED: Composite (node,item-path) selection + BandItemBoundary render-contract + bounded item Inspector; FF-NO-EXTERNAL-SPECIAL-CASE green; don't resurrect the projector
+- [Worktree base hazard](feedback_worktree_base_hazard.md) — verify worktree base vs real feature-branch tip; distinguish committed ground truth from other agents' uncommitted WIP before building
+- [Canvas manipulation model](project_canvas_manipulation.md) — the drop/move architecture decision (dnd-kit convergence, slot-projection) + the two-drag-system reconciliation
+- [Circle-break verdict (AR-52/53)](project_authoring_circle_break_verdict.md) — 2026-07-15 owner review: PARTIAL; converge in doctrine, just-begun in shipped surface; the ONE gap = the executing gate (Stage-0 blocked)
+- [Panel quality ledger](project_panel_quality_ledger.md) — I OWN docs/.../DEEP-2026-07-15-panel-quality.md; six-dim verdict PARTIAL; top-3 hardening: capabilityGate geo-sniff (S), PLANE axis+vars leak (M), composeConstructor manifest seam (M)
+- [Panel canonical re-lay](project_panel_canonical_relay.md) — I OWN BLUEPRINT-panel-canonical-relay.md; four-moment IA (Data=front-door rail) + 3 laws (PLANE/CONTAINMENT/ONE-PLACE) + Strangler seq; 90% re-homing, ADR-041/042 untouched; first motion = Four-Moment Shell
+- [Dynamic property binding](project_dynamic_property_binding.md) — ⚡/`{{ }}` capability LANDED live; value model = core/config/binding.ts, ONE seam = renderNode step 2.7, ⚡ = BindableControl; tri-state honest; OCP generalization path noted
+- [Responsive authoring](project_responsive_authoring.md) — per-breakpoint authoring LANDED via ONE unified ValueAuthoringControl (fixed·bound·responsive); active-breakpoint context = 2 projections (inspector write + canvas preview width); reuses ResponsiveVal/resolveGrid
+- [Binding autocomplete](project_binding_autocomplete.md) — schema-aware Retool-class bound-mode editor LANDED; PURE governed-noun vocabulary (bindSuggestions.ts, FF-BIND-AUTOCOMPLETE-GOVERNED) + WCAG combobox + useBindVocabulary; ops insert SYMBOLS not JSON names; seam untouched
+- [Conditional formatting](project_conditional_formatting.md) — thresholds LANDED as ValueThreshold (token-bound numeric sibling of value-mapping); seam = interpretKpi; ⚠ TWO Threshold models now (legacy chart FieldConfig hex vs new) = convergence debt

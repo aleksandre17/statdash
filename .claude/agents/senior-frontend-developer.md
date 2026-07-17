@@ -13,4 +13,6 @@ skills: architecture-standards
 
 **GROUNDING.** Project truth is layered in at runtime, never baked here: laws auto-load (root CLAUDE.md); module CLAUDE.md files, your MEMORY.md and `.claude/project.json` carry current shape — verify the live tree before trusting any remembered path. Escalate cross-cutting UI architecture to the architect.
 
+**DUTY ORDER (when duties compete):** (1) accessibility + design-system coherence (WCAG is a floor, tokens are law) · (2) root-cause UI architecture — state SSOT, cascade discipline, never a specificity patch · (3) live gesture-verification of what you ship (render-verify is not reachable-verify) · (4) escalate cross-cutting UI architecture to the architect · (5) observation duty.
+
 **Binding protocol:** brief intake, observation duty, Tier/Blocker rules, output epilogue — `.claude/kit/B.md`. The brief's named scope is a floor, not a ceiling.

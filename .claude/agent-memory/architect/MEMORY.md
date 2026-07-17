@@ -1,8 +1,7 @@
-# Architect Memory Index
+# Memory Index
 
-> ADR decision records are first-class artifacts in `docs/architecture/decisions/ADR-NNN-*.md` (SSOT). The redundant per-ADR pointer memories were removed in the SSOT-reorg curation; the decision map below points straight at the ADR docs. Path key: the shared layer moved `engine/*`→`platform/packages/*` and scope `@geostat/*`→`@statdash/*` (ADR-012) — older memories' path literals are illustrative, verify against the tree.
-
-## Project — durable seams, gotchas, and rationale
+## Auto-relocated (memory-home-guard — reconcile into a topic section)
+- [Deep system-architecture (2026-07-15)](project_deep_system_architecture_2026_07_15.md) — the un-named Projector law (Parts+Facets are ONE), artifact-identity forked 5×, PropFieldType fork, describeApp read-model gap; SSOT audit doc
 - [Platform layout & monorepo seams](project_platform_layout.md) — real path layout; chart/table/kpi are *panels* not nodes; @plugins alias seam; framework-seam pointers; ADR-012 rename key
 - [@geostat/@statdash alias resolution](project_geostat_alias_resolution.md) — packages resolve via path aliases, NOT npm workspaces; workspace:* is a latent install-breaker; the 6+ alias-map locations
 - [Panel as external product](project_panel_external_product.md) — panel ships externally; engine packages = the published SemVer contract
@@ -20,8 +19,7 @@
 - [Multi-tenancy — RESOLVED (SaaS)](project_multitenancy_decision_fork.md) — owner chose multi-tenant SaaS 2026-06-28; TIERED HYBRID pool-default+silo-escape, RLS spine, agency=tenant; 5 verified-in-code corrections + FF gates; ADR at platform/work/
 - [Memory-home resolution + SSOT enforcement](project_memory_home_resolution.md) — memory resolves CWD-relative (not CLAUDE_PROJECT_DIR); strays self-heal via memory-home-guard.py + doctor backstop
 - [AR-48 delivery port (export/embed/snapshot) DESIGNED](project_ar48_delivery_port.md) — backend ~80% BUILT (reference-grade), "stub" docs are STALE; real work = wire the dark client seam + image/provenance/card-scope facets; SSOT=DESIGN-delivery-port doc
-
-## Project — DB / data-platform view (architect-level rationale)
+- [Bounded-Element bands (ADR-038/039)](project_bounded_element_bands.md) — canvas item selection: homogeneous props band (kpi-strip, SHIPPED) vs discriminated page-filter band (BE-4, DESIGN SETTLED); BandSource port; filter SSOT reconciles cheaply, no runner fork
 - [DB layer](project_db_layer.md) — Phase-2 DB (PG+Timescale+LTREE+JSONB) structural SSOT; two-schema physical isolation (stats.* / config.*); async-ready engine contract
 - [i18n DB](project_i18n_db.md) — two co-existing locale patterns (JSONB bags vs classifier_display.locale rows); keep ka/en short subtags + config.locale registry; canonical img HAS ICU
 - [Ingestion architecture](project_ingestion_architecture.md) — proposed Staged Submission Pipeline (Medallion + 202-job + PUBLISH gate) replacing manual seed.ts; reuse anchors in-SQL
@@ -30,11 +28,8 @@
 - [API demo parity](project_api_demo_parity.md) — root causes blocking :3002 demo parity: ApiStore missing display channel + stats-api classifier/obs wire drift + empty aggregates + regional _T pollution
 - [engine/core build gap](project_engine_core_build_gap.md) — core is dist-pointing w/ NO tsconfig + empty dist + undeclared @geostat/expr dep; Node consumers (apps/api) break; bundler apps hide it
 - [Typecheck baseline](project_typecheck_baseline.md) — root `tsc --noEmit`=0 is a FALSE GREEN; real gate is `cd apps/geostat && tsc -b`; baseline now clean; 3 i18next suite-load failures are environmental
-
-## Feedback
 - [engine/react locale-agnostic](feedback_engine_react_locale_agnostic.md) — hook BLOCKS Georgian codepoints + 'ka' literals in engine/react; use 'en'/'fr' in tests
-
-## Architecture Decisions — SSOT in docs/architecture/decisions/ (no duplicate memory)
+- [dev mode, never prod](feedback_dev_mode_never_prod.md) — all work runs on dev/staging; prod is a live LAN demo, owner-gated deploy only; dev creds in gitignored apps/api/.env
 - ADR-001 data-binding-architecture — one DataStore port + N source kinds; ship blend seam, defer planner. Accepted (partial)
 - ADR-002 platform-and-constructor-vision — config-object SSOT + pure SDUI renderer; coverage LEADS. Proposed (vision)
 - ADR-003 constructor — open store model, PropSchema inspector, lossless round-trip, G3 live preview. Accepted (substantially built)
@@ -57,3 +52,12 @@
 - ADR-0025 vintage-release — release = publication-event aggregate stamped via GUC/triggers; V25 additive + genesis backfill. Accepted (design)
 - ADR-0026 bootstrap-runner — apps/geostat becomes a generic SDUI runner booting from GET /api/bootstrap. Proposed. Phase B=ADR-018, C=ADR-017
 - ADR-0033 worktree-loss-guard-and-arrow-ownership — two-tier worktree_guard (session-boundary bulk-delete detector + PreToolUse Bash reminder) after the 451-file working-tree-loss incident. Accepted
+- ADR-042 authoring-triprojection-and-placement-port — authoring = Select⊥Inspect⊥Manipulate over ONE Part model; Placement port (`placePart`) = writePart's structural sibling; designs OUT the owner's 5 rot (section-de-privilege via CAPS.LAYOUT + retire AUTOWRAP literal; inspector = facet tab-bar over the BUILT facetRegistry; data = bounded ctx referenced by handle; chrome folds in; SOLID machine-held). ACCEPTED (lead). Build plan = SPEC-authoring-experience-architecture §9. First = Slice 0 Placement seam. NOTE: Inspect/Facet axis already BUILT in code (docs were stale)
+- [Part Grammar Foundation](project_part_grammar_foundation.md) — ADR-041 ROOT-1..4 object-model foundation; accepted cut, phase order, the one-way step
+- [S6 Chrome Unification](project_s6_chrome_unification.md) — chrome-as-part (ADR-041 R4): chrome residence is `sourced` NOT `slot`; seam inventory; HALTED for sign-off
+- [architect deliver-and-stop](feedback_architect_deliver_and_stop.md) — foundation commission = ADR + plan (+ inert scaffold) then STOP; lead routes phases; don't touch board/registry
+- [protection layer first-class](feedback_protection_layer_first_class.md) — in foundation reforms, land regression-guard FFs (ratchet) + enforcement/discoverability EARLY as a fence, never an end-of-plan afterthought
+
+## Auto-relocated (memory-home-guard — reconcile into a topic section)
+- [Framework-lens verdict (2026-07-15)](project_framework_lens_verdict.md) — five-lens deep audit + my core/framework verdict: converge-not-circle, the ONE gate that blocks proof
+- [Deep-audit corpus](reference_deep_audit_corpus.md) — where the five-lens ground truth + settled substrate ADRs live

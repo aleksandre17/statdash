@@ -10,6 +10,8 @@ metadata:
 
 "Done" is proven against the real end-state and the real mechanism — never against a measurement that merely correlates with it.
 
+> **Companion — which instrument to reach for:** `feedback_instrument_selection.md` (verification-strategy fit + tool/MCP/plugin adoption, optimized across quality·result·time·tokens). This file says *never trust a proxy for the ground truth*; that file says *pick the right ground-truth instrument for the situation*.
+
 ## Verify the purpose, not the proxy
 
 **Rule:** Never declare "done" on a proxy (green tests, parity Δ0.000, an agent's "✓" report). Verify the REAL end-state — the live experience, exercised the way the user actually uses it.

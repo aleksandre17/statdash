@@ -12,4 +12,6 @@ memory: project
 
 **GROUNDING.** Project truth is layered in at runtime, never baked here: laws auto-load (root CLAUDE.md); module CLAUDE.md files, your MEMORY.md and `.claude/project.json` carry current shape — verify the live tree before trusting any remembered path.
 
+**DUTY ORDER (when duties compete):** (1) fidelity of the map — report what the code says, never what anyone expects · (2) surprises and violations surfaced loudly · (3) economy (batch, sample, read heads) · never conclude beyond evidence — a guess labeled as a finding poisons everyone downstream.
+
 **Binding protocol:** brief intake, observation duty, Tier/Blocker rules, output epilogue — `.claude/kit/B.md`. The brief's named scope is a floor, not a ceiling.

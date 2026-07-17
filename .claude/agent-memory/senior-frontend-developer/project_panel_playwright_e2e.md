@@ -16,6 +16,24 @@ Playwright is the panel's formal real-browser / e2e tool (EVAL-package-landscape
 
 **Offline-run mechanism (this Windows box, no web):** `@playwright/test` is NOT installable offline, but the npx cache has full `playwright` + `playwright-core` **1.61.1** (`~/AppData/Local/npm-cache/_npx/*/node_modules/playwright` — it ships the runner: `lib/runner`, `./test` export) and Chromium is installed (`~/AppData/Local/ms-playwright/chromium_headless_shell-1228`). To run: junction `platform/node_modules/{playwright,playwright-core}` → the cache, add a `platform/node_modules/@playwright/test` shim (`index.js` = `require('playwright/test')`), then `node platform/node_modules/playwright/cli.js test --config apps/panel/playwright.config.ts`. node_modules is gitignored so the bridge never pollutes the tree. Pinned devDep = `@playwright/test@1.61.1`.
 
+**UPDATED bridge recipe (2026-07-11 — a REAL `@playwright/test@1.61.1` pnpm dep now
+exists):** `node_modules/@playwright/test` is the OBSOLETE offline shim (a real dir,
+`require('playwright/test')`), and `node_modules/playwright` junctions to the npx cache —
+these two + the real `.pnpm/@playwright+test@1.61.1` collide → `did not expect
+test.beforeEach()` / "two different versions of @playwright/test" / "No tests found" on a
+plain `pnpm test:e2e` OR `node node_modules/playwright/cli.js test`. WORKING recipe (run
+from `platform/`): temporarily swap the shim for the real package, run its cli, restore:
+`mv node_modules/@playwright/test node_modules/@playwright/test.shimbak` → `powershell
+New-Item -ItemType Junction -Path node_modules\@playwright\test -Target
+node_modules\.pnpm\@playwright+test@1.61.1\node_modules\@playwright\test` → `CI=1 node
+node_modules/@playwright/test/cli.js test --config apps/panel/playwright.config.ts
+<spec>.e2e.ts` → restore: `powershell (Get-Item node_modules\@playwright\test).Delete()`
+(removes only the junction link, NOT the target) + `mv ...shimbak back`. Both runner AND
+spec-import now resolve to ONE real instance. The Vite dev server boots fine on :5173
+(reuseExistingServer). ~7s/spec. Proven: chromeNavAuthoring + full 8-spec suite green.
+The default (un-swapped) state is BROKEN for e2e — reconcile by removing the shim so
+pnpm's `@playwright/test` symlink stands (flagged).
+
 **Shim-identity gotcha (bit me 2026-07-09):** the shim MUST `require('playwright/test')` (resolves through the node_modules/playwright JUNCTION), NOT a hardcoded absolute path to a specific `_npx/<hash>/…/playwright/test.js`. There are MULTIPLE `_npx/<hash>` caches, and if the shim points at a DIFFERENT hash than the junction (which the cli.js runner loads), the spec's `test`/`expect` are a DIFFERENT module instance than the runner → `test.beforeEach() … did not expect … two different versions of @playwright/test` and "No tests found". Fix: both sides must resolve to ONE instance — shim via `require('playwright/test')`, run via `node_modules/playwright/cli.js`.
 
 **steward.e2e.ts (M2.2 headline, added 2026-07-09):** proves in-tool metric authoring end-to-end — boot author lens → top-bar "Model mode" toggle → steward lens → Model surface → MetricCatalogManager → New metric → PICK dataset+measure (unit pre-fills) → slug-legal id + bilingual GOVERNED label (distinct from cube measure label) + format → Create → save-success → toggle back to author → Data → assert tile in MetricPalette by governed label + count grew by 1. mockApi extended: stateful mutable catalog (PUT /api/config/site replaces it, GET /api/bootstrap serves it), `/api/stats/datasets`, `/api/cube/:code/profile` (typed against src/lib/cubeApi).

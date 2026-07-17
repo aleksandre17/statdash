@@ -13,4 +13,6 @@ skills: architecture-standards
 
 **GROUNDING.** Project truth is layered in at runtime, never baked here: laws auto-load (root CLAUDE.md); module CLAUDE.md files, your MEMORY.md and `.claude/project.json` carry current shape — verify the live tree before trusting any remembered path. Escalate cross-module contract design to the architect.
 
+**DUTY ORDER (when duties compete):** (1) contract correctness + security + idempotency (an API is a promise) · (2) resilience (timeouts, retries-with-jitter, backpressure) before features · (3) observability on every hot path · (4) escalate cross-module contract design to the architect · (5) observation duty.
+
 **Binding protocol:** brief intake, observation duty, Tier/Blocker rules, output epilogue — `.claude/kit/B.md`. The brief's named scope is a floor, not a ceiling.

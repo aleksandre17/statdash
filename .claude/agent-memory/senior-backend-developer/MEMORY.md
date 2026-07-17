@@ -1,19 +1,21 @@
-# Senior Backend Developer — Memory Index
+# Memory Index
 
-## Deploy & ops
+## Auto-relocated (memory-home-guard — reconcile into a topic section)
 - [LIVE deploy mechanism](project_live_deploy_mechanism.md) — RUNBOOK for 192.168.1.199: server clone /tmp/statdash-build + docker-compose.prod.yml ALONE, per-service `--no-deps --force-recreate`, backup/rollback, smoke; postgres landmine RESOLVED (ADR-019); disk + ingest gotchas
+- [Full dev line](project_full_dev_line.md) — docker-compose.dev.yml (statdash-dev): pg 5458/api 3011/geostat 3012/panel 3013; V38, anchor REGIONAL_GVA=1650; REDEPLOY = checkout worktree /tmp/statdash-dev-line (NEVER the clone — panel src-mounts from it), build+recreate api/geostat/panel
+- [Dev-panel LIVE-WATCH](project_dev_panel_livewatch.md) — WORKING server-side live-watch (commit 7693460): panel = source-mounted vite dev on :3013 + rsync (dev-watch-panel.sh); src-only mount (strict pnpm), vite.config port-SSOT + /api proxy; supersedes "image-based only / kit unproven"
+- [Dev seed/reseed mechanism](project_dev_seed_reseed_mechanism.md) — reseed dev cube via seed.ts + ops/seed-data bundles (throwaway api-image runner); slugs-vs-codes = additive duplication over ingest DB; SURGICAL dedupe recipe (proven 2026-07-16, dev 3315→1650); PROD confirmed = R-code ingest (1665), landing slugs = REPLACE not ADD
+- [geostat build wall — RECURRING CLASS](project_geostat_radix_build_wall.md) — runtime bare import in a source-bundled pkg MUST be its peerDep (sourcePackagePeers reads only peers); radix RESOLVED c286cef; apexcharts devDep-only BLOCKED 01d101d 2026-07-16; abort = retag api:dev back + revert worktree
+- [ADR-035 interleave DEFECT](project_adr035_interleave_defect.md) — bringup-fresh.sh BROKEN as-committed: Phase 2 ingest (V32) stalls because worker needs submission.claimed_at (V37); circular V33↔ingest↔V37; DON'T promote to prod as-is; fix + how dev got data
+- [Isolated dev-panel preview — SUPERSEDED](project_isolated_dev_panel.md) — dev-panel :3010 FOLDED IN to the full line 2026-07-11; compose still committed but not running
 - [Deploy model (kit)](project_geostat_deploy_model.md) — geostat-kit server build layouts (jar vs context-dir); node-vite remote tar-scope gap FIXED; NOT the live-demo path
 - [check-laws path coupling](project_checklaws_path_coupling.md) — ops scripts hardcode lib dir paths (rename false-greens them); check_zero retirement-lock vs check_ts content-law helpers
-
-## Build & toolchain
 - [Toolchain facts](project_toolchain_facts.md) — pnpm root is platform/, Docker context is platform/, build:engine before api, no node pin
 - [Structure migration](project_migration_progress.md) — DONE: engine/→packages/ + @statdash scope rename (7a47e5d); surviving constraints (geostat name un-scoped; ops/docker-compose.yml is a distinct DB stack)
 - [package build/dist resolution](project_package_build_resolution.md) — tsup --dts exposes undeclared sibling deps / self-imports / deep-internal imports that Vite+Vitest source aliases hide
 - [API TS build overrides](project_api_tsconfig_overrides.md) — a Node-emitting pkg must override root tsconfig's noEmit/bundler/allowImportingTsExtensions
 - [SQL migrations location](project_sql_migrations_location.md) — migrations at repo-root ops/postgres/migrations (NOT platform/ops); prod at V38; V9 sorts after V38 lexically
 - [CI DB gating](project_ci_db_gating.md) — DB-gated suites un-skip on DATABASE_URL; per-suite preconditions; verify-parity/bundle-seed lane RETIRED
-
-## API service (apps/api)
 - [api env fail-fast seam](project_api_env_failfast_seam.md) — env.ts single boot-time Zod gate; PROD_REQUIRED_SECRETS; test boot via resetModules
 - [api scripts/src boundary](project_api_scripts_src_boundary.md) — runtime src/ must not import build-time scripts/ (seed-helpers); restate SQL on the Queryable port
 - [api Problem Details](project_api_problem_details.md) — RFC 9457 problem+json: registry in apps/api lib, shape in contracts; error-handler-must-register-before-routes pitfall
@@ -21,8 +23,6 @@
 - [api ops floor](project_api_ops_floor.md) — API-02/03/08/09/10/11/16: async pg-backed audit/snapshot ports, hand-rolled metrics+rate-limit+openapi(zod v3)+redact, V36/V37, canonicalRoutes-is-a-factory
 - [api image + validate:local](project_api_image_and_validate_local.md) — Dockerfile pnpm-deploy (symlink-free) + the 8-stage live-DB one-shot; CI workflow is stale
 - [RBAC vocabulary](project_rbac_vocabulary.md) — roles admin/editor/viewer only; no publisher; publish gated to admin
-
-## Ingest & canonical pipeline
 - [canonical upload route](project_canonical_upload_route.md) — ADR-0031 Wave 3a/3b: route seams (fetchActiveLocales/precheckContractCompat/recognizeReferenceMetadata), writeWorkbook ACL, txn-no-op-worker test trick
 - [canonical e2e pipeline](project_canonical_e2e_pipeline.md) — EXACT FSM (received→staged→explicit publish→gold) + preconditions (V7 datasets/DSD, status=published, ka+en locales) + anchors
 - [versioned ingestion](project_versioned_ingestion.md) — ?datasetVersion resolves the DSD gate → new vintage; mints in the route; reuses dataset_dimension/dimension/bump_dataset_version; NOT V28 supersession
@@ -30,8 +30,6 @@
 - [version-mint locale label — RESOLVED](project_version_mint_locale_label.md) — 8e9cb27: stats.dimension {en:code} insert guarded by `if (isNew)`; existing axis never re-inserted
 - [SCD-2 classifier writers](project_scd2_classifier_writers.md) — which files are SCD-2 writers vs in-place upserters; is_current invariants across ingest/seed
 - [codelist label revision path](project_codelist_label_revision_path.md) — display-label-only fix: re-ingest → hash change → SCD-2 upsertClassifier updates gold; facts 409 EXPECTED; *_MEASURE_CORRECTIONS map
-
-## DSD, provisioning & data model
 - [V7 DSD vs canonical shape](project_v7_dsd_vs_canonical_shape.md) — V7 pre-registers GDP DSD 3-dim measure,time,geo (always applied); canonical GDP is 4-dim → DSD gate fires; ACCOUNTS/REGIONAL match
 - [seed/DSD divergence](project_seed_dsd_divergence.md) — R__seed_geostat_gold GDP DSD omits `approach`, fails V22 dim_key trigger on Flyway re-run; RESOLVED via V34 + R__ neutralize + ingest
 - [fresh provision canonical](project_fresh_provision_canonical.md) — fresh prod compose-up: V34 GDP 4-dim widen + R__ neutralized (both lanes) + ingest one-shot; ⚠ V33 fails on a truly-fresh DB (data-ordering defect)
@@ -44,8 +42,6 @@
 - [GeoStat source quirks](project_geostat_source_quirks.md) — raw DATA/ Excel defects: File1 ENG GDP column year-shifted (GEO=SSOT), B6G ka typo, File3 partial activity breakdown + Excel lock hazard
 - [parity render regressions — RESOLVED](project_parity_render_regressions.md) — kpi-strip querySync-cold crash + observations filter both fixed; the CORRECT `filter=<JSON>` wire contract (do not re-test the query-string form)
 - [geograph d3-geo](project_geograph_d3geo.md) — SVG choropleth: external-lib peer-alias build contract + geojson CW-winding projection bug; READ THE MAP SCREENSHOT, DOM metrics lie
-
-## Feedback
 - [Flyway immutable](feedback_flyway_immutable.md) — never edit an applied migration, not even comments (checksum break)
 - [eslint owns dependency arrow](feedback_eslint_owns_dependency_arrow.md) — eslint no-restricted-imports is SSOT for the arrow; never mirror arrow edges into kit law_patterns (ADR-0033)
 - [measure FP before blocking law](feedback_measure_fp_before_blocking_law.md) — grep repo match-counts before adding a BLOCKING law_pattern; only precise config-key shapes, never bare constructs

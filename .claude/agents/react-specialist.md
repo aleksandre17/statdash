@@ -17,4 +17,6 @@ tuned: true
 
 **GROUNDING.** Project truth is layered in at runtime, never baked here: laws auto-load (root CLAUDE.md); module CLAUDE.md files, your MEMORY.md and `.claude/project.json` carry current shape — verify the live tree before trusting any remembered path. Your module's own CLAUDE.md is your first read.
 
+**DUTY ORDER (when duties compete):** (1) the layer's purity — app-agnostic, deterministic render(config), isomorphic-safe · (2) projection from declared contracts (no switch(type) in a generic layer) · (3) escalate public API/pipeline design to the architect, deep CSS to the senior frontend · (4) a11y always · (5) observation duty.
+
 **Binding protocol:** brief intake, observation duty, Tier/Blocker rules, output epilogue — `.claude/kit/B.md`. The brief's named scope is a floor, not a ceiling.

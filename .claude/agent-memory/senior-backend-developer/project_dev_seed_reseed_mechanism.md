@@ -1,0 +1,21 @@
+---
+name: dev-seed-reseed-mechanism
+description: Dev-line REGIONAL_GVA carries TWO encodings (ingest R-codes vs seed.ts slugs) — the reseed mechanism, the additive-duplication landmine, the SURGICAL dedupe recipe (proven 2026-07-16), and PROD's confirmed encoding (R-codes) that the prod-landing plan must not duplicate onto
+metadata:
+  type: project
+---
+
+The dev cube (`statdash-dev`, 192.168.1.199, pg `statdash-dev-pg`:5458, db `statdash`/user `statdash`) can be reseeded via `seed.ts` + `ops/seed-data` bundles run as a THROWAWAY api-image runner (mount `/ops/seed-data`). Two landmines: (1) the stale 2-dim GDP bundle aborts a FULL `seed.ts` (V34 DSD is 4-dim) — do NOT retry full seed; (2) **slugs-vs-codes = ADDITIVE duplication over an ingest-seeded DB.**
+
+**Why:** the ingest path (`ingest-canonical.sh` → `POST /api/ingest/canonical`) emits geo codes `R2..R12` + geo-total `_T`; `seed.ts` emits SLUG geo codes (`tbilisi, adjara, imereti, guria, kakheti, kvemo_kartli, mtskheta, racha, samegrelo, samtskhe, shida_kartli`). Different `dim_key` ⇒ different `dim_key_hash` ⇒ the reseed ADDS a second parallel encoding instead of replacing. On dev this produced REGIONAL_GVA = 3315 (1665 R-code ingest + 1650 slug). A wildcard national sum over `sector=_T, geo≠_T` then DOUBLE-COUNTS.
+
+**⚠ The two encodings hold DIFFERENT VALUES, not just different keys** (2024, sector=_T, geo≠_T): R-code sum = **93022.28**, slug sum = **80979.37** (the parity golden). So this is a data-vintage divergence, not a pure re-label — landing slugs is a REPLACE decision, not a merge.
+
+**Surgical dedupe recipe (PROVEN 2026-07-16 on dev, reversible).** `stats.observation` keys REGIONAL by `dim_key` jsonb `{geo,sector,measure}`; time lives in `time_period`/`time_period_date` cols (NOT in dim_key). DELETE has NO triggers (auto-version/revision fire only on INS/UPD) so a delete is clean + does not bump dataset_version.
+1. Backup net: `\copy (SELECT dataset_code,time_period,time_period_date,dim_key,obs_value,obs_status,obs_conf,obs_attribute FROM stats.observation WHERE dataset_code='REGIONAL_GVA' AND (dim_key->>'geo' ~ '^R[0-9]+$' OR dim_key->>'geo'='_T')) TO '/tmp/regional_gva_old_encoding_backup.csv' CSV HEADER` (server-side, 1665 rows).
+2. `BEGIN; DELETE FROM stats.observation WHERE dataset_code='REGIONAL_GVA' AND (dim_key->>'geo' ~ '^R[0-9]+$' OR dim_key->>'geo'='_T'); … verify … COMMIT;` — deletes exactly 1665 (11×R-codes×150 + 15 geo-`_T`), leaves 1650 slug rows.
+3. Proofs (post): tbilisi/2024/_T `obs_value`=42982.57; national 2024 `sector=_T, geo≠_T` sum=80979.37 (golden, no double-count); residual `geo ~ '^R[0-9]+$' OR geo='_T'` = 0. Dev totals after: REGIONAL 1650 + ACCOUNTS 415 + GDP 399 = **2464**. Cube profile `/api/cube/REGIONAL_GVA/profile` timeCoverage still 2010–2024 (15 periods).
+- **psql-over-ssh quoting:** nested single-quotes in `psql -c '…'` inside `ssh '…'` break; pipe SQL via a heredoc → `ssh … "docker exec -i statdash-dev-pg psql -U statdash -d statdash" <<'SQL'`.
+
+**PROD encoding — GROUND TRUTH (read-only confirmed 2026-07-16).** Prod stack containers are `statdash-postgres / statdash-api / statdash-geostat / statdash-panel` (NO `-prod-` infix; `statdash-flyway`/`statdash-ingest` are exited one-shots). Prod pg = `statdash-postgres`. Prod REGIONAL_GVA = **1665, geo = `R2..R12,_T` (pure INGEST/R-code encoding), ZERO slugs** — populated by the `ingest` one-shot (canonical workbooks; R__ gold seed neutralized per ADR-0032; no seed.ts in prod compose). Prod national-2024 sum = 93022.28 (= the R-code vintage).
+- **Prod-landing rule:** to put the slug/`_T` data on prod WITHOUT repeating the dev duplication, prod needs a REPLACE, never a seed-on-top-of-ingest ADD. Recommended: (a) back up prod REGIONAL_GVA, (b) delete the R-code rows with the SAME predicate, (c) load the slug encoding from the reproducible `seed.ts`+`ops/seed-data` bundle — as ONE atomic deploy step. Root-cause alternative (escalate to database-architect): converge the canonical INGEST source to emit slug geo codes so the normal ingest one-shot lands slugs directly and the seed-vs-ingest divergence is retired. See [[live-deploy-mechanism]], [[seed-dsd-divergence]], [[full-dev-line]].

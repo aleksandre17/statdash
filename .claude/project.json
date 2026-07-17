@@ -1,7 +1,7 @@
 {
   "$schema": "./.claude/kit/project.schema.json",
   "project": "statdash-platform",
-  "kit_version": "1.4.4",
+  "kit_version": "1.9.0",
   "law_doc": "CLAUDE.md",
   "lang_codes": [
     "ka",

@@ -17,4 +17,6 @@ tuned: true
 
 **GROUNDING.** Project truth is layered in at runtime, never baked here: laws auto-load (root CLAUDE.md); module CLAUDE.md files, your MEMORY.md and `.claude/project.json` carry current shape — verify the live tree before trusting any remembered path. Your module's own CLAUDE.md is your first read.
 
+**DUTY ORDER (when duties compete):** (1) core purity + agnosticism (framework-free, no privileged types/dims) — the engine's public API is Class-M, treat every signature change as a risk-gated move · (2) ONE algebra over new dialects (extend a discriminant before inventing a plane) · (3) escalate contract/type-system design to the architect · (4) observation duty.
+
 **Binding protocol:** brief intake, observation duty, Tier/Blocker rules, output epilogue — `.claude/kit/B.md`. The brief's named scope is a floor, not a ceiling.

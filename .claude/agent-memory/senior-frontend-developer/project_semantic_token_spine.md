@@ -119,6 +119,23 @@ not a line-count dodge.
 `cssVar('--color-surface', ...)` (Leaflet `PathOptions` is JS-fed, `var()` invalid — gotcha #2). The
 `geograph/` dir-level FF-TOKEN-ONLY exclusion was REMOVED once this landed.
 
+**Charts EMIT path — the charts-LOCAL cssVar twin (closed 2026-07-12).** The server-side SVG
+realizer (`packages/charts/src/emit/`: `emitter.ts` placeholder, `cartesian.ts` chrome, `palette.ts`
+`EMIT_PALETTE`) had baked hex literals — FF-TOKEN-ONLY scans `charts/src/**`, so these were red.
+`charts` MUST NOT import `@statdash/styles` (Law 3: it's inside the arrow `…←core←charts←react`,
+styles is a render-layer leaf). Lawful path = a DELIBERATE charts-local twin `emit/cssVar.ts`
+(byte-identical logic to styles' cssVar, guarded `getComputedStyle`→fallback): the VALUE SSOT stays
+single (tokens.css), only the ~5-line resolver is duplicated across the arrow boundary. All emit
+colours now `cssVar('--token', <light fallback>)`: `--chart-color-1…10`, `--color-chart-frame/-grid`,
+`--color-text-muted/-secondary`, `--color-surface`. SVG presentation attrs can't hold `var()`
+(gotcha #2), and the emitter is server-side (no DOM) → cssVar returns the fallback = deterministic
+export; a browser export re-themes for free. NOTE: the emit muted fallback was STALE `#6B7B8D`; the
+SSOT `--color-text-muted` is now `#5A6B7D` (darkened for WCAG AA 4.5:1, tokens.css) — aligned the
+fallback to close the drift (no assertion pinned the old value). `emit.fitness.test.ts` pins
+`stroke="#F0F5F3"` (grid) + authored per-point colours — all unchanged since fallbacks == SSOT light.
+Allowlist stays 3 entries (PropSchemaForm, charts/colors.ts neutral seeds, core resolvers.ts) — the
+emit path did NOT need an exemption; cssVar-pairing is the honest fix.
+
 See also [[project_dark_mode_completeness_and_fitness]] (the dark-mode override LAYER built on top
 of this spine) and [[project_geostat_tenant_dark_cascade_gap]] (a tenant stylesheet silently
 defeating the dark-flip mechanism by source-order — a distinct, later-found defect class).

@@ -1,12 +1,17 @@
-# Engine Specialist — Memory Index
+# Memory Index
 
-## Feedback — corrections & validated approaches
+## Auto-relocated (memory-home-guard — reconcile into a topic section)
 - [Class-M hook protocol](feedback_class_m_hook.md) — public `@statdash/engine` API edit → run 09B degradation-risk assessment as a named section; repeating an Opus-blessed seam needs no re-escalation
 - [Shared-tree concurrency](feedback_shared_tree_concurrency.md) — tree is shared with concurrent agents; never `git stash -u`; diagnose typecheck/test failures via `git status`/`git diff <file>` first
 - [Worktree vitest hoisted](feedback_worktree_vitest_hoisted.md) — pointer to plugins-specialist's consolidated worktree/Windows pitfalls file
 - [Write tool byte-fidelity](feedback_write_tool_byte_fidelity.md) — Write silently normalizes exotic whitespace (e.g. NBSP) when retyping from memory; use Edit or verify byte-identity
-
-## Project — epics, seams still evolving, escalation history
+- [ar36 pivot](project_ar36_pivot.md) — CONSOLIDATED: P0 EncodingChannel CtxRef seam + P1-P3 derive/fold facts
+- [Deep engine audit 2026-07-15](project_deep_engine_audit_2026_07_15.md) — invisible findings: honest-state grammar discarded at querySync; lineage/provenance claimed-but-unbuilt; additivity guard path-dependent; metric noun 0 consumers. Includes W1 Cell-seam design (PM-1) — **PM-1 now LANDED, see [[cell-honest-state-seam]]**
+- [Cell honest-state seam](reference_cell_honest_state_seam.md) — Cell/ValueState + storeCell (PM-1 LANDED); no-data≠genuine-0 needs obs-scan (val SUMs); masked closes F7; obsAtCoord SSOT shared w/ preliminary; KpiDef.state + KpiStateCard consumer
+- [ADR-042 Placement port](project_adr042_placement_port.md) — Slice 0 LANDED: placePart (writePart's structural sibling) on PartSource; 4 residence adapters; PlacementPlan/resolvePlacementPlan; ONE commit site placeNode.ts; insert+outline-move refactored byte-identical
+- [ADR-041 Part grammar](project_adr041_part_grammar.md) — Phase 6 capstone LANDED: isWrapper/isNodeContainer derived, kind-as-containment retired, FF-DERIVED-CONTAINMENT hard `[]`; BandDescriptor kept node-level alias (Delta 3)
+- [S6 chrome reversible landed](project_s6_chrome_reversible_landed.md) — chrome=sourced Part of site-frame; mechanism (site-frame META + registry-by-source collision fix + chromeParts) LANDED green; one-way selection fold HALTED (item-4/5 entangled)
+- [Reactive graph track (ADR-024)](project_reactive_graph_track.md) — V0/V1/V2/V2.5 SHIPPED (extractDeps SSOT + shadow graph); Findings A/B CLOSED (ambientDims read-set + $d-locale) → parity EXACT; V3 render-switch UNBLOCKED (owner-gated one-way door, not fired)
 - [Perspective-axis refactor](project_perspective_axis.md) — timeMode/mode → generic perspective axis (SHIPPED, grep-clean); recurring hazard classes (ownership-vs-visibility gates, migrate-before-delete sequencing, alias-then-retire); superseded further by TM-STRANGLER
 - [TM-STRANGLER time-binding](project_tm_strangler.md) — DimBinding+Selection discriminant (point/window/all) replaces shape-inferred timeBinding; generic TimeGranularity; FF-NO-MODE-LITERAL twin; supersedes PerspectiveTimeBinding
 - [CLUSTER② Law-1 + inert seams](project_cluster2_law1_seams.md) — GrowthResolver privileged-literal leak fix (`atTime` wrong for obs-meta reads, use filter-key TIME_DIM); AD-6 `available` gate STILL not threaded in SiteRenderer (flagged); GRAIN-G4 granularity→grain default-gated
@@ -14,13 +19,10 @@
 - [AR-40 P0 semantic-layer spine](project_ar40_p0_spine.md) — KPI render+preliminary made metric-aware; the 3-paths-read-a-measure-ref bug (only warm resolved through resolveMeasureRef); gdp-total KPI migrated to metric-id
 - [AR-49 M0 dimension catalog](project_ar49_m0_dimension_catalog.md) — DimensionDef governed-dim registry (peer of metric), manifest.dimensions, describeApp 1.1.0 bump; engine items 1-5 done, 6-11 pending
 - [Preliminary-badge year-aware fix](project_preliminary_displayed_slice.md) — badge must derive from the DISPLAYED obs slice, not dataset-wide; applyEncoding now carries obsStatus
-- [AR-36 pivot P0](project_ar36_pivot_p0.md) — state-bound encoding channels (CtxScopeRef + resolveEncodingRefs pre-pass, called in react before applyEncoding)
-- [AR-36 pivot P1/P2/P3](project_ar36_pivot_p123.md) — regional 2-panel fold to ONE pivot; grain must bind to state (chart interpreters don't aggregate same-label rows); resolvePipeRefs seam for aggregate.by/sort
 - [Async store ACL parity](project_async_store_acl_parity.md) — stats adapter contract: LocaleString classifier labels, obs Number coercion, display overlay, warm-key≡read-key seam
 - [Canonical workbook parser](project_canonical_parser.md) — ADR-0031 xlsx→bronze deserializer; DSD SSOT = STRUCTURE.dimensions; xlsx ACL-confined to apps/api
 - [Restructure paths](project_restructure_paths.md) — engine/* → platform/packages/*; @statdash/* scope (landed, @geostat/* fully retired)
-
-## Reference — durable seam contracts (spot-checked against current code)
+- [extractDeps seam](reference_extractdeps_seam.md) — config→dependency SSOT (ADR-024); NodeDeps buckets + classification rules (literal-pin≠edge, encoding/pipe $ctx dual-record, $ctx scope split, time-is-structural)
 - [ObjectMeta one type system](reference_object_meta_one_type_system.md) — ADR-023 R1: ObjectMeta base + kind-as-facet refinements; objectRegistry one discovery registry; `type` is node-tier (not base) — byte-identical `in`-narrowing rule
 - [Fail-soft interpret guard](reference_failsoft_interpret_guard.md) — per-node interpreters (interpretKpis + extractKpiRequirements twin) tolerate absent optional input `?? []`, never hard-throw into NodeErrorBoundary; engine twin of chrome fail-soft; class has bitten twice
 - [Panel e2e offline bridge](reference_panel_e2e_offline_bridge.md) — run boot.e2e.ts offline via cached playwright 1.61.1 + gitignored @playwright/test shim; panel bundles @statdash/* from SOURCE so a core edit is live with no rebuild
@@ -39,6 +41,7 @@
 - [Measure-ref seam](reference_measure_ref_seam.md) — resolveMeasureRef (ADR R1) is the SSOT distinguishing raw code vs registered metric-id; never call getMetric directly
 - [Metric-store binding](reference_metric_store_binding.md) — MetricDef.dataSource (Cube pattern) → specDataSource → react effectiveStoreKey precedence
 - [Calc-metric seam](reference_calc_metric_seam.md) — MetricDef.calc declarative measure-algebra via expr; resolveMetricValue/calcMetricRequirements; KpiValueSpec 'metric' variant
+- [Hierarchy drill seam](reference_hierarchy_drill_seam.md) — ADR-034 §8 S4: DimensionDef.hierarchy + data/drill.ts; reifies codelist parent edges; composes evalMeasureAtGrain (no metric-grain change); AR-42 bridge
 - [KPI visibility surface](reference_kpi_visibility_surface.md) — kpiVisible evaluates `when` against filterParams (not ctx.dims), same surface renderNode uses
 - [Ref-dispatch SSOT](reference_ref_dispatch_ssot.md) — resolveRef (ADR R4) is the ONE dispatcher for every $-ref; ctx/param/row/var/dim scopes; expr's ExprRef is a separate lower-layer concern
 - [LocaleString brand](reference_localestring_brand.md) — Symbol-brand positive ID of i18n row cells, tagged at the $d join, resolved at the react boundary
@@ -53,6 +56,8 @@
 - [Defaults-vs-saveGuard contract](reference_defaults_guard_contract.md) — getDefaults must omit optional localized fields / seed required ones complete
 - [Tenant-content gates](reference_tenant_content_gates.md) — two gates (vitest ALLOW + bash LAW4_CATALOG_ALLOW twin) must stay in sync for authoring-label catalogs
 - [Effects retirement](reference_effects_retirement.md) — Effect/applyEffects/schema.effects deleted wholesale, locked by check-laws grep guard; BRE `\?` pitfall
-
-## Auto-relocated (memory-home-guard — reconcile into a topic section)
 - [Panel StyleSurface gate flake](project_gate_panel_flake.md) — full-graph `pnpm test` can false-RED on a panel StyleSurface timeout; verify heavy panel React tests in isolation
+- [AR-50 semantic-layer](project_ar50_semantic_layer.md) — convergence initiative; E1 (one expr dialect) + E2 (one agg vocab) DONE in M5; more erosions remain
+- [Semantic-layer proposals](ref_semantic_layer_proposals.md) — where the erosion catalog + AR-50 design studies + ADR-034 live
+- [AR-50 semantic layer](project_ar50_semantic_layer.md) — build sequence, the ⛔ growth/ratio-list one-way-door, M2 landed (87aea32)
+- [reversible-expansion parity](feedback_reversible_expansion_parity.md) — prove a core generalization safe via byte-identical parity of the narrow path; single-dialect + arrow + Law-1 grain are hard gates

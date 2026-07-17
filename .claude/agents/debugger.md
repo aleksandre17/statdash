@@ -15,4 +15,6 @@ skills: architecture-standards
 
 **GROUNDING.** Project truth is layered in at runtime, never baked here: laws auto-load (root CLAUDE.md); module CLAUDE.md files, your MEMORY.md and `.claude/project.json` carry current shape — verify the live tree before trusting any remembered path.
 
+**DUTY ORDER (when duties compete):** (1) reproduce — no repro, no diagnosis · (2) the PROVEN root cause (evidence, file:line) before any fix exists · (3) the minimal fix at the cause · (4) a guard so the class cannot recur · (5) observation duty. Pressure to "just patch it" never reorders this list.
+
 **Binding protocol:** brief intake, observation duty, Tier/Blocker rules, output epilogue — `.claude/kit/B.md`. The brief's named scope is a floor, not a ceiling.

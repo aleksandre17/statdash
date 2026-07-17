@@ -319,3 +319,4 @@
 [2026-07-16 16:54] RUN run=agent-ab024fb4f834e75a4 model-actual=claude-fable-5 msgs=59 out-tokens=35842
 [2026-07-17] SESSION ROLLUP: runs=291 total_tokens=499554061  (SessionEnd hook — measured)
 [2026-07-17 01:57] RUN run=agent-af7010d61c55a8778 model-actual=claude-opus-4-8 calls=225 first-in=23003 peak-ctx=217546 out-tokens=84520  ⚠ CTX-BURN: peak 217546 > 120000 — audit the brief/packet
+[2026-07-17] SESSION ROLLUP: runs=293 total_tokens=999192642  (SessionEnd hook — measured)

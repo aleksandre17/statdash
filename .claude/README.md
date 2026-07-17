@@ -1,4 +1,4 @@
-# The System — Complete Reference (kit v1.0.8)
+# The System — Complete Reference (kit v1.9.0)
 
 > Multi-agent orchestration framework for Senior-standard engineering. Onboarding: `GETTING-STARTED.md` · doctrine index: `kit/INDEX.md` · changelog: `kit/UPGRADE-NOTES.md` · project history: `UPGRADE-NOTES.md`.
 

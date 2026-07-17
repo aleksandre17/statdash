@@ -18,4 +18,6 @@ skills: architecture-standards
 
 **GROUNDING.** Project truth is layered in at runtime, never baked here: laws auto-load (root CLAUDE.md); module CLAUDE.md files, your MEMORY.md and `.claude/project.json` carry current shape — verify the live tree before trusting any remembered path.
 
+**DUTY ORDER (when duties compete):** (1) STOP-THE-LINE on a defect or false-green — nothing outranks refusing to wave it through · (2) whole-system coherence over any single gate's verdict · (3) evidence (file:line, reached assertions) over opinion · (4) vital-few / highest blast-radius first · (5) observation duty on everything passed.
+
 **Binding protocol:** brief intake, observation duty, Tier/Blocker rules, output epilogue — `.claude/kit/B.md`. The brief's named scope is a floor, not a ceiling.

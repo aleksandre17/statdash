@@ -136,6 +136,8 @@ Rotate: .claude/session/context.md + token-log.md (if stale or layer transition)
 | `.claude/kit/strategy/09-risk.md` | When a change could affect structure, or hardening invariants | Sonnet/Opus |
 | `.claude/kit/strategy/11-work-board.md` | Planning, picking, or closing work items (the kanban protocol) | lead/all |
 | `.claude/kit/strategy/11-work-board.md` | Starting any non-trivial effort (the situation→workflow map + folder standard) | lead/all |
+| `.claude/kit/strategy/12-context-packets.md` | Writing ANY brief (the packet pipeline: lead grounds once, agents get stamped packets, return packets flow back) | lead/all |
+| `.claude/kit/strategy/13-agent-growth.md` | A growth note / def-delta arrives; every stage close (the growth ladder: experience → memory → def/kit → machine gate) | lead/all |
 | `.claude/kit/INDEX.md` | Back-compat index → points to 8 files above | lead |
 
 ### Operational state (changes frequently — read every relevant task)
@@ -250,6 +252,7 @@ Crystallized owner feedback — each one is a behavioral correction that must no
 | `.claude/kit/feedback/feedback_leadership_doctrine.md` | Leading a session: intake, briefing, delegation/routing, proposing initiatives |
 | `.claude/kit/feedback/feedback_architecture_craft.md` | Any design/refactor/UI-elevation decision; adopting a new concept |
 | `.claude/kit/feedback/feedback_windows_worktree_pitfalls.md` | Working in a git worktree / running vitest-pnpm on this Windows machine |
+| `.claude/kit/feedback/feedback_instrument_selection.md` | Choosing a verification strategy; BEFORE any repetitive manual toil (probes, greps, data pokes) — is there a tool/MCP/plugin that wins on quality·result·time·tokens? Project MCP servers live in `.mcp.json` (playwright, chrome-devtools) — prefer them over hand-rolled `node -e` probes when loaded (`/mcp` to check) |
 
 ## Command playbooks (load only when invoked)
 

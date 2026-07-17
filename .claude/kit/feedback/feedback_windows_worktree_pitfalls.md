@@ -6,7 +6,9 @@ metadata:
 ---
 
 Canon for running gates (vitest/tsc/eslint) from an isolated `.claude/worktrees/agent-<hash>/`
-checkout on Windows. Organized by pitfall.
+checkout on Windows. Organized by pitfall. **Agnostic guide — THIS project's specific names,
+build order, retired-dep quirks and false-red baselines live in
+`.claude/context/worktree-gates-playbook.md` (read it alongside).**
 
 ## 1. MAX_PATH + pnpm (`ERR_PACKAGE_IMPORT_NOT_DEFINED "#module-evaluator"`)
 
@@ -30,45 +32,39 @@ rm -rf node_modules
 pnpm install --frozen-lockfile --config.virtual-store-dir=C:/pvs-<short-id>
 ```
 Must be forward-slash absolute (`C:\pvs-<id>` is parsed as relative → mkdir's a
-literal `C:pvs-<id>` folder inside the project). Then build the engine chain before
-any suite importing `@statdash/*` from source: `pnpm --filter "@statdash/expr" build`
-then `--filter "@statdash/engine" build` (or `pnpm -r --filter "./packages/*..." run
-build`) — fresh install has no `dist/` yet.
+literal `C:pvs-<id>` folder inside the project). Then build the workspace's package
+chain before any suite that imports workspace packages from source (fresh install has
+no `dist/` yet) — the project's exact build order: see the project playbook.
 
 **Alternative — throwaway short-path worktree:** `git worktree add --detach
 C:/<short> <branch>` → `pnpm install --prefer-offline --ignore-scripts` → `pnpm -r
 --filter "./packages/*" run build` (required, `--ignore-scripts` skips it). Run
-per-package, not root config (root pulls in `apps/geostat`, needs leaflet, absent
-under `--ignore-scripts`). Panel has no `tsconfig.app.json` — use plain
-`tsconfig.json`. Cleanup: `git worktree remove C:/<short> --force` (may fail on
+per-package, not root config (a root config may pull in an app with a ghost dep —
+see pitfall #2 + the project playbook). Cleanup: `git worktree remove C:/<short> --force` (may fail on
 locked node_modules) → `git worktree prune` + `rm -rf`.
 
-**False-red under relocated store:** `apps/{geostat,panel}` tsc shows ~5 phantom
-errors (react-apexcharts JSX-component errors under React-19 app types, an
-implicit-any in `SidebarNavSection.tsx`) absent on main with the same lockfile —
+**False-red under relocated store:** app-level tsc can show phantom errors absent on
+main with the same lockfile (this project's known baseline: project playbook) —
 baseline against main to confirm env artifact, not your change. Don't conflate with
 [[green-gate-stale-buildinfo]] (a different phantom class — stale buildinfo/d.ts, not
 path-length).
 
-## 2. Leaflet resolve failure + hoisted node-linker
+## 2. Stale-hoisted "ghost dependency" + hoisted node-linker
 
-**Symptom:** `apps/geostat/vitest.config.ts` config-load throws `Cannot find module
-'leaflet'`.
+**Symptom:** a vitest config throws `Cannot find module '<dep>'` at config-load in a
+clean checkout, though main "works".
 
-**Root cause:** config does `require.resolve('leaflet')`/`'react-leaflet'` at
-load-time (`dirExternals`), but leaflet is RETIRED (0 refs in pnpm-lock.yaml; a
-fitness test asserts no source imports it). Main checkout only resolves it via a
-STALE hoisted `node_modules/leaflet` from an old install — a clean install lacks it.
+**Root cause (the class):** the config `require.resolve`s a dep at load-time that is
+actually RETIRED from the lockfile — main only resolves it via a STALE hoisted copy
+from an old install; any clean install lacks it. The ghost is a latent break.
 
-**Fix (workaround):** copy `leaflet`, `react-leaflet`, `@react-leaflet` from main's
-`platform/node_modules` into the worktree's, or symlink from the pnpm store
-(`ln -sfn "$PWD/.pnpm/leaflet@1.9.4/node_modules/leaflet" leaflet`). Real fix (app
-config owner) = drop both from `dirExternals`.
+**Fix (workaround):** symlink the dep from the pnpm store into the worktree's
+node_modules. Real fix (config owner): drop the retired dep from the config's
+load-time resolution. (This project's known ghost: see the project playbook.)
 
 **Separate — jest-dom needs hoisted linking.** Default isolated store breaks
 `@testing-library/jest-dom/dist/vitest.mjs` → `Cannot find package 'vitest'` (peer
-unresolvable from jest-dom's store dir). Only geostat (jest-dom user) needs this —
-`api`/`@statdash/engine` work without it:
+unresolvable from jest-dom's store dir). Only the jest-dom-using app needs this:
 ```
 CI=true pnpm install --config.node-linker=hoisted --config.virtual-store-dir=C:/vs/<short>
 ```
@@ -93,12 +89,10 @@ node_modules still point at the custom store → dual-React invalid-hook error.
 **Timeouts:** deep-path import/env setup is slow (~60-90s); default 5000ms
 `testTimeout` gives spurious failures — run with `--testTimeout=60000`.
 
-**`--project` filter by NAME not dir:** `api`, `@statdash/engine` (core),
-`national-accounts` (geostat, derived from workspace root package name — no explicit
-`name` in that config). Or filter by filename (`vitest run
-perspective-render-validation`). Always run from `platform/` root — a package subdir
-breaks store resolution. With all of the above, geostat's full jsdom suite (123
-tests) runs green.
+**`--project` filter by NAME not dir** (a project's name may be derived from the
+workspace root, not its folder — the live names: project playbook). Or filter by
+filename. Always run from the workspace root — a package subdir breaks store
+resolution.
 
 ## 4. `git stash` phantom `.claude/agent-memory/**` deletions
 

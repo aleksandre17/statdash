@@ -1,5 +1,5 @@
-# Explorer Memory Index
+# Memory Index
 
-> This dir keeps only durable, non-derivable knowledge. Code maps of THIS repo's app/engine packages are deliberately NOT kept here — they go stale fast (verified 2026-07-08: prior maps were already wrong) and are cheap to regenerate by re-reading current code. Re-explore fresh each time; don't rely on a memorized shape of `platform/`.
-
+## Auto-relocated (memory-home-guard — reconcile into a topic section)
 - [geostat-kit deploy package](reference_geostat_deploy_kit.md) — vendored ops/deploy kit (`kits/geostat-kit/`), manifest-driven pattern, ProjectContext API, credentials model. No literal secrets recorded.
+- [Chrome authoring state (AR-49)](project_chrome_authoring_state.md) — chrome IS authorable but buried + not canvas-selectable; canvas renders a HOLLOW InnerSidebar (fidelity gap)

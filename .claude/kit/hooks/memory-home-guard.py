@@ -35,7 +35,14 @@ except (AttributeError, ValueError):
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from _manifest import load
 
-ROOT = os.environ.get("CLAUDE_PROJECT_DIR") or os.getcwd()
+# ROOT resolution (hardened 2026-07-15): NEVER bare cwd. A manual run from inside `.claude/`
+# once computed CANON = `.claude/.claude/agent-memory` and "restored" the ENTIRE memory tree
+# into a phantom nested home. The hook file itself lives at <root>/.claude/kit/hooks/ — that
+# anchor is always true; env var wins when set, cwd is only a last-resort sanity-checked guess.
+_SELF_ROOT = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", ".."))
+ROOT = os.environ.get("CLAUDE_PROJECT_DIR") or (
+    _SELF_ROOT if os.path.isdir(os.path.join(_SELF_ROOT, ".claude")) else os.getcwd()
+)
 CANON = os.path.normpath(os.path.join(ROOT, ".claude", "agent-memory"))
 
 

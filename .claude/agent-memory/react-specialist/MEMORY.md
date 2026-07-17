@@ -1,6 +1,6 @@
-# React-Specialist Memory Index
+# Memory Index
 
-## Presentation / render-context architecture (ADR-0029 family)
+## Auto-relocated (memory-home-guard — reconcile into a topic section)
 - [Presentation projection registry](project_presentation_registry.md) — ADR-0029 v2: page presentation (color, crumbs) flows through a projector registry, renderer stays concern-free
 - [Color single-home migration](project_color_single_home_migration.md) — presentation.color is color's only home; the v1→v2 migration chain's first real migrator
 - [Frame system not a smell](project_frame_system_not_a_smell.md) — AppChrome data-frame is already OCP-clean via CSS attribute-selector cascade; a strategy registry was rejected as YAGNI
@@ -14,28 +14,21 @@
 - [Disclosure + placement seams](project_disclosure_placement_seams.md) — useDisclosure (toggle) + mergePlacement (layout-item style merge) in react engine
 - [De-tenant augmentation seam](project_detenant_augmentation_seam.md) — react/styles carry zero tenant content; generic PlatformXMap open via module augmentation
 - [Extension points](project_extension_points.md) — VS Code contribution-points pattern (ExtensionRegistry/useExtensions); PANEL_TITLE_BADGE/SECTION_HEADER_ACTIONS
-
-## Authoring / catalog (AR-49 Constructor)
 - [Metric catalog store](project_metric_catalog_store.md) — AR-49 M0 panel semantic-catalog seam: metricCatalog.store + useMetricCatalog + semanticCatalogOptions (governed peer of cubeProfile)
-
-## Data / async render path
+- [Part-anchor merge](project_part_anchor_merge.md) — ADR-041 Phase 4: ONE PartAnchor + data-part-* family; overlay frames via enumerateParts recursion + walkNodes fallback (accepts-gating blocks full walk removal)
+- [Highlight render boundary](project_highlight_render_boundary.md) — AR-42: highlight consumers (TableShell selectedIds + ChartOutput.emphasis/emitCartesian); FF-ACTION-ARM-CONSUMED latent-arm guard; apex-emphasis parity pending
 - [Async render warm-read](project_async_render_warm_read.md) — capability-transparent CachedStore + useNodeRows warm-then-sync-read Cache-Aside
 - [KPI warm surface](project_kpi_warm_surface.md) — kpi-strip is a 2nd async-warm surface (interpretKpis, not useNodeRows); yoy year-1 warm
 - [Time classifier never loaded](project_time_classifier_never_loaded.md) — time dim has NO classifier members on live stats path; latest-year only from observations
 - [Charts neutral color seam](project_charts_neutral_color_seam.md) — charts interpreters emit literal-hex defaults, NOT cssVar; theming layers on in the plugin apex adapter
-
-## Map / geo rendering
 - [Declarative choropleth](project_declarative_choropleth.md) — geograph map is a data-derived d3-geo SVG choropleth (Leaflet retired); kills the hidden-container blank-map bug class
 - [Container visible gate](project_container_visible_gate.md) — useContainerVisible gates DOM-measuring renderers on real layout; ApexRenderer is the live consumer (GeoMap's old Leaflet use was superseded)
-
-## i18n / data integrity
 - [AR-37 P0 locale binding](project_ar37_p0_locale_binding.md) — <html lang>/dir + i18next global bound at LocaleGuard; localeDirection registry
 - [Integrity visible fold](project_integrity_visible_fold.md) — page data-integrity fold gates on NodeVisibilityContext; hidden view-toggle panels clear their report
-
-## Build / test infrastructure
 - [Worktree vitest MAX_PATH block](project_worktree_vitest_maxpath_block.md) — independent re-confirmation; see senior-frontend-developer's canonical writeup
 - [Fitness raw source scan](project_fitness_raw_source_scan.md) — scan a module's own source in a panel fitness via Vite `?raw`, not import.meta.url/__dirname (both fail under Vitest 4)
-
-## Feedback — corrections & validated approaches
 - [Registry over special-case](feedback_registry_over_special_case.md) — generic renderers iterate a registry; concerns live in registered units, never renderer branches
 - [Never git stash with uncommitted work](feedback_never_git_stash_with_uncommitted_work.md) — git stash reverts all in-flight edits; use git diff/show to inspect, never stash
+- [authoring editor lives in panel](feedback_authoring_editor_lives_in_panel.md) — Inspector/FieldControlRegistry/FieldControls live in apps/panel, NOT packages/react (arrow forbids react→panel); "packages/react" in briefs = "the generic authoring layer"
+- [tsc -b incremental staleness](feedback_tsc_incremental_staleness.md) — root `tsc -b` can report phantom stale errors; force `tsc -b --clean` before trusting the whole-graph typecheck DoD gate
+- [Part-port enumeration perf](project_partport_enumeration_perf.md) — ADR-041 whole-tree enumeration is LINEAR (~2.7µs/node); constant-factor memos flagged-not-applied for AR-42; real risk = DOM querySelector-per-node in CanvasOverlay

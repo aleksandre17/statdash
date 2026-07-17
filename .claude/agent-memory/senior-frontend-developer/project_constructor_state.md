@@ -77,8 +77,11 @@ suggestions.
 
 **Page Inspector (`features/page-config/`):** authors `PageConfigBase` via the SAME generic
 Inspector; `presentation.*` is registry-derived (not hand-listed). The page-root `type` (kind) is
-DELIBERATELY not authored — `canvasPageAdapter` hardwires the root to `inner-page` and strips `type`
-from meta to preserve the "meta-less page → no spurious meta" round-trip invariant.
+not yet AUTHORED in the UI, but as of the AR-49 foundation fix it is CARRIED first-class and
+losslessly — see [[project_panel_per_page_type]]. (Superseded: the adapter no longer hardwires
+`inner-page` or discards the page `type`; `CanvasPage.type` is a required column and every
+creation path sets it. `PageMeta` still excludes `type` — type is node-structural, from the page-
+node union, never `PageConfigBase` — so `type` never double-sources into meta.)
 
 **Perspectives pane (`features/perspectives/`):** `PerspectivesByParam` record⇄ordered-list adapter
 (`perspectiveModel.ts`, mirrors `filterSchemaModel.ts`); `perspectives[0]` IS the default (one SSOT —
@@ -121,3 +124,5 @@ inline editor).
 - **`registerMigration` note:** irrelevant to Constructor editors directly but the round-trip fitness
   suite shares the migration chain — see the color/variant migrators in `../react-specialist/`
   memory if touching schema version bumps.
+
+**Page-root `type` is DELIBERATELY not authored** — `canvasPageAdapter` hardwires the root to `inner-page` and strips `type` from meta to preserve the "meta-less page → no spurious meta" round-trip invariant (reconciled from twin).
