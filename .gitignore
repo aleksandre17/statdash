@@ -61,3 +61,6 @@ work/live-shots/
 work/sweep/
 # platform/work/ is dissolved — a rogue second work dir must not return
 platform/work/
+
+# owner ad-hoc review screenshots at repo root
+/img*.png
