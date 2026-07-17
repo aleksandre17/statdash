@@ -3,7 +3,6 @@ import { Box, Typography, Divider } from '@mui/material'
 import { SuspenseFallback } from '../../shared/SuspenseFallback'
 import { MetricCatalogManager } from '../model/MetricCatalogManager'
 import { DataFlowMap } from '../model/DataFlowMap'
-import { CanonicalUpload } from '../model/CanonicalUpload'
 import { useActiveLocales } from '../../inspector/useActiveLocales'
 import type { Locale } from '../../types/constructor'
 
@@ -72,14 +71,6 @@ export function ModelSurface({ locale }: { locale: Locale }) {
           ? 'Define the governed data model — metrics authors compose with, plus the sources, specs and queries behind them.'
           : 'აქ განისაზღვრება მართული მონაცემთა მოდელი — მეტრიკები, რომლებითაც ავტორები აწყობენ, და მათ უკან არსებული წყაროები, სპეც-ები და მოთხოვნები.'}
       </Typography>
-
-      {/* FRONT-DOOR (AR-51 / ADR-040): onboard raw data — upload a workbook that
-          SELF-DECLARES its DSD → review → publish → obs. Everything downstream
-          (sources → specs → metrics) consumes what enters HERE (the owner's
-          "everything starts with raw-data upload"). The panel is format-agnostic. */}
-      <CanonicalUpload locale={locale} />
-
-      <Divider flexItem />
 
       {/* Region 0 — the HOME: the Data-Flow map (Move 3). The pipeline made visible —
           source → dataset/spec → metric → used-by — the orientation for everything
