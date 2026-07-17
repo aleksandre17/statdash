@@ -1,4 +1,4 @@
-import { useId, useLayoutEffect, useState } from 'react'
+import { useId, useLayoutEffect, useRef, useState } from 'react'
 import ReactApexChart              from 'react-apexcharts'
 import { useContainerVisible, useNodeVisible } from '@statdash/react/engine'
 import type { ChartRendererProps } from '@statdash/react/engine'
@@ -96,51 +96,69 @@ export function ApexRenderer({ output, onDataHover, onDataLeave, onDataClick }: 
     },
   }
 
+  // ── Mount-once + freeze-while-hidden (owner, round 12: the chart↔table
+  //  toggle-back REBUILT the chart — full remount + replayed animation read as
+  //  "the page refreshes itself"). Framework grade (Grafana/ECharts keep-alive
+  //  school): the chart mounts ONCE — the first time it is genuinely laid out
+  //  (`shown`, the 0×0-measure guard) — and then STAYS mounted through hide.
+  //  While hidden its props are FROZEN (a display:none apex must never receive
+  //  updateOptions — the NaN-redraw class), so a plain toggle-back is pure CSS
+  //  display and costs nothing. Data that changed while hidden lands on the
+  //  next visible render: the frozen view refreshes, chartKey remounts fresh
+  //  against a real box — the only case a rebuild is correct. */
+  const [everShown, setEverShown] = useState(false)
+  if (shown && !everShown) setEverShown(true) // render-time latch (sanctioned)
+  const liveView = { options, chartKey, output, fontFamily, mainId, brushId }
+  const viewRef  = useRef(liveView)
+  if (shown) viewRef.current = liveView
+  const view = viewRef.current
+  const viewSliderOn = shouldRenderSlider(view.output)
+
   // The host div (with the box-measuring ref) is ALWAYS rendered so `shown` can
   // flip once it is laid out — the footprint must exist before the chart mounts
   // (measurement is never circular). Slider path stacks the main plot + a
   // fixed-height brush rail (flex column); non-slider path is the single
   // container-filling chart, unchanged (flag-absent render stays byte-identical).
-  const sliderLayout = sliderOn
+  const sliderLayout = viewSliderOn
     ? { width: '100%', height: '100%', display: 'flex', flexDirection: 'column' as const }
     : { width: '100%', height: '100%' }
 
   return (
     <div ref={hostRef} style={sliderLayout}>
-      {shown && sliderOn && (
+      {everShown && viewSliderOn && (
         <>
           {/* Main plot renders FIRST so ApexCharts registers it before the brush's
               `brush.target` lookup runs. */}
           <div style={{ flex: '1 1 auto', minHeight: 0 }}>
             <ReactApexChart
-              key={chartKey}
-              options={options}
-              series={options.series as ApexAxisChartSeries | number[]}
-              type={apexChartType(output.type)}
+              key={view.chartKey}
+              options={view.options}
+              series={view.options.series as ApexAxisChartSeries | number[]}
+              type={apexChartType(view.output.type)}
               height="100%"
             />
           </div>
           <div className="chart-brush-rail" style={{ flex: '0 0 auto', height: SLIDER_HEIGHT }}>
             <ReactApexChart
-              key={`${chartKey}-brush`}
-              options={buildBrushOptions(output, { mainId, brushId, fontFamily })}
-              series={[{ name: '__nav__', data: navSeriesData(output) }] as ApexAxisChartSeries}
+              key={`${view.chartKey}-brush`}
+              options={buildBrushOptions(view.output, { mainId: view.mainId, brushId: view.brushId, fontFamily: view.fontFamily })}
+              series={[{ name: '__nav__', data: navSeriesData(view.output) }] as ApexAxisChartSeries}
               type="area"
               height={SLIDER_HEIGHT}
             />
           </div>
         </>
       )}
-      {shown && !sliderOn && (
+      {everShown && !viewSliderOn && (
         <ReactApexChart
-          key={chartKey}
-          options={options}
-          series={options.series as ApexAxisChartSeries | number[]}
-          type={apexChartType(output.type)}
+          key={view.chartKey}
+          options={view.options}
+          series={view.options.series as ApexAxisChartSeries | number[]}
+          type={apexChartType(view.output.type)}
           // Horizontal categorical charts size to their category count so rows never
           // cram; all other types fill the container ('100%') as before. `fitDelta`
           // shaves a sub-row scrollbar sliver (see useLayoutEffect below).
-          height={fitHeight(categoricalChartHeight(output), fitDelta)}
+          height={fitHeight(categoricalChartHeight(view.output), fitDelta)}
         />
       )}
     </div>

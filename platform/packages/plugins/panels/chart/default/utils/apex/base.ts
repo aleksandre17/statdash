@@ -25,7 +25,7 @@ export function liftTooltip(chartCtx: { el: Element }) {
 //  values (via cssVar, resolved from the live cascade) at build time, and the
 //  chart must be re-built when the theme flips (see useThemeVersion). foreColor
 //  is Apex's single fallback ink for anything a builder doesn't override; left
-//  unset it stays Apex's built-in dark grey (#373d3f) → dim on a dark surface.
+//  unset it stays Apex's built-in dark grey → dim on a dark surface.
 //
 
 /**
@@ -128,8 +128,11 @@ export const BASE: ApexOptions = {
   // at spread time (render), flipping with the theme like the rest of the chrome.
   get tooltip(): ApexTooltip { return { theme: isDarkTheme() ? 'dark' : 'light' } },
   states: {
-    hover:  { filter: { type: 'lighten', value: 0.08 } },
-    active: { filter: { type: 'darken',  value: 0.12 } },
+    // Hover DARKENS: on a sequential ramp the lightest step (e.g. Tbilisi's
+    // pale first band) washed to near-white under 'lighten' and vanished
+    // (owner, round 12). Darken reads on every ramp step, light or dark.
+    hover:  { filter: { type: 'darken', value: 0.08 } },
+    active: { filter: { type: 'darken', value: 0.12 } },
   },
 }
 

@@ -178,6 +178,41 @@
   border-radius: var(--radius-xs);
 }
 
+/* The row's ONE link — icon + label. Fills the row up to the chevron; the
+   disclosure-first interception lives in the component (closed parent → the
+   link click expands instead of navigating). */
+.sidebar-nav-link {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  min-width: 0;
+  text-decoration: none;
+}
+.sidebar-nav-link:focus-visible {
+  outline: var(--border-width-base) solid var(--sc, var(--color-accent));
+  outline-offset: calc(-1 * var(--border-width-base));
+  border-radius: var(--radius-xs);
+}
+
+/* Dedicated disclosure toggle — collapsing never requires navigating. */
+.sidebar-chevron-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  padding: var(--spacing-xs);
+  cursor: pointer;
+  color: inherit;
+}
+.sidebar-chevron-btn:focus-visible {
+  outline: var(--border-width-base) solid var(--sc, var(--color-accent));
+  outline-offset: calc(-1 * var(--border-width-base));
+  border-radius: var(--radius-xs);
+}
+
 .sidebar-chevron {
   flex-shrink: 0;
   width: 1rem;

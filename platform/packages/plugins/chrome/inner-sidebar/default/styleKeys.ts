@@ -18,7 +18,11 @@ export const SIDEBAR = {
   sectionLabel: 'sidebar-section-label',
   navSection:   'sidebar-nav-section',
   navItem:      'sidebar-nav-item',
+  /** The row's ONE link (icon + label) — the disclosure-nav navigation half. */
+  navLink:      'sidebar-nav-link',
   navLabel:     'sidebar-nav-label',
+  /** Dedicated disclosure toggle (aria-expanded) — never navigates. */
+  chevronBtn:   'sidebar-chevron-btn',
   icon:         'sidebar-icon',
   chevron:      'sidebar-chevron',
   sub:          'sidebar-sub',

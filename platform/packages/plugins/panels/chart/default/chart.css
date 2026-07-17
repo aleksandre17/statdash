@@ -16,6 +16,14 @@
  * stretched by an equal-height sibling — instead of a percentage that silently
  * collapses when any ancestor's height is `auto` (the vertical-bar frozen-176 bug).
  * height:100% is retained as the fallback for a block/non-flex parent context. */
+/* Apex mounts its <svg> as an INLINE element — inline layout reserves a
+   ~6px baseline-descender strip BELOW it, so a chart that exactly fits its
+   box still overflows by that strip and raises a scrollbar over nothing
+   (the round-10/12 sliver's true root; the sub-row fit hook remains as the
+   generic guard for definite-px vs vw-band crossovers). display:block is the
+   canonical cure (every CSS reset ships it for svg/img). */
+.chart-wrap .apexcharts-canvas > svg { display: block; }
+
 .chart-wrap {
   display:        flex;
   flex-direction: column;

@@ -105,20 +105,39 @@ describe('ApexRenderer — visibility gate', () => {
     vi.unstubAllGlobals()
   })
 
-  it('unmounts ReactApexChart again if the toggle flips back to hidden (no dangling measurement)', () => {
+  it('KEEPS the chart mounted when the toggle flips back to hidden — props frozen, nothing measures (keep-alive)', () => {
+    // Round-12 contract change: a toggle-back must NOT rebuild the chart
+    // (remount + replayed animation read as a page refresh). The NaN guarantee
+    // moves from unmounting to FREEZING: while hidden the mounted chart
+    // receives no prop updates, so nothing ever measures the 0×0 box.
     vi.stubGlobal('ResizeObserver', FakeResizeObserver)
     FakeResizeObserver.instances = []
 
-    const { container, queryByTestId } = render(<ApexRenderer output={makeOutput()} />)
+    const { container, queryByTestId, rerender } = render(<ApexRenderer output={makeOutput()} />)
     const host = container.firstElementChild as HTMLElement
 
     setLaidOut(host, true)
     act(() => FakeResizeObserver.instances.at(-1)?.trigger())
     expect(queryByTestId('apex-mounted')).not.toBeNull()
+    const mountsWhenShown = mounts.length
 
     setLaidOut(host, false)
     act(() => FakeResizeObserver.instances.at(-1)?.trigger())
-    expect(queryByTestId('apex-mounted')).toBeNull()
+    // Keep-alive: still mounted…
+    expect(queryByTestId('apex-mounted')).not.toBeNull()
+
+    // …and FROZEN: new data arriving while hidden must not reach the chart.
+    const changed = makeOutput()
+    changed.series[0]!.data = [{ value: 99, formatted: '99' }, { value: 1, formatted: '1' }]
+    rerender(<ApexRenderer output={changed} />)
+    // Apex-format series (numbers) — assert on the serialized payload.
+    expect(JSON.stringify((mounts.at(-1) as { series: unknown }).series)).not.toContain('99')
+
+    // On re-show the frozen view refreshes — the changed data lands (fresh key).
+    setLaidOut(host, true)
+    act(() => FakeResizeObserver.instances.at(-1)?.trigger())
+    expect(JSON.stringify((mounts.at(-1) as { series: unknown }).series)).toContain('99')
+    expect(mounts.length).toBeGreaterThan(mountsWhenShown)
 
     vi.unstubAllGlobals()
   })
@@ -172,7 +191,12 @@ describe('ApexRenderer — declarative visibility gate (NodeVisibilityProvider)'
     vi.unstubAllGlobals()
   })
 
-  it('unmounts synchronously when the provider flips to hidden — no async ResizeObserver needed', () => {
+  it('stays mounted but FROZEN when the provider flips to hidden — no update ever reaches a hidden chart', () => {
+    // Keep-alive counterpart of the old synchronous-unmount contract: hiding no
+    // longer unmounts (toggle-back must not rebuild), and the same-commit
+    // guarantee is now "no prop update while hidden" — apex never redraws into
+    // a display:none box (redrawOnParentResize is globally off; data changes
+    // are withheld until the next visible render).
     vi.stubGlobal('ResizeObserver', FakeResizeObserver)
     FakeResizeObserver.instances = []
 
@@ -186,14 +210,15 @@ describe('ApexRenderer — declarative visibility gate (NodeVisibilityProvider)'
     act(() => FakeResizeObserver.instances.at(-1)?.trigger())
     expect(queryByTestId('apex-mounted')).not.toBeNull()
 
-    // Flip to hidden. The box is STILL reporting laid-out (no ResizeObserver fired):
-    // the chart must unmount on the render alone — the synchronous race killer.
+    const changed = makeOutput()
+    changed.series[0]!.data = [{ value: 77, formatted: '77' }, { value: 2, formatted: '2' }]
     rerender(
       <NodeVisibilityProvider visible={false}>
-        <ApexRenderer output={makeOutput()} />
+        <ApexRenderer output={changed} />
       </NodeVisibilityProvider>,
     )
-    expect(queryByTestId('apex-mounted')).toBeNull()
+    expect(queryByTestId('apex-mounted')).not.toBeNull() // keep-alive
+    expect(JSON.stringify((mounts.at(-1) as { series: unknown }).series)).not.toContain('77') // frozen
 
     vi.unstubAllGlobals()
   })
