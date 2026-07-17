@@ -3130,7 +3130,7 @@
               {
                 "metric": "regional.gva",
                 "at": {
-                  "geo": "R2",
+                  "geo": "tbilisi",
                   "sector": "_T"
                 },
                 "time": 2024,
@@ -3148,7 +3148,7 @@
                   "type": "share",
                   "num": {
                     "measure": "regional.gva",
-                    "filter": { "geo": "R2", "sector": "_T" },
+                    "filter": { "geo": "tbilisi", "sector": "_T" },
                     "time": 2024
                   },
                   "denom": {
@@ -3165,7 +3165,7 @@
               {
                 "metric": "regional.gva",
                 "at": {
-                  "geo": "R3",
+                  "geo": "adjara",
                   "sector": "_T"
                 },
                 "time": 2024,
@@ -3183,7 +3183,7 @@
                   "type": "share",
                   "num": {
                     "measure": "regional.gva",
-                    "filter": { "geo": "R3", "sector": "_T" },
+                    "filter": { "geo": "adjara", "sector": "_T" },
                     "time": 2024
                   },
                   "denom": {
@@ -3200,7 +3200,7 @@
               {
                 "metric": "regional.gva",
                 "at": {
-                  "geo": "R5",
+                  "geo": "imereti",
                   "sector": "_T"
                 },
                 "time": 2024,
@@ -3218,7 +3218,7 @@
                   "type": "share",
                   "num": {
                     "measure": "regional.gva",
-                    "filter": { "geo": "R5", "sector": "_T" },
+                    "filter": { "geo": "imereti", "sector": "_T" },
                     "time": 2024
                   },
                   "denom": {
@@ -3235,7 +3235,7 @@
               {
                 "metric": "regional.gva",
                 "at": {
-                  "geo": "R11",
+                  "geo": "kvemo_kartli",
                   "sector": "_T"
                 },
                 "time": 2024,
@@ -3253,7 +3253,7 @@
                   "type": "share",
                   "num": {
                     "measure": "regional.gva",
-                    "filter": { "geo": "R11", "sector": "_T" },
+                    "filter": { "geo": "kvemo_kartli", "sector": "_T" },
                     "time": 2024
                   },
                   "denom": {
