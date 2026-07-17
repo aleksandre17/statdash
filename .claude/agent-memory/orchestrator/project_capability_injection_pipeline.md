@@ -7,6 +7,8 @@ metadata:
 
 Owner (2026-07-16, away, full autonomy): "along the way keep bringing additional functionalities — invented, from international standards, or hybrid." Plus: "canvas is not fully fixed." He demanded ONE concrete capability a strong platform has that we lack, and to IMPLEMENT it (not diagnose). See [[project_framework_grade_verdict]].
 
+**RE-AFFIRMED 2026-07-17** — owner checked in verbatim: be "ideologue, idea-finder, leader, scientist, senior expert of patterns/concepts/architectures — critical and objective; go into the depth, come out with clearer cores and foundations"; mine the reference platforms' experience → hybridize → lay OUR variant; close every lag (functionality, code quality, universal standards). Twice-affirmed = charter D6 must be EXERCISED on a rhythm, not just remembered — delivery pressure had crowded it out; a benchmark-mining cycle (platform-architect, refreshed BENCHMARK doc + ranked backlog + top-3 formed recs) was fired same day. Watch the balance: every few sessions, one D6 cycle.
+
 **Why:** He's exhausted by diagnosis-without-adoption; the disease is adoption, not absence ([[project_framework_bones_exist]]). He wants FELT, hand-held capability, delivered continuously — proof we can think/find/implement, benchmarked to the proven class, and that "they're not better than us."
 
 **How to apply — the lead's ranked capability backlog (deliver continuously, WIP-pipelined, tree-safe, non-circle-reopening):**

@@ -42,6 +42,34 @@
 4. Honesty rule: keep the **None** rows visible. A benchmark that only lists gaps mis-calibrates the platform's real standing (versioning, expr, validation, tokens, i18n, a11y are genuinely reference-grade).
 
 ---
+
+## 2026-07-17 — Refresh: capability-lag scan at the Authoring-Canon layer (D6 ideology cycle)
+
+> **Trigger:** owner re-affirmed the standing D6 mandate (mine the reference class → hybridize → lay OUR variant; close every lag in functionality, code quality, universal standards). Scanned at the layer we now live — the Authoring Canon program (AR-52 waves W1–W5; W1 Honest Canvas ~DONE, W2 Semantic Spine IN FLIGHT). This section is CAPABILITY presence/absence, not a code audit. Grounded against `ARCHITECTURE-REGISTRY.md`, `ROADMAP-zero-to-hero.md`, cards `0070–0075`, and the orchestrator's `capability-injection-pipeline` thread (items #1–#4 shipped: dynamic binding, thresholds, per-breakpoint authoring, schema-aware bind editor). Ranked backlog + hybrid sketches live in `proposals/CAPABILITY-INJECTION-BACKLOG.md` (created this cycle). _By: platform-architect._
+
+### Where we stand NOW per capability area vs the class (honest)
+
+| Capability area | Reference class + who sets the bar | Our standing (2026-07-17) | Verdict |
+|---|---|---|---|
+| **Authoring functionality** (contextual editing · palette · inspector · canvas manipulate) | Figma (contextual) · Builder.io (registry-projected) · Webflow · Retool | Declaration-driven contextual editing at Figma-class (ADR-039/041, BE line); dynamic binding + thresholds + per-breakpoint authoring shipped (#1–#4). Manipulate (drag/move on canvas) = W4, designed not landed. | **At-par → ahead** (registry-projected surfaces + completeness gate exceed the class); Manipulate is the one open authoring gap |
+| **Semantic / metrics layer** | LookML · dbt MetricFlow · Cube · Malloy · Power BI | Governed `MetricDef` + one `resolveMeasureRef` path + in-tool calc/measure-algebra editor (AR-40/49-M3.0/50-M5 built). **Ratio/share/derived declarable today.** | **At-par**, with ONE sharp gap: **time-relative metrics** (YoY/QoQ/growth/cumulative) as governed nouns — MetricFlow/Cube's signature — designed (AR-49 M3.2) but **not built** |
+| **Governance & lineage** | Looker access-grants · Collibra · Sigma lineage · OpenLineage | Steward change-impact reverse index (`computeMetricImpact`) built; metric-certification lifecycle designed (AR-50/N3); full source→pixel lineage = AR-43/H-LINEAGE horizon (sequenced Stage 2). | **Lag (steward side closing, reader-side horizon)** — impact analysis EXISTS; end-to-end lineage-as-a-read does not yet |
+| **Versioning / undo / publish safety** | Builder.io revision history + scheduled publish · Figma named versions · Grafana version history | `page_version` FSM rows + undo/redo only. **No semantic diff, no one-click rollback, no visible named-checkpoint history, no editorial draft→review→publish.** AR-47 registered, unbuilt. | **Lagging** — the clearest confirmed gap; table-stakes the moment non-devs co-author. Home = W5 publish loop on the ONE `Publishable` identity |
+| **Data-quality / validation on ingest** | Great Expectations · Soda · dbt tests · **Eurostat VTL / SDMX validation · .Stat DQAF** | Two-tier CONFIG validation strong; **no declared expectation-set on ingested OBSERVATIONS** (non-null, range, code-in-codelist, additivity, time-completeness). CanonicalDsd self-describes structure, not quality rules. | **Absent** — and it is the strongest *statistics-native* our-better: fuse Great-Expectations declarations with SDMX + our honest-state canon |
+| **Output / embed / permalink / export** | Grafana snapshot+iframe · Datawrapper/OWID embed · Superset export | Permalink reference-grade (URL=SSOT); data export (CSV/XLSX/SDMX-JSON) LIVE; embed/snapshot backend BUILT but UNWIRED to client + image-export/provenance-on-artifact owed. AR-48 designed. | **Lag → closing** (backend built, client wiring + 3 facets owed) |
+| **Accessibility & standards** | WCAG 2.2 · SDMX · schema.org/Dataset · DCAT-AP · JSON-LD | WCAG 2.1 AA reference-grade; SDMX adopted whole (Law 4). **Missing: SDMX-companion VTL validation; dataset-discoverability metadata (schema.org/Dataset · DCAT · JSON-LD) for a public NSO.** | **Ahead on a11y; absent on discoverability-metadata + VTL** — both are cheap standard-adoptions with high NSO value |
+| **Operational maturity** (CI · alerting · observability) | Grafana provisioning-as-code + alerting · executing CI everywhere | **NO executing CI** — Stage 0 blocked on an owner door (`gh` unauth + no local Docker); 18 DB-gated suites + J1–J6 journeys never run in-machine; the fresh-migrate V33 hazard unproven. Alerting/subscriptions = out-of-domain for published stats (YAGNI). | **Lagging (the executing gate)** — this is the AR-53/Stage-0 wound; the single highest-leverage non-feature fix. Not a capability to invent — a gate to turn green |
+
+### The four seed hypotheses — tested critically (confirm / refute / sharpen)
+
+1. **Derived/composed metrics as declarations** → **SHARPENED (partly refuted).** Ratio/share/derived already declare as governed calc-metrics (AR-40 + AR-49 M3.0 + AR-50 M5, all built). The real gap is narrower and sharper: **time-relative** metrics (YoY/QoQ/growth/cumulative/MTD) — MetricFlow's `cumulative`/`derived-with-offset` and Cube's `rolling_window`. Home = AR-49 M3.2 (`MetricInput.at` relative-time `{$prev:'time'}`, an engine-crossing seam). Rank it up; do not re-propose the whole layer.
+2. **Page config versioning + undo/rollback** → **CONFIRMED.** Genuinely thin. AR-47's editorial FSM + semantic diff + one-click rollback + visible history is the injection. Our-better: diff is a *semantic diff over the declaration tree* and rollback is *lossless by the round-trip law*, which text-diff builders cannot claim.
+3. **Metric lineage + change-impact for stewards** → **PARTLY REFUTED.** Steward-facing change-impact already ships (`computeMetricImpact` reverse index — delete-guard + impact preview). What remains is reader-facing *source→pixel lineage-as-a-read* (AR-43/H-LINEAGE, Stage-2 horizon, already sequenced). Not a fresh injection — a horizon to hold.
+4. **Declared data-quality rule-set on ingest** → **CONFIRMED (the headline).** Absent, statistics-native, and it lands exactly where W2 is opening the front door now. Great-Expectations-class expectations, but SDMX-grade and honest-state-projected.
+
+**Net calibration:** the platform is *ahead* on authoring surfaces, tokens, i18n, a11y, permalink; *at-par* on the semantic layer with one sharp time-relative gap; *lagging* on versioning/rollback, ingest data-quality, and — most consequentially — the *executing CI gate*. No teardown implied anywhere; every gap has an existing seam or registered AR. The disease remains adoption, not absence.
+
+---
 ---
 
 # Part II — Deep constructor study (durable design reference)
