@@ -25,16 +25,21 @@ function HeroControl({ def }: { def: HeroNode }) {
       <HeroGraphic />
 
       <div className="hero__container">
-        <h1 className="hero__title">
-          {resolve(def.title).split('\n').map((line, i) => (
-            i === 0
-              ? <span key={i}>{line}</span>
-              : <span key={i}><br />{line}</span>
-          ))}
-        </h1>
-        {SHOW_HERO_SUBTITLES && def.subtitle && (
-          <p className="hero__subtitle">{resolve(def.subtitle)}</p>
-        )}
+        {/* ONE heading zone (title + optional subtitle) — a single grid row,
+            so the container's fr air-rows distribute space around it as a
+            unit (hero.css §proportional space distribution). */}
+        <div className="hero__heading">
+          <h1 className="hero__title">
+            {resolve(def.title).split('\n').map((line, i) => (
+              i === 0
+                ? <span key={i}>{line}</span>
+                : <span key={i}><br />{line}</span>
+            ))}
+          </h1>
+          {SHOW_HERO_SUBTITLES && def.subtitle && (
+            <p className="hero__subtitle">{resolve(def.subtitle)}</p>
+          )}
+        </div>
 
         <div className="hero__cards">
           {def.cards.map((card, index) => (
