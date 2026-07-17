@@ -53,13 +53,17 @@ export interface ManifestDatasource {
  * Wire shape of ONE component of a calculated metric (DC-01) — the zero-dep
  * mirror of engine `MetricInput`. `measure` is a raw SDMX code OR a metric-id;
  * `at` pins generic dims (Law 1 — any dim, never time-special) for THIS
- * component's point-read, merged over ctx.dims. `at` values are JSON scalars
- * (the `DimVal` universe: string | number | boolean | null) — pure coordinate
- * data, never a `$ctx`/`$ne` predicate (a point-read addresses a single cell).
+ * component's point-read, merged over ctx.dims. An `at` value is EITHER a JSON
+ * scalar (the `DimVal` universe: string | number | boolean | null) OR a RELATIVE
+ * member-navigation token `{ $prev: n }` [ADR-045] — the MDX `Lag(n)`/`ParallelPeriod`
+ * mirror of engine `RelativeCoord`, navigated over the dimension's ordered members at
+ * read time (a growth metric's prior-period coordinate). Pure coordinate data, never a
+ * `$ctx`/`$ne` predicate (a point-read addresses a single cell). JSON-only, so the
+ * token survives the manifest round-trip (Law 2 — a tree, never a function).
  */
 export interface ManifestMetricInput {
   measure: string
-  at?:     Record<string, string | number | boolean | null>
+  at?:     Record<string, string | number | boolean | null | { $prev: number }>
 }
 
 /**

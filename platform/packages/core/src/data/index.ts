@@ -36,3 +36,4 @@ export type { KpiSpec, KpiValueSpec, KpiTrendSpec, DimFilter, DimFilterRef } fro
 export { interpretFeatured, extractFeaturedRequirements, featuredToKpiSpec } from './featured'
 export type { FeaturedItemSpec, FeaturedSlideDef, FeaturedStoreResolver, FeaturedRequirement } from './featured'
 export { resolveMetricValue, calcMetricRequirements, isCalculatedMetric } from './metric-calc'
+export { orderedMembers, navigateRelative, resolveRelativeAt }        from './relative-coord'

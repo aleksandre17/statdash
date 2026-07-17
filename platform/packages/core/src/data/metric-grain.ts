@@ -33,7 +33,7 @@
 import type { DataStore, RollupOp } from './store'
 import { storeValAt }               from './store'
 import type { EngineRow }           from './encoding'
-import { getMetric, resolveMeasureRef, effectiveAdditivity } from './metric'
+import { getMetric, resolveMeasureRef, effectiveAdditivity, isRelativeCoord } from './metric'
 import type { MetricDef, MetricInput } from './metric'
 import { resolveMetricValue }       from './metric-calc'
 import type { SectionContext }      from '../core/context'
@@ -139,9 +139,7 @@ function enumerateGrainTuples(
     if (!grainSet.has(dim) && val != null) filter[dim] = val
   }
   // Input pins (input.at) constrain THIS component's read (Law 1 — any dim).
-  for (const [dim, val] of Object.entries(input.at ?? {})) {
-    if (val != null) filter[dim] = val
-  }
+  for (const [dim, val] of Object.entries(absolutePins(input.at))) filter[dim] = val
   const rows = store.querySync({ type: 'obs', measure: inputBaseCode(input), filter }, ctx)
   for (const row of rows) {
     const tuple: Record<string, DimVal> = {}
@@ -172,12 +170,28 @@ function readInputAt(
   if (metric?.calc) {
     // `input.at` is Partial (values may be undefined); the store matcher skips unset
     // dims, so the cast is sound — undefined keys never narrow a coordinate.
-    const dims = { ...ctx.dims, ...(input.at ?? {}), ...tuple } as Record<string, DimVal>
+    const dims = { ...ctx.dims, ...absolutePins(input.at), ...tuple } as Record<string, DimVal>
     return resolveMetricValue(input.measure, { ...ctx, dims }, store) ?? 0
   }
   guardNoSumOfRatio(input.measure, 'sum')
-  const at: Partial<Record<string, DimVal>> = { ...(input.at ?? {}), ...tuple }
+  const at: Partial<Record<string, DimVal>> = { ...absolutePins(input.at), ...tuple }
   return storeValAt(store, inputBaseCode(input), at, ctx)
+}
+
+/**
+ * The ABSOLUTE pins of a component's `at` — a relative token `{ $prev: n }` [ADR-045] is
+ * DROPPED here. Grain-SERIES navigation of a relative coordinate is a follow-up (the
+ * tuple-vs-token collision needs its own design); the SCALAR KPI path (evalCalcAtGrain
+ * grain-∅ → resolveMetricValue) already resolves tokens honestly. A token-FREE input —
+ * every catalog metric today — is byte-identical (null/undefined keys were already
+ * skipped by the store matcher). Keeps the grain path type-correct without expanding scope.
+ */
+function absolutePins(at: MetricInput['at']): Record<string, DimVal> {
+  const out: Record<string, DimVal> = {}
+  for (const [dim, v] of Object.entries(at ?? {})) {
+    if (v != null && !isRelativeCoord(v)) out[dim] = v
+  }
+  return out
 }
 
 /** Grain comparator — numeric where both values are numeric, else lexical; per axis in order. */
@@ -218,7 +232,10 @@ export function evalCalcAtGrain(
   // Grain-∅ = scalar. The scalar path is UNTOUCHED — one governed number, byte-identical.
   if (grain.length === 0) {
     const v = resolveMetricValue(ref, ctx, store)
-    return v === undefined ? [] : [{ value: v }]
+    // `null` = an off-the-edge relative coordinate (honest no-data, ADR-045); `undefined`
+    // = a non-calc ref. Both yield NO row here (no fabricated value). A resolved value —
+    // including a genuine 0 — is one row. Byte-identical for every token-free metric.
+    return v == null ? [] : [{ value: v }]
   }
 
   const metric = getMetric(ref)

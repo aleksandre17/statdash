@@ -12,16 +12,45 @@ import type { SectionContext }                   from '../core/context'
 import type { FormatKey }                         from './kpi-spec'
 
 /**
+ * Relative member-navigation token [ADR-045] — the OLAP-canonical way to address a
+ * coordinate RELATIVE to the active one, over the ORDERED MEMBER SET of a dimension.
+ * This is MDX `Lag(n)` / `ParallelPeriod` adopted whole (Law 4): `{ $prev: n }` on a
+ * dimension addresses the member `n` positions BACK in that dimension's ordered
+ * members — NOT a naive `value - n` arithmetic. Off-the-edge (no such prior member,
+ * e.g. `$prev:1` at the first period) resolves to NO MEMBER → the honest no-data state
+ * (Law 11), never a wrap, clamp, or fabricated 0.
+ *
+ * GENERIC over dims (Law 1): the token addresses ANY ordered dimension — time is
+ * merely the first consumer (an SDMX TIME_PERIOD axis); `{ geo: { $prev: 1 } }` is
+ * equally valid over a coded geo codelist. Pure data — a JSON token, never a function
+ * (Law 2), so it survives the manifest round-trip and stays Constructor-authorable.
+ *
+ * `$prev: n` is the minimal canonical set (n ≥ 1: n members back). The union is OPEN
+ * (OCP): a future `$first` (MDX OpeningPeriod, for index-to-base / cumulative) or a
+ * window token is a NEW discriminant here, resolved by one more branch in
+ * `navigateRelative` — the interface and every consumer are unchanged.
+ */
+export type RelativeCoord = { $prev: number }
+
+/** True ⟺ `v` is a relative member-navigation token (a `{ $prev }` coordinate). */
+export function isRelativeCoord(v: unknown): v is RelativeCoord {
+  return typeof v === 'object' && v !== null
+    && '$prev' in v && typeof (v as { $prev: unknown }).$prev === 'number'
+}
+
+/**
  * One named component of a CALCULATED metric: a measure read at a generic
  * coordinate. `at` pins dims (Law 1 — any dim, never time-special) for THIS
  * component's point-read, merged OVER ctx.dims (and over the referenced metric's
- * default dims). Pure data — a coordinate, never a function (Law 2).
+ * default dims). A pinned value is EITHER an absolute `DimVal` OR a `RelativeCoord`
+ * token (`{ $prev: n }`) navigated over the dimension's ordered members at read time
+ * [ADR-045]. Pure data — a coordinate, never a function (Law 2).
  */
 export interface MetricInput {
   /** Underlying measure ref — a raw SDMX code OR a registered metric-id. */
   measure: string
-  /** Generic coordinate pin merged over ctx.dims for this component's read. */
-  at?:     Partial<Record<string, DimVal>>
+  /** Generic coordinate pin merged over ctx.dims for this component's read. Absolute value OR a `{ $prev: n }` relative token. */
+  at?:     Partial<Record<string, DimVal | RelativeCoord>>
 }
 
 /**

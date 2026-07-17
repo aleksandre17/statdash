@@ -351,12 +351,14 @@ export type { FeaturedItemSpec, FeaturedSlideDef, FeaturedStoreResolver, Feature
 
 // ── Metric registry [N26] — Constructor metric vocabulary + extension seam ──
 export type { MetricDef, ResolvedMeasure, MetricInput, MetricCalc, MetricAgg,
-         Additivity, SemiAdditiveRule }                               from './data/metric'
+         Additivity, SemiAdditiveRule, RelativeCoord }                from './data/metric'
 export { registerMetric, registerMetrics, getMetric, listMetrics, listMetricDefs,
          resolveMeasureRef, mergeMetricDims, withMetricProvenance,
          METRIC_AGG_VALUES, ADDITIVITY_VALUES,
-         effectiveAdditivity, defaultAdditivity }                     from './data/metric'
+         effectiveAdditivity, defaultAdditivity, isRelativeCoord }    from './data/metric'
 export { resolveMetricValue, calcMetricRequirements, isCalculatedMetric } from './data/metric-calc'
+// ── Relative member navigation [ADR-045] — MDX Lag/ParallelPeriod over an ordered dim ──
+export { orderedMembers, navigateRelative, resolveRelativeAt }        from './data/relative-coord'
 // ── Measure algebra at grain [AR-50 M2] — the grain-polymorphic evaluator ──
 //  evalCalcAtGrain generalizes a calc metric from scalar (grain-∅, byte-identical
 //  to resolveMetricValue) to any grain via align-join + per-row Expr eval. The
