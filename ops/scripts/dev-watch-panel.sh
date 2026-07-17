@@ -18,7 +18,7 @@
 #     PATH="/c/msys64/usr/bin:$PATH" HOME="/c/msys64/home/Test-User" \
 #       rsync -az --delete --exclude node_modules --exclude dist --exclude .git \
 #       -e /c/msys64/usr/bin/ssh \
-#       platform/apps/panel/src/ geostat-deploy:/home/administrator/statdash-dev-src/platform/apps/panel/src/
+#       platform/apps/panel/src/ geostat-deploy:/tmp/statdash-dev-line/platform/apps/panel/src/
 #
 # ── THE PROVEN RECIPE (why these knobs) ──────────────────────────────────────
 #   • MSYS2 rsync + MSYS2 ssh on PATH (Git's ssh + MSYS2 rsync = `dup() failed` fd bug).
@@ -41,7 +41,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 SERVER="${SERVER:-geostat-deploy}"                                # ssh host alias
 LOCAL_SRC="${LOCAL_SRC:-$ROOT/platform/apps/panel/src}"           # what to watch
-REMOTE_SRC="${DEV_PANEL_SRC:-/home/administrator/statdash-dev-src/platform/apps/panel/src}"
+REMOTE_SRC="${DEV_PANEL_SRC:-/tmp/statdash-dev-line/platform/apps/panel/src}"
 SSH_BIN="${SSH_BIN:-/c/msys64/usr/bin/ssh}"
 INTERVAL="${INTERVAL:-1}"                                         # poll seconds
 
