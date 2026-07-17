@@ -49,6 +49,10 @@
   padding: 0 0 calc(var(--landing-carousel-overlap) + 2rem);
 }
 
+/* Explicit row homes — auto-placement would seat the children in the AIR
+   rows (rows fill consecutively from 1). */
+.hero__heading { grid-row: 2; }
+.hero__container > .hero__cards { grid-row: 4; }
 .hero__heading > :last-child { margin-bottom: 0; }
 
 .hero__title {
