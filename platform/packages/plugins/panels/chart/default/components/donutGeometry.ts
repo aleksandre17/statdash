@@ -1,10 +1,33 @@
 // ── donutGeometry — donut label-placement engine (pure, no React) ──────
 //
-//  Split out of DonutChart (one-concern-per-file; keeps the chart component
-//  under the body ceiling). All geometry/layout math + the slice/label types
-//  + the build() entry live here; the component file is now just the SVG view.
-//  The single design-token touch is the slice fallback color, resolved via
-//  cssVar (var() is invalid in the SVG fill it feeds).
+//  Split out of DonutChart (one-concern-per-file). All geometry/layout math +
+//  the slice/label types + the build() entry live here; the component file is
+//  the SVG view. The single design-token touch is the slice fallback color,
+//  resolved via cssVar (var() is invalid in the SVG fill it feeds).
+//
+//  LABEL LAYOUT — non-crossing BY CONSTRUCTION (round-12 supersedes the old
+//  heuristic search). The prior engine searched a radius×angle grid per label
+//  and dodged collisions with Bézier "pushes" — good, but a search can only
+//  make crossings unlikely, never impossible (its last-resort fallback drew
+//  through anything). This engine is the two-column callout layout of the
+//  reference class (Datawrapper · ECharts alignLabels · AMCharts):
+//
+//    1. slices partition by MID-ANGLE into a RIGHT and a LEFT column;
+//    2. within a side, anchors are Y-MONOTONE along the arc (sin is monotone
+//       over each half), so sorting by angle sorts by anchor y;
+//    3. labels stack in that SAME order, de-overlapped by an order-preserving
+//       two-pass sweep (forward: no overlap; backward: pull back inside the
+//       viewport) — order in ⇒ order out;
+//    4. every leader is the same y-monotone 3-segment polyline (radial exit →
+//       diagonal → horizontal into its column).
+//
+//  Invariant: two polylines whose start points share one vertical order and
+//  whose end points share the SAME order, each y-monotone between two fixed
+//  columns, form a planar wiring diagram — they cannot intersect. So for ANY
+//  dataset, ANY slice distribution: zero leader crossings, zero label
+//  overlaps, everything in bounds. Proven, not searched. The companion
+//  fitness suite (donutLabelLayout.fitness.test.ts) hammers it with
+//  adversarial distributions and asserts all three invariants.
 
 import type { ChartOutput } from '@statdash/charts'
 import { fmtNum } from '@statdash/engine'
@@ -17,26 +40,24 @@ const PAD = 0.042, EXPLODE_D = 9
 // Nothing renders outside this rect — leaders included
 const X0 = 2, X1 = W - 2, Y0 = 2, Y1 = H - 2
 
-const BOX_GAP = 5, DONUT_CLEAR = R + 8
 const F_PCT = 11, F_NAME = 9.5
 const LH_PCT = F_PCT + 2, LH_NAME = F_NAME + 2
 const CH_W = 5.6
 
-// Search grid — deliberately coarse for speed
-const RS = R + 28, RE = 190, RSTEP = 6, ASTEP = 0.08
+// Column geometry: radial exit off the ring, then a diagonal into the fixed
+// label column each side owns (Datawrapper's aligned-callout silhouette).
+const COL_X    = R + 42          // column offset from CX (label text starts here)
+const ROW_GAP  = 4               // min vertical clearance between label boxes
+const EDGE_PAD = 4               // viewport top/bottom breathing
 
 // View constants the component + tooltip render against.
 export const DONUT_VIEW = { W, H, CX, CY, X0, Y0, EXPLODE_D, F_PCT, F_NAME, LH_PCT, LH_NAME } as const
 
 type Pt = [number, number]
-interface Box { x1: number; y1: number; x2: number; y2: number }
 
 // ── Math helpers ───────────────────────────────────────────────────────
 
 const pol = (r: number, a: number): Pt => [CX + r * Math.cos(a), CY + r * Math.sin(a)]
-
-const clampX = (x: number) => Math.max(X0, Math.min(X1, x))
-const clampY = (y: number) => Math.max(Y0, Math.min(Y1, y))
 
 function sliceArc(s: number, e: number): string {
   const [x1, y1] = pol(R, s), [x2, y2] = pol(R, e)
@@ -54,194 +75,6 @@ export function wrap(t: string, m: number): string[] {
   if (c) o.push(c); return o.length ? o : [t]
 }
 
-// ── Geometry ───────────────────────────────────────────────────────────
-
-const boxHit = (a: Box, b: Box) =>
-    !(a.x2 + BOX_GAP < b.x1 || b.x2 + BOX_GAP < a.x1 || a.y2 + BOX_GAP < b.y1 || b.y2 + BOX_GAP < a.y1)
-
-function touchesDonut(b: Box): boolean {
-  for (const x of [b.x1, (b.x1 + b.x2) / 2, b.x2])
-    for (const y of [b.y1, (b.y1 + b.y2) / 2, b.y2])
-      if (Math.hypot(x - CX, y - CY) < DONUT_CLEAR) return true
-  return false
-}
-
-function segCross(a1: Pt, a2: Pt, b1: Pt, b2: Pt): boolean {
-  const d = (a2[0] - a1[0]) * (b2[1] - b1[1]) - (a2[1] - a1[1]) * (b2[0] - b1[0])
-  if (Math.abs(d) < 1e-9) return false
-  const t = ((b1[0] - a1[0]) * (b2[1] - b1[1]) - (b1[1] - a1[1]) * (b2[0] - b1[0])) / d
-  const u = ((b1[0] - a1[0]) * (a2[1] - a1[1]) - (b1[1] - a1[1]) * (a2[0] - a1[0])) / d
-  return t > 0.02 && t < 0.98 && u > 0.02 && u < 0.98
-}
-
-function polysCross(a: Pt[], b: Pt[]): boolean {
-  for (let i = 0; i < a.length - 1; i++)
-    for (let j = 0; j < b.length - 1; j++)
-      if (segCross(a[i], a[i + 1], b[j], b[j + 1])) return true
-  return false
-}
-
-function segHitsBox(x1: number, y1: number, x2: number, y2: number, b: Box): boolean {
-  const bx1 = b.x1 - 1, by1 = b.y1 - 1, bx2 = b.x2 + 1, by2 = b.y2 + 1
-  if (x1 >= bx1 && x1 <= bx2 && y1 >= by1 && y1 <= by2) return true
-  if (x2 >= bx1 && x2 <= bx2 && y2 >= by1 && y2 <= by2) return true
-  const dx = x2 - x1, dy = y2 - y1; let tE = 0, tX = 1
-  for (const [p, q] of [[-dx, x1 - bx1], [dx, bx2 - x1], [-dy, y1 - by1], [dy, by2 - y1]] as Pt[]) {
-    if (Math.abs(p) < 1e-9) { if (q < 0) return false }
-    else { const r = q / p; if (p < 0) tE = Math.max(tE, r); else tX = Math.min(tX, r); if (tE > tX) return false }
-  }
-  return true
-}
-
-function polyHitsBoxes(pts: Pt[], boxes: Box[]): boolean {
-  for (let i = 0; i < pts.length - 1; i++)
-    for (const b of boxes)
-      if (segHitsBox(pts[i][0], pts[i][1], pts[i + 1][0], pts[i + 1][1], b)) return true
-  return false
-}
-
-// ── Cubic Bézier flatten (with clamping) ───────────────────────────────
-
-function flatCubic(p0: Pt, c1: Pt, c2: Pt, p3: Pt): Pt[] {
-  const N = 10, pts: Pt[] = []
-  for (let i = 0; i <= N; i++) {
-    const t = i / N, u = 1 - t
-    pts.push([
-      clampX(u * u * u * p0[0] + 3 * u * u * t * c1[0] + 3 * u * t * t * c2[0] + t * t * t * p3[0]),
-      clampY(u * u * u * p0[1] + 3 * u * u * t * c1[1] + 3 * u * t * t * c2[1] + t * t * t * p3[1]),
-    ])
-  }
-  return pts
-}
-
-// ── Leader builder ─────────────────────────────────────────────────────
-//
-// Cubic Bézier: exits donut radially, arrives at label horizontally.
-// Control points are CLAMPED to SVG bounds so the curve cannot escape.
-// Push parameter swings the curve outward to dodge obstacles.
-
-function buildLeader(
-    sx: number, sy: number, ex: number, ey: number,
-    sliceAngle: number, boxes: Box[], routes: Pt[][],
-): { d: string; pts: Pt[]; ok: boolean } | null {
-
-  const f = (n: number) => n.toFixed(1)
-  const rdx = Math.cos(sliceAngle), rdy = Math.sin(sliceAngle)
-  const dist = Math.hypot(ex - sx, ey - sy)
-  const arm = Math.max(15, Math.min(dist * 0.38, 50))
-  const endDir = ex > CX ? 1 : -1
-
-  // ── Straight leader FIRST (portal notes item 6: straighten the callout lines) ──
-  //  A clean straight segment from the slice edge to the label anchor is the
-  //  Datawrapper/Observable donut-leader standard and reads far cleaner than a
-  //  curved Bézier. Take it whenever it clears the ring, the placed label boxes,
-  //  and every prior leader; only fall through to the curved pushes when a
-  //  straight line would collide (dense / high-cardinality donuts).
-  {
-    const pts: Pt[] = [[sx, sy], [ex, ey]]
-    const oob = pts.some(([x, y]) => x < X0 || x > X1 || y < Y0 || y > Y1)
-    const hitsDonut = () => {
-      // sample the segment against the inner-donut clear radius
-      for (let t = 0; t <= 1; t += 0.1) {
-        const x = sx + (ex - sx) * t, y = sy + (ey - sy) * t
-        if (Math.hypot(x - CX, y - CY) < R + 2) return true
-      }
-      return false
-    }
-    if (!oob && !hitsDonut() && !polyHitsBoxes(pts, boxes) && !routes.some(r => polysCross(pts, r))) {
-      const d = `M${f(sx)},${f(sy)} L${f(ex)},${f(ey)}`
-      return { d, pts, ok: true }
-    }
-  }
-
-  // Try pushes: 0, then outward, then inward
-  const pushes = [0, 10, 20, 35, 50, -10, -20, -35]
-
-  for (const push of pushes) {
-    const c1: Pt = [
-      clampX(sx + rdx * arm + rdx * push),
-      clampY(sy + rdy * arm + rdy * push),
-    ]
-    const eDist = Math.hypot(ex - CX, ey - CY) || 1
-    const eDx = (ex - CX) / eDist, eDy = (ey - CY) / eDist
-    const c2: Pt = [
-      clampX(ex - endDir * arm * 0.7 + eDx * push * 0.5),
-      clampY(ey + eDy * push * 0.5),
-    ]
-
-    const start: Pt = [sx, sy], end: Pt = [ex, ey]
-    const pts = flatCubic(start, c1, c2, end)
-
-    // Check bounds (should pass due to clamping, but verify)
-    const oob = pts.some(([x, y]) => x < X0 || x > X1 || y < Y0 || y > Y1)
-    if (oob) continue
-
-    // Check donut
-    if (pts.some(([x, y]) => Math.hypot(x - CX, y - CY) < R + 2)) continue
-
-    // Check label boxes
-    if (polyHitsBoxes(pts, boxes)) continue
-
-    // Check leader crossings
-    if (routes.some(r => polysCross(pts, r))) continue
-
-    const d = `M${f(sx)},${f(sy)} C${f(c1[0])},${f(c1[1])} ${f(c2[0])},${f(c2[1])} ${f(ex)},${f(ey)}`
-    return { d, pts, ok: true }
-  }
-
-  // Absolute fallback: straight line (clamped)
-  const pts: Pt[] = [[sx, sy], [ex, ey]]
-  const d = `M${f(sx)},${f(sy)} L${f(ex)},${f(ey)}`
-  return { d, pts, ok: false }
-}
-
-// ── Candidate ──────────────────────────────────────────────────────────
-
-interface Cand {
-  ax: number; ay: number; tx: number; ty: number
-  anchor: 'start' | 'end' | 'middle'
-  lines: string[]; bh: number; box: Box; score: number
-}
-
-function tryPos(a: number, r: number, base: number, pct: string, name: string, showNames: boolean): Cand | null {
-  const cos = Math.cos(a), sin = Math.sin(a)
-  const [ax, ay] = pol(r, a)
-
-  const horiz = Math.abs(cos) >= Math.abs(sin)
-  const right = horiz ? cos >= 0 : false
-  const down = !horiz ? sin >= 0 : false
-
-  const avail = horiz
-      ? (right ? X1 - ax - 6 : ax - X0 - 6)
-      : Math.min(ax - X0, X1 - ax) * 2 - 6
-  if (avail < 30) return null
-
-  const maxCh = Math.max(6, Math.floor((avail - 12) / CH_W))
-  const lines = showNames ? wrap(name, maxCh) : []
-  const longest = showNames ? Math.max(pct.length, ...lines.map(l => l.length)) : pct.length
-  const bw = longest * CH_W + 12, bh = showNames ? LH_PCT + lines.length * LH_NAME : LH_PCT
-
-  let anchor: 'start' | 'end' | 'middle', tx: number, ty: number
-  let x1: number, y1: number, x2: number, y2: number
-
-  if (horiz) {
-    if (right) { anchor = 'start'; tx = ax + 5; x1 = ax; x2 = ax + bw + 5 }
-    else { anchor = 'end'; tx = ax - 5; x1 = ax - bw - 5; x2 = ax }
-    y1 = ay - bh / 2; y2 = ay + bh / 2; ty = ay - bh / 2
-  } else {
-    anchor = 'middle'; tx = ax; x1 = ax - bw / 2 - 2; x2 = ax + bw / 2 + 2
-    if (down) { y1 = ay + 2; y2 = ay + bh + 2; ty = ay + 2 }
-    else { y1 = ay - bh - 2; y2 = ay - 2; ty = ay - bh - 2 }
-  }
-
-  if (x1 < X0 || x2 > X1 || y1 < Y0 || y2 > Y1) return null
-  const box: Box = { x1, y1, x2, y2 }
-  if (touchesDonut(box)) return null
-
-  const score = Math.abs(a - base) * 140 + Math.abs(r - (showNames ? RS : R + 14)) * 2
-  return { ax, ay, tx, ty, anchor, lines, bh, box, score }
-}
-
 // ── Types ──────────────────────────────────────────────────────────────
 
 export interface Slice { path: string; mid: number; color: string; pct: number; name: string; formatted: string }
@@ -252,71 +85,121 @@ export interface Lbl {
   anchor: 'start' | 'end' | 'middle'; lines: string[]; bh: number
 }
 
-// ── Greedy placement ───────────────────────────────────────────────────
+// ── Order-preserving column stack ──────────────────────────────────────
+//
+//  Rows arrive sorted by their ideal y (= anchor order along the arc). The
+//  forward pass pushes each row below its predecessor; the backward pass
+//  pulls the whole tail up when the stack runs past the viewport. Order is
+//  never exchanged — the non-crossing invariant rests on exactly that.
 
-function placeAll(
-    entries: { idx: number; angle: number; pct: number; color: string; pctText: string; name: string }[],
-    showNames: boolean,
-): Lbl[] {
-  const rsStart = showNames ? RS : R + 14
-  const reEnd   = showNames ? RE : 160
-  const sorted = [...entries].sort((a, b) => b.pct - a.pct)
-  const boxes: Box[] = [], routes: Pt[][] = [], result: Lbl[] = []
+interface Row { ideal: number; h: number; y: number }
 
-  for (const e of sorted) {
-    const [lx, ly] = pol(R + 5, e.angle)
+/** Stack rows in-order inside [Y0..Y1]. The gap adapts: when the column is
+ *  tight the clearance shrinks (to zero at the limit) instead of any row ever
+ *  escaping the viewport or swapping order. Returns false when even gap-0
+ *  cannot fit — the caller degrades (fewer/leaner rows). */
+function stackColumn(rows: Row[]): boolean {
+  const avail = (Y1 - EDGE_PAD) - (Y0 + EDGE_PAD)
+  const total = rows.reduce((t, r) => t + r.h, 0)
+  if (total > avail) return false
+  const gap = rows.length > 1
+    ? Math.min(ROW_GAP, (avail - total) / (rows.length - 1))
+    : ROW_GAP
+  let cursor = Y0 + EDGE_PAD
+  for (const r of rows) {
+    r.y = Math.max(r.ideal - r.h / 2, cursor)
+    cursor = r.y + r.h + gap
+  }
+  let floor = Y1 - EDGE_PAD
+  for (let i = rows.length - 1; i >= 0; i--) {
+    const r = rows[i]!
+    if (r.y + r.h > floor) r.y = floor - r.h
+    floor = r.y - gap
+  }
+  return true
+}
 
-    let bestCand: Cand | null = null
-    let bestLead: { d: string; pts: Pt[] } | null = null
-    let bestScore = Infinity
+// ── Build ──────────────────────────────────────────────────────────────
 
-    // Build angle list once
-    const angles: number[] = [e.angle]
-    for (let da = ASTEP; da <= 2.5; da += ASTEP)
-      angles.push(e.angle + da, e.angle - da)
+interface Entry { idx: number; angle: number; pct: number; color: string; pctText: string; name: string }
 
-    for (let r = rsStart; r <= reEnd; r += RSTEP) {
-      for (const a of angles) {
-        const c = tryPos(a, r, e.angle, e.pctText, e.name, showNames)
-        if (!c || c.score >= bestScore) continue
-        if (boxes.some(b => boxHit(c.box, b))) continue
+function placeAll(entries: Entry[], showNames: boolean): Lbl[] {
+  const f = (n: number) => n.toFixed(1)
+  const result: Lbl[] = []
 
-        const lead = buildLeader(lx, ly, c.ax, c.ay, e.angle, boxes, routes)
-        if (!lead || !lead.ok) continue
+  // 1. Partition by side and sort by the ANCHOR Y itself (sin) — never by the
+  //    raw angle: mid-angles live in [-π/2, 3π/2) and the right half WRAPS
+  //    (its top spans both ends of that range), so an angle sort inverts the
+  //    order across the wrap and the wiring invariant dies (the 16-dust-slices
+  //    regression this file's fitness suite pins). sin has no wrap.
+  const bySinAsc = (a: Entry, b: Entry) => Math.sin(a.angle) - Math.sin(b.angle)
+  const right = entries.filter(e => Math.cos(e.angle) >= 0).sort(bySinAsc)
+  const left  = entries.filter(e => Math.cos(e.angle) < 0).sort(bySinAsc)
 
-        // Clearance bonus
-        let cl = 300
-        for (const b of boxes) {
-          const dx = Math.max(0, b.x1 - c.box.x2, c.box.x1 - b.x2)
-          const dy = Math.max(0, b.y1 - c.box.y2, c.box.y1 - b.y2)
-          cl = Math.min(cl, Math.sqrt(dx * dx + dy * dy))
-        }
+  for (const [side, dir] of [[right, 1], [left, -1]] as Array<[Entry[], 1 | -1]>) {
+    if (side.length === 0) continue
+    const colX  = CX + dir * COL_X
+    const avail = dir === 1 ? X1 - colX - 6 : colX - X0 - 6
+    const maxCh = Math.max(6, Math.floor((avail - 6) / CH_W))
 
-        const total = c.score - Math.min(cl, 50) * 2
-        if (total < bestScore) {
-          bestScore = total; bestCand = c; bestLead = lead
-        }
-      }
-      // Early exit: if we found something at this radius with good score, stop
-      if (bestCand && bestScore < 50) break
+    // 2. Measure rows at their ideal y (the arc projection), in arc order —
+    //    then de-overlap, degrading honestly when the column is over capacity:
+    //    names drop first (pct-only rows), and only past even THAT limit the
+    //    smallest slices lose their callout (ECharts overflow school) — the
+    //    numbers stay reachable in the tooltip, and the invariants never bend.
+    const measure = (names: boolean): Row[] => side.map((e) => {
+      const lines = names ? wrap(e.name, maxCh) : []
+      const h = names ? LH_PCT + lines.length * LH_NAME : LH_PCT
+      return { ideal: CY + (R + 26) * Math.sin(e.angle), h, y: 0 }
+    })
+    let names = showNames
+    let rows = measure(names)
+    if (!stackColumn(rows) && names) { names = false; rows = measure(false) }
+    let kept = side
+    if (!stackColumn(rows)) {
+      const capacity = Math.max(1, Math.floor(((Y1 - EDGE_PAD) - (Y0 + EDGE_PAD)) / LH_PCT))
+      const keepSet = new Set([...side].sort((a, b) => b.pct - a.pct).slice(0, capacity).map(e => e.idx))
+      kept = side.filter(e => keepSet.has(e.idx))
+      rows = kept.map((e) => ({ ideal: CY + (R + 26) * Math.sin(e.angle), h: LH_PCT, y: 0 }))
+      stackColumn(rows)
     }
 
-    if (bestCand && bestLead) {
-      boxes.push(bestCand.box)
-      routes.push(bestLead.pts)
+    // 3. Emit labels + their y-monotone 3-segment leaders.
+    kept.forEach((e, i) => {
+      const row = rows[i]!
+      const lines = names ? wrap(e.name, maxCh) : []
+      const yMid = row.y + row.h / 2
+
+      // THE non-crossing construction (two-verticals wiring): (1) a HORIZONTAL
+      // from the slice edge to the side's common exit vertical Ex — horizontals
+      // are parallel, they cannot cross each other; (2) a DIAGONAL from Ex to
+      // the label column — both endpoint sets sit on two fixed verticals in
+      // the SAME y-order, and straight segments between two order-matched
+      // verticals cannot intersect (the wiring-diagram lemma); (3) the short
+      // horizontal into the text. Segments of different kinds live in disjoint
+      // x half-planes (left of Ex / between Ex and the column / past it), so
+      // cross-kind intersections are impossible too. Straight diagonals from
+      // the raw arc — ANY variant we tried — invert in flat clusters at the
+      // poles (the 16-dust fitness case); this construction cannot.
+      const p0 = pol(R + 2, e.angle)              // slice edge
+      const p1: Pt = [CX + dir * (R + 16), p0[1]] // common exit vertical, same y
+      const p2: Pt = [colX - dir * 8, yMid]       // diagonal lands beside the column
+      const p3: Pt = [colX - dir * 3, yMid]       // short horizontal into the text
+      const ld = `M${f(p0[0])},${f(p0[1])} L${f(p1[0])},${f(p1[1])} L${f(p2[0])},${f(p2[1])} L${f(p3[0])},${f(p3[1])}`
+
       result.push({
         idx: e.idx, color: e.color, pctText: e.pctText,
-        lx, ly, ld: bestLead.d,
-        ax: bestCand.ax, ay: bestCand.ay, tx: bestCand.tx, ty: bestCand.ty,
-        anchor: bestCand.anchor, lines: bestCand.lines, bh: bestCand.bh,
+        lx: p0[0], ly: p0[1], ld,
+        ax: p3[0], ay: yMid,
+        tx: colX, ty: row.y,
+        anchor: dir === 1 ? 'start' : 'end',
+        lines, bh: row.h,
       })
-    }
+    })
   }
 
   return result
 }
-
-// ── Build ──────────────────────────────────────────────────────────────
 
 export function build(output: ChartOutput, showNames: boolean) {
   const pts = output.series[0]?.data ?? [], cats = output.categories
@@ -325,24 +208,18 @@ export function build(output: ChartOutput, showNames: boolean) {
   const isPct = (pts[0]?.formatted ?? '').includes('%')
 
   // A donut shows categorical structure, so each slice should read as its own
-  // hue — same rule as the treemap (TreemapChart.tsx). When the series carries no
-  // per-slice color encoding (every point resolves to the same/blank threshold —
-  // a plain single-measure donut), distribute the platform's categorical palette
-  // so slices are distinguishable instead of collapsing to one muted grey. When
-  // rows DO carry distinct semantic colors (threshold encoding), respect them.
-  // A `palette: "sequential"` chart reads as ONE quantity split into ordered
-  // classes → paint every slice from the single-hue blue ramp (sampled so N
-  // slices span the whole light→dark reading), overriding any per-row semantic
-  // colour. Otherwise the historical rule holds: distribute the categorical
-  // palette when the series carries ≤1 distinct threshold colour, else respect
-  // the per-slice semantic colours.
+  // hue — same rule as the treemap (TreemapChart.tsx). A `palette:"sequential"`
+  // chart reads as ONE quantity split into ordered classes → paint every slice
+  // from the single-hue ramp (sampled so N slices span light→dark). Otherwise:
+  // distribute the categorical palette when the series carries ≤1 distinct
+  // threshold colour, else respect the per-slice semantic colours.
   const sequential = output.palette === 'sequential'
   const distinct   = new Set(pts.map(p => p.thresholdColor).filter(Boolean))
   const distribute = distinct.size <= 1
   const palette    = sequential ? chartSequentialSample(pts.length) : chartPalette()
 
   let ang = -Math.PI / 2
-  const slices: Slice[] = [], entries: Parameters<typeof placeAll>[0] = []
+  const slices: Slice[] = [], entries: Entry[] = []
   pts.forEach((pt, i) => {
     const pct = pt.value / tot
     const sw = Math.max(pct * 2 * Math.PI - PAD, 0.001)

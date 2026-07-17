@@ -30,7 +30,10 @@
   height:         100%;
   min-height:     0;
   min-width:      0;
-  padding:        0.4vw;
+  /* WHOLE-px token, deliberately not vw-fluid: a fractional padding (0.4vw =
+     6.72px) makes scrollHeight round UP while clientHeight rounds DOWN — a
+     phantom 1px scrollbar on a perfectly fitting chart (round-12 endgame). */
+  padding:        var(--spacing-sm, 8px);
 }
 
 /* Role proportion (AR-8 §2b) — a chart reads well WIDER than square, so its band
