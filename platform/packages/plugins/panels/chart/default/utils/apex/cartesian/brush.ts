@@ -71,11 +71,14 @@ if (typeof window !== 'undefined') {
 const SPACER = '__spacer__'
 
 /** Height (px) of the slim brush rail under the main plot. 64 = a ~34px
- *  grabbable strip + the 11px year-label row (Highcharts navigator norm).
- *  The prior 96 left a tall plotless zone above the area shape — dead height
- *  the MAIN plot reclaims through its flex:1 sibling (owner, 2026-07-17:
- *  „სლაიდერის გამო სივრცე რჩება სიმაღლეში"). */
-export const SLIDER_HEIGHT = 96
+ *  grabbable strip + the year-label row (Highcharts navigator norm). Only
+ *  possible in SPARKLINE mode: apex otherwise reserves a ~20-30px top offset
+ *  (gridPadFortitleSubtitle) + a hard "-15" in gridHeight, which at 96 left a
+ *  tall dead band above the strip and below 96 collapsed the plot to nothing
+ *  (the selection window + grips never drew — e2e-proven at 64/68/72). The
+ *  MAIN plot reclaims the freed height via its flex:1 sibling (owner,
+ *  2026-07-17: „სლაიდერის გამო სივრცე რჩება სიმაღლეში"). */
+export const SLIDER_HEIGHT = 64
 
 /**
  * Minimum category count before a range slider earns its chrome. A slider under
@@ -150,6 +153,11 @@ export function buildBrushOptions(
       // 'selection' + zoom disabled) — never override zoom here; an explicit
       // value beats the brush defaults and kills the selection mode.
       brush:      { enabled: true, target: opts.mainId, autoScaleYaxis: true },
+      // SPARKLINE mode = apex's own navigator-strip geometry: kills the
+      // title/subtitle top offset and the -15 gridHeight constant, so the
+      // strip fills the band edge-to-edge. It only writes DEFAULTS — the
+      // explicit xaxis.labels/grid overrides below still win (years stay).
+      sparkline:  { enabled: true },
       // Full range on first paint. DOMAIN: apex brush officially supports only
       // numeric/datetime x-axes — a category axis participates by apex's OWN
       // conversion (Config.checkForCatToNumericXAxis → convertCatToNumericXaxis,

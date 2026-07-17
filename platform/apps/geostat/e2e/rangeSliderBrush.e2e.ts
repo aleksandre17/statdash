@@ -106,8 +106,14 @@ test('rangeSlider brush: renders live, zero pageerrors, drag drives the main x-w
 
   for (const t of TARGETS) {
     await test.step(t.name, async () => {
-      await page.goto(t.url, { waitUntil: 'networkidle' })
-      await page.getByText(t.perspective, { exact: false }).first().click()
+      // domcontentloaded, NOT networkidle: a page holding any long-lived
+      // connection (HMR/polling) never settles networkidle — the regional step
+      // once hung a full 300s on it. The expects below are the real readiness
+      // gates (perspective button visible → rail visible → ticks drawn).
+      await page.goto(t.url, { waitUntil: 'domcontentloaded' })
+      const perspective = page.getByText(t.perspective, { exact: false }).first()
+      await expect(perspective, `${t.name}: perspective toggle appears`).toBeVisible({ timeout: 30000 })
+      await perspective.click()
 
       // (2) main + rail render.
       const rail = page.locator(RAIL_SEL).first()
