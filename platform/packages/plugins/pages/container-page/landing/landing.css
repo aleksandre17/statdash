@@ -71,16 +71,20 @@
   position: relative;
   z-index: 2;
   margin-top: calc(-1 * var(--landing-overlap));
-  /* CENTERED, whatever the guest's own width model: auto margins keep a
-     narrower guest centered; the max-width cap gives a full-width guest its
-     side gutters (a fixed margin-inline overrode the guest's auto-centering
-     and pinned it left — owner catch). */
+  /* CENTERED, and the guest's OWN width always wins (owner: „სიგრძე როგორც
+     იყო ისე დარჩეს"): auto margins center whatever width the guest declares
+     (the slider's own width:100%/max-width:1280px contract stays intact). */
   margin-inline: auto;
-  max-width: calc(100% - 2 * var(--spacing-lg, 1.5rem));
   background: var(--color-surface);
   border-radius: var(--radius-lg, 12px);
   border: 1px solid var(--color-border-subtle);
   box-shadow: var(--shadow-overlay);
+}
+/* Width DEFAULT for a guest that declares no width model of its own — at
+   ZERO specificity (:where), so any guest's own max-width (e.g. the
+   slider's 1280px) beats it in the cascade instead of being clobbered. */
+:where(.landing-root > .hero + *) {
+  max-width: calc(100% - 2 * var(--spacing-lg, 1.5rem));
 }
 
 .landing-footer {
