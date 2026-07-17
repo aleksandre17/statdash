@@ -1,18 +1,19 @@
 # Memory Index
 
-- [Canvas craft batch (P3/P5/P6/P7/L2)](project_panel_canvas_craft_batch.md) — governed dim labels · RightDock siteContext · canvas dark-preview · double-chevron collapse
-- [W1 Honest Canvas (AR-52)](project_panel_w1_honest_canvas.md) — live-default+veil, honest UNBOUND KPI (FF-CANVAS-NEVER-LIES), perspective dedup
-- [W2 Semantic Spine (AR-52)](project_panel_w2_semantic_spine.md) — front-door hoist · corpus MIGRATED→governed ids · FF-DATA-BOUNDED · config-cube-contract guard · e2e/probes home
-- [Summary-Card Inspector (Move 1)](project_summary_card_inspector.md) — rich values → constant-weight glance cards + dock section registry; FF-NO-RAW-JSON-DEFAULT
-- [Constructor architecture (state)](project_constructor_state.md) — Inspector/SchemaSource seam, registry pattern, Coverage Fitness gate
-- [Constructor C3+C5](project_panel_c3_c5.md) — cube capability-discovery + save guard / i18n shift-left
+- [Canvas craft batch (P3/P5/P6/P7/L2)](project_panel_canvas_craft_batch.md) — governed dim labels · RightDock siteContext · canvas dark-preview
+- [W1 Honest Canvas (AR-52)](project_panel_w1_honest_canvas.md) — live-default+veil, honest UNBOUND KPI (FF-CANVAS-NEVER-LIES)
+- [W2 Semantic Spine (AR-52)](project_panel_w2_semantic_spine.md) — front-door hoist · corpus→governed ids · FF-DATA-BOUNDED · config-cube-contract guard
+- [Summary-Card Inspector (Move 1)](project_summary_card_inspector.md) — rich values → glance cards + dock section registry; FF-NO-RAW-JSON-DEFAULT
+- [Constructor architecture (state)](project_constructor_state.md) — Inspector/SchemaSource seam, registry pattern, Coverage Fitness
+- [Constructor C3+C5](project_panel_c3_c5.md) — cube capability-discovery + save guard
 - [Panel DataSpec editor](project_panel_dataspec_editor.md) — visual DataSpec Query Builder
-- [Placement Law primitive (SL-0b)](project_placement_law_primitive.md) — canonical §3.2 scope×weight→container; glance-via-scope + 4-band inline/drill
-- [Nav + chrome authorable](project_panel_nav_chrome_authorable.md) — nav per-entry editable (updateNavItem); chrome→Pages&Site
-- [Calc editor M3.0](project_panel_calc_editor_m30.md) — derived-metric editor in MetricEditor (CalcBuilder+ExprTreeEditor)
-- [Panel live canvas (N35)](project_panel_live_canvas.md) — real NodePageRenderer as Constructor canvas
-- [Page lifecycle workflow](project_page_lifecycle_workflow.md) — draft→publish, lifecycle store slice, save-guard/403
-- [Live-preview request volume](project_live_preview_request_volume.md) — cube-request bounding via debounced page descriptor
+- [Pipeline live per-step grid (W-P1)](project_panel_pipeline_live_grid.md) — prefix-run over applyPipeline off a once-resolved live source read; derive-throws + MEASURE_DIM-unexported gotchas
+- [Placement Law primitive (SL-0b)](project_placement_law_primitive.md) — §3.2 scope×weight→container; 4-band inline/drill
+- [Nav + chrome authorable](project_panel_nav_chrome_authorable.md) — nav per-entry editable; chrome→Pages&Site
+- [Calc editor M3.0](project_panel_calc_editor_m30.md) — derived-metric editor (CalcBuilder+ExprTreeEditor)
+- [Panel live canvas (N35)](project_panel_live_canvas.md) — real NodePageRenderer as canvas
+- [Page lifecycle workflow](project_page_lifecycle_workflow.md) — draft→publish, lifecycle slice, save-guard/403
+- [Live-preview request volume](project_live_preview_request_volume.md) — cube-request bounding via debounced descriptor
 - [Value mappings architecture](project_value_mappings_architecture.md) — EXP-06 value→{text,token,icon}, token-bound
 - [Panel code-splitting](project_panel_code_splitting.md) — lazy boundaries + Rolldown vendor groups; jsx-runtime/apexcharts gotcha
 - [Panel tsconfig constraints](project_panel_tsconfig_constraints.md) — no TS parameter-properties / import type
