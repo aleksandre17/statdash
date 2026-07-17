@@ -70,15 +70,16 @@ if (typeof window !== 'undefined') {
 
 const SPACER = '__spacer__'
 
-/** Height (px) of the slim brush rail under the main plot. 64 = a ~34px
- *  grabbable strip + the year-label row (Highcharts navigator norm). Only
+/** Height (px) of the slim brush rail under the main plot. In SPARKLINE
+ *  mode the WHOLE band is the strip (no internal offsets), so 32 = a thin
+ *  ONS-style navigator; every freed pixel goes to the MAIN plot. Only
  *  possible in SPARKLINE mode: apex otherwise reserves a ~20-30px top offset
  *  (gridPadFortitleSubtitle) + a hard "-15" in gridHeight, which at 96 left a
  *  tall dead band above the strip and below 96 collapsed the plot to nothing
  *  (the selection window + grips never drew — e2e-proven at 64/68/72). The
  *  MAIN plot reclaims the freed height via its flex:1 sibling (owner,
  *  2026-07-17: „სლაიდერის გამო სივრცე რჩება სიმაღლეში"). */
-export const SLIDER_HEIGHT = 64
+export const SLIDER_HEIGHT = 32
 
 /**
  * Minimum category count before a range slider earns its chrome. A slider under
