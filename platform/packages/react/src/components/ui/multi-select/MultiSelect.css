@@ -237,3 +237,16 @@
   border: 1px solid var(--color-border);
   background: var(--color-surface-raised, var(--color-surface));
 }
+
+/* The TRIGGER needs the same defense in-page: Tailwind preflight styles
+   <button> itself unlayered (border:0, background:transparent, color:inherit),
+   so the layered trigger surface never applied — no outer border, and the
+   „ყველა" placeholder read page-black in BOTH themes (owner, round 10). */
+.ui-multiselect__trigger {
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text-primary);
+}
+.ui-multiselect__trigger .ui-multiselect__value {
+  color: var(--color-text-secondary);
+}

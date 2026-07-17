@@ -79,6 +79,11 @@ export const BASE: ApexOptions = {
     // The navigator overrides this toolbar wholesale, so apex's own brush()
     // defaults (autoSelected 'selection') keep its drag-window fully alive.
     toolbar:    { show: false, tools: { zoom: false, selection: false, pan: false } },
+    // …and the mouse-WHEEL half of the same owner note: apex 3.45+ ships
+    // allowMouseWheelZoom:true by DEFAULT, gated only on this flag (not on the
+    // toolbar gesture gate above). zoom.enabled itself stays untouched — the
+    // brush pipeline needs the capability; only user gestures die.
+    zoom:       { allowMouseWheelZoom: false },
     // Apex ships its OWN internal ResizeObserver-driven "redraw on parent resize"
     // (default true), debounced via a bare setTimeout its destroy() never clears —
     // so a hide-then-unmount within that window fires a redraw into a torn-down
@@ -232,7 +237,10 @@ const HBAR_PX_PER_CATEGORY = 34   // min vertical slot per row (bar + gap + labe
 // two independent magic numbers. Many-category hbars are UNCHANGED: they still
 // grow past the floor via HBAR_PX_PER_CATEGORY and cap/scroll at 920 (the
 // b5ae777 fix B guard).
-const HBAR_MIN_HEIGHT      = 560  // floor — a solo/few-bar hbar reads as a real focus chart
+// 560 + the wrap's padding/a11y chrome (~19px) landed a HAIR above the live
+// section band (573px @1680) — a 6px scrollbar for nothing (owner, round 10).
+// 544 keeps the same ≈59%-of-cap solo-focus anchor and clears the band.
+const HBAR_MIN_HEIGHT      = 544  // floor — a solo/few-bar hbar reads as a real focus chart
 const HBAR_MAX_HEIGHT      = 920  // cap — beyond this the panel scrolls
 
 /**

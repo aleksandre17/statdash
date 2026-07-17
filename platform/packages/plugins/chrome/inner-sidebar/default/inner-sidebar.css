@@ -306,18 +306,37 @@
     box-shadow: var(--shadow-rail);
   }
 
-  /* Collapsed (not hovered / not focused): icons only. Labels return the instant
-     the rail expands — including on keyboard focus — so a reached control always
-     has its visible name. */
+  /* REVEAL, never REFLOW (owner, round 10: „ტექსტები იწყებს მოძრაობას").
+     Every row is laid out at the EXPANDED width in BOTH states — the collapsed
+     rail merely CLIPS it (overflow-x:hidden on the aside), and expansion slides
+     the clip edge open. Nothing re-wraps, re-centers or re-justifies, so no
+     text ever moves: labels sit at their final x from the start and only FADE.
+     The icon owns a fixed slot centered within the collapsed 78px, so its x is
+     identical collapsed vs expanded (VS Code / Material rail convention). */
+  .inner-sidebar .sidebar-brand,
+  .inner-sidebar .sidebar-section-label,
+  .inner-sidebar .sidebar-nav-item,
+  .inner-sidebar .sidebar-footer { width: 260px; box-sizing: border-box; }
+  /* (78px − 2rem icon) / 2 = 23px — the icon's centered-x in the collapsed rail. */
+  .inner-sidebar .sidebar-nav-item { padding-left: 23px; }
+  .inner-sidebar .sidebar-brand    { padding-left: 23px; }
+
+  .inner-sidebar .sidebar-section-label,
+  .inner-sidebar .sidebar-nav-label,
+  .inner-sidebar .sidebar-chevron,
+  .inner-sidebar .sidebar-footer,
+  .inner-sidebar .sidebar-brand-text {
+    transition: opacity 0.18s ease;
+  }
   .inner-sidebar:not(:hover):not(:focus-within) .sidebar-section-label,
   .inner-sidebar:not(:hover):not(:focus-within) .sidebar-nav-label,
   .inner-sidebar:not(:hover):not(:focus-within) .sidebar-chevron,
-  .inner-sidebar:not(:hover):not(:focus-within) .sidebar-sub,
   .inner-sidebar:not(:hover):not(:focus-within) .sidebar-footer,
-  .inner-sidebar:not(:hover):not(:focus-within) .sidebar-brand-text { display: none; }
+  .inner-sidebar:not(:hover):not(:focus-within) .sidebar-brand-text { opacity: 0; }
 
-  .inner-sidebar:not(:hover):not(:focus-within) .sidebar-nav-item { justify-content: center; padding: 0.625rem; }
-  .inner-sidebar:not(:hover):not(:focus-within) .sidebar-brand    { justify-content: center; }
+  /* Sub-lists stay display-toggled: they expand VERTICALLY (an accordion is
+     expected motion) and must not hold phantom height in the collapsed rail. */
+  .inner-sidebar:not(:hover):not(:focus-within) .sidebar-sub { display: none; }
 }
 
 /* ── Responsive ─────────────────────────────────────────────────── */
