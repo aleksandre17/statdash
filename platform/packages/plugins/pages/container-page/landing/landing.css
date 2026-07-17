@@ -52,6 +52,32 @@
   opacity: 0.85;
 }
 
+/* ── The landing node's SIGNATURE: content rides INTO the hero ──────────
+   Owner directive (2026-07-17): the band after the hero lifts up and
+   overlaps the hero area — and this is the PAGE NODE's handwriting, not a
+   slider special-case: WHATEVER node an author drops after the hero (the
+   featured slider today, any content tomorrow) gets the same floating-card
+   entrance (the classic hero-overlap pattern — gov.uk / Stripe school).
+   Declarative and slot-generic: keyed on `.hero + *`, never on a node type
+   (ADR-038 — no external special-case). The hero itself yields the room, so
+   its own content never sits under the overlap. */
+.landing-root {
+  --landing-overlap: 3.5rem;
+}
+.landing-root > .hero {
+  padding-bottom: calc(var(--landing-overlap) + var(--spacing-md, 1rem));
+}
+.landing-root > .hero + * {
+  position: relative;
+  z-index: 2;
+  margin-top: calc(-1 * var(--landing-overlap));
+  margin-inline: var(--spacing-lg, 1.5rem);
+  background: var(--color-surface);
+  border-radius: var(--radius-lg, 12px);
+  border: 1px solid var(--color-border-subtle);
+  box-shadow: var(--shadow-overlay);
+}
+
 .landing-footer {
   min-height: var(--landing-footer-height);
 }
