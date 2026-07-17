@@ -41,9 +41,13 @@ const nextUid = () => `step-${uidCounter++}`
 export interface PipelineBuilderProps {
   value:    TransformStep[]
   onChange: (steps: TransformStep[]) => void
+  /** The step whose output the live grid shows (W-P1). Selecting a card sets it.
+   *  Optional so the builder still works standalone (no grid). */
+  selectedStep?: number
+  onSelectStep?: (index: number) => void
 }
 
-export function PipelineBuilder({ value, onChange }: PipelineBuilderProps) {
+export function PipelineBuilder({ value, onChange, selectedStep, onSelectStep }: PipelineBuilderProps) {
   const sensors = useDndSensors()
 
   // Stable drag ids — one per step, kept length-synced with `value`. Held in
@@ -100,6 +104,8 @@ export function PipelineBuilder({ value, onChange }: PipelineBuilderProps) {
               key={uids[index]}
               uid={uids[index]}
               step={step}
+              selected={selectedStep === index}
+              onSelect={onSelectStep ? () => onSelectStep(index) : undefined}
               onChange={(next) => updateStep(index, next)}
               onRemove={() => removeStep(index)}
             />
@@ -116,11 +122,13 @@ export function PipelineBuilder({ value, onChange }: PipelineBuilderProps) {
 interface StepCardProps {
   uid:      string
   step:     TransformStep
+  selected?: boolean
+  onSelect?: () => void
   onChange: (next: TransformStep) => void
   onRemove: () => void
 }
 
-function StepCard({ uid, step, onChange, onRemove }: StepCardProps) {
+function StepCard({ uid, step, selected, onSelect, onChange, onRemove }: StepCardProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: uid })
 
   return (
@@ -132,6 +140,7 @@ function StepCard({ uid, step, onChange, onRemove }: StepCardProps) {
         opacity: isDragging ? 0.5 : 1,
         transform: CSS.Transform.toString(transform),
         transition,
+        ...(selected && { borderColor: 'primary.main', boxShadow: 1 }),
       }}
     >
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -144,7 +153,13 @@ function StepCard({ uid, step, onChange, onRemove }: StepCardProps) {
         >
           <DragIndicatorIcon fontSize="small" />
         </Box>
-        <Chip size="small" label={step.op} color="primary" variant="outlined" />
+        {onSelect
+          ? <Chip
+              size="small" label={step.op} clickable data-testid="pipe-step-chip"
+              color="primary" variant={selected ? 'filled' : 'outlined'}
+              aria-pressed={selected} onClick={onSelect}
+            />
+          : <Chip size="small" label={step.op} color="primary" variant="outlined" />}
         <Box sx={{ flex: 1 }} />
         <IconButton size="small" aria-label="ნაბიჯის წაშლა" onClick={onRemove}>
           <DeleteIcon fontSize="small" />

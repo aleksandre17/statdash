@@ -1,5 +1,6 @@
+import { useState } from 'react'
 import {
-  Accordion, AccordionDetails, AccordionSummary, Box, Typography,
+  Accordion, AccordionDetails, AccordionSummary, Box, Chip, Typography,
 } from '@mui/material'
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
 import type { DataSpec, EncodingSpec, ObsQuery, TransformStep } from '@statdash/engine'
@@ -8,6 +9,9 @@ import { FilterBuilder } from './query/FilterBuilder'
 import { PipelineBuilder } from './query/PipelineBuilder'
 import { EncodingEditor } from './query/EncodingEditor'
 import { FieldWells } from '../fieldwells/FieldWells'
+import { PipelineStepGrid } from '../pipeline-preview/PipelineStepGrid'
+import { AS_OF_SOURCE } from '../pipeline-preview/pipelinePreview'
+import { useActiveLocales } from '../../../inspector/useActiveLocales'
 
 // ── QuerySpecEditor — full query editor (ObsQuery + pipe + encoding) ──────────
 
@@ -24,6 +28,12 @@ function readMeasures(measure: ObsQuery['measure']): string[] {
 }
 
 export function QuerySpecEditor({ value, onChange }: QuerySpecEditorProps) {
+  const en = (useActiveLocales()[0] ?? 'ka') === 'en'
+
+  // The step whose live output the grid shows (W-P1). Default = the Get/source read
+  // (AS_OF_SOURCE) — browse-first (SPEC §9 E1): data is on screen before any step.
+  const [asOfStep, setAsOfStep] = useState<number>(AS_OF_SOURCE)
+
   const setQuery = (patch: Partial<ObsQuery>) =>
     onChange({ ...value, query: { ...value.query, ...patch } })
 
@@ -47,8 +57,39 @@ export function QuerySpecEditor({ value, onChange }: QuerySpecEditorProps) {
         />
       </Section>
 
-      <Section title="პაიპლაინი (Transform Steps)">
-        <PipelineBuilder value={value.pipe ?? []} onChange={setPipe} />
+      <Section title="პაიპლაინი (Transform Steps) + ცოცხალი მონაცემები">
+        <Box
+          sx={{
+            display: 'grid',
+            gap: 2,
+            gridTemplateColumns: { xs: '1fr', md: 'minmax(220px, 340px) 1fr' },
+            alignItems: 'start',
+          }}
+        >
+          {/* Left — the applied-steps rail (source Get chip + sortable steps). */}
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+            <Chip
+              size="small"
+              clickable
+              data-testid="pipe-source-chip"
+              label={en ? 'Get (source)' : 'წყარო (Get)'}
+              color="primary"
+              variant={asOfStep === AS_OF_SOURCE ? 'filled' : 'outlined'}
+              aria-pressed={asOfStep === AS_OF_SOURCE}
+              onClick={() => setAsOfStep(AS_OF_SOURCE)}
+              sx={{ alignSelf: 'flex-start' }}
+            />
+            <PipelineBuilder
+              value={value.pipe ?? []}
+              onChange={setPipe}
+              selectedStep={asOfStep}
+              onSelectStep={setAsOfStep}
+            />
+          </Box>
+
+          {/* Right — the live per-step grid (SPEC §3.2). */}
+          <PipelineStepGrid spec={value} asOfStep={asOfStep} />
+        </Box>
       </Section>
 
       {/* ADVANCED fallback (progressive disclosure): the typed measure +
