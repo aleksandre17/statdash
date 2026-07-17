@@ -1,5 +1,8 @@
 # Memory Index
 
+## Boot hydrate / probe-selector diagnosis
+- [Hydrate append-vs-replace + selector scoping](project_hydrate_append_vs_replace_and_selector_scoping.md) — duplicate-key UUIDs falsified a plausible "metric collision" hypothesis (was a StrictMode double-hydrate append race, sibling of an already-fixed `setPages` defect); + an insertion-palette tile and the live canvas overlay sharing one data-attribute silently no-op'd a probe click — scope selectors to the real container, confirm via a positive emitted signal
+
 ## Data / query windowing
 - [Year-window default vs data extent](project_year_window_default_data_extent.md) — range fromYear/toYear defaults resolve against the time CODELIST/classifier, not the measure's realised periods; overshoots when a measure ends before the codelist (regional GVA 2010-2024 vs codelist 2010-2025) → empty final year / honest em-dash. Plus the regional `_T`-default KPI gap + stale token yardstick
 

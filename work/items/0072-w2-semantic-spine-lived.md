@@ -1,7 +1,7 @@
 ---
 id: "0072"
 title: "W2 — THE SEMANTIC SPINE, LIVED: data-first front door · dictionary→canvas bind · migrate the corpus onto governed handles"
-status: CODE+GATES LANDED on main — live J-walks + reprovision pending :3013 (stack down 2026-07-17)
+status: DONE (2026-07-17) — J1/J2/J4 walked LIVE on :3013, consoleErrors:[], evidence work/authoring-truth/w2/; dev reprovisioned (regional v5 · gdp v6 · accounts v3 published); post-walk fixes 3a3eb4a (boot-race hydrate) + 5b87c2d (dev sync mount); gates: panel 977/977 · api 379/0 · bind-parity 8/8
 class: M
 priority: P0
 owner: — (senior/apex build agent, Opus)
