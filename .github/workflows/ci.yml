@@ -22,9 +22,9 @@
 #   dev migrate against an identical engine (no "works in dev" drift).
 #
 # WHY build:engine BEFORE anything api
-#   apps/api depends on @geostat/engine (workspace:*) and its tsconfig/test
-#   resolution expects the engine dist to exist. `pnpm build:engine` builds
-#   engine/* first; api typecheck/test/seed/start all run after. This ordering
+#   apps/api depends on @statdash/* engine packages (workspace:*) and its
+#   tsconfig/test resolution expects the package dist to exist. `pnpm build:engine`
+#   builds packages/* first; api typecheck/test/seed/start all run after. This ordering
 #   is a known board requirement — skip it and api typecheck + the engine import
 #   in bootstrap-parity (`migratePageConfig`) break.
 #
@@ -39,9 +39,15 @@
 #   versions via its schema_history table); seed.ts is INSERT … ON CONFLICT
 #   (upsert), never check/delete/insert. Safe to re-run.
 #
-# ⚠ NOT YET EXECUTED — authored from the real project commands but never run in
-#   CI (the authoring environment has no Docker/psql). The first CI run must
-#   confirm the items listed at the bottom of this file.
+# ⚠ NOT YET EXECUTED (as of 2026-07-15) — authored from the real project commands
+#   but never run in CI (the authoring environment has no Docker/psql, and `gh` is
+#   not authenticated here so this workflow cannot be pushed/watched from the dev
+#   box). RESURRECTION STATUS (Stage-0): the dead `@geostat/*` package filters are
+#   corrected to `@statdash/*` (Phase-5 rename), lint + panel typecheck added to
+#   close the green-gate holes, and the fresh-migrate V33 hazard is flagged on the
+#   Flyway steps. To actually TURN THE KEY (prove the gate runs green): either
+#   `gh auth login` + push this branch, or run on a Docker-capable runner. Until a
+#   real run happens, this file is CORRECT-BUT-UNPROVEN — not evidence.
 # ════════════════════════════════════════════════════════════════════════════
 
 name: CI
@@ -151,12 +157,21 @@ jobs:
       - name: Check architecture laws
         run: pnpm check-laws
 
-      # ── Typecheck: app graph + the api package ──────────────────────────────
+      # ── Lint (whole workspace — the green-gate standard) ────────────────────
+      - name: Lint
+        run: pnpm lint
+
+      # ── Typecheck: app graph + the api AND panel packages ───────────────────
+      # The green-gate standard is geostat app + `@statdash/api` + `@statdash/panel`
+      # (the panel was historically absent from CI — a real gate hole, closed here).
       - name: Typecheck (geostat app)
         run: pnpm typecheck
 
-      - name: Typecheck (@geostat/api)
-        run: pnpm --filter @geostat/api typecheck
+      - name: Typecheck (@statdash/api)
+        run: pnpm --filter @statdash/api typecheck
+
+      - name: Typecheck (@statdash/panel)
+        run: pnpm --filter @statdash/panel exec tsc -b
 
       # ── Unit + DB-gated tests ───────────────────────────────────────────────
       # DATABASE_URL is exported here (job-level env), so the suites guarded by
@@ -247,7 +262,7 @@ jobs:
       #    parity gate compares (GDP_ANNUAL, ACCOUNTS_SEQUENCE, REGIONAL_GVA).
       #    seed.ts uses a pg Pool directly and needs ONLY DATABASE_URL.
       - name: Seed cube
-        run: pnpm --filter @geostat/api seed
+        run: pnpm --filter @statdash/api seed
 
       # 4. start the API in the background, then wait for /health. The API parses
       #    env.ts at boot (DATABASE_URL + JWT_SECRET + ADMIN_*); on app.ready() it
@@ -265,7 +280,7 @@ jobs:
           # One-shot (NOT `dev`'s tsx watch): watch mode would hold the step open
           # and could re-trigger on file events. `tsx src/index.ts` boots once and
           # backgrounds cleanly. apps/api ships tsx as a devDependency.
-          pnpm --filter @geostat/api exec tsx src/index.ts > "${{ github.workspace }}/api.log" 2>&1 &
+          pnpm --filter @statdash/api exec tsx src/index.ts > "${{ github.workspace }}/api.log" 2>&1 &
           echo "API_PID=$!" >> "$GITHUB_ENV"
 
       - name: Wait for API health
@@ -286,7 +301,7 @@ jobs:
       - name: Run verify-parity
         env:
           API_BASE_URL: http://localhost:3001
-        run: pnpm --filter @geostat/api verify-parity
+        run: pnpm --filter @statdash/api verify-parity
 
       # Tear down the background API (best-effort; the runner is ephemeral anyway).
       - name: Stop API
@@ -295,12 +310,20 @@ jobs:
 
 # ════════════════════════════════════════════════════════════════════════════
 # WHAT THE FIRST CI RUN MUST CONFIRM (authored, NOT executed here)
+#   0. ⚠ FRESH-MIGRATE V33 HAZARD (highest-risk — see ADR-035 + database-architect
+#      memory `project_fresh_from_zero_interleave`): a single uncapped `flyway
+#      migrate` on a FRESH volume was known to DIE at V33 (a migration that needs
+#      canonical data already present — the migrate/ingest interleave). CI migrates
+#      a pristine service DB V1→V39, so it may hit exactly this. If the Flyway step
+#      fails at V33, the fix is the ADR-035 interleave (migrate to a cap → seed →
+#      migrate the rest), NOT a blind bypass. Confirm a clean V1→V39 succeeds OR
+#      wire the interleave. This is the load-bearing risk of Stage-0.
 #   1. Node version: repo pins no .nvmrc/engines. Node 22 LTS chosen; if a build
 #      step needs 24 (@types/node is ^24), bump node-version.
 #   2. The API is started one-shot via `tsx src/index.ts` (apps/api's own dev dep),
 #      NOT `pnpm dev` (which is `tsx watch`). Confirm it backgrounds, runs the
 #      boot-time runProvisioning, and /health returns 200. Alternative if the
-#      compiled path is preferred: `pnpm --filter @geostat/api build && start`.
+#      compiled path is preferred: `pnpm --filter @statdash/api build && start`.
 #   3. Flyway via `docker run` (not a service/action) talks to PG over
 #      `--network host` at localhost:5432. Confirm the runner allows host
 #      networking for the flyway container and reaches the service port.
