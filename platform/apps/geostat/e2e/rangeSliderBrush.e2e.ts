@@ -45,9 +45,12 @@ const TARGETS = [
   { name: 'sna-hero-range (stacked bar)', url: '/ka/accounts', perspective: 'დინამიკა' },
 ]
 
-// The brush RAIL is the apex canvas inside the fixed-height (96px, SLIDER_HEIGHT)
-// flex row ApexRenderer stacks under the main plot; the MAIN is its flex-sibling.
-const RAIL_SEL = 'div[style*="96px"] > div > .apexcharts-canvas'
+// The brush RAIL is the apex canvas inside the `.chart-brush-rail` band
+// ApexRenderer stacks under the main plot (the MAIN is its flex-sibling).
+// Keyed on the CLASS — the rail's stable identity — never on the inline
+// height literal (a `div[style*="96px"]` selector silently died the day
+// SLIDER_HEIGHT changed).
+const RAIL_SEL = '.chart-brush-rail .apexcharts-canvas'
 
 /** Visible x-tick labels of the slider-linked MAIN chart (first tspan per tick —
  *  each apex tick <text> nests a <title> duplicate). */
@@ -64,6 +67,10 @@ async function mainXLabels(page: Page): Promise<string[] | null> {
 }
 
 test('rangeSlider brush: renders live, zero pageerrors, drag drives the main x-window', async ({ page }) => {
+  // Three heavy Apex pages in ONE test walk; a cold vite transform pass alone
+  // can eat the default 90s (the spec once "failed" green code on budget, not
+  // behavior — 2026-07-17). Generous per-test budget, honest per-step expects.
+  test.setTimeout(300_000)
   const fixtures: FixtureMap = RECORD ? {} : JSON.parse(readFileSync(FIXTURE_FILE, 'utf8'))
   const pageerrors: string[] = []
   page.on('pageerror', (err) => pageerrors.push(String(err).split('\n')[0]!))

@@ -70,7 +70,15 @@ function parseRgb(color: string): [number, number, number] | null {
 
 export const BASE: ApexOptions = {
   chart: {
-    toolbar:    { show: false },
+    // No drag gesture on a READ plot (owner, 2026-07-17: „მაუსზე გათიშე წლების
+    // რეინჯი") — the range NAVIGATOR below long charts is the one windowing
+    // affordance (Highcharts navigator convention). Killed at apex's GESTURE
+    // gate (globals.zoomEnabled = autoSelected==='zoom' && tools.zoom &&
+    // zoom.enabled — apexcharts.js:6903), NOT via zoom.enabled: the brush
+    // pipeline needs the target's zoom CAPABILITY, only the mouse gesture goes.
+    // The navigator overrides this toolbar wholesale, so apex's own brush()
+    // defaults (autoSelected 'selection') keep its drag-window fully alive.
+    toolbar:    { show: false, tools: { zoom: false, selection: false, pan: false } },
     // Apex ships its OWN internal ResizeObserver-driven "redraw on parent resize"
     // (default true), debounced via a bare setTimeout its destroy() never clears —
     // so a hide-then-unmount within that window fires a redraw into a torn-down

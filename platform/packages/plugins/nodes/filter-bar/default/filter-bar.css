@@ -6,11 +6,14 @@
 .filter-bar {
   background: var(--color-surface);
   border-bottom: 1px solid var(--color-border);
-  padding: 0 1.5rem;
+  padding: 0 var(--spacing-lg, 1.5rem);
   height: var(--inner-fb-h);
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  /* Controls breathe (owner, 2026-07-17: „ერთმანეთზე არიან მიჭყლეტილები") —
+     once the selects became content-sized they sat flush at the old 8px gap;
+     a filter ROW separates its controls at the md step. */
+  gap: var(--spacing-md, 1rem);
   position: sticky;
   top: calc(var(--app-header-h) + var(--inner-ph-h));
   z-index: 29;

@@ -2082,6 +2082,7 @@
                       {
                         "type": "chart",
                         "chartType": "line",
+                        "rangeSlider": true,
                         "palette": "sequential",
                         "fieldConfig": {
                           "unit": {
@@ -2485,6 +2486,7 @@
                       {
                         "type": "chart",
                         "chartType": "bar",
+                        "rangeSlider": true,
                         "palette": "sequential",
                         "fieldConfig": {
                           "unit": {
@@ -2599,6 +2601,7 @@
                       {
                         "type": "chart",
                         "chartType": "bar",
+                        "rangeSlider": true,
                         "palette": "sequential",
                         "fieldConfig": {
                           "unit": {
@@ -4298,6 +4301,7 @@
                 "children": [
                   {
                     "chartType": "bar",
+                    "rangeSlider": true,
                     "dataLabels": false,
                     "palette": "sequential",
                     "fieldConfig": {

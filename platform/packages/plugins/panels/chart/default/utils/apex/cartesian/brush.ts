@@ -75,7 +75,7 @@ const SPACER = '__spacer__'
  *  The prior 96 left a tall plotless zone above the area shape — dead height
  *  the MAIN plot reclaims through its flex:1 sibling (owner, 2026-07-17:
  *  „სლაიდერის გამო სივრცე რჩება სიმაღლეში"). */
-export const SLIDER_HEIGHT = 64
+export const SLIDER_HEIGHT = 96
 
 /**
  * Minimum category count before a range slider earns its chrome. A slider under
@@ -146,6 +146,9 @@ export function buildBrushOptions(
       fontFamily: opts.fontFamily ?? 'system-ui, sans-serif',
       toolbar:    { show: false },
       // The navigator link: this rail's drag-selection sets the target's x-window.
+      // NOTE: apex's own brush() defaults drive the nav (toolbar.autoSelected
+      // 'selection' + zoom disabled) — never override zoom here; an explicit
+      // value beats the brush defaults and kills the selection mode.
       brush:      { enabled: true, target: opts.mainId, autoScaleYaxis: true },
       // Full range on first paint. DOMAIN: apex brush officially supports only
       // numeric/datetime x-axes — a category axis participates by apex's OWN
