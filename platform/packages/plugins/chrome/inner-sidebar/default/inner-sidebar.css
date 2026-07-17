@@ -295,7 +295,12 @@
        below the app header (z-50) — effective only because the CELL above
        carries the same rank in the page-root stacking context. */
     z-index: 40;
-    transition: width 0.22s ease, box-shadow 0.22s ease;
+    /* Width snaps near-instantly (90ms < human aim-then-click time): during a
+       slow width transition the overflow CLIP EDGE lags the spot the user is
+       already aiming at, and a clipped area receives NO pointer events — the
+       first click fell through to the page (owner, round 11: „პირველ კლიკზე
+       არ ეკლიკება"). The 0.18s label fade keeps the reveal civilized. */
+    transition: width 0.09s ease-out, box-shadow 0.22s ease;
   }
   .inner-sidebar:hover,
   .inner-sidebar:focus-within {

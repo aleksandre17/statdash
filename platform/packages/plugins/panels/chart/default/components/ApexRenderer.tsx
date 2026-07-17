@@ -1,4 +1,4 @@
-import { useId }                   from 'react'
+import { useId, useLayoutEffect, useState } from 'react'
 import ReactApexChart              from 'react-apexcharts'
 import { useContainerVisible, useNodeVisible } from '@statdash/react/engine'
 import type { ChartRendererProps } from '@statdash/react/engine'
@@ -52,6 +52,13 @@ export function ApexRenderer({ output, onDataHover, onDataLeave, onDataClick }: 
   // brush companion links by (hooks run unconditionally, before any early return).
   const uid = useId()
   const shown = nodeVisible && boxVisible
+  // Sub-row scroll-sliver fit (definition + rationale at the bottom of this
+  // file). Called BEFORE the empty-series early return — hooks order law.
+  const fitDelta = useScrollSliverFit(
+    hostRef,
+    shown && !shouldRenderSlider(output) && typeof categoricalChartHeight(output) === 'number',
+    output.series.map(sr => sr.data.map(d => d.value).join(',')).join(';'),
+  )
   if (output.series.length === 0) return null
   const fontFamily = typeof window !== 'undefined'
     ? (getComputedStyle(document.documentElement).getPropertyValue('--font-family-base').trim() || 'system-ui, sans-serif')
@@ -131,10 +138,52 @@ export function ApexRenderer({ output, onDataHover, onDataLeave, onDataClick }: 
           series={options.series as ApexAxisChartSeries | number[]}
           type={apexChartType(output.type)}
           // Horizontal categorical charts size to their category count so rows never
-          // cram; all other types fill the container ('100%') as before.
-          height={categoricalChartHeight(output)}
+          // cram; all other types fill the container ('100%') as before. `fitDelta`
+          // shaves a sub-row scrollbar sliver (see useLayoutEffect below).
+          height={fitHeight(categoricalChartHeight(output), fitDelta)}
         />
       )}
     </div>
   )
+}
+
+// ── Sub-row scroll-sliver fit ────────────────────────────────────────────────
+//
+//  A definite-px categorical chart (hbar floor/row-count) lives inside a
+//  vw-scaled section band — two independent axes that can cross by a few px at
+//  any viewport, raising a scrollbar over NOTHING (owner, round 10: a 6px
+//  y-scroll on the regional comparison). After paint, measure the nearest
+//  scrolling ancestor: an overshoot UNDER one row (34px) is chrome noise → the
+//  chart re-renders shaved by exactly that delta; a genuine many-row overflow
+//  (> one row) keeps its designed scroll. Shrink-only + capped + reset per
+//  chart identity — the loop is structurally bounded to ONE correction.
+
+const FIT_TOLERANCE_PX = 34 // = one hbar row (HBAR_PX_PER_CATEGORY)
+
+function fitHeight(desired: number | '100%', delta: number): number | '100%' {
+  return typeof desired === 'number' ? Math.max(1, desired - delta) : desired
+}
+
+function useScrollSliverFit(
+  hostRef: React.RefObject<HTMLDivElement | null>,
+  active: boolean,
+  resetKey: string,
+): number {
+  // Reset-on-key via render-time derived state (the React-sanctioned pattern) —
+  // never a synchronous setState inside an effect.
+  const [fit, setFit] = useState({ key: resetKey, delta: 0 })
+  if (fit.key !== resetKey) setFit({ key: resetKey, delta: 0 })
+  const delta = fit.key === resetKey ? fit.delta : 0
+  useLayoutEffect(() => {
+    if (!active || delta !== 0) return
+    const id = requestAnimationFrame(() => {
+      let el: HTMLElement | null = hostRef.current
+      while (el && el.scrollHeight <= el.clientHeight + 1) el = el.parentElement
+      if (!el) return
+      const over = el.scrollHeight - el.clientHeight
+      if (over > 0 && over <= FIT_TOLERANCE_PX) setFit({ key: resetKey, delta: over })
+    })
+    return () => cancelAnimationFrame(id)
+  }, [hostRef, active, delta, resetKey])
+  return delta
 }
