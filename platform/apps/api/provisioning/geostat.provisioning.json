@@ -5453,6 +5453,90 @@
               "right": 100
             }
           }
+        },
+        {
+          "id": "gdp.growthYoy",
+          "label": {
+            "ka": "მშპ-ის ზრდა (წლიური)",
+            "en": "GDP growth (YoY)"
+          },
+          "format": "sign_pct",
+          "additivity": "non-additive",
+          "dataSource": "gdp",
+          "calc": {
+            "inputs": {
+              "cur": {
+                "measure": "gdp.current"
+              },
+              "prev": {
+                "measure": "gdp.current",
+                "at": {
+                  "time": {
+                    "$prev": 1
+                  }
+                }
+              }
+            },
+            "expr": {
+              "op": "mul",
+              "left": {
+                "op": "sub",
+                "left": {
+                  "op": "div",
+                  "left": {
+                    "$derived": "cur"
+                  },
+                  "right": {
+                    "$derived": "prev"
+                  }
+                },
+                "right": 1
+              },
+              "right": 100
+            }
+          }
+        },
+        {
+          "id": "gdp.perCapitaGrowthYoy",
+          "label": {
+            "ka": "მშპ ერთ სულზე — ზრდა (წლიური)",
+            "en": "GDP per capita growth (YoY)"
+          },
+          "format": "sign_pct",
+          "additivity": "non-additive",
+          "dataSource": "gdp",
+          "calc": {
+            "inputs": {
+              "cur": {
+                "measure": "gdp.perCapita"
+              },
+              "prev": {
+                "measure": "gdp.perCapita",
+                "at": {
+                  "time": {
+                    "$prev": 1
+                  }
+                }
+              }
+            },
+            "expr": {
+              "op": "mul",
+              "left": {
+                "op": "sub",
+                "left": {
+                  "op": "div",
+                  "left": {
+                    "$derived": "cur"
+                  },
+                  "right": {
+                    "$derived": "prev"
+                  }
+                },
+                "right": 1
+              },
+              "right": 100
+            }
+          }
         }
       ]
     },
