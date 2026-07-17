@@ -28,12 +28,14 @@
 //  next whole spec). WCAG 2.1 AA: labelled regions, keyboard-reachable disclosure.
 //
 import { lazy, Suspense } from 'react'
-import { Box, Typography, Divider, Accordion, AccordionSummary, AccordionDetails } from '@mui/material'
+import { Box, Typography, Divider, Button, Accordion, AccordionSummary, AccordionDetails } from '@mui/material'
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
+import TuneIcon from '@mui/icons-material/Tune'
 import type { DataSpec } from '@statdash/engine'
 import type { FieldControlProps } from '../fieldControl.types'
 import { SuspenseFallback } from '../../shared/SuspenseFallback'
 import { MetricPalette } from '../../discovery/MetricPalette'
+import { useFocusEscalation } from '../focusEscalation'
 import { bindMeasureToSpec } from './dataFacetModel'
 
 // Lazy: the DataSpec editor suite (+ dnd-kit) loads only when an author expands the
@@ -44,9 +46,51 @@ const DataSpecEditor = lazy(() =>
   import('../../features/data-layer/DataSpecEditor').then((m) => ({ default: m.DataSpecEditor })),
 )
 
-export function DataFacetField({ value, locale, onChange }: FieldControlProps) {
+// Lazy: the three-pane workbench (+ PipelineBuilder/dnd-kit, live grid, generated-query
+// pane) loads only when the author OPENS it (via the focus-view escalation) — never in
+// the eager inspector chunk. The escalation render-prop wraps it in Suspense (below).
+const DataWorkbench = lazy(() =>
+  import('../../features/data-layer/workbench/DataWorkbench').then((m) => ({ default: m.DataWorkbench })),
+)
+
+// A fresh, valid-by-default query spec — the browse-first Get + result (E1): opening
+// the workbench on an unbound element seeds this, and the grid shows the "pick a metric"
+// browse hint until one is chosen. Byte-identical to DataSpecEditor's `query` default.
+function freshQuerySpec(): DataSpec {
+  return { type: 'query', query: { measure: [] }, pipe: [], encoding: { label: 'label' } }
+}
+
+export function DataFacetField({ field, value, locale, onChange }: FieldControlProps) {
   const spec = value as DataSpec | undefined
   const en = locale === 'en'
+
+  // The overflow-escalation host (StudioShell, around the dock). Null in isolation
+  // (unit tests / other mounts) → the workbench door hides, the in-place editors below
+  // still serve — fail-soft, zero regression (mirrors NestedItemControl's fallback).
+  const escalation = useFocusEscalation()
+
+  // The workbench is QUERY-shaped (Get + pipe + generated query). It opens for a query
+  // spec OR an unbound element (seeded fresh, browse-first); a non-query spec is edited
+  // through the existing conversion (the advanced accordion below) — pre-note #2.
+  const canWorkbench = !!escalation && (!spec || spec.type === 'query')
+
+  const openWorkbench = () => {
+    if (!escalation) return
+    // Ensure the field carries a query spec BEFORE handing it to the workbench, so the
+    // escalation's live binding reads a query spec from the first render (the host binds
+    // `props[field.field]` live each render).
+    if (!spec || spec.type !== 'query') onChange(freshQuerySpec())
+    escalation.escalate({
+      source:    'node-field',
+      fieldPath: field.field,
+      title:     { ka: 'მონაცემთა ვორქბენჩი', en: 'Data workbench' },
+      render:    (bind) => (
+        <Suspense fallback={<SuspenseFallback label={en ? 'Loading workbench' : 'იტვირთება ვორქბენჩი'} />}>
+          <DataWorkbench value={bind.value as DataSpec | undefined} onChange={(next) => bind.onChange(next)} />
+        </Suspense>
+      ),
+    })
+  }
 
   return (
     <Box className="insp-data" data-testid="data-facet-field" sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
@@ -59,6 +103,22 @@ export function DataFacetField({ value, locale, onChange }: FieldControlProps) {
           onBind={(metricId) => onChange(bindMeasureToSpec(spec, metricId))}
         />
       </Box>
+
+      {/* ── OPEN THE WORKBENCH — the primary door into the three-pane surface (W-P2).
+          Escalates OUT to the wide focus-view: step rail · live grid · generated query.
+          The author starts from Get, never from a spec-type Select (SPEC §3.4). ─────── */}
+      {canWorkbench && (
+        <Button
+          size="small"
+          variant="outlined"
+          startIcon={<TuneIcon />}
+          onClick={openWorkbench}
+          data-testid="open-data-workbench"
+          sx={{ alignSelf: 'flex-start' }}
+        >
+          {en ? 'Open data workbench' : 'გახსენით მონაცემთა ვორქბენჩი'}
+        </Button>
+      )}
 
       <Divider textAlign="left">
         <Typography variant="caption" color="text.secondary">

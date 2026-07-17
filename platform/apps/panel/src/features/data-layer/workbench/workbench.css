@@ -1,0 +1,47 @@
+/* ── DataWorkbench — the three-pane authoring surface (W-P2 · SPEC §3) ────────────
+   ONE surface, THREE panes, ALWAYS visible together (the Power-Query editor, not a
+   sidebar accordion). It fills the focus-view body (the wide separate screen it is
+   escalated into), so the center live-grid finally gets REAL width — the CRAFT fix
+   for W-P1's suffocation in the 320px dock. Token-driven (no brand literal). */
+.data-workbench {
+  display: grid;
+  /* rail (bounded) · live grid (greedy 1fr — the CRAFT win) · generated query (bounded) */
+  grid-template-columns: minmax(220px, 300px) minmax(0, 1fr) minmax(280px, 380px);
+  gap: var(--spacing-lg, 24px);
+  align-items: start;
+  height: 100%;
+  min-height: 0;
+}
+
+.data-workbench__pane {
+  min-width: 0;   /* let the center pane's table scroll instead of overflowing the grid */
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm, 8px);
+}
+
+/* The generated-query pane is a quiet aside — a subtle separating rule on its start
+   edge so the three zones read as distinct columns (Power Query's paned feel). */
+.data-workbench__query {
+  border-inline-start: var(--border-width-thin, 1px) solid var(--color-border-subtle, rgba(0, 0, 0, 0.08));
+  padding-inline-start: var(--spacing-md, 16px);
+}
+
+.data-workbench--empty {
+  display: block;
+}
+
+/* ── Narrow fallback — stack the three panes (the focus-view can be narrow on a small
+   viewport). The grid stays a real table (WCAG), just full-width in the stack. */
+@media (max-width: 1080px) {
+  .data-workbench {
+    grid-template-columns: 1fr;
+  }
+  .data-workbench__query {
+    border-inline-start: none;
+    padding-inline-start: 0;
+    border-block-start: var(--border-width-thin, 1px) solid var(--color-border-subtle, rgba(0, 0, 0, 0.08));
+    padding-block-start: var(--spacing-md, 16px);
+  }
+}
