@@ -1,7 +1,7 @@
 ---
 id: "0071"
 title: "W1 — THE HONEST CANVAS: the canvas never lies (live-first default · honest unbound states · faithful chrome)"
-status: READY (first wave; blocks 0072–0075)
+status: DONE (2026-07-17 — merged to main, converged gate green, J3-invariants live-proven on :3013; blocks 0072–0075 now unblocked)
 class: M
 priority: P0
 owner: — (senior/apex build agent, Opus)
@@ -31,3 +31,20 @@ links:
 - **dev-image rebuild** (core + plugins + panel changed) → make it FELT on :3013.
 - **Converged gate on the MERGED tree** (core+panel+plugins) once frontend lands — not before (mid-flight = transient).
 - **J3 walk** live + screenshots → owner.
+
+### CLOSURE (senior-frontend, 2026-07-17) — all W1 work confirmed merged on `main` (commits `918c515` honest UNBOUND KPI, `7eb4017` honest tokens + no silent-blank chart, `b69067a` engine dynamic-binding honest tri-state) + the chrome-faithful brand-into-manifest seam (`buildThemeVars`/`applyThemeOverrides`/`themeVars` prop; `chromeFaithful.fitness`). No new build needed — reconciliation + journey-close only.
+
+**Converged gate on the merged main tree (PARSED, not exit-code):**
+- `apps/panel` vitest: **133 files / 975 tests passed, 0 failed** (the prior `insertByteIdentity` RED my notes flagged is since fixed).
+- W1 FFs green: `canvasNeverLies.fitness` + `chromeFaithful.fitness` + `canvasChromeFaithful.fitness` = **19/19**. Core honest-binding `binding.fitness` = **13/13**. Plugins `kpi-strip` = **11/11**.
+- `tsc -b apps/panel`: **exit 0, clean**. `pnpm --filter ./apps/panel lint`: **0 errors, 6 warnings** (accepted react-refresh/exhaustive-deps baseline).
+
+**LIVE PROOF — real stack, no mocks, remote :3013 (probe `work/probe-w1-honest-canvas.mjs`, shots `work/authoring-truth/w1/`):**
+- `liveDefault:true` (live is the default) · structural opt-out raises the honest veil (`veilPresent` false→true; text "სტრუქტურული რეჟიმი — ცოცხალი მონაცემები გამორთულია; მაჩვენებლები არ არის რეალური" — TEXT label, Law 9).
+- `perspectiveSwitchInToolbar:false` — ONE perspective control (duplicate folded).
+- `hasNonZeroKpi:true`, real values `["80 979","+15.1%","100.0","10.7"]` — NO fake zeros.
+- `tokenLeakCount:0` — no `{spanFrom}`/`{time}` plumbing leak (core `UNRESOLVED_TOKEN` proven LIVE ⇒ the packages image on :3013 IS rebuilt with current core).
+- `canvasAccent:"#0080BE"` — the published GeoStat brand is faithful on the canvas root (chrome-faithful proven LIVE).
+- 0 console errors / 0 pageerrors.
+
+**One item proven at FITNESS-level only, not ambiently live:** the unbound-KPI affordance (`data-kpi-state=unbound` → `KpiUnboundCard`, the door to J4). `unboundAffordances:0` on the probed page because its KPIs are all BOUND — the affordance renders only when an unbound element is present. It is RED→GREEN in `canvasNeverLies.fitness` and its render path is confirmed-deployed (same packages image as the brand/token proofs). Photographing it live needs a composed unbound element = a state-mutating compose gesture on the shared :3013 authoring surface; deferred to the owner's J3 walk-through (or an authorized compose-mutation) rather than risk leaving a scratch node on shared state. W1 DoD (`FF-CANVAS-NEVER-LIES` + `FF-CHROME-FAITHFUL` green, deployed, invariants live-proven) is MET.
