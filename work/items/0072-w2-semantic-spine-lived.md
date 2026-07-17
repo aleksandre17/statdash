@@ -1,7 +1,7 @@
 ---
 id: "0072"
 title: "W2 — THE SEMANTIC SPINE, LIVED: data-first front door · dictionary→canvas bind · migrate the corpus onto governed handles"
-status: BLOCKED on 0071
+status: CODE+GATES LANDED on main — live J-walks + reprovision pending :3013 (stack down 2026-07-17)
 class: M
 priority: P0
 owner: — (senior/apex build agent, Opus)
@@ -20,3 +20,26 @@ links:
 **Hard boundaries.** Governance lens PRESERVED (D-DA1: author binds, steward defines) — one-step journey, zero-step governance is refused. Dependency arrow unchanged. Corpus migration is expand-contract: config byte-compat until the flip, each page render-verified (chart==table parity where same-section).
 
 **DoD.** Journeys **J1 (upload→published cube), J2 (define metric), J4 (bind via governed noun)** each walked LIVE on :3013 against the real api/db · corpus scan: 0 author-plane raw-source configs · deployed · owner shown.
+
+---
+
+## Delivery log (senior build agent, 2026-07-17, on `main`)
+
+**Commits:** `02d2cf9` (front door) · `04b39af` (corpus migration + FF-DATA-BOUNDED) · `90fb21c` (probe mechanics).
+
+**Landed (reversible, in-codebase, gate-proven):**
+- **Outcome 1 — data-first front door.** CanonicalUpload was buried inside the Steward-only ModelSurface (rail Data → flip lens → upload). Hoisted to `DataModelBody` ABOVE the role-lens split → the onboard-data door renders in the DEFAULT author lens, ONE step from the shell, both lenses. Governance preserved (publish = server-FSM; raw-source modeler stays behind Steward Edit). `DataModelBody.test.tsx` proves the front-door-in-both-lenses invariant. FF-AUTHOR-NO-QUERY holds (CanonicalUpload is the blessed front-door component, not the ExcelUpload/DataModelingPanel wall).
+- **Outcome 3 — corpus migrated onto governed handles (the FLIP).** 53 author-plane single-value bindings across the SNA/regional/GDP pages flipped off raw SDMX codes onto governed metric-ids (B5G→accounts.gni, B9→accounts.netLending, B1G→accounts.gdp, P1→accounts.output, B6G→accounts.disposableIncome, B8G→accounts.savings, GVA→regional.gva, gross-domestic-product-at-current-prices→gdp.current, gdp-per-capita-usd→gdp.perCapita, real-gdp-growth-rates→gdp.realGrowth). The catalog already DEFINED every metric (expand done); this run is the flip. Coordinate parity proven on-disk by `config-cube-contract.fitness` (resolveMeasureRef mirror → same DSD code, checked vs the canonical workbook). KPI specs already carried format/unit inline → render-identical. Steward plane untouched: catalog `code` fields, calc-input coordinates (D1/B1G `at`), and `type:query` fan-out DataSpecs (breakdown charts + raw-code exprs `measure == 'P1'`) stay raw by design.
+- **Outcome 4 — FF-DATA-BOUNDED bites.** New `apps/api/src/provisioning/data-bounded.fitness.test.ts`: every author-plane single-value binding must name a governed metric-id; a planted raw code fails the build. This IS "corpus scan: 0 author-plane raw-source configs". FF-AUTHOR-NO-QUERY (surfaces) already held.
+- **Folded — probe mechanics.** `platform/e2e/probes/` is the new journey-probe home (resolves @playwright/@statdash natively; the work/ copy dance is gone). W2 J1/J2/J4 probe landed there.
+
+**Already built (verified, no work needed):**
+- **Outcome 2 — metric drag→bind.** Fully wired: `CanvasOverlay` consumes the metric drag → `useCanvasController.bindMetric` → `firstMetricField`/`bindMetricToProps`; the Inspector DATA facet (`DataFacetField`) mounts the `MetricPalette` for click+drag. Byte-identical writes, both gestures.
+- **Outcome 5 — DataFlowMap embedded.** Since AR-49 M4.3 it is Region 0 of ModelSurface + top of DataDictionarySurface (the Data home orientation) — no longer exiled full-screen.
+
+**Converged gate (parsed logs):** panel vitest **977/977** · `tsc -b apps/panel` clean · lint **0 err / 6 warn** · apps/api **379 pass / 0 fail** (config-cube-contract **4/4**, FF-DATA-BOUNDED **4/4**) · core bind-parity **8/8**. No `packages/*` touched → no dist rebuild.
+
+**Remainder (owner / next run):**
+- **Live J1/J2/J4 walks + screenshots → `work/authoring-truth/w2/`.** BLOCKED: :3013 + the api are DOWN this session (curl 000). Run `node e2e/probes/probe-w2-semantic-spine.mjs` from `platform/` once the stack is up.
+- **Reprovision the live db.** The migration edits the SEED (`geostat.provisioning.json`); the running :3013 db still carries the pre-migration config until a reprovision — a server side-effect that is the owner's step. Only then does the governance benefit (format/unit now applied via the metric) render live.
+- **Surfaced follow-ups (out of W2 scope):** (a) the honest UNBOUND-KPI card (`data-kpi-state=unbound`) is not yet a metric DROP target — kpi-strip's measure is nested in `items[]`, not top-level bindable, so drag-onto-unbound-card (the ideal J4 gesture) needs a nested-part bind seam. (b) `type:query` DataSpecs still carry raw codes (e.g. `non-observed-economy-share` at prov:2574) — steward-plane by design; a future pass could govern the query measures too. (c) the GVA query specs carried a redundant `query.filter.measure` alongside `query.measure` — now both governed, still redundant.
