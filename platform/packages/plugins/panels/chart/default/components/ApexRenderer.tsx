@@ -193,13 +193,17 @@ function useScrollSliverFit(
   if (fit.key !== resetKey) setFit({ key: resetKey, delta: 0 })
   const delta = fit.key === resetKey ? fit.delta : 0
   useLayoutEffect(() => {
-    if (!active || delta !== 0) return
+    // CONVERGENT, bounded: after each shave apex re-lays its absolute chrome
+    // (legend/toolbar), which can still poke a few px past the box — so
+    // re-measure and ACCUMULATE until clean or the one-row cap is reached.
+    // Every step strictly shrinks the chart; termination by construction.
+    if (!active || delta >= FIT_TOLERANCE_PX) return
     const id = requestAnimationFrame(() => {
       let el: HTMLElement | null = hostRef.current
       while (el && el.scrollHeight <= el.clientHeight + 1) el = el.parentElement
       if (!el) return
       const over = el.scrollHeight - el.clientHeight
-      if (over > 0 && over <= FIT_TOLERANCE_PX) setFit({ key: resetKey, delta: over })
+      if (over > 0 && delta + over <= FIT_TOLERANCE_PX) setFit({ key: resetKey, delta: delta + over })
     })
     return () => cancelAnimationFrame(id)
   }, [hostRef, active, delta, resetKey])
