@@ -2,6 +2,7 @@
 
 - [Canvas craft batch (P3/P5/P6/P7/L2)](project_panel_canvas_craft_batch.md) — governed dim labels · RightDock siteContext · canvas dark-preview · double-chevron collapse
 - [W1 Honest Canvas (AR-52)](project_panel_w1_honest_canvas.md) — live-default+veil, honest UNBOUND KPI (FF-CANVAS-NEVER-LIES), perspective dedup
+- [W2 Semantic Spine (AR-52)](project_panel_w2_semantic_spine.md) — front-door hoist · corpus MIGRATED→governed ids · FF-DATA-BOUNDED · config-cube-contract guard · e2e/probes home
 - [Summary-Card Inspector (Move 1)](project_summary_card_inspector.md) — rich values → constant-weight glance cards + dock section registry; FF-NO-RAW-JSON-DEFAULT
 - [Constructor architecture (state)](project_constructor_state.md) — Inspector/SchemaSource seam, registry pattern, Coverage Fitness gate
 - [Constructor C3+C5](project_panel_c3_c5.md) — cube capability-discovery + save guard / i18n shift-left
@@ -15,13 +16,13 @@
 - [Value mappings architecture](project_value_mappings_architecture.md) — EXP-06 value→{text,token,icon}, token-bound
 - [Panel code-splitting](project_panel_code_splitting.md) — lazy boundaries + Rolldown vendor groups; jsx-runtime/apexcharts gotcha
 - [Panel tsconfig constraints](project_panel_tsconfig_constraints.md) — no TS parameter-properties / import type
-- [Panel Playwright e2e harness](project_panel_playwright_e2e.md) — real-browser boot/bind proof; runner separation; mock-API; offline-run bridge
-- [Canvas chrome fidelity + hollow rail](project_panel_canvas_chromeconfig_defect.md) — hollow-rail FIXED (projectCanvasSiteChrome); chrome-SELECTION via ChromeSlot anchor
+- [Panel Playwright e2e](project_panel_playwright_e2e.md) — real-browser boot/bind proof; mock-API; e2e/probes/ = journey-probe home
+- [Canvas chrome fidelity + hollow rail](project_panel_canvas_chromeconfig_defect.md) — hollow-rail FIXED (projectCanvasSiteChrome); chrome-SELECTION via ChromeSlot
 - [Canvas brand faithful (AR-52 W1)](project_canvas_brand_faithful.md) — brand-in-manifest themeOverrides + ONE styles apply seam (buildThemeVars/applyThemeOverrides), dark-safe
-- [Insert accept-graph gap (M4.1)](project_panel_insert_accept_graph_gap.md) — auto-wrap into `section`; content blocks (hero/text/links/…) have no page home → guided hint; fix via META accepts
+- [Insert accept-graph gap (M4.1)](project_panel_insert_accept_graph_gap.md) — auto-wrap into `section`; homeless content blocks → guided hint; fix via META accepts
 - [Per-page type end-to-end](project_panel_per_page_type.md) — CanvasPage.type first-class+required; insert accepts derive from page.type; FF-NO-PRIVILEGED-PAGE-TYPE
 - [Bounded bands → Part port](project_panel_bounded_element_bands.md) — BE-1/4/5 = ONE ADR-041 Part port; sourcedParts stable-key + positional facade till Phase 3/4
-- [FACET axis (COMPLETE — 5 facets)](project_facet_axis_style_facet.md) — FacetDescriptor/facetRegistry caps→generic dock sections. Gotcha: appliesWhen≠meta.type; per-facet PropFieldType
+- [FACET axis (5 facets)](project_facet_axis_style_facet.md) — FacetDescriptor/facetRegistry caps→generic dock sections. Gotcha: appliesWhen≠meta.type; per-facet PropFieldType
 - [Live store measure pinning](project_live_store_measure_pinning.md) — live ApiStore does pure dim_key containment, no measure filter/agg
 - [Law-4 i18n check](project_law4_i18n_check.md) — check-laws Georgian rule: single-locale=violation, bilingual {ka,en}=ok
 - [Runner chrome i18n (ADR-019)](project_runner_chrome_i18n_adr019.md) — manifest.i18n.catalog wiring; i18next addResourceBundle deep-flag gotcha
@@ -69,17 +70,14 @@
 - [panel studio map](project_panel_studio_map.md) — CONSOLIDATED: shell M1.2 · IA S1-S5 · dock SL1-SL4 · role lens M2 · data-flow M4.3/M5b — every landed Studio slice's seams
 - [four-moment shell (AR-52 Step 1)](project_panel_four_moment_shell.md) — Data-first 5-mode rail · top bar = context+Publish; SUPERSEDES S5 rail/top-bar
 - [plane the inspector (AR-52 Step 2)](project_panel_plane_inspector.md) — AudiencePlane axis hides plumbing from author dock (2 chokepoints); StructuredValueView; FF-NO-UNPROJECTED-DECLARED-FIELD
-- [REFINE by concern-groups (AR-52)](project_panel_concern_refine.md) — FieldConcern axis groups the whole-node dock; DockBody route; FF-CONCERN-GROUPED; facet-concern asymmetry to unify
+- [REFINE by concern-groups (AR-52)](project_panel_concern_refine.md) — FieldConcern axis groups the whole-node dock; DockBody route; FF-CONCERN-GROUPED
 - [i18n map](project_i18n_map.md) — CONSOLIDATED: AR-26 LocaleString content contract · AR-37/39 full-sync+badges · label placement (Law 4)
-
-- [Inspector controls off the DTCG spine](project_insp_tokens_undefined.md) — `--insp-*` tokens are UNDEFINED; native controls render on hardcoded hex (dark-mode-broken); FF-NO-UNTHEMED-COLOR doesn't cover apps/panel
+- [Inspector controls off the DTCG spine](project_insp_tokens_undefined.md) — `--insp-*` tokens UNDEFINED; native controls on hardcoded hex (dark-broken); FF-NO-UNTHEMED-COLOR misses apps/panel
 - [MUI→Radix Strangler state](project_mui_radix_migration.md) — owned Select landed (wave 0071); ratchet baseline + remaining sweep targets for the junior
 - [Chart sequential palette](project_chart_sequential_palette.md) — ChartDef.palette + --chart-seq-N; the MANY chart-color paths (donut SVG, buildColors, interpreters, schema)
-- [Portal review batch](project_portal_review_batch.md) — axis fmtNum, niceFloor, tooltip; item11 regional=config-not-ingest; item7 brush LIVE-FIX: apex UMD-global seam + _chartInstances quarantine + 1-based domain; geostat e2e harness
+- [Portal review batch](project_portal_review_batch.md) — axis fmtNum/niceFloor/tooltip; item7 brush LIVE-FIX (apex UMD-global + _chartInstances quarantine + 1-based domain)
 - [Radix primitives in jsdom](feedback_radix_jsdom_polyfills.md) — the 4 polyfills a Radix listbox needs to open in jsdom; native→Radix swaps break fireEvent.change-coupled tests
-
 - [legend aesthetic owner verdict](feedback_legend_aesthetic.md) — legends bottom, single-line ellipsis, ONE `--chart-legend-font-size` token; wrapped/columned legends rejected (R2-3)
-
 - [store cube-region scoping](project_store_cube_region_scoping.md) — stats store scopes wire-dim classifiers to actualRegion; dev DB has TWO sector vocabularies (governance flag)
 - [rail cell+panel pattern](project_rail_cell_panel_pattern.md) — expanding chrome = constant layout cell + absolute overlay panel; never transition in-flow width
 - [filter-control sizing + rail](project_filter_control_sizing_and_rail.md) — multi-select/year-select filter-bar sizing; --shadow-rail token; craftScreens e2e
