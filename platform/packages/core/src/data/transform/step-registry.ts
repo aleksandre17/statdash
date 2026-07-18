@@ -8,7 +8,7 @@
 //
 
 import type { RawRow, TransformStep, PipelineContext } from './types'
-import type { PropSchema } from '../../config/prop-schema'
+import type { PropSchema, PropField } from '../../config/prop-schema'
 
 /**
  * Handler signature for a transform step.
@@ -132,6 +132,48 @@ export function getOpsInCategory(category: StepCategory): string[] {
     .filter(([, cat]) => cat === category)
     .map(([op]) => op)
     .sort()
+}
+
+// ── Role coverage (P-OFFER · card 0087 · FF-ROLE-COVERAGE) ─────────────────────────
+//
+//  Every LEAF authoring field of every registered op-schema must declare its `role`
+//  (field / member / newName / expr / literal) so the panel's ONE generic step editor
+//  can project it to an offered control. A container field (one carrying an `itemSchema`)
+//  is not itself a leaf — its sub-fields carry the roles, checked recursively. This is
+//  the CATEGORY_PIN pattern for roles: a NEW op cannot ship without its offer story.
+//
+/** A `op.field` (or `op.field.subField`) leaf that carries no `role` decision. */
+export interface UnroledField {
+  op:    string
+  /** The dot-ish path to the offending leaf (e.g. `aggregate.aggregations.op`). */
+  field: string
+}
+
+function collectUnroled(op: string, schema: PropSchema, prefix: string, out: UnroledField[]): void {
+  for (const f of schema as PropField[]) {
+    const path = prefix ? `${prefix}.${f.field}` : `${op}.${f.field}`
+    if (f.itemSchema && f.itemSchema.length > 0) {
+      // A structured container — its sub-fields carry the roles (recurse), not itself.
+      collectUnroled(op, f.itemSchema, path, out)
+      continue
+    }
+    if (!f.role) out.push({ op, field: path })
+  }
+}
+
+/**
+ * The leaf fields (across every registered op-schema) that carry NO `role` — the
+ * shrinking COVERAGE_TODO the P-OFFER projection closes (card 0087). Empty for the
+ * built-in inventory once every op declares its roles; `FF-ROLE-COVERAGE` asserts it
+ * stays `[]`, so a NEW op (or a new field) added without a role decision surfaces here
+ * loudly, with a pointer to the exact `op.field` path.
+ */
+export function listUnroledFields(): UnroledField[] {
+  const out: UnroledField[] = []
+  for (const [op, schema] of [..._schemas.entries()].sort(([a], [b]) => a.localeCompare(b))) {
+    collectUnroled(op, schema, '', out)
+  }
+  return out
 }
 
 /**

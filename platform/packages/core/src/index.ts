@@ -110,10 +110,10 @@ export { applyPipeline, applyStep, resolvePipeRefs, getFormatter, FORMATTERS, fm
 // Transform-step registry — the Constructor's transform-op catalog (listTransformOps)
 // + the plugin extension seam (registerTransformStep). Built-in ops registered via
 // the './data/transform' side-effect above.
-export type { StepFn, StepCategory }                                    from './data/transform/step-registry'
+export type { StepFn, StepCategory, UnroledField }                      from './data/transform/step-registry'
 export { registerTransformStep, getTransformStep, listTransformOps,
          getTransformStepSchema, listTransformOpSchemas,
-         getTransformStepCategory, listUncategorizedOps,
+         getTransformStepCategory, listUncategorizedOps, listUnroledFields,
          STEP_CATEGORIES, getOpsInCategory, listOpsByCategory }         from './data/transform/step-registry'
 
 // ── FieldConfig — Grafana-equivalent display configuration ────────────
@@ -197,7 +197,7 @@ import './config/rowspec-schemas' // side-effect: register the built-in RowSpec 
 //  react/slice-meta re-exports these, so existing import sites are unchanged.
 export type {
   PropFieldType, PropFieldSource, PropFieldOption, PropFieldValidation,
-  PropField, PropSchema, PropertyGroup, AudiencePlane, FieldConcern,
+  PropField, PropSchema, PropertyGroup, AudiencePlane, FieldConcern, PropFieldRole,
 }                                           from './config/prop-schema'
 export type { LinkIconKey, LinkDef }        from './config/links'
 // ── Dynamic property binding — literal-OR-expression scalar props (⚡ / `{{ }}`) ──

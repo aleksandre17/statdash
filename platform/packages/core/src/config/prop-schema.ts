@@ -60,6 +60,43 @@ export type AudiencePlane = 'author' | 'steward' | 'system'
 //
 export type FieldConcern = 'content' | 'data' | 'style' | 'layout' | 'behavior'
 
+// ── PropFieldRole — the DECLARED AUTHORING ROLE of a field's value (P-OFFER · card 0087) ─
+//
+//  The Authoring Canon's P-OFFER principle (owner 2026-07-18: «მთელ პაიპლაინზე
+//  ვრცელდებოდეს შემოთავაზებები … არაფერი გამორჩეს … აგნოსტიკური») demands that EVERY
+//  authorable field of EVERY transform op declare WHAT KIND of value it carries — so the
+//  ONE generic step editor can PROJECT the right offered control (never a bespoke per-op
+//  form, never a raw box the author must guess into). The role is the sibling of
+//  `concern`/`plane` — a projection hint the ENGINE never reads; only the panel's
+//  TransformStepEditor maps role → control:
+//    • 'field'   — an INPUT COLUMN reference (an existing column of the step's input). The
+//                  panel offers the governed column list (FieldPicker); a `type:'array'`
+//                  field-role field offers a MULTI column pick. Agnostic: the columns come
+//                  from the live input rows, so tomorrow's new dimension appears with zero
+//                  code change (Law 1).
+//    • 'member'  — a COLUMN'S VALUE (a distinct member of some input column). The panel
+//                  offers the Excel-AutoFilter member list (MemberPicker) over the column
+//                  named by the sibling `memberOf` field. `type:'array'` ⇒ an IN-set pick.
+//    • 'newName' — a GENUINELY NEW identifier the step PRODUCES (a derive's `as`, an
+//                  aggregation's output name). Free text is legitimate here (nothing to
+//                  offer — the name does not exist yet).
+//    • 'expr'    — a FORMULA over the input row (derive's `expr`, a template string). The
+//                  panel projects the ONE schema-aware expr editor (ExprAutocompleteInput)
+//                  with its scope EXTENDED by the step-input columns + a live per-row
+//                  preview through the ONE evaluator (`@statdash/expr`), never a second one.
+//    • 'literal' — a CONSTANT / enum value (a reducer `fn`, a sort `dir`, a window size).
+//                  The panel renders a typed input (a select when `options` are declared).
+//
+//  Composite object/array-of-object fields (a `rename` map, an `aggregate.aggregations`
+//  list) carry an `itemSchema` whose SUB-fields each declare their own role — the projector
+//  recurses. The coverage guard (FF-ROLE-COVERAGE) requires every leaf field of every
+//  registered op-schema to carry a role decision, so a NEW op cannot ship without its offer
+//  story (the CATEGORY_PIN precedent). Additive + OCP: a field with no `role` is byte-
+//  identical to before (the projector falls back to its typed control) — the guard, not the
+//  runtime, is what forces the decision.
+//
+export type PropFieldRole = 'field' | 'member' | 'newName' | 'expr' | 'literal'
+
 // ── PropFieldType — primitive and rich value types in a PropField ─────
 export type PropFieldType =
   | 'string'        // plain text
@@ -206,6 +243,25 @@ export interface PropField {
    * plane. Additive + OCP — a new field lands in its declared concern with no dock change.
    */
   concern?:    FieldConcern
+  /**
+   * The DECLARED AUTHORING ROLE of this field's value (the P-OFFER canon — card 0087).
+   * The panel's ONE generic TransformStepEditor projects role → offered control (field →
+   * FieldPicker · member → MemberPicker · newName → free text · expr → the expr editor +
+   * live preview · literal → typed input). A projection hint the ENGINE never reads; only
+   * the step editor maps it. Absent ⇒ the projector falls back to the field's typed control
+   * (byte-identical to before). FF-ROLE-COVERAGE forbids a leaf field of a registered op-
+   * schema shipping with no role decision (a new op must declare its offer story).
+   */
+  role?:       PropFieldRole
+  /**
+   * For a `role: 'member'` field ONLY: the sibling field whose value NAMES the input column
+   * whose distinct members this field offers (the MemberPicker is scoped to that column —
+   * e.g. a `rollup.of` member list is scoped to `rollup.dim`). The panel reads the column
+   * key from the sibling's value and offers `input.valuesFor(column)`. The peer of
+   * `sourceDim` (cube.members), scoped to the step's LIVE input rows (Law 1). Ignored unless
+   * `role === 'member'`.
+   */
+  memberOf?:   string
   /**
    * Coverage contract for the field's value. `'localized'` marks a field whose
    * value must be a complete `LocaleString` over ALL active locales — the
