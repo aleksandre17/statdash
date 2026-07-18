@@ -1,7 +1,7 @@
 ---
 id: "0081"
 title: "TIME-RELATIVE METRICS AS GOVERNED NOUNS — YoY/QoQ/growth/cumulative declared, never coded"
-status: DONE (2026-07-17 — ADR-045 landed green; governed growth metrics live on :3013)
+status: DONE (2026-07-17; FINAL visual leg closed 2026-07-18 — the real growth series renders live via the governed metric, see 0082 ADR-047 Wave A)
 class: M
 priority: P0
 owner: engine-specialist (Opus)
