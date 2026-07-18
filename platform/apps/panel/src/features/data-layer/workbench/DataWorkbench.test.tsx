@@ -110,3 +110,32 @@ describe('DataWorkbench — the three-pane surface (spine-shaped)', () => {
     expect(screen.queryByTestId('workbench-rail')).toBeNull()
   })
 })
+
+// ── 0084 — the steward raw-cube entry + the promotion loop, plane-gated ──────────
+describe('DataWorkbench — the two-audience canon (0084)', () => {
+  it('AUTHOR lens: NO raw-cube tab, NO promotion affordance (FF-AUTHOR-NO-QUERY)', () => {
+    useRoleStore.setState({ role: 'author' })
+    render(<DataWorkbench value={querySpec} onChange={() => {}} />)
+    expect(screen.queryByTestId('get-tab-cubes')).toBeNull()
+    expect(screen.queryByTestId('promote-metric')).toBeNull()
+  })
+
+  it('STEWARD lens: the raw-cube tab is offered', () => {
+    useRoleStore.setState({ role: 'steward' })
+    render(<DataWorkbench value={querySpec} onChange={() => {}} />)
+    expect(screen.getByTestId('get-tab-cubes')).toBeInTheDocument()
+  })
+
+  it('STEWARD lens: a bound RAW/steward head offers «მეტრიკად დაწინაურება»', () => {
+    // A legacy query desugars to a STEWARD source(query) head — promotable.
+    useRoleStore.setState({ role: 'steward' })
+    render(<DataWorkbench value={querySpec} onChange={() => {}} />)
+    expect(screen.getByTestId('promote-metric')).toBeInTheDocument()
+  })
+
+  it('STEWARD lens: a GOVERNED head is already promoted — no promote affordance', () => {
+    useRoleStore.setState({ role: 'steward' })
+    render(<DataWorkbench value={pipelineSpec} onChange={() => {}} />)
+    expect(screen.queryByTestId('promote-metric')).toBeNull()
+  })
+})

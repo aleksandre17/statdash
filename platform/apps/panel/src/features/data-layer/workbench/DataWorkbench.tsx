@@ -39,9 +39,12 @@ import { AS_OF_SOURCE, AUTHOR_HIDDEN_FIELDS } from '../pipeline-preview/pipeline
 import { GeneratedQueryPane } from './GeneratedQueryPane'
 import { VerbPalette } from './VerbPalette'
 import {
-  fromWorkbenchModel, isHeadBound, toWorkbenchModel, withGovernedMetric,
+  fromWorkbenchModel, isHeadBound, isStewardHead, promoteHeadToMetric, stewardHeadMeasure,
+  toWorkbenchModel, withGovernedMetric, withStewardCube,
 } from './workbenchModel'
-import { MetricPalette } from '../../../discovery/MetricPalette'
+import { GetHead } from './GetHead'
+import { PromoteMetric } from './PromoteMetric'
+import { useRole } from '../../../studio/useRole'
 import { useActiveLocales } from '../../../inspector/useActiveLocales'
 import type { Locale } from '../../../types/constructor'
 import './workbench.css'
@@ -58,8 +61,10 @@ export interface DataWorkbenchProps {
 }
 
 export function DataWorkbench({ value, onChange }: DataWorkbenchProps) {
-  const locale = (useActiveLocales()[0] ?? 'ka') as Locale
+  const locales = useActiveLocales() as Locale[]
+  const locale = (locales[0] ?? 'ka') as Locale
   const en = locale === 'en'
+  const isSteward = useRole() === 'steward'
 
   // The step whose live output the grid shows. Default = the Get read (AS_OF_SOURCE) —
   // browse-first (E1): data is on screen before any tail step.
@@ -112,6 +117,15 @@ export function DataWorkbench({ value, onChange }: DataWorkbenchProps) {
   const bound = isHeadBound(model.head)
   const setTail = (tail: TransformStep[]) => onChange(fromWorkbenchModel({ ...model, tail }))
   const pickMetric = (metricId: string) => onChange(fromWorkbenchModel(withGovernedMetric(model, metricId)))
+  const pickCube = (_datasetCode: string, measures: string[]) => onChange(fromWorkbenchModel(withStewardCube(model, measures)))
+  const promote = (metricId: string) => onChange(fromWorkbenchModel(promoteHeadToMetric(model, metricId)))
+
+  // The promotion loop (E2) is offered ONLY for a bound STEWARD raw head — a raw read whose
+  // destiny is a governed fact. A governed head is already promoted; an unbound head has
+  // nothing to promote. `stewardMeasure` is the single code the promotion governs.
+  const stewardMeasureRaw = stewardHeadMeasure(model.head)
+  const stewardMeasure = Array.isArray(stewardMeasureRaw) ? stewardMeasureRaw[0] : stewardMeasureRaw
+  const canPromote = isSteward && bound && isStewardHead(model.head) && !!stewardMeasure
 
   return (
     <Box className="data-workbench" data-testid="data-workbench">
@@ -140,12 +154,19 @@ export function DataWorkbench({ value, onChange }: DataWorkbenchProps) {
             onClick={() => setAsOfStep(AS_OF_SOURCE)}
             sx={{ alignSelf: 'flex-start' }}
           />
-          <MetricPalette
-            locale={locale}
-            canBind
-            bindHint={en ? 'Pick a governed metric for the source' : 'აირჩიეთ მართული მეტრიკა წყაროსთვის'}
-            onBind={pickMetric}
-          />
+          {/* The source picker — governed metrics (author + steward) + raw cubes (steward
+              lens only, plane law). The AUTHOR never sees the raw tab (FF-AUTHOR-NO-QUERY). */}
+          <GetHead locale={locale} onPickMetric={pickMetric} onPickCube={pickCube} />
+
+          {/* The promotion loop (E2) — a bound raw/steward head can become a governed metric. */}
+          {canPromote && stewardMeasure && (
+            <PromoteMetric
+              measure={stewardMeasure}
+              locales={locales}
+              locale={locale}
+              onPromoted={promote}
+            />
+          )}
         </Box>
 
         <PipelineBuilder

@@ -106,6 +106,14 @@ async function run() {
   await page.waitForTimeout(1500)
   await page.screenshot({ path: resolve(OUT, '03-filter-added.png'), fullPage: true })
 
+  // ── Click «პირობის დამატება / Add condition» FIRST ────────────────────────────
+  //  A fresh Filter step has ZERO conditions → it renders ONLY the "Add condition"
+  //  button; no FieldPicker exists until a condition ROW is added. (The prior probe
+  //  went straight to the column Select → 0 matches → a false "empty offer" signal.
+  //  This is the corrected walk the Wave-A2 DUTY-0 verdict identified.)
+  await page.getByRole('button', { name: /პირობის დამატება|Add condition/ }).first().click().catch(() => {})
+  await page.waitForTimeout(800)
+
   // ── The COLUMN control OFFERS governed columns (not free text) ────────────────
   const offer = await readFilterOffer()
   await page.screenshot({ path: resolve(OUT, '04-column-offered.png'), fullPage: true })

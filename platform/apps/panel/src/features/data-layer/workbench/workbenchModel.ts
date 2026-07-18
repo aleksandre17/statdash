@@ -100,3 +100,41 @@ export function withGovernedMetric(m: WorkbenchModel, metricId: string): Workben
   }
   return { ...m, head: { op: 'source', metrics: [metricId] } }
 }
+
+// ── The STEWARD raw-cube head (0084 · ADR-046 variant 2) ───────────────────────
+//
+//  A raw cube pick emits the EXISTING steward `source` head `{op:'source', query}` —
+//  no new grammar (the variant lives in the engine). The browse grid then resolves the
+//  head through the QueryResolver's storeObs (the same raw-observation read a legacy
+//  `query` used), so the steward sees the cube's raw observations. Reachable ONLY behind
+//  the steward lens (plane law, ADR-041 §PLANE) — the author never picks a raw cube.
+
+/** True when the head is a STEWARD raw read (an ObsQuery), not a governed metric ref. */
+export function isStewardHead(head: SourceStep | undefined): head is Extract<SourceStep, { query: ObsQuery }> {
+  return !!head && 'query' in head
+}
+
+/** The raw measure code(s) a steward head reads — the promotion loop's `code`. */
+export function stewardHeadMeasure(head: SourceStep | undefined): string | string[] | undefined {
+  return isStewardHead(head) ? head.query.measure : undefined
+}
+
+/** Swap the head to a STEWARD raw-cube browse of `measures` — a FRESH source read (the
+ *  tail is cleared: a new raw cube is a new table, its columns differ from the prior read).
+ *  The write emits the steward `source(query)` variant (Law 1: `measure` is generic). */
+export function withStewardCube(m: WorkbenchModel, measures: string[]): WorkbenchModel {
+  const measure: string | string[] = measures.length === 1 ? measures[0]! : measures
+  return { ...m, head: { op: 'source', query: { measure } }, tail: [] }
+}
+
+/**
+ * Promote a steward raw head to a GOVERNED metric ref (E2 — the Looker/dbt promotion
+ * loop). The head is REPLACED by `{op:'source', metrics:[metricId]}` (the tail + encoding
+ * preserved). The invariant (FF-PROMOTE-ROUNDTRIP): when `metricId` is a BASE metric whose
+ * `code` equals the raw head's `query.measure`, the governed head resolves BYTE-IDENTICALLY
+ * to the raw head it replaced (a refactor, never a semantic change) — proven at the browse
+ * seam (browseBaseMetric ≡ the steward obs read, ADR-046 Addendum 2).
+ */
+export function promoteHeadToMetric(m: WorkbenchModel, metricId: string): WorkbenchModel {
+  return { ...m, head: { op: 'source', metrics: [metricId] } }
+}

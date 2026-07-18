@@ -7,8 +7,9 @@
 import { describe, it, expect } from 'vitest'
 import type { DataSpec } from '@statdash/engine'
 import {
-  fromWorkbenchModel, isHeadBound, isWorkbenchShaped, sourceGrainDims, sourceMeasure,
-  toWorkbenchModel, withGovernedMetric,
+  fromWorkbenchModel, isHeadBound, isStewardHead, isWorkbenchShaped, promoteHeadToMetric,
+  sourceGrainDims, sourceMeasure, stewardHeadMeasure, toWorkbenchModel, withGovernedMetric,
+  withStewardCube,
 } from './workbenchModel'
 
 describe('toWorkbenchModel — the ONE canonical view over BOTH inputs', () => {
@@ -86,5 +87,35 @@ describe('head helpers', () => {
   it('isWorkbenchShaped narrows to query | pipeline', () => {
     expect(isWorkbenchShaped({ type: 'query', query: { measure: 'B1G' }, pipe: [], encoding: { label: 'l' } })).toBe(true)
     expect(isWorkbenchShaped({ type: 'row-list', rows: [] })).toBe(false)
+  })
+})
+
+describe('the steward raw-cube head + the promotion loop (0084)', () => {
+  it('isStewardHead / stewardHeadMeasure read only the ObsQuery variant', () => {
+    expect(isStewardHead({ op: 'source', query: { measure: 'GVA' } })).toBe(true)
+    expect(isStewardHead({ op: 'source', metrics: ['GVA'] })).toBe(false)
+    expect(stewardHeadMeasure({ op: 'source', query: { measure: 'GVA' } })).toBe('GVA')
+    expect(stewardHeadMeasure({ op: 'source', metrics: ['GVA'] })).toBeUndefined()
+  })
+
+  it('withStewardCube swaps to a steward source(query) head + CLEARS the tail (fresh browse)', () => {
+    const m = { head: { op: 'source' as const, metrics: ['old'] }, tail: [{ op: 'sort', by: 'value', dir: 'asc' } as never], encoding: { label: 'l' } }
+    const next = withStewardCube(m, ['GVA', 'POP'])
+    expect(isStewardHead(next.head)).toBe(true)
+    expect(stewardHeadMeasure(next.head)).toEqual(['GVA', 'POP'])
+    expect(next.tail).toEqual([])                       // a new raw cube is a new table
+  })
+
+  it('withStewardCube collapses a single measure to a scalar (ObsQuery.measure)', () => {
+    const next = withStewardCube({ head: { op: 'source', metrics: [] }, tail: [], encoding: { label: 'l' } }, ['GVA'])
+    expect(stewardHeadMeasure(next.head)).toBe('GVA')
+  })
+
+  it('promoteHeadToMetric REPLACES the head with the governed ref, preserving the tail', () => {
+    const m = { head: { op: 'source' as const, query: { measure: 'GVA' } }, tail: [{ op: 'filter', where: { geo: 'adjara' } } as never], encoding: { label: 'l' } }
+    const next = promoteHeadToMetric(m, 'regional_gva')
+    expect(next.head).toHaveProperty('metrics', ['regional_gva'])
+    expect(isStewardHead(next.head)).toBe(false)
+    expect(next.tail).toEqual(m.tail)                    // Floor-3 shaping untouched
   })
 })
