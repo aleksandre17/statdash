@@ -26,6 +26,7 @@
 **Owner doors (unchanged):** portal prod GO · CI key-turn (`gh auth`/runner — D6 scan's #1 gap) · sector-history hue · 0079/0080.
 
 ## STANDING rules (binding)
+- **THE PROACTIVE LAW (owner escalation 07-18):** the owner finding a gap first = a LEAD DEFECT. Open every session with a D6 pulse; before every wave, a reference-class walk of the active surface, findings carded UNPROMPTED. The idea stream is continuous DUTY.
 - **Context packets (`kit/strategy/12-context-packets.md`):** the lead grounds once; agents get stamped packets, return packets flow back; no heavy doc assigned wholesale; economy from logistics, NEVER from quality.
 - **green-gate: PARSE the vitest log (`Tests N failed`), never exit codes.** Converged gate = vitest + lint + `tsc -b apps/panel`; rebuild dist when `packages/*` touched.
 - **Git hygiene:** working tree may carry the OWNER'S deletions — stage explicitly, NEVER `git add -A`.
