@@ -11,7 +11,8 @@
 **0084 LANDED (7058c12, live-green 1110/0):** steward Get «მეტრიკები|ნედლი კუბები» tabs · raw browse 200 rows · promotion loop live (head→governed, palette offers it) · FF-PROMOTE-ROUNDTRIP 3/3 · member-label debt visible (3 cubes × 8 label-less members — provisioning governance debt). Finding #1 → card 0089.
 
 **THE QUEUE (owner-frozen intake; execute in order):**
-1. **0089** — cross-cube browse scope (the picked raw cube reads ITS OWN store — 0084 finding #1, the 0083 routing class; architect seam decision first).
+1. **0091 (W-P6a)** — THE DATA HOME: /studio/model becomes the four-floor ladder, SOURCES FIRST, one upload door, dedup+SOLID (owner verdict: «საშინელება»; Law 11 C1 visible spine; DQ half stays W-P6b).
+1b. **0089** — cross-cube browse scope (the picked raw cube reads ITS OWN store — 0084 finding #1, the 0083 routing class; architect seam decision first).
 2. **0088** — facet essentials INLINE (metric switch + filter chips + one door; frequency-layering canon — owner-guided 0086 correction).
 2b. **0090** — the METRIC PASSPORT (author: formula-in-words card · steward: MetricDef JSON + lowered codes — Looker/PowerBI/dbt transparency canon; owner-caught opacity).
 3. **0087** — P-OFFER TOTAL: field-ROLE declaration on op schemas → generic offer projection (kills hand-maps) + EXPR/TEMPLATE first-class (Power Query Custom Column: step-input columns in autocomplete scope + live per-row preview) + **FF-FILTER-PARITY** (workbench carries the old editors' FULL power — $ctx «მიჰყევი გვერდის არჩევანს» / $ne «ყველა გარდა» as OFFERED picker modes) + FF-ROLE-COVERAGE/FF-OFFER-ROUNDTRIP/agnostic fixture.
