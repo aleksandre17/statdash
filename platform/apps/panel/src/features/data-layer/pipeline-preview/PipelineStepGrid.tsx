@@ -7,20 +7,18 @@
 //  describeApp). Selecting a different step re-slices already-resolved rows — no
 //  re-fetch. Composable: W-P2 re-homes this verbatim into the three-pane shell.
 //
-import type { DataSpec } from '@statdash/engine'
 import { MEASURE_DIM } from '@statdash/engine'
 import { useMetricCatalog } from '../../../discovery/useMetricCatalog'
 import { useActiveProfile, profileOrNull } from '../../../discovery/useActiveProfile'
 import { useActiveLocales } from '../../../inspector/useActiveLocales'
 import { useRole } from '../../../studio/useRole'
 import type { Locale } from '../../../types/constructor'
+import { sourceMeasure, type WorkbenchModel } from '../workbench/workbenchModel'
 import { usePipelineSourceRows } from './usePipelineSourceRows'
 import { deriveStepRows, capRows, deriveColumns, AS_OF_SOURCE } from './pipelinePreview'
 import { buildColumnLabels, type ColumnLabelResolver } from './columnLabels'
 import { buildMemberLabels, rawMemberLabels, type MemberLabelResolver } from './memberLabels'
 import { PipelineDataGrid } from './PipelineDataGrid'
-
-type QuerySpec = Extract<DataSpec, { type: 'query' }>
 
 /** SDMX plumbing echoes hidden from the AUTHOR plane (SPEC §3.4 — no plumbing tokens):
  *  `measure` is the flow-code column that duplicates the metric label (the value column
@@ -30,23 +28,25 @@ type QuerySpec = Extract<DataSpec, { type: 'query' }>
 const AUTHOR_HIDDEN_FIELDS = new Set([MEASURE_DIM, 'obsStatus'])
 
 export interface PipelineStepGridProps {
-  spec:     QuerySpec
+  /** The canonical pipeline view — the source HEAD + the pure TAIL (spine-agnostic:
+   *  a legacy `query` and a native `pipeline` both arrive here as ONE model). */
+  model:    WorkbenchModel
   /** The "as-of" step the grid shows the output of: AS_OF_SOURCE (-1) = the Get
-   *  read; 0..pipe.length-1 = after that pipe step. */
+   *  read; 0..tail.length-1 = after that tail step. */
   asOfStep: number
 }
 
-export function PipelineStepGrid({ spec, asOfStep }: PipelineStepGridProps) {
+export function PipelineStepGrid({ model, asOfStep }: PipelineStepGridProps) {
   const locale = (useActiveLocales()[0] ?? 'ka') as Locale
   const en = locale === 'en'
   const catalog = useMetricCatalog()
   const profile = profileOrNull(useActiveProfile())
   const role = useRole()
-  const source = usePipelineSourceRows(spec)
+  const source = usePipelineSourceRows(model.head, model.encoding)
 
-  const pipe = spec.pipe ?? []
+  const tail = model.tail
 
-  // Prefix-run the pipe to the selected step (pure — no re-fetch on step change).
+  // Prefix-run the tail to the selected step (pure — no re-fetch on step change).
   // Plain consts: the React Compiler memoizes these; a manual useMemo returning a
   // closure trips "could not preserve memoization" (a known compiler seam).
   // Fail-soft: an incomplete step mid-authoring (e.g. a half-typed derive expr) can
@@ -56,7 +56,7 @@ export function PipelineStepGrid({ spec, asOfStep }: PipelineStepGridProps) {
   let derivationError = false
   let stepRows: ReturnType<typeof deriveStepRows> = source.sourceRows
   try {
-    stepRows = deriveStepRows(source.sourceRows, pipe, asOfStep, source.pipeCtx)
+    stepRows = deriveStepRows(source.sourceRows, tail, asOfStep, source.pipeCtx)
   } catch {
     derivationError = true
   }
@@ -74,7 +74,7 @@ export function PipelineStepGrid({ spec, asOfStep }: PipelineStepGridProps) {
     : buildColumnLabels({
         metrics:    catalog.metrics,
         dimensions: catalog.dimensions,
-        query:      spec.query,
+        measure:    sourceMeasure(model.head),
         locale,
       })
 
@@ -87,7 +87,7 @@ export function PipelineStepGrid({ spec, asOfStep }: PipelineStepGridProps) {
   const metricName = columnLabel('value')
   const caption = asOfStep <= AS_OF_SOURCE
     ? (en ? `Get: ${metricName}` : `წყარო: ${metricName}`)
-    : (en ? `Step ${asOfStep + 1}: ${pipe[asOfStep]?.op ?? ''}` : `ნაბიჯი ${asOfStep + 1}: ${pipe[asOfStep]?.op ?? ''}`)
+    : (en ? `Step ${asOfStep + 1}: ${tail[asOfStep]?.op ?? ''}` : `ნაბიჯი ${asOfStep + 1}: ${tail[asOfStep]?.op ?? ''}`)
 
   return (
     <PipelineDataGrid

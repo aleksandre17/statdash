@@ -53,11 +53,12 @@ const DataWorkbench = lazy(() =>
   import('../../features/data-layer/workbench/DataWorkbench').then((m) => ({ default: m.DataWorkbench })),
 )
 
-// A fresh, valid-by-default query spec — the browse-first Get + result (E1): opening
+// A fresh, valid-by-default PIPELINE spec — the browse-first Get + result (E1): opening
 // the workbench on an unbound element seeds this, and the grid shows the "pick a metric"
-// browse hint until one is chosen. Byte-identical to DataSpecEditor's `query` default.
-function freshQuerySpec(): DataSpec {
-  return { type: 'query', query: { measure: [] }, pipe: [], encoding: { label: 'label' } }
+// browse hint until one is chosen. The ⛔ W-P5 emission flip: the workbench's fresh spec
+// is the spine (an empty governed `source` head), never the legacy `query` shape.
+function freshPipelineSpec(): DataSpec {
+  return { type: 'pipeline', pipe: [{ op: 'source', metrics: [] }], encoding: { label: 'label' } }
 }
 
 export function DataFacetField({ field, value, locale, onChange }: FieldControlProps) {
@@ -69,17 +70,18 @@ export function DataFacetField({ field, value, locale, onChange }: FieldControlP
   // still serve — fail-soft, zero regression (mirrors NestedItemControl's fallback).
   const escalation = useFocusEscalation()
 
-  // The workbench is QUERY-shaped (Get + pipe + generated query). It opens for a query
-  // spec OR an unbound element (seeded fresh, browse-first); a non-query spec is edited
-  // through the existing conversion (the advanced accordion below) — pre-note #2.
-  const canWorkbench = !!escalation && (!spec || spec.type === 'query')
+  // The workbench is PIPELINE-shaped (Get + tail + generated query). It opens for a
+  // `pipeline` OR a legacy `query` (via its desugared view) OR an unbound element
+  // (seeded fresh, browse-first); any other spec kind is edited through the existing
+  // conversion (the advanced accordion below) — pre-note #2.
+  const canWorkbench = !!escalation && (!spec || spec.type === 'query' || spec.type === 'pipeline')
 
   const openWorkbench = () => {
     if (!escalation) return
-    // Ensure the field carries a query spec BEFORE handing it to the workbench, so the
-    // escalation's live binding reads a query spec from the first render (the host binds
+    // Ensure the field carries a workbench-shaped spec BEFORE handing it to the workbench,
+    // so the escalation's live binding reads it from the first render (the host binds
     // `props[field.field]` live each render).
-    if (!spec || spec.type !== 'query') onChange(freshQuerySpec())
+    if (!spec || (spec.type !== 'query' && spec.type !== 'pipeline')) onChange(freshPipelineSpec())
     escalation.escalate({
       source:    'node-field',
       fieldPath: field.field,

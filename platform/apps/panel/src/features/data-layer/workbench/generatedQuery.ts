@@ -15,13 +15,12 @@
 //    • STEWARD — `describeStewardDetail`: the raw DataSpec JSON + the lowered ObsQuery
 //      (the wire truth) — the steward-only advanced door (progressive disclosure).
 //
-import type { DataSpec, ObsQuery, TransformStep } from '@statdash/engine'
+import type { ObsQuery, TransformStep } from '@statdash/engine'
 import { queryReadObs } from '@statdash/engine'
 import type { ColumnLabelResolver } from '../pipeline-preview/columnLabels'
 import type { Locale } from '../../../types/constructor'
 import { verbLabelForOp } from './verbProjection'
-
-type QuerySpec = Extract<DataSpec, { type: 'query' }>
+import { fromWorkbenchModel, sourceGrainDims, sourceMeasure, type WorkbenchModel } from './workbenchModel'
 
 // ── The friendly verb label per op — a PROJECTION of the registry `category` ─────
 //
@@ -45,16 +44,9 @@ const FIELD_VALUE_KEYS = ['by', 'field', 'dim', 'over', 'on', 'key', 'groupBy', 
 //  record-keyed-by-field params (filter.where — the KEYS are the pinned dims).
 const FIELD_RECORD_KEYS = ['where'] as const
 
-/** Normalize an ObsQuery.measure (string | string[]) to a list. */
-function readMeasures(measure: ObsQuery['measure']): string[] {
+/** Normalize a measure ref (string | string[]) to a list. */
+function readMeasures(measure: string | string[] | undefined): string[] {
   return Array.isArray(measure) ? measure : measure ? [measure] : []
-}
-
-/** The governed dimension nouns the Get read spans — the pinned filter dims. Values
- *  are member codes (never shown); the KEYS are the dims, resolved to governed labels. */
-function grainDims(query: ObsQuery): string[] {
-  const filter = (query.filter ?? {}) as Record<string, unknown>
-  return Object.keys(filter)
 }
 
 /** The governed field nouns a tail step consumes/produces — pulled from its field-name
@@ -102,26 +94,28 @@ export interface AuthorStep {
 }
 
 /**
- * The GOVERNED, bilingual declarative rendering of a query pipeline (the author plane).
- * The head is the Get read (metric + grain dims); each tail step is its friendly verb +
- * the governed field nouns it touches. Resolves every noun through `resolve` (the same
- * governed catalog the live grid speaks) — so it structurally cannot show a raw code.
+ * The GOVERNED, bilingual declarative rendering of a PIPELINE (the author plane). The
+ * head is the Get read (the source metric + its governed grain dims); each tail step is
+ * its friendly verb + the governed field nouns it touches. Resolves every noun through
+ * `resolve` (the same governed catalog the live grid speaks) — so it structurally cannot
+ * show a raw code (FF-AUTHOR-NO-QUERY). Spine-agnostic: reads the canonical WorkbenchModel,
+ * so a legacy `query` (via its desugared view) and a native `pipeline` render identically.
  */
 export function describeAuthorSteps(
-  spec:    QuerySpec,
+  model:   WorkbenchModel,
   resolve: ColumnLabelResolver,
   locale:  Locale,
 ): AuthorStep[] {
   const en = locale === 'en'
   const out: AuthorStep[] = []
 
-  const measures = readMeasures(spec.query.measure)
-  const pipe = spec.pipe ?? []
+  const measures = readMeasures(sourceMeasure(model.head))
+  const tail = model.tail
 
-  // No metric bound AND no steps → there is no query to describe yet. Return an EMPTY
+  // No metric bound AND no steps → there is no pipeline to describe yet. Return an EMPTY
   // rendering (the pane shows an honest "bind a metric" hint) rather than a vestigial
   // "Get: (pick a metric)" one-liner floating with nothing under it (SPEC §9 / Law 11).
-  if (measures.length === 0 && pipe.length === 0) return out
+  if (measures.length === 0 && tail.length === 0) return out
 
   // ── Head: the Get read — the metric + the governed grain nouns (year, pinned dims) ──
   // The bound metric's governed label = the value column's governed header (the SAME
@@ -130,37 +124,47 @@ export function describeAuthorSteps(
   const getVerb = measures.length === 0
     ? (en ? 'Get: (pick a metric)' : 'წყარო: (აირჩიეთ მეტრიკა)')
     : (en ? `Get: ${metricLabel}` : `წყარო: ${metricLabel}`)
-  out.push({ op: 'source', verb: getVerb, nouns: grainDims(spec.query).map(resolve) })
+  out.push({ op: 'source', verb: getVerb, nouns: sourceGrainDims(model.head).map(resolve) })
 
   // ── Tail: the pure transform verbs ────────────────────────────────────────────
-  for (const step of pipe) {
+  for (const step of tail) {
     out.push({ op: step.op, verb: verbLabelForOp(step.op, locale), nouns: stepFieldNouns(step, resolve) })
   }
   return out
 }
 
-/** The steward-only wire truth: the raw DataSpec + the lowered ObsQuery. */
+/** The steward-only wire truth: the raw pipeline DataSpec + the lowered head ObsQuery. */
 export interface StewardDetail {
-  /** The raw DataSpec, pretty-printed (the steward-advanced JSON door). */
+  /** The raw DataSpec (the emitted `pipeline`), pretty-printed (the steward JSON door). */
   json:     string
-  /** The lowered ObsQuery — the wire query the Get read resolves to (SDMX-grade). */
+  /** The lowered ObsQuery — the wire query the Get head resolves to (SDMX-grade). A
+   *  governed `source.metrics` head has no single obsQuery (it lowers through the metric
+   *  resolver's grain algebra) — declared honestly rather than faked. */
   obsQuery: string
 }
 
 /**
- * The steward-plane detail: the raw DataSpec JSON + the lowered ObsQuery (the wire
+ * The steward-plane detail: the raw `pipeline` JSON + the lowered head ObsQuery (the wire
  * truth behind the governed rendering). `queryReadObs` is the SAME lowering the live
- * source read uses (`usePipelineSourceRows`) — the pane shows exactly what hits the store.
+ * source read uses — the pane shows exactly what a STEWARD head issues to the store.
  */
-export function describeStewardDetail(spec: QuerySpec): StewardDetail {
-  // Fail-soft: lowering an unregistered/half-authored metric-id must never throw the
-  // pane (the same fail-soft discipline the live grid holds — Law 11). A failed lower
-  // shows an honest note, not a crash.
+export function describeStewardDetail(model: WorkbenchModel): StewardDetail {
+  const spec = fromWorkbenchModel(model)
+  const head = model.head
+  // Fail-soft: lowering an unregistered/half-authored ref must never throw the pane (the
+  // same fail-soft discipline the live grid holds — Law 11). A failed lower shows an
+  // honest note, not a crash.
   let obsQuery: string
-  try {
-    obsQuery = JSON.stringify(queryReadObs(spec.query), null, 2)
-  } catch {
-    obsQuery = '// query could not be lowered (unresolved reference)'
+  if ('query' in head) {
+    try {
+      obsQuery = JSON.stringify(queryReadObs(head.query as ObsQuery), null, 2)
+    } catch {
+      obsQuery = '// head query could not be lowered (unresolved reference)'
+    }
+  } else if ('metrics' in head) {
+    obsQuery = '// governed source — lowered through the metric resolver (grain algebra), not a single ObsQuery'
+  } else {
+    obsQuery = '// inline source — read-free (literal rows)'
   }
   return { json: JSON.stringify(spec, null, 2), obsQuery }
 }

@@ -7,7 +7,7 @@
 //  picker reads. Fail-soft: an uncatalogued field falls back to the field name
 //  itself (honest — the true field, never a fabricated label).
 //
-import type { MetricDef, ObsQuery } from '@statdash/engine'
+import type { MetricDef } from '@statdash/engine'
 import { TIME_DIM, MEASURE_DIM } from '@statdash/engine'
 import type { CatalogDimension } from '../../../discovery/semanticCatalogOptions'
 import { readCatalogLabel, governedDimensionLabels } from '../../../discovery/semanticCatalogOptions'
@@ -20,8 +20,10 @@ import type { Locale } from '../../../types/constructor'
 const VALUE_FIELD = 'value'
 const MEASURE_FIELD = MEASURE_DIM
 
-/** Normalize an ObsQuery.measure (string | string[]) to the first bound id/code. */
-function firstMeasure(measure: ObsQuery['measure']): string | undefined {
+/** Normalize a source measure ref (string | string[]) to the first bound id/code. The
+ *  ref is spine-agnostic: a governed `source.metrics` id OR a steward `query.measure`
+ *  code — both resolve to the bound metric's governed label off the catalog. */
+function firstMeasure(measure: string | string[] | undefined): string | undefined {
   return Array.isArray(measure) ? measure[0] : measure || undefined
 }
 
@@ -42,14 +44,15 @@ export interface ColumnLabelResolver {
 export function buildColumnLabels(args: {
   metrics:    Record<string, MetricDef>
   dimensions: Record<string, CatalogDimension>
-  query:      ObsQuery
+  /** The source head's measure ref(s) — governed metric-ids or steward query codes. */
+  measure:    string | string[] | undefined
   locale:     Locale
 }): ColumnLabelResolver {
-  const { metrics, dimensions, query, locale } = args
+  const { metrics, dimensions, measure, locale } = args
   const dimLabel = governedDimensionLabels(dimensions, locale)
 
   // The bound metric's governed label (drives the value/measure column header).
-  const boundId = firstMeasure(query.measure)
+  const boundId = firstMeasure(measure)
   const metricDef = boundId ? metrics[boundId] : undefined
   const metricLabel = metricDef ? readCatalogLabel(metricDef.label, locale, boundId!) : boundId
 

@@ -11,6 +11,7 @@ import { EncodingEditor } from './query/EncodingEditor'
 import { FieldWells } from '../fieldwells/FieldWells'
 import { PipelineStepGrid } from '../pipeline-preview/PipelineStepGrid'
 import { AS_OF_SOURCE } from '../pipeline-preview/pipelinePreview'
+import { toWorkbenchModel } from '../workbench/workbenchModel'
 import { useActiveLocales } from '../../../inspector/useActiveLocales'
 
 // ── QuerySpecEditor — full query editor (ObsQuery + pipe + encoding) ──────────
@@ -87,8 +88,12 @@ export function QuerySpecEditor({ value, onChange }: QuerySpecEditorProps) {
             />
           </Box>
 
-          {/* Right — the live per-step grid (SPEC §3.2). */}
-          <PipelineStepGrid spec={value} asOfStep={asOfStep} />
+          {/* Right — the live per-step grid (SPEC §3.2). The query is lowered to the
+              canonical pipeline view (steward source head) — the ONE grid model. */}
+          {(() => {
+            const model = toWorkbenchModel(value)
+            return model ? <PipelineStepGrid model={model} asOfStep={asOfStep} /> : null
+          })()}
         </Box>
       </Section>
 

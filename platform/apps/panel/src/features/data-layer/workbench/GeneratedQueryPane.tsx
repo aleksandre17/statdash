@@ -18,21 +18,19 @@
 //
 import { Accordion, AccordionDetails, AccordionSummary, Box, Typography } from '@mui/material'
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
-import type { DataSpec } from '@statdash/engine'
 import { useRole } from '../../../studio/useRole'
 import { useMetricCatalog } from '../../../discovery/useMetricCatalog'
 import { buildColumnLabels, type ColumnLabelResolver } from '../pipeline-preview/columnLabels'
 import type { Locale } from '../../../types/constructor'
 import { describeAuthorSteps, describeStewardDetail } from './generatedQuery'
-
-type QuerySpec = Extract<DataSpec, { type: 'query' }>
+import { sourceMeasure, type WorkbenchModel } from './workbenchModel'
 
 export interface GeneratedQueryPaneProps {
-  spec:   QuerySpec
+  model:  WorkbenchModel
   locale: Locale
 }
 
-export function GeneratedQueryPane({ spec, locale }: GeneratedQueryPaneProps) {
+export function GeneratedQueryPane({ model, locale }: GeneratedQueryPaneProps) {
   const en = locale === 'en'
   const role = useRole()
   const catalog = useMetricCatalog()
@@ -44,11 +42,11 @@ export function GeneratedQueryPane({ spec, locale }: GeneratedQueryPaneProps) {
     : buildColumnLabels({
         metrics:    catalog.metrics,
         dimensions: catalog.dimensions,
-        query:      spec.query,
+        measure:    sourceMeasure(model.head),
         locale,
       })
 
-  const steps = describeAuthorSteps(spec, resolve, locale)
+  const steps = describeAuthorSteps(model, resolve, locale)
 
   return (
     <Box
@@ -100,15 +98,15 @@ export function GeneratedQueryPane({ spec, locale }: GeneratedQueryPaneProps) {
       </Box>
 
       {/* STEWARD plane — the wire truth (raw spec + lowered ObsQuery), disclosed. */}
-      {role === 'steward' && <StewardWireTruth spec={spec} locale={locale} />}
+      {role === 'steward' && <StewardWireTruth model={model} locale={locale} />}
     </Box>
   )
 }
 
 // ── StewardWireTruth — the raw DataSpec + lowered ObsQuery (steward-only door) ──────
-function StewardWireTruth({ spec, locale }: { spec: QuerySpec; locale: Locale }) {
+function StewardWireTruth({ model, locale }: { model: WorkbenchModel; locale: Locale }) {
   const en = locale === 'en'
-  const detail = describeStewardDetail(spec)
+  const detail = describeStewardDetail(model)
   return (
     <Box data-testid="gq-steward" sx={{ mt: 1, display: 'flex', flexDirection: 'column', gap: 0.5 }}>
       <Typography variant="caption" color="text.disabled">

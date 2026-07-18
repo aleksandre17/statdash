@@ -5,25 +5,48 @@
 //  free transforms the control drives — no React, no store, trivially testable
 //  (mirrors styleFieldModel for the STYLE facet).
 //
-import type { DataSpec } from '@statdash/engine'
+import type { DataSpec, PipeStep, SourceStep } from '@statdash/engine'
 
 /**
  * Bind a GOVERNED metric onto an element's DataSpec — the metric-bind MODE of the
- * DATA facet (author-safe, pipe-over-governed). Produces / updates a `query` spec
- * with the metric-id at `query.measure`: the SAME canonical location the element's
- * schema metric-ref field (`data.query.measure`, enum-ref source:'metrics') and the
- * host-level Metric-Palette bind write to, so a facet bind is byte-identical to hand-
- * authoring the metric picker. Metric-optional: this is invoked ONLY when the author
- * picks a metric — a raw query/transform/derive/calc pipeline is authored without it,
- * straight through the spec editor.
+ * DATA facet (author-safe, pipe-over-governed). The ⛔ W-P5 EMISSION FLIP (ADR-046 ·
+ * SPEC §4): a governed bind now emits the canonical `pipeline` spine — a `source`
+ * head that names governed metrics + a pure tail — NOT the legacy `query` shape. The
+ * governed `source.metrics` head lowers onto the SAME resolveMeasureRef + M2 grain
+ * algebra the `metric` DataSpec uses (PipelineResolver → the `metric` resolver), so a
+ * calc metric (e.g. a YoY growth metric) resolves to its REAL computed value, not a
+ * raw obs read (the value-cell path a legacy `query.measure` could never reach).
  *
- * A pre-existing `query` spec keeps its other query facets (dims/filter/pipe); any
- * other spec kind (or none) is seeded fresh — the palette is the governed ENTRY, not
- * an override of an already-authored advanced pipeline (that is edited in the editor).
+ * Stored configs are NEVER batch-rewritten (expand-contract, read-time desugar) — this
+ * is an ACTIVE author bind, so emitting the spine is the intended flip, not a migration.
+ *
+ * Reconciliation over the ONE `data` value:
+ *   • an existing `pipeline` with a governed `source` head → APPEND the metric (multi-
+ *     series), keeping the tail + encoding untouched (idempotent — no duplicate id);
+ *   • a `pipeline` with a steward/inline head → set a governed head, keep the tail;
+ *   • a legacy `query` spec → carry its tail + encoding onto a governed spine head
+ *     (the emission flip converts it on active edit);
+ *   • fresh / any other spec kind → a fresh governed spine.
+ *
+ * Metric-optional: this is invoked ONLY when the author picks a metric — a raw
+ * query/transform/derive/calc pipeline is authored without it, straight through the
+ * workbench (author plane) or the spec editor (steward plane).
  */
 export function bindMeasureToSpec(spec: DataSpec | undefined, metricId: string): DataSpec {
-  if (spec && spec.type === 'query') {
-    return { ...spec, query: { ...spec.query, measure: metricId } }
+  if (spec && spec.type === 'pipeline') {
+    const [head, ...tail] = spec.pipe
+    if (head?.op === 'source' && 'metrics' in head) {
+      const metrics = head.metrics.includes(metricId) ? head.metrics : [...head.metrics, metricId]
+      return { ...spec, pipe: [{ ...head, metrics }, ...tail] }
+    }
+    const governed: SourceStep = { op: 'source', metrics: [metricId] }
+    return { ...spec, pipe: [governed, ...tail] as PipeStep[] }
   }
-  return { type: 'query', query: { measure: metricId }, pipe: [], encoding: { label: 'label' } }
+
+  if (spec && spec.type === 'query') {
+    const governed: SourceStep = { op: 'source', metrics: [metricId] }
+    return { type: 'pipeline', pipe: [governed, ...(spec.pipe ?? [])] as PipeStep[], encoding: spec.encoding }
+  }
+
+  return { type: 'pipeline', pipe: [{ op: 'source', metrics: [metricId] }], encoding: { label: 'label' } }
 }
