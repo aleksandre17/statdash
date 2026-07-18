@@ -1,7 +1,7 @@
 ---
 id: "0091"
 title: "W-P6a — THE DATA HOME: four floors, SOURCES FIRST (owner verdict on /studio/model: «საშინელება — გადახლართული ლოგიკები, წყაროები ბოლოში, გამეორებები»)"
-status: QUEUED-HOT (2026-07-18 — pulled forward from W-P6; fires after 0087+0089 land; the DQ-on-ingest half stays W-P6b in place)
+status: DONE (2026-07-18; built by senior-frontend to session-limit, lead verified+landed the gate/commit/live-verify tail, `8c9b807` on main). «წყაროები» is an INDEPENDENT top-level page FIRST in nav; ONE upload door (dedup pinned by `oneUploadDoor.fitness`); cube inventory + BROWSABLE classifiers live-proven (REGIONAL_GVA → measure 72 · geo 25 · sector 19 · time 16 წევრი); /studio/model cleaned to Floor 2 (front-door removed, `data-front-door`=0 live); cross-gesture cube→workbench (one-shot `sourcesHandoff` → `withStewardCube`). Gate: panel vitest 1168/0 · tsc clean · eslint clean · zero console errors. Shots: work/authoring-truth/0091/. **Ledger (craft, small):** dimension rows show key-as-label where no distinct governed dim label exists (geo/time/measure) — the member-label governance debt (0084) surfacing at dim level; honest, not wrong; folds into the label-completeness work. The seeded raw-browse spec name carries a KA-only string (`— ნედლი დათვალიერება`) — bilingualize in a later pass.
 class: M
 priority: P0
 owner: lead → senior/apex build agent (Opus)

@@ -18,8 +18,8 @@ Query-as-visible-pipeline + the raw-data home. **LANDED (all live-proven on :301
 «წყაროები» = an INDEPENDENT top-level page, FIRST in nav (Superset/Grafana canon; owner verdict on /studio/model: «საშინელება») — cube inventory + debt chips + ONE upload door (dedup) + **CLASSIFIERS BROWSABLE** (cube→dims→codelist, governed labels, tree where edges exist; SDMX DSD canon) · /studio/model cleans to Floor 2 only · cross-gestures (cube→workbench; promote→catalog). **FIRST DUTY of the new session: check its landing (git log / card 0091), live-verify, sync panel src, screenshot for the owner.**
 
 ### THE QUEUE (owner-frozen intake; execute in order; every wave = canon anchor + biting gate + live journey)
-1. **0091** — (in flight, verify/land first).
-2. **0089** — cross-cube browse scope: a picked raw cube reads ITS OWN store (0084 finding; the 0083 routing class; architect seam decision — bias: the head declares its home).
+1. ✅ **0091 DONE** (`8c9b807`, live-verified: Sources page first-in-nav, one upload door, classifiers browsable, model cleaned to Floor 2, cube→workbench cross-gesture; panel 1168/0).
+2. **0089** — cross-cube browse scope: a picked raw cube reads ITS OWN store (0084 finding; the 0083 routing class; architect seam decision — bias: the head declares its home). **NOTE: 0091's cross-gesture makes this MORE reachable now (a cube from Sources seeds a steward head that must read its own store) — the fix is the natural next step.**
 3. **0092** — TRANSIENT-FAILURE GRAMMAR + the ONE query scheduler in core (sweep #1, breaks-trust: our own 429 killed the portal to an English dead-end; dedupe+cap+backoff+stale-while-revalidate; `transient-retrying` declared bilingual state).
 4. **0093** — CHROME INTEGRITY batch (S, fix-on-sight): «[object Object]» links · EN aria on KA · studio topbar EN · dark table-header 4.28:1 AA fail · skip-link; ONE i18n contract + axe fitness.
 5. **0088** — facet essentials INLINE (metric switch + filter chips + door; frequency-layering; role-projection generalizes here — pre-note in card).
