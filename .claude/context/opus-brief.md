@@ -2,33 +2,49 @@
 
 > **⛔ ROOT LAWS FIRST.** Containment = ADR-041 (one Part grammar · one port · residence-at-field). Authoring = ADR-042 (Triprojection: Select/Inspect/Manipulate over the one Part model). Product canon = **CLAUDE.md Law 11** (Data first · canvas never lies · projection with a plane · a journey is the unit of done). FF ratchets red the build on violations. A new kind is a DECLARATION, never a bridge.
 
-## Current State (2026-07-18, marathon session end — the PIPELINE PROGRAM era)
+## Current State (2026-07-18, end of the two-day pipeline marathon — continue MID-STRIDE)
 
-**Branch: `main` ONLY (all other branches merged/deleted 07-17, remote too). Everything below is COMMITTED+PUSHED on main. Suite ~3820+/0 full · panel 1085+/0 · tsc clean. Dev tier :3013/:3012 current (panel src synced; core tar-synced; api rebuilt + reprovisioned regional v6/gdp v7).**
+**Branch: `main` ONLY (all others merged/deleted 07-17, remote too). Everything below COMMITTED+PUSHED. Full suite 3923/0 · panel 1110+/0 · `tsc -b` clean. Dev tier live: :3013 studio / :3012 portal (admin/dev_admin_pw_123); panel src synced, core tar-synced (incl. the NeCtxRef fix), api rebuilt+reprovisioned (regional v6 · gdp v7).**
 
-**THE ACTIVE PROGRAM — card `0082` (AR-54, ADR-046 ACCEPTED owner-blessed «ნდობას გიცხადებ»): query-as-visible-pipeline + raw-data home.** Landed: W-P0 (FF gates+baseline) · W-P1 (live per-step grid) · W-P2 (three-pane workbench, focus-view) · W-P3 (7-verb palette + governed cells) · W-P4 (`pipeline`+`source` engine) · W-P5a (LIVE desugar switch, byte-identical) · W-P5b (workbench speaks pipeline; Get=browse-first MetricPalette head; emission flipped for query-class; ⛔ demotion HELD) · W-P5c (browse lowering) · ADR-047 Wave A (metric-natural coordinates — the −100 lie killed; live growth series 2011:17.8…2020:0.13…2023:11.0) · P-OFFER Wave A2 (offer-driven Filter/Sort/Lookup — live 200→26) · 0085 (wire-truth pane = sourceHeadObs SSOT) · 0086 (facet = summary+door) · dark-mode grey.100 class fix · FilterStepForm draft-over-canonical fix.
+### THE ACTIVE PROGRAM — card `0082` (AR-54 · ADR-046 ACCEPTED, owner-blessed «ნდობას გიცხადებ, გააკეთე»)
+Query-as-visible-pipeline + the raw-data home. **LANDED (all live-proven on :3013):**
+- **W-P0…W-P5c + ADR-047 Wave A:** FF gates+baseline · live per-step grid · three-pane workbench (focus-view) · 7-verb palette + governed cells · `pipeline`+`source` engine · LIVE desugar switch (query/transform/pivot → the ONE spine, byte-identical; ratio-list/timeseries/growth = honest value-cell exceptions awaiting a 4th source variant, architect-owned) · browse lowering (grain-∅ governed head = observation browse, ADR-046 Add.2) · metric-natural coordinates (ADR-047 — the −100 lie killed; real growth series live: 2011:17.8 … 2020:0.13 … 2023:11.0, first period honest «—»).
+- **P-OFFER (owner doctrine «ყველაფერი შეთავაზებული»):** offer-driven Filter/Sort/Lookup (live 200→26) · field-ROLE seam on op schemas + the ONE role-projecting step editor (raw-JSON forms dead; expr fields = autocomplete over step-input columns + LIVE per-row preview) · **filter full power: three offered modes** — specific · «მიჰყევი გვერდის არჩევანს» ($ctx) · «ყველა, გარდა…» ($ne, +NeCtxRef combo) · Get-head grain editor («წაკითხვის არე», browse 200→1). Gates: FF-ROLE-COVERAGE · FF-OFFER-ROUNDTRIP · FF-FILTER-PARITY · FF-EXPR-SCOPE-SSOT + agnostic fixture. **Card 0087 DONE.**
+- **ENGINE BUG found+fixed by the parity work:** pipeline `applyFilter` matched `$ctx` before `$ne` → NeCtxRef silently dropped its exclusion (diverged from store `matchesFilter`). Fixed at root (`steps.ts`), both paths fitness-pinned (`filter-parity.fitness`). `f532169`.
+- **0084 DONE:** steward Get «მეტრიკები|ნედლი კუბები» tabs · raw-cube browse (200 rows) · the PROMOTION LOOP live (raw head→governed metric, palette offers it; FF-PROMOTE-ROUNDTRIP 3/3) · member-label debt visible (3 cubes × 8 label-less members = provisioning governance debt) · author lens NEVER sees the raw tab.
+- **0085 DONE** (wire-truth pane = `sourceHeadObs` SSOT, declared empties, no zero-height void) · **0086 DONE** (facet = summary + ONE workbench door) · dark-mode `grey.100` class fix · FilterStepForm draft-over-canonical fix · 0083 (caps-lie store hijack) · the integrity cluster (filter.measure corruption b544819 · hydration race · stale-sync · ApexRenderer tsc) — all closed at the root with guards.
 
-**0084 LANDED (7058c12, live-green 1110/0):** steward Get «მეტრიკები|ნედლი კუბები» tabs · raw browse 200 rows · promotion loop live (head→governed, palette offers it) · FF-PROMOTE-ROUNDTRIP 3/3 · member-label debt visible (3 cubes × 8 label-less members — provisioning governance debt). Finding #1 → card 0089.
+### IN FLIGHT at session end: **0091 (W-P6a) — THE DATA HOME**
+«წყაროები» = an INDEPENDENT top-level page, FIRST in nav (Superset/Grafana canon; owner verdict on /studio/model: «საშინელება») — cube inventory + debt chips + ONE upload door (dedup) + **CLASSIFIERS BROWSABLE** (cube→dims→codelist, governed labels, tree where edges exist; SDMX DSD canon) · /studio/model cleans to Floor 2 only · cross-gestures (cube→workbench; promote→catalog). **FIRST DUTY of the new session: check its landing (git log / card 0091), live-verify, sync panel src, screenshot for the owner.**
 
-**THE QUEUE (owner-frozen intake; execute in order):**
-1. **0091 (W-P6a)** — THE DATA HOME: /studio/model becomes the four-floor ladder, SOURCES FIRST, one upload door, dedup+SOLID (owner verdict: «საშინელება»; Law 11 C1 visible spine; DQ half stays W-P6b).
-1b. **0089** — cross-cube browse scope (the picked raw cube reads ITS OWN store — 0084 finding #1, the 0083 routing class; architect seam decision first).
-2. **0088** — facet essentials INLINE (metric switch + filter chips + one door; frequency-layering canon — owner-guided 0086 correction).
-2b. **0090** — the METRIC PASSPORT (author: formula-in-words card · steward: MetricDef JSON + lowered codes — Looker/PowerBI/dbt transparency canon; owner-caught opacity).
-3. **0087** — P-OFFER TOTAL: field-ROLE declaration on op schemas → generic offer projection (kills hand-maps) + EXPR/TEMPLATE first-class (Power Query Custom Column: step-input columns in autocomplete scope + live per-row preview) + **FF-FILTER-PARITY** (workbench carries the old editors' FULL power — $ctx «მიჰყევი გვერდის არჩევანს» / $ne «ყველა გარდა» as OFFERED picker modes) + FF-ROLE-COVERAGE/FF-OFFER-ROUNDTRIP/agnostic fixture.
-4. **ADR-047 Wave B** — the honest-null calc floor (`storeCellAt` + `MetricInput.coalesce`; no-data component → null, never fabricated) — REQUIRED before the ⛔ door FIRES.
-5. **⛔ W-P5 demotion** — its own revert-net commit, only after Wave B + full journey green.
-6. **W-P6** — four-floor raw home + DQ-on-ingest (backlog rec #1).
-7. **Owner novice-walk** — he walks zero→page; every stumble = a craft card. Then: comparator FilterValue variant (architect) · R1–R5 revivals (backlog §Archaeology) · Grafana-style editable code view for steward in workbench (SPEC §3.3).
+### THE QUEUE (owner-frozen intake; execute in order; every wave = canon anchor + biting gate + live journey)
+1. **0091** — (in flight, verify/land first).
+2. **0089** — cross-cube browse scope: a picked raw cube reads ITS OWN store (0084 finding; the 0083 routing class; architect seam decision — bias: the head declares its home).
+3. **0092** — TRANSIENT-FAILURE GRAMMAR + the ONE query scheduler in core (sweep #1, breaks-trust: our own 429 killed the portal to an English dead-end; dedupe+cap+backoff+stale-while-revalidate; `transient-retrying` declared bilingual state).
+4. **0093** — CHROME INTEGRITY batch (S, fix-on-sight): «[object Object]» links · EN aria on KA · studio topbar EN · dark table-header 4.28:1 AA fail · skip-link; ONE i18n contract + axe fitness.
+5. **0088** — facet essentials INLINE (metric switch + filter chips + door; frequency-layering; role-projection generalizes here — pre-note in card).
+6. **0090** — the METRIC PASSPORT (author: formula-in-words · steward: MetricDef JSON + lowered codes; Looker/PowerBI/dbt transparency).
+7. **0098** — AUTHORABILITY DEPTH batch (parity audit top-5: Trend builder ~33 occ · $prev in CalcBuilder · wire VisibilityBuilder to item-`when` (42 occ) · filter options-source/spanRole · perspective resets + keyed badge).
+8. **ADR-047 Wave B** — the honest-null calc floor (`storeCellAt` + `MetricInput.coalesce`) — REQUIRED before the ⛔ door fires.
+9. **⛔ W-P5 demotion** — its own revert-net commit, ONLY after Wave B + the full journey green (the door has correctly held itself TWICE).
+10. **W-P6b** — DQ-on-ingest at Floor 1 (backlog rec #1; SDMX-grade expectation sets; ADR owed).
+11. Then: 0094 Edit/Preview · 0095 gesture→command · 0096 URL=permalink generalized (Law 9) · 0097 PUBLISH-READINESS GATE (the new stat-native concept — design-first) · comparator FilterValue variant + array-$ne (architect) · R1–R5 revivals (backlog §Archaeology; R2 hierarchy grammar pairs with 0091's classifier tree) · steward editable code view (SPEC §3.3) · **the owner NOVICE-WALK** (he walks zero→page; every stumble = a card; his confusion is the bar).
 
-**Session-proven mechanics (do not rediscover):** dev panel container = `/tmp/statdash-dev-line` mount (sync script FIXED); `packages/*` BAKED → whole-src tar + restart (`docker cp` single-file 500s); api rebuild from `/tmp/statdash-build` (fetch main first); reprovision verify via `config.page_version` bumps; probes live in `platform/e2e/probes/` (run from `platform/`); MUI Select options render only when OPENED (probe artifact class ×2 this session); owner walks :3013 live — sync after EVERY panel-touching commit.
+### Dossiers (the idea stream — all committed, all carded)
+`docs/architecture/audit/PROACTIVE-SWEEP-2026-07-18.md` (15 findings → 0092–0097) · `AUTHORABILITY-PARITY-2026-07-18.md` (element parity STRONG; gaps = opaque sub-objects → 0098; CHECK-4 verified clean) · `ARCHAEOLOGY-2026-07-18-lost-concepts.md` (nothing good lost; R1–R5 registered; owner's href/tree-field shapes ALIVE in evolved form) · `CAPABILITY-INJECTION-BACKLOG.md` (ranked, incl. R5 store-views note).
 
-**Owner doors (unchanged):** portal prod GO · CI key-turn (`gh auth`/runner — D6 scan's #1 gap) · sector-history hue · 0079/0080.
+### Session-proven mechanics (do not rediscover)
+Dev panel container mounts `/tmp/statdash-dev-line/platform/apps/panel/src` (sync script FIXED — `bash ops/scripts/dev-watch-panel.sh --once` + in-container md5 verify) · `packages/*` is BAKED SRC → whole-src tar + container restart (single-file docker cp 500s) · api rebuild from `/tmp/statdash-build` (git fetch main first; provisioning baked into the api image; verify via `config.page_version` bumps) · probes live in `platform/e2e/probes/` (run from `platform/`; NEVER from work/ or /tmp — ESM) · MUI Select options render only when OPENED (probe-artifact class ×3 this session) · sync after EVERY panel-touching commit (the owner walks :3013 live) · never fullPage-screenshot apex pages.
+
+### Owner doors (unchanged, his only)
+Portal prod GO (+one-time metrics SQL) · CI key-turn (`gh auth`/Docker runner — the D6 scan's #1 standards gap: until CI executes, every green is testimony) · sector-history hue · 0079 accounts / 0080.
 
 ## STANDING rules (binding)
-- **THE PROACTIVE LAW (owner escalation 07-18):** the owner finding a gap first = a LEAD DEFECT. Open every session with a D6 pulse; before every wave, a reference-class walk of the active surface, findings carded UNPROMPTED. The idea stream is continuous DUTY.
-- **Context packets (`kit/strategy/12-context-packets.md`):** the lead grounds once; agents get stamped packets, return packets flow back; no heavy doc assigned wholesale; economy from logistics, NEVER from quality.
-- **green-gate: PARSE the vitest log (`Tests N failed`), never exit codes.** Converged gate = vitest + lint + `tsc -b apps/panel`; rebuild dist when `packages/*` touched.
-- **Git hygiene:** working tree may carry the OWNER'S deletions — stage explicitly, NEVER `git add -A`.
-- **Model routing:** apex defs pin opus; middles routed per-call by decision-density; when unsure → the stronger mind.
-- **Journeys J1–J6 are the DoD unit** — jsdom/unit green alone never closes a wave.
+- **THE PROACTIVE LAW (owner escalation 07-18):** the owner finding a gap first = a LEAD DEFECT, logged as one. Open every session with a D6 pulse (what does the class have that we lack on the ACTIVE surface); before every wave, a reference-class walk, findings carded UNPROMPTED. The idea stream is continuous DUTY — «აი რას იპოვიდი შენ — ჩვენ უკვე ვიპოვეთ» is the standard of a session's first report.
+- **P-OFFER (owner doctrine):** the author never types an identifier — everything offered, governed, bilingual; honest free-text fallback only for the genuinely unrepresentable; full power NEVER cut for simplicity (scope narrows, the bar never).
+- **Unification law:** one model, two zooms (facet=summary+door; workbench=THE editor); builder↔code = two VIEWS of one model, lossless, plane-gated — never two divergent editors.
+- **Context packets (`kit/strategy/12-context-packets.md`):** the lead grounds once; agents get stamped packets; economy from logistics, NEVER from quality.
+- **green-gate: PARSE the vitest log (`Tests N failed`), never exit codes.** Full ritual when `packages/*` touched: FULL `tsc -b` + FULL vitest + dist rebuild + the named parity block (FF-BIND-PARITY · FF-PIPELINE-EQUIV · browse/filter parity).
+- **Git hygiene:** stage explicitly, NEVER `git add -A`; one agent per coherent slice; serialize same-file work; agents' in-flight files are untouchable.
+- **Model routing:** apex-conceptual → FABLE (self or `model:"fable"` agents; owner: Fable-lead > Opus); standard senior judgment → Opus; mechanics → cheap tier. Apex drafts get the lead's personal elevation before the owner sees them.
+- **Journeys are the DoD unit** — jsdom/unit green alone never closes a wave; the owner's live walk is the final acceptance; his confusion is a defect class.
