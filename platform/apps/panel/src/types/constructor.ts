@@ -175,7 +175,7 @@ export interface CanvasPage {
 //      so each stays deep-linkable and Back/Forward moves in/out of it.
 //  (`data` was retired as a surface — metric binding is now a contextual section of
 //  the right Inspector, reached by SELECTING a data-bound element, SPEC §3.1.)
-export const STUDIO_SURFACES = ['insert', 'layers', 'pages-site', 'style', 'model'] as const
+export const STUDIO_SURFACES = ['sources', 'insert', 'layers', 'pages-site', 'style', 'model'] as const
 
 export type StudioSurface = (typeof STUDIO_SURFACES)[number]
 

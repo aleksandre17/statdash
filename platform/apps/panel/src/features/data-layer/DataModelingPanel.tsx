@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Box, Typography, Button, Chip, Paper, Divider } from '@mui/material'
 import StorageIcon from '@mui/icons-material/Storage'
 import DataObjectIcon from '@mui/icons-material/DataObject'
@@ -16,6 +16,8 @@ import { useConstructorStore, useDataSources, useDataSpecs } from '../../store/c
 import { useDndSensors } from '../../shared/dnd/useDndSensors'
 import type { DataSpec } from '@statdash/engine'
 import { DataSpecEditor } from './DataSpecEditor'
+import { withStewardCube, fromWorkbenchModel } from './workbench/workbenchModel'
+import { useSourcesHandoff } from '../../store/sourcesHandoff'
 import { ShowMe } from './showme/ShowMe'
 import { SourceAuthoringPanel } from '../datasources/SourceAuthoringPanel'
 import { ExcelUpload } from '../datasources/ExcelUpload'
@@ -112,6 +114,20 @@ export function DataModelingPanel() {
   const sensors        = useDndSensors()
 
   const [selection, setSelection] = useState<Selection>(null)
+
+  // ── Sources → workbench cross-gesture (0091 · the ladder as navigation) ────────
+  //  A cube's «დაათვალიერე workbench-ში» on the Sources page set a one-shot handoff and
+  //  navigated here (Steward lens). Consume it ONCE on arrival: seed a fresh spec with the
+  //  steward raw-cube head (0084's withStewardCube) and select it for shaping — the SAME
+  //  createDataSpec path Show-Me uses. `take()` reads-and-clears, so it never re-fires.
+  const takePendingCube = useSourcesHandoff((s) => s.take)
+  useEffect(() => {
+    const pending = takePendingCube()
+    if (!pending) return
+    const seeded = withStewardCube({ head: { op: 'source', query: { measure: '' } }, tail: [], encoding: { label: 'time', value: 'value' } }, pending.measures)
+    void createDataSpec({ name: `${pending.datasetCode} — ნედლი დათვალიერება`, spec: fromWorkbenchModel(seeded) })
+      .then((created) => setSelection({ kind: 'spec', id: created.id }))
+  }, [takePendingCube])
 
   const handleSourceDragEnd = (e: DragEndEvent) => {
     const { active, over } = e

@@ -1,11 +1,11 @@
-// ── DataModelBody — the data-first FRONT DOOR is one step from the shell (W2 · C1) ─
+// ── DataModelBody — the Model page is Floor-2 ONLY (0091 · Data-Home split) ──────
 //
-//  The AR-52 W2 fix for "onboarding is buried behind a lens flip" (STUDY §F3 / G8).
-//  The onboard-data DOOR (CanonicalUpload) now sits ABOVE the role-lens split, so it
-//  is reachable in ONE intentful step from the shell (rail Data → here) in EITHER lens
-//  — the author no longer has to flip to Steward just to SEE the door. Governance is
-//  preserved elsewhere (the FSM's publish is server-authorised; the raw-source modeler
-//  stays behind the Steward "Edit" lens) — this proves only WHERE the door is.
+//  The owner's re-architecture (2026-07-18): raw sources are their OWN top-level
+//  destination now («წყაროები», FIRST in the nav) — the ONE upload door + the cube
+//  inventory + classifiers live THERE, not here. This page is the GOVERNED semantic
+//  MODEL: the dictionary/flow-map (author lens) or the metric/dimension modeler (steward
+//  lens). This guard proves the Floor-1 upload door NEVER returns to the Model page
+//  (screen-level SRP — the decoupling the owner demanded), and the lens split still holds.
 //
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
@@ -23,21 +23,21 @@ beforeEach(() => {
   useRoleStore.setState({ role: 'author' })      // the documented default session
 })
 
-describe('DataModelBody — the data-first front door (AR-52 W2 · Canon C1)', () => {
-  it('surfaces the onboard-data door in the DEFAULT (author) lens — no Steward flip required', () => {
+describe('DataModelBody — Floor-2 only, no upload door (0091)', () => {
+  it('carries NO upload door in the DEFAULT (author) lens — it moved to «წყაროები»', () => {
     render(<DataModelBody locale="en" />)
-    // The front-door section AND the real upload affordance render for a plain author.
-    expect(screen.getByTestId('data-front-door')).toBeInTheDocument()
-    expect(screen.getByTestId('canonical-upload')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /Choose workbook/ })).toBeInTheDocument()
+    // The author reach is the read-only dictionary; the Floor-1 front door is gone.
+    expect(screen.getByTestId('data-dictionary')).toBeInTheDocument()
+    expect(screen.queryByTestId('data-front-door')).toBeNull()
+    expect(screen.queryByTestId('canonical-upload')).toBeNull()
   })
 
-  it('keeps the door present in the Steward lens too (WHERE is lens-independent)', () => {
+  it('carries NO upload door in the Steward lens either (SRP — one page, one job)', () => {
     useRoleStore.setState({ role: 'steward' })
     render(<DataModelBody locale="en" />)
-    // The door is synchronous (above the lazy modeler split), so it is present without
-    // awaiting ModelSurface's heavy chunk — the same door, both lenses.
-    expect(screen.getByTestId('data-front-door')).toBeInTheDocument()
-    expect(screen.getByTestId('canonical-upload')).toBeInTheDocument()
+    // The lens toggle is present (browse ⇄ edit stays in-place), but no upload door.
+    expect(screen.getByTestId('data-model-lens-toggle')).toBeInTheDocument()
+    expect(screen.queryByTestId('data-front-door')).toBeNull()
+    expect(screen.queryByTestId('canonical-upload')).toBeNull()
   })
 })

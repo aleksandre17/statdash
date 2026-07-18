@@ -31,11 +31,12 @@ beforeEach(() => {
   useRoleStore.setState({ role: 'author' })
 })
 
-// Relay Step 1: the destination re-homed to the rail as mode #1 (Data). It stays a
-// registered focus-view target (the settled full-screen destination); only the ENTRY
-// moved from the top bar to the rail. Reach it from the rail's Data button.
+// 0091 Data-Home split: the governed data-MODEL destination is the rail's «მოდელი»
+// (Model) mode now — raw sources moved OUT to «წყაროები» (Sources, mode #1). The
+// data-model stays a registered focus-view target (the settled full-screen destination);
+// reach it from the rail's Model button.
 const railData = () =>
-  within(screen.getByRole('navigation', { name: 'Studio surfaces' })).getByRole('button', { name: 'Data' })
+  within(screen.getByRole('navigation', { name: 'Studio surfaces' })).getByRole('button', { name: 'Model' })
 
 describe('FF-DATA-REACHABLE — the data model is reachable from a default (author) session', () => {
   it('the Data-model destination is an always-visible, non-role-gated rail mode (the front door)', () => {

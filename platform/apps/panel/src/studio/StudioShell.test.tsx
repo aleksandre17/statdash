@@ -38,16 +38,16 @@ describe('StudioShell — IA + landmarks (WCAG 2.1 AA)', () => {
 })
 
 describe('StudioShell — the four-moment mode rail (relay Step 1)', () => {
-  it('offers ONE ordered mode list — Data · Add · Layers · Site · Style, Data first (the front door)', () => {
+  it('offers ONE ordered mode list — Sources · Model · Add · Layers · Site · Style, Sources first (0091)', () => {
     renderStudio()
     const rail = screen.getByRole('navigation', { name: 'Studio surfaces' })
     // Every moment is now ONE rail mode (LAW C) — no scattered top-bar doors.
-    for (const name of ['Data', 'Add', 'Layers', 'Site', 'Style']) {
+    for (const name of ['Sources', 'Model', 'Add', 'Layers', 'Site', 'Style']) {
       expect(within(rail).getByRole('button', { name })).toBeEnabled()
     }
-    // Data is the FIRST entry — the reference-class "data source first" front door.
+    // Sources is the FIRST entry — the Data Home leads («ჯერ მონაცემი»).
     const buttons = within(rail).getAllByRole('button')
-    expect(buttons[0]).toHaveAccessibleName('Data')
+    expect(buttons[0]).toHaveAccessibleName('Sources')
   })
 
   it('opens on Add with aria-current, and swapping to Layers is order-free (no gating)', () => {
@@ -73,11 +73,13 @@ describe('StudioShell — the four-moment mode rail (relay Step 1)', () => {
 //  FF-MODEL-IS-FOCUSVIEW). The role lens splits only its CONTENT (author→read-only
 //  Dictionary, steward→modeler); navigation is decoupled from identity — opening the
 //  destination NEVER escalates the lens. These tests arrange the lens via the store.
+// 0091: the governed data-MODEL destination is the rail's «Model» mode now (raw sources
+// moved OUT to «Sources», mode #1). Model routes to the same data-model Focus-View.
 const railData = () =>
-  within(screen.getByRole('navigation', { name: 'Studio surfaces' })).getByRole('button', { name: 'Data' })
+  within(screen.getByRole('navigation', { name: 'Studio surfaces' })).getByRole('button', { name: 'Model' })
 
 describe('StudioShell — Data is the rail front door, reachable in every lens (relay Step 1)', () => {
-  it('the DEFAULT (author) session offers Data as rail-mode #1', () => {
+  it('the DEFAULT (author) session offers Model as a rail mode', () => {
     renderStudio()
     expect(railData()).toBeEnabled()
   })

@@ -51,7 +51,8 @@ const CommandPalette = lazy(() =>
 //  visible while a rebrand / nav edit repaints it (the "rebrand = data" payoff). This
 //  map is the OCP seam: a future canvas-less workspace is one row + one registry target.
 const WORKSPACE_SURFACES: Partial<Record<StudioSurface, FocusViewTargetId>> = {
-  model: 'data-model',
+  sources: 'sources',
+  model:   'data-model',
 }
 
 // ── StudioShell — the AR-49 Studio (canvas-always-home + activity rail) ────────

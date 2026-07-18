@@ -3,6 +3,7 @@ import type { SvgIconProps } from '@mui/material'
 import AddBoxOutlinedIcon from '@mui/icons-material/AddBoxOutlined'
 import LayersOutlinedIcon from '@mui/icons-material/LayersOutlined'
 import SchemaOutlinedIcon from '@mui/icons-material/SchemaOutlined'
+import StorageOutlinedIcon from '@mui/icons-material/StorageOutlined'
 import WebOutlinedIcon from '@mui/icons-material/WebOutlined'
 import PaletteOutlinedIcon from '@mui/icons-material/PaletteOutlined'
 import type { StudioSurface } from '../types/constructor'
@@ -30,8 +31,13 @@ export interface RailEntry {
   icon:   ComponentType<SvgIconProps>
 }
 
+//  DATA HOME split (0091 · owner 2026-07-18): the floors are SEPARATE top-level
+//  destinations. «წყაროები» (Sources — raw cubes + classifiers + the ONE upload door)
+//  leads FIRST («ჯერ მონაცემი»); «მოდელი» (the governed semantic model) follows. Both
+//  are full-screen Focus-Views; the ladder survives as this NAV ORDER + cross-gestures.
 export const RAIL_ENTRIES: readonly RailEntry[] = [
-  { id: 'model',      label: { ka: 'მონაცემები', en: 'Data' },   icon: SchemaOutlinedIcon },
+  { id: 'sources',    label: { ka: 'წყაროები',   en: 'Sources' }, icon: StorageOutlinedIcon },
+  { id: 'model',      label: { ka: 'მოდელი',     en: 'Model' },  icon: SchemaOutlinedIcon },
   { id: 'insert',     label: { ka: 'დამატება',   en: 'Add' },    icon: AddBoxOutlinedIcon },
   { id: 'layers',     label: { ka: 'შრეები',     en: 'Layers' }, icon: LayersOutlinedIcon },
   { id: 'pages-site', label: { ka: 'საიტი',      en: 'Site' },   icon: WebOutlinedIcon },
@@ -45,6 +51,7 @@ export const RAIL_ENTRIES: readonly RailEntry[] = [
 //  placeholder). Kept explicit (not derived from RAIL_ENTRIES) so each dock surface has
 //  a visible heading + a named complementary landmark (WCAG 2.1 AA).
 export const SURFACE_HEADINGS: Record<StudioSurface, { ka: string; en: string }> = {
+  'sources':    { ka: 'წყაროები',         en: 'Sources' },
   'insert':     { ka: 'დამატება',        en: 'Add' },
   'layers':     { ka: 'შრეები',          en: 'Layers' },
   'style':      { ka: 'სტილი',            en: 'Style' },

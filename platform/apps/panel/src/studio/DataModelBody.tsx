@@ -1,9 +1,8 @@
-import { Box, ToggleButton, ToggleButtonGroup, Tooltip, Typography } from '@mui/material'
+import { Box, ToggleButton, ToggleButtonGroup, Tooltip } from '@mui/material'
 import MenuBookOutlinedIcon from '@mui/icons-material/MenuBookOutlined'
 import TuneOutlinedIcon from '@mui/icons-material/TuneOutlined'
 import { ModelSurface } from './surfaces/ModelSurface'
 import { DataDictionarySurface } from './surfaces/DataDictionarySurface'
-import { CanonicalUpload } from './model/CanonicalUpload'
 import { useRole, useSetRole } from './useRole'
 import type { Locale } from '../types/constructor'
 
@@ -27,15 +26,14 @@ import type { Locale } from '../types/constructor'
 //  lens changes what you see, so the control lives exactly here (Least Astonishment).
 //  Bilingual, keyboard-reachable native <button aria-pressed> (WCAG 2.1 AA · 4.1.2).
 //
-//  ── The data-first FRONT DOOR (AR-52 W2 · Canon C1) ──────────────────────────────
-//  Onboarding raw data is the spine's origin ("everything starts with raw data"). It
-//  used to be BURIED — reachable only after flipping to the Steward lens (ModelSurface).
-//  It now sits ABOVE the lens split, so it is ONE intentful step from the shell (rail
-//  Data → here) in EITHER lens: the DOOR is front, not behind the lens. Governance is
-//  preserved (the canon's refusal of "zero-step governance"): the DOOR is where the
-//  author/steward alike SEE it, but PUBLISHING a staged cube is the gated act — the
-//  canonical FSM's publish is server-authorised (D-DA1: steward defines), and the full
-//  raw-source modeler (define specs/sources) stays behind the Steward "Edit" lens below.
+//  ── Floor 2 only — sources moved OUT to «წყაროები» (0091) ─────────────────────────
+//  The Data Home split (owner 2026-07-18): raw sources are their OWN top-level
+//  destination now («წყაროები», FIRST in the nav) — the ONE upload door + the cube
+//  inventory + browsable classifiers live there. This page is the GOVERNED semantic
+//  MODEL: the dictionary/flow-map (author lens) and the metric/dimension modeler (steward
+//  lens). The ladder is the nav order (Sources → Model) + cross-gestures (a cube's
+//  «browse in workbench» lands the steward in the modeler below; promote lands a governed
+//  metric in the catalog). No upload door here — screen-level SRP is the decoupling.
 export function DataModelBody({ locale }: { locale: Locale }) {
   const role    = useRole()
   const setRole = useSetRole()
@@ -43,15 +41,6 @@ export function DataModelBody({ locale }: { locale: Locale }) {
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-      {/* FRONT DOOR — onboard raw data, one step from the shell, both lenses (C1). */}
-      <Box component="section" aria-label={en ? 'Onboard data' : 'მონაცემების ატვირთვა'} data-testid="data-front-door"
-        sx={{ display: 'flex', flexDirection: 'column', gap: 0.75, p: 1.25, border: '1px solid', borderColor: 'divider', borderRadius: 1, bgcolor: 'background.paper' }}>
-        <Typography variant="overline" color="text.secondary">
-          {en ? 'Start here — raw data' : 'დაიწყე აქ — ნედლი მონაცემები'}
-        </Typography>
-        <CanonicalUpload locale={locale} />
-      </Box>
-
       <Box sx={{ display: 'flex', justifyContent: 'flex-end' }} data-testid="data-model-lens-toggle">
         <ToggleButtonGroup
           exclusive

@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import { DataModelBody } from './DataModelBody'
+import { SourcesBody } from './sources/SourcesBody'
 import type { Locale } from '../types/constructor'
 import type { FocusEscalationRequest, FieldBinding } from '../inspector/focusEscalation'
 
@@ -48,6 +49,14 @@ export interface FocusViewTarget {
 // (chart encoding, filters pipeline) here as the placement law escalates them out
 // of the dock. Data, not a branch — mirrors `RAIL_ENTRIES`.
 export const FOCUS_VIEW_TARGETS: Readonly<Record<string, FocusViewTarget>> = {
+  // «წყაროები» — the Data Home, FIRST in the nav (0091). A SEPARATE top-level
+  // destination (Superset/Power BI data-hub class): raw cubes + browsable classifiers
+  // + the ONE upload door. The spine's origin — «ჯერ მონაცემი».
+  'sources': {
+    id: 'sources',
+    title: { ka: 'წყაროები', en: 'Sources' },
+    render: ({ locale }) => <SourcesBody locale={locale} />,
+  },
   'data-model': {
     id: 'data-model',
     title: { ka: 'მონაცემთა მოდელი', en: 'Data model' },
