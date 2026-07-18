@@ -35,5 +35,25 @@ verbatim) · generated-query pane (`GeneratedQueryPane` + pure `generatedQuery.t
   CELL values + duplicate metric header (value+measure) + untranslated `obsStatus` — a
   `columnLabels.ts`/cell-localization pass owed in W-P3. The generated-query pane is clean.
 
+**Mount-seam map (0099 — the workbench mounts standalone, no canvas element):**
+`DataWorkbench` is a pure controlled `value`/`onChange` component — it needs NO selected
+node. Its two live-binding HOSTS:
+- **Facet escalation (canvas element):** `DataFacetField` → `useFocusEscalation().escalate({source:'node-field', fieldPath:'data', render:bind=><DataWorkbench …/>})` → full-screen
+  `FocusView`. The escalation host (`FocusEscalationContext`) is provided ONLY around the
+  compose-shell RightDock — it is ABSENT inside the Sources/Model focus-view screens, so you
+  CANNOT escalate a fresh workbench focus-view from those screens.
+- **Entity landing (`DataModelingPanel`, 0099):** a workbench-shaped spec (`isWorkbenchShaped`
+  = native `pipeline` OR legacy `query`) selected in the panel mounts `DataWorkbench` inline,
+  FULL-WIDTH (browser column steps aside, a Back returns), bound to the spec entity via
+  `updateDataSpec`. This is the Sources «დაათვალიერე workbench-ში» handoff's landing (the
+  handoff seeds a `pipeline` via `withStewardCube`+`createDataSpec` and selects it). BEFORE
+  0099 the panel routed `pipeline` through `DataSpecEditor.SpecBody` (no `pipeline` case) →
+  `JsonFallback` raw JSON — the defect. The raw `DataSpecEditor` now survives as a COLLAPSED
+  steward disclosure below the workbench (plane law), and still serves non-workbench spec kinds.
+- **Do NOT route `pipeline`→workbench inside `DataSpecEditor.SpecBody`:** `DataSpecEditor` is
+  also the facet's steward raw-editor accordion (where a pipeline element already has the
+  escalation door) — it would double the workbench + strand the raw-JSON escape.
+
 Related: [[project_panel_pipeline_live_grid]] (W-P1 grid) · [[project_panel_plane_inspector]]
-(AudiencePlane) · [[project_facet_axis_style_facet]] (facet dispatch).
+(AudiencePlane) · [[project_facet_axis_style_facet]] (facet dispatch) ·
+[[project_panel_pipeline_emission_flip_wp5b]] (fromWorkbenchModel emission).
