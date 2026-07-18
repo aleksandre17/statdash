@@ -25,8 +25,9 @@ import type {
   DataStore, EngineRow, PipelineSpec, PipelineContext, Requirement, SectionContext, SourceStep,
 } from '@statdash/engine'
 import {
-  interpretSpec, extractRequirements, queryReadObs, sourceHeadObs, staticStore,
+  interpretSpec, extractRequirements, queryReadObs, sourceHeadObs, specDataSource,
 } from '@statdash/engine'
+import { resolveStore } from '@statdash/react/engine'
 import { useLivePreviewStores } from '../../../canvas/useLivePreviewStores'
 import { useActiveLocales } from '../../../inspector/useActiveLocales'
 import { isHeadBound, sourceOnlySpec } from '../workbench/workbenchModel'
@@ -61,19 +62,6 @@ export function usePipelineSourceRows(head: SourceStep | undefined, encoding: Pi
   const locale = useActiveLocales()[0] ?? 'ka'
   const { stores, status: liveStatus } = useLivePreviewStores('live')
 
-  // The store the preview reads: the first cube-bound store in the live map. The
-  // structural fallback is the empty static store (sync).
-  const store = useMemo<DataStore>(
-    () => stores[Object.keys(stores)[0] ?? 'default'] ?? staticStore,
-    [stores],
-  )
-
-  const ctx = useMemo<SectionContext>(() => ({ dims: {}, locale }), [locale])
-  const pipeCtx = useMemo<PipelineContext>(
-    () => ({ classifiers: store.classifiers, display: store.display, section: ctx }),
-    [store, ctx],
-  )
-
   const bound = isHeadBound(head)
 
   // The SOURCE-ONLY pipeline (the head alone) — the exact spec the engine resolves for
@@ -84,6 +72,25 @@ export function usePipelineSourceRows(head: SourceStep | undefined, encoding: Pi
     () => (head ? sourceOnlySpec(head, encoding) : null),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [headKey, encoding],
+  )
+
+  // The store the preview reads MUST be the store the governed head's metric DECLARES
+  // (M1 `dataSource`) — resolved through the SAME SSOT the renderer routes through
+  // (renderNode → effectiveStoreKey → specDataSource → resolveStore), never a second
+  // routing rule. Reading the FIRST live-map store (the PAGE's store) read a metric off
+  // a FOREIGN dataset → 0 live rows for any metric whose components live in another cube
+  // (e.g. a `gdp`-sourced metric browsed on a regional page). resolveStore does the map
+  // lookup + CachedStore wrap + fallback (key → first → staticStore) byte-identically to
+  // the canvas node, so warm ≡ read and the preview shares the canvas's cache.
+  const store = useMemo<DataStore>(
+    () => resolveStore({ stores, pageStoreKey: sourceSpec ? specDataSource(sourceSpec) : undefined }),
+    [stores, sourceSpec],
+  )
+
+  const ctx = useMemo<SectionContext>(() => ({ dims: {}, locale }), [locale])
+  const pipeCtx = useMemo<PipelineContext>(
+    () => ({ classifiers: store.classifiers, display: store.display, section: ctx }),
+    [store, ctx],
   )
 
   // The identity of THIS read: the source spec ⊕ the store instance. A change in either
