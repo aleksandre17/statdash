@@ -145,17 +145,28 @@ describe('FF-DESUGAR-EQUIV — pivot desugars row-identically to transform+melt'
     })
   }
 
-  it('desugar(pivot) lowers to a transform primitive (one resolution path)', () => {
+  it('desugar(pivot) lowers to the `pipeline` spine [W-P5a] (one resolution path)', () => {
+    // W-P5a — the LIVE switch: pivot now lowers onto the ONE `pipeline` grammar
+    // (inline-rows source + the melt/cast tail), not the intermediate `transform`. The
+    // FF-DESUGAR-EQUIV pivot corpus above proves the resolved rows stay byte-identical.
     const lowered = desugar({ type: 'pivot', rows: [], keyField: 'geo', valueFields: ['value'] })
-    expect(lowered.type).toBe('transform')
+    expect(lowered.type).toBe('pipeline')
+  })
+
+  it('desugar lowers the pipeline-shaped discriminants onto the spine [W-P5a]', () => {
+    // The LIVE desugar switch: query/transform/pivot all resolve through `pipeline` now.
+    // Byte-identity is proven by FF-PIPELINE-EQUIV (rows) + FF-DESUGAR-EQUIV (pivot corpus).
+    const q: DataSpec = { type: 'query', query: { measure: 'B1G' }, encoding: { label: 'time', value: 'value' } }
+    const t: DataSpec = { type: 'transform', source: [], steps: [], encoding: { label: 'time' } }
+    expect(desugar(q).type).toBe('pipeline')
+    expect(desugar(t).type).toBe('pipeline')
   })
 
   it('desugar is identity (same reference) for every NON-lowered spec', () => {
-    // timeseries now lowers to point-series (G2), so it is NO LONGER identity — its
-    // byte-identity is proven by the FF-DESUGAR-EQUIV corpus below.
+    // timeseries lowers to point-series (G2); query/transform/pivot lower to `pipeline`
+    // (W-P5a). The store-aware VALUE-CELL specs growth/ratio-list are NOT spine-expressible
+    // (see the desugarToPipeline W-P5a finding) and stay identity → direct resolvers.
     const primitives: DataSpec[] = [
-      { type: 'query', query: { measure: 'B1G' }, encoding: { label: 'time', value: 'value' } },
-      { type: 'transform', source: [], steps: [], encoding: { label: 'time' } },
       { type: 'row-list', rows: [{ code: 'B1G' }] },
       { type: 'growth', code: 'B1G', years: [2020, 2021] },
       { type: 'ratio-list', pairs: [{ code: 'D1', denom: 'B1G' }] },

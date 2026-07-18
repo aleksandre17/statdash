@@ -200,6 +200,27 @@ describe('useNodeRows — async path (caps.sync === false)', () => {
     expect(__promiseCacheForTest.size).toBe(1)
   })
 
+  it('a pipeline with a STEWARD source.query head warms + resolves (W-P5a exact-obs warm)', async () => {
+    // A directly-authored `pipeline` whose head is `{op:'source', query}` reads via the
+    // QueryResolver (delegated by PipelineResolver). Its exact obs query must be warmed
+    // (specHeadObs) so the post-warm sync read is served — else a cold cache / empty grid.
+    const rows: EngineRow[] = [{ value: 99 } as EngineRow]
+    const store = makeAsyncStore({ state: 'done', data: rows })
+    const node  = makeNode({
+      data: {
+        type: 'pipeline',
+        pipe: [{ op: 'source', query: { measure: 'GDP' } }],
+        encoding: { label: 'time', value: 'value' },
+      } as unknown as NodeBase['data'],
+    })
+    const ctx = makeCtx(store)
+
+    await act(async () => { renderHook(node, ctx) })
+
+    expect(screen.queryByTestId('skeleton')).toBeNull()
+    expect(screen.getByTestId('row-0').textContent).toBe('99')
+  })
+
   it('node with no data returns empty rows without suspending', async () => {
     const store = makeAsyncStore({ state: 'done', data: [] })
     const node  = makeNode({ data: undefined })

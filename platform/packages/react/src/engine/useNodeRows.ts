@@ -29,11 +29,32 @@
 //
 
 import { use, useMemo }                         from 'react'
-import type { DataRow, DataSpec, QueryResult, Requirement } from '@statdash/engine'
+import type { DataRow, DataSpec, QueryResult, Requirement, SourceStep, StoreQuery } from '@statdash/engine'
 import { extractRequirements, queryReadObs }      from '@statdash/engine'
 import type { NodeBase, RenderContext }          from './types'
 import { resolveNodeRows, resolveStore, storeGenId } from './resolveNodeRows'
 import { specDimKey }                            from './specDimKey'
+
+// ── specHeadObs — the exact obs query a spec's store read issues [GAP 4 / W-P5a] ──
+//
+//  A `query` read (QueryResolver.storeObs) and a `pipeline` STEWARD source head
+//  (`{op:'source', query}`, which the PipelineResolver delegates to QueryResolver) both
+//  issue an obs read whose (measure, filter, orderBy) must be WARMED under the IDENTICAL
+//  key the sync read looks up — else warm-key ≠ read-key (cold cache → empty charts).
+//  `queryReadObs` is that single SSOT key derivation (metric expansion + default-dim
+//  merge, NO time bound — range clamps post-fetch). Returns undefined when there is no
+//  extra obs read to warm:
+//    • a GOVERNED source head (`{op:'source', metrics}`) → its obs/val reads are already
+//      covered by the generic per-requirement warm (metricRequirements) — the live-proof path;
+//    • an INLINE source head (`{op:'source', rows}`) / a pure transform → read-free.
+function specHeadObs(spec: DataSpec): StoreQuery | undefined {
+  if (spec.type === 'query') return queryReadObs(spec.query)
+  if (spec.type === 'pipeline') {
+    const head = spec.pipe[0] as SourceStep | undefined
+    if (head?.op === 'source' && 'query' in head) return queryReadObs(head.query)
+  }
+  return undefined
+}
 
 // ── Promise cache — keyed on specDimKey (N34c) ────────────────────────────
 //
@@ -219,17 +240,19 @@ export function useNodeRows(node: NodeBase, ctx: RenderContext): DataRow[] {
               qa({ type: 'obs', measure: r.code }, reqCtx),
             ]
           }).concat(
-            // 'query' specs carry their own obs query that the QueryResolver read
-            // issues. GAP 4: warm under the EXACT query the read uses — derived by
-            // the SSOT `queryReadObs` (resolveQueryMeasures: metric expansion +
-            // default-dim merge, NO time bound — clamped post-fetch). Warming the
-            // raw `spec.query.measure` would miss a metric-id and, in range mode,
-            // the wasted time:0 val reqs never matched the unbounded read → cold
-            // cache → empty charts. Same `ctx.sectionCtx` (time unset in range
-            // mode) ⇒ warm-key ≡ read-key in BOTH year and range modes.
-            spec.type === 'query'
-              ? [qa(queryReadObs(spec.query), ctx.sectionCtx)]
-              : [],
+            // The head obs read a `query` OR a `pipeline` STEWARD source head issues,
+            // warmed under the EXACT query the read uses — the SSOT `queryReadObs`
+            // (resolveQueryMeasures: metric expansion + default-dim merge, NO time bound —
+            // clamped post-fetch). Warming the raw measure would miss a metric-id and, in
+            // range mode, the wasted time:0 val reqs never matched the unbounded read →
+            // cold cache → empty charts. Same `ctx.sectionCtx` (time unset in range mode)
+            // ⇒ warm-key ≡ read-key in BOTH year and range modes. W-P5a: a directly-authored
+            // `pipeline` with a steward `source.query` head now warms here too (the governed
+            // `source.metrics` head is covered by the generic per-req warm above).
+            (() => {
+              const headObs = specHeadObs(spec)
+              return headObs ? [qa(headObs, ctx.sectionCtx)] : []
+            })(),
           ),
         )
       : Promise.resolve([])

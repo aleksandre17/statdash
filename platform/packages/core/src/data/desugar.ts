@@ -133,7 +133,24 @@ function desugarTimeseries(spec: Extract<DataSpec, { type: 'timeseries' }>): Poi
 //
 export function desugar(spec: DataSpec): ResolvableSpec {
   switch (spec.type) {
-    case 'pivot':      return desugarPivot(spec)
+    // ADR-046 spine [W-P5a — the LIVE desugar switch]. The read path now lowers the
+    // pipeline-SHAPED discriminants onto the ONE `pipeline` grammar. Stored configs are
+    // NEVER rewritten — this runs at read/warm time only (expand-contract). Each reduces
+    // to a `source` HEAD (steward ObsQuery / inline rows) + a pure tail, so the lowering
+    // is byte-identical BY CONSTRUCTION: `query`/`transform` are proven row-identical by
+    // FF-PIPELINE-EQUIV (rows) and their store-read contract is the SAME shared kernel
+    // (queryRequirements / read-free); `pivot` is an inline-rows transform (desugarPivot)
+    // lowered onto the spine, proven by the FF-DESUGAR-EQUIV pivot corpus.
+    case 'query':
+    case 'transform':
+    case 'pivot':      return desugarToPipeline(spec)
+
+    // NOT re-targeted (W-P5a finding — see desugarToPipeline below): `timeseries` stays on
+    // the store-aware `point-series` primitive; `growth`/`ratio-list` keep their direct
+    // resolvers. The pipeline's three `source` variants (metrics/query/rows) cannot express
+    // a per-coordinate `valAt` point read (point-series' pct row) or a per-pair `storeVal`
+    // scalar read — folding them onto the spine byte-identically needs a store-aware
+    // value-cell `source` variant, a Class-M contract change (escalated to the architect).
     case 'timeseries': return desugarTimeseries(spec)
     default:           return spec
   }
@@ -158,6 +175,19 @@ export function desugar(spec: DataSpec): ResolvableSpec {
 //  The mapping IS SPEC §1.3's table:
 //    query     → [ source(obsQuery + clamp), …query.pipe ]
 //    transform → [ source(inline rows),      …steps       ]
+//    pivot     → [ source(inline rows),      …melt/cast/… ]   (via desugarPivot)
+//
+//  W-P5a FINDING — timeseries/growth/ratio-list are NOT lowered here (they fall through to
+//  identity). They are the store-aware VALUE-CELL specs: `timeseries` lowers to the
+//  `point-series` primitive (per-coordinate `storeValAt` sum + a `pct` row); `growth`
+//  reads prev/cur via `storeVal(atTime)` and computes YoY; `ratio-list` reads a `storeVal`
+//  scalar per numerator/denominator pair. NONE is expressible as a `{metrics|query|rows}`
+//  `source` head + a pure tail: the `metrics` head (MetricResolver) emits a different row
+//  shape (`{…tuple, id, label, series, metric, value}`, no `pct`) and the `query` head
+//  emits RAW obs (unsummed), so any of these three lowered onto the spine CRACKS row parity.
+//  Byte-identically folding them requires a 4th, store-aware `source` variant (a point/val
+//  read) — a Class-M contract change on the `SourceStep` union owned by the architect, not a
+//  build-wave decision. Kept on their direct/point-series resolvers; escalated in the report.
 //
 export function desugarToPipeline(spec: DataSpec): DataSpec {
   switch (spec.type) {
@@ -184,7 +214,16 @@ export function desugarToPipeline(spec: DataSpec): DataSpec {
       }
       return pipeline
     }
+    case 'pivot':
+      // pivot IS an inline-rows transform (desugarPivot: melt + cast + rename + concat +
+      // optional color lookup). Lower THAT transform onto the spine — the recursion hits the
+      // `transform` case above → a `source(inline rows)` head + the pure melt/cast tail. Proven
+      // row-identical by the FF-DESUGAR-EQUIV pivot corpus resolving through interpretSpec.
+      return desugarToPipeline(desugarPivot(spec))
     default:
-      return spec   // re-targets in W-P5 (timeseries/growth/ratio-list/pivot/metric/row-list)
+      // timeseries/growth/ratio-list — see the W-P5a FINDING in the header (store-aware
+      // value-cell specs, not spine-expressible without a new `source` variant). metric is
+      // already a `source(metrics)` head by construction; row-list stays direct.
+      return spec
   }
 }
