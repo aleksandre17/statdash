@@ -22,3 +22,15 @@ worktree: `git show HEAD:<f> | grep -qU $'\r' && echo CRLF || echo LF` against
 `grep -qU $'\r' <f>`. Normalize a wrongly-CRLF'd file back to LF with
 `tr -d '\r' < f > f.tmp && mv f.tmp f`, then re-run its test to confirm intact.
 Preserve whatever EOL the file had at HEAD — do not blanket-convert.
+
+**The per-file mix is real and fine-grained** (confirmed W-P3 2026-07-18): sibling files
+in the SAME dir differ — `packages/core/src/data/transform/index.ts` is CRLF at HEAD but
+`step-registry.ts` / `verb-coverage.fitness.test.ts` right beside it are LF. Match EACH
+file to its own HEAD (`git show HEAD:<f> | tr -cd '\r' | wc -c`), never the neighbour's.
+**Don't chase `git diff --cached --check` "trailing whitespace" on a CRLF file** — it flags
+every `\r` as trailing whitespace by design; that is BENIGN for a file whose HEAD is CRLF.
+The real signal is the *numstat*: a clean content-only diff (small +/-) means the EOL is
+correct; a whole-file churn (`74/68` on a 74-line file) means you flipped it. Normalize
+deterministically with a python `b.replace(b'\r\n',b'\n').replace(b'\r',b'\n')` (→LF) then
+optionally `.replace(b'\n',b'\r\n')` (→CRLF) to avoid the mixed-state you get from
+round-tripping `sed`.

@@ -39,10 +39,19 @@ derive `value*2` shows the computed value per row (`work/authoring-truth/0087/02
 **Hand-maps killed.** `generatedQuery.ts` `FIELD_VALUE_KEYS`/`FIELD_RECORD_KEYS` gone — author-plane
 nouns now derive from schema roles (`role`∈{field,newName}; member/expr/literal are not nouns).
 
-**Ledgered next wave (NOT done):** FILTER FULL-POWER PARITY — MemberPicker `$ctx` («მიჰყევი
-გვერდის არჩევანს») + `$ne` («ყველა, გარდა…») offered modes + Get-head grain/where authoring (engine
-`FilterValue` already accepts the refs — this is offered-UI + FilterStepForm Cond-model work);
-`FF-OFFER-ROUNDTRIP`/`FF-FILTER-PARITY` fixtures. See card 0087.
+**FILTER FULL-POWER PARITY (0087b, DELIVERED 2026-07-18, commit f532169):** `FilterStepForm`'s
+Cond model gained three OFFERED modes — specific (checkbox IN-list) · **follow** «მიჰყევი გვერდის
+არჩევანს» → `{$ctx:<dim>}` (the $ctx string = the field name, tracks the page's selection of that
+dim) · **except** «ყველა, გარდა…» → `{$ne:v}` (single-select — engine `$ne` is ONE DimVal; a
+multi-exclude is a ledgered array-$ne engine door, NOT panel-invented) + an "also follow page
+selection" checkbox → `{$ne,$ctx}` NeCtxRef. A stored `$ctx`/`$ne` renders as its MODE (a
+`ToggleButtonGroup`); free text stays only for genuinely unrepresentable shapes. `MemberPicker`
+gained a `single` (radio-like) prop. Get-head grain «წაკითხვის არე» = `GetGrainEditor` pins the
+governed head's `where` (dim+member offered; grain-∅ browse default; workbenchModel
+`isGovernedHead`/`governedWhere`/`withGovernedWhere`). Gates: `FF-FILTER-PARITY`
+(core `filter-parity.fitness.ts` — applyFilter ≡ matchesFilter) + `FF-OFFER-ROUNDTRIP`
+(`offerRoundtrip.fitness.tsx` over `listTransformOps()`). See [[project_panel_poffer_filter_offer]]
+for the engine `applyFilter` NeCtxRef resolution fix this wave landed.
 
 Extends [[project_panel_poffer_filter_offer]] · [[project_panel_data_workbench_wp2]]. Dev-line proof
 recipe: [[dev-line-panel-3013]] (whole-src tar for a core change).
