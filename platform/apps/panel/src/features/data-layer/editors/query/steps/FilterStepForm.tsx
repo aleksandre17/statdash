@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from 'react'
 import { Box, Button, IconButton, TextField, Typography } from '@mui/material'
 import AddIcon from '@mui/icons-material/Add'
 import CloseIcon from '@mui/icons-material/Close'
@@ -54,13 +55,32 @@ function toStep(conds: Cond[]): FilterStep {
 }
 
 export function FilterStepForm({ step, onChange }: FilterStepFormProps) {
-  const conds = readConds(step)
+  // DRAFT-over-canonical (the controlled-form-over-record pattern): the UI keeps
+  // in-progress rows (incl. EMPTY ones) in local state; the canonical step only
+  // ever carries COMPLETE conditions (toStep drops empty fields — correct for
+  // config). Without the draft, an added empty row was projected away by toStep
+  // and re-derived from the unchanged `where` → "add condition" did NOTHING
+  // (owner-caught, 2026-07-18). External step changes (as-of switch, undo)
+  // reseed the draft via the lastEmitted guard — never a render loop.
+  const [conds, setConds] = useState<Cond[]>(() => readConds(step))
+  const lastEmitted = useRef<FilterStep['where']>(step.where)
+  useEffect(() => {
+    if (JSON.stringify(step.where) !== JSON.stringify(lastEmitted.current)) {
+      lastEmitted.current = step.where
+      setConds(readConds(step))
+    }
+  }, [step.where, step])
 
+  const emit = (next: Cond[]) => {
+    setConds(next)
+    const s = toStep(next)
+    lastEmitted.current = s.where
+    onChange(s)
+  }
   const updateCond = (index: number, patch: Partial<Cond>) =>
-    onChange(toStep(conds.map((c, i) => (i === index ? { ...c, ...patch } : c))))
-
-  const addCond = () => onChange(toStep([...conds, { field: '', raw: '' }]))
-  const removeCond = (index: number) => onChange(toStep(conds.filter((_c, i) => i !== index)))
+    emit(conds.map((c, i) => (i === index ? { ...c, ...patch } : c)))
+  const addCond = () => emit([...conds, { field: '', raw: '' }])
+  const removeCond = (index: number) => emit(conds.filter((_c, i) => i !== index))
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
