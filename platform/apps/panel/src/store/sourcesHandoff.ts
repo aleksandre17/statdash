@@ -20,6 +20,12 @@ export interface PendingCube {
   datasetCode: string
   /** The cube's measure codes — the steward `source(query)` head reads these. */
   measures:    string[]
+  /** The cube's store HOME (a `storeKey`) — resolved from `datasetCode` via the session-source
+   *  SSOT (`storeKeyForDataset`) at CLICK time, so the seeded steward head reads the PICKED
+   *  cube's OWN store, not the page's (0089 · ADR-046 Addendum 3). Resolved at the origin
+   *  gesture (race-free — no dependency on when the consumer's session sources hydrate).
+   *  Undefined ⇒ the picked cube is not a session source ⇒ the head declares no home. */
+  dataSource?: string
 }
 
 interface SourcesHandoffState {

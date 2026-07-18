@@ -124,7 +124,7 @@ export function DataModelingPanel() {
   useEffect(() => {
     const pending = takePendingCube()
     if (!pending) return
-    const seeded = withStewardCube({ head: { op: 'source', query: { measure: '' } }, tail: [], encoding: { label: 'time', value: 'value' } }, pending.measures)
+    const seeded = withStewardCube({ head: { op: 'source', query: { measure: '' } }, tail: [], encoding: { label: 'time', value: 'value' } }, pending.measures, pending.dataSource)
     void createDataSpec({ name: `${pending.datasetCode} — ნედლი დათვალიერება`, spec: fromWorkbenchModel(seeded) })
       .then((created) => setSelection({ kind: 'spec', id: created.id }))
   }, [takePendingCube])

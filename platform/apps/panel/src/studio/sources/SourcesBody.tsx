@@ -5,6 +5,8 @@ import { CubeInventory } from './CubeInventory'
 import { useSourcesHandoff } from '../../store/sourcesHandoff'
 import { useSetRole } from '../useRole'
 import { useSetSurface } from '../useStudioRoute'
+import { useDataSources } from '../../store/constructor.store'
+import { storeKeyForDataset } from '../../discovery/cubeProfile.store'
 import type { Locale } from '../../types/constructor'
 
 // ── SourcesBody — «წყაროები», the INDEPENDENT Data Home, FIRST in the nav (0091) ─
@@ -35,12 +37,18 @@ export function SourcesBody({ locale }: { locale: Locale }) {
   const browseCube = useSourcesHandoff((s) => s.browseCube)
   const setRole    = useSetRole()
   const setSurface = useSetSurface()
+  const sources    = useDataSources()
 
   const regionRef = useRef<HTMLDivElement>(null)
   useEffect(() => { regionRef.current?.focus() }, [])
 
   const onBrowseInWorkbench = (datasetCode: string, measures: string[]) => {
-    browseCube({ datasetCode, measures })
+    // 0089 · ADR-046 Addendum 3: FREEZE the picked cube's store home into the handoff, resolved
+    // here (at the origin gesture) from the session sources — so the seeded steward head reads
+    // the PICKED cube's OWN store, not the page's, and the resolution is race-free of when the
+    // Model-page consumer hydrates. Undefined when the cube is not a session source (degrades).
+    const dataSource = storeKeyForDataset(sources, datasetCode)
+    browseCube({ datasetCode, measures, dataSource })
     setRole('steward')       // the workbench lives behind the Steward lens (FF-AUTHOR-NO-QUERY)
     setSurface('model')      // → /studio/model; DataModelingPanel consumes the handoff
   }

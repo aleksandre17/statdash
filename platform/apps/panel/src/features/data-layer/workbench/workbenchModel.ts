@@ -154,10 +154,20 @@ export function stewardHeadMeasure(head: SourceStep | undefined): string | strin
 
 /** Swap the head to a STEWARD raw-cube browse of `measures` — a FRESH source read (the
  *  tail is cleared: a new raw cube is a new table, its columns differ from the prior read).
- *  The write emits the steward `source(query)` variant (Law 1: `measure` is generic). */
-export function withStewardCube(m: WorkbenchModel, measures: string[]): WorkbenchModel {
+ *  The write emits the steward `source(query)` variant (Law 1: `measure` is generic).
+ *
+ *  `storeKey` (0089 · ADR-046 Addendum 3) declares the cube's store HOME on the head so the
+ *  browse reads the PICKED cube's OWN store, not the page's (the cross-cube lying-grid fix).
+ *  Same routing vocabulary as the governed head (`MetricDef.dataSource`); the caller resolves
+ *  it from the picked datasetCode via the session-source SSOT `storeKeyForDataset`. Optional:
+ *  no storeKey ⇒ the head carries none and falls through to the page store (byte-identical to
+ *  pre-0089 — no regression). */
+export function withStewardCube(m: WorkbenchModel, measures: string[], storeKey?: string): WorkbenchModel {
   const measure: string | string[] = measures.length === 1 ? measures[0]! : measures
-  return { ...m, head: { op: 'source', query: { measure } }, tail: [] }
+  const head: SourceStep = storeKey
+    ? { op: 'source', query: { measure }, dataSource: storeKey }
+    : { op: 'source', query: { measure } }
+  return { ...m, head, tail: [] }
 }
 
 /**

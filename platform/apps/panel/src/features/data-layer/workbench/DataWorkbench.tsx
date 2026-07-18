@@ -47,6 +47,8 @@ import { GetHead } from './GetHead'
 import { GetGrainEditor } from './GetGrainEditor'
 import { PromoteMetric } from './PromoteMetric'
 import { useRole } from '../../../studio/useRole'
+import { useDataSources } from '../../../store/constructor.store'
+import { storeKeyForDataset } from '../../../discovery/cubeProfile.store'
 import { useActiveLocales } from '../../../inspector/useActiveLocales'
 import type { Locale } from '../../../types/constructor'
 import './workbench.css'
@@ -71,6 +73,9 @@ export function DataWorkbench({ value, onChange }: DataWorkbenchProps) {
   const locale = (locales[0] ?? 'ka') as Locale
   const en = locale === 'en'
   const isSteward = useRole() === 'steward'
+  // Session sources — the datasetCode→storeKey SSOT for the raw-cube pick (0089). The picked
+  // cube's storeKey is frozen onto the steward head so its browse reads that cube's own store.
+  const sources = useDataSources()
 
   // The step whose live output the grid shows. Default = the Get read (AS_OF_SOURCE) —
   // browse-first (E1): data is on screen before any tail step.
@@ -123,7 +128,11 @@ export function DataWorkbench({ value, onChange }: DataWorkbenchProps) {
   const bound = isHeadBound(model.head)
   const setTail = (tail: TransformStep[]) => onChange(fromWorkbenchModel({ ...model, tail }))
   const pickMetric = (metricId: string) => onChange(fromWorkbenchModel(withGovernedMetric(model, metricId)))
-  const pickCube = (_datasetCode: string, measures: string[]) => onChange(fromWorkbenchModel(withStewardCube(model, measures)))
+  // 0089 · ADR-046 Addendum 3: the picked raw cube declares its OWN store home on the head
+  // (datasetCode→storeKey via the session-source SSOT), so the browse reads THAT cube's store,
+  // not the page's (the cross-cube lying-grid fix). Undefined storeKey ⇒ head declares no home.
+  const pickCube = (datasetCode: string, measures: string[]) =>
+    onChange(fromWorkbenchModel(withStewardCube(model, measures, storeKeyForDataset(sources, datasetCode))))
   const promote = (metricId: string) => onChange(fromWorkbenchModel(promoteHeadToMetric(model, metricId)))
   const setGrain = (where: Partial<Record<string, DimVal>>) =>
     onChange(fromWorkbenchModel(withGovernedWhere(model, where)))

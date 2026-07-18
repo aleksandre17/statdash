@@ -94,9 +94,33 @@ export function specMeasureRefs(spec: DataSpec): string[] {
  * byte-identical to the single-store status quo.
  */
 export function specDataSource(spec: DataSpec): string | undefined {
+  // 0089 · ADR-046 Addendum 3 — a pipeline STEWARD head DECLARES its store home directly.
+  // Its `query.measure` is a RAW code with no MetricDef to route through (the governed head
+  // routes via metric→dataSource below), so the head names its `storeKey` itself. Honored
+  // FIRST — the steward analogue of the metric-declared dataSource, ONE routing vocabulary
+  // (a storeKey string) consumed identically by resolveStore. Absent ⇒ falls through to the
+  // measure-ref walk, byte-identical to a pre-0089 steward head.
+  const declared = declaredSourceHome(spec)
+  if (declared !== undefined) return declared
   for (const ref of measureRefs(spec)) {
     const ds = resolveMeasureRef(ref).dataSource
     if (ds !== undefined) return ds
+  }
+  return undefined
+}
+
+/**
+ * The store home a pipeline's steward `source` head DECLARES directly (0089), or undefined
+ * for any other spec / head shape. A NON-EMPTY string only — a blank/empty `dataSource` is
+ * treated as absent (never routes to '' — the empty-wildcard pin class, ADR-047 D1). Kept
+ * module-local: the ONE place the head-declared home is read, next to specDataSource.
+ */
+function declaredSourceHome(spec: DataSpec): string | undefined {
+  if (spec.type !== 'pipeline') return undefined
+  const head = spec.pipe[0]
+  if (head?.op === 'source' && 'dataSource' in head) {
+    const ds = (head as { dataSource?: unknown }).dataSource
+    if (typeof ds === 'string' && ds.length > 0) return ds
   }
   return undefined
 }

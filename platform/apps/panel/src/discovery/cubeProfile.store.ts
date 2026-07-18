@@ -87,6 +87,22 @@ export function datasetCodeOf(source: DataSourceDef | undefined): string | undef
 }
 
 /**
+ * The `storeKey` (a session DataSource's `name`) bound to `datasetCode`, or undefined when no
+ * session source targets that cube. The INVERSE of `datasetCodeOf` over the session sources —
+ * the ONE datasetCode↔storeKey mapping (0089 · ADR-046 Addendum 3), never a second routing
+ * rule. `source.name` IS the live store-map key (`deriveLiveDescriptors` emits `id: source.name`,
+ * `buildStoreManifest` keys by `id`, `resolveStore` indexes `ctx.stores[pageStoreKey]`), so the
+ * returned storeKey routes a steward head to the picked cube's OWN store. Used at the raw-cube
+ * PICK gesture to FREEZE the picked cube's store home into the head's config (the head declares
+ * its home; a session store map is state config can't replay). Undefined ⇒ the picked cube is
+ * not a session source ⇒ the head declares no home and falls through to the page store.
+ */
+export function storeKeyForDataset(sources: DataSourceDef[], datasetCode: string): string | undefined {
+  const match = sources.find((s) => datasetCodeOf(s) === datasetCode)
+  return match?.name
+}
+
+/**
  * Resolve the active dataset code from the session's data sources. The first
  * source declaring a datasetCode wins (the common single-cube case). Returns
  * undefined when no source is cube-bound — consumers then degrade to ungated

@@ -244,6 +244,14 @@ export type SourceStep =
   | { op: 'source'; metrics: MetricRef[]; by?: string[]; time?: TimeDimensionSpec
       where?: Partial<Record<string, DimVal>> }
   | { op: 'source'; query: ObsQuery
+      /** The store HOME this steward head reads — a `storeKey` (the SAME routing vocabulary
+       *  the governed head uses via `MetricDef.dataSource`; ADR-046 Addendum 3, card 0089). A
+       *  raw `query.measure` code has no `MetricDef` to route through, so the head names its
+       *  store DIRECTLY. Optional + additive: absent ⇒ `specDataSource` falls through to the
+       *  page/default store (byte-identical to a pre-0089 steward head). Resolved once at the
+       *  authoring PICK gesture (datasetCode→storeKey via `storeKeyForDataset`) and frozen into
+       *  config — never a session-side map. */
+      dataSource?: string
       /** Range clamp folded post-fetch via effectiveBounds — mirrors QueryResolver's fromDim/toDim/timeDimension. */
       clamp?: { fromDim?: string; toDim?: string; timeDimension?: TimeDimensionSpec } }
   | { op: 'source'; rows: Record<string, DimVal>[] }

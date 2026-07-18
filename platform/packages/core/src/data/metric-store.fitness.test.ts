@@ -101,6 +101,69 @@ describe('FF-METRIC-NAMES-STORE — a metric routes a referencing spec to its st
   })
 })
 
+// ── FF-STEWARD-HEAD-NAMES-STORE (0089 · ADR-046 Addendum 3) ─────────────
+//
+//  The cross-cube lying-grid fix: a steward `source` head reads a RAW measure with no
+//  MetricDef to route through, so it DECLARES its store home directly (`head.dataSource`,
+//  the SAME storeKey vocabulary the governed head uses). specDataSource honors it FIRST.
+//  Absent ⇒ byte-identical fall-through to the page store (no regression on stored specs).
+
+describe('FF-STEWARD-HEAD-NAMES-STORE — a steward source head declares its store home', () => {
+  const enc = { label: 'time', value: 'value' }
+
+  it('a pipeline steward head routes to its DECLARED dataSource (page store ≠ picked cube)', () => {
+    // 'GVA' is a RAW code with no MetricDef ⇒ without the declared home this falls through to
+    // undefined (the page store — the exact lying grid). The head names 'regional' → routes there.
+    const spec: DataSpec = {
+      type: 'pipeline', encoding: enc,
+      pipe: [{ op: 'source', query: { measure: 'GVA' }, dataSource: 'regional' }],
+    }
+    expect(specDataSource(spec)).toBe('regional')
+  })
+
+  it('a steward head with NO dataSource falls through to undefined (byte-identical to pre-0089)', () => {
+    const spec: DataSpec = {
+      type: 'pipeline', encoding: enc,
+      pipe: [{ op: 'source', query: { measure: 'GVA' } }],
+    }
+    expect(specDataSource(spec)).toBeUndefined()
+  })
+
+  it('a blank dataSource is treated as absent (never routes to the empty-wildcard store)', () => {
+    const spec: DataSpec = {
+      type: 'pipeline', encoding: enc,
+      pipe: [{ op: 'source', query: { measure: 'GVA' }, dataSource: '' }],
+    }
+    expect(specDataSource(spec)).toBeUndefined()
+  })
+
+  it('the head-declared home is honored FIRST, before any measure-ref routing', () => {
+    // A steward head reads a raw measure, but assert the precedence explicitly: the declared
+    // home wins over a stray metric ref, so a steward browse can never mis-route via a ref.
+    const spec: DataSpec = {
+      type: 'pipeline', encoding: enc,
+      pipe: [{ op: 'source', query: { measure: 'metric:gdp' }, dataSource: 'regional' }],
+    }
+    expect(specDataSource(spec)).toBe('regional')
+  })
+
+  it('a governed pipeline head (no dataSource) still routes via its metric (no regression)', () => {
+    const spec: DataSpec = {
+      type: 'pipeline', encoding: enc,
+      pipe: [{ op: 'source', metrics: ['metric:gdp'] }],
+    }
+    expect(specDataSource(spec)).toBe('gdp')
+  })
+
+  it('the steward head dataSource is pure JSON (Law 2 — survives round-trip)', () => {
+    const spec: DataSpec = {
+      type: 'pipeline', encoding: enc,
+      pipe: [{ op: 'source', query: { measure: 'GVA' }, dataSource: 'regional' }],
+    }
+    expect(JSON.parse(JSON.stringify(spec))).toEqual(spec)
+  })
+})
+
 // ── FF-CONFIG-ROUNDTRIP ────────────────────────────────────────────────
 
 describe('FF-CONFIG-ROUNDTRIP — dataSource is pure JSON (Law 2)', () => {
