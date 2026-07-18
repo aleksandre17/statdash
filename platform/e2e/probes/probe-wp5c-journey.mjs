@@ -158,6 +158,12 @@ async function run() {
     gqSteps: afterAggregate.gqSteps, rawLeaks: afterAggregate.rawLeaks })
 
   const capturedGrowth = gvals.filter((g) => g.value && g.value !== '—' && g.value !== '–').map((g) => `${g.year}:${g.value}`)
+  // ADR-047 Wave A closure: the metric-natural browse must render a REAL national growth
+  // series — NEVER the fabricated −100 (0/prev from a zeroed foreign geo match, the W-P5c lie).
+  const noMinus100 = gvals.every((g) => {
+    const n = g.value == null ? null : Number(String(g.value).replace(/[^0-9.\-]/g, ''))
+    return n === null || Number.isNaN(n) || Math.round(n) !== -100
+  })
   log('summary', {
     openedA, openedB,
     baseBrowseRows: baseBrowse.gridRows,
@@ -165,6 +171,7 @@ async function run() {
     growthBound: growthId,
     growthRows: growthBrowse.gridRows,
     capturedGrowthValues: capturedGrowth,
+    adr047WaveA_noMinus100: noMinus100,          // TRUE ⟺ the −100 lie is closed live
     firstPeriodHonest: gvals.length ? (gvals[0].value === '—' || gvals[0].value === '–' || gvals[0].value === null) : null,
     stepsFlow: afterAggregate.gqStepCount,
     rawLeaks: [...new Set([...baseBrowse.rawLeaks, ...growthBrowse.rawLeaks, ...afterFilter.rawLeaks, ...afterAggregate.rawLeaks])],
