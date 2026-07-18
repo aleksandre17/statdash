@@ -50,7 +50,17 @@ export interface StepInputOffer {
   valuesFor(field: string): ValueOffer[]
   /** Whether a column is value-typed (numeric) — the comparator seam (ledgered). */
   isNumeric(field: string): boolean
+  /** A small, capped sample of the step's INPUT rows (the Power-Query Custom-Column
+   *  preview substrate — card 0087). The expr-role control runs the CURRENT step over
+   *  these rows through the ONE engine evaluator (`applyStep`) and shows the produced
+   *  value per row BEFORE committing. Capped (`PREVIEW_ROW_CAP`) + honest (never all
+   *  rows) per E3. */
+  sampleRows: readonly EngineRow[]
 }
+
+/** How many input rows the expr-role live preview evaluates (an honest, bounded sample —
+ *  the Power-Query dialog moment, never a full re-run over the whole input). */
+export const PREVIEW_ROW_CAP = 12
 
 /** How many distinct values a single column offers before the list is capped (the
  *  AutoFilter search narrows within it — an honest bound, not a silent truncation). */
@@ -126,6 +136,7 @@ export function buildStepInputOffer(args: {
 
   return {
     columns,
+    sampleRows: rows.slice(0, PREVIEW_ROW_CAP),
     isNumeric: (f) => numeric.get(f) ?? false,
     valuesFor: (f) => {
       const members = distinct.get(f)

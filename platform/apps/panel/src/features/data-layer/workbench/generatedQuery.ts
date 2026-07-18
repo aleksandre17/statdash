@@ -15,8 +15,8 @@
 //    • STEWARD — `describeStewardDetail`: the raw DataSpec JSON + the lowered ObsQuery
 //      (the wire truth) — the steward-only advanced door (progressive disclosure).
 //
-import type { SourceStep, TransformStep } from '@statdash/engine'
-import { sourceHeadObs } from '@statdash/engine'
+import type { SourceStep, TransformStep, PropField } from '@statdash/engine'
+import { sourceHeadObs, getTransformStepSchema } from '@statdash/engine'
 import type { ColumnLabelResolver } from '../pipeline-preview/columnLabels'
 import type { Locale } from '../../../types/constructor'
 import { verbLabelForOp } from './verbProjection'
@@ -30,48 +30,35 @@ import { fromWorkbenchModel, isHeadBound, sourceGrainDims, sourceMeasure, type W
 //  `verbLabelForOp`, so the pane's verbs and the "+add step" palette speak the SAME
 //  seven verbs by construction. Fallback = the op name itself (honest, never a blank).
 
-// The governed-noun extraction speaks only FIELD NAMES, never member VALUES — so a
-// filter's raw member code (e.g. a region code) is NEVER surfaced in the author plane
-// (that is the lowered-query/steward concern). Two shapes carry field names across the
-// real op registry (see `defaultStep`): params whose VALUE is a field name / list, and
-// params that are a RECORD KEYED BY field name (filter's `where`, rename/cast's `fields`).
-// Law 1: no dim is special-cased; every field name resolves generically through the catalog.
-//
-//  string / string[] field-name params (sort.by · reduce.field · rollup.dim ·
-//  window.over · join.on · lookup.key · aggregate.groupBy · melt.id/valueFields ·
-//  derive/addField/template/concat produced `as`/`name`).
-const FIELD_VALUE_KEYS = ['by', 'field', 'dim', 'over', 'on', 'key', 'groupBy', 'idFields', 'valueFields', 'as', 'name'] as const
-//  record-keyed-by-field params (filter.where — the KEYS are the pinned dims).
-const FIELD_RECORD_KEYS = ['where'] as const
-
 /** Normalize a measure ref (string | string[]) to a list. */
 function readMeasures(measure: string | string[] | undefined): string[] {
   return Array.isArray(measure) ? measure : measure ? [measure] : []
 }
 
-/** The governed field nouns a tail step consumes/produces — pulled from its field-name
- *  params + record-keyed field maps only (never member values), each resolved to a
- *  governed label. Deduped, ordered. */
+// The governed-noun extraction speaks only FIELD NAMES, never member VALUES — so a
+// filter's raw member code (e.g. a region code) is NEVER surfaced in the author plane.
+// It is now DERIVED FROM THE SCHEMA ROLES (card 0087 — killing the FIELD_VALUE_KEYS /
+// FIELD_RECORD_KEYS hand-maps): a field declared role `field` carries an input column
+// (string → the column; string[] → the columns; object map → its KEYS), and role
+// `newName` carries a produced identifier. `member` (values) / `expr` / `literal` are
+// NOT nouns. Law 1: no dim is special-cased — a new op's nouns fall out of its declared
+// roles with zero change here.
+function pushRoleNouns(role: PropField['role'], value: unknown, out: string[]): void {
+  const pushStr = (v: unknown) => { if (typeof v === 'string' && v.length > 0) out.push(v) }
+  if (role !== 'field' && role !== 'newName') return
+  if (Array.isArray(value)) value.forEach(pushStr)
+  else if (role === 'field' && value && typeof value === 'object') Object.keys(value).forEach(pushStr)
+  else pushStr(value)
+}
+
+/** The governed field nouns a tail step consumes/produces — derived from the op's schema
+ *  roles (field / newName only; never member values), each resolved to a governed label.
+ *  Deduped, ordered. A schema-less op contributes no nouns (honest). */
 function stepFieldNouns(step: TransformStep, resolve: ColumnLabelResolver): string[] {
   const rec = step as unknown as Record<string, unknown>
+  const schema = (getTransformStepSchema(step.op) ?? []) as PropField[]
   const raw: string[] = []
-  const pushStr = (v: unknown) => { if (typeof v === 'string' && v.length > 0) raw.push(v) }
-
-  // string / string[] field-name params
-  for (const key of FIELD_VALUE_KEYS) {
-    const v = rec[key]
-    if (Array.isArray(v)) v.forEach(pushStr)
-    else pushStr(v)
-  }
-  // record-keyed-by-field params — the KEYS are the fields (values are member codes, skipped)
-  for (const key of FIELD_RECORD_KEYS) {
-    const v = rec[key]
-    if (v && typeof v === 'object' && !Array.isArray(v)) Object.keys(v).forEach(pushStr)
-  }
-  // `fields` — array of field names (select/concat/lookup) OR a record keyed by field (rename/cast)
-  const fields = rec['fields']
-  if (Array.isArray(fields)) fields.forEach(pushStr)
-  else if (fields && typeof fields === 'object') Object.keys(fields).forEach(pushStr)
+  for (const f of schema) pushRoleNouns(f.role, rec[f.field], raw)
 
   const seen = new Set<string>()
   const out: string[] = []

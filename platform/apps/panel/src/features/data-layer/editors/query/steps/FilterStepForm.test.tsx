@@ -27,6 +27,7 @@ const offer: StepInputOffer = {
     f === 'geo'
       ? [{ value: 'GE', label: 'საქართველო' }, { value: 'AB', label: 'აფხაზეთი' }]
       : [],
+  sampleRows: [],
 }
 
 describe('FilterStepForm — add condition renders a row (the owner-caught no-op)', () => {

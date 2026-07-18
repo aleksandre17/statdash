@@ -22,10 +22,12 @@ export interface FieldPickerProps {
   label:    string
   /** Placeholder for the free-text fallback / the empty Select option. */
   placeholder?: string
+  /** Stable id for the underlying input (deterministic addressing in tests / e2e). */
+  id?:      string
   sx?: object
 }
 
-export function FieldPicker({ columns, value, onChange, label, placeholder, sx }: FieldPickerProps) {
+export function FieldPicker({ columns, value, onChange, label, placeholder, id, sx }: FieldPickerProps) {
   if (!columns) {
     return (
       <TextField
@@ -35,6 +37,7 @@ export function FieldPicker({ columns, value, onChange, label, placeholder, sx }
         placeholder={placeholder}
         onChange={(e) => onChange(e.target.value)}
         sx={sx}
+        slotProps={{ htmlInput: id ? { id } : undefined }}
       />
     )
   }
@@ -49,7 +52,7 @@ export function FieldPicker({ columns, value, onChange, label, placeholder, sx }
       value={value}
       onChange={(e) => onChange(e.target.value)}
       sx={sx}
-      slotProps={{ select: { displayEmpty: true } }}
+      slotProps={{ select: { displayEmpty: true, id } }}
     >
       <MenuItem value="">
         <em>{placeholder ?? '—'}</em>

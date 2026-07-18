@@ -3,7 +3,6 @@ import { Box, TextField, Typography } from '@mui/material'
 import type { TransformStep } from '@statdash/engine'
 import { getTransformStepSchema } from '@statdash/engine'
 import type { StepInputOffer } from '../../../pipeline-preview/stepInput'
-import { DeriveStepForm } from './DeriveStepForm'
 import { LookupStepForm } from './LookupStepForm'
 import { SortStepForm } from './SortStepForm'
 import { FilterStepForm } from './FilterStepForm'
@@ -12,12 +11,15 @@ import { TransformStepEditor } from './TransformStepEditor'
 // ── StepForm — dispatcher: renders the right editor per op ─────────────────────
 //
 //  Resolution order (OCP, the ADR's "schema-driven, not a bespoke form per op"):
-//    1. derive/lookup/sort/filter — keep their hand-tuned bespoke forms (richer
-//       list/expression UX), UNCHANGED and byte-identical (their unit tests pin
-//       them). These predate the schema-registry and stay the best surface.
-//    2. ANY other op carrying an authoring PropSchema → the GENERIC schema-driven
-//       TransformStepEditor (the same Inspector that authors node properties).
-//       Registering a new op + schema makes it authorable with zero panel code.
+//    1. lookup/sort/filter — keep their hand-tuned bespoke forms (a where-map with
+//       parity modes, a multi-key sort, a codelist join). Their unit tests pin them.
+//    2. ANY other op carrying an authoring PropSchema (incl. `derive`) → the GENERIC
+//       ROLE-PROJECTING TransformStepEditor (card 0087): each field is offered by its
+//       declared role — field→FieldPicker, member→MemberPicker, expr→the autocomplete
+//       editor + live preview, newName→text, literal→typed input. `derive` now routes
+//       here so its `expr` gets the schema-aware editor + per-row preview (retiring the
+//       plain-textarea DeriveStepForm). A new op + schema is authorable with zero panel
+//       code — the P-OFFER projection is generic (Refusal #4).
 //    3. No schema (today only `joinByField`, which carries resolved rows) →
 //       a raw-JSON textarea: still editable, round-trips losslessly. This is the
 //       shrinking COVERAGE_TODO surface tracked by Fitness #1.
@@ -34,13 +36,12 @@ export interface StepFormProps {
 
 export function StepForm({ step, onChange, input }: StepFormProps) {
   switch (step.op) {
-    case 'derive': return <DeriveStepForm step={step} onChange={onChange} />
     case 'lookup': return <LookupStepForm step={step} onChange={onChange} input={input} />
     case 'sort':   return <SortStepForm   step={step} onChange={onChange} input={input} />
     case 'filter': return <FilterStepForm step={step} onChange={onChange} input={input} />
     default:
       return getTransformStepSchema(step.op)
-        ? <TransformStepEditor step={step} onChange={onChange} />
+        ? <TransformStepEditor step={step} onChange={onChange} input={input} />
         : <RawStepForm step={step} onChange={onChange} />
   }
 }
