@@ -1,4 +1,4 @@
-import { useFilter, useCurrentStore, useResolveLocale } from '@statdash/react'
+import { useFilter, useCurrentStore, useResolveLocale, useT } from '@statdash/react'
 import { resolveYears }                           from '@statdash/engine'
 import type { ParamYearSelectNode }               from '@statdash/engine'
 
@@ -8,6 +8,7 @@ export function YearSelectShell({ filterKey, config }: { filterKey: string; conf
   const { state, set } = useFilter()
   const store          = useCurrentStore()
   const resolveLabel   = useResolveLocale()
+  const t              = useT('year-select')
   const current        = state[filterKey] ?? config.default ?? ''
 
   const years = store
@@ -19,7 +20,7 @@ export function YearSelectShell({ filterKey, config }: { filterKey: string; conf
       className="filter-select filter-control__select filter-control__year-select"
       value={current}
       onChange={e => set(filterKey, e.target.value)}
-      aria-label={config.label ? resolveLabel(config.label) : 'Year'}
+      aria-label={config.label ? resolveLabel(config.label) : t('label')}
     >
       {years.map(y => <option key={y} value={y}>{y}</option>)}
     </select>

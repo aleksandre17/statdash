@@ -5021,7 +5021,10 @@
               "share.permalink": "Copy permalink",
               "share.copied": "Copied",
               "collapse": "Collapse",
-              "expand": "Expand"
+              "expand": "Expand",
+              "error.title": "Failed to load component",
+              "error.retry": "Retry",
+              "skip.toContent": "Skip to main content"
             }
           },
           "ka": {
@@ -5032,7 +5035,10 @@
               "share.permalink": "ბმულის კოპირება",
               "share.copied": "დაკოპირდა",
               "collapse": "ჩაკეცვა",
-              "expand": "გაშლა"
+              "expand": "გაშლა",
+              "error.title": "კომპონენტი ვერ ჩაიტვირთა",
+              "error.retry": "თავიდან ცდა",
+              "skip.toContent": "მთავარ შინაარსზე გადასვლა"
             }
           }
         },

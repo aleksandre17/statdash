@@ -100,7 +100,13 @@
   text-align: left;
   font-size: 0.6875rem;
   font-weight: 700;
-  color: var(--color-text-faint);
+  /* Muted (not faint) label role. The header sits on --color-surface-raised,
+   * which is LIGHTER than --color-surface in dark mode, so --color-text-faint
+   * (tuned against --color-surface) dropped to 4.28:1 here — a WCAG 1.4.3 AA
+   * fail (and 4.48:1 in light, marginal). --color-text-muted is the mode-aware
+   * pair for a muted caption on a raised surface: 5.09:1 dark / 5.28:1 light.
+   * Token-bound (8d86baf discipline) — the fix flips with the theme by itself. */
+  color: var(--color-text-muted);
   letter-spacing: 0.05em;
   text-transform: uppercase;
   background: var(--color-surface-raised);

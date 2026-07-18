@@ -37,6 +37,9 @@ const FEEDBACK_I18N: Record<string, Record<string, string>> = {
     'share.copied':       'Copied',
     'collapse':           'Collapse',
     'expand':             'Expand',
+    'error.title':        'Failed to load component',
+    'error.retry':        'Retry',
+    'skip.toContent':     'Skip to main content',
   },
 }
 

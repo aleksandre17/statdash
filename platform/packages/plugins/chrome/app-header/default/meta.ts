@@ -7,16 +7,22 @@
 //  never widened (Open/Closed).
 //
 import type { ChromeSliceMeta } from '@statdash/react/engine'
+import type { LocaleString }                from '@statdash/engine'
 import { defineSchema, type AssertSchemaCovers, type Expect } from '../../../schema-contract'
 
 // ── SocialLinkDef — one social-media link rendered in the header actions ──
 //
 //  Owned by the header (its sole consumer), not the shared chrome base.
+//  `label` is the accessible name (aria-label) and is bilingual — it rides the
+//  ONE i18n content contract (LocaleString), resolved at the render seam via
+//  useResolveLocale, exactly like FooterLinkDef.label. A bare `string` here let
+//  provisioning author a `{ka,en}` bag into an unresolved aria slot → the
+//  accessible name rendered as "[object Object]" (WCAG 4.1.2 fail).
 export interface SocialLinkDef {
   href:  string
-  label: string       // aria-label for accessibility
-  icon:  string       // SVG path d attribute
-  fill?: boolean      // true = filled, false = stroked
+  label: LocaleString  // aria-label for accessibility (bilingual, resolved in-shell)
+  icon:  string        // SVG path d attribute
+  fill?: boolean       // true = filled, false = stroked
 }
 
 // ── AppHeaderConfig — the per-instance config shape this shell reads ─────
@@ -41,7 +47,7 @@ export interface AppHeaderConfig {
 //  string (matching SocialLinkDef.icon: string); `label` is the aria-label.
 export const SocialLinkItemSchema = defineSchema([
   { field: 'href',  type: 'string',  label: { ka: 'ბმული',        en: 'URL' }, required: true },
-  { field: 'label', type: 'string',  label: { ka: 'წარწერა (aria)', en: 'Label (aria)' }, required: true },
+  { field: 'label', type: 'LocaleString',  label: { ka: 'წარწერა (aria)', en: 'Label (aria)' }, coverage: 'localized', required: true },
   { field: 'icon',  type: 'string',  label: { ka: 'SVG იკონა (path d)', en: 'SVG icon (path d)' }, required: true },
   { field: 'fill',  type: 'boolean', label: { ka: 'შევსებული', en: 'Filled' } },
 ])

@@ -255,10 +255,14 @@ describe('useNodeRows — async error path', () => {
     }
 
     // NodeErrorBoundary renders a fallback element — the shell must NOT crash
-    // the whole tree. The error message or a retry button signals the boundary fired.
+    // the whole tree. Assert the STRUCTURAL fallback markers (the title + retry
+    // button), not a literal string: the labels now route through the i18n
+    // contract (useTSafe('feedback')), so they are locale-dependent and proven by
+    // the geostat render gate; here we only prove the boundary fired + degraded
+    // gracefully with NO SiteProvider above it (the safe-resolver contract).
     expect(screen.queryByTestId('skeleton')).toBeNull()
-    // NodeErrorBoundary default renders 'Failed to load component'
-    expect(screen.getByText('Failed to load component')).toBeTruthy()
+    expect(document.querySelector('.node-error')).not.toBeNull()
+    expect(document.querySelector('.node-error__retry')).not.toBeNull()
   })
 
 })

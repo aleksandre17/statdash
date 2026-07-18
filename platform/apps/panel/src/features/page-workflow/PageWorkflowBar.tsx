@@ -24,8 +24,24 @@ import { PageStatusBadge } from './PageStatusBadge'
 import { SaveIssueList } from './SaveIssueList'
 import { PageBrowser } from './PageBrowser'
 import { VersionHistoryDialog } from './VersionHistoryDialog'
+import { useActiveLocales } from '../../inspector/useActiveLocales'
+import type { Locale } from '../../types/constructor'
+
+// Bilingual chrome strings (Law 4 — same local-map + t() seam as PageBrowser /
+// the rest of the studio chrome; the topbar sat in English beside the Georgian
+// rail, breaking WCAG 3.1.2 language-of-parts coherence).
+const T = {
+  pages:          { ka: 'გვერდები',            en: 'Pages' },
+  history:        { ka: 'ისტორია',             en: 'History' },
+  saveDraft:      { ka: 'მონახაზის შენახვა',   en: 'Save draft' },
+  publish:        { ka: 'გამოქვეყნება',        en: 'Publish' },
+  draftSaved:     { ka: 'მონახაზი შენახულია',  en: 'Draft saved' },
+  publishForbid:  { ka: 'გამოსაქვეყნებლად უფლება არ გაქვთ. სთხოვეთ გამომქვეყნებელს ან ადმინს.', en: 'You do not have permission to publish. Ask a publisher or admin to publish this page.' },
+} as const
+const tt = (k: keyof typeof T, locale: Locale) => T[k][locale] ?? T[k].en
 
 export function PageWorkflowBar() {
+  const locale       = useActiveLocales()[0] ?? 'ka'
   const page         = useActivePage()
   const pageId       = page?.id ?? null
   const lifecycle    = usePageLifecycle(pageId)
@@ -60,7 +76,7 @@ export function PageWorkflowBar() {
       <Stack direction="row" spacing={1.5} alignItems="center" flexWrap="wrap" useFlexGap>
         <Button size="small" variant="outlined" startIcon={<FolderOpenIcon />}
           onClick={() => setBrowserOpen(true)} data-testid="open-pages">
-          Pages
+          {tt('pages', locale)}
         </Button>
 
         <PageStatusBadge lifecycle={lifecycle} />
@@ -69,15 +85,15 @@ export function PageWorkflowBar() {
 
         <Button size="small" variant="outlined" startIcon={<HistoryIcon />}
           onClick={() => setHistoryOpen(true)} disabled={!pageId} data-testid="open-history">
-          History
+          {tt('history', locale)}
         </Button>
         <Button size="small" variant="contained" startIcon={<SaveIcon />}
           onClick={handleSave} disabled={!pageId || busy} data-testid="save-page">
-          Save draft
+          {tt('saveDraft', locale)}
         </Button>
         <Button size="small" variant="contained" color="success" startIcon={<PublishIcon />}
           onClick={handlePublish} disabled={!canPublish || busy} data-testid="publish-page">
-          Publish
+          {tt('publish', locale)}
         </Button>
       </Stack>
 
@@ -96,7 +112,7 @@ export function PageWorkflowBar() {
       {/* Publish 403 — needs the publisher/admin role (server-owned, reflected). */}
       {publishState?.forbidden && (
         <Alert severity="warning" sx={{ mt: 1.5 }} data-testid="publish-forbidden">
-          You do not have permission to publish. Ask a publisher or admin to publish this page.
+          {tt('publishForbid', locale)}
         </Alert>
       )}
       {publishState && !publishState.forbidden && publishState.error && (
@@ -107,7 +123,7 @@ export function PageWorkflowBar() {
       <Snackbar
         open={saveStatus?.saved === true}
         autoHideDuration={2500}
-        message="Draft saved"
+        message={tt('draftSaved', locale)}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
       />
 

@@ -250,3 +250,20 @@ export function useT(ns: string): (key: string, vars?: Record<string, string>) =
     [ns, locale],
   )
 }
+
+// useTSafe — non-throwing system-UI-string resolver (the useT twin of
+//  useResolveLocaleSafe, Postel's Law). The LAST-line-of-defense chrome — the
+//  NodeErrorBoundary fallback — must render even when it fired ABOVE a
+//  <SiteProvider> (or none exists, e.g. a boot crash / isolated story). It reads
+//  the active locale when a provider is present, else falls back to i18next's own
+//  resolved language; the namespace catalog is global in i18next either way.
+export function useTSafe(ns: string): (key: string, vars?: Record<string, string>) => string {
+  const localeOverride = useContext(LocaleContext)
+  const ctx            = useContext(SiteContext)
+  const locale = localeOverride ?? ctx?.locale
+  return useCallback(
+    (key: string, vars?: Record<string, string>) =>
+      i18next.t(`${ns}:${key}`, { ...(locale ? { lng: locale } : {}), ...vars }),
+    [ns, locale],
+  )
+}

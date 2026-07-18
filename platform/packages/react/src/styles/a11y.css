@@ -24,6 +24,31 @@
   border:      0;
 }
 
+/* Skip-to-content bypass block (WCAG 2.4.1). Visually removed until focused,
+   then it slides into the top-left as a real, activatable link — the standard
+   keyboard affordance so a keyboard/AT user need not tab the whole header on
+   every page. Token-bound (accent surface + inverse text), theme-safe. It is
+   the FIRST focusable element (rendered first in AppChrome), targeting
+   #main-content on the page's <main>. */
+.skip-link {
+  position:      absolute;
+  top:           0;
+  left:          0;
+  z-index:       1000;
+  transform:     translateY(-120%);
+  padding:       0.5rem 1rem;
+  background:    var(--color-accent);
+  color:         var(--color-text-inverse);
+  font-size:     0.875rem;
+  font-weight:   600;
+  border-radius: 0 0 var(--radius-sm, 4px) 0;
+  text-decoration: none;
+  transition:    transform 0.15s ease;
+}
+.skip-link:focus {
+  transform: translateY(0);
+}
+
 /* Focus-visible: skip mouse clicks, show ring only for keyboard */
 :focus-visible {
   outline:        2px solid var(--color-accent);

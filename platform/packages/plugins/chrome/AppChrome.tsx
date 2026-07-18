@@ -17,7 +17,7 @@
 //
 import { useMemo }                               from 'react'
 import type { ReactNode }                        from 'react'
-import { usePageFrame, useSiteChrome, useChromeOverrides } from '@statdash/react'
+import { usePageFrame, useSiteChrome, useChromeOverrides, useT } from '@statdash/react'
 import { resolveChrome, ChromeRegion }           from '@statdash/react/engine'
 
 export default function AppChrome({ children }: { children: ReactNode }) {
@@ -25,13 +25,17 @@ export default function AppChrome({ children }: { children: ReactNode }) {
   const site      = useSiteChrome()
   const overrides = useChromeOverrides()
   const layout    = useMemo(() => resolveChrome(site, overrides), [site, overrides])
+  const t         = useT('feedback')  // generic chrome ns (skip-link is framework chrome)
 
   return (
     <div className="app-shell" data-frame={frame}>
+      {/* WCAG 2.4.1 bypass block — the FIRST focusable element, hidden until
+          focused, jumps keyboard/AT users past the header to the main content. */}
+      <a href="#main-content" className="skip-link">{t('skip.toContent')}</a>
       <ChromeRegion region="top"    entries={layout.get('top')    ?? []} />
       <div className="app-shell__body">
         <ChromeRegion region="left" entries={layout.get('left')   ?? []} />
-        <main className="app-shell__content">{children}</main>
+        <main className="app-shell__content" id="main-content" tabIndex={-1}>{children}</main>
         <ChromeRegion region="right" entries={layout.get('right') ?? []} />
       </div>
       <ChromeRegion region="bottom"  entries={layout.get('bottom')  ?? []} />

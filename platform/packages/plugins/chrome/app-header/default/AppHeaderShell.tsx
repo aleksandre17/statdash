@@ -74,7 +74,7 @@ export function AppHeaderShell({ surface = 'opaque' }: { surface?: HeaderSurface
                   href={social.href}
                   target="_blank"
                   rel="noopener noreferrer"
-                  aria-label={social.label}
+                  aria-label={t(social.label)}
                   className={HEADER.socialLink}
                 >
                   <svg

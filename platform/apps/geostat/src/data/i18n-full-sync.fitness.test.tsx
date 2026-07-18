@@ -21,6 +21,14 @@
 //  empty states), which is exactly where the mixed-locale symptom lived. Data-cell
 //  localization is covered by resolveRowLocales' own unit tests.
 //
+//  (d) — added 0093 — the SAME three checks run over the ACCESSIBLE-NAME
+//        ATTRIBUTES (aria-label, title, alt, placeholder, aria-description), not
+//        only visible textContent. This closes the exact gap that let the header
+//        social links ship with an accessible name of "[object Object]": a
+//        LocaleString bag authored into a bare-string aria slot flattens in the
+//        ATTRIBUTE, which textContent never sees. The a11y tree is chrome too —
+//        it must resolve like everything else (WCAG 4.1.2 / 3.1.2).
+//
 import { describe, it, expect, beforeAll, afterEach } from 'vitest'
 import { render, cleanup } from '@testing-library/react'
 import { MemoryRouter, Routes, Route, Navigate } from 'react-router-dom'
@@ -69,7 +77,10 @@ afterEach(() => cleanup())
 // guarantee honest ("/en content is fully English") without falsely flagging the
 // language-switch affordance. Scoped by the stable `.locale-switcher` class — the app
 // CONTENT (titles, KPI labels, badges, nav) is still fully guarded.
-function renderPageText(slug: string, locale: string): string {
+// Accessible-name attributes — the a11y tree the previous gate never scanned.
+const A11Y_NAME_ATTRS = ['aria-label', 'title', 'alt', 'placeholder', 'aria-description'] as const
+
+function renderPage(slug: string, locale: string): { text: string; names: string[] } {
   const manifest = buildManifest()
   const url = `/${locale}/${slug}`
   const { container } = render(
@@ -89,8 +100,22 @@ function renderPageText(slug: string, locale: string): string {
       </SiteProvider>
     </MemoryRouter>,
   )
+  // The locale switcher intentionally renders every locale's endonym in its own
+  // script (ქარ / ENG) — excluded from BOTH the text and the a11y-name scan for
+  // the same reason (it is the language-choice affordance, not content).
   container.querySelectorAll('.locale-switcher').forEach((el) => el.remove())
-  return container.textContent ?? ''
+  const names: string[] = []
+  for (const el of container.querySelectorAll('*')) {
+    for (const attr of A11Y_NAME_ATTRS) {
+      const v = el.getAttribute(attr)
+      if (v) names.push(v)
+    }
+  }
+  return { text: container.textContent ?? '', names }
+}
+
+function renderPageText(slug: string, locale: string): string {
+  return renderPage(slug, locale).text
 }
 
 const TENANT_SCRIPT = /[Ⴀ-ჿ]/
@@ -125,5 +150,34 @@ describe('FF-RENDER-NO-LOCALE-LEAK — the locale switch is live at every render
       expect(TENANT_SCRIPT.test(ka), `/ka render of ${slug} has NO Georgian — chrome is pinned to English (switch not live)`).toBe(true)
       expect(en === ka, `/en and /ka renders of ${slug} are identical — the locale switch does not flip this page`).toBe(false)
     })
+
+    // (d) the ACCESSIBLE-NAME tree, the seam the header social links escaped from:
+    //     no LocaleString bag may String()-flatten into an aria-label/title/alt,
+    //     in ANY locale. (The exact 0093 defect — accessible name "[object Object]".)
+    for (const locale of LOCALES) {
+      it(`${slug} / ${locale} — no [object Object] in the accessible-name tree`, () => {
+        const { names } = renderPage(slug, locale)
+        const flattened = names.filter((n) => n.includes('[object Object]'))
+        expect(
+          flattened,
+          `accessible name(s) in ${slug}/${locale} are String()-flattened LocaleString bags — a bag reached an aria/title/alt slot without resolution`,
+        ).toEqual([])
+      })
+    }
   }
+
+  // (d′) accessible-name locale integrity — an aria-label/title on /en must be
+  //      Georgian-free (a KA-only value leaking into the a11y tree is invisible to
+  //      the textContent gate but read aloud to an /en AT user). The locale-switcher
+  //      endonyms are already excluded in renderPage.
+  it('the accessible-name tree of /en pages carries no leaked tenant script', () => {
+    for (const slug of PAGES) {
+      const { names } = renderPage(slug, 'en')
+      const leaked = names.filter((n) => TENANT_SCRIPT.test(n))
+      expect(
+        leaked,
+        `Georgian leaked into an accessible name on the /en render of ${slug} (aria/title/alt): ${JSON.stringify(leaked)}`,
+      ).toEqual([])
+    }
+  })
 })

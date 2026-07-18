@@ -10,6 +10,14 @@ export const yearSelectSlice: FilterControlSlice<ParamYearSelectNode, number> = 
     label:       'Year Selector',
     category:    'filter',
     dimension:   'time',
+    // Bilingual default accessible-name for the <select> when the filter config
+    // authors no explicit label — registered under the 'year-select' namespace
+    // (AR-37 P1). Without this the shell fell back to a hardcoded English 'Year'
+    // aria-label on the KA locale (WCAG 3.1.2).
+    i18n: {
+      ka: { label: 'წელი' },
+      en: { label: 'Year' },
+    },
   },
   defaultValue: (config) => Number(config.default) || new Date().getFullYear(),
   codec: {
