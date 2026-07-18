@@ -31,6 +31,10 @@ Power Query applied-steps + per-step grid (the perception model) · Grafana buil
 - **Gates:** `FF-PIPELINE-EQUIV` · `FF-JOURNEY-PIPE` · `FF-VERB-COVERAGE` · `FF-DQ-DECLARED` · `FF-PROMOTE-ROUNDTRIP` (E2) + held: `FF-AUTHOR-NO-QUERY`, `FF-CANVAS-NEVER-LIES`, `FF-ONE-DERIVATION-PATH`.
 - **W-P1 dependency truth (E5):** the graph substrate exists (`packages/core/src/graph/`); per-step nodes are new projection work on that engine; SPEC-rendering-architecture remains PROPOSED and is not silently assumed.
 
+## Addendum 2 — browse semantics of the governed `source` head (lead, 2026-07-18, closing the W-P5b crack)
+
+A governed head `{op:'source', metrics:[…]}` with **no grain** lowers to the metric's **OBSERVATION BROWSE**: the full obs read across the metric's natural dimensions (codes via `resolveMeasureRef` → the storeObs path the steward head uses), rendered with governed labels. An **explicit grain** (`by`/`time`/`where`) lowers to the shaped read (the existing M2 grain algebra). A CALC metric under browse evaluates **per member of its time axis** (`resolveMetricValue` at each coordinate) — so `gdp.growthYoy` browses as a year-by-year growth column, honest no-data at the first-period edge (ADR-045). Canonical anchor: Power Query — a source IS the table; shaping comes after. This is what SPEC §9 E1 ("the empty pipeline is the browse grid") requires to be true at the engine, not just the surface. Rejected: a hidden default grain injected at emission (a lie in the config — the stored spec would carry a grain the author never chose); a panel-side browse shim (second derivation path, refusal #6 class).
+
 ## Addendum — W-P4 filter-resolution decision (engine-specialist, 2026-07-18)
 
 **The question (W-P0 pre-note #3, deferred into the `source` design):** should `filter.<dim>` values learn UNIFORM governed-ref resolution at the one lowering path, or stay LITERAL-with-a-gate (`config-cube-contract` CHECK-4)?
