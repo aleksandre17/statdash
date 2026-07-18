@@ -85,4 +85,16 @@ describe('GeneratedQueryPane — the STEWARD plane (adds the wire truth)', () =>
     render(<GeneratedQueryPane model={model} locale="en" />)
     expect(screen.getAllByTestId('gq-step')[0].textContent).toContain('Gross Domestic Product')
   })
+
+  it('an UNBOUND head still renders a DECLARED ObsQuery note — never an empty void (Law 11)', () => {
+    const unbound: WorkbenchModel = {
+      head: { op: 'source', metrics: [] }, tail: [], encoding: { label: 'label' },
+    }
+    render(<GeneratedQueryPane model={unbound} locale="en" />)
+    const obs = screen.getByTestId('gq-obsquery')
+    expect(obs).toBeInTheDocument()
+    // The pane always ANSWERS — the wire block carries the declared bind hint, not blank.
+    expect(obs.textContent?.trim().length ?? 0).toBeGreaterThan(0)
+    expect(obs.textContent).toContain('Bind a metric')
+  })
 })

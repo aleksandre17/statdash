@@ -106,7 +106,7 @@ export function GeneratedQueryPane({ model, locale }: GeneratedQueryPaneProps) {
 // ── StewardWireTruth — the raw DataSpec + lowered ObsQuery (steward-only door) ──────
 function StewardWireTruth({ model, locale }: { model: WorkbenchModel; locale: Locale }) {
   const en = locale === 'en'
-  const detail = describeStewardDetail(model)
+  const detail = describeStewardDetail(model, locale)
   return (
     <Box data-testid="gq-steward" sx={{ mt: 1, display: 'flex', flexDirection: 'column', gap: 0.5 }}>
       <Typography variant="caption" color="text.disabled">
@@ -128,7 +128,12 @@ function WireBlock({ label, body, testid }: { label: string; body: string; testi
         <Box
           component="pre"
           data-testid={testid}
-          sx={{ m: 0, p: 1, bgcolor: 'action.hover', color: 'text.primary', borderRadius: 1, fontSize: 11, overflow: 'auto', fontFamily: 'monospace' }}
+          sx={{
+            m: 0, p: 1, bgcolor: 'action.hover', color: 'text.primary', borderRadius: 1,
+            // Law 11 in our own instrument: a declared note ALWAYS has height — never the
+            // zero-height void the owner caught («ჩნდება და სიმაღლე არ აქვს»).
+            minHeight: '2.5em', fontSize: 11, overflow: 'auto', fontFamily: 'monospace',
+          }}
         >
           {body}
         </Box>

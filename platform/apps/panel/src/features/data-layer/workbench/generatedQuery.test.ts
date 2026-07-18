@@ -8,6 +8,7 @@
 //
 import { describe, it, expect } from 'vitest'
 import type { SourceStep, TransformStep } from '@statdash/engine'
+import { sourceHeadObs } from '@statdash/engine'
 import type { ColumnLabelResolver } from '../pipeline-preview/columnLabels'
 import { describeAuthorSteps, describeStewardDetail } from './generatedQuery'
 import type { WorkbenchModel } from './workbenchModel'
@@ -88,27 +89,59 @@ describe('describeAuthorSteps — the GOVERNED author rendering (FF-AUTHOR-NO-QU
   })
 })
 
-describe('describeStewardDetail — the raw wire truth (steward-only)', () => {
+describe('describeStewardDetail — the wire truth from the ONE SSOT (steward-only)', () => {
   it('carries the raw pipeline DataSpec JSON — the member/dim codes the author never sees', () => {
-    const detail = describeStewardDetail(model)
+    const detail = describeStewardDetail(model, 'en')
     expect(detail.json).toContain(RAW_MEMBER_CODE) // 'GE' — present for the steward
     expect(detail.json).toContain('REGION')
     expect(detail.json).toContain('m.gdp')
     expect(detail.json).toContain('"type": "pipeline"') // the emitted spine
   })
 
-  it('a steward query head carries the lowered ObsQuery — the wire query the Get read resolves to', () => {
-    const stewardModel: WorkbenchModel = {
-      head: { op: 'source', query: { measure: 'm.gdp', filter: { REGION: RAW_MEMBER_CODE } } },
-      tail: [], encoding: { label: 'label' },
-    }
-    const detail = describeStewardDetail(stewardModel)
-    const parsed = JSON.parse(detail.obsQuery)
-    expect(parsed).toHaveProperty('measure')
+  // ── The EQUALITY fitness — the pane's wire == sourceHeadObs(head), not a resemblance ──
+  it('a steward query head shows its ObsQuery VERBATIM — pane wire EQUALS sourceHeadObs', () => {
+    const head: SourceStep = { op: 'source', query: { measure: 'm.gdp', filter: { REGION: RAW_MEMBER_CODE } } }
+    const stewardModel: WorkbenchModel = { head, tail: [], encoding: { label: 'label' } }
+    const detail = describeStewardDetail(stewardModel, 'en')
+    // Deep-equal against the engine SSOT — the ONE lowering path (no pane-local re-derive).
+    expect(JSON.parse(detail.obsQuery)).toEqual(sourceHeadObs(head))
+    expect(JSON.parse(detail.obsQuery)).toHaveProperty('measure')
   })
 
-  it('a governed head declares its metric-resolver lowering honestly (no faked ObsQuery)', () => {
-    const detail = describeStewardDetail(model)
-    expect(detail.obsQuery).toContain('governed source')
+  it('a grain-∅ GOVERNED head shows the resolved { measure } browse read — EQUALS sourceHeadObs', () => {
+    const head: SourceStep = { op: 'source', metrics: ['m.gdp'] } // grain-∅ ⇒ observation browse
+    const browseModel: WorkbenchModel = { head, tail: [], encoding: { label: 'label' } }
+    const detail = describeStewardDetail(browseModel, 'en')
+    expect(JSON.parse(detail.obsQuery)).toEqual(sourceHeadObs(head)) // { measure: ['m.gdp'] }
+    expect(JSON.parse(detail.obsQuery)).toHaveProperty('measure')
+  })
+
+  it('a GRAINED governed head declares its metric-resolver lowering honestly (no faked ObsQuery)', () => {
+    // govHead pins `where` ⇒ grained ⇒ sourceHeadObs undefined ⇒ a DECLARED note, never a void.
+    const detail = describeStewardDetail(model, 'en')
+    expect(sourceHeadObs(model.head)).toBeUndefined()
+    expect(detail.obsQuery).toContain('metric resolver')
+    expect(detail.obsQuery.trim().length).toBeGreaterThan(0)
+  })
+
+  it('an INLINE head declares "no wire query" — never an empty void (Law 11)', () => {
+    const head = { op: 'source', rows: [{ id: 'a', value: 1 }] } as unknown as SourceStep
+    const detail = describeStewardDetail({ head, tail: [], encoding: { label: 'label' } }, 'en')
+    expect(detail.obsQuery).toContain('inline rows')
+    expect(detail.obsQuery.trim().length).toBeGreaterThan(0)
+  })
+
+  it('an UNBOUND head declares the bind hint — never an empty void (Law 11)', () => {
+    const head: SourceStep = { op: 'source', metrics: [] }
+    const detail = describeStewardDetail({ head, tail: [], encoding: { label: 'label' } }, 'en')
+    expect(detail.obsQuery).toContain('Bind a metric')
+    expect(detail.obsQuery.trim().length).toBeGreaterThan(0)
+  })
+
+  it('the declared notes are bilingual (Georgian under locale=ka)', () => {
+    const inline = { op: 'source', rows: [] } as unknown as SourceStep
+    const detail = describeStewardDetail({ head: inline, tail: [], encoding: { label: 'label' } }, 'ka')
+    expect(detail.obsQuery).toContain('inline rows') // the ka string keeps the parenthetical
+    expect(detail.obsQuery).toContain('wire')
   })
 })

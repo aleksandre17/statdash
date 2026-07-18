@@ -1,7 +1,8 @@
 ---
 id: "0085"
 title: "THE WIRE-TRUTH PANE — the steward ObsQuery/JSON block speaks for every head, never an empty void (owner-caught)"
-status: QUEUED-HOT (2026-07-18, owner verbatim: «ობს ქვერიში არაფერი არ ჩანს, ან სიმაღლე არ აქვს» + «არ გადადო» — fires with/right after 0084; same serialization guard)
+status: DONE (2026-07-18, build agent Opus) — `describeStewardDetail` now derives the wire read from the engine SSOT `sourceHeadObs(head)` (no pane-local re-lowering): steward query → ObsQuery verbatim; grain-∅ governed → `{ measure }` browse read; grained/inline/unbound → DECLARED bilingual notes; WireBlock carries a min-height (no zero-height void). Live-verified (steward): a governed head → `{ "measure": ["accounts.compensation"] }` (99px, real read); unbound → «მიაბი მეტრიკა…» declared (33px, not a void). Fitness: pane wire == sourceHeadObs EQUALITY + empty-state render. Gates: panel vitest 1085/0 · tsc clean · eslint clean. Shots: work/authoring-truth/0086/08-09.
+was: QUEUED-HOT (2026-07-18, owner verbatim: «ობს ქვერიში არაფერი არ ჩანს, ან სიმაღლე არ აქვს» + «არ გადადო» — fires with/right after 0084; same serialization guard)
 class: S-M
 priority: P0
 owner: lead → build agent (Opus)

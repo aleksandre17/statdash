@@ -15,12 +15,12 @@
 //    • STEWARD — `describeStewardDetail`: the raw DataSpec JSON + the lowered ObsQuery
 //      (the wire truth) — the steward-only advanced door (progressive disclosure).
 //
-import type { ObsQuery, TransformStep } from '@statdash/engine'
-import { queryReadObs } from '@statdash/engine'
+import type { SourceStep, TransformStep } from '@statdash/engine'
+import { sourceHeadObs } from '@statdash/engine'
 import type { ColumnLabelResolver } from '../pipeline-preview/columnLabels'
 import type { Locale } from '../../../types/constructor'
 import { verbLabelForOp } from './verbProjection'
-import { fromWorkbenchModel, sourceGrainDims, sourceMeasure, type WorkbenchModel } from './workbenchModel'
+import { fromWorkbenchModel, isHeadBound, sourceGrainDims, sourceMeasure, type WorkbenchModel } from './workbenchModel'
 
 // ── The friendly verb label per op — a PROJECTION of the registry `category` ─────
 //
@@ -137,34 +137,54 @@ export function describeAuthorSteps(
 export interface StewardDetail {
   /** The raw DataSpec (the emitted `pipeline`), pretty-printed (the steward JSON door). */
   json:     string
-  /** The lowered ObsQuery — the wire query the Get head resolves to (SDMX-grade). A
-   *  governed `source.metrics` head has no single obsQuery (it lowers through the metric
-   *  resolver's grain algebra) — declared honestly rather than faked. */
+  /** The lowered ObsQuery — the wire read the Get head issues to the store, derived from
+   *  the engine SSOT `sourceHeadObs` (never a pane-local re-lowering, FF-ONE-DERIVATION-
+   *  PATH). A steward `query` head → its ObsQuery verbatim; a grain-∅ governed head → the
+   *  resolved `{ measure }` browse read; a grained governed / inline / unbound head has no
+   *  single ObsQuery → a DECLARED honest note (never an empty void, Law 11). */
   obsQuery: string
 }
 
 /**
- * The steward-plane detail: the raw `pipeline` JSON + the lowered head ObsQuery (the wire
- * truth behind the governed rendering). `queryReadObs` is the SAME lowering the live
- * source read uses — the pane shows exactly what a STEWARD head issues to the store.
+ * The DECLARED wire note for a head whose obs read is not a single ObsQuery (`sourceHeadObs`
+ * returns `undefined`): unbound / inline / grained-governed. NEVER an empty string — Law 11
+ * in our own instrument (the pane must always answer "what is asked of the store?"). Bilingual.
  */
-export function describeStewardDetail(model: WorkbenchModel): StewardDetail {
+function stewardHeadNote(head: SourceStep, locale: Locale): string {
+  const en = locale === 'en'
+  // Unbound FIRST — a `metrics: []` head is `'metrics' in head` yet reads nothing.
+  if (!isHeadBound(head)) {
+    return en ? 'Bind a metric — the query will appear here' : 'მიაბი მეტრიკა — მოთხოვნა აქ გამოჩნდება'
+  }
+  if ('rows' in head) {
+    return en ? 'No wire query (inline rows)' : 'wire-მოთხოვნა არ არის (inline rows)'
+  }
+  // A GRAINED governed head — the shaped M2 read, warmed per requirement through the metric
+  // resolver's grain algebra (sourceHeadObs returns undefined BY DESIGN for this form).
+  return en
+    ? 'Governed source — lowered through the metric resolver (grain algebra)'
+    : 'მართული წყარო — იტანება მეტრიკის რეზოლვერით (გრეინ-ალგებრა)'
+}
+
+/**
+ * The steward-plane detail: the raw `pipeline` JSON + the lowered head ObsQuery (the wire
+ * truth behind the governed rendering). The ObsQuery comes from the ONE engine SSOT
+ * `sourceHeadObs(head)` — the EXACT obs read/warm the live source read & useNodeRows align
+ * to — so the pane shows precisely what the head issues to the store (assert-equal, not
+ * resemble). When there is no single ObsQuery (grained governed / inline / unbound), a
+ * DECLARED bilingual note stands in its place — never an empty, height-less void (Law 11).
+ */
+export function describeStewardDetail(model: WorkbenchModel, locale: Locale): StewardDetail {
   const spec = fromWorkbenchModel(model)
   const head = model.head
-  // Fail-soft: lowering an unregistered/half-authored ref must never throw the pane (the
-  // same fail-soft discipline the live grid holds — Law 11). A failed lower shows an
-  // honest note, not a crash.
-  let obsQuery: string
-  if ('query' in head) {
-    try {
-      obsQuery = JSON.stringify(queryReadObs(head.query as ObsQuery), null, 2)
-    } catch {
-      obsQuery = '// head query could not be lowered (unresolved reference)'
-    }
-  } else if ('metrics' in head) {
-    obsQuery = '// governed source — lowered through the metric resolver (grain algebra), not a single ObsQuery'
-  } else {
-    obsQuery = '// inline source — read-free (literal rows)'
-  }
+  // An UNBOUND governed head (`metrics: []`) still yields a degenerate `{ measure: [] }`
+  // from sourceHeadObs — a read of nothing. That is not the wire truth an author wants to
+  // see; it is the affordance to bind. So the DECLARED note wins for an unbound head, and
+  // the SSOT ObsQuery is shown only for a genuinely-bound read (steward query / grain-∅
+  // governed browse) — the EQUALITY fitness holds for exactly those bound-read forms.
+  const obs = isHeadBound(head) ? sourceHeadObs(head) : undefined
+  const obsQuery = obs !== undefined
+    ? JSON.stringify(obs, null, 2)          // steward query verbatim OR grain-∅ governed { measure }
+    : stewardHeadNote(head, locale)         // no single read ⇒ a declared honest note (never a void)
   return { json: JSON.stringify(spec, null, 2), obsQuery }
 }
