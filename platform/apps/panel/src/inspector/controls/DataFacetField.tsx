@@ -1,47 +1,54 @@
 // ── DataFacetField — the DATA facet control (PropFieldType 'data-pipeline') ───────
 //
-//  The second FACET control (sibling of StyleField): it authors an element's whole
-//  `data: DataSpec` in place — the un-burying of Gap 3 (SPEC-deep-authorability-
-//  completion). Registered in FieldControlRegistry under `type:'data-pipeline'`, so the
-//  generic Inspector dispatches the DATA facet's `contract` field to it (genericity in
-//  the DISPATCH — a rich facet resolves to a rich editor, exactly like Webflow/Builder.io
-//  project a fixed Data tab per data-bindable element).
+//  ONE MODEL, TWO ZOOMS (card 0086, owner-caught duality). The inspector DATA facet is a
+//  compact READ-ONLY *summary* of the element's data + ONE prominent door into the
+//  workbench — never a SECOND parallel editor beside it. This closes the owner's
+//  «workbench-ს თუ ააგეთ-პაიპლაინს ვეღარ ვარჩევ» confusion: the workbench is THE editor
+//  (Power BI's Power Query Editor = the editor; the report view = compact wells · Figma:
+//  inspector = projection, advanced = escalation). Progressive disclosure with ONE editing
+//  model, never two.
 //
-//  TWO reconciled modes over ONE `data` value (one onChange → props.data):
-//    • BIND (governed, the simple default) — the MetricPalette: pick a governed metric
-//      → `bindMeasureToSpec` writes `query.measure`. This is the element.data metric-bind
-//      re-homed as ONE MODE of the facet, not a parallel section (SPEC reconciliation).
-//    • PIPE (advanced, metric-OPTIONAL) — the existing DataSpecEditor: author a raw
-//      query / transform / derive / calc pipeline OVER a governed source, with or without
-//      a metric. Lazy-loaded so the editor suite never weighs down the eager inspector
-//      chunk (mirrors ModelSurface's lazy DataModelingPanel).
+//  What the facet shows (author plane):
+//    • SUMMARY (read-only) — governed source name · step count · row count/state, all
+//      derived from the SAME `toWorkbenchModel` the workbench operates on (one derivation,
+//      no second interpretation). Honest states incl. unbound-as-affordance (AR-52 «the
+//      canvas never lies»: no-data / loading / error are DECLARED, never faked).
+//    • THE DOOR — one prominent «გახსენი ვორქბენჩი» primary action into the three-pane
+//      surface (this also closes the owner's discoverability complaint).
+//    • QUICK-BIND — for an UNBOUND element only, the MetricPalette one-gesture bind (a
+//      Power BI fields-well equivalent — a quick action, not an editor).
 //
-//  D-DA1 — the governance LENS, not a wall. This control is the AUTHOR's pipe-over-
-//  governed surface: every mode here composes over ALREADY-GOVERNED sources (metrics,
-//  cube measures, prior specs). Defining a RAW BASE SOURCE (a brand-new dataset — the
-//  SourceAuthoringPanel / Excel upload in DataModelingPanel) stays Steward-gated in
-//  ModelSurface and is deliberately NOT mounted here — so the pipe is un-buried for
-//  authors WITHOUT dissolving the governance that keeps published numbers trustworthy
-//  (Law 9). Encoded + guarded by FF-AUTHOR-NO-QUERY (the lens form).
+//  The full inline DataSpec editor LEFT the author plane (its components live re-homed in
+//  the workbench). The Steward-advanced LENS retains the raw editor (the plane law: raw
+//  spec authoring is a steward concern; the formal ⛔ demotion is gated on ADR-047 Wave B
+//  and is deliberately NOT fired here).
+//
+//  D-DA1 — the governance LENS, not a wall: every mode here composes over ALREADY-GOVERNED
+//  sources. Defining a RAW BASE SOURCE stays Steward-gated in ModelSurface, NOT here
+//  (FF-AUTHOR-NO-QUERY, the lens form).
 //
 //  Controlled component: value in (the current DataSpec | undefined), onChange out (the
-//  next whole spec). WCAG 2.1 AA: labelled regions, keyboard-reachable disclosure.
+//  next whole spec). WCAG 2.1 AA: labelled summary group, keyboard-reachable door + editor.
 //
 import { lazy, Suspense } from 'react'
-import { Box, Typography, Divider, Button, Accordion, AccordionSummary, AccordionDetails } from '@mui/material'
+import { Box, Typography, Button, Accordion, AccordionSummary, AccordionDetails } from '@mui/material'
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
-import TuneIcon from '@mui/icons-material/Tune'
-import type { DataSpec } from '@statdash/engine'
+import LaunchIcon from '@mui/icons-material/Launch'
+import type { DataSpec, EncodingSpec } from '@statdash/engine'
 import type { FieldControlProps } from '../fieldControl.types'
 import { SuspenseFallback } from '../../shared/SuspenseFallback'
 import { MetricPalette } from '../../discovery/MetricPalette'
 import { useFocusEscalation } from '../focusEscalation'
+import { useRole } from '../../studio/useRole'
 import { bindMeasureToSpec } from './dataFacetModel'
+import { toWorkbenchModel, isHeadBound } from '../../features/data-layer/workbench/workbenchModel'
+import { usePipelineSourceRows, type PreviewStatus } from '../../features/data-layer/pipeline-preview/usePipelineSourceRows'
+import { useGridLabels } from '../../features/data-layer/pipeline-preview/useGridLabels'
 
-// Lazy: the DataSpec editor suite (+ dnd-kit) loads only when an author expands the
-// advanced pipeline — never in the eager inspector chunk. Named import via the direct
-// module (NOT the data-layer barrel, which also exports the Steward-only
-// DataModelingPanel / source authoring) so the author facet pulls ONLY the pipe editor.
+// Lazy: the raw DataSpec editor suite (+ dnd-kit) loads only when a STEWARD expands the
+// advanced editor — never in the eager inspector chunk / never for an author. Named import
+// via the direct module (NOT the data-layer barrel, which also exports the Steward-only
+// DataModelingPanel / source authoring) so the facet pulls ONLY the pipe editor.
 const DataSpecEditor = lazy(() =>
   import('../../features/data-layer/DataSpecEditor').then((m) => ({ default: m.DataSpecEditor })),
 )
@@ -53,6 +60,10 @@ const DataWorkbench = lazy(() =>
   import('../../features/data-layer/workbench/DataWorkbench').then((m) => ({ default: m.DataWorkbench })),
 )
 
+/** A neutral encoding for the summary's source read when the model is absent (its result
+ *  is 'unbound' in that branch — the hook must still be called unconditionally). */
+const EMPTY_ENCODING: EncodingSpec = { label: '' }
+
 // A fresh, valid-by-default PIPELINE spec — the browse-first Get + result (E1): opening
 // the workbench on an unbound element seeds this, and the grid shows the "pick a metric"
 // browse hint until one is chosen. The ⛔ W-P5 emission flip: the workbench's fresh spec
@@ -61,26 +72,61 @@ function freshPipelineSpec(): DataSpec {
   return { type: 'pipeline', pipe: [{ op: 'source', metrics: [] }], encoding: { label: 'label' } }
 }
 
-export function DataFacetField({ field, value, locale, onChange }: FieldControlProps) {
+/** The honest, bilingual row-count/state line (AR-52 — a declared state, never a fake 0). */
+function rowStateLabel(status: PreviewStatus, count: number, en: boolean): string {
+  switch (status) {
+    case 'ok':          return en ? `${count} rows`       : `${count} სტრიქონი`
+    case 'loading':     return en ? 'loading…'            : 'იტვირთება…'
+    case 'error':       return en ? 'read error'          : 'წაკითხვის შეცდომა'
+    case 'unavailable': return en ? 'live unavailable'    : 'ცოცხალი მიუწვდომელია'
+    case 'unbound':     return en ? 'not bound'           : 'მიუბმელი'
+  }
+}
+
+function SummaryRow({ label, value, testid }: { label: string; value: string; testid: string }) {
+  return (
+    <Box sx={{ display: 'flex', gap: 1, alignItems: 'baseline', justifyContent: 'space-between' }}>
+      <Typography variant="caption" color="text.secondary">{label}</Typography>
+      <Typography variant="body2" fontWeight={600} data-testid={testid} sx={{ textAlign: 'right', minWidth: 0, overflowWrap: 'anywhere' }}>
+        {value}
+      </Typography>
+    </Box>
+  )
+}
+
+export function DataFacetField({ value, field, locale, onChange }: FieldControlProps) {
   const spec = value as DataSpec | undefined
   const en = locale === 'en'
 
   // The overflow-escalation host (StudioShell, around the dock). Null in isolation
-  // (unit tests / other mounts) → the workbench door hides, the in-place editors below
-  // still serve — fail-soft, zero regression (mirrors NestedItemControl's fallback).
+  // (unit tests / other mounts) → the workbench door hides, the summary still serves —
+  // fail-soft, zero regression (mirrors NestedItemControl's fallback).
   const escalation = useFocusEscalation()
+  const role = useRole()
+  const isSteward = role === 'steward'
 
-  // The workbench is PIPELINE-shaped (Get + tail + generated query). It opens for a
-  // `pipeline` OR a legacy `query` (via its desugared view) OR an unbound element
-  // (seeded fresh, browse-first); any other spec kind is edited through the existing
-  // conversion (the advanced accordion below) — pre-note #2.
+  // The ONE model the workbench operates on (W-P5b) — the summary derives from THIS, not a
+  // second interpretation. `null` for a spec the workbench does not shape (row-list/…).
+  const model = toWorkbenchModel(spec)
+  const bound = !!model && isHeadBound(model.head)
+  const stepCount = model?.tail.length ?? 0
+  const nonShaped = !!spec && !model
+
+  // The live source read — the honest row-count/state for the summary (the SAME read the
+  // canvas & workbench issue; unbound/loading/error/no-data are DECLARED, never faked).
+  const source = usePipelineSourceRows(model?.head, model?.encoding ?? EMPTY_ENCODING)
+  const { columnLabel } = useGridLabels(model?.head)
+  const sourceName = bound ? columnLabel('value') : ''
+
+  // The workbench opens for a `pipeline` OR a legacy `query` (via its desugared view) OR an
+  // unbound element (seeded fresh, browse-first); any other spec kind is edited through the
+  // steward raw editor below.
   const canWorkbench = !!escalation && (!spec || spec.type === 'query' || spec.type === 'pipeline')
 
   const openWorkbench = () => {
     if (!escalation) return
-    // Ensure the field carries a workbench-shaped spec BEFORE handing it to the workbench,
-    // so the escalation's live binding reads it from the first render (the host binds
-    // `props[field.field]` live each render).
+    // Ensure the field carries a workbench-shaped spec BEFORE handing it over, so the
+    // escalation's live binding reads it from the first render.
     if (!spec || (spec.type !== 'query' && spec.type !== 'pipeline')) onChange(freshPipelineSpec())
     escalation.escalate({
       source:    'node-field',
@@ -96,59 +142,78 @@ export function DataFacetField({ field, value, locale, onChange }: FieldControlP
 
   return (
     <Box className="insp-data" data-testid="data-facet-field" sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-      {/* ── BIND mode — the governed metric palette (author-safe default) ─────────── */}
-      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-        <MetricPalette
-          locale={locale}
-          canBind
-          bindHint={en ? 'Bind a governed metric to this element' : 'მიაბით მართული მეტრიკა ამ ელემენტს'}
-          onBind={(metricId) => onChange(bindMeasureToSpec(spec, metricId))}
-        />
+      {/* ── SUMMARY (read-only) — the ONE model, honest state (never a fake 0) ────────── */}
+      <Box
+        role="group"
+        aria-label={en ? 'Data summary' : 'მონაცემთა შეჯამება'}
+        data-testid="data-facet-summary"
+        sx={{
+          display: 'flex', flexDirection: 'column', gap: 0.75,
+          p: 1.25, border: 1, borderColor: 'divider', borderRadius: 1, bgcolor: 'action.hover',
+        }}
+      >
+        <Typography variant="overline" color="text.secondary">{en ? 'Data' : 'მონაცემები'}</Typography>
+        {bound ? (
+          <>
+            <SummaryRow label={en ? 'Source' : 'წყარო'} value={sourceName} testid="summary-source" />
+            <SummaryRow label={en ? 'Steps' : 'ნაბიჯები'} value={String(stepCount)} testid="summary-steps" />
+            <SummaryRow label={en ? 'Rows' : 'სტრიქონები'} value={rowStateLabel(source.status, source.sourceRows.length, en)} testid="summary-rows" />
+          </>
+        ) : nonShaped ? (
+          <Typography variant="body2" color="text.secondary" data-testid="summary-nonpipeline">
+            {en
+              ? `This element uses a "${spec!.type}" data spec — open the steward raw editor below to change it.`
+              : `ამ ელემენტს აქვს "${spec!.type}" ტიპის მონაცემები — შესაცვლელად გახსენით ნედლი რედაქტორი ქვემოთ.`}
+          </Typography>
+        ) : (
+          <Typography variant="body2" color="text.secondary" data-testid="summary-unbound">
+            {en
+              ? 'No data bound yet — bind a governed metric, or open the workbench to build a pipeline.'
+              : 'მონაცემები ჯერ მიბმული არ არის — მიაბით მართული მეტრიკა, ან გახსენით ვორქბენჩი პაიპლაინის ასაგებად.'}
+          </Typography>
+        )}
       </Box>
 
-      {/* ── OPEN THE WORKBENCH — the primary door into the three-pane surface (W-P2).
-          Escalates OUT to the wide focus-view: step rail · live grid · generated query.
-          The author starts from Get, never from a spec-type Select (SPEC §3.4). ─────── */}
+      {/* ── THE DOOR — the ONE prominent primary action into the three-pane surface ──── */}
       {canWorkbench && (
         <Button
-          size="small"
-          variant="outlined"
-          startIcon={<TuneIcon />}
+          variant="contained"
+          startIcon={<LaunchIcon />}
           onClick={openWorkbench}
           data-testid="open-data-workbench"
-          sx={{ alignSelf: 'flex-start' }}
+          fullWidth
         >
-          {en ? 'Open data workbench' : 'გახსენით მონაცემთა ვორქბენჩი'}
+          {en ? 'Open data workbench' : 'გახსენი ვორქბენჩი'}
         </Button>
       )}
 
-      <Divider textAlign="left">
-        <Typography variant="caption" color="text.secondary">
-          {en ? 'or author a pipeline' : 'ან ააგეთ პაიპლაინი'}
-        </Typography>
-      </Divider>
+      {/* ── QUICK-BIND — the one-gesture governed metric bind, UNBOUND elements only
+          (Power BI fields-well class: a quick action, not an editor). ───────────────── */}
+      {!bound && !nonShaped && (
+        <MetricPalette
+          locale={locale}
+          canBind
+          bindHint={en ? 'Or bind a governed metric directly' : 'ან პირდაპირ მიაბით მართული მეტრიკა'}
+          onBind={(metricId) => onChange(bindMeasureToSpec(spec, metricId))}
+        />
+      )}
 
-      {/* ── PIPE mode — the full DataSpec editor (metric-OPTIONAL, over governed data) ─ */}
-      <Accordion disableGutters variant="outlined" data-testid="data-facet-pipe">
-        <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-          <Typography variant="subtitle2" fontWeight={600}>
-            {en ? 'Data pipeline' : 'მონაცემთა პაიპლაინი'}
-          </Typography>
-        </AccordionSummary>
-        <AccordionDetails>
-          <Suspense fallback={<SuspenseFallback label={en ? 'Loading data editors' : 'იტვირთება რედაქტორები'} fill={false} />}>
-            <DataSpecEditor value={spec ?? null} onChange={(next) => onChange(next)} />
-          </Suspense>
-        </AccordionDetails>
-      </Accordion>
-
-      {/* Governance orientation (the lens): raw new datasets live in the Steward's Data
-          model. Author here = pipe over governed sources (D-DA1). */}
-      <Typography variant="caption" color="text.disabled">
-        {en
-          ? 'Composes over governed sources. Define a new raw dataset in the Data model (Steward).'
-          : 'იყენებს მართულ წყაროებს. ახალი ნედლი მონაცემთა ნაკრები განისაზღვრება მონაცემთა მოდელში (სტიუარდი).'}
-      </Typography>
+      {/* ── STEWARD lens — the raw DataSpec editor, retained (plane law; the ⛔ demotion
+          is gated on ADR-047 Wave B and NOT fired here). Absent for the author plane. ── */}
+      {isSteward && (
+        <Accordion disableGutters variant="outlined" data-testid="data-facet-pipe">
+          <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+            <Typography variant="subtitle2" fontWeight={600}>
+              {en ? 'Raw editor (steward)' : 'ნედლი რედაქტორი (სტიუარდი)'}
+            </Typography>
+          </AccordionSummary>
+          <AccordionDetails>
+            <Suspense fallback={<SuspenseFallback label={en ? 'Loading data editors' : 'იტვირთება რედაქტორები'} fill={false} />}>
+              <DataSpecEditor value={spec ?? null} onChange={(next) => onChange(next)} />
+            </Suspense>
+          </AccordionDetails>
+        </Accordion>
+      )}
     </Box>
   )
 }

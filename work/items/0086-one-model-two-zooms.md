@@ -1,7 +1,8 @@
 ---
 id: "0086"
 title: "ONE MODEL, TWO ZOOMS — the DATA facet becomes summary+door; the workbench is THE editor (owner-caught duality)"
-status: QUEUED-HOT (2026-07-18, owner verbatim: «ორი ვარიანტია — workbench ან ააგეთ პაიპლაინი, ვეღარ ვხვდები რა განსხვავებაა… გაერთიანდეს?» — lead decided: unify per the Power BI / Figma canon)
+status: DONE (2026-07-18, build agent Opus) — the DATA facet is now SUMMARY + one prominent «გახსენი ვორქბენჩი» door; the inline full editor left the author plane (retained steward-lens only, plane law). Live-verified: bound element → summary (წყარო·ნაბიჯები·სტრიქონები, 415 rows read honestly) + door, `inlinePipeAuthor=0`; unbound → honest affordance + quick-bind; zero console errors. Shots: work/authoring-truth/0086/01-02. Gates: panel vitest 1085/0 · tsc -b apps/panel clean · eslint clean.
+was: QUEUED-HOT (2026-07-18, owner verbatim: «ორი ვარიანტია — workbench ან ააგეთ პაიპლაინი, ვეღარ ვხვდები რა განსხვავებაა… გაერთიანდეს?» — lead decided: unify per the Power BI / Figma canon)
 class: S-M
 priority: P0
 owner: lead → build agent (Opus); pairs with 0085 in one wave (same facet/pane area)
