@@ -73,3 +73,12 @@ The single highest-leverage non-feature item in the scan is **Stage-0 CI resurre
 ## Maintenance
 - When an entry is accepted, the lead registers/advances it in `ARCHITECTURE-REGISTRY.md` (AR-*) and this row points to the AR. This file never becomes a second competing registry.
 - Re-rank at every Leader's Scan against the refreshed `BENCHMARK-REFERENCE-PLATFORMS.md`. YAGNI governs net-new surfaces — a candidate waits for a real consumer.
+
+## Archaeology revivals (2026-07-18 — dig report: `docs/architecture/audit/ARCHAEOLOGY-2026-07-18-lost-concepts.md`)
+
+Mined from docs/archive + examples on the owner's ask; both owner-remembered shapes (href/fromSDMX per-spec source · tree-field derive) verified ALIVE (absorbed/upgraded). Four fragments worth reviving, ranked:
+
+- **R1 · Remote self-describing structure** for external SDMX sources (`structureUrl` — the Tier-2/3 envelope's good half). Anchor: SDMX Registry structure endpoints · Grafana getMetadata · Power BI composite models. Folds: AR-51 + W-P6 Floor-1 (unify the D-HREF door with AR-51 as ONE item). Effort M–L; trigger = the first real external source.
+- **R2 · One hierarchy grammar** — tree-field ops reify from the governed codelist (today: three coexisting lookup surfaces). Anchor: SDMX HierarchicalCodelist · LookML drill_fields · Power BI/Cube hierarchies. Folds: ADR-034 S4 seam. Effort S–M.
+- **R3 · Perspective facet (small multiples)** — axis `render:'switch'|'facet'`. Anchor: Vega-Lite facet/GoG · Power BI small multiples. Folds: AR-31 lattice. Effort M; YAGNI-gated on a real trellis ask.
+- **R4 · Extract/freeze** — snapshot a live query into a `static` source. Anchor: Tableau Extract · Power BI Import · Superset upload-to-dataset. Folds: AR-48 delivery port (built, unwired). Effort S–M.
