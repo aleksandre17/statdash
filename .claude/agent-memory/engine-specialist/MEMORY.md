@@ -6,8 +6,7 @@
 - [Worktree vitest hoisted](feedback_worktree_vitest_hoisted.md) — pointer to plugins-specialist's consolidated worktree/Windows pitfalls file
 - [Write tool byte-fidelity](feedback_write_tool_byte_fidelity.md) — Write silently normalizes exotic whitespace (e.g. NBSP) when retyping from memory; use Edit or verify byte-identity
 - [ar36 pivot](project_ar36_pivot.md) — CONSOLIDATED: P0 EncodingChannel CtxRef seam + P1-P3 derive/fold facts
-- [Deep engine audit 2026-07-15](project_deep_engine_audit_2026_07_15.md) — honest-state discarded at querySync; lineage claimed-but-unbuilt; additivity guard path-dependent; W1 Cell-seam LANDED
-- [Cell honest-state seam](reference_cell_honest_state_seam.md) — Cell/ValueState + storeCell (PM-1); no-data≠genuine-0 needs obs-scan; obsAtCoord SSOT w/ preliminary; KpiDef.state consumer
+- [Cell honest-state seam](reference_cell_honest_state_seam.md) — Cell/ValueState + storeCell (PM-1); no-data≠genuine-0 needs obs-scan; obsAtCoord SSOT w/ preliminary; ADR-047 Wave B = storeCellAt+coalesce
 - [ADR-042 Placement port](project_adr042_placement_port.md) — Slice 0 LANDED: placePart (writePart's structural sibling) on PartSource; 4 residence adapters; PlacementPlan/resolvePlacementPlan; ONE commit site placeNode.ts; insert+outline-move refactored byte-identical
 - [ADR-041 Part grammar](project_adr041_part_grammar.md) — Phase 6 capstone LANDED: isWrapper/isNodeContainer derived, kind-as-containment retired, FF-DERIVED-CONTAINMENT hard `[]`; BandDescriptor kept node-level alias (Delta 3)
 - [S6 chrome reversible landed](project_s6_chrome_reversible_landed.md) — chrome=sourced Part of site-frame; mechanism (site-frame META + registry-by-source collision fix + chromeParts) LANDED green; one-way selection fold HALTED (item-4/5 entangled)
@@ -64,4 +63,5 @@
 - [reversible-expansion parity](feedback_reversible_expansion_parity.md) — prove a core generalization safe via byte-identical parity of the narrow path; single-dialect + arrow + Law-1 grain are hard gates
 - [Pipeline W-P0/W-P4 (ADR-046)](project_pipeline_wp4.md) — LANDED: FF-PIPELINE-EQUIV (requirements-not-rows) + FF-VERB-COVERAGE + pipeline discriminant + source head op + desugarToPipeline (shadow) + shared requirement kernels (W-P0 detail in project_pipeline_wp0.md)
 - [Pipeline W-P5a (ADR-046)](project_pipeline_wp5a.md) — LANDED (2efc36b): live desugar switch (query/transform/pivot→spine); ⛔ timeseries/growth/ratio-list BLOCKED on a value-cell source variant (escalated)
-- [Pipeline W-P5c (ADR-046)](project_pipeline_wp5c.md) — LANDED (37bf4fd): grain-∅ governed head BROWSES (Addendum 2); base crack CLOSED live (200 rows); sourceHeadObs warm SSOT; ⛔ calc -100 coordinate seam ESCALATED (foreign dim pin + resolveMetricValue no-data), door held
+- [Pipeline W-P5c (ADR-046)](project_pipeline_wp5c.md) — LANDED (37bf4fd): grain-∅ governed head BROWSES (Addendum 2); base crack CLOSED; calc -100 seam ESCALATED → CLOSED by [Metric-natural](reference_metric_natural_seam.md)
+- [Metric-natural seam (ADR-047 A)](reference_metric_natural_seam.md) — closes calc-browse −100; foreign ctx pins→'' DERIVED from obs (not declared); warm≡read whole-table '' superset; Wave B=honest-null floor
