@@ -18,7 +18,7 @@
 //
 import type { SiteManifestContract, ManifestMetric, ManifestDimension } from '@statdash/contracts'
 import type { DataStore, DatasourceInstanceConfig }            from '@statdash/engine'
-import { registerManifestMetrics, registerManifestDimensions } from '@statdash/engine'
+import { registerManifestMetrics, registerManifestDimensions, scheduleFetch } from '@statdash/engine'
 import type { NavEntry, I18nConfig, ChromeConfig, ChromeEntry } from '@statdash/react'
 import type { NodePageConfig }                                 from '@statdash/react/engine'
 
@@ -136,7 +136,11 @@ export function emptyManifest(): SiteManifest {
 //  honored so a future endpoint shape change doesn't hard-break the client.
 
 export async function fetchBootstrap(baseUrl: string): Promise<SiteManifest> {
-  const res = await fetch(`${baseUrl}/api/bootstrap`)
+  // Through the shared fetch scheduler (ADR-048 D4): a transient boot 429 backs off
+  // and recovers to the real manifest instead of throwing → falling to the English
+  // emptyManifest() dead-end. The dead-end now fires only for a genuinely-down /
+  // unconfigured platform (its designed purpose), never a self-inflicted rate-limit.
+  const res = await scheduleFetch(`${baseUrl}/api/bootstrap`)
   if (!res.ok) throw new Error(`GET /api/bootstrap: ${res.status}`)
   const json = (await res.json()) as { data?: SiteManifest } & Partial<SiteManifest>
   return (json.data ?? (json as SiteManifest))

@@ -13,6 +13,7 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { ApiStore, OBS_WIRE_LIMIT }                         from '../store-api'
+import { FetchScheduler }                                  from '../fetch-scheduler'
 import type { RawObsRow }                                  from '../store-api'
 import type { SectionContext }                             from '../../core/context'
 import type { StoreQuery }                                 from '../store'
@@ -43,8 +44,13 @@ const rawRow: RawObsRow = {
 // Simple identity mapper — engine-agnostic; tests verify raw→Row projection
 const mapRow = (raw: RawObsRow) => ({ ...raw.dim_key, value: raw.obs_value ?? 0 })
 
+// Inject a scheduler with an INSTANT sleep (ADR-048) so the transient-backoff path
+// never waits real time in tests. maxRetries kept default; each attempt still hits
+// the mocked fetch, so retry-count assertions are deterministic.
+const instantScheduler = () => new FetchScheduler({ maxRetries: 4, sleep: async () => {} })
+
 function makeStore(ttlMs?: number) {
-  return new ApiStore(BASE_URL, DATASET_CODE, NON_TIME_DIMS, {}, mapRow, undefined, {}, ttlMs)
+  return new ApiStore(BASE_URL, DATASET_CODE, NON_TIME_DIMS, {}, mapRow, undefined, {}, ttlMs, instantScheduler())
 }
 
 function makeOkResponse(rows: RawObsRow[], etag?: string): Response {
@@ -94,8 +100,22 @@ describe('ApiStore.queryAsync', () => {
     expect(filter['sector']).toBe('S13')
   })
 
-  it('2 — returns state:error on non-2xx response', async () => {
-    vi.mocked(fetch).mockResolvedValueOnce(makeErrorResponse(503, 'unavailable'))
+  it('2 — a genuine (non-transient) error → state:error immediately, no retry', async () => {
+    // 500 is NOT in TRANSIENT_STATUSES → the scheduler does not retry it.
+    vi.mocked(fetch).mockResolvedValueOnce(makeErrorResponse(500, 'boom'))
+
+    const store  = makeStore()
+    const result = await store.queryAsync(obsQuery, ctx)
+
+    expect(result.state).toBe('error')
+    expect(result.error).toContain('500')
+    expect(result.data).toEqual([])
+    expect(fetch).toHaveBeenCalledOnce()   // no retry on a hard error
+  })
+
+  it('2b — a PERSISTENT transient (503) is retried, then returns an honest transient error with no cache (ADR-048)', async () => {
+    // Every attempt 503s (no Retry-After) → exponential backoff, exhausts the budget.
+    vi.mocked(fetch).mockResolvedValue(makeErrorResponse(503, 'unavailable'))
 
     const store  = makeStore()
     const result = await store.queryAsync(obsQuery, ctx)
@@ -103,6 +123,21 @@ describe('ApiStore.queryAsync', () => {
     expect(result.state).toBe('error')
     expect(result.error).toContain('503')
     expect(result.data).toEqual([])
+    expect(result.meta?.transient).toBe(true)   // flagged transient, never a hard error
+    expect(fetch).toHaveBeenCalledTimes(5)       // 1 initial + 4 retries, then STOP
+  })
+
+  it('2c — a transient 503 that RECOVERS resolves to the rows (never empty, never thrown)', async () => {
+    vi.mocked(fetch)
+      .mockResolvedValueOnce(makeErrorResponse(503))     // first attempt rate-limited
+      .mockResolvedValueOnce(makeOkResponse([rawRow]))   // retry succeeds
+
+    const store  = makeStore()
+    const result = await store.queryAsync(obsQuery, ctx)
+
+    expect(result.state).toBe('done')
+    expect(result.data).toHaveLength(1)
+    expect(fetch).toHaveBeenCalledTimes(2)
   })
 
   it('3 — caches result: fetch called only once for two identical queries', async () => {

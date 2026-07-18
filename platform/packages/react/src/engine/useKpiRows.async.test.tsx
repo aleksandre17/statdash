@@ -231,6 +231,11 @@ describe('useKpiRows — async store warms BOTH periods of a yoy KPI', () => {
     const p1 = qa({ type: 'val', code: 'GDP' }, ctx2)
     const p2 = qa({ type: 'val', code: 'GDP' }, ctx2)
 
+    // The fetch now goes through the FetchScheduler's admission gate (ADR-048): its
+    // `await acquire()` defers the fetch call by a microtask even when a slot is free.
+    // CachedStore._inflight still dedups the two concurrent calls to ONE — flush the
+    // microtask queue, then assert the dedup invariant (one fetch, not two).
+    for (let i = 0; i < 4; i++) await Promise.resolve()
     expect(fetch).toHaveBeenCalledTimes(1)   // deduped — not 2
 
     resolveFetch(okResponse([{ time_period: '2025', dim_key: {}, obs_value: 110, obs_status: 'A', obs_attribute: {} }]))

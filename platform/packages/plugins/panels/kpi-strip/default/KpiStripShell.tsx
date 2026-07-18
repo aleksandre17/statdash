@@ -31,10 +31,14 @@ function KpiStripControl({ def, ctx }: { def: KpiStripNode; ctx: RenderContext }
   //  instead of a fabricated number. loading/error never arise on the sync interpret
   //  path (async is handled upstream by useKpiRows' suspend) but carry a safe fallback.
   const stateCopy: Record<KpiHonestState, { title: string; hint: string }> = {
-    'no-data': { title: t('no-data-title'), hint: t('no-data-hint') },
-    masked:    { title: t('masked-title'),  hint: t('masked-hint')  },
-    loading:   { title: t('no-data-title'), hint: t('no-data-hint') },
-    error:     { title: t('no-data-title'), hint: t('no-data-hint') },
+    'no-data':            { title: t('no-data-title'),  hint: t('no-data-hint')  },
+    masked:               { title: t('masked-title'),   hint: t('masked-hint')   },
+    loading:              { title: t('no-data-title'),  hint: t('no-data-hint')  },
+    // A transient 429/503 in backoff (ADR-048) — a bilingual retrying affordance,
+    // never a fabricated 0. The async render path usually auto-recovers under Suspense;
+    // this copy covers the interpret-derived transient tile.
+    'transient-retrying': { title: t('retrying-title'), hint: t('retrying-hint') },
+    error:                { title: t('no-data-title'),  hint: t('no-data-hint')  },
   }
 
   // ── ADR-041 · D-F2 — the value band is the SOLE residence ──────────────────

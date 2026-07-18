@@ -18,7 +18,11 @@ export type { DataStore, Requirement, StoreQuery, StoreCaps,
               QueryResult, ResultMeta, Unsubscribe, GrainLevel, RollupOp } from './store'
 export { staticStore, storeVal, storeValAt, storeObs, storeSchema, runBatch, asyncFromSync } from './store'
 export type { Cell, ValueState }                                   from './cell'
-export { storeCell, obsAtCoord, obsStatusOf }                      from './cell'
+export { storeCell, obsAtCoord, obsStatusOf,
+         okCell, noDataCell, unboundCell, maskedCell, retryingCell } from './cell'
+export type { FetchImpl, FetchSchedulerOptions, RetryInfo }        from './fetch-scheduler'
+export { FetchScheduler, defaultFetchScheduler, scheduleFetch,
+         isTransientStatus, parseRetryAfterMs, TRANSIENT_STATUSES } from './fetch-scheduler'
 export { rollupValues }                                            from './grain'
 export type { ExternalStoreOptions }                               from './store-impl'
 export { ExternalStore, CachedStore }                              from './store-impl'

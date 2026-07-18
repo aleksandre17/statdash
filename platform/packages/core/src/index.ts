@@ -261,7 +261,12 @@ export type { DataStore, Requirement, StoreQuery, StoreCaps,
 export { staticStore, storeVal, storeValAt, storeObs, storeSchema, runBatch, asyncFromSync } from './data/store'
 // ── The honest value envelope — AR-52 / Law 11 (the canvas never lies) ─────────
 export type { Cell, ValueState }                                       from './data/cell'
-export { storeCell, obsAtCoord, obsStatusOf }                          from './data/cell'
+export { storeCell, obsAtCoord, obsStatusOf,
+         okCell, noDataCell, unboundCell, maskedCell, retryingCell }   from './data/cell'
+// ── The transient-failure grammar + the ONE fetch scheduler — ADR-048 ──────────
+export type { FetchImpl, FetchSchedulerOptions, RetryInfo }            from './data/fetch-scheduler'
+export { FetchScheduler, defaultFetchScheduler, scheduleFetch,
+         isTransientStatus, parseRetryAfterMs, TRANSIENT_STATUSES }    from './data/fetch-scheduler'
 export { rollupValues }                                                from './data/grain'
 export type { ExternalStoreOptions }                                   from './data/store-impl'
 export { ExternalStore, CachedStore }                                  from './data/store-impl'

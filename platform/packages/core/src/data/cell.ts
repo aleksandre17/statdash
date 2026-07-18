@@ -30,12 +30,13 @@ import type { ObsStatus }              from '../core/provenance'
 //
 //  The level-of-honesty a resolved value carries. Exactly one applies to a Cell.
 export type ValueState =
-  | 'ok'        // a real value — INCLUDING a genuine 0
-  | 'no-data'   // coordinate is valid but the store has no observation there
-  | 'unbound'   // the spec is incomplete — no measure/coordinate to read (authoring)
-  | 'loading'   // an async read is in flight (the QueryResult.state that dies at querySync)
-  | 'error'     // the read failed
-  | 'masked'    // suppressed by OBS_STATUS 'c' — value WITHHELD, never rendered as a number
+  | 'ok'                 // a real value — INCLUDING a genuine 0
+  | 'no-data'            // coordinate is valid but the store has no observation there
+  | 'unbound'            // the spec is incomplete — no measure/coordinate to read (authoring)
+  | 'loading'            // an async read is in flight (the QueryResult.state that dies at querySync)
+  | 'transient-retrying' // a read hit a transient failure (429/503) and is backing off/retrying (ADR-048)
+  | 'error'              // the read failed
+  | 'masked'             // suppressed by OBS_STATUS 'c' — value WITHHELD, never rendered as a number
 
 /**
  * The honest value envelope. `value` is `null` for every non-`ok` state — a Cell
@@ -51,10 +52,12 @@ export interface Cell {
 }
 
 // ── Cell constructors (readability at the call sites) ──────────────────────────
-export const okCell      = (value: number, status?: ObsStatus): Cell => ({ value, state: 'ok', status })
-export const noDataCell  = (): Cell                                   => ({ value: null, state: 'no-data' })
-export const unboundCell = (): Cell                                   => ({ value: null, state: 'unbound' })
-export const maskedCell  = (): Cell                                   => ({ value: null, state: 'masked', status: 'c' })
+export const okCell        = (value: number, status?: ObsStatus): Cell => ({ value, state: 'ok', status })
+export const noDataCell    = (): Cell                                   => ({ value: null, state: 'no-data' })
+export const unboundCell   = (): Cell                                   => ({ value: null, state: 'unbound' })
+export const maskedCell    = (): Cell                                   => ({ value: null, state: 'masked', status: 'c' })
+/** A read in transient backoff/retry (429/503) — value withheld, never a fake 0 (ADR-048). */
+export const retryingCell  = (): Cell                                   => ({ value: null, state: 'transient-retrying' })
 
 // ── obsAtCoord — the observation slice at a coordinate (the SSOT scan) ──────────
 //

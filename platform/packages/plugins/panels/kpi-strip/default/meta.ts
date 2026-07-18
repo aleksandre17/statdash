@@ -50,6 +50,9 @@ export const META: PanelSliceMeta = {
       // masked: SDMX OBS_STATUS 'c' — confidential, the value must NOT be published.
       'masked-title':  'კონფიდენციალური',
       'masked-hint':   'მნიშვნელობა დაფარულია',
+      // transient-retrying (ADR-048): a 429/503 in backoff — auto-recovering, never a fake 0.
+      'retrying-title': 'მონაცემი იტვირთება…',
+      'retrying-hint':  'დროებითი შეფერხება — ხელახლა ვცდით',
     },
     en: {
       'trend-up': 'Up:', 'trend-down': 'Down:', 'trend-flat': 'Flat:',
@@ -60,6 +63,8 @@ export const META: PanelSliceMeta = {
       'no-data-hint':  'No observation for this coordinate',
       'masked-title':  'Confidential',
       'masked-hint':   'Value withheld',
+      'retrying-title': 'Retrying…',
+      'retrying-hint':  'Temporary delay — retrying',
     },
   },
 }

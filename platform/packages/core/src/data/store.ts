@@ -105,6 +105,14 @@ export interface ResultMeta {
   totalRows?:  number
   /** True when the response limit was hit and more rows exist server-side. */
   truncated?:  boolean
+  /** True when the rows are a last-good (stale-while-revalidate) fallback — the
+   *  refresh could not complete (a persistent transient) so a held slice was served
+   *  instead of a crash (ADR-048 D2). */
+  stale?:      boolean
+  /** True when a `state:'error'` envelope is a TRANSIENT failure (429/503 past the
+   *  scheduler's backoff budget) rather than a hard error — the render may show the
+   *  declared retrying state, never a fabricated empty (ADR-048 D3). */
+  transient?:  boolean
 }
 
 export interface QueryResult<T = EngineRow> {

@@ -31,6 +31,8 @@ import { matchesFilter, buildObsFilterParam } from './store-filter'
 import { resolveCachedPointRead } from './store-api-pointread'
 import type { DimVal, FilterValue } from '../sdmx'
 import type { MetadataPort }                                           from '../core/provenance'
+import { defaultFetchScheduler, isTransientStatus } from './fetch-scheduler'
+import type { FetchScheduler }                       from './fetch-scheduler'
 
 
 // ── RawObsRow — server contract shape ───────────────────────────────
@@ -119,6 +121,12 @@ export class ApiStore implements DataStore {
    */
   readonly display:             Record<string, DisplayMap>
   private readonly mapRow:      (raw: RawObsRow) => EngineRow
+  /**
+   * The admission + backoff queue (ADR-048). Defaults to the CLIENT-GLOBAL
+   * singleton so every ApiStore on a page throttles together (the concurrency cap
+   * bounds the whole fan-out, not one store). Injectable for tests.
+   */
+  private readonly scheduler:   FetchScheduler
 
   constructor(
     baseUrl:      string,
@@ -129,6 +137,7 @@ export class ApiStore implements DataStore {
     metadata?:    MetadataPort,
     display:      Record<string, DisplayMap> = {},
     ttlMs:        number = 5 * 60 * 1000,
+    scheduler:    FetchScheduler = defaultFetchScheduler,
   ) {
     this.baseUrl     = baseUrl
     this.datasetCode = datasetCode
@@ -138,6 +147,7 @@ export class ApiStore implements DataStore {
     this.metadata    = metadata
     this.display     = display
     this.ttlMs       = ttlMs
+    this.scheduler   = scheduler
   }
 
   // ── queryAsync — primary async path ──────────────────────────────
@@ -180,14 +190,20 @@ export class ApiStore implements DataStore {
     const storedETag = this._eTags.get(this.datasetCode)
     if (storedETag && cached) headers['If-None-Match'] = storedETag
 
+    // The fetch goes through the CLIENT-GLOBAL scheduler (ADR-048): concurrency-
+    // capped, with Retry-After-honoring backoff on 429/503. A transient failure is
+    // retried INSIDE this await (the promise stays pending → the render's Suspense
+    // skeleton stays up and auto-recovers), never mapped straight to a crashed shell.
     let res: Response
     try {
-      res = await fetch(
+      res = await this.scheduler.schedule(
         `${this.baseUrl}/api/stats/observations?${new URLSearchParams(params)}`,
         { headers },
       )
     } catch (err) {
-      return { state: 'error', data: [], error: String(err) }
+      // Network blip past the retry budget → serve last-good if we hold it (SWR),
+      // else an honest transient error (never a fabricated empty a caller renders as 0).
+      return this.lastGoodOr(cacheKey, { state: 'error', data: [], error: String(err), meta: { transient: true } })
     }
 
     // 304 Not Modified — the held slice is still current. Reuse it and refresh its
@@ -204,7 +220,15 @@ export class ApiStore implements DataStore {
 
     if (!res.ok) {
       const body = await res.text().catch(() => '')
-      return { state: 'error', data: [], error: `HTTP ${res.status}: ${body}` }
+      const transient = isTransientStatus(res.status)
+      // A transient status here means the scheduler EXHAUSTED its backoff budget (a
+      // persistent 429/503). Serve last-good if we hold a slice (SWR); otherwise an
+      // honest transient error — the render shows the declared retrying/failed state,
+      // never a fabricated empty. A non-transient status (4xx/5xx) is a real error.
+      return this.lastGoodOr(cacheKey, {
+        state: 'error', data: [], error: `HTTP ${res.status}: ${body}`,
+        meta: transient ? { transient: true } : undefined,
+      })
     }
 
     // Store fresh ETag for future conditional requests
@@ -233,6 +257,25 @@ export class ApiStore implements DataStore {
         cacheHit:  false,
       },
     }
+  }
+
+  // ── lastGoodOr — stale-while-revalidate fallback (ADR-048 D2) ─────
+  //
+  //  A read that could not be refreshed (a persistent transient 429/503, or a
+  //  network throw past the retry budget) serves the HELD slice if we hold one —
+  //  even TTL-expired — as last-good `done` (meta.stale). Only with NO held slice
+  //  do we surface the honest error/transient envelope the caller passes. This is
+  //  NOT a new cache: it reads the SAME _cache the fresh path writes.
+  private lastGoodOr(cacheKey: string, fallback: QueryResult<EngineRow>): QueryResult<EngineRow> {
+    const held = this._cache.get(cacheKey)
+    if (held) {
+      return {
+        state: 'done',
+        data:  held.rows,
+        meta:  { totalRows: held.rows.length, truncated: held.truncated ?? false, source: 'api', cacheHit: true, stale: true },
+      }
+    }
+    return fallback
   }
 
   // ── queryFrame — cache-read with truncation meta (P2-1) ──────────
