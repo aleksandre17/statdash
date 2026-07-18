@@ -7,7 +7,9 @@
 - [Constructor architecture (state)](project_constructor_state.md) — Inspector/SchemaSource seam, registry pattern, Coverage Fitness
 - [Constructor C3+C5](project_panel_c3_c5.md) — cube capability-discovery + save guard
 - [Panel DataSpec editor](project_panel_dataspec_editor.md) — visual DataSpec Query Builder
-- [Pipeline live per-step grid (W-P1)](project_panel_pipeline_live_grid.md) — prefix-run over applyPipeline off a once-resolved live source read; derive-throws + MEASURE_DIM-unexported gotchas
+- [Pipeline live per-step grid (W-P1)](project_panel_pipeline_live_grid.md) — prefix-run over applyPipeline off a once-resolved live source read; derive-throws gotcha
+- [Data workbench three-pane (W-P2)](project_panel_data_workbench_wp2.md) — focus-view escalation; generatedQuery plane-split
+- [Pipeline emission flip (W-P5b)](project_panel_pipeline_emission_flip_wp5b.md) — workbenchModel ONE-path; bindMeasureToSpec→governed source head; OPEN Get-grain crack
 - [Placement Law primitive (SL-0b)](project_placement_law_primitive.md) — §3.2 scope×weight→container; 4-band inline/drill
 - [Nav + chrome authorable](project_panel_nav_chrome_authorable.md) — nav per-entry editable; chrome→Pages&Site
 - [Calc editor M3.0](project_panel_calc_editor_m30.md) — derived-metric editor (CalcBuilder+ExprTreeEditor)
@@ -15,7 +17,7 @@
 - [Page lifecycle workflow](project_page_lifecycle_workflow.md) — draft→publish, lifecycle slice, save-guard/403
 - [Live-preview request volume](project_live_preview_request_volume.md) — cube-request bounding via debounced descriptor
 - [Value mappings architecture](project_value_mappings_architecture.md) — EXP-06 value→{text,token,icon}, token-bound
-- [Panel code-splitting](project_panel_code_splitting.md) — lazy boundaries + Rolldown vendor groups; jsx-runtime/apexcharts gotcha
+- [Panel code-splitting](project_panel_code_splitting.md) — lazy boundaries + Rolldown vendor groups; jsx-runtime gotcha
 - [Panel tsconfig constraints](project_panel_tsconfig_constraints.md) — no TS parameter-properties / import type
 - [Panel Playwright e2e](project_panel_playwright_e2e.md) — real-browser boot/bind proof; mock-API; e2e/probes/ = journey-probe home
 - [Canvas chrome fidelity + hollow rail](project_panel_canvas_chromeconfig_defect.md) — hollow-rail FIXED (projectCanvasSiteChrome); chrome-SELECTION via ChromeSlot
@@ -23,7 +25,7 @@
 - [Insert accept-graph gap (M4.1)](project_panel_insert_accept_graph_gap.md) — auto-wrap into `section`; homeless content blocks → guided hint; fix via META accepts
 - [Per-page type end-to-end](project_panel_per_page_type.md) — CanvasPage.type first-class+required; insert accepts derive from page.type; FF-NO-PRIVILEGED-PAGE-TYPE
 - [Bounded bands → Part port](project_panel_bounded_element_bands.md) — BE-1/4/5 = ONE ADR-041 Part port; sourcedParts stable-key + positional facade till Phase 3/4
-- [FACET axis (5 facets)](project_facet_axis_style_facet.md) — FacetDescriptor/facetRegistry caps→generic dock sections. Gotcha: appliesWhen≠meta.type; per-facet PropFieldType
+- [FACET axis (5 facets)](project_facet_axis_style_facet.md) — FacetDescriptor/facetRegistry caps→dock sections; appliesWhen≠meta.type
 - [Live store measure pinning](project_live_store_measure_pinning.md) — live ApiStore does pure dim_key containment, no measure filter/agg
 - [Law-4 i18n check](project_law4_i18n_check.md) — check-laws Georgian rule: single-locale=violation, bilingual {ka,en}=ok
 - [Runner chrome i18n (ADR-019)](project_runner_chrome_i18n_adr019.md) — manifest.i18n.catalog wiring; i18next addResourceBundle deep-flag gotcha
@@ -38,12 +40,11 @@
 - [DataTable band fill-chain](project_datatable_band_fill_chain.md) — TableShell wrapper breaks the band flex-chain; :has() fill-flex fix
 - [SNA table is PivotTable](project_sna_table_is_pivottable.md) — /ka/accounts renders via PivotTable not SimpleTable; probe gotchas
 - [Panel sizing cqi model](project_panel_sizing_cqi_model.md) — context-proportional band; --panel-ratio composes role×context×authored as 3 orthogonal vars
-- [Responsive audit systemic roots](project_responsive_audit_systemic_roots.md) — 2026-06 audit + fix wave; reflow fitness guard + --page-measure seam
+- [Responsive audit roots](project_responsive_audit_systemic_roots.md) — reflow fitness guard + --page-measure seam
 - [Section authoring uniformity](project_section_authoring_uniformity.md) — every section composed via `columns`; nav-safety invariants
 - [Chrome config seam](project_chrome_config_seam.md) — thin ChromeConfig base + per-element PropSchema; F1/F2/F3 fitness gate
 - [Fail-soft chrome + app boundary](project_failsoft_chrome_and_app_boundary.md) — resolveChrome mounts ALL slots; shells must null-guard chromeConfig
 - [Export menu + section scope](project_export_menu_and_section_scope.md) — ExportBar→ExportMenu; NodeExportContext section-scoped publish/subscribe seam
-- [text/gauge panels not in barrel](project_text_gauge_panels_not_in_barrel.md) — exist on disk but absent from panels/index.ts → silently render nothing
 - [Bootstrap runner Phase A (ADR-026)](project_bootstrap_runner_phasea.md) — manifest is runtime SSOT; PageLoader resolves via usePageById
 - [De-tenant Phase 2 STRIP (ADR-028)](project_detenant_phase_strip.md) — geostat → pure runner; emptyManifest fallback; seed-data re-points
 - [Geostat code-splitting](project_geostat_code_splitting.md) — single lazy RendererSurface boundary; store-builder eager-registration ordering regression
@@ -59,6 +60,7 @@
 - [node-vite remote deploy layout](project_node_vite_remote_deploy_layout.md) — ships workspace root to $DEPLOY_PATH/context; env_file path math
 - [Config API contract](reference_config_api_contract.md) — /api/config endpoint shapes & quirks the Constructor client maps
 - [Render path / browser-verify](reference_render_path_browser_verify.md) — runner needs API; live :3002/:3003; fail-soft-is-itself-broken
+- [Dev-line panel :3013](reference_dev_line_panel_3013.md) — statdash-dev-panel-full; packages/* baked as SRC (no dist); whole-src tar-sync for packages/core live-proof
 - [Conform to engine types over spec text](feedback_conform_engine_types.md) — when a task spec contradicts a published engine type, the type wins
 - [No registerSlice in engine-react tests](feedback_engine_react_no_registerslice_in_tests.md) — register via nodeRegistry.register; registerSlice pulls i18next
 - [Plugins shell test: mock new engine imports](feedback_plugins_shell_test_mock_new_engine_import.md) — new @statdash/react/engine imports must join the test's vi.mock or the shell renders undefined
@@ -66,19 +68,19 @@
 - [vitest .css?raw is empty](reference_vitest_css_raw_empty.md) — raw CSS resolves to '' in panel vitest; scan .tsx not .css
 - [icon token rendering](feedback_icon_token_rendering.md) — token→component via createElement in a .ts helper; `<Var/>` from runtime = lint ERROR
 - [panel gate commands](reference_panel_gate_commands.md) — run test/lint/tsc from platform/; 2 warnings baseline
-- [page-config schema-gen + panel i18n](project_page_config_schema_gen_and_panel_i18n.md) — gen:schema after node/projector schema edits; chrome-i18n {en,ka}+t()+useActiveLocales; ColorControl DTCG-themed
+- [page-config schema-gen + panel i18n](project_page_config_schema_gen_and_panel_i18n.md) — gen:schema after schema edits; chrome-i18n {en,ka}+t(); ColorControl DTCG-themed
 - [Contextual-relevance canon](feedback_contextual_relevance_canon.md) — show ONLY active element; drill-in disclosure, never all-expanded
-- [panel studio map](project_panel_studio_map.md) — CONSOLIDATED: shell M1.2 · IA S1-S5 · dock SL1-SL4 · role lens M2 · data-flow M4.3/M5b — every landed Studio slice's seams
+- [panel studio map](project_panel_studio_map.md) — CONSOLIDATED: shell M1.2 · IA S1-S5 · dock SL1-SL4 · role lens M2 · data-flow M4.3/M5b
 - [four-moment shell (AR-52 Step 1)](project_panel_four_moment_shell.md) — Data-first 5-mode rail · top bar = context+Publish; SUPERSEDES S5 rail/top-bar
-- [plane the inspector (AR-52 Step 2)](project_panel_plane_inspector.md) — AudiencePlane axis hides plumbing from author dock (2 chokepoints); StructuredValueView; FF-NO-UNPROJECTED-DECLARED-FIELD
+- [plane the inspector (AR-52 Step 2)](project_panel_plane_inspector.md) — AudiencePlane hides plumbing from author dock; FF-NO-UNPROJECTED-DECLARED-FIELD
 - [REFINE by concern-groups (AR-52)](project_panel_concern_refine.md) — FieldConcern axis groups the whole-node dock; DockBody route; FF-CONCERN-GROUPED
 - [i18n map](project_i18n_map.md) — CONSOLIDATED: AR-26 LocaleString content contract · AR-37/39 full-sync+badges · label placement (Law 4)
 - [Inspector controls off the DTCG spine](project_insp_tokens_undefined.md) — `--insp-*` tokens UNDEFINED; native controls on hardcoded hex (dark-broken); FF-NO-UNTHEMED-COLOR misses apps/panel
-- [MUI→Radix Strangler state](project_mui_radix_migration.md) — owned Select landed (wave 0071); ratchet baseline + remaining sweep targets for the junior
+- [MUI→Radix Strangler state](project_mui_radix_migration.md) — owned Select landed (0071); ratchet baseline + sweep targets
 - [Chart sequential palette](project_chart_sequential_palette.md) — ChartDef.palette + --chart-seq-N; the MANY chart-color paths (donut SVG, buildColors, interpreters, schema)
-- [Portal review batch](project_portal_review_batch.md) — axis fmtNum/niceFloor/tooltip; item7 brush LIVE-FIX (apex UMD-global + _chartInstances quarantine + 1-based domain)
-- [Radix primitives in jsdom](feedback_radix_jsdom_polyfills.md) — the 4 polyfills a Radix listbox needs to open in jsdom; native→Radix swaps break fireEvent.change-coupled tests
-- [legend aesthetic owner verdict](feedback_legend_aesthetic.md) — legends bottom, single-line ellipsis, ONE `--chart-legend-font-size` token; wrapped/columned legends rejected (R2-3)
+- [Portal review batch](project_portal_review_batch.md) — axis fmtNum/niceFloor/tooltip; brush LIVE-FIX (apex UMD-global + _chartInstances quarantine)
+- [Radix primitives in jsdom](feedback_radix_jsdom_polyfills.md) — 4 polyfills a Radix listbox needs; native→Radix breaks fireEvent.change tests
+- [legend aesthetic owner verdict](feedback_legend_aesthetic.md) — legends bottom, single-line ellipsis, ONE token; wrapped/columned rejected
 - [store cube-region scoping](project_store_cube_region_scoping.md) — stats store scopes wire-dim classifiers to actualRegion; dev DB has TWO sector vocabularies (governance flag)
 - [rail cell+panel pattern](project_rail_cell_panel_pattern.md) — expanding chrome = constant layout cell + absolute overlay panel; never transition in-flow width
 - [filter-control sizing + rail](project_filter_control_sizing_and_rail.md) — multi-select/year-select filter-bar sizing; --shadow-rail token; craftScreens e2e
