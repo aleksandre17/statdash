@@ -1,5 +1,7 @@
 # Memory Index
 
+- [Proactive sweep 2026-07-18](project_proactive_sweep_2026_07_18.md) — I OWN PROACTIVE-SWEEP-2026-07-18.md; top root = transient-failure grammar (429 kills pages); 15 findings + verified-good list
+
 ## Auto-relocated (memory-home-guard — reconcile into a topic section)
 - [Time-mode decision](project_time_mode_decision.md) — orthogonal-axis law (selection ⊥ grain ⊥ dim); grain deferred behind D-GRAIN on data grounds
 - [Responsive composition model](project_responsive_composition_model.md) — A+B = ONE grammar (structure ⊥ style); resolveStyle merge + 3-boundary @layer; layout-node SSOT; retire row + bespoke page div
@@ -32,4 +34,5 @@
 - [Responsive authoring](project_responsive_authoring.md) — per-breakpoint authoring LANDED via ONE unified ValueAuthoringControl (fixed·bound·responsive); active-breakpoint context = 2 projections (inspector write + canvas preview width); reuses ResponsiveVal/resolveGrid
 - [Binding autocomplete](project_binding_autocomplete.md) — schema-aware Retool-class bound-mode editor LANDED; PURE governed-noun vocabulary (bindSuggestions.ts, FF-BIND-AUTOCOMPLETE-GOVERNED) + WCAG combobox + useBindVocabulary; ops insert SYMBOLS not JSON names; seam untouched
 - [Query pipeline + data home (0082)](project_query_pipeline_data_home.md) — I OWN SPEC-query-pipeline-data-home.md; "the pipeline is the spine": one `pipeline` DataSpec + `source` head op + 3-pane surface (rail·live-grid·generated-query) + four-floor raw-data home; DQ rec#1 folds in; 7-verb projection over existing 18 ops
+- [Authorability-parity audit](project_authorability_parity_audit.md) — I OWN AUTHORABILITY-PARITY-2026-07-18.md; verdict = ELEMENT parity COMPLETE, every gap is an opaque sub-object or wiring gap (top-1 = structured Trend builder); Dir-B = query→pipeline flip + CHECK-4 PASS
 - [Conditional formatting](project_conditional_formatting.md) — thresholds LANDED as ValueThreshold (token-bound numeric sibling of value-mapping); seam = interpretKpi; ⚠ TWO Threshold models now (legacy chart FieldConfig hex vs new) = convergence debt
