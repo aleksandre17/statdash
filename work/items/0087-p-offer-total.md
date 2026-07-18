@@ -1,7 +1,19 @@
 ---
 id: "0087"
 title: "P-OFFER TOTAL — offers across the WHOLE pipeline via field-ROLE declaration (owner directive: nothing missed, nothing unbuildable, agnostic forever)"
-status: QUEUED (2026-07-18, owner verbatim: «მთელ პაიპლაინზე ვრცელდებოდეს შემოთავაზებები… არაფერი გამორჩეს… ვერაფერი ვერ ააწყო — არასდროს… აგნოსტიკური, ხვალ ახალი დაემატოს — არ გატყდეს, ჩაერთოს»; fires after 0086+0085 → 0084)
+status: CORE+PROJECTION LANDED (2026-07-18, commits b5bb0ad+8e7785b on main, pushed). Role seam + generic role-projecting editor + expr live preview + agnostic offers delivered & live-proven. DEFERRED (ledgered below): FILTER FULL-POWER PARITY ($ctx/$ne MemberPicker modes + Get-head grain/where authoring) + FF-OFFER-ROUNDTRIP/FF-FILTER-PARITY fixtures. Owner verbatim: «მთელ პაიპლაინზე ვრცელდებოდეს შემოთავაზებები… არაფერი გამორჩეს… ვერაფერი ვერ ააწყო — არასდროს… აგნოსტიკური, ხვალ ახალი დაემატოს — არ გატყდეს, ჩაერთოს»
+
+## Delivered (this session, 2026-07-18)
+- **Role seam (core, additive):** `PropFieldRole = field|member|newName|expr|literal` on `PropField` (beside `category`/`plane`/`concern`; +`memberOf` for member scoping). Every registered op-schema leaf field roled; `aggregate.aggregations`/`group.by` gained `itemSchema` (sub-fields roled). `listUnroledFields()` + **FF-ROLE-COVERAGE** bite (a NEW op cannot ship unroled). `rollup.of` → role `member`, `memberOf:'dim'`.
+- **Generic role-projecting `TransformStepEditor`:** replaced the raw-JSON Inspector delegation. Projects each field by role — field→FieldPicker/column-checklist · member→MemberPicker · newName→text · expr→ExprAutocompleteInput (scope EXTENDED by step-input columns) + **live per-row preview** through the ONE evaluator (`applyStep`/`@statdash/expr`) · literal→typed input · aggregations→structured itemSchema list. `derive` routes here (retired the plain-textarea `DeriveStepForm`, deleted). Offer carries capped `sampleRows` for the preview (`PREVIEW_ROW_CAP=12`).
+- **Hand-maps killed:** `generatedQuery.ts` `FIELD_VALUE_KEYS`/`FIELD_RECORD_KEYS` gone — author-plane nouns now derive from schema roles.
+- **Gates (parsed):** core transform 109/0 · panel data-layer 192/0 · `tsc -b` (core+panel) EXIT 0 · lint clean · FF-ROLE-COVERAGE + FF-EXPR-SCOPE-SSOT + agnostic fixture green.
+- **LIVE (:3013, probe-0087-role-projection.mjs):** all 5 demo verbs walked — derive/aggregate render OFFERED comprehensible forms (governed bilingual labels, groupBy column-checklist, structured aggregations, expr **live preview computing value*2 per row**); filter/sort/lookup bespoke forms intact; **NO raw-JSON fallback anywhere, zero console errors**. Shots → `work/authoring-truth/0087/`.
+
+## Ledgered remaining (next wave)
+- **FILTER FULL-POWER PARITY (§3):** MemberPicker gains offered modes — specific (done) · dynamic «მიჰყევი გვერდის არჩევანს» (`$ctx`) · «ყველა, გარდა…» (`$ne`); Get-head read-level grain/where authorable in the workbench. `FF-FILTER-PARITY` fixtures. (The engine `FilterValue = …|CtxRef|NeRef|NeCtxRef` already accepts these — this is offered-UI + FilterStepForm Cond-model work, not engine grammar.)
+- **FF-OFFER-ROUNDTRIP** fixture per op (every engine-accepted payload authorable; unrepresentable → honest free text). The projector already round-trips the built-in shapes (proven by the 192-green data-layer suite); the dedicated cross-op fixture is the remaining formal gate.
+
 class: M
 priority: P0
 owner: lead → engine-specialist + senior-frontend (Opus; core seam + generic projection)
