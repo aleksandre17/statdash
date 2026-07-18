@@ -3,8 +3,8 @@ import { desugar }               from './desugar'
 import { resolveFilterForReqs }  from '../registry/resolvers'
 import { resolveMeasureRef }     from './metric'
 import type { EngineRow }        from './encoding'
-import type { DimVal }           from '../sdmx'
-import type { DataSpec }         from '../config/data-spec'
+import type { DimVal, ObsQuery } from '../sdmx'
+import type { DataSpec, MetricSpec, SourceStep } from '../config/data-spec'
 import type { SectionContext }   from '../core/context'
 import { TIME_DIM }              from '../core/context'
 import { effectiveYears, isUnsetTime } from '../core/time-dimension'
@@ -109,12 +109,86 @@ function _specTag(spec: DataSpec): string {
 // slices (year mode) — GAP 4. Shares the ONE isUnsetTime predicate with
 // ApiStore.toObsParams (core/time-dimension.ts) so warm-key and read-key agree.
 
+// ── Shared requirement kernels — the SSOT the `pipeline` desugar preserves ─────
+//
+//  The `query` and `metric` store-read contracts are extracted here as pure kernels so
+//  the `pipeline` branch (whose `source` head lowers onto the SAME reads) reuses the
+//  IDENTICAL logic — FF-PIPELINE-EQUIV holds BY CONSTRUCTION, not by parallel code that
+//  can drift. A source(query) head extracts `queryRequirements`; a source(metrics) head
+//  extracts `metricRequirements`; a source(rows) head is read-free (like `transform`).
+
+/** The store-read contract of a `query` (its ObsQuery) — the exact `query` branch logic. */
+function queryRequirements(query: ObsQuery, ctx: SectionContext): Requirement[] {
+  const time     = ctx.dims[TIME_DIM] as number
+  const measures = resolveMeasureRef(query.measure).codes
+
+  const filter     = query.filter
+  const timeFilter = filter?.[TIME_DIM]
+
+  // GAP 4 — range-awareness. No time filter AND `time` unset ⇒ the read is UNBOUNDED
+  // (bounds clamp POST-fetch); warm ONE unbounded req per measure so warm-key ≡ read-key.
+  const rangeMode = timeFilter === undefined && isUnsetTime(time)
+
+  let years: number[]
+  if (timeFilter !== undefined) {
+    years = resolveFilterForReqs(timeFilter, ctx).map(Number).filter((n) => !isNaN(n))
+  } else {
+    years = [time]
+  }
+
+  // Fold NON-time filter dims into the requirement dims so each pinned slice is uniquely
+  // identified (two specs differing only by a filter pin must yield distinct reqs).
+  const pinned: Record<string, DimVal> = {}
+  if (filter) {
+    for (const [dim, fv] of Object.entries(filter)) {
+      if (dim === TIME_DIM || fv === undefined || fv === null) continue
+      const vals = resolveFilterForReqs(fv, ctx)
+      if (vals.length === 1) pinned[dim] = vals[0]!
+    }
+  }
+
+  if (rangeMode) {
+    return measures.map((code) => ({ code, dims: { ...ctx.dims, ...pinned } }))
+  }
+  return measures.flatMap((code) =>
+    years.map((year) => ({ code, dims: { ...ctx.dims, ...pinned, [TIME_DIM]: year } })),
+  )
+}
+
+/** The store-read contract of a `metric` spec (grain-stripped unbounded superset) — the exact `metric` branch. */
+function metricRequirements(spec: MetricSpec, ctx: SectionContext): Requirement[] {
+  const grainAxes = new Set<string>([
+    ...(spec.by ?? []),
+    ...(spec.time?.dim ? [spec.time.dim] : []),
+  ])
+  const base: Record<string, DimVal> = {}
+  for (const [d, v] of Object.entries(ctx.dims)) if (!grainAxes.has(d) && v != null) base[d] = v as DimVal
+  for (const [d, v] of Object.entries(spec.where ?? {})) if (v != null) base[d] = v as DimVal
+  return spec.metrics.flatMap((ref) =>
+    resolveMeasureRef(ref).codes.map((code) => ({ code, dims: { ...base } })),
+  )
+}
+
+/**
+ * The store-read contract of a `pipeline`'s `source` head — dispatched to the SAME
+ * kernel the equivalent legacy spec uses (the pure tail issues no read). This is the
+ * invariant FF-PIPELINE-EQUIV proves: a desugared pipeline extracts the identical set.
+ */
+function pipelineRequirements(head: SourceStep | undefined, ctx: SectionContext): Requirement[] {
+  if (!head || head.op !== 'source') return []
+  if ('metrics' in head) {
+    // Drop `op`, keep the generic grain (Law 1 — no privileged-dim key typed here).
+    const { op: _op, ...grain } = head
+    return metricRequirements({ type: 'metric', ...grain }, ctx)
+  }
+  if ('query' in head) return queryRequirements(head.query, ctx)
+  return []   // inline rows — read-free (the `transform` case)
+}
+
 export function extractRequirements(
   spec: DataSpec,
   ctx:  SectionContext,
 ): Requirement[] {
-  const time = ctx.dims[TIME_DIM] as number
-
   // R3: analyse the lowered primitive — the same path interpretSpec resolves.
   // pivot lowers to transform (both extract []); timeseries lowers to point-series
   // (whose case below warms the SAME per-coordinate reads the old timeseries case did).
@@ -195,77 +269,21 @@ export function extractRequirements(
         ...resolveMeasureRef(denom).codes.map((c) => ({ code: c, dims: ctx.dims })),
       ])
 
-    case 'metric': {
-      // Semantic query [AR-50 M-SQ]. The resolver enumerates every grain coordinate
-      // (evalMeasureAtGrain scans the store at ctx.dims with the grain axes OPENED), so
-      // warm ONE UNBOUNDED slice per underlying code with the grain axes STRIPPED — the
-      // superset spanning every tuple the read visits (mirrors point-series 'all' / the
-      // query rangeMode branch; never warm [] for a reading spec, FF-NO-EMPTY-REQS). The
-      // `where` pins narrow the fixed slice; grain axes (by ⊕ time.dim) are removed since
-      // the read spans all their values. A calc metric-id expands to its component codes.
-      const grainAxes = new Set<string>([
-        ...(lowered.by ?? []),
-        ...(lowered.time?.dim ? [lowered.time.dim] : []),
-      ])
-      const base: Record<string, DimVal> = {}
-      for (const [d, v] of Object.entries(ctx.dims)) if (!grainAxes.has(d) && v != null) base[d] = v as DimVal
-      for (const [d, v] of Object.entries(lowered.where ?? {})) if (v != null) base[d] = v as DimVal
-      return lowered.metrics.flatMap((ref) =>
-        resolveMeasureRef(ref).codes.map((code) => ({ code, dims: { ...base } })),
-      )
-    }
+    case 'metric':
+      // Semantic query [AR-50 M-SQ]. Grain-stripped unbounded superset per underlying
+      // code — the kernel is shared with the `pipeline` governed-source branch.
+      return metricRequirements(lowered, ctx)
 
-    case 'query': {
-      const measures = resolveMeasureRef(lowered.query.measure).codes
+    case 'query':
+      // The obs read contract (measures × pinned dims × year/range handling). The kernel
+      // is shared with the `pipeline` steward-source branch, so the desugar is provably
+      // equivalent (FF-PIPELINE-EQUIV) by construction, not by parallel code.
+      return queryRequirements(lowered.query, ctx)
 
-      const filter     = lowered.query.filter
-      const timeFilter = filter?.[TIME_DIM]
-
-      // GAP 4 — range-awareness. When the query has NO time filter AND `time` is
-      // unset (range/dynamics mode: bounds come from fromDim/toDim/timeDimension,
-      // clamped POST-fetch), the READ issues an UNBOUNDED obs query (no time on
-      // the wire). Warming a spurious `time:0` slice would key DIFFERENTLY from
-      // that read → cold cache → empty charts (the GAP 4 symptom). Emit ONE
-      // unbounded requirement per measure (no `time` pin) so the warm slice keys
-      // IDENTICALLY to the read. In year mode `time` is a real year and the
-      // per-year pin below is byte-identical to the pre-GAP-4 behaviour.
-      const rangeMode = timeFilter === undefined && isUnsetTime(time)
-
-      let years: number[]
-      if (timeFilter !== undefined) {
-        years = resolveFilterForReqs(timeFilter, ctx)
-          .map(Number)
-          .filter((n) => !isNaN(n))
-      } else {
-        years = [time]
-      }
-
-      // Fold the query's NON-time filter dims into the requirement dims so each
-      // pinned slice is uniquely identified. Two `query` specs that differ ONLY by
-      // a filter pin (e.g. approach:'PROD' vs 'EXP') MUST yield distinct
-      // requirements — otherwise their specDimKey collides and useNodeRows' promise
-      // cache returns one panel's rows for the other. The pin also flows into the
-      // warm reqCtx so the prefetched slice is correctly scoped. $ctx refs resolve
-      // against ctx exactly as the read does; multi-value/$ne pins (non-scalar) are
-      // left to the obs read (they don't narrow to a single cache identity here).
-      const pinned: Record<string, DimVal> = {}
-      if (filter) {
-        for (const [dim, fv] of Object.entries(filter)) {
-          if (dim === TIME_DIM || fv === undefined || fv === null) continue
-          const vals = resolveFilterForReqs(fv, ctx)
-          if (vals.length === 1) pinned[dim] = vals[0]!
-        }
-      }
-
-      if (rangeMode) {
-        // Unbounded: one req per measure, NO time pin — matches the unbounded read.
-        return measures.map((code) => ({ code, dims: { ...ctx.dims, ...pinned } }))
-      }
-
-      return measures.flatMap((code) =>
-        years.map((year) => ({ code, dims: { ...ctx.dims, ...pinned, [TIME_DIM]: year } })),
-      )
-    }
+    case 'pipeline':
+      // ADR-046 spine: the read is entirely the `source` HEAD's — the pure tail issues
+      // no store read. Dispatched to the SAME kernel the equivalent legacy spec uses.
+      return pipelineRequirements(lowered.pipe[0] as SourceStep | undefined, ctx)
 
     case 'pivot':
     case 'transform':

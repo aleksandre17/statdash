@@ -29,7 +29,7 @@ import {
   meltSchema, renameSchema, castSchema, concatSchema, templateSchema,
   addFieldSchema, selectSchema, aggregateSchema, rollupSchema, groupSchema,
   reduceSchema, windowSchema, joinSchema, deriveSchema, lookupSchema,
-  sortSchema, filterSchema, blendSchema,
+  sortSchema, filterSchema, blendSchema, sourceSchema,
 } from './op-schemas'
 import type { RawRow } from './types'
 
@@ -69,6 +69,14 @@ registerTransformStep('reduce',       applyReduce       as StepFn, reduceSchema,
 registerTransformStep('rename',       applyRename       as StepFn, renameSchema,    'reshape')
 registerTransformStep('rollup',       applyRollup       as StepFn, rollupSchema,    'aggregate')
 registerTransformStep('select',       applySelect       as StepFn, selectSchema,    'reshape')
+// source — the store-aware pipeline HEAD (ADR-046 · SPEC §1.1). Registered with
+// category:'get' so the 7-verb palette's Get card is a PROJECTION of this declaration
+// (getOpsInCategory('get') === ['source']). Like `blend`, its REAL resolution is
+// out-of-pipe: the PipelineResolver reads the store for the head and strips it before
+// the pure tail runs through applyStep. The identity handler here is the safe fallback
+// for a `source` that ever reaches the pure pipeline (a misuse — source is head-only):
+// it has no store handle, so it passes rows through unchanged rather than crashing.
+registerTransformStep('source',       ((rows: RawRow[]) => rows) as StepFn, sourceSchema, 'get')
 registerTransformStep('sort',         applySort         as StepFn, sortSchema,      'sort')
 registerTransformStep('template',     applyTemplate     as StepFn, templateSchema,  'derive')
 registerTransformStep('window',       applyWindow       as StepFn, windowSchema,    'derive')

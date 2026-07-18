@@ -8,6 +8,7 @@
 //  re-fetch. Composable: W-P2 re-homes this verbatim into the three-pane shell.
 //
 import type { DataSpec } from '@statdash/engine'
+import { MEASURE_DIM } from '@statdash/engine'
 import { useMetricCatalog } from '../../../discovery/useMetricCatalog'
 import { useActiveProfile, profileOrNull } from '../../../discovery/useActiveProfile'
 import { useActiveLocales } from '../../../inspector/useActiveLocales'
@@ -26,7 +27,7 @@ type QuerySpec = Extract<DataSpec, { type: 'query' }>
  *  already carries it — dedupe), `obsStatus` is data-quality provenance for the steward.
  *  The steward plane sees them RAW. Law 1: named by their reserved obs-column keys, not
  *  by any business dimension. */
-const AUTHOR_HIDDEN_FIELDS = new Set(['measure', 'obsStatus'])
+const AUTHOR_HIDDEN_FIELDS = new Set([MEASURE_DIM, 'obsStatus'])
 
 export interface PipelineStepGridProps {
   spec:     QuerySpec

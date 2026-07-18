@@ -8,17 +8,17 @@
 //  itself (honest — the true field, never a fabricated label).
 //
 import type { MetricDef, ObsQuery } from '@statdash/engine'
-import { TIME_DIM } from '@statdash/engine'
+import { TIME_DIM, MEASURE_DIM } from '@statdash/engine'
 import type { CatalogDimension } from '../../../discovery/semanticCatalogOptions'
 import { readCatalogLabel, governedDimensionLabels } from '../../../discovery/semanticCatalogOptions'
 import type { Locale } from '../../../types/constructor'
 
 /** The value-carrying field a query observation lands its number under, and the
  *  SDMX MEASURE key (the observation's flow-code field) — both take the bound
- *  metric's governed label. (`MEASURE_DIM` is not re-exported from the engine
- *  barrel; the convention key is inlined here, matching core/context.ts.) */
+ *  metric's governed label. `MEASURE_DIM` is the engine SSOT for the measure key
+ *  (ADR-046 W-P4 barrel export — no longer inlined). */
 const VALUE_FIELD = 'value'
-const MEASURE_FIELD = 'measure'
+const MEASURE_FIELD = MEASURE_DIM
 
 /** Normalize an ObsQuery.measure (string | string[]) to the first bound id/code. */
 function firstMeasure(measure: ObsQuery['measure']): string | undefined {

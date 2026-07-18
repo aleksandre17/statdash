@@ -296,6 +296,37 @@ function scanSpec(spec: DataSpec, acc: Acc, ambientDims?: readonly string[]): vo
       // Inline `rows` data, no store read, no ctx time — deps come only from the
       // (client-side) pipeline/encoding the host node carries (scanned in steps 2/6).
       break
+    case 'pipeline': {
+      // ADR-046 spine. The read edges are entirely the `source` HEAD's (measures are
+      // already captured by the specMeasureRefs loop above, now pipeline-aware); the
+      // pure tail contributes only its client-side transform/$ctx edges. Dispatch on the
+      // head variant to the SAME edges the equivalent legacy spec records — so the
+      // reactive graph never goes blind on the new discriminant.
+      const head = spec.pipe[0]
+      if (head && head.op === 'source') {
+        if ('metrics' in head) {
+          // Governed read ≡ the `metric` branch: grain axes + time binding + where pins +
+          // ambient (each grain cell is an OLAP point-read over the whole coordinate) +
+          // localized governed series labels.
+          if (head.by) for (const d of head.by) acc.dims.add(d)
+          addTimeBinding(acc, undefined, undefined, head.time)
+          if (head.where) for (const d of Object.keys(head.where)) acc.dims.add(d)
+          addAmbient(acc, ambientDims)
+          acc.locale = true
+        } else if ('query' in head) {
+          // Steward read ≡ the `query` branch: obs filter $ctx dims + the range clamp keys.
+          scanObsQuery(head.query, acc)
+          addTimeBinding(acc, head.clamp?.fromDim, head.clamp?.toDim, head.clamp?.timeDimension)
+        }
+        // inline `rows` head — read-free (like transform).
+      }
+      // The pure TAIL steps (after the head) + the pipeline's encoding carry their own
+      // client-side transform/$ctx/classifier edges.
+      const tail = spec.pipe.slice(1) as TransformStep[]
+      if (tail.length) scanTransforms(tail, acc)
+      if (spec.encoding) scanEncoding(spec.encoding, acc)
+      break
+    }
   }
 }
 

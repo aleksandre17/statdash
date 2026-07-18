@@ -35,10 +35,16 @@ describe('buildVerbPalette — the 7-verb projection of the op registry', () => 
     expect(byCat.sort).toBe('sort')
   })
 
-  it('the `get` head verb is honestly NON-insertable (no `source` op registered yet)', () => {
+  it('the `get` head verb is NON-insertable-as-a-tail-step (it IS the source head)', () => {
+    // ADR-046 W-P4: the engine now backs Get with the `source` op, so the projection is
+    // LIVE (ops non-empty). But Get is the pipeline HEAD — authored as the FIRST step (the
+    // metric binding), not ADDED as a tail step through "+add step" — so it stays
+    // non-insertable here (the palette adds tail steps). Whether a fresh workbench turns
+    // Get into an "add source" action pairs with the workbench→pipeline flip (W-P5).
     const get = palette.find((v) => v.category === 'get')!
     expect(get.insertable).toBe(false)
-    expect(get.ops).toEqual([])
+    expect(get.ops.map((o) => o.op)).toEqual(['source'])   // the projection is live
+    expect(get.defaultOp).toBe('')                          // non-insertable ⇒ no default
   })
 
   it('Aggregate discloses its several concrete ops (aggregate·group·reduce·rollup)', () => {
@@ -74,7 +80,12 @@ describe('verbLabelForOp — the op→verb projection (replaces the hand VERB_LA
     expect(verbLabelForOp('filter', 'en')).toBe('Filter')
   })
 
-  it('an un-categorized op (e.g. the W-P4 head `source`) falls back to the bare op — honest', () => {
-    expect(verbLabelForOp('source', 'en')).toBe('source')
+  it('the head `source` op derives the Get verb label (ADR-046 W-P4 — now categorized `get`)', () => {
+    expect(verbLabelForOp('source', 'en')).toBe('Get')
+    expect(verbLabelForOp('source', 'ka')).toBe('წყარო')
+  })
+
+  it('a truly un-categorized op falls back to the bare op — honest', () => {
+    expect(verbLabelForOp('notARealOp', 'en')).toBe('notARealOp')
   })
 })

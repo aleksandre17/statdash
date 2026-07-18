@@ -213,6 +213,60 @@ export type DataSpec =
       encoding: EncodingSpec
     }
   | MetricSpec
+  | PipelineSpec
+
+// ── SourceStep — the store-aware HEAD of a pipeline [ADR-046 · SPEC §1.1] ──────
+//
+//  The ONE store-aware step. Every other pipe step (`TransformStep`) is pure over
+//  rows; the `source` head is the single place a pipeline reads the store, mirroring
+//  how `PointSeriesSpec` is the store-aware primitive under `timeseries`/`growth` and
+//  `joinByField` is the resolved-rows underside of `blend`. Three payload variants —
+//  discriminated STRUCTURALLY by which field is present (no privileged flag):
+//
+//    • governed (AUTHOR plane) — `metrics` + a generic grain (`by`/`time`/`where`,
+//      Law-1 generic, IDENTICAL to MetricSpec). Lowers onto the SAME measure resolution
+//      + M2 grain algebra the `metric` DataSpec uses (the PipelineResolver builds a
+//      MetricSpec and delegates — no second read path). The Constructor-simple case:
+//      pick a governed metric, get rows.
+//    • steward — a raw `ObsQuery` (+ optional range `clamp`). Lowers onto the SAME
+//      `storeObs`/`resolveQueryMeasures` read + `effectiveBounds` post-fetch clamp the
+//      `query` DataSpec uses (byte-identical to QueryResolver).
+//    • inline — literal `rows` (subsumes `transform.source`); read-free.
+//
+//  100% JSON-serializable — data only (Law 2). `op:'source'` is registered in the
+//  runtime step-registry with `category:'get'` (transform/index.ts) so the 7-verb
+//  palette's Get card is a PROJECTION of that declaration — but the actual store read
+//  happens in the PipelineResolver (the head is stripped before the pure tail runs
+//  through `applyStep`), so its registered handler is an identity fallback, exactly as
+//  `blend`'s is (its real resolution is out-of-pipe). It is DELIBERATELY not a member
+//  of the `TransformStep` union — a source in the pure tail is a misuse, not a shape.
+export type SourceStep =
+  | { op: 'source'; metrics: MetricRef[]; by?: string[]; time?: TimeDimensionSpec
+      where?: Partial<Record<string, DimVal>> }
+  | { op: 'source'; query: ObsQuery
+      /** Range clamp folded post-fetch via effectiveBounds — mirrors QueryResolver's fromDim/toDim/timeDimension. */
+      clamp?: { fromDim?: string; toDim?: string; timeDimension?: TimeDimensionSpec } }
+  | { op: 'source'; rows: Record<string, DimVal>[] }
+
+/** One step in a pipeline: the store-aware `source` head, or a pure `TransformStep` tail step. */
+export type PipeStep = SourceStep | TransformStep
+
+// ── PipelineSpec — the `pipeline` DataSpec: the ONE canonical grammar [ADR-046 · SPEC §1] ──
+//
+//  An ordered `pipe` whose HEAD is a `source` read and whose TAIL is the existing pure
+//  transform verbs (Power Query's Source-first model). This is the spine ADR-046 makes
+//  canonical: every other data-shaping discriminant is SUGAR that lowers into it
+//  (`desugarToPipeline`, SPEC §1.3). Additive via `registerSpec` (OCP — the interpreter
+//  is unchanged; a new discriminant is a new registered resolver). 100% JSON-serializable.
+//
+//  Law 1: the source grain (`by`/`time.dim`/`where`) are generic dim keys; every tail
+//  op operates on generic field names. No hardcoded dimension anywhere in the grammar.
+export interface PipelineSpec {
+  type:     'pipeline'
+  /** Ordered steps: `pipe[0]` is the `source` head; `pipe[1..]` are pure `TransformStep`s. */
+  pipe:     PipeStep[]
+  encoding: EncodingSpec
+}
 
 // ── MetricRef — a governed-metric reference in a semantic query [AR-50 M-SQ] ──
 //

@@ -140,9 +140,16 @@ const COVERAGE_TODO = {
     //                                  reusing the useMetricCatalog registry view + a generic
     //                                  by/time grain + where pins, emitting a pure MetricSpec)
     //
-    // The allowlist is EMPTY: every DataSpec discriminant now has a dedicated editor, so a
-    // new un-surfaced type FAILS this gate (no silent drift). `metric` (AR-50 M-SQ) shipped
-    // its authoring pane — the follow-on allowlist entry was REMOVED, the forcing function done.
+    // `metric` (AR-50 M-SQ) shipped its authoring pane — the follow-on allowlist entry
+    // was REMOVED, the forcing function done.
+    //
+    // `pipeline` (ADR-046 W-P4) is DELIBERATELY not a discriminant-picker editor: SPEC §3.4
+    // RETIRES the 8-type Select from the author plane — a pipeline is authored through the
+    // three-pane WORKBENCH (step rail + live grid + generated-query pane, W-P1/2/3), never
+    // by choosing "pipeline" from a type menu. The workbench IS its authoring surface; the
+    // Get card (source head) is a projection of the op registry's `category:'get'`. So it is
+    // allowlisted here, not surfaced as a bespoke DataSpecEditor branch.
+    pipeline: 'ADR-046 — authored via the three-pane data workbench, not a discriminant-picker editor (SPEC §3.4)',
   },
   paramDefs: {
     // V0 — page-level FilterSchema/ParamDef authoring is DONE. Every ParamDef

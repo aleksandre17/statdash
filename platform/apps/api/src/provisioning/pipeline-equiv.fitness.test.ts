@@ -46,6 +46,7 @@ import { fileURLToPath } from 'node:url'
 import { dirname, resolve } from 'node:path'
 import {
   extractRequirements,
+  desugarToPipeline,
   registerManifestMetrics,
   registerManifestDimensions,
   DATASPEC_DISCRIMINANTS,
@@ -228,5 +229,87 @@ describe('FF-PIPELINE-EQUIV — corpus resolution baseline (ADR-046, gates the �
     // change (regenerate with UPDATE_BASELINE=1 and review the diff) or a regression in
     // the store-read contract of a stored config (the class FF-PIPELINE-EQUIV kills).
     expect(current).toEqual(committed)
+  })
+
+  // ── W-P4: the shadow goes LIVE — every corpus spec resolved BOTH ways ──────────
+  //
+  //  ADR-046 makes `pipeline` the ONE grammar (SPEC §1.3): each legacy discriminant
+  //  lowers into it via `desugarToPipeline`. This is the equivalence the ⛔ W-P5 flip is
+  //  gated on: for EVERY stored config, the store-read contract extracted from the LEGACY
+  //  spec must be byte-identical to the contract extracted from its `pipeline` desugar.
+  //  Proven here per corpus spec, under BOTH canonical contexts, requirements-not-rows
+  //  (SPEC §8 — the pure, store-free invariant; the pure tail issues no read).
+  it('W-P4 shadow: legacy ≡ desugarToPipeline for every corpus spec (gates the ⛔ flip)', () => {
+    const base = canonicalDims(artifact)
+    const contexts: Record<string, SectionContext> = {
+      year:  { dims: { ...base, [TIME_DIM]: 2020 } },
+      range: { dims: { ...base, [TIME_DIM]: 0 } },
+    }
+    const mismatches: string[] = []
+    for (const { key, spec } of collectDataSpecs(artifact)) {
+      const lowered = desugarToPipeline(spec)
+      for (const [name, ctx] of Object.entries(contexts)) {
+        const legacy   = canonRequirements(extractRequirements(spec, ctx))
+        const pipeline = canonRequirements(extractRequirements(lowered, ctx))
+        if (JSON.stringify(legacy) !== JSON.stringify(pipeline)) {
+          mismatches.push(`${key} @${name}: legacy=${JSON.stringify(legacy)} pipeline=${JSON.stringify(pipeline)}`)
+        }
+      }
+    }
+    expect(mismatches, `pipeline-desugar equivalence broke:\n${mismatches.join('\n')}`).toEqual([])
+  })
+})
+
+// ── W-P4 pre-note #2 (mandatory): synthetic per-discriminant fixtures ──────────
+//
+//  The corpus is 100% `query` — rich for query→pipeline, but proves NOTHING for the
+//  other discriminants. This block proves the desugar equivalence beyond the corpus's
+//  population with hand-authored fixtures for the two discriminants W-P4 lowers
+//  (`query` in its store-reading AND range/pinned shapes, `transform` in its read-free
+//  shape). The convenience specs re-target in W-P5 and get their own fixtures then.
+describe('FF-PIPELINE-EQUIV — synthetic per-discriminant equivalence (W-P4 pre-note #2)', () => {
+  const CTX_YEAR:  SectionContext = { dims: { time: 2020, geo: '_G' } }
+  const CTX_RANGE: SectionContext = { dims: { time: 0,    geo: '_G' } }
+
+  const canon = (reqs: Requirement[]) =>
+    reqs
+      .map((r) => ({ code: r.code, dims: Object.fromEntries(Object.entries(r.dims).sort(([a], [b]) => a.localeCompare(b))) }))
+      .sort((a, b) => (JSON.stringify(a) < JSON.stringify(b) ? -1 : 1))
+
+  const fixtures: { name: string; spec: DataSpec; ctx: SectionContext }[] = [
+    { name: 'query · raw code, year mode',
+      spec: { type: 'query', query: { measure: 'B1G' }, encoding: { label: 'time', value: 'value' } }, ctx: CTX_YEAR },
+    { name: 'query · raw code, range mode (unbounded)',
+      spec: { type: 'query', query: { measure: 'B1G' }, encoding: { label: 'time', value: 'value' } }, ctx: CTX_RANGE },
+    { name: 'query · multi-measure + non-time filter pin',
+      spec: { type: 'query', query: { measure: ['B1G', 'P3'], filter: { approach: 'PROD' } },
+              encoding: { label: 'time', value: 'value' } }, ctx: CTX_YEAR },
+    { name: 'query · explicit time filter (year enumeration)',
+      spec: { type: 'query', query: { measure: 'B1G', filter: { time: [2018, 2019] } },
+              encoding: { label: 'time', value: 'value' } }, ctx: CTX_RANGE },
+    { name: 'query · with a pipe tail (tail issues no read)',
+      spec: { type: 'query', query: { measure: 'B1G' }, pipe: [{ op: 'sort', by: 'value', dir: 'desc' }],
+              encoding: { label: 'time', value: 'value' } }, ctx: CTX_YEAR },
+    { name: 'query · fromDim/toDim clamp (read-unbounded, clamp is post-fetch)',
+      spec: { type: 'query', query: { measure: 'B1G' }, fromDim: 'lo', toDim: 'hi',
+              encoding: { label: 'time', value: 'value' } }, ctx: CTX_RANGE },
+    { name: 'transform · inline rows (read-free)',
+      spec: { type: 'transform', source: [{ geo: 'GE', value: 1 }], steps: [{ op: 'sort', by: 'value' }],
+              encoding: { label: 'geo', value: 'value' } }, ctx: CTX_YEAR },
+  ]
+
+  for (const { name, spec, ctx } of fixtures) {
+    it(`${name} — legacy ≡ desugarToPipeline`, () => {
+      const legacy   = canon(extractRequirements(spec, ctx))
+      const pipeline = canon(extractRequirements(desugarToPipeline(spec), ctx))
+      expect(pipeline).toEqual(legacy)
+    })
+  }
+
+  it('desugarToPipeline actually PRODUCES a pipeline with a source head (not a no-op)', () => {
+    const lowered = desugarToPipeline({ type: 'query', query: { measure: 'B1G' }, encoding: { label: 'time' } })
+    expect(lowered.type).toBe('pipeline')
+    const head = (lowered as { pipe: { op?: string }[] }).pipe[0]
+    expect(head.op).toBe('source')
   })
 })

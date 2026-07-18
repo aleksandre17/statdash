@@ -200,6 +200,21 @@ export const blendSchema: PropSchema = [
   { field: 'rename', type: 'object', label: bi('სახელის ცვლილებები', 'Renames') },
 ]
 
+// ── source — the store-aware pipeline HEAD [ADR-046 · SPEC §1.1] ──────
+//  The Get verb. Its GOVERNED (author-plane) form is a metric picker + a generic
+//  grain — the ONLY thing the author plane speaks (Law 4). `metrics` names governed
+//  metric-ids (resolved through the SAME resolveMeasureRef seam); `by`/`where` are
+//  generic dim keys (Law 1). The raw `query`/inline `rows` forms are steward-plane
+//  advanced shapes (typed object sub-editors), not surfaced to the author. The actual
+//  store read happens in the PipelineResolver (the head is stripped before the pure
+//  tail runs); this schema is the Constructor's Get-step editor, projected via the
+//  registry `category:'get'`.
+export const sourceSchema: PropSchema = [
+  { field: 'metrics', type: 'array',  label: bi('მაჩვენებლები (გავერნებული)', 'Metrics (governed)'), required: true },
+  { field: 'by',      type: 'array',  label: bi('ჭრილი (განზომილებები)', 'Grain (dimensions)') },
+  { field: 'where',   type: 'object', label: bi('ფილტრი (განზ. → მნიშვნელობა)', 'Filter (dim → value)') },
+]
+
 // ── join — SQL LEFT JOIN against an array source ──────────────────────
 export const joinSchema: PropSchema = [
   { field: 'with',    type: 'object', label: bi('წყარო ({$cl}/{$d}/inline)', 'Source ({$cl}/{$d}/inline)'),

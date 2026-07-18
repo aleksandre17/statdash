@@ -121,6 +121,15 @@ export function validateDataSpec(
       if (!spec.metrics?.length)
         v.error(path + '.metrics', 'MISSING_REQUIRED', 'metric spec requires at least one metric')
       break
+
+    case 'pipeline': {
+      // ADR-046 spine: a pipeline needs a `source` HEAD (the store-aware read). The pure
+      // tail is validated per-op by the transform-step schemas, not here.
+      const head = spec.pipe?.[0]
+      if (!spec.pipe?.length || !head || (head as { op?: string }).op !== 'source')
+        v.error(path + '.pipe', 'MISSING_REQUIRED', 'pipeline requires a `source` head step')
+      break
+    }
   }
 
   return v.build()

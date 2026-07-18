@@ -51,6 +51,7 @@ const CATEGORY_PIN: Record<string, StepCategory> = {
   rollup:     'aggregate',
   select:     'reshape',
   sort:       'sort',
+  source:     'get',        // ADR-046 W-P4: the store-aware pipeline HEAD (SPEC §1.1)
   template:   'derive',
   window:     'derive',
 }
@@ -104,10 +105,11 @@ describe('FF-VERB-COVERAGE — the op registry projects cleanly into the 7 verbs
     expect(fromProjection).toEqual(listTransformOps())
 
     const grouped = listOpsByCategory()
-    // Every verb key is present (incl. `get`, empty until W-P4 registers `source`).
+    // Every verb key is present (incl. `get`).
     expect(Object.keys(grouped).sort()).toEqual([...STEP_CATEGORIES].sort())
-    // `get` has no backing op yet — an HONEST empty verb (non-insertable in the palette).
-    expect(grouped.get).toEqual([])
+    // `get` is backed by the `source` head op (ADR-046 W-P4) — the palette's Get card is
+    // now insertable by projection (getOpsInCategory('get') === ['source']), zero panel change.
+    expect(grouped.get).toEqual(['source'])
     // The flattened grouping equals the flattened per-verb projection (one SSOT).
     expect(STEP_CATEGORIES.flatMap((c) => grouped[c]).sort()).toEqual(listTransformOps())
   })

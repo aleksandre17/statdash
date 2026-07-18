@@ -23,6 +23,7 @@ import { applyPipeline }                      from '../data/transform'
 import { defaultRegistry }                   from './engine'
 import { PointSeriesResolver }                from './point-series-resolver'
 import { MetricResolver }                     from './metric-resolver'
+import { PipelineResolver }                   from './pipeline-resolver'
 
 // ── Shared utilities ───────────────────────────────────────────────────
 //
@@ -353,3 +354,4 @@ defaultRegistry
   .registerSpec(new TransformResolver())
   .registerSpec(new PointSeriesResolver())
   .registerSpec(new MetricResolver())
+  .registerSpec(new PipelineResolver())

@@ -23,7 +23,7 @@
 //  editors are preserved; lowering happens at resolve time only).
 //
 
-import type { DataSpec, PointSeriesSpec, ResolvableSpec } from '../config/data-spec'
+import type { DataSpec, PointSeriesSpec, ResolvableSpec, PipelineSpec, PipeStep } from '../config/data-spec'
 import type { DimVal }    from '../sdmx'
 import { TIME_DIM }       from '../core/context'
 import { effectiveYears, isDefaultGranularity } from '../core/time-dimension'
@@ -136,5 +136,55 @@ export function desugar(spec: DataSpec): ResolvableSpec {
     case 'pivot':      return desugarPivot(spec)
     case 'timeseries': return desugarTimeseries(spec)
     default:           return spec
+  }
+}
+
+// ── desugarToPipeline — the ADR-046 spine lowering [SPEC §1.3] ─────────────────
+//
+//  Lowers a legacy DataSpec onto the ONE canonical `pipeline` grammar: a `source`
+//  HEAD (the store-aware read) + the pure tail verbs. Pure value→value (no ctx/store)
+//  — the Constructor never sees it (stored configs are NEVER rewritten; this runs at
+//  read/proof time only — expand-contract).
+//
+//  W-P4 SCOPE: `query` and `transform` only (the two forms the workbench + corpus
+//  exercise). It is DELIBERATELY NOT wired into the live `desugar()` above — the live
+//  resolution path is UNCHANGED (FF-DESUGAR-EQUIV keeps query/transform as identity
+//  primitives), so this wave is fully revert-clean. FF-PIPELINE-EQUIV proves that the
+//  desugared pipeline extracts the IDENTICAL store-read contract; the ⛔ default-emission
+//  flip (W-P5) makes the pipeline the emitted default and re-targets the convenience
+//  specs (timeseries/growth/ratio-list/pivot). A spec with no rule here is returned
+//  UNCHANGED (identity) so callers can map the whole corpus uniformly.
+//
+//  The mapping IS SPEC §1.3's table:
+//    query     → [ source(obsQuery + clamp), …query.pipe ]
+//    transform → [ source(inline rows),      …steps       ]
+//
+export function desugarToPipeline(spec: DataSpec): DataSpec {
+  switch (spec.type) {
+    case 'query': {
+      const hasClamp = spec.fromDim !== undefined || spec.toDim !== undefined || spec.timeDimension !== undefined
+      const source: PipeStep = {
+        op: 'source', query: spec.query,
+        ...(hasClamp
+          ? { clamp: { fromDim: spec.fromDim, toDim: spec.toDim, timeDimension: spec.timeDimension } }
+          : {}),
+      }
+      const pipeline: PipelineSpec = {
+        type: 'pipeline',
+        pipe: [source, ...(spec.pipe ?? [])],
+        encoding: spec.encoding,
+      }
+      return pipeline
+    }
+    case 'transform': {
+      const pipeline: PipelineSpec = {
+        type: 'pipeline',
+        pipe: [{ op: 'source', rows: spec.source }, ...spec.steps],
+        encoding: spec.encoding,
+      }
+      return pipeline
+    }
+    default:
+      return spec   // re-targets in W-P5 (timeseries/growth/ratio-list/pivot/metric/row-list)
   }
 }

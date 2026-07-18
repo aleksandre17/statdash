@@ -100,17 +100,30 @@ export function buildVerbPalette(locale: Locale): VerbEntry[] {
     const ops = getOpsInCategory(category)
       .filter((op) => !NON_AUTHORABLE.has(op))
       .map((op) => ({ op, label: OP_LABELS[op] ? bi(OP_LABELS[op], locale) : op }))
-    // Prefer the SPEC default op; fall back to the first projected op if absent.
-    const defaultOp = ops.some((o) => o.op === display.defaultOp)
-      ? display.defaultOp
-      : (ops[0]?.op ?? '')
+    // The HEAD verb (STEP_CATEGORIES[0] = Get) is the pipeline's SOURCE — authored as
+    // the FIRST step (the metric binding / source chip), NOT added as a tail step. The
+    // "+add step" palette adds TAIL steps, so the head verb stays a visible-but-non-
+    // insertable head marker even now that the engine backs it with the `source` op
+    // (ADR-046 W-P4). `ops` is non-empty (the projection is live — getOpsInCategory('get')
+    // === ['source']); only tail-insertion is withheld. Whether a FRESH workbench turns
+    // Get into an "add source / pick metric" action pairs with the workbench→pipeline
+    // conversion + emission flip (W-P5), not this engine wave.
+    const isHead     = category === STEP_CATEGORIES[0]
+    const insertable = !isHead && ops.length > 0
+    // Prefer the SPEC default op; fall back to the first projected op if absent. A
+    // non-insertable verb carries no default (nothing is inserted when it is picked).
+    const defaultOp = !insertable
+      ? ''
+      : ops.some((o) => o.op === display.defaultOp)
+        ? display.defaultOp
+        : (ops[0]?.op ?? '')
     return {
       category,
       label:      bi(display.label, locale),
       hint:       bi(display.hint, locale),
       ops,
       defaultOp,
-      insertable: ops.length > 0,
+      insertable,
     }
   })
 }

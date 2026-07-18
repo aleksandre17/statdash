@@ -29,7 +29,7 @@ export type { Unit, ChartType, Indicator, SectionContext } from './core/context'
 // TIME_DIM — the SSOT key for the conventional time axis. Exported so the
 // store-builder (plugins) can fall back to it when a profile's DSD time-dim is
 // absent, WITHOUT hardcoding the 'time' literal (Law 1).
-export { TIME_DIM, atTime }                                              from './core/context'
+export { TIME_DIM, MEASURE_DIM, atTime }                                 from './core/context'
 export { groupBySpan }                                                   from './core/layout'
 export type { DataLookupOp, DeriveEntry, NodeDeriveMap }                from './core/types'
 export { evalNodeDerive }                                                from './core/evalNodeDerive'
@@ -126,6 +126,11 @@ export type {
   ColumnDef,
   RowSpec,
   DataSpec,
+  MetricSpec,
+  MetricRef,
+  PipelineSpec,
+  SourceStep,
+  PipeStep,
   TableConfig,
   YearsSpec,
   TimeBound,
@@ -332,7 +337,7 @@ export { interpretSpec, extractRequirements, setSpecResolveObserver }  from './d
 // GAP 4 — the SSOT obs-query the QueryResolver read issues; the async warm path
 // (useNodeRows) fetches under this IDENTICAL query so warm-key ≡ read-key.
 export { queryReadObs }                                                 from './registry/resolvers'
-export { desugar }                                                      from './data/desugar'
+export { desugar, desugarToPipeline }                                   from './data/desugar'
 export { applySelection, splitRangeValue }                              from './data/applySelection'
 export type { SelectionMode }                                           from './data/applySelection'
 // ── Directional cross-filter-pivot LAW [AR-42 P2] — the six AR-38 derives, once ──

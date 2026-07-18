@@ -52,6 +52,20 @@ function measureRefs(spec: DataSpec): string[] {
       // The governed metric refs are the spec's measure references (a calc metric-id
       // expands to its component codes downstream via resolveMeasureRef).
       return [...spec.metrics]
+    case 'pipeline': {
+      // ADR-046 spine: the measure refs are the `source` HEAD's — the pure tail reads
+      // no store. A governed head carries `metrics`; a steward head carries an ObsQuery
+      // measure; an inline head carries none. Keeps store-routing / warm visible on the
+      // new discriminant (the same refs the equivalent legacy spec would surface).
+      const head = spec.pipe[0]
+      if (!head || head.op !== 'source') return []
+      if ('metrics' in head) return [...head.metrics]
+      if ('query' in head) {
+        const m = head.query.measure
+        return Array.isArray(m) ? [...m] : [m]
+      }
+      return []
+    }
     case 'pivot':
     case 'transform':
       return []
