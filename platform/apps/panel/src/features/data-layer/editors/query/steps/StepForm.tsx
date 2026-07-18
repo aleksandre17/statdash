@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Box, TextField, Typography } from '@mui/material'
 import type { TransformStep } from '@statdash/engine'
 import { getTransformStepSchema } from '@statdash/engine'
+import type { StepInputOffer } from '../../../pipeline-preview/stepInput'
 import { DeriveStepForm } from './DeriveStepForm'
 import { LookupStepForm } from './LookupStepForm'
 import { SortStepForm } from './SortStepForm'
@@ -25,14 +26,18 @@ import { TransformStepEditor } from './TransformStepEditor'
 export interface StepFormProps {
   step:     TransformStep
   onChange: (next: TransformStep) => void
+  /** The step's INPUT offer (columns + distinct member values), when the workbench can
+   *  supply it. Enables the P-OFFER pick-don't-type controls (Filter's column+value,
+   *  Sort's field, Lookup's key); absent ⇒ the honest free-text fallback. */
+  input?:   StepInputOffer
 }
 
-export function StepForm({ step, onChange }: StepFormProps) {
+export function StepForm({ step, onChange, input }: StepFormProps) {
   switch (step.op) {
     case 'derive': return <DeriveStepForm step={step} onChange={onChange} />
-    case 'lookup': return <LookupStepForm step={step} onChange={onChange} />
-    case 'sort':   return <SortStepForm   step={step} onChange={onChange} />
-    case 'filter': return <FilterStepForm step={step} onChange={onChange} />
+    case 'lookup': return <LookupStepForm step={step} onChange={onChange} input={input} />
+    case 'sort':   return <SortStepForm   step={step} onChange={onChange} input={input} />
+    case 'filter': return <FilterStepForm step={step} onChange={onChange} input={input} />
     default:
       return getTransformStepSchema(step.op)
         ? <TransformStepEditor step={step} onChange={onChange} />

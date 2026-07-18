@@ -1,6 +1,8 @@
 import { Box, TextField } from '@mui/material'
 import type { TransformStep } from '@statdash/engine'
 import { ChipInput } from '../ChipInput'
+import type { StepInputOffer } from '../../../pipeline-preview/stepInput'
+import { FieldPicker } from './offer/FieldPicker'
 
 // ── LookupStepForm — op=lookup: key + from($d ref) + fields ────────────────────
 //
@@ -14,6 +16,9 @@ type LookupStep = Extract<TransformStep, { op: 'lookup' }>
 export interface LookupStepFormProps {
   step:     LookupStep
   onChange: (next: LookupStep) => void
+  /** The step's INPUT offer — the join KEY is PICKED from the offered columns (P-OFFER);
+   *  absent ⇒ free text. */
+  input?:   StepInputOffer
 }
 
 function readFromDim(from: LookupStep['from']): string {
@@ -21,14 +26,15 @@ function readFromDim(from: LookupStep['from']): string {
   return ''
 }
 
-export function LookupStepForm({ step, onChange }: LookupStepFormProps) {
+export function LookupStepForm({ step, onChange, input }: LookupStepFormProps) {
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-      <TextField
-        size="small"
-        label="გასაღების სვეტი"
+      <FieldPicker
+        columns={input?.columns}
         value={step.key}
-        onChange={(e) => onChange({ ...step, key: e.target.value })}
+        onChange={(key) => onChange({ ...step, key })}
+        label="გასაღების სვეტი"
+        placeholder="აირჩიეთ სვეტი"
       />
       <TextField
         size="small"

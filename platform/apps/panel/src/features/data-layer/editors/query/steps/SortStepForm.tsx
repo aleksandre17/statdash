@@ -1,7 +1,9 @@
-import { Box, Button, IconButton, MenuItem, Select, TextField } from '@mui/material'
+import { Box, Button, IconButton, MenuItem, Select } from '@mui/material'
 import AddIcon from '@mui/icons-material/Add'
 import CloseIcon from '@mui/icons-material/Close'
 import type { TransformStep } from '@statdash/engine'
+import type { StepInputOffer } from '../../../pipeline-preview/stepInput'
+import { FieldPicker } from './offer/FieldPicker'
 
 // ── SortStepForm — op=sort: list of { field, dir } ─────────────────────────────
 //
@@ -18,6 +20,9 @@ type SortKey = { field: string; dir: 'asc' | 'desc' }
 export interface SortStepFormProps {
   step:     SortStep
   onChange: (next: SortStep) => void
+  /** The step's INPUT offer — the field is PICKED from the offered columns (P-OFFER);
+   *  absent ⇒ free text. */
+  input?:   StepInputOffer
 }
 
 function readKeys(step: SortStep): SortKey[] {
@@ -38,7 +43,7 @@ function toStep(keys: SortKey[]): SortStep {
   return { op: 'sort', by: keys.map((k) => ({ field: k.field, dir: k.dir })) }
 }
 
-export function SortStepForm({ step, onChange }: SortStepFormProps) {
+export function SortStepForm({ step, onChange, input }: SortStepFormProps) {
   const keys = readKeys(step)
 
   const updateKey = (index: number, patch: Partial<SortKey>) =>
@@ -55,11 +60,12 @@ export function SortStepForm({ step, onChange }: SortStepFormProps) {
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
       {keys.map((key, index) => (
         <Box key={index} sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-          <TextField
-            size="small"
-            label="სვეტი"
+          <FieldPicker
+            columns={input?.columns}
             value={key.field}
-            onChange={(e) => updateKey(index, { field: e.target.value })}
+            onChange={(field) => updateKey(index, { field })}
+            label="სვეტი"
+            placeholder="აირჩიეთ სვეტი"
             sx={{ flex: 1 }}
           />
           <Select

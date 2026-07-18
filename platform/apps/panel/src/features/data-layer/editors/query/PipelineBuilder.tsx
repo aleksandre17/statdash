@@ -13,6 +13,7 @@ import { DndContext, type DragEndEvent, closestCenter } from '@dnd-kit/core'
 import type { TransformStep } from '@statdash/engine'
 import { listTransformOps } from '@statdash/engine'
 import { useDndSensors } from '../../../../shared/dnd/useDndSensors'
+import type { StepInputOffer } from '../../pipeline-preview/stepInput'
 import { StepForm } from './steps/StepForm'
 import { defaultStep } from './steps/defaultStep'
 
@@ -50,9 +51,14 @@ export interface PipelineBuilderProps {
    *  builder uses internally (keeps the uid array in sync). When absent, the default
    *  `AddStepControl` renders — so the LEGACY editors are untouched (Strangler). */
   renderAddStep?: (addStep: (op: string) => void) => React.ReactNode
+  /** The P-OFFER step-input provider: `stepInput(index)` = the OFFER (columns + distinct
+   *  member values) for the tail step at `index`, derived from the SAME rows the grid
+   *  shows (its INPUT = the previous step's output). The workbench passes it; the LEGACY
+   *  editors omit it → the step forms degrade to free text (Strangler / honest fallback). */
+  stepInput?: (index: number) => StepInputOffer | undefined
 }
 
-export function PipelineBuilder({ value, onChange, selectedStep, onSelectStep, renderAddStep }: PipelineBuilderProps) {
+export function PipelineBuilder({ value, onChange, selectedStep, onSelectStep, renderAddStep, stepInput }: PipelineBuilderProps) {
   const sensors = useDndSensors()
 
   // Stable drag ids — one per step, kept length-synced with `value`. Held in
@@ -113,6 +119,7 @@ export function PipelineBuilder({ value, onChange, selectedStep, onSelectStep, r
               onSelect={onSelectStep ? () => onSelectStep(index) : undefined}
               onChange={(next) => updateStep(index, next)}
               onRemove={() => removeStep(index)}
+              input={stepInput?.(index)}
             />
           ))}
         </SortableContext>
@@ -131,9 +138,10 @@ interface StepCardProps {
   onSelect?: () => void
   onChange: (next: TransformStep) => void
   onRemove: () => void
+  input?:   StepInputOffer
 }
 
-function StepCard({ uid, step, selected, onSelect, onChange, onRemove }: StepCardProps) {
+function StepCard({ uid, step, selected, onSelect, onChange, onRemove, input }: StepCardProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: uid })
 
   return (
@@ -170,7 +178,7 @@ function StepCard({ uid, step, selected, onSelect, onChange, onRemove }: StepCar
           <DeleteIcon fontSize="small" />
         </IconButton>
       </Box>
-      <StepForm step={step} onChange={onChange} />
+      <StepForm step={step} onChange={onChange} input={input} />
     </Paper>
   )
 }

@@ -29,10 +29,13 @@
 //
 import { useState } from 'react'
 import { Box, Chip, Typography } from '@mui/material'
-import type { DataSpec, TransformStep } from '@statdash/engine'
+import type { DataSpec, EncodingSpec, TransformStep } from '@statdash/engine'
 import { PipelineBuilder } from '../editors/query/PipelineBuilder'
-import { PipelineStepGrid } from '../pipeline-preview/PipelineStepGrid'
-import { AS_OF_SOURCE } from '../pipeline-preview/pipelinePreview'
+import { PipelineStepGridView } from '../pipeline-preview/PipelineStepGrid'
+import { usePipelineSourceRows } from '../pipeline-preview/usePipelineSourceRows'
+import { useGridLabels } from '../pipeline-preview/useGridLabels'
+import { buildStepInputOffer, stepInputRows, type StepInputOffer } from '../pipeline-preview/stepInput'
+import { AS_OF_SOURCE, AUTHOR_HIDDEN_FIELDS } from '../pipeline-preview/pipelinePreview'
 import { GeneratedQueryPane } from './GeneratedQueryPane'
 import { VerbPalette } from './VerbPalette'
 import {
@@ -42,6 +45,10 @@ import { MetricPalette } from '../../../discovery/MetricPalette'
 import { useActiveLocales } from '../../../inspector/useActiveLocales'
 import type { Locale } from '../../../types/constructor'
 import './workbench.css'
+
+/** A neutral encoding for the source hook when there is no shaped model yet (its result
+ *  is unused in that branch — the hook must still be called unconditionally). */
+const EMPTY_ENCODING: EncodingSpec = { label: '' }
 
 export interface DataWorkbenchProps {
   /** The element's DataSpec (the escalation binds this live from the store). */
@@ -62,6 +69,34 @@ export function DataWorkbench({ value, onChange }: DataWorkbenchProps) {
   // shape (row-list/timeseries/growth/…) is declared honestly rather than painted broken
   // (Law 11) — those keep their own front-doors (the value-cell specs, W-P5a finding).
   const model = toWorkbenchModel(value)
+
+  // ── ONE source read, lifted (SPEC §3.2 / P-OFFER) ──────────────────────────────────
+  //  Resolved ONCE here (never a 2nd fetch): the grid and the step-editor OFFERS both
+  //  derive from THESE rows. The hooks are called unconditionally (before the honest
+  //  non-shaped early-return) — their result is unused when there is no model.
+  const source = usePipelineSourceRows(model?.head, model?.encoding ?? EMPTY_ENCODING)
+  const { isAuthor, columnLabel, cellLabel, locale: gridLocale } = useGridLabels(model?.head)
+
+  // The P-OFFER provider: the OFFER (governed columns + distinct member values) for the
+  // tail step at `index`, over its INPUT rows (= the previous step's output — the SAME
+  // ONE derivation path the grid uses). No rows yet, or a prior step throws mid-authoring
+  // → `undefined` so the step form degrades to the honest free-text fallback (Law 11).
+  const stepInput = (index: number): StepInputOffer | undefined => {
+    if (!model || source.status !== 'ok') return undefined
+    try {
+      const rows = stepInputRows(source.sourceRows, model.tail, index, source.pipeCtx)
+      return buildStepInputOffer({
+        rows,
+        columnLabel,
+        cellLabel,
+        hiddenFields: isAuthor ? AUTHOR_HIDDEN_FIELDS : undefined,
+        locale: gridLocale,
+      })
+    } catch {
+      return undefined
+    }
+  }
+
   if (!model) {
     return (
       <Box className="data-workbench data-workbench--empty" data-testid="data-workbench-nonquery" sx={{ p: 3, color: 'text.secondary' }}>
@@ -119,6 +154,7 @@ export function DataWorkbench({ value, onChange }: DataWorkbenchProps) {
           selectedStep={asOfStep}
           onSelectStep={setAsOfStep}
           renderAddStep={(addStep) => <VerbPalette onAdd={addStep} />}
+          stepInput={stepInput}
         />
       </Box>
 
@@ -131,7 +167,7 @@ export function DataWorkbench({ value, onChange }: DataWorkbenchProps) {
         data-testid="workbench-grid"
       >
         <Typography variant="overline" color="text.secondary">{en ? 'Live data' : 'ცოცხალი მონაცემები'}</Typography>
-        <PipelineStepGrid model={model} asOfStep={asOfStep} />
+        <PipelineStepGridView model={model} asOfStep={asOfStep} source={source} />
       </Box>
 
       {/* ── RIGHT — the generated query + EXPLAIN seam (E4). The pane owns its own

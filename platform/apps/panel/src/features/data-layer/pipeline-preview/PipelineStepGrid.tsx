@@ -5,27 +5,21 @@
 //  step by pure prefix-run (deriveStepRows — the ONE engine seam, no cache), caps
 //  them honestly (E3), and speaks governed column headers (buildColumnLabels off
 //  describeApp). Selecting a different step re-slices already-resolved rows — no
-//  re-fetch. Composable: W-P2 re-homes this verbatim into the three-pane shell.
+//  re-fetch.
 //
-import { MEASURE_DIM } from '@statdash/engine'
-import { useMetricCatalog } from '../../../discovery/useMetricCatalog'
-import { useActiveProfile, profileOrNull } from '../../../discovery/useActiveProfile'
-import { useActiveLocales } from '../../../inspector/useActiveLocales'
-import { useRole } from '../../../studio/useRole'
-import type { Locale } from '../../../types/constructor'
-import { sourceMeasure, type WorkbenchModel } from '../workbench/workbenchModel'
-import { usePipelineSourceRows } from './usePipelineSourceRows'
-import { deriveStepRows, capRows, deriveColumns, AS_OF_SOURCE } from './pipelinePreview'
-import { buildColumnLabels, type ColumnLabelResolver } from './columnLabels'
-import { buildMemberLabels, rawMemberLabels, type MemberLabelResolver } from './memberLabels'
+//  Two forms share ONE view:
+//    • PipelineStepGrid     — self-resolving (calls usePipelineSourceRows). The
+//                             standalone form (QuerySpecEditor, the journey gate).
+//    • PipelineStepGridView — the source rows passed IN. The workbench lifts the
+//                             ONE source read to DataWorkbench (so the step-editor
+//                             OFFERS derive from the SAME rows — never a 2nd fetch)
+//                             and hands them here.
+//
+import type { WorkbenchModel } from '../workbench/workbenchModel'
+import { usePipelineSourceRows, type PipelineSource } from './usePipelineSourceRows'
+import { useGridLabels } from './useGridLabels'
+import { deriveStepRows, capRows, deriveColumns, AS_OF_SOURCE, AUTHOR_HIDDEN_FIELDS } from './pipelinePreview'
 import { PipelineDataGrid } from './PipelineDataGrid'
-
-/** SDMX plumbing echoes hidden from the AUTHOR plane (SPEC §3.4 — no plumbing tokens):
- *  `measure` is the flow-code column that duplicates the metric label (the value column
- *  already carries it — dedupe), `obsStatus` is data-quality provenance for the steward.
- *  The steward plane sees them RAW. Law 1: named by their reserved obs-column keys, not
- *  by any business dimension. */
-const AUTHOR_HIDDEN_FIELDS = new Set([MEASURE_DIM, 'obsStatus'])
 
 export interface PipelineStepGridProps {
   /** The canonical pipeline view — the source HEAD + the pure TAIL (spine-agnostic:
@@ -36,19 +30,18 @@ export interface PipelineStepGridProps {
   asOfStep: number
 }
 
-export function PipelineStepGrid({ model, asOfStep }: PipelineStepGridProps) {
-  const locale = (useActiveLocales()[0] ?? 'ka') as Locale
-  const en = locale === 'en'
-  const catalog = useMetricCatalog()
-  const profile = profileOrNull(useActiveProfile())
-  const role = useRole()
-  const source = usePipelineSourceRows(model.head, model.encoding)
+export interface PipelineStepGridViewProps extends PipelineStepGridProps {
+  /** The resolved SOURCE read — lifted out so the workbench shares ONE derivation
+   *  path between the grid and the step-editor offers. */
+  source:   PipelineSource
+}
 
+// ── PipelineStepGridView — the pure view (source rows passed in) ────────────────
+export function PipelineStepGridView({ model, asOfStep, source }: PipelineStepGridViewProps) {
+  const { locale, en, isAuthor, columnLabel, cellLabel } = useGridLabels(model.head)
   const tail = model.tail
 
   // Prefix-run the tail to the selected step (pure — no re-fetch on step change).
-  // Plain consts: the React Compiler memoizes these; a manual useMemo returning a
-  // closure trips "could not preserve memoization" (a known compiler seam).
   // Fail-soft: an incomplete step mid-authoring (e.g. a half-typed derive expr) can
   // throw in the engine op — surface the HONEST error state, never crash the editor
   // (the canvas fail-soft law); the same throw is caught by NodeErrorBoundary at
@@ -60,29 +53,13 @@ export function PipelineStepGrid({ model, asOfStep }: PipelineStepGridProps) {
   } catch {
     derivationError = true
   }
-  const capped   = capRows(stepRows)
-  const status   = source.status === 'ok' && derivationError ? 'error' : source.status
+  const capped = capRows(stepRows)
+  const status = source.status === 'ok' && derivationError ? 'error' : source.status
 
   // The author plane hides the SDMX plumbing echoes (measure dedup + obsStatus); the
   // steward plane keeps every column. Law 11: an author never sees a raw flow code.
-  const isAuthor = role !== 'steward'
-  const columns  = deriveColumns(capped.rows)
+  const columns = deriveColumns(capped.rows)
     .filter((c) => !(isAuthor && AUTHOR_HIDDEN_FIELDS.has(c)))
-
-  const columnLabel: ColumnLabelResolver = catalog.status !== 'ready'
-    ? (field: string) => field
-    : buildColumnLabels({
-        metrics:    catalog.metrics,
-        dimensions: catalog.dimensions,
-        measure:    sourceMeasure(model.head),
-        locale,
-      })
-
-  // The CELL resolver: governed member labels in the author plane (adjara→აჭარა, _T→
-  // Total), raw codes in the steward plane / before the profile is ready.
-  const cellLabel: MemberLabelResolver = isAuthor && profile
-    ? buildMemberLabels(profile, locale)
-    : rawMemberLabels
 
   const metricName = columnLabel('value')
   const caption = asOfStep <= AS_OF_SOURCE
@@ -102,4 +79,10 @@ export function PipelineStepGrid({ model, asOfStep }: PipelineStepGridProps) {
       locale={locale}
     />
   )
+}
+
+// ── PipelineStepGrid — the self-resolving form (standalone) ─────────────────────
+export function PipelineStepGrid({ model, asOfStep }: PipelineStepGridProps) {
+  const source = usePipelineSourceRows(model.head, model.encoding)
+  return <PipelineStepGridView model={model} asOfStep={asOfStep} source={source} />
 }

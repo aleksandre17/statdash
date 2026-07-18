@@ -13,11 +13,18 @@
 //  honest cap, and the honest-cell grammar.
 //
 import type { DimVal, EngineRow, TransformStep, PipelineContext } from '@statdash/engine'
-import { applyPipeline } from '@statdash/engine'
+import { applyPipeline, MEASURE_DIM } from '@statdash/engine'
 
 /** The platform MISSING-VALUE glyph — the honest stand-in for a no-data cell
  *  (Law 11 / FF-CANVAS-NEVER-LIES; the SAME '—' `resolveTemplate` renders). */
 export const MISSING_GLYPH = '—'
+
+/** SDMX plumbing echoes hidden from the AUTHOR plane (SPEC §3.4 — no plumbing tokens):
+ *  `measure` is the flow-code column that duplicates the metric label (the value column
+ *  already carries it — dedupe), `obsStatus` is data-quality provenance for the steward.
+ *  The steward plane sees them RAW. Law 1: named by their reserved obs-column keys, not
+ *  by any business dimension. Shared by the grid (column filter) + the P-OFFER provider. */
+export const AUTHOR_HIDDEN_FIELDS: ReadonlySet<string> = new Set([MEASURE_DIM, 'obsStatus'])
 
 /** The honest preview cap (SPEC §9 E3 — Power Query's exact discipline). The grid
  *  shows the first N rows with an honest count note, never a silent truncation. */

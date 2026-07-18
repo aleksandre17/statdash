@@ -14,8 +14,9 @@ import { useMetricCatalogStore } from '../../../discovery/metricCatalog.store'
 import { useRoleStore } from '../../../studio/useRole'
 
 // Mock the center pane — the re-homed grid (its states are tested in PipelineDataGrid).
+// The workbench renders the VIEW form (the source read is lifted into DataWorkbench).
 vi.mock('../pipeline-preview/PipelineStepGrid', () => ({
-  PipelineStepGrid: ({ asOfStep }: { asOfStep: number }) => (
+  PipelineStepGridView: ({ asOfStep }: { asOfStep: number }) => (
     <div data-testid="mock-step-grid" data-asof={asOfStep}>grid</div>
   ),
 }))
