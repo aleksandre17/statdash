@@ -258,7 +258,7 @@ describe('useNodeRows — async error path', () => {
     // the whole tree. Assert the STRUCTURAL fallback markers (the title + retry
     // button), not a literal string: the labels now route through the i18n
     // contract (useTSafe('feedback')), so they are locale-dependent and proven by
-    // the geostat render gate; here we only prove the boundary fired + degraded
+    // the tenant-app render gate; here we only prove the boundary fired + degraded
     // gracefully with NO SiteProvider above it (the safe-resolver contract).
     expect(screen.queryByTestId('skeleton')).toBeNull()
     expect(document.querySelector('.node-error')).not.toBeNull()
