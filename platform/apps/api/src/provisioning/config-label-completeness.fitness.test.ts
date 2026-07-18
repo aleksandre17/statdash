@@ -60,8 +60,16 @@ const DISPLAY_KEYS = new Set([
 // never a display label: a `data` query/encoding/pipe subtree, a `vars`/`options`/
 // `transforms` expression tree. A DISPLAY_KEY appearing anywhere beneath one of these
 // (e.g. `encoding.label`, `pipe[].rename.label`) is a binding and is NOT enforced.
+//
+// `catalog` (siteConfig.i18n.catalog, ADR-019) is a DIFFERENT KIND of subtree: an
+// i18next resource bundle shaped locale-OUTER (`catalog[locale][ns][key] = string`),
+// where the locale is the PATH, not a leaf `{en,ka}` bag. A DISPLAY_KEY leaf there
+// (e.g. `catalog.ka.year-select.label = "წელი"`) is already locale-partitioned by
+// construction, so the LocaleString-bag model does not apply — its cross-locale
+// completeness is the domain of authoring-locale-complete.fitness (which walks the
+// catalog per-locale). Exempting it here keeps the two gates' models from colliding.
 const BINDING_SEGMENTS = new Set([
-  'data', 'vars', 'encoding', 'pipe', 'query', 'transforms', 'options',
+  'data', 'vars', 'encoding', 'pipe', 'query', 'transforms', 'options', 'catalog',
 ])
 
 const isPlainObject = (v: unknown): v is Record<string, unknown> =>

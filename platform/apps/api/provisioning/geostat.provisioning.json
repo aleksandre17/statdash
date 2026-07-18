@@ -5025,6 +5025,9 @@
               "error.title": "Failed to load component",
               "error.retry": "Retry",
               "skip.toContent": "Skip to main content"
+            },
+            "year-select": {
+              "label": "Year"
             }
           },
           "ka": {
@@ -5039,6 +5042,9 @@
               "error.title": "კომპონენტი ვერ ჩაიტვირთა",
               "error.retry": "თავიდან ცდა",
               "skip.toContent": "მთავარ შინაარსზე გადასვლა"
+            },
+            "year-select": {
+              "label": "წელი"
             }
           }
         },

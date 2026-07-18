@@ -10,12 +10,15 @@ export const yearSelectSlice: FilterControlSlice<ParamYearSelectNode, number> = 
     label:       'Year Selector',
     category:    'filter',
     dimension:   'time',
-    // Bilingual default accessible-name for the <select> when the filter config
+    // EN-NEUTRAL default accessible-name for the <select> when the filter config
     // authors no explicit label — registered under the 'year-select' namespace
-    // (AR-37 P1). Without this the shell fell back to a hardcoded English 'Year'
-    // aria-label on the KA locale (WCAG 3.1.2).
+    // (AR-37 P1) so the shell resolves `t('label')` instead of a hardcoded literal
+    // (the WCAG 3.1.2 gap). English is the neutral source language and the only
+    // baseline a tenant-agnostic library file may carry (Law 3); tenant locales
+    // (e.g. the Georgian year label) arrive at boot from the manifest i18n CATALOG
+    // under this same 'year-select' namespace (registerManifestI18n, ADR-019) —
+    // exactly the baseline/tenant split feedback.ts documents for 'feedback'.
     i18n: {
-      ka: { label: 'წელი' },
       en: { label: 'Year' },
     },
   },

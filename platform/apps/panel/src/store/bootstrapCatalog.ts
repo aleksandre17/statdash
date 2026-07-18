@@ -30,6 +30,7 @@
 //
 import type { SiteManifestContract } from '@statdash/contracts'
 import { registerManifestMetrics, registerManifestDimensions } from '@statdash/engine'
+import { registerManifestI18n, type I18nConfig } from '@statdash/react'
 import { getToken } from '../lib/auth'
 
 // Same base as the config client (lib/api.ts): dev supplies VITE_API_URL (or the
@@ -38,7 +39,7 @@ import { getToken } from '../lib/auth'
 const BASE = import.meta.env.VITE_API_URL ?? ''
 
 /** The catalog channels the authoring boot reads off the delivery manifest. */
-type CatalogManifest = Pick<SiteManifestContract, 'metrics' | 'dimensions'>
+type CatalogManifest = Pick<SiteManifestContract, 'metrics' | 'dimensions' | 'i18n'>
 
 /**
  * Fetch the governed catalog from GET /api/bootstrap. The delivery route returns
@@ -62,14 +63,21 @@ export async function fetchCatalogManifest(): Promise<CatalogManifest> {
  * `describeApp()` — and thus the MetricPalette / governed enum-ref controls — see a
  * populated catalog. MUST run before the wizard's Page step first reads the catalog.
  * Returns true on success, false on any API failure (fail-soft — never throws to
- * the boot flow). Registers BOTH channels (metrics + dimensions), matching the
- * geostat runner's bootstrapSite() parity.
+ * the boot flow). Registers ALL THREE tenant channels (metrics + dimensions + the
+ * i18n catalog), matching the geostat runner's bootstrapSite() parity — the i18n
+ * catalog so the live canvas PREVIEWS a tenant's page with its authored locale
+ * chrome (e.g. a control's localized aria label) exactly as the runner renders it,
+ * instead of only the framework's neutral en baseline (AR-52: the canvas never lies).
  */
 export async function bootstrapCatalog(): Promise<boolean> {
   try {
     const manifest = await fetchCatalogManifest()
     registerManifestMetrics(manifest.metrics)
     registerManifestDimensions(manifest.dimensions)
+    // The i18n catalog is a JsonRecord on the wire; it carries the ADR-019
+    // I18nConfig shape ({ locales, defaultLocale, fallbackLocale, catalog? }).
+    // registerManifestI18n is a no-op when the catalog is absent (Postel).
+    if (manifest.i18n) registerManifestI18n(manifest.i18n as unknown as I18nConfig)
     return true
   } catch (e) {
     console.warn('[api] catalog bootstrap failed — MetricPalette will show its empty state', e)

@@ -33,6 +33,7 @@ import { SiteProvider } from '@statdash/react'
 import { LocaleGuard } from '../app/LocaleGuard'
 import { setupRegistrations } from '../setupRegistrations'
 import { registerFormatters } from '../i18n/formatters'
+import { registerManifestI18n } from '../i18n/manifest-catalog'
 import type { SiteManifest } from './site-manifest'
 
 // ── Load the provisioning manifest (the live /api/bootstrap source) from disk ──
@@ -60,6 +61,11 @@ beforeAll(() => {
   setupRegistrations()
   const manifest = buildManifest()
   registerFormatters(manifest.i18n.locales)
+  // Pour the TENANT i18n catalog (the year-select ka 'წელი' label, the ka feedback
+  // chrome…) into i18next — the SAME boot seam the live runner drives from App.tsx
+  // (registerManifestI18n(boot.manifest.i18n), ADR-019). Without this the ka render
+  // would diverge from live: en-neutral library baselines only, no tenant Georgian.
+  registerManifestI18n(manifest.i18n)
 })
 
 afterEach(() => cleanup())
@@ -97,6 +103,12 @@ function renderPage(slug: string, locale: string, perspective?: string) {
 const TAB_LABELS = { ka: { year: 'წლიური', range: 'დინამიკა' }, en: { year: 'Annual', range: 'Dynamics' } } as const
 //  The range from-select's aria-label (a bilingual filter label) per active locale.
 const RANGE_LABEL = { ka: 'შუალედი:', en: 'Interval:' } as const
+//  The year-select's default aria-label per active locale. The control authors no
+//  explicit `label`, so the shell resolves `t('label')` in the 'year-select' namespace:
+//  en 'Year' is the library's en-neutral baseline (meta.i18n), ka 'წელი' arrives via
+//  the tenant manifest catalog (registerManifestI18n, loaded in beforeAll). The
+//  invariant proven below is "year-select present in year mode", read off its label.
+const YEAR_LABEL = { ka: 'წელი', en: 'Year' } as const
 
 const SPEC = {
   gdp: {
@@ -191,14 +203,14 @@ for (const slug of ['gdp', 'accounts', 'regional'] as const) {
       it('year-select shows in `year`; from/to range selects show in `range`; never both', () => {
         renderPage(slug, locale)
         const yCombos = comboLabels()
-        expect(yCombos, 'year-select present in year').toContain('Year')
+        expect(yCombos, 'year-select present in year').toContain(YEAR_LABEL[locale])
         expect(yCombos, 'from-range hidden in year').not.toContain(RANGE_LABEL[locale])
         cleanup()
 
         renderPage(slug, locale, 'range')
         const rCombos = comboLabels()
         expect(rCombos, 'from-range present in range').toContain(RANGE_LABEL[locale])
-        expect(rCombos, 'year-select hidden in range').not.toContain('Year')
+        expect(rCombos, 'year-select hidden in range').not.toContain(YEAR_LABEL[locale])
       })
     })
   }

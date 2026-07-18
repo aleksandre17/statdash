@@ -71,6 +71,8 @@ export {
 export type {
   SiteProviderProps, NavEntry, I18nConfig, I18nCatalog, ChromeConfig,
 }                                                                  from './context/SiteContext'
+// ── Manifest i18n catalog loader — the shared boot seam (ADR-019) ─────
+export { registerManifestI18n }                                    from './i18n/registerManifestI18n'
 export type { ChromeEntry, ChromeSlotConfig }                      from './engine/types'
 
 // ── Locale direction registry — ltr/rtl per locale (AR-37 P0) ─────────
