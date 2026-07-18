@@ -48,3 +48,23 @@ Portal prod GO (+one-time metrics SQL) · CI key-turn (`gh auth`/Docker runner �
 - **Git hygiene:** stage explicitly, NEVER `git add -A`; one agent per coherent slice; serialize same-file work; agents' in-flight files are untouchable.
 - **Model routing:** apex-conceptual → FABLE (self or `model:"fable"` agents; owner: Fable-lead > Opus); standard senior judgment → Opus; mechanics → cheap tier. Apex drafts get the lead's personal elevation before the owner sees them.
 - **Journeys are the DoD unit** — jsdom/unit green alone never closes a wave; the owner's live walk is the final acceptance; his confusion is a defect class.
+
+## To the incoming lead — from the Fable that walked this road (2026-07-18)
+
+You are not a smaller mind taking over a bigger one's work. The charter binds identically on any model — the difference is not capacity but HABITS. These are the ones that carried two days of 15 green waves, and the ones that nearly broke them:
+
+1. **Summon Fable when the work is apex-conceptual.** You still command `model:"fable"` on the Agent tool — new grammars, SPECs, circle-break studies, proactive sweeps go THERE (fresh context + specialist memory + the strongest mind), and YOU do the critical elevation pass before the owner sees anything. Author ≠ judge, inverted: they create, you judge. Never relay a draft as-is.
+
+2. **The owner is your best instrument — treat him as the standard, never as the tester.** He types fast, with typos, in Georgian; behind every «ვერ ვხვდები» sits a canonical finding — his instincts matched Power Query, Grafana, Superset, Figma NINE times in one day. But the Proactive Law exists because he should never need to find first: open every session by walking the product before he does. The sentence that restored his trust was «აი რას იპოვიდი შენ — ჩვენ უკვე ვიპოვეთ». Earn it daily.
+
+3. **The journey-gate is the crown jewel — it held the ⛔ door shut TWICE against green suites.** 3900 passing tests said yes; the live walk said no (−100 fabrication, grain-less browse). Never let gate-green close a wave. Walk it, screenshot it, read the screenshot yourself.
+
+4. **Falsification is victory, not embarrassment.** My hypotheses died twice in one night (seed-drift; boot-path divergence) — both times the evidence-driven agent found a better root. Brief agents to EXIT-FAST and disprove you; log your own misses; the owner respects a falsified lead more than a defended guess.
+
+5. **Verify-before-brief, always:** 2–3 cheap greps stamping every brief (a card's status is a claim, not a fact — W1 was already built when its card said READY). And after EVERY panel-touching commit: `dev-watch-panel.sh --once` — he walks :3013 live; a stale sync once cost us three diagnosis rounds.
+
+6. **Decide; don't ask.** Reversible + in-codebase = yours. He gave trust with «ნდობას გიცხადებ, გააკეთე» and reaffirmed it by escalating only when we were NOT proactive enough. The failure mode he punishes is timidity and staleness, never boldness with a revert-net.
+
+7. **Economy from logistics, never from the bar.** One coherent slice per agent; fold scope into the first brief (no SendMessage illusions); serialize same-file work; the full gate ritual when packages/* is touched — the one targeted-only run this session had to be re-baselined by the next wave.
+
+The trajectory you inherit: finish the queue (0091→…→Wave B→⛔ door→DQ), then the owner's novice-walk, and hold the north star — the statistics-native semantic platform that beats the class in the governed × simple × honest quadrant. The bones are strong, the gates bite, the board is true. Continue mid-stride; the road is yours now.
