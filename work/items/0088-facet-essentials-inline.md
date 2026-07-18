@@ -19,3 +19,5 @@ links:
 **Boundaries.** All writes go through `toWorkbenchModel`/`fromWorkbenchModel` (the ONE model — no facet-local spec surgery) · P-OFFER (chips governed-labeled, nothing typed) · plane law (steward raw view untouched) · WCAG · bilingual · honest states.
 
 **DoD.** Live: bound element → metric visible + switchable inline; a filter added in the workbench appears as a chip; removing the chip updates the grid/canvas; depth door works; zero console errors; panel gate green (vitest parsed + tsc + lint). Screenshots. The facet's concept-count for a first-time author: metric · filters · door — THREE things, nothing else.
+
+**Pre-note (0087 finding, 2026-07-18):** the `role` seam is universal — the facet's inline pickers (metric switch, chips) should ride the SAME role-projection (FieldPicker/MemberPicker are pipeline-step-local today; the declaration is not). One projection, every surface.
