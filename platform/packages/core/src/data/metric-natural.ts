@@ -105,10 +105,20 @@ export function naturalBrowseCtx(
   for (const [dim, v] of Object.entries(ctx.dims)) {
     if (v === '' || v === null || v === undefined) continue      // already unpinned
     const seen       = members.get(dim)
-    const isNatural  = seen !== undefined && [...seen].some(isConcreteMember)
     const pinPresent = seen !== undefined && seen.has(String(v))
-    // FOREIGN ⟺ NOT a natural axis AND the pinned member is absent from the metric's obs.
-    if (!isNatural && !pinPresent) {
+    // FOREIGN ⟺ the pinned MEMBER is absent from the metric's obs for this dim.
+    // MEMBERSHIP decides, NOT axis-existence: a dim the metric ranges over but NOT at
+    // this member is still foreign. A NATIONAL metric whose only geo member is the
+    // country code 'GE' (a whole-country coordinate that is NOT the SDMX '_T' literal),
+    // browsed on a page pinning a REGION ('adjara'), must have that region neutralized —
+    // else resolveMetricValue reads storeValAt(GDP,{geo:'adjara'})=0 → 0/prev folds to a
+    // fabricated null/−100 (the W-P5c FINDING, a Law-11 breach). The earlier guard also
+    // required "NOT a natural axis", which KEPT a foreign pin whenever the dim carried ANY
+    // concrete member — so a national series encoded at 'GE' (concrete) was never
+    // neutralized and rendered empty for every period. Membership alone is the honest
+    // test: a pin ON a member the metric DOES carry (a real region for a regional metric,
+    // or the '_T'/'GE' total itself) is present ⇒ kept; anything else is dropped.
+    if (!pinPresent) {
       dims[dim] = '' as DimVal
       neutralized.push(dim)
     }

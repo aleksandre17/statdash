@@ -136,6 +136,78 @@ describe('FF-BROWSE-METRIC-NATURAL — a calc browse under a FOREIGN pin renders
   })
 })
 
+// ── FF-BROWSE-NATIONAL-AT-CONCRETE-GEO — the LIVE topology the '_T' fixture could not catch ──
+//
+//  The green fixtures above model a NATIONAL total as geo='_T' (the SDMX literal). The LIVE
+//  GDP_ANNUAL cube carries its national series at the CONCRETE country code geo='GE' (+ an
+//  `approach` dim, approach='_Z'), NOT '_T'. The earlier naturalBrowseCtx kept a foreign pin
+//  whenever the dim carried ANY concrete member — so 'GE' (concrete) made geo look "natural",
+//  the regional pin geo='adjara' was NEVER neutralized, and resolveMetricValue read national
+//  GDP at geo='adjara' (an empty slice) → null for every period (the live 0-values/−100 the
+//  probe saw). MEMBERSHIP, not axis-existence, is the honest test: 'adjara' is absent from the
+//  metric's obs (only 'GE') ⇒ foreign ⇒ neutralized ⇒ the metric reads its own national slice.
+const NATIONAL_GDP_GE: Observation[] = [
+  { measure: 'nat:GDP', approach: '_Z', time: 2018, geo: 'GE', value: 80,  label: 'GDP' },
+  { measure: 'nat:GDP', approach: '_Z', time: 2019, geo: 'GE', value: 90,  label: 'GDP' },
+  { measure: 'nat:GDP', approach: '_Z', time: 2020, geo: 'GE', value: 100, label: 'GDP' },
+]
+const geStore = new ExternalStore(NATIONAL_GDP_GE)
+// A regional page pins BOTH a foreign geo (a region the national cube has no obs for) and a
+// foreign sector (absent from the national cube entirely) — the true regional-page ctx.
+const regionalPageCtx: SectionContext = { dims: { geo: 'adjara', sector: 'agri' } }
+
+describe('FF-BROWSE-NATIONAL-AT-CONCRETE-GEO — a national series carried at geo=GE (not _T)', () => {
+  it('a concrete national geo pin (GE) is NOT a natural axis for a REGION pin — membership decides', () => {
+    // geo carries the concrete member 'GE' → the OLD "any concrete member ⇒ natural axis ⇒ keep"
+    // rule wrongly KEPT geo=adjara. The membership rule neutralizes it: 'adjara' ∉ {'GE'}.
+    const { neutralized, ctx } = naturalBrowseCtx(NATIONAL_GDP_GE, 'nat:GDP', regionalPageCtx)
+    expect(neutralized).toEqual(['geo', 'sector'])       // BOTH foreign pins dropped
+    expect(ctx.dims['geo']).toBe('')                     // adjara neutralized → reads national GE
+    expect(ctx.dims['sector']).toBe('')
+  })
+
+  it('a pin ON the concrete national member (GE) is KEPT — present in the obs', () => {
+    const { neutralized } = naturalBrowseCtx(NATIONAL_GDP_GE, 'nat:GDP', { dims: { geo: 'GE' } })
+    expect(neutralized).toEqual([])                      // 'GE' IS a member → not foreign
+  })
+
+  it('gdp.growthYoy (national @ GE) browsed on a geo=adjara REGIONAL page = the REAL national YoY', () => {
+    const calcBrowse: DataSpec = {
+      type: 'pipeline', pipe: [{ op: 'source', metrics: ['natv:gdp-yoy'] }], encoding: { label: 'id' },
+    }
+    const rows = interpretSpec(calcBrowse, regionalPageCtx, geStore)
+    expect(rows.map((r) => r['id'])).toEqual(['2018', '2019', '2020'])
+    expect(rows[0]!['value']).toBeNull()                       // first period — honest no-data
+    expect(Number(rows[1]!['value'])).toBeCloseTo(12.5)        // the REAL national series, not null/−100
+    expect(Number(rows[2]!['value'])).toBeCloseTo(11.111, 2)
+    for (const r of rows) { expect(r['value']).not.toBe(-100); expect(r['value']).not.toBe(0) }
+  })
+
+  it('an async ApiStore over the SAME GE-national topology resolves the real series off the warm', async () => {
+    const raw: RawObsRow[] = NATIONAL_GDP_GE.map((o) => ({
+      time_period:   String(o['time']),
+      dim_key:       { measure: String(o['measure']), approach: String(o['approach']), geo: String(o['geo']) },
+      obs_value:     String(o['value']),
+      obs_status:    'A',
+      obs_attribute: {},
+    }))
+    vi.stubGlobal('fetch', fakeFetch(raw))
+    // Live nonTimeDims for the gdp cube: approach + measure + geo (measure pinned per-val).
+    const api = new ApiStore('http://api.test', 'GDP_ANNUAL', ['approach', 'measure', 'geo'], {}, mapRow)
+    const calcBrowse: DataSpec = {
+      type: 'pipeline', pipe: [{ op: 'source', metrics: ['natv:gdp-yoy'] }], encoding: { label: 'id' },
+    }
+    await warmLikeLive(api, calcBrowse, regionalPageCtx)
+    let rows!: EngineRow[]
+    expect(() => { rows = interpretSpec(calcBrowse, regionalPageCtx, api) }).not.toThrow()
+    // Byte-identical to the in-memory result over the same GE-national data.
+    expect(rows).toEqual(interpretSpec(calcBrowse, regionalPageCtx, geStore))
+    expect(rows[0]!['value']).toBeNull()
+    expect(Number(rows[1]!['value'])).toBeCloseTo(12.5)
+    vi.unstubAllGlobals()
+  })
+})
+
 // ── FF-BROWSE-WARM-COVERS-NATURAL — warm ≡ read across the re-merge wall (async store) ──
 //
 //  Drives a REAL ApiStore (fake server), warms EXACTLY the slices useNodeRows' warm walk
