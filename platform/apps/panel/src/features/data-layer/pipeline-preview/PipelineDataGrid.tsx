@@ -91,7 +91,7 @@ export function PipelineDataGrid({
           sx={{
             borderCollapse: 'collapse', width: '100%', fontSize: 12,
             '& th, & td': { border: 1, borderColor: 'divider', px: 1, py: 0.5, textAlign: 'left', whiteSpace: 'nowrap' },
-            '& thead th': { bgcolor: 'grey.100', fontWeight: 600, position: 'sticky', top: 0 },
+            '& thead th': { bgcolor: 'action.hover', fontWeight: 600, position: 'sticky', top: 0 },
           }}
         >
           <Box component="caption" sx={{ captionSide: 'top', textAlign: 'left', px: 1, py: 0.5, fontWeight: 600, fontSize: 12 }}>
@@ -142,7 +142,7 @@ function StateNote({
       aria-busy={busy || undefined}
       sx={{
         p: 2, border: 1, borderColor: 'divider', borderRadius: 1,
-        bgcolor: 'grey.50', color: 'text.secondary', fontSize: 12, textAlign: 'center',
+        bgcolor: 'action.hover', color: 'text.secondary', fontSize: 12, textAlign: 'center',
       }}
     >
       {children}

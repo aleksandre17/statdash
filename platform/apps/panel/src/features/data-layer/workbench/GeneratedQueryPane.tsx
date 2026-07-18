@@ -128,7 +128,7 @@ function WireBlock({ label, body, testid }: { label: string; body: string; testi
         <Box
           component="pre"
           data-testid={testid}
-          sx={{ m: 0, p: 1, bgcolor: 'grey.100', borderRadius: 1, fontSize: 11, overflow: 'auto', fontFamily: 'monospace' }}
+          sx={{ m: 0, p: 1, bgcolor: 'action.hover', color: 'text.primary', borderRadius: 1, fontSize: 11, overflow: 'auto', fontFamily: 'monospace' }}
         >
           {body}
         </Box>

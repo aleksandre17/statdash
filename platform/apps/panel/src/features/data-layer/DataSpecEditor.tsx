@@ -92,7 +92,7 @@ export function DataSpecEditor({ value, onChange }: DataSpecEditorProps) {
             <Box
               component="pre"
               sx={{
-                m: 0, p: 1.5, bgcolor: 'grey.100', borderRadius: 1,
+                m: 0, p: 1.5, bgcolor: 'action.hover', color: 'text.primary', borderRadius: 1,
                 fontSize: 12, overflow: 'auto', fontFamily: 'monospace',
               }}
             >
