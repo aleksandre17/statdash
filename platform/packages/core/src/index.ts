@@ -367,6 +367,13 @@ export { registerMetric, registerMetrics, getMetric, listMetrics, listMetricDefs
          METRIC_AGG_VALUES, ADDITIVITY_VALUES,
          effectiveAdditivity, defaultAdditivity, isRelativeCoord }    from './data/metric'
 export { resolveMetricValue, calcMetricRequirements, isCalculatedMetric } from './data/metric-calc'
+// ── Metric-natural browse coordinates [ADR-047 Wave A · DECISION 1] ──
+//  A grain-∅ metric BROWSE reads the metric at its NATURAL coordinates: a FOREIGN ctx pin
+//  (a dim the metric does not carry an observation for) is neutralized to the empty-wildcard
+//  '' — DERIVED from the obs slice the browse scans (Law 5), never a declared axis field. ONE
+//  '' mechanism, two consumers: naturalBrowseCtx (read, foreign-only) + browseScanCtx/Dims
+//  (warm/scan whole-table superset), so warm ≡ read across the React re-merge wall.
+export { metricNaturalDims, naturalBrowseCtx, browseScanDims, browseScanCtx } from './data/metric-natural'
 // ── Relative member navigation [ADR-045] — MDX Lag/ParallelPeriod over an ordered dim ──
 export { orderedMembers, navigateRelative, resolveRelativeAt }        from './data/relative-coord'
 // ── Measure algebra at grain [AR-50 M2] — the grain-polymorphic evaluator ──

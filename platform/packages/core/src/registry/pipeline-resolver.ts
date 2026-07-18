@@ -25,7 +25,7 @@
 import type { EngineRow }         from '../data/encoding'
 import type { DataSpec, PipelineSpec, PipeStep, SourceStep, MetricRef } from '../config/data-spec'
 import type { SectionContext }    from '../core/context'
-import { atTime, TIME_DIM }       from '../core/context'
+import { atTime, TIME_DIM, MEASURE_DIM } from '../core/context'
 import type { DataStore }         from '../data/store'
 import { storeObs }               from '../data/store'
 import type { TransformStep }     from '../data/transform'
@@ -33,6 +33,7 @@ import { applyPipeline }          from '../data/transform'
 import type { DimVal, ObsQuery }  from '../sdmx'
 import { getMetric, resolveMeasureRef } from '../data/metric'
 import { isCalculatedMetric, resolveMetricValue } from '../data/metric-calc'
+import { naturalBrowseCtx, browseScanCtx } from '../data/metric-natural'
 import { tagLocaleString }        from '../i18n/types'
 import type { LocaleString }      from '../i18n/types'
 import type { SpecResolver }      from './engine'
@@ -76,32 +77,53 @@ function browseMetrics(refs: MetricRef[], ctx: SectionContext, store: DataStore)
   return out
 }
 
-/** BASE browse — the metric's obs read, byte-identical to the steward obs read (via `query`). */
+/**
+ * BASE browse — the metric's obs read, byte-identical to the steward obs read (via `query`).
+ * The metric-natural coordinate rule [ADR-047 DECISION 1] applies: a FOREIGN ctx pin (a dim
+ * the metric does not range over — e.g. a national metric on a region-pinned page) is
+ * neutralized to '' so the browse reads the metric's OWN natural table, never an empty slice.
+ * The naturality is DERIVED from the metric's obs (whole-table scan), never a declared axis.
+ */
 function browseBaseMetric(ref: MetricRef, ctx: SectionContext, store: DataStore): EngineRow[] {
+  const code = resolveMeasureRef(ref).codes[0] ?? ref
+  const members = storeObs(store, { measure: code }, browseScanCtx(ctx))
+  const { ctx: natCtx } = naturalBrowseCtx(members, code, ctx)
   const querySpec: DataSpec = { type: 'query', query: { measure: ref }, encoding: { label: 'id' } }
-  return defaultRegistry.spec('query')?.resolve(querySpec, ctx, store) ?? []
+  return defaultRegistry.spec('query')?.resolve(querySpec, natCtx, store) ?? []
 }
 
 /** CALC browse — resolveMetricValue at each member of the metric's time axis (year-by-year). */
 function browseCalcMetric(ref: MetricRef, ctx: SectionContext, store: DataStore): EngineRow[] {
-  // Component codes carry the time axis (a calc metric has no raw obs of its own). Enumerate
-  // the distinct time members over a TIME-UNBOUNDED read (a browse is the whole table — a
-  // ctx year pin never narrows it), ascending.
+  // Component codes carry the time axis (a calc metric has no raw obs of its own). Scan the
+  // component's WHOLE natural table once (browseScanCtx neutralizes every pin to '' so a
+  // FOREIGN ctx pin — e.g. geo=<region> on a national component — does not zero the slice on
+  // an async store, and the scan is time-unbounded). That one slice yields BOTH the metric's
+  // natural dims and its time members.
   const codes = resolveMeasureRef(ref).codes
   if (!codes.length) return []
-  const { [TIME_DIM]: _pin, ...unbounded } = ctx.dims
-  const browseCtx: SectionContext = { ...ctx, dims: unbounded as Record<string, DimVal> }
-  const members = storeObs(store, { measure: codes[0]! }, browseCtx)
-  const years = [...new Set(members.map((o) => Number(o[TIME_DIM])))]
+  const code0 = codes[0]!
+  const members = storeObs(store, { measure: code0 }, browseScanCtx(ctx))
+
+  // The metric-natural coordinate [ADR-047 DECISION 1]: neutralize every FOREIGN pin (derived
+  // from `members`) to '' so a NATIONAL component under a regional page reads its own value —
+  // NOT storeValAt(...) = 0 → the −100 lie (W-P5c FINDING). A NATURAL pin (a dim the metric
+  // ranges over) is kept, so a regional metric still shows its pinned region's series.
+  const { ctx: natCtx } = naturalBrowseCtx(members, code0, ctx)
+
+  const years = [...new Set(
+    members
+      .filter((o) => String((o as Record<string, DimVal>)[MEASURE_DIM] ?? code0) === code0)
+      .map((o) => Number(o[TIME_DIM])),
+  )]
     .filter((n) => !Number.isNaN(n))
     .sort((a, b) => a - b)
 
   const series = metricSeries(ref)
   return years.map((y) => {
-    // resolveMetricValue: a number, OR null at the first-period edge (honest no-data,
-    // ADR-045). It is a calc metric by construction here, so never undefined. NEVER a
-    // fabricated 0 — the null flows to the grid's honest `no-data` Cell (Law 11).
-    const v = resolveMetricValue(ref, atTime(y, ctx), store)
+    // resolveMetricValue at the NATURAL coordinate: a number, OR null at the first-period edge
+    // (honest no-data, ADR-045). It is a calc metric by construction here, so never undefined.
+    // NEVER a fabricated 0/−100 — the null flows to the grid's honest `no-data` Cell (Law 11).
+    const v = resolveMetricValue(ref, atTime(y, natCtx), store)
     const row: EngineRow = {
       id: String(y), label: String(y), [TIME_DIM]: y, series, metric: ref, value: (v ?? null) as DimVal,
     }

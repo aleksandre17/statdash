@@ -11,6 +11,7 @@ import { effectiveYears, isUnsetTime } from '../core/time-dimension'
 import type { DataStore, Requirement } from './store'
 import { defaultRegistry }       from '../registry/engine'
 import { hasSourceGrain }        from '../registry/pipeline-resolver'
+import { browseScanDims }        from './metric-natural'
 import { emitDiagnostic }        from '../registry/diagnostics'
 import { diagWarning }           from '../core/diagnostic'
 
@@ -188,10 +189,16 @@ function pipelineRequirements(head: SourceStep | undefined, ctx: SectionContext)
     // obs-array slice a BASE browse reads is additionally warmed under `sourceHeadObs` in
     // the react warm; here we warm the val + per-code obs superset the calc reads visit.
     if (!hasSourceGrain(head)) {
-      const { [TIME_DIM]: _t, ...rest } = ctx.dims
-      const base = rest as Record<string, DimVal>
+      // ADR-047 DECISION 1: the browse reads the metric's NATURAL table — foreign ctx pins
+      // neutralized to '' at READ time (metric-natural). The warm has NO store to derive
+      // naturality, so it warms the whole-table SUPERSET: EVERY ctx pin set to the empty-
+      // wildcard '' via `browseScanDims` (NOT stripped — an omitted dim inherits its ctx pin
+      // across the re-merge wall { ...ctx.dims, ...r.dims }; a '' dim wins the spread as
+      // "unpinned", and isUnsetTime('') leaves the time axis unbounded). warm ⊇ read by
+      // construction — the SAME '' mechanism the READ's obs member scan uses (browseScanCtx).
+      const dims = browseScanDims(ctx)
       return head.metrics.flatMap((ref) =>
-        resolveMeasureRef(ref).codes.map((code) => ({ code, dims: { ...base } })),
+        resolveMeasureRef(ref).codes.map((code) => ({ code, dims: { ...dims } })),
       )
     }
     return metricRequirements({ type: 'metric', ...grain }, ctx)
