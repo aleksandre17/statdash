@@ -1,15 +1,18 @@
 # Memory Index
 
-- [Canvas craft batch (P3/P5/P6/P7/L2)](project_panel_canvas_craft_batch.md) — governed dim labels · RightDock siteContext · canvas dark-preview
-- [W1 Honest Canvas (AR-52)](project_panel_w1_honest_canvas.md) — live-default+veil, honest UNBOUND KPI (FF-CANVAS-NEVER-LIES)
-- [W2 Semantic Spine (AR-52)](project_panel_w2_semantic_spine.md) — front-door hoist · corpus→governed ids · FF-DATA-BOUNDED · config-cube-contract guard
-- [Summary-Card Inspector (Move 1)](project_summary_card_inspector.md) — rich values → glance cards + dock section registry; FF-NO-RAW-JSON-DEFAULT
-- [Constructor architecture (state)](project_constructor_state.md) — Inspector/SchemaSource seam, registry pattern, Coverage Fitness
+- [Canvas craft batch (P3/P5/P6/P7/L2)](project_panel_canvas_craft_batch.md) — governed dim labels · RightDock siteContext
+- [W1 Honest Canvas (AR-52)](project_panel_w1_honest_canvas.md) — live-default+veil, honest UNBOUND KPI
+- [W2 Semantic Spine (AR-52)](project_panel_w2_semantic_spine.md) — front-door hoist · corpus→governed ids · FF-DATA-BOUNDED
+- [Summary-Card Inspector (Move 1)](project_summary_card_inspector.md) — rich values → glance cards + dock section registry
+- [Constructor architecture (state)](project_constructor_state.md) — Inspector/SchemaSource seam, registry
 - [Constructor C3+C5](project_panel_c3_c5.md) — cube capability-discovery + save guard
 - [Panel DataSpec editor](project_panel_dataspec_editor.md) — visual DataSpec Query Builder
-- [Pipeline live per-step grid (W-P1)](project_panel_pipeline_live_grid.md) — prefix-run over applyPipeline off a once-resolved live source read; derive-throws gotcha
+- [Pipeline live per-step grid (W-P1)](project_panel_pipeline_live_grid.md) — prefix-run over applyPipeline off a once-resolved source read
 - [Data workbench three-pane (W-P2)](project_panel_data_workbench_wp2.md) — focus-view escalation; generatedQuery plane-split
-- [Pipeline emission flip (W-P5b)](project_panel_pipeline_emission_flip_wp5b.md) — workbenchModel ONE-path; bindMeasureToSpec→governed source head; OPEN Get-grain crack
+- [Pipeline emission flip (W-P5b)](project_panel_pipeline_emission_flip_wp5b.md) — workbenchModel ONE-path; bindMeasureToSpec→governed source head
+- [P-OFFER filter offer](project_panel_poffer_filter_offer.md) — pick governed cols/members not type; stepInput seam; engine filter=equality/IN only
+- [Field-ROLE projection (0087)](project_panel_role_projection.md) — PropFieldRole seam + generic role-projecting step editor + expr live preview; retired the raw-JSON Inspector delegation
+- [Raw-cube entry + promotion (0084)](project_panel_raw_cube_promotion.md) — steward GetHead tabs · PromoteMetric reuses semanticCatalog (SAFE-SAVE) · cubeDebt · FF-PROMOTE-ROUNDTRIP
 - [Placement Law primitive (SL-0b)](project_placement_law_primitive.md) — §3.2 scope×weight→container; 4-band inline/drill
 - [Nav + chrome authorable](project_panel_nav_chrome_authorable.md) — nav per-entry editable; chrome→Pages&Site
 - [Calc editor M3.0](project_panel_calc_editor_m30.md) — derived-metric editor (CalcBuilder+ExprTreeEditor)
@@ -22,30 +25,29 @@
 - [Panel Playwright e2e](project_panel_playwright_e2e.md) — real-browser boot/bind proof; mock-API; e2e/probes/ = journey-probe home
 - [Canvas chrome fidelity + hollow rail](project_panel_canvas_chromeconfig_defect.md) — hollow-rail FIXED (projectCanvasSiteChrome); chrome-SELECTION via ChromeSlot
 - [Canvas brand faithful (AR-52 W1)](project_canvas_brand_faithful.md) — brand-in-manifest themeOverrides + ONE styles apply seam (buildThemeVars/applyThemeOverrides), dark-safe
-- [Insert accept-graph gap (M4.1)](project_panel_insert_accept_graph_gap.md) — auto-wrap into `section`; homeless content blocks → guided hint; fix via META accepts
-- [Per-page type end-to-end](project_panel_per_page_type.md) — CanvasPage.type first-class+required; insert accepts derive from page.type; FF-NO-PRIVILEGED-PAGE-TYPE
-- [Bounded bands → Part port](project_panel_bounded_element_bands.md) — BE-1/4/5 = ONE ADR-041 Part port; sourcedParts stable-key + positional facade till Phase 3/4
-- [FACET axis (5 facets)](project_facet_axis_style_facet.md) — FacetDescriptor/facetRegistry caps→dock sections; appliesWhen≠meta.type
-- [Live store measure pinning](project_live_store_measure_pinning.md) — live ApiStore does pure dim_key containment, no measure filter/agg
-- [Law-4 i18n check](project_law4_i18n_check.md) — check-laws Georgian rule: single-locale=violation, bilingual {ka,en}=ok
+- [Insert accept-graph gap (M4.1)](project_panel_insert_accept_graph_gap.md) — auto-wrap into `section`; homeless blocks → hint; fix via META accepts
+- [Per-page type end-to-end](project_panel_per_page_type.md) — CanvasPage.type first-class+required; insert accepts derive from page.type
+- [Bounded bands → Part port](project_panel_bounded_element_bands.md) — BE-1/4/5 = ONE ADR-041 Part port; sourcedParts stable-key facade
+- [FACET axis (5 facets)](project_facet_axis_style_facet.md) — FacetDescriptor/facetRegistry caps→dock sections
+- [Live store measure pinning](project_live_store_measure_pinning.md) — live ApiStore = pure dim_key containment, no measure filter
+- [Law-4 i18n check](project_law4_i18n_check.md) — check-laws: single-locale=violation, bilingual {ka,en}=ok
 - [Runner chrome i18n (ADR-019)](project_runner_chrome_i18n_adr019.md) — manifest.i18n.catalog wiring; i18next addResourceBundle deep-flag gotcha
 - [Integrity indicator page scope (AR-40)](project_integrity_indicator_page_scope.md) — ONE page-level indicator; two-channel NodeStatusContext; kpi-strip fold gotcha
-- [Semantic-token spine](project_semantic_token_spine.md) — 3-tier tokens, gates (FF-TOKEN-ONLY/FF-TENANT-OVERRIDE), byte-identity gotcha, ΔE collapse ratification
-- [Dark-mode completeness + fitness](project_dark_mode_completeness_and_fitness.md) — dark is a token-override layer that must cover the WHOLE Tier-2 set
-- [Tenant dark cascade gap](project_geostat_tenant_dark_cascade_gap.md) — a tenant block can pin a role and beat [data-theme=dark] by source order
+- [Semantic-token spine](project_semantic_token_spine.md) — 3-tier tokens, gates (FF-TOKEN-ONLY/FF-TENANT-OVERRIDE), ΔE collapse ratification
+- [Dark-mode completeness](project_dark_mode_completeness_and_fitness.md) — dark=token-override over WHOLE Tier-2 set · [tenant cascade gap](project_geostat_tenant_dark_cascade_gap.md)
 - [Theming seam](project_theming_seam.md) — data-theme attribute + semantic-token override; ctx.theme threading
 - [Font de-brand role spine](project_font_debrand_role_spine.md) — --font-family-display L0 role; donut-legend deferred · [FiraGO](project_platform_typeface_firago.md) self-hosted SSOT
 - [Scrollbar utility + table overflow](project_scrollbar_utility_and_table_overflow.md) — .scroll-fancy SSOT; flex min-width:auto table-clip root cause
-- [Chart low-cardinality render rule](project_chart_low_cardinality_render_rule.md) — colour-by-series + bounded bar fill + horizontal content-height seams
-- [DataTable band fill-chain](project_datatable_band_fill_chain.md) — TableShell wrapper breaks the band flex-chain; :has() fill-flex fix
-- [SNA table is PivotTable](project_sna_table_is_pivottable.md) — /ka/accounts renders via PivotTable not SimpleTable; probe gotchas
+- [Chart low-cardinality render rule](project_chart_low_cardinality_render_rule.md) — colour-by-series + bounded bar fill + content-height seams
+- [DataTable band fill-chain](project_datatable_band_fill_chain.md) — TableShell breaks band flex-chain; :has() fix
+- [SNA table is PivotTable](project_sna_table_is_pivottable.md) — /ka/accounts uses PivotTable not SimpleTable
 - [Panel sizing cqi model](project_panel_sizing_cqi_model.md) — context-proportional band; --panel-ratio composes role×context×authored as 3 orthogonal vars
 - [Responsive audit roots](project_responsive_audit_systemic_roots.md) — reflow fitness guard + --page-measure seam
 - [Section authoring uniformity](project_section_authoring_uniformity.md) — every section composed via `columns`; nav-safety invariants
 - [Chrome config seam](project_chrome_config_seam.md) — thin ChromeConfig base + per-element PropSchema; F1/F2/F3 fitness gate
 - [Fail-soft chrome + app boundary](project_failsoft_chrome_and_app_boundary.md) — resolveChrome mounts ALL slots; shells must null-guard chromeConfig
-- [Export menu + section scope](project_export_menu_and_section_scope.md) — ExportBar→ExportMenu; NodeExportContext section-scoped publish/subscribe seam
-- [Bootstrap runner Phase A (ADR-026)](project_bootstrap_runner_phasea.md) — manifest is runtime SSOT; PageLoader resolves via usePageById
+- [Export menu + section scope](project_export_menu_and_section_scope.md) — ExportBar→ExportMenu; NodeExportContext section-scoped seam
+- [Bootstrap runner Phase A (ADR-026)](project_bootstrap_runner_phasea.md) — manifest is runtime SSOT; PageLoader via usePageById
 - [De-tenant Phase 2 STRIP (ADR-028)](project_detenant_phase_strip.md) — geostat → pure runner; emptyManifest fallback; seed-data re-points
 - [Geostat code-splitting](project_geostat_code_splitting.md) — single lazy RendererSurface boundary; store-builder eager-registration ordering regression
 - [Optional-peer vite resolution](project_optional_peer_vite_resolution.md) — data-driven peer alias unions all source-bundled @statdash/* peerDeps
@@ -78,7 +80,7 @@
 - [Inspector controls off the DTCG spine](project_insp_tokens_undefined.md) — `--insp-*` tokens UNDEFINED; native controls on hardcoded hex (dark-broken); FF-NO-UNTHEMED-COLOR misses apps/panel
 - [MUI→Radix Strangler state](project_mui_radix_migration.md) — owned Select landed (0071); ratchet baseline + sweep targets
 - [Chart sequential palette](project_chart_sequential_palette.md) — ChartDef.palette + --chart-seq-N; the MANY chart-color paths (donut SVG, buildColors, interpreters, schema)
-- [Portal review batch](project_portal_review_batch.md) — axis fmtNum/niceFloor/tooltip; brush LIVE-FIX (apex UMD-global + _chartInstances quarantine)
+- [Portal review batch](project_portal_review_batch.md) — axis fmtNum/niceFloor/tooltip; brush LIVE-FIX (apex UMD-global + _chartInstances)
 - [Radix primitives in jsdom](feedback_radix_jsdom_polyfills.md) — 4 polyfills a Radix listbox needs; native→Radix breaks fireEvent.change tests
 - [legend aesthetic owner verdict](feedback_legend_aesthetic.md) — legends bottom, single-line ellipsis, ONE token; wrapped/columned rejected
 - [store cube-region scoping](project_store_cube_region_scoping.md) — stats store scopes wire-dim classifiers to actualRegion; dev DB has TWO sector vocabularies (governance flag)
