@@ -12,7 +12,9 @@ links:
 ---
 **The verdict this answers (owner, live walk of /studio/model):** tangled coupling · bad UI · data SOURCES buried at the BOTTOM when everything should START with them · upload repeated in multiple places · SOLID/SSOT violations · anti-patterns. He is right, and the page predates the canon it violates.
 
-**The build — the Model page becomes the FOUR-FLOOR LADDER, read top-to-bottom (SPEC §2, one vertical spine):**
+**AMENDED (owner 2026-07-18, second pass — the class consensus form):** the floors become SEPARATE TOP-LEVEL DESTINATIONS, not one scroll page — Superset (Data | SQL Lab | Charts as distinct nav worlds) · Grafana (Connections = its own section) · Power BI (Data hub apart from the model view). **«წყაროები» is an INDEPENDENT page, FIRST in the studio nav order** («ჯერ მონაცემი»); «მოდელი» is its own cleaned page; the ladder survives as the NAV ORDER + cross-gestures (promote: source→model; where-used: model→pages). Screen-level SRP — one page, one responsibility — is itself the decoupling the owner demanded.
+
+**The build — the floors as destinations (SPEC §2 spine expressed as navigation):**
 1. **Floor 1 · ნედლი წყაროები (TOP — sources lead):** the cube/dataset inventory (governed titles, dim summaries, the 0084 label-debt chips) + ONE upload door (`CanonicalUpload` — exactly one mount; every duplicate dies). Steward-owned per the plane law.
 2. **Floor 2 · მართული მოდელი:** metrics + dimensions (the catalog manager, the dictionary) — fed FROM floor 1 (the promotion loop lands here).
 3. **Floor 3 · query-ები/მილსადენები:** which specs exist, where bound (summary; editing stays in the workbench — one editor, 0086 law).
