@@ -2,15 +2,25 @@
 
 > **⛔ ROOT LAWS FIRST.** Containment = ADR-041 (one Part grammar · one port · residence-at-field). Authoring = ADR-042 (Triprojection: Select/Inspect/Manipulate over the one Part model). Product canon = **CLAUDE.md Law 11** (Data first · canvas never lies · projection with a plane · a journey is the unit of done). FF ratchets red the build on violations. A new kind is a DECLARATION, never a bridge.
 
-## Current State (2026-07-17)
+## Current State (2026-07-18, marathon session end — the PIPELINE PROGRAM era)
 
-**ACTIVE: card `work/items/0078` — portal review-notes batch (owner's docx), branch `fix/portal-review-notes-2026-07-10`.** Owner verdict round-3 (2026-07-17): substance landed, but the interaction surfaces fail the CRAFT bar — "მოგწონს ლეფტ ბარი? … საშინელებაა (dark multi-select)". Owner handed full ownership for the session: EVERY docx note at best-concept grade.
-- LIVE on dev :3012: bundle `index-5TgkzNSQ.js` (R1+R2 fixes deployed 07-17; the prior session built images but never recreated containers — check the CONTAINER, not the image). Slide-2 (B5G) codes cleaned in dev DB.
-- **Seed provenance root fix committed `9766092`:** governed-catalog merge (metrics/dimensions) now three-way (kubectl last-applied concept) via system-plane `provisioning_seed_hashes` ledger — a provisioning label fix reaches steward-untouched entries. The (B5G) incident class is closed at the root.
-- **0078 CLOSED ON DEV (2026-07-17): r4 walk 17 PASS / 0 FAIL, light+dark** (`walk-r4.mjs`, `r4-*.png`). Craft wave `7003ee3` (multi-select popover, rail elevation, year select, brush craft, ComboInterpreter palette root) · gate 3646 ✓ / lint 0 err / tsc ✓ · bundle `index-CHtE4PyK.js`, gdp v4, seed-provenance ledger ACTIVE. **Probe law: never fullPage-screenshot apex pages** (capture-resize → apex-internal pageerrors; unreachable by real gestures). Awaiting the owner: prod GO (incl. one-time metrics SQL touch) + sector-history hue call + 0079 accounts (renders text, 0 charts).
-- **Token-burn audit landed `5489634`** (owner escalation): spawn=16-24k, burn is in-run (turn-churn); ledger now shows first-in/peak-ctx/calls + CTX-BURN>120k; strategy/06 has measured budgets + lead-keeps-it threshold. Debt: sfd memory dir (556KB/86 files, 57KB map) + engine-specialist (60 files) curation due.
-- **Walk-coverage lessons (do not repeat):** carousel = iterate ALL slides (slide-2 false PASS); lazy pages need scroll + tab-switch before probing; SVG tick innerText flaky — screenshots are the proof of record.
-- Paused strata: AR-52 W1 remainder · AR-53 · Stage-0 CI (owner doors pending, see ROADMAP-zero-to-hero.md). Known P0 truths hold (ci.yml dead, 18 DB-gated suites, `c` masking, config↔stats FK void, stale RED insertByteIdentity.fitness).
+**Branch: `main` ONLY (all other branches merged/deleted 07-17, remote too). Everything below is COMMITTED+PUSHED on main. Suite ~3820+/0 full · panel 1085+/0 · tsc clean. Dev tier :3013/:3012 current (panel src synced; core tar-synced; api rebuilt + reprovisioned regional v6/gdp v7).**
+
+**THE ACTIVE PROGRAM — card `0082` (AR-54, ADR-046 ACCEPTED owner-blessed «ნდობას გიცხადებ»): query-as-visible-pipeline + raw-data home.** Landed: W-P0 (FF gates+baseline) · W-P1 (live per-step grid) · W-P2 (three-pane workbench, focus-view) · W-P3 (7-verb palette + governed cells) · W-P4 (`pipeline`+`source` engine) · W-P5a (LIVE desugar switch, byte-identical) · W-P5b (workbench speaks pipeline; Get=browse-first MetricPalette head; emission flipped for query-class; ⛔ demotion HELD) · W-P5c (browse lowering) · ADR-047 Wave A (metric-natural coordinates — the −100 lie killed; live growth series 2011:17.8…2020:0.13…2023:11.0) · P-OFFER Wave A2 (offer-driven Filter/Sort/Lookup — live 200→26) · 0085 (wire-truth pane = sourceHeadObs SSOT) · 0086 (facet = summary+door) · dark-mode grey.100 class fix · FilterStepForm draft-over-canonical fix.
+
+**IN FLIGHT at session end: card `0084`** (steward Get «ნედლი კუბები» tab → `{op:'source',query:{...}}` head + «მეტრიკად დაწინაურება» loop + FF-PROMOTE-ROUNDTRIP flip + R/U member-label debt visibility + probe-poffer-filter repair). CHECK ITS LANDING FIRST (git log / card status), live-verify, then proceed.
+
+**THE QUEUE (owner-frozen intake; execute in order):**
+1. **0088** — facet essentials INLINE (metric switch + filter chips + one door; frequency-layering canon — owner-guided 0086 correction).
+2. **0087** — P-OFFER TOTAL: field-ROLE declaration on op schemas → generic offer projection (kills hand-maps) + EXPR/TEMPLATE first-class (Power Query Custom Column: step-input columns in autocomplete scope + live per-row preview) + **FF-FILTER-PARITY** (workbench carries the old editors' FULL power — $ctx «მიჰყევი გვერდის არჩევანს» / $ne «ყველა გარდა» as OFFERED picker modes) + FF-ROLE-COVERAGE/FF-OFFER-ROUNDTRIP/agnostic fixture.
+3. **ADR-047 Wave B** — the honest-null calc floor (`storeCellAt` + `MetricInput.coalesce`; no-data component → null, never fabricated) — REQUIRED before the ⛔ door FIRES.
+4. **⛔ W-P5 demotion** — its own revert-net commit, only after Wave B + full journey green.
+5. **W-P6** — four-floor raw home + DQ-on-ingest (backlog rec #1).
+6. **Owner novice-walk** — he walks zero→page; every stumble = a craft card. Then: comparator FilterValue variant (architect) · R1–R5 revivals (backlog §Archaeology) · Grafana-style editable code view for steward in workbench (SPEC §3.3).
+
+**Session-proven mechanics (do not rediscover):** dev panel container = `/tmp/statdash-dev-line` mount (sync script FIXED); `packages/*` BAKED → whole-src tar + restart (`docker cp` single-file 500s); api rebuild from `/tmp/statdash-build` (fetch main first); reprovision verify via `config.page_version` bumps; probes live in `platform/e2e/probes/` (run from `platform/`); MUI Select options render only when OPENED (probe artifact class ×2 this session); owner walks :3013 live — sync after EVERY panel-touching commit.
+
+**Owner doors (unchanged):** portal prod GO · CI key-turn (`gh auth`/runner — D6 scan's #1 gap) · sector-history hue · 0079/0080.
 
 ## STANDING rules (binding)
 - **Context packets (`kit/strategy/12-context-packets.md`):** the lead grounds once; agents get stamped packets, return packets flow back; no heavy doc assigned wholesale; economy from logistics, NEVER from quality.
