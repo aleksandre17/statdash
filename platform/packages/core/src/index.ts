@@ -337,6 +337,9 @@ export { interpretSpec, extractRequirements, setSpecResolveObserver }  from './d
 // GAP 4 — the SSOT obs-query the QueryResolver read issues; the async warm path
 // (useNodeRows) fetches under this IDENTICAL query so warm-key ≡ read-key.
 export { queryReadObs }                                                 from './registry/resolvers'
+// ADR-046 Addendum 2 — the obs query a pipeline `source` head reads/warms (steward query
+// OR the governed grain-∅ BROWSE); the async warm (useNodeRows) aligns its key to this SSOT.
+export { sourceHeadObs }                                                from './registry/pipeline-resolver'
 export { desugar, desugarToPipeline }                                   from './data/desugar'
 export { applySelection, splitRangeValue }                              from './data/applySelection'
 export type { SelectionMode }                                           from './data/applySelection'

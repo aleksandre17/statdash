@@ -30,7 +30,7 @@
 
 import { use, useMemo }                         from 'react'
 import type { DataRow, DataSpec, QueryResult, Requirement, SourceStep, StoreQuery } from '@statdash/engine'
-import { extractRequirements, queryReadObs }      from '@statdash/engine'
+import { extractRequirements, queryReadObs, sourceHeadObs } from '@statdash/engine'
 import type { NodeBase, RenderContext }          from './types'
 import { resolveNodeRows, resolveStore, storeGenId } from './resolveNodeRows'
 import { specDimKey }                            from './specDimKey'
@@ -44,14 +44,21 @@ import { specDimKey }                            from './specDimKey'
 //  `queryReadObs` is that single SSOT key derivation (metric expansion + default-dim
 //  merge, NO time bound — range clamps post-fetch). Returns undefined when there is no
 //  extra obs read to warm:
-//    • a GOVERNED source head (`{op:'source', metrics}`) → its obs/val reads are already
-//      covered by the generic per-requirement warm (metricRequirements) — the live-proof path;
+//    • a GOVERNED GRAIN-∅ BROWSE head (`{op:'source', metrics}`, no grain) → the metric's
+//      OBSERVATION BROWSE [ADR-046 Addendum 2] reads a `{measure: metrics}` obs slice
+//      (base codes / calc component codes, resolveMeasureRef-expanded); warmed here under
+//      the SAME `queryReadObs` key so the base-browse obs read and the calc enumeration +
+//      per-year component reads all resolve from one time-unbounded slice (warm ⊇ read);
+//    • a GOVERNED GRAINED source head → its shaped val/obs reads are covered by the generic
+//      per-requirement warm (metricRequirements) ⇒ `sourceHeadObs` returns undefined;
 //    • an INLINE source head (`{op:'source', rows}`) / a pure transform → read-free.
+//  The head→obs derivation (steward query vs governed browse vs grained/inline) is the ONE
+//  core SSOT `sourceHeadObs` — no grain decision is duplicated in the warm.
 function specHeadObs(spec: DataSpec): StoreQuery | undefined {
   if (spec.type === 'query') return queryReadObs(spec.query)
   if (spec.type === 'pipeline') {
-    const head = spec.pipe[0] as SourceStep | undefined
-    if (head?.op === 'source' && 'query' in head) return queryReadObs(head.query)
+    const obs = sourceHeadObs(spec.pipe[0] as SourceStep | undefined)
+    if (obs) return queryReadObs(obs)
   }
   return undefined
 }

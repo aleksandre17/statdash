@@ -25,7 +25,7 @@ import type {
   DataStore, EngineRow, PipelineSpec, PipelineContext, Requirement, SectionContext, SourceStep,
 } from '@statdash/engine'
 import {
-  interpretSpec, extractRequirements, queryReadObs, staticStore,
+  interpretSpec, extractRequirements, queryReadObs, sourceHeadObs, staticStore,
 } from '@statdash/engine'
 import { useLivePreviewStores } from '../../../canvas/useLivePreviewStores'
 import { useActiveLocales } from '../../../inspector/useActiveLocales'
@@ -119,14 +119,18 @@ export function usePipelineSourceRows(head: SourceStep | undefined, encoding: Pi
     const timer = setTimeout(() => {
       // WARM the exact (code, dims) slices the source read will look up — the SAME
       // static analysis the sync engine reads back (extractRequirements), plus the head
-      // obs for a STEWARD query head (queryReadObs — metric expansion, no time bound).
+      // obs the source read issues, via the ONE core SSOT `sourceHeadObs`: a STEWARD query
+      // head OR a governed GRAIN-∅ BROWSE head (ADR-046 Addendum 2 — `{measure: metrics}`,
+      // metric-expanded, no time bound) both warm their aligned obs slice so the base-browse
+      // obs read + the calc enumeration/per-year reads all hit a warm cache (warm ⊇ read).
       // Both val AND obs shapes are warmed per req so storeVal (metric grain reads) and
-      // storeObs (query reads) both hit a warm cache — mirrors useNodeRows' warm.
+      // storeObs (query/browse reads) both hit a warm cache — mirrors useNodeRows' warm.
       const reqs: Requirement[] = (() => {
         try { return extractRequirements(sourceSpec, ctx) } catch { return [] }
       })()
       const head0 = sourceSpec.pipe[0] as SourceStep | undefined
-      const headObs = head0 && head0.op === 'source' && 'query' in head0 ? queryReadObs(head0.query) : undefined
+      const obsQuery = sourceHeadObs(head0)
+      const headObs = obsQuery ? queryReadObs(obsQuery) : undefined
       const warm = qa
         ? Promise.all([
             ...reqs.flatMap((r) => {

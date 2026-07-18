@@ -23,6 +23,7 @@
 import { describe, it, expect } from 'vitest'
 import { interpretSpec }        from './spec'
 import { desugarToPipeline }    from './desugar'
+import { registerMetric }       from './metric'
 import { ExternalStore }        from './store-impl'
 import { defaultRegistry }      from '../registry/engine'
 import '../registry/resolvers'  // side-effect: register the built-in resolvers
@@ -122,5 +123,87 @@ describe('FF-PIPELINE-EQUIV (rows) — a governed source head ≡ the metric spe
     expect(rows.length).toBeGreaterThan(0)
     // sorted by value desc — first row's value ≥ last row's value
     expect(Number(rows[0]!['value'])).toBeGreaterThanOrEqual(Number(rows[rows.length - 1]!['value']))
+  })
+})
+
+// ── FF-PIPELINE-EQUIV (rows) — the GRAIN-∅ governed BROWSE [ADR-046 Addendum 2] ────────
+//
+//  A governed head with NO grain lowers to the metric's OBSERVATION BROWSE ("a source IS
+//  the table" — Power Query), NOT the grain-∅ scalar. A BASE metric browses as its full obs
+//  read — byte-identical to the STEWARD obs read (the crack W-P5b diagnosed: a grain-less
+//  governed head resolved to a 1-row scalar `0`, never the rich observation grid). A CALC
+//  metric browses PER MEMBER of its time axis via resolveMetricValue — a year-by-year value
+//  column with an HONEST null at the first-period edge (ADR-045), never a fabricated 0.
+
+// growth-YoY expr: (cur / prev − 1) × 100 — REUSES @statdash/expr, no second dialect.
+const YOY_EXPR = {
+  op: 'mul',
+  left:  { op: 'sub', left: { op: 'div', left: { $derived: 'cur' }, right: { $derived: 'prev' } }, right: 1 },
+  right: 100,
+} as const
+
+registerMetric('pipe:gdp-base', { label: { en: 'GDP' }, code: 'GDP' })
+registerMetric('pipe:gdp-yoy', {
+  label: { en: 'GDP growth YoY' },
+  additivity: 'non-additive',
+  calc: {
+    inputs: {
+      cur:  { measure: 'GDP' },
+      prev: { measure: 'GDP', at: { time: { $prev: 1 } } },
+    },
+    expr: YOY_EXPR,
+  },
+})
+
+describe('FF-PIPELINE-EQUIV (rows) — the grain-∅ governed BROWSE (Addendum 2)', () => {
+  it('a BASE metric browse ≡ the steward obs read (row set — governed labels aside)', () => {
+    const browse: DataSpec = {
+      type: 'pipeline', pipe: [{ op: 'source', metrics: ['pipe:gdp-base'] }],
+      encoding: { label: 'id' },
+    }
+    // The steward obs read of the SAME underlying code — the storeObs path a `query` head uses.
+    const steward: DataSpec = { type: 'query', query: { measure: 'GDP' }, encoding: { label: 'id' } }
+    const browseRows  = interpretSpec(browse, ctxRange, store)
+    const stewardRows = interpretSpec(steward, ctxRange, store)
+    // The rich observation grid, NOT a 1-row scalar — the crack is closed.
+    expect(browseRows.length).toBe(4)               // all GDP obs (2018/2019/2020 GE + 2020 AM)
+    expect(browseRows).toEqual(stewardRows)          // browse IS the steward obs read
+  })
+
+  it('a governed browse is NOT the grain-∅ scalar (the W-P5b crack)', () => {
+    // With grain the head is the shaped scalar (1 row per metric); WITHOUT grain it browses.
+    const scalar: DataSpec = { type: 'metric', metrics: ['pipe:gdp-base'] }   // grain-∅ scalar
+    const scalarRows = interpretSpec(scalar, ctxRange, store)
+    expect(scalarRows.length).toBe(1)                // the OLD (wrong-for-browse) 1-row shape
+    const browse: DataSpec = {
+      type: 'pipeline', pipe: [{ op: 'source', metrics: ['pipe:gdp-base'] }], encoding: { label: 'id' },
+    }
+    expect(interpretSpec(browse, ctxRange, store).length).toBeGreaterThan(1)   // browse ≠ scalar
+  })
+
+  it('a CALC metric browse = per-year values with an honest null at the first period', () => {
+    const browse: DataSpec = {
+      type: 'pipeline', pipe: [{ op: 'source', metrics: ['pipe:gdp-yoy'] }],
+      encoding: { label: 'id' },
+    }
+    const rows = interpretSpec(browse, ctxRange, store)
+    // GDP@GE = {2018:80, 2019:90, 2020:100}; YoY over the ordered members.
+    expect(rows.map((r) => r['id'])).toEqual(['2018', '2019', '2020'])
+    expect(rows[0]!['value']).toBeNull()                          // first period — honest no-data (ADR-045)
+    expect(Number(rows[1]!['value'])).toBeCloseTo(12.5)           // (90/80 − 1)×100
+    expect(Number(rows[2]!['value'])).toBeCloseTo(11.111, 2)      // (100/90 − 1)×100
+    // NEVER a fabricated 0 at the edge (Law 11 / FF-CANVAS-NEVER-LIES).
+    expect(rows[0]!['value']).not.toBe(0)
+  })
+
+  it('a browse + a pure tail composes (source browse → filter)', () => {
+    const browse: DataSpec = {
+      type: 'pipeline',
+      pipe: [{ op: 'source', metrics: ['pipe:gdp-base'] }, { op: 'filter', where: { geo: 'GE' } }],
+      encoding: { label: 'id' },
+    }
+    const rows = interpretSpec(browse, ctxRange, store)
+    expect(rows.length).toBe(3)                       // the GE rows only (AM filtered out)
+    expect(rows.every((r) => r['geo'] === 'GE')).toBe(true)
   })
 })

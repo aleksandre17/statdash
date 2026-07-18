@@ -10,6 +10,7 @@ import { TIME_DIM }              from '../core/context'
 import { effectiveYears, isUnsetTime } from '../core/time-dimension'
 import type { DataStore, Requirement } from './store'
 import { defaultRegistry }       from '../registry/engine'
+import { hasSourceGrain }        from '../registry/pipeline-resolver'
 import { emitDiagnostic }        from '../registry/diagnostics'
 import { diagWarning }           from '../core/diagnostic'
 
@@ -179,6 +180,20 @@ function pipelineRequirements(head: SourceStep | undefined, ctx: SectionContext)
   if ('metrics' in head) {
     // Drop `op`, keep the generic grain (Law 1 — no privileged-dim key typed here).
     const { op: _op, ...grain } = head
+    // GRAIN-∅ ⇒ the metric's OBSERVATION BROWSE [ADR-046 Addendum 2]: a NEW read shape
+    // (the whole table across natural dims, time-unbounded) — NOT the shaped grain read.
+    // The warm must span every period the browse reads, so STRIP the TIME_DIM pin (mirrors
+    // the query rangeMode / point-series 'all' branch — warm ⊇ read). Per underlying code
+    // (base: its own code; calc: its component codes, via resolveMeasureRef). The exact
+    // obs-array slice a BASE browse reads is additionally warmed under `sourceHeadObs` in
+    // the react warm; here we warm the val + per-code obs superset the calc reads visit.
+    if (!hasSourceGrain(head)) {
+      const { [TIME_DIM]: _t, ...rest } = ctx.dims
+      const base = rest as Record<string, DimVal>
+      return head.metrics.flatMap((ref) =>
+        resolveMeasureRef(ref).codes.map((code) => ({ code, dims: { ...base } })),
+      )
+    }
     return metricRequirements({ type: 'metric', ...grain }, ctx)
   }
   if ('query' in head) return queryRequirements(head.query, ctx)
