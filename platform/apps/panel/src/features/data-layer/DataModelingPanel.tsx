@@ -1,11 +1,13 @@
-import { useEffect, useState } from 'react'
-import { Box, Typography, Button, Chip, Paper, Divider } from '@mui/material'
+import { lazy, Suspense, useEffect, useRef, useState } from 'react'
+import { Box, Typography, Button, Chip, Paper, Divider, Accordion, AccordionSummary, AccordionDetails } from '@mui/material'
 import StorageIcon from '@mui/icons-material/Storage'
 import DataObjectIcon from '@mui/icons-material/DataObject'
 import AddIcon from '@mui/icons-material/Add'
 import UploadFileIcon from '@mui/icons-material/UploadFile'
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline'
 import DragIndicatorIcon from '@mui/icons-material/DragIndicator'
+import ArrowBackIcon from '@mui/icons-material/ArrowBack'
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
 import {
   SortableContext, verticalListSortingStrategy,
   useSortable, arrayMove,
@@ -16,8 +18,18 @@ import { useConstructorStore, useDataSources, useDataSpecs } from '../../store/c
 import { useDndSensors } from '../../shared/dnd/useDndSensors'
 import type { DataSpec } from '@statdash/engine'
 import { DataSpecEditor } from './DataSpecEditor'
-import { withStewardCube, fromWorkbenchModel } from './workbench/workbenchModel'
+import { withStewardCube, fromWorkbenchModel, isWorkbenchShaped } from './workbench/workbenchModel'
 import { useSourcesHandoff } from '../../store/sourcesHandoff'
+import { useActiveLocales } from '../../inspector/useActiveLocales'
+import { SuspenseFallback } from '../../shared/SuspenseFallback'
+
+// Lazy: the three-pane workbench (+ PipelineBuilder/dnd-kit, live grid, generated-query
+// pane) loads only when a workbench-shaped spec (query/pipeline) is opened for shaping —
+// never in the eager modeler chunk. The SAME surface the inspector DATA-facet escalation
+// mounts (0086 — ONE editor); the raw-JSON DataSpecEditor stays a steward last resort.
+const DataWorkbench = lazy(() =>
+  import('./workbench/DataWorkbench').then((m) => ({ default: m.DataWorkbench })),
+)
 import { ShowMe } from './showme/ShowMe'
 import { SourceAuthoringPanel } from '../datasources/SourceAuthoringPanel'
 import { ExcelUpload } from '../datasources/ExcelUpload'
@@ -112,6 +124,7 @@ export function DataModelingPanel() {
   const reorderSpecs   = useConstructorStore((s) => s.reorderDataSpecs)
   const updateDataSpec = useConstructorStore((s) => s.updateDataSpec)
   const sensors        = useDndSensors()
+  const en = (useActiveLocales()[0] ?? 'ka') === 'en'
 
   const [selection, setSelection] = useState<Selection>(null)
 
@@ -159,6 +172,76 @@ export function DataModelingPanel() {
   const selectedSpec   = selection?.kind === 'spec'   ? specs.find((d) => d.id === selection.id) ?? null   : null
   // The authoring panel shows for both an existing source and a brand-new one.
   const showAuthoring  = selection?.kind === 'source' || selection?.kind === 'source-new'
+
+  // ── ONE editor = the workbench (0086 · 0099) ───────────────────────────────────
+  //  A workbench-SHAPED spec (a native `pipeline` — what the Sources «დაათვალიერე
+  //  workbench-ში» cross-gesture seeds — OR a legacy `query`, via its desugared view) is
+  //  SHAPED on the three-pane WORKBENCH GRID, never the raw-JSON `JsonFallback` (the 0089
+  //  finding #2 defect). This is the SAME surface the inspector DATA-facet escalation opens
+  //  (no fork): the browse rows + steps + generated-query pane the gesture PROMISES. The raw
+  //  editor survives as a steward last-resort disclosure below (plane law). Non-workbench
+  //  spec kinds (row-list/timeseries/…) keep the `DataSpecEditor` two-column form.
+  const workbenchSpec = selectedSpec && isWorkbenchShaped(selectedSpec.spec) ? selectedSpec : null
+  const workbenchSpecId = workbenchSpec?.id
+
+  // The workbench takes over the panel full-width (the CRAFT room its three panes need —
+  // the same reason the inspector escalates it to a full-screen focus-view). Bring it into
+  // view on arrival (the handoff lands the steward here from another scroll position).
+  const workbenchHeadRef = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    if (!workbenchSpecId) return
+    const el = workbenchHeadRef.current
+    if (el && typeof el.scrollIntoView === 'function') el.scrollIntoView({ block: 'start' })
+  }, [workbenchSpecId])
+
+  if (workbenchSpec) {
+    return (
+      <Box className="data-modeling-panel data-modeling-panel--workbench">
+        <Box ref={workbenchHeadRef} className="data-modeling-panel__workbench-head" data-testid="modeling-workbench">
+          <Button
+            size="small"
+            startIcon={<ArrowBackIcon fontSize="small" />}
+            onClick={() => setSelection(null)}
+            data-testid="workbench-back-to-list"
+          >
+            {en ? 'Back to list' : 'სიაში დაბრუნება'}
+          </Button>
+          <Typography variant="h6" fontWeight={600} sx={{ flex: 1, minWidth: 0, overflowWrap: 'anywhere' }}>
+            {workbenchSpec.name}
+          </Typography>
+          <Chip
+            size="small"
+            label={String((workbenchSpec.spec as { type?: string }).type ?? 'spec')}
+            color="secondary"
+            variant="outlined"
+          />
+        </Box>
+
+        <Suspense fallback={<SuspenseFallback label={en ? 'Loading workbench' : 'იტვირთება ვორქბენჩი'} />}>
+          <DataWorkbench
+            value={workbenchSpec.spec}
+            onChange={(spec) => updateDataSpec(workbenchSpec.id, { spec })}
+          />
+        </Suspense>
+
+        {/* Steward last resort — the raw DataSpec editor (plane law: raw-JSON is a
+            disclosure, never the default landing). Collapsed by default. */}
+        <Accordion disableGutters variant="outlined" data-testid="workbench-raw-advanced">
+          <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+            <Typography variant="subtitle2" fontWeight={600}>
+              {en ? 'Raw editor (advanced)' : 'ნედლი რედაქტორი (დამატებითი)'}
+            </Typography>
+          </AccordionSummary>
+          <AccordionDetails>
+            <DataSpecEditor
+              value={workbenchSpec.spec}
+              onChange={(spec) => updateDataSpec(workbenchSpec.id, { spec })}
+            />
+          </AccordionDetails>
+        </Accordion>
+      </Box>
+    )
+  }
 
   return (
     <Box className="data-modeling-panel">

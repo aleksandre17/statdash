@@ -25,3 +25,21 @@
     grid-template-columns: 320px 1fr;  /* browser | editor (wide step) */
   }
 }
+
+/* ── Workbench focus (0099) ───────────────────────────────────────────────────
+   When a workbench-shaped spec (pipeline/query) is opened, the three-pane
+   DataWorkbench takes over the WHOLE panel width — the CRAFT room its live grid
+   needs (the same reason the inspector escalates it to a full-screen focus-view).
+   The browser column steps aside; a Back control returns to the two-column list. */
+.data-modeling-panel--workbench {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-height: 360px;
+}
+
+.data-modeling-panel__workbench-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
