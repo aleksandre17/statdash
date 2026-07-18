@@ -30,9 +30,9 @@
 - [Bounded bands → Part port](project_panel_bounded_element_bands.md) — BE-1/4/5 = ONE ADR-041 Part port; sourcedParts stable-key facade
 - [FACET axis (5 facets)](project_facet_axis_style_facet.md) — FacetDescriptor/facetRegistry caps→dock sections
 - [Live store measure pinning](project_live_store_measure_pinning.md) — live ApiStore = pure dim_key containment, no measure filter
-- [Chrome accessible-name i18n (0093)](project_chrome_accessible_name_i18n.md) — [object Object] aria=LocaleString in bare-string slot; useTSafe; leak-gate must scan aria attrs
-- [Law-4 i18n check](project_law4_i18n_check.md) — check-laws: single-locale=violation, bilingual {ka,en}=ok
-- [Runner chrome i18n (ADR-019)](project_runner_chrome_i18n_adr019.md) — manifest.i18n.catalog wiring; i18next addResourceBundle deep-flag gotcha
+- [Chrome accessible-name i18n (0093)](project_chrome_accessible_name_i18n.md) — [object Object] aria=LocaleString in bare-string slot; useTSafe; leak-gate scans aria
+- [Law-4 i18n check](project_law4_i18n_check.md) — single-locale=violation, {ka,en}=ok
+- [Runner/panel chrome i18n (ADR-019, 0093b)](project_manifest_i18n_shared_seam.md) — registerManifestI18n@react; panel bootstrapCatalog parity; year-select ka→catalog
 - [Integrity indicator page scope (AR-40)](project_integrity_indicator_page_scope.md) — ONE page-level indicator; two-channel NodeStatusContext; kpi-strip fold gotcha
 - [Semantic-token spine](project_semantic_token_spine.md) — 3-tier tokens, gates (FF-TOKEN-ONLY/FF-TENANT-OVERRIDE), ΔE collapse ratification
 - [Dark-mode completeness](project_dark_mode_completeness_and_fitness.md) — dark=token-override over WHOLE Tier-2 · [tenant cascade gap](project_geostat_tenant_dark_cascade_gap.md)
