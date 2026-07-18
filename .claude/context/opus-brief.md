@@ -13,6 +13,7 @@
 **THE QUEUE (owner-frozen intake; execute in order):**
 1. **0089** — cross-cube browse scope (the picked raw cube reads ITS OWN store — 0084 finding #1, the 0083 routing class; architect seam decision first).
 2. **0088** — facet essentials INLINE (metric switch + filter chips + one door; frequency-layering canon — owner-guided 0086 correction).
+2b. **0090** — the METRIC PASSPORT (author: formula-in-words card · steward: MetricDef JSON + lowered codes — Looker/PowerBI/dbt transparency canon; owner-caught opacity).
 3. **0087** — P-OFFER TOTAL: field-ROLE declaration on op schemas → generic offer projection (kills hand-maps) + EXPR/TEMPLATE first-class (Power Query Custom Column: step-input columns in autocomplete scope + live per-row preview) + **FF-FILTER-PARITY** (workbench carries the old editors' FULL power — $ctx «მიჰყევი გვერდის არჩევანს» / $ne «ყველა გარდა» as OFFERED picker modes) + FF-ROLE-COVERAGE/FF-OFFER-ROUNDTRIP/agnostic fixture.
 4. **ADR-047 Wave B** — the honest-null calc floor (`storeCellAt` + `MetricInput.coalesce`; no-data component → null, never fabricated) — REQUIRED before the ⛔ door FIRES.
 5. **⛔ W-P5 demotion** — its own revert-net commit, only after Wave B + full journey green.
