@@ -29,7 +29,7 @@
 //
 import { useState } from 'react'
 import { Box, Chip, Typography } from '@mui/material'
-import type { DataSpec, EncodingSpec, TransformStep } from '@statdash/engine'
+import type { DataSpec, DimVal, EncodingSpec, TransformStep } from '@statdash/engine'
 import { PipelineBuilder } from '../editors/query/PipelineBuilder'
 import { PipelineStepGridView } from '../pipeline-preview/PipelineStepGrid'
 import { usePipelineSourceRows } from '../pipeline-preview/usePipelineSourceRows'
@@ -39,10 +39,12 @@ import { AS_OF_SOURCE, AUTHOR_HIDDEN_FIELDS } from '../pipeline-preview/pipeline
 import { GeneratedQueryPane } from './GeneratedQueryPane'
 import { VerbPalette } from './VerbPalette'
 import {
-  fromWorkbenchModel, isHeadBound, isStewardHead, promoteHeadToMetric, stewardHeadMeasure,
-  toWorkbenchModel, withGovernedMetric, withStewardCube,
+  fromWorkbenchModel, governedWhere, isGovernedHead, isHeadBound, isStewardHead,
+  promoteHeadToMetric, stewardHeadMeasure, toWorkbenchModel, withGovernedMetric,
+  withGovernedWhere, withStewardCube,
 } from './workbenchModel'
 import { GetHead } from './GetHead'
+import { GetGrainEditor } from './GetGrainEditor'
 import { PromoteMetric } from './PromoteMetric'
 import { useRole } from '../../../studio/useRole'
 import { useActiveLocales } from '../../../inspector/useActiveLocales'
@@ -52,6 +54,10 @@ import './workbench.css'
 /** A neutral encoding for the source hook when there is no shaped model yet (its result
  *  is unused in that branch — the hook must still be called unconditionally). */
 const EMPTY_ENCODING: EncodingSpec = { label: '' }
+
+/** The grain editor offers from the SOURCE browse rows — the INPUT to the first tail step
+ *  (`stepInput(0)` derives to AS_OF_SOURCE, the head's browse output). */
+const GRAIN_STEP = 0
 
 export interface DataWorkbenchProps {
   /** The element's DataSpec (the escalation binds this live from the store). */
@@ -119,6 +125,8 @@ export function DataWorkbench({ value, onChange }: DataWorkbenchProps) {
   const pickMetric = (metricId: string) => onChange(fromWorkbenchModel(withGovernedMetric(model, metricId)))
   const pickCube = (_datasetCode: string, measures: string[]) => onChange(fromWorkbenchModel(withStewardCube(model, measures)))
   const promote = (metricId: string) => onChange(fromWorkbenchModel(promoteHeadToMetric(model, metricId)))
+  const setGrain = (where: Partial<Record<string, DimVal>>) =>
+    onChange(fromWorkbenchModel(withGovernedWhere(model, where)))
 
   // The promotion loop (E2) is offered ONLY for a bound STEWARD raw head — a raw read whose
   // destiny is a governed fact. A governed head is already promoted; an unbound head has
@@ -157,6 +165,17 @@ export function DataWorkbench({ value, onChange }: DataWorkbenchProps) {
           {/* The source picker — governed metrics (author + steward) + raw cubes (steward
               lens only, plane law). The AUTHOR never sees the raw tab (FF-AUTHOR-NO-QUERY). */}
           <GetHead locale={locale} onPickMetric={pickMetric} onPickCube={pickCube} />
+
+          {/* The read-level grain «წაკითხვის არე» (SPEC §3.2) — a bound GOVERNED head's
+              `where` pins, OFFERED from the source browse. Grain-∅ browse is the default. */}
+          {bound && isGovernedHead(model.head) && (
+            <GetGrainEditor
+              where={governedWhere(model.head)}
+              onChange={setGrain}
+              input={stepInput(GRAIN_STEP)}
+              locale={locale}
+            />
+          )}
 
           {/* The promotion loop (E2) — a bound raw/steward head can become a governed metric. */}
           {canPromote && stewardMeasure && (

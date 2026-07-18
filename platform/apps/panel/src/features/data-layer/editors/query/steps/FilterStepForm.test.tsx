@@ -93,7 +93,30 @@ describe('FilterStepForm — OFFER-driven (P-OFFER): pick, never type', () => {
     expect(onChange).toHaveBeenLastCalledWith({ op: 'filter', where: {} })
   })
 
-  it('a value the offer cannot represent ($ctx ref) stays free text — never lost', () => {
+  it('FALLBACK: no offer → free-text column + value (never a dead control, Law 11)', () => {
+    render(<FilterStepForm step={{ op: 'filter', where: { geo: 'GE' } }} onChange={vi.fn()} />)
+    expect((screen.getByLabelText('სვეტი') as HTMLInputElement).value).toBe('geo')
+    expect(screen.getByLabelText(/მნიშვნელობა/)).toBeTruthy()
+    expect(screen.queryByRole('checkbox')).toBeNull()
+  })
+})
+
+// ── FF-FILTER-PARITY (gesture half) — the three OFFERED modes emit the engine shapes ──
+//  Each old-editor filtering capability ($ctx follow · $ne except · $ne+$ctx combined) is
+//  authorable through the workbench filter form (pick, never type). The core half proves
+//  those shapes RESOLVE byte-identically to the store predicate (filter-parity.fitness).
+describe('FilterStepForm — FULL PARITY modes (card 0087 §3)', () => {
+  it('«მიჰყევი გვერდის არჩევანს» (follow) emits {$ctx: <dim>} — the field=parameter class', () => {
+    const onChange = vi.fn()
+    render(<FilterStepForm step={{ op: 'filter', where: { geo: 'GE' } }} onChange={onChange} input={offer} />)
+    fireEvent.click(screen.getByTestId('filter-mode-follow'))
+    expect(onChange).toHaveBeenLastCalledWith({ op: 'filter', where: { geo: { $ctx: 'geo' } } })
+    // a stored $ctx renders as its MODE, not free text (no more fallback for refs)
+    expect(screen.getByTestId('filter-follow-note')).toBeTruthy()
+    expect(screen.queryByLabelText(/მნიშვნელობა/)).toBeNull()
+  })
+
+  it('a stored {$ctx} value seeds FOLLOW mode (renders as the mode, never raw JSON)', () => {
     render(
       <FilterStepForm
         step={{ op: 'filter', where: { geo: { $ctx: 'geo' } } } as FilterStep}
@@ -101,15 +124,54 @@ describe('FilterStepForm — OFFER-driven (P-OFFER): pick, never type', () => {
         input={offer}
       />,
     )
-    // no checkbox list for an unrepresentable value; the free-text value box carries it
-    expect(screen.queryByRole('checkbox')).toBeNull()
-    expect(screen.getByLabelText(/მნიშვნელობა/)).toBeTruthy()
+    expect(screen.getByTestId('filter-follow-note')).toBeTruthy()
+    expect(screen.queryByLabelText(/მნიშვნელობა/)).toBeNull()
   })
 
-  it('FALLBACK: no offer → free-text column + value (never a dead control, Law 11)', () => {
-    render(<FilterStepForm step={{ op: 'filter', where: { geo: 'GE' } }} onChange={vi.fn()} />)
-    expect((screen.getByLabelText('სვეტი') as HTMLInputElement).value).toBe('geo')
-    expect(screen.getByLabelText(/მნიშვნელობა/)).toBeTruthy()
-    expect(screen.queryByRole('checkbox')).toBeNull()
+  it('«ყველა, გარდა…» (except) emits {$ne: v} — keep everything except one member', () => {
+    const onChange = vi.fn()
+    render(<FilterStepForm step={{ op: 'filter', where: { geo: 'GE' } }} onChange={onChange} input={offer} />)
+    fireEvent.click(screen.getByTestId('filter-mode-except'))
+    // single-select exclusion list: check the member to exclude
+    fireEvent.click(screen.getByRole('checkbox', { name: 'აფხაზეთი' }))
+    expect(onChange).toHaveBeenLastCalledWith({ op: 'filter', where: { geo: { $ne: 'AB' } } })
+  })
+
+  it('except + "also follow page selection" emits {$ne, $ctx} — NeCtxRef (combined)', () => {
+    const onChange = vi.fn()
+    render(
+      <FilterStepForm
+        step={{ op: 'filter', where: { geo: { $ne: 'AB' } } } as FilterStep}
+        onChange={onChange}
+        input={offer}
+      />,
+    )
+    fireEvent.click(screen.getByTestId('filter-except-follow'))
+    expect(onChange).toHaveBeenLastCalledWith({ op: 'filter', where: { geo: { $ne: 'AB', $ctx: 'geo' } } })
+  })
+
+  it('a stored NeCtxRef seeds except mode with follow checked', () => {
+    render(
+      <FilterStepForm
+        step={{ op: 'filter', where: { geo: { $ne: 'AB', $ctx: 'geo' } } } as FilterStep}
+        onChange={vi.fn()}
+        input={offer}
+      />,
+    )
+    expect((screen.getByTestId('filter-except-follow').querySelector('input') as HTMLInputElement).checked).toBe(true)
+  })
+
+  it('switching back to specific from a ref mode clears to an empty pick', () => {
+    const onChange = vi.fn()
+    render(
+      <FilterStepForm
+        step={{ op: 'filter', where: { geo: { $ctx: 'geo' } } } as FilterStep}
+        onChange={onChange}
+        input={offer}
+      />,
+    )
+    fireEvent.click(screen.getByTestId('filter-mode-specific'))
+    // an empty specific pick is no condition (Excel: nothing chosen)
+    expect(onChange).toHaveBeenLastCalledWith({ op: 'filter', where: {} })
   })
 })

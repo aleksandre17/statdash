@@ -16,9 +16,13 @@
 //  other data-layer pure models (binding.ts / generatedQuery.ts).
 //
 import type {
-  DataSpec, EncodingSpec, ObsQuery, PipelineSpec, PipeStep, SourceStep, TransformStep,
+  DataSpec, DimVal, EncodingSpec, ObsQuery, PipelineSpec, PipeStep, SourceStep, TransformStep,
 } from '@statdash/engine'
 import { desugarToPipeline } from '@statdash/engine'
+
+/** The governed (AUTHOR-plane) source head — a metric ref + a generic M2 grain. */
+type GovernedHead = Extract<SourceStep, { metrics: MetricRefList }>
+type MetricRefList = string[]
 
 /** The canonical pipeline view: the store-aware `source` HEAD + the pure TAIL + encoding. */
 export interface WorkbenchModel {
@@ -99,6 +103,35 @@ export function withGovernedMetric(m: WorkbenchModel, metricId: string): Workben
     return { ...m, head: { ...head, metrics } }
   }
   return { ...m, head: { op: 'source', metrics: [metricId] } }
+}
+
+// ── The governed head's READ-LEVEL grain (`where` pins) — «წაკითხვის არე» (card 0087) ─
+//
+//  The governed head carries a generic M2 grain (`by`/`time`/`where`, Law-1 generic,
+//  identical to MetricSpec). `where` is the fixed-coordinate PIN surface: `{ time: 2020 }`
+//  reads only 2020 (the old query editor's power, now OFFERED in the workbench). Scalar
+//  DimVal per dim (the engine head type) — the AutoFilter single-member pick. Grain-∅ =
+//  browse stays the default (ADR-046 Addendum 2 — an EMPTY grain is a meaningful state,
+//  never force one). `by`/`time` are the ledgered grain axes the same surface will host.
+
+/** True when the head is a GOVERNED metric read (an AUTHOR-plane grain surface). */
+export function isGovernedHead(head: SourceStep | undefined): head is GovernedHead {
+  return !!head && 'metrics' in head
+}
+
+/** The governed head's `where` pins (dim → single member). Empty ⇒ browse (no pin). */
+export function governedWhere(head: SourceStep | undefined): Partial<Record<string, DimVal>> {
+  return isGovernedHead(head) ? (head.where ?? {}) : {}
+}
+
+/** Set the governed head's `where` grain — the workbench read-area editor's write. An empty
+ *  map drops the `where` key entirely (grain-∅ browse, never a lingering `{}`). */
+export function withGovernedWhere(m: WorkbenchModel, where: Partial<Record<string, DimVal>>): WorkbenchModel {
+  if (!isGovernedHead(m.head)) return m
+  const next = { ...m.head } as GovernedHead
+  if (Object.keys(where).length === 0) delete next.where
+  else next.where = where
+  return { ...m, head: next }
 }
 
 // ── The STEWARD raw-cube head (0084 · ADR-046 variant 2) ───────────────────────

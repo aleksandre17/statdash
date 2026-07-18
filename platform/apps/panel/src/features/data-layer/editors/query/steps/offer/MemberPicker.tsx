@@ -23,9 +23,15 @@ export interface MemberPickerProps {
   selected: readonly DimVal[]
   onChange: (next: DimVal[]) => void
   locale:   string
+  /** SINGLE-select mode (a radio-like list): checking a member REPLACES the selection —
+   *  the "exclude ONE member" gesture the engine `$ne` (a single DimVal) can represent
+   *  (card 0087 «ყველა, გარდა…»). Default (`false`) = the multi-check AutoFilter list. */
+  single?:  boolean
+  /** Optional WCAG group label override (the "except" list reads "exclude a value"). */
+  ariaLabel?: string
 }
 
-export function MemberPicker({ offers, selected, onChange, locale }: MemberPickerProps) {
+export function MemberPicker({ offers, selected, onChange, locale, single = false, ariaLabel }: MemberPickerProps) {
   const en = locale === 'en'
   const [search, setSearch] = useState('')
 
@@ -48,6 +54,11 @@ export function MemberPicker({ offers, selected, onChange, locale }: MemberPicke
 
   const toggle = (value: DimVal, checked: boolean) => {
     const key = String(value)
+    if (single) {
+      // Radio-like: a check REPLACES the selection; unchecking the sole member clears it.
+      onChange(checked ? [value] : [])
+      return
+    }
     const next = checked
       ? [...selected.filter((v) => String(v) !== key), value]
       : selected.filter((v) => String(v) !== key)
@@ -57,7 +68,7 @@ export function MemberPicker({ offers, selected, onChange, locale }: MemberPicke
   return (
     <Box
       role="group"
-      aria-label={en ? 'Filter values' : 'ფილტრის მნიშვნელობები'}
+      aria-label={ariaLabel ?? (en ? 'Filter values' : 'ფილტრის მნიშვნელობები')}
       sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, minWidth: 180, flex: 1 }}
     >
       <TextField

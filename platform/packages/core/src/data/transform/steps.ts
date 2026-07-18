@@ -1,5 +1,6 @@
-﻿import type { CtxRef, DimVal, FilterValue }  from '../../sdmx'
+﻿import type { CtxRef, DimVal, FilterValue, NeCtxRef, NeRef }  from '../../sdmx'
 import { isDimRef }                           from '../codelist'
+import { splitMultiValue }                    from '../store-filter'
 import { composeLocale, tagLocaleString }      from '../../i18n/types'
 import type { LocaleString }                   from '../../i18n/types'
 import { resolveRef }                         from '../../ref/ref'
@@ -73,15 +74,33 @@ export function applyFilter(
   return rows.filter((row) =>
     Object.entries(step.where).every(([field, condition]) => {
       const val = row[field]
-      // Resolve a ctx-scope ref against SectionContext.dims via the one dispatcher (../ref).
+      // ── $ne exclusion (NeRef / NeCtxRef) — mirror the store `matchesFilter` branch ──
+      //  A NeCtxRef carries BOTH `$ne` and `$ctx`; it MUST be matched BEFORE the pure-
+      //  CtxRef branch below (which keys only on `$ctx`), or the exclusion is silently
+      //  dropped. The transform path had exactly that gap — a NeCtxRef fell through to
+      //  `isCtxRef` and resolved as a plain equality, losing `$ne` (card 0087 FILTER
+      //  PARITY; the store predicate never had the bug). Byte-identical to matchesFilter:
+      //  drop the excluded value; if `$ctx` resolves non-empty, also restrict to that
+      //  member set (comma-joined multi-value split via the splitMultiValue SSOT).
+      if (typeof condition === 'object' && condition !== null && !Array.isArray(condition) && '$ne' in condition) {
+        const ne = condition as NeRef | NeCtxRef
+        if (String(val) === String(ne.$ne)) return false
+        if ('$ctx' in ne) {
+          const cv = resolveRef({ $ctx: ne.$ctx }, { dims: ctx?.section?.dims }) as DimVal | undefined
+          if (cv !== '' && cv !== null && cv !== undefined) {
+            const leaves = typeof cv === 'string' && cv.includes(',') ? splitMultiValue(cv) : [cv]
+            if (!leaves.some((l) => String(l) === String(val))) return false
+          }
+        }
+        return true
+      }
+      // ── $ctx ref (pure CtxRef) — resolved against SectionContext.dims via the one dispatcher ──
       let resolved: FilterValue | DimVal | undefined = condition
       if (isCtxRef(condition)) {
         const cv = resolveRef(condition as CtxRef, { dims: ctx?.section?.dims }) as DimVal | undefined
         if (cv === '' || cv === null || cv === undefined) return true   // wildcard
         resolved = cv
       }
-      if (typeof resolved === 'object' && resolved !== null && !Array.isArray(resolved) && '$ne' in resolved)
-        return val !== (resolved as { $ne: unknown }).$ne
       return Array.isArray(resolved)
         ? (resolved as DimVal[]).includes(val)
         : val === resolved

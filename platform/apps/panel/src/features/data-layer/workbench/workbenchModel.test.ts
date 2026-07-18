@@ -7,10 +7,11 @@
 import { describe, it, expect } from 'vitest'
 import type { DataSpec } from '@statdash/engine'
 import {
-  fromWorkbenchModel, isHeadBound, isStewardHead, isWorkbenchShaped, promoteHeadToMetric,
-  sourceGrainDims, sourceMeasure, stewardHeadMeasure, toWorkbenchModel, withGovernedMetric,
-  withStewardCube,
+  fromWorkbenchModel, governedWhere, isGovernedHead, isHeadBound, isStewardHead,
+  isWorkbenchShaped, promoteHeadToMetric, sourceGrainDims, sourceMeasure, stewardHeadMeasure,
+  toWorkbenchModel, withGovernedMetric, withGovernedWhere, withStewardCube,
 } from './workbenchModel'
+import type { WorkbenchModel } from './workbenchModel'
 
 describe('toWorkbenchModel — the ONE canonical view over BOTH inputs', () => {
   it('lowers a legacy query to a STEWARD source head + the pure tail (desugared view)', () => {
@@ -39,6 +40,44 @@ describe('toWorkbenchModel — the ONE canonical view over BOTH inputs', () => {
     expect(toWorkbenchModel({ type: 'row-list', rows: [] })).toBeNull()
     expect(toWorkbenchModel({ type: 'timeseries', code: 'B1G', years: 'all' })).toBeNull()
     expect(toWorkbenchModel(undefined)).toBeNull()
+  })
+})
+
+describe('governed head grain «წაკითხვის არე» — the `where` pin surface (card 0087 §3.2)', () => {
+  const governed: WorkbenchModel = {
+    head: { op: 'source', metrics: ['B1G'] },
+    tail: [], encoding: { label: 'label' },
+  }
+  const steward: WorkbenchModel = {
+    head: { op: 'source', query: { measure: 'B1G' } },
+    tail: [], encoding: { label: 'label' },
+  }
+
+  it('isGovernedHead distinguishes the metric head from the steward query head', () => {
+    expect(isGovernedHead(governed.head)).toBe(true)
+    expect(isGovernedHead(steward.head)).toBe(false)
+  })
+
+  it('governedWhere reads the pins (empty by default — browse is the default grain)', () => {
+    expect(governedWhere(governed.head)).toEqual({})
+    expect(governedWhere({ op: 'source', metrics: ['B1G'], where: { year: 2020 } })).toEqual({ year: 2020 })
+  })
+
+  it('withGovernedWhere pins a coordinate on the governed head', () => {
+    const next = withGovernedWhere(governed, { year: 2020 })
+    expect(isGovernedHead(next.head) && next.head.where).toEqual({ year: 2020 })
+    // the write survives the emission flip as a `pipeline` source head
+    expect(fromWorkbenchModel(next).pipe[0]).toMatchObject({ op: 'source', metrics: ['B1G'], where: { year: 2020 } })
+  })
+
+  it('an empty grain DROPS the `where` key entirely (grain-∅ browse, never a lingering {})', () => {
+    const pinned = withGovernedWhere(governed, { year: 2020 })
+    const cleared = withGovernedWhere(pinned, {})
+    expect(isGovernedHead(cleared.head) && 'where' in cleared.head).toBe(false)
+  })
+
+  it('withGovernedWhere is a no-op on a steward head (grain lives on `query`, not `where`)', () => {
+    expect(withGovernedWhere(steward, { year: 2020 })).toBe(steward)
   })
 })
 
