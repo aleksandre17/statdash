@@ -3,6 +3,7 @@
 - [Canvas craft batch (P3/P5/P6/P7/L2)](project_panel_canvas_craft_batch.md) — governed dim labels · RightDock siteContext
 - [W1 Honest Canvas (AR-52)](project_panel_w1_honest_canvas.md) — live-default+veil, honest UNBOUND KPI
 - [W2 Semantic Spine (AR-52)](project_panel_w2_semantic_spine.md) — front-door hoist · corpus→governed ids · FF-DATA-BOUNDED
+- [P2a substrate un-bury (ADR-049)](project_panel_p2a_substrate_unbury.md) — workbench kind-agnostic · band-item visibility · TrendField; 2 forced PropFieldType consumers + gen:schema
 - [Summary-Card Inspector (Move 1)](project_summary_card_inspector.md) — rich values → glance cards + dock section registry
 - [Constructor architecture (state)](project_constructor_state.md) — Inspector/SchemaSource seam, registry
 - [Constructor C3+C5](project_panel_c3_c5.md) — cube capability-discovery + save guard
@@ -11,8 +12,8 @@
 - [Data workbench three-pane (W-P2)](project_panel_data_workbench_wp2.md) — focus-view escalation; generatedQuery plane-split
 - [Pipeline emission flip (W-P5b)](project_panel_pipeline_emission_flip_wp5b.md) — workbenchModel ONE-path; bindMeasureToSpec→governed source head
 - [P-OFFER filter offer](project_panel_poffer_filter_offer.md) — pick governed cols/members not type; stepInput seam; engine filter=equality/IN only
-- [Field-ROLE projection (0087)](project_panel_role_projection.md) — PropFieldRole seam + generic role-projecting step editor + expr live preview; retired the raw-JSON Inspector delegation
-- [Raw-cube entry + promotion (0084)](project_panel_raw_cube_promotion.md) — steward GetHead tabs · PromoteMetric reuses semanticCatalog · cubeDebt · FF-PROMOTE-ROUNDTRIP
+- [Field-ROLE projection (0087)](project_panel_role_projection.md) — PropFieldRole seam + generic role-projecting step editor + expr live preview
+- [Raw-cube entry + promotion (0084)](project_panel_raw_cube_promotion.md) — steward GetHead tabs · PromoteMetric reuses semanticCatalog · FF-PROMOTE-ROUNDTRIP
 - [Placement Law primitive (SL-0b)](project_placement_law_primitive.md) — §3.2 scope×weight→container; 4-band inline/drill
 - [Nav + chrome authorable](project_panel_nav_chrome_authorable.md) — nav per-entry editable; chrome→Pages&Site
 - [Calc editor M3.0](project_panel_calc_editor_m30.md) — derived-metric editor (CalcBuilder+ExprTreeEditor)
@@ -54,16 +55,16 @@
 - [Optional-peer vite resolution](project_optional_peer_vite_resolution.md) — data-driven peer alias unions all source-bundled @statdash/* peerDeps
 - [Expr bundler-agnostic env flag](project_expr_bundler_agnostic_env.md) — packages/expr dev flag: local cast only, never process.env/vite ambient
 - [ESLint conventions](project_eslint_conventions.md) — _-prefix unused-var ignore; react-refresh co-location warnings accepted
-- [Storybook v10 setup](project_storybook_v10_setup.md) — resolves to v10; addon-essentials/@storybook/test are v8-only, use core+addon-docs
+- [Storybook v10 setup](project_storybook_v10_setup.md) — resolves to v10; addon-essentials/@storybook/test v8-only, use core+addon-docs
 - [Plugins shell test harness](project_plugins_shell_test_harness.md) — REAL shells: i18next stub, jsdom Apex/Leaflet limits
 - [Geostat runner render harness](project_geostat_runner_render_test_harness.md) — boot sequence, vitest @/ alias fix, jsdom shims
 - [react exportMenu fitness hangs](project_react_exportmenu_fitness_hangs_gate.md) — packages/react whole-suite HANGS; run targeted
 - [CSS fitness comment-strip gotcha](project_css_fitness_comment_stripping_gotcha.md) — block-scanning regexes MUST strip CSS comments first
 - [Windows long-path vitest block](project_windows_longpath_vitest_worktree_block.md) — MAX_PATH block workable via node_modules junctions
 - [node-vite remote deploy layout](project_node_vite_remote_deploy_layout.md) — ships workspace root to $DEPLOY_PATH/context; env_file path math
-- [Config API contract](reference_config_api_contract.md) — /api/config endpoint shapes & quirks the Constructor client maps
+- [Config API contract](reference_config_api_contract.md) — /api/config endpoint shapes & quirks
 - [Render path / browser-verify](reference_render_path_browser_verify.md) — runner needs API; live :3002/:3003; fail-soft-is-itself-broken
-- [Dev-line panel :3013](reference_dev_line_panel_3013.md) — statdash-dev-panel-full; packages/* baked as SRC (no dist); whole-src tar-sync for packages/core live-proof
+- [Dev-line panel :3013](reference_dev_line_panel_3013.md) — statdash-dev-panel-full; packages/* baked as SRC; tar-sync for packages/core live-proof
 - [Conform to engine types over spec text](feedback_conform_engine_types.md) — when a task spec contradicts a published engine type, the type wins
 - [No registerSlice in engine-react tests](feedback_engine_react_no_registerslice_in_tests.md) — register via nodeRegistry.register; registerSlice pulls i18next
 - [Plugins shell test: mock new engine imports](feedback_plugins_shell_test_mock_new_engine_import.md) — new @statdash/react/engine imports must join the test's vi.mock
@@ -71,16 +72,16 @@
 - [vitest .css?raw is empty](reference_vitest_css_raw_empty.md) — raw CSS resolves to '' in panel vitest; scan .tsx not .css
 - [icon token rendering](feedback_icon_token_rendering.md) — token→component via createElement in a .ts helper; `<Var/>` from runtime = lint ERROR
 - [panel gate commands](reference_panel_gate_commands.md) — run test/lint/tsc from platform/; 2 warnings baseline
-- [page-config schema-gen + panel i18n](project_page_config_schema_gen_and_panel_i18n.md) — gen:schema after schema edits; chrome-i18n {en,ka}+t(); ColorControl DTCG-themed
+- [page-config schema-gen + panel i18n](project_page_config_schema_gen_and_panel_i18n.md) — gen:schema after schema edits; chrome-i18n {en,ka}+t()
 - [Contextual-relevance canon](feedback_contextual_relevance_canon.md) — show ONLY active element; drill-in disclosure, never all-expanded
 - [panel studio map](project_panel_studio_map.md) — CONSOLIDATED: shell M1.2 · IA S1-S5 · dock SL1-SL4 · role lens M2 · data-flow M4.3/M5b
 - [four-moment shell (AR-52 Step 1)](project_panel_four_moment_shell.md) — Data-first 5-mode rail · top bar = context+Publish; SUPERSEDES S5 rail/top-bar
 - [plane the inspector (AR-52 Step 2)](project_panel_plane_inspector.md) — AudiencePlane hides plumbing from author dock; FF-NO-UNPROJECTED-DECLARED-FIELD
 - [REFINE by concern-groups (AR-52)](project_panel_concern_refine.md) — FieldConcern axis groups the whole-node dock; DockBody route; FF-CONCERN-GROUPED
 - [i18n map](project_i18n_map.md) — CONSOLIDATED: AR-26 LocaleString content contract · AR-37/39 full-sync+badges · label placement (Law 4)
-- [Inspector controls off the DTCG spine](project_insp_tokens_undefined.md) — `--insp-*` UNDEFINED; native controls on hex (dark-broken); FF-NO-UNTHEMED-COLOR misses apps/panel
+- [Inspector controls off the DTCG spine](project_insp_tokens_undefined.md) — `--insp-*` UNDEFINED; native controls on hex; FF-NO-UNTHEMED-COLOR misses apps/panel
 - [MUI→Radix Strangler state](project_mui_radix_migration.md) — owned Select landed (0071); ratchet baseline + sweep targets
-- [Chart sequential palette](project_chart_sequential_palette.md) — ChartDef.palette + --chart-seq-N; the MANY chart-color paths (donut SVG, buildColors, interpreters, schema)
+- [Chart sequential palette](project_chart_sequential_palette.md) — ChartDef.palette + --chart-seq-N; the MANY chart-color paths
 - [Portal review batch](project_portal_review_batch.md) — axis fmtNum/niceFloor/tooltip; brush LIVE-FIX (apex UMD-global + _chartInstances)
 - [Radix primitives in jsdom](feedback_radix_jsdom_polyfills.md) — 4 polyfills a Radix listbox needs; native→Radix breaks fireEvent.change tests
 - [legend aesthetic owner verdict](feedback_legend_aesthetic.md) — legends bottom, single-line ellipsis, ONE token; wrapped/columned rejected

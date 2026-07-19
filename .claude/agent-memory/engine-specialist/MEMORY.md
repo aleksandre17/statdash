@@ -7,13 +7,13 @@
 - [Write tool byte-fidelity](feedback_write_tool_byte_fidelity.md) — Write silently normalizes exotic whitespace (e.g. NBSP) when retyping from memory; use Edit or verify byte-identity
 - [ar36 pivot](project_ar36_pivot.md) — CONSOLIDATED: P0 EncodingChannel CtxRef seam + P1-P3 derive/fold facts
 - [Cell honest-state seam](reference_cell_honest_state_seam.md) — Cell/ValueState + storeCell (PM-1); no-data≠genuine-0 needs obs-scan; obsAtCoord SSOT w/ preliminary; ADR-047 Wave B = storeCellAt+coalesce
-- [ADR-042 Placement port](project_adr042_placement_port.md) — Slice 0 LANDED: placePart (writePart's structural sibling) on PartSource; 4 residence adapters; PlacementPlan/resolvePlacementPlan; ONE commit site placeNode.ts; insert+outline-move refactored byte-identical
+- [ADR-042 Placement port](project_adr042_placement_port.md) — Slice 0 LANDED: placePart on PartSource; 4 residence adapters; PlacementPlan/resolvePlacementPlan; ONE commit site placeNode.ts
 - [ADR-041 Part grammar](project_adr041_part_grammar.md) — Phase 6 capstone LANDED: isWrapper/isNodeContainer derived, kind-as-containment retired, FF-DERIVED-CONTAINMENT hard `[]`; BandDescriptor kept node-level alias (Delta 3)
 - [S6 chrome reversible landed](project_s6_chrome_reversible_landed.md) — chrome=sourced Part of site-frame; mechanism (site-frame META + registry-by-source collision fix + chromeParts) LANDED green; one-way selection fold HALTED (item-4/5 entangled)
 - [Reactive graph track (ADR-024)](project_reactive_graph_track.md) — V0/V1/V2/V2.5 SHIPPED (extractDeps SSOT + shadow graph); Findings A/B CLOSED → parity EXACT; V3 render-switch UNBLOCKED (owner-gated, not fired)
-- [Perspective-axis refactor](project_perspective_axis.md) — timeMode/mode → generic perspective axis (SHIPPED, grep-clean); recurring hazard classes (ownership-vs-visibility gates, migrate-before-delete sequencing, alias-then-retire); superseded further by TM-STRANGLER
-- [TM-STRANGLER time-binding](project_tm_strangler.md) — DimBinding+Selection discriminant (point/window/all) replaces shape-inferred timeBinding; generic TimeGranularity; FF-NO-MODE-LITERAL twin; supersedes PerspectiveTimeBinding
-- [CLUSTER② Law-1 + inert seams](project_cluster2_law1_seams.md) — GrowthResolver privileged-literal leak fix (`atTime` wrong for obs-meta reads, use filter-key TIME_DIM); AD-6 `available` gate STILL not threaded in SiteRenderer (flagged); GRAIN-G4 granularity→grain default-gated
+- [Perspective-axis refactor](project_perspective_axis.md) — timeMode/mode → generic perspective axis (SHIPPED); hazard classes (ownership-vs-visibility gates, migrate-before-delete, alias-then-retire); superseded by TM-STRANGLER
+- [TM-STRANGLER time-binding](project_tm_strangler.md) — DimBinding+Selection discriminant (point/window/all) replaces shape-inferred timeBinding; generic TimeGranularity; FF-NO-MODE-LITERAL twin
+- [CLUSTER② Law-1 + inert seams](project_cluster2_law1_seams.md) — GrowthResolver privileged-literal fix (`atTime` wrong for obs-meta reads, use TIME_DIM); AD-6 `available` gate not threaded in SiteRenderer (flagged); GRAIN-G4 granularity→grain default-gated
 - [Adoption epic (X-2)](project_adoption_epic.md) — all 4 Acts done; Act 1's cross-workstream metric-delivery gap resolved later by AR-40 P0
 - [AR-40 P0 semantic-layer spine](project_ar40_p0_spine.md) — KPI render+preliminary made metric-aware; the 3-paths-read-a-measure-ref bug (only warm resolved through resolveMeasureRef); gdp-total KPI migrated to metric-id
 - [AR-49 M0 dimension catalog](project_ar49_m0_dimension_catalog.md) — DimensionDef governed-dim registry (peer of metric), manifest.dimensions, describeApp 1.1.0 bump; engine items 1-5 done, 6-11 pending
@@ -36,6 +36,7 @@
 - [Grain / store-port](reference_grain_store_port.md) — valAt port primitive + internal point-series lowering + grain.ts reducer; point-series is deliberately NOT a public discriminant
 - [Transform dispatch registry](reference_transform_dispatch_registry.md) — applyStep dispatches only via step-registry; add op = one registerTransformStep line
 - [Blend seam](reference_blend_seam.md) — `blend` op = declarative cross-store join front-door for joinByField; B0 core no-op, B1 react resolveBlends (manifest is react-only)
+- [DataSpec authoring-contract (ADR-049 P1)](reference_dataspec_authoring_contract.md) — SPEC_CATALOG stub→contract (make()+schema/editorKey); binding-axis port; DataSpecEditor switch-free
 - [Encoding channel enrichment](reference_encoding_channel_enrichment.md) — EncodingChannel = string|ChannelDef{field,type?,key?} (ADR R2)+CtxScopeRef (AR-36); bare string byte-identical
 - [Measure-ref seam](reference_measure_ref_seam.md) — resolveMeasureRef (ADR R1) is the SSOT distinguishing raw code vs registered metric-id; never call getMetric directly
 - [Metric-store binding](reference_metric_store_binding.md) — MetricDef.dataSource (Cube pattern) → specDataSource → react effectiveStoreKey precedence

@@ -1,0 +1,30 @@
+---
+id: "0102"
+title: "THE CANONICAL PANEL IA — one site-builder object-model spine (Site ⊃ Page ⊃ Skeleton/Template ⊃ Section ⊃ Element ⊃ Data), benchmarked vs the reference class, to end the panel's parallel-concept CHAOS. Owner-mandated 2026-07-19."
+status: STUDY IN FLIGHT (2026-07-19 — apex READ-ONLY canonical study, platform-architect@fable; decision-grade model + Strangler remedy → owner picks)
+class: XL (foundational IA — the umbrella; 0100/0101 become elements of its remedy)
+priority: P0 (owner: "we've fallen out of the canon; lay out & set up a remedy to the chaos in the panel; show me we resemble a site-builder platform + framework core")
+owner: lead → platform-architect@fable (study) → owner decision → phased Strangler remedy
+relates:
+  - work/items/0101-layout-site-assembly-broken.md   # SYMPTOM: "the page skeleton got lost"; empty-container un-assemblable
+  - work/items/0100-assembly-by-declaration.md        # the DATA-binding + preset axis — an element of this model
+  - docs/architecture/decisions/ADR-038-bounded-element-law.md
+  - docs/architecture/decisions/ADR-041-part-grammar-and-part-port.md
+  - docs/architecture/decisions/ADR-042-authoring-triprojection-and-placement-port.md
+  - docs/architecture/proposals/STUDY-authoring-canon-circle-break.md
+---
+**Owner mandate (2026-07-19, verbatim intent):** "Whatever we do, we still seem to have fallen out of the canon. My hierarchy: (1) DATA — upload + view uploaded data, isolated, beautiful UI. (2) SITE — create a site + site parameters/canonicity. (3) PAGE — create + assemble a page; the CHROME (which has no ordering); and the 'page' = the site SKELETONS/FRAMES, which GOT LOST. (5) the rest = logical continuations. I may be missing/wrong. So ONCE AND FOR ALL: study ALL our reference site-builder cores deeply — their visions, UI, experiences, structures, concepts, problem-solving methods, architectures — to lay out, assemble and SET UP a remedy to the CHAOS in the panel. YOU do it, use all agents' memory, produce the RESULT — show me we really resemble a site-builder platform + a framework core base."
+
+**The circle (lead reading):** the panel grew PARALLEL concept-surfaces (Sources/Model · Insert/Layers · Site/Pages · Style/chrome) with no shared spine. The reference class runs ONE nested containment: **Site ⊃ Page ⊃ Skeleton/Template (chrome regions) ⊃ Section ⊃ Element ⊃ Data-binding.** The **page-skeleton/template** first-class concept is lost/absent — the root of the "chaos" and "can't assemble a site" (0101 is its symptom).
+
+**The study (apex, READ-ONLY, decision-grade — NOT code):**
+1. Extract the CANONICAL object-model / IA / authoring-experience of the reference class — Webflow · Framer · Builder.io · WordPress(themes/templates/blocks/Gutenberg) · Plasmic · Puck · Wix · Retool · Grafana · Form.io/JSON-Forms — how each organizes site → page → template/skeleton → section → component → data, and where chrome + site-params live.
+2. Map OUR ACTUAL panel concepts (studio surfaces, the page/site store, node/object registry, where a "page skeleton/template" is or should be, chrome, site params, the data layer) — file:line.
+3. Verdict along the owner's hierarchy (data → site → page/skeleton/chrome → rest): what is mis-factored / conflated / LOST / chaotic. Name the missing/lost first-class concepts (esp. page-skeleton/template).
+4. Propose THE canonical IA + object-model spine that reconciles with (extends, never forks) ADR-038/041/042/049 — no fifth grammar.
+5. A Strangler REMEDY SEQUENCE migrating the current panel onto the spine; show where 0101 (empty-container/skeleton) and 0100-P2b (preset) fit as elements.
+Deliverable = decision-grade doc + options + recommendation → owner picks. Then the roadmap re-sequences around it.
+
+**Chrome-axis data point (surfaced by 0100-P2a live-verify, 2026-07-19):** `useSiteChrome must be called inside <SiteProvider>` (`packages/plugins/chrome/AppChrome.tsx:27` via `packages/react/src/context/SiteContext.tsx:113`) — the studio previews chrome (header/nav/footer) WITHOUT a `<SiteProvider>` wrapper (non-fatal, hidden from per-load counters). This is a concrete instance of the owner's "chrome which has no ordering" + the lost site/skeleton frame — the canonical spine must first-class how chrome/skeleton is provided + ordered per page. Feed into the study's SITE/PAGE/chrome verdict.
+
+**WIP:** 0100-P2a CLOSED (built→gated→committed `660cc37`+`6ffe97d`→deployed→shown, all 3 behaviors PASS live). This study, once owner-blessed, becomes the trunk; 0101/P2b re-sequence under it.

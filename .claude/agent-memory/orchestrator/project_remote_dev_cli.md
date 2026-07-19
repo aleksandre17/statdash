@@ -1,10 +1,18 @@
 ---
 name: remote-dev-cli
-description: The remote-dev system — how to run the panel/apps on the Linux dev server (192.168.1.199); it is the CLI, NOT local vite. Needs pwsh (PS7).
+description: How to deploy panel changes to the DEV server :3013 (192.168.1.199). The CANONICAL path is the kit-BYPASSED tar/docker-cp recipe — NOT `dev up --mode remote` (wrong container + broken bridge). pwsh IS available.
 metadata:
   type: reference
 ---
-**The remote-dev system (use THIS to show work on the server — do NOT reinvent with local vite):**
+**★★ CANONICAL DEPLOY PATH (reconfirmed 2026-07-19 — read THIS before anything below):**
+- **DON'T use `tools/statdash.ps1 dev up p --mode remote`.** Two independent reasons: (1) it syncs to the geostat-kit container `/home/administrator/statdash/panel`, which does NOT serve :3013; (2) it throws a real bug at `geostat.ps1:427` (array → `-Command [string]`) in Invoke-DevUp.ps1's remote-watch bridge. Fixing the bug wouldn't help — wrong container. pwsh7 + powershell.exe + ssh ARE all reachable from Git-Bash (an earlier "pwsh absent" claim was a false-negative — verify individually, `command -v pwsh`).
+- **:3013 is served by container `statdash-dev-panel-full`** (compose project `statdash-dev`, worktree `/tmp/statdash-dev-line`, config `.../ops/compose/docker-compose.dev.yml`). Panel Vite ALIASES `@statdash/engine`→`packages/core/src` (`resolve.conditions:['source']`) — so a locally-built `dist/` is IRRELEVANT to the dev server; it bundles core SOURCE. Only `apps/panel/src` is bind-mounted; `packages/*` are baked in the image.
+- **EPHEMERAL quick-deploy (uncommitted, to show the owner) — proven 2026-07-19:** panel src → the bind-mount via tar-over-ssh (HMR reflects); core src → `docker cp` into the running container's writable layer (survives `docker restart`, LOST on image rebuild/recreate); then `docker restart statdash-dev-panel-full` (core isn't mounted, so a restart is needed for Vite to re-read it). rsync may be unavailable in this shell (`$ProgramFiles` empty) → use `tar cf - <files> | ssh geostat-deploy "tar xf - -C <remote>"` and `docker cp`. Non-destructive (no `--delete`). Isolation: restart ONLY the panel container (api/geostat/pg/staging/prod untouched).
+- **DURABLE deploy (post-commit):** the image-rebuild recipe at ★ below (line ~31) — tar the tree + `docker-compose -f docker-compose.dev.yml build panel && up -d panel`.
+- SSH: `ssh geostat-deploy` (alias in `~/.ssh/config` → 192.168.1.199, works non-interactively). App at `http://192.168.1.199:3013` DIRECTLY (no localhost tunnel). Login admin/dev_admin_pw_123.
+
+---
+**The remote-dev system (historical detail — the CLI path above is superseded; recipe below still valid):**
 - Entry: `tools/statdash.ps1` → `ops/cli/statdash.ps1`/`.sh` → `kits/geostat-kit/cli/geostat.ps1` (kit dispatcher). Bash variant `ops/cli/statdash.sh` exists but routes `dev` back to PowerShell.
 - Command: **`.\tools\statdash.ps1 dev up <alias> --mode remote`** — Mode ③ "Remote watch": rsync local branch SOURCE → the Linux server + a Vite dev container there (live reload). `deploy watch` = static dist build on server instead.
 - Aliases (`geostat.ops.json`): `a`=api, `g`=geostat, `p`=panel. So the panel on the server = **`dev up p --mode remote`**.
