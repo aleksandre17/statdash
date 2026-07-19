@@ -33,7 +33,7 @@
 //  Law 3: CanvasView lives in apps/panel — the engine stays app-agnostic. It
 //  consumes NodePageRenderer as-is; no fork.
 //
-import { useState, type CSSProperties } from 'react'
+import { useState, useRef, useLayoutEffect, type CSSProperties } from 'react'
 import {
   MemoryRouter,
   // The invariant-reset seam (v6-sanctioned): the app now mounts a real BrowserRouter
@@ -180,6 +180,25 @@ export function CanvasView({
   const { bp } = useActiveBreakpoint()
   const previewW = previewWidthFor(bp)
 
+  // ── Toolbar clearance measure (0102 R1 · Part 4) ───────────────────────────
+  //  The structural-mode veil banner must sit BELOW the floating toolbar. The toolbar is
+  //  position:absolute (out of flow, so it doesn't shift the measured layers), so no CSS
+  //  flow can clear it — we measure its real height into `--canvas-toolbar-h` on the root
+  //  and canvas.css offsets the banner by it. Robust to the toolbar's real height across
+  //  breakpoint / mode / theme (mode pills wrap, fail-soft badge appears, …). Held in
+  //  state so a React re-render (which rewrites the root's inline style) never wipes it.
+  const rootRef = useRef<HTMLDivElement>(null)
+  const [toolbarH, setToolbarH] = useState<number | undefined>()
+  useLayoutEffect(() => {
+    const toolbar = rootRef.current?.querySelector<HTMLElement>('.canvas-toolbar')
+    if (!toolbar) return
+    const apply = () => setToolbarH(toolbar.offsetHeight)
+    apply()
+    const ro = new ResizeObserver(apply)
+    ro.observe(toolbar)
+    return () => ro.disconnect()
+  }, [])
+
   // Perspective PREVIEW — seed the canvas router URL with the active axis param so the
   // live renderer switches perspective. The renderer's perspectiveState SSOT derives
   // entirely from the URL filter param (FilterProvider reads location.search on mount →
@@ -195,13 +214,20 @@ export function CanvasView({
     ? `/?${encodeURIComponent(perspectiveKey)}=${encodeURIComponent(previewPerspectiveId)}`
     : '/'
 
+  // Root CSS vars — the previewed brand (themeVars) + the preview-width cap (consumed by
+  // canvas.css when data-preview-bp is set) + the measured toolbar height (banner clearance).
+  const rootStyle: CSSProperties = {
+    ...themeVars,
+    ...(previewW  != null ? { '--canvas-preview-w': `${previewW}px` } : {}),
+    ...(toolbarH  != null ? { '--canvas-toolbar-h': `${toolbarH}px` } : {}),
+  } as CSSProperties
+
   return (
     <div
+      ref={rootRef}
       className={rootClass}
       data-testid="canvas-root"
-      // Preview-width var (consumed by canvas.css when data-preview-bp is set) is merged
-      // onto the theme vars so the previewed brand still applies.
-      style={previewW ? { ...themeVars, '--canvas-preview-w': `${previewW}px` } as CSSProperties : themeVars}
+      style={rootStyle}
       // The active preview breakpoint — present only when the base is NOT selected, so
       // canvas.css caps the renderer width and the container-query cascade reflows.
       data-preview-bp={bp !== 'default' ? bp : undefined}
@@ -289,6 +315,7 @@ export function CanvasView({
         chrome={chrome}
         onDrop={onDropNode}
         onBindMetric={onBindMetric}
+        locale={locale}
       />
     </div>
   )

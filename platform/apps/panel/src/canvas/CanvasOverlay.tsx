@@ -30,6 +30,7 @@ import {
 } from '@statdash/react/engine'
 import type { NodeBase, SlotDef, ObjectMeta, ChromeSlotConfig, ChromeEntry } from '@statdash/react/engine'
 import type { FilterSchemaInput }    from '@statdash/engine'
+import { resolveLocaleString }       from '@statdash/engine'
 import { walkNodes }                 from './walkNodes'
 import type { WalkedNode }           from './walkNodes'
 import { enumerateParts }            from './bandSource'
@@ -41,12 +42,97 @@ import { hasMetricDrag, readMetricDrag } from '../discovery/metricDrag'
 interface Rect { left: number; top: number; width: number; height: number }
 
 interface NodeFrame extends WalkedNode { id: string; rect: Rect }
-interface DropFrame { parentId: string; slotKey: string; slot: SlotDef; rect: Rect }
+/** A per-slot drop target. `empty` = the slot holds no rendered child (its rect is an
+ *  allocated placeholder band, not a measured child-union) — such zones show their
+ *  labelled affordance AT REST so the author sees where content goes without dragging. */
+interface DropFrame { parentId: string; slotKey: string; slot: SlotDef; rect: Rect; empty: boolean }
 /** A selectable value-band item frame — the bounded-element hit target (ADR-038). */
 interface ItemFrame { nodeId: string; path: string; rect: Rect }
 /** A selectable chrome-region frame (S6) — a `sourced` Part of the site-frame, addressed
  *  by the ONE `PartAddress` (`{ SITE_FRAME_ID, chrome.<slot> }`) like any other part. */
 interface ChromeFrame { slot: string; path: string; rect: Rect }
+
+// ── Per-slot drop geometry (0102 R1 — the "no overlap" fix) ────────────────
+//
+//  The overlay must give EACH declared slot its OWN rect, so a node with ≥2 slots
+//  (inner-page = sticky + main) no longer stacks N identical dropzones + labels on the
+//  parent's single box. Generic over the declared Part slots (ADR-041) — never a per-type
+//  branch: a slot's region is DERIVED from where its declared children actually rendered.
+//
+//   • populated slot → the UNION of its children's measured anchor boxes (the real region
+//     the renderer laid the slot's content into).
+//   • empty slot     → an allocated placeholder BAND inside the node box (there is no
+//     rendered region to measure). Bands are laid in the residual space NOT occupied by the
+//     node's populated slots, so a slot band never shares a box with a sibling slot.
+//
+//  Minimum band height so an allocated empty-slot zone stays a usable, labelled target.
+const EMPTY_BAND_MIN = 32
+
+/** Smallest axis-aligned box covering every input rect. */
+function unionRect(rects: Rect[]): Rect {
+  let l = Infinity, t = Infinity, r = -Infinity, b = -Infinity
+  for (const x of rects) {
+    l = Math.min(l, x.left); t = Math.min(t, x.top)
+    r = Math.max(r, x.left + x.width); b = Math.max(b, x.top + x.height)
+  }
+  return { left: l, top: t, width: r - l, height: b - t }
+}
+
+/** The ids of the child nodes residing in `node[field]` (array or single). Generic —
+ *  reads the slot's declared residence field, never a per-type child accessor. */
+function slotChildIds(node: NodeBase, field: string): string[] {
+  const raw = (node as unknown as Record<string, unknown>)[field]
+  const arr = Array.isArray(raw) ? raw : raw != null ? [raw] : []
+  const ids: string[] = []
+  for (const c of arr) {
+    const id = c && typeof c === 'object' ? (c as { id?: unknown }).id : undefined
+    if (typeof id === 'string') ids.push(id)
+  }
+  return ids
+}
+
+/** Allocate `count` non-overlapping placeholder bands for the node's empty slots. Prefer
+ *  the residual space ABOVE the populated content, else BELOW it, else a clamped strip at
+ *  the node top (the degenerate "content fills the whole box" case). Deterministic, so a
+ *  slot's band is stable across measures. */
+function emptyBands(node: Rect, used: Rect[], count: number): Rect[] {
+  let top = node.top
+  let bottom = node.top + node.height
+  if (used.length) {
+    const usedTop    = Math.min(...used.map(r => r.top))
+    const usedBottom = Math.max(...used.map(r => r.top + r.height))
+    const above = usedTop - node.top
+    const below = node.top + node.height - usedBottom
+    if (above >= count * EMPTY_BAND_MIN)      { top = node.top;    bottom = usedTop }
+    else if (below >= count * EMPTY_BAND_MIN) { top = usedBottom;  bottom = node.top + node.height }
+    else                                      { bottom = node.top + Math.min(node.height, count * EMPTY_BAND_MIN) }
+  }
+  const h = (bottom - top) / count
+  return Array.from({ length: count }, (_, i) => ({
+    left: node.left, top: top + i * h, width: node.width, height: h,
+  }))
+}
+
+/** Derive one DropFrame per declared slot of `frame`, each with its OWN rect. */
+function slotDropsFor(frame: NodeFrame, rectById: Map<string, Rect>): DropFrame[] {
+  const slots = nodeRegistry.getSlots(frame.type, frame.variant)
+  if (!slots) return []
+  const out:     DropFrame[]          = []
+  const empties: [string, SlotDef][]  = []
+  for (const [slotKey, slot] of Object.entries(slots)) {
+    const rects = slotChildIds(frame.node, slot.field)
+      .map(id => rectById.get(id))
+      .filter((r): r is Rect => !!r)
+    if (rects.length) out.push({ parentId: frame.id, slotKey, slot, rect: unionRect(rects), empty: false })
+    else empties.push([slotKey, slot])
+  }
+  if (empties.length) {
+    const bands = emptyBands(frame.rect, out.map(d => d.rect), empties.length)
+    empties.forEach(([slotKey, slot], i) =>
+      out.push({ parentId: frame.id, slotKey, slot, rect: bands[i], empty: true }))
+  }
+  return out
+}
 
 export interface CanvasOverlayProps {
   /** The live NodePageConfig the renderer drew — overlay walks the same tree. */
@@ -78,6 +164,8 @@ export interface CanvasOverlayProps {
    */
   chrome?:        Record<string, ChromeEntry>
   onDrop:         (parentId: string, slotKey: string, nodeType: string) => void
+  /** Active UI locale — resolves each slot's i18n label at render (Law 9). Absent ⇒ 'ka'. */
+  locale?:        string
   /**
    * Bind a governed metric dragged from the Metric Palette onto a node frame
    * (AR-49 M0 item 9). Each node frame becomes a metric drop target; the host
@@ -88,7 +176,7 @@ export interface CanvasOverlayProps {
 
 export function CanvasOverlay({
   page, selectedNodeId, selectedItemPath, dragging = false,
-  onSelect, onSelectItem, chrome, onDrop, onBindMetric,
+  onSelect, onSelectItem, chrome, onDrop, onBindMetric, locale,
 }: CanvasOverlayProps) {
   const overlayRef = useRef<HTMLDivElement>(null)
   const [frames, setFrames] = useState<NodeFrame[]>([])
@@ -124,9 +212,11 @@ export function CanvasOverlay({
     const filterSchema = (page as unknown as { filterSchema?: FilterSchemaInput }).filterSchema
 
     const nextFrames: NodeFrame[] = []
-    const nextDrops:  DropFrame[] = []
     const nextItems:  ItemFrame[] = []
     const framed = new Set<string>()
+    // The measured box of every framed node, keyed by id — the SSOT the per-slot drop
+    // geometry reads to derive each slot's region from where its children rendered.
+    const rectById = new Map<string, Rect>()
 
     // Frame ONE node through its merged `data-part-*` node anchor, then RECURSE into
     // its declared parts via the ONE Part port. This is the declaration-driven,
@@ -154,13 +244,7 @@ export function CanvasOverlay({
       if (!box) return
       const rect = rel(box)
       nextFrames.push({ node, type, variant, id, rect })
-
-      const slots = nodeRegistry.getSlots(type, variant)
-      if (slots) {
-        for (const [slotKey, slot] of Object.entries(slots)) {
-          nextDrops.push({ parentId: id, slotKey, slot, rect })
-        }
-      }
+      rectById.set(id, rect)
 
       if (!anchor) return
       const meta = nodeRegistry.getMeta(type, variant) as ObjectMeta | undefined
@@ -191,6 +275,12 @@ export function CanvasOverlay({
     // in a later contract phase once every container child is a declared slot part).
     frameNode(page)
     for (const w of walkNodes(page)) frameNode(w.node)
+
+    // Per-slot drop geometry — computed AFTER every node is framed (so each slot's child
+    // rects are known). Each declared slot gets its OWN rect (populated → child-union;
+    // empty → an allocated band), so multiple slots on one node no longer overlap.
+    const nextDrops: DropFrame[] = []
+    for (const f of nextFrames) nextDrops.push(...slotDropsFor(f, rectById))
 
     // ── Chrome regions (S6) — chrome is a `sourced` Part of the SITE-FRAME element.
     //  Enumerate the site-frame's chrome parts through the ONE Part port (the SAME
@@ -352,12 +442,21 @@ export function CanvasOverlay({
         )
       })}
 
-      {dragging && drops.map((d) => {
+      {/* Drop zones. EMPTY slots render AT REST too (a low-emphasis, labelled affordance so
+          the author SEES where content goes without already dragging — the Builder/Webflow
+          empty-slot pattern); populated-slot zones stay drag-only to avoid clutter. At rest
+          every zone is pointer-events:none (CSS), so an at-rest affordance never blocks node
+          selection; a drag re-enables pointer-events on all. Labels resolve to the active
+          locale (Law 9). */}
+      {drops.filter((d) => dragging || d.empty).map((d) => {
         const key = `${d.parentId}:${d.slotKey}`
         return (
           <div
             key={`drop-${key}`}
-            className={`canvas-dropzone${overSlot === key ? ' canvas-dropzone--over' : ''}`}
+            className={
+              `canvas-dropzone${d.empty ? ' canvas-dropzone--empty' : ''}` +
+              `${overSlot === key ? ' canvas-dropzone--over' : ''}`
+            }
             data-parent-id={d.parentId}
             data-slot-key={d.slotKey}
             data-testid={`dropzone-${key}`}
@@ -367,7 +466,7 @@ export function CanvasOverlay({
             onDrop={handleDrop(d)}
           >
             <span className="canvas-dropzone__label">
-              {typeof d.slot.label === 'string' ? d.slot.label : d.slot.label.en ?? d.slotKey}
+              {resolveLocaleString(d.slot.label, locale ?? 'ka', 'en') || d.slotKey}
             </span>
           </div>
         )

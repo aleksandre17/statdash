@@ -142,7 +142,11 @@
 }
 
 .canvas-veil__label {
-  margin-top: calc(var(--space-2, 8px) + 34px); /* clear the toolbar */
+  /* Clear the toolbar by its MEASURED height — `--canvas-toolbar-h` is set on the canvas
+   * root by CanvasView's ResizeObserver — plus the toolbar's top offset and a gap. Robust
+   * to the real toolbar height across breakpoint / mode / theme (no magic offset that
+   * under-shoots a wrapped or taller toolbar). Falls back to a safe estimate pre-measure. */
+  margin-top: calc(var(--space-2, 8px) + var(--canvas-toolbar-h, 34px) + var(--space-2, 8px));
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -413,6 +417,20 @@
 .canvas-root--dragging .canvas-dropzone {
   pointer-events: auto;
   opacity: 1;
+}
+
+/* ── At-rest empty-slot affordance (0102 R1 · Part 2) ───────────────────────
+ *
+ *  An EMPTY declared slot (grid/section children, an inner-page sticky bar, …) shows a
+ *  low-emphasis, LABELLED drop region AT REST — so the author sees WHERE content goes
+ *  without already dragging (the Builder/Framer/Webflow empty-slot pattern). It stays
+ *  pointer-events:none (inherited from .canvas-dropzone) until a drag, so this at-rest
+ *  affordance never blocks selecting the empty container underneath; the
+ *  .canvas-root--dragging rule above re-enables pointer-events for the drop itself. */
+.canvas-dropzone--empty {
+  opacity: 1;
+  border-color: var(--canvas-dropzone-idle);
+  background: color-mix(in srgb, var(--canvas-accent) 6%, transparent);
 }
 
 .canvas-dropzone--over {

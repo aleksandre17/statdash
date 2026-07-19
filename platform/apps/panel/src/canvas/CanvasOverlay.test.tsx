@@ -71,16 +71,25 @@ describe('CanvasOverlay', () => {
     expect(screen.getByTestId('dropzone-sec-1:children')).toBeInTheDocument()
   })
 
-  it('hides drop zones when not dragging', () => {
+  it('at rest: shows EMPTY-slot zones (the at-rest affordance) but hides POPULATED ones', () => {
+    // 0102 R1 · Part 2 — an empty slot shows its labelled drop affordance at rest so the
+    // author sees where content goes; a populated slot's zone stays drag-only (no clutter).
     render(
       <div className="canvas-root">
         <div className="canvas-layer canvas-layer--renderer">
+          <div data-part-node-id="page-1"><div>page</div></div>
           <div data-part-node-id="sec-1"><div>section</div></div>
         </div>
         <CanvasOverlay page={page} onSelect={vi.fn()} onDrop={vi.fn()} />
       </div>,
     )
-    expect(screen.queryByTestId('dropzone-sec-1:children')).not.toBeInTheDocument()
+    // Empty slots (sec-1.children, page-1.sticky) render at rest, flagged --empty.
+    const secZone = screen.getByTestId('dropzone-sec-1:children')
+    expect(secZone).toBeInTheDocument()
+    expect(secZone.className).toContain('canvas-dropzone--empty')
+    expect(screen.getByTestId('dropzone-page-1:sticky')).toBeInTheDocument()
+    // page-1.main holds sec-1 → populated → hidden at rest (revealed only while dragging).
+    expect(screen.queryByTestId('dropzone-page-1:main')).not.toBeInTheDocument()
   })
 })
 
