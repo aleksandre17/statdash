@@ -1,6 +1,8 @@
 # Memory Index
 
 ## Auto-relocated (memory-home-guard — reconcile into a topic section)
+- [Framework-lens verdict (2026-07-15)](project_framework_lens_verdict.md) — five-lens deep audit + my core/framework verdict: converge-not-circle, the ONE gate that blocks proof
+- [Deep-audit corpus](reference_deep_audit_corpus.md) — where the five-lens ground truth + settled substrate ADRs live
 - [Deep system-architecture (2026-07-15)](project_deep_system_architecture_2026_07_15.md) — the un-named Projector law (Parts+Facets are ONE), artifact-identity forked 5×, PropFieldType fork, describeApp read-model gap; SSOT audit doc
 - [Platform layout & monorepo seams](project_platform_layout.md) — real path layout; chart/table/kpi are *panels* not nodes; @plugins alias seam; framework-seam pointers; ADR-012 rename key
 - [@geostat/@statdash alias resolution](project_geostat_alias_resolution.md) — packages resolve via path aliases, NOT npm workspaces; workspace:* is a latent install-breaker; the 6+ alias-map locations
@@ -53,6 +55,7 @@
 - ADR-0026 bootstrap-runner — apps/geostat becomes a generic SDUI runner booting from GET /api/bootstrap. Proposed. Phase B=ADR-018, C=ADR-017
 - ADR-048 transient-failure-grammar + the ONE fetch scheduler — scheduler at ApiStore network seam (packages/core, client-global singleton): concurrency cap + Retry-After backoff on 429/503 + SWR last-good; ABOVE _cache dedupe, BELOW cache write (warm≡read untouched). `transient-retrying` joins ValueState; boot fetch backs off vs the English emptyManifest dead-end. Hard network reject fails FAST. Accepted+BUILT-GREEN (card 0092, sweep #1); live-verify pending
 - ADR-049 assembly-by-declaration — the *binding* axis gets its port + objects land composed. P1 DataSpec authoring-contract registry (3 DataSpecEditor switch(type)→one generic renderer; anchor=extend SchemaSource UP; ratchet FF-NO-DATASPEC-SWITCH first) → P2a un-bury (drop DataFacetField:124, wire VisibilityBuilder, build TrendField) → P2b Composed-Preset projection (preset=partial declaration on objectRegistry→palette). EXTENDS ADR-038/041, no 5th grammar, no object-model change. P1 WIP=1. Proposed. Card 0100
+- [ADR-050 canonical-panel-ia](project_adr050_canonical_panel_ia.md) — "projection-missing" disease; skeleton=page-kind×PresetDecl; R1→R6
 - ADR-047 metric-natural-coordinates + honest-null-calc-floor — D1: grain-∅ browse neutralizes FOREIGN ctx pins to '' (empty-wildcard crosses the react re-merge wall), naturality DERIVED from the obs slice (NOT declared — MetricDef.dims is pins-not-axes, surprise). D2: resolveMetricValue short-circuits to null via storeCellAt when a component is no-data (+ MetricInput.coalesce escape); extends ADR-045. Wave A (D1)=minimal ⛔ W-P5 door unblock; Wave B (D2)=uniform Law-11 floor. Closes 0082 W-P5c FINDING. Accepted (design)
 - ADR-0033 worktree-loss-guard-and-arrow-ownership — two-tier worktree_guard (session-boundary bulk-delete detector + PreToolUse Bash reminder) after the 451-file working-tree-loss incident. Accepted
 - ADR-042 authoring-triprojection-and-placement-port — authoring = Select⊥Inspect⊥Manipulate over ONE Part model; Placement port (`placePart`) = writePart's structural sibling; designs OUT the owner's 5 rot (section-de-privilege via CAPS.LAYOUT + retire AUTOWRAP literal; inspector = facet tab-bar over the BUILT facetRegistry; data = bounded ctx referenced by handle; chrome folds in; SOLID machine-held). ACCEPTED (lead). Build plan = SPEC-authoring-experience-architecture §9. First = Slice 0 Placement seam. NOTE: Inspect/Facet axis already BUILT in code (docs were stale)
@@ -60,7 +63,3 @@
 - [S6 Chrome Unification](project_s6_chrome_unification.md) — chrome-as-part (ADR-041 R4): chrome residence is `sourced` NOT `slot`; seam inventory; HALTED for sign-off
 - [architect deliver-and-stop](feedback_architect_deliver_and_stop.md) — foundation commission = ADR + plan (+ inert scaffold) then STOP; lead routes phases; don't touch board/registry
 - [protection layer first-class](feedback_protection_layer_first_class.md) — in foundation reforms, land regression-guard FFs (ratchet) + enforcement/discoverability EARLY as a fence, never an end-of-plan afterthought
-
-## Auto-relocated (memory-home-guard — reconcile into a topic section)
-- [Framework-lens verdict (2026-07-15)](project_framework_lens_verdict.md) — five-lens deep audit + my core/framework verdict: converge-not-circle, the ONE gate that blocks proof
-- [Deep-audit corpus](reference_deep_audit_corpus.md) — where the five-lens ground truth + settled substrate ADRs live
