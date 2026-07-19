@@ -24,12 +24,37 @@ import * as Panels    from '@plugins/panels'
 import * as Nodes     from '@plugins/nodes'
 import * as Controls  from '@plugins/controls'
 import { createElement }              from 'react'
-import { registerSlice, middlewareRegistry, PART_NODE_ID_ATTR, PART_NODE_TYPE_ATTR } from '@statdash/react/engine'
+import { registerSlice, middlewareRegistry, nodeRegistry, isNodeContainer, PART_NODE_ID_ATTR, PART_NODE_TYPE_ATTR } from '@statdash/react/engine'
+import type { NodeBase }              from '@statdash/react/engine'
 import { perspectiveRegistry }   from '@statdash/engine'
 import { registerStoreBuilders } from '@statdash/plugins/datasources'
 import { registerPresentationProjectors } from '@statdash/plugins/presentation'
 
 let done = false
+
+/**
+ * An EMPTY layout container (0102 R1 — the "Slice-1 placeholder"). Registry-DERIVED,
+ * never a per-type list: a node is an empty container iff its declared contract holds a
+ * `slot` residence part (`isNodeContainer` — it accepts child nodes) AND none of its slot
+ * fields carry a child on THIS node. Such a container renders 0px on the canvas (no rows /
+ * children), so the anchor middleware stamps it `data-node-empty`; canvas.css then gives it
+ * a visible min-height + drop-affordance and the overlay measures a usable (non-zero) rect.
+ * Authoring-only: this marker is stamped solely by the panel canvas middleware — the
+ * published render is untouched. Generic over EVERY container kind (grid · columns · stack ·
+ * card · section · …), zero per-type wiring (ADR-041 · Law 1).
+ */
+function isEmptyContainer(node: NodeBase): boolean {
+  const variant = (node as { variant?: string }).variant ?? 'default'
+  const meta = nodeRegistry.getMeta(node.type, variant)
+  if (!meta || !isNodeContainer(meta)) return false
+  const slots = nodeRegistry.getSlots(node.type, variant)
+  if (!slots) return false
+  for (const slot of Object.values(slots)) {
+    const kids = (node as unknown as Record<string, unknown>)[slot.field]
+    if (Array.isArray(kids) ? kids.length > 0 : kids != null) return false
+  }
+  return true
+}
 
 /**
  * Register every plugin slice into the engine registries.
@@ -100,6 +125,10 @@ export function setupCanvasRegistry(): void {
             {
               [PART_NODE_ID_ATTR]:   node.id ?? '',
               [PART_NODE_TYPE_ATTR]: node.type,
+              // 0102 R1 — an empty container is stamped so canvas.css can give its 0px box a
+              // visible min-height + drop-affordance (the "Slice-1 placeholder"). Presence-only
+              // attribute; absent (populated / leaf) ⇒ byte-identical to pre-slice.
+              ...(isEmptyContainer(node) ? { 'data-node-empty': '' } : {}),
               style: { display: 'contents' },
             },
             el,

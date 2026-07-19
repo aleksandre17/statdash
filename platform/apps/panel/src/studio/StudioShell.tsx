@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useMemo, useState, type CSSProperties } from 'react'
+import { lazy, Suspense, useCallback, useEffect, useMemo, useState, type CSSProperties } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { Box, Typography, Chip, GlobalStyles } from '@mui/material'
 // Token SSOT — the shell chrome reads @statdash/styles DTCG custom properties
@@ -124,6 +124,22 @@ export function StudioShell() {
       )
     }
   }, [activePageId, urlPageId, pages, setSearchParams])
+
+  // A deliberate page-tab click is a NAVIGATION intent, so it must drive the URL (Law 9:
+  // URL = permalink), not just the store. Effect B is a boot-INITIALIZER that deliberately
+  // stands down when the URL already names a valid page (to avoid the boot loop) — so a tab
+  // click that only called `setActivePage` would leave a stale `?page=<other>` and diverge
+  // store↔URL. This is the ONE navigation gesture: it PUSHES the new `?page=<id>` (Back/
+  // Forward restores the prior page) AND sets the store SSOT; Effect A/B then rest at a
+  // fixpoint (activePageId === urlPageId ⇒ both no-op).
+  const selectPage = useCallback((id: string) => {
+    setActivePage(id)
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev)
+      next.set('page', id)
+      return next
+    })
+  }, [setActivePage, setSearchParams])
 
   // Locale: the site's first active locale, with a top-bar PREVIEW override (spec
   // §2.1 "[ka|en]") — ephemeral view state, never persisted, reusing the existing
@@ -316,7 +332,7 @@ export function StudioShell() {
               label={p.title[locale] || p.title.ka || p.id}
               color={p.id === activePageId ? 'primary' : 'default'}
               variant={p.id === activePageId ? 'filled' : 'outlined'}
-              onClick={() => setActivePage(p.id)}
+              onClick={() => selectPage(p.id)}
             />
           ))}
         </Box>

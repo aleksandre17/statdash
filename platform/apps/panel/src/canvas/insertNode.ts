@@ -264,9 +264,12 @@ function containerChildOrder(page: CanvasPage, parentId: string): string[] {
  * KEPT `resolveInsertPlan`, byte-identical — so every insert fitness stays green). `source`
  * present ⇒ a MOVE of the existing node `source`, reproducing the Outline's Candidate-A/B
  * resolution as a resolved plan:
- *   A — nest INTO `target` when it is an accepting, NON-EMPTY container the source isn't
- *       already parented by → reparent at index 0 (an empty container is not an outline
- *       nest-target today; that quirk is preserved and closed by the Slice-1 placeholder).
+ *   A — nest INTO `target` when it is an accepting container the source isn't already
+ *       parented by → reparent at index 0. An EMPTY container is a valid nest-target too
+ *       (0102 R1 · the Slice-1 placeholder is now delivered: an empty container renders a
+ *       visible drop-affordance on the canvas, so "drop ON the container" unambiguously
+ *       means nest-as-child). Disambiguation is by the TARGET: target-is-container → nest;
+ *       target-is-leaf → sibling reorder (Candidate B) — deterministic, no childCount guess.
  *   B — else a sibling reorder/reparent within `target`'s container, with the same
  *       drop-below index adjustment the heuristic applied.
  */
@@ -285,8 +288,11 @@ export function resolvePlacementPlan(
   if (!overNode) return { kind: 'blocked', reason: 'no-target' }
   const targetParentId = parentContainerId(page, target)
 
-  // Candidate A — nest INTO the target (an accepting, non-empty container the source isn't in).
-  if (nestAccepts(overNode.type, type) && overNode.childIds.length > 0 && targetParentId !== source) {
+  // Candidate A — nest INTO the target (an accepting container the source isn't already in).
+  // Empty OR populated: an empty container is a first-class nest-target (0102 R1) — its
+  // on-canvas placeholder makes "drop ON it" mean nest-as-child. The `targetParentId !== source`
+  // guard still prevents nesting a node inside a container it already parents.
+  if (nestAccepts(overNode.type, type) && targetParentId !== source) {
     return { kind: 'reparent', parentId: target, index: 0 }
   }
   // Candidate B — sibling reorder within the target's container (same drop-below adjustment).

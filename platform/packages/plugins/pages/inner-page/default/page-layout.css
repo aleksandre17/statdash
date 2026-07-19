@@ -58,6 +58,12 @@
   width: 100%;
   max-width: var(--page-measure, var(--size-container-wide));
   margin-inline: auto;
+  /* Page-card containment (0102 R1) — the measure-bounded card is a boundary: an
+     oversized child (a too-wide grid) is clipped horizontally rather than bleeding
+     past the card onto the surrounding shell. `overflow-x: clip` adds no scroll box
+     and leaves vertical flow (sticky/tooltip) visible; the card is already
+     `min-width: 0`, so a grid/flex child shrinks to it instead of forcing it wider. */
+  overflow-x: clip;
   /* Fluid side gutter — scales continuously with the viewport instead of
      stepping at 1280, so the content breathes proportionally on every screen
      (fluid-first law §3). Vertical rhythm stays on the spacing scale. */

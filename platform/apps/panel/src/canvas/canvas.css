@@ -198,6 +198,44 @@
   pointer-events: auto;
 }
 
+/* ── Empty-container authoring placeholder (0102 R1 · the "Slice-1 placeholder") ──
+ *
+ *  An empty layout container (grid / columns / stack / card / section — any node that
+ *  accepts child nodes) renders 0px on the canvas: no rows, no children, so it is an
+ *  invisible strip the author can neither SEE nor DROP into (the primary "I can't start
+ *  assembling a site" blocker). The panel's anchor middleware stamps such a container
+ *  `data-node-empty`; here — in the AUTHORING canvas ONLY — we give it a real min-height
+ *  and a dashed drop-affordance (the Builder/Framer/Webflow empty-slot pattern). Two wins
+ *  fall out of one rule: the author SEES the container, and the overlay measures a usable
+ *  (non-zero) rect, so the container's OWN dropzone becomes a real first-child target.
+ *
+ *  The marker rides the display:contents anchor, so `> *` targets its single real box
+ *  child GENERICALLY (never a per-type layout class — ADR-041 · Law 1). Published render
+ *  is untouched (the marker is a panel-canvas-only stamp). */
+.canvas-layer--renderer [data-node-empty] > * {
+  min-height: var(--canvas-empty-min-h, 4.5rem);
+  outline: var(--canvas-outline) dashed var(--canvas-dropzone-idle);
+  outline-offset: -2px;
+  border-radius: var(--canvas-radius);
+  background: var(--canvas-accent-soft);
+}
+
+/* ── Page-frame containment (0102 R1 · Part 3) ─────────────────────────────────
+ *
+ *  A page is a containment boundary content must not escape (ADR-041): an oversized
+ *  element (a too-wide grid) must stay within the page card, never bleed over the rest
+ *  of the canvas or a neighbouring page. Clamp at the PAGE-FRAME level (the app-shell
+ *  content region the runner wraps every page in), NOT the whole canvas — horizontal
+ *  escape is clipped (`overflow-x: clip`, which — unlike `hidden` — adds no scroll box
+ *  and leaves the block flow intact) while the vertical axis stays visible (sticky
+ *  headers, hero overlap, tooltips unaffected). `min-width: 0` lets a grid/flex child
+ *  shrink to the frame instead of forcing it wider. */
+.canvas-layer--renderer .app-shell,
+.canvas-layer--renderer .app-shell__content {
+  min-width: 0;
+  overflow-x: clip;
+}
+
 /* Layer 2 — overlay. The layer itself is transparent to pointer events; only
  * its interactive children (.canvas-node, .canvas-dropzone) opt back in. */
 .canvas-overlay {
