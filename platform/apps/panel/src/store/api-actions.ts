@@ -30,6 +30,7 @@ import {
 import type { PageStatus } from './constructor.lifecycle'
 import type { SaveIssue } from '../save/saveGuard'
 import { resolveActiveLocales } from '../inspector/useActiveLocales'
+import { newNodeId } from '../canvas/nodeId'
 
 /** Coerce a server status string into the lifecycle FSM enum (default draft). */
 function toPageStatus(raw: string | undefined): PageStatus {
@@ -246,9 +247,20 @@ export async function saveSite(patch: Partial<SiteDef>): Promise<void> {
 // ── Pages ──────────────────────────────────────────────────────────────────────
 
 export async function createPage(input: Omit<CanvasPage, 'id'>): Promise<CanvasPage> {
+  // Two distinct ids meet on the create path (root-cause of the id lifecycle):
+  //   • page IDENTITY — the server-owned key, assigned by the POST and read back
+  //     below as the store key + lifecycle key.
+  //   • config ROOT-NODE id — a node id like every child; the emitted config must
+  //     carry a NON-EMPTY one or (a) the engine's INVALID_ID guard 400s the POST
+  //     and (b) the client save-guard's round-trip is asymmetric (absent id
+  //     hydrates back to a synthesized 'page', breaking the identity check).
+  // So mint a provisional root-node id from the ONE node-id factory (never id:''),
+  // guard + POST with it, then adopt the server identity into the stored page. The
+  // first real save reconciles the persisted config's root id to that identity.
+  const rootId = newNodeId()
   // C5 save guard — block an invalid config before it ever reaches the server.
-  await assertSaveable({ ...input, id: '' })
-  const { id } = await configApi.pages.create(toApiPage({ ...input, id: '' }))
+  await assertSaveable({ ...input, id: rootId })
+  const { id } = await configApi.pages.create(toApiPage({ ...input, id: rootId }))
   const page: CanvasPage = { ...input, id }
   const store = useConstructorStore.getState()
   store.addPage(page)

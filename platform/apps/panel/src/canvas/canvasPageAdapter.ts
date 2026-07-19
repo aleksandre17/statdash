@@ -109,6 +109,13 @@ export function toNodePageConfig(page: CanvasPage): NodePageConfig {
     ...(page.meta ?? {}),               // frame/chrome/presentation/filterSchema/vars/perspectives/…
     type:     page.type || DEFAULT_PAGE_TYPE,
     ...(page.variant ? { variant: page.variant } : {}),   // page-root variant (landing) — node-structural
+    // The page root is a NODE like any other — it carries its own non-empty id, so
+    // this adapter is a faithful bijection (never omits/synthesizes the root id).
+    // The create path guarantees a real id: createPage mints a provisional client
+    // node id (the same factory the children use) BEFORE the POST, then the
+    // server-assigned identity replaces it. So `page.id` is always a non-empty
+    // node id here — it satisfies the engine's `INVALID_ID` guard AND round-trips
+    // symmetrically through fromNodePageConfig (which reads the id straight back).
     id:       page.id,
     path:     page.slug,
     children,

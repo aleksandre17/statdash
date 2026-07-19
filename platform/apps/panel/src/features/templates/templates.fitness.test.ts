@@ -18,13 +18,16 @@
 //
 import { describe, it, expect, beforeAll } from 'vitest'
 import { validateConfig } from '@statdash/engine'
+import { objectRegistry } from '@statdash/react/engine'
 import { setupCanvasRegistry } from '../../canvas/setupCanvasRegistry'
 import { toNodePageConfig, fromNodePageConfig } from '../../canvas/canvasPageAdapter'
+import { newNodeId } from '../../canvas/nodeId'
 import { validatePageForSave } from '../../save/saveGuard'
 import { PAGE_STARTERS, seedToPageConfig } from './pageStarters'
 import { generatePageFromProfile } from './generatePage'
 import { hydrateTemplate } from './loadTemplate'
 import type { NodePageConfig } from '@statdash/react/engine'
+import type { CanvasPage } from '../../types/constructor'
 import type { CubeProfile, CubeProfileMeasure, CubeProfileDimension } from '../../lib/cubeApi'
 
 beforeAll(() => { setupCanvasRegistry() })
@@ -63,6 +66,72 @@ describe('page starters (registered declarations) are valid NodePageConfigs', ()
         expect(report.issues).toEqual([])
         expect(report.ok).toBe(true)
       })
+    })
+  }
+})
+
+// ── FF-CREATE-CONFIG-API-VALID — the create emission passes BOTH id gates ──────
+//
+//  TWO gates guard the create emission, and neither an empty NOR an absent root id
+//  satisfies both (the reconciliation this FF now pins):
+//    • SERVER — the engine's config validator rejects an EMPTY id "when present"
+//      (INVALID_ID). An ABSENT id passes it.
+//    • CLIENT — the C5 save-guard's round-trip check: an ABSENT root id hydrates
+//      back through fromNodePageConfig to a SYNTHESIZED 'page' id, so
+//      toNodePageConfig re-emits id:'page' ≠ the (id-less) input → the round-trip
+//      identity FAILS. Only a NON-EMPTY root id round-trips symmetrically.
+//
+//  So the create path (createPage) mints a provisional NON-EMPTY root-node id from
+//  the ONE node-id factory (the same one children use) — the config ROOT node is a
+//  node like every other and carries a real id; the server-owned page IDENTITY is
+//  a separate key, assigned by the POST. This FF exercises the ACTUAL create bytes
+//  for EVERY registered page kind AND every starter, asserting the emission clears
+//  BOTH gates. Generic: driven by the registry + the starter list, no per-kind
+//  literal.
+//
+describe('create emission is API-valid (clears both the server + client id gates)', () => {
+  /** The config bytes createPage sends: the page with a provisional non-empty root id. */
+  const createEmission = (page: CanvasPage): NodePageConfig =>
+    toNodePageConfig({ ...page, id: newNodeId() })
+
+  /**
+   * The root id is a non-empty string (client save-guard's round-trip needs it),
+   * the engine validator raises no INVALID_ID (server gate), AND the adapter
+   * round-trip is symmetric over the id (both gates, pinned together).
+   */
+  const assertIdValid = (page: CanvasPage) => {
+    const cfg = createEmission(page)
+    // Server gate: id present + non-empty, so no INVALID_ID.
+    const rootId = (cfg as unknown as { id?: unknown }).id
+    expect(typeof rootId === 'string' && rootId.length > 0).toBe(true)
+    expect(validateConfig(cfg).filter((e) => e.code === 'INVALID_ID')).toEqual([])
+    // Client gate: the emission round-trips losslessly (id survives symmetrically).
+    const restored = fromNodePageConfig(cfg, page.title)
+    expect(restored.id).toBe(rootId)
+    expect(toNodePageConfig(restored)).toEqual(cfg)
+  }
+
+  // Every registered page KIND — the blank-page create path (PageBrowser.handleCreate).
+  for (const kind of objectRegistry.listByKind('page')) {
+    it(`blank ${kind.type}/${kind.variant} create config has a valid non-empty root id`, () => {
+      const blank: CanvasPage = {
+        id: '',
+        type: kind.type,
+        ...(kind.variant && kind.variant !== 'default' ? { variant: kind.variant } : {}),
+        title: TITLE,
+        slug: 'test-page',
+        nodeIds: [],
+        nodes: {},
+      }
+      assertIdValid(blank)
+    })
+  }
+
+  // Every starter — the template create path (createFromTemplate strips the id).
+  for (const starter of PAGE_STARTERS) {
+    it(`starter ${starter.id} create config has a valid non-empty root id`, () => {
+      const page = hydrateTemplate(seedToPageConfig(starter.seed), TITLE, 'test-page')
+      assertIdValid(page)
     })
   }
 })

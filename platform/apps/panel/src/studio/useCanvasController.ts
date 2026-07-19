@@ -7,6 +7,7 @@ import { enumerateParts, getPartSource } from '../canvas/bandSource'
 import { resolvePlacementPlan, planPlacement, resolveInsertPlan, planPresetPlacement } from '../canvas/insertNode'
 import { placeSlotPart } from '../canvas/placeNode'
 import { toNodePageConfig } from '../canvas/canvasPageAdapter'
+import { newNodeId } from '../canvas/nodeId'
 import { projectCanvasSiteChrome } from '../canvas/canvasSiteChrome'
 import { nodeRegistry, chromeRegistry, presetRegistry, SITE_FRAME_ID, SITE_FRAME_META, CHROME_PART_PREFIX } from '@statdash/react/engine'
 import type { PartAddress, PartResidence, ObjectMeta, PropSchema, PropertyGroup, PartSourceContext } from '@statdash/react/engine'
@@ -67,8 +68,6 @@ interface SelectedPart {
 //  bind funnels through firstMetricField → bindMetricToProps → updateNode; a drop
 //  through makeNode → insertNode; a prop edit through setAtPath → updateNode. In
 //  M1.3 the surviving canvas points here and PageStep's inline copy is deleted.
-
-const newNodeId = () => `node-${Math.random().toString(36).slice(2, 9)}`
 
 export function useCanvasController() {
   const page       = useActivePage()
