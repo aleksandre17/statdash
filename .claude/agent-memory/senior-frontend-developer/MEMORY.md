@@ -4,17 +4,18 @@
 - [W1 Honest Canvas (AR-52)](project_panel_w1_honest_canvas.md) — live-default+veil, honest UNBOUND KPI
 - [W2 Semantic Spine (AR-52)](project_panel_w2_semantic_spine.md) — front-door hoist · corpus→governed ids
 - [P2a substrate un-bury (ADR-049)](project_panel_p2a_substrate_unbury.md) — workbench kind-agnostic · band-item visibility · TrendField
+- [Composed-preset primitive (P2b/R2)](project_panel_composed_preset_primitive.md) — presetRegistry + planPresetInserts + Starters band
 - [Summary-Card Inspector (Move 1)](project_summary_card_inspector.md) — rich values → glance cards + dock section registry
 - [Constructor architecture (state)](project_constructor_state.md) — Inspector/SchemaSource seam, registry
 - [Constructor C3+C5](project_panel_c3_c5.md) — cube capability-discovery + save guard
 - [Panel DataSpec editor](project_panel_dataspec_editor.md) — visual DataSpec Query Builder
-- [Pipeline live per-step grid (W-P1)](project_panel_pipeline_live_grid.md) — prefix-run over applyPipeline off a once-resolved source read
+- [Pipeline live per-step grid (W-P1)](project_panel_pipeline_live_grid.md) — prefix-run over applyPipeline; once-resolved source
 - [Data workbench three-pane (W-P2)](project_panel_data_workbench_wp2.md) — focus-view escalation; generatedQuery plane-split
-- [Pipeline emission flip (W-P5b)](project_panel_pipeline_emission_flip_wp5b.md) — workbenchModel ONE-path; bindMeasureToSpec→governed head
-- [P-OFFER filter offer](project_panel_poffer_filter_offer.md) — pick governed cols/members; stepInput seam; engine filter=equality/IN
+- [Pipeline emission flip (W-P5b)](project_panel_pipeline_emission_flip_wp5b.md) — workbenchModel ONE-path; bindMeasureToSpec→head
+- [P-OFFER filter offer](project_panel_poffer_filter_offer.md) — pick governed cols/members; stepInput; filter=eq/IN
 - [Field-ROLE projection (0087)](project_panel_role_projection.md) — PropFieldRole seam + role-projecting step editor + expr preview
 - [Raw-cube entry + promotion (0084)](project_panel_raw_cube_promotion.md) — steward GetHead tabs · PromoteMetric reuses semanticCatalog
-- [Placement Law primitive (SL-0b)](project_placement_law_primitive.md) — §3.2 scope×weight→container; 4-band inline/drill
+- [Placement Law primitive (SL-0b)](project_placement_law_primitive.md) — §3.2 scope×weight→container; 4-band
 - [Nav + chrome authorable](project_panel_nav_chrome_authorable.md) — nav per-entry editable
 - [Calc editor M3.0](project_panel_calc_editor_m30.md) — derived-metric editor (CalcBuilder+ExprTree)
 - [Panel live canvas (N35)](project_panel_live_canvas.md) — real NodePageRenderer canvas
@@ -23,16 +24,16 @@
 - [Value mappings architecture](project_value_mappings_architecture.md) — EXP-06 value→{text,token,icon}, token-bound
 - [Panel code-splitting](project_panel_code_splitting.md) — lazy boundaries + Rolldown vendor groups; jsx-runtime gotcha
 - [Panel tsconfig constraints](project_panel_tsconfig_constraints.md) — no TS parameter-properties / import type
-- [Panel Playwright e2e](project_panel_playwright_e2e.md) — real-browser boot/bind proof; mock-API; e2e/probes/ = journey-probe home
+- [Panel Playwright e2e](project_panel_playwright_e2e.md) — real-browser boot/bind proof; mock-API; e2e/probes/ home
 - [Canvas chrome fidelity + hollow rail](project_panel_canvas_chromeconfig_defect.md) — hollow-rail FIXED (projectCanvasSiteChrome); chrome-SELECTION via ChromeSlot
-- [Canvas brand faithful (AR-52 W1)](project_canvas_brand_faithful.md) — brand-in-manifest themeOverrides + ONE styles apply seam (buildThemeVars/applyThemeOverrides), dark-safe
-- [Insert accept-graph gap (M4.1)](project_panel_insert_accept_graph_gap.md) — auto-wrap into `section`; homeless blocks → hint; fix via META accepts
-- [Layout site-assembly R1 (0102)](project_panel_layout_assembly_r1.md) — empty-container data-node-empty · move-nest · page-frame overflow-x:clip · page-tab URL
+- [Canvas brand faithful (AR-52 W1)](project_canvas_brand_faithful.md) — brand themeOverrides + ONE styles apply seam (buildThemeVars/applyThemeOverrides), dark-safe
+- [Insert accept-graph gap (M4.1)](project_panel_insert_accept_graph_gap.md) — auto-wrap into `section`; homeless→hint; fix via META accepts
+- [Layout site-assembly R1 (0102)](project_panel_layout_assembly_r1.md) — empty-container data-node-empty · move-nest · page-frame overflow-x:clip
 - [Per-page type end-to-end](project_panel_per_page_type.md) — CanvasPage.type first-class+required; insert accepts derive from page.type
 - [Bounded bands → Part port](project_panel_bounded_element_bands.md) — BE-1/4/5 = ONE ADR-041 Part port; sourcedParts stable-key facade
-- [FACET axis (5 facets)](project_facet_axis_style_facet.md) — FacetDescriptor/facetRegistry caps→dock sections
+- [FACET axis (5 facets)](project_facet_axis_style_facet.md) — FacetDescriptor/facetRegistry→dock
 - [Live store measure pinning](project_live_store_measure_pinning.md) — live ApiStore = pure dim_key containment, no measure filter
-- [Chrome accessible-name i18n (0093)](project_chrome_accessible_name_i18n.md) — [object Object] aria=LocaleString in bare-string slot; useTSafe; leak-gate scans aria
+- [Chrome accessible-name i18n (0093)](project_chrome_accessible_name_i18n.md) — [object Object] aria=LocaleString in bare-string slot; useTSafe
 - [Law-4 i18n check](project_law4_i18n_check.md) — single-locale=violation, {ka,en}=ok
 - [Runner/panel chrome i18n (ADR-019, 0093b)](project_manifest_i18n_shared_seam.md) — registerManifestI18n@react; panel bootstrapCatalog parity; year-select ka→catalog
 - [Integrity indicator page scope (AR-40)](project_integrity_indicator_page_scope.md) — ONE page-level indicator; two-channel NodeStatusContext; kpi-strip fold gotcha

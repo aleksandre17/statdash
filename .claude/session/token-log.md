@@ -376,3 +376,8 @@
 [2026-07-19 15:33] RUN run=agent-a857e4d5671e93925 model-actual=claude-opus-4-8 calls=88 first-in=19195 peak-ctx=129791 out-tokens=39028  ⚠ CTX-BURN: peak 129791 > 120000 — audit the brief/packet
 [2026-07-19 15:50] RUN run=agent-a13d033d873500d06 model-actual=claude-opus-4-8 calls=99 first-in=29246 peak-ctx=83949 out-tokens=16199
 [2026-07-19 16:07] RUN run=agent-af8e230d77e6feb99 model-actual=claude-opus-4-8 calls=108 first-in=22699 peak-ctx=148474 out-tokens=56147  ⚠ CTX-BURN: peak 148474 > 120000 — audit the brief/packet
+[2026-07-19 16:32] RUN run=agent-a6b256d836f365c8c model-actual=claude-opus-4-8 calls=111 first-in=28752 peak-ctx=91318 out-tokens=28087
+[2026-07-19 16:48] RUN run=agent-a8a65436c0c8ac0b4 model-actual=claude-opus-4-8 calls=200 first-in=22693 peak-ctx=218069 out-tokens=67049  ⚠ CTX-BURN: peak 218069 > 120000 — audit the brief/packet
+[2026-07-19 17:05] RUN run=agent-ad34bc8b4ebc07f6a model-actual=claude-opus-4-8 calls=17 first-in=17643 peak-ctx=43088 out-tokens=8496
+[2026-07-19 17:14] RUN run=agent-a53859c346c2d8ea0 model-actual=claude-opus-4-8 calls=84 first-in=28892 peak-ctx=112275 out-tokens=29335
+[2026-07-19 17:30] RUN run=agent-a51a83603a83026fb model-actual=claude-opus-4-8 calls=77 first-in=22242 peak-ctx=106192 out-tokens=25447
