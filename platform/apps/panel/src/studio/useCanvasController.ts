@@ -4,11 +4,11 @@ import { nodeSchemaSource } from '../inspector/schemaSource'
 import { firstMetricField, isMetricBindable, bindMetricToProps } from '../discovery/metricBinding'
 import { setAtPath } from '../inspector/showWhen'
 import { enumerateParts, getPartSource } from '../canvas/bandSource'
-import { resolvePlacementPlan, planPlacement } from '../canvas/insertNode'
+import { resolvePlacementPlan, planPlacement, resolveInsertPlan, planPresetPlacement } from '../canvas/insertNode'
 import { placeSlotPart } from '../canvas/placeNode'
 import { toNodePageConfig } from '../canvas/canvasPageAdapter'
 import { projectCanvasSiteChrome } from '../canvas/canvasSiteChrome'
-import { nodeRegistry, chromeRegistry, SITE_FRAME_ID, SITE_FRAME_META, CHROME_PART_PREFIX } from '@statdash/react/engine'
+import { nodeRegistry, chromeRegistry, presetRegistry, SITE_FRAME_ID, SITE_FRAME_META, CHROME_PART_PREFIX } from '@statdash/react/engine'
 import type { PartAddress, PartResidence, ObjectMeta, PropSchema, PropertyGroup, PartSourceContext } from '@statdash/react/engine'
 import { CHROME_STRUCTURAL_FIELDS } from '../inspector/facets/chromeFacetModel'
 import type { VisibilityExpr, FilterSchemaInput } from '@statdash/engine'
@@ -203,13 +203,22 @@ export function useCanvasController() {
   // root (parentId === pageId, not in page.nodes) resolves to direct-page or the
   // canonical wrap. A 'blocked' plan compiles to zero ops — never an invalid tree.
   const handleDrop = useCallback(
-    (parentId: string, _slotKey: string, nodeType: string) => {
+    (parentId: string, _slotKey: string, nodeType: string, presetId?: string) => {
       if (!pageId || !page) return
       const container = parentId === pageId ? null : parentId
-      // ONE placement grammar: resolve the plan, compile the op, commit through placePart
-      // (the slot-residence structural port). Byte-identical to the old resolveInsertPlan
-      // → planInserts → insertNodes path — the seam, not a behaviour change (Slice 0).
-      const op = planPlacement(resolvePlacementPlan(page, null, container, nodeType), { type: nodeType, makeId: newNodeId })
+      // A PRESET drop (ADR-049 P2b): expand the registered composed whole through the SAME
+      // placement resolver a bare tile uses — the preset ROOT flows through `resolveInsertPlan`
+      // (→ direct / wrap / blocked), then `planPresetInserts` overlays `makeNode` recursively
+      // so the bound DataSpec + pre-wired trend/visibility/children all land as ONE undoable
+      // action. Falls back to the bare-tile path when no preset rides the drop. Both commit
+      // through the ONE slot-residence port (`placeSlotPart`) — one placement grammar.
+      const preset = presetId ? presetRegistry.get(presetId) : undefined
+      const op = preset
+        ? planPresetPlacement(preset.seed, resolveInsertPlan(page, container, preset.seed.type), newNodeId)
+        // ONE placement grammar: resolve the plan, compile the op, commit through placePart
+        // (the slot-residence structural port). Byte-identical to the old resolveInsertPlan
+        // → planInserts → insertNodes path — the seam, not a behaviour change (Slice 0).
+        : planPlacement(resolvePlacementPlan(page, null, container, nodeType), { type: nodeType, makeId: newNodeId })
       if (!op) return
       const insertedId = placeSlotPart(pageId, op, { insertNodes, moveNode, removeNode })
       markPageDirty(pageId)

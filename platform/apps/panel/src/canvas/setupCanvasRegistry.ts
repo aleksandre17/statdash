@@ -29,6 +29,7 @@ import type { NodeBase }              from '@statdash/react/engine'
 import { perspectiveRegistry }   from '@statdash/engine'
 import { registerStoreBuilders } from '@statdash/plugins/datasources'
 import { registerPresentationProjectors } from '@statdash/plugins/presentation'
+import { registerCanvasPresets } from './canvasPresets'
 
 let done = false
 
@@ -95,6 +96,16 @@ export function setupCanvasRegistry(): void {
   //  iterates these generically — so the live preview projects page presentation
   //  byte-identically to the runner.
   registerPresentationProjectors()
+
+  // ── Composed-preset content (ADR-049 P2b · ADR-050 R2) ────────────────────
+  //
+  //  The CONTENT half of the preset split: the shell registers its curated starter
+  //  presets into the engine's app-agnostic `presetRegistry` — exactly as the slice
+  //  loop above feeds the object/node registries. The palette projects these as a
+  //  Starters band; a drop expands the composed whole (bound + pre-wired) via
+  //  planPresetInserts. Domain metric ids live here (above the arrow), never in the
+  //  engine's PresetRegistry mechanism.
+  registerCanvasPresets()
 
   // ── Canvas anchor middleware (AOP — engine-supported, no engine change) ──
   //

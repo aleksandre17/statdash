@@ -14,6 +14,9 @@ import type { Locale } from '../types/constructor'
 
 /** Localized heading per palette group key (machine key → bilingual heading). */
 export const PALETTE_GROUP_LABELS: Record<string, Record<Locale, string>> = {
+  // Starters — composed presets (ADR-049 P2b): pick a data-bound whole, then tweak.
+  // Leads the palette ahead of the raw element tiles.
+  starters:    { ka: 'მზა ბლოკები',         en: 'Starters' },
   recommended: { ka: 'რეკომენდებული',      en: 'Recommended' },
   data:        { ka: 'მონაცემთა პანელები',  en: 'Data panels' },
   layout:      { ka: 'განლაგება',           en: 'Layout' },

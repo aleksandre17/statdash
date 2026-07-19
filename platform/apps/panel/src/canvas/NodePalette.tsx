@@ -26,6 +26,8 @@
 //
 import { useMemo }                                      from 'react'
 import { resolveLocaleString }                          from '@statdash/engine'
+import { presetRegistry }                               from '@statdash/react/engine'
+import type { PresetDecl }                              from '@statdash/react/engine'
 import { getPaletteEntries, getGroupedPaletteEntries }  from './paletteEntries'
 import type { PaletteEntry, PaletteGroup }              from './paletteEntries'
 import { paletteGroupHeading, PALETTE_LEAF_HINT }       from './paletteGroupLabels'
@@ -106,6 +108,59 @@ function PaletteItem({
   )
 }
 
+/**
+ * A composed-preset tile (ADR-049 P2b · ADR-050 R2). Drags the SAME `nodeType` payload a
+ * plain tile does — the preset seed's ROOT type, so CanvasOverlay's slot-accept gate
+ * validates the composed whole by its root — PLUS a `presetId`, which the host reads to
+ * expand the bound + pre-wired subtree instead of a bare tile. Purely additive to the
+ * drag contract: a plain tile carries no `presetId`, so the bare path is unchanged.
+ */
+function PresetItem({
+  preset,
+  locale,
+  wrap = false,
+  onDragStateChange,
+}: {
+  preset: PresetDecl
+  locale: Locale
+  wrap?: boolean
+  onDragStateChange?: (dragging: boolean) => void
+}) {
+  const name = resolveLocaleString(preset.label, locale, 'en') || preset.id
+  const desc = preset.description ? resolveLocaleString(preset.description, locale, 'en') : ''
+  const wrapHint = locale === 'en' ? 'adds inside a section' : 'დაემატება სექციაში'
+
+  return (
+    <button
+      type="button"
+      className="node-palette__tile node-palette__tile--preset"
+      data-preset-id={preset.id}
+      data-node-type={preset.seed.type}
+      data-wrap={wrap || undefined}
+      draggable
+      aria-label={
+        (locale === 'en' ? `Add ${name}` : `დამატება: ${name}`) + (wrap ? ` (${wrapHint})` : '')
+      }
+      onDragStart={(e) => {
+        e.dataTransfer.setData('nodeType', preset.seed.type)
+        e.dataTransfer.setData('presetId', preset.id)
+        e.dataTransfer.effectAllowed = 'copy'
+        onDragStateChange?.(true)
+      }}
+      onDragEnd={() => onDragStateChange?.(false)}
+    >
+      <span className="node-palette__tile-icon" aria-hidden="true">
+        {renderPaletteIcon(preset.icon, { fontSize: 'small' })}
+      </span>
+      <span className="node-palette__tile-text">
+        <span className="node-palette__tile-name">{name}</span>
+        {desc && <span className="node-palette__tile-desc">{desc}</span>}
+        {wrap && <span className="node-palette__tile-wrap">{wrapHint}</span>}
+      </span>
+    </button>
+  )
+}
+
 export function NodePalette({ locale = 'ka', selectedType, pageType, onDragStateChange }: NodePaletteProps) {
   const active = useActiveProfile()
 
@@ -162,6 +217,33 @@ export function NodePalette({ locale = 'ka', selectedType, pageType, onDragState
     return out
   }, [active, flat])
 
+  // Starters band (ADR-049 P2b) — the composed presets, projected as insertable wholes
+  // ahead of the raw element tiles. GENERIC map over presetRegistry.list() (zero per-type
+  // code — FF-PRESET-NO-SPECIAL-CASE), narrowed to the selection's accept-set by the SAME
+  // `acceptsInSelection` predicate the tiles use (a preset is validated by its seed ROOT
+  // type), so a preset is never offered where its composed whole would bounce.
+  const starters = useMemo<PresetDecl[]>(
+    () => presetRegistry.list().filter((p) => acceptsInSelection(p.seed.type)),
+    [acceptsInSelection],
+  )
+
+  const StartersSection =
+    starters.length > 0 ? (
+      <section
+        className="node-palette__group node-palette__group--starters"
+        aria-label={paletteGroupHeading('starters', locale)}
+      >
+        <h3 className="node-palette__group-heading">{paletteGroupHeading('starters', locale)}</h3>
+        <ul className="node-palette__group-list">
+          {starters.map((preset) => (
+            <li key={preset.id}>
+              <PresetItem preset={preset} locale={locale} wrap={isWrapTile(preset.seed.type)} onDragStateChange={onDragStateChange} />
+            </li>
+          ))}
+        </ul>
+      </section>
+    ) : null
+
   const RecommendedSection =
     recommended.length > 0 ? (
       <section
@@ -198,10 +280,13 @@ export function NodePalette({ locale = 'ka', selectedType, pageType, onDragState
     )
   }
 
-  // Grouped render — one <section> per semantic category group, recommendations first.
-  if (groups.length > 0) {
+  // Grouped render — one <section> per semantic category group, Starters + recommendations
+  // first. Fires when there are node groups OR standalone presets (so a preset-only palette
+  // still renders the Starters band, not the empty-registry flat fallback).
+  if (groups.length > 0 || starters.length > 0) {
     return (
       <div className="node-palette" data-testid="node-palette" aria-label="Node palette">
+        {StartersSection}
         {RecommendedSection}
         {groups.map((group) => {
           const heading = paletteGroupHeading(group.key, locale)

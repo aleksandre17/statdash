@@ -25,7 +25,9 @@ describe('NodePalette', () => {
 
   it('renders one draggable item per type with a nodeType payload', () => {
     render(<NodePalette />)
-    const items = screen.getAllByRole('button')
+    // Node tiles only — the additive Starters band (ADR-049 P2b) renders composed-PRESET
+    // tiles (carrying `data-preset-id`), a distinct concern guarded by presetInsert.fitness.
+    const items = screen.getAllByRole('button').filter((el) => !el.hasAttribute('data-preset-id'))
     expect(items.length).toBe(getPaletteEntries().length)
     const section = items.find((el) => el.getAttribute('data-node-type') === 'section')
     expect(section).toBeTruthy()

@@ -16,7 +16,7 @@
 //  owns the "what shape + where" decision so it cannot drift between surfaces.
 //
 import { nodeRegistry, isNodeContainer, slotAdmits } from '@statdash/react/engine'
-import type { PlacementOp, PartInsertOp } from '@statdash/react/engine'
+import type { PlacementOp, PartInsertOp, NodeSeed } from '@statdash/react/engine'
 import type { CanvasNode, CanvasPage } from '../types/constructor'
 
 /**
@@ -219,6 +219,99 @@ export function planInserts(
     { node: wrapper, parentId: plan.parentId },
     { node: child,   parentId: wrapper.id },
   ]
+}
+
+// ── planPresetInserts — the composed-preset insert path (ADR-049 P2b · ADR-050 R2) ──
+//
+//  The preset-insert peer of `planInserts`. A preset is a partial element declaration
+//  (`NodeSeed` — a pure-config sub-tree). This expands that seed into the SAME ordered
+//  `InsertOp[]` the batched `insertNodes` reducer commits (ONE history entry), so a
+//  dropped preset lands bound + pre-wired as a single undoable action. Three properties
+//  keep the V6 byte-identical insert invariant EXACT (`makeNode`/`resolveInsertPlan`
+//  stay UNTOUCHED — this is a pure sibling builder over them):
+//
+//    1. Placement is SHARED — the preset ROOT flows through the caller's existing
+//       `resolveInsertPlan(page, sel, seed.type)` (→ direct / wrap / blocked), so a
+//       preset obeys `nestAccepts`/`slotAdmits` identically to a bare tile and the
+//       never-cliff guarantee extends to presets for free.
+//    2. The node build OVERLAYS `makeNode` — each seed node is `makeNode(type, id,
+//       variant)` then overlaid `props = { ...getDefaults, ...seed.props }` (+ data/view
+//       folded to their node-body keys). A seed of just `{ type }` produces a node
+//       BYTE-IDENTICAL to today's palette drop (FF-PRESET-DEGENERATE-IDENTITY).
+//    3. Ids are assigned in FIXED PRE-ORDER via the SAME `makeId` factory (wrapper →
+//       root → children depth-first), mirroring how `planInserts`' wrap branch assigns
+//       wrapper-then-child — so two surfaces inserting the same preset produce
+//       byte-identical trees. `childIds` are left EMPTY on every built node: the
+//       parent↔child link is expressed ONLY by each op's `parentId`, and the reducer
+//       wires `childIds` from it (`insertNodePatch`) — exactly as `planInserts` does.
+
+/**
+ * Build one seed node (overlaying `makeNode`) and, depth-first, its children — pushing
+ * each as an `InsertOp` in PRE-ORDER (parent before child, so the folding reducer sees
+ * the parent present before nesting under it). Returns the built node's id (its
+ * children's `parentId`). `childIds` stay `[]` — the reducer derives them from `parentId`.
+ */
+function buildSeedInserts(
+  seed:     NodeSeed,
+  parentId: string,
+  makeId:   () => string,
+  out:      InsertOp[],
+): string {
+  const node = makeNode(seed.type, makeId(), seed.variant)
+  // Overlay declared config onto the registry-default props. A degenerate seed (`{type}`
+  // with no overlays) leaves the node byte-identical to `makeNode` — the pinned invariant.
+  if (seed.props) node.props = { ...node.props, ...seed.props }
+  if (seed.data !== undefined) node.props.data = seed.data   // node-body bind key (props.data)
+  // node-body visibility key — MERGED so a pre-wired `visibleWhen` never clobbers a
+  // default `view.role` (chart/table) the getDefaults seeded.
+  if (seed.view !== undefined) {
+    node.props.view = { ...(node.props.view as Record<string, unknown> | undefined), ...seed.view }
+  }
+  out.push({ node, parentId })
+  if (seed.children) {
+    for (const child of seed.children) buildSeedInserts(child, node.id, makeId, out)
+  }
+  return node.id
+}
+
+/**
+ * Expand a preset `seed` into ordered `InsertOp[]` given a resolved `InsertPlan` for the
+ * preset ROOT type. `direct` nests the seed subtree straight under the plan's parent;
+ * `wrap` builds the canonical container first (its id becomes the seed root's parent, the
+ * same page → section → type hop `planInserts` applies); `blocked` compiles to no ops.
+ * The id factory is called once per created node IN PRE-ORDER — byte-identical across
+ * surfaces (V6, extended to cover preset inserts).
+ */
+export function planPresetInserts(
+  seed:   NodeSeed,
+  plan:   InsertPlan,
+  makeId: () => string,
+): InsertOp[] {
+  if (plan.kind === 'blocked') return []
+  const out: InsertOp[] = []
+  if (plan.kind === 'wrap') {
+    const wrapper = makeNode(plan.wrapperType, makeId())
+    out.push({ node: wrapper, parentId: plan.parentId })
+    buildSeedInserts(seed, wrapper.id, makeId, out)
+  } else {
+    buildSeedInserts(seed, plan.parentId, makeId, out)
+  }
+  return out
+}
+
+/**
+ * Compile a preset insert into the ONE `PlacementOp` the slot-residence `placePart`
+ * commits — the preset peer of `planPlacement`'s insert arm. Shares `placeSlotPart`
+ * with every other structural gesture (ONE placement grammar); an empty expansion (a
+ * blocked plan) compiles to null (the caller surfaces the guided hint).
+ */
+export function planPresetPlacement(
+  seed:   NodeSeed,
+  plan:   InsertPlan,
+  makeId: () => string,
+): PlacementOp | null {
+  const ops = planPresetInserts(seed, plan, makeId)
+  return ops.length === 0 ? null : { kind: 'insert', ops: ops as unknown as PartInsertOp[] }
 }
 
 // ── PlacementPlan — ONE structural-placement resolver (ADR-042 D2 · generalizes InsertPlan) ──

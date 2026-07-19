@@ -113,21 +113,51 @@ describe('FF-ONE-TYPE-SYSTEM — one ObjectMeta ingestion path, kind is a facet 
     expect(ingestAt).toBeLessThan(firstKindBranch)                    // ingested BEFORE behaviour routing
   })
 
-  it('no NEW per-kind type registry is minted — the engine registry set is frozen', () => {
-    // A new kind must be a FACET on ObjectMeta, never a fresh parallel registry.
-    // Scans the WHOLE engine tree: the registry classes are exactly the known
-    // behaviour stores (node/chrome/control/skeleton/chart/extension) + the ONE
-    // ObjectRegistry (the type system). A 4th parallel TYPE registry answering
-    // "new kind" (the fragmentation R1 removes) breaks this gate.
-    const KNOWN_REGISTRIES = [
+  it('no NEW per-kind TYPE registry is minted — the type/behaviour set is frozen; a new registry must be CONTENT', () => {
+    // A new KIND must be a FACET on ObjectMeta, never a fresh parallel TYPE registry.
+    // Scanning the WHOLE engine tree, EVERY registry class must fall in one of two
+    // explicitly-declared categories:
+    //   • FROZEN_TYPE_REGISTRIES — the ONE type system (ObjectRegistry) + the behaviour
+    //     stores it drives (node/chrome/control/skeleton/chart/extension). FROZEN: a NEW
+    //     parallel TYPE registry answering "what KIND is this" is the exact fragmentation
+    //     R1 removes and MUST break this gate.
+    //   • CONTENT_REGISTRIES — curated CATALOGS that COMPOSE existing types. They store
+    //     descriptors keyed by their own id (N-per-type), never ingest ObjectMeta, never
+    //     feed the type system, never answer "what kind". PresetRegistry (ADR-049 P2b ·
+    //     ADR-050 R2) is the first: a `PresetDecl`'s `seed.type` references an ALREADY-
+    //     registered node type — content, not a type system. The blessed design chose a
+    //     content SIBLING over an `ObjectMeta` field / `getDefaults` widening precisely so
+    //     the type system stays one; the STRUCTURAL teeth below prove the category honest.
+    const FROZEN_TYPE_REGISTRIES = [
       'ChartRendererRegistry', 'ChromeRegistry', 'ExtensionRegistry',
       'FilterControlRegistry', 'NodeRegistry', 'ObjectRegistry', 'SkeletonRegistry',
     ]
-    const found = new Set<string>()
+    const CONTENT_REGISTRIES = ['PresetRegistry']
+
+    const found = new Map<string, string>()                 // class name → its source text
     for (const f of sourceFiles(here)) {
-      for (const m of readFileSync(f, 'utf8').matchAll(/export class (\w*Registry)\b/g)) found.add(m[1])
+      const src = readFileSync(f, 'utf8')
+      for (const m of src.matchAll(/export class (\w*Registry)\b/g)) found.set(m[1], src)
     }
-    expect([...found].sort()).toEqual(KNOWN_REGISTRIES)
+
+    // Every registry is CATEGORIZED — an uncategorized new registry fails here, forcing a
+    // human to declare its bucket. The fragmentation tripwire is preserved: a new TYPE
+    // registry not on either list breaks the gate.
+    expect([...found.keys()].sort()).toEqual(
+      [...FROZEN_TYPE_REGISTRIES, ...CONTENT_REGISTRIES].sort(),
+    )
+
+    // TEETH — a CONTENT registry must be GENUINELY content: it may NOT ingest ObjectMeta,
+    // feed the type system, or answer "what kind". This is what stops a disguised TYPE
+    // registry from being smuggled into the content bucket to dodge the freeze. (Comments
+    // are stripped first — PresetRegistry's prose legitimately NAMES ObjectMeta to explain
+    // why it is NOT one; only executable references count.)
+    for (const name of CONTENT_REGISTRIES) {
+      const code = stripComments(found.get(name) ?? '')
+      expect(code, `${name} must not ingest ObjectMeta`).not.toMatch(/ObjectMeta/)
+      expect(code, `${name} must not feed the type system`).not.toMatch(/objectRegistry\s*\.\s*register\s*\(/)
+      expect(code, `${name} must not answer "what kind"`).not.toMatch(/\bkinds\s*\(/)
+    }
   })
 })
 

@@ -163,7 +163,14 @@ export interface CanvasOverlayProps {
    * chrome-specific handler (the `ChromeSelection` arm is retired).
    */
   chrome?:        Record<string, ChromeEntry>
-  onDrop:         (parentId: string, slotKey: string, nodeType: string) => void
+  /**
+   * A block was dropped into `slotKey` of `parentId`. `nodeType` is the block's root
+   * type (for a PRESET drop it is the preset seed's root type — so the slot-accept gate
+   * below validates the composed whole by its root). `presetId`, when present, names a
+   * registered composed preset (ADR-049 P2b): the host expands it into a bound + pre-wired
+   * subtree instead of a bare tile. Absent ⇒ a plain single-tile insert (unchanged).
+   */
+  onDrop:         (parentId: string, slotKey: string, nodeType: string, presetId?: string) => void
   /** Active UI locale — resolves each slot's i18n label at render (Law 9). Absent ⇒ 'ka'. */
   locale?:        string
   /**
@@ -341,7 +348,10 @@ export function CanvasOverlay({
     const direct  = !accepts || accepts.length === 0 || accepts.includes(nodeType)
     const wrap    = !!accepts && accepts.includes(AUTOWRAP_CONTAINER) && nestAccepts(AUTOWRAP_CONTAINER, nodeType)
     if (!direct && !wrap) return
-    onDrop(d.parentId, d.slotKey, nodeType)
+    // A preset drop rides the SAME payload (its seed root as `nodeType`, validated above)
+    // plus a `presetId` — the host expands the composed whole; a bare tile carries none.
+    const presetId = e.dataTransfer.getData('presetId') || undefined
+    onDrop(d.parentId, d.slotKey, nodeType, presetId)
   }
 
   // ── Metric drag → bind onto a node frame (AR-49 M0 item 9) ────────────────

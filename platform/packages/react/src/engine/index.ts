@@ -253,6 +253,15 @@ export { nodeRegistry } from './register-all'
 export { ObjectRegistry, objectRegistry, normalizeObjectIdentity } from './objectRegistry'
 export type { ObjectKind, ObjectRegistryEntry }                    from './objectRegistry'
 
+// ── Composed-preset registry (ADR-049 P2b · ADR-050 R2) ───────────────
+//  The "pick a whole, then tweak" port: a preset is a partial element declaration
+//  (a pure-config `NodeSeed` composing an existing type), projected into the palette
+//  as ONE insertable whole. The MECHANISM is engine-resident + app-agnostic; the
+//  CONTENT (curated presets, possibly with domain codes) is registered by the shell
+//  at boot, exactly like registerSlice feeds objectRegistry.
+export { PresetRegistry, presetRegistry, registerPreset, getPresets } from './PresetRegistry'
+export type { PresetDecl, NodeSeed }                                  from './PresetRegistry'
+
 // ── Frame system — page frame provider + hook ─────────────────────────
 export { FrameProvider, usePageFrame }    from '../context/FrameContext'
 

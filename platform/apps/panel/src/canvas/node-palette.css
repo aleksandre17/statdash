@@ -118,6 +118,13 @@
   border-color: var(--color-accent, #005a9c);
 }
 
+/* Starters (ADR-049 P2b) — composed, data-bound wholes. An accent leading edge marks a
+   preset tile as a "pick a whole, then tweak" starting point, distinct from a bare block. */
+.node-palette__tile--preset {
+  border-left: 3px solid var(--color-accent, #005a9c);
+  background: var(--color-accent-muted, #e8f0f8);
+}
+
 /* ── Leaf-selection guided hint (M4.1 Thread A) ─────────────────────────────── */
 
 .node-palette__leaf-hint {

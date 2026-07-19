@@ -36,8 +36,14 @@ const pageRootTypes = () =>
   getPaletteEntries()
     .map((e) => e.type)
     .filter((t) => pageRootInsertability('inner-page', t) !== 'blocked')
+// The NODE tiles only — the raw-type projection this guard is about. The additive
+// Starters band (ADR-049 P2b) renders composed-PRESET tiles (carrying `data-preset-id`)
+// which are a distinct concern (guarded by presetInsert.fitness), so they are excluded
+// here; the node-tile contextual narrowing invariant is asserted over node tiles alone.
+const nodeButtons = () =>
+  screen.queryAllByRole('button').filter((b) => !b.hasAttribute('data-preset-id'))
 const buttonTypes = () =>
-  screen.queryAllByRole('button').map((b) => b.getAttribute('data-node-type'))
+  nodeButtons().map((b) => b.getAttribute('data-node-type'))
 
 describe('FF-PALETTE-CONTEXTUAL — the leaf/container discriminant (D-M4.1-A)', () => {
   it('isDropTarget: a container is a target, a leaf (even with empty slots) is not', () => {
@@ -111,19 +117,19 @@ describe('FF-PALETTE-CONTEXTUAL — the palette projection', () => {
 
   it('(c2) absent pageType → permissive page root (isolated-mount back-compat: whole registry)', () => {
     render(<NodePalette selectedType={null} />)
-    expect(buttonTypes().sort()).toEqual([...droppableTypes()].sort())
+    expect(buttonTypes().sort()).toEqual([...droppableTypes()].sort())   // node tiles = whole registry
   })
 
   it('(d) leaf selected → NO node tile + the guided Inspector hint (guidance, not a block)', () => {
     render(<NodePalette selectedType="filter-bar" />)
-    expect(screen.queryAllByRole('button')).toHaveLength(0)
+    expect(screen.queryAllByRole('button')).toHaveLength(0)   // leaf hint suppresses tiles AND presets
     expect(screen.getByTestId('node-palette-leaf-hint')).toBeInTheDocument()
   })
 
   it('FF-NO-WORKFLOW-GATE — a leaf never blocks: clearing the selection restores the full set', () => {
     const { rerender } = render(<NodePalette selectedType="hero" />)
-    expect(screen.queryAllByRole('button')).toHaveLength(0)   // leaf → hint only
+    expect(screen.queryAllByRole('button')).toHaveLength(0)   // leaf → hint only (no tiles, no presets)
     rerender(<NodePalette selectedType={null} />)
-    expect(screen.queryAllByRole('button').length).toBe(droppableTypes().length)
+    expect(nodeButtons().length).toBe(droppableTypes().length)   // node tiles restored in full
   })
 })
