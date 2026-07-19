@@ -1210,8 +1210,9 @@
               },
               "trend": {
                 "title": "Trend",
-                "description": "object field",
-                "type": "object"
+                "description": "trend field",
+                "type": "object",
+                "$comment": "KpiTrendSpec"
               }
             },
             "required": [
@@ -2041,13 +2042,15 @@
               },
               "when": {
                 "title": "Visibility",
-                "description": "object field",
-                "type": "object"
+                "description": "visibility field",
+                "type": "object",
+                "$comment": "VisibilityExpr"
               },
               "trend": {
                 "title": "Trend",
-                "description": "object field",
-                "type": "object"
+                "description": "trend field",
+                "type": "object",
+                "$comment": "KpiTrendSpec"
               },
               "trendSub": {
                 "title": "Trend caption",

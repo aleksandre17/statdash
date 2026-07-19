@@ -35,6 +35,7 @@ import { isAuthenticated, AuthError } from './lib/auth'
 // Side-effect import.
 import './inspector/controls/value-mapping/register'
 import './inspector/controls/thresholds/register'
+import './inspector/controls/trend/register'
 // ADR-049 P1 — register the rich DataSpec editors under their engine-declared
 // `editorKey`s so the generic DataSpec composer resolves them by key (no switch).
 import './features/data-layer/registerSpecEditors'

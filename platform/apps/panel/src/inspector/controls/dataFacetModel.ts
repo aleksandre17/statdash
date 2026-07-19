@@ -8,6 +8,35 @@
 import type { DataSpec, PipeStep, SourceStep } from '@statdash/engine'
 
 /**
+ * A fresh, valid-by-default PIPELINE spec — the browse-first Get + result (E1): opening
+ * the workbench on an UNBOUND element seeds this, and the grid shows the "pick a metric"
+ * browse hint until one is chosen. The ⛔ W-P5 emission flip: the workbench's fresh spec
+ * is the spine (an empty governed `source` head), never the legacy `query` shape.
+ */
+export function freshPipelineSpec(): DataSpec {
+  return { type: 'pipeline', pipe: [{ op: 'source', metrics: [] }], encoding: { label: 'label' } }
+}
+
+/**
+ * ADR-049 P2a Lane 1 — the workbench-open ADOPT decision (FF-WORKBENCH-KIND-AGNOSTIC).
+ *
+ * Opening the DataWorkbench must never DISCARD an existing binding. Before the un-gate,
+ * the door was reachable only for `query`/`pipeline`/unbound, and opening on anything
+ * else seeded a `freshPipelineSpec()` that WIPED the bound spec. Now the door is kind-
+ * agnostic, so the seed decision is: a bound spec of ANY kind (row-list / timeseries /
+ * growth / ratio-list / query / pipeline / …) is ADOPTED intact — handed to the workbench
+ * verbatim, no write; only a TRULY unbound element is seeded a fresh browse-first pipeline.
+ *
+ * Returns the spec to WRITE before escalating, or `null` when the current binding is
+ * already adoptable (no write — the binding is preserved). The workbench itself declares
+ * an honest empty state for a kind it cannot yet shape (Law 11) and offers a governed
+ * metric bind to start — so the door is a live path forward, never a lossy overwrite.
+ */
+export function adoptOnOpen(spec: DataSpec | undefined): DataSpec | null {
+  return spec ? null : freshPipelineSpec()
+}
+
+/**
  * Bind a GOVERNED metric onto an element's DataSpec — the metric-bind MODE of the
  * DATA facet (author-safe, pipe-over-governed). The ⛔ W-P5 EMISSION FLIP (ADR-046 ·
  * SPEC §4): a governed bind now emits the canonical `pipeline` spine — a `source`

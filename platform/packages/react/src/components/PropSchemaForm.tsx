@@ -171,6 +171,11 @@ const FIELD_RENDERERS: Record<PropFieldType, FieldRenderer> = {
   // TOKENS_CATALOG); the panel's Inspector dispatches this type to the ThresholdField
   // step-list editor via FieldControlRegistry.
   thresholds:   jsonInput,
+  // trend: a rich `KpiTrendSpec` discriminated union (yoy/cagr/share/static). The engine-
+  // level form degrades to JSON (Law 3 — the discriminant editor needs the panel's metric
+  // discovery for its governed measure picker); the panel's Inspector dispatches this type
+  // to TrendField via FieldControlRegistry.
+  trend:        jsonInput,
   // enum-ref: options come from a runtime catalog (field.source) the engine can
   // NOT resolve (Law 3 — the panel resolves it against its discovery APIs). At
   // the engine level we degrade to a free-text input for the ref value; a field

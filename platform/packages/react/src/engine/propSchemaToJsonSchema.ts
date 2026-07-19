@@ -227,6 +227,12 @@ function typeDescriptor(type: PropField['type']): Partial<JsonSchemaProperty> {
       // shape is enforced at the authoring boundary (VisibilityField → VisibilityBuilder)
       // and by the engine's `evalVisibility` interpreter, not this structural type.
       return { type: 'object', $comment: 'VisibilityExpr' }
+    case 'trend':
+      // a KPI/featured item's `trend: KpiTrendSpec` — validated as an object so saveGuard
+      // accepts an authored trend; the discriminated-union shape (yoy/cagr/share/static) is
+      // enforced at the authoring boundary (TrendField over the declared variant schemas)
+      // and by the engine's trend interpreter (resolveTrend), not this structural type.
+      return { type: 'object', $comment: 'KpiTrendSpec' }
     default:
       return { type: 'string' }
   }

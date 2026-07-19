@@ -279,13 +279,14 @@ const OPAQUE_BY_DESIGN: Readonly<Record<string, string>> = {
 
   // (c) Deep union / free-form sub-objects INSIDE a structured itemSchema — the
   //     governed KPI/featured items are reachable item-by-item (metric-ref, label,
-  //     color…), but these sub-fields are discriminated unions / free-form maps that
-  //     stay raw-JSON in the item editor (the honest fallback for expert coordinates).
-  'kpi-strip.items.when':         'VisibilityExpr — recursive predicate union',
-  'kpi-strip.items.trend':        'KpiTrendSpec — discriminated union (yoy/cagr/share/static)',
+  //     color…), but these sub-fields are free-form maps that stay raw-JSON in the item
+  //     editor (the honest fallback for expert coordinates).
+  //     NOTE (ADR-049 P2a): `items.when` (→ type:'visibility', Lane 2) and `items.trend`
+  //     (→ type:'trend', Lane 3) are NO LONGER opaque — they now project through the
+  //     VisibilityField / TrendField controls, so they left this allowlist (their absence
+  //     is asserted by the `stale` check: a re-opaqued field would red the build).
   'kpi-strip.items.value.filter': 'DimFilter — free-form dim→value coordinate map',
   'featured-slider.items.at':     'DimFilter — free-form dim→value coordinate map',
-  'featured-slider.items.trend':  'KpiTrendSpec — discriminated union',
 }
 
 describe('Constructor C0 — nested authorability is 100%-gated (fitness #1c)', () => {

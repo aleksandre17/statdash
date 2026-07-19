@@ -115,6 +115,7 @@ export type PropFieldType =
   | 'events'        // an element's `on: NodeEventHandler[]` — declarative interaction authoring (EventsField)
   | 'visibility'    // an element's `view.visibleWhen: VisibilityExpr` — conditional-visibility authoring (VisibilityField)
   | 'thresholds'    // an ordered ThresholdStep[] — numeric conditional-formatting authoring (ThresholdField)
+  | 'trend'         // a KpiTrendSpec discriminated union (yoy/cagr/share/static) — trend authoring (TrendField)
 
 // ── PropFieldSource — runtime catalog an 'enum-ref' field draws options from ──
 //

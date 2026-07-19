@@ -32,6 +32,7 @@ import { Box, Chip, Typography } from '@mui/material'
 import type { DataSpec, DimVal, EncodingSpec, TransformStep } from '@statdash/engine'
 import { PipelineBuilder } from '../editors/query/PipelineBuilder'
 import { PipelineStepGridView } from '../pipeline-preview/PipelineStepGrid'
+import { MetricPalette } from '../../../discovery/MetricPalette'
 import { usePipelineSourceRows } from '../pipeline-preview/usePipelineSourceRows'
 import { useGridLabels } from '../pipeline-preview/useGridLabels'
 import { buildStepInputOffer, stepInputRows, type StepInputOffer } from '../pipeline-preview/stepInput'
@@ -114,13 +115,29 @@ export function DataWorkbench({ value, onChange }: DataWorkbenchProps) {
   }
 
   if (!model) {
+    // ADR-049 P2a Lane 1 — the KIND-AGNOSTIC door lands here for a spec the workbench does
+    // not yet shape (row-list / timeseries / growth / ratio-list). The binding is ADOPTED
+    // intact (the caller never wiped it); this pane declares that honestly (Law 11) AND
+    // offers a governed metric bind to START a pipeline — so the un-gated door is a LIVE
+    // path forward, not a dead room. Binding a metric emits the spine (the ⛔ emission flip),
+    // an explicit author gesture, exactly like a legacy `query` converts on active edit.
     return (
-      <Box className="data-workbench data-workbench--empty" data-testid="data-workbench-nonquery" sx={{ p: 3, color: 'text.secondary' }}>
-        <Typography variant="body2">
+      <Box className="data-workbench data-workbench--empty" data-testid="data-workbench-nonquery" sx={{ p: 3, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+        <Typography variant="body2" color="text.secondary">
           {en
-            ? 'This element has no pipeline yet. Bind a governed metric to start.'
-            : 'ამ ელემენტს ჯერ პაიპლაინი არ აქვს. დასაწყებად მიაბით მართული მეტრიკა.'}
+            ? 'This element has no pipeline yet. Bind a governed metric to start building one.'
+            : 'ამ ელემენტს ჯერ პაიპლაინი არ აქვს. ასაგებად მიაბით მართული მეტრიკა.'}
         </Typography>
+        <MetricPalette
+          locale={locale}
+          canBind
+          bindHint={en ? 'Bind a governed metric' : 'მიაბით მართული მეტრიკა'}
+          onBind={(metricId) =>
+            onChange(fromWorkbenchModel(withGovernedMetric(
+              { head: { op: 'source', metrics: [] }, tail: [], encoding: { label: 'label' } },
+              metricId,
+            )))}
+        />
       </Box>
     )
   }

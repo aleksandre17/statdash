@@ -61,7 +61,9 @@ export const FeaturedItemSchema = defineSchema([
   // Raw `dim→value` coordinate — plumbing behind the governed bind. `plane:'system'`
   // so it never renders on the author plane (root Law 11 · ADR-043).
   { field: 'at',       type: 'object',       label: { ka: 'კოორდინატი (dim→value)', en: 'Coordinate (dim→value)' }, plane: 'system' },
-  { field: 'trend',    type: 'object',       label: { ka: 'ტრენდი', en: 'Trend' } },
+  // ADR-049 P2a Lane 3 — `type:'trend'` projects the KpiTrendSpec union through the
+  // TrendField control (no raw-JSON fall-through; FF-TREND-HAS-PROJECTION).
+  { field: 'trend',    type: 'trend',        label: { ka: 'ტრენდი', en: 'Trend' } },
 ])
 
 // FF-SCHEMA-COMPLETE depth (tier c): 1:1 with FeaturedItemSpec's editable keys.

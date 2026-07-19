@@ -40,7 +40,7 @@ import { SuspenseFallback } from '../../shared/SuspenseFallback'
 import { MetricPalette } from '../../discovery/MetricPalette'
 import { useFocusEscalation } from '../focusEscalation'
 import { useRole } from '../../studio/useRole'
-import { bindMeasureToSpec } from './dataFacetModel'
+import { bindMeasureToSpec, adoptOnOpen } from './dataFacetModel'
 import { toWorkbenchModel, isHeadBound } from '../../features/data-layer/workbench/workbenchModel'
 import { usePipelineSourceRows, type PreviewStatus } from '../../features/data-layer/pipeline-preview/usePipelineSourceRows'
 import { useGridLabels } from '../../features/data-layer/pipeline-preview/useGridLabels'
@@ -63,14 +63,6 @@ const DataWorkbench = lazy(() =>
 /** A neutral encoding for the summary's source read when the model is absent (its result
  *  is 'unbound' in that branch — the hook must still be called unconditionally). */
 const EMPTY_ENCODING: EncodingSpec = { label: '' }
-
-// A fresh, valid-by-default PIPELINE spec — the browse-first Get + result (E1): opening
-// the workbench on an unbound element seeds this, and the grid shows the "pick a metric"
-// browse hint until one is chosen. The ⛔ W-P5 emission flip: the workbench's fresh spec
-// is the spine (an empty governed `source` head), never the legacy `query` shape.
-function freshPipelineSpec(): DataSpec {
-  return { type: 'pipeline', pipe: [{ op: 'source', metrics: [] }], encoding: { label: 'label' } }
-}
 
 /** The honest, bilingual row-count/state line (AR-52 — a declared state, never a fake 0). */
 function rowStateLabel(status: PreviewStatus, count: number, en: boolean): string {
@@ -118,16 +110,20 @@ export function DataFacetField({ value, field, locale, onChange }: FieldControlP
   const { columnLabel } = useGridLabels(model?.head)
   const sourceName = bound ? columnLabel('value') : ''
 
-  // The workbench opens for a `pipeline` OR a legacy `query` (via its desugared view) OR an
-  // unbound element (seeded fresh, browse-first); any other spec kind is edited through the
-  // steward raw editor below.
-  const canWorkbench = !!escalation && (!spec || spec.type === 'query' || spec.type === 'pipeline')
+  // ADR-049 P2a Lane 1 — the workbench door is KIND-AGNOSTIC (FF-WORKBENCH-KIND-AGNOSTIC).
+  // EVERY bind-kind reaches the workbench (no `spec.type` literal gate): the buried surface
+  // is no longer denied to a row-list / timeseries / growth / ratio-list element. The only
+  // gate is the escalation host (null in isolation → the door fail-soft hides).
+  const canWorkbench = !!escalation
 
   const openWorkbench = () => {
     if (!escalation) return
-    // Ensure the field carries a workbench-shaped spec BEFORE handing it over, so the
-    // escalation's live binding reads it from the first render.
-    if (!spec || (spec.type !== 'query' && spec.type !== 'pipeline')) onChange(freshPipelineSpec())
+    // ADOPT, never discard (adoptOnOpen): a bound spec of ANY kind is handed to the workbench
+    // INTACT — only a truly unbound element is seeded a fresh browse-first pipeline. The
+    // workbench declares an honest empty state for a kind it cannot yet shape and offers a
+    // governed metric bind to start (Law 11 — the door is a live path, never a lossy wipe).
+    const seed = adoptOnOpen(spec)
+    if (seed) onChange(seed)
     escalation.escalate({
       source:    'node-field',
       fieldPath: field.field,

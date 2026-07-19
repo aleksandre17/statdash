@@ -66,10 +66,17 @@ export const KpiItemSchema = defineSchema([
   // → the ThresholdField step-list editor (registered in apps/panel, out of the arrow).
   // concern:'style' (a presentation facet) · plane:'author' (a first-class author gesture).
   { field: 'thresholds',     type: 'thresholds',   concern: 'style',    label: { ka: 'პირობითი ფორმატირება', en: 'Conditional formatting' } },
-  // Per-item conditional visibility (a VisibilityExpr: op · perspective). `plane:'steward'`:
+  // Per-item conditional visibility (a VisibilityExpr: op · perspective). ADR-049 P2a
+  // Lane 2 un-buries the band-item `when`: `type:'visibility'` projects it through the
+  // SAME VisibilityField/VisibilityBuilder the node facet uses (registered in the panel
+  // FieldControlRegistry), so a KPI item's show-when is authored via the recursive
+  // condition builder — no raw-JSON fall-through (FF-VISIBILITY-NO-RAW-WHEN). `plane:'steward'`:
   // advanced conditional logic behind the steward lens, not author-default (root Law 11).
-  { field: 'when',           type: 'object',       concern: 'behavior', label: { ka: 'ხილვადობა', en: 'Visibility' }, plane: 'steward' },
-  { field: 'trend',          type: 'object',       concern: 'data',     label: { ka: 'ტრენდი', en: 'Trend' } },
+  { field: 'when',           type: 'visibility',   concern: 'behavior', label: { ka: 'ხილვადობა', en: 'Visibility' }, plane: 'steward' },
+  // ADR-049 P2a Lane 3 — the trend gets its projection: `type:'trend'` resolves to the
+  // TrendField control (a discriminant selector over the KpiTrendSpec union: yoy/cagr/
+  // share/static), replacing the raw-JSON `object` fallback (FF-TREND-HAS-PROJECTION).
+  { field: 'trend',          type: 'trend',        concern: 'data',     label: { ka: 'ტრენდი', en: 'Trend' } },
   { field: 'trendSub',       type: 'LocaleString', concern: 'content',  label: { ka: 'ტრენდის წარწერა', en: 'Trend caption' }, coverage: 'localized' },
   { field: 'preliminary',    type: 'boolean',      concern: 'data',     label: { ka: 'წინასწარი', en: 'Preliminary' } },
   { field: 'note',           type: 'string',       concern: 'content',  label: { ka: 'შენიშვნა', en: 'Note' } },
