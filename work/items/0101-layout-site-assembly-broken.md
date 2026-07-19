@@ -1,7 +1,7 @@
 ---
 id: "0101"
 title: "SITE ASSEMBLY BY LAYOUT IS BROKEN — layout elements don't compose ('don't understand each other'); a dropped GRID overflows the page and content BLEEDS onto another page (→ regional-accounts). Owner-reported live 2026-07-19."
-status: ROOT-CAUSED (2026-07-19 — explorer+MCP live characterization decisive; QUEUED as next WIP after 0100-P2a, AHEAD of 0100-P2b; build not yet started, WIP=1). Good news: the containment GRAMMAR (ADR-041) is sound — the hole is the empty-container AUTHORING affordance (a referenced-but-undelivered "Slice-1 placeholder"), not the architecture.
+status: DONE (2026-07-19 — = canonical-remedy R1). Floor shipped `14dc8ec` (empty-container min-height + move-guard + page-frame containment + page-tab→URL) + drop-affordance projection `18dded3` (per-slot geometry kills overlap · at-rest visible labeled dropzones · localized labels · banner clears toolbar). Converged gate 4001/0. Deployed :3013. **OWNER-SCREEN LIVE-VERIFIED (his exact Example page): overlap GONE · at-rest affordance shows where to drop · settle-drop lands a grid child · banner clear · KA labels · 0 console errors.** Shots `work/authoring-truth/0102-r1-fixed/`. RESIDUALS (tracked, not blocking): partial i18n (the "Sticky" qualifier + canvas kind-badges `grid`/`inner-page` still EN — minor polish); chart-in-structural console crash `useNodeRows.ts:233` → card 0103 (canon canvas-never-lies); named-slot render (`sticky` unrendered) → 0102 R3/R4. Good news confirmed: the containment GRAMMAR (ADR-041) was always sound — the disease was the authoring PROJECTION, exactly per 0102.
 class: M-L (authoring-affordance + CSS containment; NOT a grammar change)
 priority: P0 (the PRIMARY gesture — 'assemble a site by layout' — is failing; owner: 'to this day I can't even start')
 owner: lead → explorer (characterize) → debugger/architect (root-cause + fix)
@@ -37,5 +37,12 @@ relates:
 2. **Page-frame containment:** clamp content to the page card (overflow/containment on the page-frame container).
 3. **Routing (small):** page-tab drives the URL (`?page=`) — Law 9.
 Screenshots: `work/authoring-truth/0101/`. Benchmark the empty-container affordance vs Builder/Framer/Webflow (visible empty-slot dropzones).
+
+**R1 SHIPPED the floor (14dc8ec): empty-container min-height + move-guard + page-frame containment + page-tab→URL — deployed+committed.** But owner live-repro (2026-07-19, his Example page) proved the FLOOR isn't enough — the drop MECHANISM works (settle-step drop lands a child; ports measure real geometry — the "collapse" diagnosis was FALSE, `measure()` uses `firstElementChild` not the display:contents anchor), yet the **authoring PROJECTION is broken** (the real "engine works, projection missing"):
+- **Overlapping slot dropzones** — `CanvasOverlay.tsx:158-163` gives EVERY declared slot the PARENT node's single rect (never measures each slot's own box) → inner-page `sticky`+`main` stack byte-identical (357,172,242×855) → the owner's "StickyBar/Content" label pile-up.
+- **No at-rest affordance** — dropzones render only while `dragging===true` (`:355`) → the canvas shows nothing about where to drop → the "can't add / it jams" perception (a fast atomic drag also drops before ports mount).
+- **EN-only labels** — `:369-370` uses `.label.en` on `/ka/` (Law 9 gap).
+- **Banner overlaps toolbar** — `canvas.css:144` hard-coded 34px magic offset under-shoots the toolbar.
+**R1-completion fix IN FLIGHT (senior-frontend):** per-slot geometry (kills overlap) · at-rest visible drop affordance (shows where to add) · localized labels · banner layout fix. Generic over declared Part-slots (ADR-041). dnd-probe harness `e2e/dropTargetGeometry.e2e.ts` (uncommitted, debugger-authored) extended to pin non-overlapping per-slot zones. R1 NOT closed until the owner's exact screen is clean + visibly droppable.
 
 **Boundaries.** Extends ADR-041 (no fifth grammar) · page = a containment boundary content must not escape · declarative · loose coupling. WIP=1: 0100-P2a keeps building (read-only characterization runs parallel-safe); this does not abandon P2a.
