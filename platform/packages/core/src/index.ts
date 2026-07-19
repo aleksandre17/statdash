@@ -436,8 +436,8 @@ export type { LocaleFormatter }                                          from '.
 export { formatterRegistry }                                             from './i18n/format'
 
 // ── Spec Capability Catalog — Self-Describing Module (Panel / Constructor) ─
-export type { SpecField, SpecDescriptor }  from './spec-catalog'
-export { SPEC_CATALOG, resolveSpecAuthoring } from './spec-catalog'
+export type { SpecField, SpecDescriptor, SpecManifestEntry }  from './spec-catalog'
+export { SPEC_CATALOG, resolveSpecAuthoring, specManifest } from './spec-catalog'
 
 // ── FilterDerive ops → @statdash/expr plugin registration ─────────────
 //

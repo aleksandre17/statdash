@@ -17,10 +17,10 @@
 //
 
 import type { RegistryManifest }  from './NodeRegistry'
-import type { SpecDescriptor, PerspectiveOption } from '@statdash/engine'
+import type { SpecManifestEntry, PerspectiveOption } from '@statdash/engine'
 import { nodeRegistry }                     from './register-all'
 import { chartRegistry }                    from '@statdash/charts'
-import { SPEC_CATALOG, perspectiveRegistry, listTransformOps, listMetricDefs, listDimensionDefs, listExportFormats } from '@statdash/engine'
+import { specManifest, perspectiveRegistry, listTransformOps, listMetricDefs, listDimensionDefs, listExportFormats } from '@statdash/engine'
 import type { MetricDef, DimensionDef }                from '@statdash/engine'
 import { registeredKinds }                  from './storeManifest'
 import { filterControlRegistry }            from './filterControlRegistry'
@@ -92,8 +92,13 @@ export interface AppManifest {
   propertySchemas:  RegistryManifest['propertySchemas']
   /** Registered chart type strings — drives the chart-type picker. */
   chartTypes:       string[]
-  /** All DataSpec types with fields, descriptions, examples. */
-  specTypes:        Record<string, SpecDescriptor>
+  /**
+   * All DataSpec types with fields, descriptions, examples. The SERIALIZABLE
+   * face of the authoring contract (`SpecManifestEntry`) — the runtime `make`
+   * factory is projected OUT (Law 2: no functions in the JSON manifest); it stays
+   * available at runtime via the engine's `resolveSpecAuthoring`.
+   */
+  specTypes:        Record<string, SpecManifestEntry>
   /** Registered perspectives — drives the perspective-switcher palette. */
   perspectives:     PerspectiveOption[]
   /** Registered datasource kind strings — drives the datasource manager. */
@@ -150,7 +155,7 @@ export function describeApp(): AppManifest {
     palette,
     propertySchemas,
     chartTypes:      chartRegistry.chartTypes(),
-    specTypes:       SPEC_CATALOG,
+    specTypes:       specManifest(),
     perspectives:    perspectiveRegistry.list(),
     datasourceKinds: registeredKinds(),
     transformOps:        listTransformOps(),

@@ -32,18 +32,35 @@ export type SpecField = {
   type:        string   // human-readable hint: 'ObsQuery' | 'RowSpec[]' | 'string' | etc.
 }
 
-export type SpecDescriptor = {
+/**
+ * The SERIALIZABLE face of a bind-kind's authoring contract — pure data, no
+ * functions. This is exactly what the Constructor's app manifest (`describeApp`)
+ * emits, so it round-trips through JSON losslessly (Law 2: config is declarative,
+ * no functions in the manifest). The runtime `make` factory lives on
+ * `SpecDescriptor` (below), NOT here — a default-seed factory is engine RUNTIME
+ * behaviour the editor calls, never config, so it must never reach the manifest.
+ */
+export type SpecManifestEntry = {
   label:            { ka: string; en: string }
   description:      { ka: string; en: string }
   constructorReady: boolean   // false = has fn field, Constructor cannot generate
   fields:           SpecField[]
   example:          string
-  /** Default factory — a pure `DataSpec` seed the picker emits on kind selection. */
-  make:             () => DataSpec
   /** Authoring surface #1 — a PropSchema rendered by the generic Inspector. */
   schema?:          PropSchema
   /** Authoring surface #2 — a boot-registered rich editor, resolved by this key. */
   editorKey?:       string
+}
+
+/**
+ * The RUNTIME authoring contract for a bind-kind: the serializable descriptor
+ * PLUS the `make` factory the editor calls to seed a default spec. `make` is the
+ * one non-serializable field — it is deliberately absent from `SpecManifestEntry`
+ * so the emitted manifest is function-free BY CONSTRUCTION (see `specManifest`).
+ */
+export type SpecDescriptor = SpecManifestEntry & {
+  /** Default factory — a pure `DataSpec` seed the picker emits on kind selection. */
+  make:             () => DataSpec
 }
 
 /**
@@ -54,6 +71,19 @@ export type SpecDescriptor = {
  */
 export function resolveSpecAuthoring(type: string): SpecDescriptor | undefined {
   return SPEC_CATALOG[type]
+}
+
+/**
+ * The function-free projection of `SPEC_CATALOG` for the JSON app manifest (Law 2).
+ * Strips each kind's runtime `make` factory BY CONSTRUCTION — the returned objects
+ * carry only data fields (`SpecManifestEntry`), so `describeApp()`'s output
+ * round-trips through JSON losslessly. `make` stays available at runtime via
+ * `resolveSpecAuthoring` / `SPEC_CATALOG` (the editor's default-seed path).
+ */
+export function specManifest(): Record<string, SpecManifestEntry> {
+  return Object.fromEntries(
+    Object.entries(SPEC_CATALOG).map(([type, { make: _make, ...entry }]) => [type, entry]),
+  )
 }
 
 export const SPEC_CATALOG: Record<string, SpecDescriptor> = {
