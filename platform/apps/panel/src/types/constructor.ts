@@ -146,6 +146,16 @@ export interface CanvasPage {
    * be locked into) the default on reload.
    */
   type:     string
+  /**
+   * The page-root VARIANT (e.g. container-page `landing`) — the second half of the
+   * page-KIND identity, symmetric to {@link CanvasNode.variant}. A registered page
+   * kind is a `(type, variant)` pair (ADR-050 R3): `landing` is `container-page` +
+   * `variant:'landing'`, whose meta `defaults` select the landing frame + chrome.
+   * First-class + node-structural (NOT swept into `meta`), so the adapter round-trips
+   * it LOSSLESSLY — absent ⇒ the kind's `'default'` variant (byte-identical to pre-R3
+   * pages, which carried no page-root variant).
+   */
+  variant?: string
   title:    { ka: string; en: string }
   slug:     string
   /** Ordered top-level node IDs — D&D reorder updates this array. */

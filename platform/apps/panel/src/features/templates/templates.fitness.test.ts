@@ -21,7 +21,7 @@ import { validateConfig } from '@statdash/engine'
 import { setupCanvasRegistry } from '../../canvas/setupCanvasRegistry'
 import { toNodePageConfig, fromNodePageConfig } from '../../canvas/canvasPageAdapter'
 import { validatePageForSave } from '../../save/saveGuard'
-import { STARTER_TEMPLATES } from './starterTemplates'
+import { PAGE_STARTERS, seedToPageConfig } from './pageStarters'
 import { generatePageFromProfile } from './generatePage'
 import { hydrateTemplate } from './loadTemplate'
 import type { NodePageConfig } from '@statdash/react/engine'
@@ -41,10 +41,11 @@ function hydrate(config: NodePageConfig) {
   return hydrateTemplate(config, TITLE, 'test-page')
 }
 
-describe('starter templates are valid NodePageConfigs', () => {
-  for (const t of STARTER_TEMPLATES) {
-    describe(t.id, () => {
-      const page = () => hydrate(t.config)
+describe('page starters (registered declarations) are valid NodePageConfigs', () => {
+  for (const starter of PAGE_STARTERS) {
+    describe(starter.id, () => {
+      // Each starter's page-root seed expands into the create-path config (ADR-050 R3).
+      const page = () => hydrate(seedToPageConfig(starter.seed))
 
       it('passes validateConfig (engine structural floor)', () => {
         const cfg = toNodePageConfig(page())

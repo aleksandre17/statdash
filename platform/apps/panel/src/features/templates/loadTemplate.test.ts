@@ -6,7 +6,7 @@
 //
 import { describe, it, expect } from 'vitest'
 import { hydrateTemplate, slugify } from './loadTemplate'
-import { STARTER_TEMPLATES } from './starterTemplates'
+import { PAGE_STARTERS, seedToPageConfig } from './pageStarters'
 
 describe('slugify', () => {
   it('lowercases + hyphenates + strips edges', () => {
@@ -18,27 +18,31 @@ describe('slugify', () => {
 })
 
 describe('hydrateTemplate', () => {
-  const tpl = STARTER_TEMPLATES.find((t) => t.id === 'chart-table')!
+  // The chart-table starter expanded from its registered page-root seed (ADR-050 R3).
+  // Deterministic pre-order ids: root 'starter' → 'starter-0' (header), 'starter-1'
+  // (section) → 'starter-1-0' (chart), 'starter-1-1' (table).
+  const config = () => seedToPageConfig(PAGE_STARTERS.find((p) => p.id === 'chart-table')!.seed)
 
   it('stamps the page identity from the slug (placeholder id/path replaced)', () => {
-    const page = hydrateTemplate(tpl.config, { ka: 'მშპ', en: 'GDP' }, 'gdp')
+    const page = hydrateTemplate(config(), { ka: 'მშპ', en: 'GDP' }, 'gdp')
     expect(page.id).toBe('gdp')
     expect(page.slug).toBe('gdp')
     expect(page.title).toEqual({ ka: 'მშპ', en: 'GDP' })
   })
 
-  it('hydrates the flat node model with the template node ids intact', () => {
-    const page = hydrateTemplate(tpl.config, { ka: 'მშპ', en: 'GDP' }, 'gdp')
+  it('hydrates the flat node model with the seed-derived node ids intact', () => {
+    const page = hydrateTemplate(config(), { ka: 'მშპ', en: 'GDP' }, 'gdp')
     // header + section at top level; the chart + table nested under the section.
-    expect(page.nodeIds).toEqual(['hdr', 'sec'])
-    expect(page.nodes.sec.childIds).toEqual(['sec-chart', 'sec-table'])
-    expect(page.nodes['sec-chart'].type).toBe('chart')
-    expect(page.nodes['sec-chart'].props).toMatchObject({ chartType: 'bar' })
+    expect(page.nodeIds).toEqual(['starter-0', 'starter-1'])
+    expect(page.nodes['starter-1'].childIds).toEqual(['starter-1-0', 'starter-1-1'])
+    expect(page.nodes['starter-1-0'].type).toBe('chart')
+    expect(page.nodes['starter-1-0'].props).toMatchObject({ chartType: 'bar' })
   })
 
-  it('does not mutate the committed template config (pure)', () => {
-    const before = JSON.stringify(tpl.config)
-    hydrateTemplate(tpl.config, { ka: 'x', en: 'x' }, 'x')
-    expect(JSON.stringify(tpl.config)).toBe(before)
+  it('does not mutate the source config (pure)', () => {
+    const cfg = config()
+    const before = JSON.stringify(cfg)
+    hydrateTemplate(cfg, { ka: 'x', en: 'x' }, 'x')
+    expect(JSON.stringify(cfg)).toBe(before)
   })
 })

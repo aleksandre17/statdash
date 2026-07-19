@@ -61,7 +61,7 @@ export const DEFAULT_PAGE_TYPE = 'inner-page'
 //  reference a key the contract doesn't have.
 //
 const PAGE_STRUCTURAL_KEYS: ReadonlySet<keyof NodePageConfig> = new Set([
-  'type', 'children', 'id', 'path',
+  'type', 'variant', 'children', 'id', 'path',
 ] as Array<keyof NodePageConfig>)
 
 // ── Serialize side: flat store → engine NodeDef tree ────────────────────────
@@ -108,6 +108,7 @@ export function toNodePageConfig(page: CanvasPage): NodePageConfig {
   return {
     ...(page.meta ?? {}),               // frame/chrome/presentation/filterSchema/vars/perspectives/…
     type:     page.type || DEFAULT_PAGE_TYPE,
+    ...(page.variant ? { variant: page.variant } : {}),   // page-root variant (landing) — node-structural
     id:       page.id,
     path:     page.slug,
     children,
@@ -181,6 +182,9 @@ export function fromNodePageConfig(
   const id   = typeof root.id === 'string' ? root.id : 'page'
   const slug = typeof root.path === 'string' ? root.path : id
   const type = typeof root.type === 'string' && root.type ? root.type : DEFAULT_PAGE_TYPE
+  // Page-root variant (landing) — node-structural, carried as a first-class column
+  // (never swept into meta); absent ⇒ the kind's 'default' variant.
+  const variant = typeof root.variant === 'string' && root.variant ? root.variant : undefined
 
   const nodes: Record<string, CanvasNode> = {}
   const rawTop = Array.isArray(root.children) ? (root.children as unknown[]) : []
@@ -194,6 +198,7 @@ export function fromNodePageConfig(
   return {
     id,
     type,
+    ...(variant ? { variant } : {}),
     title: title ?? { ka: slug, en: slug },
     slug,
     nodeIds,

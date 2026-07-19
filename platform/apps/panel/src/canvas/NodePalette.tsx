@@ -26,7 +26,7 @@
 //
 import { useMemo }                                      from 'react'
 import { resolveLocaleString }                          from '@statdash/engine'
-import { presetRegistry }                               from '@statdash/react/engine'
+import { presetRegistry, objectRegistry }               from '@statdash/react/engine'
 import type { PresetDecl }                              from '@statdash/react/engine'
 import { getPaletteEntries, getGroupedPaletteEntries }  from './paletteEntries'
 import type { PaletteEntry, PaletteGroup }              from './paletteEntries'
@@ -217,13 +217,18 @@ export function NodePalette({ locale = 'ka', selectedType, pageType, onDragState
     return out
   }, [active, flat])
 
-  // Starters band (ADR-049 P2b) — the composed presets, projected as insertable wholes
-  // ahead of the raw element tiles. GENERIC map over presetRegistry.list() (zero per-type
-  // code — FF-PRESET-NO-SPECIAL-CASE), narrowed to the selection's accept-set by the SAME
-  // `acceptsInSelection` predicate the tiles use (a preset is validated by its seed ROOT
-  // type), so a preset is never offered where its composed whole would bounce.
+  // Starters band (ADR-049 P2b) — the composed ELEMENT presets, projected as insertable
+  // wholes ahead of the raw element tiles. GENERIC map over presetRegistry.list() (zero
+  // per-type code — FF-PRESET-NO-SPECIAL-CASE), narrowed to the selection's accept-set by
+  // the SAME `acceptsInSelection` predicate the tiles use (a preset is validated by its seed
+  // ROOT type), so a preset is never offered where its composed whole would bounce. PAGE
+  // starters (ADR-050 R3 — presets whose seed roots a registered page KIND) share this ONE
+  // registry but belong to the create-page gallery, not the in-canvas palette; excluded
+  // GENERICALLY (objectRegistry — never a hardcoded id list), symmetric to `pageStarterList`.
   const starters = useMemo<PresetDecl[]>(
-    () => presetRegistry.list().filter((p) => acceptsInSelection(p.seed.type)),
+    () => presetRegistry.list().filter(
+      (p) => !objectRegistry.has('page', p.seed.type, p.seed.variant ?? 'default') && acceptsInSelection(p.seed.type),
+    ),
     [acceptsInSelection],
   )
 

@@ -5,17 +5,19 @@
 //  or CREATE a new page (createPage → POST /pages). Each row shows the
 //  server-reflected lifecycle so the author sees draft/published at a glance.
 //
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import {
   Dialog, DialogTitle, DialogContent, DialogActions, Button,
-  List, ListItemButton, ListItemText, Divider, TextField, Box, Stack, Alert,
+  List, ListItemButton, ListItemText, Divider, TextField, Box, Stack, Alert, Typography,
 } from '@mui/material'
 import AddIcon from '@mui/icons-material/Add'
 import WidgetsIcon from '@mui/icons-material/Widgets'
+import { objectRegistry } from '@statdash/react/engine'
+import { resolveLocaleString } from '@statdash/engine'
 import { usePages } from '../../store/constructor.store'
 import { useConstructorStore } from '../../store/constructor.store'
 import { openPage, createPage } from '../../store/api-actions'
-import { DEFAULT_PAGE_TYPE } from '../../canvas/canvasPageAdapter'
+import { renderPaletteIcon } from '../../canvas/paletteIcons'
 import { PageStatusBadge } from './PageStatusBadge'
 import { TemplateGallery } from '../templates'
 import { useActiveLocales } from '../../inspector/useActiveLocales'
@@ -43,6 +45,8 @@ const T = {
   titleReq:     { ka: 'სათაური (ka) სავალდებულოა',                en: 'Title (ka) is required' },
   slugErr:      { ka: 'სათაურიდან სწორი slug ვერ გამოვიდა',       en: 'Could not derive a valid slug from the title' },
   createFailed: { ka: 'შექმნა ვერ მოხერხდა',                      en: 'Create failed' },
+  pageKind:     { ka: 'გვერდის ტიპი',                             en: 'Page type' },
+  kindReq:      { ka: 'აირჩიეთ გვერდის ტიპი',                     en: 'Choose a page type' },
 } as const
 const t = (k: keyof typeof T, locale: Locale) => T[k][locale] ?? T[k].en
 
@@ -68,6 +72,13 @@ export function PageBrowser({ open, onClose }: PageBrowserProps) {
   const [error,    setError]    = useState<string | null>(null)
   const [busy,     setBusy]     = useState(false)
   const [gallery,  setGallery]  = useState(false)
+  // The page-KIND gallery source (ADR-050 R3): every registered `sliceType:'page'`
+  // descriptor, projected from the ONE type-descriptor registry — NO hardcoded default
+  // kind. A new registered page kind appears here with zero code (FF-SKELETON-CHOOSABLE).
+  const pageKinds = useMemo(() => objectRegistry.listByKind('page'), [])
+  // Index of the chosen kind. The initial selection is REGISTRY-DERIVED (the first
+  // registered kind), VISIBLE + changeable in the gallery — never a hidden literal.
+  const [kindIdx, setKindIdx] = useState(0)
 
   const handleOpen = async (id: string) => {
     setBusy(true)
@@ -78,15 +89,18 @@ export function PageBrowser({ open, onClose }: PageBrowserProps) {
 
   const handleCreate = async () => {
     if (!titleKa.trim()) { setError(t('titleReq', locale)); return }
+    const kind = pageKinds[kindIdx]
+    if (!kind) { setError(t('kindReq', locale)); return }
     const slug = slugify(titleEn || titleKa)
     if (!slug) { setError(t('slugErr', locale)); return }
     setBusy(true)
     setError(null)
     try {
       const page = await createPage({
-        // A blank page starts as the default kind — the author can retype it via
-        // the page Inspector once page-kind authoring lands (never a hidden default).
-        type:    DEFAULT_PAGE_TYPE,
+        // The page lands as the CHOSEN registered kind (type + variant) — never a
+        // hardcoded default. `variant` is carried only when non-default (landing).
+        type:    kind.type,
+        ...(kind.variant && kind.variant !== 'default' ? { variant: kind.variant } : {}),
         title:   { ka: titleKa.trim(), en: (titleEn || titleKa).trim() },
         slug,
         nodeIds: [],
@@ -137,6 +151,45 @@ export function PageBrowser({ open, onClose }: PageBrowserProps) {
           </Stack>
         ) : (
           <Stack spacing={2} data-testid="new-page-form">
+            {/* ── Page-KIND gallery (ADR-050 R3) — pick a registered skeleton frame.
+                A semantic radio group (WCAG 2.1 AA), projected from objectRegistry —
+                no hardcoded default kind (FF-SKELETON-CHOOSABLE). ── */}
+            <Box>
+              <Typography variant="overline" color="text.secondary">{t('pageKind', locale)}</Typography>
+              <Box role="radiogroup" aria-label={t('pageKind', locale)} data-testid="page-kind-gallery"
+                   sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: 1, mt: 0.5 }}>
+                {pageKinds.map((k, i) => {
+                  const selected = i === kindIdx
+                  const label = resolveLocaleString(k.meta.label ?? k.type, locale, 'en') || k.type
+                  return (
+                    <Box
+                      key={`${k.type}::${k.variant}`}
+                      role="radio"
+                      aria-checked={selected}
+                      aria-label={label}
+                      tabIndex={0}
+                      data-testid={`page-kind-${k.type}-${k.variant}`}
+                      onClick={() => setKindIdx(i)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setKindIdx(i) }
+                      }}
+                      sx={{
+                        p: 1, borderRadius: 1, cursor: 'pointer', userSelect: 'none',
+                        display: 'flex', gap: 1, alignItems: 'center',
+                        border: 2, borderColor: selected ? 'primary.main' : 'divider',
+                        bgcolor: selected ? 'action.selected' : 'background.paper',
+                        '&:focus-visible': { outline: 2, outlineColor: 'primary.main' },
+                      }}
+                    >
+                      <Box sx={{ color: 'primary.main', display: 'flex' }}>
+                        {renderPaletteIcon(k.meta.icon, { fontSize: 'small' })}
+                      </Box>
+                      <Typography variant="body2" fontWeight={600} noWrap>{label}</Typography>
+                    </Box>
+                  )
+                })}
+              </Box>
+            </Box>
             <TextField label={t('titleKa', locale)} value={titleKa} size="small" required
               onChange={(e) => setTitleKa(e.target.value)} inputProps={{ 'aria-label': t('newTitleKa', locale) }} />
             <TextField label={t('titleEn', locale)} value={titleEn} size="small"

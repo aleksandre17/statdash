@@ -17,16 +17,15 @@ import {
   Dialog, DialogTitle, DialogContent, DialogActions, Button,
   Box, Stack, Typography, TextField, Alert, Divider,
 } from '@mui/material'
-import SpeedIcon       from '@mui/icons-material/Speed'
-import InsertChartIcon from '@mui/icons-material/InsertChart'
-import DashboardIcon   from '@mui/icons-material/Dashboard'
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome'
-import WidgetsIcon     from '@mui/icons-material/Widgets'
-import type { NodePageConfig } from '@statdash/react/engine'
-import { STARTER_TEMPLATES, type StarterTemplate } from './starterTemplates'
+import type { NodePageConfig, PresetDecl } from '@statdash/react/engine'
+import { resolveLocaleString } from '@statdash/engine'
+import { pageStarterList, seedToPageConfig } from './pageStarters'
 import { generatePageFromProfile } from './generatePage'
 import { createFromTemplate } from './loadTemplate'
+import { renderPaletteIcon } from '../../canvas/paletteIcons'
 import { useActiveProfile } from '../../discovery/useActiveProfile'
+import { useActiveLocales } from '../../inspector/useActiveLocales'
 
 export interface TemplateGalleryProps {
   open:    boolean
@@ -35,25 +34,24 @@ export interface TemplateGalleryProps {
   onCreated?: () => void
 }
 
-// Icon token → component (the gallery's small presentation map).
-const ICONS: Record<string, React.ReactNode> = {
-  speed:        <SpeedIcon fontSize="large" />,
-  'insert-chart': <InsertChartIcon fontSize="large" />,
-  dashboard:    <DashboardIcon fontSize="large" />,
-}
-
-/** A selected source of config: a committed starter OR the data-first generate. */
+/** A selected source of config: a REGISTERED page starter OR the data-first generate. */
 type Choice =
-  | { kind: 'starter'; template: StarterTemplate }
+  | { kind: 'starter'; preset: PresetDecl }
   | { kind: 'generate'; config: NodePageConfig }
 
 export function TemplateGallery({ open, onClose, onCreated }: TemplateGalleryProps) {
-  const active = useActiveProfile()
+  const active  = useActiveProfile()
+  const locale  = useActiveLocales()[0] ?? 'ka'
   const [choice,  setChoice]  = useState<Choice | null>(null)
   const [titleKa, setTitleKa] = useState('')
   const [titleEn, setTitleEn] = useState('')
   const [error,   setError]   = useState<string | null>(null)
   const [busy,    setBusy]    = useState(false)
+
+  // The starters are REGISTERED declarations (ADR-050 R3), read from the ONE preset
+  // registry — no fixture file (FF-STARTERS-ARE-DECLARATIONS). A new starter appears
+  // here by being registered, with zero gallery code.
+  const starters = useMemo<PresetDecl[]>(() => pageStarterList(), [])
 
   // Data-first: a generated page exists only when the bound cube yields one.
   const generated = useMemo<NodePageConfig | null>(
@@ -71,7 +69,9 @@ export function TemplateGallery({ open, onClose, onCreated }: TemplateGalleryPro
     if (!titleKa.trim()) { setError('სათაური (ka) აუცილებელია'); return }
     setBusy(true); setError(null)
     try {
-      const config = choice.kind === 'starter' ? choice.template.config : choice.config
+      // A starter's page-root seed is expanded into the valid NodePageConfig the create
+      // path consumes (the SAME NodeSeed grammar element presets use — not a new dialect).
+      const config = choice.kind === 'starter' ? seedToPageConfig(choice.preset.seed) : choice.config
       const page = await createFromTemplate(config, { ka: titleKa.trim(), en: (titleEn || titleKa).trim() })
       reset(); onClose(); onCreated?.()
       void page
@@ -81,7 +81,7 @@ export function TemplateGallery({ open, onClose, onCreated }: TemplateGalleryPro
     }
   }
 
-  const isStarterSelected = (id: string) => choice?.kind === 'starter' && choice.template.id === id
+  const isStarterSelected = (id: string) => choice?.kind === 'starter' && choice.preset.id === id
   const isGenerateSelected = choice?.kind === 'generate'
 
   return (
@@ -95,19 +95,21 @@ export function TemplateGallery({ open, onClose, onCreated }: TemplateGalleryPro
         {/* ── Starter templates (semantic radio group — keyboard navigable) ── */}
         <Box role="radiogroup" aria-label="საწყისი შაბლონები"
              sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 2 }}>
-          {STARTER_TEMPLATES.map((t) => {
-            const selected = isStarterSelected(t.id)
+          {starters.map((preset) => {
+            const selected = isStarterSelected(preset.id)
+            const name = resolveLocaleString(preset.label, locale, 'en') || preset.id
+            const desc = preset.description ? resolveLocaleString(preset.description, locale, 'en') : ''
             return (
               <Box
-                key={t.id}
+                key={preset.id}
                 role="radio"
                 aria-checked={selected}
-                aria-label={t.name.ka}
+                aria-label={name}
                 tabIndex={0}
-                data-testid={`template-${t.id}`}
-                onClick={() => setChoice({ kind: 'starter', template: t })}
+                data-testid={`template-${preset.id}`}
+                onClick={() => setChoice({ kind: 'starter', preset })}
                 onKeyDown={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setChoice({ kind: 'starter', template: t }) }
+                  if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setChoice({ kind: 'starter', preset }) }
                 }}
                 sx={{
                   p: 2, borderRadius: 1, cursor: 'pointer', userSelect: 'none',
@@ -118,9 +120,9 @@ export function TemplateGallery({ open, onClose, onCreated }: TemplateGalleryPro
                   '&:focus-visible': { outline: 2, outlineColor: 'primary.main' },
                 }}
               >
-                <Box sx={{ color: 'primary.main' }}>{ICONS[t.icon] ?? <WidgetsIcon fontSize="large" />}</Box>
-                <Typography variant="subtitle1" fontWeight={600}>{t.name.ka}</Typography>
-                <Typography variant="caption" color="text.secondary">{t.description.ka}</Typography>
+                <Box sx={{ color: 'primary.main', display: 'flex' }}>{renderPaletteIcon(preset.icon, { fontSize: 'large' })}</Box>
+                <Typography variant="subtitle1" fontWeight={600}>{name}</Typography>
+                <Typography variant="caption" color="text.secondary">{desc}</Typography>
               </Box>
             )
           })}

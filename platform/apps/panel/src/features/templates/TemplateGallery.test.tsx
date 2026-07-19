@@ -7,9 +7,15 @@
 //    - confirming a selection calls createFromTemplate with the chosen config +
 //      the entered title (the persistence path, mocked here).
 //
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, beforeAll } from 'vitest'
 import { render, screen, fireEvent, within } from '@testing-library/react'
+import { setupCanvasRegistry } from '../../canvas/setupCanvasRegistry'
 import type { CubeProfile } from '../../lib/cubeApi'
+
+// The starters are REGISTERED declarations (ADR-050 R3): the gallery reads
+// pageStarterList() (presetRegistry ∩ registered page kinds), so the registry must
+// be booted for the starters to project — the same setup the fitness suite runs.
+beforeAll(() => { setupCanvasRegistry() })
 
 // A ready profile so the data-first option renders + generates a page.
 const PROFILE: CubeProfile = {

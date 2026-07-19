@@ -30,6 +30,7 @@ import { perspectiveRegistry }   from '@statdash/engine'
 import { registerStoreBuilders } from '@statdash/plugins/datasources'
 import { registerPresentationProjectors } from '@statdash/plugins/presentation'
 import { registerCanvasPresets } from './canvasPresets'
+import { registerPageStarters }  from '../features/templates/pageStarters'
 
 let done = false
 
@@ -106,6 +107,15 @@ export function setupCanvasRegistry(): void {
   //  planPresetInserts. Domain metric ids live here (above the arrow), never in the
   //  engine's PresetRegistry mechanism.
   registerCanvasPresets()
+
+  // ── Page starters as declarations (ADR-050 R3) ────────────────────────────
+  //
+  //  The page-level half of the composed-preset primitive: page starters register
+  //  into the SAME presetRegistry as page-root PresetDecls (seed.type = a registered
+  //  page KIND). The create-page gallery projects `pageStarterList()`; the element
+  //  palette excludes page-kind seeds. This REPLACES the starterTemplates.ts fixture
+  //  (FF-STARTERS-ARE-DECLARATIONS) — ONE registry home for every curated whole.
+  registerPageStarters()
 
   // ── Canvas anchor middleware (AOP — engine-supported, no engine change) ──
   //
