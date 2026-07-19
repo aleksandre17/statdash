@@ -143,6 +143,35 @@ describe('registered-preset projection — a real preset projects into the palet
     expect((chart.props.data as { type?: string })?.type).toBe('query')
   })
 
+  // ── FF-PRESET-CHILD-BORN-RENDERABLE — a minimal chart child seed lands renderable ──
+  //  R2 regression (0102 · live-verify): the section→chart preset's chart child is a
+  //  MINIMAL seed (`{type:'chart', data}` — NO restated view/chartType). Its birth
+  //  defaults must arrive via getDefaults('chart') — merged UNDER the seed by
+  //  buildSeedInserts (root AND child) — so the child is born with the MARK
+  //  (`chartType`) it cannot render without (absent → useChartOutput.resolveChartType
+  //  reads `.$ctx` off undefined once bound → the crash NodeErrorBoundary caught) and
+  //  its semantic `view.role`. The fix is TYPE-AGNOSTIC (the chart declares its own
+  //  defaults; no per-type branch in the insert path), so this guards the mechanism
+  //  through its most-exposed instance.
+  it('a composed preset whose child is a minimal bound chart resolves a RENDERABLE node (birth defaults present)', () => {
+    const preset = presetRegistry.get('preset-section-chart')!
+    const page = basePage()
+    const plan = resolveInsertPlan(page, null, preset.seed.type)
+    const ops  = planPresetInserts(preset.seed, plan, ids())
+    const patched = insertNodesPatch(state(page), 'p1', ops).pages![0] as CanvasPage
+
+    const sectionId = patched.nodeIds[patched.nodeIds.length - 1]
+    const chart = patched.nodes[patched.nodes[sectionId].childIds[0]]
+    expect(chart.type).toBe('chart')
+    // The bound DataSpec landed (rows will resolve → the chart REACHES its shell)...
+    expect((chart.props.data as { type?: string })?.type).toBe('query')
+    // ...and it arrived with the MARK it needs to render (getDefaults, merged under the seed).
+    // Absent this, resolveChartType throws on `.$ctx` the moment rows resolve.
+    expect(chart.props.chartType).toBe('bar')
+    // ...and its semantic view role (dual-view toggle recognises the chart view).
+    expect((chart.props.view as { role?: string })?.role).toBe('chart')
+  })
+
   it('a bound-metric preset lands its per-item governed measure (not a stray node.data)', () => {
     const preset = presetRegistry.get('preset-kpi-metric')!
     const page = basePage()

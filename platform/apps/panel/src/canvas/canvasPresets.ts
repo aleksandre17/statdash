@@ -22,9 +22,13 @@ import type { PresetDecl } from '@statdash/react/engine'
  *           .measure — NOT a node.data bind, which a kpi-strip does not read; WORK-0083)
  *           PLUS a pre-wired `trend` (P2a Lane 3) on the item.
  *   • chart — a node-level bound DataSpec (P1 `query`) + a pre-wired `view.visibleWhen`
- *           (P2a) — merged over the default view.role so the chart still renders as a chart.
+ *           (P2a) — merged OVER the chart's birth defaults (`getDefaults('chart')` →
+ *           chartType + view.role) so the pre-wired visibility composes without clobbering
+ *           the mark/role the chart needs to render.
  *   • section→chart — a composed SUBTREE (a section wrapping a bound chart) — proves the
  *           recursive seed build + the shared placement resolver land a whole with bound data.
+ *           The child chart is a MINIMAL seed (`{type:'chart', data}`, NO restated view/mark):
+ *           `getDefaults('chart')` supplies chartType + view.role, so the whole renders.
  */
 export const STARTER_PRESETS: PresetDecl[] = [
   {
