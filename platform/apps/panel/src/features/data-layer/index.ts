@@ -14,7 +14,8 @@ export { DataModelingPanel } from './DataModelingPanel'
 export { QuerySpecEditor } from './editors/QuerySpecEditor'
 export { TimeseriesEditor } from './editors/TimeseriesEditor'
 export { GrowthEditor } from './editors/GrowthEditor'
-export { RatioListEditor } from './editors/RatioListEditor'
+// ratio-list migrated to the SCHEMA arm (ADR-049 P1 step 4) — authored by the
+// generic Inspector (SPEC_CATALOG['ratio-list'].schema), no bespoke editor.
 export { RowListEditor } from './editors/rowlist/RowListEditor'
 export { RowSpecEditor } from './editors/rowlist/RowSpecEditor'
 export { TransformEditor } from './editors/TransformEditor'

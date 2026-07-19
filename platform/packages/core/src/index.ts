@@ -437,7 +437,7 @@ export { formatterRegistry }                                             from '.
 
 // ── Spec Capability Catalog — Self-Describing Module (Panel / Constructor) ─
 export type { SpecField, SpecDescriptor }  from './spec-catalog'
-export { SPEC_CATALOG }                    from './spec-catalog'
+export { SPEC_CATALOG, resolveSpecAuthoring } from './spec-catalog'
 
 // ── FilterDerive ops → @statdash/expr plugin registration ─────────────
 //
