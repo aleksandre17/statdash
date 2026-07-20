@@ -64,6 +64,15 @@ function measureRefs(spec: DataSpec): string[] {
         const m = head.query.measure
         return Array.isArray(m) ? [...m] : [m]
       }
+      // Value-cell head (ADR-046 Addendum 4 / DU4a) — the internal point-series hoisted to a
+      // `{op:'source', over, code}` head. Its `code` is the SAME measure ref the folded-FROM
+      // `timeseries`/`growth` surfaced ([spec.code]), so store-routing (specDataSource →
+      // resolveMeasureRef(code).dataSource) is BYTE-IDENTICAL to the legacy spec. Omitting this
+      // arm dropped the ref → specDataSource returned undefined → the folded spec fell back to
+      // the FIRST/default store (the cross-store lying-grid: a `gdp`-homed measure browsed on a
+      // regional-first floor read the wrong cube → fabricated 0s). This completes the DU4a head
+      // across the store-routing traversal (readSource/sourceHeadObs/extractDeps already had it).
+      if ('over' in head) return [head.code]
       return []
     }
     case 'pivot':

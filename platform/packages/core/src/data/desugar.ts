@@ -107,6 +107,12 @@ function desugarTimeseries(spec: Extract<DataSpec, { type: 'timeseries' }>): Poi
     code:   spec.code,
     over:   TIME_DIM,
     coords: effectiveYears(spec),
+    // Law 11 (FF-CANVAS-NEVER-LIES): a `timeseries` renders the RAW value at each year — an
+    // absent year must read as honest no-data (null), NEVER a fabricated 0. This is the ONE
+    // place the timeseries value cell is lowered, so BOTH the legacy TimeseriesResolver path
+    // (which desugars through here) and the pipeline fold (which hoists this point-series to a
+    // value-cell head) inherit the honest read — they stay byte-identical to each other.
+    noData: 'null',
   }
   if (spec.fromDim || spec.toDim || spec.timeDimension) {
     ps.clamp = { fromDim: spec.fromDim, toDim: spec.toDim, timeDimension: spec.timeDimension }
@@ -243,6 +249,10 @@ export function desugarToPipeline(spec: DataSpec): DataSpec {
         op: 'source', over: ps.over, code: ps.code, coords: ps.coords,
         ...(ps.clamp ? { clamp: ps.clamp } : {}),
         ...(ps.grain ? { grain: ps.grain } : {}),
+        // Hoist the honest-missing mode (Law 11) so the folded value-cell head reconstitutes the
+        // IDENTICAL point-series in readSource — the fold's absent-cell read is byte-identical to
+        // the legacy timeseries path (both null, never a fabricated 0).
+        ...(ps.noData ? { noData: ps.noData } : {}),
       }
       const pipeline: PipelineSpec = {
         type: 'pipeline',

@@ -20,10 +20,11 @@
 //  byte-identical; `storeCell` is the honest sibling nothing is forced to adopt.
 //
 
-import type { DataStore, Observation } from './store'
+import type { DataStore, Observation, StoreQuery, GrainLevel, RollupOp } from './store'
 import { storeVal, storeObs }          from './store'
 import type { SectionContext }         from '../core/context'
 import { MEASURE_DIM }                 from '../core/context'
+import type { DimVal }                 from '../sdmx'
 import type { ObsStatus }              from '../core/provenance'
 
 // ── ValueState — the canonical interpret-level state grammar ───────────────────
@@ -144,4 +145,42 @@ export function storeCell(store: DataStore, code: string, ctx: SectionContext): 
   if (obs === null)      return okCell(n)                    // status unreadable → never regress
   if (obs.length === 0)  return n === 0 ? noDataCell() : okCell(n)  // empty scan: no-data ⟺ 0
   return okCell(n, obsStatusOf(obs[0]!))                     // real obs behind it (genuine 0 = ok)
+}
+
+// ── storeCellAt — the honest sibling of storeValAt (point read at a coordinate) ─────────
+//
+//  The value-cell resolver (PointSeriesResolver) fans out one point read per enumerated
+//  coordinate. `storeValAt` collapses an ABSENT coordinate to `0` (the same lie storeVal
+//  makes), so a displayed value cell over a coordinate the store never observed renders a
+//  fabricated 0 (Law 11 / FF-CANVAS-NEVER-LIES). `storeCellAt` is the honest read at an
+//  EXPLICIT coordinate (`at` merged over ctx.dims, exactly as storeValAt), returning a `Cell`
+//  whose `value` is `null` for a genuinely-absent (no observation) coordinate.
+//
+//  Routing MIRRORS storeValAt so the `ok` value is byte-identical:
+//    • default (no grain, sum) → storeCell at the merged coordinate: the obs-existence scan
+//      distinguishes no-data (null) from a genuine published 0 (ok), and masks a confidential
+//      cell — the full honest semantics. A cold/unreadable obs slice degrades to ok(sum),
+//      never a FALSE no-data (statistics safety, inherited from storeCell).
+//    • grain / rollup (the LOD door) → the `valAt` port query; an absent cell (no row) is
+//      honest null, a present cell is its value. (The obs-scan is annual-shaped; the LOD read
+//      trusts the store's own valAt presence.)
+export function storeCellAt(
+  store:   DataStore,
+  code:    string,
+  at:      Partial<Record<string, DimVal>>,
+  ctx:     SectionContext,
+  grain?:  Record<string, GrainLevel>,
+  rollup?: RollupOp,
+): Cell {
+  if (!code || code.trim().length === 0) return unboundCell()
+  const keys = Object.keys(at)
+  const merged: SectionContext = keys.length === 0
+    ? ctx
+    : { ...ctx, dims: { ...ctx.dims, ...at } as Record<string, DimVal> }
+  if (!grain && (rollup === undefined || rollup === 'sum')) {
+    return storeCell(store, code, merged)
+  }
+  const q: StoreQuery = { type: 'valAt', code, at, grain, rollup }
+  const raw = store.querySync(q, ctx)[0]?.['value']
+  return raw === undefined || raw === null ? noDataCell() : okCell(Number(raw))
 }

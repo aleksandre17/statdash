@@ -23,7 +23,9 @@
 import { describe, it, expect } from 'vitest'
 import { interpretSpec, extractRequirements } from './spec'
 import { desugarToPipeline }    from './desugar'
+import { desugar }              from './desugar'
 import { registerMetric }       from './metric'
+import { specDataSource, specMeasureRefs } from './metric-store'
 import { ExternalStore }        from './store-impl'
 import { defaultRegistry }      from '../registry/engine'
 import '../registry/resolvers'  // side-effect: register the built-in resolvers
@@ -425,5 +427,128 @@ describe('FF-PIPELINE-EQUIV (rows) — ratio-list & row-list stay on the DU3 fal
     expect(rows[0]!['id']).toBe('GDP')
     expect(Number(rows[0]!['value'])).toBeLessThan(0)          // negate flips the sign — a per-cell param
     expect('label' in rows[0]!).toBe(true)                     // store-meta enrichment (no explicit label)
+  })
+})
+
+// ── FF-PIPELINE-EQUIV — the value-cell fold preserves CROSS-STORE routing [Law 11 · ADR-046 Add.4] ──
+//
+//  The bug this closes: the value-cell `source` head (DU4a) is the internal PointSeriesSpec hoisted
+//  to a `{op:'source', over, code}` head. When DU4a landed it updated readSource / sourceHeadObs /
+//  extractDeps for the new head shape — but NOT `measureRefs` (metric-store.ts). So `specDataSource`
+//  of a folded value-cell pipeline surfaced NO measure ref → returned undefined → the renderer routed
+//  the spec to the FIRST/default store. A measure homed in a NON-default cube (a `gdp`-sourced metric
+//  browsed on a regional-first floor) then read the WRONG store → an empty sum → a FABRICATED 0 per
+//  coordinate (the cross-store lying grid). The corpus above never caught it: it is single-store, and
+//  store routing is not exercised by `interpretSpec(spec, ctx, ONE_STORE)`. These blocks add the
+//  missing dimension — a metric homed in a non-default store — and assert byte-identical ROUTING.
+
+// A gdp-homed governed metric (the live shape: `timeseries.code` is a metric-id, not a raw code).
+registerMetric('pipe:gdp-homed', { label: { en: 'GDP (gdp cube)' }, code: 'GDP', dataSource: 'gdp' })
+
+describe('FF-PIPELINE-EQUIV — the value-cell fold routes to the SAME store as the legacy spec', () => {
+  it('specMeasureRefs surfaces the value-cell head code (the routing gap DU4a left open)', () => {
+    const folded = desugarToPipeline({ type: 'timeseries', code: 'pipe:gdp-homed', years: [2020] })
+    // The head code IS the measure ref the legacy timeseries surfaced ([spec.code]).
+    expect(specMeasureRefs(folded)).toEqual(['pipe:gdp-homed'])
+  })
+
+  it('a folded timeseries routes to the SAME dataSource as the legacy timeseries (byte-identical)', () => {
+    const ts: DataSpec = { type: 'timeseries', code: 'pipe:gdp-homed', years: [2020] }
+    // Legacy: specDataSource(timeseries) → resolveMeasureRef(code).dataSource = 'gdp'.
+    expect(specDataSource(ts)).toBe('gdp')
+    // Folded: MUST resolve to the identical store, not undefined (the pre-fix fall-to-default lie).
+    expect(specDataSource(desugarToPipeline(ts))).toBe(specDataSource(ts))
+    expect(specDataSource(desugarToPipeline(ts))).toBe('gdp')
+  })
+
+  it('a folded single-code growth routes to the SAME dataSource as the legacy growth', () => {
+    const g: DataSpec = { type: 'growth', code: 'pipe:gdp-homed', years: [2019, 2020] }
+    expect(specDataSource(g)).toBe('gdp')
+    expect(specDataSource(desugarToPipeline(g))).toBe(specDataSource(g))
+  })
+
+  it('a raw-code value-cell head routes identically to the legacy raw timeseries (both undefined)', () => {
+    // A bare code with no MetricDef routes nowhere — the fold must NOT invent a store, so it stays
+    // byte-identical to the legacy raw timeseries (page/default store kept). No false routing.
+    const ts: DataSpec = { type: 'timeseries', code: 'GDP', years: [2020] }
+    expect(specDataSource(ts)).toBeUndefined()
+    expect(specDataSource(desugarToPipeline(ts))).toBeUndefined()
+  })
+
+  it('the folded spec resolves REAL cross-store values (not fabricated 0s) once routed correctly', () => {
+    // Two-store world: the DEFAULT (regional) store has NO GDP; the `gdp` store has it. This
+    // reproduces the live regional-first floor. Simulate the renderer's store cascade (resolveStore):
+    // route by specDataSource, falling back to the first store — exactly the react binding rule.
+    const regional = new ExternalStore([{ measure: 'GVA', time: 2020, geo: 'GE', value: 7 }])
+    const gdp      = new ExternalStore([
+      { measure: 'GDP', time: 2018, geo: 'GE', value: 80 },
+      { measure: 'GDP', time: 2019, geo: 'GE', value: 90 },
+      { measure: 'GDP', time: 2020, geo: 'GE', value: 100 },
+    ])
+    const stores: Record<string, ExternalStore> = { default: regional, gdp }
+    const route = (spec: DataSpec) => stores[specDataSource(spec) ?? 'default']!
+
+    const ts: DataSpec = { type: 'timeseries', code: 'pipe:gdp-homed', years: [2018, 2019, 2020] }
+    const c: SectionContext = { dims: { geo: 'GE' } }
+
+    // Routed to the WRONG store (the bug), GDP reads empty → all 0/null. Routed correctly → real values.
+    const legacyRows = legacyDirect(ts, c, route(ts))
+    const foldRows   = interpretSpec(desugarToPipeline(ts), c, route(desugarToPipeline(ts)))
+    expect(foldRows).toEqual(legacyRows)                       // byte-identical, cross-store
+    expect(foldRows.map((r) => r['value'])).toEqual([80, 90, 100])   // REAL GDP, not [0,0,0]
+  })
+})
+
+// ── FF-CANVAS-NEVER-LIES — the value-cell read distinguishes ABSENT from a genuine 0 [Law 11] ──
+//
+//  Even routed to the RIGHT store, a coordinate the store never observed must read as honest
+//  no-data (null), NEVER a fabricated 0 — and a GENUINE published 0 (an observation whose value
+//  is 0) must stay 0. The timeseries lowering declares `noData:'null'`, so both the legacy path
+//  (TimeseriesResolver → point-series) and the fold (value-cell head → point-series) read through
+//  the storeCell obs-existence scan. The distinction is the whole point of the Cell seam: the OLAP
+//  `val` sum collapses no-data into 0, so only the obs scan can tell them apart.
+
+describe('FF-CANVAS-NEVER-LIES — an absent value cell is null, a genuine 0 stays 0', () => {
+  // 2018 = a genuine published 0 (an observation exists); 2020 = NO observation (absent).
+  const honestStore = new ExternalStore([
+    { measure: 'GDP', time: 2018, geo: 'GE', value: 0 },
+    { measure: 'GDP', time: 2019, geo: 'GE', value: 90 },
+    // 2020: no observation at all
+  ])
+  const c: SectionContext = { dims: { geo: 'GE' } }
+  const ts: DataSpec = { type: 'timeseries', code: 'GDP', years: [2018, 2019, 2020] }
+
+  it('the fold reads null for an absent coordinate and 0 for a genuine published 0', () => {
+    const rows = interpretSpec(desugarToPipeline(ts), c, honestStore)
+    const byYear = Object.fromEntries(rows.map((r) => [r['id'], r['value']]))
+    expect(byYear['2018']).toBe(0)        // genuine published 0 — a real value, kept
+    expect(byYear['2019']).toBe(90)
+    expect(byYear['2020']).toBeNull()     // absent coordinate — honest no-data, NEVER a fabricated 0
+    expect(byYear['2020']).not.toBe(0)    // the lie the pre-Law-11 storeValAt fast-lane told
+  })
+
+  it('the fold is byte-identical to the legacy timeseries in the absent/genuine-0 case', () => {
+    // Both paths funnel through the SAME honest PointSeriesResolver (desugarTimeseries sets
+    // noData:'null'), so the honest read is shared — the fold never diverges from legacy.
+    const legacy = legacyDirect(ts, c, honestStore)
+    const fold   = interpretSpec(desugarToPipeline(ts), c, honestStore)
+    expect(fold).toEqual(legacy)
+  })
+
+  it('desugar sets noData:"null" on the timeseries lowering (both paths inherit the honest read)', () => {
+    const lowered = desugar({ type: 'timeseries', code: 'GDP', years: [2020] })
+    expect(lowered.type).toBe('point-series')
+    expect((lowered as Extract<import('../config/data-spec').ResolvableSpec, { type: 'point-series' }>).noData).toBe('null')
+    const head = (desugarToPipeline({ type: 'timeseries', code: 'GDP', years: [2020] }) as
+      Extract<DataSpec, { type: 'pipeline' }>).pipe[0]!
+    expect('noData' in head && head.noData).toBe('null')   // hoisted to the value-cell head
+  })
+
+  it('growth\'s intermediate value cell does NOT declare honest-null (GrowthResolver parity)', () => {
+    // The growth fold's source cell is consumed by the YoY tail, not displayed — it must stay on
+    // the raw storeValAt path so the fold is byte-identical to GrowthResolver's `?? 0`.
+    const head = (desugarToPipeline({ type: 'growth', code: 'GDP', years: [2019, 2020] }) as
+      Extract<DataSpec, { type: 'pipeline' }>).pipe[0]!
+    expect('noData' in head).toBe(false)
   })
 })

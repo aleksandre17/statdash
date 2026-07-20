@@ -21,6 +21,7 @@ import type { SectionContext }   from '../core/context'
 import { clampToBounds, effectiveBounds } from '../core/time-dimension'
 import type { DataStore }        from '../data/store'
 import { storeValAt, storeObs }  from '../data/store'
+import { storeCellAt }           from '../data/cell'
 import type { DimVal }           from '../sdmx'
 import type { SpecResolver }     from './engine'
 import { applyPipeline }         from '../data/transform'
@@ -49,17 +50,27 @@ export class PointSeriesResolver implements SpecResolver<PointSeriesSpec> {
       coords = clampToBounds(coords as number[], from, to)
     }
 
-    // 3. one valAt point read per coordinate (default sum ≡ storeVal(atTime), Law 1).
-    const vals = coords.map((c) =>
-      storeValAt(store, code, { ...spec.at, [over]: c }, ctx, spec.grain, spec.rollup),
-    )
-    const max = Math.max(...vals.map(Math.abs), 1)
+    // 3. one point read per coordinate (default sum ≡ storeVal(atTime), Law 1).
+    //    Honest-missing (Law 11 / FF-CANVAS-NEVER-LIES): when `noData: 'null'` is declared (the
+    //    timeseries lowering sets it — a displayed value cell must not fabricate a 0), read via
+    //    storeCellAt so a GENUINELY-ABSENT coordinate yields `null` (obs-scan distinguishes
+    //    no-data from a genuine published 0). Absent/`'zero'` ⇒ the raw storeValAt sum, byte-
+    //    identical to the pre-Law-11 read (growth's intermediate cell keeps this path).
+    const honest = spec.noData === 'null'
+    const vals: (number | null)[] = coords.map((c) => {
+      const at = { ...spec.at, [over]: c }
+      return honest
+        ? storeCellAt(store, code, at, ctx, spec.grain, spec.rollup).value
+        : storeValAt(store, code, at, ctx, spec.grain, spec.rollup)
+    })
+    const max = Math.max(...vals.map((v) => Math.abs(v ?? 0)), 1)
 
     const rows: EngineRow[] = coords.map((c, i) => ({
       id:    String(c),
       label: String(c),
-      value: vals[i],
-      pct:   (Math.abs(vals[i]) / max) * 100,
+      // number for a real cell, `null` for an honest-missing coordinate (never a fake 0).
+      value: vals[i] as DimVal,
+      pct:   (Math.abs(vals[i] ?? 0) / max) * 100,
     }))
 
     if (!spec.pipe?.length) return rows

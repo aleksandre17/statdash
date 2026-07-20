@@ -273,6 +273,12 @@ export type SourceStep =
       grain?:  Record<string, GrainLevel>
       /** Aggregation when one coordinate matches multiple finer cells (default 'sum'). */
       rollup?: RollupOp
+      /** Honest-missing mode (Law 11) — how a GENUINELY-ABSENT coordinate reads. `'null'` yields
+       *  the honest no-data state (value `null`, via the storeCell obs-scan seam) instead of a
+       *  fabricated `0`; absent/`'zero'` ⇒ byte-identical to the raw `storeValAt` sum. The
+       *  timeseries fold sets `'null'` (a raw value cell must not lie); the growth fold leaves it
+       *  absent (its value cell is an intermediate the YoY tail consumes — GrowthResolver parity). */
+      noData?: 'null' | 'zero'
       /** Numeric range clamp on the enumerated coordinate — folds fromDim/toDim + timeDimension
        *  via the SAME effectiveBounds the val-cell specs used (byte-identical). */
       clamp?:  { fromDim?: string; toDim?: string; timeDimension?: TimeDimensionSpec } }
@@ -377,6 +383,15 @@ export interface PointSeriesSpec {
   grain?:  Record<string, GrainLevel>
   /** Aggregation when one coordinate matches multiple finer cells (default 'sum'). */
   rollup?: RollupOp
+  /**
+   * Honest-missing mode (Law 11 / FF-CANVAS-NEVER-LIES) — how a GENUINELY-ABSENT coordinate
+   * reads. `'null'` yields the honest no-data state (`value: null`, decided via the storeCell
+   * obs-existence scan so "no observation" ≠ "a genuine published 0"); absent/`'zero'` ⇒
+   * byte-identical to the raw `storeValAt` sum (the pre-Law-11 fast lane). The timeseries
+   * lowering sets `'null'` (a displayed value cell must not fabricate a 0); growth leaves it
+   * absent so its intermediate value cell stays byte-identical to GrowthResolver's `?? 0`.
+   */
+  noData?: 'null' | 'zero'
   /**
    * Optional numeric range clamp on the enumerated coordinate — folds the legacy
    * fromDim/toDim + timeDimension via effectiveBounds (the SAME machinery the val-cell
