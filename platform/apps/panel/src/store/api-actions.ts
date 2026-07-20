@@ -17,6 +17,7 @@ import type {
   CanvasPage,
 } from '../types/constructor'
 import { useConstructorStore } from './constructor.store'
+import { useDataSpecSaveStore } from './dataSpecSave.store'
 import {
   configApi,
   ApiError,
@@ -198,20 +199,66 @@ export async function createDataSpec(
   return spec
 }
 
-export async function updateDataSpec(
-  id: string,
-  patch: Partial<NamedDataSpec>,
-): Promise<void> {
-  useConstructorStore.getState().updateDataSpec(id, patch) // optimistic
+// ── Edit persistence — optimistic store + debounced, coalesced PUT ───────────────
+//
+//  Root-cause of the data-loss defect (b1e9f8e0 / AR-49 M1.3a): creating a spec
+//  persisted (createDataSpec → POST) but EDITING one wrote store-only, so edits were
+//  lost on reload. This restores the create/edit symmetry — an edit now durably PUTs.
+//
+//  Create is one gesture = one call; an EDIT is different — the workbench emits
+//  onChange on every shaping keystroke, so a PUT-per-change would flood the server.
+//  So the OPTIMISTIC store write stays IMMEDIATE (the controlled workbench value
+//  reflects the edit at once — snappy), while the durable PUT is DEBOUNCED and
+//  COALESCED per id (the latest patch wins). `flushDataSpecSaves()` forces every
+//  pending PUT out at once — the panel calls it on unmount / when leaving a spec, so
+//  an edit can NEVER be dropped by navigating away inside the debounce window
+//  (Law 11 — the edit is never silently lost). Failure surfaces an honest error on
+//  the save store; success flips it to `saved` — never a fake-saved state.
+const SPEC_SAVE_DEBOUNCE_MS = 400
+const pendingSpecPatches = new Map<string, Partial<NamedDataSpec>>()
+const pendingSpecTimers  = new Map<string, ReturnType<typeof setTimeout>>()
+
+/** Run the coalesced PUT for one id NOW (clears its timer + pending patch first). */
+async function flushSpec(id: string): Promise<void> {
+  const timer = pendingSpecTimers.get(id)
+  if (timer) clearTimeout(timer)
+  pendingSpecTimers.delete(id)
+  const patch = pendingSpecPatches.get(id)
+  if (!patch) return
+  pendingSpecPatches.delete(id)
+  useDataSpecSaveStore.getState().setDataSpecSave(id, { phase: 'saving' })
   try {
     await configApi.dataSpecs.update(id, {
       name: patch.name,
       description: patch.description,
       spec: patch.spec as Record<string, unknown> | undefined,
     })
+    useDataSpecSaveStore.getState().setDataSpecSave(id, { phase: 'saved' })
   } catch (e) {
+    const message = e instanceof Error ? e.message : 'Save failed'
     console.error('[api] updateDataSpec failed', e)
+    // Honest state (Law 11) — never silently drop the edit, never show fake-saved.
+    useDataSpecSaveStore.getState().setDataSpecSave(id, { phase: 'error', error: message })
   }
+}
+
+export function updateDataSpec(id: string, patch: Partial<NamedDataSpec>): void {
+  // 1) Optimistic + IMMEDIATE — the controlled workbench reflects the edit at once.
+  useConstructorStore.getState().updateDataSpec(id, patch)
+  // 2) Coalesce the patch (latest field wins) and (re)arm the debounced durable PUT.
+  pendingSpecPatches.set(id, { ...pendingSpecPatches.get(id), ...patch })
+  const existing = pendingSpecTimers.get(id)
+  if (existing) clearTimeout(existing)
+  pendingSpecTimers.set(id, setTimeout(() => { void flushSpec(id) }, SPEC_SAVE_DEBOUNCE_MS))
+}
+
+/**
+ * Force every pending spec PUT out synchronously — the panel calls this on unmount /
+ * when leaving a spec so a debounced edit is durably written before navigation, never
+ * dropped. Idempotent: a no-op when nothing is pending.
+ */
+export async function flushDataSpecSaves(): Promise<void> {
+  await Promise.all([...pendingSpecTimers.keys()].map((id) => flushSpec(id)))
 }
 
 export async function deleteDataSpec(id: string): Promise<void> {

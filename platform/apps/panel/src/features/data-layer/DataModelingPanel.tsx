@@ -33,7 +33,8 @@ const DataWorkbench = lazy(() =>
 import { ShowMe } from './showme/ShowMe'
 import { SourceAuthoringPanel } from '../datasources/SourceAuthoringPanel'
 import { ExcelUpload } from '../datasources/ExcelUpload'
-import { deleteDataSource, createDataSpec, refreshDataSources } from '../../store/api-actions'
+import { deleteDataSource, createDataSpec, refreshDataSources, updateDataSpec, flushDataSpecSaves } from '../../store/api-actions'
+import { useDataSpecSave } from '../../store/dataSpecSave.store'
 import type { ConnectionStatus } from '../../types/constructor'
 import './data-modeling-panel.css'
 
@@ -122,7 +123,6 @@ export function DataModelingPanel() {
   const specs   = useDataSpecs()
   const reorderSources = useConstructorStore((s) => s.reorderDataSources)
   const reorderSpecs   = useConstructorStore((s) => s.reorderDataSpecs)
-  const updateDataSpec = useConstructorStore((s) => s.updateDataSpec)
   const sensors        = useDndSensors()
   const en = (useActiveLocales()[0] ?? 'ka') === 'en'
 
@@ -202,6 +202,20 @@ export function DataModelingPanel() {
   //  path, not a raw Select (FF-ONE-SPEC-EDITOR).
   const selectedSpecId = selectedSpec?.id
 
+  // ── Durable edit persistence (data-loss fix) ───────────────────────────────────
+  //  Every workbench onChange (BOTH the three-pane pipeline shaping AND the fallback-
+  //  lane non-pipeline edit funnel through the ONE onChange below) persists through the
+  //  api-action `updateDataSpec`: immediate optimistic store write (snappy controlled
+  //  value) + a debounced, coalesced PUT. Leaving a spec (back-to-list / selecting
+  //  another / unmount) FLUSHES any pending PUT so a debounced edit is never dropped by
+  //  navigation. The save phase is surfaced honestly in the head (Law 11).
+  const save = useDataSpecSave(selectedSpecId)
+  useEffect(() => {
+    if (!selectedSpecId) return
+    // Cleanup fires on id change AND on unmount → flush the spec being left.
+    return () => { void flushDataSpecSaves() }
+  }, [selectedSpecId])
+
   // The workbench takes over the panel full-width (the CRAFT room its three panes need —
   // the same reason the inspector escalates it to a full-screen focus-view). Bring it into
   // view on arrival (the handoff lands the steward here from another scroll position).
@@ -233,6 +247,21 @@ export function DataModelingPanel() {
             color="secondary"
             variant="outlined"
           />
+          {/* Honest save state (Law 11) — never a fake "saved". The error chip retries
+              the durable PUT with the current spec; success/saving are informational. */}
+          {save?.phase === 'saving' && (
+            <Chip size="small" variant="outlined" data-testid="spec-save-status"
+              label={en ? 'Saving…' : 'ინახება…'} />
+          )}
+          {save?.phase === 'saved' && (
+            <Chip size="small" color="success" variant="outlined" data-testid="spec-save-status"
+              label={en ? 'Saved' : 'შენახულია'} />
+          )}
+          {save?.phase === 'error' && (
+            <Chip size="small" color="error" clickable data-testid="spec-save-status"
+              onClick={() => updateDataSpec(selectedSpec.id, { spec: selectedSpec.spec })}
+              label={en ? `Not saved — retry` : 'ვერ შეინახა — თავიდან'} />
+          )}
         </Box>
 
         <Suspense fallback={<SuspenseFallback label={en ? 'Loading workbench' : 'იტვირთება ვორქბენჩი'} />}>

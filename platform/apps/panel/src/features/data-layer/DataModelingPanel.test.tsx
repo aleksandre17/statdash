@@ -25,8 +25,11 @@ vi.mock('../../discovery/MetricPalette', () => ({
   MetricPalette: () => <button data-testid="mock-metric-palette">pick</button>,
 }))
 
-// createDataSpec is the ONE persistence path — the in-workspace cube seed writes through it.
-// Mock it to add the spec to the store synchronously (no network), returning the entity.
+// The API persistence path is mocked (no network in unit tests). createDataSpec adds
+// to the store synchronously (the in-workspace cube seed writes through it); updateDataSpec
+// writes the optimistic patch to the store synchronously (so "store reflects the edit"
+// assertions hold) AND is a spy so an edit's DURABLE persistence can be asserted — the
+// real action's debounced PUT + flush is covered in store/dataSpecPersist.test.ts.
 vi.mock('../../store/api-actions', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../../store/api-actions')>()
   return {
@@ -36,6 +39,10 @@ vi.mock('../../store/api-actions', async (importOriginal) => {
       useConstructorStore.getState().addDataSpec(created)
       return created
     }),
+    updateDataSpec: vi.fn((id: string, patch: Partial<NamedDataSpec>) => {
+      useConstructorStore.getState().updateDataSpec(id, patch)
+    }),
+    flushDataSpecSaves: vi.fn(async () => {}),
   }
 })
 
@@ -101,17 +108,24 @@ describe('DataModelingPanel — relocated data authoring (AR-49 M1.3)', () => {
     expect(screen.queryByTestId('workbench-rail')).toBeNull()
   })
 
-  it('editing a NON-pipeline spec in the fallback lane writes through the same store action (updateDataSpec)', async () => {
+  it('editing a NON-pipeline spec in the fallback lane PERSISTS through the api-action updateDataSpec (durable, not store-only)', async () => {
+    const { updateDataSpec } = await import('../../store/api-actions')
     renderPanel()
     fireEvent.click(screen.getByText('Manual rows'))
     const lane = await screen.findByTestId('workbench-fallback-lane')
     // row-list lands on the JSON fallback textarea (no rich editor booted) — an edit there
-    // writes through the SAME updateDataSpec store action the workbench uses.
+    // must reach the API-persisting updateDataSpec (PUT), not the store-only action (the
+    // data-loss defect: fallback-lane edits were lost on reload).
     const box = within(lane).getByRole('textbox')
     fireEvent.change(box, { target: { value: '{"type":"row-list","rows":[{"a":1}]}' } })
+    // The edit is optimistically reflected in the store…
     const saved = useConstructorStore.getState().dataSpecs.find((s) => s.id === 'spec-r')!.spec
     expect(saved.type).toBe('row-list')
     expect((saved as Extract<DataSpec, { type: 'row-list' }>).rows).toHaveLength(1)
+    // …AND it went through the durable api-action with the edited spec (not store-only).
+    expect(updateDataSpec).toHaveBeenCalledWith('spec-r', {
+      spec: { type: 'row-list', rows: [{ a: 1 }] },
+    })
   })
 
   it('selecting a source reveals the authoring panel with delete', () => {
