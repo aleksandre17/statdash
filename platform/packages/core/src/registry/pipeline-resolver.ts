@@ -23,7 +23,7 @@
 //
 
 import type { EngineRow }         from '../data/encoding'
-import type { DataSpec, PipelineSpec, PipeStep, SourceStep, MetricRef } from '../config/data-spec'
+import type { DataSpec, PipelineSpec, PipeStep, SourceStep, MetricRef, PointSeriesSpec } from '../config/data-spec'
 import type { SectionContext }    from '../core/context'
 import { atTime, TIME_DIM, MEASURE_DIM } from '../core/context'
 import type { DataStore }         from '../data/store'
@@ -142,6 +142,7 @@ export function sourceHeadObs(head: SourceStep | undefined): ObsQuery | undefine
   if (!head || head.op !== 'source') return undefined
   if ('query' in head)   return head.query
   if ('metrics' in head) return hasSourceGrain(head) ? undefined : { measure: head.metrics }
+  if ('over' in head)    return { measure: head.code }   // value-cell — warms the enumerate + valAt reads
   return undefined   // inline rows — read-free
 }
 
@@ -171,6 +172,17 @@ function readSource(head: SourceStep | undefined, ctx: SectionContext, store: Da
       fromDim: head.clamp?.fromDim, toDim: head.clamp?.toDim, timeDimension: head.clamp?.timeDimension,
     }
     return defaultRegistry.spec('query')?.resolve(querySpec, ctx, store) ?? []
+  }
+
+  // Value-cell (store-aware POINT read): the internal PointSeriesSpec hoisted to a `source`
+  // head — reconstitute the point-series (drop `op`, add its discriminant) and delegate to the
+  // already-registered, already-proven PointSeriesResolver. NO new read path / store port —
+  // the read is the SAME storeValAt fan-out FF-DESUGAR-EQUIV proves row-identical for timeseries,
+  // so the fold is byte-identical BY CONSTRUCTION (ADR-046 Addendum 4).
+  if ('over' in head) {
+    const { op: _op, ...rest } = head
+    const pointSeries: PointSeriesSpec = { type: 'point-series', ...rest }
+    return defaultRegistry.spec('point-series')?.resolve(pointSeries, ctx, store) ?? []
   }
 
   // Inline: literal rows (subsumes transform.source) — read-free.

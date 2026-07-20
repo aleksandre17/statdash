@@ -232,6 +232,15 @@ export type DataSpec =
 //      `storeObs`/`resolveQueryMeasures` read + `effectiveBounds` post-fetch clamp the
 //      `query` DataSpec uses (byte-identical to QueryResolver).
 //    • inline — literal `rows` (subsumes `transform.source`); read-free.
+//    • value-cell (store-aware POINT read) — a bare `over` (+ `code`): ENUMERATES a generic
+//      `over` dimension's coordinates and reads a scalar `valAt` cell per coordinate (Add.4,
+//      card 0102). This IS the internal `PointSeriesSpec` hoisted to a `source` head — the
+//      store-aware value-cell primitive the `metrics`/`query`/`rows` heads cannot express
+//      (metrics emits the grain/browse shape, query emits RAW unsummed obs, rows is literal).
+//      It resolves by DELEGATION to the already-proven PointSeriesResolver (no new read path,
+//      no new store port). The desugar target for the val-cell convenience kinds (timeseries
+//      → here; growth/ratio-list/row-list sequenced) — a source VARIANT, not a fifth grammar
+//      (Law 10): one structurally-discriminated union member; the tail verbs stay unchanged.
 //
 //  100% JSON-serializable — data only (Law 2). `op:'source'` is registered in the
 //  runtime step-registry with `category:'get'` (transform/index.ts) so the 7-verb
@@ -255,6 +264,18 @@ export type SourceStep =
       /** Range clamp folded post-fetch via effectiveBounds — mirrors QueryResolver's fromDim/toDim/timeDimension. */
       clamp?: { fromDim?: string; toDim?: string; timeDimension?: TimeDimensionSpec } }
   | { op: 'source'; rows: Record<string, DimVal>[] }
+  | { op: 'source'; over: string; code: string
+      /** Explicit coordinate list; absent ⇒ the store's distinct(over), ascending. */
+      coords?: readonly DimVal[] | 'all'
+      /** Fixed base coordinate merged into every read (e.g. a pinned geo). */
+      at?:     Partial<Record<string, DimVal>>
+      /** Generic per-dim grain / LOD, forwarded to valAt. */
+      grain?:  Record<string, GrainLevel>
+      /** Aggregation when one coordinate matches multiple finer cells (default 'sum'). */
+      rollup?: RollupOp
+      /** Numeric range clamp on the enumerated coordinate — folds fromDim/toDim + timeDimension
+       *  via the SAME effectiveBounds the val-cell specs used (byte-identical). */
+      clamp?:  { fromDim?: string; toDim?: string; timeDimension?: TimeDimensionSpec } }
 
 /** One step in a pipeline: the store-aware `source` head, or a pure `TransformStep` tail step. */
 export type PipeStep = SourceStep | TransformStep

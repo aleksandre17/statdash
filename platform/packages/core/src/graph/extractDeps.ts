@@ -317,6 +317,16 @@ function scanSpec(spec: DataSpec, acc: Acc, ambientDims?: readonly string[]): vo
           // Steward read ≡ the `query` branch: obs filter $ctx dims + the range clamp keys.
           scanObsQuery(head.query, acc)
           addTimeBinding(acc, head.clamp?.fromDim, head.clamp?.toDim, head.clamp?.timeDimension)
+        } else if ('over' in head) {
+          // Value-cell read ≡ the timeseries/point-series branch: the enumerated `over` axis +
+          // the fixed base-coordinate `at` pins are read deps; each coord is an OLAP point-read
+          // over the whole active coordinate (storeValAt merges ctx.dims) ⇒ ambient; the range
+          // clamp keys are time-binding edges. The SAME edges timeseries records — so the
+          // reactive graph never goes blind on the new discriminant (Addendum 4).
+          acc.dims.add(head.over)
+          if (head.at) for (const d of Object.keys(head.at)) acc.dims.add(d)
+          addAmbient(acc, ambientDims)
+          addTimeBinding(acc, head.clamp?.fromDim, head.clamp?.toDim, head.clamp?.timeDimension)
         }
         // inline `rows` head — read-free (like transform).
       }

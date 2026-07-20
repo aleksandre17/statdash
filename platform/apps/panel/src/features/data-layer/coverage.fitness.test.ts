@@ -34,7 +34,9 @@ import {
   isVisibilityOpAuthorable,
   listPerspectiveScopeKeys, getPerspectiveScopeKeySchema,
   DATASPEC_DISCRIMINANTS, PARAMDEF_TYPES, VISIBILITY_OPS,
+  desugarToPipeline,
 } from '@statdash/engine'
+import type { DataSpec } from '@statdash/engine'
 
 // ── Authoring surfaces present in the Constructor TODAY ─────────────────────────
 
@@ -257,6 +259,12 @@ describe('Coverage Fitness #1 — every renderer capability is authorable (or an
     expect(gaps, `un-surfaced perspective-scope keys not in COVERAGE_TODO: ${gaps.join(', ')}`).toEqual([])
   })
 
+  it('the store-aware value-cell kinds are a KNOWN subset of the discriminant union', () => {
+    // Guard the FF-ALL-KINDS-SHAPED enumeration against a typo/rename in VALUE_CELL_KINDS.
+    const all = new Set<string>(DATASPEC_DISCRIMINANTS)
+    expect(VALUE_CELL_KINDS.filter((k) => !all.has(k))).toEqual([])
+  })
+
   it('COVERAGE_TODO is keyed to KNOWN union members only (no stale/typo entries)', () => {
     // A stale allowlist entry (a member that no longer exists) is itself drift —
     // catch it so the gap list stays an accurate mirror of the real unions.
@@ -273,5 +281,73 @@ describe('Coverage Fitness #1 — every renderer capability is authorable (or an
     // perspectiveScope: the allowlist is empty today (deferred keys are doc-only, not
     // registered) — so any KEY in it must be a registered scope key (a stale/typo guard).
     expect(Object.keys(COVERAGE_TODO.perspectiveScope).filter((k) => !allScope.has(k))).toEqual([])
+  })
+})
+
+// ── FF-ALL-KINDS-SHAPED — the store-aware value-cell kinds fold onto the spine (shrinking gap) ──
+//
+//  ADR-051 §Consequences / ADR-046 Addendum 4 (DU4). The store-aware VALUE-CELL discriminants
+//  (each ENUMERATES coordinates and reads a scalar cell) fold onto the ONE `pipeline` spine via
+//  the value-cell `source` variant, KIND BY KIND. This gate tracks the SHRINKING gap: a kind is
+//  either FOLDED (`desugarToPipeline` lowers it to `pipeline` today) or on the explicit
+//  NOT_YET_FOLDED allowlist (keeps the DU3 fallback lane). A newly-folded kind MUST be removed
+//  from the allowlist to keep green (forcing function); a regression (a folded kind stops
+//  lowering) FAILS. DU4a folds `timeseries` (the keystone); growth/ratio-list/row-list remain.
+//
+//  Representative minimal spec per value-cell kind — enough to drive desugarToPipeline (pure,
+//  no store/ctx). `desugarToPipeline` is the shaping SSOT (NOT the live `desugar()` switch,
+//  which is deliberately un-flipped in DU4a), so this reflects the CAPABILITY, not activation.
+
+const VALUE_CELL_KINDS = ['timeseries', 'growth', 'ratio-list', 'row-list'] as const
+
+const NOT_YET_FOLDED = new Set<string>([
+  'growth',     // DU4b — source + window/derive tail (or calc-metric browse for multi-code)
+  'ratio-list', // DU4c — the MEASURE-axis explicit-cells form of the value-cell variant
+  'row-list',   // DU4d — the MEASURE-axis explicit-cells form of the value-cell variant
+])
+
+const VALUE_CELL_REP: Record<(typeof VALUE_CELL_KINDS)[number], DataSpec> = {
+  timeseries:   { type: 'timeseries', code: 'GDP', years: [2020] },
+  growth:       { type: 'growth', code: 'GDP', years: [2019, 2020] },
+  'ratio-list': { type: 'ratio-list', pairs: [{ code: 'D1', denom: 'GDP' }] },
+  'row-list':   { type: 'row-list', rows: [{ code: 'GDP' }] },
+}
+
+describe('FF-ALL-KINDS-SHAPED — value-cell kinds fold onto the pipeline spine (shrinking gap)', () => {
+  for (const kind of VALUE_CELL_KINDS) {
+    const rep = VALUE_CELL_REP[kind]
+    if (NOT_YET_FOLDED.has(kind)) {
+      it(`${kind} — NOT yet folded (DU3 fallback lane); allowlisted`, () => {
+        // Still identity: desugarToPipeline returns it UNCHANGED (its own discriminant),
+        // so its direct resolver keeps it editable during the transition.
+        expect(desugarToPipeline(rep).type).toBe(kind)
+      })
+    } else {
+      it(`${kind} — FOLDED: desugarToPipeline lowers it to the pipeline spine`, () => {
+        expect(desugarToPipeline(rep).type).toBe('pipeline')
+      })
+    }
+  }
+
+  it('timeseries folds to a value-cell `source` head (DU4a keystone)', () => {
+    const lowered = desugarToPipeline(VALUE_CELL_REP.timeseries)
+    expect(lowered.type).toBe('pipeline')
+    const head = (lowered as Extract<DataSpec, { type: 'pipeline' }>).pipe[0]!
+    expect(head.op).toBe('source')
+    expect('over' in head).toBe(true)   // the value-cell discriminant (Add.4)
+  })
+
+  it('the gap is a VISIBLE, SHRINKING list — every kind is folded OR explicitly allowlisted', () => {
+    // No value-cell kind may be silently unaccounted: it is either lowered to `pipeline`
+    // today, or a NOT_YET_FOLDED entry with a DU4 roadmap tag. (A folded kind still sitting
+    // in the allowlist also fails — keep the list honest.)
+    const gaps: string[] = []
+    for (const kind of VALUE_CELL_KINDS) {
+      const folded      = desugarToPipeline(VALUE_CELL_REP[kind]).type === 'pipeline'
+      const allowlisted = NOT_YET_FOLDED.has(kind)
+      if (!folded && !allowlisted) gaps.push(kind)
+      if (folded && allowlisted)   gaps.push(`${kind} (folded but still in NOT_YET_FOLDED — remove it)`)
+    }
+    expect(gaps, `value-cell kinds neither folded nor allowlisted: ${gaps.join(', ')}`).toEqual([])
   })
 })

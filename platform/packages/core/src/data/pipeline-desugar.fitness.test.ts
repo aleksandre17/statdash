@@ -21,7 +21,7 @@
 // @vitest-environment node
 
 import { describe, it, expect } from 'vitest'
-import { interpretSpec }        from './spec'
+import { interpretSpec, extractRequirements } from './spec'
 import { desugarToPipeline }    from './desugar'
 import { registerMetric }       from './metric'
 import { ExternalStore }        from './store-impl'
@@ -205,5 +205,71 @@ describe('FF-PIPELINE-EQUIV (rows) — the grain-∅ governed BROWSE (Addendum 2
     const rows = interpretSpec(browse, ctxRange, store)
     expect(rows.length).toBe(3)                       // the GE rows only (AM filtered out)
     expect(rows.every((r) => r['geo'] === 'GE')).toBe(true)
+  })
+})
+
+// ── FF-PIPELINE-EQUIV (rows) — the value-cell `source` variant [ADR-046 Addendum 4 · DU4a] ──
+//
+//  The KEYSTONE fold: `timeseries` (a store-aware VALUE-CELL spec — a per-coordinate storeValAt
+//  point read) now lowers onto the spine via the 4th `source` variant (the internal
+//  PointSeriesSpec hoisted to a `{op:'source', over, code, …}` head, discriminated by `over`).
+//  The head reconstitutes the IDENTICAL point-series in readSource and delegates to the SAME
+//  PointSeriesResolver — so the fold is byte-identical BY CONSTRUCTION.
+//
+//  Two-path oracle: `legacyDirect(timeseries)` = the TimeseriesResolver dispatched DIRECTLY
+//  (its own desugar → point-series lowering, the independent pre-spine path); the pipeline path
+//  = `interpretSpec(desugarToPipeline(timeseries))` (the value-cell source head → readSource →
+//  reconstituted point-series). Both funnel to PointSeriesResolver on equivalent params; the
+//  NEW code proven equivalent is the desugarToPipeline hoist + the readSource strip/unstrip
+//  round-trip. `toEqual` = same rows/order/values/nulls/fields.
+
+type TimeseriesSpec = Extract<DataSpec, { type: 'timeseries' }>
+
+const valueCellCorpus: { name: string; spec: TimeseriesSpec; ctx: SectionContext }[] = [
+  { name: 'explicit years',
+    spec: { type: 'timeseries', code: 'GDP', years: [2018, 2019, 2020] }, ctx: ctxRange },
+  { name: "'all' (store distinct asc)",
+    spec: { type: 'timeseries', code: 'GDP', years: 'all' }, ctx: ctxRange },
+  { name: 'single year',
+    spec: { type: 'timeseries', code: 'GDP', years: [2020] }, ctx },
+  { name: 'empty years',
+    spec: { type: 'timeseries', code: 'GDP', years: [] }, ctx: ctxRange },
+  { name: 'fromDim/toDim clamp (post-enumerate)',
+    spec: { type: 'timeseries', code: 'GDP', years: 'all', fromDim: 'lo', toDim: 'hi' },
+    ctx: { dims: { geo: 'GE', lo: 2019, hi: 2020 } } },
+  { name: 'timeDimension ctx-ref clamp',
+    spec: { type: 'timeseries', code: 'GDP', years: 'all',
+            timeDimension: { dim: 'time', range: [{ $ctx: 'lo' }, { $ctx: 'hi' }] } },
+    ctx: { dims: { geo: 'GE', lo: 2018, hi: 2019 } } },
+]
+
+describe('FF-PIPELINE-EQUIV (rows) — timeseries resolves identically through the value-cell source head', () => {
+  for (const { name, spec, ctx: c } of valueCellCorpus) {
+    it(name, () => {
+      // legacy = TimeseriesResolver dispatched directly (its own point-series lowering, no spine);
+      // pipeline = the value-cell source head resolved through the spine.
+      const legacy   = legacyDirect(spec, c, store)
+      const pipeline = interpretSpec(desugarToPipeline(spec), c, store)
+      expect(pipeline).toEqual(legacy)
+    })
+  }
+
+  it('the value-cell head extracts the IDENTICAL warm requirements as the lowered timeseries', () => {
+    // A directly-authored value-cell pipeline head must warm the SAME (code, dims) set the
+    // timeseries → point-series lowering warms — never [] (FF-NO-EMPTY-REQS). Shared kernel.
+    for (const { spec, ctx: c } of valueCellCorpus) {
+      expect(extractRequirements(desugarToPipeline(spec), c)).toEqual(extractRequirements(spec, c))
+    }
+  })
+
+  it('desugarToPipeline(timeseries) builds a value-cell `source` head (over/code), no tail', () => {
+    const lowered = desugarToPipeline({ type: 'timeseries', code: 'GDP', years: [2020] })
+    expect(lowered.type).toBe('pipeline')
+    const pipeline = lowered as Extract<DataSpec, { type: 'pipeline' }>
+    expect(pipeline.pipe).toHaveLength(1)                       // source head only — no tail
+    const head = pipeline.pipe[0]!
+    expect(head.op).toBe('source')
+    expect('over' in head && head.over).toBe('time')            // the value-cell discriminant
+    expect('code' in head && head.code).toBe('GDP')
   })
 })

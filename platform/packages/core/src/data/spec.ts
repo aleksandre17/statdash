@@ -4,7 +4,7 @@ import { resolveFilterForReqs }  from '../registry/resolvers'
 import { resolveMeasureRef }     from './metric'
 import type { EngineRow }        from './encoding'
 import type { DimVal, ObsQuery } from '../sdmx'
-import type { DataSpec, MetricSpec, SourceStep } from '../config/data-spec'
+import type { DataSpec, MetricSpec, SourceStep, PointSeriesSpec } from '../config/data-spec'
 import type { SectionContext }   from '../core/context'
 import { TIME_DIM }              from '../core/context'
 import { effectiveYears, isUnsetTime } from '../core/time-dimension'
@@ -172,12 +172,46 @@ function metricRequirements(spec: MetricSpec, ctx: SectionContext): Requirement[
 }
 
 /**
+ * The store-read contract of a `point-series` read (the val-cell lowering target for
+ * timeseries + the value-cell `source` head). Warm one val read per ENUMERATED coordinate
+ * (the unclamped superset — the read clamps later); 'all'/absent coords are not statically
+ * knowable, so emit ONE UNBOUNDED req per code with the enumerated `over` dim STRIPPED (Law 1
+ * — generic, not time-special) so the warmed slice spans every coordinate the resolver reads.
+ * Shared by BOTH the `point-series` case and the value-cell `source` head so FF-PIPELINE-EQUIV
+ * (requirements) holds BY CONSTRUCTION, never by parallel code that can drift.
+ */
+function pointSeriesRequirements(spec: PointSeriesSpec, ctx: SectionContext): Requirement[] {
+  const psCodes = resolveMeasureRef(spec.code).codes
+  const at = spec.at
+  const over = spec.over
+  if (spec.coords === undefined || spec.coords === 'all') {
+    const { [over]: _stripOver, ...rest } = ctx.dims
+    return psCodes.map((code) => ({
+      code, dims: { ...rest, ...at } as Record<string, DimVal>,
+    }))
+  }
+  return psCodes.flatMap((code) =>
+    (spec.coords as readonly DimVal[]).map((c) => ({
+      // `at` is Partial; the matching loop skips unset dims, so the cast is sound.
+      code, dims: { ...ctx.dims, ...at, [over]: c } as Record<string, DimVal>,
+    })),
+  )
+}
+
+/**
  * The store-read contract of a `pipeline`'s `source` head — dispatched to the SAME
  * kernel the equivalent legacy spec uses (the pure tail issues no read). This is the
  * invariant FF-PIPELINE-EQUIV proves: a desugared pipeline extracts the identical set.
  */
 function pipelineRequirements(head: SourceStep | undefined, ctx: SectionContext): Requirement[] {
   if (!head || head.op !== 'source') return []
+  if ('over' in head) {
+    // Value-cell head ≡ the `point-series` lowering: reconstitute the point-series (drop `op`,
+    // add its discriminant) and extract the SAME requirements the lowered timeseries warms —
+    // byte-identical by construction (ADR-046 Addendum 4).
+    const { op: _op, ...rest } = head
+    return pointSeriesRequirements({ type: 'point-series', ...rest }, ctx)
+  }
   if ('metrics' in head) {
     // Drop `op`, keep the generic grain (Law 1 — no privileged-dim key typed here).
     const { op: _op, ...grain } = head
@@ -219,31 +253,12 @@ export function extractRequirements(
   switch (lowered.type) {
 
     // ── point-series — the lowering target for timeseries (grain G2) ──
-    //  Warm one val read per ENUMERATED coordinate (the unclamped superset, exactly
-    //  as the old `timeseries` case warmed effectiveYears — the read clamps later).
-    case 'point-series': {
-      const psCodes = resolveMeasureRef(lowered.code).codes
-      const at = lowered.at
-      const over = lowered.over
-      // 'all'/absent coords resolve at runtime from the store (distinct(over)); the
-      // coordinate set is NOT knowable statically. Emit ONE UNBOUNDED requirement per
-      // code — the enumerated `over` dim STRIPPED from the dims (Law 1: generic, not
-      // time-special) so the warmed slice spans every coordinate the resolver reads
-      // (its obs enumerate + per-coordinate val reads). Mirrors the `query` rangeMode
-      // branch (:220): a read-issuing spec must never warm [] (FF-NO-EMPTY-REQS).
-      if (lowered.coords === undefined || lowered.coords === 'all') {
-        const { [over]: _stripOver, ...rest } = ctx.dims
-        return psCodes.map((code) => ({
-          code, dims: { ...rest, ...at } as Record<string, DimVal>,
-        }))
-      }
-      return psCodes.flatMap((code) =>
-        (lowered.coords as readonly DimVal[]).map((c) => ({
-          // `at` is Partial; the matching loop skips unset dims, so the cast is sound.
-          code, dims: { ...ctx.dims, ...at, [over]: c } as Record<string, DimVal>,
-        })),
-      )
-    }
+    //  Warm one val read per ENUMERATED coordinate (the unclamped superset, exactly as the
+    //  old `timeseries` case warmed effectiveYears — the read clamps later). The SHARED kernel
+    //  `pointSeriesRequirements` is reused by the value-cell `source` head so a directly-authored
+    //  value-cell pipeline warms the IDENTICAL set (never [] — FF-NO-EMPTY-REQS).
+    case 'point-series':
+      return pointSeriesRequirements(lowered, ctx)
 
     case 'row-list':
       // Resolve each ref through the SSOT seam so prefetch warms the underlying

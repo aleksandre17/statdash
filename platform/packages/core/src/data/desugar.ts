@@ -145,12 +145,13 @@ export function desugar(spec: DataSpec): ResolvableSpec {
     case 'transform':
     case 'pivot':      return desugarToPipeline(spec)
 
-    // NOT re-targeted (W-P5a finding — see desugarToPipeline below): `timeseries` stays on
-    // the store-aware `point-series` primitive; `growth`/`ratio-list` keep their direct
-    // resolvers. The pipeline's three `source` variants (metrics/query/rows) cannot express
-    // a per-coordinate `valAt` point read (point-series' pct row) or a per-pair `storeVal`
-    // scalar read — folding them onto the spine byte-identically needs a store-aware
-    // value-cell `source` variant, a Class-M contract change (escalated to the architect).
+    // NOT re-targeted in the LIVE switch (DU4a is capability + proof only — the emission flip
+    // is a later gated step): `timeseries` stays on the store-aware `point-series` primitive
+    // here; `growth`/`ratio-list` keep their direct resolvers. The value-cell `source` variant
+    // that lets timeseries fold onto the spine NOW EXISTS (ADR-046 Addendum 4) and
+    // `desugarToPipeline(timeseries)` produces it (proven byte-identical by the FF-PIPELINE-EQUIV
+    // value-cell corpus) — but flipping this live switch to the spine is deliberately deferred so
+    // DU4a stays revert-clean. `growth`/`ratio-list`/`row-list` await their own folds (DU4b–d).
     case 'timeseries': return desugarTimeseries(spec)
     default:           return spec
   }
@@ -173,21 +174,22 @@ export function desugar(spec: DataSpec): ResolvableSpec {
 //  UNCHANGED (identity) so callers can map the whole corpus uniformly.
 //
 //  The mapping IS SPEC §1.3's table:
-//    query     → [ source(obsQuery + clamp), …query.pipe ]
-//    transform → [ source(inline rows),      …steps       ]
-//    pivot     → [ source(inline rows),      …melt/cast/… ]   (via desugarPivot)
+//    query      → [ source(obsQuery + clamp),        …query.pipe ]
+//    transform  → [ source(inline rows),             …steps       ]
+//    pivot      → [ source(inline rows),             …melt/cast/… ]   (via desugarPivot)
+//    timeseries → [ source(over=TIME_DIM, code, …) ]                  (via desugarTimeseries)
 //
-//  W-P5a FINDING — timeseries/growth/ratio-list are NOT lowered here (they fall through to
-//  identity). They are the store-aware VALUE-CELL specs: `timeseries` lowers to the
-//  `point-series` primitive (per-coordinate `storeValAt` sum + a `pct` row); `growth`
-//  reads prev/cur via `storeVal(atTime)` and computes YoY; `ratio-list` reads a `storeVal`
-//  scalar per numerator/denominator pair. NONE is expressible as a `{metrics|query|rows}`
-//  `source` head + a pure tail: the `metrics` head (MetricResolver) emits a different row
-//  shape (`{…tuple, id, label, series, metric, value}`, no `pct`) and the `query` head
-//  emits RAW obs (unsummed), so any of these three lowered onto the spine CRACKS row parity.
-//  Byte-identically folding them requires a 4th, store-aware `source` variant (a point/val
-//  read) — a Class-M contract change on the `SourceStep` union owned by the architect, not a
-//  build-wave decision. Kept on their direct/point-series resolvers; escalated in the report.
+//  DU4a FOLD (ADR-046 Addendum 4) — the value-cell `source` variant closes the W-P5a gap:
+//  `timeseries` is a store-aware VALUE-CELL spec (per-coordinate `storeValAt` point read + a
+//  `pct` row), which the `{metrics|query|rows}` heads cannot express (metrics emits the grain
+//  shape, query emits RAW unsummed obs). The 4th variant — the internal `PointSeriesSpec`
+//  hoisted to a `source` head (discriminated by `over`) — lets it fold: `desugarTimeseries`
+//  produces the point-series, and this arm hoists it to the head verbatim, so the read is the
+//  SAME PointSeriesResolver fan-out and the fold is byte-identical BY CONSTRUCTION.
+//
+//  STILL on the DU3 fallback lane (not yet folded, DU4b–d): `growth` (source + window/derive
+//  tail, or calc-metric browse for multi-code), `ratio-list`/`row-list` (the MEASURE-axis
+//  explicit-cells form of the value-cell variant). Each returns identity here until proven.
 //
 export function desugarToPipeline(spec: DataSpec): DataSpec {
   switch (spec.type) {
@@ -220,10 +222,33 @@ export function desugarToPipeline(spec: DataSpec): DataSpec {
       // `transform` case above → a `source(inline rows)` head + the pure melt/cast tail. Proven
       // row-identical by the FF-DESUGAR-EQUIV pivot corpus resolving through interpretSpec.
       return desugarToPipeline(desugarPivot(spec))
+    case 'timeseries': {
+      // ADR-046 Addendum 4 / ADR-051 DU4a — the KEYSTONE value-cell fold. `timeseries` IS the
+      // point-series read desugarTimeseries already lowers to; hoist THAT point-series to a
+      // value-cell `source` head (the same over/code/coords/clamp/grain fields, discriminated by
+      // `over`), no tail. The head reconstitutes the IDENTICAL PointSeriesSpec in readSource and
+      // delegates to the SAME PointSeriesResolver — so the fold is byte-identical BY CONSTRUCTION
+      // (FF-PIPELINE-EQUIV value-cell corpus). Reuses desugarTimeseries verbatim, so the clamp +
+      // sub-annual-grain logic (GRAIN-G4) is shared, never re-derived.
+      const ps = desugarTimeseries(spec)
+      const source: PipeStep = {
+        op: 'source', over: ps.over, code: ps.code, coords: ps.coords,
+        ...(ps.clamp ? { clamp: ps.clamp } : {}),
+        ...(ps.grain ? { grain: ps.grain } : {}),
+      }
+      const pipeline: PipelineSpec = {
+        type: 'pipeline',
+        pipe: [source],
+        encoding: { label: 'label', value: 'value' },
+      }
+      return pipeline
+    }
     default:
-      // timeseries/growth/ratio-list — see the W-P5a FINDING in the header (store-aware
-      // value-cell specs, not spine-expressible without a new `source` variant). metric is
-      // already a `source(metrics)` head by construction; row-list stays direct.
+      // growth/ratio-list/row-list — the store-aware VALUE-CELL specs still on the DU3 fallback
+      // lane (Add.4: growth folds via a source + window/derive tail or calc-metric browse;
+      // ratio-list/row-list via the MEASURE-axis explicit-cells form of the variant). Not folded
+      // here until byte-identically proven (Law 8). metric is already a `source(metrics)` head by
+      // construction; each returns UNCHANGED (identity) → its direct resolver.
       return spec
   }
 }
