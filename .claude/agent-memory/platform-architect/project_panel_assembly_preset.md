@@ -17,8 +17,9 @@ Builder Blocks, Puck `defaultProps`, Form.io templates, Grafana viz-suggestions+
 DataWorkbench → hunt scattered compound parts).
 
 **Two durable code facts:**
-- DataWorkbench (Power-Query 3-pane + live grid) is gated to query/pipeline/unbound ONLY at
-  `DataFacetField.tsx:124` (`canWorkbench`); row-list/timeseries/growth/ratio-list can't reach it → raw editor.
+- DataWorkbench (Power-Query 3-pane + live grid) — the `canWorkbench` gate at `DataFacetField.tsx`
+  is now KIND-AGNOSTIC (`!!escalation`, FF-WORKBENCH-KIND-AGNOSTIC) — the old query/pipeline/unbound
+  `spec.type` gate is GONE (verified 2026-07-20); every bind-kind reaches the workbench.
 - VisibilityBuilder built + wired to filters/perspectives/params/page but NOT KPI/featured `when` nor node
   `view.visibleWhen` (~42 occ). ⚡bind/responsive/thresholds fire only for BINDABLE_TYPES fields.
 

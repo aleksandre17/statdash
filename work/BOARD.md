@@ -1,6 +1,8 @@
 # BOARD — statdash-platform · the ONE managerial window
 
-_Projection, not a register (curated by the lead at every stage event; last: 2026-07-17)._
+_Projection, not a register (curated by the lead at every stage event; last: 2026-07-20)._
+
+> **ACTIVE PROGRAM (2026-07-20): Data-Workspace Unification — card `0104`** (ADR-051 "one data workspace, source is step 0" + ADR-046 Add.4/5). Shipped+live on :3013: DU1–DU3 · persistence · DU4a/b (timeseries+growth fold) · Step A · F2 · authoring-hold (**saving PAUSED by default**). Data restored: regional + GDP portal charts 1&2 + orphan-scratch purge. **⚠️ A capability REGRESSION shipped (DU3+Step A dropped editor power — R1–R6) → capability-parity is now a HARD pre-gate.** NEXT: finish capability restoration → **fully unify the two editing pipelines into one complete + beautiful surface** (owner-directed) + the 5-item DESIGN redistribution + DU6 visual refresh. Full handoff in `work/items/0104-*.md`.
 
 > **The register rule (binding):** status truth lives in exactly THREE places — the **master plan** (`docs/architecture/ROADMAP-zero-to-hero.md`), the **vision registry** (`docs/architecture/ARCHITECTURE-REGISTRY.md`), and the **cards** (`work/items/`). This board only PROJECTS them for a manager's glance; git history is the shipped log. If this board ever contradicts those sources, the sources win — fix the projection, never fork a status here.
 

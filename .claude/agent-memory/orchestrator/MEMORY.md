@@ -4,6 +4,9 @@
 - [canonical panel IA (0102) — THE TRUNK](project_canonical_panel_ia.md) — 2026-07-19 owner whole-panel circle-break: derive THE site-builder object-model spine (Site⊃Page⊃Skeleton/Template⊃Section⊃Element⊃Data) vs reference class; lost concept = page-skeleton/template; apex fable study → owner picks → remedy; SUPERSEDES 0100's framing, absorbs 0101
 - [assembly by declaration (0100/ADR-049)](project_assembly_by_declaration.md) — 2026-07-19 owner-blessed circle-break: panel assembles by DECLARATION not dispatch/by-hand; P1 DataSpec authoring registry (kills DataSpecEditor switches) → P2 composed-preset projection; Strangler, extends ADR-038/041
 
+## Active program (queued)
+- [data-workspace UX backlog](project_data_workspace_ux_backlog.md) — owner's 2026-07-20 live review: 5 craft/IA items (metric IA scatter · core-fns-forward · classifiers-visible · Model-floor beauty=DU6 · popups); fold into ADR-051 polish after Step A/F2
+
 ## Routing & agent management
 - [Fable apex routing](feedback_fable_apex_routing.md) — apex-conceptual → fable (self or model:"fable"); Opus = standard senior; apex drafts get lead's elevation
 - [lead decides, never asks tactics](feedback_lead_decides_never_asks_tactics.md) — lead DECIDES do-vs-delegate & tactics; asking owner a call I can make = abdication; questions only for one-way-doors/strategy/owner-info
@@ -20,6 +23,7 @@
 - [use MCP instruments](feedback_use_mcp_instruments.md) — practice MCP/plugin adoption (playwright MCP over hand-rolled probes); /mcp at session start
 
 ## Verification & delivery discipline
+- [capability-parity gate](feedback_capability_parity_gate.md) — HARD: before ANY retire/merge/consolidate, prove survivor ⊇ removed (enumerate removed FIRST); DoD="no capability lost" not "no duplicate"; a silent regression (DU3 advanced-editor) cost owner trust
 - [WIP=1, finish before start](feedback_wip1_finish_before_start.md) — finish ONE thing end-to-end (built→gated→deployed→SHOWN); owner feedback QUEUES, never abandons-restarts
 - [verify gesture not load](feedback_verify_gesture_not_load.md) — done only when the real USER GESTURE is proven (select→section→edit), not when app loads; probe the feature's own labels
 - [verification-fit per situation](feedback_verification_fit_per_situation.md) — pick the KIND of proof: live-UX→Playwright · logic→unit · invariant→FF · data→parity; sometimes SKIP the test and LOOK

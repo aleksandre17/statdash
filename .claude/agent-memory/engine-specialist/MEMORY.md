@@ -3,17 +3,17 @@
 ## Auto-relocated (memory-home-guard — reconcile into a topic section)
 - [Class-M hook protocol](feedback_class_m_hook.md) — public `@statdash/engine` API edit → run 09B degradation-risk assessment as a named section; repeating an Opus-blessed seam needs no re-escalation
 - [Shared-tree concurrency](feedback_shared_tree_concurrency.md) — tree is shared with concurrent agents; never `git stash -u`; diagnose typecheck/test failures via `git status`/`git diff <file>` first
-- [Worktree vitest hoisted](feedback_worktree_vitest_hoisted.md) — pointer to plugins-specialist's consolidated worktree/Windows pitfalls file
+- [Worktree vitest hoisted](feedback_worktree_vitest_hoisted.md) — worktree/Windows pitfalls file
 - [Write tool byte-fidelity](feedback_write_tool_byte_fidelity.md) — Write silently normalizes exotic whitespace (e.g. NBSP) when retyping from memory; use Edit or verify byte-identity
 - [ar36 pivot](project_ar36_pivot.md) — CONSOLIDATED: P0 EncodingChannel CtxRef seam + P1-P3 derive/fold facts
-- [Cell honest-state seam](reference_cell_honest_state_seam.md) — Cell/ValueState + storeCell (PM-1); no-data≠genuine-0 needs obs-scan; obsAtCoord SSOT w/ preliminary; ADR-047 Wave B = storeCellAt+coalesce
-- [ADR-042 Placement port](project_adr042_placement_port.md) — Slice 0 LANDED: placePart on PartSource; 4 residence adapters; PlacementPlan/resolvePlacementPlan; ONE commit site placeNode.ts
+- [Cell honest-state seam](reference_cell_honest_state_seam.md) — Cell/ValueState + storeCell (PM-1); no-data≠genuine-0 needs obs-scan; obsAtCoord SSOT; ADR-047 Wave B = storeCellAt+coalesce
+- [ADR-042 Placement port](project_adr042_placement_port.md) — Slice 0 LANDED: placePart on PartSource; 4 residence adapters; PlacementPlan/resolvePlacementPlan; ONE site placeNode.ts
 - [ADR-041 Part grammar](project_adr041_part_grammar.md) — Phase 6 capstone LANDED: isWrapper/isNodeContainer derived, kind-as-containment retired, FF-DERIVED-CONTAINMENT hard `[]`; BandDescriptor kept node-level alias (Delta 3)
-- [S6 chrome reversible landed](project_s6_chrome_reversible_landed.md) — chrome=sourced Part of site-frame; mechanism (site-frame META + registry-by-source collision fix + chromeParts) LANDED green; one-way selection fold HALTED (item-4/5 entangled)
+- [S6 chrome reversible landed](project_s6_chrome_reversible_landed.md) — chrome=sourced Part of site-frame; mechanism LANDED green; one-way selection fold HALTED (item-4/5 entangled)
 - [Reactive graph track (ADR-024)](project_reactive_graph_track.md) — V0/V1/V2/V2.5 SHIPPED (extractDeps SSOT + shadow graph); Findings A/B CLOSED → parity EXACT; V3 render-switch UNBLOCKED (owner-gated, not fired)
-- [Perspective-axis refactor](project_perspective_axis.md) — timeMode/mode → generic perspective axis (SHIPPED); hazard classes (ownership-vs-visibility gates, migrate-before-delete, alias-then-retire); superseded by TM-STRANGLER
+- [Perspective-axis refactor](project_perspective_axis.md) — timeMode/mode → generic perspective axis (SHIPPED); hazard classes; superseded by TM-STRANGLER
 - [TM-STRANGLER time-binding](project_tm_strangler.md) — DimBinding+Selection discriminant (point/window/all) replaces shape-inferred timeBinding; generic TimeGranularity; FF-NO-MODE-LITERAL twin
-- [CLUSTER② Law-1 + inert seams](project_cluster2_law1_seams.md) — GrowthResolver privileged-literal fix (`atTime` wrong for obs-meta reads, use TIME_DIM); AD-6 `available` gate not threaded in SiteRenderer (flagged); GRAIN-G4 granularity→grain default-gated
+- [CLUSTER② Law-1 + inert seams](project_cluster2_law1_seams.md) — GrowthResolver privileged-literal fix (use TIME_DIM for obs-meta reads); AD-6 `available` gate unthreaded in SiteRenderer (flagged); GRAIN-G4 granularity→grain
 - [Adoption epic (X-2)](project_adoption_epic.md) — all 4 Acts done; Act 1's cross-workstream metric-delivery gap resolved later by AR-40 P0
 - [AR-40 P0 semantic-layer spine](project_ar40_p0_spine.md) — KPI render+preliminary made metric-aware; the 3-paths-read-a-measure-ref bug (only warm resolved through resolveMeasureRef); gdp-total KPI migrated to metric-id
 - [AR-49 M0 dimension catalog](project_ar49_m0_dimension_catalog.md) — DimensionDef governed-dim registry (peer of metric), manifest.dimensions, describeApp 1.1.0 bump; engine items 1-5 done, 6-11 pending
@@ -63,6 +63,8 @@
 - [AR-50 semantic layer](project_ar50_semantic_layer.md) — build sequence, the ⛔ growth/ratio-list one-way-door, M2 landed (87aea32)
 - [reversible-expansion parity](feedback_reversible_expansion_parity.md) — prove a core generalization safe via byte-identical parity of the narrow path; single-dialect + arrow + Law-1 grain are hard gates
 - [Pipeline W-P0/W-P4 (ADR-046)](project_pipeline_wp4.md) — LANDED: FF-PIPELINE-EQUIV (requirements-not-rows) + FF-VERB-COVERAGE + pipeline discriminant + source head op + desugarToPipeline (shadow) + shared requirement kernels (W-P0 detail in project_pipeline_wp0.md)
-- [Pipeline W-P5a (ADR-046)](project_pipeline_wp5a.md) — LANDED (2efc36b): live desugar switch (query/transform/pivot→spine); ⛔ timeseries/growth/ratio-list BLOCKED on a value-cell source variant (escalated)
-- [Pipeline W-P5c (ADR-046)](project_pipeline_wp5c.md) — LANDED (37bf4fd): grain-∅ governed head BROWSES (Addendum 2); base crack CLOSED; calc -100 seam ESCALATED → CLOSED by [Metric-natural](reference_metric_natural_seam.md)
+- [Pipeline W-P5a (ADR-046)](project_pipeline_wp5a.md) — LANDED (2efc36b): live switch query/transform/pivot→spine; value-cell BLOCK → UNBLOCKED by DU4a
+- [Pipeline DU4a (Add.4)](project_pipeline_du4a.md) — LANDED: 4th SourceStep value-cell variant (over/code)→PointSeriesResolver; timeseries byte-identical; switch NOT flipped
+- [Pipeline DU4c/d](project_pipeline_du4cd.md) — ASSESSED+DEFERRED: ratio-list+row-list need explicit-cells extension → flagged ADR-046 Add.5
+- [Pipeline W-P5c (ADR-046)](project_pipeline_wp5c.md) — LANDED (37bf4fd): grain-∅ governed head BROWSES (Add.2); base crack CLOSED; calc -100 → [Metric-natural](reference_metric_natural_seam.md)
 - [Metric-natural seam (ADR-047 A)](reference_metric_natural_seam.md) — closes calc-browse −100; foreign ctx pins→'' DERIVED from obs (not declared); warm≡read whole-table '' superset; Wave B=honest-null floor

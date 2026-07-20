@@ -8,3 +8,5 @@
 - [Color-token JS-axis gap](project_color_token_jsaxis.md) — FF-TOKEN-ONLY guards CSS+plugins/react JS but NOT charts/core; brand #0080BE leaks there; pair name-scans with value-scans for brand-neutrality
 - [DB i18n divergence](project_db_i18n_divergence.md) — silver ingest validator hardcodes ka|en, diverges from V13/V14 gold config.locale contract; approver preview can green-light a submission gold then rejects
 - [self-policing mandate](feedback_self_policing_mandate.md) — owner must never be the one who discovers anti-patterns; every stated law needs a machine gate, false-green worse than no gate
+- [Dev deploy topology gap](project_dev_deploy_topology_gap.md) — dev :3013 container mounts ONLY panel/src; packages/* baked into image → panel-only rsync never deploys engine changes (false-RED trap; how to docker-cp a package)
+- [Value-cell fold fake-0](project_valuecell_fold_fake_zero.md) — folded timeseries/growth value-cell head has no store-home → cross-cube measure fabricates 0 per coord (Law 11), not honest no-data; GDP=0 vs GVA=real (2026-07-20)
