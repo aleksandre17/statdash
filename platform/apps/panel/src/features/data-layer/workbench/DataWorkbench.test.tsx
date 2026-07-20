@@ -3,8 +3,9 @@
 //  What the workbench OWNS: the three panes mount TOGETHER, always visible; the surface
 //  speaks the ONE `pipeline` spine and accepts BOTH a legacy `query` (via its desugared
 //  view) AND a native `pipeline`; every write EMITS `pipeline` (the ⛔ emission flip); the
-//  8-type discriminant Select never appears; a non-shaped spec is declared honestly. The
-//  live grid + the metric palette are mocked so the composition test is deterministic.
+//  author starts from Get (the type picker is tucked in the collapsed Advanced/raw panel,
+//  not the primary flow); a non-shaped spec is declared honestly. The live grid + the metric
+//  palette are mocked so the composition test is deterministic.
 //
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
@@ -98,10 +99,13 @@ describe('DataWorkbench — the three-pane surface (spine-shaped)', () => {
     expect(head).toHaveProperty('metrics', ['m.gdp'])
   })
 
-  it('does NOT show the 8-type spec-discriminant Select (author starts from Get)', () => {
+  it('the author starts from Get — the type picker is tucked in the collapsed Advanced panel, not the primary flow', () => {
     render(<DataWorkbench value={querySpec} onChange={() => {}} />)
-    expect(screen.queryByText('სპეც-ის ტიპი')).toBeNull()
+    // The primary entry is the Get source chip (browse-first), never a type-discriminant menu.
     expect(screen.getByTestId('pipe-source-chip')).toBeInTheDocument()
+    // The kind picker is RESTORED (R1) but INSIDE the Advanced/raw disclosure — progressive
+    // disclosure, not the entry point (FF-EDITOR-CAPABILITY-PARITY).
+    expect(screen.getByTestId('workbench-advanced')).toContainElement(screen.getByTestId('spec-type-picker'))
   })
 
   it('a non-shaped spec is declared honestly, not a broken workbench', () => {

@@ -37,24 +37,34 @@ export function isWorkbenchShaped(spec: DataSpec | undefined): spec is Extract<D
 }
 
 /**
- * Lower any accepted spec to the canonical pipeline view — the ONE code path.
+ * Lower an accepted spec to the canonical pipeline view — the ONE code path.
  *
- * The accept-list is SELF-MAINTAINING (ADR-046 Add.5 activation · ADR-051 DU4 Step A): run
- * the spec through the engine SSOT `desugarToPipeline` and accept iff it actually FOLDS to a
- * `pipeline`. So exactly the folded kinds open the three panes — `query`, `transform`,
- * `pivot`, `timeseries`, single-code `growth` (each lowers to a `source` head + pure tail) —
- * while a NOT-yet-folded kind (multi-code `growth`, `ratio-list`, `row-list`, `metric`)
- * comes back as identity → non-`pipeline` → `null` → the DU3 fallback lane. No hand-kept
- * kind list drifts from the desugar SSOT: the gate tracks whatever `desugarToPipeline` folds.
+ * The accept-list is exactly the kinds the three panes can GENUINELY AUTHOR: a native
+ * `pipeline` (used as-is) and a legacy `query` (via its desugared steward-source view). Both
+ * open the panes with a FULLY editable head (governed/steward/query source picker + grain) —
+ * that is what "shape it as a pipeline" means.
+ *
+ * NARROWED back from Step A (ADR-051 DU4 · trust-recovery correction). Step A widened this
+ * gate to "any kind `desugarToPipeline` can lower", conflating *the engine CAN fold it* with
+ * *the author SHOULD edit it as a pipeline*. `timeseries` / single-code `growth` / `pivot` /
+ * `transform` DO desugar to a pipeline, but the panes could only show their folded head
+ * READ-ONLY (value-cell) or LOSSY (pivot→melt) — so opening them here silently BYPASSED their
+ * intact dedicated editors (`TimeseriesEditor`/`GrowthEditor`/`PivotEditor`/`TransformEditor`)
+ * and stripped author-editable fields (`code`/`years`, pivot rows/keyField/valueFields, inline
+ * `source`, the single↔multi toggle). They now return `null` → the DU3 fallback lane, where
+ * those editors give FULL editing. Re-admitting them to the three panes WITH full head-
+ * authoring is a SEPARATE future wave, not this gate. (`ratio-list`/`row-list`/`metric` never
+ * folded — they were always here.)
  *
  * Returns `null` for a spec the workbench does not shape — the caller declares that honestly
- * rather than paint a broken surface (Law 11).
+ * (the fallback lane's dedicated editor) rather than paint a broken/lossy surface (Law 11).
  */
 export function toWorkbenchModel(spec: DataSpec | undefined): WorkbenchModel | null {
   if (!spec) return null
-  // A native pipeline is used as-is; anything else is lowered through the SSOT. `desugarToPipeline`
-  // returns a non-folded kind UNCHANGED (identity), so `pipeline.type !== 'pipeline'` below is the
-  // honest fold gate — it is `pipeline` only for a kind that genuinely folded.
+  // ONLY `pipeline` + `query` enter the three panes (`isWorkbenchShaped`). A native pipeline is
+  // used as-is; a `query` is lowered through the engine SSOT `desugarToPipeline` to its steward
+  // source head + pure tail. Every other kind routes to the fallback lane's dedicated editor.
+  if (!isWorkbenchShaped(spec)) return null
   const pipeline: DataSpec = spec.type === 'pipeline' ? spec : desugarToPipeline(spec)
   if (pipeline.type !== 'pipeline') return null
   const head = pipeline.pipe[0]

@@ -12,14 +12,20 @@
 //        A pipeline-shaped spec keeps the three panes and shows NO fallback lane.
 //    B · neither host mounts `DataSpecEditor` as a SIBLING of the workbench, and — the DU3
 //        core claim — a NON-PIPELINE spec edits through the SAME workbench fallback lane in
-//        BOTH hosts (no host-dependent second surface, no kind <Select>) —
+//        BOTH hosts (no host-dependent second surface) —
 //        · DataModelingPanel: a workbench-shaped spec shows the three panes; AND a
 //          non-pipeline selectedSpec ALSO takes over the panel through DataWorkbench (its
-//          fallback lane) — NOT a separate DataSpecEditor branch, and with NO kind <Select>.
+//          fallback lane) — NOT a separate DataSpecEditor branch.
 //          (This closes the earlier blind spot: the Model floor used to fall through to a
-//          still-present DataSpecEditor mount with its kind Select for non-pipeline kinds.)
+//          still-present DataSpecEditor mount for non-pipeline kinds.)
 //        · DataFacetField: the inspector facet references the workbench (THE DOOR) and no
 //          longer imports/mounts `DataSpecEditor` at all — it opens the one surface.
+//
+//  NOTE (ADR-051 DU4 trust-recovery): the kind picker is RESTORED (R1), but INSIDE the one
+//  surface — the workbench's `spec-type-picker`, never a second parallel DataSpecEditor. So
+//  the invariant is "no SIBLING second editor / no DataSpecEditor import", proven structurally
+//  (the old `workbench-raw-advanced` sibling stays absent; the facet imports no DataSpecEditor);
+//  the type-switcher, where present, lives WITHIN the workbench container.
 //
 //  Per-kind EDITABILITY completeness is owned by FF-DATASPEC-AUTHORING-COMPLETE +
 //  DataSpecEditor.test (every SPEC_CATALOG kind resolves to a live authoring surface);
@@ -95,7 +101,7 @@ describe('FF-ONE-SPEC-EDITOR — the workbench (+ its fallback lane) is the SOLE
   })
 
   // ── B · neither host mounts DataSpecEditor as a SIBLING of the workbench ───────────
-  it('HOST DataModelingPanel — a workbench-shaped spec shows the workbench with NO sibling raw editor', () => {
+  it('HOST DataModelingPanel — a workbench-shaped spec shows the workbench with NO sibling raw editor', async () => {
     const SOURCE: DataSourceDef = { id: 'src-1', name: 'SDMX', type: 'sdmx-json', config: {}, status: 'connected' }
     const QUERY: NamedDataSpec = {
       id: 'spec-q', name: 'GDP query',
@@ -109,10 +115,15 @@ describe('FF-ONE-SPEC-EDITOR — the workbench (+ its fallback lane) is the SOLE
     )
     fireEvent.click(screen.getByText('GDP query'))
     expect(screen.getByTestId('modeling-workbench')).toBeInTheDocument()
-    // The old parallel "Raw editor (advanced)" accordion is gone; no DataSpecEditor kind
-    // <Select> sits beside the workbench — the workbench is the sole editor here.
+    // The three panes confirm this is the workbench (lazy-resolved) …
+    expect(await screen.findByTestId('workbench-rail')).toBeInTheDocument()
+    // The old parallel "Raw editor (advanced)" SIBLING accordion is gone — the workbench is
+    // the sole editor here (no second DataSpecEditor mount beside it).
     expect(screen.queryByTestId('workbench-raw-advanced')).toBeNull()
-    expect(screen.queryByRole('combobox', { name: 'სპეც-ის ტიპი' })).toBeNull()
+    // The type picker is RESTORED (R1) but lives INSIDE the one surface — the workbench's
+    // Advanced/raw panel — never as a sibling.
+    const advanced = screen.getByTestId('workbench-advanced')
+    expect(advanced).toContainElement(screen.getByTestId('spec-type-picker'))
   })
 
   it('HOST DataModelingPanel — a NON-PIPELINE spec ALSO edits through the workbench fallback lane, NO DataSpecEditor branch, NO kind <Select>', async () => {
@@ -137,8 +148,9 @@ describe('FF-ONE-SPEC-EDITOR — the workbench (+ its fallback lane) is the SOLE
     // The three SHAPING panes stay absent for a non-pipeline kind…
     expect(screen.queryByTestId('workbench-rail')).toBeNull()
     expect(screen.queryByTestId('workbench-grid')).toBeNull()
-    // …and the deleted kind <Select> type-switcher does NOT reappear in this host.
-    expect(screen.queryByRole('combobox', { name: 'სპეც-ის ტიპი' })).toBeNull()
+    // …and the restored type-switcher (R1) lives INSIDE this workbench's fallback lane —
+    // one surface, not a resurrected sibling DataSpecEditor.
+    expect(lane).toContainElement(screen.getByTestId('spec-type-picker'))
   })
 
   it('HOST DataFacetField — the inspector facet opens the WORKBENCH and mounts NO DataSpecEditor', () => {

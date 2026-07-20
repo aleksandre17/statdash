@@ -3,6 +3,16 @@
    sidebar accordion). It fills the focus-view body (the wide separate screen it is
    escalated into), so the center live-grid finally gets REAL width — the CRAFT fix
    for W-P1's suffocation in the 320px dock. Token-driven (no brand literal). */
+/* The shell stacks the three-pane grid over the quiet "Advanced / raw" disclosure, so the
+   grid still gets the full body height while the escape hatch sits as a bounded footer. */
+.data-workbench-shell {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md, 16px);
+  height: 100%;
+  min-height: 0;
+}
+
 .data-workbench {
   display: grid;
   /* rail (bounded) · live grid (greedy 1fr — the CRAFT win) · generated query (bounded) */
@@ -11,6 +21,16 @@
   align-items: start;
   height: 100%;
   min-height: 0;
+}
+
+/* Inside the shell the grid flexes to fill; the Advanced disclosure stays intrinsic. */
+.data-workbench-shell > .data-workbench {
+  height: auto;
+  flex: 1 1 auto;
+}
+
+.data-workbench-shell > .data-workbench__advanced {
+  flex: 0 0 auto;
 }
 
 .data-workbench__pane {

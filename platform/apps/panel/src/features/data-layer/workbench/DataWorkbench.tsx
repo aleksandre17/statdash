@@ -48,6 +48,7 @@ import { GetHead } from './GetHead'
 import { GetGrainEditor } from './GetGrainEditor'
 import { PromoteMetric } from './PromoteMetric'
 import { SpecBody } from '../DataSpecEditor'
+import { SpecTypePicker, ReadOnlyJson, AdvancedRawPanel } from './WorkbenchAdvanced'
 import { useRole } from '../../../studio/useRole'
 import { useDataSources } from '../../../store/constructor.store'
 import { storeKeyForDataset } from '../../../discovery/cubeProfile.store'
@@ -144,14 +145,27 @@ export function DataWorkbench({ value, onChange }: DataWorkbenchProps) {
             <Typography variant="overline" color="text.secondary">
               {en ? `Editor — ${value.type}` : `რედაქტორი — ${value.type}`}
             </Typography>
+            {/* R1 — inter-kind CONVERT: the kind picker the retired DataSpecEditor held.
+                Picking another kind seeds a fresh spec (make()) — the only type-switch gesture
+                now the picker left the inspector. */}
+            <SpecTypePicker value={value} onChange={onChange} locale={locale} />
+            {/* The kind's DEDICATED editor (Timeseries/Growth/Pivot/Transform/RowList/…),
+                dispatched by declaration — FULL editing (code/years, pivot fields, inline
+                rows + encoding, single↔multi toggle), never a lowered read-only head. */}
             <SpecBody value={value} onChange={onChange} />
+            {/* R6 — the read-only JSON disclosure (the old DataSpecEditor "JSON output"). */}
+            <ReadOnlyJson value={value} locale={locale} />
           </Box>
         ) : (
-          <Typography variant="body2" color="text.secondary">
-            {en
-              ? 'This element has no pipeline yet. Bind a governed metric to start building one.'
-              : 'ამ ელემენტს ჯერ პაიპლაინი არ აქვს. ასაგებად მიაბით მართული მეტრიკა.'}
-          </Typography>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }} data-testid="workbench-from-scratch">
+            <Typography variant="body2" color="text.secondary">
+              {en
+                ? 'This element has no data yet. Bind a governed metric, or pick a spec type to author from scratch.'
+                : 'ამ ელემენტს ჯერ მონაცემები არ აქვს. მიაბით მართული მეტრიკა, ან აირჩიეთ სპეც-ის ტიპი ნულიდან ასაგებად.'}
+            </Typography>
+            {/* R1 — create-from-scratch: pick a kind → a fresh seed of that kind. */}
+            <SpecTypePicker value={null} onChange={onChange} locale={locale} />
+          </Box>
         )}
         <MetricPalette
           locale={locale}
@@ -189,6 +203,7 @@ export function DataWorkbench({ value, onChange }: DataWorkbenchProps) {
   const canPromote = isSteward && bound && isStewardHead(model.head) && !!stewardMeasure
 
   return (
+    <Box className="data-workbench-shell">
     <Box className="data-workbench" data-testid="data-workbench">
       {/* ── LEFT — the applied-steps rail (Power Query) ──────────────────────────── */}
       <Box
@@ -294,6 +309,14 @@ export function DataWorkbench({ value, onChange }: DataWorkbenchProps) {
       <Box className="data-workbench__pane data-workbench__query" data-testid="workbench-query">
         <GeneratedQueryPane model={model} locale={locale} />
       </Box>
+    </Box>
+
+    {/* ── ADVANCED / RAW — the escape hatch the panes don't (yet) expose (owner complaint).
+        A `query` → QuerySpecEditor's Advanced (encoding, MeasureSelector, FilterBuilder,
+        FieldWells); a native `pipeline` → writable raw JSON. Plus type-convert + read-only
+        JSON. Collapsed by default: the three panes stay the primary act. `value` is defined
+        in this branch (a non-null model requires a non-null value). ───────────────────────── */}
+    {value && <AdvancedRawPanel value={value} onChange={onChange} locale={locale} />}
     </Box>
   )
 }

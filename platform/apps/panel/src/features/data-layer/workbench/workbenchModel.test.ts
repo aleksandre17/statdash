@@ -43,53 +43,48 @@ describe('toWorkbenchModel — the ONE canonical view over BOTH inputs', () => {
   })
 })
 
-// ── ADR-046 Add.5 activation · ADR-051 DU4 Step A — the folded kinds OPEN the three panes ──
+// ── ADR-051 DU4 — the fold gate is NARROWED back to what the panes can AUTHOR ──────────
 //
-//  The accept-list is the desugar SSOT: a kind opens the workbench iff `desugarToPipeline`
-//  folds it. So a stored `timeseries` and a single-code `growth` now yield a model (three
-//  panes, READ-ONLY value-cell head); the NOT-yet-folded kinds (multi-code growth, ratio-list,
-//  row-list) still fall through to the DU3 fallback lane. Reversible = shrink the accept-list.
-describe('Step A — folded kinds open the three-pane workbench (self-maintaining gate)', () => {
-  it('a stored timeseries NOW folds to a value-cell source head + three panes', () => {
-    const m = toWorkbenchModel({ type: 'timeseries', code: 'B1G', years: 'all' })!
-    expect(m).not.toBeNull()
-    expect(m.head.op).toBe('source')
-    expect('over' in m.head).toBe(true)                 // the value-cell discriminant (Add.4)
-    expect(sourceMeasure(m.head)).toBe('B1G')           // the honest governed value-column measure
+//  Trust-recovery correction: Step A widened the gate to "any kind `desugarToPipeline` folds"
+//  — which silently diverted `timeseries` / single-code `growth` / `pivot` / `transform` into
+//  the three panes with a READ-ONLY/LOSSY head, bypassing their intact dedicated editors. The
+//  gate now admits ONLY `pipeline` + `query` (`isWorkbenchShaped`) — the kinds the panes can
+//  GENUINELY author with a fully editable head. Every other kind returns `null` → the DU3
+//  fallback lane, where its dedicated editor gives FULL editing (code/years, pivot fields,
+//  inline rows + encoding, single↔multi toggle). Re-admitting them WITH full head-authoring is
+//  a separate future wave.
+describe('DU4 narrowed fold gate — only pipeline+query open the three panes', () => {
+  it('a folded-but-not-pane-authorable kind returns null → the dedicated fallback editor', () => {
+    // timeseries / single-code growth / pivot / transform ALL desugar to a pipeline, but the
+    // panes cannot author their head editably — so they route to the fallback lane, NOT the panes.
+    expect(toWorkbenchModel({ type: 'timeseries', code: 'B1G', years: 'all' })).toBeNull()
+    expect(toWorkbenchModel({ type: 'growth', code: 'B1G', years: 'all' })).toBeNull()          // single-code
+    expect(toWorkbenchModel({ type: 'pivot', rows: [], keyField: 'k', valueFields: [] })).toBeNull()
+    expect(toWorkbenchModel({ type: 'transform', source: [], steps: [], encoding: { label: 'l' } })).toBeNull()
   })
 
-  it('a single-code growth NOW folds to a value-cell head + the YoY tail', () => {
-    const m = toWorkbenchModel({ type: 'growth', code: 'B1G', years: 'all' })!
-    expect(m).not.toBeNull()
-    expect('over' in m.head).toBe(true)
-    // the desugared YoY tail is now the workbench's editable tail (window→derive→…→select)
-    expect(m.tail.map((s) => s.op)).toContain('derive')
-  })
-
-  it('the NOT-yet-folded kinds STILL fall to the fallback lane (null) — Law 11, still editable there', () => {
+  it('the kinds that never folded STILL route to the fallback lane (null)', () => {
     expect(toWorkbenchModel({ type: 'growth', code: ['B1G', 'B1GQ'], years: 'all' })).toBeNull()  // multi-code
     expect(toWorkbenchModel({ type: 'ratio-list', pairs: [{ code: 'A', denom: 'B' }] } as never)).toBeNull()
     expect(toWorkbenchModel({ type: 'row-list', rows: [] })).toBeNull()
+    expect(toWorkbenchModel({ type: 'metric', metrics: ['B1G'] } as never)).toBeNull()
   })
 
-  it('editing a viewed timeseries (add a tail step) CONVERTS to a byte-identical pipeline', () => {
+  it('the gate does not lean on desugar folding a non-pane kind — the narrowing is honest', () => {
+    // Even though the ENGINE still folds timeseries to a pipeline (desugarToPipeline is
+    // unchanged — a capability, not an activation), the PANEL gate refuses it. The panel
+    // decision is the isWorkbenchShaped kind-check, not the engine's fold ability.
     const ts: DataSpec = { type: 'timeseries', code: 'B1G', years: 'all' }
-    const model = toWorkbenchModel(ts)!
-    // The view→edit→emit path (the SAME `fromWorkbenchModel` `query` uses): the emitted spec is a
-    // `pipeline` whose HEAD is the folded value-cell head — identical to the pure desugared view, so
-    // a re-emit with no tail change resolves byte-identically (the roundtrip identity the FF proves).
-    const reEmitted = fromWorkbenchModel(model)
-    expect(reEmitted.type).toBe('pipeline')
-    // strongest panel-seam claim: the re-emit is IDENTICAL to the pure engine desugared view —
-    // so the stored spec converts to exactly what desugarToPipeline folds (the engine already
-    // proves that fold resolves byte-identically to the timeseries: FF-PIPELINE-EQUIV).
-    expect(reEmitted).toEqual(desugarToPipeline(ts))
-    expect(reEmitted.pipe[0]).toEqual(model.head)       // head preserved verbatim (no lossy re-derive)
-    // now an actual tail edit converts + persists the pipeline with the appended step
+    expect(desugarToPipeline(ts).type).toBe('pipeline')   // engine still CAN fold it …
+    expect(toWorkbenchModel(ts)).toBeNull()               // … but the panes decline it (DU4)
+  })
+
+  it('a pipeline/query edit still round-trips through fromWorkbenchModel (the panes emit a pipeline)', () => {
+    const query: DataSpec = { type: 'query', query: { measure: 'B1G' }, pipe: [], encoding: { label: 'label' } }
+    const model = toWorkbenchModel(query)!
     const withStep = fromWorkbenchModel({ ...model, tail: [...model.tail, { op: 'sort', by: 'value', dir: 'asc' } as never] })
     expect(withStep.type).toBe('pipeline')
     expect(withStep.pipe.at(-1)!.op).toBe('sort')
-    expect(withStep.pipe[0]).toEqual(model.head)        // head unchanged by a tail edit
   })
 })
 

@@ -94,16 +94,18 @@ describe('DataModelingPanel — relocated data authoring (AR-49 M1.3)', () => {
     expect(screen.getByRole('button', { name: 'Excel' })).toBeInTheDocument()
   })
 
-  it('selecting a NON-pipeline spec opens the ONE workbench surface via its fallback lane — no kind Select (ADR-051 DU3)', async () => {
+  it('selecting a NON-pipeline spec opens the ONE workbench surface via its fallback lane (ADR-051 DU3)', async () => {
     renderPanel()
     fireEvent.click(screen.getByText('Manual rows'))
     // Same host takeover as a pipeline spec — the workbench, not a separate DataSpecEditor.
     expect(screen.getByTestId('modeling-workbench')).toBeInTheDocument()
     // The non-pipeline kind edits IN the workbench's co-located SpecBody fallback lane
     // (lazy-resolved), never a second sibling editor…
-    expect(await screen.findByTestId('workbench-fallback-lane')).toBeInTheDocument()
-    // …and the deleted kind <Select> type-switcher does NOT reappear (FF-ONE-SPEC-EDITOR).
-    expect(screen.queryByRole('combobox', { name: 'სპეც-ის ტიპი' })).toBeNull()
+    const lane = await screen.findByTestId('workbench-fallback-lane')
+    expect(lane).toBeInTheDocument()
+    // …and the restored type-switcher (R1) lives INSIDE that lane — one surface, not a
+    // resurrected sibling DataSpecEditor (FF-ONE-SPEC-EDITOR / FF-EDITOR-CAPABILITY-PARITY).
+    expect(lane).toContainElement(screen.getByTestId('spec-type-picker'))
     // The three SHAPING panes are absent — row-list is not (yet) pane-shaped.
     expect(screen.queryByTestId('workbench-rail')).toBeNull()
   })
@@ -146,10 +148,11 @@ describe('DataModelingPanel — a workbench-shaped spec lands on the GRID (0086 
     expect(within(grid).getByTestId('mock-step-grid')).toBeInTheDocument()
     expect(screen.getByTestId('workbench-back-to-list')).toBeInTheDocument()
     // ADR-051 DU3 — the workbench is the SOLE spec editor: the parallel "Raw editor
-    // (advanced)" accordion is GONE, and NO second DataSpecEditor (its kind <Select>) sits
-    // beside the workbench (FF-ONE-SPEC-EDITOR).
+    // (advanced)" SIBLING accordion is GONE, no second DataSpecEditor sits beside it.
     expect(screen.queryByTestId('workbench-raw-advanced')).toBeNull()
-    expect(screen.queryByRole('combobox', { name: 'სპეც-ის ტიპი' })).toBeNull()
+    // R1 restored INSIDE the one surface — the type picker lives in the workbench's own
+    // Advanced/raw panel, not a sibling (FF-ONE-SPEC-EDITOR / FF-EDITOR-CAPABILITY-PARITY).
+    expect(screen.getByTestId('workbench-advanced')).toContainElement(screen.getByTestId('spec-type-picker'))
   })
 
   it('an in-workspace cube seed (on the URL) seeds a steward pipeline cube and lands on the workbench GRID (not JsonFallback)', async () => {
