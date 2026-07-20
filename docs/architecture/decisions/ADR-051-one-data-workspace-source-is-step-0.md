@@ -61,6 +61,12 @@ None of them ships two editors for one query, or teleports you between screens t
 
 **Costs / trade-offs.** Sustained projection work across the rail, the focus-view registry, the two workbench hosts, and the desugar coverage for four kinds (sequenced, WIP=1). Deferred: reference-binding / spec-as-object (ADR-052). Multi-site and per-site shared pipelines remain YAGNI.
 
+**Wave plan — the desugar fold (DU4) and its precondition (DU4a).**
+
+- **DU4a — the value-cell `source` variant (PRECONDITION of DU4; ADR-046 Addendum 4, ACCEPTED).** The engine primitive that lets the store-aware value-cell kinds fold onto the spine: a 4th `SourceStep` variant (the enumerated point read, `{op:'source', over, code, …}`) delegating to the proven `PointSeriesResolver`. Without it, no value-cell kind can desugar to `pipeline` byte-identically and the DU3 fallback lane cannot retire. **DU4 cannot start until DU4a is green.** DU4a is read/proof-time only → revert-clean (the one-way door is the later emission flip, gated on `FF-PIPELINE-EQUIV`).
+- **DU4 — fold the four kinds, kind-by-kind (each additive/reversible; a not-yet-folded kind keeps the DU3 fallback lane, so nothing breaks):** `timeseries` first (the keystone — byte-identical by construction, ships with DU4a) → `growth` (source + window/derive tail, or calc-metric browse for multi-code) → `ratio-list` / `row-list` (the MEASURE-axis explicit-cells form of the variant). `FF-ALL-KINDS-SHAPED` tracks the shrinking gap; the fallback lane demotes only when every kind is shaped.
+- **DU4 · GAP-3 (independent task — the raw-JSON reference pickers).** `lookup.from` / `join.with` / `blend.from` currently take raw-JSON opaque objects in the workbench. Project them onto a P-OFFER picker with `role: 'source-ref'` (pick a named source/cube, not hand-type JSON) so a cross-source combine step is non-programmer-authorable. Orthogonal to the desugar fold — it hardens the *combine* verbs' authoring surface, not the source head. Sequenced within DU4, no dependency on DU4a.
+
 **The fitness functions that lock each projection** (protection-layer-first — each lands with its wave, then ratchets):
 - `FF-ONE-DATA-WORKSPACE` — the rail exposes exactly ONE data destination; `sources` + `model` are not two peer top-level entries.
 - `FF-SOURCE-IS-STEP-0` — every pipeline head is a `source` step, and the workspace/element entry presents "pick a source" as the first affordance.
