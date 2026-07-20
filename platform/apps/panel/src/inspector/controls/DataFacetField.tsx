@@ -18,10 +18,11 @@
 //    • QUICK-BIND — for an UNBOUND element only, the MetricPalette one-gesture bind (a
 //      Power BI fields-well equivalent — a quick action, not an editor).
 //
-//  The full inline DataSpec editor LEFT the author plane (its components live re-homed in
-//  the workbench). The Steward-advanced LENS retains the raw editor (the plane law: raw
-//  spec authoring is a steward concern; the formal ⛔ demotion is gated on ADR-047 Wave B
-//  and is deliberately NOT fired here).
+//  The full inline DataSpec editor LEFT the inspector entirely (ADR-051 DU3 — ONE editing
+//  surface). It is no longer mounted here as a second parallel editor: a spec the three
+//  panes can't yet shape edits INSIDE the workbench via its co-located SpecBody fallback
+//  lane, reached through THE DOOR. This closes the "two editors for one spec" defect
+//  (FF-ONE-SPEC-EDITOR) — the facet keeps only a read-only summary + the one door.
 //
 //  D-DA1 — the governance LENS, not a wall: every mode here composes over ALREADY-GOVERNED
 //  sources. Defining a RAW BASE SOURCE stays Steward-gated in ModelSurface, NOT here
@@ -31,27 +32,17 @@
 //  next whole spec). WCAG 2.1 AA: labelled summary group, keyboard-reachable door + editor.
 //
 import { lazy, Suspense } from 'react'
-import { Box, Typography, Button, Accordion, AccordionSummary, AccordionDetails } from '@mui/material'
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
+import { Box, Typography, Button } from '@mui/material'
 import LaunchIcon from '@mui/icons-material/Launch'
 import type { DataSpec, EncodingSpec } from '@statdash/engine'
 import type { FieldControlProps } from '../fieldControl.types'
 import { SuspenseFallback } from '../../shared/SuspenseFallback'
 import { MetricPalette } from '../../discovery/MetricPalette'
 import { useFocusEscalation } from '../focusEscalation'
-import { useRole } from '../../studio/useRole'
 import { bindMeasureToSpec, adoptOnOpen } from './dataFacetModel'
 import { toWorkbenchModel, isHeadBound } from '../../features/data-layer/workbench/workbenchModel'
 import { usePipelineSourceRows, type PreviewStatus } from '../../features/data-layer/pipeline-preview/usePipelineSourceRows'
 import { useGridLabels } from '../../features/data-layer/pipeline-preview/useGridLabels'
-
-// Lazy: the raw DataSpec editor suite (+ dnd-kit) loads only when a STEWARD expands the
-// advanced editor — never in the eager inspector chunk / never for an author. Named import
-// via the direct module (NOT the data-layer barrel, which also exports the Steward-only
-// DataModelingPanel / source authoring) so the facet pulls ONLY the pipe editor.
-const DataSpecEditor = lazy(() =>
-  import('../../features/data-layer/DataSpecEditor').then((m) => ({ default: m.DataSpecEditor })),
-)
 
 // Lazy: the three-pane workbench (+ PipelineBuilder/dnd-kit, live grid, generated-query
 // pane) loads only when the author OPENS it (via the focus-view escalation) — never in
@@ -94,8 +85,6 @@ export function DataFacetField({ value, field, locale, onChange }: FieldControlP
   // (unit tests / other mounts) → the workbench door hides, the summary still serves —
   // fail-soft, zero regression (mirrors NestedItemControl's fallback).
   const escalation = useFocusEscalation()
-  const role = useRole()
-  const isSteward = role === 'steward'
 
   // The ONE model the workbench operates on (W-P5b) — the summary derives from THIS, not a
   // second interpretation. `null` for a spec the workbench does not shape (row-list/…).
@@ -158,8 +147,8 @@ export function DataFacetField({ value, field, locale, onChange }: FieldControlP
         ) : nonShaped ? (
           <Typography variant="body2" color="text.secondary" data-testid="summary-nonpipeline">
             {en
-              ? `This element uses a "${spec!.type}" data spec — open the steward raw editor below to change it.`
-              : `ამ ელემენტს აქვს "${spec!.type}" ტიპის მონაცემები — შესაცვლელად გახსენით ნედლი რედაქტორი ქვემოთ.`}
+              ? `This element uses a "${spec!.type}" data spec — open the workbench to edit it.`
+              : `ამ ელემენტს აქვს "${spec!.type}" ტიპის მონაცემები — რედაქტირებისთვის გახსენით ვორქბენჩი.`}
           </Typography>
         ) : (
           <Typography variant="body2" color="text.secondary" data-testid="summary-unbound">
@@ -194,22 +183,11 @@ export function DataFacetField({ value, field, locale, onChange }: FieldControlP
         />
       )}
 
-      {/* ── STEWARD lens — the raw DataSpec editor, retained (plane law; the ⛔ demotion
-          is gated on ADR-047 Wave B and NOT fired here). Absent for the author plane. ── */}
-      {isSteward && (
-        <Accordion disableGutters variant="outlined" data-testid="data-facet-pipe">
-          <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-            <Typography variant="subtitle2" fontWeight={600}>
-              {en ? 'Raw editor (steward)' : 'ნედლი რედაქტორი (სტიუარდი)'}
-            </Typography>
-          </AccordionSummary>
-          <AccordionDetails>
-            <Suspense fallback={<SuspenseFallback label={en ? 'Loading data editors' : 'იტვირთება რედაქტორები'} fill={false} />}>
-              <DataSpecEditor value={spec ?? null} onChange={(next) => onChange(next)} />
-            </Suspense>
-          </AccordionDetails>
-        </Accordion>
-      )}
+      {/* ADR-051 DU3 — the parallel "Raw editor (steward)" accordion is GONE. A spec the
+          three panes can't yet shape is edited INSIDE the workbench's co-located SpecBody
+          fallback lane (reached through THE DOOR above), never a second sibling editor here
+          (FF-ONE-SPEC-EDITOR). The steward plane still governs cube/raw-source authoring —
+          that stays in ModelSurface (FF-AUTHOR-NO-QUERY), not this facet. */}
     </Box>
   )
 }

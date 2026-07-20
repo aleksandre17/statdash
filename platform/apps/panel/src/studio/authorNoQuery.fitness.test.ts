@@ -16,8 +16,9 @@
 //      ExcelUpload / source create·delete) is reachable ONLY from the Steward's
 //      ModelSurface, never from an author-lens surface (a relocation regression goes RED).
 //    • LENS OPEN — the DATA facet control (DataFacetField, the author's in-place pipe)
-//      DOES reach the pipe editor (DataSpecEditor) and does NOT reach the raw-source
-//      machinery: author = pipe-over-governed, steward = raw-source, provably.
+//      DOES reach the pipe editor (the three-pane DataWorkbench — ADR-051 DU3, the ONE
+//      editing surface) and does NOT reach the raw-source machinery: author =
+//      pipe-over-governed, steward = raw-source, provably.
 //
 import { describe, it, expect } from 'vitest'
 
@@ -57,8 +58,11 @@ function stripComments(src: string): string {
 const RAW_SOURCE_MACHINERY =
   /\bDataModelingPanel\b|\bSourceAuthoringPanel\b|\bExcelUpload\b|\bcreateDataSource\b|\bdeleteDataSource\b/
 
-// The pipe editor — the author-safe surface the lens OPENS (mounted in the DATA facet).
-const PIPE_EDITOR = /\bDataSpecEditor\b/
+// The pipe editor — the author-safe surface the lens OPENS (reached from the DATA facet).
+// ADR-051 DU3: the facet no longer mounts DataSpecEditor as a second parallel editor; the
+// ONE editing surface it opens (through THE DOOR) is the three-pane DataWorkbench — which
+// carries the co-located SpecBody fallback lane for kinds the panes can't yet shape.
+const PIPE_EDITOR = /\bDataWorkbench\b/
 
 describe('FF-AUTHOR-NO-QUERY — the governance lens (author=pipe-over-governed, steward=raw-source)', () => {
   it('scans the author-lens surfaces (guard is actually running)', () => {
@@ -88,7 +92,7 @@ describe('FF-AUTHOR-NO-QUERY — the governance lens (author=pipe-over-governed,
 
   it('LENS OPEN — the DATA facet reaches the PIPE editor (author = pipe-over-governed)', () => {
     // The author CAN author a transform/derive/calc/query pipeline over a governed source:
-    // the DATA facet control mounts the DataSpec pipe editor in place.
+    // the DATA facet control opens the three-pane workbench (the ONE editing surface, DU3).
     expect(PIPE_EDITOR.test(stripComments(dataFacetSrc))).toBe(true)
   })
 

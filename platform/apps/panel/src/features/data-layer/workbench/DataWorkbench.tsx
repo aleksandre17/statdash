@@ -47,6 +47,7 @@ import {
 import { GetHead } from './GetHead'
 import { GetGrainEditor } from './GetGrainEditor'
 import { PromoteMetric } from './PromoteMetric'
+import { SpecBody } from '../DataSpecEditor'
 import { useRole } from '../../../studio/useRole'
 import { useDataSources } from '../../../store/constructor.store'
 import { storeKeyForDataset } from '../../../discovery/cubeProfile.store'
@@ -115,23 +116,49 @@ export function DataWorkbench({ value, onChange }: DataWorkbenchProps) {
   }
 
   if (!model) {
-    // ADR-049 P2a Lane 1 — the KIND-AGNOSTIC door lands here for a spec the workbench does
-    // not yet shape (row-list / timeseries / growth / ratio-list). The binding is ADOPTED
-    // intact (the caller never wiped it); this pane declares that honestly (Law 11) AND
-    // offers a governed metric bind to START a pipeline — so the un-gated door is a LIVE
-    // path forward, not a dead room. Binding a metric emits the spine (the ⛔ emission flip),
-    // an explicit author gesture, exactly like a legacy `query` converts on active edit.
+    // ADR-049 P2a Lane 1 + ADR-051 DU3 — the KIND-AGNOSTIC door lands here for a spec the
+    // three panes cannot yet SHAPE (row-list / timeseries / growth / ratio-list / pivot /
+    // metric). Two honest sub-states (Law 11), never a broken/blank pane:
+    //   • an EXISTING non-pipeline spec is edited IN PLACE via the co-located SpecBody
+    //     FALLBACK LANE — the ONE editing surface (DU3). The parallel "Raw editor" accordion
+    //     that used to sit beside the workbench in both hosts is GONE; this IS where those
+    //     kinds now edit, so no kind is left uneditable.
+    //   • the binding is ADOPTED intact — this pane ALSO offers a governed metric bind to
+    //     START (or convert to) a pipeline: the un-gated door is a LIVE path forward, not a
+    //     dead room. Binding emits the spine (the ⛔ emission flip), an explicit gesture.
     return (
-      <Box className="data-workbench data-workbench--empty" data-testid="data-workbench-nonquery" sx={{ p: 3, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-        <Typography variant="body2" color="text.secondary">
-          {en
-            ? 'This element has no pipeline yet. Bind a governed metric to start building one.'
-            : 'ამ ელემენტს ჯერ პაიპლაინი არ აქვს. ასაგებად მიაბით მართული მეტრიკა.'}
-        </Typography>
+      <Box className="data-workbench data-workbench--empty" data-testid="data-workbench-nonquery" sx={{ p: 3, display: 'flex', flexDirection: 'column', gap: 2 }}>
+        {value ? (
+          // The co-located fallback lane — the generic, declaration-driven SpecBody dispatch
+          // (registered editor / schema→Inspector / steward raw-JSON) for the kind the three
+          // panes can't yet shape. NOT the full DataSpecEditor: no kind <Select> here, so the
+          // out-of-range 'pipeline' warning can never surface (a pipeline never reaches here).
+          <Box
+            component="section"
+            role="region"
+            className="data-workbench__pane data-workbench__fallback"
+            aria-label={en ? 'Editor' : 'რედაქტორი'}
+            data-testid="workbench-fallback-lane"
+            sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}
+          >
+            <Typography variant="overline" color="text.secondary">
+              {en ? `Editor — ${value.type}` : `რედაქტორი — ${value.type}`}
+            </Typography>
+            <SpecBody value={value} onChange={onChange} />
+          </Box>
+        ) : (
+          <Typography variant="body2" color="text.secondary">
+            {en
+              ? 'This element has no pipeline yet. Bind a governed metric to start building one.'
+              : 'ამ ელემენტს ჯერ პაიპლაინი არ აქვს. ასაგებად მიაბით მართული მეტრიკა.'}
+          </Typography>
+        )}
         <MetricPalette
           locale={locale}
           canBind
-          bindHint={en ? 'Bind a governed metric' : 'მიაბით მართული მეტრიკა'}
+          bindHint={value
+            ? (en ? 'Or bind a governed metric to convert to a pipeline' : 'ან მიაბით მართული მეტრიკა პაიპლაინად გადასაქცევად')
+            : (en ? 'Bind a governed metric' : 'მიაბით მართული მეტრიკა')}
           onBind={(metricId) =>
             onChange(fromWorkbenchModel(withGovernedMetric(
               { head: { op: 'source', metrics: [] }, tail: [], encoding: { label: 'label' } },

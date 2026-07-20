@@ -1,6 +1,6 @@
 import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { Box, Typography, Button, Chip, Paper, Divider, Accordion, AccordionSummary, AccordionDetails } from '@mui/material'
+import { Box, Typography, Button, Chip, Paper, Divider } from '@mui/material'
 import StorageIcon from '@mui/icons-material/Storage'
 import DataObjectIcon from '@mui/icons-material/DataObject'
 import AddIcon from '@mui/icons-material/Add'
@@ -8,7 +8,6 @@ import UploadFileIcon from '@mui/icons-material/UploadFile'
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline'
 import DragIndicatorIcon from '@mui/icons-material/DragIndicator'
 import ArrowBackIcon from '@mui/icons-material/ArrowBack'
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
 import {
   SortableContext, verticalListSortingStrategy,
   useSortable, arrayMove,
@@ -18,16 +17,16 @@ import { DndContext, type DragEndEvent, closestCenter } from '@dnd-kit/core'
 import { useConstructorStore, useDataSources, useDataSpecs } from '../../store/constructor.store'
 import { useDndSensors } from '../../shared/dnd/useDndSensors'
 import type { DataSpec } from '@statdash/engine'
-import { DataSpecEditor } from './DataSpecEditor'
-import { withStewardCube, fromWorkbenchModel, isWorkbenchShaped } from './workbench/workbenchModel'
+import { withStewardCube, fromWorkbenchModel } from './workbench/workbenchModel'
 import { CUBE_SEED_PARAM, CUBE_MEASURES_PARAM, CUBE_STORE_PARAM, WORKBENCH_SEED_PARAMS } from '../../studio/useStudioRoute'
 import { useActiveLocales } from '../../inspector/useActiveLocales'
 import { SuspenseFallback } from '../../shared/SuspenseFallback'
 
 // Lazy: the three-pane workbench (+ PipelineBuilder/dnd-kit, live grid, generated-query
-// pane) loads only when a workbench-shaped spec (query/pipeline) is opened for shaping —
-// never in the eager modeler chunk. The SAME surface the inspector DATA-facet escalation
-// mounts (0086 — ONE editor); the raw-JSON DataSpecEditor stays a steward last resort.
+// pane) loads only when a spec is opened for shaping — never in the eager modeler chunk.
+// It is the SOLE spec editor in this host (ADR-051 DU3): a query/pipeline shapes on the
+// three panes; any other kind edits in its co-located SpecBody fallback lane. The SAME
+// surface the inspector DATA-facet escalation mounts (0086 — ONE editor, no sibling).
 const DataWorkbench = lazy(() =>
   import('./workbench/DataWorkbench').then((m) => ({ default: m.DataWorkbench })),
 )
@@ -189,28 +188,31 @@ export function DataModelingPanel() {
   // The authoring panel shows for both an existing source and a brand-new one.
   const showAuthoring  = selection?.kind === 'source' || selection?.kind === 'source-new'
 
-  // ── ONE editor = the workbench (0086 · 0099) ───────────────────────────────────
-  //  A workbench-SHAPED spec (a native `pipeline` — what the Sources «დაათვალიერე
-  //  workbench-ში» cross-gesture seeds — OR a legacy `query`, via its desugared view) is
-  //  SHAPED on the three-pane WORKBENCH GRID, never the raw-JSON `JsonFallback` (the 0089
-  //  finding #2 defect). This is the SAME surface the inspector DATA-facet escalation opens
-  //  (no fork): the browse rows + steps + generated-query pane the gesture PROMISES. The raw
-  //  editor survives as a steward last-resort disclosure below (plane law). Non-workbench
-  //  spec kinds (row-list/timeseries/…) keep the `DataSpecEditor` two-column form.
-  const workbenchSpec = selectedSpec && isWorkbenchShaped(selectedSpec.spec) ? selectedSpec : null
-  const workbenchSpecId = workbenchSpec?.id
+  // ── ONE editor = the workbench (0086 · 0099 · ADR-051 DU3) ─────────────────────
+  //  EVERY selected spec — a native `pipeline` (what the Sources «დაათვალიერე workbench-ში»
+  //  cross-gesture seeds), a legacy `query` (via its desugared view), OR any other kind
+  //  (row-list/timeseries/growth/…) — is edited through the ONE `DataWorkbench` surface.
+  //  The workbench internally routes: a query/pipeline shapes on the three-pane GRID (never
+  //  the raw-JSON `JsonFallback` — the 0089 finding #2 defect); any other kind edits IN its
+  //  co-located SpecBody FALLBACK LANE. This is byte-for-byte the SAME surface the inspector
+  //  DATA-facet escalation opens (no fork), so a non-pipeline spec opened here edits through
+  //  the SAME lane as the inspector door — genuinely one surface, no host-dependent second
+  //  editor. The kind `<Select>` type-switcher (ADR-046 already deleted the 8-way spec-type
+  //  Select) does NOT reappear; type-conversion is the workbench's "bind a governed metric"
+  //  path, not a raw Select (FF-ONE-SPEC-EDITOR).
+  const selectedSpecId = selectedSpec?.id
 
   // The workbench takes over the panel full-width (the CRAFT room its three panes need —
   // the same reason the inspector escalates it to a full-screen focus-view). Bring it into
   // view on arrival (the handoff lands the steward here from another scroll position).
   const workbenchHeadRef = useRef<HTMLDivElement>(null)
   useEffect(() => {
-    if (!workbenchSpecId) return
+    if (!selectedSpecId) return
     const el = workbenchHeadRef.current
     if (el && typeof el.scrollIntoView === 'function') el.scrollIntoView({ block: 'start' })
-  }, [workbenchSpecId])
+  }, [selectedSpecId])
 
-  if (workbenchSpec) {
+  if (selectedSpec) {
     return (
       <Box className="data-modeling-panel data-modeling-panel--workbench">
         <Box ref={workbenchHeadRef} className="data-modeling-panel__workbench-head" data-testid="modeling-workbench">
@@ -223,11 +225,11 @@ export function DataModelingPanel() {
             {en ? 'Back to list' : 'სიაში დაბრუნება'}
           </Button>
           <Typography variant="h6" fontWeight={600} sx={{ flex: 1, minWidth: 0, overflowWrap: 'anywhere' }}>
-            {workbenchSpec.name}
+            {selectedSpec.name}
           </Typography>
           <Chip
             size="small"
-            label={String((workbenchSpec.spec as { type?: string }).type ?? 'spec')}
+            label={String((selectedSpec.spec as { type?: string }).type ?? 'spec')}
             color="secondary"
             variant="outlined"
           />
@@ -235,26 +237,15 @@ export function DataModelingPanel() {
 
         <Suspense fallback={<SuspenseFallback label={en ? 'Loading workbench' : 'იტვირთება ვორქბენჩი'} />}>
           <DataWorkbench
-            value={workbenchSpec.spec}
-            onChange={(spec) => updateDataSpec(workbenchSpec.id, { spec })}
+            value={selectedSpec.spec}
+            onChange={(spec) => updateDataSpec(selectedSpec.id, { spec })}
           />
         </Suspense>
-
-        {/* Steward last resort — the raw DataSpec editor (plane law: raw-JSON is a
-            disclosure, never the default landing). Collapsed by default. */}
-        <Accordion disableGutters variant="outlined" data-testid="workbench-raw-advanced">
-          <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-            <Typography variant="subtitle2" fontWeight={600}>
-              {en ? 'Raw editor (advanced)' : 'ნედლი რედაქტორი (დამატებითი)'}
-            </Typography>
-          </AccordionSummary>
-          <AccordionDetails>
-            <DataSpecEditor
-              value={workbenchSpec.spec}
-              onChange={(spec) => updateDataSpec(workbenchSpec.id, { spec })}
-            />
-          </AccordionDetails>
-        </Accordion>
+        {/* ADR-051 DU3 — the parallel "Raw editor (advanced)" accordion + the kind <Select>
+            are GONE: the workbench (with its co-located SpecBody fallback lane) is the SOLE
+            spec-editing surface here. A non-pipeline kind edits INSIDE the workbench's
+            fallback lane — the SAME lane the inspector door opens — never a second sibling
+            editor and never a raw type-switcher (FF-ONE-SPEC-EDITOR). */}
       </Box>
     )
   }
@@ -359,26 +350,9 @@ export function DataModelingPanel() {
           {selection?.kind === 'upload' && (
             <ExcelUpload onIngested={() => { void refreshDataSources() }} />
           )}
-
-          {selectedSpec && (
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-              <Typography variant="h6" fontWeight={600}>{selectedSpec.name}</Typography>
-              <Typography variant="body2" color="text.secondary">{selectedSpec.description ?? '—'}</Typography>
-              <Box>
-                <Chip
-                  size="small"
-                  label={String((selectedSpec.spec as { type?: string }).type ?? 'spec')}
-                  color="secondary"
-                  variant="outlined"
-                />
-              </Box>
-              <Divider />
-              <DataSpecEditor
-                value={selectedSpec.spec}
-                onChange={(spec) => updateDataSpec(selectedSpec.id, { spec })}
-              />
-            </Box>
-          )}
+          {/* A selected spec is NOT edited here — it takes over the panel full-width through
+              the ONE DataWorkbench surface (the early return above, ADR-051 DU3). The grid
+              view only hosts source authoring / upload; there is no second spec editor. */}
         </Paper>
       </Box>
     </Box>

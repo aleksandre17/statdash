@@ -10,9 +10,10 @@ import type { DataSpec, MetricDef } from '@statdash/engine'
 
 // The full data-modeling body (source/spec browser + editor), extracted from the
 // wizard's DataStep so the Studio Data surface mounts the SAME component. These
-// tests prove it mounts against the real store, routes a workbench-shaped spec to
-// the WORKBENCH GRID (0086 · 0099 — one editor, never the raw-JSON JsonFallback), and
-// keeps the DataSpecEditor for non-workbench spec kinds.
+// tests prove it mounts against the real store and routes EVERY selected spec through
+// the ONE DataWorkbench surface (ADR-051 DU3): a query/pipeline shapes on the three-pane
+// GRID (0086 · 0099 — never the raw-JSON JsonFallback), and any other kind edits in the
+// workbench's co-located SpecBody fallback lane — no separate DataSpecEditor, no kind Select.
 
 // The workbench's live grid + metric palette are mocked so the composition test is
 // deterministic (their own states are tested in PipelineDataGrid / DataWorkbench).
@@ -46,7 +47,7 @@ const QUERY_SPEC: NamedDataSpec = {
   id: 'spec-q', name: 'GDP query',
   spec: { type: 'query', query: { measure: ['m.gdp'] }, pipe: [], encoding: { label: 'label' } },
 }
-// A NON-workbench spec — keeps the DataSpecEditor two-column form.
+// A NON-pipeline spec — edits through the workbench's co-located SpecBody fallback lane.
 const ROWLIST_SPEC: NamedDataSpec = {
   id: 'spec-r', name: 'Manual rows', spec: { type: 'row-list', rows: [] },
 }
@@ -86,21 +87,31 @@ describe('DataModelingPanel — relocated data authoring (AR-49 M1.3)', () => {
     expect(screen.getByRole('button', { name: 'Excel' })).toBeInTheDocument()
   })
 
-  it('selecting a NON-workbench spec reveals the real DataSpecEditor', () => {
+  it('selecting a NON-pipeline spec opens the ONE workbench surface via its fallback lane — no kind Select (ADR-051 DU3)', async () => {
     renderPanel()
     fireEvent.click(screen.getByText('Manual rows'))
-    // The DataSpecEditor's type picker — proof the SAME editor mounted, not a stub.
-    expect(screen.getByRole('combobox', { name: 'სპეც-ის ტიპი' })).toBeInTheDocument()
-    expect(screen.queryByTestId('modeling-workbench')).toBeNull()
+    // Same host takeover as a pipeline spec — the workbench, not a separate DataSpecEditor.
+    expect(screen.getByTestId('modeling-workbench')).toBeInTheDocument()
+    // The non-pipeline kind edits IN the workbench's co-located SpecBody fallback lane
+    // (lazy-resolved), never a second sibling editor…
+    expect(await screen.findByTestId('workbench-fallback-lane')).toBeInTheDocument()
+    // …and the deleted kind <Select> type-switcher does NOT reappear (FF-ONE-SPEC-EDITOR).
+    expect(screen.queryByRole('combobox', { name: 'სპეც-ის ტიპი' })).toBeNull()
+    // The three SHAPING panes are absent — row-list is not (yet) pane-shaped.
+    expect(screen.queryByTestId('workbench-rail')).toBeNull()
   })
 
-  it('editing a NON-workbench spec writes through the same store action (updateDataSpec)', () => {
+  it('editing a NON-pipeline spec in the fallback lane writes through the same store action (updateDataSpec)', async () => {
     renderPanel()
     fireEvent.click(screen.getByText('Manual rows'))
-    fireEvent.mouseDown(screen.getByRole('combobox', { name: 'სპეც-ის ტიპი' }))
-    const listbox = screen.getByRole('listbox')
-    fireEvent.click(within(listbox).getByText(/\(timeseries\)/))
-    expect(useConstructorStore.getState().dataSpecs.find((s) => s.id === 'spec-r')!.spec.type).toBe('timeseries')
+    const lane = await screen.findByTestId('workbench-fallback-lane')
+    // row-list lands on the JSON fallback textarea (no rich editor booted) — an edit there
+    // writes through the SAME updateDataSpec store action the workbench uses.
+    const box = within(lane).getByRole('textbox')
+    fireEvent.change(box, { target: { value: '{"type":"row-list","rows":[{"a":1}]}' } })
+    const saved = useConstructorStore.getState().dataSpecs.find((s) => s.id === 'spec-r')!.spec
+    expect(saved.type).toBe('row-list')
+    expect((saved as Extract<DataSpec, { type: 'row-list' }>).rows).toHaveLength(1)
   })
 
   it('selecting a source reveals the authoring panel with delete', () => {
@@ -120,9 +131,11 @@ describe('DataModelingPanel — a workbench-shaped spec lands on the GRID (0086 
     expect(screen.getByTestId('modeling-workbench')).toBeInTheDocument()
     expect(within(grid).getByTestId('mock-step-grid')).toBeInTheDocument()
     expect(screen.getByTestId('workbench-back-to-list')).toBeInTheDocument()
-    // Raw-JSON survives ONLY as a collapsed steward disclosure (plane law) — never the landing.
-    const advanced = screen.getByTestId('workbench-raw-advanced')
-    expect(within(advanced).getByRole('button').getAttribute('aria-expanded')).toBe('false')
+    // ADR-051 DU3 — the workbench is the SOLE spec editor: the parallel "Raw editor
+    // (advanced)" accordion is GONE, and NO second DataSpecEditor (its kind <Select>) sits
+    // beside the workbench (FF-ONE-SPEC-EDITOR).
+    expect(screen.queryByTestId('workbench-raw-advanced')).toBeNull()
+    expect(screen.queryByRole('combobox', { name: 'სპეც-ის ტიპი' })).toBeNull()
   })
 
   it('an in-workspace cube seed (on the URL) seeds a steward pipeline cube and lands on the workbench GRID (not JsonFallback)', async () => {

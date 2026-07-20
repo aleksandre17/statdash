@@ -93,7 +93,12 @@ export function DataSpecEditor({ value, onChange }: DataSpecEditorProps) {
 //    neither / unresolved              → the steward raw-JSON last-resort disclosure
 //  A new bind-kind reaches its surface with ZERO edit here (FF-NO-DATASPEC-SWITCH).
 //
-function SpecBody({ value, onChange }: { value: DataSpec; onChange: (spec: DataSpec) => void }) {
+//  Exported (ADR-051 DU3): the workbench co-locates THIS generic dispatch as its own
+//  fallback lane for kinds the three panes can't yet shape — the ONE editing surface.
+//  It carries NO kind <Select> (that stays the DataSpecEditor picker), so a pipeline
+//  spec can never trip the picker's out-of-range warning through this lane.
+//
+export function SpecBody({ value, onChange }: { value: DataSpec; onChange: (spec: DataSpec) => void }) {
   const authoring = resolveSpecAuthoring(value.type)
 
   if (authoring?.editorKey) {
