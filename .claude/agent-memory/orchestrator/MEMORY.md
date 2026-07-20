@@ -31,6 +31,7 @@
 - [localeString leak + apex blindspot](feedback_localestring_leak_apex_blindspot.md) — bilingual-but-string field = silent React #31; jsdom misses chart shells
 
 ## Standing mandate (what the owner wants)
+- [pipeline full power + simple](feedback_pipeline_full_power_simple.md) — the ONE data pipeline must do EVERYTHING the arsenal can (full capability parity) AND be simple enough a non-programmer masters it; owner authorized adopting reference-class libraries
 - [autonomous cognition](feedback_autonomous_cognition.md) — HIGHEST: independent cognizing mind not executor; SEE invisible links/gaps/concepts, bring reference-class concepts, reduce need for direction
 - [full ownership + reference-grade](feedback_full_ownership_reference_grade.md) — FULL ownership: reference-grade, loosely-coupled, SOLID, canonical (arch AND UI); own calls, results not process, one body
 - [craft + completeness bar](feedback_craft_completeness_bar.md) — every surface clears the reference-class CRAFT bar; see+close the thousand small gaps unprompted; craft is part of DONE

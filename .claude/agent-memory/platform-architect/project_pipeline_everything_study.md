@@ -1,0 +1,22 @@
+---
+name: pipeline-everything-study
+description: READ-ONLY study for ADR-051 (0102) — "pipeline can do EVERYTHING + non-programmer-simple" audit; the value-cell source variant is the ONE load-bearing GAP; library verdict = adopt only TanStack, build/keep the rest
+metadata:
+  type: project
+---
+
+Study feeding [[one-data-workspace]] (ADR-051) / [[query-pipeline-data-home]] (ADR-046), owner's two non-negotiables: pipeline does EVERYTHING + non-programmer-masterable + adopt a lib if warranted. Returned as a decision doc (no file written per orchestrator rule). 2026-07-20.
+
+**Verdict: surface is FAR more built than the ADR waves imply** — 19-op arsenal, store-aware `source` head (3 variants + Addendum 3 store-home), live per-step grid, 7-verb palette (category projection LIVE, FF-VERB-COVERAGE), P-OFFER pick-don't-type (role projection, FF-ROLE-COVERAGE), browse-first, honest Cell states, governed-noun plane (the quadrant NO leader holds: governed×simple×no-query). Workbench already surpasses Power Query/Grafana/Tableau Prep on perception.
+
+**GAP-1 (load-bearing) — the value-cell `source` variant is MISSING.** `desugar.ts:180-190` + ADR-046 W-P5a: `timeseries`/`growth`/`ratio-list`/`row-list` are store-aware value-cell specs (per-coordinate `storeValAt` sum + `pct` row; per-pair `storeVal` scalar) — NOT expressible by the 3 source variants (metrics/query/rows) → folding cracks FF-PIPELINE-EQUIV byte-parity. Class-M `SourceStep` contract change ESCALATED TO ME. Remedy = a 4th variant `{op:'source', point:{code,over,coords?,at?,rollup?,clamp?}}` delegating to the EXISTING `point-series` resolver (mirrors blend→joinByField, governed head→metric resolver; no new store port/evaluator). This ONE primitive unblocks all 4 kinds. **It is the engine PRECONDITION of ADR-051 DU4** → propose a wave DU4a before DU4b, and it belongs as **ADR-046 Addendum 4** (I author it; within settled spine grammar, additive/expand-contract).
+
+**GAP-2 — pivot + the 4 kinds authored only in the LEGACY DataSpecEditor** (`toWorkbenchModel` accepts query|pipeline only; else → the "raw editor advanced" accordion in DataModelingPanel + DataFacetField = the ADR-051 archipelago). Downstream of GAP-1: closes when the 4 kinds desugar to pipeline (DU3 absorb → DU4 fold → DU5 demote).
+
+**GAP-3 (simplicity, independent DU4 task) — 3 opaque-object fields are raw JSON in the AUTHOR plane.** `lookup.from`/`join.with`/`blend.from` = `role:'literal'`+`type:'object'` → `JsonObjectField` textarea (TransformStepEditor.tsx). Breaks pick-don't-type + no-raw-JSON for Combine. Fix = new `role:'source-ref'` projected to a governed secondary-source picker reusing GetHead/MetricPalette/RawCubePalette.
+
+**Simplicity doctrine (7 rules, each a FF): R-S1** one front door=browse+pick source, NEVER a spec-type Select in author plane · **R-S2** pick-never-type (JsonObjectField in author plane = defect) · **R-S3** always-on live grid + generated-query/EXPLAIN pane · **R-S4** canvas-never-lies · **R-S5** plain verbs, ops one level deeper · **R-S6** plane discipline (power behind steward lens) · **R-S7** no kind stranded. Live violations: V1 two editors mounted, V2 8-way Select front door, V3 raw-JSON opaque objects, V4 four kinds unshapeable in one workspace.
+
+**Library verdict (owner authorized): adopt exactly ONE — TanStack Table+Virtual** (headless, MIT, ~14KB), scoped to the raw-data-home Floor-1 grid (DU6), YAGNI-gated on a real >1k-row consumer; the capped 200-row preview grid stays hand-rolled. **BUILD/keep everything else:** (a) workbench BEATS react-querybuilder (raw columns+SQL, breaks governed plane/Law 2) & ReactFlow (wrong grammar — linear applied-steps is simpler+correct); (b) keep home-grown ExprAutocompleteInput (governed autocomplete + live preview over @statdash/expr whitelist) — CodeMirror 6 only later behind steward lens as a wrapper w/ our vocab; reject Monaco (2MB). Reject AG Grid / MUI X DataGrid Pro / Glide (own the DOM / paid / canvas breaks WCAG Law 9). Rationale honors Law 4: we already built on the platforms' IDEAS in best form; importing their runtimes would regress us. Propose a lightweight adoption ADR so "why not AG Grid/Monaco" isn't re-litigated.
+
+**How to apply:** ADR-051 needs NO amendment; annotate its wave plan (DU4 precondition = DU4a/ADR-046 Addendum 4; GAP-3 is a separate DU4 line). Per [[maximal-orthogonality]], the TanStack adoption stays deferred until a real consumer exists.

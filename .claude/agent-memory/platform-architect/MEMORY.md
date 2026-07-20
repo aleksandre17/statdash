@@ -2,6 +2,8 @@
 
 - [Proactive sweep 2026-07-18](project_proactive_sweep_2026_07_18.md) — I OWN PROACTIVE-SWEEP-2026-07-18.md; top root = transient-failure grammar (429 kills pages); 15 findings + verified-good list
 - [Canonical panel IA (0102)](project_canonical_panel_ia.md) — I OWN STUDY-canonical-panel-ia.md; spine EXISTS in engine, skeleton LOST as projection; skeleton = page-kind × PresetDecl; remedy R1-R6
+- [One Data Workspace (ADR-051)](project_one_data_workspace.md) — I authored ADR-051; Option A / Surface-axis close of 0102; source-is-step-0, retire 2 rail doors + courier + parallel raw editor; waves DU1-DU6; Option B=ADR-052 deferred
+- [Pipeline-everything study (0102)](project_pipeline_everything_study.md) — value-cell `source` variant = THE gap (ADR-046 Addendum 4, DU4 precondition); GAP-3 raw-JSON opaque objects; libs = adopt only TanStack, build/keep rest
 
 ## Auto-relocated (memory-home-guard — reconcile into a topic section)
 - [Time-mode decision](project_time_mode_decision.md) — orthogonal-axis law (selection ⊥ grain ⊥ dim); grain deferred behind D-GRAIN on data grounds

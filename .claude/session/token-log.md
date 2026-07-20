@@ -386,3 +386,11 @@
 [2026-07-19 18:13] RUN run=agent-a49883edd4ffad706 model-actual=claude-opus-4-8 calls=70 first-in=28792 peak-ctx=63262 out-tokens=10399
 [2026-07-19 18:29] RUN run=agent-a4b100ecbb8fe7c31 model-actual=claude-opus-4-8 calls=48 first-in=22131 peak-ctx=67174 out-tokens=14175
 [2026-07-19 18:54] RUN run=agent-a3d7b4567f1d9758f model-actual=claude-opus-4-8 calls=76 first-in=22245 peak-ctx=94951 out-tokens=27997
+[2026-07-20] SESSION ROLLUP: runs=360 total_tokens=4002428378  (SessionEnd hook — measured)
+[2026-07-20 09:46] RUN run=agent-a592ae4a0bccad768 model-actual=claude-opus-4-8 calls=98 first-in=28628 peak-ctx=99223 out-tokens=11297
+[2026-07-20 10:37] RUN run=agent-a1cf64e0e2f3a1d9b model-actual=claude-opus-4-8 calls=43 first-in=21249 peak-ctx=98860 out-tokens=17671
+[2026-07-20 10:52] RUN run=agent-ab877debf576f61de model-actual=claude-opus-4-8 calls=33 first-in=21215 peak-ctx=89912 out-tokens=19585
+[2026-07-20 11:02] RUN run=agent-acd5628129982f953 model-actual=claude-opus-4-8 calls=62 first-in=21253 peak-ctx=161732 out-tokens=24073  ⚠ CTX-BURN: peak 161732 > 120000 — audit the brief/packet
+
+[07:11] opus-b DU1-live-verify tokens=~85k files=2 → du1-step{1-7}*.png(new, repo root), deploy: tar apps/panel/src → statdash-dev-panel-full bind-mount + restart
+[2026-07-20 11:12] RUN run=agent-aef15e9e71789a9aa model-actual=claude-opus-4-8 calls=182 first-in=22081 peak-ctx=185730 out-tokens=82863  ⚠ CTX-BURN: peak 185730 > 120000 — audit the brief/packet

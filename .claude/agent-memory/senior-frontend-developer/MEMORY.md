@@ -5,7 +5,8 @@
 - [W2 Semantic Spine (AR-52)](project_panel_w2_semantic_spine.md) — front-door hoist · corpus→governed ids
 - [P2a substrate un-bury (ADR-049)](project_panel_p2a_substrate_unbury.md) — workbench kind-agnostic · band-item visibility · TrendField
 - [Composed-preset primitive (P2b/R2)](project_panel_composed_preset_primitive.md) — presetRegistry + planPresetInserts + Starters band
-- [Skeleton restore (ADR-050 R3)](project_panel_skeleton_restore_r3.md) — page-kind gallery + starters-as-decls; SkeletonRegistry=loading-fallback; page-root variant
+- [Skeleton restore (ADR-050 R3)](project_panel_skeleton_restore_r3.md) — page-kind gallery + starters-as-decls; SkeletonRegistry=loading-fallback
+- [One Data workspace (ADR-051 DU1)](project_panel_one_data_workspace.md) — sources+model→one `data` door; floors via ?dataFloor
 - [Summary-Card Inspector (Move 1)](project_summary_card_inspector.md) — rich values → glance cards + dock section registry
 - [Constructor architecture (state)](project_constructor_state.md) — Inspector/SchemaSource seam, registry
 - [Constructor C3+C5](project_panel_c3_c5.md) — cube capability-discovery + save guard
@@ -26,8 +27,8 @@
 - [Panel code-splitting](project_panel_code_splitting.md) — lazy boundaries + Rolldown vendor groups; jsx-runtime gotcha
 - [Panel tsconfig constraints](project_panel_tsconfig_constraints.md) — no TS parameter-properties / import type
 - [Panel Playwright e2e](project_panel_playwright_e2e.md) — real-browser boot/bind proof; mock-API; e2e/probes/ home
-- [Canvas chrome fidelity + hollow rail](project_panel_canvas_chromeconfig_defect.md) — hollow-rail FIXED (projectCanvasSiteChrome); chrome-SELECTION via ChromeSlot
-- [Canvas brand faithful (AR-52 W1)](project_canvas_brand_faithful.md) — brand themeOverrides + ONE styles apply seam (buildThemeVars/applyThemeOverrides), dark-safe
+- [Canvas chrome fidelity + hollow rail](project_panel_canvas_chromeconfig_defect.md) — hollow-rail FIXED; chrome-SELECTION via ChromeSlot
+- [Canvas brand faithful (AR-52 W1)](project_canvas_brand_faithful.md) — brand themeOverrides + ONE styles apply seam, dark-safe
 - [Insert accept-graph gap (M4.1)](project_panel_insert_accept_graph_gap.md) — auto-wrap into `section`; homeless→hint; fix via META accepts
 - [Layout site-assembly R1 (0102)](project_panel_layout_assembly_r1.md) — empty-container data-node-empty · move-nest · page-frame overflow-x:clip
 - [Per-page type end-to-end](project_panel_per_page_type.md) — CanvasPage.type first-class+required; insert accepts derive from page.type
@@ -67,7 +68,7 @@
 - [node-vite remote deploy layout](project_node_vite_remote_deploy_layout.md) — ships workspace root to $DEPLOY_PATH/context; env_file path math
 - [Config API contract](reference_config_api_contract.md) — /api/config endpoint shapes & quirks
 - [Render path / browser-verify](reference_render_path_browser_verify.md) — runner needs API; live :3002/:3003; fail-soft-is-itself-broken
-- [Dev-line panel :3013](reference_dev_line_panel_3013.md) — statdash-dev-panel-full; packages/* baked as SRC; tar-sync for packages/core live-proof
+- [Dev-line panel :3013](reference_dev_line_panel_3013.md) — statdash-dev-panel-full; packages/* baked as SRC; tar-sync live-proof
 - [Conform to engine types over spec text](feedback_conform_engine_types.md) — when a task spec contradicts a published engine type, the type wins
 - [No registerSlice in engine-react tests](feedback_engine_react_no_registerslice_in_tests.md) — register via nodeRegistry.register; registerSlice pulls i18next
 - [Plugins shell test: mock new engine imports](feedback_plugins_shell_test_mock_new_engine_import.md) — new @statdash/react/engine imports must join the test's vi.mock
@@ -89,5 +90,5 @@
 - [Radix primitives in jsdom](feedback_radix_jsdom_polyfills.md) — 4 polyfills a Radix listbox needs; native→Radix breaks fireEvent.change tests
 - [legend aesthetic owner verdict](feedback_legend_aesthetic.md) — legends bottom, single-line ellipsis, ONE token; wrapped/columned rejected
 - [store cube-region scoping](project_store_cube_region_scoping.md) — stats store scopes wire-dim classifiers to actualRegion; dev DB has TWO sector vocabularies
-- [rail cell+panel pattern](project_rail_cell_panel_pattern.md) — expanding chrome = constant layout cell + absolute overlay panel; never transition in-flow width
+- [rail cell+panel pattern](project_rail_cell_panel_pattern.md) — expanding chrome = constant cell + absolute overlay panel
 - [filter-control sizing + rail](project_filter_control_sizing_and_rail.md) — multi-select/year-select filter-bar sizing; --shadow-rail token; craftScreens e2e
