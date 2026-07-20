@@ -1,10 +1,10 @@
 import { useEffect, useRef } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Box, Typography } from '@mui/material'
 import { CanonicalUpload } from '../model/CanonicalUpload'
 import { CubeInventory } from './CubeInventory'
-import { useSourcesHandoff } from '../../store/sourcesHandoff'
 import { useSetRole } from '../useRole'
-import { useSetSurface } from '../useStudioRoute'
+import { studioDataWorkbenchPath } from '../useStudioRoute'
 import { useDataSources } from '../../store/constructor.store'
 import { storeKeyForDataset } from '../../discovery/cubeProfile.store'
 import type { Locale } from '../../types/constructor'
@@ -25,32 +25,38 @@ import type { Locale } from '../../types/constructor'
 //  «ჯერ შეიმეცნოს, მერე მანიპულირება»: comprehension precedes manipulation — SEE the
 //  data and its vocabulary here; the Model page governs it; the workbench shapes it.
 //
-//  ── Cross-gesture (the ladder as navigation) ──────────────────────────────────
-//  A cube's «დაათვალიერე workbench-ში» hands the steward INTO the Model page's workbench
-//  seeded with that cube: set the one-shot handoff, flip to the Steward lens, navigate to
-//  /studio/model (the workbench consumes the handoff on arrival — 0084's withStewardCube).
+//  ── In-workspace cube browse (ADR-051 DU2 — the courier is dead) ───────────────
+//  A cube's «დაათვალიერე workbench-ში» is an IN-WORKSPACE selection now, not a cross-
+//  screen handoff: switch to the Model floor of THIS same Data workspace (`?dataFloor=
+//  model`) with the picked cube RIDING THE URL (`studioDataWorkbenchPath`), and the
+//  workbench seeds its `source` step from that seed on arrival (DataModelingPanel). No
+//  one-shot store, no `setSurface` teleport — the destination stays `/studio/data`, only
+//  the floor query changes (the exact DU1 floor-switch mechanism). The steward LENS is
+//  still selected: shaping a raw cube IS a steward activity (FF-AUTHOR-NO-QUERY — the
+//  author never picks a raw cube), so landing in the steward shaping view is the correct,
+//  least-astonishing outcome of an explicit "browse in workbench", not a courier side-effect.
 //
 //  WCAG (Law 9): a labelled region; focus lands here on mount (the destination the user
 //  navigated INTO); bilingual chrome throughout, no hardcoded string leak.
 export function SourcesBody({ locale }: { locale: Locale }) {
   const en = locale === 'en'
-  const browseCube = useSourcesHandoff((s) => s.browseCube)
-  const setRole    = useSetRole()
-  const setSurface = useSetSurface()
-  const sources    = useDataSources()
+  const navigate = useNavigate()
+  const setRole  = useSetRole()
+  const sources  = useDataSources()
 
   const regionRef = useRef<HTMLDivElement>(null)
   useEffect(() => { regionRef.current?.focus() }, [])
 
   const onBrowseInWorkbench = (datasetCode: string, measures: string[]) => {
-    // 0089 · ADR-046 Addendum 3: FREEZE the picked cube's store home into the handoff, resolved
+    // 0089 · ADR-046 Addendum 3: FREEZE the picked cube's store home into the seed, resolved
     // here (at the origin gesture) from the session sources — so the seeded steward head reads
-    // the PICKED cube's OWN store, not the page's, and the resolution is race-free of when the
-    // Model-page consumer hydrates. Undefined when the cube is not a session source (degrades).
+    // the PICKED cube's OWN store, not the page's. Undefined when the cube is not a session
+    // source (degrades: the head declares no home, falls through to the page store).
     const dataSource = storeKeyForDataset(sources, datasetCode)
-    browseCube({ datasetCode, measures, dataSource })
-    setRole('steward')       // the workbench lives behind the Steward lens (FF-AUTHOR-NO-QUERY)
-    setSurface('model')      // → /studio/model; DataModelingPanel consumes the handoff
+    setRole('steward')  // shaping a raw cube is a steward activity (FF-AUTHOR-NO-QUERY)
+    // In-workspace floor switch (same `/studio/data` surface) seeded with the cube — the
+    // workbench reads the seed off the URL. No courier store, no cross-surface teleport.
+    navigate(studioDataWorkbenchPath({ datasetCode, measures, dataSource }))
   }
 
   return (

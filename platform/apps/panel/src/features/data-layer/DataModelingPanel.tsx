@@ -1,4 +1,5 @@
 import { lazy, Suspense, useEffect, useRef, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { Box, Typography, Button, Chip, Paper, Divider, Accordion, AccordionSummary, AccordionDetails } from '@mui/material'
 import StorageIcon from '@mui/icons-material/Storage'
 import DataObjectIcon from '@mui/icons-material/DataObject'
@@ -19,7 +20,7 @@ import { useDndSensors } from '../../shared/dnd/useDndSensors'
 import type { DataSpec } from '@statdash/engine'
 import { DataSpecEditor } from './DataSpecEditor'
 import { withStewardCube, fromWorkbenchModel, isWorkbenchShaped } from './workbench/workbenchModel'
-import { useSourcesHandoff } from '../../store/sourcesHandoff'
+import { CUBE_SEED_PARAM, CUBE_MEASURES_PARAM, CUBE_STORE_PARAM, WORKBENCH_SEED_PARAMS } from '../../studio/useStudioRoute'
 import { useActiveLocales } from '../../inspector/useActiveLocales'
 import { SuspenseFallback } from '../../shared/SuspenseFallback'
 
@@ -128,19 +129,34 @@ export function DataModelingPanel() {
 
   const [selection, setSelection] = useState<Selection>(null)
 
-  // ── Sources → workbench cross-gesture (0091 · the ladder as navigation) ────────
-  //  A cube's «დაათვალიერე workbench-ში» on the Sources page set a one-shot handoff and
-  //  navigated here (Steward lens). Consume it ONCE on arrival: seed a fresh spec with the
-  //  steward raw-cube head (0084's withStewardCube) and select it for shaping — the SAME
-  //  createDataSpec path Show-Me uses. `take()` reads-and-clears, so it never re-fires.
-  const takePendingCube = useSourcesHandoff((s) => s.take)
+  // ── In-workspace cube seed (ADR-051 DU2 — the courier is dead) ─────────────────
+  //  The Sources floor's «დაათვალიერე workbench-ში» now rides the URL (`studioDataWorkbench
+  //  Path` → `?cube=…&cubeMeasures=…&cubeStore=…`), not a one-shot store. On arrival, seed a
+  //  fresh spec with the steward raw-cube head (0084's withStewardCube) and select it for
+  //  shaping — the SAME createDataSpec path Show-Me uses. The seed params are cleared BEFORE
+  //  the async create (read-then-clear, replace), so a re-render never re-seeds — the exact
+  //  one-shot the courier's `take()` gave, now honestly on the workspace URL (DU1 plumbing).
+  const [params, setParams] = useSearchParams()
+  const seedCode     = params.get(CUBE_SEED_PARAM)
+  const seedMeasures = params.get(CUBE_MEASURES_PARAM)
+  const seedStore    = params.get(CUBE_STORE_PARAM)
   useEffect(() => {
-    const pending = takePendingCube()
-    if (!pending) return
-    const seeded = withStewardCube({ head: { op: 'source', query: { measure: '' } }, tail: [], encoding: { label: 'time', value: 'value' } }, pending.measures, pending.dataSource)
-    void createDataSpec({ name: `${pending.datasetCode} — ნედლი დათვალიერება`, spec: fromWorkbenchModel(seeded) })
+    if (!seedCode) return
+    // One-shot: drop the seed params first, so the effect never fires twice for one intent
+    // (the floor param and everything else is preserved — only the cube* keys clear).
+    setParams((prev) => {
+      const next = new URLSearchParams(prev)
+      for (const key of WORKBENCH_SEED_PARAMS) next.delete(key)
+      return next
+    }, { replace: true })
+    const measures = seedMeasures ? seedMeasures.split(',').filter(Boolean) : []
+    const seeded = withStewardCube(
+      { head: { op: 'source', query: { measure: '' } }, tail: [], encoding: { label: 'time', value: 'value' } },
+      measures, seedStore ?? undefined,
+    )
+    void createDataSpec({ name: `${seedCode} — ნედლი დათვალიერება`, spec: fromWorkbenchModel(seeded) })
       .then((created) => setSelection({ kind: 'spec', id: created.id }))
-  }, [takePendingCube])
+  }, [seedCode, seedMeasures, seedStore, setParams])
 
   const handleSourceDragEnd = (e: DragEndEvent) => {
     const { active, over } = e

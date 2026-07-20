@@ -39,6 +39,50 @@ export type DataFloor = 'sources' | 'model'
 export const studioDataPath = (floor?: DataFloor) =>
   `${studioSurfacePath('data')}${floor ? `?${DATA_FLOOR_PARAM}=${floor}` : ''}`
 
+// ── The in-workspace "browse this cube" seed (ADR-051 DU2) ──────────────────────
+//  DU2 retires the cross-screen courier (`store/sourcesHandoff`). "Browse this cube in
+//  the workbench" is now an IN-WORKSPACE selection: the Sources floor seeds the source
+//  step in place by switching to the Model floor with the picked cube RIDING THE URL —
+//  the SAME DU1 plumbing the floor itself rides (`?dataFloor`), never a one-shot store.
+//  The seed is fully self-describing (datasetCode + its measures + its store home, all
+//  resolved at the origin gesture — race-free, 0089-faithful), so a pasted link replays
+//  it and the workbench never depends on transient cross-render state (Law 2 / Law 6).
+export const CUBE_SEED_PARAM     = 'cube'         // the picked dataset code (identity + seeded name)
+export const CUBE_MEASURES_PARAM = 'cubeMeasures' // its measure codes (comma-joined) — the steward head reads these
+export const CUBE_STORE_PARAM    = 'cubeStore'    // the cube's store HOME (0089), resolved at the pick
+
+/** The seed's URL keys — cleared as ONE unit once the workbench consumes it (one-shot). */
+export const WORKBENCH_SEED_PARAMS = [CUBE_SEED_PARAM, CUBE_MEASURES_PARAM, CUBE_STORE_PARAM] as const
+
+/** A one-shot "browse this raw cube in the workbench" intent (ADR-051 DU2 — the ex-courier payload). */
+export interface WorkbenchCubeSeed {
+  datasetCode: string
+  measures:    string[]
+  dataSource?: string
+}
+
+/** Path to the Data workspace's Model floor, seeded to browse `seed` in the workbench.
+ *  Same `/studio/data` surface (an in-workspace floor switch, never a cross-surface teleport). */
+export function studioDataWorkbenchPath(seed: WorkbenchCubeSeed): string {
+  const p = new URLSearchParams()
+  p.set(DATA_FLOOR_PARAM, 'model')
+  p.set(CUBE_SEED_PARAM, seed.datasetCode)
+  if (seed.measures.length) p.set(CUBE_MEASURES_PARAM, seed.measures.join(','))
+  if (seed.dataSource)      p.set(CUBE_STORE_PARAM, seed.dataSource)
+  return `${studioSurfacePath('data')}?${p.toString()}`
+}
+
+/** Decode a pending workbench cube seed from the URL — null when none is present. */
+export function readWorkbenchSeed(params: URLSearchParams): WorkbenchCubeSeed | null {
+  const datasetCode = params.get(CUBE_SEED_PARAM)
+  if (!datasetCode) return null
+  return {
+    datasetCode,
+    measures:   params.get(CUBE_MEASURES_PARAM)?.split(',').filter(Boolean) ?? [],
+    dataSource: params.get(CUBE_STORE_PARAM) ?? undefined,
+  }
+}
+
 /** Narrow a raw route param to a known surface (an unknown segment is not one). */
 export function isStudioSurface(value: string | undefined): value is StudioSurface {
   return value != null && (STUDIO_SURFACES as readonly string[]).includes(value)

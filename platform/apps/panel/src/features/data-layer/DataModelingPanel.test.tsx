@@ -1,10 +1,10 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { render, screen, within, fireEvent } from '@testing-library/react'
+import { MemoryRouter } from 'react-router-dom'
 import { DataModelingPanel } from './DataModelingPanel'
 import { useConstructorStore } from '../../store/constructor.store'
 import { useMetricCatalogStore } from '../../discovery/metricCatalog.store'
 import { useRoleStore } from '../../studio/useRole'
-import { useSourcesHandoff } from '../../store/sourcesHandoff'
 import type { DataSourceDef, NamedDataSpec } from '../../types/constructor'
 import type { DataSpec, MetricDef } from '@statdash/engine'
 
@@ -24,7 +24,7 @@ vi.mock('../../discovery/MetricPalette', () => ({
   MetricPalette: () => <button data-testid="mock-metric-palette">pick</button>,
 }))
 
-// createDataSpec is the ONE persistence path — the Sources handoff seeds through it.
+// createDataSpec is the ONE persistence path — the in-workspace cube seed writes through it.
 // Mock it to add the spec to the store synchronously (no network), returning the entity.
 vi.mock('../../store/api-actions', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../../store/api-actions')>()
@@ -60,15 +60,24 @@ beforeEach(() => {
   useConstructorStore.setState({ dataSources: [SOURCE], dataSpecs: [QUERY_SPEC, ROWLIST_SPEC] })
   useMetricCatalogStore.setState({ catalog: { status: 'ready', metrics, dimensions } })
   useRoleStore.setState({ role: 'steward' })
-  useSourcesHandoff.setState({ pendingCube: null })
 })
 afterEach(() => {
   useMetricCatalogStore.setState({ catalog: { status: 'idle' } })
 })
 
+// The panel reads its in-workspace cube seed off the workspace URL (ADR-051 DU2), so every
+// render is wrapped in a router; `entries` seeds the URL for the browse-a-cube test.
+function renderPanel(entries: string[] = ['/studio/data?dataFloor=model']) {
+  return render(
+    <MemoryRouter initialEntries={entries}>
+      <DataModelingPanel />
+    </MemoryRouter>,
+  )
+}
+
 describe('DataModelingPanel — relocated data authoring (AR-49 M1.3)', () => {
   it('mounts the source + spec browser reading the store', () => {
-    render(<DataModelingPanel />)
+    renderPanel()
     expect(screen.getByText('მონაცემების წყაროები')).toBeInTheDocument()
     expect(screen.getByText('მონაცემების სპეც-ები')).toBeInTheDocument()
     expect(screen.getByText('SDMX source')).toBeInTheDocument()
@@ -78,7 +87,7 @@ describe('DataModelingPanel — relocated data authoring (AR-49 M1.3)', () => {
   })
 
   it('selecting a NON-workbench spec reveals the real DataSpecEditor', () => {
-    render(<DataModelingPanel />)
+    renderPanel()
     fireEvent.click(screen.getByText('Manual rows'))
     // The DataSpecEditor's type picker — proof the SAME editor mounted, not a stub.
     expect(screen.getByRole('combobox', { name: 'სპეც-ის ტიპი' })).toBeInTheDocument()
@@ -86,7 +95,7 @@ describe('DataModelingPanel — relocated data authoring (AR-49 M1.3)', () => {
   })
 
   it('editing a NON-workbench spec writes through the same store action (updateDataSpec)', () => {
-    render(<DataModelingPanel />)
+    renderPanel()
     fireEvent.click(screen.getByText('Manual rows'))
     fireEvent.mouseDown(screen.getByRole('combobox', { name: 'სპეც-ის ტიპი' }))
     const listbox = screen.getByRole('listbox')
@@ -95,7 +104,7 @@ describe('DataModelingPanel — relocated data authoring (AR-49 M1.3)', () => {
   })
 
   it('selecting a source reveals the authoring panel with delete', () => {
-    render(<DataModelingPanel />)
+    renderPanel()
     fireEvent.click(screen.getByText('SDMX source'))
     expect(screen.getByRole('button', { name: 'წაშლა' })).toBeInTheDocument()
   })
@@ -104,7 +113,7 @@ describe('DataModelingPanel — relocated data authoring (AR-49 M1.3)', () => {
 // ── 0099 — the one editor = the workbench GRID, never the raw-JSON landing ────────
 describe('DataModelingPanel — a workbench-shaped spec lands on the GRID (0086 · 0099)', () => {
   it('selecting a query/pipeline spec opens the three-pane WORKBENCH grid, not the JSON fallback', async () => {
-    render(<DataModelingPanel />)
+    renderPanel()
     fireEvent.click(screen.getByText('GDP query'))
     // The workbench (lazy) resolves — the PROMISED grid, not a raw-JSON textarea.
     const grid = await screen.findByTestId('workbench-grid')
@@ -116,13 +125,12 @@ describe('DataModelingPanel — a workbench-shaped spec lands on the GRID (0086 
     expect(within(advanced).getByRole('button').getAttribute('aria-expanded')).toBe('false')
   })
 
-  it('the Sources handoff seeds a steward pipeline cube and lands on the workbench GRID (not JsonFallback)', async () => {
-    useSourcesHandoff.setState({
-      pendingCube: { datasetCode: 'REGIONAL_GVA', measures: ['gva.total'], dataSource: 'stats' },
-    })
-    render(<DataModelingPanel />)
+  it('an in-workspace cube seed (on the URL) seeds a steward pipeline cube and lands on the workbench GRID (not JsonFallback)', async () => {
+    // ADR-051 DU2: the cube rides the workspace URL (`?cube=…&cubeMeasures=…&cubeStore=…`),
+    // not a courier store. The panel reads it, seeds a fresh steward pipeline, and selects it.
+    renderPanel(['/studio/data?dataFloor=model&cube=REGIONAL_GVA&cubeMeasures=gva.total&cubeStore=stats'])
 
-    // The handoff creates + selects the seeded spec → the workbench grid renders.
+    // The seed creates + selects the seeded spec → the workbench grid renders.
     expect(await screen.findByTestId('workbench-grid')).toBeInTheDocument()
     expect(screen.getByTestId('modeling-workbench')).toBeInTheDocument()
     expect(screen.getByTestId('mock-step-grid')).toBeInTheDocument()

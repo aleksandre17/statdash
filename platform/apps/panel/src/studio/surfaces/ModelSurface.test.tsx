@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import { render, screen } from '@testing-library/react'
+import { MemoryRouter } from 'react-router-dom'
 import { ModelSurface } from './ModelSurface'
 import { setupCanvasRegistry } from '../../canvas/setupCanvasRegistry'
 import { useConstructorStore } from '../../store/constructor.store'
@@ -21,9 +22,19 @@ beforeEach(() => {
   useConstructorStore.setState({ dataSpecs: [SPEC], selection: null })
 })
 
+function renderSurface(locale: 'en' | 'ka') {
+  // The lazy DataModelingPanel reads its in-workspace cube seed off the URL (ADR-051 DU2),
+  // so the surface renders within a router in production and here.
+  return render(
+    <MemoryRouter initialEntries={['/studio/data?dataFloor=model']}>
+      <ModelSurface locale={locale} />
+    </MemoryRouter>,
+  )
+}
+
 describe('ModelSurface — the Steward\'s define workspace mounts the relocated modeler (AR-49 M2.1)', () => {
   it('renders the Steward context caption synchronously (before the heavy chunk resolves)', () => {
-    render(<ModelSurface locale="en" />)
+    renderSurface('en')
     expect(screen.getByText(/Define the governed data model/)).toBeInTheDocument()
   })
 
@@ -31,13 +42,13 @@ describe('ModelSurface — the Steward\'s define workspace mounts the relocated 
     // The surface mounts only when the user opens the Data-model workspace, so focus
     // lands here — the keyboard/AT payoff of the one-action jump the old split flow
     // never delivered.
-    render(<ModelSurface locale="en" />)
+    renderSurface('en')
     const region = screen.getByRole('group', { name: 'Data model workspace' })
     expect(region).toHaveFocus()
   })
 
   it('mounts the full DataModelingPanel (the relocated raw modeler — no capability lost)', async () => {
-    render(<ModelSurface locale="ka" />)
+    renderSurface('ka')
     // The lazy modeler resolves and reads the store — its source browser + the seeded
     // spec appear, proving the machinery is fully functional in Model mode.
     // Generous timeout: Model mode's eager graph grew (M2.2 MetricCatalogManager),
