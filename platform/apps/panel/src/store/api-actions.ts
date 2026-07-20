@@ -18,6 +18,7 @@ import type {
 } from '../types/constructor'
 import { useConstructorStore } from './constructor.store'
 import { useDataSpecSaveStore } from './dataSpecSave.store'
+import { isAuthoringHeld } from './authoringHold'
 import {
   configApi,
   ApiError,
@@ -243,8 +244,18 @@ async function flushSpec(id: string): Promise<void> {
 }
 
 export function updateDataSpec(id: string, patch: Partial<NamedDataSpec>): void {
-  // 1) Optimistic + IMMEDIATE — the controlled workbench reflects the edit at once.
+  // 1) Optimistic + IMMEDIATE — the controlled workbench reflects the edit at once. This
+  //    ALWAYS runs, held or not: the in-session UI stays live regardless of persistence.
   useConstructorStore.getState().updateDataSpec(id, patch)
+  // 1a) Authoring hold (store/authoringHold.ts) — the ONE reversible guard. While held,
+  //     the edit is IN-SESSION ONLY: no PUT is armed, nothing is queued (so a later
+  //     flush can never write it either), and the save chip shows an HONEST 'paused'
+  //     ("Draft — not saving"), never a fake `saved` (Law 11). Flip the hold OFF to
+  //     restore the exact debounced auto-save below (the fix is gated, not deleted).
+  if (isAuthoringHeld()) {
+    useDataSpecSaveStore.getState().setDataSpecSave(id, { phase: 'paused' })
+    return
+  }
   // 2) Coalesce the patch (latest field wins) and (re)arm the debounced durable PUT.
   pendingSpecPatches.set(id, { ...pendingSpecPatches.get(id), ...patch })
   const existing = pendingSpecTimers.get(id)
@@ -258,6 +269,10 @@ export function updateDataSpec(id: string, patch: Partial<NamedDataSpec>): void 
  * dropped. Idempotent: a no-op when nothing is pending.
  */
 export async function flushDataSpecSaves(): Promise<void> {
+  // Authoring hold — do NOT force pending PUTs out on leave/unmount either. Held = no
+  // durable write, end to end (never a save behind the owner's back). While held nothing
+  // is pending anyway; this is the belt-and-braces guard for a hold flipped ON mid-session.
+  if (isAuthoringHeld()) return
   await Promise.all([...pendingSpecTimers.keys()].map((id) => flushSpec(id)))
 }
 

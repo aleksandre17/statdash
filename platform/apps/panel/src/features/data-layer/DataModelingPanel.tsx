@@ -35,6 +35,7 @@ import { SourceAuthoringPanel } from '../datasources/SourceAuthoringPanel'
 import { ExcelUpload } from '../datasources/ExcelUpload'
 import { deleteDataSource, createDataSpec, refreshDataSources, updateDataSpec, flushDataSpecSaves } from '../../store/api-actions'
 import { useDataSpecSave } from '../../store/dataSpecSave.store'
+import { useAuthoringHold, useAuthoringHoldStore } from '../../store/authoringHold'
 import type { ConnectionStatus } from '../../types/constructor'
 import './data-modeling-panel.css'
 
@@ -210,6 +211,10 @@ export function DataModelingPanel() {
   //  another / unmount) FLUSHES any pending PUT so a debounced edit is never dropped by
   //  navigation. The save phase is surfaced honestly in the head (Law 11).
   const save = useDataSpecSave(selectedSpecId)
+  // Authoring hold (store/authoringHold.ts) — while held, edits stay in-session only; the
+  // head shows an HONEST "Draft — not saving" and hides the saving/saved chips entirely.
+  const held = useAuthoringHold()
+  const setHeld = useAuthoringHoldStore((s) => s.setHeld)
   useEffect(() => {
     if (!selectedSpecId) return
     // Cleanup fires on id change AND on unmount → flush the spec being left.
@@ -247,20 +252,39 @@ export function DataModelingPanel() {
             color="secondary"
             variant="outlined"
           />
-          {/* Honest save state (Law 11) — never a fake "saved". The error chip retries
-              the durable PUT with the current spec; success/saving are informational. */}
-          {save?.phase === 'saving' && (
-            <Chip size="small" variant="outlined" data-testid="spec-save-status"
-              label={en ? 'Saving…' : 'ინახება…'} />
-          )}
-          {save?.phase === 'saved' && (
-            <Chip size="small" color="success" variant="outlined" data-testid="spec-save-status"
-              label={en ? 'Saved' : 'შენახულია'} />
-          )}
-          {save?.phase === 'error' && (
-            <Chip size="small" color="error" clickable data-testid="spec-save-status"
-              onClick={() => updateDataSpec(selectedSpec.id, { spec: selectedSpec.spec })}
-              label={en ? `Not saved — retry` : 'ვერ შეინახა — თავიდან'} />
+          {/* Honest save state (Law 11) — never a fake "saved". When the authoring hold is
+              ON, edits are IN-SESSION ONLY: show an unmistakable "Draft — not saving" and
+              suppress every auto-save chip (they cannot honestly appear while paused), plus
+              a deliberate "Enable saving" toggle to flip the hold OFF live when stable. When
+              the hold is OFF, the normal saving/saved/error auto-save chips render. */}
+          {held ? (
+            <>
+              <Chip size="small" color="warning" variant="filled" data-testid="spec-save-status"
+                label={en ? 'Draft — not saving' : 'მონახაზი — არ ინახება'} />
+              <Button
+                size="small" color="warning" variant="outlined"
+                data-testid="authoring-hold-toggle"
+                onClick={() => setHeld(false)}
+              >
+                {en ? 'Enable saving' : 'შენახვის ჩართვა'}
+              </Button>
+            </>
+          ) : (
+            <>
+              {save?.phase === 'saving' && (
+                <Chip size="small" variant="outlined" data-testid="spec-save-status"
+                  label={en ? 'Saving…' : 'ინახება…'} />
+              )}
+              {save?.phase === 'saved' && (
+                <Chip size="small" color="success" variant="outlined" data-testid="spec-save-status"
+                  label={en ? 'Saved' : 'შენახულია'} />
+              )}
+              {save?.phase === 'error' && (
+                <Chip size="small" color="error" clickable data-testid="spec-save-status"
+                  onClick={() => updateDataSpec(selectedSpec.id, { spec: selectedSpec.spec })}
+                  label={en ? `Not saved — retry` : 'ვერ შეინახა — თავიდან'} />
+              )}
+            </>
           )}
         </Box>
 

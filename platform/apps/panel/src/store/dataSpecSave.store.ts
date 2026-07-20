@@ -10,7 +10,10 @@
 //
 import { create } from 'zustand'
 
-export type DataSpecSavePhase = 'saving' | 'saved' | 'error'
+//  `paused` is the authoring-hold state (see store/authoringHold.ts): the optimistic edit
+//  is in the session but NOT durably written — an HONEST "Draft — not saving", never a
+//  fake `saved` (Law 11). The other three are the auto-save lifecycle (saving→saved|error).
+export type DataSpecSavePhase = 'saving' | 'saved' | 'error' | 'paused'
 
 export interface DataSpecSaveState {
   phase:  DataSpecSavePhase
