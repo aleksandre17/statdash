@@ -37,16 +37,25 @@ export function isWorkbenchShaped(spec: DataSpec | undefined): spec is Extract<D
 }
 
 /**
- * Lower any accepted spec to the canonical pipeline view — the ONE code path. Returns
- * `null` for a spec the workbench does not shape (row-list/timeseries/growth/…): the
- * caller declares that honestly rather than paint a broken surface (Law 11).
+ * Lower any accepted spec to the canonical pipeline view — the ONE code path.
+ *
+ * The accept-list is SELF-MAINTAINING (ADR-046 Add.5 activation · ADR-051 DU4 Step A): run
+ * the spec through the engine SSOT `desugarToPipeline` and accept iff it actually FOLDS to a
+ * `pipeline`. So exactly the folded kinds open the three panes — `query`, `transform`,
+ * `pivot`, `timeseries`, single-code `growth` (each lowers to a `source` head + pure tail) —
+ * while a NOT-yet-folded kind (multi-code `growth`, `ratio-list`, `row-list`, `metric`)
+ * comes back as identity → non-`pipeline` → `null` → the DU3 fallback lane. No hand-kept
+ * kind list drifts from the desugar SSOT: the gate tracks whatever `desugarToPipeline` folds.
+ *
+ * Returns `null` for a spec the workbench does not shape — the caller declares that honestly
+ * rather than paint a broken surface (Law 11).
  */
 export function toWorkbenchModel(spec: DataSpec | undefined): WorkbenchModel | null {
   if (!spec) return null
-  const pipeline: DataSpec =
-    spec.type === 'pipeline' ? spec
-    : spec.type === 'query'  ? desugarToPipeline(spec)  // the SSOT desugared view
-    : spec
+  // A native pipeline is used as-is; anything else is lowered through the SSOT. `desugarToPipeline`
+  // returns a non-folded kind UNCHANGED (identity), so `pipeline.type !== 'pipeline'` below is the
+  // honest fold gate — it is `pipeline` only for a kind that genuinely folded.
+  const pipeline: DataSpec = spec.type === 'pipeline' ? spec : desugarToPipeline(spec)
   if (pipeline.type !== 'pipeline') return null
   const head = pipeline.pipe[0]
   if (!head || head.op !== 'source') return null
@@ -68,22 +77,50 @@ export function sourceOnlySpec(head: SourceStep, encoding: EncodingSpec): Pipeli
   return { type: 'pipeline', pipe: [head], encoding }
 }
 
-/** The measure ref(s) a source head reads — governed metrics, or a steward query's
- *  measure. Drives the governed value-column label (never a raw code, Law 4). */
+/** The measure ref(s) a source head reads — governed metrics, a steward query's measure,
+ *  or the value-cell head's single `code`. Drives the governed value-column label (never a
+ *  raw code, Law 4) so the folded timeseries/growth grid resolves its measure honestly. */
 export function sourceMeasure(head: SourceStep | undefined): string | string[] | undefined {
   if (!head) return undefined
   if ('metrics' in head) return head.metrics
   if ('query' in head) return head.query.measure
+  if ('over' in head) return head.code          // value-cell (Add.4) — the enumerated measure code
   return undefined
 }
 
 /** The filter/grain dim KEYS the head pins (their governed labels are shown; the member
- *  VALUES never are). A governed head pins via `where`; a steward head via `query.filter`. */
+ *  VALUES never are). A governed head pins via `where`; a steward head via `query.filter`;
+ *  a value-cell head enumerates `over` and pins fixed base coords in `at` (both are dim keys
+ *  the author reads — the honest "what the rows are indexed by", never a member value). */
 export function sourceGrainDims(head: SourceStep | undefined): string[] {
   if (!head) return []
   if ('metrics' in head) return Object.keys((head.where ?? {}) as Record<string, unknown>)
   if ('query' in head) return Object.keys(((head.query as ObsQuery).filter ?? {}) as Record<string, unknown>)
+  if ('over' in head) return [head.over, ...Object.keys((head.at ?? {}) as Record<string, unknown>)]
   return []
+}
+
+// ── The value-cell head (Add.4 · timeseries + single-code growth fold) ─────────────
+//
+//  A folded `timeseries`/`growth` lowers to the value-cell `source` head
+//  `{op:'source', over, code, coords}` — it ENUMERATES coordinates on `over` and reads a
+//  scalar value per coordinate (delegated to PointSeriesResolver at resolve time). It is
+//  READ-ONLY in the workbench Step A: the author SEES it honestly (real source + axis +
+//  coords) and edits the TAIL; full head editing is a sequenced follow-up. The live grid
+//  still resolves REAL rows through the engine (Law 11 — never a fake/blank head).
+
+/** True when the head is a value-cell read (an enumerated `over` axis + a scalar `code`). */
+export function isValueCellHead(head: SourceStep | undefined): head is Extract<SourceStep, { over: string }> {
+  return !!head && 'over' in head
+}
+
+/** The value-cell head's honest read summary — the enumerated axis dim + its explicit
+ *  coordinates (absent ⇒ the full distinct axis, `'all'`). The measure is `sourceMeasure`.
+ *  Read-only display fodder for the Get card (Law 11 — the author sees exactly what is read). */
+export function valueCellSummary(head: SourceStep | undefined):
+  { over: string; coords: readonly DimVal[] | 'all' | undefined } | undefined {
+  if (!isValueCellHead(head)) return undefined
+  return { over: head.over, coords: head.coords }
 }
 
 /** Whether the head carries a bound read (a metric, a query measure, or inline rows). */

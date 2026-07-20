@@ -6,10 +6,12 @@
 //
 import { describe, it, expect } from 'vitest'
 import type { DataSpec } from '@statdash/engine'
+import { desugarToPipeline } from '@statdash/engine'
 import {
   fromWorkbenchModel, governedWhere, isGovernedHead, isHeadBound, isStewardHead,
-  isWorkbenchShaped, promoteHeadToMetric, sourceGrainDims, sourceMeasure, stewardHeadMeasure,
-  toWorkbenchModel, withGovernedMetric, withGovernedWhere, withStewardCube,
+  isValueCellHead, isWorkbenchShaped, promoteHeadToMetric, sourceGrainDims, sourceMeasure,
+  stewardHeadMeasure, toWorkbenchModel, valueCellSummary, withGovernedMetric, withGovernedWhere,
+  withStewardCube,
 } from './workbenchModel'
 import type { WorkbenchModel } from './workbenchModel'
 
@@ -36,10 +38,58 @@ describe('toWorkbenchModel — the ONE canonical view over BOTH inputs', () => {
     expect(m.tail.map((s) => s.op)).toEqual(['filter'])
   })
 
-  it('returns null for a spec the workbench does not shape (row-list/timeseries/…)', () => {
-    expect(toWorkbenchModel({ type: 'row-list', rows: [] })).toBeNull()
-    expect(toWorkbenchModel({ type: 'timeseries', code: 'B1G', years: 'all' })).toBeNull()
+  it('returns null for undefined and for a spec the workbench does not shape', () => {
     expect(toWorkbenchModel(undefined)).toBeNull()
+  })
+})
+
+// ── ADR-046 Add.5 activation · ADR-051 DU4 Step A — the folded kinds OPEN the three panes ──
+//
+//  The accept-list is the desugar SSOT: a kind opens the workbench iff `desugarToPipeline`
+//  folds it. So a stored `timeseries` and a single-code `growth` now yield a model (three
+//  panes, READ-ONLY value-cell head); the NOT-yet-folded kinds (multi-code growth, ratio-list,
+//  row-list) still fall through to the DU3 fallback lane. Reversible = shrink the accept-list.
+describe('Step A — folded kinds open the three-pane workbench (self-maintaining gate)', () => {
+  it('a stored timeseries NOW folds to a value-cell source head + three panes', () => {
+    const m = toWorkbenchModel({ type: 'timeseries', code: 'B1G', years: 'all' })!
+    expect(m).not.toBeNull()
+    expect(m.head.op).toBe('source')
+    expect('over' in m.head).toBe(true)                 // the value-cell discriminant (Add.4)
+    expect(sourceMeasure(m.head)).toBe('B1G')           // the honest governed value-column measure
+  })
+
+  it('a single-code growth NOW folds to a value-cell head + the YoY tail', () => {
+    const m = toWorkbenchModel({ type: 'growth', code: 'B1G', years: 'all' })!
+    expect(m).not.toBeNull()
+    expect('over' in m.head).toBe(true)
+    // the desugared YoY tail is now the workbench's editable tail (window→derive→…→select)
+    expect(m.tail.map((s) => s.op)).toContain('derive')
+  })
+
+  it('the NOT-yet-folded kinds STILL fall to the fallback lane (null) — Law 11, still editable there', () => {
+    expect(toWorkbenchModel({ type: 'growth', code: ['B1G', 'B1GQ'], years: 'all' })).toBeNull()  // multi-code
+    expect(toWorkbenchModel({ type: 'ratio-list', pairs: [{ code: 'A', denom: 'B' }] } as never)).toBeNull()
+    expect(toWorkbenchModel({ type: 'row-list', rows: [] })).toBeNull()
+  })
+
+  it('editing a viewed timeseries (add a tail step) CONVERTS to a byte-identical pipeline', () => {
+    const ts: DataSpec = { type: 'timeseries', code: 'B1G', years: 'all' }
+    const model = toWorkbenchModel(ts)!
+    // The view→edit→emit path (the SAME `fromWorkbenchModel` `query` uses): the emitted spec is a
+    // `pipeline` whose HEAD is the folded value-cell head — identical to the pure desugared view, so
+    // a re-emit with no tail change resolves byte-identically (the roundtrip identity the FF proves).
+    const reEmitted = fromWorkbenchModel(model)
+    expect(reEmitted.type).toBe('pipeline')
+    // strongest panel-seam claim: the re-emit is IDENTICAL to the pure engine desugared view —
+    // so the stored spec converts to exactly what desugarToPipeline folds (the engine already
+    // proves that fold resolves byte-identically to the timeseries: FF-PIPELINE-EQUIV).
+    expect(reEmitted).toEqual(desugarToPipeline(ts))
+    expect(reEmitted.pipe[0]).toEqual(model.head)       // head preserved verbatim (no lossy re-derive)
+    // now an actual tail edit converts + persists the pipeline with the appended step
+    const withStep = fromWorkbenchModel({ ...model, tail: [...model.tail, { op: 'sort', by: 'value', dir: 'asc' } as never] })
+    expect(withStep.type).toBe('pipeline')
+    expect(withStep.pipe.at(-1)!.op).toBe('sort')
+    expect(withStep.pipe[0]).toEqual(model.head)        // head unchanged by a tail edit
   })
 })
 
@@ -114,6 +164,16 @@ describe('head helpers', () => {
     expect(isHeadBound({ op: 'source', metrics: [] })).toBe(false)
     expect(isHeadBound({ op: 'source', metrics: ['B1G'] })).toBe(true)
     expect(isHeadBound({ op: 'source', rows: [] })).toBe(true)
+  })
+
+  it('a value-cell head reads its `code` as the measure, its `over`+`at` as grain dims, and is BOUND', () => {
+    const vc = { op: 'source' as const, over: 'time', code: 'B1G', coords: [2020, 2021] as const, at: { geo: 'GE' } }
+    expect(sourceMeasure(vc)).toBe('B1G')                          // honest governed value column (Law 4)
+    expect(sourceGrainDims(vc)).toEqual(['time', 'geo'])           // enumerated axis + pinned coords (keys only)
+    expect(isHeadBound(vc)).toBe(true)                             // reads a real code → not the "pick a metric" hint
+    expect(isValueCellHead(vc)).toBe(true)
+    expect(valueCellSummary(vc)).toEqual({ over: 'time', coords: [2020, 2021] })
+    expect(valueCellSummary({ op: 'source', metrics: ['B1G'] })).toBeUndefined()
   })
 
   it('withGovernedMetric appends to a governed head (deduped) / converts other heads', () => {

@@ -41,8 +41,8 @@ import { GeneratedQueryPane } from './GeneratedQueryPane'
 import { VerbPalette } from './VerbPalette'
 import {
   fromWorkbenchModel, governedWhere, isGovernedHead, isHeadBound, isStewardHead,
-  promoteHeadToMetric, stewardHeadMeasure, toWorkbenchModel, withGovernedMetric,
-  withGovernedWhere, withStewardCube,
+  isValueCellHead, promoteHeadToMetric, stewardHeadMeasure, toWorkbenchModel,
+  valueCellSummary, withGovernedMetric, withGovernedWhere, withStewardCube,
 } from './workbenchModel'
 import { GetHead } from './GetHead'
 import { GetGrainEditor } from './GetGrainEditor'
@@ -215,9 +215,35 @@ export function DataWorkbench({ value, onChange }: DataWorkbenchProps) {
             onClick={() => setAsOfStep(AS_OF_SOURCE)}
             sx={{ alignSelf: 'flex-start' }}
           />
-          {/* The source picker — governed metrics (author + steward) + raw cubes (steward
-              lens only, plane law). The AUTHOR never sees the raw tab (FF-AUTHOR-NO-QUERY). */}
-          <GetHead locale={locale} onPickMetric={pickMetric} onPickCube={pickCube} />
+          {/* A FOLDED value-cell head (timeseries / single-code growth, Add.4) is READ-ONLY
+              in Step A: the author SEES the real source honestly (measure + enumerated axis +
+              coords) and edits the TAIL below; full head editing is the sequenced follow-up.
+              Law 11: the real source label + axis, never a fake/blank or a misleading picker. */}
+          {isValueCellHead(model.head) ? (
+            (() => {
+              const summary = valueCellSummary(model.head)!
+              const coordsText = summary.coords === undefined || summary.coords === 'all'
+                ? (en ? 'all' : 'ყველა')
+                : summary.coords.join(', ')
+              return (
+                <Box
+                  role="group"
+                  data-testid="workbench-valuecell-source"
+                  aria-label={en ? 'Source (read-only)' : 'წყარო (მხოლოდ წასაკითხი)'}
+                  sx={{ display: 'flex', flexDirection: 'column', gap: 0.25, px: 0.5 }}
+                >
+                  <Typography variant="body2">{columnLabel('value')}</Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    {en ? 'over' : 'ღერძი'} {columnLabel(summary.over)} · {coordsText}
+                  </Typography>
+                </Box>
+              )
+            })()
+          ) : (
+            /* The source picker — governed metrics (author + steward) + raw cubes (steward
+               lens only, plane law). The AUTHOR never sees the raw tab (FF-AUTHOR-NO-QUERY). */
+            <GetHead locale={locale} onPickMetric={pickMetric} onPickCube={pickCube} />
+          )}
 
           {/* The read-level grain «წაკითხვის არე» (SPEC §3.2) — a bound GOVERNED head's
               `where` pins, OFFERED from the source browse. Grain-∅ browse is the default. */}
