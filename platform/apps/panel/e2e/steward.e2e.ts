@@ -46,12 +46,15 @@ test('steward authors a governed metric in-tool → the author sees it in the pa
   await expect(page.locator('.studio-shell')).toBeVisible()
 
   // ── 2. OPEN — ONE click on the rail's "Data" mode (the front door) ───────────
-  //  Data is rail-mode #1. A single click NAVIGATES to the always-reachable data-model
-  //  destination WITHOUT escalating the lens — the author lands on the READ-ONLY Data
-  //  Dictionary (the built ≠ buried fix; the raw query cliff stays off the author path).
+  //  Data is rail-mode #1 (ADR-051 DU1: the ONE Data workspace). A single click
+  //  NAVIGATES to it WITHOUT escalating the lens; it opens on the Sources floor (the
+  //  source is step 0). Switch to the Model floor for the governed model — the author
+  //  lands on the READ-ONLY Dictionary (built ≠ buried; the raw query cliff stays off it).
   const rail     = page.getByRole('navigation', { name: 'Studio surfaces' })
   await rail.getByRole('button', { name: 'Data', exact: true }).click()
-  // The destination opened as the READ-ONLY Dictionary (author lens, not the modeler).
+  await page.getByTestId('data-floor-selector')
+    .getByRole('button', { name: 'Model', exact: true }).click()
+  // The Model floor opened as the READ-ONLY Dictionary (author lens, not the modeler).
   await expect(page.getByTestId('data-dictionary')).toBeVisible()
   await expect(page.getByTestId('dict-metric-gdp.current')).toBeVisible()
 

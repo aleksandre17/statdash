@@ -50,9 +50,12 @@ const CommandPalette = lazy(() =>
 //  summoned from the top bar — deliberately NOT full-screen, so the live canvas stays
 //  visible while a rebrand / nav edit repaints it (the "rebrand = data" payoff). This
 //  map is the OCP seam: a future canvas-less workspace is one row + one registry target.
+//  ADR-051 DU1: the ONE `data` workspace is the sole full-screen data destination — the
+//  former `sources` + `model` surfaces are gone from the rail and 301-redirect to it
+//  (StudioRoutes), so they never resolve here. `data` re-homes onto the FocusView; its
+//  body (DataWorkspaceBody) composes the Sources → Model floors in place.
 const WORKSPACE_SURFACES: Partial<Record<StudioSurface, FocusViewTargetId>> = {
-  sources: 'sources',
-  model:   'data-model',
+  data: 'data',
 }
 
 // ── StudioShell — the AR-49 Studio (canvas-always-home + activity rail) ────────

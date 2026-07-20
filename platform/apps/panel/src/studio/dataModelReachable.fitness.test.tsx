@@ -31,36 +31,46 @@ beforeEach(() => {
   useRoleStore.setState({ role: 'author' })
 })
 
-// 0091 Data-Home split: the governed data-MODEL destination is the rail's «მოდელი»
-// (Model) mode now — raw sources moved OUT to «წყაროები» (Sources, mode #1). The
-// data-model stays a registered focus-view target (the settled full-screen destination);
-// reach it from the rail's Model button.
+// ADR-051 DU1: the two former peer doors fold into ONE «მონაცემები» (Data) rail mode —
+// the ONE Data workspace whose internal IA is the four-floor ladder. The governed
+// data-MODEL is the Model floor of that workspace (reached by the in-workspace floor
+// selector); it stays a reachable, non-role-gated destination. Reach the workspace from
+// the rail's single Data button.
 const railData = () =>
-  within(screen.getByRole('navigation', { name: 'Studio surfaces' })).getByRole('button', { name: 'Model' })
+  within(screen.getByRole('navigation', { name: 'Studio surfaces' })).getByRole('button', { name: 'Data' })
+
+// The in-workspace floor selector — the Model floor button (the governed model lives here).
+const modelFloor = () =>
+  within(screen.getByTestId('data-floor-selector')).getByRole('button', { name: 'Model' })
 
 describe('FF-DATA-REACHABLE — the data model is reachable from a default (author) session', () => {
-  it('the Data-model destination is an always-visible, non-role-gated rail mode (the front door)', () => {
+  it('the ONE Data workspace is an always-visible, non-role-gated rail mode (the front door)', () => {
     // Encoded structurally: it is a registered focus-view target (a reachable
     // destination), so no future role/visibility gate can bury it without tripping this…
-    expect(Object.keys(FOCUS_VIEW_TARGETS)).toContain('data-model')
+    expect(Object.keys(FOCUS_VIEW_TARGETS)).toContain('data')
 
     // …and from the DEFAULT session the rail Data mode is present + enabled.
     renderStudio()
     expect(railData()).toBeEnabled()
   })
 
-  it('ONE click from the default session lands the user IN the data-model destination', () => {
+  it('ONE click from the default session lands the user IN the Data workspace (source is step 0)', () => {
     renderStudio()
     fireEvent.click(railData())
 
     // The destination opened (the focus-view screen with its breadcrumb-back)…
-    expect(screen.getByRole('region', { name: 'Data model' })).toBeInTheDocument()
+    expect(screen.getByRole('region', { name: 'Data' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Back' })).toBeInTheDocument()
+    // …on the SOURCES floor by default (the source is step 0 — the honest first
+    // affordance, Law 11), with the Model floor one obvious in-workspace switch away.
+    expect(screen.getByTestId('sources-body')).toBeInTheDocument()
+    expect(modelFloor()).toBeEnabled()
   })
 
-  it('the default (author) reach is the READ-ONLY Dictionary — never the raw query modeler', () => {
+  it('the default (author) reach of the Model floor is the READ-ONLY Dictionary — never the raw modeler', () => {
     renderStudio()
     fireEvent.click(railData())
+    fireEvent.click(modelFloor())
 
     // The lens was NOT escalated by navigating (built ≠ buried does not mean
     // "expose the query cliff") — the author sees the governed Data Dictionary…
@@ -70,11 +80,12 @@ describe('FF-DATA-REACHABLE — the data model is reachable from a default (auth
     expect(screen.queryByText(/Define the governed data model/)).toBeNull()
   })
 
-  it('the ⌘K / deep-link route reaches it too (a second discoverable entry)', () => {
-    // The `/studio/model` route is the deep-link/command entry (useCommandRunner opens
-    // it) — a second obvious path to the same destination, still author-lens read-only.
+  it('the ⌘K / deep-link route reaches the Model floor too (a second discoverable entry)', () => {
+    // The legacy `/studio/model` route is the deep-link/command entry (useCommandRunner
+    // opens `/studio/data?dataFloor=model`) — a second obvious path to the Model floor,
+    // still author-lens read-only.
     renderStudio('model')
-    expect(screen.getByRole('region', { name: 'Data model' })).toBeInTheDocument()
+    expect(screen.getByRole('region', { name: 'Data' })).toBeInTheDocument()
     expect(screen.getByTestId('data-dictionary')).toBeInTheDocument()
   })
 })

@@ -6,8 +6,8 @@
 //    • clicking a Navigator pane CHANGES the URL (`/studio/<surface>`) and renders it;
 //    • browser Back/Forward move between panes (real history entries);
 //    • a pasted deep-link URL opens that surface — and `?page=<id>` opens that page;
-//    • the `model` destination is a real route (`/studio/model`) — the focus-view is
-//      deep-linkable (summoned from the rail's Data mode, relay Step 1), and Back leaves it.
+//    • the ONE Data workspace is a real route (`/studio/data`, ADR-051 DU1) — the
+//      focus-view is deep-linkable (summoned from the rail's single Data mode), Back leaves it.
 //  It drives the same governed API stub (e2e/support/mockApi.ts) the boot/steward
 //  proofs use, so all the panel e2e legs assert one truth.
 //
@@ -47,21 +47,22 @@ test('the Navigator pane is real URL state — click, deep-link, and Back/Forwar
   await expect(page.getByRole('heading', { name: 'Layers', exact: true })).toBeVisible()
 })
 
-test('the Data-model focus-view is a real, deep-linkable route (/studio/model) summoned from the rail, and Back leaves it', async ({ page }) => {
+test('the ONE Data workspace is a real, deep-linkable route (/studio/data) summoned from the rail, and Back leaves it', async ({ page }) => {
   await page.goto('/')
   await expect(page.getByRole('banner')).toBeVisible({ timeout: 60_000 })
   const rail = page.getByRole('navigation', { name: 'Studio surfaces' })
 
-  // Enter the Data-model destination from the RAIL's Data mode (relay Step 1 — the front door).
+  // Enter the ONE Data workspace from the RAIL's single Data mode (ADR-051 DU1 — the
+  // former Sources + Model peer doors folded into this one front door).
   await rail.getByRole('button', { name: 'Data', exact: true }).click()
-  await expect(page).toHaveURL(/\/studio\/model/)
-  await expect(page.getByRole('region', { name: 'Data model' })).toBeVisible()
+  await expect(page).toHaveURL(/\/studio\/data/)
+  await expect(page.getByRole('region', { name: 'Data', exact: true })).toBeVisible()
   await expect(rail).toBeHidden() // the focus-view is a separate screen (rail not primary)
 
   // Back navigates OUT of the focus-view, restoring the editing shell.
   await page.goBack()
   await expect(page.getByRole('navigation', { name: 'Studio surfaces' })).toBeVisible()
-  await expect(page.getByRole('region', { name: 'Data model' })).toBeHidden()
+  await expect(page.getByRole('region', { name: 'Data', exact: true })).toBeHidden()
 })
 
 test('a pasted deep-link opens the surface directly; ?page= opens that page', async ({ page }) => {

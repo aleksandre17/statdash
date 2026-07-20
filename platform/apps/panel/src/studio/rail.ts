@@ -2,7 +2,6 @@ import type { ComponentType } from 'react'
 import type { SvgIconProps } from '@mui/material'
 import AddBoxOutlinedIcon from '@mui/icons-material/AddBoxOutlined'
 import LayersOutlinedIcon from '@mui/icons-material/LayersOutlined'
-import SchemaOutlinedIcon from '@mui/icons-material/SchemaOutlined'
 import StorageOutlinedIcon from '@mui/icons-material/StorageOutlined'
 import WebOutlinedIcon from '@mui/icons-material/WebOutlined'
 import PaletteOutlinedIcon from '@mui/icons-material/PaletteOutlined'
@@ -31,13 +30,14 @@ export interface RailEntry {
   icon:   ComponentType<SvgIconProps>
 }
 
-//  DATA HOME split (0091 · owner 2026-07-18): the floors are SEPARATE top-level
-//  destinations. «წყაროები» (Sources — raw cubes + classifiers + the ONE upload door)
-//  leads FIRST («ჯერ მონაცემი»); «მოდელი» (the governed semantic model) follows. Both
-//  are full-screen Focus-Views; the ladder survives as this NAV ORDER + cross-gestures.
+//  ONE DATA WORKSPACE (ADR-051 DU1 · owner 2026-07-20): «მონაცემები» (Data) is a SINGLE
+//  front-door destination — the two former peer doors («წყაროები» Sources + «მოდელი»
+//  Model) fold into ONE, whose internal IA is the four-floor ladder (Sources → Model →
+//  Pipelines → element). Data leads FIRST («ჯერ მონაცემი»); the source is step 0. This
+//  is the sole data door on the rail (FF-ONE-DATA-WORKSPACE): there is no separate
+//  Sources / Model top-level entry. It routes to the full-screen Focus-View.
 export const RAIL_ENTRIES: readonly RailEntry[] = [
-  { id: 'sources',    label: { ka: 'წყაროები',   en: 'Sources' }, icon: StorageOutlinedIcon },
-  { id: 'model',      label: { ka: 'მოდელი',     en: 'Model' },  icon: SchemaOutlinedIcon },
+  { id: 'data',       label: { ka: 'მონაცემები', en: 'Data' },  icon: StorageOutlinedIcon },
   { id: 'insert',     label: { ka: 'დამატება',   en: 'Add' },    icon: AddBoxOutlinedIcon },
   { id: 'layers',     label: { ka: 'შრეები',     en: 'Layers' }, icon: LayersOutlinedIcon },
   { id: 'pages-site', label: { ka: 'საიტი',      en: 'Site' },   icon: WebOutlinedIcon },
@@ -45,12 +45,15 @@ export const RAIL_ENTRIES: readonly RailEntry[] = [
 ] as const
 
 // ── Left-dock headings (bilingual) — the aside title + landmark name ────────────
-//  Covers every surface the left dock can render (Add · Layers · Site · Style). `model`
-//  (Data) re-homes onto the full-screen FocusView — its title comes from the focus-view
-//  registry, so the dock heading below is never shown for it (a type-completeness
-//  placeholder). Kept explicit (not derived from RAIL_ENTRIES) so each dock surface has
-//  a visible heading + a named complementary landmark (WCAG 2.1 AA).
+//  Covers every surface the left dock can render (Add · Layers · Site · Style). `data`
+//  (the ONE Data workspace) re-homes onto the full-screen FocusView — its title comes
+//  from the focus-view registry, so the dock heading below is never shown for it (a
+//  type-completeness placeholder). The legacy `sources` / `model` segments are redirect-
+//  only aliases (ADR-051 DU1) and are likewise never rendered as a dock heading; kept
+//  for Record-completeness over the StudioSurface union. Explicit (not derived from
+//  RAIL_ENTRIES) so each dock surface has a visible heading + named landmark (WCAG 2.1 AA).
 export const SURFACE_HEADINGS: Record<StudioSurface, { ka: string; en: string }> = {
+  'data':       { ka: 'მონაცემები',       en: 'Data' },
   'sources':    { ka: 'წყაროები',         en: 'Sources' },
   'insert':     { ka: 'დამატება',        en: 'Add' },
   'layers':     { ka: 'შრეები',          en: 'Layers' },

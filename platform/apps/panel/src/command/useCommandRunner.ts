@@ -11,22 +11,21 @@
 //  actions (history-composed) — no parallel mutation engine.
 //
 import { useCallback } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { nodeRegistry } from '@statdash/react/engine'
 import { resolveLocaleString } from '@statdash/engine'
 import type { LocaleString } from '@statdash/engine'
 import {
   useConstructorStore, useActivePage, useActivePageId, useSelectedNode,
 } from '../store/constructor.store'
-import { useSetSurface } from '../studio/useStudioRoute'
+import { studioDataPath } from '../studio/useStudioRoute'
 import { makeNode, resolvePlacementPlan, planPlacement } from '../canvas/insertNode'
 import { placeSlotPart } from '../canvas/placeNode'
 import { insertNeedsContainerHint } from '../canvas/paletteGroupLabels'
 import { useToast } from '../store/notify'
 import { useActiveLocales } from '../inspector/useActiveLocales'
+import { newNodeId } from '../canvas/nodeId'
 import type { Command } from './commandModel'
-
-// Same id factory shape PageStep uses (collision-resistant short id).
-const newNodeId = () => `node-${Math.random().toString(36).slice(2, 9)}`
 
 export function useCommandRunner() {
   const page       = useActivePage()
@@ -38,17 +37,18 @@ export function useCommandRunner() {
   const selectNode = useConstructorStore((s) => s.selectNode)
   const removeNode = useConstructorStore((s) => s.removeNode)
   const markDirty  = useConstructorStore((s) => s.markPageDirty)
-  const setSurface = useSetSurface()
+  const navigate   = useNavigate()
   const notify     = useToast()
   const locale     = useActiveLocales()[0] ?? 'ka'
 
   return useCallback((cmd: Command) => {
     // Workspace navigation is document-independent (no active page required), so it
     // runs BEFORE the page guard. "Data model" is PURE NAVIGATION (AR-50 M5b): open
-    // the always-reachable Data-model destination WITHOUT touching the role lens, so
-    // the user lands on the role-appropriate content (author → read-only Dictionary).
+    // the always-reachable Data workspace WITHOUT touching the role lens, so the user
+    // lands on the role-appropriate content (author → read-only Dictionary). ADR-051
+    // DU1: the target is the ONE Data workspace's Model floor (`?dataFloor=model`).
     if (cmd.kind === 'action' && cmd.action === 'open-data-model') {
-      setSurface('model')
+      navigate(studioDataPath('model'))
       return
     }
 
@@ -103,5 +103,5 @@ export function useCommandRunner() {
       markDirty(pageId)
       selectNode(clone.id)
     }
-  }, [page, pageId, selectedId, insertNodes, insertNode, moveNode, selectNode, removeNode, markDirty, setSurface, notify, locale])
+  }, [page, pageId, selectedId, insertNodes, insertNode, moveNode, selectNode, removeNode, markDirty, navigate, notify, locale])
 }

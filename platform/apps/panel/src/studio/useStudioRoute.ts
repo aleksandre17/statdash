@@ -26,6 +26,19 @@ export const STUDIO_BASE = '/studio'
 /** The canonical path for a surface — the single place the scheme is spelled. */
 export const studioSurfacePath = (surface: StudioSurface) => `${STUDIO_BASE}/${surface}`
 
+// ── The ONE Data workspace floor (ADR-051 DU1) ─────────────────────────────────
+//  The `data` surface is ONE destination whose internal IA is the four-floor ladder
+//  (Sources → Model → Pipelines → element). Which floor is open rides a query param so
+//  the floor is deep-linkable (a pasted `/studio/data?dataFloor=model` opens the Model
+//  floor) and the legacy `/studio/model` redirect can preserve its intent. Default =
+//  `sources` — the source is step 0 («ჯერ მონაცემი»), the honest first affordance.
+export const DATA_FLOOR_PARAM = 'dataFloor'
+export type DataFloor = 'sources' | 'model'
+
+/** Path to the ONE Data workspace, optionally opening a named floor (ADR-051 DU1). */
+export const studioDataPath = (floor?: DataFloor) =>
+  `${studioSurfacePath('data')}${floor ? `?${DATA_FLOOR_PARAM}=${floor}` : ''}`
+
 /** Narrow a raw route param to a known surface (an unknown segment is not one). */
 export function isStudioSurface(value: string | undefined): value is StudioSurface {
   return value != null && (STUDIO_SURFACES as readonly string[]).includes(value)

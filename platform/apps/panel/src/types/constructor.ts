@@ -179,13 +179,21 @@ export interface CanvasPage {
 //  entry — OCP; the route validator + string type can never drift):
 //    • Compose panes — `insert` (Add) · `layers` (Layers): the left Navigator's two
 //      panes, swapped over the always-mounted canvas (nothing gates anything).
-//    • Project workspaces — `pages-site` (Site) · `style` (Theme) · `model` (Data
-//      model): DEMOTED from the rail to TOP-BAR-summoned, full-screen focus-view
-//      destinations (project-scope, not per-element navigation). Still real routes,
-//      so each stays deep-linkable and Back/Forward moves in/out of it.
-//  (`data` was retired as a surface — metric binding is now a contextual section of
-//  the right Inspector, reached by SELECTING a data-bound element, SPEC §3.1.)
-export const STUDIO_SURFACES = ['sources', 'insert', 'layers', 'pages-site', 'style', 'model'] as const
+//    • Project workspaces — `pages-site` (Site) · `style` (Theme) · `data` (the ONE
+//      Data workspace): DEMOTED from the rail to full-screen focus-view destinations
+//      (project-scope, not per-element navigation). Still real routes, so each stays
+//      deep-linkable and Back/Forward moves in/out of it.
+//
+//  ── ADR-051 DU1 — the ONE Data workspace (2026-07-20) ─────────────────────────
+//  `sources` + `model` collapse into ONE `data` destination whose internal IA is the
+//  four-floor ladder (Sources → Model → Pipelines → element). The rail exposes exactly
+//  one data door (FF-ONE-DATA-WORKSPACE); the two legacy segments survive here ONLY as
+//  redirect-only aliases (StudioRoutes 301-redirects `/studio/sources` + `/studio/model`
+//  → `/studio/data`) so the still-live cross-gesture courier (SourcesBody →
+//  `setSurface('model')`, DU2 deletes it) keeps type-checking and working. They carry no
+//  rail entry and no focus-view target — a walk never surfaces them. When DU2 kills the
+//  courier they leave the union entirely.
+export const STUDIO_SURFACES = ['data', 'sources', 'insert', 'layers', 'pages-site', 'style', 'model'] as const
 
 export type StudioSurface = (typeof STUDIO_SURFACES)[number]
 

@@ -1,6 +1,5 @@
 import type { ReactNode } from 'react'
-import { DataModelBody } from './DataModelBody'
-import { SourcesBody } from './sources/SourcesBody'
+import { DataWorkspaceBody } from './DataWorkspaceBody'
 import type { Locale } from '../types/constructor'
 import type { FocusEscalationRequest, FieldBinding } from '../inspector/focusEscalation'
 
@@ -49,18 +48,15 @@ export interface FocusViewTarget {
 // (chart encoding, filters pipeline) here as the placement law escalates them out
 // of the dock. Data, not a branch — mirrors `RAIL_ENTRIES`.
 export const FOCUS_VIEW_TARGETS: Readonly<Record<string, FocusViewTarget>> = {
-  // «წყაროები» — the Data Home, FIRST in the nav (0091). A SEPARATE top-level
-  // destination (Superset/Power BI data-hub class): raw cubes + browsable classifiers
-  // + the ONE upload door. The spine's origin — «ჯერ მონაცემი».
-  'sources': {
-    id: 'sources',
-    title: { ka: 'წყაროები', en: 'Sources' },
-    render: ({ locale }) => <SourcesBody locale={locale} />,
-  },
-  'data-model': {
-    id: 'data-model',
-    title: { ka: 'მონაცემთა მოდელი', en: 'Data model' },
-    render: ({ locale }) => <DataModelBody locale={locale} />,
+  // «მონაცემები» — the ONE Data workspace (ADR-051 DU1). The former `sources` +
+  // `data-model` targets fold into this SINGLE destination whose internal IA is the
+  // four-floor ladder (Sources → Model → Pipelines → element). The source is step 0;
+  // DataWorkspaceBody composes the floors in place (no peer doors, no teleport —
+  // FF-ONE-DATA-WORKSPACE). The spine's origin — «ჯერ მონაცემი».
+  'data': {
+    id: 'data',
+    title: { ka: 'მონაცემები', en: 'Data' },
+    render: ({ locale }) => <DataWorkspaceBody locale={locale} />,
   },
 } as const
 

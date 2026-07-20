@@ -24,15 +24,20 @@ test('a DEFAULT (author) session reaches the data model in one click — as the 
   await expect(page.getByRole('banner')).toBeVisible({ timeout: 60_000 })
   await expect(page.locator('.studio-shell')).toBeVisible()
 
-  // ── REACH — the Data-model destination is a first-class, always-visible RAIL mode
-  //  (relay Step 1: Data is rail-mode #1, the front door, NOT gated behind a preference
-  //  toggle). ONE click opens it.
+  // ── REACH — the ONE Data workspace is a first-class, always-visible RAIL mode
+  //  (ADR-051 DU1: Data is rail-mode #1, the front door, NOT gated behind a preference
+  //  toggle). ONE click opens it — on the SOURCES floor (the source is step 0).
   await page.getByRole('navigation', { name: 'Studio surfaces' })
     .getByRole('button', { name: 'Data', exact: true }).click()
+  await expect(page.getByRole('region', { name: 'Data', exact: true })).toBeVisible()
 
-  // ── LAND — the data-model screen opened as the READ-ONLY Dictionary (author lens
-  //  was NOT escalated), populated with the REAL governed nouns.
-  await expect(page.getByRole('region', { name: 'Data model' })).toBeVisible()
+  // ── FLOOR — switch to the Model floor (the governed model lives here); the in-workspace
+  //  floor selector is the four-floor ladder made visible (Sources → Model → …).
+  await page.getByTestId('data-floor-selector')
+    .getByRole('button', { name: 'Model', exact: true }).click()
+
+  // ── LAND — the Model floor opened as the READ-ONLY Dictionary (author lens was NOT
+  //  escalated), populated with the REAL governed nouns.
   const dictionary = page.getByTestId('data-dictionary')
   await expect(dictionary).toBeVisible()
   // A governed metric with its real en label (the catalog boot populated the registry).

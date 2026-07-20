@@ -17,9 +17,10 @@ import { useConstructorStore } from '../store/constructor.store'
 import { useRoleStore } from './useRole'
 import { FOCUS_VIEW_TARGETS, getFocusViewTarget } from './focusViewRegistry'
 
-// Enter the Data-model focus-view via its REAL route (`/studio/model`): StudioShell
-// renders <FocusView> for the model surface (derived from the URL). The Steward lens
-// splits the body to the full modeler.
+// Enter the ONE Data workspace via the legacy `/studio/model` route (ADR-051 DU1 —
+// it 301-redirects to `/studio/data?dataFloor=model`, the Model floor): StudioShell
+// renders <FocusView> for the `data` surface (derived from the URL). The Steward lens
+// splits the Model floor's body to the full modeler.
 beforeEach(() => {
   setupCanvasRegistry()
   useConstructorStore.setState({ selection: null })
@@ -31,7 +32,7 @@ describe('FF-FOCUSVIEW-SEPARATE-ROUTE — the focus-view is a distinct screen, n
   it('while active, the editing shell chrome (rail + docks + grid + bottom strip) is GONE', () => {
     const { container } = renderStudio('model')
     // The focus-view screen is present…
-    expect(screen.getByRole('region', { name: 'Data model' })).toBeInTheDocument()
+    expect(screen.getByRole('region', { name: 'Data' })).toBeInTheDocument()
     // …and the whole 4-column editing shell is NOT rendered (a separate route — the
     // rail/docks are not the primary chrome, and the grid is absent, not covered).
     expect(container.querySelector('.studio-shell')).toBeNull()
@@ -46,7 +47,7 @@ describe('FF-FOCUSVIEW-SEPARATE-ROUTE — the focus-view is a distinct screen, n
     fireEvent.click(screen.getByRole('button', { name: 'Back' }))
     // The editing shell is restored (the rail is back) and the focus-view screen is gone.
     expect(screen.getByRole('navigation', { name: 'Studio surfaces' })).toBeInTheDocument()
-    expect(screen.queryByRole('region', { name: 'Data model' })).toBeNull()
+    expect(screen.queryByRole('region', { name: 'Data' })).toBeNull()
   })
 
   it('focus MOVES into the focus-view on enter (WCAG 2.1 AA · 2.4.3)', () => {
@@ -68,18 +69,19 @@ function stripComments(src: string): string {
 }
 
 describe('FF-MODEL-IS-FOCUSVIEW — Model composes the shared shell via the registry', () => {
-  it('the registry holds a data-model target whose body is the role-split DataModelBody', () => {
-    const target = getFocusViewTarget('data-model')
+  it('the registry holds the ONE data target whose body composes the workspace floors', () => {
+    const target = getFocusViewTarget('data')
     expect(target).toBeDefined()
-    expect(target!.title.en).toBe('Data model')
-    // The target renders the role-split body (AR-50 M5b): DataModelBody projects the
-    // destination by the lens — steward→ModelSurface, author→DataDictionarySurface —
-    // so the destination is reachable in ANY lens while the modeler stays steward-only.
+    expect(target!.title.en).toBe('Data')
+    // ADR-051 DU1: the target renders DataWorkspaceBody, which composes the Sources →
+    // Model floors in place; the Model floor is the role-split DataModelBody (steward→
+    // ModelSurface, author→DataDictionarySurface — reachable in ANY lens, modeler stays
+    // steward-only).
     const el = target!.render({ locale: 'en' }) as { type?: { name?: string } }
-    expect(el.type?.name).toBe('DataModelBody')
+    expect(el.type?.name).toBe('DataWorkspaceBody')
   })
 
-  it('the data-model body renders the read-only Dictionary for AUTHOR and the modeler for STEWARD', () => {
+  it('the Model floor renders the read-only Dictionary for AUTHOR and the modeler for STEWARD', () => {
     // Author lens → the read-only Data Dictionary (no modeler, no query cliff).
     useRoleStore.setState({ role: 'author' })
     const { unmount } = renderStudio('model')
@@ -94,11 +96,11 @@ describe('FF-MODEL-IS-FOCUSVIEW — Model composes the shared shell via the regi
     expect(screen.queryByTestId('data-dictionary')).toBeNull()
   })
 
-  it('the Studio shell composes the shared <FocusView> for Model — no fork', () => {
-    // The focus-view region + the relocated ModelSurface body inside it prove Model
-    // rides the shared shell, not a bespoke takeover.
+  it('the Studio shell composes the shared <FocusView> for the Data workspace — no fork', () => {
+    // The focus-view region + the relocated ModelSurface body inside it prove the Data
+    // workspace rides the shared shell, not a bespoke takeover.
     renderStudio('model')
-    const region = screen.getByRole('region', { name: 'Data model' })
+    const region = screen.getByRole('region', { name: 'Data' })
     expect(region).toBeInTheDocument()
     expect(screen.getByText(/Define the governed data model/)).toBeInTheDocument()
   })
@@ -126,7 +128,7 @@ describe('FF-MODEL-IS-FOCUSVIEW — Model composes the shared shell via the regi
     for (const [id, target] of Object.entries(FOCUS_VIEW_TARGETS)) {
       expect(target.id).toBe(id)
     }
-    expect(Object.keys(FOCUS_VIEW_TARGETS)).toContain('data-model')
+    expect(Object.keys(FOCUS_VIEW_TARGETS)).toContain('data')
   })
 
   it('the guard actually bites — a planted direct ModelSurface import IS detected', () => {

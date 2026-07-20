@@ -38,16 +38,20 @@ describe('StudioShell — IA + landmarks (WCAG 2.1 AA)', () => {
 })
 
 describe('StudioShell — the four-moment mode rail (relay Step 1)', () => {
-  it('offers ONE ordered mode list — Sources · Model · Add · Layers · Site · Style, Sources first (0091)', () => {
+  it('offers ONE ordered mode list — Data · Add · Layers · Site · Style, Data first (ADR-051 DU1)', () => {
     renderStudio()
     const rail = screen.getByRole('navigation', { name: 'Studio surfaces' })
-    // Every moment is now ONE rail mode (LAW C) — no scattered top-bar doors.
-    for (const name of ['Sources', 'Model', 'Add', 'Layers', 'Site', 'Style']) {
+    // Every moment is now ONE rail mode (LAW C) — no scattered top-bar doors; the two
+    // former data doors (Sources + Model) fold into ONE Data mode (FF-ONE-DATA-WORKSPACE).
+    for (const name of ['Data', 'Add', 'Layers', 'Site', 'Style']) {
       expect(within(rail).getByRole('button', { name })).toBeEnabled()
     }
-    // Sources is the FIRST entry — the Data Home leads («ჯერ მონაცემი»).
+    // Data is the FIRST entry — the one Data workspace leads («ჯერ მონაცემი»); the two
+    // separate Sources / Model rail doors are gone.
     const buttons = within(rail).getAllByRole('button')
-    expect(buttons[0]).toHaveAccessibleName('Sources')
+    expect(buttons[0]).toHaveAccessibleName('Data')
+    expect(within(rail).queryByRole('button', { name: 'Sources' })).toBeNull()
+    expect(within(rail).queryByRole('button', { name: 'Model' })).toBeNull()
   })
 
   it('opens on Add with aria-current, and swapping to Layers is order-free (no gating)', () => {
@@ -66,59 +70,70 @@ describe('StudioShell — the four-moment mode rail (relay Step 1)', () => {
   })
 })
 
-// ── Data — the rail front-door destination (relay Step 1 · AR-50 M5b) ─────────
+// ── Data — the ONE rail front-door workspace (ADR-051 DU1) ────────────────────
 //
 //  The G6 "built ≠ buried" fix, re-homed to the rail: Data is rail-mode #1 (no role
 //  gate), and clicking it routes to the settled full-screen Focus-View (owner §3.4 /
-//  FF-MODEL-IS-FOCUSVIEW). The role lens splits only its CONTENT (author→read-only
-//  Dictionary, steward→modeler); navigation is decoupled from identity — opening the
-//  destination NEVER escalates the lens. These tests arrange the lens via the store.
-// 0091: the governed data-MODEL destination is the rail's «Model» mode now (raw sources
-// moved OUT to «Sources», mode #1). Model routes to the same data-model Focus-View.
+//  FF-MODEL-IS-FOCUSVIEW). ADR-051 DU1 folds the two former peer doors (Sources + Model)
+//  into ONE Data workspace whose internal IA is the four-floor ladder — the workspace
+//  opens on the SOURCES floor (source is step 0), and the Model floor is one in-workspace
+//  floor switch away. The role lens splits only the Model floor's CONTENT (author→
+//  read-only Dictionary, steward→modeler); navigation is decoupled from identity —
+//  opening the destination NEVER escalates the lens. These tests arrange the lens via the store.
 const railData = () =>
-  within(screen.getByRole('navigation', { name: 'Studio surfaces' })).getByRole('button', { name: 'Model' })
+  within(screen.getByRole('navigation', { name: 'Studio surfaces' })).getByRole('button', { name: 'Data' })
 
-describe('StudioShell — Data is the rail front door, reachable in every lens (relay Step 1)', () => {
-  it('the DEFAULT (author) session offers Model as a rail mode', () => {
+// The in-workspace floor selector's Model-floor button (the governed model lives here).
+const modelFloor = () =>
+  within(screen.getByTestId('data-floor-selector')).getByRole('button', { name: 'Model' })
+
+describe('StudioShell — Data is the ONE rail front-door workspace, reachable in every lens (ADR-051 DU1)', () => {
+  it('the DEFAULT (author) session offers Data as a rail mode', () => {
     renderStudio()
     expect(railData()).toBeEnabled()
   })
 
-  it('from a DEFAULT author session, opening Data shows the READ-ONLY Dictionary (no query cliff)', () => {
+  it('from a DEFAULT author session, opening Data lands on Sources (step 0); the Model floor is READ-ONLY (no query cliff)', () => {
     renderStudio()
     fireEvent.click(railData())
 
-    // The Data-model FOCUS-VIEW screen opens (rail gone, breadcrumb-back present)…
-    expect(screen.getByRole('region', { name: 'Data model' })).toBeInTheDocument()
+    // The Data FOCUS-VIEW screen opens on the Sources floor (rail gone, breadcrumb-back present)…
+    expect(screen.getByRole('region', { name: 'Data' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Back' })).toBeInTheDocument()
-    // …and the AUTHOR lens is untouched (no escalation) → the read-only Dictionary, NOT
-    // the modeler. The raw query cliff never lands on the author path.
+    expect(screen.getByTestId('sources-body')).toBeInTheDocument()
+
+    // …switch to the Model floor: the AUTHOR lens is untouched (no escalation) → the
+    // read-only Dictionary, NOT the modeler. The raw query cliff never lands on the author path.
+    fireEvent.click(modelFloor())
     expect(useRoleStore.getState().role).toBe('author')
     expect(screen.getByTestId('data-dictionary')).toBeInTheDocument()
     expect(screen.queryByText(/Define the governed data model/)).toBeNull()
   })
 
-  it('the Steward lens opens the SAME destination as the full modeler', () => {
+  it('the Steward lens opens the SAME workspace; the Model floor is the full modeler', () => {
     useRoleStore.setState({ role: 'steward' })
     renderStudio()
     fireEvent.click(railData())
-    expect(screen.getByRole('region', { name: 'Data model' })).toBeInTheDocument()
+    expect(screen.getByRole('region', { name: 'Data' })).toBeInTheDocument()
+    fireEvent.click(modelFloor())
     expect(screen.getByText(/Define the governed data model/)).toBeInTheDocument()
     expect(screen.queryByTestId('data-dictionary')).toBeNull()
   })
 
-  it('the rail Data mode is PURE NAVIGATION — it opens the destination without escalating the lens', () => {
+  it('the rail Data mode is PURE NAVIGATION — it opens the workspace without escalating the lens', () => {
     renderStudio()
     fireEvent.click(railData())
+    fireEvent.click(modelFloor())
 
     // Navigated to the destination, but the lens stayed author → the read-only Dictionary.
     expect(useRoleStore.getState().role).toBe('author')
     expect(screen.getByTestId('data-dictionary')).toBeInTheDocument()
   })
 
-  it('the in-place lens toggle opts INTO editing (author→steward) without leaving the destination', () => {
+  it('the in-place lens toggle opts INTO editing (author→steward) without leaving the Model floor', () => {
     renderStudio()
     fireEvent.click(railData())
+    fireEvent.click(modelFloor())
     // Author landed on the Dictionary; flip the lens toggle to Edit → the modeler.
     expect(screen.getByTestId('data-dictionary')).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: /Edit \(Steward\)/ }))
@@ -129,7 +144,7 @@ describe('StudioShell — Data is the rail front door, reachable in every lens (
   it('breadcrumb-back leaves the Focus-View and returns to the editing shell (lens untouched)', () => {
     useRoleStore.setState({ role: 'steward' })
     renderStudio('model')
-    expect(screen.getByRole('region', { name: 'Data model' })).toBeInTheDocument()
+    expect(screen.getByRole('region', { name: 'Data' })).toBeInTheDocument()
     expect(screen.queryByRole('navigation', { name: 'Studio surfaces' })).toBeNull()
 
     // Back returns to the editing shell at the default surface; navigation is
