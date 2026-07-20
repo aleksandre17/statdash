@@ -145,13 +145,14 @@ export function desugar(spec: DataSpec): ResolvableSpec {
     case 'transform':
     case 'pivot':      return desugarToPipeline(spec)
 
-    // NOT re-targeted in the LIVE switch (DU4a is capability + proof only — the emission flip
-    // is a later gated step): `timeseries` stays on the store-aware `point-series` primitive
-    // here; `growth`/`ratio-list` keep their direct resolvers. The value-cell `source` variant
-    // that lets timeseries fold onto the spine NOW EXISTS (ADR-046 Addendum 4) and
-    // `desugarToPipeline(timeseries)` produces it (proven byte-identical by the FF-PIPELINE-EQUIV
-    // value-cell corpus) — but flipping this live switch to the spine is deliberately deferred so
-    // DU4a stays revert-clean. `growth`/`ratio-list`/`row-list` await their own folds (DU4b–d).
+    // NOT re-targeted in the LIVE switch (DU4a/b are capability + proof only — the emission flip
+    // is a later gated step): `timeseries` stays on the store-aware `point-series` primitive here;
+    // `growth`/`ratio-list` keep their direct resolvers. The value-cell `source` variant that lets
+    // these fold onto the spine EXISTS (ADR-046 Addendum 4): `desugarToPipeline(timeseries)` (DU4a)
+    // and `desugarToPipeline(growth-single-code)` (DU4b) produce it, proven byte-identical by the
+    // FF-PIPELINE-EQUIV value-cell + growth corpora — but flipping this live switch to the spine is
+    // deliberately deferred so the wave stays revert-clean. `ratio-list`/`row-list` (and multi-code
+    // `growth`, via calc-metric browse) await their own folds (DU4c–d).
     case 'timeseries': return desugarTimeseries(spec)
     default:           return spec
   }
@@ -187,9 +188,16 @@ export function desugar(spec: DataSpec): ResolvableSpec {
 //  produces the point-series, and this arm hoists it to the head verbatim, so the read is the
 //  SAME PointSeriesResolver fan-out and the fold is byte-identical BY CONSTRUCTION.
 //
-//  STILL on the DU3 fallback lane (not yet folded, DU4b–d): `growth` (source + window/derive
-//  tail, or calc-metric browse for multi-code), `ratio-list`/`row-list` (the MEASURE-axis
-//  explicit-cells form of the value-cell variant). Each returns identity here until proven.
+//  DU4b FOLD (ADR-046 Addendum 4) — SINGLE-CODE `growth` folds onto the SAME value-cell head:
+//  a `source(over=TIME_DIM, code, coords)` enumerate + a pure tail (window `lag` → prev, two
+//  `derive`s composing YoY + sign-color via @statdash/expr, an `exists`+`filter` positional
+//  first-period drop, a `select` to the single-code field set). Byte-identical to GrowthResolver
+//  (FF-PIPELINE-EQUIV growth corpus). MULTI-CODE growth carries a per-code store meta read the
+//  pure tail cannot reproduce → it folds via the calc-metric BROWSE path (Addendum 2), NOT here;
+//  it returns identity → the direct GrowthResolver (DU3 fallback lane) until that fold is proven.
+//
+//  STILL on the DU3 fallback lane (not yet folded, DU4c–d): `ratio-list`/`row-list` (the
+//  MEASURE-axis explicit-cells form of the value-cell variant). Each returns identity until proven.
 //
 export function desugarToPipeline(spec: DataSpec): DataSpec {
   switch (spec.type) {
@@ -243,12 +251,63 @@ export function desugarToPipeline(spec: DataSpec): DataSpec {
       }
       return pipeline
     }
+    case 'growth': {
+      // ADR-046 Addendum 4 / ADR-051 DU4b — SINGLE-CODE growth folds onto the value-cell spine.
+      // The GrowthResolver (single-code) enumerates the clamped year series, reads a scalar
+      // storeVal(atTime) per year, composes YoY over the ordered series with a sign-based color,
+      // and DROPS the first period (years.slice(1)). Every piece maps to the value-cell `source`
+      // head + the pure tail verbs — ONE grammar, no new op (Law 10):
+      //   • source(over=TIME_DIM, code, coords=effectiveYears, clamp?) — the SAME per-year point
+      //     read GrowthResolver's storeVal fan-out issues. NO grain is forwarded: GrowthResolver
+      //     reads storeVal (never storeValAt-with-grain), so a sub-annual granularity is ignored
+      //     here too — byte-identical value cells (this is the ONE divergence from the timeseries
+      //     arm, which DOES forward grain; growth must not, so it does not reuse desugarTimeseries).
+      //   • window(lag over value → _prev) — the previous-year value; the lag op OMITS the field on
+      //     the first row of the partition (the honest "no predecessor" edge, no fabricated 0/null).
+      //   • derive(value = '_prev ? ((value / _prev - 1) * 100) : 0') — the EXACT YoY formula via
+      //     @statdash/expr (ONE dialect); the coalesce-to-0 field read reproduces `prev ?`.
+      //   • derive(color = "value >= 0 ? '#00A896' : '#E76F51'") — the SAME sign→color rule.
+      //   • derive(_hasPrev = exists(_prev)) + filter(_hasPrev) — a POSITIONAL first-period drop:
+      //     desugar is pure (no store/ctx) so it cannot know the first year for 'all'; "keep the
+      //     periods that HAVE a predecessor" drops exactly row 0 for BOTH explicit and 'all' coords
+      //     — the byte-identical analogue of years.slice(1). (`exists` reads the RAW field via an
+      //     object Expr, so a legitimate prev===0 is KEPT, never confused with the missing edge.)
+      //   • select [id,label,value,color] — the exact single-code field set (drops pct/_scaffold).
+      // MULTI-CODE growth is NOT folded here: its per-code storeObs label/color meta read is not
+      // expressible by the pure tail (Add.4 routes it via the calc-metric browse path); it returns
+      // IDENTITY → the direct GrowthResolver (DU3 fallback lane). Sequenced follow-up (see below).
+      const codeArr = Array.isArray(spec.code) ? spec.code : [spec.code]
+      if (codeArr.length !== 1) return spec        // multi-code / empty — stays on the direct resolver
+      const code = codeArr[0]!
+
+      const hasClamp = spec.fromDim !== undefined || spec.toDim !== undefined || spec.timeDimension !== undefined
+      const gSource: PipeStep = {
+        op: 'source', over: TIME_DIM, code, coords: effectiveYears(spec),
+        ...(hasClamp
+          ? { clamp: { fromDim: spec.fromDim, toDim: spec.toDim, timeDimension: spec.timeDimension } }
+          : {}),
+      }
+      const pipeline: PipelineSpec = {
+        type: 'pipeline',
+        pipe: [
+          gSource,
+          { op: 'window', fn: 'lag', over: 'value', as: '_prev' },
+          { op: 'derive', as: 'value',    expr: '_prev ? ((value / _prev - 1) * 100) : 0' },
+          { op: 'derive', as: 'color',    expr: "value >= 0 ? '#00A896' : '#E76F51'" },
+          { op: 'derive', as: '_hasPrev', expr: { op: 'exists', value: { $row: '_prev' } } },
+          { op: 'filter', where: { _hasPrev: 1 } },
+          { op: 'select', fields: ['id', 'label', 'value', 'color'] },
+        ],
+        encoding: { label: 'label', value: 'value' },
+      }
+      return pipeline
+    }
     default:
-      // growth/ratio-list/row-list — the store-aware VALUE-CELL specs still on the DU3 fallback
-      // lane (Add.4: growth folds via a source + window/derive tail or calc-metric browse;
-      // ratio-list/row-list via the MEASURE-axis explicit-cells form of the variant). Not folded
-      // here until byte-identically proven (Law 8). metric is already a `source(metrics)` head by
-      // construction; each returns UNCHANGED (identity) → its direct resolver.
+      // ratio-list/row-list — the store-aware VALUE-CELL specs still on the DU3 fallback lane
+      // (Add.4: the MEASURE-axis explicit-cells form of the variant, DU4c/d). Not folded here
+      // until byte-identically proven (Law 8). growth folds above (single-code; multi-code stays
+      // on its direct resolver). metric is already a `source(metrics)` head by construction; each
+      // returns UNCHANGED (identity) → its direct resolver.
       return spec
   }
 }

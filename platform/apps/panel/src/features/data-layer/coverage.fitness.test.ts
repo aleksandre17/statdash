@@ -292,7 +292,8 @@ describe('Coverage Fitness #1 — every renderer capability is authorable (or an
 //  either FOLDED (`desugarToPipeline` lowers it to `pipeline` today) or on the explicit
 //  NOT_YET_FOLDED allowlist (keeps the DU3 fallback lane). A newly-folded kind MUST be removed
 //  from the allowlist to keep green (forcing function); a regression (a folded kind stops
-//  lowering) FAILS. DU4a folds `timeseries` (the keystone); growth/ratio-list/row-list remain.
+//  lowering) FAILS. DU4a folds `timeseries` (the keystone); DU4b folds single-code `growth`
+//  (source + window/derive YoY tail); ratio-list/row-list remain (DU4c/d).
 //
 //  Representative minimal spec per value-cell kind — enough to drive desugarToPipeline (pure,
 //  no store/ctx). `desugarToPipeline` is the shaping SSOT (NOT the live `desugar()` switch,
@@ -301,7 +302,11 @@ describe('Coverage Fitness #1 — every renderer capability is authorable (or an
 const VALUE_CELL_KINDS = ['timeseries', 'growth', 'ratio-list', 'row-list'] as const
 
 const NOT_YET_FOLDED = new Set<string>([
-  'growth',     // DU4b — source + window/derive tail (or calc-metric browse for multi-code)
+  // growth (single-code) FOLDED in DU4b — source(over=TIME_DIM) + window/derive YoY tail. The
+  // representative below is single-code, so it lowers to `pipeline`. MULTI-CODE growth stays on
+  // the direct resolver (its per-code store meta read → calc-metric browse, Add.2) but is NOT a
+  // separate discriminant, so it is not tracked here — it is covered by the FF-PIPELINE-EQUIV
+  // growth corpus (which asserts multi-code identity).
   'ratio-list', // DU4c — the MEASURE-axis explicit-cells form of the value-cell variant
   'row-list',   // DU4d — the MEASURE-axis explicit-cells form of the value-cell variant
 ])

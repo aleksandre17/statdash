@@ -273,3 +273,92 @@ describe('FF-PIPELINE-EQUIV (rows) — timeseries resolves identically through t
     expect('code' in head && head.code).toBe('GDP')
   })
 })
+
+// ── FF-PIPELINE-EQUIV (rows) — the SINGLE-CODE growth fold [ADR-046 Addendum 4 · DU4b] ──
+//
+//  `growth` (single-code) is a store-aware VALUE-CELL spec composed into YoY: the GrowthResolver
+//  enumerates the clamped year series, reads a scalar storeVal per year, computes YoY over the
+//  ordered series with a sign→color rule, and DROPS the first period. It folds onto the SAME
+//  value-cell `source` head DU4a shipped, plus a PURE tail (window `lag` → derive YoY → derive
+//  color → exists+filter first-period drop → select) — ONE grammar, no new op (Law 10). The
+//  YoY/color exprs reuse @statdash/expr (no second dialect). Byte-identical BY CONSTRUCTION: the
+//  source is the SAME per-year point read, the tail composes it with the SAME arithmetic.
+//
+//  Two-path oracle (identical to the query/timeseries corpora): `legacyDirect(growth)` = the
+//  GrowthResolver dispatched DIRECTLY (its own storeVal fan-out — the independent pre-spine path);
+//  the pipeline path = `interpretSpec(desugarToPipeline(growth))` (value-cell head → window/derive
+//  tail). `toEqual` = same rows/order/values/colors/fields — INCLUDING the dropped first period
+//  (FF-CANVAS-NEVER-LIES: the edge is dropped, never a fabricated 0). MULTI-CODE growth is NOT
+//  folded (its per-code store meta read → calc-metric browse, Add.2); it stays on the direct
+//  resolver — asserted below as identity so the DU3 fallback lane keeps working.
+
+type GrowthSpec = Extract<DataSpec, { type: 'growth' }>
+
+// GDP@GE = {2018:80, 2019:90, 2020:100}; YoY over the ordered clamped members.
+const growthCorpus: { name: string; spec: GrowthSpec; ctx: SectionContext }[] = [
+  { name: 'explicit years (drops the first period)',
+    spec: { type: 'growth', code: 'GDP', years: [2018, 2019, 2020] }, ctx: ctxRange },
+  { name: 'single-element code array',
+    spec: { type: 'growth', code: ['GDP'], years: [2018, 2019, 2020] }, ctx: ctxRange },
+  { name: "'all' (store distinct asc)",
+    spec: { type: 'growth', code: 'GDP', years: 'all' }, ctx: ctxRange },
+  { name: 'single year (empty after first-period drop)',
+    spec: { type: 'growth', code: 'GDP', years: [2020] }, ctx },
+  { name: 'empty years',
+    spec: { type: 'growth', code: 'GDP', years: [] }, ctx: ctxRange },
+  { name: 'fromDim/toDim clamp (post-enumerate)',
+    spec: { type: 'growth', code: 'GDP', years: 'all', fromDim: 'lo', toDim: 'hi' },
+    ctx: { dims: { geo: 'GE', lo: 2018, hi: 2020 } } },
+  { name: 'timeDimension ctx-ref clamp',
+    spec: { type: 'growth', code: 'GDP', years: 'all',
+            timeDimension: { dim: 'time', range: [{ $ctx: 'lo' }, { $ctx: 'hi' }] } },
+    ctx: { dims: { geo: 'GE', lo: 2018, hi: 2020 } } },
+]
+
+describe('FF-PIPELINE-EQUIV (rows) — single-code growth resolves identically through the value-cell spine', () => {
+  for (const { name, spec, ctx: c } of growthCorpus) {
+    it(name, () => {
+      // legacy = GrowthResolver dispatched directly (its storeVal fan-out, no spine);
+      // pipeline = the value-cell source head + the pure YoY/color/drop tail.
+      const legacy   = legacyDirect(spec, c, store)
+      const pipeline = interpretSpec(desugarToPipeline(spec), c, store)
+      expect(pipeline).toEqual(legacy)
+    })
+  }
+
+  it('the honest first-period edge is DROPPED, never a fabricated 0 (FF-CANVAS-NEVER-LIES)', () => {
+    // GDP@GE over 2018/2019/2020 → 2 YoY rows (2019, 2020); the first period is ABSENT.
+    const spec: GrowthSpec = { type: 'growth', code: 'GDP', years: [2018, 2019, 2020] }
+    const rows = interpretSpec(desugarToPipeline(spec), ctxRange, store)
+    expect(rows.map((r) => r['label'])).toEqual(['2019', '2020'])   // 2018 dropped, not a 0 row
+    expect(Number(rows[0]!['value'])).toBeCloseTo(12.5)             // (90/80 − 1)×100
+    expect(Number(rows[1]!['value'])).toBeCloseTo(11.111, 2)        // (100/90 − 1)×100
+    expect(rows[0]!['color']).toBe('#00A896')                       // positive → green
+    expect(rows.every((r) => 'pct' in r || '_prev' in r || '_hasPrev' in r)).toBe(false)  // scaffold dropped
+  })
+
+  it('the growth value-cell head extracts the IDENTICAL warm requirements as the direct growth spec', () => {
+    // The folded pipeline warms the SAME (code, dims) set the growth resolver's requirements
+    // enumerate — never [] (FF-NO-EMPTY-REQS). Shared pointSeriesRequirements kernel.
+    for (const { spec, ctx: c } of growthCorpus) {
+      expect(extractRequirements(desugarToPipeline(spec), c)).toEqual(extractRequirements(spec, c))
+    }
+  })
+
+  it('desugarToPipeline(growth single-code) builds a value-cell `source` head + a pure tail', () => {
+    const lowered = desugarToPipeline({ type: 'growth', code: 'GDP', years: [2018, 2019, 2020] })
+    expect(lowered.type).toBe('pipeline')
+    const head = (lowered as Extract<DataSpec, { type: 'pipeline' }>).pipe[0]!
+    expect(head.op).toBe('source')
+    expect('over' in head && head.over).toBe('time')            // the value-cell discriminant
+    expect('code' in head && head.code).toBe('GDP')
+  })
+
+  it('MULTI-CODE growth is NOT folded — it stays identity on the direct resolver (DU3 lane)', () => {
+    // Its per-code storeObs label/color meta read is not expressible by the pure tail (Add.4
+    // routes it via the calc-metric browse path); until then it must keep working directly.
+    const multi: GrowthSpec = { type: 'growth', code: ['GDP', 'POP'], years: [2019, 2020] }
+    expect(desugarToPipeline(multi)).toBe(multi)               // identity (same reference)
+    expect(desugarToPipeline(multi).type).toBe('growth')
+  })
+})
