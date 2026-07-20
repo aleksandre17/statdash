@@ -95,3 +95,96 @@ This variant IS the existing internal `PointSeriesSpec` read (the genuine store-
 **Guards.** `FF-PIPELINE-EQUIV` (byte-identical rows, extended with a value-cell corpus — the ⛔ gate for any emission flip) · `FF-ALL-KINDS-SHAPED` (progress: `timeseries` now pipeline-shapeable; the remaining kinds a visible, shrinking list) · held: `FF-DESUGAR-EQUIV` (the point-series read is unchanged), `FF-CANVAS-NEVER-LIES` (honest first-period null preserved for growth/calc-browse), `FF-CONFIG-ROUNDTRIP` (the variant is pure JSON).
 
 **Status: ACCEPTED** (owner-blessed autonomy, 2026-07-20 — ADR-051 direction). The variant TYPE is a grammar addition (a new config shape) and therefore a one-way door **only at the emission flip** (when the Constructor emits `pipeline` with a value-cell head as the stored default — gated exactly like W-P5 on `FF-PIPELINE-EQUIV` green). The DU4a wiring (union member + desugar arm + resolver delegation + fitness) runs at read/proof time only and is fully **revert-clean**.
+
+## Addendum 5 — the explicit-cells extension of the value-cell head (the MEASURE-axis fold for `ratio-list` + `row-list`) [architect, 2026-07-20, card 0102 · ADR-051 DU4c/DU4d · closing the `desugar.ts:305-317` fallback default]
+
+**The gap (assessed at the DU4c/d attempt, `resolvers.ts:133-265`).** The Add.4 `over`-form value-cell head enumerates a **homogeneous** coordinate axis (`over: TIME_DIM`, distinct coords, one `storeVal` per coord). The two remaining store-aware kinds do not fit that shape — they enumerate an **explicit, heterogeneous list of MEASURE codes**, each cell reading its own value and carrying its own per-cell parameters:
+
+- **`ratio-list`** (`resolvers.ts:243-265`) — per `spec.pairs` entry `{code, denom, label?}`: reads **TWO** cells (`storeVal(numCode)`, `storeVal(denCode)`), emits `{id, measure, label, value:(num/den)*100}` (guarded `den ? … : 0`). Has `measure`, never `pct`, never enrichment. Carries an optional trailing `spec.pipe`.
+- **`row-list`** (`resolvers.ts:133-171`) — per `RowSpec` `{code, label?, color?, negate?, isTotal?, pctOf?}`: reads **ONE** cell (`storeVal(code)`) plus a **conditional second** cell (`storeVal(pctOf)`, a *per-cell distinct* denominator) only when `pctOf` is declared; performs a **store-META enrichment** read (`storeObs({measure:code})[0]` → label/color, LocaleString-tagged) when label/color are absent; emits `{id, label, value:negate?-raw:raw}` plus **conditional** `pct` (only where `pctOf` declared, *unguarded* — a 0 denominator yields `Infinity`, deliberately), `color`, `isTotal`. Never `measure`. No tail.
+
+Neither folds through the Add.4 `over`-form. Both need the explicit-cells reading primitive Add.4 named but left unspecified (the `cells:{code,denom?,…}[]` "`…`"). This addendum specifies it.
+
+### Decision — ONE unified `cells` head shape (a 5th `SourceStep` member, in the value-cell family), NOT two variants
+
+A single explicit-cells head serves **both** kinds. It is discriminated by the presence of `cells` (mirroring `metrics`/`query`/`rows`/`over` presence-discrimination); it is the **MEASURE-axis, heterogeneous-list** sibling of the Add.4 `over`-form (the axis-enumerate homogeneous form) — the SAME "enumerate coordinates, read scalar value cells" primitive, two read shapes. It is **not** a fifth grammar (the `PipelineSpec` grammar — source head + pure tail — is unchanged) and **not** a per-kind variant (Add.4 ALT-A) — it is ONE read-shape for the explicit-cells CLASS, serving ratio-list + row-list today and extensible to any future explicit-cell kind. Law 10 honored.
+
+```ts
+| { op: 'source'
+    cells:   ExplicitCell[]                       // the enumerated, heterogeneous cell list
+    enrich?: boolean                              // HEAD-level opt-in store-meta label/color fallback
+    at?:     Partial<Record<string, DimVal>>      // fixed base coordinate merged into every read
+    grain?:  Record<string, GrainLevel>           // per-dim LOD forwarded to valAt
+    rollup?: RollupOp }                            // aggregation when one cell matches finer cells
+
+interface ExplicitCell {
+  code:     string             // the measure code read for `value` (the cell's primary coordinate)
+  denom?:   string             // ONE secondary read → `_denom` companion (ratio denominator OR pct base)
+  label?:   LocaleString       // literal passthrough; enrich fills when absent + enrich
+  color?:   string             // literal passthrough; enrich fills when absent + enrich
+  negate?:  boolean            // literal passthrough; the tail negates
+  isTotal?: boolean            // literal passthrough
+}
+```
+
+The three open questions, resolved explicitly:
+
+1. **ONE unified shape or two?** — **ONE.** `ExplicitCell` is a *superset* descriptor; each kind populates its subset (ratio-list: `{code, denom(always), label?}`; row-list: `{code, denom?(=pctOf), label?, color?, negate?, isTotal?}`). The two kinds diverge ONLY in their **pure tails** (which the desugar emits per-kind) — the head shape is one. Two structurally-distinct kinds, one read shape.
+
+2. **Does the cell own the store-meta enrichment fallback?** — **No: the cell owns the label/color VALUES; the HEAD owns the enrich POLICY** as an opt-in `enrich?: boolean` flag. Enrichment is applied *uniformly across all cells of a spec or not at all* (row-list enriches every cell missing label/color; ratio-list never does) — there is no spec where some cells enrich and others don't — so the policy is a head property, not a per-cell one. `row-list` desugars with `enrich: true`; `ratio-list` omits it (→ `label ?? code`, no enrichment). Because enrichment reads the store (`storeObs`), it CANNOT be a pure tail verb — it belongs at the head, the only store-aware step.
+
+3. **The differing output field-sets (`measure` vs none; `pct` always vs conditional)?** — **all downstream of the head, split cleanly by the head/tail boundary.** The head does STORE reads only and emits per-cell rows carrying `value` (+ `_denom` companion when a secondary code is declared, + literal passthrough). The **arithmetic** (ratio division, negate, pct formula, the `measure` field) is the **pure tail**, emitted differently per kind. The **conditional output fields** (`pct`, `isTotal`, `color` present on some rows, absent on others) are preserved because the HEAD — imperative store-aware code — emits `_denom`/`isTotal`/`color` **only on the cells that declare them** (exactly as the resolver branches per row), and a presence-conditional `derive` + a presence-preserving `select` carry that through. This is the SAME "field present on some rows only" mechanism the DU4b growth fold already proves byte-identical (`window lag` omits `_prev`; `exists` reads it; `select` preserves what exists).
+
+### The head owns exactly the store-aware read — via a shared, extracted `readExplicitCells` (the Strangler seam guaranteeing byte-identity)
+
+`readSource` (pipeline-resolver.ts) gains ONE arm (`'cells' in head`) that delegates to a new **pure store-read helper** `readExplicitCells(cells, enrich, at, grain, rollup, ctx, store)` extracted from the two legacy resolvers. It performs, per cell, exactly what the resolvers do today: (1) `storeVal(code)` → `value`; (2) if `denom` declared, `storeVal(denom)` → `_denom`; (3) if `enrich` and label/color absent, `storeObs({measure:code})[0]` → fill label/color, **`tagLocaleString` on an object label** (the identical i18n boundary, `resolvers.ts:162`); (4) copy literal `label`/`color`/`negate`/`isTotal` onto the row, conditionally as the resolver does (e.g. `isTotal` only when set). It emits NO ratio/pct/negate arithmetic. **Both** the new head arm **and** (transitionally) the legacy `RatioListResolver`/`RowListResolver` call this ONE helper — so the cells the tail runs on are *literally the same cells* the legacy arithmetic ran on. Byte-identity is by construction; the FF proof reduces to "does the pure tail reproduce the arithmetic." Guard: `FF-EXPLICIT-CELLS-READ-SHARED` (the head arm and the legacy resolvers share the SOLE store-read helper — no re-implementation, one read path, Law 6).
+
+### The desugar arms (`desugarToPipeline`, replacing the `default` identity for these two kinds)
+
+**`ratio-list` →**
+```
+[ source(cells = pairs.map(p ⇒ ({code:p.code, denom:p.denom, label:p.label}))),   // no enrich
+  derive(measure = id),                                    // or head carries measure = code
+  derive(value  = '_denom ? (value / _denom * 100) : 0'),  // the guarded ratio
+  select([id, measure, label, value]) ]                    // drops _denom scaffold
+… ++ spec.pipe                                             // ratio-list's optional existing tail, verbatim
+```
+
+**`row-list` →**
+```
+[ source(cells = rows.map(r ⇒ ({code:r.code, denom:r.pctOf, label:r.label,
+                                color:r.color, negate:r.negate, isTotal:r.isTotal})), enrich:true),
+  derive(pct   = _denom present ? (abs(value) / _denom) * 100 : ⟨omit⟩),   // UNGUARDED, presence-conditional
+  derive(value = 'negate ? -value : value'),                              // pct read abs(value) first — order-safe
+  select([id, label, value, pct, color, isTotal]) ]                       // presence-preserving; drops _denom, negate
+```
+
+- `pct` uses `abs(value)` and row-list applies no denom-guard, so a 0 pctOf yields `Infinity` — the tail must reproduce this UNGUARDED (unlike ratio-list's guarded `value`). Its emission condition is "**pctOf was DECLARED**" (= `_denom` companion present), NOT "denom value truthy" — so the head emits `_denom` iff declared, and the derive fires on presence. `abs()` makes pct order-independent of the negate step.
+- `select` must be **presence-preserving** (project listed fields that EXIST, drop the rest, never inject an absent field as `null`) so row-list rows without `color`/`pct`/`isTotal` stay without them (byte-identity). Equivalent: an exclude-mode select that only strips the `_`-scaffold. **Flagged to build:** confirm `select` is presence-preserving (the DU4b growth fold's `select` never exercised absent listed fields); if it null-fills, use the scaffold-strip form instead. Byte-identity (`FF-PIPELINE-EQUIV`) is the oracle either way.
+
+### FF-PIPELINE-EQUIV corpora (the acceptance bar — `interpretSpec(desugarToPipeline(spec))` `toEqual` `legacyDirect(spec)`)
+
+- **ratio-list:** with/without `label`; `denom` value 0 (→ `value` 0); multi-pair; with and without a trailing `spec.pipe`; verify `measure` present and `pct` absent.
+- **row-list:** `label`/`color` present vs absent-then-enriched (from `storeObs` meta, incl. an **object-valued LocaleString** label — the tag must survive); `negate` true/false; `pctOf` present vs absent (`pct` conditional); `pctOf` value 0 (→ `Infinity`, unguarded — must match); `isTotal` present vs absent; verify `measure` absent and no `null`-filled fields.
+
+### Which resolver logic moves where
+
+| logic | today | after Add.5 |
+|---|---|---|
+| `storeVal(code)` / `storeVal(denom\|pctOf)` reads | in each resolver | `readExplicitCells` (shared) — head arm |
+| `storeObs` enrichment + `tagLocaleString` | RowListResolver:147-162 | `readExplicitCells` (behind `enrich`) — head arm |
+| literal passthrough (label/color/negate/isTotal) copy | each resolver | `readExplicitCells` — head arm |
+| ratio `(num/den)*100`, `measure` field | RatioListResolver | pure `derive`/`select` tail (desugar-emitted) |
+| negate, `pct` formula, conditional emission | RowListResolver | pure `derive`/`select` tail (desugar-emitted) |
+| `spec.pipe` (ratio-list) | RatioListResolver:258-263 | appended tail verbatim |
+| `RatioListResolver` / `RowListResolver` bodies | live dispatch | thin delegates (kept registered, like `TimeseriesResolver`) until DU5 deletion |
+
+### Multi-code `growth` — the calc-metric browse fold path (noted, NOT designed here)
+
+Multi-code `growth` (`code: string[]`, len > 1, `resolvers.ts:221-238`) does NOT fold through the explicit-cells head: it performs a per-code `storeObs({measure:code, filter:{[TIME_DIM]:years[0]}})[0]` series label/color meta read and emits a `series` field + `id: label::year`. Per Add.4 it folds via the **`metrics` head + calc-metric browse** path (Addendum 2 — a governed YoY calc-metric browses year-by-year with an honest first-period null), NOT the value-cell family: each code → a YoY calc-metric; head `source(metrics:[…], time: browse-grain)`; the governed head's natural label/color REPLACE the raw `storeObs` read. **Open risk (flagged, own equivalence proof required):** the governed metric label/color may DIFFER from the raw obs-meta label/color the current resolver reads — so this fold is NOT byte-identical by construction and needs either its own equivalence corpus or an accepted-divergence note. It is sequenced separately (DU4e), belongs to the metrics-head family, and is out of scope for this addendum.
+
+### Guards
+
+`FF-PIPELINE-EQUIV` (extended with the ratio-list + row-list corpora — the ⛔ gate for the emission flip) · `FF-EXPLICIT-CELLS-READ-SHARED` (head arm + legacy resolvers share the SOLE `readExplicitCells`) · `FF-ALL-KINDS-SHAPED` (progress: ratio-list + row-list now foldable → the remaining gap shrinks to *multi-code growth* alone) · held: `FF-DESUGAR-EQUIV`, `FF-CANVAS-NEVER-LIES` (LocaleString labels + honest unguarded values preserved), `FF-CONFIG-ROUNDTRIP` (`cells` is pure JSON — no functions, Law 2).
+
+**Status: ACCEPTED** (owner-blessed autonomy, 2026-07-20 — ADR-051 direction). Like Add.4, the `cells` head TYPE is a grammar addition and a one-way door **only at the emission flip** (Constructor stores `pipeline` with a `cells` head as default — gated on `FF-PIPELINE-EQUIV` green). The DU4c/d wiring (5th union member + `readExplicitCells` extraction + two desugar arms + fitness corpora) runs at read/proof time only and is fully **revert-clean**.
