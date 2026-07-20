@@ -304,10 +304,15 @@ export function desugarToPipeline(spec: DataSpec): DataSpec {
     }
     default:
       // ratio-list/row-list — the store-aware VALUE-CELL specs still on the DU3 fallback lane
-      // (Add.4: the MEASURE-axis explicit-cells form of the variant, DU4c/d). Not folded here
-      // until byte-identically proven (Law 8). growth folds above (single-code; multi-code stays
-      // on its direct resolver). metric is already a `source(metrics)` head by construction; each
-      // returns UNCHANGED (identity) → its direct resolver.
+      // (Add.4: the MEASURE-axis explicit-cells form of the variant, DU4c/d). ASSESSED
+      // (engine-specialist, 2026-07-20): NEITHER folds byte-identically with the CURRENT value-cell
+      // variant ({over,code,coords}) + the pure tail — ratio-list reads TWO cells per row (num + a
+      // per-pair denom) and emits a `measure` field with no `pct`; row-list carries per-cell
+      // negate/pctOf/isTotal + a store-META label/color enrichment read. Both need the explicit-cells
+      // extension (`cells:{code,denom?,…}[]`), whose exact schema Add.4 leaves unspecified (the `…`)
+      // → flagged for an architect design (ADR-046 Addendum 5), NOT improvised here (Law 8 / Law 10).
+      // growth folds above (single-code; multi-code stays on its direct resolver). metric is already
+      // a `source(metrics)` head by construction; each returns UNCHANGED (identity) → its direct resolver.
       return spec
   }
 }

@@ -362,3 +362,68 @@ describe('FF-PIPELINE-EQUIV (rows) — single-code growth resolves identically t
     expect(desugarToPipeline(multi).type).toBe('growth')
   })
 })
+
+// ── DU4c / DU4d — ratio-list & row-list ASSESSED, DEFERRED to the DU3 fallback lane ─────────
+//   [ADR-046 Addendum 4 · engine-specialist assessment 2026-07-20]
+//
+//  ASSESSMENT: NEITHER kind is byte-identically expressible via the DU4a value-cell `source`
+//  variant ({over, code, coords, at, grain, rollup, clamp}) + the pure tail — so per Law 8 (no
+//  grammar without a proven fold) NEITHER is folded. They are the MEASURE-axis form the ADR
+//  named, but each needs the EXPLICIT-CELLS extension of the variant, whose exact schema is NOT
+//  fully specified in Addendum 4 (the `…` in `cells:{code,denom?,…}`). Improvising it here would
+//  smuggle an under-designed variant field (Law 10) — flagged for a focused architect design
+//  (ADR-046 Addendum 5) before it is built. Why each cannot fold with the CURRENT variant:
+//
+//   • ratio-list reads TWO cells per row (numerator + a PER-PAIR denominator: storeVal(num,ctx)
+//     AND storeVal(den,ctx)) and emits {id, measure, label, value: den?(num/den)*100:0} — NO
+//     `pct`. One `source` head reads ONE value per coordinate over ONE fixed `code`; the pure
+//     tail has no store to read the denominator; the pairing lives in `spec.pairs`, not the
+//     store. The `measure` field + the cross-cell ÷ can't be reproduced (point-series emits
+//     `pct`, never `measure`). Needs `cells: {code, denom, label?}[]` (a per-cell numerator +
+//     its own denominator read + the ÷×100 fold in the resolver).
+//   • row-list carries PER-CELL heterogeneous shaping (negate / pctOf-denominator / isTotal /
+//     explicit label+color) AND a store-META label/color enrichment read (storeObs, with
+//     LocaleString tagging). A flat `coords` list can't carry per-cell params; point-series
+//     always emits `pct` (|v|/max) whereas row-list emits it only for `pctOf` with a different
+//     formula (|raw|/denomVal×100). Needs `cells: {code, label?, color?, negate?, pctOf?,
+//     isTotal?}[]` + the meta-enrich read + the LocaleString tag.
+//
+//  These guards prove the DU3 fallback lane keeps working (like the DU4b multi-code guard),
+//  so a future accidental fold that cracks parity is caught here.
+
+describe('FF-PIPELINE-EQUIV (rows) — ratio-list & row-list stay on the DU3 fallback lane (DU4c/d deferred)', () => {
+  it('ratio-list is NOT folded — desugarToPipeline returns identity (same reference)', () => {
+    const spec: DataSpec = { type: 'ratio-list', pairs: [{ code: 'GDP', denom: 'POP' }] }
+    expect(desugarToPipeline(spec)).toBe(spec)                 // identity (same reference)
+    expect(desugarToPipeline(spec).type).toBe('ratio-list')
+  })
+
+  it('the ratio-list DU3 lane keeps resolving through its direct resolver', () => {
+    const spec: DataSpec = { type: 'ratio-list', pairs: [{ code: 'GDP', denom: 'POP' }] }
+    // interpretSpec desugars (→ identity) then dispatches to RatioListResolver — the DU3 lane.
+    const rows = interpretSpec(spec, ctx, store)
+    expect(rows).toEqual(legacyDirect(spec, ctx, store))       // stable, direct-resolver rows
+    expect(rows).toHaveLength(1)
+    expect(rows[0]!['id']).toBe('GDP')
+    expect(rows[0]!['measure']).toBe('GDP')                    // the field the value-cell head can't emit
+    expect('pct' in rows[0]!).toBe(false)                      // ratio-list emits NO pct (point-series would)
+    // GDP@{2020,GE}=100, POP@{2020,GE}=4 → (100/4)×100 = 2500 (the cross-cell ÷ the tail can't do).
+    expect(Number(rows[0]!['value'])).toBeCloseTo(2500)
+  })
+
+  it('row-list is NOT folded — desugarToPipeline returns identity (same reference)', () => {
+    const spec: DataSpec = { type: 'row-list', rows: [{ code: 'GDP' }] }
+    expect(desugarToPipeline(spec)).toBe(spec)                 // identity (same reference)
+    expect(desugarToPipeline(spec).type).toBe('row-list')
+  })
+
+  it('the row-list DU3 lane keeps resolving (per-cell negate + store-meta label enrichment)', () => {
+    const spec: DataSpec = { type: 'row-list', rows: [{ code: 'GDP', negate: true }] }
+    const rows = interpretSpec(spec, ctx, store)
+    expect(rows).toEqual(legacyDirect(spec, ctx, store))       // stable, direct-resolver rows
+    expect(rows).toHaveLength(1)
+    expect(rows[0]!['id']).toBe('GDP')
+    expect(Number(rows[0]!['value'])).toBeLessThan(0)          // negate flips the sign — a per-cell param
+    expect('label' in rows[0]!).toBe(true)                     // store-meta enrichment (no explicit label)
+  })
+})

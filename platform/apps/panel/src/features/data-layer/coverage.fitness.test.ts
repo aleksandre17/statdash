@@ -307,8 +307,15 @@ const NOT_YET_FOLDED = new Set<string>([
   // the direct resolver (its per-code store meta read → calc-metric browse, Add.2) but is NOT a
   // separate discriminant, so it is not tracked here — it is covered by the FF-PIPELINE-EQUIV
   // growth corpus (which asserts multi-code identity).
-  'ratio-list', // DU4c — the MEASURE-axis explicit-cells form of the value-cell variant
-  'row-list',   // DU4d — the MEASURE-axis explicit-cells form of the value-cell variant
+  // DU4c/DU4d — ASSESSED (engine-specialist, 2026-07-20) and DEFERRED. Neither folds byte-
+  // identically with the CURRENT value-cell variant ({over,code,coords}) + the pure tail:
+  //   ratio-list reads TWO cells per row (numerator + a PER-PAIR denominator) and emits a
+  //     `measure` field with no `pct` — one head reads one value per coord, the tail has no store.
+  //   row-list carries per-cell negate/pctOf/isTotal + a store-META label/color enrichment read.
+  // Both need the explicit-cells extension (`cells:{code,denom?,…}[]`) whose schema Add.4 leaves
+  // unspecified → flagged for an architect design (ADR-046 Addendum 5), not improvised (Law 8/10).
+  'ratio-list', // DU4c — MEASURE-axis explicit-cells form (deferred: needs the cells extension)
+  'row-list',   // DU4d — MEASURE-axis explicit-cells form (deferred: needs the cells extension)
 ])
 
 const VALUE_CELL_REP: Record<(typeof VALUE_CELL_KINDS)[number], DataSpec> = {
