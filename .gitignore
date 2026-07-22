@@ -70,3 +70,4 @@ platform/work/
 platform/**/test-results/
 platform/apps/panel/.audit-shots/
 work/**/sweep/
+work/portal-walk/
