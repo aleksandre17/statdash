@@ -32,7 +32,6 @@
 
 ## Standing mandate (what the owner wants)
 - [agnostic → kit rule](feedback_agnostic_to_kit.md) — owner 2026-07-22: everything agnostic (true on ANY project) lives in `.claude/kit/`; only THIS-repo facts stay in agent-memory; apply at every curation/creation
-- [platform generality mandate](feedback_platform_generality_mandate.md) — owner verbatim 2026-07-22: fit NOTHING concrete; architecture that never breaks, max capability always, pulls UP to the standard, adapts to any new data — QUOTE in build briefs
 - [pipeline full power + simple](feedback_pipeline_full_power_simple.md) — ONE pipeline: full capability parity AND non-programmer-simple
 - [autonomous cognition + idea source](feedback_autonomous_cognition.md) — HIGHEST: independent cognizing mind; lead = ideologue (owner adjudicates); guard vs regression incl. owner's ideas; one-body observation duty
 - [full ownership + reference-grade](feedback_full_ownership_reference_grade.md) — reference-grade, SOLID, canonical; own calls, results not process

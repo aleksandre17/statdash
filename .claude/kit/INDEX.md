@@ -254,6 +254,7 @@ Crystallized owner feedback — each one is a behavioral correction that must no
 | `.claude/kit/feedback/feedback_windows_worktree_pitfalls.md` | Working in a git worktree / running vitest-pnpm on this Windows machine |
 | `.claude/kit/feedback/feedback_instrument_selection.md` | Choosing a verification strategy; BEFORE any repetitive manual toil (probes, greps, data pokes) — is there a tool/MCP/plugin that wins on quality·result·time·tokens? Project MCP servers live in `.mcp.json` (playwright, chrome-devtools) — prefer them over hand-rolled `node -e` probes when loaded (`/mcp` to check) |
 | `.claude/kit/feedback/feedback_worktree_isolation.md` | Deciding whether parallel agents get isolated worktrees; before ANY concurrent repo-editing (serialize-by-default; never share one git index across lanes) |
+| `.claude/kit/feedback/feedback_platform_generality.md` | Writing ANY build/design brief (quote the Generality Law as the bar); reviewing any diff that serves a concrete instance (the §5 tripwire: still right if the instance were swapped?) |
 
 ## Command playbooks (load only when invoked)
 
