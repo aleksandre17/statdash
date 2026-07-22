@@ -1,6 +1,6 @@
 # 0078 — Portal review notes batch (owner's 2026-07-10 docx, 13 items)
 
-**Source of truth:** `portalistvis_10.07.2026.docx` (18 paragraphs, images in `portal-notes-media/`; paragraph→image map re-derivable from the docx rels — P14→image19 etc.).
+**Source of truth:** `portalistvis_10.07.2026.docx` (18 paragraphs, images in `work/portal-notes-media/`; paragraph→image map re-derivable from the docx rels — P14→image19 etc.).
 **Branch:** `fix/portal-review-notes-2026-07-10` · **Status:** built + locally gated (vitest 3621 pass / lint 0 err / tsc panel clean) · dev-tier deploy in flight · live walk pending.
 
 ## Note → fix map (paragraph numbers from the docx)

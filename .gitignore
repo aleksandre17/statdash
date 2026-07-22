@@ -64,3 +64,9 @@ platform/work/
 
 # owner ad-hoc review screenshots at repo root
 /img*.png
+
+# MCP + test artifacts (regenerable)
+.playwright-mcp/
+platform/**/test-results/
+platform/apps/panel/.audit-shots/
+work/**/sweep/
