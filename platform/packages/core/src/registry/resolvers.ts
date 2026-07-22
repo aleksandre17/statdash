@@ -24,6 +24,7 @@ import { defaultRegistry }                   from './engine'
 import { PointSeriesResolver }                from './point-series-resolver'
 import { MetricResolver }                     from './metric-resolver'
 import { PipelineResolver }                   from './pipeline-resolver'
+import { GROWTH_POSITIVE_COLOR, GROWTH_NEGATIVE_COLOR } from '../data/semantic-colors'
 
 // ── Shared utilities ───────────────────────────────────────────────────
 //
@@ -214,7 +215,7 @@ class GrowthResolver implements SpecResolver<Extract<DataSpec, { type: 'growth' 
         const cur  = storeVal(store, codes[0], atTime(y,        ctx))
         const gr   = prev ? ((cur / prev - 1) * 100) : 0
         return { id: String(y), label: String(y), value: gr,
-                 color: gr >= 0 ? '#00A896' : '#E76F51' }
+                 color: gr >= 0 ? GROWTH_POSITIVE_COLOR : GROWTH_NEGATIVE_COLOR }
       })
     }
 

@@ -27,6 +27,7 @@ import type { DataSpec, PointSeriesSpec, ResolvableSpec, PipelineSpec, PipeStep 
 import type { DimVal }    from '../sdmx'
 import { TIME_DIM }       from '../core/context'
 import { effectiveYears, isDefaultGranularity } from '../core/time-dimension'
+import { GROWTH_POSITIVE_COLOR, GROWTH_NEGATIVE_COLOR } from './semantic-colors'
 
 // ── pivot → transform + melt ──────────────────────────────────────────
 //
@@ -276,7 +277,8 @@ export function desugarToPipeline(spec: DataSpec): DataSpec {
       //     the first row of the partition (the honest "no predecessor" edge, no fabricated 0/null).
       //   • derive(value = '_prev ? ((value / _prev - 1) * 100) : 0') — the EXACT YoY formula via
       //     @statdash/expr (ONE dialect); the coalesce-to-0 field read reproduces `prev ?`.
-      //   • derive(color = "value >= 0 ? '#00A896' : '#E76F51'") — the SAME sign→color rule.
+      //   • derive(color = sign→color) — the SAME rule, from the ONE named SSOT
+      //     (`semantic-colors.ts` — GrowthResolver reads the same names; can't diverge).
       //   • derive(_hasPrev = exists(_prev)) + filter(_hasPrev) — a POSITIONAL first-period drop:
       //     desugar is pure (no store/ctx) so it cannot know the first year for 'all'; "keep the
       //     periods that HAVE a predecessor" drops exactly row 0 for BOTH explicit and 'all' coords
@@ -303,7 +305,7 @@ export function desugarToPipeline(spec: DataSpec): DataSpec {
           gSource,
           { op: 'window', fn: 'lag', over: 'value', as: '_prev' },
           { op: 'derive', as: 'value',    expr: '_prev ? ((value / _prev - 1) * 100) : 0' },
-          { op: 'derive', as: 'color',    expr: "value >= 0 ? '#00A896' : '#E76F51'" },
+          { op: 'derive', as: 'color',    expr: `value >= 0 ? '${GROWTH_POSITIVE_COLOR}' : '${GROWTH_NEGATIVE_COLOR}'` },
           { op: 'derive', as: '_hasPrev', expr: { op: 'exists', value: { $row: '_prev' } } },
           { op: 'filter', where: { _hasPrev: 1 } },
           { op: 'select', fields: ['id', 'label', 'value', 'color'] },

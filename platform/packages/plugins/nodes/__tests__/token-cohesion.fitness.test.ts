@@ -73,10 +73,12 @@ const ALLOWED: AllowEntry[] = [
     literals: ['#6B7B8D', '#E53E3E'],
   },
   {
-    tail: join('core', 'src', 'registry', 'resolvers.ts'),
-    why:  'Growth-sign +/- semantic encoding colors emitted onto EngineRow JSON ' +
+    tail: join('core', 'src', 'data', 'semantic-colors.ts'),
+    why:  'THE named core color SSOT (the previous entry’s own follow-up, discharged): ' +
+          'growth-sign +/- semantic encoding colors emitted onto EngineRow JSON ' +
           '(var() invalid). Universal up/down data semantics, not tenant brand. ' +
-          'Follow-up: promote to a named core color SSOT (out of this wave’s lane).',
+          'GrowthResolver + the desugar growth fold both read these names — the ' +
+          'sign→color rule has ONE home; any OTHER literal in the file still fails.',
     literals: ['#00A896', '#E76F51'],
   },
 ]
