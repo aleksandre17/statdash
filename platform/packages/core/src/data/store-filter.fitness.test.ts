@@ -23,7 +23,9 @@ import type { RawObsRow }                       from './store-api'
 import { ExternalStore }                        from './store-impl'
 import type { Observation }                     from '../sdmx'
 import type { SectionContext }                  from '../core/context'
+import { MEASURE_DIM }                          from '../core/context'
 import type { StoreQuery }                      from './store'
+import { queryReadObs }                         from '../registry/resolvers'
 
 // ── buildObsFilterParam WIRE-path unit assertions ──────────────────────
 
@@ -218,5 +220,135 @@ describe('FF-NECTXREF-MULTIVALUE — matchesFilter restricts to the leaf SET, no
 
     const geos = res.data.map((r) => (r as Record<string, unknown>)['geo'])
     expect(geos).toEqual(['R3', 'R4'])          // client re-check restricts to the leaf set
+  })
+})
+
+// ── FF-OBS-MEASURE-PIN — an obs query's top-level measure scopes the wire filter ──
+//
+//  Root cause (CONFIRMED-LIVE, card 0104, GDP charts 1/2 rendered a foreign series):
+//  buildObsFilterParam pinned MEASURE_DIM for a `val` query but NOT for an `obs` query.
+//  The metric-ref path (resolveQueryMeasures → queryReadObs) keeps the measure TOP-LEVEL
+//  (`{type:'obs', measure:'gdp.current', filter:{geo,approach}}`), NOT inside q.filter —
+//  so the wire filter went out measure-LESS, the store fetched the covering {geo,approach}
+//  slice (ALL measures), and the chart collapsed each time coordinate to a last-wins
+//  measure. Two sibling `query` charts with the SAME dims + DIFFERENT measure hit the
+//  SAME (measure-less) key → identical rows → identical series (the lie). The val branch
+//  proved the shape; this asserts the obs branch pins MEASURE_DIM through the SAME helper.
+//
+//  Faithful to the runtime path: builds the StoreQuery via `queryReadObs` — the exact SSOT
+//  the QueryResolver read + the async warm both derive their (measure,filter) key from.
+
+describe('FF-OBS-MEASURE-PIN — the top-level obs measure lands in the wire filter', () => {
+
+  it('single measure: the metric-ref query pins MEASURE_DIM as a scalar', () => {
+    // queryReadObs is what QueryResolver feeds storeObs (resolveMeasureRef + default-dim
+    // merge). A raw code (no registered metric) round-trips byte-identically here.
+    const q = queryReadObs({ measure: 'gdp.current', filter: { geo: 'GE', approach: 'B1GQ' } })
+    const filter = wireFilter(q, {})
+    expect(filter[MEASURE_DIM]).toBe('gdp.current')   // measure is SCOPED, not dropped
+    expect(filter['geo']).toBe('GE')
+    expect(filter['approach']).toBe('B1GQ')
+  })
+
+  it('array measure: a multi-measure obs query pins the OR-set (route reads it = ANY)', () => {
+    const q = queryReadObs({ measure: ['gdp.current', 'gdp.perCapita'], filter: { geo: 'GE' } })
+    const filter = wireFilter(q, {})
+    expect(filter[MEASURE_DIM]).toEqual(['gdp.current', 'gdp.perCapita'])
+  })
+
+  it("wildcard '*': NO measure pin — the metric-swap $ctx-into-filter supplies the scope", () => {
+    // The perspective metric-swap pattern rides measure:'*' + filter[MEASURE_DIM]:{$ctx}.
+    // measurePin('*') → undefined, so the wildcard never pins a literal '*' (0 rows); the
+    // q.filter[MEASURE_DIM] $ctx below still scopes it to the active dim value.
+    const noScope = wireFilter({ type: 'obs', measure: '*', filter: { geo: 'GE' } }, {})
+    expect(noScope[MEASURE_DIM]).toBeUndefined()
+
+    const viaCtx = wireFilter(
+      { type: 'obs', measure: '*', filter: { [MEASURE_DIM]: { $ctx: 'measure' } } },
+      { measure: 'gdp.current' },
+    )
+    expect(viaCtx[MEASURE_DIM]).toBe('gdp.current')   // the explicit $ctx pin wins
+  })
+
+  it('an explicit q.filter[MEASURE_DIM] overrides the top-level measure pin', () => {
+    // Precedence: the measure pin lands BEFORE the q.filter loop, so an explicit filter
+    // measure (rare, but legal) wins — mirroring "explicit config > metric default".
+    const filter = wireFilter(
+      { type: 'obs', measure: 'gdp.current', filter: { [MEASURE_DIM]: 'gdp.perCapita' } },
+      {},
+    )
+    expect(filter[MEASURE_DIM]).toBe('gdp.perCapita')
+  })
+
+  it('val branch stays byte-identical: a concrete code still pins MEASURE_DIM scalar', () => {
+    // The shared helper must not perturb the confirmed-correct val/KPI path.
+    const filter = wireFilter({ type: 'val', code: 'gdp.current' }, {})
+    expect(filter[MEASURE_DIM]).toBe('gdp.current')
+  })
+})
+
+// ── FF-QUERY-RENDER-TRUTH — sibling obs charts, same dims / diff measure ⇒ DISTINCT ──
+//
+//  The gate that was MISSING while the bug shipped green. warm-key ≡ read-key (both derive
+//  from buildObsFilterParam) held the cache CONSISTENT even when it was measure-WRONG, so
+//  no consistency fitness could bite. This asserts TRUTH: two ApiStore obs reads that share
+//  {geo,approach} but request DIFFERENT measures must send DIFFERENT wire filters and
+//  surface DIFFERENT series. The server double is measure-AWARE (honours filter.measure) —
+//  so a regression to a measure-LESS key makes BOTH URLs identical → the double returns the
+//  same covering rows → the series collapse to equal → this test RED. Impossible to slip.
+
+const GDP_DATASET = 'NA_GDP'
+const GDP_DIMS    = ['geo', 'approach']
+
+// A measure-aware server: returns ONLY the rows whose measure matches the wire filter's
+// MEASURE_DIM pin (the real route's `= ANY` containment). A measure-LESS filter ⇒ it would
+// return the whole covering slice (all measures) — exactly the covering-collapse bug.
+const GDP_FACTS: RawObsRow[] = [
+  { time_period: '2015', dim_key: { geo: 'GE', approach: 'B1GQ', measure: 'gdp.current'   }, obs_value: 33935, obs_status: 'A', obs_attribute: {} },
+  { time_period: '2016', dim_key: { geo: 'GE', approach: 'B1GQ', measure: 'gdp.current'   }, obs_value: 35800, obs_status: 'A', obs_attribute: {} },
+  { time_period: '2015', dim_key: { geo: 'GE', approach: 'B1GQ', measure: 'gdp.perCapita' }, obs_value:  9100, obs_status: 'A', obs_attribute: {} },
+  { time_period: '2016', dim_key: { geo: 'GE', approach: 'B1GQ', measure: 'gdp.perCapita' }, obs_value:  9600, obs_status: 'A', obs_attribute: {} },
+]
+
+function gdpServer(): void {
+  vi.mocked(fetch).mockImplementation((input: RequestInfo | URL) => {
+    const url    = new URL(String(input))
+    const filter = JSON.parse(url.searchParams.get('filter') ?? '{}') as Record<string, unknown>
+    const pin    = filter[MEASURE_DIM]
+    const pins   = pin === undefined ? null : Array.isArray(pin) ? pin.map(String) : [String(pin)]
+    // null pin = measure-less request (the bug) → the covering slice (ALL measures).
+    const rows   = pins === null ? GDP_FACTS : GDP_FACTS.filter((r) => pins.includes(r.dim_key.measure))
+    return Promise.resolve(okResponse(rows))
+  })
+}
+
+const gdpMapRow = (raw: RawObsRow) => ({ ...raw.dim_key, time: Number(raw.time_period), value: raw.obs_value ?? 0 })
+
+describe('FF-QUERY-RENDER-TRUTH — same dims, different measure ⇒ distinct wire + series', () => {
+
+  it('two sibling obs reads scope to their OWN measure and render DIFFERENT series', async () => {
+    gdpServer()
+    const store = new ApiStore(BASE_URL, GDP_DATASET, GDP_DIMS, {}, gdpMapRow)
+    const ctx: SectionContext = { dims: { geo: 'GE', approach: 'B1GQ' } }
+
+    // Chart 1 (nominal ₾) and Chart 2 (per-capita $): SAME dims, DIFFERENT measure — the
+    // exact live GDP-page shape. Built via queryReadObs (the runtime SSOT key path).
+    const q1 = queryReadObs({ measure: 'gdp.current'   })
+    const q2 = queryReadObs({ measure: 'gdp.perCapita' })
+    const r1 = await store.queryAsync(q1, ctx)
+    const r2 = await store.queryAsync(q2, ctx)
+
+    // WIRE proof — each request carried its own measure (never a shared measure-less key).
+    const urls = vi.mocked(fetch).mock.calls.map((c) => new URL(String(c[0])))
+    const pins = urls.map((u) => JSON.parse(u.searchParams.get('filter') ?? '{}')[MEASURE_DIM])
+    expect(pins).toContain('gdp.current')
+    expect(pins).toContain('gdp.perCapita')
+
+    // RENDER-TRUTH — the two series are DISTINCT (the covering-collapse lie is dead).
+    const v1 = r1.data.map((r) => (r as Record<string, unknown>)['value'])
+    const v2 = r2.data.map((r) => (r as Record<string, unknown>)['value'])
+    expect(v1).toEqual([33935, 35800])       // nominal ₾
+    expect(v2).toEqual([9100, 9600])         // per-capita $
+    expect(v1).not.toEqual(v2)               // the class this gate forever forbids
   })
 })

@@ -47,12 +47,34 @@ function toWireValue(val: DimVal): string | string[] | undefined {
 }
 
 
+// ── measurePin — a query's measure coordinate in wire-filter shape (SSOT) ──
+//
+//  BOTH a `val` point read and an `obs` multi-dim query scope to a measure (or an
+//  OR-set of measures). This is the ONE place that expresses "which MEASURE_DIM
+//  code(s) does this query pin" so the val/obs branches of buildObsFilterParam can
+//  never drift — the AR-38 asymmetry whose obs arm silently dropped the pin, fetching
+//  a measure-LESS covering slice that the chart then collapsed to a last-wins measure.
+//    • one concrete code  → scalar pin
+//    • an OR-set of codes → array pin (the route reads it as `= ANY`)
+//    • the '*' wildcard   → undefined (no pin = "all measures"; the metric-ref pattern
+//      supplies the real scope via q.filter[MEASURE_DIM] downstream) · empty → undefined
+//  Generic over the value shape (Law 1 — MEASURE_DIM is a dim like any other; only its
+//  role as the query's own measure coordinate is expressed here, once).
+function measurePin(measure: string | readonly string[]): string | string[] | undefined {
+  const raw = Array.isArray(measure) ? measure : [measure as string]
+  if (raw.some((m) => String(m) === '*')) return undefined
+  const codes = raw.map(String).filter((c) => c !== '')
+  return codes.length === 0 ? undefined : codes.length === 1 ? codes[0] : codes
+}
+
 // ── buildObsFilterParam — StoreQuery → wire `filter` JSON (or undefined) ──
 //
 //  Assembles the non-time dim filter for the observations wire param. Sources,
 //  in precedence order:
 //    1. ctx.dims baseline (every nonTimeDim with a concrete value)
-//    2. a `val` query's MEASURE_DIM pin (the OLAP point-read measure SSOT)
+//    2. the query's MEASURE_DIM pin (val's `code` OR obs's top-level `measure`, via
+//       the ONE measurePin helper — so the fetch/cache key scopes to the measure the
+//       query carries and two sibling obs charts with different measures stay distinct)
 //    3. q.filter overrides ($ctx scope · array OR-set · scalar · `$ne` exclusion)
 //
 //  `$ne` is a CLIENT-SIDE operator (the route's dim-filter schema has no `<>`): a
@@ -77,11 +99,19 @@ export function buildObsFilterParam(
     }
   }
 
-  // A `val` query is an OLAP point-read for ONE measure: pin MEASURE_DIM (the val
-  // SSOT) — else the server returns every measure and storeVal collapses onto rows[0].
-  if (q.type === 'val') {
-    filterRecord[MEASURE_DIM] = q.code
-  }
+  // Pin MEASURE_DIM from the query's own measure coordinate — a `val` point-read's
+  // `code` OR an `obs` query's top-level `measure` — through the ONE measurePin helper.
+  //   • val: else the server returns every measure and storeVal collapses onto rows[0].
+  //   • obs: the metric-ref path (resolveQueryMeasures) keeps the measure TOP-LEVEL, not
+  //     in q.filter; without this pin the obs fetch/cache key was measure-LESS → it read
+  //     the covering {geo,approach} slice (ALL measures) and the chart collapsed each
+  //     time coordinate to a last-wins measure (charts rendered a foreign series). The
+  //     pin lands BEFORE the q.filter loop so an explicit q.filter[MEASURE_DIM] (the '*'
+  //     + $ctx metric-swap pattern) still overrides it.
+  const mPin = q.type === 'val' ? measurePin(q.code)
+             : q.type === 'obs' ? measurePin(q.measure)
+             : undefined
+  if (mPin !== undefined) filterRecord[MEASURE_DIM] = mPin
 
   if (q.type === 'obs' && q.filter) {
     for (const [dim, fv] of Object.entries(q.filter)) {
