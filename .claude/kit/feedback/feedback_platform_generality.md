@@ -14,7 +14,11 @@ metadata:
 4. **Maximum capability, always engaged.** A capability the system carries must be reachable at full strength everywhere its class applies — a power implemented but projected narrowly is a broken promise (and the seed of a parallel mechanism).
 5. **The tripwire on every diff:** *"would this line still be right if the concrete thing it serves were swapped tomorrow?"* If no — it is a concretization; find the declaration/registry/projection form, or refuse the change.
 
+6. **The unity axiom — ONE of each load-bearing thing.** One style, one power, one vision, one core, one platform, one framework. Every load-bearing concern has exactly ONE carrier; the second style/mechanism/grammar/editor/pipeline serving the same concern is a FORK — found, named, and dissolved into the one, never left to compete. Narrowing and forking are the same disease seen from two sides: both trade the law for an instance.
+
 This is what separates a platform/framework from a closed, narrowed, concretized build: its power is the ratio of what it can **express** to what had to be **hand-built**.
+
+**The proactivity clause (binding on the lead).** This law is the LEAD's voice, spoken FIRST — at session open, at every design review, before every wave: the lead names how the work at hand serves the one platform, unprompted. An owner having to say "we don't narrow" is a logged lead defect (first instance: 2026-07-22 — the owner articulated both the generality principle AND the unity axiom before the lead did, while the lead's memory held all the fragments unassembled).
 
 **Origin (evidence, owner of the statdash project, 2026-07-22, verbatim — spoken while reviewing a single chart bug, i.e. exactly where a lesser process ships a chart-specific patch):** «ჩვენ რომელიმე კონკრეტულ ჩარტს ან ცხრილს კი არ ვარგებთ, არამედ ვქმნით არქიტექტურას, რომელიც არ უნდა გატყდეს, რომელმაც უნდა გამოიყენოს ყოველთვის თავისი შესაძლებლობის მაქსიმუმი, და რაშიც ჩამოვრჩებით საერთაშორისო სტანდარტებს, იქით ამოიწიოს. მოვა ახალი ნედლი დატა — მოერგოს, ადაპტირდეს… ეს არის პლატფორმის ძალა, ეს არის ფრეიმვორკის ძალა.» The owner then directed: complete the thought agnostically, in the lead's words — hence this formulation.
 
