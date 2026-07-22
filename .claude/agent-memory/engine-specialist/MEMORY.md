@@ -42,6 +42,7 @@
 - [Effects retirement](reference_effects_retirement.md) — Effect/applyEffects/schema.effects deleted wholesale, locked by check-laws grep guard; BRE `\?` pitfall
 
 ## Reference — app/store boundary + panel/plugin conventions
+- [FetchScheduler coalescing](reference_fetch_scheduler_coalesce.md) — in-flight single-flight (0111) ON TOP of ADR-048 queue; stats-api getAt routes through scheduleFetch = the ~18× classifier collapse
 - [ApiStore freshness gate](reference_apistore_freshness_gate.md) — 304/ETag conditional-GET; TTL-aware `_cache{rows,expiresAt}`; fresh/stale/miss dispatch
 - [Apps/api engine dist consumption](reference_apps_api_engine_dist.md) — apps/api resolves @statdash/engine via DIST not source; rebuild after any core export change
 - [Panel/plugin conventions](reference_panel_plugin_conventions.md) — 3-barrel panel registration + plugin layout/i18n boundary (2 sync'd gates) + offline e2e bridge, consolidated
