@@ -12,8 +12,8 @@
 //  lives in @statdash/plugins/datasources (shared by runner + Constructor).
 //
 
-import { describe, it, expect } from 'vitest'
-import { fromStatsObsRow, fromStatsClassifiers } from './stats-api'
+import { describe, it, expect, vi, afterEach } from 'vitest'
+import { fromStatsObsRow, fromStatsClassifiers, fetchObservations } from './stats-api'
 import type { RawStatsObsRow, StatsClassifierRow } from './stats-api'
 
 const raw = (over: Partial<RawStatsObsRow>): RawStatsObsRow => ({
@@ -157,5 +157,51 @@ describe('GAP 5b — fromStatsClassifiers label + parent_code mapping', () => {
     expect(cl[0].code).toBe('P1')      // explicit column wins
     expect(cl[0].parent).toBe('X')     // parent_code wins over metadata.parent
     expect(cl[0].extra).toBe('kept')   // non-clashing metadata still lifted
+  })
+})
+
+// ── FF-SCHEDULER-COALESCE — the adapter seam is ROUTED, never raw (0112 · R3) ────
+//
+//  fetchObservations was the LAST raw un-admitted fetch in this adapter (0111 routed
+//  getAt; this closes the file). The oracle is BEHAVIORAL, not a source scan: routing
+//  through the client-global FetchScheduler is observable as single-flight — two
+//  concurrent IDENTICAL reads collapse to ONE wire call (a raw fetch would issue two),
+//  while a conditional If-None-Match read stays a DISTINCT wire read (coalesceKeyFor
+//  keys on headers — a revalidation must never fold into an unconditional miss).
+describe('FF-SCHEDULER-COALESCE — fetchObservations routes through the ADR-048 seam', () => {
+  afterEach(() => vi.unstubAllGlobals())
+
+  const okBody = () =>
+    new Response(JSON.stringify({ data: [] }), { status: 200, headers: { ETag: 'W/"v2"' } })
+
+  it('two concurrent identical reads collapse to ONE wire call (proof of scheduler routing)', async () => {
+    let calls = 0
+    vi.stubGlobal('fetch', vi.fn(async () => { calls += 1; return okBody() }))
+    const [a, b] = await Promise.all([
+      fetchObservations('', { dataset: 'D' }),
+      fetchObservations('', { dataset: 'D' }),
+    ])
+    expect(calls).toBe(1)                       // coalesced — the scheduler seam, not raw fetch
+    expect(a.notModified).toBe(false)
+    expect(b.data).toEqual([])
+    expect(b.etag).toBe('W/"v2"')               // each caller reads its own clone
+  })
+
+  it('a conditional If-None-Match read NEVER folds into the unconditional miss', async () => {
+    let calls = 0
+    vi.stubGlobal('fetch', vi.fn(async () => { calls += 1; return okBody() }))
+    await Promise.all([
+      fetchObservations('', { dataset: 'D' }, 'W/"v1"'),
+      fetchObservations('', { dataset: 'D' }),
+    ])
+    expect(calls).toBe(2)                       // different headers → different coalesce keys
+  })
+
+  it('the 304 conditional-GET contract survives the routed transport', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => new Response(null, { status: 304 })))
+    const out = await fetchObservations('', { dataset: 'D' }, 'W/"v1"')
+    expect(out.notModified).toBe(true)
+    expect(out.etag).toBe('W/"v1"')             // caller's ETag preserved on 304
+    expect(out.data).toEqual([])
   })
 })

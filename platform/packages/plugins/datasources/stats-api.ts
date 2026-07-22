@@ -1,13 +1,13 @@
 // ── Stats API client + adapters (Layer 3: VITE_STORE_MODE=stats) ──────────
 //
-//  HTTP boundary for the real stats API at /api/stats/*. The one adapter fetch
-//  (getAt) routes through the ADR-048 FetchScheduler (scheduleFetch) so these
-//  idempotent reads are concurrency-capped, Retry-After-backed, and in-flight
-//  COALESCED (card 0111) — never a raw un-admitted fetch.
-//  All responses use a { data: T } envelope — unwrapped here before use.
+//  HTTP boundary for the real stats API at /api/stats/*. EVERY adapter read
+//  (getAt + fetchObservations) routes through the ADR-048 FetchScheduler
+//  (scheduleFetch) so these idempotent reads are concurrency-capped,
+//  Retry-After-backed, and in-flight COALESCED (cards 0111/0112) — never a raw
+//  un-admitted fetch. All responses use a { data: T } envelope — unwrapped here.
 //
 //  Pattern: Hexagonal Architecture — this file is the single adapter at the
-//  port. `getAt()` is the ONLY place fetch is called (Law 5: API-readiness).
+//  port; `scheduleFetch` is the only transport it touches (Law 5: API-readiness).
 //
 //  Law 1 (no privileged dimensions): dim_key is treated as an opaque generic
 //  Record<string, DimVal>. We never name 'measure' / 'geo' / 'time' here —
@@ -331,6 +331,12 @@ export async function fetchCubeProfile(base: string, datasetCode: string): Promi
 //  ETag/304 aware: the route emits a weak ETag (GAP 5a). We forward the caller's
 //  If-None-Match and surface `notModified` so the store can keep its cached slice
 //  on a 304 (conditional-GET cache validation, RFC 9110).
+//
+//  Routed through the SAME ADR-048 scheduler as getAt (card 0112 · R3): this was
+//  the last raw un-admitted fetch in the adapter, contradicting the header claim
+//  above. Coalescing stays correct for the conditional read — `coalesceKeyFor`
+//  keys on headers, so an If-None-Match revalidation NEVER folds into an
+//  unconditional miss (FF-SCHEDULER-COALESCE covers exactly this pair).
 
 /** Query params for GET /api/stats/observations — mirrors the route's ObsQuery. */
 export interface ObsFetchParams {
@@ -356,7 +362,7 @@ export async function fetchObservations(
   const headers: Record<string, string> = {}
   if (ifNoneMatch) headers['If-None-Match'] = ifNoneMatch
 
-  const res = await fetch(`${base}${STATS_PREFIX}/observations?${qp.toString()}`, { headers })
+  const res = await scheduleFetch(`${base}${STATS_PREFIX}/observations?${qp.toString()}`, { headers })
 
   // 304 — cached slice is still fresh; keep the caller's ETag, signal no body.
   if (res.status === 304) return { data: [], etag: ifNoneMatch, notModified: true }
