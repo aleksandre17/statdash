@@ -12,3 +12,7 @@ must revert `.npmrc` before committing, and verify rendering suites in the main 
 Full write-up and general Windows/worktree pitfalls now live in plugins-specialist's memory:
 see `../../kit/feedback/feedback_windows_worktree_pitfalls.md`. Related:
 [[shared-tree-concurrency]].
+
+**Vitest 4 gotcha:** the platform's test config lives at `platform/vitest.config.ts`
+(projects declared there), NOT `vitest.workspace.ts` — Vitest 4 ignores workspace
+files silently. Run tests via `pnpm -C platform test`.

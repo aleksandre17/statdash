@@ -394,3 +394,42 @@
 
 [07:11] opus-b DU1-live-verify tokens=~85k files=2 → du1-step{1-7}*.png(new, repo root), deploy: tar apps/panel/src → statdash-dev-panel-full bind-mount + restart
 [2026-07-20 11:12] RUN run=agent-aef15e9e71789a9aa model-actual=claude-opus-4-8 calls=182 first-in=22081 peak-ctx=185730 out-tokens=82863  ⚠ CTX-BURN: peak 185730 > 120000 — audit the brief/packet
+[2026-07-20 11:34] RUN run=agent-a02bdb1289b7b4c2f model-actual=claude-opus-4-8 calls=156 first-in=31658 peak-ctx=140588 out-tokens=32304  ⚠ CTX-BURN: peak 140588 > 120000 — audit the brief/packet
+[2026-07-20 11:43] RUN run=agent-a3c149f39b06088d9 model-actual=claude-opus-4-8 calls=113 first-in=22272 peak-ctx=144772 out-tokens=53785  ⚠ CTX-BURN: peak 144772 > 120000 — audit the brief/packet
+[2026-07-20 12:03] RUN run=agent-a3631c8ece129fe27 model-actual=claude-opus-4-8 calls=112 first-in=31646 peak-ctx=94325 out-tokens=23404
+
+[12:26] opus-b DU3-live-verify tokens=~118k files=0 → live-walk :3013 (verify-only, no source change); evidence: platform/apps/panel/src/features/data-layer/workbench/DataWorkbench.tsx:118-168, DataModelingPanel.tsx:199+350-368, DataFacetField.tsx (diff)
+[2026-07-20 12:27] RUN run=agent-a45711ee292a2c7d3 model-actual=claude-opus-4-8 calls=124 first-in=22521 peak-ctx=135369 out-tokens=47759  ⚠ CTX-BURN: peak 135369 > 120000 — audit the brief/packet
+[2026-07-20 12:39] RUN run=agent-a28d6144814e1f689 model-actual=claude-opus-4-8 calls=204 first-in=31712 peak-ctx=192579 out-tokens=62681  ⚠ CTX-BURN: peak 192579 > 120000 — audit the brief/packet
+[2026-07-20 12:51] RUN run=agent-a8d0d1f303222c49e model-actual=claude-opus-4-8 calls=75 first-in=22572 peak-ctx=91453 out-tokens=25539
+[2026-07-20 13:12] RUN run=agent-aed856095a8ea7760 model-actual=claude-opus-4-8 calls=144 first-in=31749 peak-ctx=164279 out-tokens=33469  ⚠ CTX-BURN: peak 164279 > 120000 — audit the brief/packet
+[2026-07-20 13:28] RUN run=agent-aa54e8dd4daff51f5 model-actual=claude-opus-4-8 calls=117 first-in=22045 peak-ctx=138134 out-tokens=45166  ⚠ CTX-BURN: peak 138134 > 120000 — audit the brief/packet
+[2026-07-20 13:38] RUN run=agent-abc9891d182665f28 model-actual=claude-opus-4-8 calls=230 first-in=31596 peak-ctx=153004 out-tokens=34502  ⚠ CTX-BURN: peak 153004 > 120000 — audit the brief/packet
+[2026-07-20 13:55] RUN run=agent-a7bf6b2034a743d7c model-actual=claude-opus-4-8 calls=48 first-in=21489 peak-ctx=111387 out-tokens=31276
+[2026-07-20 14:16] RUN run=agent-a5bcf78ac0ed4927b model-actual=claude-opus-4-8 calls=149 first-in=21187 peak-ctx=152033 out-tokens=48700  ⚠ CTX-BURN: peak 152033 > 120000 — audit the brief/packet
+[2026-07-20 14:26] RUN run=agent-a637daee458bc8f6e model-actual=claude-opus-4-8 calls=122 first-in=21013 peak-ctx=174963 out-tokens=60123  ⚠ CTX-BURN: peak 174963 > 120000 — audit the brief/packet
+[2026-07-20 14:37] RUN run=agent-a19174df0412d1ad2 model-actual=claude-opus-4-8 calls=77 first-in=20866 peak-ctx=116991 out-tokens=31898
+[2026-07-20 14:50] RUN run=agent-a77d4a5a08346a131 model-actual=claude-opus-4-8 calls=48 first-in=21729 peak-ctx=108852 out-tokens=17529
+[2026-07-20 15:14] RUN run=agent-a1f15b37215c4a92e model-actual=claude-opus-4-8 calls=137 first-in=22458 peak-ctx=113477 out-tokens=35232
+[2026-07-20 15:36] RUN run=agent-a7f1760c123515682 model-actual=claude-opus-4-8 calls=260 first-in=31906 peak-ctx=227677 out-tokens=59388  ⚠ CTX-BURN: peak 227677 > 120000 — audit the brief/packet
+[2026-07-20 15:53] RUN run=agent-aad04c852fdcc17a5 model-actual=claude-opus-4-8 calls=119 first-in=21027 peak-ctx=191087 out-tokens=65338  ⚠ CTX-BURN: peak 191087 > 120000 — audit the brief/packet
+[2026-07-20 16:09] RUN run=agent-a3b93b2109585d145 model-actual=claude-opus-4-8 calls=181 first-in=32147 peak-ctx=166163 out-tokens=41042  ⚠ CTX-BURN: peak 166163 > 120000 — audit the brief/packet
+[2026-07-20 16:20] RUN run=agent-a0804bcff46976c6c model-actual=claude-opus-4-8 calls=187 first-in=28758 peak-ctx=160870 out-tokens=33244  ⚠ CTX-BURN: peak 160870 > 120000 — audit the brief/packet
+
+[13:00] opus-b regional-restore tokens=~85k files=1 → .claude/agent-memory/debugger/project_config_source_versioning_gap.md(new); RESTORED dev config.data_source(regional).datasetCode GDP_ANNUAL→REGIONAL_GVA via PUT /api/config/data-sources/a48d3d27
+[2026-07-20 16:58] RUN run=agent-a55a60c6c2b6bfe9f model-actual=claude-opus-4-8 calls=67 first-in=21891 peak-ctx=80858 out-tokens=14654
+[2026-07-20 16:58] RUN run=agent-a81fd4101093f7d9e model-actual=claude-opus-4-8 calls=62 first-in=22251 peak-ctx=144038 out-tokens=37898  ⚠ CTX-BURN: peak 144038 > 120000 — audit the brief/packet
+[2026-07-20 17:03] RUN run=agent-ac584e988fae69223 model-actual=claude-opus-4-8 calls=80 first-in=19111 peak-ctx=78271 out-tokens=21901
+[2026-07-20 17:25] RUN run=agent-ac30353d337d85e06 model-actual=claude-opus-4-8 calls=77 first-in=19535 peak-ctx=75946 out-tokens=29808
+[2026-07-20 17:29] RUN run=agent-ade1c2181ff25f373 model-actual=claude-opus-4-8 calls=90 first-in=29151 peak-ctx=157644 out-tokens=16826  ⚠ CTX-BURN: peak 157644 > 120000 — audit the brief/packet
+[2026-07-20 17:40] RUN run=agent-a28d0e91470191133 model-actual=claude-opus-4-8 calls=68 first-in=31739 peak-ctx=111871 out-tokens=30991
+[2026-07-20 17:40] RUN run=agent-a512ec29cc21c9414 model-actual=claude-opus-4-8 calls=18 first-in=28818 peak-ctx=50428 out-tokens=6821
+
+[17:42] chief-engineer gdp-chart-restore tokens=~85k files=3 → BLOCKER: config NOT the defect (byte-identical to provisioning); root cause store-filter.ts:86-118 obs measure-drop. NO PUT applied. work/gdp-restore-backup/gdp-page-live-20260720-173540.json(new), .claude/agent-memory/chief-engineer/project_obs_measure_drop.md(new)
+[2026-07-20 17:46] RUN run=agent-a684fae5d510883e7 model-actual=claude-opus-4-8 calls=39 first-in=19294 peak-ctx=35779 out-tokens=11248
+[2026-07-20 18:07] RUN run=agent-a997fca8f9a936866 model-actual=claude-opus-4-8 calls=99 first-in=31995 peak-ctx=128776 out-tokens=39518  ⚠ CTX-BURN: peak 128776 > 120000 — audit the brief/packet
+[2026-07-21] SESSION ROLLUP: runs=398 total_tokens=8006004662  (SessionEnd hook — measured)
+[2026-07-21 08:32] RUN run=agent-a972297baa502c607 model-actual=claude-opus-4-8 calls=181 first-in=22977 peak-ctx=234628 out-tokens=75202  ⚠ CTX-BURN: peak 234628 > 120000 — audit the brief/packet
+[2026-07-22] SESSION ROLLUP: runs=400 total_tokens=16012084526  (SessionEnd hook — measured)
+[2026-07-22 10:27] LAUNCH agent=senior-frontend-developer model-requested=sonnet task=memory-curation-own-dir
+[2026-07-22 10:27] LAUNCH agent=engine-specialist model-requested=sonnet task=memory-curation-own-dir

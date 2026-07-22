@@ -10,3 +10,4 @@
 - [self-policing mandate](feedback_self_policing_mandate.md) — owner must never be the one who discovers anti-patterns; every stated law needs a machine gate, false-green worse than no gate
 - [Dev deploy topology gap](project_dev_deploy_topology_gap.md) — dev :3013 container mounts ONLY panel/src; packages/* baked into image → panel-only rsync never deploys engine changes (false-RED trap; how to docker-cp a package)
 - [Value-cell fold fake-0](project_valuecell_fold_fake_zero.md) — folded timeseries/growth value-cell head has no store-home → cross-cube measure fabricates 0 per coord (Law 11), not honest no-data; GDP=0 vs GVA=real (2026-07-20)
+- [Obs measure-drop](project_obs_measure_drop.md) — CONFIRMED-LIVE: buildObsFilterParam pins measure for `val` but NOT for `obs` top-level q.measure → metric-ref query charts fetch covering slice, collapse to last-wins measure (growth); config+server correct, render lies (Law 11). Config PUT is NOT the fix — STOP (2026-07-20)

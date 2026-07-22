@@ -193,7 +193,7 @@ No agent ever reads all 7 strategy files. The selective map prevents that.
 | Strategy/process content in a memory file | Strategy lives in `.claude/kit/strategy/01–07` | Add to the correct numbered file |
 | Duplicate of existing content | Causes drift — two sources of truth diverge | Grep first. Extend the existing file. |
 | `MEMORY.md` growing past ~50 lines | Growth = scope creep or duplicates | Delete or merge entries before adding new ones |
-| Agnostic lesson stored as project memory | Portable wisdom trapped in a project-local layer — lost to the next project | Graduate it: a lesson true on ANY codebase → `.claude/kit/feedback/` (kit travels); only THIS-repo facts stay in `agent-memory` |
+| Agnostic lesson stored as project memory | Portable wisdom trapped in a project-local layer — lost to the next project | **OWNER-BLESSED STANDING RULE (2026-07-22): the kit IS the agnostic space.** Everything true on ANY codebase — lessons, doctrine, disciplines, tools — graduates to `.claude/kit/` (feedback/ · strategy/ · hooks/) with an INDEX load-condition row; only THIS-repo facts stay in `agent-memory`. Apply at every memory creation AND every curation pass. Anti-duplication: if the agnostic core already lives in a kit file, EXTEND it — never a twin. |
 
 **Before creating any new memory file:** grep the concept. If it already lives somewhere → update that file. If it belongs to a category (feedback/user/project/reference) but no file exists → create ONE canonical file, add one line to MEMORY.md.
 
@@ -253,6 +253,7 @@ Crystallized owner feedback — each one is a behavioral correction that must no
 | `.claude/kit/feedback/feedback_architecture_craft.md` | Any design/refactor/UI-elevation decision; adopting a new concept |
 | `.claude/kit/feedback/feedback_windows_worktree_pitfalls.md` | Working in a git worktree / running vitest-pnpm on this Windows machine |
 | `.claude/kit/feedback/feedback_instrument_selection.md` | Choosing a verification strategy; BEFORE any repetitive manual toil (probes, greps, data pokes) — is there a tool/MCP/plugin that wins on quality·result·time·tokens? Project MCP servers live in `.mcp.json` (playwright, chrome-devtools) — prefer them over hand-rolled `node -e` probes when loaded (`/mcp` to check) |
+| `.claude/kit/feedback/feedback_worktree_isolation.md` | Deciding whether parallel agents get isolated worktrees; before ANY concurrent repo-editing (serialize-by-default; never share one git index across lanes) |
 
 ## Command playbooks (load only when invoked)
 
