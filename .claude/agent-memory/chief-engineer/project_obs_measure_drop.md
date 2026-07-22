@@ -13,7 +13,7 @@ metadata:
 
 **Why gates stayed green (false-green):** warm & read BOTH derive their key from the same `buildObsFilterParam`, so warm-key ≡ read-key (both measure-less) — `warm-read-key`/`warm-covers-render` fitnesses pass on consistency while the slice is measure-WRONG. No fitness asserts two sibling `query` charts with same {geo,approach} + different measure render DISTINCT series.
 
-**Fix (owner, not me):** in the obs branch, pin `MEASURE_DIM` from `q.measure` (single|array) into filterRecord, mirroring the val branch. Add fitness: (a) a `query` spec with `query.measure` yields a measure-scoped wire filter; (b) render-truth — sibling query charts same-dims/diff-measure ⇒ distinct series.
+**Fix — LANDED `a91cd74c` (2026-07-22, engine-specialist):** `measurePin()` helper is now the SSOT for wire measure-pinning; BOTH val and obs branches pin through it (single→scalar, OR-set→array, `'*'`→skip so `$ctx`-into-filter scopes; explicit `filter[MEASURE_DIM]` still overrides). Gates added: FF-OBS-MEASURE-PIN (5 asserts) + FF-QUERY-RENDER-TRUTH (sibling same-dims/diff-measure ⇒ distinct wire filter AND distinct series — the missing truth gate). Class-sweep: `buildObsFilterParam` was the single measure-less obs key builder; no other path. Deployed to dev :3013+:3012 same day; live GDP re-verify by the lead.
 
 **Why:** Violates Law 11 (canvas never lies — a fake series presented as nominal ₾). CONFIRMED live on production portal :3012.
 **How to apply:** If asked to "restore mis-bound gdp charts" via config — the config is NOT the defect (byte-identical to `geostat.provisioning.json`); STOP any config PUT and point here. Verify the file still has the val/obs asymmetry before recommending (grep `MEASURE_DIM` in store-filter.ts).

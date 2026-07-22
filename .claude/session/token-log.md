@@ -437,3 +437,7 @@
 [2026-07-22 11:01] LAUNCH agent=chief-engineer model-requested=opus task=0104-step1-live-verify-capability-restoration
 [2026-07-22 11:04] RUN run=agent-a319caa885b69d92b model-actual=claude-sonnet-5 calls=418 first-in=25791 peak-ctx=511591 out-tokens=41041  ⚠ CTX-BURN: peak 511591 > 120000 — audit the brief/packet
 [11:17] opus-b 0104-step1-live-verify tokens=~118k files=8 → work/authoring-truth/0104/01..08 (new, screenshots); 7/7 PASS live-verified
+[2026-07-22 11:19] LAUNCH agent=engine-specialist model-requested=opus task=0104-priority1-measure-drop-root-fix
+[2026-07-22 11:21] RUN run=agent-a7cc2158010e21203 model-actual=claude-opus-4-8 calls=220 first-in=32498 peak-ctx=142567 out-tokens=37399  ⚠ CTX-BURN: peak 142567 > 120000 — audit the brief/packet
+[11:34] engine-specialist 0104-p1-measure-drop ROOT-FIXED: buildObsFilterParam obs branch now pins MEASURE_DIM via new shared measurePin() helper (val+obs unified, AR-38 asymmetry closed); +FF-OBS-MEASURE-PIN (5) +FF-QUERY-RENDER-TRUTH (1, the missing render-truth gate); full vitest 4116 pass / 1 pre-existing unrelated RED (desugar.ts token-cohesion, not mine); parity block 176 green; class-sweep=single choke point, no other measure-less key path; files=2 (store-filter.ts, store-filter.fitness.test.ts)
+[2026-07-22 11:43] LAUNCH agent=explorer model-requested=sonnet task=0104-p1-live-verify-gdp-measure-fix
