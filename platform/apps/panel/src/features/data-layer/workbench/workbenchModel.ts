@@ -30,6 +30,16 @@ export interface WorkbenchModel {
   head:     SourceStep
   tail:     TransformStep[]
   encoding: EncodingSpec
+  /**
+   * The BYTE-TRUE stored artifact this model was lowered from (D5 · card 0112 §R4 — the
+   * dialect-honesty fix). Set by `toWorkbenchModel` from its input `spec` verbatim (never
+   * reconstructed from head/tail/encoding, so a legacy `query`'s extra fields — fromDim/
+   * toDim/timeDimension/rowLimit — are never silently dropped from the steward's "stored"
+   * pane). Optional: an ad-hoc/from-scratch model (no prior persisted spec, e.g. the
+   * bind-to-create lane) carries none — `describeStewardDetail` then treats the model's
+   * own pipeline emission as the stored dialect (the two trivially coincide).
+   */
+  storedSpec?: DataSpec
 }
 
 /**
@@ -78,9 +88,10 @@ export function toWorkbenchModel(spec: DataSpec | undefined): WorkbenchModel | n
   const head = pipeline.pipe[0]
   if (!head || head.op !== 'source') return null
   return {
-    head:     head as SourceStep,
-    tail:     pipeline.pipe.slice(1) as TransformStep[],
-    encoding: pipeline.encoding,
+    head:       head as SourceStep,
+    tail:       pipeline.pipe.slice(1) as TransformStep[],
+    encoding:   pipeline.encoding,
+    storedSpec: spec,              // the artifact AS PERSISTED — byte-true, pre-desugar (D5)
   }
 }
 

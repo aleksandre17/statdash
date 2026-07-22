@@ -92,10 +92,18 @@ describe('describeAuthorSteps — the GOVERNED author rendering (FF-AUTHOR-NO-QU
 describe('describeStewardDetail — the wire truth from the ONE SSOT (steward-only)', () => {
   it('carries the raw pipeline DataSpec JSON — the member/dim codes the author never sees', () => {
     const detail = describeStewardDetail(model, 'en')
-    expect(detail.json).toContain(RAW_MEMBER_CODE) // 'GE' — present for the steward
-    expect(detail.json).toContain('REGION')
-    expect(detail.json).toContain('m.gdp')
-    expect(detail.json).toContain('"type": "pipeline"') // the emitted spine
+    expect(detail.storedJson).toContain(RAW_MEMBER_CODE) // 'GE' — present for the steward
+    expect(detail.storedJson).toContain('REGION')
+    expect(detail.storedJson).toContain('m.gdp')
+    expect(detail.storedJson).toContain('"type": "pipeline"') // the emitted spine
+  })
+
+  it('no `storedSpec` (ad-hoc model) ⇒ the stored dialect coincides with the canonical assembly', () => {
+    // model has no `storedSpec` — describeStewardDetail falls back to the model's own
+    // pipeline emission as "the stored artifact", so the two dialects trivially coincide.
+    const detail = describeStewardDetail(model, 'en')
+    expect(detail.dialect).toEqual({ stored: 'pipeline', shown: 'pipeline' })
+    expect(detail.storedJson).toBe(detail.canonicalJson)
   })
 
   // ── The EQUALITY fitness — the pane's wire == sourceHeadObs(head), not a resemblance ──

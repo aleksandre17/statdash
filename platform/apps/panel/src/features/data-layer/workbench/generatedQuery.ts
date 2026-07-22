@@ -12,10 +12,12 @@
 //      (`ColumnLabelResolver`) — a metric-id becomes its governed label, a dim code its
 //      governed label. It NEVER touches `queryReadObs` (the lowered wire query), so by
 //      construction it cannot leak a raw SDMX code (FF-AUTHOR-NO-QUERY).
-//    • STEWARD — `describeStewardDetail`: the raw DataSpec JSON + the lowered ObsQuery
-//      (the wire truth) — the steward-only advanced door (progressive disclosure).
+//    • STEWARD — `describeStewardDetail`: the STORED artifact's byte-true JSON (never the
+//      lowered assembly posing as it, card 0112 §R4 dialect-honesty fix) + the labeled
+//      canonical assembly + the lowered ObsQuery (the wire truth) — the steward-only
+//      advanced door (progressive disclosure).
 //
-import type { SourceStep, TransformStep, PropField } from '@statdash/engine'
+import type { DataSpec, SourceStep, TransformStep, PropField } from '@statdash/engine'
 import { sourceHeadObs, getTransformStepSchema } from '@statdash/engine'
 import type { ColumnLabelResolver } from '../pipeline-preview/columnLabels'
 import type { Locale } from '../../../types/constructor'
@@ -120,10 +122,27 @@ export function describeAuthorSteps(
   return out
 }
 
-/** The steward-only wire truth: the raw pipeline DataSpec + the lowered head ObsQuery. */
+/**
+ * The steward-only wire truth (card 0112 §R4 — the dialect-honesty fix, D5). TWO
+ * serializations, each HONESTLY labeled — never the assembly presented AS the artifact:
+ *   • `storedJson`    — the artifact AS PERSISTED, byte-true (a legacy `query`'s own
+ *                        fields verbatim — never the lowered pipeline standing in for it).
+ *   • `canonicalJson` — the engine `desugarToPipeline` assembly, a declared PROJECTION.
+ * `dialect` names both discriminants so the pane can decide whether to show one block
+ * (they coincide — a stored `pipeline`) or two (they diverge — a stored `query`).
+ */
 export interface StewardDetail {
-  /** The raw DataSpec (the emitted `pipeline`), pretty-printed (the steward JSON door). */
-  json:     string
+  /** The STORED artifact's own serialization, pretty-printed — byte-true (never
+   *  reconstructed via `fromWorkbenchModel`). Absent `model.storedSpec` (an ad-hoc/
+   *  from-scratch model) falls back to the model's own pipeline emission — the two
+   *  dialects then trivially coincide. */
+  storedJson:    string
+  /** The lowered PIPELINE assembly (`fromWorkbenchModel`), pretty-printed — ALWAYS a
+   *  declared projection, labeled "lowered — engine desugarToPipeline" by the pane,
+   *  never shown as if it were the stored artifact. */
+  canonicalJson: string
+  /** The two discriminants at the seam (Law 11: declare the dialect, never hide it). */
+  dialect: { stored: DataSpec['type']; shown: DataSpec['type'] }
   /** The lowered ObsQuery — the wire read the Get head issues to the store, derived from
    *  the engine SSOT `sourceHeadObs` (never a pane-local re-lowering, FF-ONE-DERIVATION-
    *  PATH). A steward `query` head → its ObsQuery verbatim; a grain-∅ governed head → the
@@ -154,15 +173,26 @@ function stewardHeadNote(head: SourceStep, locale: Locale): string {
 }
 
 /**
- * The steward-plane detail: the raw `pipeline` JSON + the lowered head ObsQuery (the wire
- * truth behind the governed rendering). The ObsQuery comes from the ONE engine SSOT
- * `sourceHeadObs(head)` — the EXACT obs read/warm the live source read & useNodeRows align
- * to — so the pane shows precisely what the head issues to the store (assert-equal, not
- * resemble). When there is no single ObsQuery (grained governed / inline / unbound), a
- * DECLARED bilingual note stands in its place — never an empty, height-less void (Law 11).
+ * The steward-plane detail (card 0112 §R4 kill-design, D5): the STORED artifact's own
+ * byte-true JSON + the labeled `desugarToPipeline` assembly + the lowered head ObsQuery.
+ * The ObsQuery comes from the ONE engine SSOT `sourceHeadObs(head)` — the EXACT obs
+ * read/warm the live source read & useNodeRows align to — so the pane shows precisely
+ * what the head issues to the store (assert-equal, not resemble). When there is no single
+ * ObsQuery (grained governed / inline / unbound), a DECLARED bilingual note stands in its
+ * place — never an empty, height-less void (Law 11).
+ *
+ * `storedJson` NEVER re-derives from `head`/`tail`/`encoding` (that would silently drop a
+ * legacy `query`'s own fields — fromDim/toDim/timeDimension/rowLimit — reproducing the R4
+ * lie one layer down). It serializes `model.storedSpec` verbatim — the artifact exactly as
+ * persisted. `canonicalJson` is the SAME `fromWorkbenchModel` assembly the emission flip
+ * writes on edit — always present, always labeled a projection by the pane, never the
+ * artifact itself.
  */
 export function describeStewardDetail(model: WorkbenchModel, locale: Locale): StewardDetail {
-  const spec = fromWorkbenchModel(model)
+  const canonical = fromWorkbenchModel(model)
+  // No prior persisted spec (ad-hoc/from-scratch model) ⇒ there is nothing to diverge FROM;
+  // the model's own pipeline emission stands in for "the stored artifact" — dialects coincide.
+  const stored = model.storedSpec ?? canonical
   const head = model.head
   // An UNBOUND governed head (`metrics: []`) still yields a degenerate `{ measure: [] }`
   // from sourceHeadObs — a read of nothing. That is not the wire truth an author wants to
@@ -173,5 +203,10 @@ export function describeStewardDetail(model: WorkbenchModel, locale: Locale): St
   const obsQuery = obs !== undefined
     ? JSON.stringify(obs, null, 2)          // steward query verbatim OR grain-∅ governed { measure }
     : stewardHeadNote(head, locale)         // no single read ⇒ a declared honest note (never a void)
-  return { json: JSON.stringify(spec, null, 2), obsQuery }
+  return {
+    storedJson:    JSON.stringify(stored, null, 2),
+    canonicalJson: JSON.stringify(canonical, null, 2),
+    dialect:       { stored: stored.type, shown: canonical.type },
+    obsQuery,
+  }
 }

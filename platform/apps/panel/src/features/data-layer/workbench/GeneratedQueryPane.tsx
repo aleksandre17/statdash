@@ -103,16 +103,39 @@ export function GeneratedQueryPane({ model, locale }: GeneratedQueryPaneProps) {
   )
 }
 
-// ── StewardWireTruth — the raw DataSpec + lowered ObsQuery (steward-only door) ──────
+// ── StewardWireTruth — the STORED artifact + the labeled assembly + lowered ObsQuery
+//    (steward-only door, card 0112 §R4 dialect-honesty fix, D5) ─────────────────────────
+//
+//  The stored artifact renders FIRST, byte-true, under an honest dialect label — never
+//  again the `desugarToPipeline` assembly standing in for it (the measured lie: `query`→
+//  `pipeline`, 7→8 steps, zero marker). The assembly renders SECOND, ONLY when it diverges
+//  from the stored bytes (a stored `pipeline` coincides with its own assembly — one pane,
+//  no redundant duplicate, no marker noise), always labeled a PROJECTION.
 function StewardWireTruth({ model, locale }: { model: WorkbenchModel; locale: Locale }) {
   const en = locale === 'en'
   const detail = describeStewardDetail(model, locale)
+  const diverges = detail.storedJson !== detail.canonicalJson
   return (
     <Box data-testid="gq-steward" sx={{ mt: 1, display: 'flex', flexDirection: 'column', gap: 0.5 }}>
       <Typography variant="caption" color="text.disabled">
         {en ? 'Steward — wire truth' : 'სტიუარდი — რეალური query'}
       </Typography>
-      <WireBlock label={en ? 'DataSpec (raw)' : 'DataSpec (ნედლი)'} body={detail.json} testid="gq-json" />
+      <WireBlock
+        label={en
+          ? `Stored artifact (${detail.dialect.stored})`
+          : `შენახული ჩანაწერი (${detail.dialect.stored})`}
+        body={detail.storedJson}
+        testid="gq-json"
+      />
+      {diverges && (
+        <WireBlock
+          label={en
+            ? 'Lowered — engine desugarToPipeline'
+            : 'დაშლილი — engine desugarToPipeline'}
+          body={detail.canonicalJson}
+          testid="gq-canonical-json"
+        />
+      )}
       <WireBlock label={en ? 'Lowered ObsQuery' : 'დაბლა-გატანილი ObsQuery'} body={detail.obsQuery} testid="gq-obsquery" />
     </Box>
   )
