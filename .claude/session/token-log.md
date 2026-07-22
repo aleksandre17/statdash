@@ -445,3 +445,4 @@
 [2026-07-22 11:45] RUN run=agent-a155b0d20f05a875f model-actual=claude-opus-4-8 calls=76 first-in=19834 peak-ctx=102831 out-tokens=26519
 [2026-07-22 11:46] LAUNCH agent=platform-architect model-requested=fable task=0104-phase3-elevation-apex-design
 [2026-07-22 11:48] RUN run=agent-a493e6aa5e70a3031 model-actual=claude-sonnet-5 calls=27 first-in=32849 peak-ctx=50371 out-tokens=3968
+[2026-07-22 11:58] RUN run=agent-a928cb48ed57c8183 model-actual=claude-fable-5 calls=38 first-in=22833 peak-ctx=88844 out-tokens=34388

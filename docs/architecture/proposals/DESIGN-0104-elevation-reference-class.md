@@ -1,6 +1,6 @@
 # DESIGN-0104 — Elevation to the Reference Class: the One Data Workspace, Finished
 
-- **Status:** PROPOSED (design-only; lead elevation pass → owner adjudication before any build)
+- **Status:** ACCEPTED (owner, 2026-07-22 — all four §7 decisions blessed: «თუ ეს შენი საუკეთესო ვერსიაა, მაშინ კი. ვიმედოვნებ, რომ საუკეთესო ui სტანდარტები, უძლიერესი და ლოგიკური ფუნქციები, მარტივი და powerful იქნება, ისეთი როგორც კონკურენციაში შევა, ჩვენს ცნობილ პლატფორმებთან» — the competitive bar is part of the acceptance)
 - **Date:** 2026-07-22 · **Author:** platform-architect (apex pass, card 0104 Phase 3)
 - **Card:** `work/items/0104-data-workspace-unification-and-capability-restoration.md`
 - **Stands on (settled, not re-litigated):** ADR-041/042 (object model) · ADR-046 + Add.4/5 (pipeline spine, value-cell/cells heads) · ADR-050 (spine) · ADR-051 (One Data Workspace, DU1–DU3 shipped) · `DESIGN-data-workspace-canonical-redistribution.md` (5 owner verdicts, waves DW-C→DU6→DW-A/B/D) · TanStack-Table-only adoption verdict · Laws 2/10/11 · P-OFFER · one-model-two-zooms.
