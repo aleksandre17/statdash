@@ -12,4 +12,4 @@ links:
 
 **DoD** — identical concurrent requests coalesce to one wire call (fitness at the scheduler seam) · page switch fetches only the VISIBLE page's needs · long-task budget per switch measurably down (before/after numbers in the card) · live re-walk: no duplicate rows in the network log for one gesture.
 
-**Notes** — Untested freeze suspects (owner-state deltas) stay open in 0109: native drag-drop path, long-session listener leak (`CanvasOverlay.tsx:326-334` ResizeObserver), production build, large datasets. Also surfaced: `measure()` full-tree querySelector per RO-fire (0109 §3) — same perf family, fix alongside.
+**Notes** — Untested freeze suspects (owner-state deltas) stay open in 0109: native drag-drop path, long-session listener leak (`CanvasOverlay.tsx:326-334` ResizeObserver), production build, large datasets. Also surfaced: `measure()` full-tree querySelector per RO-fire (0109 §3) — same perf family, fix alongside. **+ 0109 residual (2026-07-22 re-walk):** overlay rect recompute misses chart↔table view toggles (stale 4×4 hit-target until next scroll/resize) — recompute must trigger on visibility/layout mutation too.

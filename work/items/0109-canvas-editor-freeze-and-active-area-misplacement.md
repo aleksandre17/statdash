@@ -12,6 +12,10 @@ links:
 
 **DoD** — repro dossier with gestures+screenshots → named root cause (file:line) → root fix → regression guard (fitness or e2e) → live re-walk clean → owner sees it work.
 
+## ✅ CLOSED 2026-07-22 (Symptom B + fold-ins; Symptom A carried by 0111)
+Root (falsified the dossier's origin-guess — confirmed by repro, not inference): the ONE `canvas:node-anchor` middleware applied TWICE on the ASYNC render path (`renderWithRows` continuation + outer Suspense) — why live-preview (async, the default) broke while structural (sync) worked. Fix `d56c65a2`: inner apply removed (grammar: one residence anchor per node, ADR-041) + `resolveAnchorBox` descends all `display:contents` levels (defense) + `FF-NODE-FRAME-NONDEGENERATE` (single-stamp both paths + descent) + LocaleString `TextControl` class fix. Gate 4167/1-tolerated. **Live re-verify 5/5** (`R-*.png`): all node kinds select with true geometry (chart 194×280@(381,351) etc., was 0×0@origin), 1 stamp/node 16/16, no over-fix, header shows «რეგიონი», console clean.
+**Residual (narrow, non-blocking → folded into 0111's overlay family):** after a chart↔table view toggle the overlay's cached rect stays 4×4 until the next scroll/resize recompute — transient stale hit-target; recompute must also trigger on visibility/layout mutation, not only RO/scroll.
+
 **Notes** — Owner-found = process failure logged (the canvas had no recent proactive walk). Suspect classes to check (not conclusions): selection-overlay geometry vs scroll/zoom transforms (active-area offset class); long-task/render-storm or event-loop starvation on the freeze (the FetchScheduler/0092 lineage is at the data seam, canvas freeze may be render-side). DU2 killed one freeze cause (courier) — this is a DIFFERENT, still-live one.
 
 ## Repro dossier
