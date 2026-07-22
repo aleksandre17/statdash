@@ -1,0 +1,44 @@
+{
+  "id": "215abc43-54aa-4386-8130-da578e1b936f",
+  "slug": "r3-starter-charttable",
+  "title": {
+    "en": "R3 Starter ChartTable",
+    "ka": "R3 Starter ChartTable"
+  },
+  "status": "draft",
+  "metadata": {},
+  "created_at": "2026-07-19T14:44:47.715Z",
+  "updated_at": "2026-07-19T14:44:47.715Z",
+  "version_number": 1,
+  "config": {
+    "id": "node-08k3h3e",
+    "path": "r3-starter-charttable",
+    "type": "inner-page",
+    "children": [
+      {
+        "id": "starter-0",
+        "type": "page-header",
+        "title": "ახალი გვერდი"
+      },
+      {
+        "id": "starter-1",
+        "type": "section",
+        "title": "სექცია",
+        "children": [
+          {
+            "id": "starter-1-0",
+            "type": "chart",
+            "chartType": "bar"
+          },
+          {
+            "id": "starter-1-1",
+            "type": "table"
+          }
+        ]
+      }
+    ],
+    "schemaVersion": 5
+  },
+  "data_specs": [],
+  "is_published": false
+}

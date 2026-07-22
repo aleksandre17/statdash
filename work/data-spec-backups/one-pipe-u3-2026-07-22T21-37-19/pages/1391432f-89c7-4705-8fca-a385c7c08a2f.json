@@ -1,0 +1,1254 @@
+{
+  "id": "1391432f-89c7-4705-8fca-a385c7c08a2f",
+  "slug": "accounts",
+  "title": {
+    "en": "accounts",
+    "ka": "accounts"
+  },
+  "status": "published",
+  "metadata": {},
+  "created_at": "2026-07-11T10:52:31.270Z",
+  "updated_at": "2026-07-22T10:37:54.896Z",
+  "version_number": 4,
+  "config": {
+    "id": "accounts",
+    "path": "/accounts",
+    "type": "inner-page",
+    "vars": {
+      "selectedSectionId": {
+        "op": "lookup",
+        "key": "account",
+        "map": {
+          "capital": "capital-account",
+          "income_gen": "income-formation",
+          "production": "production-account",
+          "primary_dist": "primary-distribution",
+          "secondary_dist": "secondary-distribution"
+        },
+        "fallback": null
+      }
+    },
+    "children": [
+      {
+        "type": "page-header",
+        "badge": {
+          "year": {
+            "en": "Updated: {time}",
+            "ka": "განახლდა: {time}"
+          },
+          "range": {
+            "en": "{fromYear}–{toYear}",
+            "ka": "{fromYear}–{toYear}"
+          }
+        },
+        "title": {
+          "en": "System of National Accounts",
+          "ka": "ეროვნული ანგარიშების სისტემა"
+        },
+        "crumbs": [
+          {
+            "label": {
+              "en": "National Accounts",
+              "ka": "ეროვნული ანგარიშები"
+            }
+          }
+        ]
+      },
+      {
+        "type": "filter-bar"
+      },
+      {
+        "type": "perspective-bar"
+      },
+      {
+        "type": "kpi-strip",
+        "items": [
+          {
+            "id": "b5g",
+            "unit": {
+              "en": "GEL mn",
+              "ka": "მლნ ₾"
+            },
+            "when": {
+              "op": "perspective-is",
+              "perspective": "year"
+            },
+            "color": "#4ECDC4",
+            "label": {
+              "en": "Gross National Income",
+              "ka": "მთლიანი ეროვნული შემოსავალი"
+            },
+            "trend": {
+              "type": "yoy",
+              "filter": {
+                "side": "U",
+                "account": "allocation-of-primary-income-account"
+              },
+              "measure": "accounts.gni"
+            },
+            "value": {
+              "type": "point",
+              "filter": {
+                "side": "U",
+                "account": "allocation-of-primary-income-account"
+              },
+              "format": "mln_gel",
+              "measure": "accounts.gni"
+            },
+            "trendSub": {
+              "en": "compared to previous year",
+              "ka": "წინა წელთან შედარებით"
+            }
+          },
+          {
+            "id": "b6g",
+            "unit": {
+              "en": "GEL mn",
+              "ka": "მლნ ₾"
+            },
+            "when": {
+              "op": "perspective-is",
+              "perspective": "year"
+            },
+            "color": "#7B6CF6",
+            "label": {
+              "en": "Gross Disposable Income",
+              "ka": "მთლიანი განკარგვადი შემოსავალი"
+            },
+            "trend": {
+              "type": "yoy",
+              "filter": {
+                "side": "U",
+                "account": "secondary-distribution-of-income-account"
+              },
+              "measure": "accounts.disposableIncome"
+            },
+            "value": {
+              "type": "point",
+              "filter": {
+                "side": "U",
+                "account": "secondary-distribution-of-income-account"
+              },
+              "format": "mln_gel",
+              "measure": "accounts.disposableIncome"
+            },
+            "trendSub": {
+              "en": "compared to previous year",
+              "ka": "წინა წელთან შედარებით"
+            }
+          },
+          {
+            "id": "b8g",
+            "unit": {
+              "en": "GEL mn",
+              "ka": "მლნ ₾"
+            },
+            "when": {
+              "op": "perspective-is",
+              "perspective": "year"
+            },
+            "color": "#F4A261",
+            "label": {
+              "en": "Gross Saving",
+              "ka": "მთლიანი დანაზოგი"
+            },
+            "trend": {
+              "type": "yoy",
+              "filter": {
+                "side": "U",
+                "account": "use-of-disposable-income-account"
+              },
+              "measure": "accounts.savings"
+            },
+            "value": {
+              "type": "point",
+              "filter": {
+                "side": "U",
+                "account": "use-of-disposable-income-account"
+              },
+              "format": "mln_gel",
+              "measure": "accounts.savings"
+            },
+            "trendSub": {
+              "en": "compared to previous year",
+              "ka": "წინა წელთან შედარებით"
+            }
+          },
+          {
+            "id": "b9-year",
+            "unit": {
+              "en": "GEL mn",
+              "ka": "მლნ ₾"
+            },
+            "when": {
+              "op": "perspective-is",
+              "perspective": "year"
+            },
+            "color": "#E76F51",
+            "label": {
+              "en": "Net lending/borrowing",
+              "ka": "წმინდა დაკრედიტება/სესხება"
+            },
+            "trend": {
+              "type": "yoy",
+              "filter": {
+                "side": "U",
+                "account": "capital-account"
+              },
+              "measure": "accounts.netLending"
+            },
+            "value": {
+              "type": "point",
+              "filter": {
+                "side": "U",
+                "account": "capital-account"
+              },
+              "format": "mln_gel",
+              "measure": "accounts.netLending"
+            },
+            "trendSub": {
+              "en": "compared to previous year",
+              "ka": "წინა წელთან შედარებით"
+            }
+          },
+          {
+            "id": "b1g-cagr",
+            "unit": {
+              "en": "%",
+              "ka": "%"
+            },
+            "when": {
+              "op": "perspective-is",
+              "perspective": "range"
+            },
+            "color": "#00A896",
+            "label": {
+              "en": "Value added — average annual growth",
+              "ka": "დამატებული ღირებულება — საშუალო წლიური ზრდა"
+            },
+            "trend": {
+              "to": {
+                "$ctx": "toYear"
+              },
+              "from": {
+                "$ctx": "fromYear"
+              },
+              "type": "cagr",
+              "filter": {
+                "side": "U",
+                "account": "production-account"
+              },
+              "measure": "accounts.gdp"
+            },
+            "value": {
+              "to": {
+                "$ctx": "toYear"
+              },
+              "from": {
+                "$ctx": "fromYear"
+              },
+              "type": "cagr",
+              "filter": {
+                "side": "U",
+                "account": "production-account"
+              },
+              "measure": "accounts.gdp"
+            },
+            "trendSub": {
+              "en": "{fromYear}–{toYear}",
+              "ka": "{fromYear}–{toYear}"
+            }
+          },
+          {
+            "id": "p1-cagr",
+            "unit": {
+              "en": "%",
+              "ka": "%"
+            },
+            "when": {
+              "op": "perspective-is",
+              "perspective": "range"
+            },
+            "color": "#0080BE",
+            "label": {
+              "en": "Output — average annual growth",
+              "ka": "გამოშვება — საშუალო წლიური ზრდა"
+            },
+            "trend": {
+              "to": {
+                "$ctx": "toYear"
+              },
+              "from": {
+                "$ctx": "fromYear"
+              },
+              "type": "cagr",
+              "filter": {
+                "side": "R",
+                "account": "production-account"
+              },
+              "measure": "accounts.output"
+            },
+            "value": {
+              "to": {
+                "$ctx": "toYear"
+              },
+              "from": {
+                "$ctx": "fromYear"
+              },
+              "type": "cagr",
+              "filter": {
+                "side": "R",
+                "account": "production-account"
+              },
+              "measure": "accounts.output"
+            },
+            "trendSub": {
+              "en": "{fromYear}–{toYear}",
+              "ka": "{fromYear}–{toYear}"
+            }
+          },
+          {
+            "id": "labor-share",
+            "unit": {
+              "en": "%",
+              "ka": "%"
+            },
+            "when": {
+              "op": "perspective-is",
+              "perspective": "range"
+            },
+            "color": "#4ECDC4",
+            "label": {
+              "en": "Labour share in value added",
+              "ka": "შრომის წილი დამატებულ ღირებულებაში"
+            },
+            "trend": {
+              "dir": "flat",
+              "type": "static",
+              "value": {
+                "en": "Stable",
+                "ka": "სტაბილური"
+              }
+            },
+            "value": {
+              "time": {
+                "$ctx": "toYear"
+              },
+              "type": "metric",
+              "metric": "accounts.laborShare"
+            },
+            "trendSub": {
+              "en": "{toYear}",
+              "ka": "{toYear}"
+            }
+          },
+          {
+            "id": "b9",
+            "unit": {
+              "en": "GEL mn",
+              "ka": "მლნ ₾"
+            },
+            "when": {
+              "op": "perspective-is",
+              "perspective": "range"
+            },
+            "color": "#E76F51",
+            "label": {
+              "en": "Net lending/borrowing",
+              "ka": "წმინდა დაკრედიტება/სესხება"
+            },
+            "trend": {
+              "dir": "down",
+              "type": "static",
+              "value": "−"
+            },
+            "value": {
+              "abs": true,
+              "time": {
+                "$ctx": "toYear"
+              },
+              "type": "point",
+              "filter": {
+                "side": "U",
+                "account": "capital-account"
+              },
+              "format": "mln_gel",
+              "measure": "accounts.netLending"
+            },
+            "trendSub": {
+              "en": "{toYear}",
+              "ka": "{toYear}"
+            }
+          }
+        ]
+      },
+      {
+        "type": "columns",
+        "view": {
+          "visibleWhen": {
+            "op": "perspective-is",
+            "perspective": "year"
+          }
+        },
+        "count": {
+          "md": 1,
+          "sm": 1,
+          "default": 1
+        },
+        "children": [
+          {
+            "id": "sna-hero",
+            "type": "section",
+            "view": {
+              "styles": {
+                "height": "16:9"
+              },
+              "subtitle": {
+                "en": "{time}, GEL mn",
+                "ka": "{time} წელი, მლნ ლარი"
+              },
+              "noCollapse": true
+            },
+            "color": "#0080BE",
+            "title": {
+              "en": "National Accounts",
+              "ka": "ეროვნული ანგარიშები"
+            },
+            "children": [
+              {
+                "data": {
+                  "pipe": [
+                    {
+                      "op": "source",
+                      "query": {
+                        "filter": {
+                          "time": {
+                            "$ctx": "time"
+                          },
+                          "account": {
+                            "$ctx": "account"
+                          },
+                          "measure": {
+                            "$ctx": "measure"
+                          }
+                        },
+                        "measure": "*"
+                      }
+                    },
+                    {
+                      "on": "account",
+                      "op": "join",
+                      "with": {
+                        "$cl": "account"
+                      },
+                      "fields": [
+                        "order"
+                      ]
+                    },
+                    {
+                      "on": "measure",
+                      "op": "join",
+                      "with": {
+                        "$cl": "aggregates"
+                      },
+                      "fields": [
+                        "isClosing"
+                      ]
+                    },
+                    {
+                      "by": [
+                        {
+                          "dir": "asc",
+                          "field": "order"
+                        },
+                        {
+                          "field": "side",
+                          "using": [
+                            "R",
+                            "U"
+                          ]
+                        },
+                        {
+                          "dir": "asc",
+                          "last": -1,
+                          "field": "seqPos"
+                        },
+                        {
+                          "dir": "asc",
+                          "field": "isClosing"
+                        }
+                      ],
+                      "op": "sort"
+                    },
+                    {
+                      "op": "lookup",
+                      "key": "measure",
+                      "from": {
+                        "$d": "aggregates"
+                      },
+                      "fields": [
+                        "label",
+                        "color"
+                      ]
+                    },
+                    {
+                      "op": "lookup",
+                      "key": "account",
+                      "from": {
+                        "$d": "account"
+                      },
+                      "fields": [
+                        "label",
+                        "color"
+                      ],
+                      "rename": {
+                        "color": "accountColor",
+                        "label": "accountLabel"
+                      }
+                    },
+                    {
+                      "op": "lookup",
+                      "key": "side",
+                      "from": {
+                        "R": {
+                          "color": "#4472C4",
+                          "series": {
+                            "en": "Resources",
+                            "ka": "რესურსები"
+                          }
+                        },
+                        "U": {
+                          "color": "#E76F51",
+                          "series": {
+                            "en": "Uses",
+                            "ka": "გამოყენება"
+                          }
+                        }
+                      },
+                      "fields": [
+                        "series",
+                        "color"
+                      ]
+                    },
+                    {
+                      "as": "label",
+                      "op": "template",
+                      "tpl": "{label} ({measure})"
+                    },
+                    {
+                      "as": "_id",
+                      "op": "concat",
+                      "fields": [
+                        "account",
+                        "measure",
+                        "side"
+                      ]
+                    },
+                    {
+                      "op": "rename",
+                      "fields": {
+                        "isClosing": "_isTotal"
+                      }
+                    },
+                    {
+                      "by": [
+                        {
+                          "field": "account",
+                          "inject": {
+                            "set": {
+                              "value": 0,
+                              "series": {
+                                "en": "Resources",
+                                "ka": "რესურსები"
+                              },
+                              "_isGroup": 1
+                            },
+                            "from": {
+                              "color": "accountColor",
+                              "label": "accountLabel"
+                            }
+                          }
+                        }
+                      ],
+                      "op": "group"
+                    }
+                  ],
+                  "type": "pipeline",
+                  "encoding": {
+                    "id": "_id",
+                    "color": "color",
+                    "label": "label",
+                    "level": "_level",
+                    "series": "series",
+                    "isTotal": "_isTotal",
+                    "parentId": "_parentId",
+                    "isSeparator": "_isGroup"
+                  }
+                },
+                "type": "chart",
+                "view": {
+                  "role": "chart",
+                  "label": {
+                    "en": "Chart",
+                    "ka": "დიაგრამა"
+                  }
+                },
+                "label": {
+                  "en": "Full sequence of accounts, GEL mn",
+                  "ka": "ანგარიშების სრული ჯაჭვი, მლნ ლარი"
+                },
+                "compact": true,
+                "chartType": "hbar-diverging",
+                "fieldConfig": {
+                  "unit": {
+                    "en": "GEL mn",
+                    "ka": "მლნ ₾"
+                  }
+                }
+              },
+              {
+                "data": {
+                  "pipe": [
+                    {
+                      "op": "source",
+                      "query": {
+                        "filter": {
+                          "time": {
+                            "$ctx": "time"
+                          },
+                          "account": {
+                            "$ctx": "account"
+                          },
+                          "measure": {
+                            "$ctx": "measure"
+                          }
+                        },
+                        "measure": "*"
+                      }
+                    },
+                    {
+                      "on": "account",
+                      "op": "join",
+                      "with": {
+                        "$cl": "account"
+                      },
+                      "fields": [
+                        "order"
+                      ]
+                    },
+                    {
+                      "on": "measure",
+                      "op": "join",
+                      "with": {
+                        "$cl": "aggregates"
+                      },
+                      "fields": [
+                        "isClosing"
+                      ]
+                    },
+                    {
+                      "by": [
+                        {
+                          "dir": "asc",
+                          "field": "order"
+                        },
+                        {
+                          "field": "side",
+                          "using": [
+                            "R",
+                            "U"
+                          ]
+                        },
+                        {
+                          "dir": "asc",
+                          "last": -1,
+                          "field": "seqPos"
+                        },
+                        {
+                          "dir": "asc",
+                          "field": "isClosing"
+                        }
+                      ],
+                      "op": "sort"
+                    },
+                    {
+                      "op": "lookup",
+                      "key": "measure",
+                      "from": {
+                        "$d": "aggregates"
+                      },
+                      "fields": [
+                        "label",
+                        "color"
+                      ]
+                    },
+                    {
+                      "op": "lookup",
+                      "key": "account",
+                      "from": {
+                        "$d": "account"
+                      },
+                      "fields": [
+                        "label",
+                        "color"
+                      ],
+                      "rename": {
+                        "color": "accountColor",
+                        "label": "accountLabel"
+                      }
+                    },
+                    {
+                      "op": "lookup",
+                      "key": "side",
+                      "from": {
+                        "R": {
+                          "color": "#4472C4",
+                          "series": {
+                            "en": "Resources",
+                            "ka": "რესურსები"
+                          }
+                        },
+                        "U": {
+                          "color": "#E76F51",
+                          "series": {
+                            "en": "Uses",
+                            "ka": "გამოყენება"
+                          }
+                        }
+                      },
+                      "fields": [
+                        "series",
+                        "color"
+                      ]
+                    },
+                    {
+                      "as": "label",
+                      "op": "template",
+                      "tpl": "{label} ({measure})"
+                    },
+                    {
+                      "as": "_id",
+                      "op": "concat",
+                      "fields": [
+                        "account",
+                        "measure",
+                        "side"
+                      ]
+                    },
+                    {
+                      "op": "rename",
+                      "fields": {
+                        "isClosing": "_isTotal"
+                      }
+                    },
+                    {
+                      "by": [
+                        {
+                          "field": "account",
+                          "inject": {
+                            "set": {
+                              "value": 0,
+                              "series": {
+                                "en": "Resources",
+                                "ka": "რესურსები"
+                              },
+                              "_isGroup": 1
+                            },
+                            "from": {
+                              "color": "accountColor",
+                              "label": "accountLabel"
+                            }
+                          }
+                        }
+                      ],
+                      "op": "group"
+                    }
+                  ],
+                  "type": "pipeline",
+                  "encoding": {
+                    "id": "_id",
+                    "color": "color",
+                    "label": "label",
+                    "level": "_level",
+                    "series": "series",
+                    "isTotal": "_isTotal",
+                    "parentId": "_parentId",
+                    "isSeparator": "_isGroup"
+                  }
+                },
+                "type": "table",
+                "view": {
+                  "role": "table",
+                  "label": {
+                    "en": "Table",
+                    "ka": "ცხრილი"
+                  }
+                },
+                "color": "#0080BE",
+                "indent": true,
+                "columns": [
+                  {
+                    "bar": true,
+                    "key": "value",
+                    "label": {
+                      "en": "GEL mn",
+                      "ka": "მლნ ₾"
+                    },
+                    "format": "mln_gel"
+                  }
+                ],
+                "statusFlags": false
+              }
+            ],
+            "variants": {
+              "emphasis": "hero"
+            }
+          }
+        ]
+      },
+      {
+        "type": "columns",
+        "view": {
+          "visibleWhen": {
+            "op": "perspective-is",
+            "perspective": "range"
+          }
+        },
+        "count": {
+          "md": 1,
+          "sm": 1,
+          "default": 1
+        },
+        "children": [
+          {
+            "id": "sna-hero-range",
+            "type": "section",
+            "view": {
+              "styles": {
+                "height": "16:9"
+              },
+              "subtitle": {
+                "en": "2020–2025, GEL mn",
+                "ka": "2020–2025 წლები, მლნ ლარი"
+              },
+              "noCollapse": true
+            },
+            "color": "#0080BE",
+            "title": {
+              "en": "National Accounts",
+              "ka": "ეროვნული ანგარიშები"
+            },
+            "children": [
+              {
+                "data": {
+                  "pipe": [
+                    {
+                      "op": "source",
+                      "clamp": {
+                        "toDim": "toYear",
+                        "fromDim": "fromYear"
+                      },
+                      "query": {
+                        "filter": {
+                          "account": {
+                            "$ctx": "account"
+                          }
+                        },
+                        "measure": [
+                          "accounts.output",
+                          "accounts.gdp",
+                          "accounts.gni",
+                          "accounts.disposableIncome",
+                          "accounts.savings",
+                          "accounts.netLending"
+                        ],
+                        "orderBy": {
+                          "dir": "asc",
+                          "field": "time"
+                        }
+                      }
+                    },
+                    {
+                      "as": "_isDeriving",
+                      "op": "derive",
+                      "expr": "(measure == 'P1' && account == 'production-account' && side == 'R') || (side == 'U' && ((measure == 'B1G' && account == 'production-account') || (measure == 'B5G' && account == 'allocation-of-primary-income-account') || (measure == 'B6G' && account == 'secondary-distribution-of-income-account') || (measure == 'B8G' && account == 'use-of-disposable-income-account') || (measure == 'B9' && account == 'capital-account'))) ? 1 : 0"
+                    },
+                    {
+                      "op": "filter",
+                      "where": {
+                        "_isDeriving": 1
+                      }
+                    },
+                    {
+                      "op": "lookup",
+                      "key": "measure",
+                      "from": {
+                        "$d": "aggregates"
+                      },
+                      "fields": [
+                        "label",
+                        "color"
+                      ]
+                    }
+                  ],
+                  "type": "pipeline",
+                  "encoding": {
+                    "color": "color",
+                    "label": "time",
+                    "series": "label"
+                  }
+                },
+                "type": "chart",
+                "view": {
+                  "role": "chart",
+                  "label": {
+                    "en": "Chart",
+                    "ka": "დიაგრამა"
+                  }
+                },
+                "label": {
+                  "en": "P1 · B1G · B5G · B6G · B8G · B9 — full sequence",
+                  "ka": "P1 · B1G · B5G · B6G · B8G · B9 — სრული ჯაჭვი"
+                },
+                "stacked": true,
+                "chartType": "bar",
+                "fieldConfig": {
+                  "unit": {
+                    "en": "GEL mn",
+                    "ka": "მლნ ₾"
+                  }
+                },
+                "rangeSlider": true
+              },
+              {
+                "data": {
+                  "pipe": [
+                    {
+                      "op": "source",
+                      "clamp": {
+                        "toDim": "toYear",
+                        "fromDim": "fromYear"
+                      },
+                      "query": {
+                        "filter": {
+                          "account": {
+                            "$ctx": "account"
+                          }
+                        },
+                        "measure": [
+                          "accounts.output",
+                          "accounts.gdp",
+                          "accounts.gni",
+                          "accounts.disposableIncome",
+                          "accounts.savings",
+                          "accounts.netLending"
+                        ],
+                        "orderBy": {
+                          "dir": "asc",
+                          "field": "time"
+                        }
+                      }
+                    },
+                    {
+                      "as": "_isDeriving",
+                      "op": "derive",
+                      "expr": "(measure == 'P1' && account == 'production-account' && side == 'R') || (side == 'U' && ((measure == 'B1G' && account == 'production-account') || (measure == 'B5G' && account == 'allocation-of-primary-income-account') || (measure == 'B6G' && account == 'secondary-distribution-of-income-account') || (measure == 'B8G' && account == 'use-of-disposable-income-account') || (measure == 'B9' && account == 'capital-account'))) ? 1 : 0"
+                    },
+                    {
+                      "op": "filter",
+                      "where": {
+                        "_isDeriving": 1
+                      }
+                    },
+                    {
+                      "op": "lookup",
+                      "key": "measure",
+                      "from": {
+                        "$d": "aggregates"
+                      },
+                      "fields": [
+                        "label",
+                        "color"
+                      ]
+                    }
+                  ],
+                  "type": "pipeline",
+                  "encoding": {
+                    "color": "color",
+                    "label": "time",
+                    "series": "label"
+                  }
+                },
+                "type": "table",
+                "view": {
+                  "role": "table",
+                  "label": {
+                    "en": "Table",
+                    "ka": "ცხრილი"
+                  }
+                },
+                "color": "#0080BE",
+                "indent": true,
+                "columns": [
+                  {
+                    "key": "value",
+                    "label": {
+                      "en": "GEL mn",
+                      "ka": "მლნ ₾"
+                    },
+                    "format": "mln_gel"
+                  }
+                ],
+                "colLabel": {
+                  "en": "Year",
+                  "ka": "წელი"
+                },
+                "statusFlags": false
+              }
+            ],
+            "variants": {
+              "emphasis": "hero"
+            }
+          }
+        ]
+      },
+      {
+        "type": "links",
+        "items": [
+          {
+            "href": {
+              "en": "https://www.geostat.ge/en/modules/categories/119/national-accounts",
+              "ka": "https://www.geostat.ge/ka/modules/categories/119/methodologia-erovnuli-angarishebi"
+            },
+            "icon": "doc",
+            "label": {
+              "en": "Methodological notes",
+              "ka": "მეთოდოლოგიური განმარტებები"
+            }
+          },
+          {
+            "href": "https://www.geostat.ge/ka/modules/categories/24/mtliani-erovnuli-shemosavali-mesh",
+            "icon": "info",
+            "label": {
+              "en": "Additional information",
+              "ka": "დამატებითი ინფორმაცია"
+            }
+          },
+          {
+            "href": "https://www.geostat.ge",
+            "icon": "ext",
+            "label": {
+              "en": "Geostat — geostat.ge",
+              "ka": "საქსტატი — geostat.ge"
+            }
+          }
+        ]
+      }
+    ],
+    "storeKey": "accounts",
+    "filterSchema": {
+      "bars": {
+        "bar": {
+          "order": 0,
+          "filters": {
+            "mode": {
+              "type": "hidden",
+              "default": "year"
+            },
+            "year": {
+              "type": "year-select",
+              "years": {
+                "type": "inline",
+                "field": "code",
+                "items": {
+                  "$cl": "time"
+                }
+              },
+              "default": {
+                "from": "options",
+                "pick": "last"
+              },
+              "visibleWhen": {
+                "op": "perspective-is",
+                "perspective": "year"
+              }
+            },
+            "toYear": {
+              "type": "select",
+              "label": {
+                "en": "End year",
+                "ka": "საბოლოო წელი"
+              },
+              "order": 20,
+              "default": {
+                "from": "options",
+                "pick": "first"
+              },
+              "options": {
+                "pipe": [
+                  {
+                    "by": "code",
+                    "op": "sort",
+                    "dir": "desc"
+                  }
+                ],
+                "type": "inline",
+                "items": {
+                  "$d": "time"
+                },
+                "labelField": "code",
+                "valueField": "code"
+              },
+              "spanRole": "to",
+              "visibleWhen": {
+                "op": "perspective-is",
+                "perspective": "range"
+              }
+            },
+            "account": {
+              "type": "select",
+              "label": {
+                "en": "Account:",
+                "ka": "ანგარიში:"
+              },
+              "default": "",
+              "options": {
+                "pipe": [
+                  {
+                    "by": "order",
+                    "op": "sort",
+                    "dir": "asc"
+                  }
+                ],
+                "type": "inline",
+                "items": {
+                  "$d": "account"
+                },
+                "labelField": "label",
+                "valueField": "code"
+              },
+              "emptyLabel": {
+                "en": "All",
+                "ka": "ყველა"
+              }
+            },
+            "measure": {
+              "type": "hidden",
+              "default": ""
+            },
+            "fromYear": {
+              "type": "select",
+              "label": {
+                "en": "Interval:",
+                "ka": "შუალედი:"
+              },
+              "order": 10,
+              "default": {
+                "from": "options",
+                "pick": "first"
+              },
+              "options": {
+                "pipe": [
+                  {
+                    "by": "code",
+                    "op": "sort",
+                    "dir": "asc"
+                  }
+                ],
+                "type": "inline",
+                "items": {
+                  "$d": "time"
+                },
+                "labelField": "code",
+                "valueField": "code"
+              },
+              "spanRole": "from",
+              "visibleWhen": {
+                "op": "perspective-is",
+                "perspective": "range"
+              }
+            }
+          },
+          "position": "sticky"
+        }
+      },
+      "context": {
+        "dims": {
+          "time": "year",
+          "toYear": "toYear",
+          "account": "account",
+          "measure": "measure",
+          "fromYear": "fromYear"
+        }
+      }
+    },
+    "perspectives": {
+      "mode": {
+        "perspectives": [
+          {
+            "id": "year",
+            "icon": "calendar",
+            "label": {
+              "en": "Annual",
+              "ka": "წლიური"
+            },
+            "scope": {
+              "binding": {
+                "dim": "time",
+                "selection": {
+                  "at": {
+                    "$ctx": "year"
+                  },
+                  "kind": "point"
+                }
+              }
+            }
+          },
+          {
+            "id": "range",
+            "icon": "calendar-range",
+            "label": {
+              "en": "Dynamics",
+              "ka": "დინამიკა"
+            },
+            "scope": {
+              "binding": {
+                "dim": "time",
+                "selection": {
+                  "to": {
+                    "$ctx": "toYear"
+                  },
+                  "from": {
+                    "$ctx": "fromYear"
+                  },
+                  "kind": "window",
+                  "targetKeys": {
+                    "to": "toYear",
+                    "from": "fromYear"
+                  }
+                }
+              }
+            },
+            "onExit": {
+              "set": {
+                "toYear": null,
+                "fromYear": null
+              }
+            },
+            "onEnter": {
+              "set": {
+                "year": null
+              }
+            }
+          }
+        ]
+      }
+    },
+    "presentation": {
+      "color": "#0080BE"
+    },
+    "schemaVersion": 5
+  },
+  "data_specs": [],
+  "is_published": false
+}

@@ -1,0 +1,1705 @@
+[
+  {
+    "id": "2684eeb0-0446-4623-ae22-f382f0d101a2",
+    "name": "bar (შემოთავაზებული)",
+    "description": null,
+    "spec": {
+      "pipe": [
+        {
+          "op": "source",
+          "query": {
+            "measure": [
+              "GDP_AGRI"
+            ]
+          }
+        }
+      ],
+      "type": "pipeline",
+      "encoding": {
+        "label": "measure",
+        "value": "GDP_AGRI"
+      }
+    },
+    "source_id": null,
+    "created_at": "2026-07-22T19:49:32.074Z",
+    "updated_at": "2026-07-22T21:37:06.625Z"
+  },
+  {
+    "id": "864dbe1f-c197-46b0-a52d-af9be6ee2d4d",
+    "name": "REGIONAL_GVA — ნედლი დათვალიერება",
+    "description": null,
+    "spec": {
+      "pipe": [
+        {
+          "op": "source",
+          "query": {
+            "measure": [
+              "GDP_AGRI",
+              "GVA",
+              "P1",
+              "GDP_IND",
+              "P2",
+              "agriculture-forestry-and-fishing",
+              "B1G",
+              "GDP_CON",
+              "manufacturing",
+              "D1",
+              "GDP_SVC",
+              "construction",
+              "ACC_NET_TAX",
+              "GDP_NET_TAX",
+              "services",
+              "B2G",
+              "C",
+              "D2_D3",
+              "EXP",
+              "net-taxes",
+              "B2G_B3G",
+              "D4_REC",
+              "IMP",
+              "I_GFCF",
+              "final-consumption-expenditure",
+              "D4_D1",
+              "D4_PAY",
+              "X",
+              "gross-capital-formation",
+              "B5G",
+              "D4_D1_PAY",
+              "M",
+              "exports-of-goods-and-services",
+              "D5_REC",
+              "imports-of-goods-and-services",
+              "D5",
+              "D5_PAY",
+              "NET_TAX_PROD",
+              "gross-domestic-product-at-current-prices",
+              "B6G",
+              "OS_GROSS",
+              "compensation-of-emploees",
+              "MIXED_INC",
+              "P3",
+              "net-taxes_2",
+              "B8G",
+              "GDP_GROWTH",
+              "gross-operating-surplus",
+              "D9R",
+              "GDP_PER_CAPITA",
+              "gross-mixed-income",
+              "GDP",
+              "P5",
+              "real-gdp-growth-rates",
+              "B9",
+              "D9P",
+              "NOE_SHARE",
+              "gdp-per-capita-usd",
+              "GFCF_RES",
+              "gfcf-dwellings",
+              "GFCF_STRUCT",
+              "P5G",
+              "gfcf-other-buildings-and-structures",
+              "GFCF_MACH",
+              "gfcf-machinery-and-equipment",
+              "GFCF_BIO",
+              "gfcf-cultivated-biological-resources",
+              "GFCF_IP",
+              "gfcf-intellectual-property-products",
+              "GDP_DEFLATOR",
+              "non-observed-economy-share",
+              "gdp-deflator"
+            ]
+          },
+          "dataSource": "regional"
+        }
+      ],
+      "type": "pipeline",
+      "encoding": {
+        "label": "time",
+        "value": "value"
+      }
+    },
+    "source_id": null,
+    "created_at": "2026-07-22T19:13:41.553Z",
+    "updated_at": "2026-07-22T19:13:41.553Z"
+  },
+  {
+    "id": "bf462fe8-bb7a-43e4-afa5-ec626fa218ac",
+    "name": "REGIONAL_GVA — ნედლი დათვალიერება",
+    "description": null,
+    "spec": {
+      "pipe": [
+        {
+          "op": "source",
+          "query": {
+            "measure": [
+              "GDP_AGRI",
+              "GVA",
+              "P1",
+              "GDP_IND",
+              "P2",
+              "agriculture-forestry-and-fishing",
+              "B1G",
+              "GDP_CON",
+              "manufacturing",
+              "D1",
+              "GDP_SVC",
+              "construction",
+              "ACC_NET_TAX",
+              "GDP_NET_TAX",
+              "services",
+              "B2G",
+              "C",
+              "D2_D3",
+              "EXP",
+              "net-taxes",
+              "B2G_B3G",
+              "D4_REC",
+              "IMP",
+              "I_GFCF",
+              "final-consumption-expenditure",
+              "D4_D1",
+              "D4_PAY",
+              "X",
+              "gross-capital-formation",
+              "B5G",
+              "D4_D1_PAY",
+              "M",
+              "exports-of-goods-and-services",
+              "D5_REC",
+              "imports-of-goods-and-services",
+              "D5",
+              "D5_PAY",
+              "NET_TAX_PROD",
+              "gross-domestic-product-at-current-prices",
+              "B6G",
+              "OS_GROSS",
+              "compensation-of-emploees",
+              "MIXED_INC",
+              "P3",
+              "net-taxes_2",
+              "B8G",
+              "GDP_GROWTH",
+              "gross-operating-surplus",
+              "D9R",
+              "GDP_PER_CAPITA",
+              "gross-mixed-income",
+              "GDP",
+              "P5",
+              "real-gdp-growth-rates",
+              "B9",
+              "D9P",
+              "NOE_SHARE",
+              "gdp-per-capita-usd",
+              "GFCF_RES",
+              "gfcf-dwellings",
+              "GFCF_STRUCT",
+              "P5G",
+              "gfcf-other-buildings-and-structures",
+              "GFCF_MACH",
+              "gfcf-machinery-and-equipment",
+              "GFCF_BIO",
+              "gfcf-cultivated-biological-resources",
+              "GFCF_IP",
+              "gfcf-intellectual-property-products",
+              "GDP_DEFLATOR",
+              "non-observed-economy-share",
+              "gdp-deflator"
+            ]
+          },
+          "dataSource": "regional"
+        }
+      ],
+      "type": "pipeline",
+      "encoding": {
+        "label": "time",
+        "value": "value"
+      }
+    },
+    "source_id": null,
+    "created_at": "2026-07-22T19:13:41.552Z",
+    "updated_at": "2026-07-22T19:13:41.552Z"
+  },
+  {
+    "id": "9bad43d9-cb05-4e9b-ad36-9778eec1a3be",
+    "name": "F2-VERIFY gdp.current honest-missing 1990/2099",
+    "description": null,
+    "spec": {
+      "pipe": [
+        {
+          "op": "source",
+          "code": "gdp.current",
+          "over": "time",
+          "coords": [
+            1990,
+            2020,
+            2025,
+            2099
+          ],
+          "noData": "null"
+        }
+      ],
+      "type": "pipeline",
+      "encoding": {
+        "label": "label",
+        "value": "value"
+      }
+    },
+    "source_id": null,
+    "created_at": "2026-07-20T11:48:51.524Z",
+    "updated_at": "2026-07-22T21:37:06.659Z"
+  },
+  {
+    "id": "f512b3fb-fd87-4c61-b72b-09de68785044",
+    "name": "F2-VERIFY gdp.current metric-id timeseries",
+    "description": null,
+    "spec": {
+      "pipe": [
+        {
+          "op": "source",
+          "code": "gdp.current",
+          "over": "time",
+          "coords": [
+            2018,
+            2020,
+            2022,
+            2023,
+            2024,
+            2025
+          ],
+          "noData": "null"
+        }
+      ],
+      "type": "pipeline",
+      "encoding": {
+        "label": "label",
+        "value": "value"
+      }
+    },
+    "source_id": null,
+    "created_at": "2026-07-20T11:47:38.947Z",
+    "updated_at": "2026-07-22T21:37:06.678Z"
+  },
+  {
+    "id": "f9257ca5-edd0-4910-9082-accb80f30d8c",
+    "name": "F2-VERIFY GDPcp mixed years 2018-2025",
+    "description": null,
+    "spec": {
+      "pipe": [
+        {
+          "op": "source",
+          "code": "gross-domestic-product-at-current-prices",
+          "over": "time",
+          "coords": [
+            2018,
+            2020,
+            2022,
+            2023,
+            2024,
+            2025
+          ],
+          "noData": "null"
+        }
+      ],
+      "type": "pipeline",
+      "encoding": {
+        "label": "label",
+        "value": "value"
+      }
+    },
+    "source_id": null,
+    "created_at": "2026-07-20T11:46:17.745Z",
+    "updated_at": "2026-07-22T21:37:06.692Z"
+  },
+  {
+    "id": "c0858450-c863-4c98-b684-99c92b4e9c3f",
+    "name": "F2-VERIFY GDP-current-prices timeseries",
+    "description": null,
+    "spec": {
+      "pipe": [
+        {
+          "op": "source",
+          "code": "gross-domestic-product-at-current-prices",
+          "over": "time",
+          "coords": [
+            2015,
+            2016,
+            2017,
+            2018,
+            2019,
+            2020,
+            2021,
+            2022
+          ],
+          "noData": "null"
+        }
+      ],
+      "type": "pipeline",
+      "encoding": {
+        "label": "label",
+        "value": "value"
+      }
+    },
+    "source_id": null,
+    "created_at": "2026-07-20T11:43:51.412Z",
+    "updated_at": "2026-07-22T21:37:06.707Z"
+  },
+  {
+    "id": "83a74cc9-aa86-482d-aaaa-f2bf2936645f",
+    "name": "F2-VERIFY GDP timeseries with 1990 out-of-range",
+    "description": null,
+    "spec": {
+      "pipe": [
+        {
+          "op": "source",
+          "code": "GDP",
+          "over": "time",
+          "coords": [
+            1990,
+            2015,
+            2016,
+            2020,
+            2099
+          ],
+          "noData": "null"
+        }
+      ],
+      "type": "pipeline",
+      "encoding": {
+        "label": "label",
+        "value": "value"
+      }
+    },
+    "source_id": null,
+    "created_at": "2026-07-20T11:41:41.312Z",
+    "updated_at": "2026-07-22T21:37:06.722Z"
+  },
+  {
+    "id": "afde887d-96dd-42e6-aff9-a4bf9c5b0fa5",
+    "name": "F2-VERIFY GDP timeseries in-range",
+    "description": null,
+    "spec": {
+      "pipe": [
+        {
+          "op": "source",
+          "code": "GDP",
+          "over": "time",
+          "coords": [
+            2015,
+            2016,
+            2017,
+            2018,
+            2019,
+            2020,
+            2021,
+            2022
+          ],
+          "noData": "null"
+        }
+      ],
+      "type": "pipeline",
+      "encoding": {
+        "label": "label",
+        "value": "value"
+      }
+    },
+    "source_id": null,
+    "created_at": "2026-07-20T11:41:41.298Z",
+    "updated_at": "2026-07-22T21:37:06.738Z"
+  },
+  {
+    "id": "c0edcaee-79bb-4b8b-a7fc-bbda0f6bef1b",
+    "name": "STEP-A single-code growth (GDP)",
+    "description": null,
+    "spec": {
+      "pipe": [
+        {
+          "op": "source",
+          "code": "GVA",
+          "over": "time",
+          "coords": "all"
+        },
+        {
+          "as": "_prev",
+          "fn": "lag",
+          "op": "window",
+          "over": "value"
+        },
+        {
+          "as": "value",
+          "op": "derive",
+          "expr": "_prev ? ((value / _prev - 1) * 100) : 0"
+        },
+        {
+          "as": "color",
+          "op": "derive",
+          "expr": "value >= 0 ? '#00A896' : '#E76F51'"
+        },
+        {
+          "as": "_hasPrev",
+          "op": "derive",
+          "expr": {
+            "op": "exists",
+            "value": {
+              "$row": "_prev"
+            }
+          }
+        },
+        {
+          "op": "filter",
+          "where": {
+            "_hasPrev": 1
+          }
+        },
+        {
+          "op": "select",
+          "fields": [
+            "id",
+            "label",
+            "value",
+            "color"
+          ]
+        }
+      ],
+      "type": "pipeline",
+      "encoding": {
+        "label": "label",
+        "value": "value"
+      }
+    },
+    "source_id": null,
+    "created_at": "2026-07-20T10:59:28.507Z",
+    "updated_at": "2026-07-22T21:37:06.754Z"
+  },
+  {
+    "id": "be0aee89-ecfe-431e-8150-7f483855d599",
+    "name": "STEP-A timeseries (GDP)",
+    "description": null,
+    "spec": {
+      "pipe": [
+        {
+          "op": "source",
+          "code": "GVA",
+          "over": "time",
+          "coords": [
+            2015,
+            2016,
+            2017,
+            2018,
+            2019,
+            2020,
+            2021,
+            2022
+          ]
+        },
+        {
+          "by": "value",
+          "op": "sort",
+          "dir": "desc"
+        }
+      ],
+      "type": "pipeline",
+      "encoding": {
+        "label": "label",
+        "value": "value"
+      }
+    },
+    "source_id": null,
+    "created_at": "2026-07-20T10:59:28.491Z",
+    "updated_at": "2026-07-22T10:18:14.687Z"
+  },
+  {
+    "id": "ab99968b-94c4-4947-be74-1eaf3f1a5a6d",
+    "name": "DU3 fallback-lane probe (row-list)",
+    "description": "disposable DU3 verification target",
+    "spec": {
+      "rows": [
+        {
+          "code": "GDP",
+          "label": {
+            "en": "???",
+            "ka": "PERSIST_KA_9x7"
+          }
+        },
+        {
+          "code": "EXP",
+          "label": "????????"
+        }
+      ],
+      "type": "row-list"
+    },
+    "source_id": null,
+    "created_at": "2026-07-20T08:42:36.549Z",
+    "updated_at": "2026-07-20T09:18:25.196Z"
+  },
+  {
+    "id": "83ec0e31-488f-4296-bcf5-b1023c2db0cc",
+    "name": "GDP_ANNUAL — ნედლი დათვალიერება",
+    "description": null,
+    "spec": {
+      "pipe": [
+        {
+          "op": "source",
+          "query": {
+            "measure": [
+              "GDP_AGRI",
+              "GVA",
+              "P1",
+              "GDP_IND",
+              "P2",
+              "agriculture-forestry-and-fishing",
+              "B1G",
+              "GDP_CON",
+              "manufacturing",
+              "D1",
+              "GDP_SVC",
+              "construction",
+              "ACC_NET_TAX",
+              "GDP_NET_TAX",
+              "services",
+              "B2G",
+              "C",
+              "D2_D3",
+              "EXP",
+              "net-taxes",
+              "B2G_B3G",
+              "D4_REC",
+              "IMP",
+              "I_GFCF",
+              "final-consumption-expenditure",
+              "D4_D1",
+              "D4_PAY",
+              "X",
+              "gross-capital-formation",
+              "B5G",
+              "D4_D1_PAY",
+              "M",
+              "exports-of-goods-and-services",
+              "D5_REC",
+              "imports-of-goods-and-services",
+              "D5",
+              "D5_PAY",
+              "NET_TAX_PROD",
+              "gross-domestic-product-at-current-prices",
+              "B6G",
+              "OS_GROSS",
+              "compensation-of-emploees",
+              "MIXED_INC",
+              "P3",
+              "net-taxes_2",
+              "B8G",
+              "GDP_GROWTH",
+              "gross-operating-surplus",
+              "D9R",
+              "GDP_PER_CAPITA",
+              "gross-mixed-income",
+              "GDP",
+              "P5",
+              "real-gdp-growth-rates",
+              "B9",
+              "D9P",
+              "NOE_SHARE",
+              "gdp-per-capita-usd",
+              "GFCF_RES",
+              "gfcf-dwellings",
+              "GFCF_STRUCT",
+              "P5G",
+              "gfcf-other-buildings-and-structures",
+              "GFCF_MACH",
+              "gfcf-machinery-and-equipment",
+              "GFCF_BIO",
+              "gfcf-cultivated-biological-resources",
+              "GFCF_IP",
+              "gfcf-intellectual-property-products",
+              "GDP_DEFLATOR",
+              "non-observed-economy-share",
+              "gdp-deflator"
+            ]
+          },
+          "dataSource": "gdp"
+        },
+        {
+          "op": "filter",
+          "where": {}
+        },
+        {
+          "op": "filter",
+          "where": {}
+        }
+      ],
+      "type": "pipeline",
+      "encoding": {
+        "label": "time",
+        "value": "value"
+      }
+    },
+    "source_id": null,
+    "created_at": "2026-07-20T07:38:43.008Z",
+    "updated_at": "2026-07-20T09:26:28.601Z"
+  },
+  {
+    "id": "297c13e7-0a03-4f72-9edb-de18b1056d82",
+    "name": "GDP_ANNUAL — ნედლი დათვალიერება",
+    "description": null,
+    "spec": {
+      "pipe": [
+        {
+          "op": "source",
+          "query": {
+            "measure": [
+              "GDP_AGRI",
+              "GVA",
+              "P1",
+              "GDP_IND",
+              "P2",
+              "agriculture-forestry-and-fishing",
+              "B1G",
+              "GDP_CON",
+              "manufacturing",
+              "D1",
+              "GDP_SVC",
+              "construction",
+              "ACC_NET_TAX",
+              "GDP_NET_TAX",
+              "services",
+              "B2G",
+              "C",
+              "D2_D3",
+              "EXP",
+              "net-taxes",
+              "B2G_B3G",
+              "D4_REC",
+              "IMP",
+              "I_GFCF",
+              "final-consumption-expenditure",
+              "D4_D1",
+              "D4_PAY",
+              "X",
+              "gross-capital-formation",
+              "B5G",
+              "D4_D1_PAY",
+              "M",
+              "exports-of-goods-and-services",
+              "D5_REC",
+              "imports-of-goods-and-services",
+              "D5",
+              "D5_PAY",
+              "NET_TAX_PROD",
+              "gross-domestic-product-at-current-prices",
+              "B6G",
+              "OS_GROSS",
+              "compensation-of-emploees",
+              "MIXED_INC",
+              "P3",
+              "net-taxes_2",
+              "B8G",
+              "GDP_GROWTH",
+              "gross-operating-surplus",
+              "D9R",
+              "GDP_PER_CAPITA",
+              "gross-mixed-income",
+              "GDP",
+              "P5",
+              "real-gdp-growth-rates",
+              "B9",
+              "D9P",
+              "NOE_SHARE",
+              "gdp-per-capita-usd",
+              "GFCF_RES",
+              "gfcf-dwellings",
+              "GFCF_STRUCT",
+              "P5G",
+              "gfcf-other-buildings-and-structures",
+              "GFCF_MACH",
+              "gfcf-machinery-and-equipment",
+              "GFCF_BIO",
+              "gfcf-cultivated-biological-resources",
+              "GFCF_IP",
+              "gfcf-intellectual-property-products",
+              "GDP_DEFLATOR",
+              "non-observed-economy-share",
+              "gdp-deflator"
+            ]
+          },
+          "dataSource": "gdp"
+        }
+      ],
+      "type": "pipeline",
+      "encoding": {
+        "label": "time",
+        "value": "value"
+      }
+    },
+    "source_id": null,
+    "created_at": "2026-07-20T07:38:42.992Z",
+    "updated_at": "2026-07-20T07:38:42.992Z"
+  },
+  {
+    "id": "de4e3802-132b-4686-9ef6-00ebb67fa041",
+    "name": "GDP_ANNUAL — ნედლი დათვალიერება",
+    "description": null,
+    "spec": {
+      "pipe": [
+        {
+          "op": "source",
+          "query": {
+            "measure": [
+              "GDP_AGRI",
+              "GVA",
+              "P1",
+              "GDP_IND",
+              "P2",
+              "agriculture-forestry-and-fishing",
+              "B1G",
+              "GDP_CON",
+              "manufacturing",
+              "D1",
+              "GDP_SVC",
+              "construction",
+              "ACC_NET_TAX",
+              "GDP_NET_TAX",
+              "services",
+              "B2G",
+              "C",
+              "D2_D3",
+              "EXP",
+              "net-taxes",
+              "B2G_B3G",
+              "D4_REC",
+              "IMP",
+              "I_GFCF",
+              "final-consumption-expenditure",
+              "D4_D1",
+              "D4_PAY",
+              "X",
+              "gross-capital-formation",
+              "B5G",
+              "D4_D1_PAY",
+              "M",
+              "exports-of-goods-and-services",
+              "D5_REC",
+              "imports-of-goods-and-services",
+              "D5",
+              "D5_PAY",
+              "NET_TAX_PROD",
+              "gross-domestic-product-at-current-prices",
+              "B6G",
+              "OS_GROSS",
+              "compensation-of-emploees",
+              "MIXED_INC",
+              "P3",
+              "net-taxes_2",
+              "B8G",
+              "GDP_GROWTH",
+              "gross-operating-surplus",
+              "D9R",
+              "GDP_PER_CAPITA",
+              "gross-mixed-income",
+              "GDP",
+              "P5",
+              "real-gdp-growth-rates",
+              "B9",
+              "D9P",
+              "NOE_SHARE",
+              "gdp-per-capita-usd",
+              "GFCF_RES",
+              "gfcf-dwellings",
+              "GFCF_STRUCT",
+              "P5G",
+              "gfcf-other-buildings-and-structures",
+              "GFCF_MACH",
+              "gfcf-machinery-and-equipment",
+              "GFCF_BIO",
+              "gfcf-cultivated-biological-resources",
+              "GFCF_IP",
+              "gfcf-intellectual-property-products",
+              "GDP_DEFLATOR",
+              "non-observed-economy-share",
+              "gdp-deflator"
+            ]
+          },
+          "dataSource": "gdp"
+        }
+      ],
+      "type": "pipeline",
+      "encoding": {
+        "label": "time",
+        "value": "value"
+      }
+    },
+    "source_id": null,
+    "created_at": "2026-07-20T07:08:32.660Z",
+    "updated_at": "2026-07-20T07:08:32.660Z"
+  },
+  {
+    "id": "f246fbf7-c9fc-4958-890b-9672ba4ced99",
+    "name": "ACCOUNTS_SEQUENCE — ნედლი დათვალიერება",
+    "description": null,
+    "spec": {
+      "pipe": [
+        {
+          "op": "source",
+          "query": {
+            "measure": [
+              "GDP_AGRI",
+              "GVA",
+              "P1",
+              "GDP_IND",
+              "P2",
+              "agriculture-forestry-and-fishing",
+              "B1G",
+              "GDP_CON",
+              "manufacturing",
+              "D1",
+              "GDP_SVC",
+              "construction",
+              "ACC_NET_TAX",
+              "GDP_NET_TAX",
+              "services",
+              "B2G",
+              "C",
+              "D2_D3",
+              "EXP",
+              "net-taxes",
+              "B2G_B3G",
+              "D4_REC",
+              "IMP",
+              "I_GFCF",
+              "final-consumption-expenditure",
+              "D4_D1",
+              "D4_PAY",
+              "X",
+              "gross-capital-formation",
+              "B5G",
+              "D4_D1_PAY",
+              "M",
+              "exports-of-goods-and-services",
+              "D5_REC",
+              "imports-of-goods-and-services",
+              "D5",
+              "D5_PAY",
+              "NET_TAX_PROD",
+              "gross-domestic-product-at-current-prices",
+              "B6G",
+              "OS_GROSS",
+              "compensation-of-emploees",
+              "MIXED_INC",
+              "P3",
+              "net-taxes_2",
+              "B8G",
+              "GDP_GROWTH",
+              "gross-operating-surplus",
+              "D9R",
+              "GDP_PER_CAPITA",
+              "gross-mixed-income",
+              "GDP",
+              "P5",
+              "real-gdp-growth-rates",
+              "B9",
+              "D9P",
+              "NOE_SHARE",
+              "gdp-per-capita-usd",
+              "GFCF_RES",
+              "gfcf-dwellings",
+              "GFCF_STRUCT",
+              "P5G",
+              "gfcf-other-buildings-and-structures",
+              "GFCF_MACH",
+              "gfcf-machinery-and-equipment",
+              "GFCF_BIO",
+              "gfcf-cultivated-biological-resources",
+              "GFCF_IP",
+              "gfcf-intellectual-property-products",
+              "GDP_DEFLATOR",
+              "non-observed-economy-share",
+              "gdp-deflator"
+            ]
+          },
+          "dataSource": "accounts"
+        }
+      ],
+      "type": "pipeline",
+      "encoding": {
+        "label": "time",
+        "value": "value"
+      }
+    },
+    "source_id": null,
+    "created_at": "2026-07-20T05:43:21.424Z",
+    "updated_at": "2026-07-20T05:43:21.424Z"
+  },
+  {
+    "id": "fad0ddd2-de57-401f-97b6-21b69497eca2",
+    "name": "ACCOUNTS_SEQUENCE — ნედლი დათვალიერება",
+    "description": null,
+    "spec": {
+      "pipe": [
+        {
+          "op": "source",
+          "query": {
+            "measure": [
+              "GDP_AGRI",
+              "GVA",
+              "P1",
+              "GDP_IND",
+              "P2",
+              "agriculture-forestry-and-fishing",
+              "B1G",
+              "GDP_CON",
+              "manufacturing",
+              "D1",
+              "GDP_SVC",
+              "construction",
+              "ACC_NET_TAX",
+              "GDP_NET_TAX",
+              "services",
+              "B2G",
+              "C",
+              "D2_D3",
+              "EXP",
+              "net-taxes",
+              "B2G_B3G",
+              "D4_REC",
+              "IMP",
+              "I_GFCF",
+              "final-consumption-expenditure",
+              "D4_D1",
+              "D4_PAY",
+              "X",
+              "gross-capital-formation",
+              "B5G",
+              "D4_D1_PAY",
+              "M",
+              "exports-of-goods-and-services",
+              "D5_REC",
+              "imports-of-goods-and-services",
+              "D5",
+              "D5_PAY",
+              "NET_TAX_PROD",
+              "gross-domestic-product-at-current-prices",
+              "B6G",
+              "OS_GROSS",
+              "compensation-of-emploees",
+              "MIXED_INC",
+              "P3",
+              "net-taxes_2",
+              "B8G",
+              "GDP_GROWTH",
+              "gross-operating-surplus",
+              "D9R",
+              "GDP_PER_CAPITA",
+              "gross-mixed-income",
+              "GDP",
+              "P5",
+              "real-gdp-growth-rates",
+              "B9",
+              "D9P",
+              "NOE_SHARE",
+              "gdp-per-capita-usd",
+              "GFCF_RES",
+              "gfcf-dwellings",
+              "GFCF_STRUCT",
+              "P5G",
+              "gfcf-other-buildings-and-structures",
+              "GFCF_MACH",
+              "gfcf-machinery-and-equipment",
+              "GFCF_BIO",
+              "gfcf-cultivated-biological-resources",
+              "GFCF_IP",
+              "gfcf-intellectual-property-products",
+              "GDP_DEFLATOR",
+              "non-observed-economy-share",
+              "gdp-deflator"
+            ]
+          },
+          "dataSource": "accounts"
+        }
+      ],
+      "type": "pipeline",
+      "encoding": {
+        "label": "time",
+        "value": "value"
+      }
+    },
+    "source_id": null,
+    "created_at": "2026-07-19T08:27:41.560Z",
+    "updated_at": "2026-07-19T08:27:41.560Z"
+  },
+  {
+    "id": "367bda0f-a553-4c8d-88e4-5fbc3279435a",
+    "name": "ACCOUNTS_SEQUENCE — ნედლი დათვალიერება",
+    "description": null,
+    "spec": {
+      "pipe": [
+        {
+          "op": "source",
+          "query": {
+            "measure": [
+              "GDP_AGRI",
+              "GVA",
+              "P1",
+              "GDP_IND",
+              "P2",
+              "agriculture-forestry-and-fishing",
+              "B1G",
+              "GDP_CON",
+              "manufacturing",
+              "D1",
+              "GDP_SVC",
+              "construction",
+              "ACC_NET_TAX",
+              "GDP_NET_TAX",
+              "services",
+              "B2G",
+              "C",
+              "D2_D3",
+              "EXP",
+              "net-taxes",
+              "B2G_B3G",
+              "D4_REC",
+              "IMP",
+              "I_GFCF",
+              "final-consumption-expenditure",
+              "D4_D1",
+              "D4_PAY",
+              "X",
+              "gross-capital-formation",
+              "B5G",
+              "D4_D1_PAY",
+              "M",
+              "exports-of-goods-and-services",
+              "D5_REC",
+              "imports-of-goods-and-services",
+              "D5",
+              "D5_PAY",
+              "NET_TAX_PROD",
+              "gross-domestic-product-at-current-prices",
+              "B6G",
+              "OS_GROSS",
+              "compensation-of-emploees",
+              "MIXED_INC",
+              "P3",
+              "net-taxes_2",
+              "B8G",
+              "GDP_GROWTH",
+              "gross-operating-surplus",
+              "D9R",
+              "GDP_PER_CAPITA",
+              "gross-mixed-income",
+              "GDP",
+              "P5",
+              "real-gdp-growth-rates",
+              "B9",
+              "D9P",
+              "NOE_SHARE",
+              "gdp-per-capita-usd",
+              "GFCF_RES",
+              "gfcf-dwellings",
+              "GFCF_STRUCT",
+              "P5G",
+              "gfcf-other-buildings-and-structures",
+              "GFCF_MACH",
+              "gfcf-machinery-and-equipment",
+              "GFCF_BIO",
+              "gfcf-cultivated-biological-resources",
+              "GFCF_IP",
+              "gfcf-intellectual-property-products",
+              "GDP_DEFLATOR",
+              "non-observed-economy-share",
+              "gdp-deflator"
+            ]
+          },
+          "dataSource": "accounts"
+        }
+      ],
+      "type": "pipeline",
+      "encoding": {
+        "label": "time",
+        "value": "value"
+      }
+    },
+    "source_id": null,
+    "created_at": "2026-07-19T06:47:16.128Z",
+    "updated_at": "2026-07-19T06:47:16.128Z"
+  },
+  {
+    "id": "f547b3d8-ef2b-47be-b63b-6dc3e4b63294",
+    "name": "REGIONAL_GVA — ნედლი დათვალიერება",
+    "description": null,
+    "spec": {
+      "pipe": [
+        {
+          "op": "source",
+          "query": {
+            "measure": [
+              "GDP_AGRI",
+              "GVA",
+              "P1",
+              "GDP_IND",
+              "P2",
+              "agriculture-forestry-and-fishing",
+              "B1G",
+              "GDP_CON",
+              "manufacturing",
+              "D1",
+              "GDP_SVC",
+              "construction",
+              "ACC_NET_TAX",
+              "GDP_NET_TAX",
+              "services",
+              "B2G",
+              "C",
+              "D2_D3",
+              "EXP",
+              "net-taxes",
+              "B2G_B3G",
+              "D4_REC",
+              "IMP",
+              "I_GFCF",
+              "final-consumption-expenditure",
+              "D4_D1",
+              "D4_PAY",
+              "X",
+              "gross-capital-formation",
+              "B5G",
+              "D4_D1_PAY",
+              "M",
+              "exports-of-goods-and-services",
+              "D5_REC",
+              "imports-of-goods-and-services",
+              "D5",
+              "D5_PAY",
+              "NET_TAX_PROD",
+              "gross-domestic-product-at-current-prices",
+              "B6G",
+              "OS_GROSS",
+              "compensation-of-emploees",
+              "MIXED_INC",
+              "P3",
+              "net-taxes_2",
+              "B8G",
+              "GDP_GROWTH",
+              "gross-operating-surplus",
+              "D9R",
+              "GDP_PER_CAPITA",
+              "gross-mixed-income",
+              "GDP",
+              "P5",
+              "real-gdp-growth-rates",
+              "B9",
+              "D9P",
+              "NOE_SHARE",
+              "gdp-per-capita-usd",
+              "GFCF_RES",
+              "gfcf-dwellings",
+              "GFCF_STRUCT",
+              "P5G",
+              "gfcf-other-buildings-and-structures",
+              "GFCF_MACH",
+              "gfcf-machinery-and-equipment",
+              "GFCF_BIO",
+              "gfcf-cultivated-biological-resources",
+              "GFCF_IP",
+              "gfcf-intellectual-property-products",
+              "GDP_DEFLATOR",
+              "non-observed-economy-share",
+              "gdp-deflator"
+            ]
+          },
+          "dataSource": "regional"
+        }
+      ],
+      "type": "pipeline",
+      "encoding": {
+        "label": "time",
+        "value": "value"
+      }
+    },
+    "source_id": null,
+    "created_at": "2026-07-18T18:46:02.986Z",
+    "updated_at": "2026-07-18T18:46:02.986Z"
+  },
+  {
+    "id": "481b3598-4766-4f5f-91c0-b469f6217ee2",
+    "name": "REGIONAL_GVA — ნედლი დათვალიერება",
+    "description": null,
+    "spec": {
+      "pipe": [
+        {
+          "op": "source",
+          "query": {
+            "measure": [
+              "GDP_AGRI",
+              "GVA",
+              "P1",
+              "GDP_IND",
+              "P2",
+              "agriculture-forestry-and-fishing",
+              "B1G",
+              "GDP_CON",
+              "manufacturing",
+              "D1",
+              "GDP_SVC",
+              "construction",
+              "ACC_NET_TAX",
+              "GDP_NET_TAX",
+              "services",
+              "B2G",
+              "C",
+              "D2_D3",
+              "EXP",
+              "net-taxes",
+              "B2G_B3G",
+              "D4_REC",
+              "IMP",
+              "I_GFCF",
+              "final-consumption-expenditure",
+              "D4_D1",
+              "D4_PAY",
+              "X",
+              "gross-capital-formation",
+              "B5G",
+              "D4_D1_PAY",
+              "M",
+              "exports-of-goods-and-services",
+              "D5_REC",
+              "imports-of-goods-and-services",
+              "D5",
+              "D5_PAY",
+              "NET_TAX_PROD",
+              "gross-domestic-product-at-current-prices",
+              "B6G",
+              "OS_GROSS",
+              "compensation-of-emploees",
+              "MIXED_INC",
+              "P3",
+              "net-taxes_2",
+              "B8G",
+              "GDP_GROWTH",
+              "gross-operating-surplus",
+              "D9R",
+              "GDP_PER_CAPITA",
+              "gross-mixed-income",
+              "GDP",
+              "P5",
+              "real-gdp-growth-rates",
+              "B9",
+              "D9P",
+              "NOE_SHARE",
+              "gdp-per-capita-usd",
+              "GFCF_RES",
+              "gfcf-dwellings",
+              "GFCF_STRUCT",
+              "P5G",
+              "gfcf-other-buildings-and-structures",
+              "GFCF_MACH",
+              "gfcf-machinery-and-equipment",
+              "GFCF_BIO",
+              "gfcf-cultivated-biological-resources",
+              "GFCF_IP",
+              "gfcf-intellectual-property-products",
+              "GDP_DEFLATOR",
+              "non-observed-economy-share",
+              "gdp-deflator"
+            ]
+          },
+          "dataSource": "regional"
+        }
+      ],
+      "type": "pipeline",
+      "encoding": {
+        "label": "time",
+        "value": "value"
+      }
+    },
+    "source_id": null,
+    "created_at": "2026-07-18T18:43:04.602Z",
+    "updated_at": "2026-07-18T18:43:04.602Z"
+  },
+  {
+    "id": "d72007bb-d4fd-48b8-818e-4f97b829179e",
+    "name": "ACCOUNTS_SEQUENCE — ნედლი დათვალიერება",
+    "description": null,
+    "spec": {
+      "pipe": [
+        {
+          "op": "source",
+          "query": {
+            "measure": [
+              "GDP_AGRI",
+              "GVA",
+              "P1",
+              "GDP_IND",
+              "P2",
+              "agriculture-forestry-and-fishing",
+              "B1G",
+              "GDP_CON",
+              "manufacturing",
+              "D1",
+              "GDP_SVC",
+              "construction",
+              "ACC_NET_TAX",
+              "GDP_NET_TAX",
+              "services",
+              "B2G",
+              "C",
+              "D2_D3",
+              "EXP",
+              "net-taxes",
+              "B2G_B3G",
+              "D4_REC",
+              "IMP",
+              "I_GFCF",
+              "final-consumption-expenditure",
+              "D4_D1",
+              "D4_PAY",
+              "X",
+              "gross-capital-formation",
+              "B5G",
+              "D4_D1_PAY",
+              "M",
+              "exports-of-goods-and-services",
+              "D5_REC",
+              "imports-of-goods-and-services",
+              "D5",
+              "D5_PAY",
+              "NET_TAX_PROD",
+              "gross-domestic-product-at-current-prices",
+              "B6G",
+              "OS_GROSS",
+              "compensation-of-emploees",
+              "MIXED_INC",
+              "P3",
+              "net-taxes_2",
+              "B8G",
+              "GDP_GROWTH",
+              "gross-operating-surplus",
+              "D9R",
+              "GDP_PER_CAPITA",
+              "gross-mixed-income",
+              "GDP",
+              "P5",
+              "real-gdp-growth-rates",
+              "B9",
+              "D9P",
+              "NOE_SHARE",
+              "gdp-per-capita-usd",
+              "GFCF_RES",
+              "gfcf-dwellings",
+              "GFCF_STRUCT",
+              "P5G",
+              "gfcf-other-buildings-and-structures",
+              "GFCF_MACH",
+              "gfcf-machinery-and-equipment",
+              "GFCF_BIO",
+              "gfcf-cultivated-biological-resources",
+              "GFCF_IP",
+              "gfcf-intellectual-property-products",
+              "GDP_DEFLATOR",
+              "non-observed-economy-share",
+              "gdp-deflator"
+            ]
+          }
+        }
+      ],
+      "type": "pipeline",
+      "encoding": {
+        "label": "time",
+        "value": "value"
+      }
+    },
+    "source_id": null,
+    "created_at": "2026-07-18T11:26:18.610Z",
+    "updated_at": "2026-07-18T11:26:18.610Z"
+  },
+  {
+    "id": "2b4c5906-75bb-4940-bab8-cf6d0427aa61",
+    "name": "ACCOUNTS_SEQUENCE — ნედლი დათვალიერება",
+    "description": null,
+    "spec": {
+      "pipe": [
+        {
+          "op": "source",
+          "query": {
+            "measure": [
+              "GDP_AGRI",
+              "GVA",
+              "P1",
+              "GDP_IND",
+              "P2",
+              "agriculture-forestry-and-fishing",
+              "B1G",
+              "GDP_CON",
+              "manufacturing",
+              "D1",
+              "GDP_SVC",
+              "construction",
+              "ACC_NET_TAX",
+              "GDP_NET_TAX",
+              "services",
+              "B2G",
+              "C",
+              "D2_D3",
+              "EXP",
+              "net-taxes",
+              "B2G_B3G",
+              "D4_REC",
+              "IMP",
+              "I_GFCF",
+              "final-consumption-expenditure",
+              "D4_D1",
+              "D4_PAY",
+              "X",
+              "gross-capital-formation",
+              "B5G",
+              "D4_D1_PAY",
+              "M",
+              "exports-of-goods-and-services",
+              "D5_REC",
+              "imports-of-goods-and-services",
+              "D5",
+              "D5_PAY",
+              "NET_TAX_PROD",
+              "gross-domestic-product-at-current-prices",
+              "B6G",
+              "OS_GROSS",
+              "compensation-of-emploees",
+              "MIXED_INC",
+              "P3",
+              "net-taxes_2",
+              "B8G",
+              "GDP_GROWTH",
+              "gross-operating-surplus",
+              "D9R",
+              "GDP_PER_CAPITA",
+              "gross-mixed-income",
+              "GDP",
+              "P5",
+              "real-gdp-growth-rates",
+              "B9",
+              "D9P",
+              "NOE_SHARE",
+              "gdp-per-capita-usd",
+              "GFCF_RES",
+              "gfcf-dwellings",
+              "GFCF_STRUCT",
+              "P5G",
+              "gfcf-other-buildings-and-structures",
+              "GFCF_MACH",
+              "gfcf-machinery-and-equipment",
+              "GFCF_BIO",
+              "gfcf-cultivated-biological-resources",
+              "GFCF_IP",
+              "gfcf-intellectual-property-products",
+              "GDP_DEFLATOR",
+              "non-observed-economy-share",
+              "gdp-deflator"
+            ]
+          }
+        }
+      ],
+      "type": "pipeline",
+      "encoding": {
+        "label": "time",
+        "value": "value"
+      }
+    },
+    "source_id": null,
+    "created_at": "2026-07-18T11:24:13.569Z",
+    "updated_at": "2026-07-18T11:24:13.569Z"
+  },
+  {
+    "id": "9a3ac166-1fa7-41a8-beae-dd1e4316c533",
+    "name": "REGIONAL_GVA — ნედლი დათვალიერება",
+    "description": null,
+    "spec": {
+      "pipe": [
+        {
+          "op": "source",
+          "query": {
+            "measure": [
+              "GDP_AGRI",
+              "GVA",
+              "P1",
+              "GDP_IND",
+              "P2",
+              "agriculture-forestry-and-fishing",
+              "B1G",
+              "GDP_CON",
+              "manufacturing",
+              "D1",
+              "GDP_SVC",
+              "construction",
+              "ACC_NET_TAX",
+              "GDP_NET_TAX",
+              "services",
+              "B2G",
+              "C",
+              "D2_D3",
+              "EXP",
+              "net-taxes",
+              "B2G_B3G",
+              "D4_REC",
+              "IMP",
+              "I_GFCF",
+              "final-consumption-expenditure",
+              "D4_D1",
+              "D4_PAY",
+              "X",
+              "gross-capital-formation",
+              "B5G",
+              "D4_D1_PAY",
+              "M",
+              "exports-of-goods-and-services",
+              "D5_REC",
+              "imports-of-goods-and-services",
+              "D5",
+              "D5_PAY",
+              "NET_TAX_PROD",
+              "gross-domestic-product-at-current-prices",
+              "B6G",
+              "OS_GROSS",
+              "compensation-of-emploees",
+              "MIXED_INC",
+              "P3",
+              "net-taxes_2",
+              "B8G",
+              "GDP_GROWTH",
+              "gross-operating-surplus",
+              "D9R",
+              "GDP_PER_CAPITA",
+              "gross-mixed-income",
+              "GDP",
+              "P5",
+              "real-gdp-growth-rates",
+              "B9",
+              "D9P",
+              "NOE_SHARE",
+              "gdp-per-capita-usd",
+              "GFCF_RES",
+              "gfcf-dwellings",
+              "GFCF_STRUCT",
+              "P5G",
+              "gfcf-other-buildings-and-structures",
+              "GFCF_MACH",
+              "gfcf-machinery-and-equipment",
+              "GFCF_BIO",
+              "gfcf-cultivated-biological-resources",
+              "GFCF_IP",
+              "gfcf-intellectual-property-products",
+              "GDP_DEFLATOR",
+              "non-observed-economy-share",
+              "gdp-deflator"
+            ]
+          }
+        }
+      ],
+      "type": "pipeline",
+      "encoding": {
+        "label": "time",
+        "value": "value"
+      }
+    },
+    "source_id": null,
+    "created_at": "2026-07-18T11:21:23.567Z",
+    "updated_at": "2026-07-18T11:21:23.567Z"
+  },
+  {
+    "id": "782d21a4-215a-476f-85c9-932f602619e9",
+    "name": "tree (შემოთავაზებული)",
+    "description": null,
+    "spec": {
+      "pipe": [
+        {
+          "op": "source",
+          "query": {
+            "measure": [
+              "GDP"
+            ]
+          }
+        }
+      ],
+      "type": "pipeline",
+      "encoding": {
+        "label": "geo",
+        "value": "GDP"
+      }
+    },
+    "source_id": null,
+    "created_at": "2026-07-11T16:37:01.218Z",
+    "updated_at": "2026-07-22T21:37:06.843Z"
+  },
+  {
+    "id": "94b4402f-d2bd-4979-a39a-500f4c95f518",
+    "name": "map (შემოთავაზებული)",
+    "description": null,
+    "spec": {
+      "pipe": [
+        {
+          "op": "source",
+          "query": {
+            "measure": [
+              "GDP"
+            ]
+          }
+        }
+      ],
+      "type": "pipeline",
+      "encoding": {
+        "label": "geo",
+        "value": "GDP"
+      }
+    },
+    "source_id": null,
+    "created_at": "2026-07-11T16:36:54.467Z",
+    "updated_at": "2026-07-22T21:37:06.859Z"
+  },
+  {
+    "id": "cfa8d424-a69d-4e06-a7f6-f018aa3731b7",
+    "name": "tree (შემოთავაზებული)",
+    "description": null,
+    "spec": {
+      "pipe": [
+        {
+          "op": "source",
+          "query": {
+            "measure": [
+              "GDP"
+            ]
+          }
+        }
+      ],
+      "type": "pipeline",
+      "encoding": {
+        "label": "geo",
+        "value": "GDP"
+      }
+    },
+    "source_id": null,
+    "created_at": "2026-07-11T16:36:50.500Z",
+    "updated_at": "2026-07-22T21:37:06.878Z"
+  },
+  {
+    "id": "02638f9b-6fa3-4c2a-8025-26850279e252",
+    "name": "timeseries (შემოთავაზებული)",
+    "description": null,
+    "spec": {
+      "pipe": [
+        {
+          "op": "source",
+          "query": {
+            "measure": [
+              "GDP"
+            ]
+          }
+        }
+      ],
+      "type": "pipeline",
+      "encoding": {
+        "label": "time",
+        "value": "GDP"
+      }
+    },
+    "source_id": null,
+    "created_at": "2026-07-11T16:35:55.600Z",
+    "updated_at": "2026-07-22T21:37:06.893Z"
+  }
+]

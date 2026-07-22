@@ -1,0 +1,255 @@
+{
+  "pages": [
+    {
+      "id": "74468abb-713c-403b-aea6-9adb5de686aa",
+      "slug": "regional",
+      "lowered": 6,
+      "blocked": 0,
+      "failed": 0,
+      "byKind": {
+        "query": 6
+      },
+      "failures": [],
+      "action": "PUT 200"
+    },
+    {
+      "id": "87d1c36e-57ab-4d6a-9b2d-7f6ccbb0d0a7",
+      "slug": "landing",
+      "lowered": 0,
+      "blocked": 0,
+      "failed": 0,
+      "byKind": {},
+      "failures": [],
+      "action": "unchanged"
+    },
+    {
+      "id": "4590ce20-4a39-4b55-ae53-8c1205786fce",
+      "slug": "gdp",
+      "lowered": 8,
+      "blocked": 0,
+      "failed": 0,
+      "byKind": {
+        "query": 8
+      },
+      "failures": [],
+      "action": "PUT 200"
+    },
+    {
+      "id": "1391432f-89c7-4705-8fca-a385c7c08a2f",
+      "slug": "accounts",
+      "lowered": 4,
+      "blocked": 0,
+      "failed": 0,
+      "byKind": {
+        "query": 4
+      },
+      "failures": [],
+      "action": "PUT 200"
+    },
+    {
+      "id": "c116664b-b2d4-4177-b882-009398aaa9ad",
+      "slug": "example",
+      "lowered": 0,
+      "blocked": 0,
+      "failed": 0,
+      "byKind": {},
+      "failures": [],
+      "action": "unchanged"
+    },
+    {
+      "id": "215abc43-54aa-4386-8130-da578e1b936f",
+      "slug": "r3-starter-charttable",
+      "lowered": 0,
+      "blocked": 0,
+      "failed": 0,
+      "byKind": {},
+      "failures": [],
+      "action": "unchanged"
+    },
+    {
+      "id": "e5bd4110-3868-4c0f-90cc-83998a41d284",
+      "slug": "r3-verify-tab",
+      "lowered": 0,
+      "blocked": 0,
+      "failed": 0,
+      "byKind": {},
+      "failures": [],
+      "action": "unchanged"
+    },
+    {
+      "id": "3491c319-06f3-4bf0-a29e-2ba297e64a96",
+      "slug": "r3-verify-landing",
+      "lowered": 0,
+      "blocked": 0,
+      "failed": 0,
+      "byKind": {},
+      "failures": [],
+      "action": "unchanged"
+    }
+  ],
+  "dataSpecs": [
+    {
+      "id": "2684eeb0-0446-4623-ae22-f382f0d101a2",
+      "name": "bar (შემოთავაზებული)",
+      "type": "query",
+      "action": "PUT 200"
+    },
+    {
+      "id": "864dbe1f-c197-46b0-a52d-af9be6ee2d4d",
+      "name": "REGIONAL_GVA — ნედლი დათვალიერება",
+      "type": "pipeline",
+      "action": "unchanged"
+    },
+    {
+      "id": "bf462fe8-bb7a-43e4-afa5-ec626fa218ac",
+      "name": "REGIONAL_GVA — ნედლი დათვალიერება",
+      "type": "pipeline",
+      "action": "unchanged"
+    },
+    {
+      "id": "9bad43d9-cb05-4e9b-ad36-9778eec1a3be",
+      "name": "F2-VERIFY gdp.current honest-missing 1990/2099",
+      "type": "timeseries",
+      "action": "PUT 200"
+    },
+    {
+      "id": "f512b3fb-fd87-4c61-b72b-09de68785044",
+      "name": "F2-VERIFY gdp.current metric-id timeseries",
+      "type": "timeseries",
+      "action": "PUT 200"
+    },
+    {
+      "id": "f9257ca5-edd0-4910-9082-accb80f30d8c",
+      "name": "F2-VERIFY GDPcp mixed years 2018-2025",
+      "type": "timeseries",
+      "action": "PUT 200"
+    },
+    {
+      "id": "c0858450-c863-4c98-b684-99c92b4e9c3f",
+      "name": "F2-VERIFY GDP-current-prices timeseries",
+      "type": "timeseries",
+      "action": "PUT 200"
+    },
+    {
+      "id": "83a74cc9-aa86-482d-aaaa-f2bf2936645f",
+      "name": "F2-VERIFY GDP timeseries with 1990 out-of-range",
+      "type": "timeseries",
+      "action": "PUT 200"
+    },
+    {
+      "id": "afde887d-96dd-42e6-aff9-a4bf9c5b0fa5",
+      "name": "F2-VERIFY GDP timeseries in-range",
+      "type": "timeseries",
+      "action": "PUT 200"
+    },
+    {
+      "id": "c0edcaee-79bb-4b8b-a7fc-bbda0f6bef1b",
+      "name": "STEP-A single-code growth (GDP)",
+      "type": "growth",
+      "action": "PUT 200"
+    },
+    {
+      "id": "be0aee89-ecfe-431e-8150-7f483855d599",
+      "name": "STEP-A timeseries (GDP)",
+      "type": "pipeline",
+      "action": "unchanged"
+    },
+    {
+      "id": "ab99968b-94c4-4947-be74-1eaf3f1a5a6d",
+      "name": "DU3 fallback-lane probe (row-list)",
+      "type": "row-list",
+      "action": "BLOCKED (U2 kind, left)"
+    },
+    {
+      "id": "83ec0e31-488f-4296-bcf5-b1023c2db0cc",
+      "name": "GDP_ANNUAL — ნედლი დათვალიერება",
+      "type": "pipeline",
+      "action": "unchanged"
+    },
+    {
+      "id": "297c13e7-0a03-4f72-9edb-de18b1056d82",
+      "name": "GDP_ANNUAL — ნედლი დათვალიერება",
+      "type": "pipeline",
+      "action": "unchanged"
+    },
+    {
+      "id": "de4e3802-132b-4686-9ef6-00ebb67fa041",
+      "name": "GDP_ANNUAL — ნედლი დათვალიერება",
+      "type": "pipeline",
+      "action": "unchanged"
+    },
+    {
+      "id": "f246fbf7-c9fc-4958-890b-9672ba4ced99",
+      "name": "ACCOUNTS_SEQUENCE — ნედლი დათვალიერება",
+      "type": "pipeline",
+      "action": "unchanged"
+    },
+    {
+      "id": "fad0ddd2-de57-401f-97b6-21b69497eca2",
+      "name": "ACCOUNTS_SEQUENCE — ნედლი დათვალიერება",
+      "type": "pipeline",
+      "action": "unchanged"
+    },
+    {
+      "id": "367bda0f-a553-4c8d-88e4-5fbc3279435a",
+      "name": "ACCOUNTS_SEQUENCE — ნედლი დათვალიერება",
+      "type": "pipeline",
+      "action": "unchanged"
+    },
+    {
+      "id": "f547b3d8-ef2b-47be-b63b-6dc3e4b63294",
+      "name": "REGIONAL_GVA — ნედლი დათვალიერება",
+      "type": "pipeline",
+      "action": "unchanged"
+    },
+    {
+      "id": "481b3598-4766-4f5f-91c0-b469f6217ee2",
+      "name": "REGIONAL_GVA — ნედლი დათვალიერება",
+      "type": "pipeline",
+      "action": "unchanged"
+    },
+    {
+      "id": "d72007bb-d4fd-48b8-818e-4f97b829179e",
+      "name": "ACCOUNTS_SEQUENCE — ნედლი დათვალიერება",
+      "type": "pipeline",
+      "action": "unchanged"
+    },
+    {
+      "id": "2b4c5906-75bb-4940-bab8-cf6d0427aa61",
+      "name": "ACCOUNTS_SEQUENCE — ნედლი დათვალიერება",
+      "type": "pipeline",
+      "action": "unchanged"
+    },
+    {
+      "id": "9a3ac166-1fa7-41a8-beae-dd1e4316c533",
+      "name": "REGIONAL_GVA — ნედლი დათვალიერება",
+      "type": "pipeline",
+      "action": "unchanged"
+    },
+    {
+      "id": "782d21a4-215a-476f-85c9-932f602619e9",
+      "name": "tree (შემოთავაზებული)",
+      "type": "query",
+      "action": "PUT 200"
+    },
+    {
+      "id": "94b4402f-d2bd-4979-a39a-500f4c95f518",
+      "name": "map (შემოთავაზებული)",
+      "type": "query",
+      "action": "PUT 200"
+    },
+    {
+      "id": "cfa8d424-a69d-4e06-a7f6-f018aa3731b7",
+      "name": "tree (შემოთავაზებული)",
+      "type": "query",
+      "action": "PUT 200"
+    },
+    {
+      "id": "02638f9b-6fa3-4c2a-8025-26850279e252",
+      "name": "timeseries (შემოთავაზებული)",
+      "type": "query",
+      "action": "PUT 200"
+    }
+  ],
+  "apply": true
+}

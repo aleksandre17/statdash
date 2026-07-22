@@ -1,0 +1,1790 @@
+{
+  "id": "74468abb-713c-403b-aea6-9adb5de686aa",
+  "slug": "regional",
+  "title": {
+    "en": "Regional Accounts",
+    "ka": "რეგიონული ანგარიშები"
+  },
+  "status": "published",
+  "metadata": {},
+  "created_at": "2026-07-11T10:52:31.290Z",
+  "updated_at": "2026-07-22T10:37:54.979Z",
+  "version_number": 7,
+  "config": {
+    "id": "regional",
+    "path": "/regional",
+    "type": "inner-page",
+    "vars": {
+      "_selKey": "region",
+      "regionObj": {
+        "by": "region",
+        "op": "find",
+        "source": {
+          "$d": "geo"
+        },
+        "idField": "code"
+      },
+      "_regionSel": {
+        "op": "if",
+        "cond": {
+          "op": "ne",
+          "left": {
+            "$ctx": "region"
+          },
+          "right": ""
+        },
+        "else": "none",
+        "then": "some"
+      },
+      "_directional": {
+        "co": "geo",
+        "op": "directional",
+        "emit": "axis",
+        "focus": "sector",
+        "grain": [
+          "time"
+        ],
+        "priority": [
+          "sector",
+          "region"
+        ],
+        "unselected": [
+          "",
+          "_T"
+        ]
+      },
+      "_regionTitle": {
+        "by": "region",
+        "op": "join-labels",
+        "source": {
+          "$d": "geo"
+        },
+        "idField": "code",
+        "maxItems": 1,
+        "overflow": "",
+        "labelField": "label"
+      }
+    },
+    "children": [
+      {
+        "type": "page-header",
+        "badge": {
+          "year": {
+            "en": "Updated: {time}",
+            "ka": "განახლდა: {time}"
+          },
+          "range": {
+            "en": "{fromYear}–{toYear}, GEL mn",
+            "ka": "{fromYear}–{toYear} წლები, მლნ ლარი"
+          }
+        },
+        "title": {
+          "en": "Regional Accounts",
+          "ka": "რეგიონული ანგარიშები"
+        },
+        "crumbs": [
+          {
+            "label": {
+              "en": "Regional Accounts",
+              "ka": "რეგიონული ანგარიშები"
+            }
+          }
+        ]
+      },
+      {
+        "type": "filter-bar"
+      },
+      {
+        "type": "perspective-bar"
+      },
+      {
+        "type": "kpi-strip",
+        "items": [
+          {
+            "id": "reg-gva",
+            "unit": {
+              "en": "GEL mn",
+              "ka": "მლნ ₾"
+            },
+            "when": {
+              "op": "perspective-is",
+              "perspective": "year"
+            },
+            "color": "#0080BE",
+            "label": {
+              "en": "Gross Value Added",
+              "ka": "მთლიანი დამატებული ღირებულება"
+            },
+            "trend": {
+              "type": "yoy",
+              "filter": {
+                "geo": {
+                  "$ne": "_T",
+                  "$ctx": "geo"
+                },
+                "sector": {
+                  "$ctx": "sector",
+                  "default": "_T"
+                }
+              },
+              "measure": "regional.gva"
+            },
+            "value": {
+              "type": "point",
+              "filter": {
+                "geo": {
+                  "$ne": "_T",
+                  "$ctx": "geo"
+                },
+                "sector": {
+                  "$ctx": "sector",
+                  "default": "_T"
+                }
+              },
+              "format": "mln_gel",
+              "measure": "regional.gva"
+            },
+            "trendSub": {
+              "en": "compared to previous year",
+              "ka": "წინა წელთან შედარებით"
+            }
+          },
+          {
+            "id": "reg-growth",
+            "when": {
+              "op": "perspective-is",
+              "perspective": "year"
+            },
+            "color": "#00A896",
+            "label": {
+              "en": "Annual growth (year on year)",
+              "ka": "წლიური ზრდა (წინა წელთან)"
+            },
+            "value": {
+              "type": "yoy",
+              "filter": {
+                "geo": {
+                  "$ne": "_T",
+                  "$ctx": "geo"
+                },
+                "sector": {
+                  "$ctx": "sector",
+                  "default": "_T"
+                }
+              },
+              "measure": "regional.gva"
+            }
+          },
+          {
+            "id": "reg-share",
+            "unit": {
+              "en": "%",
+              "ka": "%"
+            },
+            "when": {
+              "op": "perspective-is",
+              "perspective": "year"
+            },
+            "color": "#4ECDC4",
+            "label": {
+              "en": "Share in GDP",
+              "ka": "მშპ-ში წილი"
+            },
+            "value": {
+              "num": {
+                "filter": {
+                  "geo": {
+                    "$ne": "_T",
+                    "$ctx": "geo"
+                  },
+                  "sector": {
+                    "$ctx": "sector",
+                    "default": "_T"
+                  }
+                },
+                "measure": "regional.gva"
+              },
+              "type": "share",
+              "denom": {
+                "filter": {
+                  "geo": {
+                    "$ne": "_T"
+                  },
+                  "sector": {
+                    "$ctx": "sector",
+                    "default": "_T"
+                  }
+                },
+                "measure": "regional.gva"
+              }
+            }
+          },
+          {
+            "id": "reg-cagr-year",
+            "unit": {
+              "en": "%",
+              "ka": "%"
+            },
+            "when": {
+              "op": "perspective-is",
+              "perspective": "year"
+            },
+            "color": "#7B6CF6",
+            "label": {
+              "en": "Average nominal growth ({spanFrom}–{spanTo})",
+              "ka": "საშუალო ნომინალური ზრდა ({spanFrom}–{spanTo})"
+            },
+            "value": {
+              "to": {
+                "$ctx": "spanTo"
+              },
+              "from": {
+                "$ctx": "spanFrom"
+              },
+              "type": "cagr",
+              "filter": {
+                "geo": {
+                  "$ne": "_T",
+                  "$ctx": "geo"
+                },
+                "sector": {
+                  "$ctx": "sector",
+                  "default": "_T"
+                }
+              },
+              "measure": "regional.gva"
+            }
+          },
+          {
+            "id": "reg-cagr",
+            "unit": {
+              "en": "%",
+              "ka": "%"
+            },
+            "when": {
+              "op": "perspective-is",
+              "perspective": "range"
+            },
+            "color": "#0080BE",
+            "label": {
+              "en": "Value added — average annual growth ({fromYear}–{toYear})",
+              "ka": "დამატებული ღირებულება — საშუალო წლიური ზრდა ({fromYear}–{toYear})"
+            },
+            "value": {
+              "to": {
+                "$ctx": "toYear"
+              },
+              "from": {
+                "$ctx": "fromYear"
+              },
+              "type": "cagr",
+              "filter": {
+                "geo": {
+                  "$ne": "_T",
+                  "$ctx": "geo"
+                },
+                "sector": {
+                  "$ctx": "sector",
+                  "default": "_T"
+                }
+              },
+              "measure": "regional.gva"
+            }
+          },
+          {
+            "id": "reg-gva-last",
+            "unit": {
+              "en": "GEL mn",
+              "ka": "მლნ ₾"
+            },
+            "when": {
+              "op": "perspective-is",
+              "perspective": "range"
+            },
+            "color": "#00A896",
+            "label": {
+              "en": "Value added — {toYear}",
+              "ka": "დამატებული ღირებულება — {toYear}"
+            },
+            "trend": {
+              "time": {
+                "$ctx": "toYear"
+              },
+              "type": "yoy",
+              "filter": {
+                "geo": {
+                  "$ne": "_T",
+                  "$ctx": "geo"
+                },
+                "sector": {
+                  "$ctx": "sector",
+                  "default": "_T"
+                }
+              },
+              "measure": "regional.gva"
+            },
+            "value": {
+              "time": {
+                "$ctx": "toYear"
+              },
+              "type": "point",
+              "filter": {
+                "geo": {
+                  "$ne": "_T",
+                  "$ctx": "geo"
+                },
+                "sector": {
+                  "$ctx": "sector",
+                  "default": "_T"
+                }
+              },
+              "format": "mln_gel",
+              "measure": "regional.gva"
+            },
+            "trendSub": {
+              "en": "{toYear}",
+              "ka": "{toYear}"
+            }
+          },
+          {
+            "id": "reg-gva-first",
+            "unit": {
+              "en": "GEL mn",
+              "ka": "მლნ ₾"
+            },
+            "when": {
+              "op": "perspective-is",
+              "perspective": "range"
+            },
+            "color": "#4ECDC4",
+            "label": {
+              "en": "Value added — {fromYear}",
+              "ka": "დამატებული ღირებულება — {fromYear}"
+            },
+            "trend": {
+              "dir": "flat",
+              "type": "static",
+              "value": {
+                "en": "Baseline",
+                "ka": "საწყისი"
+              }
+            },
+            "value": {
+              "time": {
+                "$ctx": "fromYear"
+              },
+              "type": "point",
+              "filter": {
+                "geo": {
+                  "$ne": "_T",
+                  "$ctx": "geo"
+                },
+                "sector": {
+                  "$ctx": "sector",
+                  "default": "_T"
+                }
+              },
+              "format": "mln_gel",
+              "measure": "regional.gva"
+            },
+            "trendSub": {
+              "en": "{fromYear}",
+              "ka": "{fromYear}"
+            }
+          },
+          {
+            "id": "reg-avg-growth",
+            "unit": {
+              "en": "%",
+              "ka": "%"
+            },
+            "when": {
+              "op": "perspective-is",
+              "perspective": "range"
+            },
+            "color": "#7B6CF6",
+            "label": {
+              "en": "Average annual growth ({fromYear}–{toYear})",
+              "ka": "საშუალო წლიური ზრდა ({fromYear}–{toYear})"
+            },
+            "value": {
+              "to": {
+                "$ctx": "toYear"
+              },
+              "from": {
+                "$ctx": "fromYear"
+              },
+              "type": "cagr",
+              "filter": {
+                "geo": {
+                  "$ne": "_T",
+                  "$ctx": "geo"
+                },
+                "sector": {
+                  "$ctx": "sector",
+                  "default": "_T"
+                }
+              },
+              "measure": "regional.gva"
+            }
+          }
+        ]
+      },
+      {
+        "type": "grid",
+        "view": {
+          "visibleWhen": {
+            "op": "perspective-is",
+            "perspective": "year"
+          }
+        },
+        "children": [
+          {
+            "id": "geo-map",
+            "on": [
+              {
+                "event": "selection:change",
+                "actions": [
+                  {
+                    "key": "region",
+                    "max": 10,
+                    "mode": "toggle",
+                    "type": "filter"
+                  }
+                ]
+              }
+            ],
+            "data": {
+              "pipe": [
+                {
+                  "op": "source",
+                  "query": {
+                    "filter": {
+                      "geo": {
+                        "$ne": "_T"
+                      },
+                      "time": {
+                        "$ctx": "time"
+                      },
+                      "sector": {
+                        "$ne": "_T",
+                        "$ctx": "sector"
+                      }
+                    },
+                    "measure": "regional.gva"
+                  }
+                },
+                {
+                  "by": [
+                    "geo"
+                  ],
+                  "op": "aggregate",
+                  "agg": "sum",
+                  "measure": "value"
+                },
+                {
+                  "op": "lookup",
+                  "key": "geo",
+                  "from": {
+                    "$d": "geo"
+                  },
+                  "fields": [
+                    "label",
+                    "color"
+                  ]
+                },
+                {
+                  "by": "value",
+                  "op": "sort",
+                  "dir": "desc"
+                }
+              ],
+              "type": "pipeline",
+              "encoding": {
+                "id": "geo",
+                "pct": {
+                  "sumOf": "value"
+                },
+                "color": "color",
+                "label": "label",
+                "value": "value"
+              }
+            },
+            "type": "geograph",
+            "view": {
+              "styles": {
+                "height": "16:9"
+              }
+            },
+            "color": "#0080BE",
+            "label": {
+              "en": "{_regionTitle}",
+              "ka": "{_regionTitle}"
+            },
+            "title": {
+              "en": "Gross Domestic Product — by region",
+              "ka": "მთლიანი შიდა პროდუქტი — რეგიონების მიხედვით"
+            },
+            "children": [
+              {
+                "on": [
+                  {
+                    "event": "row:click",
+                    "actions": [
+                      {
+                        "key": "region",
+                        "max": 10,
+                        "mode": "toggle",
+                        "type": "filter",
+                        "fromField": "id"
+                      }
+                    ]
+                  }
+                ],
+                "type": "table",
+                "view": {
+                  "role": "table",
+                  "label": {
+                    "en": "Table",
+                    "ka": "ცხრილი"
+                  }
+                },
+                "color": "#0080BE",
+                "footer": {
+                  "value": "sum"
+                },
+                "columns": [
+                  {
+                    "key": "value",
+                    "label": {
+                      "en": "GEL mn",
+                      "ka": "მლნ ₾"
+                    }
+                  },
+                  {
+                    "bar": {
+                      "max": 100
+                    },
+                    "key": "pct",
+                    "label": {
+                      "en": "Share",
+                      "ka": "წილი"
+                    },
+                    "format": "pct"
+                  }
+                ],
+                "colLabel": {
+                  "en": "Region",
+                  "ka": "რეგიონი"
+                }
+              }
+            ],
+            "isoField": "shapeISO",
+            "paramKey": "region",
+            "maxSelect": 10,
+            "geoCodeMap": {
+              "GE-AJ": "adjara",
+              "GE-GU": "guria",
+              "GE-IM": "imereti",
+              "GE-KA": "kakheti",
+              "GE-KK": "kvemo_kartli",
+              "GE-MM": "mtskheta",
+              "GE-RL": "racha",
+              "GE-SJ": "samtskhe",
+              "GE-SK": "shida_kartli",
+              "GE-SZ": "samegrelo",
+              "GE-TB": "tbilisi"
+            },
+            "geoJsonUrl": "/data/georgia-regions.geojson",
+            "multiSelect": true,
+            "occupiedIso": [
+              "GE-AB",
+              "GE-OS"
+            ],
+            "labelOverrides": {
+              "GE-AB": {
+                "en": "Occupied territory",
+                "ka": "ოკუპირებული ტერიტორია"
+              },
+              "GE-OS": {
+                "en": "Occupied territory",
+                "ka": "ოკუპირებული ტერიტორია"
+              }
+            }
+          },
+          {
+            "id": "sectors",
+            "data": {
+              "pipe": [
+                {
+                  "op": "source",
+                  "query": {
+                    "filter": {
+                      "geo": {
+                        "$ne": "_T",
+                        "$ctx": "geo"
+                      },
+                      "time": {
+                        "$ctx": "time"
+                      },
+                      "sector": {
+                        "$ne": "_T",
+                        "$ctx": "sector"
+                      }
+                    },
+                    "measure": "regional.gva"
+                  }
+                },
+                {
+                  "by": {
+                    "$ctx": "_byDims"
+                  },
+                  "op": "aggregate",
+                  "agg": "sum",
+                  "measure": "value"
+                },
+                {
+                  "op": "lookup",
+                  "key": "sector",
+                  "from": {
+                    "$d": "sector"
+                  },
+                  "fields": [
+                    "label",
+                    "sectorOrder"
+                  ]
+                },
+                {
+                  "as": "sectorLabel",
+                  "op": "derive",
+                  "expr": "label"
+                },
+                {
+                  "op": "lookup",
+                  "key": "geo",
+                  "from": {
+                    "$d": "geo"
+                  },
+                  "fields": [
+                    "label",
+                    "color"
+                  ]
+                },
+                {
+                  "as": "geoLabel",
+                  "op": "derive",
+                  "expr": "label"
+                },
+                {
+                  "by": {
+                    "$ctx": "_sortBy"
+                  },
+                  "op": "sort",
+                  "dir": {
+                    "$ctx": "_sortDir"
+                  }
+                }
+              ],
+              "type": "pipeline",
+              "encoding": {
+                "id": "geo",
+                "pct": {
+                  "sumOf": "value"
+                },
+                "color": "color",
+                "label": {
+                  "$ctx": "_xDim"
+                },
+                "value": "value",
+                "series": {
+                  "$ctx": "_seriesDim"
+                }
+              }
+            },
+            "type": "section",
+            "view": {
+              "styles": {
+                "height": "16:9"
+              },
+              "subtitle": {
+                "en": "{time}, GEL mn",
+                "ka": "{time} წელი, მლნ ლარი"
+              }
+            },
+            "color": "#0080BE",
+            "label": {
+              "en": "{_regionTitle}",
+              "ka": "{_regionTitle}"
+            },
+            "title": {
+              "en": "Gross Domestic Product — by region",
+              "ka": "მთლიანი შიდა პროდუქტი — რეგიონების მიხედვით"
+            },
+            "children": [
+              {
+                "on": [
+                  {
+                    "event": "point:click",
+                    "actions": [
+                      {
+                        "key": "region",
+                        "max": 10,
+                        "mode": "toggle",
+                        "type": "filter",
+                        "fromField": "id"
+                      }
+                    ]
+                  }
+                ],
+                "type": "chart",
+                "view": {
+                  "role": "chart",
+                  "label": {
+                    "en": "Chart",
+                    "ka": "დიაგრამა"
+                  }
+                },
+                "label": {
+                  "en": "Gross Domestic Product — by region",
+                  "ka": "მთლიანი შიდა პროდუქტი — რეგიონების მიხედვით"
+                },
+                "palette": "sequential",
+                "stacked": true,
+                "chartType": {
+                  "$ctx": "_mark"
+                },
+                "centerLabel": {
+                  "en": "GDP",
+                  "ka": "მშპ"
+                },
+                "fieldConfig": {
+                  "unit": {
+                    "en": "GEL mn",
+                    "ka": "მლნ ₾"
+                  }
+                }
+              },
+              {
+                "on": [
+                  {
+                    "event": "row:click",
+                    "actions": [
+                      {
+                        "key": {
+                          "$ctx": "_selKey"
+                        },
+                        "max": 10,
+                        "mode": "toggle",
+                        "type": "filter",
+                        "fromField": "id"
+                      }
+                    ]
+                  }
+                ],
+                "type": "table",
+                "view": {
+                  "role": "table",
+                  "label": {
+                    "en": "Table",
+                    "ka": "ცხრილი"
+                  }
+                },
+                "color": "#0080BE",
+                "footer": {
+                  "value": "sum"
+                },
+                "columns": [
+                  {
+                    "key": "value",
+                    "label": {
+                      "en": "GEL mn",
+                      "ka": "მლნ ₾"
+                    }
+                  },
+                  {
+                    "bar": {
+                      "max": 100
+                    },
+                    "key": "pct",
+                    "label": {
+                      "en": "Share",
+                      "ka": "წილი"
+                    },
+                    "format": "pct"
+                  }
+                ],
+                "colLabel": {
+                  "en": "Region",
+                  "ka": "რეგიონი"
+                }
+              }
+            ]
+          }
+        ],
+        "templateColumns": "repeat(auto-fit, minmax(min(100%, 24rem), 1fr))"
+      },
+      {
+        "type": "grid",
+        "view": {
+          "visibleWhen": {
+            "op": "perspective-is",
+            "perspective": "year"
+          }
+        },
+        "children": [
+          {
+            "id": "regions-bar",
+            "data": {
+              "pipe": [
+                {
+                  "op": "source",
+                  "query": {
+                    "filter": {
+                      "geo": {
+                        "$ne": "_T",
+                        "$ctx": "geo"
+                      },
+                      "time": {
+                        "$ctx": "time"
+                      },
+                      "sector": {
+                        "$ne": "_T",
+                        "$ctx": "sector"
+                      }
+                    },
+                    "measure": "regional.gva"
+                  }
+                },
+                {
+                  "by": [
+                    "geo"
+                  ],
+                  "op": "aggregate",
+                  "agg": "sum",
+                  "measure": "value"
+                },
+                {
+                  "op": "lookup",
+                  "key": "geo",
+                  "from": {
+                    "$d": "geo"
+                  },
+                  "fields": [
+                    "label",
+                    "color"
+                  ]
+                },
+                {
+                  "by": "value",
+                  "op": "sort",
+                  "dir": "desc"
+                }
+              ],
+              "type": "pipeline",
+              "encoding": {
+                "id": "geo",
+                "pct": {
+                  "sumOf": "value"
+                },
+                "color": "color",
+                "label": "label",
+                "value": "value"
+              }
+            },
+            "type": "section",
+            "view": {
+              "subtitle": {
+                "en": "{time}, GEL mn",
+                "ka": "{time} წელი, მლნ ლარი"
+              },
+              "visibleWhen": {
+                "op": "not",
+                "expr": {
+                  "op": "and",
+                  "exprs": [
+                    {
+                      "op": "isset",
+                      "param": "region"
+                    },
+                    {
+                      "op": "isset",
+                      "param": "sector"
+                    }
+                  ]
+                }
+              }
+            },
+            "color": "#0080BE",
+            "title": {
+              "en": "Gross Domestic Product — regional comparison",
+              "ka": "მთლიანი შიდა პროდუქტი — რეგიონული შედარება"
+            },
+            "children": [
+              {
+                "axes": {
+                  "y": {
+                    "hidden": false,
+                    "decimals": 0
+                  }
+                },
+                "type": "chart",
+                "view": {
+                  "role": "chart",
+                  "label": {
+                    "en": "Chart",
+                    "ka": "დიაგრამა"
+                  },
+                  "styles": {
+                    "aspectRatio": {
+                      "sm": "4 / 3",
+                      "default": "16 / 9"
+                    }
+                  }
+                },
+                "label": {
+                  "en": "Gross Value Added — by region",
+                  "ka": "მთლიანი დამატებული ღირებულება — რეგიონების მიხედვით"
+                },
+                "palette": "sequential",
+                "chartType": "hbar",
+                "dataLinks": [
+                  {
+                    "page": "/regional",
+                    "title": {
+                      "en": "Region details",
+                      "ka": "რეგიონის დეტალები"
+                    },
+                    "params": {
+                      "region": {
+                        "$row": "id"
+                      }
+                    },
+                    "target": "page"
+                  }
+                ],
+                "distributed": true,
+                "fieldConfig": {
+                  "unit": {
+                    "en": "GEL mn",
+                    "ka": "მლნ ₾"
+                  }
+                }
+              },
+              {
+                "on": [
+                  {
+                    "event": "row:click",
+                    "actions": [
+                      {
+                        "key": "region",
+                        "max": 10,
+                        "mode": "toggle",
+                        "type": "filter",
+                        "fromField": "id"
+                      }
+                    ]
+                  }
+                ],
+                "type": "table",
+                "view": {
+                  "role": "table",
+                  "label": {
+                    "en": "Table",
+                    "ka": "ცხრილი"
+                  },
+                  "styles": {
+                    "aspectRatio": {
+                      "sm": "4 / 3",
+                      "default": "16 / 9"
+                    }
+                  }
+                },
+                "color": "#0080BE",
+                "footer": {
+                  "value": "sum"
+                },
+                "columns": [
+                  {
+                    "key": "value",
+                    "label": {
+                      "en": "GEL mn",
+                      "ka": "მლნ ₾"
+                    }
+                  },
+                  {
+                    "bar": {
+                      "max": 100
+                    },
+                    "key": "pct",
+                    "label": {
+                      "en": "Share",
+                      "ka": "წილი"
+                    },
+                    "format": "pct"
+                  }
+                ],
+                "colLabel": {
+                  "en": "Region",
+                  "ka": "რეგიონი"
+                }
+              }
+            ]
+          }
+        ],
+        "templateColumns": "1fr"
+      },
+      {
+        "type": "grid",
+        "view": {
+          "visibleWhen": {
+            "op": "perspective-is",
+            "perspective": "range"
+          }
+        },
+        "children": [
+          {
+            "id": "geo-map-range",
+            "on": [
+              {
+                "event": "selection:change",
+                "actions": [
+                  {
+                    "key": "region",
+                    "mode": "replace",
+                    "type": "filter"
+                  }
+                ]
+              }
+            ],
+            "data": {
+              "pipe": [
+                {
+                  "op": "source",
+                  "query": {
+                    "filter": {
+                      "geo": {
+                        "$ne": "_T"
+                      },
+                      "time": {
+                        "$ctx": "toYear"
+                      },
+                      "sector": {
+                        "$ne": "_T",
+                        "$ctx": "sector"
+                      }
+                    },
+                    "measure": "regional.gva"
+                  }
+                },
+                {
+                  "by": [
+                    "geo"
+                  ],
+                  "op": "aggregate",
+                  "agg": "sum",
+                  "measure": "value"
+                },
+                {
+                  "op": "lookup",
+                  "key": "geo",
+                  "from": {
+                    "$d": "geo"
+                  },
+                  "fields": [
+                    "label",
+                    "color"
+                  ]
+                },
+                {
+                  "by": "value",
+                  "op": "sort",
+                  "dir": "desc"
+                }
+              ],
+              "type": "pipeline",
+              "encoding": {
+                "id": "geo",
+                "pct": {
+                  "sumOf": "value"
+                },
+                "color": "color",
+                "label": "label",
+                "value": "value"
+              }
+            },
+            "type": "geograph",
+            "view": {
+              "styles": {
+                "height": "16:9"
+              }
+            },
+            "color": "#0080BE",
+            "label": {
+              "en": "{_regionTitle}",
+              "ka": "{_regionTitle}"
+            },
+            "title": {
+              "en": "Gross Domestic Product — by region",
+              "ka": "მთლიანი შიდა პროდუქტი — რეგიონების მიხედვით"
+            },
+            "children": [
+              {
+                "on": [
+                  {
+                    "event": "row:click",
+                    "actions": [
+                      {
+                        "key": "region",
+                        "max": 10,
+                        "mode": "toggle",
+                        "type": "filter",
+                        "fromField": "id"
+                      }
+                    ]
+                  }
+                ],
+                "type": "table",
+                "view": {
+                  "role": "table",
+                  "label": {
+                    "en": "Table",
+                    "ka": "ცხრილი"
+                  }
+                },
+                "color": "#0080BE",
+                "footer": {
+                  "value": "sum"
+                },
+                "columns": [
+                  {
+                    "key": "value",
+                    "label": {
+                      "en": "GEL mn",
+                      "ka": "მლნ ₾"
+                    }
+                  },
+                  {
+                    "bar": {
+                      "max": 100
+                    },
+                    "key": "pct",
+                    "label": {
+                      "en": "Share",
+                      "ka": "წილი"
+                    },
+                    "format": "pct"
+                  }
+                ],
+                "colLabel": {
+                  "en": "Region",
+                  "ka": "რეგიონი"
+                }
+              }
+            ],
+            "isoField": "shapeISO",
+            "paramKey": "region",
+            "geoCodeMap": {
+              "GE-AJ": "adjara",
+              "GE-GU": "guria",
+              "GE-IM": "imereti",
+              "GE-KA": "kakheti",
+              "GE-KK": "kvemo_kartli",
+              "GE-MM": "mtskheta",
+              "GE-RL": "racha",
+              "GE-SJ": "samtskhe",
+              "GE-SK": "shida_kartli",
+              "GE-SZ": "samegrelo",
+              "GE-TB": "tbilisi"
+            },
+            "geoJsonUrl": "/data/georgia-regions.geojson",
+            "occupiedIso": [
+              "GE-AB",
+              "GE-OS"
+            ],
+            "labelOverrides": {
+              "GE-AB": {
+                "en": "Occupied territory",
+                "ka": "ოკუპირებული ტერიტორია"
+              },
+              "GE-OS": {
+                "en": "Occupied territory",
+                "ka": "ოკუპირებული ტერიტორია"
+              }
+            }
+          },
+          {
+            "id": "sectors-range",
+            "data": {
+              "pipe": [
+                {
+                  "op": "source",
+                  "clamp": {
+                    "toDim": "toYear",
+                    "fromDim": "fromYear"
+                  },
+                  "query": {
+                    "filter": {
+                      "geo": {
+                        "$ctx": "geo"
+                      },
+                      "sector": {
+                        "$ne": "_T",
+                        "$ctx": "sector"
+                      }
+                    },
+                    "measure": "regional.gva"
+                  }
+                },
+                {
+                  "by": [
+                    "time"
+                  ],
+                  "op": "aggregate",
+                  "agg": "sum",
+                  "measure": "value"
+                },
+                {
+                  "by": "time",
+                  "op": "sort",
+                  "dir": "asc"
+                }
+              ],
+              "type": "pipeline",
+              "encoding": {
+                "label": "time",
+                "value": "value"
+              }
+            },
+            "type": "section",
+            "view": {
+              "styles": {
+                "height": "16:9"
+              },
+              "subtitle": {
+                "en": "{fromYear}–{toYear}, GEL mn",
+                "ka": "{fromYear}–{toYear} წლები, მლნ ლარი"
+              }
+            },
+            "color": "#0080BE",
+            "title": {
+              "en": "Annual dynamics of Gross Domestic Product",
+              "ka": "მთლიანი შიდა პროდუქტის წლიური დინამიკა"
+            },
+            "children": [
+              {
+                "type": "chart",
+                "view": {
+                  "role": "chart",
+                  "label": {
+                    "en": "Chart",
+                    "ka": "დიაგრამა"
+                  }
+                },
+                "label": {
+                  "en": "Gross Domestic Product dynamics, {fromYear}–{toYear}",
+                  "ka": "მთლიანი შიდა პროდუქტის დინამიკა, {fromYear}–{toYear}"
+                },
+                "palette": "sequential",
+                "chartType": "bar",
+                "dataLabels": false,
+                "fieldConfig": {
+                  "unit": {
+                    "en": "GEL mn",
+                    "ka": "მლნ ₾"
+                  }
+                },
+                "rangeSlider": true
+              },
+              {
+                "type": "table",
+                "view": {
+                  "role": "table",
+                  "label": {
+                    "en": "Table",
+                    "ka": "ცხრილი"
+                  }
+                },
+                "color": "#0080BE",
+                "footer": {
+                  "value": "avg"
+                },
+                "columns": [
+                  {
+                    "key": "value",
+                    "label": {
+                      "en": "GEL mn",
+                      "ka": "მლნ ₾"
+                    }
+                  }
+                ],
+                "colLabel": {
+                  "en": "Year",
+                  "ka": "წელი"
+                }
+              }
+            ]
+          }
+        ],
+        "templateColumns": "repeat(auto-fit, minmax(min(100%, 24rem), 1fr))"
+      },
+      {
+        "type": "grid",
+        "view": {
+          "visibleWhen": {
+            "op": "perspective-is",
+            "perspective": "range"
+          }
+        },
+        "children": [
+          {
+            "id": "sector-history",
+            "data": {
+              "pipe": [
+                {
+                  "op": "source",
+                  "clamp": {
+                    "toDim": "toYear",
+                    "fromDim": "fromYear"
+                  },
+                  "query": {
+                    "filter": {
+                      "geo": {
+                        "$ctx": "geo"
+                      },
+                      "sector": {
+                        "$ne": "_T"
+                      }
+                    },
+                    "measure": "regional.gva"
+                  }
+                },
+                {
+                  "by": [
+                    "sector",
+                    "time"
+                  ],
+                  "op": "aggregate",
+                  "agg": "sum",
+                  "measure": "value"
+                },
+                {
+                  "op": "lookup",
+                  "key": "sector",
+                  "from": {
+                    "$d": "sector"
+                  },
+                  "fields": [
+                    "label",
+                    "color"
+                  ]
+                },
+                {
+                  "by": "time",
+                  "op": "sort",
+                  "dir": "asc"
+                }
+              ],
+              "type": "pipeline",
+              "encoding": {
+                "color": "color",
+                "label": "time",
+                "value": "value",
+                "series": "label"
+              }
+            },
+            "type": "section",
+            "view": {
+              "styles": {
+                "height": "16:9"
+              },
+              "subtitle": {
+                "en": "{fromYear}–{toYear}, GEL mn",
+                "ka": "{fromYear}–{toYear} წლები, მლნ ლარი"
+              }
+            },
+            "color": "#7B6CF6",
+            "title": {
+              "en": "Industry structure — historical dynamics",
+              "ka": "დარგობრივი სტრუქტურა — ისტორიული დინამიკა"
+            },
+            "children": [
+              {
+                "on": [
+                  {
+                    "event": "point:click",
+                    "actions": [
+                      {
+                        "key": "sector",
+                        "mode": "replace",
+                        "type": "filter",
+                        "fromField": "sector"
+                      }
+                    ]
+                  }
+                ],
+                "type": "chart",
+                "view": {
+                  "role": "chart",
+                  "label": {
+                    "en": "Chart",
+                    "ka": "დიაგრამა"
+                  }
+                },
+                "label": {
+                  "en": "Sectoral Gross Value Added — historical trend",
+                  "ka": "სექტორული მთლიანი დამატებული ღირებულება — ისტორიული ტრენდი"
+                },
+                "stacked": true,
+                "chartType": "area",
+                "fieldConfig": {
+                  "unit": {
+                    "en": "GEL mn",
+                    "ka": "მლნ ₾"
+                  }
+                },
+                "rangeSlider": true
+              },
+              {
+                "type": "table",
+                "view": {
+                  "role": "table",
+                  "label": {
+                    "en": "Table",
+                    "ka": "ცხრილი"
+                  }
+                },
+                "color": "#7B6CF6",
+                "footer": {
+                  "value": "avg"
+                },
+                "colLabel": {
+                  "en": "Year",
+                  "ka": "წელი"
+                },
+                "valueLabel": {
+                  "en": "GEL mn",
+                  "ka": "მლნ ₾"
+                }
+              }
+            ]
+          }
+        ],
+        "templateColumns": "1fr"
+      },
+      {
+        "type": "links",
+        "items": [
+          {
+            "href": "https://www.geostat.ge/ka/modules/categories/23/mtliani-shida-produkti-mshp",
+            "icon": "info",
+            "label": {
+              "en": "Additional information",
+              "ka": "დამატებითი ინფორმაცია"
+            }
+          },
+          {
+            "href": "https://www.geostat.ge",
+            "icon": "ext",
+            "label": {
+              "en": "Geostat — geostat.ge",
+              "ka": "საქსტატი — geostat.ge"
+            }
+          }
+        ]
+      }
+    ],
+    "storeKey": "regional",
+    "filterSchema": {
+      "bars": {
+        "bar": {
+          "order": 0,
+          "filters": {
+            "mode": {
+              "type": "hidden",
+              "default": "year"
+            },
+            "year": {
+              "type": "year-select",
+              "years": {
+                "type": "inline",
+                "field": "code",
+                "items": {
+                  "$cl": "time"
+                }
+              },
+              "default": {
+                "from": "options",
+                "pick": "last"
+              },
+              "visibleWhen": {
+                "op": "perspective-is",
+                "perspective": "year"
+              }
+            },
+            "region": {
+              "type": "hidden",
+              "default": ""
+            },
+            "sector": {
+              "type": "multi-select",
+              "label": {
+                "en": "Sectors:",
+                "ka": "დარგები:"
+              },
+              "default": "",
+              "options": {
+                "pipe": [
+                  {
+                    "op": "filter",
+                    "where": {
+                      "code": {
+                        "$ne": "_T"
+                      }
+                    }
+                  },
+                  {
+                    "by": "label",
+                    "op": "sort",
+                    "dir": "asc"
+                  }
+                ],
+                "type": "inline",
+                "items": {
+                  "$d": "sector"
+                },
+                "labelField": "label",
+                "valueField": "code"
+              },
+              "emptyLabel": {
+                "en": "All",
+                "ka": "ყველა"
+              },
+              "visibleWhen": {
+                "op": "perspective-not",
+                "perspective": "range"
+              }
+            },
+            "spanTo": {
+              "type": "hidden",
+              "default": {
+                "from": "options",
+                "pick": "first"
+              },
+              "options": {
+                "pipe": [
+                  {
+                    "by": "code",
+                    "op": "sort",
+                    "dir": "desc"
+                  }
+                ],
+                "type": "inline",
+                "items": {
+                  "$d": "time"
+                },
+                "labelField": "code",
+                "valueField": "code"
+              },
+              "alwaysResolve": true
+            },
+            "toYear": {
+              "type": "select",
+              "label": {
+                "en": "End year",
+                "ka": "საბოლოო წელი"
+              },
+              "order": 20,
+              "default": {
+                "from": "options",
+                "pick": "first"
+              },
+              "options": {
+                "pipe": [
+                  {
+                    "by": "code",
+                    "op": "sort",
+                    "dir": "desc"
+                  }
+                ],
+                "type": "inline",
+                "items": {
+                  "$d": "time"
+                },
+                "labelField": "code",
+                "valueField": "code"
+              },
+              "spanRole": "to",
+              "visibleWhen": {
+                "op": "perspective-is",
+                "perspective": "range"
+              }
+            },
+            "fromYear": {
+              "type": "select",
+              "label": {
+                "en": "Interval:",
+                "ka": "შუალედი:"
+              },
+              "order": 10,
+              "default": {
+                "from": "options",
+                "pick": "first"
+              },
+              "options": {
+                "pipe": [
+                  {
+                    "by": "code",
+                    "op": "sort",
+                    "dir": "asc"
+                  }
+                ],
+                "type": "inline",
+                "items": {
+                  "$d": "time"
+                },
+                "labelField": "code",
+                "valueField": "code"
+              },
+              "spanRole": "from",
+              "visibleWhen": {
+                "op": "perspective-is",
+                "perspective": "range"
+              }
+            },
+            "spanFrom": {
+              "type": "hidden",
+              "default": {
+                "from": "options",
+                "pick": "first"
+              },
+              "options": {
+                "pipe": [
+                  {
+                    "by": "code",
+                    "op": "sort",
+                    "dir": "asc"
+                  }
+                ],
+                "type": "inline",
+                "items": {
+                  "$d": "time"
+                },
+                "labelField": "code",
+                "valueField": "code"
+              },
+              "alwaysResolve": true
+            }
+          },
+          "position": "sticky"
+        }
+      },
+      "context": {
+        "dims": {
+          "geo": "region",
+          "geos": "geos",
+          "time": "year",
+          "sector": "sector",
+          "spanTo": "spanTo",
+          "toYear": "toYear",
+          "fromYear": "fromYear",
+          "spanFrom": "spanFrom"
+        }
+      }
+    },
+    "perspectives": {
+      "mode": {
+        "perspectives": [
+          {
+            "id": "year",
+            "icon": "calendar",
+            "label": {
+              "en": "Annual",
+              "ka": "წლიური"
+            },
+            "scope": {
+              "binding": {
+                "dim": "time",
+                "selection": {
+                  "at": {
+                    "$ctx": "year"
+                  },
+                  "kind": "point"
+                }
+              }
+            }
+          },
+          {
+            "id": "range",
+            "icon": "calendar-range",
+            "label": {
+              "en": "Dynamics",
+              "ka": "დინამიკა"
+            },
+            "scope": {
+              "binding": {
+                "dim": "time",
+                "selection": {
+                  "to": {
+                    "$ctx": "toYear"
+                  },
+                  "from": {
+                    "$ctx": "fromYear"
+                  },
+                  "kind": "window",
+                  "targetKeys": {
+                    "to": "toYear",
+                    "from": "fromYear"
+                  }
+                }
+              }
+            },
+            "onExit": {
+              "set": {
+                "toYear": null,
+                "fromYear": null
+              }
+            },
+            "onEnter": {
+              "set": {
+                "year": null,
+                "sector": ""
+              }
+            }
+          }
+        ]
+      }
+    },
+    "presentation": {
+      "color": {
+        "by": "region",
+        "op": "find",
+        "field": "color",
+        "source": {
+          "$d": "geo"
+        },
+        "idField": "code",
+        "fallback": "#0080BE"
+      },
+      "crumbs": {
+        "by": "region",
+        "op": "breadcrumbs",
+        "prefix": [
+          {
+            "label": {
+              "en": "Regional Accounts",
+              "ka": "რეგიონული ანგარიშები"
+            }
+          }
+        ],
+        "source": {
+          "$cl": "geo"
+        },
+        "idField": "code",
+        "labelField": "label"
+      }
+    },
+    "schemaVersion": 5
+  },
+  "data_specs": [],
+  "is_published": false
+}

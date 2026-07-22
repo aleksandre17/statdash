@@ -1,0 +1,23 @@
+{
+  "id": "3491c319-06f3-4bf0-a29e-2ba297e64a96",
+  "slug": "r3-verify-landing",
+  "title": {
+    "en": "R3 Verify Landing",
+    "ka": "R3 Verify Landing"
+  },
+  "status": "draft",
+  "metadata": {},
+  "created_at": "2026-07-19T14:36:16.086Z",
+  "updated_at": "2026-07-19T14:36:16.086Z",
+  "version_number": 1,
+  "config": {
+    "id": "node-6cgog9j",
+    "path": "r3-verify-landing",
+    "type": "container-page",
+    "variant": "landing",
+    "children": [],
+    "schemaVersion": 5
+  },
+  "data_specs": [],
+  "is_published": false
+}

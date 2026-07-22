@@ -1,0 +1,443 @@
+{
+  "id": "87d1c36e-57ab-4d6a-9b2d-7f6ccbb0d0a7",
+  "slug": "landing",
+  "title": {
+    "en": "landing",
+    "ka": "landing"
+  },
+  "status": "published",
+  "metadata": {},
+  "created_at": "2026-07-11T10:52:31.285Z",
+  "updated_at": "2026-07-22T10:37:54.910Z",
+  "version_number": 2,
+  "config": {
+    "id": "landing",
+    "type": "container-page",
+    "variant": "landing",
+    "children": [
+      {
+        "id": "landing-hero",
+        "type": "hero",
+        "cards": [
+          {
+            "id": "gdp",
+            "img": "https://sna.geostat.ge/img/home/mtliani.png",
+            "sub": {
+              "en": "National output and growth metrics",
+              "ka": "მოსახლეობის ხელფასი და ეკონომიკური წარმოება"
+            },
+            "color": "#0080BE",
+            "title": {
+              "en": "Gross Domestic Product",
+              "ka": "მთლიანი შიდა პროდუქტი"
+            },
+            "pageBg": "linear-gradient(160deg, #faf0e8 0%, #e4f0e8 40%, #d8ece8 70%, #d0e8ec 100%)"
+          },
+          {
+            "id": "accounts",
+            "img": "https://sna.geostat.ge/img/home/erovnuli.png",
+            "sub": {
+              "en": "Income distribution and expenditure structure",
+              "ka": "შემოსავლის განაწილება და ხარჯების სტრუქტურა"
+            },
+            "color": "#0080BE",
+            "title": {
+              "en": "National Accounts",
+              "ka": "ეროვნული ანგარიშები"
+            },
+            "pageBg": "linear-gradient(160deg, #eef4e8 0%, #e0ece8 40%, #d4ecec 70%, #c8e8f0 100%)"
+          },
+          {
+            "id": "regional",
+            "img": "https://sna.geostat.ge/img/home/regionul.png",
+            "sub": {
+              "en": "Regional economic development and comparison",
+              "ka": "რეგიონების ეკონომიკური განვითარება და შედარება"
+            },
+            "color": "#0080BE",
+            "title": {
+              "en": "Regional Analysis",
+              "ka": "რეგიონული ანალიზი"
+            },
+            "pageBg": "linear-gradient(160deg, #e8f4f0 0%, #dcf0ec 40%, #d0ece8 70%, #c4e8f0 100%)"
+          }
+        ],
+        "title": {
+          "en": "National Accounts Portal",
+          "ka": "ეროვნული ანგარიშების პორტალი"
+        },
+        "subtitle": {
+          "en": "Complete economic statistics of Georgia",
+          "ka": "საქართველოს ეკონომიკური მხედელობის სრული მონაცემები"
+        }
+      },
+      {
+        "id": "landing-featured",
+        "type": "featured-slider",
+        "items": [
+          {
+            "at": {
+              "geo": "GE",
+              "approach": "_Z"
+            },
+            "href": "gdp",
+            "time": 2025,
+            "group": {
+              "en": "GDP indicators",
+              "ka": "მშპ მაჩვენებლები"
+            },
+            "order": 1,
+            "trend": {
+              "type": "yoy",
+              "filter": {
+                "geo": "GE",
+                "approach": "_Z"
+              },
+              "measure": "gdp.current"
+            },
+            "metric": "gdp.current",
+            "trendSub": {
+              "en": "vs previous year",
+              "ka": "წინა წელთან"
+            }
+          },
+          {
+            "at": {
+              "geo": "GE",
+              "approach": "_Z"
+            },
+            "href": "gdp",
+            "time": 2025,
+            "group": {
+              "en": "GDP indicators",
+              "ka": "მშპ მაჩვენებლები"
+            },
+            "order": 2,
+            "metric": "gdp.realGrowth"
+          },
+          {
+            "at": {
+              "geo": "GE",
+              "approach": "_Z"
+            },
+            "href": "gdp",
+            "time": 2025,
+            "group": {
+              "en": "GDP indicators",
+              "ka": "მშპ მაჩვენებლები"
+            },
+            "order": 3,
+            "trend": {
+              "type": "yoy",
+              "filter": {
+                "geo": "GE",
+                "approach": "_Z"
+              },
+              "measure": "gdp.perCapita"
+            },
+            "metric": "gdp.perCapita",
+            "trendSub": {
+              "en": "vs previous year",
+              "ka": "წინა წელთან"
+            }
+          },
+          {
+            "at": {
+              "geo": "GE",
+              "approach": "_Z"
+            },
+            "href": "gdp",
+            "time": 2025,
+            "group": {
+              "en": "GDP indicators",
+              "ka": "მშპ მაჩვენებლები"
+            },
+            "order": 4,
+            "metric": "gdp.deflator"
+          },
+          {
+            "at": {
+              "side": "U",
+              "account": "allocation-of-primary-income-account"
+            },
+            "href": "accounts",
+            "time": 2025,
+            "group": {
+              "en": "National Accounts",
+              "ka": "ეროვნული ანგარიშები"
+            },
+            "order": 5,
+            "trend": {
+              "type": "yoy",
+              "filter": {
+                "side": "U",
+                "account": "allocation-of-primary-income-account"
+              },
+              "measure": "accounts.gni"
+            },
+            "metric": "accounts.gni",
+            "trendSub": {
+              "en": "vs previous year",
+              "ka": "წინა წელთან"
+            }
+          },
+          {
+            "at": {
+              "side": "U",
+              "account": "secondary-distribution-of-income-account"
+            },
+            "href": "accounts",
+            "time": 2025,
+            "group": {
+              "en": "National Accounts",
+              "ka": "ეროვნული ანგარიშები"
+            },
+            "order": 6,
+            "trend": {
+              "type": "yoy",
+              "filter": {
+                "side": "U",
+                "account": "secondary-distribution-of-income-account"
+              },
+              "measure": "accounts.disposableIncome"
+            },
+            "metric": "accounts.disposableIncome",
+            "trendSub": {
+              "en": "vs previous year",
+              "ka": "წინა წელთან"
+            }
+          },
+          {
+            "at": {
+              "side": "U",
+              "account": "use-of-disposable-income-account"
+            },
+            "href": "accounts",
+            "time": 2025,
+            "group": {
+              "en": "National Accounts",
+              "ka": "ეროვნული ანგარიშები"
+            },
+            "order": 7,
+            "trend": {
+              "type": "yoy",
+              "filter": {
+                "side": "U",
+                "account": "use-of-disposable-income-account"
+              },
+              "measure": "accounts.savings"
+            },
+            "metric": "accounts.savings",
+            "trendSub": {
+              "en": "vs previous year",
+              "ka": "წინა წელთან"
+            }
+          },
+          {
+            "at": {
+              "side": "U",
+              "account": "capital-account"
+            },
+            "href": "accounts",
+            "time": 2025,
+            "group": {
+              "en": "National Accounts",
+              "ka": "ეროვნული ანგარიშები"
+            },
+            "order": 8,
+            "trend": {
+              "type": "yoy",
+              "filter": {
+                "side": "U",
+                "account": "capital-account"
+              },
+              "measure": "accounts.netLending"
+            },
+            "metric": "accounts.netLending",
+            "trendSub": {
+              "en": "vs previous year",
+              "ka": "წინა წელთან"
+            }
+          },
+          {
+            "at": {
+              "geo": "tbilisi",
+              "sector": "_T"
+            },
+            "href": "regional",
+            "time": 2024,
+            "group": {
+              "en": "Regional statistics",
+              "ka": "რეგიონული სტატისტიკა"
+            },
+            "label": {
+              "en": "Tbilisi",
+              "ka": "თბილისი"
+            },
+            "order": 9,
+            "trend": {
+              "num": {
+                "time": 2024,
+                "filter": {
+                  "geo": "tbilisi",
+                  "sector": "_T"
+                },
+                "measure": "regional.gva"
+              },
+              "type": "share",
+              "denom": {
+                "time": 2024,
+                "filter": {
+                  "geo": {
+                    "$ne": "_T"
+                  },
+                  "sector": "_T"
+                },
+                "measure": "regional.gva"
+              }
+            },
+            "metric": "regional.gva",
+            "trendSub": {
+              "en": "Share in total GDP",
+              "ka": "წილი მთლიან მშპ-ში"
+            }
+          },
+          {
+            "at": {
+              "geo": "adjara",
+              "sector": "_T"
+            },
+            "href": "regional",
+            "time": 2024,
+            "group": {
+              "en": "Regional statistics",
+              "ka": "რეგიონული სტატისტიკა"
+            },
+            "label": {
+              "en": "Adjara A.R.",
+              "ka": "აჭარის ა.რ."
+            },
+            "order": 10,
+            "trend": {
+              "num": {
+                "time": 2024,
+                "filter": {
+                  "geo": "adjara",
+                  "sector": "_T"
+                },
+                "measure": "regional.gva"
+              },
+              "type": "share",
+              "denom": {
+                "time": 2024,
+                "filter": {
+                  "geo": {
+                    "$ne": "_T"
+                  },
+                  "sector": "_T"
+                },
+                "measure": "regional.gva"
+              }
+            },
+            "metric": "regional.gva",
+            "trendSub": {
+              "en": "Share in total GDP",
+              "ka": "წილი მთლიან მშპ-ში"
+            }
+          },
+          {
+            "at": {
+              "geo": "imereti",
+              "sector": "_T"
+            },
+            "href": "regional",
+            "time": 2024,
+            "group": {
+              "en": "Regional statistics",
+              "ka": "რეგიონული სტატისტიკა"
+            },
+            "label": {
+              "en": "Imereti",
+              "ka": "იმერეთი"
+            },
+            "order": 11,
+            "trend": {
+              "num": {
+                "time": 2024,
+                "filter": {
+                  "geo": "imereti",
+                  "sector": "_T"
+                },
+                "measure": "regional.gva"
+              },
+              "type": "share",
+              "denom": {
+                "time": 2024,
+                "filter": {
+                  "geo": {
+                    "$ne": "_T"
+                  },
+                  "sector": "_T"
+                },
+                "measure": "regional.gva"
+              }
+            },
+            "metric": "regional.gva",
+            "trendSub": {
+              "en": "Share in total GDP",
+              "ka": "წილი მთლიან მშპ-ში"
+            }
+          },
+          {
+            "at": {
+              "geo": "kvemo_kartli",
+              "sector": "_T"
+            },
+            "href": "regional",
+            "time": 2024,
+            "group": {
+              "en": "Regional statistics",
+              "ka": "რეგიონული სტატისტიკა"
+            },
+            "label": {
+              "en": "Kvemo Kartli",
+              "ka": "ქვემო ქართლი"
+            },
+            "order": 12,
+            "trend": {
+              "num": {
+                "time": 2024,
+                "filter": {
+                  "geo": "kvemo_kartli",
+                  "sector": "_T"
+                },
+                "measure": "regional.gva"
+              },
+              "type": "share",
+              "denom": {
+                "time": 2024,
+                "filter": {
+                  "geo": {
+                    "$ne": "_T"
+                  },
+                  "sector": "_T"
+                },
+                "measure": "regional.gva"
+              }
+            },
+            "metric": "regional.gva",
+            "trendSub": {
+              "en": "Share in total GDP",
+              "ka": "წილი მთლიან მშპ-ში"
+            }
+          }
+        ],
+        "autoplayMs": 7000,
+        "preliminaryBadge": false
+      }
+    ],
+    "schemaVersion": 5
+  },
+  "data_specs": [],
+  "is_published": true
+}

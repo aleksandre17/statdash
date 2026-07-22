@@ -1,0 +1,22 @@
+{
+  "id": "e5bd4110-3868-4c0f-90cc-83998a41d284",
+  "slug": "r3-verify-tab",
+  "title": {
+    "en": "R3 Verify Tab",
+    "ka": "R3 Verify Tab"
+  },
+  "status": "draft",
+  "metadata": {},
+  "created_at": "2026-07-19T14:40:32.510Z",
+  "updated_at": "2026-07-19T14:40:32.510Z",
+  "version_number": 1,
+  "config": {
+    "id": "node-i7pk04q",
+    "path": "r3-verify-tab",
+    "type": "tab-page",
+    "children": [],
+    "schemaVersion": 5
+  },
+  "data_specs": [],
+  "is_published": false
+}
