@@ -9,6 +9,9 @@ links:
   - work/items/0104-data-workspace-unification-and-capability-restoration.md
   - docs/architecture/proposals/DESIGN-0104-elevation-reference-class.md
 ---
-**Goal** — Owner (verbatim): «შედიხარ დატებლე ელემენტზე, იქ არსებული დატას შესაბამისი აგებულების ფილტრაციებიც არაა მზად». On a dataTable element, the author should get filter affordances DERIVED from the bound data's actual structure (its dims/columns/members — offered, governed), and today they are absent/not-ready. Characterize the exact gap live (what IS there vs what the data's structure warrants), then land the fix through the accepted grammar: DW-B core-ops band (basic filter forward on the element) + C4 Offer Port (dim/member offers from the bound source) — NOT a bespoke table-filter widget.
+**Goal (owner-clarified 2026-07-22)** — «დატაბლეში ნოდებს ვგულისხმობ — ნოდიდან რომ შედიხარ დატაზე, ხომ უნდა ჩანდეს, **რა დატაა და როგორ აიგო**». The node's data door must answer TWO questions at a glance:
+1. **WHAT the data is** — source, metrics, dims, honest state = **C5 Binding Summary (wave E3)**; kills the false "not bound" (QC-2) in the same stroke.
+2. **HOW it was built** — the visible step chain (Get → Filter → Derive…, 7-verb badges), NOT a bare count. **E3 scope extension (this card's contribution): `summarizeBinding` carries the named step list (label + category), the facet renders it as the build-path.** One door → the workbench for full editing. (E4's lineage door later deepens this to per-cell.)
+Secondary (the original phrasing): structure-derived filter affordances on the element = DW-B core-ops + C4 offers — unchanged, lands after E3.
 
-**DoD** — walk-documented gap → design fold into DW-B/C4 (or a justified earlier slice) → filters offered per the element's real data structure → J-walk on a real dataTable.
+**DoD** — node data facet answers "რა დატაა" (honest summary) + "როგორ აიგო" (named step chain) for EVERY spec kind (total by construction, C5) → one door to the workbench → J-walk on a real dataTable node; filters part per DW-B.
