@@ -1,17 +1,25 @@
-// ── lifecyclePlacement.fitness — ONE band, BOTH zooms, placement DERIVED (C3) ──────
+// ── lifecyclePlacement.fitness — ONE band, placement DERIVED, rows QUIET (C3 · DU6-IA-1) ──
 //
 //  DESIGN-0104 §2·C3 / brief item 5: the Authoring Lifecycle band is ONE component
-//  placed by the Placement Law in both zooms of a stored config document — NOT hand-
-//  mounted per host. This fitness proves:
-//    (1) the band's container is DERIVED from resolveSurface (no per-host literal), and
-//    (2) BOTH zooms — the Model-floor workbench head (full) + the browser row (compact) —
-//        mount the SAME <AuthoringLifecycleBand>, one dense and one not.
+//  placed by the Placement Law — NOT hand-mounted per host. DU6-IA-1 (§3d, owner-decided
+//  chip-only rows) sharpened the two zooms of a STORED spec's lifecycle:
+//    · FULL band — the Specs-floor workbench head (docId = the selected stored spec),
+//      the ONE action home (Publish / Discard live here and only here);
+//    · ROW zoom — the amber draft CHIP only (`SpecDraftChip`); the old dense row band
+//      is GONE from rows (`FF-METRIC-ROW-QUIET`'s sibling for specs — quiet rows, no
+//      second action home).
+//  This fitness proves:
+//    (1) the band's container is DERIVED from resolveSurface (no per-host literal);
+//    (2) the Specs-floor host (`SpecsBody`, the retired modeler's spec half) mounts the
+//        ONE <AuthoringLifecycleBand> in the workbench head;
+//    (3) rows mount the draft chip and NEVER a dense band — the row-level action
+//        regression is unrepresentable.
 //
-//  NOTE (SURFACED): the design names the "DATA facet" as the compact zoom, but that facet
-//  edits an element's INLINE data spec (element.data — no config.data_spec docId), so the
-//  config-REVISION lifecycle cannot apply there (an inline spec is published with its PAGE,
-//  a separate lifecycle). The faithful compact zoom of a STORED spec's lifecycle is the
-//  Model-floor browser row — both zooms here carry a real config docId.
+//  NOTE (SURFACED, kept from the C3 wave): the design names the "DATA facet" as the
+//  compact zoom, but that facet edits an element's INLINE data spec (element.data — no
+//  config.data_spec docId), so the config-REVISION lifecycle cannot apply there (an
+//  inline spec is published with its PAGE, a separate lifecycle). The faithful compact
+//  zoom of a STORED spec's lifecycle is the Specs-floor row — chip-only per DU6-IA-1.
 //
 import { describe, it, expect } from 'vitest'
 import { resolveSurface } from '../../../studio/placement/resolveSurface'
@@ -20,8 +28,8 @@ import {
   resolveLifecycleBandContainer, LIFECYCLE_BAND_SCOPE, LIFECYCLE_BAND_SHAPE,
 } from './lifecycleBandPlacement'
 
-// The Model-floor host source (Vite ?raw) — scanned to prove BOTH zooms mount the ONE band.
-const PANEL_SRC = import.meta.glob(['../DataModelingPanel.tsx'], {
+// The Specs-floor host source (Vite ?raw) — scanned to prove the zoom contract above.
+const PANEL_SRC = import.meta.glob(['../../../studio/specs/SpecsBody.tsx'], {
   query: '?raw', import: 'default', eager: true,
 }) as Record<string, string>
 /** Strip line + block comments so a symbol-scan can't be fooled by prose/JSDoc. */
@@ -37,17 +45,20 @@ describe('lifecycle band placement — DERIVED, not a per-host literal', () => {
   })
 })
 
-describe('lifecycle band — ONE component in BOTH zooms of a stored spec', () => {
-  it('the Model-floor host imports the ONE band component', () => {
-    expect(code).toMatch(/import\s*\{\s*AuthoringLifecycleBand\s*\}\s*from\s*'\.\/lifecycle\/AuthoringLifecycleBand'/)
+describe('lifecycle band — ONE component, one action home, quiet rows (DU6-IA-1 §3d)', () => {
+  it('the Specs-floor host exists and imports the ONE band component', () => {
+    // Guards the glob itself too: a moved/renamed host yields '' and fails loudly here.
+    expect(code).not.toBe('')
+    expect(code).toMatch(/import\s*\{\s*AuthoringLifecycleBand\s*\}\s*from\s*'.*\/lifecycle\/AuthoringLifecycleBand'/)
   })
 
   it('mounts the FULL band in the workbench head (docId = the selected stored spec)', () => {
     expect(code).toMatch(/<AuthoringLifecycleBand\s+docId=\{selectedSpec\.id\}/)
   })
 
-  it('mounts the COMPACT (dense) band in the browser row — the second zoom, same component', () => {
-    // The row wrapper renders the dense variant of the SAME band (not a fork).
-    expect(code).toMatch(/<AuthoringLifecycleBand[^>]*\bdense\b/)
+  it('rows carry the draft CHIP only — the dense row band is unrepresentable', () => {
+    // The row zoom is the amber chip (quiet rows); Publish/Discard have ONE home.
+    expect(code).toMatch(/<SpecDraftChip\s+specId=\{spec\.id\}/)
+    expect(code).not.toMatch(/<AuthoringLifecycleBand[^>]*\bdense\b/)
   })
 })

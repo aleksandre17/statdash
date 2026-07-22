@@ -7,9 +7,11 @@
 export { DataSpecEditor } from './DataSpecEditor'
 export type { DataSpecEditorProps } from './DataSpecEditor'
 
-// The full source/spec browser + editor body — shared by the wizard's DataStep
-// and the Studio Data surface (AR-49 M1.3). One component, no fork.
-export { DataModelingPanel } from './DataModelingPanel'
+// DU6-IA-1: `DataModelingPanel` RETIRED — its spec half became the Specs floor
+// (`studio/specs/SpecsBody`, the spec list + `DataWorkbench` takeover + cube-seed
+// consumer) and its raw-source CRUD the Sources floor (`studio/sources/SourcesBody`,
+// steward-gated). No single crammed modeler body remains (the owner's «ერთად შეტენილი»
+// dissolved into honest floors).
 
 export { QuerySpecEditor } from './editors/QuerySpecEditor'
 export { TimeseriesEditor } from './editors/TimeseriesEditor'

@@ -38,6 +38,15 @@ const CONTROL_SOURCES = import.meta.glob(['../inspector/controls/DataFacetField.
 }) as Record<string, string>
 const dataFacetSrc = Object.values(CONTROL_SOURCES)[0] ?? ''
 
+// The Sources floor — DU6-IA-1's new home for the raw-source CRUD (steward-gated). Read to
+// prove the machinery is hosted here behind the steward lens, not on any author-lens surface.
+const SOURCES_BODY_SRC = import.meta.glob(['./sources/SourcesBody.tsx'], {
+  query: '?raw',
+  import: 'default',
+  eager: true,
+}) as Record<string, string>
+const sourcesBodySrc = Object.values(SOURCES_BODY_SRC)[0] ?? ''
+
 // The AUTHOR-lens surfaces: every surface except the single Steward-only one
 // (ModelSurface — the raw modeler's legitimate home) and test files.
 const AUTHOR_SURFACES = Object.entries(SURFACE_SOURCES).filter(
@@ -69,16 +78,20 @@ describe('FF-AUTHOR-NO-QUERY — the governance lens (author=pipe-over-governed,
     expect(AUTHOR_SURFACES.length).toBeGreaterThanOrEqual(4)
   })
 
-  it('ModelSurface is the SOLE surface that references the RAW-SOURCE machinery — the wall', () => {
-    // The raw-source machinery (new-dataset definition) is reachable ONLY from the
-    // Steward's ModelSurface. Every OTHER surface — including the author's read-only Data
-    // Dictionary — is provably raw-source-free, so the guard can't silently exempt an
-    // author surface by a stale path filter.
+  it('NO Studio surface hosts the RAW-SOURCE machinery — it lives on the Sources floor, steward-gated (DU6-IA-1)', () => {
+    // DU6-IA-1 retired the Model-floor raw modeler: the raw-source CRUD (new-dataset
+    // definition) moved to the Sources floor (SourcesBody), gated behind the STEWARD lens.
+    // No `surfaces/*.tsx` hosts it anymore — an even stronger wall (the query cliff is off
+    // every surface, not just the author ones).
     const hosting = Object.entries(SURFACE_SOURCES)
       .filter(([path]) => !path.includes('.test.') && !path.includes('.fitness.'))
       .filter(([, src]) => RAW_SOURCE_MACHINERY.test(stripComments(src)))
       .map(([path]) => path)
-    expect(hosting).toEqual(['./surfaces/ModelSurface.tsx'])
+    expect(hosting).toEqual([])
+    // The machinery's HOME is the Sources floor, and it is STEWARD-gated (the wall stands).
+    expect(sourcesBodySrc.length).toBeGreaterThan(0)
+    expect(RAW_SOURCE_MACHINERY.test(stripComments(sourcesBodySrc))).toBe(true)
+    expect(/role === 'steward'/.test(stripComments(sourcesBodySrc))).toBe(true)
     // And the author's read-only data-model view exists and is one of the scanned surfaces.
     expect(SURFACE_SOURCES['./surfaces/DataDictionarySurface.tsx']).toBeDefined()
   })

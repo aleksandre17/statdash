@@ -26,14 +26,30 @@ export const STUDIO_BASE = '/studio'
 /** The canonical path for a surface — the single place the scheme is spelled. */
 export const studioSurfacePath = (surface: StudioSurface) => `${STUDIO_BASE}/${surface}`
 
-// ── The ONE Data workspace floor (ADR-051 DU1) ─────────────────────────────────
-//  The `data` surface is ONE destination whose internal IA is the four-floor ladder
-//  (Sources → Model → Pipelines → element). Which floor is open rides a query param so
-//  the floor is deep-linkable (a pasted `/studio/data?dataFloor=model` opens the Model
-//  floor) and the legacy `/studio/model` redirect can preserve its intent. Default =
-//  `sources` — the source is step 0 («ჯერ მონაცემი»), the honest first affordance.
+// ── The ONE Data workspace floors — a DECLARATION (ADR-051 DU1 · DU6-IA-1) ──────
+//  The `data` surface is ONE destination whose internal IA is a ladder of in-workspace
+//  FLOORS. DU6-IA-1 makes the floor SET a declaration (`FF-FLOOR-IS-DECLARED`): the
+//  three in-workspace floors — Sources → Model → Specs — are the SSOT the selector,
+//  the deep-links and the tests all project from; a new floor is one entry here, never a
+//  scattered `=== 'model'` conditional. (Floor 4, elements, stays on the canvas — the
+//  ladder ends with a link chip «ელემენტები — კანვასზე ↗», not a toggle.)
+//  Which floor is open rides a query param so the floor is deep-linkable (a pasted
+//  `/studio/data?dataFloor=specs` opens the Specs floor) and the legacy `/studio/model`
+//  redirect preserves its intent. Default = `sources` — the source is step 0 («ჯერ
+//  მონაცემი»), the honest first affordance.
 export const DATA_FLOOR_PARAM = 'dataFloor'
-export type DataFloor = 'sources' | 'model'
+
+/** The declared floor ids of the ONE Data workspace — the projection SSOT (DU6-IA-1). */
+export const DATA_FLOOR_IDS = ['sources', 'model', 'specs'] as const
+export type DataFloor = typeof DATA_FLOOR_IDS[number]
+export const DEFAULT_DATA_FLOOR: DataFloor = 'sources'
+
+/** Narrow a raw query value to a declared floor (unknown/absent → the default, step 0). */
+export function parseDataFloor(raw: string | null | undefined): DataFloor {
+  return (DATA_FLOOR_IDS as readonly string[]).includes(raw ?? '')
+    ? (raw as DataFloor)
+    : DEFAULT_DATA_FLOOR
+}
 
 /** Path to the ONE Data workspace, optionally opening a named floor (ADR-051 DU1). */
 export const studioDataPath = (floor?: DataFloor) =>
@@ -61,11 +77,13 @@ export interface WorkbenchCubeSeed {
   dataSource?: string
 }
 
-/** Path to the Data workspace's Model floor, seeded to browse `seed` in the workbench.
- *  Same `/studio/data` surface (an in-workspace floor switch, never a cross-surface teleport). */
+/** Path to the Data workspace's Specs floor, seeded to browse `seed` in the workbench.
+ *  Same `/studio/data` surface (an in-workspace floor switch, never a cross-surface teleport).
+ *  DU6-IA-1: the workbench + its seed consumer now live on the Specs floor (extracted from
+ *  the retired Model-floor modeler), so a browse-in-workbench gesture targets `dataFloor=specs`. */
 export function studioDataWorkbenchPath(seed: WorkbenchCubeSeed): string {
   const p = new URLSearchParams()
-  p.set(DATA_FLOOR_PARAM, 'model')
+  p.set(DATA_FLOOR_PARAM, 'specs')
   p.set(CUBE_SEED_PARAM, seed.datasetCode)
   if (seed.measures.length) p.set(CUBE_MEASURES_PARAM, seed.measures.join(','))
   if (seed.dataSource)      p.set(CUBE_STORE_PARAM, seed.dataSource)

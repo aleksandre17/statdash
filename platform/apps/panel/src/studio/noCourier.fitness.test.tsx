@@ -42,8 +42,10 @@ const APP_SRC: Record<string, string> = Object.fromEntries(
 )
 
 // The one workspace's Sources floor + the workbench host, isolated for targeted assertions.
+// DU6-IA-1: the workbench + its URL cube-seed consumer live on the Specs floor (SpecsBody),
+// extracted from the retired DataModelingPanel.
 const SOURCES_BODY = Object.entries(APP_SRC).find(([p]) => p.endsWith('/sources/SourcesBody.tsx'))?.[1] ?? ''
-const MODELING_PANEL = Object.entries(APP_SRC).find(([p]) => p.endsWith('/data-layer/DataModelingPanel.tsx'))?.[1] ?? ''
+const SPECS_BODY = Object.entries(APP_SRC).find(([p]) => p.endsWith('/specs/SpecsBody.tsx'))?.[1] ?? ''
 
 describe('FF-NO-DATA-COURIER — the courier store + cross-surface teleport are deleted', () => {
   it('the courier module `store/sourcesHandoff.ts` no longer exists', () => {
@@ -73,10 +75,10 @@ describe('FF-NO-DATA-COURIER — the courier store + cross-surface teleport are 
     expect(/useNavigate/.test(SOURCES_BODY)).toBe(true)
   })
 
-  it('the workbench host reads its cube seed off the workspace URL, not a courier store', () => {
-    expect(MODELING_PANEL.length).toBeGreaterThan(0)
-    expect(/useSearchParams/.test(MODELING_PANEL)).toBe(true)
-    expect(/CUBE_SEED_PARAM/.test(MODELING_PANEL)).toBe(true)
-    expect(/sourcesHandoff/.test(MODELING_PANEL)).toBe(false)
+  it('the workbench host (Specs floor) reads its cube seed off the workspace URL, not a courier store', () => {
+    expect(SPECS_BODY.length).toBeGreaterThan(0)
+    expect(/useSearchParams/.test(SPECS_BODY)).toBe(true)
+    expect(/CUBE_SEED_PARAM/.test(SPECS_BODY)).toBe(true)
+    expect(/sourcesHandoff/.test(SPECS_BODY)).toBe(false)
   })
 })

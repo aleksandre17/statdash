@@ -1,18 +1,9 @@
-import { lazy, Suspense, useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Box, Typography, Divider } from '@mui/material'
-import { SuspenseFallback } from '../../shared/SuspenseFallback'
 import { MetricCatalogManager } from '../model/MetricCatalogManager'
 import { DataFlowMap } from '../model/DataFlowMap'
 import { useActiveLocales } from '../../inspector/useActiveLocales'
 import type { Locale } from '../../types/constructor'
-
-// The raw source/spec/query modeling body — the SAME shared component (extracted,
-// not forked, in M1.3). Lazy so the editor suite (DataSpec editors + dnd-kit +
-// source authoring) loads only when a Steward opens Model mode; it never weighs
-// down the eager StudioShell chunk or any author-lens surface.
-const DataModelingPanel = lazy(() =>
-  import('../../features/data-layer').then((m) => ({ default: m.DataModelingPanel })),
-)
 
 // ── ModelSurface — the Steward's "define" workspace (AR-49 M2.1) ────────────────
 //
@@ -29,11 +20,18 @@ const DataModelingPanel = lazy(() =>
 //
 //  M2.2 (2026-07-09) fills Model mode's HEADLINE region: in-tool metric AUTHORING
 //  (MetricCatalogManager). Region order is top-to-bottom by frequency (spec §3.2,
-//  progressive disclosure): (1) the governed metric catalog + editor — the "define"
-//  half; (2) the relocated raw modeler — the escape hatch below it. Dimension
-//  authoring (spec §4.5 / M2.4) is DEFERRED — dimensions still reach authors as raw
-//  cube members; the semanticCatalog store preserves any existing dimensions through
-//  save (a clear seam, no capability lost).
+//  progressive disclosure): (1) the Data-Flow map — the orientation; (2) the governed
+//  metric catalog + editor — the "define" half. Dimension authoring (spec §4.5 / M2.4)
+//  is DEFERRED — dimensions still reach authors as raw cube members; the semanticCatalog
+//  store preserves any existing dimensions through save (a clear seam, no capability lost).
+//
+//  ── DU6-IA-1 — the raw modeler has gone to its own floors ─────────────────────
+//  The `DataModelingPanel` escape hatch that used to sit below the catalog is RETIRED:
+//  its spec half moved to the Specs floor (`SpecsBody` — the spec list + workbench),
+//  its raw-source CRUD to the Sources floor (steward-gated). The Model floor keeps
+//  exactly its governed objects — the flow map + the metric catalog — no crammed raw
+//  modeler underneath (the owner's «რა ზევით რა ქვევით», answered structurally).
+//  IA-2 re-lays this surface as master-detail; this wave only removes the squatter.
 export function ModelSurface({ locale }: { locale: Locale }) {
   const en = locale === 'en'
   const locales = useActiveLocales()
@@ -81,13 +79,6 @@ export function ModelSurface({ locale }: { locale: Locale }) {
 
       {/* Region 1 — the headline: define/edit the governed metric catalog (M2.2). */}
       <MetricCatalogManager locale={locale} locales={locales} openRequest={openRequest} />
-
-      <Divider flexItem />
-
-      {/* Region 3 — the relocated raw modeler — the Steward's escape hatch (spec §3.2). */}
-      <Suspense fallback={<SuspenseFallback label="Loading data editors" fill={false} />}>
-        <DataModelingPanel />
-      </Suspense>
     </Box>
   )
 }

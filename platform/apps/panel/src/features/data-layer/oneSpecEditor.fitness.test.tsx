@@ -36,7 +36,7 @@ import { render, screen, within, fireEvent } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import type { DataSpec, MetricDef } from '@statdash/engine'
 import { DataWorkbench } from './workbench/DataWorkbench'
-import { DataModelingPanel } from './DataModelingPanel'
+import { SpecsBody } from '../../studio/specs/SpecsBody'
 import { useConstructorStore } from '../../store/constructor.store'
 import { useMetricCatalogStore } from '../../discovery/metricCatalog.store'
 import { useRoleStore } from '../../studio/useRole'
@@ -101,7 +101,7 @@ describe('FF-ONE-SPEC-EDITOR — the workbench (+ its fallback lane) is the SOLE
   })
 
   // ── B · neither host mounts DataSpecEditor as a SIBLING of the workbench ───────────
-  it('HOST DataModelingPanel — a workbench-shaped spec shows the workbench with NO sibling raw editor', async () => {
+  it('HOST SpecsBody — a workbench-shaped spec shows the workbench with NO sibling raw editor', async () => {
     const SOURCE: DataSourceDef = { id: 'src-1', name: 'SDMX', type: 'sdmx-json', config: {}, status: 'connected' }
     const QUERY: NamedDataSpec = {
       id: 'spec-q', name: 'GDP query',
@@ -109,8 +109,8 @@ describe('FF-ONE-SPEC-EDITOR — the workbench (+ its fallback lane) is the SOLE
     }
     useConstructorStore.setState({ dataSources: [SOURCE], dataSpecs: [QUERY] })
     render(
-      <MemoryRouter initialEntries={['/studio/data?dataFloor=model']}>
-        <DataModelingPanel />
+      <MemoryRouter initialEntries={['/studio/data?dataFloor=specs']}>
+        <SpecsBody locale="ka" />
       </MemoryRouter>,
     )
     fireEvent.click(screen.getByText('GDP query'))
@@ -126,17 +126,17 @@ describe('FF-ONE-SPEC-EDITOR — the workbench (+ its fallback lane) is the SOLE
     expect(advanced).toContainElement(screen.getByTestId('spec-type-picker'))
   })
 
-  it('HOST DataModelingPanel — a NON-PIPELINE spec ALSO edits through the workbench fallback lane, NO DataSpecEditor branch, NO kind <Select>', async () => {
+  it('HOST SpecsBody — a NON-PIPELINE spec ALSO edits through the workbench fallback lane, NO DataSpecEditor branch, NO kind <Select>', async () => {
     // The DU3 core claim, at the exact place it used to break: a non-pipeline selectedSpec
-    // in the Model floor. It must take over the panel through DataWorkbench (the SAME
+    // in the Specs floor. It must take over the floor through DataWorkbench (the SAME
     // fallback lane the inspector door opens) — never fall through to a separate
     // DataSpecEditor mount with its kind Select.
     const SOURCE: DataSourceDef = { id: 'src-1', name: 'SDMX', type: 'sdmx-json', config: {}, status: 'connected' }
     const ROWLIST: NamedDataSpec = { id: 'spec-r', name: 'Manual rows', spec: { type: 'row-list', rows: [] } }
     useConstructorStore.setState({ dataSources: [SOURCE], dataSpecs: [ROWLIST] })
     render(
-      <MemoryRouter initialEntries={['/studio/data?dataFloor=model']}>
-        <DataModelingPanel />
+      <MemoryRouter initialEntries={['/studio/data?dataFloor=specs']}>
+        <SpecsBody locale="ka" />
       </MemoryRouter>,
     )
     fireEvent.click(screen.getByText('Manual rows'))

@@ -6,11 +6,11 @@ import { setupCanvasRegistry } from '../../canvas/setupCanvasRegistry'
 import { useConstructorStore } from '../../store/constructor.store'
 import type { NamedDataSpec } from '../../types/constructor'
 
-// The Steward's Model surface (AR-49 M2.1) — Model mode is now REAL: it mounts the
-// relocated DataModelingPanel (the raw source/spec/query/pivot modeler) as the
-// Steward's "define" workspace over the SAME live canvas. This proves the capability
-// the author's Data surface gave up (M2.1) is fully present here — the Strangler
-// relocation, not a deletion. The panel is lazy, so we await its mount.
+// The Steward's Model surface (AR-49 M2.1 · DU6-IA-1) — the governed semantic model:
+// the Data-Flow map (orientation) + the metric catalog (define). DU6-IA-1 RETIRED the
+// raw modeler (DataModelingPanel) that used to squat below the catalog — its spec half
+// moved to the Specs floor, its raw-source CRUD to the Sources floor. This surface no
+// longer hosts the source browser / spec workbench (the owner's «ერთად შეტენილი» undone).
 
 const SPEC: NamedDataSpec = {
   id: 'spec-1', name: 'GDP query',
@@ -23,8 +23,6 @@ beforeEach(() => {
 })
 
 function renderSurface(locale: 'en' | 'ka') {
-  // The lazy DataModelingPanel reads its in-workspace cube seed off the URL (ADR-051 DU2),
-  // so the surface renders within a router in production and here.
   return render(
     <MemoryRouter initialEntries={['/studio/data?dataFloor=model']}>
       <ModelSurface locale={locale} />
@@ -32,28 +30,22 @@ function renderSurface(locale: 'en' | 'ka') {
   )
 }
 
-describe('ModelSurface — the Steward\'s define workspace mounts the relocated modeler (AR-49 M2.1)', () => {
-  it('renders the Steward context caption synchronously (before the heavy chunk resolves)', () => {
+describe('ModelSurface — the Steward\'s define workspace (governed model only, DU6-IA-1)', () => {
+  it('renders the Steward context caption synchronously', () => {
     renderSurface('en')
     expect(screen.getByText(/Define the governed data model/)).toBeInTheDocument()
   })
 
   it('moves focus into the opened workspace region on mount (WCAG 2.1 AA · 2.4.3)', () => {
-    // The surface mounts only when the user opens the Data-model workspace, so focus
-    // lands here — the keyboard/AT payoff of the one-action jump the old split flow
-    // never delivered.
     renderSurface('en')
     const region = screen.getByRole('group', { name: 'Data model workspace' })
     expect(region).toHaveFocus()
   })
 
-  it('mounts the full DataModelingPanel (the relocated raw modeler — no capability lost)', async () => {
+  it('no longer hosts the retired raw modeler (no source browser / spec workbench squatting here)', () => {
     renderSurface('ka')
-    // The lazy modeler resolves and reads the store — its source browser + the seeded
-    // spec appear, proving the machinery is fully functional in Model mode.
-    // Generous timeout: Model mode's eager graph grew (M2.2 MetricCatalogManager),
-    // so the FIRST dynamic import of the modeler subsystem transforms more up front.
-    expect(await screen.findByText('მონაცემების წყაროები', {}, { timeout: 20000 })).toBeInTheDocument()
-    expect(screen.getByText('GDP query')).toBeInTheDocument()
+    // The old DataModelingPanel's source-browser header is gone from this surface.
+    expect(screen.queryByText('მონაცემების წყაროები')).toBeNull()
+    expect(screen.queryByTestId('modeling-workbench')).toBeNull()
   })
 })
