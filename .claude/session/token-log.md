@@ -443,3 +443,5 @@
 [2026-07-22 11:43] LAUNCH agent=explorer model-requested=sonnet task=0104-p1-live-verify-gdp-measure-fix
 [11:52] explorer 0104-p1-live-verify-gdp-measure-fix LIVE-VERIFIED 6/6 PASS: chart1 nominal ₾ 22148.7→104598.1 (ascending, not %-osc); chart2 per-capita $3281.2→10296.5 FULL through 2025 (not truncated 2017 as flagged-possible); chart3 growth% unchanged sane (2020:-6.3 COVID dip); chart4 unchanged; net: every /api/stats/observations req carries measure= coordinate (4 distinct measures seen); console: 0 errors/warnings → work/authoring-truth/0104/10-charts-1-4-overview.png
 [2026-07-22 11:45] RUN run=agent-a155b0d20f05a875f model-actual=claude-opus-4-8 calls=76 first-in=19834 peak-ctx=102831 out-tokens=26519
+[2026-07-22 11:46] LAUNCH agent=platform-architect model-requested=fable task=0104-phase3-elevation-apex-design
+[2026-07-22 11:48] RUN run=agent-a493e6aa5e70a3031 model-actual=claude-sonnet-5 calls=27 first-in=32849 peak-ctx=50371 out-tokens=3968
