@@ -1,65 +1,66 @@
 # Memory Index
 
 ## Auto-relocated (memory-home-guard — reconcile into a topic section)
-- [Framework-lens verdict (2026-07-15)](project_framework_lens_verdict.md) — five-lens deep audit + my core/framework verdict: converge-not-circle, the ONE gate that blocks proof
+- [Framework-lens verdict (2026-07-15)](project_framework_lens_verdict.md) — five-lens deep audit + core/framework verdict: converge-not-circle, the ONE gate that blocks proof
 - [Deep-audit corpus](reference_deep_audit_corpus.md) — where the five-lens ground truth + settled substrate ADRs live
-- [Deep system-architecture (2026-07-15)](project_deep_system_architecture_2026_07_15.md) — the un-named Projector law (Parts+Facets are ONE), artifact-identity forked 5×, PropFieldType fork, describeApp read-model gap; SSOT audit doc
-- [Platform layout & monorepo seams](project_platform_layout.md) — real path layout; chart/table/kpi are *panels* not nodes; @plugins alias seam; framework-seam pointers; ADR-012 rename key
-- [@geostat/@statdash alias resolution](project_geostat_alias_resolution.md) — packages resolve via path aliases, NOT npm workspaces; workspace:* is a latent install-breaker; the 6+ alias-map locations
+- [Deep system-architecture (2026-07-15)](project_deep_system_architecture_2026_07_15.md) — un-named Projector law (Parts+Facets are ONE), artifact-identity forked 5×, PropFieldType fork, describeApp gap
+- [Platform layout & monorepo seams](project_platform_layout.md) — real path layout; chart/table/kpi are *panels*; @plugins alias seam; ADR-012 rename key
+- [@geostat/@statdash alias resolution](project_geostat_alias_resolution.md) — path aliases NOT npm workspaces; workspace:* latent install-breaker; 6+ alias-map locations
 - [Panel as external product](project_panel_external_product.md) — panel ships externally; engine packages = the published SemVer contract
-- [catalog.ts React purity](project_catalog_react_purity.md) — plugins/catalog.ts pulls Shell modules; blocks apps/panel palette; fix = per-slice *.meta.ts extraction
-- [Charts split (Phase 8.1)](project_charts_split_8_1.md) — reusable pattern: split a generically-typed registry BY PACKAGE (two registries) to break the layer cycle
+- [catalog.ts React purity](project_catalog_react_purity.md) — plugins/catalog.ts pulls Shell modules; blocks apps/panel palette; fix = per-slice *.meta.ts
+- [Charts split (Phase 8.1)](project_charts_split_8_1.md) — split a generically-typed registry BY PACKAGE (two registries) to break the layer cycle
 - [Semantic Layer (Phase 10.1 N26)](project_semantic_layer_n26.md) — MetricRegistry as a 2nd registry axis; by→encoding.series; provenance via MetadataPort decorator
-- [AR-40 Semantic Layer + Featured-Slider (DESIGNED)](project_ar40_semantic_layer_featured_slider.md) — COMPLETE the MetricDef registry: U1 makes interpretKpi point-read metric-aware +format governed once; first consumer = landing featured-slider; SSOT=SPEC-AR40
-- [Data-binding SHIPPED](project_data_binding_shipped.md) — VERIFIED 2026-06-26: 3 store KINDS behind one DataStore port; metric→store + declarative blend wired; open work = ADOPTION not architecture; still defer D3-PLANNER
-- [Deferred framework seams](project_deferred_framework_seams.md) — published-but-unconsumed seams (getByCapability, node:status, PropSchemaForm, SwitchNode) + their activation triggers
-- [Authoring-Schema SSOT epic](project_authoring_schema_ssot.md) — Constructor must CONSUME engine manifest/PropSchema not fork it; P1 SHIPPED; P2 saveGuard / P3 chart fieldConfig / P4 dataLinks fan out in parallel
+- [AR-40 Semantic Layer + Featured-Slider (DESIGNED)](project_ar40_semantic_layer_featured_slider.md) — complete MetricDef registry; U1 metric-aware interpretKpi; first consumer = landing featured-slider; SSOT=SPEC-AR40
+- [Data-binding SHIPPED](project_data_binding_shipped.md) — VERIFIED 2026-06-26: 3 store KINDS behind one DataStore port; open work = ADOPTION; defer D3-PLANNER
+- [Deferred framework seams](project_deferred_framework_seams.md) — published-but-unconsumed seams (getByCapability, node:status, PropSchemaForm, SwitchNode) + activation triggers
+- [Authoring-Schema SSOT epic](project_authoring_schema_ssot.md) — Constructor CONSUMES engine manifest/PropSchema, never forks; P1 SHIPPED; P2/P3/P4 fan out
 - [Unit attachment level](project_unit_attachment_level.md) — UNIT_MEASURE attaches at the MEASURE-classifier level, not dataset, not series
 - [Seed units codelist mismatch](project_seed_units_codelist_mismatch.md) — seed-units.ts emits PCT but V16 seeds PERCENT; breaks once unit_code becomes an FK
-- [Responsive CSS model](project_responsive_css_model.md) — binding spine = DESIGN-css-responsive-standard.md; honest height band clamp; KPI @container ladder; FF-HEADER-NO-OVERFLOW + FF-PAGE-MEASURE-SSOT locks
-- [Chrome/Panel/Section unification](project_chrome_panel_section_unification.md) — SHIPPED 2026-07-01: body-only height model; map-collapse resolved; SectionShell-as-PanelLayout-adapter still aspirational
-- [Multi-tenancy — RESOLVED (SaaS)](project_multitenancy_decision_fork.md) — owner chose multi-tenant SaaS 2026-06-28; TIERED HYBRID pool-default+silo-escape, RLS spine, agency=tenant; 5 verified-in-code corrections + FF gates; ADR at platform/work/
-- [Memory-home resolution + SSOT enforcement](project_memory_home_resolution.md) — memory resolves CWD-relative (not CLAUDE_PROJECT_DIR); strays self-heal via memory-home-guard.py + doctor backstop
-- [AR-48 delivery port (export/embed/snapshot) DESIGNED](project_ar48_delivery_port.md) — backend ~80% BUILT (reference-grade), "stub" docs are STALE; real work = wire the dark client seam + image/provenance/card-scope facets; SSOT=DESIGN-delivery-port doc
-- [Bounded-Element bands (ADR-038/039)](project_bounded_element_bands.md) — canvas item selection: homogeneous props band (kpi-strip, SHIPPED) vs discriminated page-filter band (BE-4, DESIGN SETTLED); BandSource port; filter SSOT reconciles cheaply, no runner fork
-- [DB layer](project_db_layer.md) — Phase-2 DB (PG+Timescale+LTREE+JSONB) structural SSOT; two-schema physical isolation (stats.* / config.*); async-ready engine contract
-- [i18n DB](project_i18n_db.md) — two co-existing locale patterns (JSONB bags vs classifier_display.locale rows); keep ka/en short subtags + config.locale registry; canonical img HAS ICU
-- [Ingestion architecture](project_ingestion_architecture.md) — proposed Staged Submission Pipeline (Medallion + 202-job + PUBLISH gate) replacing manual seed.ts; reuse anchors in-SQL
-- [Live provisioning](project_live_provisioning.md) — Flyway V1-V32 + R__ repeatable GOLD seed; fresh DB re-seeds 3-dim placeholders unless R__ neutralized; GDP_ANNUAL DSD conflict
-- [GDP page dim underspecification](project_gdp_page_dim_underspecification.md) — GDP panels pin only measure+time; obs route does NO aggregation; a 4-dim real GDP needs approach+geo pinned per panel or render garbles
-- [API demo parity](project_api_demo_parity.md) — root causes blocking :3002 demo parity: ApiStore missing display channel + stats-api classifier/obs wire drift + empty aggregates + regional _T pollution
-- [engine/core build gap](project_engine_core_build_gap.md) — core is dist-pointing w/ NO tsconfig + empty dist + undeclared @geostat/expr dep; Node consumers (apps/api) break; bundler apps hide it
-- [Typecheck baseline](project_typecheck_baseline.md) — root `tsc --noEmit`=0 is a FALSE GREEN; real gate is `cd apps/geostat && tsc -b`; baseline now clean; 3 i18next suite-load failures are environmental
+- [Responsive CSS model](project_responsive_css_model.md) — spine = DESIGN-css-responsive-standard.md; honest height band clamp; FF-HEADER-NO-OVERFLOW + FF-PAGE-MEASURE-SSOT
+- [Chrome/Panel/Section unification](project_chrome_panel_section_unification.md) — SHIPPED 2026-07-01: body-only height model; SectionShell-as-PanelLayout-adapter still aspirational
+- [Multi-tenancy — RESOLVED (SaaS)](project_multitenancy_decision_fork.md) — owner chose SaaS 2026-06-28; TIERED HYBRID pool+silo-escape, RLS spine, agency=tenant; ADR at platform/work/
+- [Memory-home resolution + SSOT enforcement](project_memory_home_resolution.md) — memory resolves CWD-relative; strays self-heal via memory-home-guard.py
+- [AR-48 delivery port DESIGNED](project_ar48_delivery_port.md) — backend ~80% BUILT ("stub" docs STALE); work = dark client seam + image/provenance/card-scope facets
+- [Bounded-Element bands (ADR-038/039)](project_bounded_element_bands.md) — homogeneous props band (SHIPPED) vs discriminated page-filter band (BE-4 SETTLED); BandSource port
+- [DB layer](project_db_layer.md) — Phase-2 DB (PG+Timescale+LTREE+JSONB) structural SSOT; two-schema isolation (stats.*/config.*); async-ready engine contract
+- [i18n DB](project_i18n_db.md) — two locale patterns (JSONB bags vs classifier_display rows); ka/en short subtags + config.locale registry; canonical img HAS ICU
+- [Ingestion architecture](project_ingestion_architecture.md) — Staged Submission Pipeline (Medallion + 202-job + PUBLISH gate) replacing seed.ts
+- [Live provisioning](project_live_provisioning.md) — Flyway V1-V32 + R__ GOLD seed; fresh DB re-seeds 3-dim placeholders unless R__ neutralized; GDP_ANNUAL DSD conflict
+- [GDP page dim underspecification](project_gdp_page_dim_underspecification.md) — GDP panels pin only measure+time; 4-dim real GDP needs approach+geo pinned per panel
+- [API demo parity](project_api_demo_parity.md) — :3002 blockers: ApiStore missing display channel + classifier/obs wire drift + empty aggregates + regional _T pollution
+- [engine/core build gap](project_engine_core_build_gap.md) — core dist-pointing w/ NO tsconfig + empty dist + undeclared @geostat/expr dep; Node consumers break
+- [Typecheck baseline](project_typecheck_baseline.md) — root `tsc --noEmit`=0 is FALSE GREEN; real gate `cd apps/geostat && tsc -b`; baseline clean
 - [engine/react locale-agnostic](feedback_engine_react_locale_agnostic.md) — hook BLOCKS Georgian codepoints + 'ka' literals in engine/react; use 'en'/'fr' in tests
-- [dev mode, never prod](feedback_dev_mode_never_prod.md) — all work runs on dev/staging; prod is a live LAN demo, owner-gated deploy only; dev creds in gitignored apps/api/.env
-- ADR-001 data-binding-architecture — one DataStore port + N source kinds; ship blend seam, defer planner. Accepted (partial)
+- [dev mode, never prod](feedback_dev_mode_never_prod.md) — all work on dev/staging; prod is a live LAN demo, owner-gated deploy; dev creds gitignored apps/api/.env
+- ADR-001 data-binding — one DataStore port + N source kinds; ship blend seam, defer planner. Accepted (partial)
 - ADR-002 platform-and-constructor-vision — config-object SSOT + pure SDUI renderer; coverage LEADS. Proposed (vision)
 - ADR-003 constructor — open store model, PropSchema inspector, lossless round-trip, G3 live preview. Accepted (substantially built)
 - ADR-004 ingestion-pipeline — generic self-describing canonical-workbook parser PRIMARY; per-template mapping SECONDARY. Proposed
-- ADR-005 mode-as-perspective-axis — generalize privileged mode into generic perspective axis; delete by-mode, no shim. Proposed (final)
+- ADR-005 mode-as-perspective-axis — privileged mode → generic perspective axis; delete by-mode, no shim. Proposed (final)
 - ADR-006 semantic-token-theming-spine — 3-tier tokens; brand-neutral default + [data-tenant]; byte-identical geostat. Proposed
 - ADR-007 sdmx-p1-frontier — P1 = ConceptScheme V27 + lifecycle FSM V28 + CategoryScheme V29; defer the rest. Proposed
-- ADR-008 deployment-topology — per-app single-origin reverse proxy; vite-only build stage; SPA fallback; no wildcard CORS. Proposed
+- ADR-008 deployment-topology — per-app single-origin reverse proxy; vite-only build; SPA fallback; no wildcard CORS. Proposed
 - ADR-009 element-config-schema-seam — kill shared-base bloat; per-slice schema; base-minimality fitness fn. Proposed
-- ADR-010 multistore-storeid-reintroduction — routing spine LIVE; re-adopt metric→store + authoring; defer envelope/auth/blending (D1-D3). Accepted
-- ADR-011 time-range-readiness-seam — store-builder folds server time coverage into classifiers['time'] so pick:last resolves sync. Proposed
-- ADR-012 platform-structure-rearchitecture — engine/→packages/, @geostat→@statdash, new @statdash/contracts; keep the arrow; Strangler-Fig. Proposed
+- ADR-010 multistore-storeid — routing spine LIVE; re-adopt metric→store + authoring; defer envelope/auth/blending. Accepted
+- ADR-011 time-range-readiness-seam — store-builder folds server time coverage into classifiers['time']. Proposed
+- ADR-012 platform-structure — engine/→packages/, @geostat→@statdash, new contracts pkg; Strangler-Fig. Proposed
 - ADR-013 shell-variant-style-spine — meta-declared VariantDef → data-attrs; hero+compact → one emphasis enum. Proposed
 - ADR-014 no-privileged-element-capability-nav — nav-contributor + nav-transparent caps + registry visitor. Proposed
-- ADR-015 statistical-platform-north-star — maturity vision vs Eurostat/.Stat/IMF; 3 ports absorb the roadmap; trigger-gated. Proposed (vision)
+- ADR-015 statistical-platform-north-star — maturity vision vs Eurostat/.Stat/IMF; 3 ports absorb roadmap; trigger-gated. Proposed
 - ADR-016 content-constraint — cube-region predicate-row model validated in SILVER. Accepted (implemented)
-- ADR-017 geostat-detenant-phase-c — serialize bundle BronzePayload to ops/seed-data/; 4-way parity gate before deletion. Proposed
-- ADR-018 bootstrap-phase-b — geostat SiteManifest from Postgres; nav as site_config.nav blob; publish in provisioning upsert. Designed
-- ADR-0023 classifier-code-path — hierarchy moves surrogate-id-chain → code-chain LTREE over (dim_code,code); V23 EXPAND + V24 CONTRACT. Accepted (design)
-- ADR-0025 vintage-release — release = publication-event aggregate stamped via GUC/triggers; V25 additive + genesis backfill. Accepted (design)
-- ADR-0026 bootstrap-runner — apps/geostat becomes a generic SDUI runner booting from GET /api/bootstrap. Proposed. Phase B=ADR-018, C=ADR-017
-- ADR-048 transient-failure-grammar + the ONE fetch scheduler — scheduler at ApiStore network seam (packages/core, client-global singleton): concurrency cap + Retry-After backoff on 429/503 + SWR last-good; ABOVE _cache dedupe, BELOW cache write (warm≡read untouched). `transient-retrying` joins ValueState; boot fetch backs off vs the English emptyManifest dead-end. Hard network reject fails FAST. Accepted+BUILT-GREEN (card 0092, sweep #1); live-verify pending
-- ADR-049 assembly-by-declaration — the *binding* axis gets its port + objects land composed. P1 DataSpec authoring-contract registry (3 DataSpecEditor switch(type)→one generic renderer; anchor=extend SchemaSource UP; ratchet FF-NO-DATASPEC-SWITCH first) → P2a un-bury (drop DataFacetField:124, wire VisibilityBuilder, build TrendField) → P2b Composed-Preset projection (preset=partial declaration on objectRegistry→palette). EXTENDS ADR-038/041, no 5th grammar, no object-model change. P1 WIP=1. Proposed. Card 0100
+- ADR-017 geostat-detenant-phase-c — serialize bundle BronzePayload to ops/seed-data/; 4-way parity gate. Proposed
+- ADR-018 bootstrap-phase-b — geostat SiteManifest from Postgres; nav as site_config.nav blob. Designed
+- ADR-0023 classifier-code-path — hierarchy → code-chain LTREE over (dim_code,code); V23 EXPAND + V24 CONTRACT. Accepted (design)
+- ADR-0025 vintage-release — release = publication-event aggregate via GUC/triggers; V25 additive + genesis backfill. Accepted (design)
+- ADR-0026 bootstrap-runner — apps/geostat = generic SDUI runner booting from GET /api/bootstrap. Proposed. Phase B=ADR-018, C=ADR-017
+- ADR-048 transient-failure-grammar — ONE fetch scheduler at ApiStore seam (cap + Retry-After backoff + SWR last-good, above dedupe/below cache-write); `transient-retrying` joins ValueState. Accepted+BUILT-GREEN (0092); live-verify pending
+- ADR-049 assembly-by-declaration — binding axis gets its port; P1 DataSpec authoring-contract registry (switch→generic renderer, ratchet FF-NO-DATASPEC-SWITCH) → P2a un-bury → P2b Composed-Preset. Extends ADR-038/041. Proposed. Card 0100
 - [ADR-050 canonical-panel-ia](project_adr050_canonical_panel_ia.md) — "projection-missing" disease; skeleton=page-kind×PresetDecl; R1→R6
-- ADR-047 metric-natural-coordinates + honest-null-calc-floor — D1: grain-∅ browse neutralizes FOREIGN ctx pins to '' (empty-wildcard crosses the react re-merge wall), naturality DERIVED from the obs slice (NOT declared — MetricDef.dims is pins-not-axes, surprise). D2: resolveMetricValue short-circuits to null via storeCellAt when a component is no-data (+ MetricInput.coalesce escape); extends ADR-045. Wave A (D1)=minimal ⛔ W-P5 door unblock; Wave B (D2)=uniform Law-11 floor. Closes 0082 W-P5c FINDING. Accepted (design)
-- ADR-0033 worktree-loss-guard-and-arrow-ownership — two-tier worktree_guard (session-boundary bulk-delete detector + PreToolUse Bash reminder) after the 451-file working-tree-loss incident. Accepted
-- ADR-042 authoring-triprojection-and-placement-port — authoring = Select⊥Inspect⊥Manipulate over ONE Part model; Placement port (`placePart`) = writePart's structural sibling; designs OUT the owner's 5 rot (section-de-privilege via CAPS.LAYOUT + retire AUTOWRAP literal; inspector = facet tab-bar over the BUILT facetRegistry; data = bounded ctx referenced by handle; chrome folds in; SOLID machine-held). ACCEPTED (lead). Build plan = SPEC-authoring-experience-architecture §9. First = Slice 0 Placement seam. NOTE: Inspect/Facet axis already BUILT in code (docs were stale)
+- [ENC-1 canonical encoding grammar (0113 DESIGNED)](project_enc1_canonical_encoding.md) — role channels kept (not VL x/y); VL per-channel record adopted whole; 5 carriers→projections; E0 before E2 editor
+- ADR-047 metric-natural-coordinates + honest-null floor — D1 grain-∅ browse neutralizes FOREIGN ctx pins to '' (naturality DERIVED from obs slice, not declared); D2 resolveMetricValue → null via storeCellAt (+coalesce escape). Closes 0082 W-P5c. Accepted (design)
+- ADR-0033 worktree-loss-guard — two-tier worktree_guard after the 451-file loss incident. Accepted
+- ADR-042 authoring-triprojection + Placement port — Select⊥Inspect⊥Manipulate over ONE Part model; `placePart` = writePart's sibling; kills 5 rot (section de-privilege, facet tab-bar, data-by-handle, chrome folds in). ACCEPTED. Build plan SPEC §9; Inspect axis already BUILT (docs were stale)
 - [Part Grammar Foundation](project_part_grammar_foundation.md) — ADR-041 ROOT-1..4 object-model foundation; accepted cut, phase order, the one-way step
-- [S6 Chrome Unification](project_s6_chrome_unification.md) — chrome-as-part (ADR-041 R4): chrome residence is `sourced` NOT `slot`; seam inventory; HALTED for sign-off
-- [architect deliver-and-stop](feedback_architect_deliver_and_stop.md) — foundation commission = ADR + plan (+ inert scaffold) then STOP; lead routes phases; don't touch board/registry
-- [protection layer first-class](feedback_protection_layer_first_class.md) — in foundation reforms, land regression-guard FFs (ratchet) + enforcement/discoverability EARLY as a fence, never an end-of-plan afterthought
+- [S6 Chrome Unification](project_s6_chrome_unification.md) — chrome-as-part (ADR-041 R4): chrome residence is `sourced` NOT `slot`; HALTED for sign-off
+- [architect deliver-and-stop](feedback_architect_deliver_and_stop.md) — foundation commission = ADR + plan (+ inert scaffold) then STOP; lead routes phases
+- [protection layer first-class](feedback_protection_layer_first_class.md) — land regression-guard FFs (ratchet) + enforcement EARLY as a fence, never an afterthought
