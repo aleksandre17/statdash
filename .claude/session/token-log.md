@@ -433,3 +433,7 @@
 [2026-07-22] SESSION ROLLUP: runs=400 total_tokens=16012084526  (SessionEnd hook — measured)
 [2026-07-22 10:27] LAUNCH agent=senior-frontend-developer model-requested=sonnet task=memory-curation-own-dir
 [2026-07-22 10:27] LAUNCH agent=engine-specialist model-requested=sonnet task=memory-curation-own-dir
+[2026-07-22 10:35] RUN run=agent-a4b01ec8abdcf1b1a model-actual=claude-sonnet-5 calls=152 first-in=24043 peak-ctx=159758 out-tokens=31667  ⚠ CTX-BURN: peak 159758 > 120000 — audit the brief/packet
+[2026-07-22 11:01] LAUNCH agent=chief-engineer model-requested=opus task=0104-step1-live-verify-capability-restoration
+[2026-07-22 11:04] RUN run=agent-a319caa885b69d92b model-actual=claude-sonnet-5 calls=418 first-in=25791 peak-ctx=511591 out-tokens=41041  ⚠ CTX-BURN: peak 511591 > 120000 — audit the brief/packet
+[11:17] opus-b 0104-step1-live-verify tokens=~118k files=8 → work/authoring-truth/0104/01..08 (new, screenshots); 7/7 PASS live-verified
