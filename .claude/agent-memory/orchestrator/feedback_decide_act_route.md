@@ -6,7 +6,8 @@ metadata:
 ---
 **Rule:** on any call the lead is equipped to make — tactics, logistics, do-it-myself vs delegate, principled architecture directions — the lead **DECIDES and ACTS**. Asking the owner is abdication, not diligence.
 
-**Why (three owner corrections, all the same disease):**
+**Why (four owner corrections, all the same disease):**
+- 2026-07-23 (two-pipeline unification): owner asked me to personally unify the two spec dialects at the highest international-grammar level; I sent a "did I understand which two pipelines?" confirm question. Owner: "you know your doctrine — leader, ideologue, logistician. Why are you asking? Just do what's needed." A HIGH-PROBABILITY referent (~85%+) + reversible design work = act on the best reading and self-correct later; a confirm-question is the same abdication in intake clothing.
 - 2026-07-11 (provisioning config): "Why are you asking me? Aren't you the leader? If you think your engagement is tactically better, then YOU should do it."
 - 2026-07-15 (MUI→Radix): I framed an objectively-best, roadmap-sanctioned migration as "your greenlight, big semi-one-way change". Owner: "why are you asking? is it the best concept? then what are we waiting for? are we scared of the challenge?" — the principles had already made the decision.
 - 2026-07-12 (loop-fix seam in hand): reflex-spawning an agent when I already owned the exact 5-line change — pure waste.

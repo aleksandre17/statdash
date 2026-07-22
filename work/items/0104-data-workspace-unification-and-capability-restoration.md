@@ -93,3 +93,6 @@ Verbatim: «საერთოდ არ მომწონს ეს გვე�
 
 ## Discipline carried forward
 WIP=1 (finish end-to-end: built→gated→**live-J-walked**→shown). **Capability-parity pre-gate before any retire/merge.** Verify the PURPOSE on the live render, never a proxy. Owner feedback QUEUES, never abandons. Decide-and-drive reversible work; don't ask what I can decide.
+
+## 🏛️ ONE-PIPE — the two-dialect unification EXECUTED (2026-07-23 night, owner-ordered)
+Design `DESIGN-one-pipeline-grammar.md` (lead pen; D1–D8, U0–U4) + `RECON-two-dialect-capability-map.md`. Executed: **U0** dialect honesty `ee436398`+`3af53567` · **U1** live-switch widened `f503a057` (one desugar scope) · **U3 ⛔ FIRED `930bebe9`** — pages gdp(8)/regional(6)/accounts(4) + 12 stored specs → pipeline, PUT 200 all, backups `work/data-spec-backups/one-pipe-u3-*`, parity 0-fail, idempotent re-run; acceptance walk 4/5→5/5 after the structural-coincidence fix (evidence 60-u3-*, 61-one-block). **At rest the grammar is ONE.** Queue: normalize-on-write (api PUT seam) · U2 `cells` head (1 blocked scratch spec + ratio/row-list class) · U4 contract (bespoke resolvers retire w/ parity) · provisioning seed JSON re-emission.
