@@ -16,6 +16,6 @@ The real lesson was never "always isolate" — it was "don't entangle *concurren
 1. Default: work serially on the current branch — myself or one agent at a time; no worktree, no side-branch.
 2. TRUE parallelism deliberately chosen → isolate, and brief each agent to base its worktree off the ACTIVE feature branch (not local main), knowing fresh worktrees lack `node_modules` for gates.
 3. If lanes MUST share a tree: nobody (lead included) commits until all are done; every stage/commit by explicit pathspec, never `git add -A`; each agent commits ONLY its own files.
-4. Prefer serialize over parallelize whenever possible — the owner values time; isolation ceremony is only justified by unavoidable concurrency.
+   - **LEAD TRIPWIRE (recurred 2026-07-22, BY the lead):** `git add <file> && git commit` is NOT pathspec-safe — `git commit` without `-- <paths>` sweeps EVERYTHING staged, including an in-flight agent's staged files (a P0 fix landed under a docs commit message this way). While ANY build agent is in flight, the lead commits ONLY as `git commit -- <explicit paths>` (or waits). "My add was scoped" is the trap — the COMMIT is what must be scoped. A brief's freshness stamp also goes stale the moment the lead launches MORE agents/commits after it — the collision map is a rolling duty, not a launch-time note.
 
 Related: [[agent-management-discipline]], [[built-but-buried-audit]], the work-protection doctrine.
