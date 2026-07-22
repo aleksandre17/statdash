@@ -22,7 +22,7 @@
 //  Slot taxonomy: drop zones come straight from nodeRegistry.getSlots(type) —
 //  the SlotDef.accepts list IS the drag-accept contract. No new fields invented.
 //
-import { useLayoutEffect, useRef, useState, useCallback } from 'react'
+import { useLayoutEffect, useMemo, useRef, useState, useCallback } from 'react'
 import {
   nodeRegistry,
   PART_FIELD_ATTR, PART_INDEX_ATTR, PART_NODE_ID_ATTR,
@@ -31,7 +31,7 @@ import {
 import type { NodeBase, SlotDef, ObjectMeta, ChromeSlotConfig, ChromeEntry } from '@statdash/react/engine'
 import type { FilterSchemaInput }    from '@statdash/engine'
 import { resolveLocaleString }       from '@statdash/engine'
-import { walkNodes }                 from './walkNodes'
+import { walkNodes, parentMap }      from './walkNodes'
 import type { WalkedNode }           from './walkNodes'
 import { resolveAnchorBox }          from './anchorBox'
 import { enumerateParts }            from './bandSource'
@@ -187,6 +187,8 @@ export function CanvasOverlay({
   onSelect, onSelectItem, chrome, onDrop, onBindMetric, locale,
 }: CanvasOverlayProps) {
   const overlayRef = useRef<HTMLDivElement>(null)
+  // Child-id → parent-id over the rendered tree — the select-behind cycle reads it (R5).
+  const parents = useMemo(() => parentMap(page), [page])
   const [frames, setFrames] = useState<NodeFrame[]>([])
   const [drops,  setDrops]  = useState<DropFrame[]>([])
   const [items,  setItems]  = useState<ItemFrame[]>([])
@@ -435,7 +437,19 @@ export function CanvasOverlay({
             aria-label={`Select ${f.type}`}
             aria-pressed={nodeSelected}
             style={{ left: f.rect.left, top: f.rect.top, width: f.rect.width, height: f.rect.height }}
-            onClick={(e) => { e.stopPropagation(); onSelect(f.id) }}
+            onClick={(e) => {
+              e.stopPropagation()
+              // Select-behind (0112 R5 — Figma/Illustrator-class): the deepest child paints
+              // ON TOP (framed last), so a parent an edge-to-edge child fully covers is
+              // otherwise unclickable. A repeat click on the already-selected node cycles
+              // selection UP to its container, walking the whole ancestor chain reachable;
+              // reaching the root (no parent) deselects, closing the cycle. First click is
+              // unchanged (selects the clicked node). Consistent with the existing deepest-
+              // wins single-click model — no inversion, no border-zone geometry (which an
+              // edge-to-edge child leaves no room for).
+              const alreadySelected = f.id === selectedNodeId && !selectedItemPath
+              onSelect(alreadySelected ? (parents.get(f.id) ?? null) : f.id)
+            }}
             onDragOver={handleMetricOver(f.id)}
             onDragLeave={() => setMetricOverId((s) => (s === f.id ? null : s))}
             onDrop={handleMetricDrop(f.id)}

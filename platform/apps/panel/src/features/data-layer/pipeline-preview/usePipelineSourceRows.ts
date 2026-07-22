@@ -29,7 +29,7 @@ import {
 } from '@statdash/engine'
 import { resolveStore } from '@statdash/react/engine'
 import { useLivePreviewStores } from '../../../canvas/useLivePreviewStores'
-import { useActiveLocales } from '../../../inspector/useActiveLocales'
+import { useActivePageContext } from '../../../canvas/pageContext'
 import { isHeadBound, sourceOnlySpec } from '../workbench/workbenchModel'
 
 /** The declared read state — loading is DISTINCT from empty (async trap #10). */
@@ -59,7 +59,6 @@ function readSource(store: DataStore, spec: PipelineSpec, ctx: SectionContext): 
  * the tail (the `Get` step output) plus the PipelineContext for the prefix-run.
  */
 export function usePipelineSourceRows(head: SourceStep | undefined, encoding: PipelineSpec['encoding']): PipelineSource {
-  const locale = useActiveLocales()[0] ?? 'ka'
   const { stores, status: liveStatus } = useLivePreviewStores('live')
 
   const bound = isHeadBound(head)
@@ -87,7 +86,11 @@ export function usePipelineSourceRows(head: SourceStep | undefined, encoding: Pi
     [stores, sourceSpec],
   )
 
-  const ctx = useMemo<SectionContext>(() => ({ dims: {}, locale }), [locale])
+  // The page's DEFAULT eval context (0112 R1) — the SAME engine default-dims derivation
+  // the canvas renders under (deriveDefaultDims over the page filterSchema), projected
+  // panel-side. Replaces the old hard-coded `{ dims: {} }` that starved every `$ctx`
+  // ref → 0 preview rows while the canvas showed full data (the divergence class dies).
+  const ctx = useActivePageContext()
   const pipeCtx = useMemo<PipelineContext>(
     () => ({ classifiers: store.classifiers, display: store.display, section: ctx }),
     [store, ctx],

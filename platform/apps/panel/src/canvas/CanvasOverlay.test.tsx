@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll, vi } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
 import { CanvasOverlay } from './CanvasOverlay'
-import { walkNodes }     from './walkNodes'
+import { walkNodes, parentMap } from './walkNodes'
 import { setupCanvasRegistry } from './setupCanvasRegistry'
 import { writeMetricDrag } from '../discovery/metricDrag'
 import type { NodeBase } from '@statdash/react/engine'
@@ -42,6 +42,95 @@ describe('walkNodes', () => {
     } as unknown as NodeBase
     const types = walkNodes(withData).map((w) => w.type)
     expect(types).toEqual(['section'])
+  })
+})
+
+describe('parentMap (0112 R5)', () => {
+  it('maps every child id to its container id over the rendered tree', () => {
+    const tree: NodeBase = {
+      type: 'inner-page', id: 'page-1',
+      children: [{ type: 'section', id: 'sec-1', children: [{ type: 'chart', id: 'chart-1' }] }],
+    } as unknown as NodeBase
+    const parents = parentMap(tree)
+    expect(parents.get('chart-1')).toBe('sec-1')
+    expect(parents.get('sec-1')).toBe('page-1')
+    expect(parents.get('page-1')).toBeUndefined()   // the root has no parent
+  })
+
+  it('does not cross data-carrying keys (an inline `data` spec is not a child)', () => {
+    const tree: NodeBase = {
+      type: 'section', id: 'sec-2',
+      data: { type: 'row-list', id: 'not-a-child', rows: [] },
+      children: [],
+    } as unknown as NodeBase
+    expect(parentMap(tree).has('not-a-child')).toBe(false)
+  })
+})
+
+// ── Select-behind (0112 R5) — an edge-to-edge child cannot orphan its container ──────
+//  The deepest child frame paints ON TOP (framed last), so a parent an edge-to-edge child
+//  fully covers is otherwise unclickable. A repeat click on the already-selected node cycles
+//  selection UP to its container (Figma/Illustrator-class), keeping the parent reachable.
+describe('CanvasOverlay — select-behind (0112 R5)', () => {
+  const nested: NodeBase = {
+    type: 'inner-page', id: 'page-1',
+    children: [{ type: 'section', id: 'sec-1', children: [{ type: 'chart', id: 'chart-1' }] }],
+  } as unknown as NodeBase
+
+  const renderNested = (props: { selectedNodeId?: string; onSelect: () => void }) =>
+    render(
+      <div className="canvas-root">
+        <div className="canvas-layer canvas-layer--renderer">
+          <div data-part-node-id="page-1"><div>page</div></div>
+          <div data-part-node-id="sec-1"><div>section</div></div>
+          <div data-part-node-id="chart-1"><div>chart</div></div>
+        </div>
+        <CanvasOverlay
+          page={nested}
+          selectedNodeId={props.selectedNodeId}
+          onSelect={props.onSelect}
+          onDrop={vi.fn()}
+        />
+      </div>,
+    )
+
+  const clickNode = (id: string) =>
+    fireEvent.click(document.querySelector(`.canvas-node[data-node-id="${id}"]`)!)
+
+  it('first click selects the clicked (deepest) node — unchanged direct-select', () => {
+    const onSelect = vi.fn()
+    renderNested({ onSelect })
+    clickNode('chart-1')
+    expect(onSelect).toHaveBeenCalledWith('chart-1')
+  })
+
+  it('a repeat click on the already-selected child cycles UP to its container (the covered parent)', () => {
+    const onSelect = vi.fn()
+    // chart-1 is already selected (it fully covers sec-1) → clicking it again reaches sec-1.
+    renderNested({ selectedNodeId: 'chart-1', onSelect })
+    clickNode('chart-1')
+    expect(onSelect).toHaveBeenCalledWith('sec-1')
+  })
+
+  it('the cycle walks the whole ancestor chain; the root deselects (closing the loop)', () => {
+    const onSelect = vi.fn()
+    // sec-1 selected → repeat click reaches page-1 (the section's container).
+    const { rerender } = renderNested({ selectedNodeId: 'sec-1', onSelect })
+    clickNode('sec-1')
+    expect(onSelect).toHaveBeenLastCalledWith('page-1')
+    // page-1 selected (the root) → repeat click has no parent → deselect (null).
+    rerender(
+      <div className="canvas-root">
+        <div className="canvas-layer canvas-layer--renderer">
+          <div data-part-node-id="page-1"><div>page</div></div>
+          <div data-part-node-id="sec-1"><div>section</div></div>
+          <div data-part-node-id="chart-1"><div>chart</div></div>
+        </div>
+        <CanvasOverlay page={nested} selectedNodeId="page-1" onSelect={onSelect} onDrop={vi.fn()} />
+      </div>,
+    )
+    clickNode('page-1')
+    expect(onSelect).toHaveBeenLastCalledWith(null)
   })
 })
 

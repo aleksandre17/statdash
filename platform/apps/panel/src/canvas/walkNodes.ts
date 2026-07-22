@@ -47,3 +47,30 @@ export function walkNodes(root: NodeBase): WalkedNode[] {
   visit(root)
   return out
 }
+
+/**
+ * Build the child-id → parent-id map over the SAME tree `walkNodes` flattens (the identical
+ * DATA_KEYS-skipping recursion, so containment is read from exactly the rendered structure).
+ * The overlay's select-behind (0112 R5) reads it to cycle selection UP to a container that
+ * an edge-to-edge child fully covers. A node with no string id (or its parent) contributes
+ * no entry — the map is a partial function, safe to `.get(id) ?? null`.
+ */
+export function parentMap(root: NodeBase): Map<string, string> {
+  const parents = new Map<string, string>()
+  const visit = (node: NodeBase) => {
+    const pid = typeof node.id === 'string' ? node.id : undefined
+    for (const key of Object.keys(node)) {
+      if (DATA_KEYS.has(key)) continue
+      const val = (node as unknown as Record<string, unknown>)[key]
+      const kids = Array.isArray(val) ? val : isNodeObject(val) ? [val] : []
+      for (const child of kids) {
+        if (!isNodeObject(child)) continue
+        const cid = typeof child.id === 'string' ? child.id : undefined
+        if (pid && cid) parents.set(cid, pid)
+        visit(child)
+      }
+    }
+  }
+  visit(root)
+  return parents
+}

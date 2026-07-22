@@ -17,6 +17,7 @@ import type { Role } from '../studio/useRole'
 import { dockSectionRegistry, type DockRenderCtx } from './sections/dockSection'
 import { registerBuiltinDockSections, registerFacetSections } from './sections/builtins'
 import { registerBuiltinFacets } from './facets/builtinFacets'
+import { applicableFacets } from './concern'
 import { setupCanvasRegistry } from '../canvas/setupCanvasRegistry'
 
 beforeAll(() => {
@@ -359,6 +360,49 @@ describe('FF-FACET-PROJECTED — a declared facet is a generic dock projection',
     expect(ids).toContain('element.facet.demo-facet')
     // …and both facet sections coexist (STYLE + demo) — the axis composes.
     expect(ids).toContain('element.facet.style')
+  })
+
+  // ── card 0112 · R2 — the two facet-projection surfaces AGREE on a data-OWNING section ──
+  //  A SECTION does NOT declare the `data-bindable` TYPE cap (only chart/table/geograph do),
+  //  yet it OWNS an inline `data` query at runtime (ADR-041 residence: ownership is an
+  //  INSTANCE property). Both the flat dock (registerFacetSections) AND the concern surface
+  //  (applicableFacets — the one the LIVE whole-node inspector renders) must project its Data
+  //  facet off the INSTANCE branch. Before the fix only the flat dock did → the section showed
+  //  NO Data facet live while this file's dock-only fitness passed (the jsdom-vs-live proxy).
+  it('R2 — a section owns `data-bindable` NOWHERE by type, so the instance branch is the real path', () => {
+    const sectionMeta = nodeRegistry.getMeta('section') as unknown as ObjectMeta
+    expect(sectionMeta?.caps ?? []).not.toContain('data-bindable')
+  })
+
+  it('R2 — the CONCERN surface (live inspector) projects Data for a data-OWNING section, and NOT for a data-less one', () => {
+    const sectionMeta = nodeRegistry.getMeta('section') as unknown as ObjectMeta
+    // Data-OWNING section: props carry the inline query at the DATA facet's readPath (`data`).
+    const owningFacets = applicableFacets(sectionMeta, 'author', {
+      data: { type: 'query', measure: '*' },
+    }).map((f) => f.id)
+    expect(owningFacets).toContain('data')
+    // A data-LESS section (no props.data, no cap) → the Data facet stays hidden.
+    const barefacets = applicableFacets(sectionMeta, 'author', {}).map((f) => f.id)
+    expect(barefacets).not.toContain('data')
+  })
+
+  it('R2 — flat dock ≡ concern surface for the SAME data-OWNING section (the divergence class dies)', () => {
+    const sectionMeta = nodeRegistry.getMeta('section') as unknown as ObjectMeta
+    const section = { id: 's-own', type: 'section', props: { data: { type: 'query', measure: '*' } } }
+
+    // Flat dock (registerFacetSections) — instance branch fires off `selected.props.data`.
+    const dockHasData = dockSectionRegistry
+      .list(elementCtx({ selected: section as never }, 'author'))
+      .map((s) => s.id)
+      .includes('element.facet.data')
+    // Concern surface (applicableFacets) — the SAME shared predicate over the same props.
+    const concernHasData = applicableFacets(sectionMeta, 'author', section.props)
+      .map((f) => f.id)
+      .includes('data')
+
+    expect(dockHasData).toBe(true)
+    expect(concernHasData).toBe(true)
+    expect(dockHasData).toBe(concernHasData)   // the two surfaces can no longer diverge
   })
 
   it('STYLE is universal over the real registered metas — no styleable cap, no chrome bleed', () => {

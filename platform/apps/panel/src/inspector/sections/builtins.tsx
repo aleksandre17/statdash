@@ -22,10 +22,9 @@ import { PerspectivesPane } from '../../features/perspectives'
 import { FiltersDrawer } from '../../features/filters'
 import { ChromeCompositionPanel } from '../../features/chrome'
 import { fixedSchemaSource, itemTitle } from '../controls/nestedItemControl.helpers'
-import { getAtPath } from '../showWhen'
 import { registerBuiltinFacets } from '../facets/builtinFacets'
 import { planesForRole, isPlaneVisible, filterSchemaByPlanes } from '../plane'
-import { bucketByConcern } from '../concern'
+import { bucketByConcern, facetAppliesToElement } from '../concern'
 import { ConcernGroups } from '../ConcernGroups'
 import type { CanvasNode } from '../../types/constructor'
 import { dockSectionRegistry, type DockRenderCtx } from './dockSection'
@@ -228,19 +227,14 @@ export function registerFacetSections(): void {
         // never renders in the author dock — the facet-level peer of the Inspector's
         // field-level plane filter. `ctx.role` absent ⇒ author lens (safe default).
         if (!isPlaneVisible(facet.plane, planesForRole(ctx.role))) return false
+        // The ONE shared applicability predicate (card 0112 · S2/R2 · ADR-041 residence):
+        // TYPE-cap (meta.appliesWhen) ∨ INSTANCE-readPath (the selected element CARRIES a
+        // value at the facet's readPath) — so a data-OWNING section still exposes its Data
+        // facet + door onto ITS spec. Sharing it with the concern dock (applicableFacets)
+        // is what kills the flat-vs-concern divergence that hid the facet LIVE. A drilled
+        // band-item part has no whole-node `selected` → props undefined → TYPE branch only.
         const meta = selectedElementMeta(ctx)
-        if (meta && facet.appliesWhen(meta)) return true
-        // INSTANCE-level projection (card 0112 · S2 · ADR-041 residence): also project a
-        // facet when the selected ELEMENT actually CARRIES a value at the facet's readPath —
-        // so a data-OWNING section (which declares `data` at runtime but opts into no
-        // `data-bindable` TYPE-cap) still exposes its Data facet + door onto ITS spec. This
-        // is the facet-axis truth that ownership is an INSTANCE property, not a type cap.
-        // GENERIC across facets, no type literal (Law 1 · FF-NO-EXTERNAL-SPECIAL-CASE): the
-        // rule is «the element carries this facet's data» (readPath value present); the
-        // empty-readPath chrome facet ('') is excluded, and a drilled band-item part (no
-        // whole-node `selected`) is untouched — its facets project through partMeta only.
-        const inst = ctx.controller.selected
-        return !!inst && facet.readPath !== '' && getAtPath(inst.props, facet.readPath) != null
+        return facetAppliesToElement(facet, meta, ctx.controller.selected?.props)
       },
       render: (ctx) => {
         const meta = selectedElementMeta(ctx)

@@ -17,7 +17,7 @@
 import type {
   FieldConcern, FacetDescriptor, LocaleString, ObjectMeta, PropField, PropSchema,
 } from '@statdash/react/engine'
-import { facetRegistry } from '@statdash/react/engine'
+import { facetRegistry, getAtPath } from '@statdash/react/engine'
 import { planesForRole, isPlaneVisible } from './plane'
 import type { Role } from '../studio/useRole'
 
@@ -113,18 +113,47 @@ export function bucketByConcern(
   return buckets
 }
 
+// ── facetAppliesToElement — the ONE "does this facet apply here" predicate ───────────
+//
+//  The SINGLE applicability rule shared by BOTH facet-projection surfaces — the flat dock
+//  (`registerFacetSections`) AND the concern dock (`applicableFacets` below) — so they can
+//  never diverge (card 0112 · R2: the two had drifted, and the concern surface, which the
+//  LIVE whole-node inspector renders, still lacked the instance branch → a data-OWNING
+//  section showed NO Data facet live while the flat-dock fitness passed).
+//
+//  Two branches, GENERIC across every facet (Law 1 — never a `node.type` read):
+//    • TYPE cap  — the facet's declared `appliesWhen` over the element's DECLARED meta
+//      (`data-bindable` for DATA, the slot-discriminant for STYLE/VISIBILITY, …).
+//    • INSTANCE  — the selected element CARRIES a value at the facet's `readPath` (ADR-041
+//      residence: ownership is an INSTANCE property, not a type cap). So a section that
+//      declares an inline `data` query at runtime — but opts into no `data-bindable` TYPE
+//      cap — still projects its Data facet + door onto ITS spec. The empty-readPath chrome
+//      facet ('') is excluded; a caller with no instance props (a drilled band part) passes
+//      `undefined` → only the TYPE branch applies (facets stay hidden during a value drill).
+//
+export function facetAppliesToElement(
+  facet: FacetDescriptor,
+  meta:  ObjectMeta | undefined,
+  props: Record<string, unknown> | undefined,
+): boolean {
+  if (meta && facet.appliesWhen(meta)) return true
+  return facet.readPath !== '' && props != null && getAtPath(props, facet.readPath) != null
+}
+
 // ── applicableFacets — the whole-node facets under the active lens ───────────────────
 //
-//  The SAME derivation registerFacetSections uses (shared predicates — plane visibility ⊕
-//  the facet's declared `appliesWhen` over the element's meta), so the concern surface's
-//  facet set is identical to the registry's, by construction (Law 1 — never a type read).
+//  The SAME predicate registerFacetSections uses (`facetAppliesToElement` — plane visibility
+//  ⊕ the shared TYPE-cap ∨ INSTANCE-readPath rule), so the concern surface's facet set is
+//  identical to the flat registry's, by construction (Law 1 — never a type read). `props`
+//  (the selected element's own props) feeds the instance branch; absent ⇒ TYPE branch only.
 //
 export function applicableFacets(
-  meta: ObjectMeta,
-  role: Role | undefined,
+  meta:  ObjectMeta,
+  role:  Role | undefined,
+  props?: Record<string, unknown>,
 ): FacetDescriptor[] {
   const planes = planesForRole(role)
   return facetRegistry
     .list()
-    .filter((f) => isPlaneVisible(f.plane, planes) && f.appliesWhen(meta))
+    .filter((f) => isPlaneVisible(f.plane, planes) && facetAppliesToElement(f, meta, props))
 }

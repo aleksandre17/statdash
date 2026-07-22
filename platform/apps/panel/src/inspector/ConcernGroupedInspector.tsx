@@ -87,7 +87,13 @@ export function ConcernGroupedInspector(
     () => filterSchemaByPlanes(nodeSchemaSource.getSchema(node), planesForRole(role)),
     [node, role],
   )
-  const facets = useMemo(() => (meta ? applicableFacets(meta, role) : []), [meta, role])
+  // `node.props` feeds the INSTANCE branch of the shared applicability predicate (0112 R2):
+  // a data-OWNING section (no `data-bindable` TYPE cap, but a runtime `props.data` query)
+  // projects its Data facet — the concern surface now agrees with the flat dock.
+  const facets = useMemo(
+    () => (meta ? applicableFacets(meta, role, node.props) : []),
+    [meta, role, node.props],
+  )
   const buckets = useMemo(() => bucketByConcern(schema, facets), [schema, facets])
 
   const elementName = meta ? label(meta.label as LocaleString, locale, node.type) : node.type
