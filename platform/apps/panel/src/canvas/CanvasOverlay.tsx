@@ -22,7 +22,7 @@
 //  Slot taxonomy: drop zones come straight from nodeRegistry.getSlots(type) —
 //  the SlotDef.accepts list IS the drag-accept contract. No new fields invented.
 //
-import { useLayoutEffect, useMemo, useRef, useState, useCallback } from 'react'
+import { useLayoutEffect, useRef, useState, useCallback } from 'react'
 import {
   nodeRegistry,
   PART_FIELD_ATTR, PART_INDEX_ATTR, PART_NODE_ID_ATTR,
@@ -187,8 +187,12 @@ export function CanvasOverlay({
   onSelect, onSelectItem, chrome, onDrop, onBindMetric, locale,
 }: CanvasOverlayProps) {
   const overlayRef = useRef<HTMLDivElement>(null)
-  // Child-id → parent-id over the rendered tree — the select-behind cycle reads it (R5).
-  const parents = useMemo(() => parentMap(page), [page])
+  // Child-id → parent-id for the select-behind ascent (R5). PRIMARY source = the frame
+  // MEASUREMENT recursion itself (the rendered/anchored truth — covers every framed id,
+  // synthesized render-children included, which the config walk can miss); the config
+  // `parentMap` back-fills only walk-fallback-framed nodes. Set alongside `frames` in
+  // the measure effect so map and frames can never diverge.
+  const [parents, setParents] = useState<Map<string, string>>(() => new Map())
   const [frames, setFrames] = useState<NodeFrame[]>([])
   const [drops,  setDrops]  = useState<DropFrame[]>([])
   const [items,  setItems]  = useState<ItemFrame[]>([])
@@ -224,6 +228,8 @@ export function CanvasOverlay({
     const nextFrames: NodeFrame[] = []
     const nextItems:  ItemFrame[] = []
     const framed = new Set<string>()
+    // Child-id → parent-id, recorded by the framing recursion (the R5 ascent SSOT).
+    const nextParents = new Map<string, string>()
     // The measured box of every framed node, keyed by id — the SSOT the per-slot drop
     // geometry reads to derive each slot's region from where its children rendered.
     const rectById = new Map<string, Rect>()
@@ -239,10 +245,12 @@ export function CanvasOverlay({
     // coordinate `(field,index)` — matching the anchor the part-owning shell stamped
     // (PartAnchor) — AND its ONE `PartAddress.partPath` (positional for value, the
     // Delta-1 STABLE key for sourced), which becomes the selection wire.
-    const frameNode = (node: NodeBase) => {
+    const frameNode = (node: NodeBase, parentId?: string) => {
       const id = typeof node.id === 'string' ? node.id : ''
       if (!id || framed.has(id)) return
       framed.add(id)
+      // The rendered-tree parent relation — recorded AT framing (R5 ascent SSOT).
+      if (parentId) nextParents.set(id, parentId)
 
       const type    = node.type
       const variant = (node as { variant?: string }).variant ?? 'default'
@@ -262,8 +270,9 @@ export function CanvasOverlay({
       const container = node as unknown as Record<string, unknown>
       for (const part of enumerateParts(container, meta, { filterSchema }, id)) {
         if (part.residence === 'slot') {
-          // Slot part — a whole child node, framed THROUGH the port by this recursion.
-          frameNode(part.subject as unknown as NodeBase)
+          // Slot part — a whole child node, framed THROUGH the port by this recursion;
+          // the recursion IS the parent relation (rendered truth, synth ids included).
+          frameNode(part.subject as unknown as NodeBase, id)
           continue
         }
         if (!onSelectItem) continue
@@ -286,6 +295,12 @@ export function CanvasOverlay({
     // in a later contract phase once every container child is a declared slot part).
     frameNode(page)
     for (const w of walkNodes(page)) frameNode(w.node)
+    // Back-fill parents for walk-fallback-framed nodes (the port didn't reach them) from
+    // the CONFIG tree — secondary source only; the framing recursion's entries win.
+    const configParents = parentMap(page)
+    for (const [child, parent] of configParents) {
+      if (framed.has(child) && !nextParents.has(child)) nextParents.set(child, parent)
+    }
 
     // Per-slot drop geometry — computed AFTER every node is framed (so each slot's child
     // rects are known). Each declared slot gets its OWN rect (populated → child-union;
@@ -322,6 +337,7 @@ export function CanvasOverlay({
     }
 
     setFrames(nextFrames)
+    setParents(nextParents)
     setDrops(nextDrops)
     setItems(nextItems)
     setChromes(nextChromes)
