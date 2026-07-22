@@ -141,6 +141,10 @@
       "js": 400
     },
     "hard_factor": 1.5,
+    "evidence_globs": [
+      "work/authoring-truth/*",
+      "work/portal-notes-media/*"
+    ],
     "claude_sanctioned_dirs": [
       "kit",
       "commands",

@@ -79,7 +79,14 @@ try:
     if os.path.isdir(os.path.join(root, "platform", "work")):
         warn.append("platform/work/ exists again — the rogue 2nd work dir (canon: ONE work/ = board only, docs/ for docs). Relocate its artifacts + remove it.")
     wt = subprocess.run(["git", "-C", root, "ls-files", "work/"], capture_output=True, text=True, timeout=10).stdout.split()
-    scratch = [f for f in wt if f.endswith(".png") or "-shots/" in f or "probe" in os.path.basename(f)]
+    # Sanctioned tracked evidence (manifest hygiene.evidence_globs, e.g. per-card J-walk proof
+    # dirs) is NOT scratch — the journey-gate's evidence trail is deliberately committed.
+    import fnmatch as _fn
+    ev_globs = (mf.get("hygiene", {}) or {}).get("evidence_globs", []) or []
+    def _sanctioned(f):
+        return any(_fn.fnmatch(f, g) or _fn.fnmatch(f, g.rstrip("*") + "**") for g in ev_globs)
+    scratch = [f for f in wt if not _sanctioned(f)
+               and (f.endswith(".png") or "-shots/" in f or "probe" in os.path.basename(f))]
     if scratch:
         warn.append(f"{len(scratch)} scratch file(s) tracked under work/ (png/probe/shots) — regenerable ephemera must not be committed. git rm --cached + .gitignore.")
 except Exception:
