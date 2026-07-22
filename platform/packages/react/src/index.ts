@@ -39,6 +39,11 @@ export type { NavItemDef, NavSubItem, NavIconKey }               from './page'
 
 // ── Filter system ─────────────────────────────────────────────────────
 export { useFilterState }                                           from './filters/useFilterState'
+// The provider-FREE zoom of the same derivation core (0112 R1) — a host outside a
+// FilterProvider (the panel's workbench preview) evaluates under the page's canonical
+// DEFAULT ctx through the SAME core, never a copied rule.
+export { deriveDefaultFilterState }                                 from './filters/filterCtxCore'
+export type { DefaultFilterState }                                  from './filters/filterCtxCore'
 export type {
   ParamDef, ParamHidden, ParamYearSelect, ParamCascade,
   ParamSelect, ParamRange, ParamMultiSelect, ParamChipSelect,

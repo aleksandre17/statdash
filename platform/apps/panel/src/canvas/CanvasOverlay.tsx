@@ -441,14 +441,22 @@ export function CanvasOverlay({
               e.stopPropagation()
               // Select-behind (0112 R5 — Figma/Illustrator-class): the deepest child paints
               // ON TOP (framed last), so a parent an edge-to-edge child fully covers is
-              // otherwise unclickable. A repeat click on the already-selected node cycles
-              // selection UP to its container, walking the whole ancestor chain reachable;
-              // reaching the root (no parent) deselects, closing the cycle. First click is
-              // unchanged (selects the clicked node). Consistent with the existing deepest-
-              // wins single-click model — no inversion, no border-zone geometry (which an
-              // edge-to-edge child leaves no room for).
-              const alreadySelected = f.id === selectedNodeId && !selectedItemPath
-              onSelect(alreadySelected ? (parents.get(f.id) ?? null) : f.id)
+              // otherwise unclickable. Repeat clicks at the same point cycle selection UP
+              // the ancestor chain: the ascent continues FROM THE CURRENT SELECTION whenever
+              // that selection lies anywhere on the clicked node's ancestor chain (self
+              // included) — comparing only against the clicked frame would reset to the
+              // deepest child after one hop (the topmost frame keeps receiving the click),
+              // oscillating child↔parent forever (live-recheck 40-recheck-07..09). Reaching
+              // the root (no parent) deselects, closing the cycle; the next click starts
+              // deep again. First click unchanged — deepest-wins, no inversion, no
+              // border-zone geometry (an edge-to-edge child leaves no room for one).
+              let ascendFrom: string | null = null
+              if (selectedNodeId && !selectedItemPath) {
+                for (let cur: string | undefined = f.id; cur; cur = parents.get(cur)) {
+                  if (cur === selectedNodeId) { ascendFrom = cur; break }
+                }
+              }
+              onSelect(ascendFrom ? (parents.get(ascendFrom) ?? null) : f.id)
             }}
             onDragOver={handleMetricOver(f.id)}
             onDragLeave={() => setMetricOverId((s) => (s === f.id ? null : s))}

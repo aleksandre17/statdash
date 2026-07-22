@@ -86,11 +86,15 @@ export function usePipelineSourceRows(head: SourceStep | undefined, encoding: Pi
     [stores, sourceSpec],
   )
 
-  // The page's DEFAULT eval context (0112 R1) — the SAME engine default-dims derivation
-  // the canvas renders under (deriveDefaultDims over the page filterSchema), projected
-  // panel-side. Replaces the old hard-coded `{ dims: {} }` that starved every `$ctx`
-  // ref → 0 preview rows while the canvas showed full data (the divergence class dies).
-  const ctx = useActivePageContext()
+  // The page's DEFAULT eval context (0112 R1) — the SAME derivation core the canvas
+  // renders under (`filterCtxCore` via `deriveDefaultFilterState`), provider-free.
+  // The PAGE store (the store options lists resolve from — resolveStore's default
+  // routing over the live map, NOT the spec's own store) powers Tier-3 options-first
+  // defaults (the live-recheck gap: gdp's options-first `time`). While Tier-3 is still
+  // pending, the ctx is INCOMPLETE — surfaced below as the declared 'loading' state,
+  // never a half-resolved read presented as truth (Law 11).
+  const pageStore = useMemo<DataStore>(() => resolveStore({ stores }), [stores])
+  const { ctx, isLoading: ctxPending } = useActivePageContext(pageStore)
   const pipeCtx = useMemo<PipelineContext>(
     () => ({ classifiers: store.classifiers, display: store.display, section: ctx }),
     [store, ctx],
@@ -107,9 +111,9 @@ export function usePipelineSourceRows(head: SourceStep | undefined, encoding: Pi
   // Sync / static stores read immediately — no loading flash (byte-identical to the
   // structural canvas). Recomputed only when the source spec or store identity changes.
   const syncRows = useMemo<EngineRow[] | null>(
-    () => (bound && isSync && sourceSpec ? readSource(store, sourceSpec, ctx) : null),
+    () => (bound && isSync && sourceSpec && !ctxPending ? readSource(store, sourceSpec, ctx) : null),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [bound, isSync, store, queryKey, ctx],
+    [bound, isSync, store, queryKey, ctx, ctxPending],
   )
 
   // Async live stores: warm (debounced + token-guarded), then read. The result is
@@ -120,7 +124,8 @@ export function usePipelineSourceRows(head: SourceStep | undefined, encoding: Pi
   const [asyncResult, setAsyncResult] = useState<AsyncResult | null>(null)
 
   useEffect(() => {
-    if (!bound || isSync || !sourceSpec) return
+    // ctxPending: never warm/read under a half-resolved ctx — the settle re-runs this.
+    if (!bound || isSync || !sourceSpec || ctxPending) return
     // A per-run cancel flag: on supersede (spec/store change) or unmount the old run's
     // cleanup flips it, so a late settle never clobbers the current read (E3) and never
     // setState-after-unmount.
@@ -165,7 +170,7 @@ export function usePipelineSourceRows(head: SourceStep | undefined, encoding: Pi
     }, DEBOUNCE_MS)
     return () => { cancelled = true; clearTimeout(timer) }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [bound, isSync, store, queryKey, ctx])
+  }, [bound, isSync, store, queryKey, ctx, ctxPending])
 
   return useMemo<PipelineSource>(() => {
     if (!bound || !sourceSpec) return { status: 'unbound', sourceRows: EMPTY_ROWS, pipeCtx }
@@ -176,6 +181,11 @@ export function usePipelineSourceRows(head: SourceStep | undefined, encoding: Pi
       return { status: 'unavailable', sourceRows: EMPTY_ROWS, pipeCtx }
     }
 
+    // The page ctx is still resolving a Tier-3 (options-first) default — reading now
+    // would evaluate under an INCOMPLETE ctx (the exact 0-rows lie R1 closed). Declare
+    // 'loading'; the ctx identity change on settle re-runs the read below.
+    if (ctxPending) return { status: 'loading', sourceRows: EMPTY_ROWS, pipeCtx }
+
     if (isSync && syncRows) return { status: 'ok', sourceRows: syncRows, pipeCtx }
 
     const current = asyncResult && asyncResult.key === queryKey && asyncResult.store === store
@@ -184,5 +194,5 @@ export function usePipelineSourceRows(head: SourceStep | undefined, encoding: Pi
     if (current && 'rows' in current) return { status: 'ok', sourceRows: current.rows, pipeCtx }
     if (current && 'error' in current) return { status: 'error', sourceRows: EMPTY_ROWS, pipeCtx }
     return { status: 'loading', sourceRows: EMPTY_ROWS, pipeCtx }
-  }, [bound, sourceSpec, liveStatus, isSync, syncRows, asyncResult, queryKey, store, pipeCtx])
+  }, [bound, sourceSpec, liveStatus, isSync, syncRows, asyncResult, queryKey, store, pipeCtx, ctxPending])
 }

@@ -6,19 +6,24 @@
 //  Grafana: template variable resolution — all variables processed at dashboard level.
 //  Retool:  computed state — evaluated once at page level, all components see same values.
 //
+//  The derivation CORE is `filterCtxCore.ts` (0112 R1) — pure functions this hook
+//  composes under React memoization. `deriveDefaultFilterState` (same module) is the
+//  provider-FREE zoom of the same core: one derivation, two zooms, no copied rule.
+//
 
-import { useMemo, useCallback } from 'react'
+import { useMemo } from 'react'
 import { useFilter }                     from '../context/FilterContext'
-import type { SectionContext, DimVal } from '@statdash/engine'
+import type { SectionContext } from '@statdash/engine'
 import type { FilterSchemaInput }                from '@statdash/engine'
 import type { DataStore }                        from '@statdash/engine'
-import { toCtxValue, resolveDefaults, LEGACY_MODE_PARAM } from '@statdash/engine'
-import { resolveYears, resolveOptions }          from '@statdash/engine'
-import type { ParamDef, ParamCascadeNode, CascadeNode } from '@statdash/engine'
-import type { ParamYearSelect, ParamSelect, ParamMultiSelect, ParamHidden } from '@statdash/engine'
-import type { EngineRow }                        from '@statdash/engine'
-import type { BarNode, ParamNode }               from '@statdash/engine'
+import { resolveDefaults, LEGACY_MODE_PARAM }    from '@statdash/engine'
+import type { ParamDef }                         from '@statdash/engine'
+import type { ParamNode, BarNode }               from '@statdash/engine'
 import type { PerspectiveOwnership }             from '@statdash/engine'
+import {
+  flattenSchemaParams, gateDefaultParams, optionsGetterFor,
+  ctxIdentityKey, buildSectionContext,
+} from './filterCtxCore'
 
 // ── FilterState — return type ─────────────────────────────────────────
 
@@ -59,14 +64,6 @@ function schemaToBarNodes(schema: FilterSchemaInput | null | undefined): BarNode
   }))
 }
 
-// ── Stable fallbacks ──────────────────────────────────────────────────
-
-// Minimal SectionContext stub used when resolving Tier 3 option defaults.
-// At this point the real context hasn't been computed yet (chicken-and-egg):
-// options lists feed the context, not the other way around. Static/inline
-// sources ignore ctx.dims entirely, so this stub is safe for Phase 1.
-const STUB_CTX: SectionContext = { dims: {} }
-
 // ── useFilterState ────────────────────────────────────────────────────
 
 export function useFilterState(
@@ -78,10 +75,7 @@ export function useFilterState(
 
   // Flatten all [key, ParamDef] pairs from all bars — order within each bar preserved.
   const flatParamEntries: Array<{ key: string; def: ParamDef }> = useMemo(
-    () =>
-      Object.values(schema?.bars ?? {}).flatMap(bar =>
-        Object.entries(bar.filters).map(([key, def]) => ({ key, def })),
-      ),
+    () => flattenSchemaParams(schema),
     // schema is static config — deps empty intentional
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [],
@@ -90,63 +84,15 @@ export function useFilterState(
   const flatParams: Array<{ key: string; def: ParamDef }> = flatParamEntries
 
   // Default-resolution gate — PERSPECTIVE OWNERSHIP is the sole SSOT (VISION #3 / P6).
-  //
-  // A param the ACTIVE perspective's `scope.timeBinding` OWNS MUST resolve its default;
-  // a param owned ONLY by a NON-active perspective (in `all` but not `active`) is
-  // SUPPRESSED — so a single collapsed bar in `range` leaves the year-owned `time`
-  // unset ⇒ the dynamics timeseries renders the FULL span (the parity fix, expressed
-  // by perspective ownership, not two bars). Any param NO perspective owns resolves
-  // normally. `alwaysResolve` (a page-level span/cube extent like spanFrom/spanTo) is
-  // a bar-independent state variable hoisted out of the gate so it resolves in EVERY
-  // perspective, declared ONCE (the OCP-clean form). With no axis/binding, ownership
-  // is empty ⇒ every non-`alwaysResolve` param resolves (the legacy single-bar page).
-  const ownsActive = ownership?.active
-  const ownsAny    = ownership?.all
+  // (Rationale lives on `gateDefaultParams` — the core owns the rule, both zooms obey it.)
   const defaultParams = useMemo(
-    () =>
-      flatParamEntries
-        .filter(({ key, def }) =>
-          isAlwaysResolve(def) ||
-          ownsActive?.has(key) ||
-          !ownsAny?.has(key),
-        )
-        .map(({ key, def }) => ({ key, def })),
-    [flatParamEntries, ownsActive, ownsAny],
+    () => gateDefaultParams(flatParamEntries, ownership),
+    [flatParamEntries, ownership?.active, ownership?.all],  // eslint-disable-line react-hooks/exhaustive-deps
   )
 
-  // Tier 3 options getter — maps a param key to its EngineRow list for
-  // OptionsDefault { from: 'options', pick: 'first' | 'last' } resolution.
-  // Returns null when the store is unavailable or the param type doesn't
-  // use an options list (cascade, hidden, range — skip Tier 3).
-  const getOptions = useCallback(
-    (key: string): EngineRow[] | null => {
-      if (!store) return null
-      const found = flatParams.find(p => p.key === key)
-      if (!found) return null
-      const { def } = found
-      if (def.type === 'year-select') {
-        const years = resolveYears((def as ParamYearSelect).years, store, STUB_CTX)
-        return years.map(y => ({ code: String(y) }) as EngineRow)
-      }
-      if (def.type === 'select' || def.type === 'multi-select') {
-        const opts = resolveOptions(
-          (def as ParamSelect | ParamMultiSelect).options,
-          store,
-          STUB_CTX,
-        )
-        return opts.map(o => ({ code: o.value }) as EngineRow)
-      }
-      // hidden WITH an options source: a derived state variable whose default
-      // follows the cube (e.g. span min/max). Resolve identically to select so
-      // its Tier 3 OptionsDefault pick:first/last lands on a real member. A
-      // plain hidden (no options) carries only a literal default → null here.
-      if (def.type === 'hidden' && (def as ParamHidden).options) {
-        const opts = resolveOptions((def as ParamHidden).options!, store, STUB_CTX)
-        return opts.map(o => ({ code: o.value }) as EngineRow)
-      }
-      // cascade, plain hidden, range, chip-select: Tier 3 not applicable
-      return null
-    },
+  // Tier 3 options getter — the core's one getter, memoized per (params, store).
+  const getOptions = useMemo(
+    () => optionsGetterFor(flatParams, store),
     [flatParams, store],
   )
 
@@ -162,28 +108,7 @@ export function useFilterState(
   const raw       = resolvedDims
   const isLoading = pendingKeys.length > 0
 
-  const context     = schema?.context
-  const dimsKey = context?.dims
-    ? Object.entries(context.dims)
-        .map(([dk, pk]) => `${dk}:${raw[pk] ?? ''}`)
-        .join(',')
-    : ''
-
-  // cascade dim contributions: deepest selected node code → ctx.dims[dim]
-  const cascadeEntries = flatParams
-    .filter((p): p is { key: string; def: ParamCascadeNode } =>
-      p.def.type === 'cascade' && !!(p.def as ParamCascadeNode).dim,
-    )
-    .map(({ key, def }) => {
-      const cascDef = def as ParamCascadeNode
-      return [
-        cascDef.dim!,
-        cascadeDeepestCode(cascDef.tree, raw[key], cascDef.dimField ?? 'code'),
-      ] as const
-    })
-    .filter(([, code]) => code !== '')
-
-  const ctxKey = `${dimsKey}|${cascadeEntries.map(([k, v]) => `${k}:${v}`).join(',')}`
+  const ctxKey = ctxIdentityKey(schema, flatParams, raw)
 
   // SectionContext — stable identity keyed on ctxKey. useMemo returns the same
   // reference until ctxKey changes, so downstream consumers don't re-render on
@@ -191,26 +116,11 @@ export function useFilterState(
   // values it is built from — dims, cascade codes — all feed into it, so
   // re-deriving inside the memo is correct and ref-write-free.) The active
   // perspective id is added to ctx.perspectiveState by SiteRenderer (not here).
-  const ctx = useMemo<SectionContext>(() => {
-    const regularDims = context?.dims
-      ? Object.fromEntries(
-          Object.entries(context.dims)
-            .map(([dk, pk]) => {
-              const paramDef = flatParams.find(p => p.key === pk)?.def
-              // toCtxValue — the engine's ONE per-type wire-fold seam (autoParse's
-              // dual, co-located with the ParamDef union): this hook stays a
-              // generic projection, no per-type branching here (ADR-038).
-              const parsed = paramDef ? toCtxValue(paramDef, raw[pk]) : raw[pk]
-              return [dk, parsed as DimVal]
-            })
-            .filter(([, v]) => v !== '' && v !== undefined),
-        )
-      : {}
-    return {
-      dims: { ...regularDims, ...Object.fromEntries(cascadeEntries) },
-    }
+  const ctx = useMemo<SectionContext>(
+    () => buildSectionContext(schema, flatParams, raw),
     // eslint-disable-next-line react-hooks/exhaustive-deps -- ctxKey is the exhaustive derived key (see comment above)
-  }, [ctxKey])
+    [ctxKey],
+  )
 
   // The conventional perspective-axis URL param. Page-level `perspectives` may name
   // it; SiteRenderer overrides with the actual axis key. Defaults to the SSOT
@@ -220,34 +130,4 @@ export function useFilterState(
   const bars           = useMemo(() => schemaToBarNodes(schema), [schema])
 
   return { ctx, raw, perspectiveKey, bars, isLoading }
-}
-
-// ── isAlwaysResolve — bar-independent default predicate ──────────────────
-//
-//  True for a hidden param flagged `alwaysResolve` — a page-level state variable
-//  (span/cube-derived) whose default resolves regardless of its bar's visibility.
-//  Only `hidden` params carry the flag (the type union gates it); any other param
-//  type is bar-gated as before.
-function isAlwaysResolve(def: ParamDef): boolean {
-  return def.type === 'hidden' && (def as ParamHidden).alwaysResolve === true
-}
-
-// ── cascadeDeepestCode — traverse cascade path to deepest selected node ──
-
-function cascadeDeepestCode(
-  tree:     CascadeNode[],
-  rawValue: string,
-  field:    string,
-): string {
-  if (!rawValue) return ''
-  const ids = rawValue.split(',').map(Number)
-  let nodes: CascadeNode[] = tree
-  let code = ''
-  for (const id of ids) {
-    const node = nodes.find(n => n.id === id)
-    if (!node) break
-    code  = (node as unknown as Record<string, unknown>)[field] as string ?? ''
-    nodes = node.children ?? []
-  }
-  return code
 }

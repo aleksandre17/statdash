@@ -132,6 +132,25 @@ describe('CanvasOverlay — select-behind (0112 R5)', () => {
     clickNode('page-1')
     expect(onSelect).toHaveBeenLastCalledWith(null)
   })
+
+  // The live-recheck regression (40-recheck-07..09): real clicks at a fixed point keep
+  // hitting the DEEPEST frame (it paints on top), so the ascent must continue from the
+  // CURRENT SELECTION whenever it lies on the clicked node's ancestor chain — comparing
+  // only clicked≡selected oscillates child↔parent and the section is never reachable.
+  it('ascends from the SELECTION when the click keeps hitting the deepest child (no oscillation)', () => {
+    const onSelect = vi.fn()
+    // sec-1 (an ancestor of the hit node) is selected; the click still lands on chart-1.
+    renderNested({ selectedNodeId: 'sec-1', onSelect })
+    clickNode('chart-1')
+    expect(onSelect).toHaveBeenLastCalledWith('page-1')   // continues UP, never back down
+  })
+
+  it('the fixed-point cycle closes: root selected + deepest hit → deselect', () => {
+    const onSelect = vi.fn()
+    renderNested({ selectedNodeId: 'page-1', onSelect })
+    clickNode('chart-1')
+    expect(onSelect).toHaveBeenLastCalledWith(null)
+  })
 })
 
 describe('CanvasOverlay', () => {
