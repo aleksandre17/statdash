@@ -51,9 +51,16 @@ export function parseDataFloor(raw: string | null | undefined): DataFloor {
     : DEFAULT_DATA_FLOOR
 }
 
-/** Path to the ONE Data workspace, optionally opening a named floor (ADR-051 DU1). */
+/** Path to the ONE Data workspace, optionally opening a named floor (ADR-051 DU1).
+ *  Pair with `SPEC_PARAM` to also deep-link a selected spec on the Specs floor. */
 export const studioDataPath = (floor?: DataFloor) =>
   `${studioSurfacePath('data')}${floor ? `?${DATA_FLOOR_PARAM}=${floor}` : ''}`
+
+// ── The Specs floor's durable selection (DU6-IA-1 F1, Law 9 — URL = permalink) ─────
+//  Which spec is open in the workbench takeover is DURABLE UI state, not ephemeral —
+//  it rides the URL (never local `useState`) so a seeded/selected workbench survives a
+//  refresh or a pasted link, one canonical spelling (`?dataFloor=specs&spec=<id>`).
+export const SPEC_PARAM = 'spec'
 
 // ── The in-workspace "browse this cube" seed (ADR-051 DU2) ──────────────────────
 //  DU2 retires the cross-screen courier (`store/sourcesHandoff`). "Browse this cube in

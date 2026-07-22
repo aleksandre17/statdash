@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
-import { render, screen, within, fireEvent } from '@testing-library/react'
-import { MemoryRouter } from 'react-router-dom'
+import { render, screen, within, fireEvent, waitFor } from '@testing-library/react'
+import { MemoryRouter, useLocation } from 'react-router-dom'
 import { SpecsBody } from './SpecsBody'
 import { useConstructorStore } from '../../store/constructor.store'
 import { useMetricCatalogStore } from '../../discovery/metricCatalog.store'
@@ -61,12 +61,20 @@ afterEach(() => {
   useMetricCatalogStore.setState({ catalog: { status: 'idle' } })
 })
 
+// A tiny probe surfacing the live router location — so a test can assert the URL was
+// rewritten (the selection permalink / seed cleanup), not just what rendered.
+function LocationProbe() {
+  const loc = useLocation()
+  return <div data-testid="loc">{loc.pathname}{loc.search}</div>
+}
+
 // The floor reads its in-workspace cube seed off the workspace URL (ADR-051 DU2), so every
 // render is wrapped in a router; `entries` seeds the URL for the browse-a-cube test.
 function renderFloor(entries: string[] = ['/studio/data?dataFloor=specs']) {
   return render(
     <MemoryRouter initialEntries={entries}>
       <SpecsBody locale="ka" />
+      <LocationProbe />
     </MemoryRouter>,
   )
 }
@@ -115,5 +123,44 @@ describe('SpecsBody — the Specs floor spec browser (DU6-IA-1)', () => {
     expect(head.op).toBe('source')
     expect(head.query).toEqual({ measure: 'gva.total' })
     expect(head.dataSource).toBe('stats')
+
+    // F1 acceptance — the post-gesture URL is a reproducible permalink: the created spec
+    // rides `spec=`, and the one-shot cube seed params are gone (consumed, never resurrected).
+    await waitFor(() => {
+      const search = screen.getByTestId('loc').textContent ?? ''
+      expect(search).toContain('dataFloor=specs')
+      expect(search).toContain('spec=seeded-1')
+      expect(search).not.toContain('cube=')
+      expect(search).not.toContain('cubeMeasures=')
+      expect(search).not.toContain('cubeStore=')
+    })
+  })
+
+  it('a deep-link `?dataFloor=specs&spec=<id>` renders the workbench takeover for that spec (F1 permalink)', async () => {
+    renderFloor(['/studio/data?dataFloor=specs&spec=spec-q'])
+    expect(await screen.findByTestId('modeling-workbench')).toBeInTheDocument()
+    expect(screen.getByText('GDP query')).toBeInTheDocument()
+  })
+
+  it('an UNKNOWN `spec=` id (not in the store) renders the LIST, never a blank, and canonicalizes the bogus param away', async () => {
+    renderFloor(['/studio/data?dataFloor=specs&spec=does-not-exist'])
+    // Honest state: the list, not a blank workbench takeover.
+    expect(screen.getByText('მონაცემების სპეც-ები')).toBeInTheDocument()
+    expect(screen.queryByTestId('modeling-workbench')).toBeNull()
+    await waitFor(() => {
+      const search = screen.getByTestId('loc').textContent ?? ''
+      expect(search).not.toContain('spec=')
+      expect(search).toContain('dataFloor=specs')
+    })
+  })
+
+  it('back-to-list removes `spec=` from the URL (deselect is a real navigation step)', async () => {
+    renderFloor(['/studio/data?dataFloor=specs&spec=spec-q'])
+    fireEvent.click(await screen.findByTestId('workbench-back-to-list'))
+    await waitFor(() => {
+      expect(screen.getByTestId('loc').textContent ?? '').not.toContain('spec=')
+    })
+    expect(screen.getByText('GDP query')).toBeInTheDocument()
+    expect(screen.queryByTestId('modeling-workbench')).toBeNull()
   })
 })

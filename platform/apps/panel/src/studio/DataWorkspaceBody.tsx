@@ -1,4 +1,4 @@
-import { lazy, Suspense, type ComponentType } from 'react'
+import { lazy, Suspense, useEffect, type ComponentType } from 'react'
 import { Box, Button, ToggleButton, ToggleButtonGroup, Tooltip } from '@mui/material'
 import StorageOutlinedIcon from '@mui/icons-material/StorageOutlined'
 import SchemaOutlinedIcon from '@mui/icons-material/SchemaOutlined'
@@ -83,7 +83,8 @@ export function DataWorkspaceBody({ locale }: { locale: Locale }) {
   const en = locale === 'en'
 
   // The open floor rides the URL (deep-linkable); unknown/absent → the source (step 0).
-  const floor: DataFloor = parseDataFloor(params.get(DATA_FLOOR_PARAM))
+  const rawFloor = params.get(DATA_FLOOR_PARAM)
+  const floor: DataFloor = parseDataFloor(rawFloor)
   const setFloor = (next: DataFloor) =>
     setParams(
       (prev) => {
@@ -93,6 +94,24 @@ export function DataWorkspaceBody({ locale }: { locale: Locale }) {
       },
       { replace: true },
     )
+
+  // ── DU6-IA-1 F2+F3 — one canonical URL per floor (Law 9: URL = permalink) ─────────
+  //  An ABSENT or INVALID `dataFloor` still renders (parseDataFloor's default), but the
+  //  address bar must never keep lying about which floor is actually open. Rewrite it
+  //  ONCE to the explicit resolved id (`replace`, no extra history entry, every other
+  //  param preserved) — guarded so it only fires when the raw value disagrees with the
+  //  resolved one (never a rewrite loop).
+  useEffect(() => {
+    if (rawFloor === floor) return
+    setParams(
+      (prev) => {
+        const merged = new URLSearchParams(prev)
+        merged.set(DATA_FLOOR_PARAM, floor)
+        return merged
+      },
+      { replace: true },
+    )
+  }, [rawFloor, floor, setParams])
 
   const active = DATA_FLOORS.find((f) => f.id === floor) ?? DATA_FLOORS[0]
   const ActiveBody = active.Body

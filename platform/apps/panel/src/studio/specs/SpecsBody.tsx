@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { Box, Typography, Button, Chip, Paper } from '@mui/material'
 import DataObjectIcon from '@mui/icons-material/DataObject'
@@ -13,7 +13,7 @@ import { useConstructorStore, useDataSpecs } from '../../store/constructor.store
 import { useDndSensors } from '../../shared/dnd/useDndSensors'
 import type { DataSpec } from '@statdash/engine'
 import { withStewardCube, fromWorkbenchModel } from '../../features/data-layer/workbench/workbenchModel'
-import { CUBE_SEED_PARAM, CUBE_MEASURES_PARAM, CUBE_STORE_PARAM, WORKBENCH_SEED_PARAMS } from '../useStudioRoute'
+import { CUBE_SEED_PARAM, CUBE_MEASURES_PARAM, CUBE_STORE_PARAM, WORKBENCH_SEED_PARAMS, SPEC_PARAM } from '../useStudioRoute'
 import { useActiveLocales } from '../../inspector/useActiveLocales'
 import { DataWorkbench } from '../../features/data-layer/workbench/DataWorkbench'
 import { ShowMe } from '../../features/data-layer/showme/ShowMe'
@@ -121,8 +121,35 @@ export function SpecsBody({ locale }: { locale: Locale }) {
   const activeLocale = (useActiveLocales()[0] ?? locale) as Locale
   const en = locale === 'en'
 
-  const [selectedId, setSelectedId] = useState<string | null>(null)
+  // ── The selected spec — URL-DERIVED, not local state (DU6-IA-1 F1, Law 9) ───────
+  //  A seeded/selected workbench must be a PERMALINK: which spec is open rides `SPEC_PARAM`
+  //  on the SAME workspace URL, never a component-local `useState` that a refresh discards.
+  const [params, setParams] = useSearchParams()
+  const selectedId   = params.get(SPEC_PARAM)
   const selectedSpec = selectedId ? specs.find((s) => s.id === selectedId) ?? null : null
+
+  /** Select (or deselect, `null`) a spec — a real navigation step (push), composing on the
+   *  LATEST params via a functional update so it never resurrects a just-cleared seed. */
+  const selectSpec = useCallback((id: string | null) => {
+    setParams((prev) => {
+      const next = new URLSearchParams(prev)
+      if (id) next.set(SPEC_PARAM, id)
+      else next.delete(SPEC_PARAM)
+      return next
+    })
+  }, [setParams])
+
+  // Deep-link honesty (Law 11): a `spec=` id absent from the store never renders blank —
+  // `selectedSpec` already falls through to the list; the bogus param is also canonicalized
+  // away (replace, no extra history entry) so the address bar stops lying about it.
+  useEffect(() => {
+    if (!selectedId || selectedSpec) return
+    setParams((prev) => {
+      const next = new URLSearchParams(prev)
+      next.delete(SPEC_PARAM)
+      return next
+    }, { replace: true })
+  }, [selectedId, selectedSpec, setParams])
 
   const regionRef = useRef<HTMLDivElement>(null)
   useEffect(() => { regionRef.current?.focus() }, [])
@@ -133,7 +160,6 @@ export function SpecsBody({ locale }: { locale: Locale }) {
   //  On arrival, seed a fresh spec with the steward raw-cube head (0084's withStewardCube)
   //  and select it for shaping — the SAME createDataSpec path Show-Me uses. The seed params
   //  clear BEFORE the async create (read-then-clear, replace), so a re-render never re-seeds.
-  const [params, setParams] = useSearchParams()
   const seedCode     = params.get(CUBE_SEED_PARAM)
   const seedMeasures = params.get(CUBE_MEASURES_PARAM)
   const seedStore    = params.get(CUBE_STORE_PARAM)
@@ -150,8 +176,8 @@ export function SpecsBody({ locale }: { locale: Locale }) {
       measures, seedStore ?? undefined,
     )
     void createDataSpec({ name: `${seedCode} — ნედლი დათვალიერება`, spec: fromWorkbenchModel(seeded) })
-      .then((created) => setSelectedId(created.id))
-  }, [seedCode, seedMeasures, seedStore, setParams])
+      .then((created) => selectSpec(created.id))
+  }, [seedCode, seedMeasures, seedStore, setParams, selectSpec])
 
   const handleSpecDragEnd = (e: DragEndEvent) => {
     const { active, over } = e
@@ -165,7 +191,7 @@ export function SpecsBody({ locale }: { locale: Locale }) {
   // Show-Me: a suggested chart → a persisted, populated DataSpec, then selected for editing.
   const handleSuggestionInsert = (spec: DataSpec, panelType: string) => {
     void createDataSpec({ name: `${panelType} (შემოთავაზებული)`, spec })
-      .then((created) => setSelectedId(created.id))
+      .then((created) => selectSpec(created.id))
   }
 
   // Bring the workbench head into view on arrival (the seed lands from another scroll pos).
@@ -192,7 +218,7 @@ export function SpecsBody({ locale }: { locale: Locale }) {
           <Button
             size="small"
             startIcon={<ArrowBackIcon fontSize="small" />}
-            onClick={() => setSelectedId(null)}
+            onClick={() => selectSpec(null)}
             data-testid="workbench-back-to-list"
           >
             {en ? 'Back to list' : 'სიაში დაბრუნება'}
@@ -261,7 +287,7 @@ export function SpecsBody({ locale }: { locale: Locale }) {
                   spec={spec}
                   selected={false}
                   locale={locale}
-                  onSelect={() => setSelectedId(spec.id)}
+                  onSelect={() => selectSpec(spec.id)}
                 />
               ))}
             </SortableContext>
