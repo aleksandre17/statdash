@@ -1,0 +1,30 @@
+import { chromium } from '@playwright/test'
+const b = await chromium.launch(); const p = await b.newPage()
+await p.goto('http://192.168.1.199:3013/studio/insert?page=regional', { waitUntil: 'networkidle', timeout: 60000 }).catch(()=>{})
+const pass = p.locator('input[type="password"]').first()
+if (await pass.count()) {
+  await p.locator('input[name="username"], input[type="text"]').first().fill('admin').catch(()=>{})
+  await pass.fill('dev_admin_pw_123'); await p.locator('button[type="submit"]').first().click().catch(()=>{})
+  await p.waitForTimeout(4000)
+  await p.goto('http://192.168.1.199:3013/studio/insert?page=regional', { waitUntil: 'networkidle', timeout: 60000 }).catch(()=>{})
+}
+await p.waitForTimeout(6000)
+await p.locator('[data-testid="canvas-overlay"] .canvas-node[data-node-type="chart"]').first().click({ force: true })
+await p.waitForTimeout(1500)
+const door = p.locator('[data-testid="open-data-workbench"]').first()
+if (await door.count()) await door.click().catch(()=>{})
+await p.waitForTimeout(4000)
+// add a Filter step via the verb palette
+await p.locator('button:has-text("ნაბიჯის დამატება")').first().click().catch(()=>{})
+await p.waitForTimeout(800)
+await p.locator('[data-testid*="verb"], button', { hasText: /გაფილტ|Filter|ფილტრ/ }).first().click().catch(()=>{})
+await p.waitForTimeout(1500)
+await p.locator('button:has-text("პირობის დამატება")').first().click().catch(()=>{})
+await p.waitForTimeout(800)
+// OPEN the column select (MUI combobox) and read the portal listbox
+const combo = p.locator('[role="combobox"]').last()
+await combo.click({ force: true }); await p.waitForTimeout(800)
+const opts = await p.locator('[role="listbox"] [role="option"], [role="option"]').allInnerTexts()
+console.log(JSON.stringify({ comboFound: await combo.count(), options: opts.slice(0, 10) }, null, 1))
+await p.screenshot({ path: '../work/authoring-truth/p-offer/open-check.png' })
+await b.close()
