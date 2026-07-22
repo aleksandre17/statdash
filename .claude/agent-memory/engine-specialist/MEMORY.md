@@ -13,6 +13,7 @@
 - [Metric-natural seam (ADR-047 A)](reference_metric_natural_seam.md) — closes calc-browse foreign-pin lie; naturality DERIVED from obs, never declared; `''` neutralizes a foreign pin
 - [Metric-store binding](reference_metric_store_binding.md) — MetricDef.dataSource (Cube pattern) → specDataSource → react effectiveStoreKey precedence
 - [Measure-ref seam](reference_measure_ref_seam.md) — resolveMeasureRef (ADR R1) is the SSOT distinguishing raw code vs registered metric-id; never call getMetric directly
+- [Wire measure-pin](reference_wire_measure_pin.md) — measurePin() unifies val+obs MEASURE_DIM wire pin; closes AR-38 obs-arm measure-drop (0104); FF-QUERY-RENDER-TRUTH is the truth gate
 - [Calc-metric seam](reference_calc_metric_seam.md) — MetricDef.calc declarative measure-algebra via expr; resolveMetricValue/calcMetricRequirements; KpiValueSpec 'metric' variant
 - [Relative-coord seam (ADR-045)](reference_relative_coord_seam.md) — `{$prev:n}` MDX-Lag over ordered members; honest first-period edge (→null); obs-scan member enum
 - [Hierarchy drill seam](reference_hierarchy_drill_seam.md) — ADR-034 §8 S4: DimensionDef.hierarchy + data/drill.ts; reifies codelist parent edges; composes evalMeasureAtGrain
