@@ -17,8 +17,10 @@ import type {
   CanvasPage,
 } from '../types/constructor'
 import { useConstructorStore } from './constructor.store'
-import { useDataSpecSaveStore } from './dataSpecSave.store'
-import { isAuthoringHeld } from './authoringHold'
+import { useDataSpecDraftStore } from './dataSpecDraft.store'
+import { useDataSpecPublishStore } from './dataSpecPublish.store'
+import type { DataSpec } from '@statdash/engine'
+import type { RevisionSummary, ConfigViolation } from '@statdash/contracts'
 import {
   configApi,
   ApiError,
@@ -101,6 +103,9 @@ export async function initFromApi(): Promise<boolean> {
     // Select. See store/constructor.pages.ts setPagesPatch (the pattern this mirrors).
     store.setDataSources(sources.map(fromApiDataSource))
     store.setDataSpecs(specs.map(fromApiDataSpec))
+    // Re-apply crash-persisted drafts over the just-loaded published specs (C3 — a draft
+    // survives reload; a stale one is dropped). Runs after the authoritative REPLACE.
+    rehydrateDataSpecDrafts()
     store.updateSite(fromApiSite(siteMap, navRows))
     store.setPages(pageDetails.map(fromApiPage))
     pageDetails.forEach((p) => {
@@ -200,80 +205,158 @@ export async function createDataSpec(
   return spec
 }
 
-// ── Edit persistence — optimistic store + debounced, coalesced PUT ───────────────
+// ── Authoring Lifecycle — draft → explicit publish → revision (ADR-052 · C3) ─────
 //
-//  Root-cause of the data-loss defect (b1e9f8e0 / AR-49 M1.3a): creating a spec
-//  persisted (createDataSpec → POST) but EDITING one wrote store-only, so edits were
-//  lost on reload. This restores the create/edit symmetry — an edit now durably PUTs.
-//
-//  Create is one gesture = one call; an EDIT is different — the workbench emits
-//  onChange on every shaping keystroke, so a PUT-per-change would flood the server.
-//  So the OPTIMISTIC store write stays IMMEDIATE (the controlled workbench value
-//  reflects the edit at once — snappy), while the durable PUT is DEBOUNCED and
-//  COALESCED per id (the latest patch wins). `flushDataSpecSaves()` forces every
-//  pending PUT out at once — the panel calls it on unmount / when leaving a spec, so
-//  an edit can NEVER be dropped by navigating away inside the debounce window
-//  (Law 11 — the edit is never silently lost). Failure surfaces an honest error on
-//  the save store; success flips it to `saved` — never a fake-saved state.
-const SPEC_SAVE_DEBOUNCE_MS = 400
-const pendingSpecPatches = new Map<string, Partial<NamedDataSpec>>()
-const pendingSpecTimers  = new Map<string, ReturnType<typeof setTimeout>>()
+//  The auto-save era is OVER (DESIGN-0104 §2·C3, superseding the debounced PUT + the
+//  authoring-hold that gated it). Every edit is a DRAFT by default: the optimistic
+//  store write stays IMMEDIATE (the controlled workbench value reflects the edit at
+//  once — snappy, in-session UX unchanged), and the edit is recorded CLIENT-SIDE in
+//  the draft store (localStorage-persisted, crash-safe). NO durable PUT fires here —
+//  a spec reaches the server ONLY through an explicit `publishDataSpec` gesture. This
+//  is the integrity boundary a live public statistical portal needs (Law 9): the
+//  author decides when a change is real, and a validated PUT is the gate it passes.
 
-/** Run the coalesced PUT for one id NOW (clears its timer + pending patch first). */
-async function flushSpec(id: string): Promise<void> {
-  const timer = pendingSpecTimers.get(id)
-  if (timer) clearTimeout(timer)
-  pendingSpecTimers.delete(id)
-  const patch = pendingSpecPatches.get(id)
-  if (!patch) return
-  pendingSpecPatches.delete(id)
-  useDataSpecSaveStore.getState().setDataSpecSave(id, { phase: 'saving' })
-  try {
-    await configApi.dataSpecs.update(id, {
-      name: patch.name,
-      description: patch.description,
-      spec: patch.spec as Record<string, unknown> | undefined,
-    })
-    useDataSpecSaveStore.getState().setDataSpecSave(id, { phase: 'saved' })
-  } catch (e) {
-    const message = e instanceof Error ? e.message : 'Save failed'
-    console.error('[api] updateDataSpec failed', e)
-    // Honest state (Law 11) — never silently drop the edit, never show fake-saved.
-    useDataSpecSaveStore.getState().setDataSpecSave(id, { phase: 'error', error: message })
-  }
-}
-
+/** Record an edit as a draft — optimistic store write + client-side draft (NO PUT). */
 export function updateDataSpec(id: string, patch: Partial<NamedDataSpec>): void {
-  // 1) Optimistic + IMMEDIATE — the controlled workbench reflects the edit at once. This
-  //    ALWAYS runs, held or not: the in-session UI stays live regardless of persistence.
-  useConstructorStore.getState().updateDataSpec(id, patch)
-  // 1a) Authoring hold (store/authoringHold.ts) — the ONE reversible guard. While held,
-  //     the edit is IN-SESSION ONLY: no PUT is armed, nothing is queued (so a later
-  //     flush can never write it either), and the save chip shows an HONEST 'paused'
-  //     ("Draft — not saving"), never a fake `saved` (Law 11). Flip the hold OFF to
-  //     restore the exact debounced auto-save below (the fix is gated, not deleted).
-  if (isAuthoringHeld()) {
-    useDataSpecSaveStore.getState().setDataSpecSave(id, { phase: 'paused' })
-    return
+  const store = useConstructorStore.getState()
+  // The published-before value (the draft's base on the FIRST edit) — captured BEFORE
+  // the optimistic write, so discard always returns to the genuinely-published spec.
+  const before = store.dataSpecs.find((s) => s.id === id)?.spec
+  // Optimistic + IMMEDIATE — the in-session UI stays live regardless of persistence.
+  store.updateDataSpec(id, patch)
+  // Track the draft only for a spec edit (a `spec` patch); a bare name/description patch
+  // still writes optimistically but the lifecycle chip counts SPEC changes.
+  const after = useConstructorStore.getState().dataSpecs.find((s) => s.id === id)?.spec
+  if (patch.spec !== undefined && before !== undefined && after !== undefined) {
+    useDataSpecDraftStore.getState().recordEdit(id, before, after)
   }
-  // 2) Coalesce the patch (latest field wins) and (re)arm the debounced durable PUT.
-  pendingSpecPatches.set(id, { ...pendingSpecPatches.get(id), ...patch })
-  const existing = pendingSpecTimers.get(id)
-  if (existing) clearTimeout(existing)
-  pendingSpecTimers.set(id, setTimeout(() => { void flushSpec(id) }, SPEC_SAVE_DEBOUNCE_MS))
 }
 
 /**
- * Force every pending spec PUT out synchronously — the panel calls this on unmount /
- * when leaving a spec so a debounced edit is durably written before navigation, never
- * dropped. Idempotent: a no-op when nothing is pending.
+ * Publish the spec's current draft — the explicit gesture that durably persists it via
+ * the VALIDATED PUT (ADR-052). On 422 `config-invalid` the failing checks are surfaced
+ * as `violations[]` on the publish store (rendered AT their fields — never a toast-and-
+ * swallow). On success the server appends a revision and the draft is cleared. Returns
+ * the outcome so a caller (the band) can react without a try/catch.
  */
-export async function flushDataSpecSaves(): Promise<void> {
-  // Authoring hold — do NOT force pending PUTs out on leave/unmount either. Held = no
-  // durable write, end to end (never a save behind the owner's back). While held nothing
-  // is pending anyway; this is the belt-and-braces guard for a hold flipped ON mid-session.
-  if (isAuthoringHeld()) return
-  await Promise.all([...pendingSpecTimers.keys()].map((id) => flushSpec(id)))
+export async function publishDataSpec(
+  id: string,
+): Promise<{ ok: boolean; violations?: boolean }> {
+  const pub = useDataSpecPublishStore.getState()
+  const spec = useConstructorStore.getState().dataSpecs.find((s) => s.id === id)
+  if (!spec) return { ok: false }
+  pub.setPublish(id, { phase: 'publishing' })
+  try {
+    await configApi.dataSpecs.update(id, {
+      name:        spec.name,
+      description: spec.description,
+      spec:        spec.spec as Record<string, unknown>,
+    })
+    // Durable — the draft is now the published truth; drop it (changeCount → clean).
+    useDataSpecDraftStore.getState().clearDraft(id)
+    pub.setPublish(id, { phase: 'published' })
+    return { ok: true }
+  } catch (e) {
+    const violations = configViolationsOf(e)
+    if (violations) {
+      // Honest, machine-readable rejection — the edit stays a draft, retryable.
+      pub.setPublish(id, { phase: 'error', violations })
+      return { ok: false, violations: true }
+    }
+    const message = e instanceof Error ? e.message : 'Publish failed'
+    console.error('[api] publishDataSpec failed', e)
+    pub.setPublish(id, { phase: 'error', error: message })
+    return { ok: false }
+  }
+}
+
+/** The `violations[]` of a 422 `config-invalid` ApiError, or null for any other error. */
+function configViolationsOf(e: unknown): ConfigViolation[] | null {
+  if (!(e instanceof ApiError) || e.status !== 422) return null
+  const problem = e.problem
+  if (problem && Array.isArray(problem.violations)) return problem.violations as ConfigViolation[]
+  return null
+}
+
+/**
+ * Discard the current draft — drop the unpublished edit and restore the published base
+ * into the store (client-side, no round-trip). Idempotent: a no-op when clean.
+ */
+export function discardDataSpec(id: string): void {
+  const draft = useDataSpecDraftStore.getState().getDraft(id)
+  if (!draft) return
+  useConstructorStore.getState().updateDataSpec(id, { spec: draft.base })
+  useDataSpecDraftStore.getState().clearDraft(id)
+  useDataSpecPublishStore.getState().clearPublish(id)
+}
+
+/** Fetch a spec's append-only revision history (genesis backfill → never empty). */
+export async function fetchDataSpecRevisions(id: string): Promise<RevisionSummary[]> {
+  try {
+    return await configApi.dataSpecs.revisions(id)
+  } catch (e) {
+    console.error('[api] fetchDataSpecRevisions failed', e)
+    return []
+  }
+}
+
+/**
+ * Restore a historical revision as the live document — a NEW validated revision
+ * server-side (admin-gated). A 403 surfaces as `forbidden` (needs admin, honest — never
+ * reimplemented client-side); a stale body may 422 with violations. On success the
+ * restored body is hydrated into the store and any local draft is dropped.
+ */
+export async function restoreDataSpecRevision(
+  id: string,
+  revId: string,
+): Promise<{ ok: boolean; forbidden?: boolean; violations?: boolean }> {
+  const pub = useDataSpecPublishStore.getState()
+  pub.setPublish(id, { phase: 'publishing' })
+  try {
+    const row = await configApi.dataSpecs.restore(id, revId)
+    const restored = fromApiDataSpec(row)
+    const store = useConstructorStore.getState()
+    if (store.dataSpecs.some((s) => s.id === id)) store.updateDataSpec(id, restored)
+    else store.addDataSpec(restored)
+    useDataSpecDraftStore.getState().clearDraft(id)
+    pub.setPublish(id, { phase: 'published' })
+    return { ok: true }
+  } catch (e) {
+    if (e instanceof ApiError && e.status === 403) {
+      pub.setPublish(id, { phase: 'forbidden', error: e.message })
+      return { ok: false, forbidden: true }
+    }
+    const violations = configViolationsOf(e)
+    if (violations) {
+      pub.setPublish(id, { phase: 'error', violations })
+      return { ok: false, violations: true }
+    }
+    const message = e instanceof Error ? e.message : 'Restore failed'
+    console.error('[api] restoreDataSpecRevision failed', e)
+    pub.setPublish(id, { phase: 'error', error: message })
+    return { ok: false }
+  }
+}
+
+/**
+ * Re-apply any crash-persisted drafts over the freshly-loaded published specs (called by
+ * initFromApi after the authoritative REPLACE). A draft whose `base` still matches the
+ * loaded published spec is re-applied (the in-session edit survives a reload); a draft
+ * whose base has DRIFTED (the doc was published elsewhere) is dropped — published wins,
+ * never a silent resurrection of an edit onto a changed base (Law 11).
+ */
+export function rehydrateDataSpecDrafts(): void {
+  const draftStore = useDataSpecDraftStore.getState()
+  const constructor = useConstructorStore.getState()
+  const deepEqual = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b)
+  for (const [id, draft] of Object.entries(draftStore.drafts)) {
+    const published = constructor.dataSpecs.find((s) => s.id === id)?.spec
+    if (published !== undefined && deepEqual(published, draft.base)) {
+      constructor.updateDataSpec(id, { spec: draft.current as DataSpec })
+    } else {
+      draftStore.clearDraft(id) // stale (published advanced) or the doc is gone
+    }
+  }
 }
 
 export async function deleteDataSpec(id: string): Promise<void> {

@@ -28,6 +28,42 @@ export const PROBLEM_CONTENT_TYPE = 'application/problem+json'
 /** URN namespace for our problem `type` URIs — stable, app-owned, dereference-free. */
 export const PROBLEM_URN_PREFIX = 'urn:statdash:problem:'
 
+// ── config-invalid (422) — the validated-PUT rejection contract (ADR-052 §4) ──
+//
+//  A `config-invalid` 422 (data_spec / data_source PUT + restore) carries a
+//  machine-readable `violations[]` extension member so a client renders the
+//  failure AT the offending field, never a stringified blob. This lives in
+//  @statdash/contracts (not apps/api) because it is a WIRE shape the panel reads
+//  off the 422 body — the same cross-boundary rationale as ProblemDetails itself.
+//  The api's referential gate (`validate-config-doc`) is the runtime that MINTS
+//  these; it should read this SSOT (SURFACED follow-up — its local copy predates
+//  this move and is byte-identical).
+
+/** The `code` extension member a `config-invalid` 422 carries. */
+export const CONFIG_INVALID_CODE = 'CONFIG_INVALID'
+
+/**
+ * One entry in a `config-invalid` 422's `violations[]` (ADR-052 §4). Machine-
+ * readable: `check` names the failed class, `path` is a JSON-pointer into the
+ * document body, `ref` is the offending value, `detail` is the human message.
+ */
+export interface ConfigViolation {
+  /** Which validation class failed. */
+  check:  'shape' | 'dataset-exists' | 'dims-subset' | 'metric-resolves'
+  /** JSON-pointer into the document body (e.g. `/config/datasetCode`). */
+  path:   string
+  /** The offending value (missing datasetCode / dim / metric id), when applicable. */
+  ref?:   string
+  /** Human-readable occurrence detail. */
+  detail: string
+}
+
+/** The `config-invalid` 422 body: ProblemDetails + the typed `violations[]`/`code`. */
+export interface ConfigInvalidProblem extends ProblemDetails {
+  code:       typeof CONFIG_INVALID_CODE
+  violations: ConfigViolation[]
+}
+
 /**
  * The RFC 9457 problem body. The five standard members are fixed; extension
  * members (§3.2) are any further JSON-serializable fields a problem kind adds.

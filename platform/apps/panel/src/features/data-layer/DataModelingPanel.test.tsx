@@ -42,7 +42,6 @@ vi.mock('../../store/api-actions', async (importOriginal) => {
     updateDataSpec: vi.fn((id: string, patch: Partial<NamedDataSpec>) => {
       useConstructorStore.getState().updateDataSpec(id, patch)
     }),
-    flushDataSpecSaves: vi.fn(async () => {}),
   }
 })
 

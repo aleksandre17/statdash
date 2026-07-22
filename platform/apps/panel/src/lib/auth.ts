@@ -36,6 +36,36 @@ export function isAuthenticated(): boolean {
   return getToken() !== null
 }
 
+// ── Role claims — a UI HINT ONLY, never enforcement (server 403 is truth) ──────
+//
+//  The governance acts (revision restore, page publish) are admin-gated SERVER-side
+//  (RFC 7235 403). To surface that honestly BEFORE the round-trip (hide/disable the
+//  restore control for a non-admin, Nielsen: prevent the error), we read the `roles`
+//  claim from the JWT payload. This is an UNVERIFIED decode (base64url of the middle
+//  segment) — sound for a UI hint, NEVER for access control (the server re-checks the
+//  signed token). A malformed/absent token/claim ⇒ no roles ⇒ non-admin (fail-closed
+//  on the hint: we hide a privileged control rather than dangle a 403).
+
+/** Decode the JWT payload's `roles` claim (unverified — UI hint only). */
+export function getRoles(): string[] {
+  const token = getToken()
+  if (token === null) return []
+  const payload = token.split('.')[1]
+  if (!payload) return []
+  try {
+    const json = atob(payload.replace(/-/g, '+').replace(/_/g, '/'))
+    const claims = JSON.parse(json) as { roles?: unknown }
+    return Array.isArray(claims.roles) ? claims.roles.filter((r): r is string => typeof r === 'string') : []
+  } catch {
+    return []
+  }
+}
+
+/** UI hint: does the session carry the admin role a restore/publish needs? */
+export function isAdminHint(): boolean {
+  return getRoles().includes('admin')
+}
+
 // ── Login ─────────────────────────────────────────────────────────────────────
 //
 //  Sends credentials to POST /api/auth/login — mirrors the `{ data: { token } }`

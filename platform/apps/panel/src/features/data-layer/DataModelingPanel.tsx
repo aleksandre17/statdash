@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { Box, Typography, Button, Chip, Paper, Divider } from '@mui/material'
 import StorageIcon from '@mui/icons-material/Storage'
@@ -20,23 +20,25 @@ import type { DataSpec } from '@statdash/engine'
 import { withStewardCube, fromWorkbenchModel } from './workbench/workbenchModel'
 import { CUBE_SEED_PARAM, CUBE_MEASURES_PARAM, CUBE_STORE_PARAM, WORKBENCH_SEED_PARAMS } from '../../studio/useStudioRoute'
 import { useActiveLocales } from '../../inspector/useActiveLocales'
-import { SuspenseFallback } from '../../shared/SuspenseFallback'
 
-// Lazy: the three-pane workbench (+ PipelineBuilder/dnd-kit, live grid, generated-query
-// pane) loads only when a spec is opened for shaping — never in the eager modeler chunk.
-// It is the SOLE spec editor in this host (ADR-051 DU3): a query/pipeline shapes on the
-// three panes; any other kind edits in its co-located SpecBody fallback lane. The SAME
-// surface the inspector DATA-facet escalation mounts (0086 — ONE editor, no sibling).
-const DataWorkbench = lazy(() =>
-  import('./workbench/DataWorkbench').then((m) => ({ default: m.DataWorkbench })),
-)
+// The three-pane workbench is the panel's PRIMARY content when a spec is selected (it
+// takes over the panel full-width — the early return below). This host is itself already
+// behind a lazy route boundary (studio ModelSurface), and the heavy vendors it needs
+// (dnd-kit, MUI) are Rolldown vendor-grouped regardless of import style — so a NESTED
+// lazy boundary here bought no eager-boot weight, it only sat a second Suspense spinner
+// in front of the panel's own primary act AND raced the cold on-demand transform of its
+// subtree in tests (the DataModelingPanel red). A direct import is the right seam: the
+// workbench ships in this already-lazy panel chunk. The inspector DATA-facet escalation
+// (DataFacetField) keeps ITS lazy boundary — there the workbench is a genuinely optional
+// heavy escalation from a light inspector.
+import { DataWorkbench } from './workbench/DataWorkbench'
 import { ShowMe } from './showme/ShowMe'
 import { SourceAuthoringPanel } from '../datasources/SourceAuthoringPanel'
 import { ExcelUpload } from '../datasources/ExcelUpload'
-import { deleteDataSource, createDataSpec, refreshDataSources, updateDataSpec, flushDataSpecSaves } from '../../store/api-actions'
-import { useDataSpecSave } from '../../store/dataSpecSave.store'
-import { useAuthoringHold, useAuthoringHoldStore } from '../../store/authoringHold'
-import type { ConnectionStatus } from '../../types/constructor'
+import { deleteDataSource, createDataSpec, refreshDataSources, updateDataSpec } from '../../store/api-actions'
+import { useDataSpecDraft } from '../../store/dataSpecDraft.store'
+import { AuthoringLifecycleBand } from './lifecycle/AuthoringLifecycleBand'
+import type { ConnectionStatus, Locale } from '../../types/constructor'
 import './data-modeling-panel.css'
 
 // ── DataModelingPanel — the reusable source/spec authoring body (AR-49 M1.3) ────
@@ -119,13 +121,26 @@ function SortableRow({ id, primary, icon, selected, endAdornment, onSelect }: So
   )
 }
 
+// ── SpecRowLifecycle — the COMPACT zoom of a stored spec's lifecycle (C3) ──────────
+//
+//  The second zoom (browser row) of the SAME lifecycle band the workbench head hosts —
+//  ONE component, placed by the same declaration (lifecycleBandPlacement), not a fork.
+//  It stays QUIET until a spec has an unpublished draft, then surfaces the amber chip +
+//  a compact Publish/Discard right on the row (publish a spec without opening it).
+function SpecRowLifecycle({ specId, locale }: { specId: string; locale: Locale }) {
+  const draft = useDataSpecDraft(specId)
+  if (!draft) return null
+  return <AuthoringLifecycleBand docId={specId} locale={locale} dense />
+}
+
 export function DataModelingPanel() {
   const sources = useDataSources()
   const specs   = useDataSpecs()
   const reorderSources = useConstructorStore((s) => s.reorderDataSources)
   const reorderSpecs   = useConstructorStore((s) => s.reorderDataSpecs)
   const sensors        = useDndSensors()
-  const en = (useActiveLocales()[0] ?? 'ka') === 'en'
+  const locale = (useActiveLocales()[0] ?? 'ka') as Locale
+  const en = locale === 'en'
 
   const [selection, setSelection] = useState<Selection>(null)
 
@@ -203,23 +218,12 @@ export function DataModelingPanel() {
   //  path, not a raw Select (FF-ONE-SPEC-EDITOR).
   const selectedSpecId = selectedSpec?.id
 
-  // ── Durable edit persistence (data-loss fix) ───────────────────────────────────
-  //  Every workbench onChange (BOTH the three-pane pipeline shaping AND the fallback-
-  //  lane non-pipeline edit funnel through the ONE onChange below) persists through the
-  //  api-action `updateDataSpec`: immediate optimistic store write (snappy controlled
-  //  value) + a debounced, coalesced PUT. Leaving a spec (back-to-list / selecting
-  //  another / unmount) FLUSHES any pending PUT so a debounced edit is never dropped by
-  //  navigation. The save phase is surfaced honestly in the head (Law 11).
-  const save = useDataSpecSave(selectedSpecId)
-  // Authoring hold (store/authoringHold.ts) — while held, edits stay in-session only; the
-  // head shows an HONEST "Draft — not saving" and hides the saving/saved chips entirely.
-  const held = useAuthoringHold()
-  const setHeld = useAuthoringHoldStore((s) => s.setHeld)
-  useEffect(() => {
-    if (!selectedSpecId) return
-    // Cleanup fires on id change AND on unmount → flush the spec being left.
-    return () => { void flushDataSpecSaves() }
-  }, [selectedSpecId])
+  // ── Authoring lifecycle (C3 — draft → explicit publish) ────────────────────────
+  //  Every workbench onChange funnels through the ONE `updateDataSpec` below: an
+  //  immediate optimistic store write (snappy controlled value) + a CLIENT-SIDE draft.
+  //  Nothing durable is written until the author Publishes (AuthoringLifecycleBand in
+  //  the head). The auto-save debounce + the leave/unmount flush are GONE (the era is
+  //  over) — a draft is crash-safe in localStorage, so leaving a spec never drops it.
 
   // The workbench takes over the panel full-width (the CRAFT room its three panes need —
   // the same reason the inspector escalates it to a full-screen focus-view). Bring it into
@@ -252,48 +256,17 @@ export function DataModelingPanel() {
             color="secondary"
             variant="outlined"
           />
-          {/* Honest save state (Law 11) — never a fake "saved". When the authoring hold is
-              ON, edits are IN-SESSION ONLY: show an unmistakable "Draft — not saving" and
-              suppress every auto-save chip (they cannot honestly appear while paused), plus
-              a deliberate "Enable saving" toggle to flip the hold OFF live when stable. When
-              the hold is OFF, the normal saving/saved/error auto-save chips render. */}
-          {held ? (
-            <>
-              <Chip size="small" color="warning" variant="filled" data-testid="spec-save-status"
-                label={en ? 'Draft — not saving' : 'მონახაზი — არ ინახება'} />
-              <Button
-                size="small" color="warning" variant="outlined"
-                data-testid="authoring-hold-toggle"
-                onClick={() => setHeld(false)}
-              >
-                {en ? 'Enable saving' : 'შენახვის ჩართვა'}
-              </Button>
-            </>
-          ) : (
-            <>
-              {save?.phase === 'saving' && (
-                <Chip size="small" variant="outlined" data-testid="spec-save-status"
-                  label={en ? 'Saving…' : 'ინახება…'} />
-              )}
-              {save?.phase === 'saved' && (
-                <Chip size="small" color="success" variant="outlined" data-testid="spec-save-status"
-                  label={en ? 'Saved' : 'შენახულია'} />
-              )}
-              {save?.phase === 'error' && (
-                <Chip size="small" color="error" clickable data-testid="spec-save-status"
-                  onClick={() => updateDataSpec(selectedSpec.id, { spec: selectedSpec.spec })}
-                  label={en ? `Not saved — retry` : 'ვერ შეინახა — თავიდან'} />
-              )}
-            </>
-          )}
+          {/* The Authoring Lifecycle band (C3) — the amber draft chip the hold GRADUATED
+              into, plus explicit Publish/Discard and the revision History door. ONE
+              component, placed by declaration (lifecycleBandPlacement) — the full (head)
+              zoom of the stored spec's lifecycle. Honest states only (Law 11). */}
+          <AuthoringLifecycleBand docId={selectedSpec.id} locale={locale} />
         </Box>
 
-        <Suspense fallback={<SuspenseFallback label={en ? 'Loading workbench' : 'იტვირთება ვორქბენჩი'} />}>
-          <DataWorkbench
-            value={selectedSpec.spec}
-            onChange={(spec) => updateDataSpec(selectedSpec.id, { spec })}
-          />
-        </Suspense>
+        <DataWorkbench
+          value={selectedSpec.spec}
+          onChange={(spec) => updateDataSpec(selectedSpec.id, { spec })}
+        />
         {/* ADR-051 DU3 — the parallel "Raw editor (advanced)" accordion + the kind <Select>
             are GONE: the workbench (with its co-located SpecBody fallback lane) is the SOLE
             spec-editing surface here. A non-pipeline kind edits INSIDE the workbench's
@@ -359,6 +332,7 @@ export function DataModelingPanel() {
                     primary={spec.name}
                     icon={<DataObjectIcon fontSize="small" />}
                     selected={selection?.kind === 'spec' && selection.id === spec.id}
+                    endAdornment={<SpecRowLifecycle specId={spec.id} locale={locale} />}
                     onSelect={() => setSelection({ kind: 'spec', id: spec.id })}
                   />
                 ))}

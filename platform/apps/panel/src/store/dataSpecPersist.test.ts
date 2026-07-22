@@ -1,16 +1,20 @@
-// ── dataSpecPersist.test — the edit-persistence contract (data-loss fix) ──────────
+// ── dataSpecPersist.test — the Authoring Lifecycle contract (C3 · FF-DRAFT-EXPLICIT-PUBLISH) ──
 //
-//  Root-cause proof: EDITING a DataSpec must durably PUT (create already POSTed; edit
-//  was store-only → lost on reload). updateDataSpec now writes the optimistic patch
-//  IMMEDIATELY (snappy) and PUTs on a debounced, coalesced flush; flushDataSpecSaves()
-//  forces the PUT out (unmount / navigation). On failure it surfaces an honest error
-//  and NEVER drops the optimistic edit (Law 11).
+//  The auto-save era is OVER. This suite is the executable proof of DESIGN-0104 §2·C3:
+//    • FF-DRAFT-EXPLICIT-PUBLISH — an edit is a client-side DRAFT; NO PUT fires without an
+//      explicit publish gesture; a draft survives reload; discard restores the published base.
+//    • FF-PUT-VALIDATED         — a 422 `config-invalid` renders its `violations[]`, keeps
+//      the edit as a draft (never a fake success, never a silent swallow — Law 11).
+//  It SUPERSEDES the debounced-autosave + authoring-hold suites (both deleted with the hold).
 //
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { useConstructorStore } from './constructor.store'
-import { useDataSpecSaveStore } from './dataSpecSave.store'
-import { useAuthoringHoldStore, DEFAULT_AUTHORING_HOLD } from './authoringHold'
-import { updateDataSpec, flushDataSpecSaves } from './api-actions'
+import { useDataSpecDraftStore } from './dataSpecDraft.store'
+import { useDataSpecPublishStore } from './dataSpecPublish.store'
+import {
+  updateDataSpec, publishDataSpec, discardDataSpec, rehydrateDataSpecDrafts,
+  restoreDataSpecRevision,
+} from './api-actions'
 import type { DataSpec } from '@statdash/engine'
 import type { NamedDataSpec } from '../types/constructor'
 
@@ -22,8 +26,16 @@ const EDITED: DataSpec = { type: 'row-list', rows: [{ a: 1 }] } as unknown as Da
 function okJson(data: unknown): Response {
   return { ok: true, status: 200, json: async () => ({ data }) } as Response
 }
-
-/** Parse the PUT calls a fetch spy recorded (url + method + parsed body). */
+/** A 422 `config-invalid` RFC 9457 problem body (the validated-PUT rejection). */
+function configInvalid422(violations: unknown[]): Response {
+  return {
+    ok: false, status: 422,
+    json: async () => ({
+      type: 'urn:statdash:problem:config-invalid', title: 'Config document failed validation',
+      status: 422, code: 'CONFIG_INVALID', violations,
+    }),
+  } as Response
+}
 function putCalls(fetchSpy: ReturnType<typeof vi.fn>) {
   return fetchSpy.mock.calls
     .filter((c) => (c[1] as RequestInit)?.method === 'PUT')
@@ -31,143 +43,138 @@ function putCalls(fetchSpy: ReturnType<typeof vi.fn>) {
 }
 
 beforeEach(() => {
-  useConstructorStore.setState({ dataSpecs: [SPEC] })
-  useDataSpecSaveStore.setState({ status: {} })
-  // These tests prove the AUTO-SAVE behavior, which is the hold-OFF path. The hold now
-  // defaults ON (owner's urgent ask), so opt this suite OUT explicitly.
-  useAuthoringHoldStore.setState({ held: false })
+  useConstructorStore.setState({ dataSpecs: [structuredClone(SPEC)] })
+  useDataSpecDraftStore.setState({ drafts: {} })
+  useDataSpecPublishStore.setState({ status: {} })
 })
 afterEach(() => {
   vi.unstubAllGlobals()
   vi.useRealTimers()
-  useAuthoringHoldStore.setState({ held: DEFAULT_AUTHORING_HOLD }) // restore the shipped default
 })
 
-describe('updateDataSpec — durable edit persistence', () => {
-  it('writes the optimistic edit to the store IMMEDIATELY (before any PUT)', () => {
+describe('FF-DRAFT-EXPLICIT-PUBLISH — an edit is a draft; only Publish writes', () => {
+  it('an edit writes the store optimistically AND records a draft — but fires NO PUT', async () => {
     const fetchSpy = vi.fn(async () => okJson({ id: 's1' }))
     vi.stubGlobal('fetch', fetchSpy)
 
     updateDataSpec('s1', { spec: EDITED })
 
-    // Snappy: the store reflects the edit synchronously, no await, no PUT yet.
+    // Optimistic: the store reflects the edit synchronously (snappy, in-session).
     const stored = useConstructorStore.getState().dataSpecs.find((s) => s.id === 's1')!.spec
     expect((stored as Extract<DataSpec, { type: 'row-list' }>).rows).toHaveLength(1)
+    // A draft is recorded (the amber chip's «n ცვლილება»)…
+    const draft = useDataSpecDraftStore.getState().drafts.s1
+    expect(draft?.changeCount).toBe(1)
+    // …and the auto-save era is OVER — NO durable write happened.
     expect(putCalls(fetchSpy)).toHaveLength(0)
   })
 
-  it('flushDataSpecSaves() issues the durable PUT with the edited spec + marks it saved', async () => {
+  it('a burst of edits accumulates in ONE draft (base pinned to the FIRST published value)', () => {
+    vi.stubGlobal('fetch', vi.fn(async () => okJson({ id: 's1' })))
+    updateDataSpec('s1', { spec: { type: 'row-list', rows: [{ a: 1 }] } as unknown as DataSpec })
+    updateDataSpec('s1', { spec: { type: 'row-list', rows: [{ a: 2 }] } as unknown as DataSpec })
+    const draft = useDataSpecDraftStore.getState().drafts.s1!
+    expect(draft.changeCount).toBe(2)
+    // base = the published value BEFORE any edit (discard target), current = the latest edit.
+    expect((draft.base as Extract<DataSpec, { type: 'row-list' }>).rows).toHaveLength(0)
+    expect((draft.current as Extract<DataSpec, { type: 'row-list' }>).rows).toEqual([{ a: 2 }])
+  })
+
+  it('Publish fires the validated PUT with the current draft + clears the draft + marks published', async () => {
     const fetchSpy = vi.fn(async () => okJson({ id: 's1' }))
     vi.stubGlobal('fetch', fetchSpy)
 
     updateDataSpec('s1', { spec: EDITED })
-    await flushDataSpecSaves()
+    const res = await publishDataSpec('s1')
 
+    expect(res.ok).toBe(true)
     const puts = putCalls(fetchSpy)
     expect(puts).toHaveLength(1)
     expect(puts[0].url).toContain('/data-specs/s1')
     expect(puts[0].body.spec).toEqual(EDITED)
-    expect(useDataSpecSaveStore.getState().status.s1).toEqual({ phase: 'saved' })
+    // The draft is gone (clean) and the honest phase is `published`.
+    expect(useDataSpecDraftStore.getState().drafts.s1).toBeUndefined()
+    expect(useDataSpecPublishStore.getState().status.s1?.phase).toBe('published')
   })
 
-  it('coalesces a burst of edits into ONE PUT carrying the latest spec', async () => {
-    const fetchSpy = vi.fn(async () => okJson({ id: 's1' }))
-    vi.stubGlobal('fetch', fetchSpy)
-
-    updateDataSpec('s1', { spec: { type: 'row-list', rows: [{ a: 1 }] } as unknown as DataSpec })
-    updateDataSpec('s1', { spec: { type: 'row-list', rows: [{ a: 2 }] } as unknown as DataSpec })
-    await flushDataSpecSaves()
-
-    const puts = putCalls(fetchSpy)
-    expect(puts).toHaveLength(1)                       // one durable write, not two
-    expect(puts[0].body.spec.rows).toEqual([{ a: 2 }]) // the latest edit wins
-  })
-
-  it('the debounce timer fires the PUT without an explicit flush (reliable durability)', async () => {
-    vi.useFakeTimers()
-    const fetchSpy = vi.fn(async () => okJson({ id: 's1' }))
-    vi.stubGlobal('fetch', fetchSpy)
-
+  it('Discard drops the draft and restores the published base into the store', () => {
+    vi.stubGlobal('fetch', vi.fn(async () => okJson({ id: 's1' })))
     updateDataSpec('s1', { spec: EDITED })
-    expect(putCalls(fetchSpy)).toHaveLength(0)         // still debounced
-    await vi.runAllTimersAsync()
-    expect(putCalls(fetchSpy)).toHaveLength(1)         // fired on its own
-  })
+    discardDataSpec('s1')
 
-  it('on a PUT failure: surfaces an HONEST error and NEVER drops the optimistic edit (Law 11)', async () => {
-    const fetchSpy = vi.fn(async () => { throw new Error('network down') })
-    vi.stubGlobal('fetch', fetchSpy)
-
-    updateDataSpec('s1', { spec: EDITED })
-    await flushDataSpecSaves()
-
-    // Honest state — error, not fake-saved.
-    const status = useDataSpecSaveStore.getState().status.s1
-    expect(status?.phase).toBe('error')
-    expect(status?.error).toBeTruthy()
-    // The edit is still in the store (optimistic, not silently reverted) — retryable.
     const stored = useConstructorStore.getState().dataSpecs.find((s) => s.id === 's1')!.spec
-    expect((stored as Extract<DataSpec, { type: 'row-list' }>).rows).toHaveLength(1)
+    expect((stored as Extract<DataSpec, { type: 'row-list' }>).rows).toHaveLength(0) // back to base
+    expect(useDataSpecDraftStore.getState().drafts.s1).toBeUndefined()
+  })
+
+  it('a draft SURVIVES reload — rehydrate re-applies it over the loaded published spec', () => {
+    // Simulate a crash-persisted draft (base == the just-loaded published value).
+    useDataSpecDraftStore.setState({
+      drafts: { s1: { base: structuredClone(SPEC.spec), current: EDITED, changeCount: 3, updatedAt: 1 } },
+    })
+    // initFromApi has REPLACED the store with the published spec; rehydrate re-applies the draft.
+    rehydrateDataSpecDrafts()
+    const stored = useConstructorStore.getState().dataSpecs.find((s) => s.id === 's1')!.spec
+    expect((stored as Extract<DataSpec, { type: 'row-list' }>).rows).toHaveLength(1) // the edit survived
+    expect(useDataSpecDraftStore.getState().drafts.s1?.changeCount).toBe(3)
+  })
+
+  it('a STALE draft (published advanced underneath) is dropped on rehydrate — published wins', () => {
+    // The published spec now differs from the draft's base → the doc was published elsewhere.
+    useConstructorStore.setState({
+      dataSpecs: [{ ...SPEC, spec: { type: 'row-list', rows: [{ server: true }] } as unknown as DataSpec }],
+    })
+    useDataSpecDraftStore.setState({
+      drafts: { s1: { base: structuredClone(SPEC.spec), current: EDITED, changeCount: 1, updatedAt: 1 } },
+    })
+    rehydrateDataSpecDrafts()
+    // The draft is dropped; the freshly-published server value is kept (never resurrected).
+    expect(useDataSpecDraftStore.getState().drafts.s1).toBeUndefined()
+    const stored = useConstructorStore.getState().dataSpecs.find((s) => s.id === 's1')!.spec
+    expect((stored as { rows: unknown[] }).rows).toEqual([{ server: true }])
   })
 })
 
-// ── Authoring hold — reversible pause of durable persistence (store/authoringHold.ts) ──
-//
-//  Owner's urgent ask (2026-07-20): while the live tool stabilizes, edits must stay
-//  IN-SESSION ONLY — the optimistic store still updates, but NO PUT fires (auto-save was
-//  corrupting stored specs). The honest state is `paused` ("Draft — not saving"), never a
-//  fake `saved` (Law 11). Flipping the hold OFF restores the exact auto-save behavior above.
-describe('authoring hold — pause durable persistence (reversible)', () => {
-  it('ships DEFAULT ON (paused) — the owner wants saving OFF right now', () => {
-    expect(DEFAULT_AUTHORING_HOLD).toBe(true)
-  })
-
-  it('HELD: an edit updates the store optimistically but fires NO PUT, even on flush', async () => {
-    useAuthoringHoldStore.setState({ held: true })
-    const fetchSpy = vi.fn(async () => okJson({ id: 's1' }))
-    vi.stubGlobal('fetch', fetchSpy)
+describe('FF-PUT-VALIDATED — a 422 renders violations and keeps the edit as a draft (Law 11)', () => {
+  it('a rejected Publish surfaces the violations[] and does NOT clear the draft', async () => {
+    const violations = [{ check: 'dataset-exists', path: '/config/datasetCode', ref: 'GDP', detail: 'unknown dataset' }]
+    vi.stubGlobal('fetch', vi.fn(async () => configInvalid422(violations)))
 
     updateDataSpec('s1', { spec: EDITED })
-    await flushDataSpecSaves() // held → must NOT force a write out either
+    const res = await publishDataSpec('s1')
 
-    // In-session UI stays live: the optimistic edit is in the store…
-    const stored = useConstructorStore.getState().dataSpecs.find((s) => s.id === 's1')!.spec
-    expect((stored as Extract<DataSpec, { type: 'row-list' }>).rows).toHaveLength(1)
-    // …but NOTHING was persisted.
-    expect(putCalls(fetchSpy)).toHaveLength(0)
+    expect(res.ok).toBe(false)
+    expect(res.violations).toBe(true)
+    const status = useDataSpecPublishStore.getState().status.s1
+    expect(status?.phase).toBe('error')
+    expect(status?.violations).toEqual(violations)
+    // The edit is still a live draft — retryable, never fake-saved, never dropped.
+    expect(useDataSpecDraftStore.getState().drafts.s1?.changeCount).toBe(1)
   })
 
-  it('HELD: the save chip shows an HONEST "paused" state, never a fake "saved" (Law 11)', () => {
-    useAuthoringHoldStore.setState({ held: true })
-    vi.stubGlobal('fetch', vi.fn(async () => okJson({ id: 's1' })))
-
+  it('a transport failure surfaces an honest error (no violations), keeping the draft', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => { throw new Error('network down') }))
     updateDataSpec('s1', { spec: EDITED })
+    const res = await publishDataSpec('s1')
 
-    expect(useDataSpecSaveStore.getState().status.s1).toEqual({ phase: 'paused' })
+    expect(res.ok).toBe(false)
+    const status = useDataSpecPublishStore.getState().status.s1
+    expect(status?.phase).toBe('error')
+    expect(status?.error).toBeTruthy()
+    expect(status?.violations).toBeUndefined()
+    expect(useDataSpecDraftStore.getState().drafts.s1?.changeCount).toBe(1)
   })
+})
 
-  it('HELD: the debounce timer never fires a PUT (nothing was armed)', async () => {
-    useAuthoringHoldStore.setState({ held: true })
-    vi.useFakeTimers()
-    const fetchSpy = vi.fn(async () => okJson({ id: 's1' }))
-    vi.stubGlobal('fetch', fetchSpy)
+describe('restore — admin governance act, honest 403 (FF-REVISION-ON-PUT lineage)', () => {
+  it('a 403 restore surfaces `forbidden` honestly (needs admin), never reimplemented client-side', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => ({
+      ok: false, status: 403,
+      json: async () => ({ type: 'urn:statdash:problem:forbidden', title: 'Forbidden', status: 403, message: 'admin role required' }),
+    } as Response)))
 
-    updateDataSpec('s1', { spec: EDITED })
-    await vi.runAllTimersAsync()
-    expect(putCalls(fetchSpy)).toHaveLength(0)
-  })
-
-  it('flipping the hold OFF restores auto-save: the next edit PUTs (existing behavior)', async () => {
-    useAuthoringHoldStore.setState({ held: false })
-    const fetchSpy = vi.fn(async () => okJson({ id: 's1' }))
-    vi.stubGlobal('fetch', fetchSpy)
-
-    updateDataSpec('s1', { spec: EDITED })
-    await flushDataSpecSaves()
-
-    const puts = putCalls(fetchSpy)
-    expect(puts).toHaveLength(1)
-    expect(puts[0].body.spec).toEqual(EDITED)
-    expect(useDataSpecSaveStore.getState().status.s1).toEqual({ phase: 'saved' })
+    const res = await restoreDataSpecRevision('s1', 'rev-9')
+    expect(res.forbidden).toBe(true)
+    expect(useDataSpecPublishStore.getState().status.s1?.phase).toBe('forbidden')
   })
 })

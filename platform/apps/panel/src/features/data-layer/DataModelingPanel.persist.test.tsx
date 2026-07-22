@@ -1,8 +1,9 @@
 // ── DataModelingPanel.persist.test — the edit-persistence WIRING (data-loss fix) ──
 //
-//  Proves the Model-floor workbench's onChange reaches the API-persisting updateDataSpec
-//  (durable PUT), not the store-only action — for BOTH shapes that funnel through the
-//  ONE DataWorkbench (ADR-051 DU3): a pipeline-shaped edit AND a fallback-lane edit.
+//  Proves the Model-floor workbench's onChange funnels through the ONE `updateDataSpec`
+//  (the draft path, C3) for BOTH shapes that share the ONE DataWorkbench (ADR-051 DU3):
+//  a pipeline-shaped edit AND a fallback-lane edit. The durable PUT is now an EXPLICIT
+//  publish (dataSpecPersist.test.ts) — the leave/unmount flush is retired with auto-save.
 //  DataWorkbench is mocked to a deterministic onChange emitter (its real routing is
 //  covered in DataModelingPanel.test.tsx / DataWorkbench.test.tsx). The durable PUT +
 //  debounce + honest-error contract of the api-action itself lives in store/dataSpecPersist.test.ts.
@@ -43,7 +44,6 @@ vi.mock('../../store/api-actions', async (importOriginal) => {
     updateDataSpec: vi.fn((id: string, patch: Partial<NamedDataSpec>) => {
       useConstructorStore.getState().updateDataSpec(id, patch)
     }),
-    flushDataSpecSaves: vi.fn(async () => {}),
   }
 })
 
@@ -84,14 +84,5 @@ describe('DataModelingPanel — edit persistence wiring (both shapes → durable
     fireEvent.click(screen.getByText('Manual rows'))
     fireEvent.click(await screen.findByTestId('emit-rowlist'))
     expect(updateDataSpec).toHaveBeenCalledWith('spec-r', { spec: ROWLIST_EDIT })
-  })
-
-  it('leaving a spec (back-to-list) FLUSHES any pending durable PUT — no dropped edit', async () => {
-    const { flushDataSpecSaves } = await import('../../store/api-actions')
-    renderPanel()
-    fireEvent.click(screen.getByText('Manual rows'))
-    await screen.findByTestId('mock-workbench')
-    fireEvent.click(screen.getByTestId('workbench-back-to-list'))
-    expect(flushDataSpecSaves).toHaveBeenCalled()
   })
 })

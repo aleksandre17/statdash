@@ -19,7 +19,7 @@ import type {
 } from '../types/constructor'
 import type { DataSpec } from '@statdash/engine'
 import type { NodePageConfig } from '@statdash/react/engine'
-import type { SiteConfigResponse } from '@statdash/contracts'
+import type { SiteConfigResponse, ProblemDetails, RevisionSummary, RevisionRecord } from '@statdash/contracts'
 import { getToken, clearToken, AuthError } from './auth'
 import { toNodePageConfig, fromNodePageConfig } from '../canvas/canvasPageAdapter'
 
@@ -33,10 +33,18 @@ const PREFIX = '/api/config'
 
 export class ApiError extends Error {
   readonly status: number
-  constructor(status: number, message: string) {
+  /**
+   * The parsed RFC 9457 `application/problem+json` body when the server sent one
+   * (e.g. a 422 `config-invalid` carries `problem.violations[]`). Undefined for a
+   * plain envelope error. Read `err.problem?.violations` at the call site to render
+   * a validation failure AT its field — never re-parse a stringified message.
+   */
+  readonly problem?: ProblemDetails
+  constructor(status: number, message: string, problem?: ProblemDetails) {
     super(message)
     this.name = 'ApiError'
     this.status = status
+    this.problem = problem
   }
 }
 
@@ -76,9 +84,16 @@ export async function requestAt<T>(prefix: string, method: string, path: string,
     throw new AuthError(401, 'Session expired — please log in again')
   }
 
-  const json = (await res.json()) as Envelope<T>
+  const json = (await res.json()) as Envelope<T> & Partial<ProblemDetails>
   if (!res.ok || json.error) {
-    throw new ApiError(res.status, json.message ?? json.error ?? 'Request failed')
+    // An `application/problem+json` body (RFC 9457) carries `type`/`title`/`status`
+    // + typed extension members (a 422 `config-invalid` → `violations[]`). Detect it
+    // and hand the WHOLE problem to ApiError so the caller reads `err.problem.violations`,
+    // never a stringified blob. A plain envelope error falls back to message/error.
+    const isProblem = typeof json.type === 'string' && typeof json.title === 'string'
+    const problem = isProblem ? (json as unknown as ProblemDetails) : undefined
+    const message = problem?.detail ?? problem?.title ?? json.message ?? json.error ?? 'Request failed'
+    throw new ApiError(res.status, message, problem)
   }
   return json.data as T
 }
@@ -250,6 +265,18 @@ export const configApi = {
     update: (id: string, body: DataSpecUpdateBody) =>
       request<DataSpecRow>('PUT', `/data-specs/${id}`, body),
     delete: (id: string) => request<{ id: string }>('DELETE', `/data-specs/${id}`),
+    // ── Revision history (ADR-052) — the append-only lifecycle log ──────────────
+    // Summaries (no bodies) for the history door; genesis backfill = never empty.
+    revisions: (id: string) =>
+      request<RevisionSummary[]>('GET', `/data-specs/${id}/revisions`),
+    // One full revision body (restore preview / read).
+    revision: (id: string, revId: string) =>
+      request<RevisionRecord>('GET', `/data-specs/${id}/revisions/${revId}`),
+    // Re-apply a historical body as a NEW validated revision. Admin-gated: a
+    // non-admin token yields ApiError 403 (surfaced honestly, never reimplemented
+    // client-side). Re-validates → a stale body may 422 (config-invalid).
+    restore: (id: string, revId: string) =>
+      request<DataSpecRow>('POST', `/data-specs/${id}/revisions/${revId}/restore`),
   },
   site: {
     // Read projects activeLocales/defaultLocale from the config.locale registry
