@@ -87,7 +87,7 @@ describe('AuthoringLifecycleBand — a 422 renders violations AT-field (never sw
           phase: 'error',
           violations: [
             { check: 'dataset-exists', path: '/config/datasetCode', ref: 'GDP', detail: 'unknown dataset GDP' },
-            { check: 'metric-resolves', path: '/pipe/0', detail: 'metric m.x does not resolve' },
+            { check: 'code-resolves', path: '/pipe/0', detail: 'metric m.x does not resolve' },
           ],
         },
       },

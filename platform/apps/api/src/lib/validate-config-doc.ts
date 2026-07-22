@@ -29,15 +29,20 @@
 //                     clean + decisive. A data_spec inherits this guarantee through
 //                     its bound source (its own render-dep dims are NOT used — see
 //                     SURFACED).
-//    • metric refs  — the GOVERNED metric-id positions of a spec (`metric.metrics`,
-//                     a governed `pipeline` source head's `metrics`). These are the
-//                     author's governed-plane references; each must resolve against
-//                     the governed catalog (`config.site_config` 'metrics'). Raw SDMX
-//                     codes in the STEWARD plane (`query.measure`, `timeseries.code`)
-//                     are physical, share the MetricRef namespace, and are NOT
-//                     flagged (Postel — an unresolved bare ref is a raw code, not a
-//                     dangling metric). The plane split (Law 11) makes the check
-//                     decisive without false-positiving raw codes.
+//    • head/source codes — EVERY code-bearing head/source position of a spec lives
+//                     in ONE shared namespace (`MetricRef`: governed metric id OR raw
+//                     cube code — the engine's `resolveMeasureRef` seam resolves both
+//                     through one path). The honest check is therefore NOT "is it
+//                     governed" but "does it RESOLVE anywhere": the governed catalog
+//                     (`config.site_config` 'metrics', ids ∪ codes) OR the live
+//                     measure codelist (`stats.classifier`, dim_code = KEY_MEASURE,
+//                     is_current — the SAME relation the cube-profile route serves
+//                     the Constructor as browsable measures; never a hardcoded list).
+//                     Unresolvable in BOTH → `code-resolves`. (The former catalog-only
+//                     `metric-resolves` let a NONSENSE raw-looking code through
+//                     silently under Postel — live-proven fake-zero corruption,
+//                     J-LIFECYCLE walk 2026-07-22. Enumerated positions: see
+//                     `codeRefPositions`.)
 //
 //  Graceful degradation (rolling migration, M-5): every stats-relation probe gates on
 //  `relationExists` first — an api build running against a DB that has not yet applied
@@ -46,9 +51,9 @@
 //  Depends only on a narrow query port (Dependency Inversion) — `app.pg`, a pooled
 //  client, or a test fake all satisfy it; never on @fastify/postgres concretes.
 
-import type { DataSpec } from '@statdash/engine'
+import type { ConfigViolation } from '@statdash/contracts'
 import { relationExists, type RelationProbe } from './relation-exists.js'
-import type { ConfigViolation } from './problem.js'
+import { KEY_MEASURE } from './cube-keys.js'
 
 /** Minimal query capability the validator needs — satisfied by app.pg / a client / a fake. */
 export type ConfigDocProbe = RelationProbe
@@ -123,6 +128,26 @@ async function metricCatalogRefs(db: ConfigDocProbe): Promise<Set<string> | 'ski
   return refs
 }
 
+/**
+ * The LIVE measure codelist — the authoritative raw-code registry (`stats.classifier`,
+ * dim_code = KEY_MEASURE, is_current = true). This is EXACTLY the relation the
+ * cube-profile route (`routes/cube/index.ts`) serves the Constructor as the browsable
+ * measure palette, and the codelist the ingest SCD-2 writers maintain — the one
+ * stats-side home of "is this a real measure code". Returns 'skipped' when the
+ * relation is absent (rolling migration) OR the codelist is EMPTY (no cube ingested
+ * yet — with nothing to judge against, a raw code cannot be judged dangling; the
+ * same degradation rule as `metricCatalogRefs`).
+ */
+async function measureCodelist(db: ConfigDocProbe): Promise<Set<string> | 'skipped'> {
+  if (!(await relationExists(db, 'stats.classifier'))) return 'skipped'
+  const { rows } = await db.query<{ code: string }>(
+    `SELECT code FROM stats.classifier WHERE dim_code = $1 AND is_current = true`,
+    [KEY_MEASURE],
+  )
+  if (rows.length === 0) return 'skipped'
+  return new Set(rows.map((r) => r.code))
+}
+
 /** The `config` JSONB of a `data_source` by id, or undefined when the source is absent. */
 async function loadSourceConfig(db: ConfigDocProbe, sourceId: string): Promise<Record<string, unknown> | undefined> {
   const { rows } = await db.query<{ config: unknown }>(
@@ -185,31 +210,108 @@ async function checkDataBinding(
   }
 }
 
-// ── Governed metric-ref resolution (the metric-resolves check) ─────────────────
+// ── Shared-namespace code positions (the code-resolves check) ──────────────────
+
+/** One code-bearing head/source position: where it sits in the PUT body + the code. */
+interface CodeRefPosition {
+  path: string
+  ref:  string
+}
 
 /**
- * The GOVERNED metric refs a spec declares — ONLY the author-plane positions
- * (`metric.metrics`, a governed `pipeline` source head's `metrics`). Steward-plane
- * raw codes (`query.measure`, `timeseries.code`, …) are deliberately NOT returned:
- * they are physical SDMX codes, not governed metric ids, and validating them against
- * the metric catalog would false-positive every raw-code spec (they share the
- * MetricRef namespace under Postel resolution). The plane split makes the check
- * decisive. Generic over the spec shape (read as an opaque record — the engine type
- * is the contract, but the api reads it structurally to stay resilient to a
- * malformed stored blob).
+ * Collect a `string | string[]` code field into positions. Non-string entries
+ * (a `{ $ctx }` ref, a malformed blob) are IGNORED, not flagged — a ctx-bound
+ * value is resolved at render time and cannot be judged here (honest skip).
  */
-function governedMetricRefs(spec: DataSpec): string[] {
-  const s = spec as unknown as Record<string, unknown>
-  if (s['type'] === 'metric' && Array.isArray(s['metrics'])) {
-    return (s['metrics'] as unknown[]).filter((m): m is string => typeof m === 'string')
+function pushCodes(out: CodeRefPosition[], v: unknown, path: string): void {
+  if (typeof v === 'string' && v.length > 0) {
+    out.push({ path, ref: v })
+  } else if (Array.isArray(v)) {
+    v.forEach((c, i) => {
+      if (typeof c === 'string' && c.length > 0) out.push({ path: `${path}/${i}`, ref: c })
+    })
   }
-  if (s['type'] === 'pipeline' && Array.isArray(s['pipe'])) {
-    const head = (s['pipe'] as unknown[])[0]
-    if (isObj(head) && head['op'] === 'source' && Array.isArray(head['metrics'])) {
-      return (head['metrics'] as unknown[]).filter((m): m is string => typeof m === 'string')
+}
+
+/**
+ * EVERY code-bearing head/source position of a stored spec — the explicit
+ * enumeration the code-resolves check covers (each is a `MetricRef` position:
+ * governed metric id OR raw cube code, one namespace, resolved by the engine
+ * through the ONE `resolveMeasureRef` seam):
+ *
+ *   • `metric`      — `metrics[]`                       → /spec/metrics/<i>
+ *   • `pipeline`    — governed head `pipe[0].metrics[]` → /spec/pipe/0/metrics/<i>
+ *                     steward  head `pipe[0].query.measure` (string | string[])
+ *                                                       → /spec/pipe/0/query/measure(/<i>)
+ *                     value-cell head `pipe[0].code` (with `over`; ADR-046 Add.4)
+ *                                                       → /spec/pipe/0/code
+ *                     inline head `pipe[0].rows` — literal DATA, no store read:
+ *                     nothing to resolve (honest skip, not silent).
+ *   • `query`       — `query.measure` (string | string[]) → /spec/query/measure(/<i>)
+ *   • `timeseries`  — `code`                             → /spec/code
+ *   • `growth`      — `code` (string | string[])         → /spec/code(/<i>)
+ *   • `ratio-list`  — `pairs[i].code` + `pairs[i].denom` → /spec/pairs/<i>/code|denom
+ *   • `row-list`    — `rows[i].code` + `rows[i].pctOf`   → /spec/rows/<i>/code|pctOf
+ *
+ * DELIBERATELY not judged (named, per the honesty rule):
+ *   • `pivot.rows` / `transform.source` — inline literal data rows, not store refs;
+ *     there is no registry a literal cell resolves against.
+ *   • dim-MEMBER values (`where`/`at`/ObsQuery `filter` values) — members of
+ *     arbitrary dims, may be `{ $ctx }` refs; judging them needs the dim→codelist
+ *     pairing + ctx semantics (a coherent follow-up, not this check).
+ *
+ * Structural reads over an opaque record (resilient to a malformed stored blob —
+ * a malformed field yields no positions, never a throw).
+ */
+function codeRefPositions(spec: Record<string, unknown>): CodeRefPosition[] {
+  const out: CodeRefPosition[] = []
+  switch (spec['type']) {
+    case 'metric':
+      pushCodes(out, spec['metrics'], '/spec/metrics')
+      break
+    case 'pipeline': {
+      const head = Array.isArray(spec['pipe']) ? (spec['pipe'] as unknown[])[0] : undefined
+      if (isObj(head) && head['op'] === 'source') {
+        pushCodes(out, head['metrics'], '/spec/pipe/0/metrics')
+        if (isObj(head['query'])) {
+          pushCodes(out, (head['query'] as Record<string, unknown>)['measure'], '/spec/pipe/0/query/measure')
+        }
+        if (typeof head['over'] === 'string') pushCodes(out, head['code'], '/spec/pipe/0/code')
+      }
+      break
     }
+    case 'query':
+      if (isObj(spec['query'])) {
+        pushCodes(out, (spec['query'] as Record<string, unknown>)['measure'], '/spec/query/measure')
+      }
+      break
+    case 'timeseries':
+    case 'growth':
+      pushCodes(out, spec['code'], '/spec/code')
+      break
+    case 'ratio-list':
+      if (Array.isArray(spec['pairs'])) {
+        (spec['pairs'] as unknown[]).forEach((p, i) => {
+          if (isObj(p)) {
+            pushCodes(out, p['code'],  `/spec/pairs/${i}/code`)
+            pushCodes(out, p['denom'], `/spec/pairs/${i}/denom`)
+          }
+        })
+      }
+      break
+    case 'row-list':
+      if (Array.isArray(spec['rows'])) {
+        (spec['rows'] as unknown[]).forEach((r, i) => {
+          if (isObj(r)) {
+            pushCodes(out, r['code'],  `/spec/rows/${i}/code`)
+            pushCodes(out, r['pctOf'], `/spec/rows/${i}/pctOf`)
+          }
+        })
+      }
+      break
+    // 'pivot' / 'transform' — inline-data kinds, no store-code positions (see above).
   }
-  return []
+  return out
 }
 
 // ── The public seam ────────────────────────────────────────────────────────────
@@ -258,18 +360,25 @@ export async function validateConfigDoc(
     return out
   }
 
-  // 2 · metric-resolves — governed metric refs resolve against the governed catalog.
-  const govRefs = governedMetricRefs(spec as unknown as DataSpec)
-  if (govRefs.length > 0) {
-    const catalog = await metricCatalogRefs(db)
-    if (catalog !== 'skipped') {
-      for (const ref of govRefs) {
-        if (!catalog.has(ref)) {
+  // 2 · code-resolves — every head/source code resolves SOMEWHERE in the shared
+  // namespace: the governed metrics catalog OR the live measure codelist. A code is
+  // flagged ONLY when BOTH registries are judgeable and NEITHER resolves it — if
+  // either side is 'skipped' (rolling migration / nothing provisioned yet), non-
+  // resolution cannot be proven and the check honestly stands down (recorded here,
+  // never a silent partial verdict that false-positives a half-provisioned DB).
+  const positions = codeRefPositions(spec)
+  if (positions.length > 0) {
+    const catalog  = await metricCatalogRefs(db)
+    const codelist = await measureCodelist(db)
+    if (catalog !== 'skipped' && codelist !== 'skipped') {
+      for (const { path, ref } of positions) {
+        if (!catalog.has(ref) && !codelist.has(ref)) {
           out.push({
-            check:  'metric-resolves',
-            path:   '/spec/metrics',
+            check:  'code-resolves',
+            path,
             ref,
-            detail: `governed metric '${ref}' does not resolve against the site metrics catalog`,
+            detail: `'${ref}' resolves neither as a governed metric (site metrics catalog) ` +
+                    `nor as a live measure code (stats.classifier)`,
           })
         }
       }

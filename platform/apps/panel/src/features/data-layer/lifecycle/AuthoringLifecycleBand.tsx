@@ -44,7 +44,7 @@ function checkLabel(check: ConfigViolation['check'], en: boolean): string {
     case 'shape':           return en ? 'shape'            : 'სტრუქტურა'
     case 'dataset-exists':  return en ? 'dataset missing'  : 'ნაკრები არ არსებობს'
     case 'dims-subset':     return en ? 'dimension'        : 'განზომილება'
-    case 'metric-resolves': return en ? 'metric'           : 'მეტრიკა'
+    case 'code-resolves':   return en ? 'code'             : 'კოდი'
   }
 }
 

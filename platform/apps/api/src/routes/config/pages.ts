@@ -1,8 +1,9 @@
 import type { FastifyBaseLogger, FastifyPluginAsync } from 'fastify'
 import { z } from 'zod'
 import { migratePageConfig, validateConfig, CURRENT_SCHEMA_VERSION } from '@statdash/engine'
-import { ok, notFound, parseBody, parseParams, HttpError } from '../../lib/http.js'
+import { ok, notFound, parseBody, parseParams } from '../../lib/http.js'
 import { Problem, configValidationProblem } from '../../lib/problem.js'
+import { requirePublishRole } from '../../lib/publish-roles.js'
 import { buildSetClause } from '../../lib/sql-update.js'
 import type { AuditLogger } from '../../lib/audit-log.js'
 
@@ -51,38 +52,15 @@ function guardConfig(config: Record<string, unknown>, pageRef: string, log: Fast
   if (ENFORCE_CONFIG_VALIDATION) throw configValidationProblem(problems)
 }
 
-// ── Publish-role gate (C4 RBAC — Constructor publish governance) ───────────────
+// ── Publish-role gate — consumed from the shared SSOT (C4 RBAC) ────────────────
 //
-//  AUTHORING vs PUBLISHING are distinct privileges (C4 / P3-5). configRoutes'
-//  authPlugin already gates EVERY config route with a valid Bearer JWT, so save
-//  (POST /, PUT /:id) is open to any authenticated user with a write role. PUBLISH
-//  is the governance act that makes a draft the live, public site — it must be
-//  gated MORE STRICTLY than save: an editor curates drafts, an admin publishes.
-//
-//  ROLE VOCABULARY: the platform RBAC set is admin/editor/viewer (V10 comment,
-//  admin/users.ts KNOWN_ROLES, V10 default 'viewer'). There is NO dedicated
-//  `publisher` role. Rather than INVENT a 4th role here (a one-way-door change
-//  spanning the DB CHECK, KNOWN_ROLES, and token issuance across apps/api — an
-//  architect-level cross-module contract decision), publish is gated to the
-//  existing privileged role: admin. This realises the editor-saves / admin-
-//  publishes separation C4 needs using the vocabulary that already exists.
-//
-//  ESCALATION (flagged for the architect): if the product needs a publisher role
-//  distinct FROM admin (a user who may publish but not manage users/system), the
-//  expand step is additive — add 'publisher' to KNOWN_ROLES + the V10 role
-//  comment, then widen PUBLISH_ROLES to ['admin', 'publisher']. The gate below is
-//  the single seam that absorbs that change (Protected Variations).
-//
-//  401 (no/invalid token, from authPlugin) vs 403 (valid token, wrong role, here)
-//  are kept distinct per RFC 7235 — same contract as ingestRoutes / releases.ts.
-const PUBLISH_ROLES = ['admin'] as const
-
-function requirePublish(roles: string[] | undefined): void {
-  const r = roles ?? []
-  if (!PUBLISH_ROLES.some((role) => r.includes(role))) {
-    throw new HttpError(403, 'admin role required to publish')
-  }
-}
+//  AUTHORING vs PUBLISHING are distinct privileges (C4 / P3-5): save is open to
+//  any authenticated write role (authPlugin), PUBLISH is admin-gated. The gate
+//  itself (PUBLISH_ROLES + requirePublishRole, incl. the role-vocabulary verdict
+//  and the additive `publisher`-role escalation path) lives in
+//  lib/publish-roles.ts — the ONE seam page-publish and the data-spec/data-source
+//  restore gates share, so the two governance acts cannot drift (the former local
+//  copy here is retired — ADR-052 follow-up).
 
 // ── Schemas ───────────────────────────────────────────────────────────────────
 const CreatePageBody = z.object({
@@ -313,7 +291,7 @@ export const pagesRoutes = (audit?: AuditLogger): FastifyPluginAsync => async (a
   // (admin) on top of authPlugin's JWT — save is open to any write role, publish
   // is the stricter governance act (C4 / P3-5). The onRequest gate runs BEFORE the
   // handler/transaction, so an unauthorised caller never opens a DB connection.
-  app.post('/:id/publish', { onRequest: async (req) => requirePublish(req.jwtPayload?.roles) }, async (req) => {
+  app.post('/:id/publish', { onRequest: async (req) => requirePublishRole(req.jwtPayload?.roles, 'publish') }, async (req) => {
     const { id } = parseParams(PageParams, req.params)
     const client = await app.pg.connect()
     try {

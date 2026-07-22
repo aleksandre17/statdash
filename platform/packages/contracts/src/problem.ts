@@ -36,8 +36,7 @@ export const PROBLEM_URN_PREFIX = 'urn:statdash:problem:'
 //  @statdash/contracts (not apps/api) because it is a WIRE shape the panel reads
 //  off the 422 body — the same cross-boundary rationale as ProblemDetails itself.
 //  The api's referential gate (`validate-config-doc`) is the runtime that MINTS
-//  these; it should read this SSOT (SURFACED follow-up — its local copy predates
-//  this move and is byte-identical).
+//  these and reads THIS type (its former local copy is retired — Strangler swap).
 
 /** The `code` extension member a `config-invalid` 422 carries. */
 export const CONFIG_INVALID_CODE = 'CONFIG_INVALID'
@@ -48,8 +47,15 @@ export const CONFIG_INVALID_CODE = 'CONFIG_INVALID'
  * document body, `ref` is the offending value, `detail` is the human message.
  */
 export interface ConfigViolation {
-  /** Which validation class failed. */
-  check:  'shape' | 'dataset-exists' | 'dims-subset' | 'metric-resolves'
+  /**
+   * Which validation class failed. `code-resolves` is the shared-namespace check:
+   * a code in a head/source position (a `MetricRef` — governed metric id OR raw
+   * cube code, one namespace) must resolve SOMEWHERE — the governed metrics
+   * catalog or the live measure codelist. It supersedes the former catalog-only
+   * `metric-resolves` (which asked "is it governed", the wrong question — a
+   * nonsense raw-looking code slipped through under Postel).
+   */
+  check:  'shape' | 'dataset-exists' | 'dims-subset' | 'code-resolves'
   /** JSON-pointer into the document body (e.g. `/config/datasetCode`). */
   path:   string
   /** The offending value (missing datasetCode / dim / metric id), when applicable. */

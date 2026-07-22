@@ -172,7 +172,7 @@ export const dataSpecsRoutes: FastifyPluginAsync = async (app) => {
   // caller never opens a DB connection.
   app.post(
     '/:id/revisions/:revId/restore',
-    { onRequest: async (req) => requirePublishRole(req.jwtPayload?.roles) },
+    { onRequest: async (req) => requirePublishRole(req.jwtPayload?.roles, 'restore a revision') },
     async (req) => {
       const { id, revId } = parseParams(RevParams, req.params)
 

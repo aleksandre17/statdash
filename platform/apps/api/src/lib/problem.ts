@@ -18,7 +18,9 @@
 //  or classes. Clients consume the shape, the server owns the catalogue.
 
 import {
+  CONFIG_INVALID_CODE,
   PROBLEM_URN_PREFIX,
+  type ConfigViolation,
   type ProblemDetails,
 } from '@statdash/contracts'
 import type { ValidationError } from '@statdash/engine'
@@ -83,8 +85,8 @@ export const PROBLEM_REGISTRY = {
   /**
    * 422 — a config document (data_spec / data_source) is well-formed JSON but its
    * SEMANTICS reference things that do not exist (a dangling datasetCode, a dim not
-   * in the referenced DSD, an unresolvable governed metric id, or a malformed spec
-   * shape). 422 Unprocessable Content is the right status — the request body parses,
+   * in the referenced DSD, a head/source code that resolves neither as a governed
+   * metric nor as a live measure code, or a malformed spec shape). 422 Unprocessable Content is the right status — the request body parses,
    * the references do not resolve (ADR-052 §4). Carries `code` + a machine-readable
    * `violations[]` extension member (the exact `accounting-identity` 422 shape) so a
    * client reads `body.violations`, never a stringified blob — NEVER a silent 200
@@ -217,38 +219,22 @@ export const accountingIdentityViolation = (
   )
 
 /**
- * A single config-document validation failure — one entry in the `violations[]`
- * extension member of a {@link configInvalid} 422 (ADR-052 §4). Machine-readable:
- * `check` names the class, `path` is a JSON-pointer into the document body, `ref`
- * is the offending value, `detail` is the human occurrence message. A `shape`
- * violation carries the engine's structural fields under `detail`/`ref`.
- */
-export interface ConfigViolation {
-  /** Which validation class failed. */
-  check:   'shape' | 'dataset-exists' | 'dims-subset' | 'metric-resolves'
-  /** JSON-pointer into the document body (e.g. `/config/datasetCode`). */
-  path:    string
-  /** The offending value (the missing datasetCode / dim / metric id), when applicable. */
-  ref?:    string
-  /** Human-readable occurrence detail. */
-  detail:  string
-}
-
-/**
  * 422 — a config document (data_spec / data_source) failed referential validation
  * (ADR-052 §4). The SSOT factory both the data-spec and data-source PUT routes throw,
  * so the two gates cannot drift on the contract. `violations` are RFC 9457 EXTENSION
  * MEMBERS (§3.2) — a machine-readable list the client reads as `body.violations`, NOT
  * JSON stuffed into `detail` (mirrors {@link accountingIdentityViolation}). Each names
  * its `check` class + a JSON-pointer `path` so the panel can surface the failure at the
- * exact field in its publish affordance.
+ * exact field in its publish affordance. The `ConfigViolation` entry type + the
+ * `CONFIG_INVALID_CODE` extension value are the @statdash/contracts wire SSOT (the
+ * panel reads the same type off the 422 body) — the former api-local copy is retired.
  */
 export const configInvalid = (violations: ReadonlyArray<ConfigViolation>): Problem =>
   new Problem(
     'config-invalid',
     `Config document failed validation: ${violations.length} ` +
     `violation${violations.length === 1 ? '' : 's'}`,
-    { code: 'CONFIG_INVALID', violations },
+    { code: CONFIG_INVALID_CODE, violations },
   )
 
 /**

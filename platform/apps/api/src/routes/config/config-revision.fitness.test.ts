@@ -9,7 +9,12 @@
 //                         Fixtures: the regional-datasetCode-flip (a dangling
 //                         datasetCode) + the dims-outside-DSD class ARE invalid; an
 //                         empty-but-structurally-valid spec (the orphan-0-row class)
-//                         is NOT invalid (emptiness is honest, ADR-052 §4).
+//                         is NOT invalid (emptiness is honest, ADR-052 §4). The
+//                         code-resolves class (J-LIFECYCLE gap, 2026-07-22): a
+//                         head/source code must resolve as a governed metric OR a
+//                         live measure code (stats.classifier) — a nonsense code in
+//                         EITHER shape is 422; a valid raw code passes; with a
+//                         registry unprovisioned the check honestly stands down.
 //    FF-REVISION-ON-PUT — every successful PUT appends EXACTLY ONE revision (full
 //                         snapshot); restore appends a NEW revision with restoredFrom
 //                         set; earlier history is NEVER mutated; restore is admin-gated.
@@ -37,6 +42,8 @@ interface State {
   datasets:    Set<string>
   dsd:         Map<string, string[]>
   metrics:     { id: string; code: string }[]
+  /** Live measure codelist (stats.classifier, dim=measure, is_current) — the raw-code SSOT. */
+  measureCodes: string[]
   revSeq:      number
 }
 
@@ -48,6 +55,7 @@ function freshState(): State {
     datasets:    new Set(['GDP_ANNUAL']),
     dsd:         new Map([['GDP_ANNUAL', ['approach', 'measure', 'geo', 'time']]]),
     metrics:     [{ id: 'gdp.current', code: 'gross-domestic-product' }],
+    measureCodes: ['gross-domestic-product', 'B1GQ'],
     revSeq:      0,
   }
 }
@@ -73,6 +81,10 @@ function runQuery(state: State, text: string, values: unknown[] = []): { rows: R
   // metrics catalog.
   if (/FROM config\.site_config WHERE key = 'metrics'/i.test(t)) {
     return { rows: [{ value: state.metrics }] }
+  }
+  // live measure codelist (stats.classifier, dim=measure, is_current) — raw-code SSOT.
+  if (/FROM stats\.classifier WHERE dim_code/i.test(t)) {
+    return { rows: state.measureCodes.map((code) => ({ code })) }
   }
 
   // ── config.revision ──
@@ -233,7 +245,7 @@ describe('FF-PUT-VALIDATED — invalid config bodies are rejected 422 with named
     expect(state.revisions).toHaveLength(0)
   })
 
-  it('a metric spec referencing an unknown governed metric id is REJECTED (metric-resolves)', async () => {
+  it('a bogus GOVERNED-looking id (resolves in neither registry) is REJECTED (code-resolves)', async () => {
     const state = freshState()
     seedSpec(state, { type: 'metric', metrics: ['gdp.current'] }, null)
     const app = await buildApp(state, EDITOR)
@@ -245,8 +257,81 @@ describe('FF-PUT-VALIDATED — invalid config bodies are rejected 422 with named
     })
 
     expect(res.statusCode).toBe(422)
-    const body = res.json() as { violations: { check: string; ref?: string }[] }
-    expect(body.violations.some((v) => v.check === 'metric-resolves' && v.ref === 'does.not.exist')).toBe(true)
+    const body = res.json() as { violations: { check: string; path: string; ref?: string }[] }
+    expect(body.violations.some(
+      (v) => v.check === 'code-resolves' && v.ref === 'does.not.exist' && v.path === '/spec/metrics/1',
+    )).toBe(true)
+  })
+
+  it('the J-LIFECYCLE gap: a pipeline steward head whose query.measure is a NONSENSE raw-looking code is REJECTED (code-resolves)', async () => {
+    // Live-proven 2026-07-22 on dev :3011 — this exact class published 200 and the
+    // grid rendered fake zeros. A code must resolve SOMEWHERE: governed catalog OR
+    // live measure codelist. `nonexistent.metric.xyz` resolves in neither.
+    const state = freshState()
+    seedSpec(state, { type: 'pipeline', pipe: [{ op: 'source', query: { measure: 'B1GQ' } }], encoding: {} }, null)
+    const app = await buildApp(state, EDITOR)
+
+    const res = await app.inject({
+      method: 'PUT',
+      url: `/api/config/data-specs/${SPEC_ID}`,
+      payload: { spec: { type: 'pipeline', pipe: [{ op: 'source', query: { measure: 'nonexistent.metric.xyz' } }], encoding: {} } },
+    })
+
+    expect(res.statusCode).toBe(422)
+    const body = res.json() as { violations: { check: string; path: string; ref?: string }[] }
+    expect(body.violations.some(
+      (v) => v.check === 'code-resolves' && v.ref === 'nonexistent.metric.xyz' && v.path === '/spec/pipe/0/query/measure',
+    )).toBe(true)
+    expect(state.revisions).toHaveLength(0) // NOT persisted
+  })
+
+  it('a value-cell head with an unresolvable code is REJECTED at /spec/pipe/0/code (code-resolves)', async () => {
+    const state = freshState()
+    seedSpec(state, { type: 'timeseries', code: 'B1GQ', years: 'all' }, null)
+    const app = await buildApp(state, EDITOR)
+
+    const res = await app.inject({
+      method: 'PUT',
+      url: `/api/config/data-specs/${SPEC_ID}`,
+      payload: { spec: { type: 'pipeline', pipe: [{ op: 'source', over: 'time', code: 'bogus.code' }], encoding: {} } },
+    })
+
+    expect(res.statusCode).toBe(422)
+    const body = res.json() as { violations: { check: string; path: string; ref?: string }[] }
+    expect(body.violations.some(
+      (v) => v.check === 'code-resolves' && v.ref === 'bogus.code' && v.path === '/spec/pipe/0/code',
+    )).toBe(true)
+  })
+
+  it('a VALID raw measure code passes (200): raw codes share the namespace and resolve via stats.classifier', async () => {
+    const state = freshState()
+    seedSpec(state, { type: 'timeseries', code: 'B1GQ', years: 'all' }, null)
+    const app = await buildApp(state, EDITOR)
+
+    const res = await app.inject({
+      method: 'PUT',
+      url: `/api/config/data-specs/${SPEC_ID}`,
+      payload: { spec: { type: 'pipeline', pipe: [{ op: 'source', query: { measure: 'B1GQ' } }], encoding: {} } },
+    })
+    expect(res.statusCode).toBe(200)
+    expect(state.revisions).toHaveLength(1)
+  })
+
+  it('honest stand-down: with NO measure codelist ingested yet, a raw-looking code cannot be judged (200, not a false 422)', async () => {
+    // Half-provisioned DB (metrics catalog present, cube not ingested): non-resolution
+    // cannot be PROVEN, so the check skips rather than false-positive a legit raw code
+    // for a not-yet-ingested cube. Both registries must be judgeable to flag.
+    const state = freshState()
+    state.measureCodes = []
+    seedSpec(state, { type: 'timeseries', code: 'B1GQ', years: 'all' }, null)
+    const app = await buildApp(state, EDITOR)
+
+    const res = await app.inject({
+      method: 'PUT',
+      url: `/api/config/data-specs/${SPEC_ID}`,
+      payload: { spec: { type: 'timeseries', code: 'not-ingested-yet', years: 'all' } },
+    })
+    expect(res.statusCode).toBe(200)
   })
 
   it('the orphan-0-row class is NOT invalid: a structurally-valid spec bound to a real dataset PERSISTS (200)', async () => {
