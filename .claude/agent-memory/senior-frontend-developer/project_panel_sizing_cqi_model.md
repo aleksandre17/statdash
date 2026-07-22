@@ -36,18 +36,15 @@ wrapper freezes at the band while header+body exceed it → overflow/letterbox.
 `.panel__body[data-height]`, `.chart-wrap[data-height]`, `[data-aspect]`). Retuned 2026-07-01
 from .84/.68.
 
-**Differential retune (2026-07-01, `3f86251`) — "too subtle" fix.** Owner confirmed on the live
-site that 8b32357's .84/.68 + floor 320 made a solo only ~30% taller than paired (reads uniform).
+**Differential retune ("too subtle" fix) — the reasoning to reuse for any future retune.**
 Reasoned from `height = ratio × scale × own-width`; a solo gets ~2× a paired cell's own-width
-(2-up), so `solo/paired ≈ 2 × scale1040`. Levers used TOGETHER: floor 320→280 (a narrow paired
-cell settles at its natural ~301px @1440 instead of being propped to the floor — this alone lifts
-the @1440 gap 1.53→1.63×); scale .68→.80 at ≥1040 (solo lands ~0.416 effective = the design's
-ideal 2.4:1 focus shape, NOT a letterbox); cap 640→720 so the widest solo keeps 2.4:1. Result:
-@1440 **1.63×**, @2560 **1.80×**; 360/768 single-col (no pairing, floor governs). **No 3rd
-`@container` step** — `--page-measure` (1760 ceiling − gutters) caps a solo's OWN inline-size at
-~1644px, so the .80 plateau already spans the whole solo range at 2.4:1; a 3rd step would be inert
-or non-monotonic (a wider panel getting shorter). Map (geo .72) stays definite-height + near-square
-at paired/moderate-solo; cap 720 actually helps the map (2.28:1 vs 2.57:1 at the old cap).
+(2-up), so `solo/paired ≈ 2 × scale1040`. Three levers used TOGETHER: lower the floor (a narrow
+paired cell settles at its natural height instead of being propped to the floor — this alone
+widens the solo/paired gap); raise the scale at wide containers (the solo lands the design's ideal
+focus-shape ratio, not a letterbox); raise the cap so the widest solo keeps that same ratio. **No
+3rd `@container` step needed** — `--page-measure` caps a solo's own inline-size, so the top scale
+plateau already spans the whole solo range; a 3rd step would be inert or non-monotonic (a wider
+panel getting shorter).
 
 **Role axis (plugin-owned, `data-content` token — NOT a node-type list, Law 1/4):**
 `geograph.css` `.panel__body[data-content="geo"]{--panel-ratio-role:.72}` (near-square, kills the
@@ -75,5 +72,5 @@ a no-letterbox floor (`chartRole × scale1040 > 0.34`), monotone scale (`scale10
 and the guard bounds (`floor ≤ 300`, `cap ≥ 700`) — so "too subtle" cannot regress silently.
 RATIO-AGNOSTIC builds its banned-word regex from
 fragments so the test file carries NO tenant literal (passes the `packages/{react,styles}`
-no-tenant-content scan — a trap when asserting agnosticism). See [[responsive_audit_systemic_roots]]
+no-tenant-content scan — a trap when asserting agnosticism). See [[project_responsive_audit_systemic_roots]]
 (architect) for the broader responsive model.

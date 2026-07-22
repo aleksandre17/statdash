@@ -5,7 +5,7 @@ metadata:
   type: project
 ---
 
-**AR-52 relay Step 2 — "plane the inspector" (DONE 2026-07-15, commit a32b809; apps/panel + additive package edits; ZERO object-model change).** Spec: `docs/architecture/proposals/BLUEPRINT-panel-canonical-relay.md` §2 LAW A. Rides root **Law 11** ("projection with a plane") + ADR-043 Projector Law. Builds on [[project_facet_axis_style_facet]] + [[project_summary_card_inspector]].
+**AR-52 relay Step 2 — "plane the inspector" (DONE 2026-07-15, commit a32b809; apps/panel + additive package edits; ZERO object-model change).** Spec: `docs/architecture/proposals/BLUEPRINT-panel-canonical-relay.md` §2 LAW A. Rides root **Law 11** ("projection with a plane") + ADR-043 Projector Law. Builds on [[project_facet_axis_style_facet]] + [[project_panel_authoring_features_misc]].
 
 ## The PLANE mechanism (additive, OCP)
 - **`AudiencePlane = 'author'|'steward'|'system'`** — new type in `packages/core/src/config/prop-schema.ts`; `PropField.plane?` + `FacetDescriptor.plane?` (packages/react `engine/facet.ts`). **Absent ⇒ author** (every legacy field byte-identical). Re-export chain to reach `@statdash/react/engine`: core `prop-schema` → core `index.ts` → react `slice-meta.ts` → react `engine/types/slice.ts` → `engine/types/index.ts` → `engine/index.ts` (5 hops; add the symbol beside `PropField` in each `export type {…}` block).

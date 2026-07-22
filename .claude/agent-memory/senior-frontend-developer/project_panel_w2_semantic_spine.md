@@ -65,4 +65,4 @@ swap is PROVED coordinate-safe with NO live db — run it after any corpus measu
 ## Gate (parsed, 2026-07-17)
 panel vitest 977/977 · tsc -b apps/panel clean · lint 0-err/6-warn · apps/api 379 pass/0 fail
 (config-cube-contract 4/4, data-bounded 4/4) · core bind-parity 8/8. No packages/* touched → no dist
-rebuild. See [[project-panel-w1-honest-canvas]], [[panel-data-model-reachable-m5b]], [[panel-data-flow-spine-m43]].
+rebuild. See [[project_panel_w1_honest_canvas]] and [[project_panel_studio_map]] (role lens + data-flow spine, current state).

@@ -1,36 +1,66 @@
 ---
 name: responsive-audit-systemic-roots
-description: 2026-06 full-ladder responsive audit + the FIX wave that resolved R1/R2/R3/F5 — root causes, in-system mechanisms used, the permanent reflow fitness guard, and the real-browser proof harness
+description: 2026-06 full-ladder responsive audit + fix wave — three systemic roots (sr-only table leak, header flex overflow, container-measure mismatch) fixed in-system (tokens/clamp/min()/flex), zero magic numbers; the permanent reflow fitness guard and the real-browser proof method.
 metadata:
   type: project
 ---
 
-Full-ladder responsive audit (live `:3002`, 54 screenshots) → report at `docs/audit/AUDIT-responsive.md`.
-**FIXED 2026-06-28** (R1/R2/R3 + F5) — all in-system (tokens/clamp/min()/flex guards), zero magic numbers. Gates green (react 444, plugins 269 vitest; typecheck; tsc -b panel; lint 0-err; check-laws). `packages/core` build:engine was RED from a concurrent core/api workstream (DimVal index-sig in data/) — NOT my scope.
+Full-ladder responsive audit (54 screenshots) → FIXED, all in-system (tokens/clamp/min()/flex
+guards), zero magic numbers. Constructor panel (auth-gated) was NOT audited — a real limitation.
 
-**Why:** owner asked where the responsive design is imperfect across the whole site + a design-system fix plan (no magic numbers), then to EXECUTE the fixes.
+**Three systemic roots (each fix resolved many findings):**
+- **R1 (P0, WCAG 1.4.10) — the sr-only table leak.** `ChartDataTable.tsx` rendered its
+  accessibility-tree mirror as `<table className="sr-only">`. For a `<table>`, `.sr-only`'s
+  `width:1px` is only a *minimum* and its `white-space:nowrap` forces full min-content width
+  (~1328px); the deprecated paint-only `clip` property doesn't actually clip layout → the table
+  leaked into `document.scrollWidth`, causing phantom horizontal scroll on EVERY dashboard at most
+  widths. **Fix:** wrap the table in a `.sr-only` DIV (the div clips, the table inside is free to
+  be wide) + harden the `.sr-only` utility with `clip-path:inset(50%)` (replaces deprecated
+  `clip`). **Permanent guard:** `packages/react/src/components/data/ChartDataTable.reflow.fitness.test.tsx`
+  — structural (jsdom has no layout engine, so a live scrollWidth check would be vacuous): asserts
+  the div wrapper exists + the `.sr-only` rule keeps `width:1px/overflow:hidden/clip-path`.
+- **R2 (P1) — header flex overflow.** `.app-header__inner` used `flex space-between` +
+  `flex-shrink:0` on both brand and actions with no `min-width:0` anywhere → overflow + a clipped
+  locale button in the ~960–1100px band. **Fix:** `min-width:0` on brand/nav + tagline
+  truncate/breakpoint.
+- **R3 (P1) — container-measure mismatch.** `page-layout.css` content variants disagreed:
+  `centered`=800px (too narrow on ultrawide), `full-width`/default=uncapped (over-stretch on
+  2560/3440), while the header WAS capped at 1280. **Fix:** wire the existing
+  `--size-container-wide` token into `.page-content` via a new **`--page-measure`** custom
+  property (defaults to `--size-container-wide`) — the OCP seam any page can override to
+  re-measure itself; sidebar variant goes full-bleed (`margin-inline:0`) but stays capped.
+- **F5 (filter bar):** `.filter-select` gained `min-width:0; max-width:min(100%,
+  var(--size-container-narrow))` (the same shrink-trap class documented in
+  [[project_panel_ui_kit_and_rail]] for the multi-select trigger).
 
-**How to apply:** the roots below are now fixed; verify against current code before assuming a regression. The permanent guard for R1 is `packages/react/src/components/data/ChartDataTable.reflow.fitness.test.tsx` (structural — jsdom has NO layout engine so a live scrollWidth check is vacuous; it asserts the table is wrapped in a `.sr-only` DIV + the `.sr-only` rule keeps width:1px/overflow:hidden/clip-path). The `--page-measure` token (defaults to `--size-container-wide`) on `.page-content` is the new OCP seam to re-measure a page.
+**Follow-up perfection pass (same wave, four more in-system root-causes):**
+- **Header nav overlap (Georgian only, ~960–1100 band):** the nav-collapse breakpoint was too low
+  — long Georgian labels overran the social icons at 1024 (EN labels fit). Moved the collapse to
+  **xl (1280)**, authored mobile-first; 1280 aligns with the inner-sidebar's own
+  rail↔horizontal-tab-bar breakpoint, so nothing is lost below xl (the tab-bar/hero cards expose
+  the same destinations). This node is now the mobile-first CSS reference pattern.
+- **Treemap blank at ≤1280:** `chart.css` sets `chart-wrap{height:auto}` on mobile; the
+  flexbox-based `TreemapChart` root is `height:100%`, which collapses to 0 with no definite parent
+  height. Fixed with a new token **`--size-panel-min-height:14rem`** as a `minHeight` floor —
+  robust to any container, inert on desktop.
+- **Ultrawide sidebar dead-space (≥~1536):** the sidebar-layout rail+content pinned LEFT with a
+  huge right void because the parent (`main.app-shell__content`) is plain block, not flex. Fixed
+  with `justify-content:center` gated `@media(min-width:1536px)` — inert below that (content
+  flex-grows, no free space). Does NOT contradict R3 (R3 rejected content floating away from the
+  rail; this keeps rail+content together as one centered unit).
+- **Section-header title wrapping one-word-per-line at narrow widths:** `.section` already has
+  `container-type:inline-size`; added `@container(max-width:30rem)` to drop the actions row below
+  the title (`order:1;flex-basis:100%` + flex-wrap on head) — container-first, so it also fixes
+  narrow COLUMNS, not just narrow windows.
 
-What the fixes were (all in-system):
-- **R1:** `ChartDataTable` now renders `<div className="sr-only"><table>…</table></div>` (was bare `<table className="sr-only">`); `a11y.css` `.sr-only` hardened — `clip-path:inset(50%)` replaced deprecated paint-only `clip`. Real-browser proof: Chromium scrollWidth at 360px **1835px → 0**.
-- **R2:** `app-header.css` — `.app-header__brand` `flex:0 1 auto`+`min-width:0`, logo `max-width:100%`+`object-fit:contain`, nav `min-width:0`; actions keep `flex-shrink:0`. ENG button at 1024 `actionsRight 1039(CLIPPED) → 998`.
-- **R3:** `page-layout.css` — `.page-content` `max-width:var(--page-measure,var(--size-container-wide))`+`margin-inline:auto`; retired the literal 800px centered cap + `max-width:none` full-width; sidebar = full-bleed (`margin-inline:0`, still capped). 2560px: centered `848 ribbon → 1280`, sidebar/full-width `2560 over-stretch → 1280`.
-- **F5:** `filter-bar.css` `.filter-select` `min-width:0; max-width:min(100%,var(--size-container-narrow))`. selW@360 `431 → 91`.
+**Real-browser proof method (reusable when a live deploy of local edits isn't possible):** a
+controlled Chromium harness loads the ACTUAL on-disk CSS files, reconstructs the shell DOM
+(including the app's global `box-sizing:border-box` reset), sets a viewport, and measures
+`documentElement.scrollWidth - clientWidth` before/after (before-baseline pulled via
+`git show HEAD:…`). `npx playwright@latest screenshot --viewport-size=W,H --wait-for-timeout=3500
+URL out.png` works as a CLI-only capture tool even when the playwright module isn't importable.
 
-Real-browser proof method (no live deploy of local edits possible — `:3002` builds from main, content-bearing local build needs the API): a controlled Chromium harness loads the ACTUAL on-disk CSS files + reconstructs the shell DOM (incl. the global `box-sizing:border-box` reset the app ships via Tailwind preflight) and measures scrollWidth before/after. Committed metrics: `platform/work/audit-shots/reflow-{before,after}.json`; after-shots PNG: `platform/work/audit-shots/after/`. Harness lived in the session scratchpad (ephemeral): read each CSS via fs, set viewport, measure `documentElement.scrollWidth - clientWidth`. The `before` baseline pulls original CSS via `git show HEAD:…`.
-
-Three systemic roots (each fix resolves many findings):
-- **R1 (P0, WCAG 1.4.10):** `ChartDataTable.tsx` renders the AT mirror as `<table className="sr-only">`. For a `<table>`, `.sr-only`'s `width:1px` is only a *minimum* and its `white-space:nowrap` forces full min-content width (~1328px); deprecated `clip` is paint-only → the table leaks `document.scrollWidth` → phantom horizontal scroll on EVERY dashboard at most widths. Fix = wrap table in a `.sr-only` div + harden utility with `clip-path:inset(50%)` + a `scrollWidth<=clientWidth` fitness test.
-- **R2 (P1):** `.app-header__inner` flex `space-between` + `flex-shrink:0` brand/actions, no `min-width:0` → 72px overflow + clipped `ENG` button in the ~960–1100px band (worst at 1024). Fix = `min-width:0` + tagline truncate/breakpoint.
-- **R3 (P1):** `page-layout.css` content variants disagree — `centered`=800px (too narrow on ultrawide), `full-width`/default=uncapped (over-stretch on 2560/3440); header IS capped 1280. Fix = wire the EXISTING `--size-container-wide` token into `.page-content`.
-
-**FOLLOW-UP PERFECTION PASS 2026-06-28** (demo-eve, all gates green: build:engine/typecheck/tsc-b-panel/lint-0-err/check-laws/vitest 2017-pass). Four more root-caused fixes, all in-system:
-- **Header nav overlap (~960–1100 band, all pages, Georgian only):** the 960px nav-collapse was too low — long Georgian nav labels overran the social icons at the 1024 PRIMARY target (EN labels fit, so Georgian-specific). Fixed in `app-header.css` by collapsing the nav at **xl (1280)**, authored mobile-first (base nav+social `display:none`, enhance up: social ≥640/sm, nav ≥1280/xl). 1280 aligns with the inner-sidebar's 1280 →horizontal-tab-bar switch, so top-nav and tab-bar are complementary and NOTHING is lost below xl (tab-bar on inner pages / hero cards on landing expose the same 3 destinations). Also unified header measure → `var(--page-measure,var(--size-container-wide))`. This node is now the mobile-first reference.
-- **Treemap blank at ≤1280 (income-approach panel):** `chart.css` sets `chart-wrap{height:auto}` on mobile; the custom-flexbox `TreemapChart` root is `height:100%` → collapses to 0 → blank panel (chart.css comment predicted it; GeoMap already self-guards with min-height:200px). Fixed by adding token **`--size-panel-min-height:14rem`** (new, in tokens.css) as a `minHeight` floor on the treemap root — robust to any container, inert on desktop (definite parent height wins). Same root also crams the many-category regional-comparison hbar at mobile — FLAGGED for chart agent (Apex height-per-category, not CSS).
-- **Ultrawide sidebar dead-space (≥~1540, inner pages):** sidebar-layout rail+content (≈1540) pinned LEFT with huge right void. `.inner-page` is a block-level flex container (parent `main.app-shell__content` is plain block, NOT flex — so its grey surface fills the viewport uniformly). Fixed with `justify-content:center` gated `@media (min-width:1536px /*2xl*/)` — centres the unit (rail stays adjacent to content, uniform bg, no two-tone frame), inert <1540 (content flex-grows → no free space). Does NOT contradict R3 (R3 rejected content floating AWAY from rail; this keeps them together).
-- **Section-header title word-wraps one-per-line at narrow:** `.section` has `container-type:inline-size`; added `@container (max-width:30rem)` → actions row drops below title via `order:1;flex-basis:100%` + `flex-wrap` on head. `order` keeps the collapse chevron on the title row (visual only; DOM/tab order preserved). Container-first → also fixes narrow columns, not just narrow windows.
-
-Browser-verify note: live `:3002` builds from branch HEAD so it reflects the DEPLOYED state, but LOCAL edits are NOT auto-deployed — the orchestrator redeploys + real-browser-verifies the ladder after the agent. Audit method: `npx playwright@latest screenshot --viewport-size=W,H --wait-for-timeout=3500 URL out.png` works here (CLI only; the playwright module isn't importable). i18n leakage observed (Georgian "განახლდა"/"რეალური" in /en views) — OUT of responsive scope, flagged not fixed.
-
-The design system is sound and these are surgical fixes, NOT a rebuild. It already ships: fluid type clamp tokens (`--font-size-fluid-*`, under-used — inner h1 is a fixed 17px), a full `@media`+`@container` responsive cascade for aspect/padding/margin/gap/etc (`node-styles.css`), container-typed cards (`card.css`), breakpoints 480/640/768/1024/1280/1536. Constructor panel `:3003` is auth-gated — canvas/inspector NOT audited (limitation). See [[render-path-browser-verify]].
+**The design system was already sound** — these were surgical fixes, not a rebuild. It ships
+fluid type clamp tokens (`--font-size-fluid-*`), a full `@media`+`@container` responsive cascade
+(`node-styles.css`), container-typed cards, breakpoints 480/640/768/1024/1280/1536. See
+[[reference_render_path_browser_verify]] for the live-server verify topology.

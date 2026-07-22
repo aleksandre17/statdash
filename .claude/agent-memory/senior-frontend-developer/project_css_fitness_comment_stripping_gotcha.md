@@ -18,3 +18,14 @@ const stripComments = (s) => s.replace(/\/\*[\s\S]*?\*\//g, m => m.replace(/[^\n
 This is the SAME technique `packages/plugins/__tests__/no-unthemed-color.fitness.test.ts` already used (its `scan()` does this) — the other two CSS-fitness files just hadn't needed it yet. Fixed in `tokens.parity.test.ts` (all 4 `readFileSync(cssPath)` call sites that do block/value parsing — the simple line-anchored `extractRootDefinitions` at the top is safe by construction since it requires `--` at the START of a line, not after `/* `) and in the new `tenant-theme.fitness.test.ts`.
 
 **How to apply:** ANY new CSS fitness function that parses a `{...}` block for `--prop: value;` pairs (not just a line-anchored existence check) MUST strip comments first. Caught this by NOT trusting the vitest CLI's green/red (it was environmentally blocked — see [[project_windows_longpath_vitest_worktree_block]]) and instead hand-replicating the exact parsing logic in a throwaway Node script to verify the new fitness's own assertions before trusting them.
+
+**Sibling blind spot — a `?raw` CSS scan can be vacuous under vitest.**
+`platform/apps/panel/src/studio/chromeTokenDriven.fitness.test.ts` scans Studio chrome frame
+sources for hardcoded brand color literals via `import.meta.glob(..., {query:'?raw'})`. Its 4
+`.tsx` sources scan correctly, but `studio.css` resolves to `''` under vitest (see
+[[reference_panel_dev_notes]]), so `findBrandColorLiterals(studio.css)` passes vacuously on
+empty content — a real hardcoded hex planted in `studio.css` would NOT fail the gate (the
+`.toHaveLength(5)` key-count still holds; only the content goes unchecked). Not urgent (also
+caught by review + the `.tsx` sources are genuinely scanned) — flagged for whoever hardens the
+token-driven invariant: move the CSS leg off `?raw` (a build-step disk scan, or enable vitest CSS
+processing for this one test).

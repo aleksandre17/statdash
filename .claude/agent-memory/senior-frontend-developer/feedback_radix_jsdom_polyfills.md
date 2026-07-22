@@ -5,7 +5,7 @@ metadata:
   type: feedback
 ---
 
-When a surface migrates MUI/native controls to Radix ([[project-mui-radix-migration]]), two test
+When a surface migrates MUI/native controls to Radix ([[project_panel_ui_kit_and_rail]]), two test
 realities bite — handle them proactively, not after a red suite.
 
 **Rule 1 — Radix listboxes/popups need jsdom polyfills to OPEN.** A CLOSED Radix Select renders fine

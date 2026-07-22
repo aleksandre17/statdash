@@ -24,11 +24,18 @@ Built for SPEC-deep-authorability-completion. An element has TWO orthogonal decl
 - **chrome** 15 · `''` · field `slot` (`typeof meta.slot==='string'`) · contract = `chromeStructuralContract(slot)` projecting variant/region/order; write lane = `patchChromeStructural` (band.partMeta branch), NOT patchProp.
 
 ## Reusable gotchas
-- **New PropFieldType per rich facet** (`packages/core/src/config/prop-schema.ts`). TWO consumers: PropSchemaForm FIELD_RENDERERS `Record<PropFieldType,…>` (tsc-FORCED — the exhaustive one; add `jsonInput` degrade) + propSchemaToJsonSchema typeDescriptor (has a `default` so optional, but add `{type,$comment}` so saveGuard accepts the authored value). Register `type→Control` in FieldControlRegistry.
-- **appliesWhen must NOT read `meta.type`** — `nodeRegistry.getMeta` returns StoredMeta WITHOUT `type` (type is the map key), so a `.type` predicate matches in unit tests (which pass `{type}`) but NEVER in the real dock flow. Use caps or the `slot` discriminant.
-- **Fold, don't parallel:** a pre-existing hand-wired section re-homes as ONE mode of a facet, deleting the section (element.data→facet, element.visibility→facet). Orphaned controller write lanes (`selectedBindable`, `setVisibleWhen`) left as follow-up. `patchProp(path, undefined)` leaves `{path:undefined}` (JSON-drops on save) vs a clean delete — accepted (consistent across facets).
-- **Shared component with 2 consumers** (VisibilitySection: facet + ParamDefEditor filter-scoping) → gate the heading with a prop, don't delete/fork.
-- **dockSection.test.ts folds** need `setupCanvasRegistry()` — a facet section is meta-driven (needs getMeta) where the old hand-wired section used registry-free `wholeNodeSelected`.
+- **New PropFieldType per rich facet** has TWO forced consumers: `PropSchemaForm` FIELD_RENDERERS
+  (tsc-exhaustive — add a `jsonInput` degrade) + `propSchemaToJsonSchema` typeDescriptor (add
+  `{type,$comment}` so saveGuard accepts the authored value). Register `type→Control` in
+  FieldControlRegistry.
+- **appliesWhen must NOT read `meta.type`** — `nodeRegistry.getMeta` returns StoredMeta WITHOUT
+  `type` (type is the map key), so a `.type` predicate matches in unit tests (which pass `{type}`)
+  but NEVER in the real dock flow. Use caps or the `slot` discriminant.
+- **Fold, don't parallel:** a pre-existing hand-wired section re-homes as ONE mode of a facet,
+  deleting the section. `patchProp(path,undefined)` leaves `{path:undefined}` (JSON-drops on save)
+  vs a clean delete — accepted, consistent across facets.
+- **Shared component with 2 consumers** (VisibilitySection: facet + filter-scoping) → gate the
+  heading with a prop, don't delete/fork.
 
 ## Guard
 `FF-FACET-PROJECTED` (`apps/panel/src/inspector/facetProjection.fitness.test.ts`): each facet registered + predicate reads declaration not type + section falls out for a real opted-in meta and NOT for a non-opted one + a synthetic 2nd facet re-derives (OCP) + "all SIX dimensions" leg. Round-trips: styleField.roundtrip / eventsFacet.roundtrip; visibility render proven by CanvasView.test.tsx.

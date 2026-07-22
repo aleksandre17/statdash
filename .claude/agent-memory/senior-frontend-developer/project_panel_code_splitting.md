@@ -22,3 +22,24 @@ apps/panel (Constructor) ships a single Vite/Rolldown entry that was a 1.89 MB m
 **Result:** eager set ≈732 kB raw / ≈220 kB gzip (index 63 kB + react-vendor 292 + mui 359 + store/api/adapter). On-demand: apexcharts 537, engine 217, controls 248, dnd-kit 44, cmdk 44, DataStep 48, PageStep 37, CanvasView 18. mui+react-vendor dominate the eager shell (react-admin AdminContext + LoginForm) — not split further (YAGNI, shell must stay eager).
 
 **Pre-existing residual (not in scope):** INEFFECTIVE_DYNAMIC_IMPORT on `packages/plugins/datasources/stats-api.ts` (was in baseline). `features/sections/` and `layout/` are orphan modules (no importers, tree-shaken).
+
+## `@statdash/expr` — bundler-agnostic dev-flag pattern
+`packages/expr` is zero-dep, bundler-agnostic pure-TS with its OWN standalone `tsup index.ts
+--format esm --dts` build (no Vite, no Node types in scope). Dev-only diagnostics there must read
+the dev flag via a self-contained LOCAL CAST, never: `process.env.NODE_ENV` (Node-ism, undefined
+in browser); bare `import.meta.env.DEV` (needs `vite/client` ambient types, absent from expr's own
+tsup `--dts` build → TS2339); or a global `interface ImportMeta{env?:...}` ambient `.d.ts` (LEAKS
+through the `@statdash/expr/src/*` path alias into consuming apps' type graph and weakens their
+OWN `import.meta.env.X` to "possibly undefined" — declaration merging on a global interface from a
+shared package is not scoped).
+
+**Correct pattern** (in `derive.ts`):
+`function isDevMode(){ const env=(import.meta as {env?:{DEV?:boolean}}).env; return env?.DEV===true }`
+— local cast, no global augmentation; Vite still statically replaces DEV, other bundlers read
+falsy and the branch dead-strips. The general convention elsewhere (packages/core, packages/react)
+is bare `import.meta.env.DEV` because those run only through Vite — this pattern is specifically
+for a package with its own bundler-less `tsup --dts` build that is ALSO path-aliased into apps.
+
+Note: `build:engine` (`pnpm -r --filter ./packages/* build`) is pre-existing RED independent of
+this — packages/core's standalone dts build fails TS7016 on `@statdash/expr` when expr's dist
+`.d.ts` is stale. Not one of the platform's green gates (build/typecheck/test/lint are).

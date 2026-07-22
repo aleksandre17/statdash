@@ -17,11 +17,20 @@ Fixed the owner's PRIMARY blocker: "I can't even start assembling a site with la
 - **Page-frame containment** = `overflow-x: clip` (NOT hidden — no scroll box, vertical stays visible for sticky/tooltip/hero-overlap) + `min-width:0`. Production card: `.page-content` in `packages/plugins/pages/inner-page/default/page-layout.css`. Canvas frame (all page types): `.canvas-layer--renderer .app-shell{,__content}` in `canvas.css`. There is NO base `.app-shell{}` CSS rule anywhere — app-shell layout is only per-`[data-frame]`; landing already clips-x at `.app-shell[data-frame="landing"]`.
 - **Page-tab → URL** (`studio/StudioShell.tsx`): `selectPage(id)` PUSHES `?page=<id>` + sets store. The pre-existing Effect B (store→URL) is a boot-initializer that deliberately stands DOWN when the URL already names a valid page (avoids the boot loop) — so a tab click that only called `setActivePage` left a stale `?page=` and diverged store↔URL. Effect A/B rest at a fixpoint after selectPage.
 
-**R1 projection completion (0102 R1 · owner-confirmed "it jams, labels pile on top"):** the drop MECHANISM was sound; the bugs were all in the authoring PROJECTION in `apps/panel/src/canvas/CanvasOverlay.tsx`. Four fixes:
-- **Per-slot geometry (the overlap):** the old measure pushed a DropFrame per declared slot using the PARENT node's ONE `rect` → N fully-overlapping zones + stacked labels. Now `slotDropsFor(frame, rectById)` gives each slot its OWN rect: populated slot = UNION of its children's measured anchor boxes (`slotChildIds` reads the slot's declared residence field → look up `rectById` built during framing); empty slot = an allocated placeholder BAND via `emptyBands()` (residual space above/below the populated union, else clamped strip). Generic over declared Part slots, zero per-type branch. Measure now builds `rectById` in the frame pass, computes drops AFTER all nodes framed.
-- **At-rest affordance (the "can't add"):** DropFrame carries `empty:boolean`; empty-slot zones render AT REST (`drops.filter(d => dragging || d.empty)`) with `.canvas-dropzone--empty` (opacity 1, labelled), populated zones stay drag-only. At rest all zones keep `pointer-events:none` (base) so the affordance never blocks node selection; drag re-enables via `.canvas-root--dragging`.
-- **Localized labels (Law 9):** `resolveLocaleString(d.slot.label, locale ?? 'ka', 'en')` (from `@statdash/engine`) replaces the hard-coded `.en`; `locale` threaded CanvasView→CanvasOverlay.
-- **Banner/toolbar clearance:** replaced the `34px` magic offset with `--canvas-toolbar-h` — CanvasView measures `.canvas-toolbar` via ResizeObserver into root state (merged into the root inline style so a re-render never wipes it); `.canvas-veil__label` margin-top = `calc(space-2 + var(--canvas-toolbar-h,34px) + space-2)`.
+**R1 projection completion (owner-confirmed "it jams, labels pile on top"):** the drop MECHANISM
+was sound; the bugs were all in the authoring PROJECTION (`CanvasOverlay.tsx`). Four fixes:
+- **Per-slot geometry (the overlap):** the old measure pushed a DropFrame per declared slot using
+  the PARENT node's ONE `rect` → N fully-overlapping zones + stacked labels. Now
+  `slotDropsFor(frame,rectById)` gives each slot its OWN rect: populated = UNION of its children's
+  measured anchor boxes; empty = an allocated placeholder BAND (`emptyBands()`). Generic over
+  declared Part slots, zero per-type branch.
+- **At-rest affordance (the "can't add"):** DropFrame carries `empty:boolean`; empty-slot zones
+  render AT REST with `.canvas-dropzone--empty`, populated zones stay drag-only — at rest all
+  zones keep `pointer-events:none` so the affordance never blocks node selection.
+- **Localized labels (Law 9):** `resolveLocaleString(d.slot.label, locale??'ka','en')` replaces a
+  hard-coded `.en`.
+- **Banner/toolbar clearance:** replaced a `34px` magic offset with `--canvas-toolbar-h`, measured
+  via ResizeObserver into root state.
 
 **Design fork (accepted, flagged):** inner-page declares a `sticky` slot but NO shell renders named `slots` (all shells render the primary `children.rendered`) — sticky is effectively unrendered. Its empty-band affordance + label are correct, but a drop there is currently invisible until a shell consumes `children.slots['sticky']`. Out of R1 scope (no shell/object-model change); the sticky slot render is the deeper follow-up.
 
@@ -31,4 +40,4 @@ Fixed the owner's PRIMARY blocker: "I can't even start assembling a site with la
 
 **New FFs:** `apps/panel/src/canvas/emptyContainerNestTarget.fitness.test.ts` (nest-target logic); `packages/plugins/pages/inner-page/default/page-containment.fitness.test.ts` (CSS-contract scan via node:fs — line-start-anchored ruleBody to skip the `> .page-content` descendant rule).
 
-Related: [[project_panel_insert_accept_graph_gap]] · [[project_panel_bounded_element_bands]] · [[project_placement_law_primitive]] · [[reference_render_path_browser_verify]]
+Related: [[project_panel_page_type_and_insert_graph]] · [[project_panel_bounded_element_bands]] · [[project_placement_law]] · [[reference_render_path_browser_verify]]

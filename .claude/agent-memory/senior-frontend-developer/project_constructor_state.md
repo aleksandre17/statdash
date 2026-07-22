@@ -12,30 +12,25 @@ recur on every new authoring slice.
 ## Architecture
 
 **One generic `<Inspector>` serves every editor surface (OCP).** It consumes a `SchemaSource` port
-(`getSchema(node) → PropSchema`) — new capability = new SchemaSource, Inspector itself never
-changes. Sources registered so far, all mirroring the same shape: `nodeSchemaSource` (default,
-`nodeRegistry.getSchema`), `chromeSchemaSource` (chrome slots), `transformStepSchemaSource`,
-`filterParamSchemaSource`, `rowSpecSchemaSource`, `visibilityLeafSchemaSource`, `pageSchemaSource`
-(page-root `PageConfigBase`), `perspectiveDefSchemaSource`/`perspectiveScopeSchemaSource`. Every
-editor models its target as a `CanvasNode {type, props}` and writes back through `setAtPath`
-(`inspector/showWhen`) — never a bespoke reducer.
+(`getSchema(node)→PropSchema`) — new capability = new SchemaSource, Inspector itself never
+changes. Sources registered so far, all mirroring the same shape: `nodeSchemaSource` (default),
+`chromeSchemaSource`, `transformStepSchemaSource`, `filterParamSchemaSource`,
+`rowSpecSchemaSource`, `visibilityLeafSchemaSource`, `pageSchemaSource`,
+`perspectiveDefSchemaSource`/`perspectiveScopeSchemaSource`. Every editor models its target as a
+`CanvasNode{type,props}` and writes back through `setAtPath` — never a bespoke reducer.
 
-**PropSchema vocabulary lives in `packages/core`** (`config/prop-schema.ts`), not react — a
-TransformStep op is defined in core and the arrow forbids core→react. `packages/react/src/engine/
-slice-meta.ts` re-exports it (needs BOTH `export type {X}` and `import type {X}` in the same file or
-tsup DTS fails "Cannot find name X") so the ~73 `@statdash/react/engine` import sites stay
-byte-identical.
+**PropSchema vocabulary lives in `packages/core`**, not react (the arrow forbids core→react).
+`packages/react/src/engine/slice-meta.ts` re-exports it (needs BOTH `export type{X}` and
+`import type{X}` in the same file or tsup DTS fails) so the ~73 `@statdash/react/engine` import
+sites stay byte-identical.
 
-**The registry pattern, repeated identically one rung at a time (op → param → rowspec → visibility
-→ perspective-scope):** a discriminant-keyed registry in `packages/core/src/config/*-schemas.ts`
-carries an authoring `PropSchema` per member; the registry is schema-ONLY (no handler — behavior/
-render stays in react/plugins, the arrow forbids core owning it). `packages/core/src/index.ts`
-side-effect-imports the schema file. Two variants: **single-shape** registries key on ONE constant
-(`ROW_SPEC_KEY`) since the type isn't a union; **union** registries key on the discriminant
-(`op`, `type`). Perspective scope and page `presentation.*` go one step further and
-**auto-surface via registry enumeration** — `listPerspectiveScopeKeys()` / `listPresentationProjectors()`
-are unioned and re-prefixed to dot-paths (`scope.*` / `presentation.*`) so a newly-registered
-scope key or projector needs ZERO Inspector-side edit (Law 8).
+**The registry pattern, repeated identically one rung at a time (op → param → rowspec →
+visibility → perspective-scope):** a discriminant-keyed registry in
+`packages/core/src/config/*-schemas.ts` carries an authoring `PropSchema` per member — schema-ONLY
+(behavior/render stays in react/plugins, arrow forbids core owning it). Two variants:
+**single-shape** registries key on ONE constant; **union** registries key on the discriminant.
+Perspective scope and page `presentation.*` go one step further and **auto-surface via registry
+enumeration** so a newly-registered scope key or projector needs ZERO Inspector-side edit (Law 8).
 
 **Coverage Fitness #1** (`apps/panel/src/features/data-layer/coverage.fitness.test.ts`) is the
 north-star gate: it enumerates every discriminant from the ENGINE SSOT (`listTransformOps()`
@@ -68,27 +63,22 @@ Drag (dnd-kit) and pick→click both funnel through ONE `applyBind` (click-to-ar
 the keyboard/WCAG equivalent of drag).
 
 **Templates/generate (`features/templates/`):** the gate a template must survive is the save-guard's
-PER-NODE REQUIRED-field check (`save/saveGuard.ts` Check 3a), not just structural `validateConfig` —
-`createPage` runs `assertSaveable` before the server write. Consequence: starters avoid
-map/geograph/kpi-strip (their required fields — geoJsonUrl, kpi items — can't ship blank) and carry
-NO `data` (author binds later via Show-Me, not fabricated codes). The data-first generator maps every
-suggestion to a `chart` (chartType is its only required field) even for map/kpi-strip-shaped
-suggestions.
+PER-NODE REQUIRED-field check, not just structural `validateConfig` — `createPage` runs
+`assertSaveable` before the server write. Consequence: starters avoid map/geograph/kpi-strip
+(required fields can't ship blank) and carry NO `data` (author binds later via Show-Me).
 
 **Page Inspector (`features/page-config/`):** authors `PageConfigBase` via the SAME generic
 Inspector; `presentation.*` is registry-derived (not hand-listed). The page-root `type` (kind) is
 not yet AUTHORED in the UI, but as of the AR-49 foundation fix it is CARRIED first-class and
-losslessly — see [[project_panel_per_page_type]]. (Superseded: the adapter no longer hardwires
+losslessly — see [[project_panel_page_type_and_insert_graph]]. (Superseded: the adapter no longer hardwires
 `inner-page` or discards the page `type`; `CanvasPage.type` is a required column and every
 creation path sets it. `PageMeta` still excludes `type` — type is node-structural, from the page-
 node union, never `PageConfigBase` — so `type` never double-sources into meta.)
 
-**Perspectives pane (`features/perspectives/`):** `PerspectivesByParam` record⇄ordered-list adapter
-(`perspectiveModel.ts`, mirrors `filterSchemaModel.ts`); `perspectives[0]` IS the default (one SSOT —
-reorder changes the default). `when`/`available` are authored via the recursive `VisibilityBuilder`,
-not scalar schema fields. **Live-canvas preview of the active perspective is NOT wired** — `CanvasView`
-has no `perspectiveState` prop; the pane's preview chip-row is local-state-only. Wiring it needs a
-`CanvasView → NodePageRenderer perspectiveState` seam (escalated, not forced).
+**Perspectives pane:** `PerspectivesByParam` record⇄ordered-list adapter; `perspectives[0]` IS the
+default (one SSOT — reorder changes the default). `when`/`available` are authored via the
+recursive `VisibilityBuilder`, not scalar fields. **Live-canvas preview of the active perspective
+is NOT wired** — `CanvasView` has no `perspectiveState` prop; the pane's preview is local-state-only.
 
 **Methodology / data-integrity fieldset:** a SHARED PropSchema fragment
 (`packages/plugins/panels/dataIntegritySchema.ts`) is spread into each data-panel's own schema
@@ -104,25 +94,19 @@ inline editor).
 
 ## Standing gotchas (apply to ANY future Constructor authoring slice)
 
-- **React Compiler / lint hard-errors, not style nits.** `useEffect`+`setState` to resync a controlled
-  value is a HARD lint error ("Calling setState synchronously within an effect can trigger cascading
-  renders") — use the render-time-reconcile pattern instead (`JsonDataField`'s `syncedJson`: track the
-  canonical JSON of the last synced value in state; when the incoming value's canonical form differs,
-  that's an OUTSIDE change and resets the draft; the user's own invalid-mid-typing draft is never
-  clobbered because it's never emitted). Also drop a `useCallback` that trips "Compilation Skipped:
-  existing memoization could not be preserved" — a plain inline fn lets the compiler memoize it.
+- **React Compiler / lint hard-errors, not style nits.** `useEffect`+`setState` to resync a
+  controlled value is a HARD lint error — use the render-time-reconcile pattern instead
+  (`JsonDataField`'s `syncedJson`: track the canonical JSON of the last synced value in state;
+  when the incoming value's canonical form differs, that's an OUTSIDE change and resets the draft;
+  the user's own invalid-mid-typing draft is never clobbered because it's never emitted). Also
+  drop a `useCallback` that trips "Compilation Skipped: existing memoization could not be
+  preserved" — a plain inline fn lets the compiler memoize it.
 - **MUI `<Select>` is not a native `<select>`** — tests must `mouseDown` then click the option, not
-  `fireEvent.change`. `EnumRefField`'s native `<select>` DOES support `fireEvent.change`. Know which
-  one you're driving.
+  `fireEvent.change`. `EnumRefField`'s native `<select>` DOES support `fireEvent.change`.
 - **`no-tenant-content.fitness` ALLOW-listing is REQUIRED for new bilingual authoring catalogs.**
-  `packages/plugins/**/meta.ts` / `**/*Node.ts` are auto-exempt (catalog-class pattern match); a NEW
-  bilingual catalog in `packages/core/src/config/*-schemas.ts` is NOT auto-exempt and needs an
-  explicit entry in BOTH `ops/scripts/check-laws.sh` (`LAW4_CATALOG_ALLOW`) and
-  `platform/tests/no-tenant-content.fitness.test.ts` (`ALLOW`). See [[project_i18n_label_and_law4_placement]].
-- **Remount-to-reseed via `key={id ?? 'new'}`**, not `setState`-in-effect, when a form must reset on
-  selection change.
-- **`registerMigration` note:** irrelevant to Constructor editors directly but the round-trip fitness
-  suite shares the migration chain — see the color/variant migrators in `../react-specialist/`
-  memory if touching schema version bumps.
-
-**Page-root `type` is DELIBERATELY not authored** — `canvasPageAdapter` hardwires the root to `inner-page` and strips `type` from meta to preserve the "meta-less page → no spurious meta" round-trip invariant (reconciled from twin).
+  `packages/plugins/**/meta.ts`/`**/*Node.ts` are auto-exempt; a NEW bilingual catalog in
+  `packages/core/src/config/*-schemas.ts` needs an explicit entry in BOTH
+  `check-laws.sh LAW4_CATALOG_ALLOW` and `no-tenant-content.fitness.test.ts ALLOW`. See
+  [[project_i18n_map]].
+- **Remount-to-reseed via `key={id ?? 'new'}`**, not `setState`-in-effect, when a form must reset
+  on selection change.

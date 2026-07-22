@@ -17,7 +17,7 @@ output equals the committed artifact (no drift)" (`generatePageConfigSchema()` v
 grid-schema relabel (I only ran `grid.fitness`, not the schema-drift gate) — the drift only
 surfaced when the presentation/page-config suite ran. `plane`/`concern` PropField tags are
 inspector-only and do NOT appear in the JSON schema; `label`(→`title`), field order,
-`default`, `options`(→`enum`) DO. See [[panel-gate-commands]].
+`default`, `options`(→`enum`) DO. See [[reference_panel_dev_notes]].
 
 ## Panel chrome-string i18n pattern (Law 4, no react-i18next in these layers)
 The inspector-controls + studio-chrome layers have NO `useTranslation`/`t()` catalog. The
@@ -34,7 +34,7 @@ PerspectivesPane):
 `IconButton` also has `aria-label="X"`, `getByLabelText('X')` finds MULTIPLE. Make the button's
 aria-label DISTINCT + more descriptive than the short tooltip (better for SR too).
 
-## ColorControl is now ON the DTCG spine (updates [[project-insp-tokens-undefined]])
+## ColorControl is now ON the DTCG spine (updates [[project_panel_ui_kit_and_rail]])
 The native `<input type=color>` (dishonest `#000000` default, unthemed) was replaced by a
 themed `.insp-swatch` bound to GLOBAL `--color-*`/`--radius-*`/`--spacing-*` tokens (dark-safe):
 empty = a "no-colour" checkerboard + bilingual "Not set", native OS picker opens from neutral

@@ -42,3 +42,36 @@ to cp.
 
 Probes live in `platform/e2e/probes/`, run from `platform/` (node has @playwright/test
 resolvable there, NOT from /tmp). Base URL default `http://192.168.1.199:3013`.
+
+**Playwright + real-browser drive of :3013 (Playwright 1.61.1 + chromium ARE installed in
+`platform/node_modules` — an old "not in sandbox" memory was stale).** Existing harness:
+`apps/panel/e2e/*.e2e.ts` + `e2e/support/mockApi.ts` (route-intercepts `**/api/**` for a
+deterministic governed seed; `seedAuthToken` sets sessionStorage `geostat_panel_token`). Drive the
+DEPLOYED line (not local vite) via `apps/panel/e2e/live.config.ts` (no webServer,
+`baseURL=$PW_BASE_URL||http://192.168.1.199:3013`): `cd platform/apps/panel && PW_BASE_URL=http://192.168.1.199:3013
+npx playwright test --config e2e/live.config.ts`. :3013 is already warm → a drive is ~13s vs ~3min
+cold local. Route-interception works cross-origin, so the seed is deterministic against the real
+bundle.
+
+**Sync source to :3013 (source-mounted live-watch).** The container mounts host
+**`/tmp/statdash-dev-line/platform/apps/panel/src`** → `/app/apps/panel/src` (verify with
+`docker inspect statdash-dev-panel-full --format '{{range .Mounts}}{{.Source}} => {{.Destination}}{{println}}{{end}}'`
+— an old `/home/administrator/statdash-dev-src/...` path was stale), runs `pnpm --filter
+./apps/panel dev` (Vite HMR). Only `apps/panel/src` is mounted this way — packages changes need
+the whole-src tar above. Sync via **tar-over-ssh** (Git's ssh works; MSYS2 rsync has a dup()-fd
+bug here): `tar czf - -C platform/apps/panel/src . | ssh -F ../ops/config/ssh/config -o
+StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null geostat-deploy "tar xzf -
+-C /tmp/statdash-dev-line/platform/apps/panel/src"` (HOME=/c/Users/Test-User; ssh config at
+repo-root `ops/`, i.e. `../ops` from `platform/`).
+
+**GOTCHA (inotify across bind mount):** a HOST-side tar write to the mount source does NOT fire
+the container's Vite (chokidar) watcher — it keeps serving stale in-memory transform. FORCE a
+re-transform with a CONTAINER-side content change: `docker exec statdash-dev-panel-full sh -c
+'sed -i "1s/^/\/\/ bump-$(date +%s)\n/" /app/apps/panel/src/<file>'`. VERIFY the browser actually
+gets the new code by curling the transformed module (`curl -s http://192.168.1.199:3013/src/<path>.ts
+| grep <changed-line>`) — do not trust "sync OK" alone; confirm via
+`docker logs --since 60s statdash-dev-panel-full`.
+
+**Ports:** prod `statdash-panel`:3003, staging `statdash-stg-panel`:3008 — UNTOUCHABLE; dev
+`statdash-dev-panel-full`:3013. Source-mount HMR does not restart the container (uptime stays
+continuous — proof prod/staging are untouched).

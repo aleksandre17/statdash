@@ -1,30 +1,58 @@
 ---
 name: project-panel-canvas-chromeconfig-defect
-description: Canvas chrome fidelity — hollow-rail root cause (empty nav/chrome into SiteProvider) FIXED via projectCanvasSiteChrome; canvas chrome-selection (PART B) still needs a packages ChromeSlot anchor
+description: Canvas chrome fidelity — the canvas now paints the WHOLE app shell (AppChrome, not just page content), chrome is canvas-selectable via a data-canvas-chrome-slot anchor, and chrome is reachable from Pages&Site. Current-state distillate of a multi-part fix (PART A-E).
 metadata:
   type: project
 ---
 
-Real path: `platform/apps/panel/src/canvas/CanvasView.tsx` (the memory's old `apps/panel/...` is pre-`platform/` monorepo layout).
+Real path: `platform/apps/panel/src/canvas/CanvasView.tsx`.
 
-**History (resolved):** the live canvas once could not render page nodes because CanvasView mounted `<SiteProvider>` WITHOUT a `chromeConfig`, and `InnerSidebarShell.useChromeConfig()` threw. That throw was killed by `useChromeConfig()` folding to `EMPTY_CHROME_CONFIG` (SiteContext.tsx) — the fail-soft posture. Nodes now render.
+**Current state (all parts SHIPPED):** `CanvasView` mounts `<AppChrome><NodePageRenderer/></AppChrome>`
+inside `SiteProvider` + `AuthoringAnchorContext(true)` — REUSING the runner's own 4-region
+orchestrator (top=header/banner, bottom=footer, right, overlay; `<main>{children}</main>`), so the
+canvas paints the EXACT shell the live site does (Webflow full-page model), not just page content.
+Chrome renders even with an EMPTY `site.chrome` because `resolveChrome` mounts EVERY registered
+slot at its default variant (see [[project_chrome_shell_mechanisms]]). Deliberately NO
+FrameProvider on the canvas (`usePageFrame()`='default', chrome visible) — the `'canvas'` frame
+would hide chrome, which is the runner's edit-mode intent, not the canvas's.
 
-**Then (FOUNDATION FIX #2, 2026-07-10): the HOLLOW RAIL.** Even rendering, the canvas InnerSidebar was an empty rail (0 nav links) — the owner's "broken mystery left bar". Root cause: CanvasView's SiteProvider was mounted with `nav={[]}` and no `chrome` prop, so `useSiteNav()`→[] and `useSiteChrome()`→{} → the InnerSidebar (unconditionally emitted by `InnerPageShell`) resolved to a hollow default. The runner renders the SAME rail POPULATED because `RendererSurface` passes `nav={manifest.nav} chrome={manifest.chrome} chromeConfig={manifest.chromeConfig}`.
+**Chrome is canvas-selectable.** `ChromeSlot` (packages/react) reads `AuthoringAnchorContext` and,
+only under the authoring canvas, wraps its output in a `display:contents` div stamping
+`data-canvas-chrome-slot`/`-key` (layout-inert, byte-identical off-canvas). `CanvasOverlay`
+queries that attribute, frames every AUTHORABLE region (filtered by
+`chromeRegistry.getMeta(slot,key)?.schema?.length>0` — the SAME filter ChromePalette uses), and a
+click routes to `onSelectChrome(slot,key)` → the existing chrome-selection arm →
+`ChromeInspectorPanel`. `ChromeRegion` (used by AppChrome for top/left/right/bottom/overlay)
+stamps the SAME `<PartAnchor field={slot} index={0}>` `ChromeSlot` does, so header/footer are
+selectable identically to the sidebar (not just the sidebar, which was the earlier, narrower fix).
+This anchor family is a deliberately INTERIM sibling of `data-part-*` (not yet a declared Part) —
+folds into the ONE PartAnchor when chrome becomes a declared part (ADR-041 Ph.6).
 
-**Fix (PART A, shipped):** `platform/apps/panel/src/canvas/canvasSiteChrome.ts::projectCanvasSiteChrome(site, pages)` is the panel's analogue of `manifest.{nav,chrome,chromeConfig}` — maps the authoring session (SiteDef + CanvasPage[]) into the engine's site-context shapes:
-- nav: each `NavItem` → `NavEntry` (path = `/${page.slug}`, slug looked up by pageId, fallback pageId; icon = neutral `'document'`; color `''` so the sidebar CSS `var(--sc, var(--color-accent))` fallback applies — no hardcoded token).
-- chrome: `SiteDef.chrome` passes through verbatim (`ChromeSlotConfig ⊂ ChromeEntry`, serializes straight to `SiteManifest.chrome`).
-- chromeConfig: minimal brand `{logoUrl, logoAlt}` only when `site.logo` set, else undefined (fail-soft).
-Threaded via `useCanvasController` (`canvasSite` memo) → StudioShell → new optional CanvasView props `nav/chrome/chromeConfig/locale` (empty defaults preserve isolated-mount behaviour). Gate: `canvasChromeFaithful.fitness.test.tsx` (**FF-CANVAS-CHROME-FAITHFUL**) — projector unit + a RENDER proof the rail shows the authored labels.
+**Chrome is reachable from Pages&Site.** Chrome (header/sidebar/footer) is SITE furniture, not
+page content, so `ChromePalette` lives in `PagesSiteSurface` (own "ჩარჩო" overline), not buried at
+the bottom of the page-content `InsertSurface`. Selecting a chrome element opens
+`ChromeInspectorPanel` in the RightDock via the already-wired `chromeSel` arm. The top-bar Site
+button is labelled VISIBLY "Site & chrome" (was an icon-only, un-findable "Pages & Site") and opens
+`PagesSiteSurface`, which hosts `ChromeCompositionPanel` (the whole-set enable/disable/swap-variant
+editor) directly.
 
-**PART B (canvas chrome SELECTION) — SHIPPED (2026-07-12, SPEC-studio-ia-canonical S4).** The ROOT-CAUSE path landed: `ChromeSlot` (packages/react/src/engine/ChromeSlot.tsx) now reads `AuthoringAnchorContext` and, ONLY under the authoring canvas, wraps its output in a `display:contents` div stamping `CHROME_SLOT_ATTR`/`CHROME_KEY_ATTR` (`data-canvas-chrome-slot`/`-key`, exported from `partAnchor.tsx` + engine/index) — layout-inert, byte-identical off-canvas (default context `false`). `CanvasOverlay` queries `[data-canvas-chrome-slot]`, frames every AUTHORABLE region (`chromeRegistry.getMeta(slot,key)?.schema?.length > 0` — the SAME filter ChromePalette uses, so no dead selection), and a click → new prop `onSelectChrome(slot,key)` → StudioShell wires `controller.selectChrome({kind:'chrome',slot,key})` (the existing arm → `ChromeInspectorPanel`). `useCanvasController` now exposes `selectChrome` + `selectedChrome`=`chromeSel`. NOTE: this is a SEPARATE, clearly-INTERIM anchor family (NOT `data-part-*`); it folds into the ONE PartAnchor when chrome becomes a declared part at S6 (chrome-as-`site-frame`-part, ADR-041 Ph.6). Gate: `apps/panel/src/canvas/canvasChromeSelectable.fitness.test.tsx` (FF-CANVAS-CHROME-SELECTABLE, registry-derived first-authorable chrome). packages/react dist REBUILD required (`pnpm -C packages/react build`, tsup). LIVE-proven: `chromeNavAuthoring.e2e` + `bandItemSelect`/`filterItemSelect` e2e (chrome frames don't intercept node/item clicks).
+**Registry flag (real gap, not faked):** `app-banner` has ONLY a `hidden` variant registered — no
+visible default banner shell exists, so a banner cannot render on the canvas until one is
+authored/registered.
 
-**PART C (surface ChromePalette) — RESOLVED (2026-07-11, commit d687043).** Chrome was buried under `INSERT_SECTION_LABELS.chrome` at the BOTTOM of `InsertSurface` — the owner's "chrome not visible anywhere." Fix was NOT a new rail entry (that touches the rail contract — deliberately avoided). Root IA insight: chrome (header/sidebar/footer) is SITE furniture, not page content, so it belongs in `PagesSiteSurface` next to Identity + Nav, NOT in the page-content Insert palette. Moved `ChromePalette` from `InsertSurface` → `PagesSiteSurface` (own "ჩარჩო" overline). Selecting a chrome element (`selectChrome`) opens `ChromeInspectorPanel` in the RightDock — ALREADY wired via `chromeSel` → `DockBody scope='element'` (RightDock needs NO edit; the section registry's `appliesTo` picks the chrome panel). InsertSurface is now strictly the block palette. LIVE-proven: `apps/panel/e2e/chromeNavAuthoring.e2e.ts`. PART B (canvas click-to-select chrome via a `data-canvas-chrome-slot` packages seam) still open — palette-selection is the reachable path meanwhile.
+**Root cause behind the ORIGINAL hollow-rail defect (historical, now closed — kept for the
+pattern, since it recurs):** `CanvasView` built a `<SiteProvider>` WITHOUT `chromeConfig` /
+`nav={[]}` / no `chrome` prop, so `useChromeConfig()`/`useSiteNav()`/`useSiteChrome()` all
+resolved to empty defaults → the InnerSidebar rendered hollow (0 nav links) and, in an earlier
+pass, `useChromeConfig()` even THREW (caught by `NodeErrorBoundary`, swallowing page children).
+Stayed green because jsdom has 0-rect geometry and the sibling unit test happened to pass its own
+chromeConfig, masking the product gap. Fix root: `canvasSiteChrome.ts::projectCanvasSiteChrome`
+projects the authoring session (SiteDef + CanvasPage[]) into the engine's site-context shapes
+(nav/chrome/chromeConfig) — the panel's analogue of what `RendererSurface` passes the runner.
+**The general lesson:** any NEW SiteProvider mount (test or product) must feed a REAL
+nav/chrome/chromeConfig triple or it silently degrades to the empty-chrome default — don't let a
+test's own compensating setup mask a product gap.
 
-**PART D (canvas renders the WHOLE APP SHELL, not just page content) — SHIPPED (2026-07-13, branch feat/ar49-m0-metric-first-authoring; NOT committed).** The owner "can't find/use chrome": the canvas showed ONLY page content — header/footer/banner ABSENT. ROOT CAUSE: `CanvasView` mounted `<NodePageRenderer>` DIRECTLY inside SiteProvider, but the app-shell chrome regions (top=header/banner, bottom=footer, right, overlay) are rendered by **`AppChrome`** (`packages/plugins/chrome/AppChrome.tsx`, the 4-region orchestrator that WRAPS the page: `<main>{children}</main>`), which the canvas OMITTED. Only the `InnerSidebar` showed — because it's a page-level `<ChromeSlot slot="InnerSidebar"/>` rendered INSIDE `NodePageRenderer` by `InnerPageShell` (that was the PART A hollow-rail). The runner renders both because `LocaleGuard` does `<AppChrome><NodePageRenderer/></AppChrome>`. **FIX (2 lines of substance):** (1) `CanvasView` now wraps `<AppChrome><NodePageRenderer/></AppChrome>` inside the SiteProvider + `AuthoringAnchorContext(true)` — REUSING the runner's own orchestrator (no fork, Law 6/7), so the canvas paints the EXACT shell the live site does (Webflow full-page model). Chrome renders even with EMPTY `site.chrome` because `resolveChrome` mounts EVERY registered slot at its default variant (see [[failsoft-chrome-and-app-boundary]]). Deliberately NO FrameProvider → `usePageFrame()`='default' (chrome VISIBLE); the `'canvas'` frame would HIDE chrome (its original edit-mode intent) — the Webflow model wants it shown. (2) `ChromeRegion` (`packages/react`, used by AppChrome for top/left/right/bottom/overlay) now stamps the SAME `<PartAnchor field={slot} index={0}>` that `ChromeSlot` does — WITHOUT this, header/footer render but are NOT canvas-selectable (only ChromeSlot stamped the anchor). Now BOTH chrome dispatch paths stamp the ONE `data-part-*` family → the overlay frames header + footer + sidebar identically. packages/react dist REBUILD required. **TWO entry points delivered:** (a) click a chrome region on canvas → chrome facet in dock; (b) the top-bar Site button, relabeled with VISIBLE text **"Site & chrome"** (was an icon-only "Pages & Site" — un-findable; a probe found no site/chrome label), opens `PagesSiteSurface` which now hosts `ChromeCompositionPanel` (the whole-set enable/disable/swap-variant editor, `chrome-row-<slot>` testids) DIRECTLY — not only via select-region-then-Back. **REGISTRY FLAG:** `app-banner` has ONLY a `hidden` variant registered (`@plugins/chrome/index.ts`) — NO visible default banner shell exists, so the banner cannot render on the canvas until a visible variant is authored/registered (real gap, not faked). Gates: `canvasChromeFaithful.fitness` (new FF-CANVAS-APP-CHROME block: `.app-shell`/`.chrome-region--top|bottom` render + `[data-part-field=AppHeader|AppFooter]` anchor + `.canvas-chrome[data-chrome-slot=AppHeader|AppFooter]` frames + header-click→`onSelectItem(SITE_FRAME_ID, chrome.AppHeader)`); `PagesSiteSurface.test` (composition present + variant write); panel vitest 124 files/888 pass; LIVE `chromeNavAuthoring.e2e` (header renders+clickable+facet-opens, composition reachable, footer→hidden drops its canvas frame). GOTCHA: a rich chrome region (AppHeader) opens TWO dock `data-testid=inspector` sections (chrome facet + per-slot config) → e2e must use `.first()`.
-
-**PART E (canvas paints the PUBLISHED BRAND, AR-52 W1) — SHIPPED 2026-07-15.** Brand was baked into the runner app (`[data-tenant]` CSS), invisible to the config-only canvas → it wore the tool's Strata skin, not the published brand. Fixed by making brand PORTABLE config (`themeOverrides`) applied through one shared `@statdash/styles` mechanism both sides consume. Full detail: [[project_canvas_brand_faithful]].
-
-Related: [[project_failsoft_chrome_and_app_boundary]] (fail-soft shells / resolveChrome mounts ALL slots), [[panel-live-canvas]] (canvas seam), [[project_chrome_config_seam]], [[facet-axis-style-facet]] (chrome facet).
-
-**Root cause (reconciled from twin):** `CanvasView` built `<SiteProvider>` WITHOUT `chromeConfig` while `InnerPageShell` unconditionally mounts `<ChromeSlot slot="InnerSidebar">` → `useChromeConfig()` threw → `NodeErrorBoundary` swallowed page children. Stayed green because jsdom has 0-rect geometry AND the sibling test passed its own chromeConfig (test compensated for the product).
+Related: [[project_chrome_shell_mechanisms]], [[project_panel_studio_map]] (canvas seam),
+[[project_facet_axis_style_facet]] (chrome facet),
+[[project_panel_canvas_craft_and_brand]] (PART E, chrome BRAND — sibling thread).

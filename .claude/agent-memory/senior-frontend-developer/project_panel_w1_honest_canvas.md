@@ -1,25 +1,53 @@
 ---
 name: project-panel-w1-honest-canvas
-description: AR-52 Wave 1 "Honest Canvas" — what shipped (live-default, honest unbound KPI, perspective dedup), the deploy split, and the roots of the deferred token/chrome/no-data seams
+description: AR-52 Wave 1 "Honest Canvas" — CLOSED/merged to main. Live-by-default + honest veil, honest UNBOUND KPI, honest token placeholder, honest chart empty-state, and chrome-faithful brand. What's still deferred.
 metadata:
   type: project
 ---
 
-AR-52 Wave 1 (Canon C2 "the canvas never lies"). **CLOSED 2026-07-17 — DONE + merged on `main`, card `work/items/0071` status=DONE (commit `083b698`).** All W1 code reached main via SHAs `918c515` (honest UNBOUND KPI), `7eb4017` (honest tokens + no silent-blank chart), `b69067a` (engine dynamic-binding honest tri-state `binding.ts`), PLUS the chrome-faithful brand-into-manifest seam that my old notes had DEFERRED — it LANDED: `buildThemeVars`/`applyThemeOverrides`/`THEME_OVERRIDES_STYLE_ID` in `@statdash/styles`, `themeVars` prop on `CanvasView`, gate `chromeFaithful.fitness.test.tsx` (canvas `--color-accent` ≡ runner accent, dark-safe :root). **Converged gate on merged main (2026-07-17, parsed):** panel 975/975 · W1 fitness 19/19 (canvasNeverLies+chromeFaithful+canvasChromeFaithful) · core binding.fitness 13/13 · plugins kpi-strip 11/11 · `tsc -b apps/panel` clean · lint 0-err/6-warn. **Live proof :3013** (probe `work/probe-w1-honest-canvas.mjs` — now the full-truth superset: adds tokenLeak scan + canvasAccent + unbound count; RUN from platform/ via a copy, ESM won't resolve @playwright from work/): liveDefault true, veil honest, ONE perspective, real KPIs `[80 979,+15.1%,…]`, **tokenLeakCount 0** + **canvasAccent #0080BE** (⇒ the :3013 packages image IS rebuilt with current core/styles — the old "plugins/core not on :3013 till image rebuild" caveat is RESOLVED for this deploy), 0 console errors. **One proof at fitness-level only:** the unbound-KPI affordance (`data-kpi-state=unbound`→`KpiUnboundCard`) — RED→GREEN in canvasNeverLies.fitness, render path deployed, but `unboundAffordances:0` on any all-bound page; photographing live needs a state-mutating compose gesture on shared :3013 → left for owner J3 walk. The prior-branch (feat/ar49-m0-metric-first-authoring) history below is SUPERSEDED by the merged-main state above but kept for root-cause context:
+AR-52 Wave 1 (Canon C2 "the canvas never lies"). **CLOSED 2026-07-17, merged to `main`**
+(card `work/items/0071`). Live-proven on :3013: liveDefault true, veil honest, ONE perspective,
+real KPIs render, tokenLeakCount 0, canvasAccent matches the runner, 0 console errors.
 
-**SHIPPED + gated + committed:**
-- **Live-by-default** — `CanvasView` mode `useState('live')` (was 'structural'). Structural is an explicit opt-out with an honest **veil** (`.canvas-veil`, diagonal hatch + label pill "ცოცხალი მონაცემები გამორთულია; მაჩვენებლები არ არის რეალური", `data-testid=canvas-structural-veil`, gated `mode==='structural'`). Live fail-soft unchanged (no cube/API → structural + badge).
-- **One perspective control (G9)** — removed the CanvasToolbar perspective radiogroup (was a duplicate of the page's own perspective-bar node). The perspective PREVIEW SSOT is `previewPerspectiveId`, driven by the dock `PerspectivesPane` (via `inspector/sections/builtins.tsx` → `controller.setPreviewPerspectiveId`), NOT the toolbar. CanvasView still seeds the MemoryRouter from `previewPerspectiveId`. The in-page perspective-bar renders as faithful (aria-hidden) content.
-- **Honest UNBOUND KPI (G2)** — `packages/plugins/panels/kpi-strip/default/kpiBinding.ts::isKpiSpecBound` (STATIC predicate over KpiSpec.value discriminants, mirrors core resolveValue reads). `KpiStripShell` partitions visible items bound/unbound BEFORE `useKpiRows` (unbound never hits storeVal('') → no fake 0, no empty-code warm); unbound → `KpiUnboundCard` (honest affordance, door to J4). i18n keys `unbound-title`/`unbound-hint` in kpi-strip `meta.ts`. Gate `FF-CANVAS-NEVER-LIES` (apps/panel/src/canvas/canvasNeverLies.fitness.test.tsx) proven RED pre-fix (unbound→"0"), GREEN after.
+**SHIPPED + gated:**
+- **Live-by-default.** `CanvasView` mode defaults to `'live'` (was `'structural'`). Structural is
+  now an explicit opt-out with an honest **veil** (`.canvas-veil`, diagonal hatch + a bilingual
+  label pill, `data-testid=canvas-structural-veil`). Live fail-soft unchanged (no cube/API →
+  structural + badge).
+- **One perspective control.** Removed the CanvasToolbar's OWN perspective radiogroup (was a
+  duplicate of the page's own perspective-bar node). The preview SSOT is `previewPerspectiveId`,
+  driven by the dock `PerspectivesPane`, not the toolbar.
+- **Honest UNBOUND KPI** — `kpiBinding.ts::isKpiSpecBound` (static predicate over KpiSpec.value
+  discriminants, mirrors core `resolveValue` reads). `KpiStripShell` partitions bound/unbound
+  BEFORE `useKpiRows` (unbound never hits an empty-code warm read → no fake 0); unbound renders
+  `KpiUnboundCard` (an honest affordance, door to a later "bind me" journey). Gate:
+  `FF-CANVAS-NEVER-LIES` (`canvas/canvasNeverLies.fitness.test.tsx`).
+- **Token leak `{spanFrom}/{spanTo}/{time}` — fixed via an honest core placeholder.** Root: these
+  are Tier-3 hidden-param defaults derived from the `time` data extent, resolved by
+  `resolveDefaults` against the page store — they leak only when the store has no extent (empty
+  structural preview, live-loading, live-unavailable). Rather than build a representative extent
+  for every no-data state (deferred, needs a typed-row seam), the floor lives at the PRIMITIVE:
+  `packages/core/src/config/template.ts resolveTemplate` returns the platform missing-value glyph
+  `'—'` for any unresolvable `{key}` instead of echoing braces. Platform-wide but safe — on the
+  live/published path vars always resolve (byte-identical); the placeholder only fires where the
+  old code leaked plumbing.
+- **Chart silent-blank — fixed via a no-rows short-circuit.** An UNBOUND chart (no `chartType`/
+  `data`) THREW inside `useChartOutput.resolveChartType` (reads `.$ctx` off `undefined`) → the
+  node error boundary rendered an empty box (the silent-blank lie). `TableShell` was already
+  honest (`EmptyState` on empty rows) — `ChartShell` had the same guard but it sat AFTER the
+  throwing hook. Fix: `useChartOutput` short-circuits `rows.length===0` → returns
+  `placeholderOutput({type:safeType})`, so the shell falls through to its declared `EmptyState`.
+  The kpi-strip's richer unbound-vs-no-data distinction was NOT replicated for charts (an
+  EmptyState is the accepted declared state there).
+- **Chrome-faithful brand** — landed in the same wave: `buildThemeVars`/`applyThemeOverrides` in
+  `@statdash/styles`, `themeVars` prop on `CanvasView`, gate `chromeFaithful.fitness.test.tsx`
+  (canvas `--color-accent` ≡ runner accent, dark-safe). Full detail:
+  [[project_panel_canvas_craft_and_brand]].
 
-**DEPLOY SPLIT (load-bearing):** the :3013 dev line src-mounts ONLY `apps/panel/src` (tar-over-ssh → HMR). So **panel changes reach :3013 live; packages/* (plugins/react/core) changes DO NOT — they need a container image rebuild.** W1's live-default+veil+dedup are LIVE-PROVEN on :3013 (probe `work/probe-w1-honest-canvas.mjs`: liveDefault true, hasNonZeroKpi true, no toolbar perspective switch, veil text correct, 0 console errors; shots `work/authoring-truth/w1/`). The honest UNBOUND KPI is a PLUGINS change → NOT on :3013 (probe `unboundAffordances:0`) until an image rebuild. See [[live-proof-3013]].
+**Still DEFERRED:** no-data KPI vs true-0 — distinguishing a bound-but-no-observation KPI read
+from a genuine 0 (the engine `Cell` honest-state seam exists; consumer wiring is the open half).
 
-**CLOSED (commit `7eb4017`, senior-frontend, gate-green — see below):**
-- **Token leak `{spanFrom}/{spanTo}/{time}` (outcome 3) — DONE via core honest-placeholder.** Root confirmed: spanFrom/spanTo/year are Tier-3 `{from:'options'}` hidden params whose defaults derive from the `time` data extent (`$d:'time'`/`$cl:'time'`), resolved by `resolveDefaults` inside `useFilterState` against the page store. They resolve fine in LIVE mode with a ready cube (the J3 path — the store carries display/classifiers); they leak ONLY when the store has no extent (empty structural staticStore, the live-loading window, live-unavailable fail-soft). WHERE-decision: the lead PREFERRED resolving defaults at canvas build — but that only holds when an extent exists (a ready profile's members); a no-cube/loading/errored page still leaks, and building a representative extent for those is the deferred PM-4 typed-row seam. So the floor that GUARANTEES the Canon invariant lives at the primitive: `packages/core/src/config/template.ts` `resolveTemplate` now returns the platform missing-value glyph `'—'` (const `UNRESOLVED_TOKEN`) for any unresolvable `{key}` instead of echoing braces. Platform-wide but SAFE — on the live/published path vars always resolve (byte-identical); the placeholder fires only where the old code leaked plumbing. Blast radius verified nil (no test asserts brace-echo output). Config typos are caught by config-label-completeness fitness, not runtime brace-echo.
-- **Chrome faithful (outcome 4):** structure renders (AppChrome + `.app-shell` + regions; existing `canvasChromeFaithful.fitness` green) and chrome component CSS + tokens load. The gap is NOT Tailwind (chrome shells are self-styled BEM). Roots: (1) the site BRAND/accent is compiled into the geostat APP (`apps/geostat/src/shared/styles/index.css` `[data-tenant="geostat"]` + `document.documentElement.dataset.tenant`), NOT the portable site config — so the canvas (config-only) can't render the brand → neutral accent. Fix = brand in manifest/site config (the ADR §2 "runtime-injected from manifest.theme" direction) + canvas applies `site.themeOverrides`/data-theme scoped. (2) panel loads only `@statdash/styles/css/index.css` (tokens), not the `@statdash/react` styles barrel (chrome-region.css overlay layer — minor). Needs LIVE browser verification (couldn't run in-session). `FF-CHROME-FAITHFUL` deferred with the fix.
-- **Chart silent-blank (outcome 2 / G1) — DONE via useChartOutput no-rows short-circuit.** Empirically probed: a freshly-dropped UNBOUND chart (no `chartType`/`data`) THREW in `packages/plugins/panels/chart/default/useChartOutput.ts` — `resolveChartType` reads `.$ctx` off an undefined chartType — and the throw hit the node error boundary → an empty box (the silent-blank lie). The TABLE was already honest (TableShell renders `<EmptyState/>` on empty rows; ChartShell has the SAME `!ctx.rows?.length` guard but it sits AFTER the throwing `useChartOutput` hook). Fix: `useChartOutput` now short-circuits `rows.length === 0` → returns `placeholderOutput({type: safeType})` (safeType = def.chartType if string else 'bar'), skipping interpretation entirely; the shell then falls through to its declared `<EmptyState/>`. Byte-identical visible result for a well-formed empty chart; honest for an unbound one. LIGHT — no typed-row veiling (PM-4 still deferred). The kpi-strip's richer unbound-vs-no-data distinction was NOT replicated for charts (scope: EmptyState is the accepted declared state).
-
-**Still DEFERRED (unchanged): No-data KPI vs true-0** — distinguishing a BOUND-but-no-observation KPI read from a true 0 (the engine `Cell` honest-state seam `ac12d88`); already has the interpret-path seam, consumer wiring is the open half.
-
-**PRE-EXISTING RED (not mine):** `apps/panel/src/command/insertByteIdentity.fitness.test.ts` FF-INSERT-NEVER-CLIFF asserts chart wraps in a section, but HEAD commit 0ffbb81 (ADR-042 D3 "page admits any flow block directly") made chart directly page-acceptable → inserts flat. Stale test from the section-de-privilege work; flag to that owner. Bar = "no NEW failures".
-</content>
+**Deploy topology reminder (load-bearing for any live-verify of this wave):** the :3013 dev line
+src-mounts ONLY `apps/panel/src` — panel changes reach it live via HMR, but `packages/*`
+(plugins/react/core) changes need a container image rebuild. See
+[[reference_dev_line_panel_3013]].

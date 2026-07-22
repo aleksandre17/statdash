@@ -15,10 +15,30 @@ Batch `fix/portal-review-notes-2026-07-10` (13 reviewer items). Notable non-obvi
 
 **Item 11 (regional GDP data gap) — DIAGNOSIS, config/frontend NOT ingest:** `ops/seed-data/geostat/facts/REGIONAL_GVA.bundle.json` is COMPLETE 2010–2024 (1485 obs, 11 geos × 9 sectors × 15 yrs, smooth). Chart starting ~2015 + near-zero 2015 bar is produced by the regional `sectors-range`/timeseries query windowing (`fromDim:fromYear/toDim:toYear` on `regional.gva`, provisioning ~L4340–4373) + range-filter default. Extra finding: `time` codelist includes **2025** but REGIONAL_GVA has no 2025 → `toYear` default `pick:last`=2025 yields an empty final regional year. Needs engine-side interpretSpec trace of fromDim/toDim boundary handling. (Related: `perspective-render-validation.test.tsx` regional/ka+en fail PRE-EXISTING on this same no-regional-data path.)
 
-**Item 7 (dataZoom range slider) — DONE, then LIVE-FIXED (079524b):** `ChartDef.rangeSlider?: boolean` (types.ts, mirrored to ChartOutput; passthrough in cartesian+combo interpreters). Realized as an Apex BRUSH companion: `plugins/.../utils/apex/cartesian/brush.ts` (`shouldRenderSlider` gate = vertical cartesian + ≥8 cats; `buildBrushOptions` = slim area chart, `chart.brush.target`+`chart.selection` full-range). `ApexRenderer.tsx` renders main+brush in a flex column, linked by a sanitized `useId()` id (main gets `chart.id` via a threaded `chartId` param through toApexOptions→buildCartesian; absent ⇒ NO id → byte-identical). Authorable: `ChartNode` ChartSchema `rangeSlider` (STYLE) + authorableContract EXPECTED map; re-ran `gen:schema`. Wired in provisioning on 3 charts: sna-hero-range (stacked bar), gdp-dynamics (combo), sector-history (area). Known a11y gap: Apex brush is mouse-only; keyboard users reach data via chart↔table toggle + export.
+**Item 7 (dataZoom range slider) — DONE, then LIVE-FIXED.** `ChartDef.rangeSlider?:boolean`
+realized as an Apex BRUSH companion (`apex/cartesian/brush.ts`: `shouldRenderSlider` gate =
+vertical cartesian + ≥8 cats; a slim area chart linked via `chart.brush.target`). Authorable via
+`ChartNode` ChartSchema (STYLE). Known a11y gap: Apex brush is mouse-only; keyboard users reach
+data via the chart↔table toggle + export.
 
-**Item 7 LIVE REGRESSION (options-green, live-crash — fixed 2026-07-16, commit 079524b).** All three brush charts were BLANK cards live; jsdom fitness stayed green (apex-can't-run-in-jsdom blindspot). TWO apexcharts@3.54.1 defects, both disarmed as a module side-effect in `brush.ts` (the one brush-aware module):
-1. `ReferenceError: ApexCharts is not defined` — `setupBrushHandler` resolves `brush.target` via the BARE UMD global `ApexCharts.getChartByID` (Core.js:571,586); no such global in a Vite ESM bundle. Fix: publish the imported class to `window.ApexCharts` (same module instance react-apexcharts uses → shared registry).
-2. `RangeError: Maximum call stack size exceeded` on EVERY chart mounted after an id-carrying chart — `render()` registers id-charts into `window.Apex._chartInstances`, and Config deep-merges `window.Apex` into every later chart's config (Config.js:105); the next chart's `initialConfig` `Utils.clone` walks the live instance's cyclic `ctx`. Fix: pre-create `_chartInstances` NON-ENUMERABLE on `window.Apex` (push/getChartByID still work; Object.keys/assign-based merge+clone can't see it). Strategic fix = apexcharts upgrade (registry off window.Apex) — blocked offline; react-apexcharts@1.9.0 already wants apexcharts>=4 (unmet-peer warning is pre-existing).
-3. Domain: apex brush officially supports numeric/datetime only; category rides apex's OWN cat→numeric conversion (`convertCatToNumericXaxis`), which is ONE-based (x=1..n, `labels[floor(val)-1]`). Selection full-range = `{min:1,max:n}` (0-based was off-domain both ends); slider-linked mains get `xaxis.tickPlacement:'on'` (build.ts, only when chartId threaded) so BAR mains convert too (bar's default 'between' blocks conversion ⇒ un-windowable target).
-Debug technique that found #2: route-intercept the served chunk, patch `Utils.clone` to record the key path, dump on depth>300 → `_chartInstances>chart>ctx>ctx>…`. Proof: real prod bundle (vite build+preview, Playwright, /api forwarded to dev API) — 3/3 render, 0 pageerrors, right-GRIP drag narrows main (full-range selection can't be dragged, only resized; grip sel: `.apexcharts-selection-rect + g .svg_select_points_r`). Guard: `apps/geostat/e2e/rangeSliderBrush.e2e.ts` + `playwright.config.ts` (port 5174) + fixtures-replayed /api (re-record: `GEOSTAT_E2E_RECORD=1 GEOSTAT_E2E_API=… pnpm test:e2e`). apexcharts@3.54.1 added as plugins devDep (peer+devDep pattern) so the fitness test's runtime import resolves.
+**Item 7 LIVE REGRESSION (options-green, live-crash — fixed).** All three brush charts were BLANK
+cards live; jsdom fitness stayed green (apex-can't-run-in-jsdom blindspot). TWO apexcharts@3.54.1
+defects, both disarmed as a module side-effect in `brush.ts` (reusable pattern for any
+apex-UMD-assumption bug):
+1. `ReferenceError: ApexCharts is not defined` — `setupBrushHandler` resolves `brush.target` via
+   the BARE UMD global `ApexCharts.getChartByID`; no such global in a Vite ESM bundle. Fix:
+   publish the imported class to `window.ApexCharts` (the same module instance react-apexcharts
+   uses → a shared registry).
+2. `RangeError: Maximum call stack size exceeded` on EVERY chart mounted after an id-carrying
+   chart — `render()` registers id-charts into `window.Apex._chartInstances`, and Config
+   deep-merges `window.Apex` into every later chart's config, whose `Utils.clone` walks the live
+   instance's CYCLIC `ctx`. Fix: pre-create `_chartInstances` NON-ENUMERABLE on `window.Apex`
+   (push/getChartByID still work; Object.keys/assign-based merge+clone can't see it). Strategic
+   fix = an apexcharts upgrade (registry off window.Apex) — blocked offline.
+3. Domain: apex brush officially supports numeric/datetime only; category rides apex's own
+   cat→numeric conversion (ONE-based, `x=1..n`) — selection full-range must be `{min:1,max:n}`
+   (0-based is off-domain both ends).
+Debug technique that found #2: route-intercept the served chunk, patch `Utils.clone` to record the
+key path, dump on depth>300. Verified against the real prod bundle (vite build+preview,
+Playwright, /api forwarded to dev API). Guard: `apps/geostat/e2e/rangeSliderBrush.e2e.ts` with
+fixtures-replayed /api.
