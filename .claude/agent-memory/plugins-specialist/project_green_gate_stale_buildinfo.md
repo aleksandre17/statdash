@@ -14,4 +14,6 @@ When verifying green on `packages/plugins/**` edits, the shared gates can report
 **Why:** wasted a verification cycle chasing "errors" in panels/table that were pure cache artifacts; the source was already correct.
 **How to apply:** before concluding a gate is RED (especially for files you never touched), clear the relevant buildinfo / rebuild upstream packages and re-run. Only trust red after a clean cache.
 
+Also (2026-07-22): the full plugins vitest run is RED ON MAIN via `nodes/__tests__/token-cohesion.fitness.test.ts` — its color-literal scan reaches `packages/core/src/data/desugar.ts` (`#00A896, #E76F51`, introduced by committed core work 8243f5b7). Pre-existing, orthogonal to plugins edits; report it as main-red, don't chase it as your regression.
+
 Also: `apps/geostat/src/data/site-manifest.test.ts > "boots without throwing when the API is unreachable"` is FLAKY under full-suite load — a 5000ms timeout on the API-unreachable fail-soft path. Passes in isolation (`pnpm vitest run src/data/site-manifest.test.ts`). Re-run isolated before treating it as a regression. Baseline total is 1150.

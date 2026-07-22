@@ -1,4 +1,4 @@
-import { useId, useLayoutEffect, useRef, useState } from 'react'
+import { useId, useLayoutEffect, useState } from 'react'
 import ReactApexChart              from 'react-apexcharts'
 import { useContainerVisible, useNodeVisible } from '@statdash/react/engine'
 import type { ChartRendererProps } from '@statdash/react/engine'
@@ -96,22 +96,61 @@ export function ApexRenderer({ output, onDataHover, onDataLeave, onDataClick }: 
     },
   }
 
-  // ── Mount-once + freeze-while-hidden (owner, round 12: the chart↔table
-  //  toggle-back REBUILT the chart — full remount + replayed animation read as
-  //  "the page refreshes itself"). Framework grade (Grafana/ECharts keep-alive
-  //  school): the chart mounts ONCE — the first time it is genuinely laid out
-  //  (`shown`, the 0×0-measure guard) — and then STAYS mounted through hide.
-  //  While hidden its props are FROZEN (a display:none apex must never receive
-  //  updateOptions — the NaN-redraw class), so a plain toggle-back is pure CSS
-  //  display and costs nothing. Data that changed while hidden lands on the
-  //  next visible render: the frozen view refreshes, chartKey remounts fresh
-  //  against a real box — the only case a rebuild is correct. */
+  return (
+    <ChartStage
+      hostRef={hostRef}
+      shown={shown}
+      fitDelta={fitDelta}
+      live={{ options, chartKey, output, fontFamily, mainId, brushId }}
+    />
+  )
+}
+
+// ── ChartStage — the mount-once + freeze-while-hidden boundary ───────────────
+//
+//  (owner, round 12: the chart↔table toggle-back REBUILT the chart — full
+//  remount + replayed animation read as "the page refreshes itself").
+//  Framework grade (Grafana/ECharts keep-alive school): the chart mounts ONCE —
+//  the first time it is genuinely laid out (`shown`, the 0×0-measure guard) —
+//  and then STAYS mounted through hide. While hidden its props are FROZEN (a
+//  display:none apex must never receive updateOptions — the NaN-redraw class),
+//  so a plain toggle-back is pure CSS display and costs nothing. Data that
+//  changed while hidden lands on the next visible render: the frozen view
+//  refreshes, chartKey remounts fresh against a real box — the only case a
+//  rebuild is correct.
+//
+//  WHY A CHILD COMPONENT: the freeze needs "the view of the last SHOWN commit".
+//  Inside ApexRenderer that snapshot could only live in a ref read/written
+//  during render (forbidden). Here `live` is a per-commit-stable PROP, so the
+//  React-sanctioned render-time derived-state idiom can track it in STATE:
+//  while shown, state follows `live` (converging within the commit — the prop
+//  identity is fixed, so the adjust pass settles); on hide, state simply stops
+//  following and still holds the last SHOWN commit's object, identity intact —
+//  the frozen chart's props never change while hidden. Capture-on-hide would be
+//  WRONG (it would freeze the hide-commit's values, letting a data change that
+//  co-occurs with the hide reach the hidden chart); tracking while shown
+//  preserves the exact ref semantics.
+
+interface ChartStageView {
+  options:    ReturnType<typeof toApexOptions>
+  chartKey:   string
+  output:     ChartRendererProps['output']
+  fontFamily: string
+  mainId:     string
+  brushId:    string
+}
+
+function ChartStage({ hostRef, shown, live, fitDelta }: {
+  hostRef:  React.RefObject<HTMLDivElement | null>
+  shown:    boolean
+  live:     ChartStageView
+  fitDelta: number
+}) {
   const [everShown, setEverShown] = useState(false)
   if (shown && !everShown) setEverShown(true) // render-time latch (sanctioned)
-  const liveView = { options, chartKey, output, fontFamily, mainId, brushId }
-  const viewRef  = useRef(liveView)
-  if (shown) viewRef.current = liveView
-  const view = viewRef.current
+  const [frozen, setFrozen] = useState(live)
+  if (shown && frozen !== live) setFrozen(live) // track the live view while shown
+  const view = shown ? live : frozen
   const viewSliderOn = shouldRenderSlider(view.output)
 
   // The host div (with the box-measuring ref) is ALWAYS rendered so `shown` can
