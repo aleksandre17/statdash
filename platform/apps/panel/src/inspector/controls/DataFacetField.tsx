@@ -39,7 +39,8 @@ import type { FieldControlProps } from '../fieldControl.types'
 import { SuspenseFallback } from '../../shared/SuspenseFallback'
 import { MetricPalette } from '../../discovery/MetricPalette'
 import { useFocusEscalation } from '../focusEscalation'
-import { bindMeasureToSpec, adoptOnOpen } from './dataFacetModel'
+import { useDataOwnership } from '../dataOwnership'
+import { bindMeasureToSpec } from './dataFacetModel'
 import { toWorkbenchModel, isHeadBound } from '../../features/data-layer/workbench/workbenchModel'
 import { usePipelineSourceRows, type PreviewStatus } from '../../features/data-layer/pipeline-preview/usePipelineSourceRows'
 import { useGridLabels } from '../../features/data-layer/pipeline-preview/useGridLabels'
@@ -86,12 +87,27 @@ export function DataFacetField({ value, field, locale, onChange }: FieldControlP
   // fail-soft, zero regression (mirrors NestedItemControl's fallback).
   const escalation = useFocusEscalation()
 
+  // ── Effective data binding, resolved through CONTAINMENT (card 0112 · S2) ──────────
+  //  A data panel's rows come from the nearest ancestor that OWNS a `data` spec (ADR-041 /
+  //  resolveNodeRows). So a chart/table that renders a section's shared rows is an
+  //  INHERITING child: its OWN `data` is undefined, but its truth is the OWNER's spec. We
+  //  read that role from the host context (null in isolation → own-spec fallback) and derive
+  //  the summary + door from the EFFECTIVE spec — the inherited owner spec for an inheriting
+  //  child, else the element's own. This ends the «unbound door on a data-less child» lie
+  //  (Law 11): the child no longer shows a fake `summary-unbound` over a chart that visibly
+  //  renders the section's data.
+  const ownership   = useDataOwnership()
+  // Narrow to the inheriting variant once (carries ownerId/ownerLabel/ownerSpec); null otherwise.
+  const inherited   = ownership?.role === 'inheriting' ? ownership : null
+  const inheriting  = !!inherited
+  const effectiveSpec = inherited ? inherited.ownerSpec : spec
+
   // The ONE model the workbench operates on (W-P5b) — the summary derives from THIS, not a
   // second interpretation. `null` for a spec the workbench does not shape (row-list/…).
-  const model = toWorkbenchModel(spec)
+  const model = toWorkbenchModel(effectiveSpec)
   const bound = !!model && isHeadBound(model.head)
   const stepCount = model?.tail.length ?? 0
-  const nonShaped = !!spec && !model
+  const nonShaped = !!effectiveSpec && !model
 
   // The live source read — the honest row-count/state for the summary (the SAME read the
   // canvas & workbench issue; unbound/loading/error/no-data are DECLARED, never faked).
@@ -107,15 +123,18 @@ export function DataFacetField({ value, field, locale, onChange }: FieldControlP
 
   const openWorkbench = () => {
     if (!escalation) return
-    // ADOPT, never discard (adoptOnOpen): a bound spec of ANY kind is handed to the workbench
-    // INTACT — only a truly unbound element is seeded a fresh browse-first pipeline. The
-    // workbench declares an honest empty state for a kind it cannot yet shape and offers a
-    // governed metric bind to start (Law 11 — the door is a live path, never a lossy wipe).
-    const seed = adoptOnOpen(spec)
-    if (seed) onChange(seed)
+    // OPEN IS A READ (card 0112 · S3): opening writes NOTHING to the store. The former
+    // seed-on-open (`adoptOnOpen` → `onChange(freshPipelineSpec())`) fabricated an empty
+    // spec on a look-only gesture — which, on a data-LESS inheriting child, SHADOWED the
+    // section's inherited rows and made the visual vanish (Law 11 violation). The workbench
+    // now opens on the effective value verbatim and seeds only on the FIRST real edit (its
+    // browse-first Get / bind — DataWorkbench's from-scratch lane). For an inheriting child
+    // the door binds the OWNER's `data` (via `ownerId`), so an edit reshapes the SHARED
+    // inherited spec, never a shadow copy on the child.
     escalation.escalate({
       source:    'node-field',
       fieldPath: field.field,
+      ...(inherited ? { ownerId: inherited.ownerId } : {}),
       title:     { ka: 'მონაცემთა ვორქბენჩი', en: 'Data workbench' },
       render:    (bind) => (
         <Suspense fallback={<SuspenseFallback label={en ? 'Loading workbench' : 'იტვირთება ვორქბენჩი'} />}>
@@ -138,6 +157,16 @@ export function DataFacetField({ value, field, locale, onChange }: FieldControlP
         }}
       >
         <Typography variant="overline" color="text.secondary">{en ? 'Data' : 'მონაცემები'}</Typography>
+        {/* An INHERITING child declares its truth honestly (Law 11): the rows are the
+            OWNER's, so it names the owner and shows the SHARED source/steps/rows — never a
+            fake «unbound». The door opens the owner's data (routed by `ownerId`). */}
+        {inherited && (
+          <SummaryRow
+            label={en ? 'Inherited from' : 'მემკვიდრეობით'}
+            value={inherited.ownerLabel}
+            testid="summary-inherited"
+          />
+        )}
         {bound ? (
           <>
             <SummaryRow label={en ? 'Source' : 'წყარო'} value={sourceName} testid="summary-source" />
@@ -147,8 +176,8 @@ export function DataFacetField({ value, field, locale, onChange }: FieldControlP
         ) : nonShaped ? (
           <Typography variant="body2" color="text.secondary" data-testid="summary-nonpipeline">
             {en
-              ? `This element uses a "${spec!.type}" data spec — open the workbench to edit it.`
-              : `ამ ელემენტს აქვს "${spec!.type}" ტიპის მონაცემები — რედაქტირებისთვის გახსენით ვორქბენჩი.`}
+              ? `This element uses a "${effectiveSpec!.type}" data spec — open the workbench to edit it.`
+              : `ამ ელემენტს აქვს "${effectiveSpec!.type}" ტიპის მონაცემები — რედაქტირებისთვის გახსენით ვორქბენჩი.`}
           </Typography>
         ) : (
           <Typography variant="body2" color="text.secondary" data-testid="summary-unbound">
@@ -168,13 +197,17 @@ export function DataFacetField({ value, field, locale, onChange }: FieldControlP
           data-testid="open-data-workbench"
           fullWidth
         >
-          {en ? 'Open data workbench' : 'გახსენი ვორქბენჩი'}
+          {inheriting
+            ? (en ? 'Open inherited data' : 'გახსენი მემკვიდრეობითი მონაცემები')
+            : (en ? 'Open data workbench' : 'გახსენი ვორქბენჩი')}
         </Button>
       )}
 
-      {/* ── QUICK-BIND — the one-gesture governed metric bind, UNBOUND elements only
-          (Power BI fields-well class: a quick action, not an editor). ───────────────── */}
-      {!bound && !nonShaped && (
+      {/* ── QUICK-BIND — the one-gesture governed metric bind, GENUINELY-UNBOUND elements
+          only (Power BI fields-well class: a quick action, not an editor). An INHERITING
+          child is excluded: binding here would write own-data that SHADOWS the inherited
+          rows (the exact S3 defect) — its data is edited at the OWNER, through the door. */}
+      {!bound && !nonShaped && !inheriting && (
         <MetricPalette
           locale={locale}
           canBind

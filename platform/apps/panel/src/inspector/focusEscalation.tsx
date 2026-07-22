@@ -54,6 +54,14 @@ export interface NodeFieldEscalation extends FocusEscalationTitled {
   /** Dot-path of the TOP-LEVEL field on the selected node — the host reads/writes it
    *  live to build the `FieldBinding`. The escalated editor is rooted here. */
   fieldPath: string
+  /**
+   * When set, bind `fieldPath` on THIS node — the data OWNER — instead of the selected
+   * node (card 0112 · S2). A data-LESS inheriting child (chart/table) whose rows come from
+   * an ancestor section routes its Data door to the OWNER's `data`, so an edit reshapes the
+   * shared inherited spec — never a fresh copy on the child that would SHADOW it (Law 11).
+   * Absent ⇒ the historical behaviour: bind the selected node's own field.
+   */
+  ownerId?: string
   /** Mount the workspace editor from the host's live field binding. Owned by the
    *  producer (it knows the drill path to replay); the host only supplies `bind`. */
   render: (bind: FieldBinding) => ReactNode

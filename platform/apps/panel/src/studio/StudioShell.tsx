@@ -21,6 +21,7 @@ import { FocusView } from './FocusView'
 import { ActiveBreakpointProvider } from './activeBreakpoint'
 import { makeEscalatedTarget, type FocusViewTarget, type FocusViewTargetId } from './focusViewRegistry'
 import { FocusEscalationContext, type FocusEscalationRequest, type FieldBinding } from '../inspector/focusEscalation'
+import { DataOwnershipProvider, resolveDataOwnership } from '../inspector/dataOwnership'
 import { getAtPath } from '../inspector/showWhen'
 import { useConstructorStore, usePages, useActivePageId, useSite } from '../store/constructor.store'
 import { useActiveSurface, useSetSurface } from './useStudioRoute'
@@ -208,21 +209,37 @@ export function StudioShell() {
   // funnel back through the store via patchProp). Requires a live selection; if it
   // vanished, nothing renders (the escalation quietly drops). Takes precedence over the
   // Model route below — an active escalation is what the author navigated INTO.
-  const { selected: selectedNode, patchProp } = controller
+  const { selected: selectedNode, patchProp, patchNodeProp, page } = controller
   const escalatedTarget = useMemo<FocusViewTarget | null>(() => {
     if (!escalation) return null
     if (escalation.source === 'node-field') {
-      // NODE-FIELD (SL-4): bind the selected node's field live. No selection → nothing to bind.
-      if (!selectedNode) return null
+      // NODE-FIELD (SL-4): bind a node's field live. Default = the selected node; when the
+      // request names an `ownerId` (card 0112 · S2 — an inheriting child's Data door), bind
+      // the OWNER's field instead, so an edit reshapes the section's SHARED inherited spec.
+      const targetNode = escalation.ownerId ? page?.nodes[escalation.ownerId] : selectedNode
+      if (!targetNode) return null
+      const ownerId = escalation.ownerId
       const bind: FieldBinding = {
-        value:    getAtPath(selectedNode.props, escalation.fieldPath),
-        onChange: (next) => patchProp(escalation.fieldPath, next),
+        value:    getAtPath(targetNode.props, escalation.fieldPath),
+        onChange: (next) => ownerId
+          ? patchNodeProp(ownerId, escalation.fieldPath, next)
+          : patchProp(escalation.fieldPath, next),
       }
       return makeEscalatedTarget(escalation, bind)
     }
     // SELF-BOUND (SL-5): a page-scoped pipeline binds its own store — no node field needed.
     return makeEscalatedTarget(escalation, null)
-  }, [escalation, selectedNode, patchProp])
+  }, [escalation, selectedNode, patchProp, patchNodeProp, page])
+
+  // The selected element's data role, resolved through the containment tree (card 0112 · S2).
+  // Provided around the dock so the Data facet control projects the truth: a data-OWNING
+  // element edits its own spec; a data-LESS inheriting child names its owner + routes its
+  // door to the owner's data; a genuinely-unbound element binds from scratch. Recomputed on
+  // selection/tree/locale change; null when nothing (or no page) is selected → own-spec view.
+  const dataOwnership = useMemo(
+    () => (page && controller.selectedId ? resolveDataOwnership(page, controller.selectedId, locale) : null),
+    [page, controller.selectedId, locale],
+  )
 
   return (
     <ActiveBreakpointProvider>
@@ -306,20 +323,24 @@ export function StudioShell() {
         data-collapsed={dockCollapsed || undefined}
         style={{ '--studio-dock-w': `${dockWidth}px` } as CSSProperties}
       >
-        {/* The escalation host is provided AROUND the dock only — so a workspace-weight
-            drill boundary in the Inspector can hand its subject OUT to a focus-view. */}
+        {/* The escalation host + the containment DATA-OWNERSHIP context are provided AROUND
+            the dock only — so a workspace-weight drill boundary in the Inspector can hand its
+            subject OUT to a focus-view, and the Data facet projects the selection's real data
+            role (owner / inheriting-child / unbound) resolved through the page tree. */}
         <FocusEscalationContext.Provider value={focusEscalation}>
-          <RightDock
-            controller={controller}
-            locale={locale}
-            collapsed={dockCollapsed}
-            onToggleCollapsed={() => setDockCollapsed((c) => !c)}
-            width={dockWidth}
-            onResize={setDockWidth}
-            // Site / Style surfaces own the left dock (project-scope authoring). Signal
-            // it so the right inspector doesn't double the context with the page tree.
-            siteContext={activeSurface === 'style' || activeSurface === 'pages-site'}
-          />
+          <DataOwnershipProvider value={dataOwnership}>
+            <RightDock
+              controller={controller}
+              locale={locale}
+              collapsed={dockCollapsed}
+              onToggleCollapsed={() => setDockCollapsed((c) => !c)}
+              width={dockWidth}
+              onResize={setDockWidth}
+              // Site / Style surfaces own the left dock (project-scope authoring). Signal
+              // it so the right inspector doesn't double the context with the page tree.
+              siteContext={activeSurface === 'style' || activeSurface === 'pages-site'}
+            />
+          </DataOwnershipProvider>
         </FocusEscalationContext.Provider>
       </Box>
 

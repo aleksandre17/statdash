@@ -7,34 +7,14 @@
 //
 import type { DataSpec, PipeStep, SourceStep } from '@statdash/engine'
 
-/**
- * A fresh, valid-by-default PIPELINE spec — the browse-first Get + result (E1): opening
- * the workbench on an UNBOUND element seeds this, and the grid shows the "pick a metric"
- * browse hint until one is chosen. The ⛔ W-P5 emission flip: the workbench's fresh spec
- * is the spine (an empty governed `source` head), never the legacy `query` shape.
- */
-export function freshPipelineSpec(): DataSpec {
-  return { type: 'pipeline', pipe: [{ op: 'source', metrics: [] }], encoding: { label: 'label' } }
-}
-
-/**
- * ADR-049 P2a Lane 1 — the workbench-open ADOPT decision (FF-WORKBENCH-KIND-AGNOSTIC).
- *
- * Opening the DataWorkbench must never DISCARD an existing binding. Before the un-gate,
- * the door was reachable only for `query`/`pipeline`/unbound, and opening on anything
- * else seeded a `freshPipelineSpec()` that WIPED the bound spec. Now the door is kind-
- * agnostic, so the seed decision is: a bound spec of ANY kind (row-list / timeseries /
- * growth / ratio-list / query / pipeline / …) is ADOPTED intact — handed to the workbench
- * verbatim, no write; only a TRULY unbound element is seeded a fresh browse-first pipeline.
- *
- * Returns the spec to WRITE before escalating, or `null` when the current binding is
- * already adoptable (no write — the binding is preserved). The workbench itself declares
- * an honest empty state for a kind it cannot yet shape (Law 11) and offers a governed
- * metric bind to start — so the door is a live path forward, never a lossy overwrite.
- */
-export function adoptOnOpen(spec: DataSpec | undefined): DataSpec | null {
-  return spec ? null : freshPipelineSpec()
-}
+//  ── The seed-on-OPEN decision is GONE (card 0112 · S3) ─────────────────────────────
+//  Opening the workbench used to WRITE a seed (`adoptOnOpen` → `freshPipelineSpec()` for an
+//  unbound element). That made a look-only open a destructive gesture: on a data-LESS
+//  inheriting child it wrote an empty own-spec that SHADOWED the section's inherited rows,
+//  vanishing the visual (Law 11 — «the canvas never lies»). Opening is now a pure READ; the
+//  workbench seeds itself on the FIRST real edit (its browse-first Get / bind). So the
+//  open-seed helpers (`adoptOnOpen`/`freshPipelineSpec`) are retired — the only remaining
+//  transform is the ACTIVE author bind below.
 
 /**
  * Bind a GOVERNED metric onto an element's DataSpec — the metric-bind MODE of the

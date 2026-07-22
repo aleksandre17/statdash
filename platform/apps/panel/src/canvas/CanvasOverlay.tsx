@@ -329,10 +329,45 @@ export function CanvasOverlay({
     measure()
     const rootEl = overlayRef.current?.parentElement
     if (!rootEl) return
-    const ro = new ResizeObserver(measure)
+
+    // rAF-coalesce a burst of signals into ONE measure per frame (a live page mounts many
+    // async nodes in quick succession — measuring per mutation would thrash).
+    let raf = 0
+    const schedule = () => {
+      if (raf) return
+      raf = requestAnimationFrame(() => { raf = 0; measure() })
+    }
+
+    // (1) SIZE — the scroll-parent's own border-box changes (window/layout resize).
+    const ro = new ResizeObserver(schedule)
     ro.observe(rootEl)
-    window.addEventListener('resize', measure)
-    return () => { ro.disconnect(); window.removeEventListener('resize', measure) }
+
+    // (2) CONTENT SETTLE (card 0112 · S1 — the re-measure race) — the frames are anchored to
+    //  RENDERED node boxes stamped ASYNC: a live-mode node resolves and stamps its
+    //  `data-part-node-id` AFTER the page-change layout effect measured, and its inner growth
+    //  never perturbs the fixed scroll-parent's border-box — so the ResizeObserver never
+    //  fires and a just-navigated / sparse page renders ZERO clickable frames (the owner's
+    //  «other pages don't take clicks»). Observe the canvas CONTENT subtree so ANY node
+    //  mount/unmount OR visibility flip (the chart↔table toggle's display swap — the 0111
+    //  stale-hit-target residual) re-measures — no user gesture required. The INVARIANT:
+    //  anchors stamped ⇒ frames measured. Mutations WHOLLY inside the overlay (our own frame
+    //  buttons, which `measure` itself writes) are ignored, so this never self-loops.
+    const mo = new MutationObserver((records) => {
+      const overlay = overlayRef.current
+      if (overlay && records.every((r) => overlay.contains(r.target))) return
+      schedule()
+    })
+    mo.observe(rootEl, {
+      childList: true, subtree: true,
+      attributes: true, attributeFilter: ['style', 'class', 'hidden', PART_NODE_ID_ATTR],
+    })
+
+    window.addEventListener('resize', schedule)
+    return () => {
+      if (raf) cancelAnimationFrame(raf)
+      ro.disconnect(); mo.disconnect()
+      window.removeEventListener('resize', schedule)
+    }
   }, [measure])
 
   const handleDrop = (d: DropFrame) => (e: React.DragEvent) => {

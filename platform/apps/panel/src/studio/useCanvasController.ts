@@ -236,6 +236,22 @@ export function useCanvasController() {
     [pageId, selected, updateNode, markPageDirty],
   )
 
+  // Write one prop on an ARBITRARY node by id — the owner-targeted sibling of `patchProp`
+  // (card 0112 · S2). An inheriting child's Data door binds the OWNER's `data`, so the
+  // escalation host writes THROUGH here to the section, reshaping the SHARED inherited spec
+  // rather than a shadow copy on the child. Byte-identical write path to patchProp (setAtPath
+  // → updateNode), just node-addressed. No-op for an unknown id (never an invalid tree).
+  const patchNodeProp = useCallback(
+    (nodeId: string, field: string, value: unknown) => {
+      if (!pageId || !page) return
+      const node = page.nodes[nodeId]
+      if (!node) return
+      updateNode(pageId, nodeId, { props: setAtPath(node.props, field, value) })
+      markPageDirty(pageId)
+    },
+    [pageId, page, updateNode, markPageDirty],
+  )
+
   // Bounded part onChange — write one subfield of the SELECTED part, RESIDENCE-ROUTED
   // through the port. The item Inspector is projected over the part's own contract, so
   // `subfield` is one of its declared fields; the residence adapter returns a residence-
@@ -318,7 +334,7 @@ export function useCanvasController() {
     dragging, setDragging,
     previewPerspectiveId, setPreviewPerspectiveId,
     selectNode, selectItem, selectChrome,
-    bindMetric, handleDrop, patchProp, patchItemProp, patchChromeStructural, setVisibleWhen, deleteSelected,
+    bindMetric, handleDrop, patchProp, patchNodeProp, patchItemProp, patchChromeStructural, setVisibleWhen, deleteSelected,
   }
 }
 
