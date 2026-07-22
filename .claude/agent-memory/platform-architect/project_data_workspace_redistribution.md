@@ -39,6 +39,24 @@ addendum). All revert-clean. FFs: FF-ONE-METRIC-VIEW, FF-MODEL-BROWSE-EDIT-COLOC
 FF-DATAFLOW-SINGLE-MOUNT, FF-COREOPS-NOT-FOCUSVIEW, FF-CLASSIFIER-SCENT,
 FF-DATA-SURFACE-PLACEMENT-DERIVED, FF-MODAL-BLOCKING-ONLY. Live-screenshot flags: #3, #4, #2.
 
-See [[one-data-workspace]] (ADR-051 this extends), [[query-pipeline-data-home]] (the workbench
-spine DW-B reuses), [[panel-assembly-preset]] (canWorkbench :124 gate now STALE — kind-agnostic
+**DU6 APEX RE-LAY (2026-07-22, owner order — I OWN the chapter file
+`docs/architecture/proposals/DESIGN-du6-model-floor-laid-out.md`;** the parent doc's §DU6 is a
+stub pointing there — the 450-line bloat law forced a chapter split, NOT a twin design;
+supersedes §4's remedy detail, keeps §4's verdicts). Root re-diagnosed: the Model floor hosts
+THREE primary objects because Floor 3 (Specs) of the accepted §1.1 ladder was never built as a
+floor. Design: 3-floor ladder Sources·Model·**Specs** projected from a `DATA_FLOORS`
+declaration (FF-FLOOR-IS-DECLARED) + Model floor = master-detail with ONE primary object = the
+governed METRIC (rail = MetricCatalogView browse, scope-grouped per 0107 page-first; detail =
+0110 grammar რა-დატაა/როგორ-აიგო/used-by, steward edits in place) · lens dissolved (affordance
++ plane, never a screen swap) · DataFlowMap single mount = detail-canvas overview state, nodes
+= cross-floor switchboard · rows chip-only (FF-METRIC-ROW-QUIET; spec-row Publish/Discard
+removed, chip only) · DataModelingPanel dissolves (spec half→SpecsBody, source half→Sources
+floor; ExcelUpload = live second upload door, surfaced). Slices: **DU6-IA-1/IA-2 pre-E2
+buildable NOW** (they never reach inside the workbench — the E2-before-DU6 caution binds only
+DU6-WB) → DW-A (scope axis + QC-3) → DU6-WB post-E2a+E3 (summarizeBinding chains, spec doors).
+Rejected: floor tabs · reordered single column · graph-first canvas · specs-as-disclosure.
+
+See [[one-data-workspace]] (ADR-051 this extends), [[elevation-reference-class-0104]] (§1.5
+visual language + §1.1 ladder this builds), [[query-pipeline-data-home]] (the workbench spine
+DW-B reuses), [[panel-assembly-preset]] (canWorkbench :124 gate now STALE — kind-agnostic
 `!!escalation`), [[shell-placement-law]] (the Placement Law this points at the data workspace).

@@ -3,7 +3,7 @@
 - [Proactive sweep 2026-07-18](project_proactive_sweep_2026_07_18.md) — I OWN PROACTIVE-SWEEP-2026-07-18.md; top root = transient-failure grammar (429 kills pages); 15 findings + verified-good list
 - [Canonical panel IA (0102)](project_canonical_panel_ia.md) — I OWN STUDY-canonical-panel-ia.md; spine EXISTS in engine, skeleton LOST as projection; skeleton = page-kind × PresetDecl; remedy R1-R6
 - [One Data Workspace (ADR-051)](project_one_data_workspace.md) — I authored ADR-051; Option A / Surface-axis close of 0102; source-is-step-0, retire 2 rail doors + courier + parallel raw editor; waves DU1-DU6; Option B=ADR-052 deferred
-- [Data-workspace redistribution (DU6+)](project_data_workspace_redistribution.md) — I OWN DESIGN-...-canonical-redistribution.md; owner's 5 problems; thesis = 4/5 = one root (project+placement-route, not hand-place+fork); waves DW-C/DU6/DW-A/DW-B/DW-D
+- [Data-workspace redistribution (DU6+)](project_data_workspace_redistribution.md) — I OWN DESIGN-...-canonical-redistribution.md + DU6 chapter DESIGN-du6-model-floor-laid-out.md (3-floor ladder, metric master-detail); waves DW-C/DU6/DW-A/DW-B/DW-D
 - [0104 elevation design](project_0104_elevation_design.md) — I OWN DESIGN-0104-elevation-reference-class.md; thesis = push declaration to decision granularity then derive; C1-C7, E0-first reshaped order, 3 owner doors
 - [Pipeline-everything study (0102)](project_pipeline_everything_study.md) — value-cell `source` variant = THE gap (ADR-046 Addendum 4, DU4 precondition); GAP-3 raw-JSON opaque objects; libs = adopt only TanStack, build/keep rest
 

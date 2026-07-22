@@ -300,3 +300,18 @@ config stays SSOT, declarative, lossless (Law 2). Every wave additive/Strangler 
 The only near-one-way element is the `confirm-dialog` axis — itself a *narrowing* guard (it
 forbids, it opens no new authoring path). Option B (ADR-052 reference-binding) unaffected, still
 after ADR-051.
+
+---
+
+## DU6 — the Model floor, laid out (apex re-lay, 2026-07-22) → chapter file
+
+The full DU6 re-lay (owner order 2026-07-22, DU6+DW-A pulled forward) lives in its own chapter
+— **`DESIGN-du6-model-floor-laid-out.md`** (this doc's line-ceiling law forces the split; the
+chapter is part of THIS body, not a twin design). It **supersedes §4's remedy detail, keeps
+§4's verdicts**: the ladder gains its honest third floor (Sources · Model · **Specs**); the
+Model floor keeps ONE primary object — the governed metric — in a master-detail layout
+(scope-grouped catalog rail + metric detail canvas); the browse/edit lens exclusion dissolves
+(lens = affordance + plane, never a screen swap); `DataFlowMap` gets its single mount as the
+floor's overview state; `DataModelingPanel` dissolves (spec half → Specs floor, source half →
+Sources floor). Slices: DU6-IA-1 / DU6-IA-2 (pre-E2, buildable now) → DW-A → DU6-WB
+(post-E2a+E3). New invariants: `FF-FLOOR-IS-DECLARED` · `FF-METRIC-ROW-QUIET`.
