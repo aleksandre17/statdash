@@ -31,6 +31,14 @@ except (AttributeError, ValueError):
 # window safe; SessionStart also runs this hook to sweep the previous session.
 RECENT_S = 86400
 CTX_BURN_LIMIT = 120_000  # peak context above this = burn defect (measured norm: 60-90k)
+# Hang guard (owner report 2026-07-22: "hooks ეკიდება"): this hook fires at EVERY session
+# boundary; a heavy parallel day leaves N multi-MB transcripts <24h old, and a full
+# read+per-line-parse of each = a multi-second stall per event. Two caps close the class:
+#   - MAX_PARSE_MB: an oversize transcript is ledgered as a stub line (dedupe holds), never parsed.
+#   - NO-MODEL transcripts >1h quiet are ledgered as 'unknown' stubs — without a written line the
+#     dedupe never engaged and the SAME file was re-read on every boundary event for 24h.
+MAX_PARSE_MB = 15
+NO_MODEL_SETTLE_S = 3600
 
 
 def _usage_stats(txt):
@@ -111,12 +119,29 @@ def main():
         run_id = os.path.basename(f)[:-6]                     # strip .jsonl
         if f"run={run_id}" in led:
             continue                                          # already ledgered
+        stamp = f"[{today} {time.strftime('%H:%M')}] RUN run={run_id}"
+        try:
+            size_mb = os.path.getsize(f) / 1e6
+        except OSError:
+            continue
+        if size_mb > MAX_PARSE_MB:                            # hang guard: never parse a giant
+            line = (f"{stamp} model-actual=unparsed calls=? first-in=? peak-ctx=? out-tokens=?"
+                    f"  ⚠ OVERSIZE-TRANSCRIPT {size_mb:.0f}MB > {MAX_PARSE_MB}MB — stats skipped")
+            new_lines.append(line)
+            led += "\n" + line
+            continue
         try:
             txt = open(f, encoding="utf-8", errors="replace").read()
         except OSError:
             continue
         models = re.findall(r'"model":"(claude-[a-z0-9.\-]+)"', txt)
         if not models:
+            # >1h quiet with no assistant model record = a dead/aborted run, never a paused one.
+            # Ledger a stub so dedupe engages; a young quiet file may still be in-flight — skip it.
+            if time.time() - os.path.getmtime(f) > NO_MODEL_SETTLE_S:
+                line = f"{stamp} model-actual=unknown calls=0 first-in=0 peak-ctx=0 out-tokens=0  ⚠ NO-MODEL-RECORD"
+                new_lines.append(line)
+                led += "\n" + line
             continue
         model = max(set(models), key=models.count)            # majority = the run's engine
         first_in, peak_ctx, calls, out_tok = _usage_stats(txt)
