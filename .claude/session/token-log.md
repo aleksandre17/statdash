@@ -448,3 +448,6 @@
 [2026-07-22 11:58] RUN run=agent-a928cb48ed57c8183 model-actual=claude-fable-5 calls=38 first-in=22833 peak-ctx=88844 out-tokens=34388
 [2026-07-22 12:37] LAUNCH agent=database-architect model-requested=opus task=E0-revision-contract-and-put-validation-design
 [2026-07-22] LAUNCH agent=database-architect model-requested=opus task=E0 door#2 design ADR-052 config revision-log + validated-PUT seam (done)
+[2026-07-22 12:46] RUN run=agent-a3923117c528b334b model-actual=claude-opus-4-8 calls=47 first-in=19679 peak-ctx=101807 out-tokens=25955
+[2026-07-22 12:52] LAUNCH agent=senior-backend-developer model-requested=opus task=E0-build-backend-revision-log-validated-put
+[2026-07-22 13:20] RUN run=agent-senior-backend-e0 model-actual=claude-opus-4-8 calls=30 task=E0-build-backend-revision-log-validated-put result=V39+contracts.revision+validate-config-doc+revision-log+validated-versioned-PUT(data-specs/sources)+restore(admin)+FF-PUT-VALIDATED/FF-REVISION-ON-PUT(10/10) gate=api-tsc+graph-tsc+lint-clean;full-vitest=2-pre-existing-panel-reds(unrelated)
