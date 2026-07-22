@@ -25,7 +25,7 @@ import { describe, it, expect } from 'vitest'
 import { desugar } from './desugar'
 import { interpretSpec } from './spec'
 import { DEFAULT_GRANULARITY } from '../core/time-dimension'
-import type { DataSpec, PointSeriesSpec } from '../config/data-spec'
+import type { DataSpec } from '../config/data-spec'
 import type { StoreQuery, DataStore } from './store'
 import type { SectionContext } from '../core/context'
 import type { EngineRow } from './encoding'
@@ -61,27 +61,32 @@ const OBS = [
 const ctx: SectionContext = { dims: {} }
 
 // ── (unit) desugar threads granularity → grain[TIME_DIM], NON-default only ─────
-describe('FF-GRANULARITY-ROLLS-UP — desugar threads granularity to point-series.grain', () => {
-  it('absent timeDimension ⇒ NO grain (annual val path)', () => {
-    const ps = desugar({ type: 'timeseries', code: 'GDP', years: [2020, 2021, 2022] }) as PointSeriesSpec
-    expect(ps.type).toBe('point-series')
-    expect(ps.grain).toBeUndefined()
+describe('FF-GRANULARITY-ROLLS-UP — desugar threads granularity to the value-cell head grain', () => {
+  // ONE-PIPE U1: the LIVE switch lowers timeseries onto the spine; the grain the old
+  // point-series carried is HOISTED onto the value-cell `source` head (the head
+  // reconstitutes the identical point-series in readSource — same LOD semantics).
+  const headOf = (spec: DataSpec) => {
+    const lowered = desugar(spec)
+    expect(lowered.type).toBe('pipeline')
+    return (lowered as Extract<DataSpec, { type: 'pipeline' }>).pipe[0]! as Record<string, unknown>
+  }
+
+  it('absent timeDimension ⇒ NO grain on the head (annual val path)', () => {
+    expect(headOf({ type: 'timeseries', code: 'GDP', years: [2020, 2021, 2022] })['grain']).toBeUndefined()
   })
 
   it(`default granularity (${DEFAULT_GRANULARITY}) ⇒ NO grain (byte-identical to absent)`, () => {
-    const withDefault = desugar({
+    expect(headOf({
       type: 'timeseries', code: 'GDP', years: [2020, 2021],
       timeDimension: { dim: 'time', granularity: DEFAULT_GRANULARITY },
-    }) as PointSeriesSpec
-    expect(withDefault.grain).toBeUndefined()
+    })['grain']).toBeUndefined()
   })
 
-  it("sub-annual granularity ('quarter') ⇒ grain { time: 'quarter' } threaded", () => {
-    const ps = desugar({
+  it("sub-annual granularity ('quarter') ⇒ grain { time: 'quarter' } threaded onto the head", () => {
+    expect(headOf({
       type: 'timeseries', code: 'GDP', years: [2020, 2021],
       timeDimension: { dim: 'time', granularity: 'quarter' },
-    }) as PointSeriesSpec
-    expect(ps.grain).toEqual({ time: 'quarter' })
+    })['grain']).toEqual({ time: 'quarter' })
   })
 })
 

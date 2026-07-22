@@ -28,7 +28,7 @@ import { storeVal, storeObs }   from './store'
 import { atTime, TIME_DIM }     from '../core/context'
 import { effectiveYears, effectiveBounds, clampToBounds } from '../core/time-dimension'
 import type { EngineRow }       from './encoding'
-import type { DataSpec }        from '../config/data-spec'
+import type { DataSpec, ResolvableSpec } from '../config/data-spec'
 import type { DimVal, Observation } from '../sdmx'
 import type { SectionContext }  from '../core/context'
 
@@ -163,20 +163,31 @@ describe('FF-DESUGAR-EQUIV — pivot desugars row-identically to transform+melt'
   })
 
   it('desugar is identity (same reference) for every NON-lowered spec', () => {
-    // timeseries lowers to point-series (G2); query/transform/pivot lower to `pipeline`
-    // (W-P5a). The store-aware VALUE-CELL specs growth/ratio-list are NOT spine-expressible
-    // (see the desugarToPipeline W-P5a finding) and stay identity → direct resolvers.
+    // ONE-PIPE U1 (W-P5b): query/transform/pivot/timeseries + SINGLE-code growth all
+    // lower to `pipeline` live. Identity remains ONLY for the U2-blocked kinds — the
+    // per-cell/meta reads not yet expressible on the spine (`cells` head, ONE-PIPE
+    // §4·D3): ratio-list, row-list, and MULTI-code growth (whose fold arm returns
+    // identity by design) → their direct resolvers.
     const primitives: DataSpec[] = [
       { type: 'row-list', rows: [{ code: 'B1G' }] },
-      { type: 'growth', code: 'B1G', years: [2020, 2021] },
+      { type: 'growth', code: ['B1G', 'D21'], years: [2020, 2021] },   // multi-code → identity
       { type: 'ratio-list', pairs: [{ code: 'D1', denom: 'B1G' }] },
     ]
     for (const p of primitives) expect(desugar(p)).toBe(p) // identity ⇒ untouched path
   })
 
-  it('desugar(timeseries) lowers to the point-series primitive', () => {
+  it('desugar(timeseries) lowers LIVE onto the pipeline spine (U1 — one desugar scope)', () => {
     const lowered = desugar({ type: 'timeseries', code: 'B1G', years: [2020] })
-    expect(lowered.type).toBe('point-series')
+    expect(lowered.type).toBe('pipeline')
+    // The value-cell `source` head reconstitutes the identical point-series read (DU4a).
+    const head = (lowered as Extract<ResolvableSpec, { type: 'pipeline' }>).pipe[0]!
+    expect(head.op).toBe('source')
+    expect('code' in head && head.code).toBe('B1G')
+  })
+
+  it('desugar(single-code growth) lowers LIVE onto the pipeline spine (U1)', () => {
+    const lowered = desugar({ type: 'growth', code: 'B1G', years: [2020, 2021] })
+    expect(lowered.type).toBe('pipeline')
   })
 })
 

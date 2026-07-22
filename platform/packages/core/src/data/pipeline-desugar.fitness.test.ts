@@ -536,9 +536,13 @@ describe('FF-CANVAS-NEVER-LIES — an absent value cell is null, a genuine 0 sta
   })
 
   it('desugar sets noData:"null" on the timeseries lowering (both paths inherit the honest read)', () => {
+    // ONE-PIPE U1: the LIVE switch now lowers timeseries onto the spine — the honest-
+    // missing mode rides the value-cell head (hoisted by the fold), so the live path and
+    // the workbench path read the IDENTICAL honest cell (null, never a fabricated 0).
     const lowered = desugar({ type: 'timeseries', code: 'GDP', years: [2020] })
-    expect(lowered.type).toBe('point-series')
-    expect((lowered as Extract<import('../config/data-spec').ResolvableSpec, { type: 'point-series' }>).noData).toBe('null')
+    expect(lowered.type).toBe('pipeline')
+    const liveHead = (lowered as Extract<DataSpec, { type: 'pipeline' }>).pipe[0]!
+    expect('noData' in liveHead && liveHead.noData).toBe('null')
     const head = (desugarToPipeline({ type: 'timeseries', code: 'GDP', years: [2020] }) as
       Extract<DataSpec, { type: 'pipeline' }>).pipe[0]!
     expect('noData' in head && head.noData).toBe('null')   // hoisted to the value-cell head

@@ -152,15 +152,17 @@ export function desugar(spec: DataSpec): ResolvableSpec {
     case 'transform':
     case 'pivot':      return desugarToPipeline(spec)
 
-    // NOT re-targeted in the LIVE switch (DU4a/b are capability + proof only — the emission flip
-    // is a later gated step): `timeseries` stays on the store-aware `point-series` primitive here;
-    // `growth`/`ratio-list` keep their direct resolvers. The value-cell `source` variant that lets
-    // these fold onto the spine EXISTS (ADR-046 Addendum 4): `desugarToPipeline(timeseries)` (DU4a)
-    // and `desugarToPipeline(growth-single-code)` (DU4b) produce it, proven byte-identical by the
-    // FF-PIPELINE-EQUIV value-cell + growth corpora — but flipping this live switch to the spine is
-    // deliberately deferred so the wave stays revert-clean. `ratio-list`/`row-list` (and multi-code
-    // `growth`, via calc-metric browse) await their own folds (DU4c–d).
-    case 'timeseries': return desugarTimeseries(spec)
+    // ONE-PIPE U1 [W-P5b — the live switch WIDENED, owner-ordered 2026-07-23]: the
+    // proven value-cell folds now run LIVE — `timeseries` (DU4a) and single-code
+    // `growth` (DU4b) lower onto the ONE spine at every read, byte-identical by the
+    // FF-PIPELINE-EQUIV value-cell + growth corpora (rows AND warm-requirement
+    // identity). One desugar scope: `desugar()` ≡ `desugarToPipeline` for every folded
+    // kind (ONE-PIPE §4·D4). Multi-code `growth` returns IDENTITY inside
+    // `desugarToPipeline` (its per-code meta read is not yet expressible — U2's `cells`
+    // head) → falls through to its direct resolver, as do `ratio-list`/`row-list`
+    // (the U2 fold; no stored instances exist, recon §1).
+    case 'timeseries':
+    case 'growth':     return desugarToPipeline(spec)
     default:           return spec
   }
 }
