@@ -18,7 +18,7 @@
 - [Editor capability parity (DU4)](project_panel_editor_capability_parity.md) — trust-recovery restore; narrow fold gate + AdvancedRawPanel/SpecTypePicker
 - [Data pipeline program (ADR-046)](project_panel_pipeline_program.md) — live grid · 3-pane workbench · emission flip · P-OFFER+role projection · steward raw-cube · C3/C5 capability+save-guard
 - [Substrate + presets (ADR-049/050)](project_panel_substrate_presets.md) — workbench kind-agnostic · composed-preset primitive · skeleton restoration
-- [Authoring-hold (DataSpec persist)](project_authoring_hold_dataspec_persistence.md) — reversible pause of durable PUT, DEFAULT ON (saving OFF)
+- [DataSpec Authoring Lifecycle (C3)](project_authoring_hold_dataspec_persistence.md) — draft→publish→history band; hold DELETED (0104 E0); client drafts + validated-PUT violations
 
 ## Panel — canvas, chrome, authoring features
 - [W1 Honest Canvas (AR-52)](project_panel_w1_honest_canvas.md) — live-default+veil, honest UNBOUND KPI, honest placeholders

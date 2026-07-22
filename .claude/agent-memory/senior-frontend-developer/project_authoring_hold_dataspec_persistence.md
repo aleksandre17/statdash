@@ -1,25 +1,38 @@
 ---
 name: project-authoring-hold-dataspec-persistence
-description: Reversible authoring-hold pauses DataSpec durable PUT; shipped DEFAULT ON (saving OFF) on dev :3013 by owner ask 2026-07-20
+description: DataSpec Authoring Lifecycle (C3) — draft→publish→history band; the authoring-hold is DELETED (superseded 2026-07-22, card 0104 E0)
 metadata:
   type: project
 ---
 
-A reversible **authoring hold** gates DataSpec durable persistence. `store/authoringHold.ts`
-(`DEFAULT_AUTHORING_HOLD`, `useAuthoringHoldStore`, `isAuthoringHeld`) is the SSOT flag;
-guarded at the seam in `store/api-actions.ts` (`updateDataSpec` returns after the optimistic
-store write when held → sets save phase `'paused'`; `flushDataSpecSaves` early-returns when
-held). Honest chip in `DataModelingPanel` head: "Draft — not saving" + an "Enable saving"
-toggle (Law 11 — never fake-saved). `DataSpecSavePhase` gained `'paused'`.
+The reversible **authoring-hold** is **DELETED** (card 0104 E0, commit 2fed78e7, 2026-07-22).
+It was the SEED; the real model shipped and superseded it. NO capability lost — the hold's only
+capability was "don't save"; publish/discard supersedes it (the hold was this model with the
+Publish button missing). Gone: `store/authoringHold.ts`, `DEFAULT_AUTHORING_HOLD`, `dataSpecSave.store.ts`
+(+ its `'paused'` phase), the "Draft — not saving"/"Enable saving" chip.
 
-**Why:** owner was experimenting on live dev :3013 and the auto-save (commit 39a32e99) was
-persisting experimental edits and corrupting stored specs. Asked 2026-07-20 to stop saving
-until it stabilizes. Shipped with hold **DEFAULT ON (saving OFF)** and deployed to :3013.
+**The Authoring Lifecycle (C3, DESIGN-0104 §2·C3) — the current model:**
+- **Drafts are CLIENT-SIDE.** `store/dataSpecDraft.store.ts` (zustand+persist, localStorage
+  `statdash.dataspec-drafts`). Every edit → optimistic store write + `recordEdit` (NO PUT).
+  Keyed by docId; carries the published `base` SNAPSHOT (discard target + staleness guard —
+  used instead of a fetched revisionNumber, which DataSpecRow doesn't carry). `changeCount` = the
+  chip's «n ცვლილება». A draft **survives reload**: `rehydrateDataSpecDrafts()` (called by
+  `initFromApi` after setDataSpecs) re-applies `current` over the loaded published spec IF base
+  still matches; a stale base (published advanced) is dropped (published wins, never resurrected).
+- **Publish = explicit.** `publishDataSpec(id)` (api-actions) → validated PUT. 422 `config-invalid`
+  → `dataSpecPublish.store` phase `error` + `violations[]` (rendered AT-field, Georgian). 403 restore
+  → `forbidden` (admin-only, server-truth). Success clears the draft. `discardDataSpec` restores base.
+  `fetchDataSpecRevisions`/`restoreDataSpecRevision` hit `/data-specs/:id/revisions[/:revId[/restore]]`.
+- **The band:** `features/data-layer/lifecycle/AuthoringLifecycleBand.tsx` — ONE component, placement-
+  DERIVED via `lifecycleBandPlacement.ts` (→ resolveSurface). Mounted in BOTH zooms: DataModelingPanel
+  workbench-head (full) + browser row (`dense`, dirty-only). **The design named the inspector "DATA
+  facet" as the 2nd zoom but that's WRONG** — the facet edits an INLINE `element.data` spec (no
+  config.data_spec docId), so config-revision lifecycle can't apply there (inline specs publish with
+  their PAGE). The real compact zoom of a stored spec = the Model-floor list row.
+- **Wire contract:** `ConfigViolation`/`ConfigInvalidProblem` now in `@statdash/contracts` (problem.ts);
+  `ApiError.problem?: ProblemDetails` carries the parsed RFC-9457 body (read `err.problem.violations`).
+  apps/api still has its own byte-identical `ConfigViolation` copy — adopting the contract is a follow-up.
+- Fitness: `dataSpecPersist.test.ts` (FF-DRAFT-EXPLICIT-PUBLISH / FF-PUT-VALIDATED),
+  `lifecycle/AuthoringLifecycleBand.test.tsx`, `lifecycle/lifecyclePlacement.fitness.test.ts`.
 
-**How to apply:** this is the SEED of the real fix — a proper draft → explicit-publish model.
-If the owner later asks why specs don't persist, or asks to re-enable saving: flip the hold OFF
-(permanent = `DEFAULT_AUTHORING_HOLD = false` + redeploy; live = "Enable saving" toggle or
-`useAuthoringHoldStore.getState().setHeld(false)`). The persistence fix is GATED, not deleted —
-flipping OFF restores exact auto-save. Auto-save contract lives in `store/dataSpecPersist.test.ts`
-(that suite opts hold OFF in beforeEach; new tests there prove the hold ON/OFF behavior).
-Related: [[project_page_lifecycle_workflow]] (pages already have draft→publish; specs do not yet).
+Related: [[project_page_lifecycle_workflow]] (pages have their own draft→publish FSM).

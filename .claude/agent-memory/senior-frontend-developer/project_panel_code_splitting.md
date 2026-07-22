@@ -23,6 +23,19 @@ apps/panel (Constructor) ships a single Vite/Rolldown entry that was a 1.89 MB m
 
 **Pre-existing residual (not in scope):** INEFFECTIVE_DYNAMIC_IMPORT on `packages/plugins/datasources/stats-api.ts` (was in baseline). `features/sections/` and `layout/` are orphan modules (no importers, tree-shaken).
 
+## Anti-pattern: nesting lazy() inside an already-lazy host's PRIMARY content
+Do NOT put a `React.lazy` boundary inside a host that is itself already lazy at the route
+level, for that host's PRIMARY content. It buys no eager-boot weight (the heavy vendors —
+dnd-kit/mui/apexcharts — are Rolldown vendor-grouped regardless of import style, so only
+app-code moves), and it costs: (a) a SECOND Suspense spinner on the primary act, (b) in
+vitest, the cold on-demand transform of the subtree races `findBy`'s 1s default on its FIRST
+resolution → a deterministic red on whichever test hits it first; warm runs pass (module
+cache). Symptom: the Suspense fallback (`aria-busy="true"`) is still mounted when findBy times
+out. Fix = DIRECT import (root, not a timeout bump). Concrete case (card 0104): `DataModelingPanel`
+(lazy at ModelSurface) nested `lazy(DataWorkbench)` → the DataModelingPanel fallback-lane red;
+made a direct import. Reserve lazy for a genuinely-OPTIONAL heavy escalation from a LIGHT host —
+e.g. `DataFacetField` (inspector) keeps `lazy(DataWorkbench)`, correctly.
+
 ## `@statdash/expr` — bundler-agnostic dev-flag pattern
 `packages/expr` is zero-dep, bundler-agnostic pure-TS with its OWN standalone `tsup index.ts
 --format esm --dts` build (no Vite, no Node types in scope). Dev-only diagnostics there must read
