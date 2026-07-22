@@ -33,6 +33,7 @@ import type { FilterSchemaInput }    from '@statdash/engine'
 import { resolveLocaleString }       from '@statdash/engine'
 import { walkNodes }                 from './walkNodes'
 import type { WalkedNode }           from './walkNodes'
+import { resolveAnchorBox }          from './anchorBox'
 import { enumerateParts }            from './bandSource'
 import { AUTOWRAP_CONTAINER, nestAccepts } from './insertNode'
 import { hasMetricDrag, readMetricDrag } from '../discovery/metricDrag'
@@ -245,9 +246,10 @@ export function CanvasOverlay({
       const variant = (node as { variant?: string }).variant ?? 'default'
 
       const anchor = rootEl.querySelector(`[${PART_NODE_ID_ATTR}="${id}"]`)
-      // display:contents anchor has no box — measure its first element child. Absent an
-      // anchor (a node not rendered — hidden / perspective-gated) contributes nothing.
-      const box = anchor?.firstElementChild ?? anchor
+      // display:contents anchor(s) have no box — descend through EVERY leading contents
+      // wrapper to the real content box (robust to a wrapper-count regression; 0109).
+      // Absent an anchor (a node not rendered — hidden / perspective-gated) contributes nothing.
+      const box = resolveAnchorBox(anchor)
       if (!box) return
       const rect = rel(box)
       nextFrames.push({ node, type, variant, id, rect })
@@ -268,7 +270,7 @@ export function CanvasOverlay({
         const itemAnchor = anchor.querySelector(
           `[${PART_FIELD_ATTR}="${part.field}"][${PART_INDEX_ATTR}="${part.index}"]`,
         )
-        const ibox = itemAnchor?.firstElementChild ?? itemAnchor
+        const ibox = resolveAnchorBox(itemAnchor)
         if (!ibox) continue
         nextItems.push({ nodeId: id, path: partPath, rect: rel(ibox) })
       }
@@ -312,7 +314,7 @@ export function CanvasOverlay({
           `[${PART_FIELD_ATTR}="${slot}"][${PART_INDEX_ATTR}="${part.index}"]`,
         )
         if (!el) continue   // registered + authorable but NOT rendered on this canvas
-        const box = el.firstElementChild ?? el
+        const box = resolveAnchorBox(el) ?? el
         nextChromes.push({ slot, path: part.address.partPath ?? slot, rect: rel(box) })
       }
     }

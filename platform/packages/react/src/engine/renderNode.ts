@@ -297,9 +297,19 @@ export function renderNode(node: NodeBase, ctx: RenderContext): ReactNode {
   // Async store: suspend on queryAsync inside an inner component. useNodeRows
   // returns the warmed rows on resume; renderWithRows then builds the node.
   // The component lets React.use()'s Suspense integration drive the re-render.
+  //
+  //  ONE after-middleware application per node (the fix for 0109): the `after`
+  //  chain is applied ONCE, around the OUTER async boundary below (asyncWrapped) —
+  //  the node's single, stable wrap present through loading→resolved, exactly as
+  //  the sync path wraps its one Suspense boundary. `renderWithRows` must therefore
+  //  NOT re-apply it when reached via this async continuation (`applyAfterMiddleware:
+  //  false`); otherwise a middleware that stamps a DOM anchor (the canvas
+  //  `data-part-node-id` node-anchor) would wrap the node TWICE — two nested
+  //  `display:contents` wrappers, so the overlay's `firstElementChild` box resolution
+  //  lands on the boxless second wrapper → a 0×0 selection frame at the origin.
   function AsyncRows(): ReactNode {
     const rows = useNodeRows(migrated, ctxM)
-    return renderWithRows(rows) as ReactNode
+    return renderWithRows(rows, false) as ReactNode
   }
 
   const asyncSkeletonFn = skeletonRegistry.get(type, variant)
@@ -327,7 +337,12 @@ export function renderNode(node: NodeBase, ctx: RenderContext): ReactNode {
   //  Hoisted closure over migrated/ctxM/type/variant/mws. Given the resolved
   //  rows, builds the final element. Shared by the sync fast-lane (called inline)
   //  and the async path (called inside AsyncRows after useNodeRows resolves).
-  function renderWithRows(rows: DataRow[]): ReactNode {
+  //
+  //  `applyAfterMiddleware` — the sync fast-lane applies the `after` chain HERE (its
+  //  only wrap). The async continuation passes `false`: its `after` chain is applied
+  //  once around the OUTER async boundary instead, so a node is never double-wrapped
+  //  (0109 — the double `data-part-node-id` anchor collapse).
+  function renderWithRows(rows: DataRow[], applyAfterMiddleware = true): ReactNode {
     let ctxN = ctxM
 
     // 2.y Per-panel scope override — merge view.scope.dimOverride onto the panel's
@@ -469,8 +484,11 @@ export function renderNode(node: NodeBase, ctx: RenderContext): ReactNode {
       }),
     )
 
-    // 7.5. Middleware after — wrap element (e.g. edit-mode overlay, analytics)
-    if (mws.length === 0) return wrapped
+    // 7.5. Middleware after — wrap element (e.g. edit-mode overlay, analytics).
+    //  Skipped in the async continuation (`applyAfterMiddleware: false`): the async
+    //  path applies the chain once around its outer boundary, so the node is wrapped
+    //  exactly once regardless of the sync/async data path (0109).
+    if (mws.length === 0 || !applyAfterMiddleware) return wrapped
     let element: ReactNode = wrapped
     for (let i = mws.length - 1; i >= 0; i--)
       if (mws[i].after) element = mws[i].after!(element, migrated, ctxN) ?? element
