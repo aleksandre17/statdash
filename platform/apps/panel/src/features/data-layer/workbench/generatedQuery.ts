@@ -141,8 +141,10 @@ export interface StewardDetail {
    *  declared projection, labeled "lowered — engine desugarToPipeline" by the pane,
    *  never shown as if it were the stored artifact. */
   canonicalJson: string
-  /** The two discriminants at the seam (Law 11: declare the dialect, never hide it). */
-  dialect: { stored: DataSpec['type']; shown: DataSpec['type'] }
+  /** The two discriminants at the seam (Law 11: declare the dialect, never hide it) +
+   *  `coincide` — STRUCTURAL identity (key-order-insensitive; jsonb round-trips reorder
+   *  keys, so byte-comparison over-reports divergence — the U3 walk's two-block finding). */
+  dialect: { stored: DataSpec['type']; shown: DataSpec['type']; coincide: boolean }
   /** The lowered ObsQuery — the wire read the Get head issues to the store, derived from
    *  the engine SSOT `sourceHeadObs` (never a pane-local re-lowering, FF-ONE-DERIVATION-
    *  PATH). A steward `query` head → its ObsQuery verbatim; a grain-∅ governed head → the
@@ -206,7 +208,28 @@ export function describeStewardDetail(model: WorkbenchModel, locale: Locale): St
   return {
     storedJson:    JSON.stringify(stored, null, 2),
     canonicalJson: JSON.stringify(canonical, null, 2),
-    dialect:       { stored: stored.type, shown: canonical.type },
+    dialect:       { stored: stored.type, shown: canonical.type, coincide: structurallyEqual(stored, canonical) },
     obsQuery,
   }
+}
+
+/** STRUCTURAL equality — key-order-insensitive (a config round-trips Postgres jsonb,
+ *  which reorders object keys, so two byte-different serializations can be the SAME
+ *  artifact; the U3 acceptance walk caught exactly that: stored ≡ assembly modulo key
+ *  order still rendered as two blocks). Arrays stay order-sensitive (a pipe's step
+ *  order IS semantics). */
+function structurallyEqual(a: unknown, b: unknown): boolean {
+  if (a === b) return true
+  if (Array.isArray(a) || Array.isArray(b)) {
+    if (!Array.isArray(a) || !Array.isArray(b) || a.length !== b.length) return false
+    return a.every((v, i) => structurallyEqual(v, b[i]))
+  }
+  if (a && b && typeof a === 'object' && typeof b === 'object') {
+    const ka = Object.keys(a as object), kb = Object.keys(b as object)
+    if (ka.length !== kb.length) return false
+    return ka.every((k) =>
+      Object.prototype.hasOwnProperty.call(b, k) &&
+      structurallyEqual((a as Record<string, unknown>)[k], (b as Record<string, unknown>)[k]))
+  }
+  return false
 }

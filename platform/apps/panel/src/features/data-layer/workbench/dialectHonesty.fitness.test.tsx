@@ -78,7 +78,7 @@ describe('FF-DIALECT-DECLARED (model layer) — a stored `query` never masquerad
   })
 
   it('the dialect marker declares BOTH discriminants honestly', () => {
-    expect(detail.dialect).toEqual({ stored: 'query', shown: 'pipeline' })
+    expect(detail.dialect).toEqual({ stored: 'query', shown: 'pipeline', coincide: false })
   })
 
   it('the canonical pane is present — the desugarToPipeline assembly, labeled a projection', () => {
@@ -101,8 +101,33 @@ describe('FF-DIALECT-DECLARED (model layer) — a stored `pipeline` COINCIDES (o
     }
     const model = toWorkbenchModel(storedPipeline)!
     const detail = describeStewardDetail(model, 'en')
-    expect(detail.dialect).toEqual({ stored: 'pipeline', shown: 'pipeline' })
+    expect(detail.dialect).toEqual({ stored: 'pipeline', shown: 'pipeline', coincide: true })
     expect(detail.storedJson).toBe(detail.canonicalJson)
+  })
+
+  it('coincidence is STRUCTURAL — jsonb-reordered keys are the SAME artifact (the U3 walk finding)', () => {
+    // A stored pipeline whose key order differs from the emission (Postgres jsonb
+    // reorders object keys) is byte-different but structurally identical — ONE block,
+    // never a phantom "lowered" duplicate. Byte-comparison over-reported divergence.
+    const reordered = JSON.parse(JSON.stringify({
+      encoding: { label: 'l' }, pipe: [{ metrics: ['m.gdp'], op: 'source' }], type: 'pipeline',
+    })) as DataSpec
+    const model = toWorkbenchModel(reordered)!
+    const detail = describeStewardDetail(model, 'en')
+    expect(detail.storedJson).not.toBe(detail.canonicalJson)   // bytes differ (key order)
+    expect(detail.dialect.coincide).toBe(true)                 // structure identical → one block
+  })
+
+  it('a REAL divergence (different steps) still declares coincide=false', () => {
+    const stored: DataSpec = {
+      type: 'pipeline', pipe: [{ op: 'source', metrics: ['m.gdp'] }, { op: 'sort', by: 'l', dir: 'asc' }],
+      encoding: { label: 'l' },
+    }
+    const model = toWorkbenchModel(stored)!
+    // Simulate an edited model whose emission dropped the sort (a genuine divergence).
+    model.tail = []
+    const detail = describeStewardDetail(model, 'en')
+    expect(detail.dialect.coincide).toBe(false)
   })
 })
 

@@ -102,7 +102,7 @@ describe('describeStewardDetail — the wire truth from the ONE SSOT (steward-on
     // model has no `storedSpec` — describeStewardDetail falls back to the model's own
     // pipeline emission as "the stored artifact", so the two dialects trivially coincide.
     const detail = describeStewardDetail(model, 'en')
-    expect(detail.dialect).toEqual({ stored: 'pipeline', shown: 'pipeline' })
+    expect(detail.dialect).toEqual({ stored: 'pipeline', shown: 'pipeline', coincide: true })
     expect(detail.storedJson).toBe(detail.canonicalJson)
   })
 

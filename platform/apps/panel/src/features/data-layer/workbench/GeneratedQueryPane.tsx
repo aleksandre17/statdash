@@ -114,7 +114,10 @@ export function GeneratedQueryPane({ model, locale }: GeneratedQueryPaneProps) {
 function StewardWireTruth({ model, locale }: { model: WorkbenchModel; locale: Locale }) {
   const en = locale === 'en'
   const detail = describeStewardDetail(model, locale)
-  const diverges = detail.storedJson !== detail.canonicalJson
+  // STRUCTURAL divergence (key-order-insensitive) — never byte-comparison: a stored
+  // pipeline that round-tripped Postgres jsonb differs from the assembly only in key
+  // order and is the SAME artifact (one block, no phantom "lowered" duplicate).
+  const diverges = !detail.dialect.coincide
   return (
     <Box data-testid="gq-steward" sx={{ mt: 1, display: 'flex', flexDirection: 'column', gap: 0.5 }}>
       <Typography variant="caption" color="text.disabled">
