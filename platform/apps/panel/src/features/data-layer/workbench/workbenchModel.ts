@@ -19,6 +19,7 @@ import type {
   DataSpec, DimVal, EncodingSpec, ObsQuery, PipelineSpec, PipeStep, SourceStep, TransformStep,
 } from '@statdash/engine'
 import { desugarToPipeline } from '@statdash/engine'
+import { isWorkbenchAdmissible } from './workbenchCapabilities'
 
 /** The governed (AUTHOR-plane) source head — a metric ref + a generic M2 grain. */
 type GovernedHead = Extract<SourceStep, { metrics: MetricRefList }>
@@ -31,9 +32,16 @@ export interface WorkbenchModel {
   encoding: EncodingSpec
 }
 
-/** Whether a spec is one the workbench can shape (query legacy, or native pipeline). */
-export function isWorkbenchShaped(spec: DataSpec | undefined): spec is Extract<DataSpec, { type: 'query' | 'pipeline' }> {
-  return !!spec && (spec.type === 'query' || spec.type === 'pipeline')
+/**
+ * Whether the three-pane workbench can shape this spec — now DERIVED from the Capability
+ * Matrix (DESIGN-0104 §2·C2 · E1), never a hand allow-list. `isWorkbenchAdmissible` answers
+ * "does the workbench provide every capability this kind requires?"; today that yields exactly
+ * `query | pipeline` (their required acts ⊆ the workbench core set), byte-identical to the old
+ * hand gate — proven by `workbenchCapabilities.test.ts`. A future kind auto-admits when a
+ * registered step editor provides its acts; this predicate is never hand-widened again.
+ */
+export function isWorkbenchShaped(spec: DataSpec | undefined): boolean {
+  return !!spec && isWorkbenchAdmissible(spec.type)
 }
 
 /**

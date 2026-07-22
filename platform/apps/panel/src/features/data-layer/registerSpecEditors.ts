@@ -26,16 +26,23 @@ import { MetricSpecEditor } from './editors/MetricSpecEditor'
 
 let registered = false
 
-/** Idempotently register the built-in rich DataSpec editors. Safe from boot + tests. */
+/**
+ * Idempotently register the built-in rich DataSpec editors. Safe from boot + tests.
+ *
+ * Each `provides` DECLARES the authoring capabilities that editor delivers (DESIGN-0104 §2·C2
+ * · E1), enumerated FROM the editor's real contract — the SAME set the kind REQUIRES in
+ * `SPEC_CATALOG` (spec-catalog.ts). The parity fitness proves the two sides agree (no
+ * requirement without a provider, no claim without a probe).
+ */
 export function registerSpecEditors(): void {
   if (registered) return
-  registerSpecEditor('query',      QuerySpecEditor  as SpecEditor)
-  registerSpecEditor('timeseries', TimeseriesEditor as SpecEditor)
-  registerSpecEditor('growth',     GrowthEditor     as SpecEditor)
-  registerSpecEditor('row-list',   RowListEditor    as SpecEditor)
-  registerSpecEditor('transform',  TransformEditor  as SpecEditor)
-  registerSpecEditor('pivot',      PivotEditor      as SpecEditor)
-  registerSpecEditor('metric',     MetricSpecEditor as SpecEditor)
+  registerSpecEditor('query',      QuerySpecEditor  as SpecEditor, ['head.source.pick', 'head.filter-builder', 'encoding.edit', 'raw-json.write'])
+  registerSpecEditor('timeseries', TimeseriesEditor as SpecEditor, ['head.measure-code.edit', 'head.years.edit'])
+  registerSpecEditor('growth',     GrowthEditor     as SpecEditor, ['head.measure-code.edit', 'head.years.edit', 'growth.single-multi.toggle'])
+  registerSpecEditor('row-list',   RowListEditor    as SpecEditor, ['row-list.rows.edit'])
+  registerSpecEditor('transform',  TransformEditor  as SpecEditor, ['transform.source.edit', 'pipeline.steps.edit', 'encoding.edit'])
+  registerSpecEditor('pivot',      PivotEditor      as SpecEditor, ['pivot.rows.edit', 'pivot.key-field.edit', 'pivot.value-fields.edit', 'pivot.colors.edit'])
+  registerSpecEditor('metric',     MetricSpecEditor as SpecEditor, ['metric.refs.edit', 'metric.grain.edit'])
   registered = true
 }
 

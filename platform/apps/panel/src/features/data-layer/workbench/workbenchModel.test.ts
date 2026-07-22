@@ -178,7 +178,11 @@ describe('head helpers', () => {
     expect(conv.head).toHaveProperty('metrics', ['B1G'])
   })
 
-  it('isWorkbenchShaped narrows to query | pipeline', () => {
+  it('isWorkbenchShaped is DERIVED from the Capability Matrix — true for query, false for row-list', () => {
+    // No longer a hand allow-list: it asks isWorkbenchAdmissible (workbenchCapabilities.ts).
+    // query's required acts ⊆ the workbench core set → shaped; row-list requires row-list.rows.edit
+    // (not a core act) → not shaped, routes to its dedicated editor. Full matrix proof lives in
+    // workbenchCapabilities.test.ts (incl. the before≡after snapshot).
     expect(isWorkbenchShaped({ type: 'query', query: { measure: 'B1G' }, pipe: [], encoding: { label: 'l' } })).toBe(true)
     expect(isWorkbenchShaped({ type: 'row-list', rows: [] })).toBe(false)
   })

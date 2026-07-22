@@ -21,8 +21,9 @@
 //  Invariant (FF-DATASPEC-AUTHORING-COMPLETE): every kind resolves to schema-or-editor.
 //  Pattern: Self-Describing Module (same as ops-catalog in @statdash/expr).
 //
-import type { DataSpec }   from './config/data-spec'
-import type { PropSchema } from './config/prop-schema'
+import type { DataSpec }     from './config/data-spec'
+import type { PropSchema }   from './config/prop-schema'
+import type { CapabilityId } from './capabilities'
 
 export type SpecField = {
   key:         string
@@ -46,6 +47,15 @@ export type SpecManifestEntry = {
   constructorReady: boolean   // false = has fn field, Constructor cannot generate
   fields:           SpecField[]
   example:          string
+  /**
+   * The AUTHORING CAPABILITIES this kind REQUIRES to be edited without loss (DESIGN-0104
+   * §2·C2 · E1). A surface (the three-pane workbench, a dedicated editor) may author this
+   * kind only when it PROVIDES every id here — workbench admissibility + editor parity are
+   * DERIVED from this set, never hand-gated (`workbenchCapabilities.ts` / the parity
+   * fitness). Enumerated FROM the dedicated editor's real contract; the vocabulary is
+   * `./capabilities` (Constructor-visible via `specManifest()`).
+   */
+  capabilities:     CapabilityId[]
   /** Authoring surface #1 — a PropSchema rendered by the generic Inspector. */
   schema?:          PropSchema
   /** Authoring surface #2 — a boot-registered rich editor, resolved by this key. */
@@ -86,6 +96,17 @@ export function specManifest(): Record<string, SpecManifestEntry> {
   )
 }
 
+/**
+ * The AUTHORING CAPABILITIES a catalog kind REQUIRES (DESIGN-0104 §2·C2 · E1) — the engine
+ * face of the Capability Matrix. Empty for an unknown kind (note `pipeline` is the workbench's
+ * NATIVE shape, not an authoring-catalog kind — its requirement is declared panel-side beside
+ * the workbench that owns it, see `workbenchCapabilities.ts`). Callers that DERIVE admissibility
+ * must fail-closed on an empty result rather than admit an undeclared kind (the regression lock).
+ */
+export function capabilitiesFor(type: string): readonly CapabilityId[] {
+  return SPEC_CATALOG[type]?.capabilities ?? []
+}
+
 export const SPEC_CATALOG: Record<string, SpecDescriptor> = {
 
   'query': {
@@ -104,6 +125,7 @@ export const SPEC_CATALOG: Record<string, SpecDescriptor> = {
       { key: 'timeDimension', label: { ka: 'დროის განზომილება', en: 'Time Dimension' }, description: { ka: 'პირველკლასიანი დროის ცნება { dim, range, granularity? } — fromDim/toDim-ის canonical ფორმა.', en: 'First-class time concept { dim, range, granularity? } — canonical form of fromDim/toDim (Cube.dev timeDimensions).' }, required: false, type: 'TimeDimensionSpec' },
     ],
     example: '{ "type": "query", "query": { "code": "GDP", "dims": { "geo": { "$ctx": "geo" } }, "years": { "$ctx": "year" } }, "encoding": { "x": "time", "y": "value" } }',
+    capabilities: ['head.source.pick', 'head.filter-builder', 'encoding.edit', 'raw-json.write'],
     make:      () => ({ type: 'query', query: { measure: [] }, pipe: [], encoding: { label: 'label' } }),
     editorKey: 'query',
   },
@@ -119,6 +141,7 @@ export const SPEC_CATALOG: Record<string, SpecDescriptor> = {
       { key: 'rows', label: { ka: 'სტრიქონები', en: 'Rows' }, description: { ka: 'RowSpec[] — code, label, color, negate, isTotal, pctOf.', en: 'RowSpec[] — code, label, color, negate, isTotal, pctOf.' }, required: true, type: 'RowSpec[]' },
     ],
     example: '{ "type": "row-list", "rows": [{ "code": "GDP", "label": "მშპ" }, { "code": "EXP", "label": "ექსპორტი" }] }',
+    capabilities: ['row-list.rows.edit'],
     make:      () => ({ type: 'row-list', rows: [] }),
     editorKey: 'row-list',
   },
@@ -138,6 +161,7 @@ export const SPEC_CATALOG: Record<string, SpecDescriptor> = {
       { key: 'timeDimension', label: { ka: 'დროის განზომილება', en: 'Time Dimension' }, description: { ka: 'პირველკლასიანი დროის ცნება { dim, range, granularity? }.', en: 'First-class time concept { dim, range, granularity? } (folds years + fromDim/toDim).' }, required: false, type: 'TimeDimensionSpec' },
     ],
     example: '{ "type": "timeseries", "code": "GDP", "years": [2015, 2016, 2017, 2018, 2019, 2020] }',
+    capabilities: ['head.measure-code.edit', 'head.years.edit'],
     make:      () => ({ type: 'timeseries', code: '', years: 'all' }),
     editorKey: 'timeseries',
   },
@@ -157,6 +181,7 @@ export const SPEC_CATALOG: Record<string, SpecDescriptor> = {
       { key: 'timeDimension', label: { ka: 'დროის განზომილება', en: 'Time Dimension' }, description: { ka: 'პირველკლასიანი დროის ცნება { dim, range, granularity? }.', en: 'First-class time concept { dim, range, granularity? } (folds years + fromDim/toDim).' }, required: false, type: 'TimeDimensionSpec' },
     ],
     example: '{ "type": "growth", "code": ["GDP", "EXP", "IMP"], "years": "all" }',
+    capabilities: ['head.measure-code.edit', 'head.years.edit', 'growth.single-multi.toggle'],
     make:      () => ({ type: 'growth', code: '', years: 'all' }),
     editorKey: 'growth',
   },
@@ -173,6 +198,7 @@ export const SPEC_CATALOG: Record<string, SpecDescriptor> = {
       { key: 'pipe',  label: { ka: 'პაიპლაინი', en: 'Pipeline' }, description: { ka: 'TransformStep[] — sort, filter, group...', en: 'Optional TransformStep[] applied after ratio computation.' }, required: false, type: 'TransformStep[]' },
     ],
     example: '{ "type": "ratio-list", "pairs": [{ "code": "EXP", "denom": "GDP", "label": "ექსპორტი/მშპ" }] }',
+    capabilities: ['ratio-list.pairs.edit'],
     make:   () => ({ type: 'ratio-list', pairs: [] }),
     // SCHEMA arm (ADR-049 P1 step 4): `pairs` is a structured array (itemSchema) —
     // it renders editably through the generic Inspector's nested ArrayOf control, so
@@ -204,6 +230,7 @@ export const SPEC_CATALOG: Record<string, SpecDescriptor> = {
       { key: 'colors',      label: { ka: 'ფერები',             en: 'Colors'       }, description: { ka: 'Record<string, string> — სერიის ფერები.',          en: 'Optional color map per series key.' },            required: false, type: 'Record<string, string>'  },
     ],
     example: '{ "type": "pivot", "rows": [{ "label": "ექსპორტი", "2022": 45, "2023": 48 }], "keyField": "label", "valueFields": ["2022", "2023"] }',
+    capabilities: ['pivot.rows.edit', 'pivot.key-field.edit', 'pivot.value-fields.edit', 'pivot.colors.edit'],
     make:      () => ({ type: 'pivot', rows: [], keyField: '', valueFields: [] }),
     editorKey: 'pivot',
   },
@@ -221,6 +248,7 @@ export const SPEC_CATALOG: Record<string, SpecDescriptor> = {
       { key: 'encoding', label: { ka: 'ენკოდინგი', en: 'Encoding' }, description: { ka: 'EncodingSpec — x, y, color, label სვეტების ბეჭდვა.', en: 'EncodingSpec — maps fields to x, y, color, label.' }, required: true, type: 'EncodingSpec' },
     ],
     example: '{ "type": "transform", "source": [...], "steps": [{ "op": "sort", "by": "value", "dir": "desc" }], "encoding": { "x": "label", "y": "value" } }',
+    capabilities: ['transform.source.edit', 'pipeline.steps.edit', 'encoding.edit'],
     make:      () => ({ type: 'transform', source: [], steps: [], encoding: { label: 'label' } }),
     editorKey: 'transform',
   },
@@ -239,6 +267,7 @@ export const SPEC_CATALOG: Record<string, SpecDescriptor> = {
       { key: 'where',   label: { ka: 'ფილტრი',      en: 'Where' }, description: { ka: 'Partial<Record<dim, DimVal>> — კოორდინატის დაფიქსირება (Law 1).',        en: 'Partial<Record<dim, DimVal>> — pin the read coordinate (Law 1).' }, required: false, type: 'Partial<Record<string, DimVal>>' },
     ],
     example: '{ "type": "metric", "metrics": ["gdp_per_capita"], "time": { "dim": "time" } }',
+    capabilities: ['metric.refs.edit', 'metric.grain.edit'],
     make:      () => ({ type: 'metric', metrics: [] }),
     editorKey: 'metric',
   },

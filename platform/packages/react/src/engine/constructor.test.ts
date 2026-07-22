@@ -154,6 +154,10 @@ describe('describeApp() — specTypes', () => {
       expect(descriptor).toHaveProperty('fields')
       expect(descriptor).toHaveProperty('example')
       expect(Array.isArray(descriptor.fields)).toBe(true)
+      // The Capability Matrix (DESIGN-0104 §2·C2) rides the manifest → Constructor-visible.
+      expect(descriptor).toHaveProperty('capabilities')
+      expect(Array.isArray(descriptor.capabilities)).toBe(true)
+      expect(descriptor.capabilities.length).toBeGreaterThan(0)   // every kind DECLARES (no ceremonial ∅)
     })
   })
 

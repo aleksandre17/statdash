@@ -48,6 +48,7 @@ describe('DataSpecEditor — generic binding-axis composer (ADR-049 P1)', () => 
       constructorReady: true,
       fields:           [],
       example:          '{ "type": "fake-sensor-feed" }',
+      capabilities:     [],   // test-only kind — routed through the composer, not workbench admissibility
       make:             () => fakeSpec,
       editorKey:        FAKE_KEY,
     } satisfies SpecDescriptor

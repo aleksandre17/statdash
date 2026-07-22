@@ -437,7 +437,10 @@ export { formatterRegistry }                                             from '.
 
 // ── Spec Capability Catalog — Self-Describing Module (Panel / Constructor) ─
 export type { SpecField, SpecDescriptor, SpecManifestEntry }  from './spec-catalog'
-export { SPEC_CATALOG, resolveSpecAuthoring, specManifest } from './spec-catalog'
+export { SPEC_CATALOG, resolveSpecAuthoring, specManifest, capabilitiesFor } from './spec-catalog'
+// ── Authoring Capability vocabulary (DESIGN-0104 §2·C2 · E1) ──────────────
+export type { CapabilityId } from './capabilities'
+export { CAPABILITY_IDS } from './capabilities'
 
 // ── FilterDerive ops → @statdash/expr plugin registration ─────────────
 //
