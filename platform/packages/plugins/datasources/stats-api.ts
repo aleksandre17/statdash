@@ -1,10 +1,13 @@
 // ── Stats API client + adapters (Layer 3: VITE_STORE_MODE=stats) ──────────
 //
-//  HTTP boundary for the real stats API at /api/stats/*. Native fetch only.
+//  HTTP boundary for the real stats API at /api/stats/*. The one adapter fetch
+//  (getAt) routes through the ADR-048 FetchScheduler (scheduleFetch) so these
+//  idempotent reads are concurrency-capped, Retry-After-backed, and in-flight
+//  COALESCED (card 0111) — never a raw un-admitted fetch.
 //  All responses use a { data: T } envelope — unwrapped here before use.
 //
 //  Pattern: Hexagonal Architecture — this file is the single adapter at the
-//  port. `get()` is the ONLY place fetch is called (Law 5: API-readiness).
+//  port. `getAt()` is the ONLY place fetch is called (Law 5: API-readiness).
 //
 //  Law 1 (no privileged dimensions): dim_key is treated as an opaque generic
 //  Record<string, DimVal>. We never name 'measure' / 'geo' / 'time' here —
@@ -17,6 +20,7 @@
 //  (Law 3: plugins is below apps; it imports only @statdash/engine types here).
 //
 import type { Observation, Classifier, DimVal } from '@statdash/engine'
+import { scheduleFetch } from '@statdash/engine'
 import { fromStatsClassifiers, type StatsClassifierRow } from './stats-classifiers'
 // Re-export the classifier ACL surface so existing import sites (stats-api.test.ts,
 // barrels) keep resolving `fromStatsClassifiers` / `StatsClassifierRow` from here
@@ -150,7 +154,15 @@ async function get<T>(base: string, path: string): Promise<T> {
  * adapter seam).
  */
 async function getAt<T>(base: string, prefix: string, path: string): Promise<T> {
-  const res = await fetch(`${base}${prefix}${path}`)
+  // Route the one adapter fetch through the CLIENT-GLOBAL scheduler (ADR-048 /
+  // card 0111): these idempotent GETs (classifiers, datasets, dataset-meta,
+  // data-sources, cube-profile) fan out heavily at boot/store-build — the same
+  // GET /classifiers/<dim> is issued by every store that carries that dim (the
+  // ~18× /classifiers/measure the live walk measured). The scheduler COALESCES
+  // identical in-flight reads to ONE wire call and caps concurrency + honors
+  // Retry-After backoff, exactly as it does for the boot fetch (D4). Still the ONE
+  // fetch chokepoint (Law 5) — now admission-controlled instead of raw.
+  const res = await scheduleFetch(`${base}${prefix}${path}`)
   if (!res.ok) throw new Error(`API ${prefix}${path}: ${res.status}`)
   const json = (await res.json()) as { data: T }
   return json.data
