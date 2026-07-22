@@ -123,10 +123,13 @@ export interface CanvasNode {
  * (`type`/`children` are NODE-structural, owned by the inner-page root + nodeIds.)
  *
  * So `meta` holds frame · chrome · presentation · filterSchema · vars ·
- * perspectives · schemaVersion (page color lives under presentation.color) — and
- * AUTOMATICALLY any field a future PageConfigBase
- * grows, because canvasPageAdapter carries it by structural pass-through, not by
- * a hand-maintained key list (mirrors how CanvasNode.props carries node body fields).
+ * perspectives · schemaVersion · **storeKey** (the page's declared store home,
+ * PageConfigBase §storeKey — mirrors `NodeBase.storeKey` so a page-level-only
+ * consumer, e.g. this type, sees it without reaching into the node-structural
+ * half of the `NodePageConfig` intersection) — and AUTOMATICALLY any field a
+ * future PageConfigBase grows, because canvasPageAdapter carries it by
+ * structural pass-through, not a hand-maintained key list (mirrors how
+ * CanvasNode.props carries node body fields).
  */
 export type PageMeta = Omit<PageConfigBase, 'id' | 'path'>
 

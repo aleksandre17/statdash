@@ -237,6 +237,22 @@ export interface PageConfigBase {
    * Absent ⇒ no axis (N=1-free; byte-identical render, FF-ONE-VIEW-NO-MACHINERY).
    */
   perspectives?: PerspectivesByParam
+  /**
+   * The page's declared store home — the middle tier of the storeKey cascade
+   * (explicit node storeKey > metric dataSource > PAGE storeKey > 'default'/
+   * first-key; see `resolveNodeRows.ts`). Identical field to `NodeBase.storeKey`
+   * (the page root IS a node — this entry
+   * is additive, not a second definition) — declared HERE TOO so a consumer that
+   * types against `PageConfigBase` alone (the page-level surface, e.g. the panel's
+   * `PageMeta`) sees it without reaching into the node-structural half of the
+   * `NodePageConfig` intersection. SiteRenderer reads it as `page.storeKey` to
+   * resolve the page's own live-preview store for Tier-3 (options-first) filter
+   * defaults; any host resolving that SAME default OUTSIDE SiteRenderer (e.g. a
+   * provider-free preview) needs this exact field to route identically (0112 R1
+   * recheck — the panel's data-door workbench preview was missing this tier
+   * entirely and fell back to the store manifest's first-inserted key instead).
+   */
+  storeKey?:     string
 }
 
 export type NodePageConfig =

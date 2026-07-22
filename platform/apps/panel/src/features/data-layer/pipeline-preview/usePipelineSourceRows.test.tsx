@@ -36,7 +36,15 @@ vi.mock('../../../inspector/useActiveLocales', () => ({
   useActiveLocales: () => ['en'],
 }))
 
+// The active page's declared store home (`config.storeKey` — 'gdp' on the live gdp page,
+// confirmed live via GET /api/config/pages/:id). Mocked per-test via `mockPageStoreKey`.
+let mockPageStoreKey: string | undefined
+vi.mock('../../../store/constructor.store', () => ({
+  useActivePage: () => (mockPageStoreKey ? { meta: { storeKey: mockPageStoreKey } } : null),
+}))
+
 beforeEach(() => {
+  mockPageStoreKey = undefined
   // A GOVERNED base metric that DECLARES its own cube (dataSource 'gdp') — the exact M1
   // shape the renderer routes by; its components live in the gdp cube, not the page's.
   registerMetric('metric:m-gdp', { code: 'GDPCODE', label: { en: 'GDP' }, dataSource: 'gdp' })
@@ -56,5 +64,37 @@ describe('usePipelineSourceRows — routes to the metric-declared store, not the
   it('an unbound head is the honest `unbound` state (no store read at all)', () => {
     const { result } = renderHook(() => usePipelineSourceRows(undefined, { label: 'geo' }))
     expect(result.current.status).toBe('unbound')
+  })
+})
+
+// ── Residual (0122 R1 recheck): a RAW/ungoverned wildcard head has NO metric to route
+// by — specDataSource(sourceSpec) is undefined for `measure:'*'` — so the ONLY thing
+// standing between the read and the manifest's blind first-key fallback is the ACTIVE
+// PAGE's own declared storeKey (mirrors SiteRenderer.tsx's `page.storeKey` cascade tier).
+// Live proof: the gdp page's "expenditure" section (`query:{measure:'*',
+// filter:{approach:'EXP',geo:'GE',time:{$ctx:'time'}}}`) read REGIONAL_GVA (the
+// manifest's first-inserted key, session/DB-row-order dependent) instead of GDP_ANNUAL
+// (the page's declared 'gdp' store) — a dimension-mismatched cube, 0 rows, while canvas
+// (which threads page.storeKey) rendered full data.
+describe('usePipelineSourceRows — a raw wildcard head (no metric) routes via the PAGE storeKey, never the blind first-key', () => {
+  it('measure:"*" with no dataSource reads the page-declared store (500), never the manifest first-key store (999)', () => {
+    mockPageStoreKey = 'gdp'
+    const head: SourceStep = { op: 'source', query: { measure: '*' } }
+    const { result } = renderHook(() => usePipelineSourceRows(head, { label: 'geo' }))
+
+    expect(result.current.status).toBe('ok')
+    const values = result.current.sourceRows.map((r) => (r as { value?: number }).value)
+    expect(values).toContain(500)      // the page's OWN declared store ('gdp')
+    expect(values).not.toContain(999)  // NOT the manifest's first-inserted (REGIONAL_GVA) key
+  })
+
+  it('with no page storeKey declared either, falls back to the manifest first-key (byte-identical pre-fix behaviour)', () => {
+    mockPageStoreKey = undefined
+    const head: SourceStep = { op: 'source', query: { measure: '*' } }
+    const { result } = renderHook(() => usePipelineSourceRows(head, { label: 'geo' }))
+
+    expect(result.current.status).toBe('ok')
+    const values = result.current.sourceRows.map((r) => (r as { value?: number }).value)
+    expect(values).toContain(999) // no routing signal at all ⇒ first-key fallback, unchanged
   })
 })

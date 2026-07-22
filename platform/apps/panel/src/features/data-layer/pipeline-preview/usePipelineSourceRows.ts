@@ -30,6 +30,7 @@ import {
 import { resolveStore } from '@statdash/react/engine'
 import { useLivePreviewStores } from '../../../canvas/useLivePreviewStores'
 import { useActivePageContext } from '../../../canvas/pageContext'
+import { useActivePage } from '../../../store/constructor.store'
 import { isHeadBound, sourceOnlySpec } from '../workbench/workbenchModel'
 
 /** The declared read state — loading is DISTINCT from empty (async trap #10). */
@@ -61,6 +62,21 @@ function readSource(store: DataStore, spec: PipelineSpec, ctx: SectionContext): 
 export function usePipelineSourceRows(head: SourceStep | undefined, encoding: PipelineSpec['encoding']): PipelineSource {
   const { stores, status: liveStatus } = useLivePreviewStores('live')
 
+  // The active page's OWN declared store (`config.storeKey`, e.g. 'gdp' — round-tripped
+  // losslessly onto `page.meta` by canvasPageAdapter's generic PageConfigBase pass-
+  // through). This is the SAME middle cascade tier the canvas cannot skip
+  // (SiteRenderer.tsx `pageStore = stores[page.storeKey ?? firstKey]`; renderNode's
+  // effectiveStoreKey: explicit storeKey > metric dataSource > PAGE storeKey >
+  // 'default'/first-key). Below, `specDataSource(sourceSpec)` is undefined for any
+  // raw/ungoverned wildcard section query (`measure:'*'`, no bound metric — exactly an
+  // authored section body, never a metric-id) — WITHOUT this tier that case fell straight
+  // through to the manifest's blind first-inserted key, which is session/DB-order
+  // dependent and unrelated to page identity (confirmed live: a gdp page's expenditure
+  // section — storeKey 'gdp' — read REGIONAL_GVA because the panel's own
+  // /api/config/data-sources happened to return 'regional' first — 0122 R1 recheck).
+  const page = useActivePage()
+  const pageStoreKey = page?.meta?.storeKey
+
   const bound = isHeadBound(head)
 
   // The SOURCE-ONLY pipeline (the head alone) — the exact spec the engine resolves for
@@ -82,8 +98,11 @@ export function usePipelineSourceRows(head: SourceStep | undefined, encoding: Pi
   // lookup + CachedStore wrap + fallback (key → first → staticStore) byte-identically to
   // the canvas node, so warm ≡ read and the preview shares the canvas's cache.
   const store = useMemo<DataStore>(
-    () => resolveStore({ stores, pageStoreKey: sourceSpec ? specDataSource(sourceSpec) : undefined }),
-    [stores, sourceSpec],
+    () => resolveStore({
+      stores,
+      pageStoreKey: (sourceSpec ? specDataSource(sourceSpec) : undefined) ?? pageStoreKey,
+    }),
+    [stores, sourceSpec, pageStoreKey],
   )
 
   // The page's DEFAULT eval context (0112 R1) — the SAME derivation core the canvas
@@ -93,7 +112,10 @@ export function usePipelineSourceRows(head: SourceStep | undefined, encoding: Pi
   // defaults (the live-recheck gap: gdp's options-first `time`). While Tier-3 is still
   // pending, the ctx is INCOMPLETE — surfaced below as the declared 'loading' state,
   // never a half-resolved read presented as truth (Law 11).
-  const pageStore = useMemo<DataStore>(() => resolveStore({ stores }), [stores])
+  const pageStore = useMemo<DataStore>(
+    () => resolveStore({ stores, pageStoreKey }),
+    [stores, pageStoreKey],
+  )
   const { ctx, isLoading: ctxPending } = useActivePageContext(pageStore)
   const pipeCtx = useMemo<PipelineContext>(
     () => ({ classifiers: store.classifiers, display: store.display, section: ctx }),

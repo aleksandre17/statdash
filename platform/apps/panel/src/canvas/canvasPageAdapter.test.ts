@@ -176,6 +176,7 @@ const META_FIELD_COVERAGE: Record<keyof PageMeta, true> = {
   filterSchema:  true,
   vars:          true,
   perspectives:  true,
+  storeKey:      true,
 }
 
 // A fully-populated PageMeta — one concrete value per guarded field.
@@ -209,6 +210,9 @@ const fullMeta: PageMeta = {
       ],
     },
   },
+  // The page's declared store home (0112 R1 recheck) — round-trips generically
+  // through meta exactly like every other PageConfigBase field.
+  storeKey: 'gdp',
 }
 
 // A COMPLETE page: identity columns + every page-level field + a nested subtree.
@@ -244,6 +248,7 @@ describe('page-level round-trip fitness (P-3): every PageConfigBase field surviv
     expect(cfg.vars).toEqual(fullMeta.vars)
     expect(cfg.perspectives).toEqual(fullMeta.perspectives)
     expect(cfg.schemaVersion).toBe(2)
+    expect(cfg.storeKey).toBe('gdp')
     // identity columns still come from the CanvasPage, not meta
     expect(cfg.id).toBe('page-full')
     expect(cfg.path).toBe('full')

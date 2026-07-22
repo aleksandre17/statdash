@@ -36,3 +36,36 @@ grep for `Object.keys(stores)[0]` / `stores[<first>]` — it MUST go through
 two stores answering the SAME code with DIFFERENT values → assert the read returns the
 metric-store's value, never the first/page store's (a routing assertion, not presence).
 See also [[async-store-live-render-patterns]] (warm ≡ read on the same resolved store).
+
+**Residual reopened the SAME class (0112/0122 R1 recheck, gdp "expenditure" section,
+live on :3013):** `specDataSource(sourceSpec)` is legitimately `undefined` for a
+RAW/ungoverned wildcard section query (`measure:'*'`, no bound metric — an authored
+section body, not a metric-id). The 336a6d6 fix only added the metric tier; it never
+added the CANVAS's other cascade tier — the PAGE's OWN declared store
+(`page.storeKey`, `SiteRenderer.tsx:89 stores[page.storeKey ?? firstKey]`,
+`renderNode.ts` `effectiveStoreKey`: explicit node storeKey > metric dataSource >
+**page storeKey** > default/first-key). `usePipelineSourceRows.ts` threaded NEITHER
+tier for the SOURCE store nor for its Tier-3-default `pageStore` (`pageContext.ts`'s
+`useActivePageContext`) — both fell straight to `resolveStore({stores})`'s blind
+`stores['default'] ?? stores[Object.keys(stores)[0]]`. Live proof: the panel's
+`GET /api/config/data-sources` happened to return `[regional, accounts, gdp]`
+(session/DB-row-order dependent, NOT page identity), so the gdp page's `storeKey:'gdp'`
+expenditure section's workbench preview queried `REGIONAL_GVA` (no `approach` dim →
+guaranteed empty) while canvas queried `GDP_ANNUAL` (real data) — two DIFFERENT stores
+for the identical spec, confirmed via a Playwright network probe (both requests
+captured side by side). **Fix:** thread `page?.meta?.storeKey` as the middle fallback
+tier in both `resolveStore` calls (`specDataSource(sourceSpec) ?? pageStoreKey` for the
+source read; `pageStoreKey` for the Tier-3 ctx pageStore) — mirrors the engine's own
+3-tier cascade exactly. Uncovered a SECOND, silent bug enabling the first: the panel's
+`PageMeta` type (`apps/panel/src/types/constructor.ts`) was `Omit<PageConfigBase,
+'id'|'path'>`, but `storeKey` lived ONLY on `NodeBase`, not `PageConfigBase` — so even
+though `canvasPageAdapter` already round-trips `storeKey` onto `page.meta` at RUNTIME
+(it's not in `PAGE_STRUCTURAL_KEYS`), the TYPE couldn't see it — `page.meta?.storeKey`
+was a compile error, not just an unwired read. Root fix was adding `storeKey?: string`
+to `PageConfigBase` itself (packages/react/src/engine/types/node.ts) — NOT widening
+PageMeta to the full `NodePageConfig` union (tried first; broke a keys-exhaustiveness
+fitness test by pulling in the whole per-node-type field surface — `data`/`view`/
+`dataLinks`/`transforms`/`fieldConfig`/`on`/`visibleToRoles` — none of which belong at
+page-meta level). **Any NEW page-level field that also happens to live on `NodeBase`
+needs this SAME double-declaration**, or a panel-side "page store" hook silently can't
+see it despite the runtime already carrying it.
