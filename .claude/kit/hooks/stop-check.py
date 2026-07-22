@@ -25,6 +25,22 @@ try:
         warn.append(f"opus-brief §Current State = {len(cs)} lines > 80. Rotate (05): oldest layer -> docs/layers/.")
 except OSError:
     pass
+# --- brief FRESHNESS tripwire (owner, 2026-07-22: "why is opus-brief ALWAYS old?") -----------
+# Root cause: the update was tied to a close ritual that rarely fires, and nothing watched
+# staleness. Machine rule: if repo commits are newer than the §Current State date, the brief
+# lies to the next SessionStart injection — warn EVERY Stop until it is rewritten mid-flight.
+try:
+    import re as _re, subprocess as _sp, datetime as _dt
+    m = _re.search(r"^## Current State \((\d{4}-\d{2}-\d{2})",
+                   open(brief, encoding="utf-8").read(), _re.M)
+    last_commit = _sp.run(["git", "-C", root, "log", "-1", "--format=%cs"],
+                          capture_output=True, text=True, timeout=10).stdout.strip()
+    if m and last_commit and last_commit > m.group(1):
+        warn.append(f"opus-brief §Current State is STALE ({m.group(1)}) — commits exist from "
+                    f"{last_commit}. Rewrite §Current State NOW (mid-flight, not at close): "
+                    f"the next SessionStart injects this file as truth.")
+except Exception:
+    pass
 log = os.path.join(root, ".claude", "session", "token-log.md")
 try:
     if not [l for l in open(log, encoding="utf-8") if l.startswith("[")]:
