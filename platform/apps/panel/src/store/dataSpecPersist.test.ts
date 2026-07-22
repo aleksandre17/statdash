@@ -9,6 +9,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { useConstructorStore } from './constructor.store'
 import { useDataSpecSaveStore } from './dataSpecSave.store'
+import { useAuthoringHoldStore, DEFAULT_AUTHORING_HOLD } from './authoringHold'
 import { updateDataSpec, flushDataSpecSaves } from './api-actions'
 import type { DataSpec } from '@statdash/engine'
 import type { NamedDataSpec } from '../types/constructor'
@@ -32,8 +33,15 @@ function putCalls(fetchSpy: ReturnType<typeof vi.fn>) {
 beforeEach(() => {
   useConstructorStore.setState({ dataSpecs: [SPEC] })
   useDataSpecSaveStore.setState({ status: {} })
+  // These tests prove the AUTO-SAVE behavior, which is the hold-OFF path. The hold now
+  // defaults ON (owner's urgent ask), so opt this suite OUT explicitly.
+  useAuthoringHoldStore.setState({ held: false })
 })
-afterEach(() => { vi.unstubAllGlobals(); vi.useRealTimers() })
+afterEach(() => {
+  vi.unstubAllGlobals()
+  vi.useRealTimers()
+  useAuthoringHoldStore.setState({ held: DEFAULT_AUTHORING_HOLD }) // restore the shipped default
+})
 
 describe('updateDataSpec — durable edit persistence', () => {
   it('writes the optimistic edit to the store IMMEDIATELY (before any PUT)', () => {
@@ -100,5 +108,66 @@ describe('updateDataSpec — durable edit persistence', () => {
     // The edit is still in the store (optimistic, not silently reverted) — retryable.
     const stored = useConstructorStore.getState().dataSpecs.find((s) => s.id === 's1')!.spec
     expect((stored as Extract<DataSpec, { type: 'row-list' }>).rows).toHaveLength(1)
+  })
+})
+
+// ── Authoring hold — reversible pause of durable persistence (store/authoringHold.ts) ──
+//
+//  Owner's urgent ask (2026-07-20): while the live tool stabilizes, edits must stay
+//  IN-SESSION ONLY — the optimistic store still updates, but NO PUT fires (auto-save was
+//  corrupting stored specs). The honest state is `paused` ("Draft — not saving"), never a
+//  fake `saved` (Law 11). Flipping the hold OFF restores the exact auto-save behavior above.
+describe('authoring hold — pause durable persistence (reversible)', () => {
+  it('ships DEFAULT ON (paused) — the owner wants saving OFF right now', () => {
+    expect(DEFAULT_AUTHORING_HOLD).toBe(true)
+  })
+
+  it('HELD: an edit updates the store optimistically but fires NO PUT, even on flush', async () => {
+    useAuthoringHoldStore.setState({ held: true })
+    const fetchSpy = vi.fn(async () => okJson({ id: 's1' }))
+    vi.stubGlobal('fetch', fetchSpy)
+
+    updateDataSpec('s1', { spec: EDITED })
+    await flushDataSpecSaves() // held → must NOT force a write out either
+
+    // In-session UI stays live: the optimistic edit is in the store…
+    const stored = useConstructorStore.getState().dataSpecs.find((s) => s.id === 's1')!.spec
+    expect((stored as Extract<DataSpec, { type: 'row-list' }>).rows).toHaveLength(1)
+    // …but NOTHING was persisted.
+    expect(putCalls(fetchSpy)).toHaveLength(0)
+  })
+
+  it('HELD: the save chip shows an HONEST "paused" state, never a fake "saved" (Law 11)', () => {
+    useAuthoringHoldStore.setState({ held: true })
+    vi.stubGlobal('fetch', vi.fn(async () => okJson({ id: 's1' })))
+
+    updateDataSpec('s1', { spec: EDITED })
+
+    expect(useDataSpecSaveStore.getState().status.s1).toEqual({ phase: 'paused' })
+  })
+
+  it('HELD: the debounce timer never fires a PUT (nothing was armed)', async () => {
+    useAuthoringHoldStore.setState({ held: true })
+    vi.useFakeTimers()
+    const fetchSpy = vi.fn(async () => okJson({ id: 's1' }))
+    vi.stubGlobal('fetch', fetchSpy)
+
+    updateDataSpec('s1', { spec: EDITED })
+    await vi.runAllTimersAsync()
+    expect(putCalls(fetchSpy)).toHaveLength(0)
+  })
+
+  it('flipping the hold OFF restores auto-save: the next edit PUTs (existing behavior)', async () => {
+    useAuthoringHoldStore.setState({ held: false })
+    const fetchSpy = vi.fn(async () => okJson({ id: 's1' }))
+    vi.stubGlobal('fetch', fetchSpy)
+
+    updateDataSpec('s1', { spec: EDITED })
+    await flushDataSpecSaves()
+
+    const puts = putCalls(fetchSpy)
+    expect(puts).toHaveLength(1)
+    expect(puts[0].body.spec).toEqual(EDITED)
+    expect(useDataSpecSaveStore.getState().status.s1).toEqual({ phase: 'saved' })
   })
 })
