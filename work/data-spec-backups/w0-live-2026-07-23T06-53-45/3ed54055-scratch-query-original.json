@@ -1,0 +1,1 @@
+{"data":{"id":"3ed54055-7151-44bf-bf8f-907dd575e3c4","name":"map (შემოთავაზებული)","description":null,"spec":{"pipe":[],"type":"query","query":{"measure":["GDP_AGRI"]},"encoding":{"label":"geo","value":"GDP_AGRI"}},"source_id":null,"created_at":"2026-07-23T05:33:15.768Z","updated_at":"2026-07-23T05:33:15.768Z"}}
