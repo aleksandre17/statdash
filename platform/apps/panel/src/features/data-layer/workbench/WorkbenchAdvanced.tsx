@@ -33,6 +33,7 @@ import { Select } from '@statdash/react'
 import type { DataSpec } from '@statdash/engine'
 import { SPEC_CATALOG, resolveSpecAuthoring } from '@statdash/engine'
 import { SpecBody } from '../DataSpecEditor'
+import { lowerLaneEmission } from './workbenchModel'
 import type { Locale } from '../../../types/constructor'
 
 // ── SpecTypePicker — create-from-scratch + inter-kind conversion (R1) ──────────────
@@ -57,7 +58,10 @@ export function SpecTypePicker(
   const handleTypeChange = (type: string) => {
     if (type === value?.type) return
     const seed = resolveSpecAuthoring(type)?.make()
-    if (seed) onChange(seed)
+    // W0/Z8 lane emission flip: a pane-shaped seed (`query`) emits as spine so the
+    // session opens in the ONE dialect; a dedicated-editor kind seeds unchanged
+    // (its editor is the authoring room — DU4). One derived scope, see lowerLaneEmission.
+    if (seed) onChange(lowerLaneEmission(seed))
   }
 
   return (
@@ -130,7 +134,11 @@ export function AdvancedRawPanel(
       <AccordionDetails>
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
           <SpecTypePicker value={value} onChange={onChange} locale={locale} />
-          <SpecBody value={value} onChange={onChange} />
+          {/* W0/Z8 lane emission flip: an Advanced edit of a pane-shaped spec (the
+              `query` branch) emits SPINE — the same conversion-on-active-edit rule the
+              panes apply — so the escape hatch can no longer re-enter sugar into
+              storage (leak #3). Non-pane-shaped kinds emit unchanged (DU4). */}
+          <SpecBody value={value} onChange={(next) => onChange(lowerLaneEmission(next))} />
           <ReadOnlyJson value={value} locale={locale} />
         </Box>
       </AccordionDetails>

@@ -41,8 +41,9 @@ import { GeneratedQueryPane } from './GeneratedQueryPane'
 import { VerbPalette } from './VerbPalette'
 import {
   fromWorkbenchModel, governedWhere, isGovernedHead, isHeadBound, isStewardHead,
-  isValueCellHead, promoteHeadToMetric, stewardHeadMeasure, toWorkbenchModel,
-  valueCellSummary, withGovernedMetric, withGovernedWhere, withStewardCube,
+  isValueCellHead, lowerLaneEmission, promoteHeadToMetric, stewardHeadMeasure,
+  toWorkbenchModel, valueCellSummary, withGovernedMetric, withGovernedWhere,
+  withStewardCube,
 } from './workbenchModel'
 import { GetHead } from './GetHead'
 import { GetGrainEditor } from './GetGrainEditor'
@@ -151,8 +152,11 @@ export function DataWorkbench({ value, onChange }: DataWorkbenchProps) {
             <SpecTypePicker value={value} onChange={onChange} locale={locale} />
             {/* The kind's DEDICATED editor (Timeseries/Growth/Pivot/Transform/RowList/…),
                 dispatched by declaration — FULL editing (code/years, pivot fields, inline
-                rows + encoding, single↔multi toggle), never a lowered read-only head. */}
-            <SpecBody value={value} onChange={onChange} />
+                rows + encoding, single↔multi toggle), never a lowered read-only head.
+                W0/Z8: emits route through the ONE lane-emission flip — pane-shaped kinds
+                lower to spine; the dedicated-editor kinds emit unchanged (DU4), with the
+                API normalize-on-write seam as the at-rest enforcement. */}
+            <SpecBody value={value} onChange={(next) => onChange(lowerLaneEmission(next))} />
             {/* R6 — the read-only JSON disclosure (the old DataSpecEditor "JSON output"). */}
             <ReadOnlyJson value={value} locale={locale} />
           </Box>

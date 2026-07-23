@@ -56,8 +56,21 @@ function ctxDim(filter: unknown, slot: string): string | undefined {
   const f = (filter as Json | undefined)?.[slot] as Json | undefined
   return typeof f?.$ctx === 'string' ? (f.$ctx as string) : undefined
 }
+// The steward ObsQuery of a node's DataSpec — dialect-agnostic (W0/Z8): the ONE
+// rest grammar carries it on the `source` HEAD (`data.pipe[0].query`); the legacy
+// sugar carried it at `data.query` (kept so the fitness still bites a regression
+// that re-enters the sugar form).
+function obsQueryOf(data: Json | undefined): Json | undefined {
+  if (!data) return undefined
+  if (data.query && typeof data.query === 'object') return data.query as Json
+  const head = Array.isArray(data.pipe) ? (data.pipe as unknown[])[0] : undefined
+  if (head && typeof head === 'object' && (head as Json).op === 'source') {
+    return (head as Json).query as Json | undefined
+  }
+  return undefined
+}
 function queryFilter(node: Json | undefined): Json | undefined {
-  return ((node?.data as Json | undefined)?.query as Json | undefined)?.filter as Json | undefined
+  return obsQueryOf(node?.data as Json | undefined)?.filter as Json | undefined
 }
 // The hero `id` sits on the SECTION; its query lives on the chart/table children.
 // Return the query filter of the first data-bearing descendant of the section.

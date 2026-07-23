@@ -3,6 +3,7 @@ import { z } from 'zod'
 import { ok, notFound, parseBody, parseParams, parseQuery } from '../../lib/http.js'
 import { configInvalid } from '../../lib/problem.js'
 import { validateConfigDoc } from '../../lib/validate-config-doc.js'
+import { normalizeSpecForRest } from '../../lib/normalize-data-spec.js'
 import { appendRevision, listRevisions, getRevision } from '../../lib/revision-log.js'
 import { requirePublishRole } from '../../lib/publish-roles.js'
 
@@ -62,11 +63,16 @@ export const dataSpecsRoutes: FastifyPluginAsync = async (app) => {
 
   app.post('/', async (req, reply) => {
     const body = parseBody(DataSpecBody, req.body)
+    // ONE-DIALECT normalize-on-write (W0/Z8): the create door lowers sugar to the
+    // pipeline rest grammar exactly as the PUT does — POST is how the post-U3
+    // scratch `query` re-entered storage; no write path may bypass the seam.
+    const norm = normalizeSpecForRest(body.spec)
+    if ('violation' in norm) throw configInvalid([norm.violation])
     const { rows: [created] } = await app.pg.query(
       `INSERT INTO config.data_spec (name, description, spec, source_id)
        VALUES ($1, $2, $3, $4)
        RETURNING id, name, description, spec, source_id, created_at, updated_at`,
-      [body.name, body.description ?? null, JSON.stringify(body.spec), body.source_id ?? null],
+      [body.name, body.description ?? null, JSON.stringify(norm.spec), body.source_id ?? null],
     )
     return reply.status(201).send(ok(created))
   })
@@ -103,6 +109,17 @@ export const dataSpecsRoutes: FastifyPluginAsync = async (app) => {
         spec:        body.spec        !== undefined ? body.spec        : cur.spec,
         source_id:   body.source_id   !== undefined ? body.source_id   : cur.source_id,
       }
+
+      // ONE-DIALECT normalize-on-write (W0/Z8): lower the RESULTING spec to the
+      // pipeline rest grammar BEFORE validation — we validate exactly what we
+      // store. Applied to the merged snapshot (not just a supplied spec) so ANY
+      // governed write converges a legacy sugar row to the one grammar.
+      const norm = normalizeSpecForRest(next.spec)
+      if ('violation' in norm) {
+        await client.query('ROLLBACK')
+        throw configInvalid([norm.violation])
+      }
+      next.spec = norm.spec
 
       // Referential gate (ADR-052 §4) — reject BEFORE any write; the txn opens no write.
       const violations = await validateConfigDoc('data_spec', next, client)
@@ -194,7 +211,17 @@ export const dataSpecsRoutes: FastifyPluginAsync = async (app) => {
           throw notFound('Data spec')
         }
 
-        const restored = source.body as DataSpecSnapshot
+        const restored = { ...(source.body as DataSpecSnapshot) }
+
+        // ONE-DIALECT normalize-on-write (W0/Z8): a historical SUGAR body must not
+        // re-enter storage as sugar — restore is a NEW revision, so it lowers
+        // through the same seam as every other write.
+        const norm = normalizeSpecForRest(restored.spec)
+        if ('violation' in norm) {
+          await client.query('ROLLBACK')
+          throw configInvalid([norm.violation])
+        }
+        restored.spec = norm.spec
 
         // Re-validate against today's refs — a stale body may now be dangling.
         const violations = await validateConfigDoc('data_spec', restored, client)

@@ -125,6 +125,13 @@ function runQuery(state: State, text: string, values: unknown[] = []): { rows: R
   }
 
   // ── config.data_spec ──
+  if (/INSERT INTO config\.data_spec/i.test(t)) {
+    const [name, description, spec, source_id] = values as [string, string | null, string, string | null]
+    const id = '33333333-3333-3333-3333-333333333333'
+    const row = { id, name, description, spec: JSON.parse(spec), source_id, created_at: 'c', updated_at: 'u' }
+    state.dataSpecs.set(id, row)
+    return { rows: [row] }
+  }
   if (/UPDATE config\.data_spec/i.test(t)) {
     const id = String(values[4])
     const row = { id, name: values[0], description: values[1], spec: JSON.parse(String(values[2])), source_id: values[3], created_at: 'c', updated_at: 'u' }
@@ -363,6 +370,96 @@ describe('FF-PUT-VALIDATED — invalid config bodies are rejected 422 with named
     })
     expect(res.statusCode).toBe(200)
     expect(state.revisions).toHaveLength(1)
+  })
+})
+
+// ════════════════════════════════════════════════════════════════════════════════
+describe('FF-ONE-DIALECT-AT-REST (write path) — every config.data_spec write door lowers sugar to pipeline', () => {
+  const storedSpec = (state: State) =>
+    (state.dataSpecs.get(SPEC_ID) as { spec: { type: string; pipe?: unknown[] } }).spec
+
+  it('a sugar `query` PUT persists as `pipeline` (row AND revision snapshot)', async () => {
+    const state = freshState()
+    seedSpec(state, { type: 'pipeline', pipe: [{ op: 'source', query: { measure: 'B1GQ' } }], encoding: {} }, null)
+    const app = await buildApp(state, EDITOR)
+
+    const res = await app.inject({
+      method: 'PUT',
+      url: `/api/config/data-specs/${SPEC_ID}`,
+      payload: { spec: { type: 'query', query: { measure: ['B1GQ'] }, pipe: [], encoding: { label: 'time', value: 'B1GQ' } } },
+    })
+    expect(res.statusCode).toBe(200)
+
+    const spec = storedSpec(state)
+    expect(spec.type).toBe('pipeline')
+    expect((spec.pipe?.[0] as { op: string; query: unknown }).op).toBe('source')
+    expect((spec.pipe?.[0] as { op: string; query: unknown }).query).toEqual({ measure: ['B1GQ'] })
+    // The revision log stores the LOWERED snapshot too — history is rest-grammar.
+    expect((state.revisions[0].body as { spec: { type: string } }).spec.type).toBe('pipeline')
+  })
+
+  it('ANY governed write converges a legacy sugar ROW: an empty PUT lowers the current spec', async () => {
+    // The deliverable-6 mechanism: the live scratch `query` normalizes through one
+    // governed PUT with no fields — the merged snapshot is the current row, and the
+    // seam lowers it before persist.
+    const state = freshState()
+    seedSpec(state, { type: 'query', query: { measure: ['B1GQ'] }, pipe: [], encoding: { label: 'time', value: 'B1GQ' } }, null)
+    const app = await buildApp(state, EDITOR)
+
+    const res = await app.inject({ method: 'PUT', url: `/api/config/data-specs/${SPEC_ID}`, payload: {} })
+    expect(res.statusCode).toBe(200)
+    expect(storedSpec(state).type).toBe('pipeline')
+  })
+
+  it('the POST create door lowers too (the ShowMe-scratch re-entry path)', async () => {
+    const state = freshState()
+    const app = await buildApp(state, EDITOR)
+
+    const res = await app.inject({
+      method: 'POST',
+      url: '/api/config/data-specs/',
+      payload: { name: 'map (შემოთავაზებული)', spec: { type: 'query', query: { measure: ['B1GQ'] }, pipe: [], encoding: { label: 'geo', value: 'B1GQ' } } },
+    })
+    expect(res.statusCode).toBe(201)
+    const created = (res.json() as { data: { spec: { type: string } } }).data
+    expect(created.spec.type).toBe('pipeline')
+  })
+
+  it('restore of a historical SUGAR body persists LOWERED (restore is a new, normalized revision)', async () => {
+    const state = freshState()
+    seedSpec(state, { type: 'pipeline', pipe: [{ op: 'source', query: { measure: 'B1GQ' } }], encoding: {} }, null)
+    // A pre-U3 revision whose body is sugar.
+    state.revisions.push({
+      id: '00000000-0000-4000-8000-00000000000a', doc_kind: 'data_spec', doc_id: SPEC_ID,
+      revision_number: 1, actor: null, note: null, restored_from: null,
+      created_at: new Date().toISOString(),
+      body: { name: 'gdp-series', description: null, source_id: null,
+              spec: { type: 'query', query: { measure: ['B1GQ'] }, pipe: [], encoding: { label: 'time', value: 'B1GQ' } } },
+    })
+    const app = await buildApp(state, ADMIN)
+
+    const res = await app.inject({
+      method: 'POST',
+      url: `/api/config/data-specs/${SPEC_ID}/revisions/00000000-0000-4000-8000-00000000000a/restore`,
+    })
+    expect(res.statusCode).toBe(200)
+    expect(storedSpec(state).type).toBe('pipeline')
+    // History is immutable — the ORIGINAL sugar revision body is untouched.
+    expect((state.revisions[0].body as { spec: { type: string } }).spec.type).toBe('query')
+  })
+
+  it('a U2-blocked kind passes through honestly (row-list stays row-list)', async () => {
+    const state = freshState()
+    seedSpec(state, { type: 'row-list', rows: [{ code: 'B1GQ' }] }, null)
+    const app = await buildApp(state, EDITOR)
+
+    const res = await app.inject({
+      method: 'PUT',
+      url: `/api/config/data-specs/${SPEC_ID}`,
+      payload: { spec: { type: 'row-list', rows: [{ code: 'B1GQ' }, { code: 'gross-domestic-product' }] } },
+    })
+    expect(res.statusCode).toBe(200)
+    expect(storedSpec(state).type).toBe('row-list')
   })
 })
 

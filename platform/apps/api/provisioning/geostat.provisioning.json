@@ -377,17 +377,25 @@
                     "chartType": "hbar-diverging",
                     "compact": true,
                     "data": {
-                      "encoding": {
-                        "color": "color",
-                        "id": "_id",
-                        "isSeparator": "_isGroup",
-                        "isTotal": "_isTotal",
-                        "label": "label",
-                        "level": "_level",
-                        "parentId": "_parentId",
-                        "series": "series"
-                      },
+                      "type": "pipeline",
                       "pipe": [
+                        {
+                          "op": "source",
+                          "query": {
+                            "filter": {
+                              "account": {
+                                "$ctx": "account"
+                              },
+                              "measure": {
+                                "$ctx": "measure"
+                              },
+                              "time": {
+                                "$ctx": "time"
+                              }
+                            },
+                            "measure": "*"
+                          }
+                        },
                         {
                           "fields": [
                             "order"
@@ -526,21 +534,16 @@
                           "op": "group"
                         }
                       ],
-                      "query": {
-                        "filter": {
-                          "account": {
-                            "$ctx": "account"
-                          },
-                          "measure": {
-                            "$ctx": "measure"
-                          },
-                          "time": {
-                            "$ctx": "time"
-                          }
-                        },
-                        "measure": "*"
-                      },
-                      "type": "query"
+                      "encoding": {
+                        "color": "color",
+                        "id": "_id",
+                        "isSeparator": "_isGroup",
+                        "isTotal": "_isTotal",
+                        "label": "label",
+                        "level": "_level",
+                        "parentId": "_parentId",
+                        "series": "series"
+                      }
                     },
                     "fieldConfig": {
                       "unit": {
@@ -575,17 +578,25 @@
                       }
                     ],
                     "data": {
-                      "encoding": {
-                        "color": "color",
-                        "id": "_id",
-                        "isSeparator": "_isGroup",
-                        "isTotal": "_isTotal",
-                        "label": "label",
-                        "level": "_level",
-                        "parentId": "_parentId",
-                        "series": "series"
-                      },
+                      "type": "pipeline",
                       "pipe": [
+                        {
+                          "op": "source",
+                          "query": {
+                            "filter": {
+                              "account": {
+                                "$ctx": "account"
+                              },
+                              "measure": {
+                                "$ctx": "measure"
+                              },
+                              "time": {
+                                "$ctx": "time"
+                              }
+                            },
+                            "measure": "*"
+                          }
+                        },
                         {
                           "fields": [
                             "order"
@@ -724,21 +735,16 @@
                           "op": "group"
                         }
                       ],
-                      "query": {
-                        "filter": {
-                          "account": {
-                            "$ctx": "account"
-                          },
-                          "measure": {
-                            "$ctx": "measure"
-                          },
-                          "time": {
-                            "$ctx": "time"
-                          }
-                        },
-                        "measure": "*"
-                      },
-                      "type": "query"
+                      "encoding": {
+                        "color": "color",
+                        "id": "_id",
+                        "isSeparator": "_isGroup",
+                        "isTotal": "_isTotal",
+                        "label": "label",
+                        "level": "_level",
+                        "parentId": "_parentId",
+                        "series": "series"
+                      }
                     },
                     "indent": true,
                     "statusFlags": false,
@@ -794,13 +800,34 @@
                   {
                     "chartType": "bar",
                     "data": {
-                      "encoding": {
-                        "color": "color",
-                        "label": "time",
-                        "series": "label"
-                      },
-                      "fromDim": "fromYear",
+                      "type": "pipeline",
                       "pipe": [
+                        {
+                          "op": "source",
+                          "query": {
+                            "filter": {
+                              "account": {
+                                "$ctx": "account"
+                              }
+                            },
+                            "measure": [
+                              "accounts.output",
+                              "accounts.gdp",
+                              "accounts.gni",
+                              "accounts.disposableIncome",
+                              "accounts.savings",
+                              "accounts.netLending"
+                            ],
+                            "orderBy": {
+                              "dir": "asc",
+                              "field": "time"
+                            }
+                          },
+                          "clamp": {
+                            "fromDim": "fromYear",
+                            "toDim": "toYear"
+                          }
+                        },
                         {
                           "as": "_isDeriving",
                           "expr": "(measure == 'P1' && account == 'production-account' && side == 'R') || (side == 'U' && ((measure == 'B1G' && account == 'production-account') || (measure == 'B5G' && account == 'allocation-of-primary-income-account') || (measure == 'B6G' && account == 'secondary-distribution-of-income-account') || (measure == 'B8G' && account == 'use-of-disposable-income-account') || (measure == 'B9' && account == 'capital-account'))) ? 1 : 0",
@@ -824,27 +851,11 @@
                           "op": "lookup"
                         }
                       ],
-                      "query": {
-                        "filter": {
-                          "account": {
-                            "$ctx": "account"
-                          }
-                        },
-                        "measure": [
-                          "accounts.output",
-                          "accounts.gdp",
-                          "accounts.gni",
-                          "accounts.disposableIncome",
-                          "accounts.savings",
-                          "accounts.netLending"
-                        ],
-                        "orderBy": {
-                          "dir": "asc",
-                          "field": "time"
-                        }
-                      },
-                      "toDim": "toYear",
-                      "type": "query"
+                      "encoding": {
+                        "color": "color",
+                        "label": "time",
+                        "series": "label"
+                      }
                     },
                     "fieldConfig": {
                       "unit": {
@@ -884,13 +895,34 @@
                       }
                     ],
                     "data": {
-                      "encoding": {
-                        "color": "color",
-                        "label": "time",
-                        "series": "label"
-                      },
-                      "fromDim": "fromYear",
+                      "type": "pipeline",
                       "pipe": [
+                        {
+                          "op": "source",
+                          "query": {
+                            "filter": {
+                              "account": {
+                                "$ctx": "account"
+                              }
+                            },
+                            "measure": [
+                              "accounts.output",
+                              "accounts.gdp",
+                              "accounts.gni",
+                              "accounts.disposableIncome",
+                              "accounts.savings",
+                              "accounts.netLending"
+                            ],
+                            "orderBy": {
+                              "dir": "asc",
+                              "field": "time"
+                            }
+                          },
+                          "clamp": {
+                            "fromDim": "fromYear",
+                            "toDim": "toYear"
+                          }
+                        },
                         {
                           "as": "_isDeriving",
                           "expr": "(measure == 'P1' && account == 'production-account' && side == 'R') || (side == 'U' && ((measure == 'B1G' && account == 'production-account') || (measure == 'B5G' && account == 'allocation-of-primary-income-account') || (measure == 'B6G' && account == 'secondary-distribution-of-income-account') || (measure == 'B8G' && account == 'use-of-disposable-income-account') || (measure == 'B9' && account == 'capital-account'))) ? 1 : 0",
@@ -914,27 +946,11 @@
                           "op": "lookup"
                         }
                       ],
-                      "query": {
-                        "filter": {
-                          "account": {
-                            "$ctx": "account"
-                          }
-                        },
-                        "measure": [
-                          "accounts.output",
-                          "accounts.gdp",
-                          "accounts.gni",
-                          "accounts.disposableIncome",
-                          "accounts.savings",
-                          "accounts.netLending"
-                        ],
-                        "orderBy": {
-                          "dir": "asc",
-                          "field": "time"
-                        }
-                      },
-                      "toDim": "toYear",
-                      "type": "query"
+                      "encoding": {
+                        "color": "color",
+                        "label": "time",
+                        "series": "label"
+                      }
                     },
                     "indent": true,
                     "statusFlags": false,
@@ -1587,18 +1603,21 @@
                   }
                 },
                 "data": {
-                  "type": "query",
-                  "query": {
-                    "measure": "*",
-                    "filter": {
-                      "geo": "GE",
-                      "approach": "PROD",
-                      "time": {
-                        "$ctx": "time"
-                      }
-                    }
-                  },
+                  "type": "pipeline",
                   "pipe": [
+                    {
+                      "op": "source",
+                      "query": {
+                        "measure": "*",
+                        "filter": {
+                          "geo": "GE",
+                          "approach": "PROD",
+                          "time": {
+                            "$ctx": "time"
+                          }
+                        }
+                      }
+                    },
                     {
                       "op": "aggregate",
                       "by": [
@@ -1707,7 +1726,12 @@
                           {
                             "event": "row:click",
                             "actions": [
-                              { "type": "highlight", "key": "_hl", "fromField": "id", "mode": "replace" }
+                              {
+                                "type": "highlight",
+                                "key": "_hl",
+                                "fromField": "id",
+                                "mode": "replace"
+                              }
                             ]
                           }
                         ],
@@ -1776,18 +1800,21 @@
                   }
                 },
                 "data": {
-                  "type": "query",
-                  "query": {
-                    "measure": "*",
-                    "filter": {
-                      "geo": "GE",
-                      "approach": "EXP",
-                      "time": {
-                        "$ctx": "time"
-                      }
-                    }
-                  },
+                  "type": "pipeline",
                   "pipe": [
+                    {
+                      "op": "source",
+                      "query": {
+                        "measure": "*",
+                        "filter": {
+                          "geo": "GE",
+                          "approach": "EXP",
+                          "time": {
+                            "$ctx": "time"
+                          }
+                        }
+                      }
+                    },
                     {
                       "op": "aggregate",
                       "by": [
@@ -1936,17 +1963,22 @@
                   }
                 },
                 "data": {
-                  "type": "query",
-                  "query": {
-                    "measure": "gdp.current",
-                    "filter": {
-                      "geo": "GE",
-                      "approach": "_Z"
-                    }
-                  },
-                  "fromDim": "fromYear",
-                  "toDim": "toYear",
+                  "type": "pipeline",
                   "pipe": [
+                    {
+                      "op": "source",
+                      "query": {
+                        "measure": "gdp.current",
+                        "filter": {
+                          "geo": "GE",
+                          "approach": "_Z"
+                        }
+                      },
+                      "clamp": {
+                        "fromDim": "fromYear",
+                        "toDim": "toYear"
+                      }
+                    },
                     {
                       "op": "sort",
                       "by": "time",
@@ -2045,17 +2077,22 @@
                   }
                 },
                 "data": {
-                  "type": "query",
-                  "query": {
-                    "measure": "gdp.perCapita",
-                    "filter": {
-                      "geo": "GE",
-                      "approach": "_Z"
-                    }
-                  },
-                  "fromDim": "fromYear",
-                  "toDim": "toYear",
+                  "type": "pipeline",
                   "pipe": [
+                    {
+                      "op": "source",
+                      "query": {
+                        "measure": "gdp.perCapita",
+                        "filter": {
+                          "geo": "GE",
+                          "approach": "_Z"
+                        }
+                      },
+                      "clamp": {
+                        "fromDim": "fromYear",
+                        "toDim": "toYear"
+                      }
+                    },
                     {
                       "op": "sort",
                       "by": "time",
@@ -2169,18 +2206,21 @@
                   }
                 },
                 "data": {
-                  "type": "query",
-                  "query": {
-                    "measure": "*",
-                    "filter": {
-                      "geo": "GE",
-                      "approach": "INC",
-                      "time": {
-                        "$ctx": "time"
-                      }
-                    }
-                  },
+                  "type": "pipeline",
                   "pipe": [
+                    {
+                      "op": "source",
+                      "query": {
+                        "measure": "*",
+                        "filter": {
+                          "geo": "GE",
+                          "approach": "INC",
+                          "time": {
+                            "$ctx": "time"
+                          }
+                        }
+                      }
+                    },
                     {
                       "op": "aggregate",
                       "by": [
@@ -2299,18 +2339,21 @@
                   }
                 },
                 "data": {
-                  "type": "query",
-                  "query": {
-                    "measure": "*",
-                    "filter": {
-                      "geo": "GE",
-                      "approach": "GFCF",
-                      "time": {
-                        "$ctx": "time"
-                      }
-                    }
-                  },
+                  "type": "pipeline",
                   "pipe": [
+                    {
+                      "op": "source",
+                      "query": {
+                        "measure": "*",
+                        "filter": {
+                          "geo": "GE",
+                          "approach": "GFCF",
+                          "time": {
+                            "$ctx": "time"
+                          }
+                        }
+                      }
+                    },
                     {
                       "op": "aggregate",
                       "by": [
@@ -2448,17 +2491,22 @@
                   }
                 },
                 "data": {
-                  "type": "query",
-                  "query": {
-                    "measure": "gdp.realGrowth",
-                    "filter": {
-                      "geo": "GE",
-                      "approach": "_Z"
-                    }
-                  },
-                  "fromDim": "fromYear",
-                  "toDim": "toYear",
+                  "type": "pipeline",
                   "pipe": [
+                    {
+                      "op": "source",
+                      "query": {
+                        "measure": "gdp.realGrowth",
+                        "filter": {
+                          "geo": "GE",
+                          "approach": "_Z"
+                        }
+                      },
+                      "clamp": {
+                        "fromDim": "fromYear",
+                        "toDim": "toYear"
+                      }
+                    },
                     {
                       "op": "sort",
                       "by": "time",
@@ -2562,18 +2610,23 @@
                   }
                 },
                 "data": {
-                  "type": "query",
-                  "query": {
-                    "measure": "*",
-                    "filter": {
-                      "geo": "GE",
-                      "approach": "_Z",
-                      "measure": "non-observed-economy-share"
-                    }
-                  },
-                  "fromDim": "fromYear",
-                  "toDim": "toYear",
+                  "type": "pipeline",
                   "pipe": [
+                    {
+                      "op": "source",
+                      "query": {
+                        "measure": "*",
+                        "filter": {
+                          "geo": "GE",
+                          "approach": "_Z",
+                          "measure": "non-observed-economy-share"
+                        }
+                      },
+                      "clamp": {
+                        "fromDim": "fromYear",
+                        "toDim": "toYear"
+                      }
+                    },
                     {
                       "op": "sort",
                       "by": "time",
@@ -3145,12 +3198,20 @@
                   "type": "share",
                   "num": {
                     "measure": "regional.gva",
-                    "filter": { "geo": "tbilisi", "sector": "_T" },
+                    "filter": {
+                      "geo": "tbilisi",
+                      "sector": "_T"
+                    },
                     "time": 2024
                   },
                   "denom": {
                     "measure": "regional.gva",
-                    "filter": { "geo": { "$ne": "_T" }, "sector": "_T" },
+                    "filter": {
+                      "geo": {
+                        "$ne": "_T"
+                      },
+                      "sector": "_T"
+                    },
                     "time": 2024
                   }
                 },
@@ -3180,12 +3241,20 @@
                   "type": "share",
                   "num": {
                     "measure": "regional.gva",
-                    "filter": { "geo": "adjara", "sector": "_T" },
+                    "filter": {
+                      "geo": "adjara",
+                      "sector": "_T"
+                    },
                     "time": 2024
                   },
                   "denom": {
                     "measure": "regional.gva",
-                    "filter": { "geo": { "$ne": "_T" }, "sector": "_T" },
+                    "filter": {
+                      "geo": {
+                        "$ne": "_T"
+                      },
+                      "sector": "_T"
+                    },
                     "time": 2024
                   }
                 },
@@ -3215,12 +3284,20 @@
                   "type": "share",
                   "num": {
                     "measure": "regional.gva",
-                    "filter": { "geo": "imereti", "sector": "_T" },
+                    "filter": {
+                      "geo": "imereti",
+                      "sector": "_T"
+                    },
                     "time": 2024
                   },
                   "denom": {
                     "measure": "regional.gva",
-                    "filter": { "geo": { "$ne": "_T" }, "sector": "_T" },
+                    "filter": {
+                      "geo": {
+                        "$ne": "_T"
+                      },
+                      "sector": "_T"
+                    },
                     "time": 2024
                   }
                 },
@@ -3250,12 +3327,20 @@
                   "type": "share",
                   "num": {
                     "measure": "regional.gva",
-                    "filter": { "geo": "kvemo_kartli", "sector": "_T" },
+                    "filter": {
+                      "geo": "kvemo_kartli",
+                      "sector": "_T"
+                    },
                     "time": 2024
                   },
                   "denom": {
                     "measure": "regional.gva",
-                    "filter": { "geo": { "$ne": "_T" }, "sector": "_T" },
+                    "filter": {
+                      "geo": {
+                        "$ne": "_T"
+                      },
+                      "sector": "_T"
+                    },
                     "time": 2024
                   }
                 },
@@ -3328,8 +3413,14 @@
                 },
                 "trend": {
                   "filter": {
-                    "geo": { "$ctx": "geo", "$ne": "_T" },
-                    "sector": { "$ctx": "sector", "default": "_T" }
+                    "geo": {
+                      "$ctx": "geo",
+                      "$ne": "_T"
+                    },
+                    "sector": {
+                      "$ctx": "sector",
+                      "default": "_T"
+                    }
                   },
                   "measure": "regional.gva",
                   "type": "yoy"
@@ -3344,8 +3435,14 @@
                 },
                 "value": {
                   "filter": {
-                    "geo": { "$ctx": "geo", "$ne": "_T" },
-                    "sector": { "$ctx": "sector", "default": "_T" }
+                    "geo": {
+                      "$ctx": "geo",
+                      "$ne": "_T"
+                    },
+                    "sector": {
+                      "$ctx": "sector",
+                      "default": "_T"
+                    }
                   },
                   "format": "mln_gel",
                   "measure": "regional.gva",
@@ -3365,8 +3462,14 @@
                 },
                 "value": {
                   "filter": {
-                    "geo": { "$ctx": "geo", "$ne": "_T" },
-                    "sector": { "$ctx": "sector", "default": "_T" }
+                    "geo": {
+                      "$ctx": "geo",
+                      "$ne": "_T"
+                    },
+                    "sector": {
+                      "$ctx": "sector",
+                      "default": "_T"
+                    }
                   },
                   "measure": "regional.gva",
                   "type": "yoy"
@@ -3390,15 +3493,26 @@
                 "value": {
                   "denom": {
                     "filter": {
-                      "geo": { "$ne": "_T" },
-                      "sector": { "$ctx": "sector", "default": "_T" }
+                      "geo": {
+                        "$ne": "_T"
+                      },
+                      "sector": {
+                        "$ctx": "sector",
+                        "default": "_T"
+                      }
                     },
                     "measure": "regional.gva"
                   },
                   "num": {
                     "filter": {
-                      "geo": { "$ctx": "geo", "$ne": "_T" },
-                      "sector": { "$ctx": "sector", "default": "_T" }
+                      "geo": {
+                        "$ctx": "geo",
+                        "$ne": "_T"
+                      },
+                      "sector": {
+                        "$ctx": "sector",
+                        "default": "_T"
+                      }
                     },
                     "measure": "regional.gva"
                   },
@@ -3422,8 +3536,14 @@
                 },
                 "value": {
                   "filter": {
-                    "geo": { "$ctx": "geo", "$ne": "_T" },
-                    "sector": { "$ctx": "sector", "default": "_T" }
+                    "geo": {
+                      "$ctx": "geo",
+                      "$ne": "_T"
+                    },
+                    "sector": {
+                      "$ctx": "sector",
+                      "default": "_T"
+                    }
                   },
                   "from": {
                     "$ctx": "spanFrom"
@@ -3452,8 +3572,14 @@
                 },
                 "value": {
                   "filter": {
-                    "geo": { "$ctx": "geo", "$ne": "_T" },
-                    "sector": { "$ctx": "sector", "default": "_T" }
+                    "geo": {
+                      "$ctx": "geo",
+                      "$ne": "_T"
+                    },
+                    "sector": {
+                      "$ctx": "sector",
+                      "default": "_T"
+                    }
                   },
                   "from": {
                     "$ctx": "fromYear"
@@ -3478,8 +3604,14 @@
                 },
                 "trend": {
                   "filter": {
-                    "geo": { "$ctx": "geo", "$ne": "_T" },
-                    "sector": { "$ctx": "sector", "default": "_T" }
+                    "geo": {
+                      "$ctx": "geo",
+                      "$ne": "_T"
+                    },
+                    "sector": {
+                      "$ctx": "sector",
+                      "default": "_T"
+                    }
                   },
                   "measure": "regional.gva",
                   "time": {
@@ -3497,8 +3629,14 @@
                 },
                 "value": {
                   "filter": {
-                    "geo": { "$ctx": "geo", "$ne": "_T" },
-                    "sector": { "$ctx": "sector", "default": "_T" }
+                    "geo": {
+                      "$ctx": "geo",
+                      "$ne": "_T"
+                    },
+                    "sector": {
+                      "$ctx": "sector",
+                      "default": "_T"
+                    }
                   },
                   "format": "mln_gel",
                   "measure": "regional.gva",
@@ -3537,8 +3675,14 @@
                 },
                 "value": {
                   "filter": {
-                    "geo": { "$ctx": "geo", "$ne": "_T" },
-                    "sector": { "$ctx": "sector", "default": "_T" }
+                    "geo": {
+                      "$ctx": "geo",
+                      "$ne": "_T"
+                    },
+                    "sector": {
+                      "$ctx": "sector",
+                      "default": "_T"
+                    }
                   },
                   "format": "mln_gel",
                   "measure": "regional.gva",
@@ -3565,8 +3709,14 @@
                 },
                 "value": {
                   "filter": {
-                    "geo": { "$ctx": "geo", "$ne": "_T" },
-                    "sector": { "$ctx": "sector", "default": "_T" }
+                    "geo": {
+                      "$ctx": "geo",
+                      "$ne": "_T"
+                    },
+                    "sector": {
+                      "$ctx": "sector",
+                      "default": "_T"
+                    }
                   },
                   "from": {
                     "$ctx": "fromYear"
@@ -3618,7 +3768,13 @@
                       {
                         "event": "row:click",
                         "actions": [
-                          { "type": "filter", "key": "region", "fromField": "id", "mode": "toggle", "max": 10 }
+                          {
+                            "type": "filter",
+                            "key": "region",
+                            "fromField": "id",
+                            "mode": "toggle",
+                            "max": 10
+                          }
                         ]
                       }
                     ],
@@ -3634,16 +3790,26 @@
                 ],
                 "color": "#0080BE",
                 "data": {
-                  "encoding": {
-                    "color": "color",
-                    "id": "geo",
-                    "label": "label",
-                    "pct": {
-                      "sumOf": "value"
-                    },
-                    "value": "value"
-                  },
+                  "type": "pipeline",
                   "pipe": [
+                    {
+                      "op": "source",
+                      "query": {
+                        "filter": {
+                          "geo": {
+                            "$ne": "_T"
+                          },
+                          "sector": {
+                            "$ne": "_T",
+                            "$ctx": "sector"
+                          },
+                          "time": {
+                            "$ctx": "time"
+                          }
+                        },
+                        "measure": "regional.gva"
+                      }
+                    },
                     {
                       "agg": "sum",
                       "by": [
@@ -3669,22 +3835,15 @@
                       "op": "sort"
                     }
                   ],
-                  "query": {
-                    "filter": {
-                      "geo": {
-                        "$ne": "_T"
-                      },
-                      "sector": {
-                        "$ne": "_T",
-                        "$ctx": "sector"
-                      },
-                      "time": {
-                        "$ctx": "time"
-                      }
+                  "encoding": {
+                    "color": "color",
+                    "id": "geo",
+                    "label": "label",
+                    "pct": {
+                      "sumOf": "value"
                     },
-                    "measure": "regional.gva"
-                  },
-                  "type": "query"
+                    "value": "value"
+                  }
                 },
                 "geoCodeMap": {
                   "GE-AJ": "adjara",
@@ -3716,14 +3875,22 @@
                     "en": "Occupied territory"
                   }
                 },
-                "occupiedIso": [ "GE-AB", "GE-OS" ],
+                "occupiedIso": [
+                  "GE-AB",
+                  "GE-OS"
+                ],
                 "maxSelect": 10,
                 "multiSelect": true,
                 "on": [
                   {
                     "event": "selection:change",
                     "actions": [
-                      { "type": "filter", "key": "region", "mode": "toggle", "max": 10 }
+                      {
+                        "type": "filter",
+                        "key": "region",
+                        "mode": "toggle",
+                        "max": 10
+                      }
                     ]
                   }
                 ],
@@ -3746,14 +3913,22 @@
                       "ka": "მშპ",
                       "en": "GDP"
                     },
-                    "chartType": { "$ctx": "_mark" },
+                    "chartType": {
+                      "$ctx": "_mark"
+                    },
                     "palette": "sequential",
                     "stacked": true,
                     "on": [
                       {
                         "event": "point:click",
                         "actions": [
-                          { "type": "filter", "key": "region", "fromField": "id", "mode": "toggle", "max": 10 }
+                          {
+                            "type": "filter",
+                            "key": "region",
+                            "fromField": "id",
+                            "mode": "toggle",
+                            "max": 10
+                          }
                         ]
                       }
                     ],
@@ -3809,7 +3984,15 @@
                       {
                         "event": "row:click",
                         "actions": [
-                          { "type": "filter", "key": { "$ctx": "_selKey" }, "fromField": "id", "mode": "toggle", "max": 10 }
+                          {
+                            "type": "filter",
+                            "key": {
+                              "$ctx": "_selKey"
+                            },
+                            "fromField": "id",
+                            "mode": "toggle",
+                            "max": 10
+                          }
                         ]
                       }
                     ],
@@ -3825,20 +4008,32 @@
                 ],
                 "color": "#0080BE",
                 "data": {
-                  "encoding": {
-                    "color": "color",
-                    "id": "geo",
-                    "label": { "$ctx": "_xDim" },
-                    "series": { "$ctx": "_seriesDim" },
-                    "pct": {
-                      "sumOf": "value"
-                    },
-                    "value": "value"
-                  },
+                  "type": "pipeline",
                   "pipe": [
                     {
+                      "op": "source",
+                      "query": {
+                        "filter": {
+                          "geo": {
+                            "$ctx": "geo",
+                            "$ne": "_T"
+                          },
+                          "sector": {
+                            "$ne": "_T",
+                            "$ctx": "sector"
+                          },
+                          "time": {
+                            "$ctx": "time"
+                          }
+                        },
+                        "measure": "regional.gva"
+                      }
+                    },
+                    {
                       "agg": "sum",
-                      "by": { "$ctx": "_byDims" },
+                      "by": {
+                        "$ctx": "_byDims"
+                      },
                       "measure": "value",
                       "op": "aggregate"
                     },
@@ -3875,28 +4070,29 @@
                       "op": "derive"
                     },
                     {
-                      "by": { "$ctx": "_sortBy" },
-                      "dir": { "$ctx": "_sortDir" },
+                      "by": {
+                        "$ctx": "_sortBy"
+                      },
+                      "dir": {
+                        "$ctx": "_sortDir"
+                      },
                       "op": "sort"
                     }
                   ],
-                  "query": {
-                    "filter": {
-                      "geo": {
-                        "$ctx": "geo",
-                        "$ne": "_T"
-                      },
-                      "sector": {
-                        "$ne": "_T",
-                        "$ctx": "sector"
-                      },
-                      "time": {
-                        "$ctx": "time"
-                      }
+                  "encoding": {
+                    "color": "color",
+                    "id": "geo",
+                    "label": {
+                      "$ctx": "_xDim"
                     },
-                    "measure": "regional.gva"
-                  },
-                  "type": "query"
+                    "series": {
+                      "$ctx": "_seriesDim"
+                    },
+                    "pct": {
+                      "sumOf": "value"
+                    },
+                    "value": "value"
+                  }
                 },
                 "id": "sectors",
                 "label": {
@@ -4023,7 +4219,13 @@
                       {
                         "event": "row:click",
                         "actions": [
-                          { "type": "filter", "key": "region", "fromField": "id", "mode": "toggle", "max": 10 }
+                          {
+                            "type": "filter",
+                            "key": "region",
+                            "fromField": "id",
+                            "mode": "toggle",
+                            "max": 10
+                          }
                         ]
                       }
                     ],
@@ -4045,16 +4247,27 @@
                 ],
                 "color": "#0080BE",
                 "data": {
-                  "encoding": {
-                    "color": "color",
-                    "id": "geo",
-                    "label": "label",
-                    "pct": {
-                      "sumOf": "value"
-                    },
-                    "value": "value"
-                  },
+                  "type": "pipeline",
                   "pipe": [
+                    {
+                      "op": "source",
+                      "query": {
+                        "filter": {
+                          "geo": {
+                            "$ctx": "geo",
+                            "$ne": "_T"
+                          },
+                          "sector": {
+                            "$ne": "_T",
+                            "$ctx": "sector"
+                          },
+                          "time": {
+                            "$ctx": "time"
+                          }
+                        },
+                        "measure": "regional.gva"
+                      }
+                    },
                     {
                       "agg": "sum",
                       "by": [
@@ -4080,23 +4293,15 @@
                       "op": "sort"
                     }
                   ],
-                  "query": {
-                    "filter": {
-                      "geo": {
-                        "$ctx": "geo",
-                        "$ne": "_T"
-                      },
-                      "sector": {
-                        "$ne": "_T",
-                        "$ctx": "sector"
-                      },
-                      "time": {
-                        "$ctx": "time"
-                      }
+                  "encoding": {
+                    "color": "color",
+                    "id": "geo",
+                    "label": "label",
+                    "pct": {
+                      "sumOf": "value"
                     },
-                    "measure": "regional.gva"
-                  },
-                  "type": "query"
+                    "value": "value"
+                  }
                 },
                 "id": "regions-bar",
                 "title": {
@@ -4114,8 +4319,14 @@
                     "expr": {
                       "op": "and",
                       "exprs": [
-                        { "op": "isset", "param": "region" },
-                        { "op": "isset", "param": "sector" }
+                        {
+                          "op": "isset",
+                          "param": "region"
+                        },
+                        {
+                          "op": "isset",
+                          "param": "sector"
+                        }
                       ]
                     }
                   }
@@ -4160,7 +4371,13 @@
                       {
                         "event": "row:click",
                         "actions": [
-                          { "type": "filter", "key": "region", "fromField": "id", "mode": "toggle", "max": 10 }
+                          {
+                            "type": "filter",
+                            "key": "region",
+                            "fromField": "id",
+                            "mode": "toggle",
+                            "max": 10
+                          }
                         ]
                       }
                     ],
@@ -4176,16 +4393,26 @@
                 ],
                 "color": "#0080BE",
                 "data": {
-                  "encoding": {
-                    "color": "color",
-                    "id": "geo",
-                    "label": "label",
-                    "pct": {
-                      "sumOf": "value"
-                    },
-                    "value": "value"
-                  },
+                  "type": "pipeline",
                   "pipe": [
+                    {
+                      "op": "source",
+                      "query": {
+                        "filter": {
+                          "geo": {
+                            "$ne": "_T"
+                          },
+                          "sector": {
+                            "$ne": "_T",
+                            "$ctx": "sector"
+                          },
+                          "time": {
+                            "$ctx": "toYear"
+                          }
+                        },
+                        "measure": "regional.gva"
+                      }
+                    },
                     {
                       "agg": "sum",
                       "by": [
@@ -4211,22 +4438,15 @@
                       "op": "sort"
                     }
                   ],
-                  "query": {
-                    "filter": {
-                      "geo": {
-                        "$ne": "_T"
-                      },
-                      "sector": {
-                        "$ne": "_T",
-                        "$ctx": "sector"
-                      },
-                      "time": {
-                        "$ctx": "toYear"
-                      }
+                  "encoding": {
+                    "color": "color",
+                    "id": "geo",
+                    "label": "label",
+                    "pct": {
+                      "sumOf": "value"
                     },
-                    "measure": "regional.gva"
-                  },
-                  "type": "query"
+                    "value": "value"
+                  }
                 },
                 "geoCodeMap": {
                   "GE-AJ": "adjara",
@@ -4248,7 +4468,11 @@
                   {
                     "event": "selection:change",
                     "actions": [
-                      { "type": "filter", "key": "region", "mode": "replace" }
+                      {
+                        "type": "filter",
+                        "key": "region",
+                        "mode": "replace"
+                      }
                     ]
                   }
                 ],
@@ -4266,7 +4490,10 @@
                     "en": "Occupied territory"
                   }
                 },
-                "occupiedIso": [ "GE-AB", "GE-OS" ],
+                "occupiedIso": [
+                  "GE-AB",
+                  "GE-OS"
+                ],
                 "paramKey": "region",
                 "title": {
                   "ka": "მთლიანი შიდა პროდუქტი — რეგიონების მიხედვით",
@@ -4335,12 +4562,27 @@
                 ],
                 "color": "#0080BE",
                 "data": {
-                  "encoding": {
-                    "label": "time",
-                    "value": "value"
-                  },
-                  "fromDim": "fromYear",
+                  "type": "pipeline",
                   "pipe": [
+                    {
+                      "op": "source",
+                      "query": {
+                        "filter": {
+                          "geo": {
+                            "$ctx": "geo"
+                          },
+                          "sector": {
+                            "$ne": "_T",
+                            "$ctx": "sector"
+                          }
+                        },
+                        "measure": "regional.gva"
+                      },
+                      "clamp": {
+                        "fromDim": "fromYear",
+                        "toDim": "toYear"
+                      }
+                    },
                     {
                       "agg": "sum",
                       "by": [
@@ -4355,20 +4597,10 @@
                       "op": "sort"
                     }
                   ],
-                  "query": {
-                    "filter": {
-                      "geo": {
-                        "$ctx": "geo"
-                      },
-                      "sector": {
-                        "$ne": "_T",
-                        "$ctx": "sector"
-                      }
-                    },
-                    "measure": "regional.gva"
-                  },
-                  "toDim": "toYear",
-                  "type": "query"
+                  "encoding": {
+                    "label": "time",
+                    "value": "value"
+                  }
                 },
                 "id": "sectors-range",
                 "title": {
@@ -4415,7 +4647,12 @@
                       {
                         "event": "point:click",
                         "actions": [
-                          { "type": "filter", "key": "sector", "fromField": "sector", "mode": "replace" }
+                          {
+                            "type": "filter",
+                            "key": "sector",
+                            "fromField": "sector",
+                            "mode": "replace"
+                          }
                         ]
                       }
                     ],
@@ -4464,14 +4701,26 @@
                 ],
                 "color": "#7B6CF6",
                 "data": {
-                  "encoding": {
-                    "color": "color",
-                    "label": "time",
-                    "series": "label",
-                    "value": "value"
-                  },
-                  "fromDim": "fromYear",
+                  "type": "pipeline",
                   "pipe": [
+                    {
+                      "op": "source",
+                      "query": {
+                        "filter": {
+                          "geo": {
+                            "$ctx": "geo"
+                          },
+                          "sector": {
+                            "$ne": "_T"
+                          }
+                        },
+                        "measure": "regional.gva"
+                      },
+                      "clamp": {
+                        "fromDim": "fromYear",
+                        "toDim": "toYear"
+                      }
+                    },
                     {
                       "agg": "sum",
                       "by": [
@@ -4498,19 +4747,12 @@
                       "op": "sort"
                     }
                   ],
-                  "query": {
-                    "filter": {
-                      "geo": {
-                        "$ctx": "geo"
-                      },
-                      "sector": {
-                        "$ne": "_T"
-                      }
-                    },
-                    "measure": "regional.gva"
-                  },
-                  "toDim": "toYear",
-                  "type": "query"
+                  "encoding": {
+                    "color": "color",
+                    "label": "time",
+                    "series": "label",
+                    "value": "value"
+                  }
                 },
                 "id": "sector-history",
                 "title": {
@@ -4864,10 +5106,18 @@
             "op": "directional",
             "focus": "sector",
             "co": "geo",
-            "priority": ["sector", "region"],
+            "priority": [
+              "sector",
+              "region"
+            ],
             "emit": "axis",
-            "grain": ["time"],
-            "unselected": ["", "_T"]
+            "grain": [
+              "time"
+            ],
+            "unselected": [
+              "",
+              "_T"
+            ]
           },
           "_regionTitle": {
             "by": "region",

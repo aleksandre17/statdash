@@ -55,6 +55,28 @@ export function isWorkbenchShaped(spec: DataSpec | undefined): boolean {
 }
 
 /**
+ * The LANE EMISSION FLIP (W0/Z8 — one-dialect hygiene). The three panes already emit
+ * spine (`fromWorkbenchModel`); the Advanced/fallback lanes route their emits through
+ * THIS helper so the in-session artifact matches what the API's normalize-on-write
+ * seam will store (never a sugar `query` re-entering a page/spec doc from the escape
+ * hatches — the leak-#3 class).
+ *
+ * Scope is DERIVED from the Capability Matrix, never a hand list: an emit lowers iff
+ * the panes can GENUINELY AUTHOR the lowered artifact (`isWorkbenchShaped` — today
+ * exactly `query`→spine and `pipeline`→identity). The DU4-protected dedicated-editor
+ * kinds (timeseries/growth/pivot/transform + the U2-blocked kinds) emit UNCHANGED
+ * in-session: lowering them per-keystroke would bypass their intact editors — the
+ * exact Step A regression the DU4 trust-recovery correction reverted (see
+ * `toWorkbenchModel` below). For those, the API seam (`normalizeSpecForRest`) remains
+ * the at-rest enforcement, and D5's dialect-honesty marker declares the difference.
+ * As kinds become pane-admissible (W1 simple views / E2a), this scope widens
+ * AUTOMATICALLY — one predicate, no call-site divergence.
+ */
+export function lowerLaneEmission(spec: DataSpec): DataSpec {
+  return isWorkbenchShaped(spec) ? desugarToPipeline(spec) : spec
+}
+
+/**
  * Lower an accepted spec to the canonical pipeline view — the ONE code path.
  *
  * The accept-list is exactly the kinds the three panes can GENUINELY AUTHOR: a native

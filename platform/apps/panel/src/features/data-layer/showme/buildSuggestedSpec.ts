@@ -9,17 +9,20 @@
 //  PROFILE — the suggestion's `basis` dimension and the first measure. No code is
 //  invented or typed.
 //
-//  Byte-identical: the produced spec is the SAME `query` shape the
-//  DataSpecEditor/QuerySpecEditor emit (type:'query', query.measure: string[],
-//  encoding with bare-string channels) — Show-Me is a faster way to reach a
-//  config the typed editors could also produce, not a new config dialect.
+//  ONE dialect (W0/Z8, ONE-PIPE §4·D1): Show-Me emits the SPINE — the same
+//  `pipeline` form the workbench panes emit (`source(query)` head + tail),
+//  produced through the engine's ONE lowering (`desugarToPipeline`, never a
+//  hand-rolled spine). Show-Me is a faster way to reach a config the workbench
+//  could also produce, not a new config dialect — and the in-session artifact
+//  is byte-identical to what the API's normalize-on-write seam will store.
 //
 import type { DataSpec } from '@statdash/engine'
+import { desugarToPipeline } from '@statdash/engine'
 import type { CubeProfile } from '../../../lib/cubeApi'
 import type { PanelSuggestion } from '../../../discovery/suggestPanels'
 
 /**
- * Build a populated `query` DataSpec for a suggestion. The measure is the
+ * Build a populated `pipeline` DataSpec for a suggestion. The measure is the
  * profile's first measure (the suggestion exists only when ≥1 measure is
  * present); the encoding label binds the suggestion's basis dimension (the axis
  * that drove the suggestion — time for timeseries, the geo/hierarchy/compare dim
@@ -40,10 +43,12 @@ export function buildSuggestedSpec(
   const basisIsDim = dims.some((d) => d.code === suggestion.basis)
   const labelField = basisIsDim ? suggestion.basis : dims[0]?.code ?? firstMeasure
 
-  return {
+  // Authored in the input grammar (the friendly query form), LOWERED through the
+  // engine SSOT — the emitted artifact is the rest grammar (source head + tail).
+  return desugarToPipeline({
     type: 'query',
     query: { measure: [firstMeasure] },
     pipe: [],
     encoding: { label: labelField, value: firstMeasure },
-  }
+  })
 }

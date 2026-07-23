@@ -27,7 +27,7 @@
   "specs": [
     {
       "key": "$.pages[0].config.children[4].children[0].children[0].data",
-      "discriminant": "query",
+      "discriminant": "pipeline",
       "requirements": {
         "year": [
           {
@@ -61,7 +61,7 @@
     },
     {
       "key": "$.pages[0].config.children[4].children[0].children[1].data",
-      "discriminant": "query",
+      "discriminant": "pipeline",
       "requirements": {
         "year": [
           {
@@ -95,7 +95,7 @@
     },
     {
       "key": "$.pages[0].config.children[5].children[0].children[0].data",
-      "discriminant": "query",
+      "discriminant": "pipeline",
       "requirements": {
         "year": [
           {
@@ -249,7 +249,7 @@
     },
     {
       "key": "$.pages[0].config.children[5].children[0].children[1].data",
-      "discriminant": "query",
+      "discriminant": "pipeline",
       "requirements": {
         "year": [
           {
@@ -403,7 +403,7 @@
     },
     {
       "key": "$.pages[1].config.children[4].children[0].data",
-      "discriminant": "query",
+      "discriminant": "pipeline",
       "requirements": {
         "year": [
           {
@@ -437,7 +437,7 @@
     },
     {
       "key": "$.pages[1].config.children[4].children[1].data",
-      "discriminant": "query",
+      "discriminant": "pipeline",
       "requirements": {
         "year": [
           {
@@ -471,7 +471,7 @@
     },
     {
       "key": "$.pages[1].config.children[5].children[0].data",
-      "discriminant": "query",
+      "discriminant": "pipeline",
       "requirements": {
         "year": [
           {
@@ -505,7 +505,7 @@
     },
     {
       "key": "$.pages[1].config.children[5].children[1].data",
-      "discriminant": "query",
+      "discriminant": "pipeline",
       "requirements": {
         "year": [
           {
@@ -539,7 +539,7 @@
     },
     {
       "key": "$.pages[1].config.children[6].children[0].data",
-      "discriminant": "query",
+      "discriminant": "pipeline",
       "requirements": {
         "year": [
           {
@@ -573,7 +573,7 @@
     },
     {
       "key": "$.pages[1].config.children[6].children[1].data",
-      "discriminant": "query",
+      "discriminant": "pipeline",
       "requirements": {
         "year": [
           {
@@ -607,7 +607,7 @@
     },
     {
       "key": "$.pages[1].config.children[7].children[0].data",
-      "discriminant": "query",
+      "discriminant": "pipeline",
       "requirements": {
         "year": [
           {
@@ -641,7 +641,7 @@
     },
     {
       "key": "$.pages[1].config.children[7].children[1].data",
-      "discriminant": "query",
+      "discriminant": "pipeline",
       "requirements": {
         "year": [
           {
@@ -675,7 +675,7 @@
     },
     {
       "key": "$.pages[3].config.children[4].children[0].data",
-      "discriminant": "query",
+      "discriminant": "pipeline",
       "requirements": {
         "year": [
           {
@@ -709,7 +709,7 @@
     },
     {
       "key": "$.pages[3].config.children[4].children[1].data",
-      "discriminant": "query",
+      "discriminant": "pipeline",
       "requirements": {
         "year": [
           {
@@ -743,7 +743,7 @@
     },
     {
       "key": "$.pages[3].config.children[5].children[0].data",
-      "discriminant": "query",
+      "discriminant": "pipeline",
       "requirements": {
         "year": [
           {
@@ -777,7 +777,7 @@
     },
     {
       "key": "$.pages[3].config.children[6].children[0].data",
-      "discriminant": "query",
+      "discriminant": "pipeline",
       "requirements": {
         "year": [],
         "range": []
@@ -785,7 +785,7 @@
     },
     {
       "key": "$.pages[3].config.children[6].children[1].data",
-      "discriminant": "query",
+      "discriminant": "pipeline",
       "requirements": {
         "year": [
           {
@@ -819,7 +819,7 @@
     },
     {
       "key": "$.pages[3].config.children[7].children[0].data",
-      "discriminant": "query",
+      "discriminant": "pipeline",
       "requirements": {
         "year": [
           {

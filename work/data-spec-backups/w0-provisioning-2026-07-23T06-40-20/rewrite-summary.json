@@ -1,0 +1,10 @@
+{
+  "apply": true,
+  "lowered": 18,
+  "blocked": 0,
+  "failed": 0,
+  "byKind": {
+    "query": 18
+  },
+  "failures": []
+}

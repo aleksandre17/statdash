@@ -130,12 +130,24 @@ function collectFanSites(node: unknown, path: string, out: FanSite[]): void {
   if (Array.isArray(node)) { node.forEach((n, i) => collectFanSites(n, `${path}[${i}]`, out)); return }
   if (!isPlainObject(node)) return
 
+  // Dialect-agnostic (W0/Z8): a fan-out site is a steward ObsQuery + an aggregating
+  // pipe — in the ONE rest grammar the query sits on the `source` HEAD
+  // (`pipe[0].query`, tail steps follow); the legacy sugar carried it at `.query`
+  // (kept so the fitness still bites a regression that re-enters the sugar form).
+  let obsQuery: Record<string, unknown> | undefined
   if (node.type === 'query' && isPlainObject(node.query)) {
-    const q = node.query as Record<string, unknown>
+    obsQuery = node.query as Record<string, unknown>
+  } else if (node.type === 'pipeline' && Array.isArray(node.pipe)) {
+    const head = (node.pipe as unknown[])[0]
+    if (isPlainObject(head) && head.op === 'source' && isPlainObject(head.query)) {
+      obsQuery = head.query as Record<string, unknown>
+    }
+  }
+  if (obsQuery) {
     const fannedDims = fannedDimsOf(node.pipe)
     fannedDims.delete(TIME_DIM)  // time is never a rollup-member dim here
     if (fannedDims.size > 0) {
-      const filter = isPlainObject(q.filter) ? q.filter : {}
+      const filter = isPlainObject(obsQuery.filter) ? obsQuery.filter : {}
       out.push({ where: `${path}.query`, fannedDims, filter })
     }
   }
