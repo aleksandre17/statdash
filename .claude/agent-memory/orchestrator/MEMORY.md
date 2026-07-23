@@ -5,6 +5,8 @@
 - [assembly by declaration (0100/ADR-049)](project_assembly_by_declaration.md) — panel assembles by DECLARATION; P1 DataSpec authoring registry → P2 composed-preset projection
 - [canonical line north](project_canonical_line_north.md) — the SOUL (Looker governance × Figma authoring × Eurostat integrity) · four moments · three laws (PLANE/CONTAINMENT/ONE-PLACE)
 
+- [authoring-surface finish (ACTIVE)](project_authoring_surface_finish.md) — owner 07-23: finish authoring UI FIRST, lead's pen + others' knowledge; U4+E2a, folds backlog #2/#5/#6
+
 ## Active program (queued)
 - [data-workspace UX backlog](project_data_workspace_ux_backlog.md) — owner's 2026-07-20 review: 5 craft/IA items; fold into ADR-051 polish after Step A/F2
 

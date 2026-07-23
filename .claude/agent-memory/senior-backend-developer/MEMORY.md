@@ -21,6 +21,7 @@
 - [api Problem Details](project_api_problem_details.md) — RFC 9457 problem+json: registry in apps/api lib, shape in contracts; error-handler-must-register-before-routes pitfall
 - [api shared seams](project_api_shared_seams.md) — REUSE lib/ seams: relationExists (rolling-migration probe), buildSetClause (partial-UPDATE), alreadyPublished (409)
 - [config revision log + validated PUT](project_config_revision_log.md) — ADR-052 E0 CLOSED (db51e189+30ee70e7): V39 log + validated PUT + code-resolves (MetricRef shared namespace → catalog ∪ stats.classifier measure codelist; metric-resolves REMOVED); ref-class verdict (source config, not extractDeps)
+- [one-dialect seam](project_one_dialect_seam.md) — W0 SHIPPED (0ffc46b0): data_spec POST/PUT/restore normalize-on-write via desugarToPipeline; allowlist +metric SURFACED; lane flip = isWorkbenchShaped (DU4-safe); pages PUT still un-normalized; worktree stash-then-checkout gotcha
 - [api ops floor](project_api_ops_floor.md) — API-02/03/08/09/10/11/16: async pg-backed audit/snapshot ports, hand-rolled metrics+rate-limit+openapi(zod v3)+redact, V36/V37, canonicalRoutes-is-a-factory
 - [api image + validate:local](project_api_image_and_validate_local.md) — Dockerfile pnpm-deploy (symlink-free) + the 8-stage live-DB one-shot; CI workflow is stale
 - [RBAC vocabulary](project_rbac_vocabulary.md) — roles admin/editor/viewer only; no publisher; publish gated to admin
